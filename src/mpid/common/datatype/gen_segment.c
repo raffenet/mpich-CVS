@@ -250,7 +250,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
     if (first != (int)stream_off) {
 	int tmp_last;
 
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 	dbg_printf("first=%d; stream_off=%ld; resetting.\n", first, stream_off);
 #endif
 
@@ -276,7 +276,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
 
 	/* continue processing... */
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 	dbg_printf("done repositioning stream_off; first=%d, stream_off=%ld, last=%d\n",
 		   first, stream_off, last);
 #endif
@@ -288,7 +288,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	/* no structs in here */
 	if ((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) assert(0);
 
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
         dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n", cur_sp, (unsigned) cur_elmp);
 #endif
 
@@ -327,7 +327,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 	    }
 
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 	    dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
 		       (unsigned) cur_elmp, piece_size);
 #endif
@@ -336,7 +336,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    if (stream_off + piece_size > (unsigned long) last) {
 		/* Cannot process the entire "piece" -- round down */
 		piece_size = ((last - stream_off) / basic_size) * basic_size;
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 		dbg_printf("\tpartial piece_size=%d\n", piece_size);
 #endif
 		partial_flag = 1;
@@ -351,7 +351,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				       pieceparams);
 	    else {
 		ret = 0;
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 		dbg_printf("\tNULL piecefn for this piece\n");
 #endif
 	    }
@@ -380,7 +380,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    default:
 			assert(0);
 		}
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 		dbg_printf("partial flag, returning sooner than expected.\n");
 #endif
 		ret = 1; /* forces return below */
@@ -415,7 +415,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    cur_elmp->curoffset  = cur_elmp->orig_offset +
 				DLOOP_Stackelm_offset(cur_elmp);
 			}
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 			dbg_printf("\tnew region: origoff = %d; curoff = %d; blksz = %d\n",
 				   (int) cur_elmp->orig_offset,
 				   (int) cur_elmp->curoffset,
@@ -427,7 +427,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			cur_elmp->curcount--;
 			if (cur_elmp->curcount == 0) cur_sp--;
 			else {
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 			    dbg_printf("end of vec block; incrementing curoffset by %d\n",
 				       cur_elmp->loop_p->loop_params.v_t.stride -
 				       (cur_elmp->orig_block * cur_elmp->loop_p->el_size));
@@ -456,13 +456,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     * for this type (which is not a leaf).  The first test is that we
 	     * hit end of block.
 	     */
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 	    dbg_printf("\thit end of block; elmp=%x\n", (unsigned) cur_elmp);
 #endif
 	    cur_elmp->curcount--;
 	    if (cur_elmp->curcount == 0) {
 		/* We also hit end of count; pop this type. */
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 		dbg_printf("\thit end of count; elmp=%x\n", (unsigned) cur_elmp);
 #endif
 		cur_sp--;
@@ -490,7 +490,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    count_index = cur_elmp->orig_count - cur_elmp->curcount;
 	    block_index = cur_elmp->orig_block - cur_elmp->curblock;
 
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 	    dbg_printf("\tpushing type, elmp=%x, count=%d, block=%d\n",
 		       (unsigned) cur_elmp, count_index, block_index);
 #endif
@@ -509,7 +509,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			count_index * cur_elmp->loop_p->loop_params.v_t.stride +
 			block_index * cur_elmp->loop_p->el_extent;
 		    next_elmp->curblock = next_elmp->orig_block;
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
 		    dbg_printf("outer vec el_size = %d, el_extent = %d, stride = %d\n",
 			       cur_elmp->loop_p->el_size, cur_elmp->loop_p->el_extent,
 			       cur_elmp->loop_p->loop_params.v_t.stride);
@@ -537,7 +537,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	} /* end of else push the datatype */
     } /* end of while cur_sp >= 0 */
 
-#ifdef M_VERBOSE
+#ifdef DLOOP_M_VERBOSE
     dbg_printf("hit end of datatype\n");
 #endif
 

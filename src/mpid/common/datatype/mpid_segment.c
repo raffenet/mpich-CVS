@@ -150,7 +150,7 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
 {
     /* TODO: IS THIS IN ANY WAY A BAD THING TO DO? */
     struct MPID_Segment_piece_params *paramp = v_paramp;
-#ifdef SP_VERBOSE
+#ifdef MPID_SP_VERBOSE
     dbg_printf("\t[index=%d, loc=%x, size=%d]\n", paramp->u.pack_vector.index,
 	       (unsigned) dbufp + dbufoff, size);
 #endif
@@ -197,7 +197,7 @@ static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
 {
     struct MPID_Segment_piece_params *paramp = v_paramp;
 
-#ifdef SU_VERBOSE
+#ifdef MPID_SU_VERBOSE
     dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
 	       (unsigned) dbufp, (unsigned) paramp->u.unpack.unpack_buffer, size);
 #endif
@@ -225,7 +225,7 @@ static int MPID_Segment_piece_pack(DLOOP_Handle handle,
      * sz = size of datatype (guess we could get this from handle value if
      *      we wanted...)
      */
-#ifdef SP_VERBOSE
+#ifdef MPID_SP_VERBOSE
     dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
 	       (unsigned) dbufp, (unsigned) paramp->u.pack.pack_buffer, size);
 #endif
@@ -245,7 +245,7 @@ static int MPID_Segment_piece_print(DLOOP_Handle handle,
 				    void *v_paramp)
 {
     struct MPID_Segment_piece_params *paramp = v_paramp;
-#ifdef D_VERBOSE
+#ifdef MPID_D_VERBOSE
     dbg_printf("\t[h=%x, do=%d, dp=%x, sz=%d]\n", handle, dbufoff, 
 	       (unsigned) dbufp, size);
 #endif

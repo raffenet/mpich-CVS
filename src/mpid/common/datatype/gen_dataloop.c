@@ -99,11 +99,6 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 {
     int ptrdiff;
 
-#if 0
-    dbg_printf("copy: dest=%x, src=%x, size=%d\n", (int) dest, (int) src, 
-	       size);
-#endif
-
     /* copy region first */
     memcpy(dest, src, size);
 
@@ -196,9 +191,6 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 		DLOOP_Dataloop_update(looparray[i], ptrdiff);
 	    }
 	    break;
-#if 0
-	case DLOOP_KIND_BASIC:
-#endif
 	default:
 	    break;
     }
@@ -265,13 +257,6 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.s_t.dataloop_array[i],depth+1);
 	    }
 	    break;
-#if 0
-	case DLOOP_KIND_BASIC:
-	    dbg_printf("\tcount = %d\n\tbasic_handle=%x\n", 
-		       dataloop->loop_params.ba_t.count,
-		       dataloop->loop_params.ba_t.handle);
-	    break;
-#endif
 	default:
 	    break;
     }
