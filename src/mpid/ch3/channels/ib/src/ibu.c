@@ -83,6 +83,7 @@ typedef struct ibu_state_t
 #define IBU_PACKET_COUNT           64
 #define IBU_NUM_PREPOSTED_RECEIVES 32
 #define IBU_MAX_CQ_ENTRIES         255
+#define IBU_MAX_POSTED_SENDS       8192
 
 typedef struct IBU_Global {
        ib_hca_handle_t hca_handle;
@@ -101,6 +102,9 @@ IBU_Global IBU_Process;
 
 static int g_connection_attempts = DEFAULT_NUM_RETRIES;
 static int g_num_cp_threads = 2;
+
+static int g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
+static int g_cur_write_stack_index = 0;
 
 /* local prototypes */
 static int ibui_post_receive(ibu_t ibu);
@@ -659,6 +663,7 @@ static int ibui_post_receive(ibu_t ibu)
 }
 
 /*****************************/
+/*
 static ibu_num_written_node_t *g_write_list_head = NULL;
 static ibu_num_written_node_t *g_write_list_tail = NULL;
 
@@ -679,6 +684,7 @@ static int ibui_next_num_written()
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
     return num_bytes;
 }
+*/
 /*****************************/
 
 /*
@@ -708,7 +714,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
     ib_data_segment_t data;
     ib_work_req_send_t work_req;
     void *mem_ptr;
-    ibu_num_written_node_t *p;
+    //ibu_num_written_node_t *p;
     int length;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITE);
 
@@ -719,6 +725,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	length = min(len, IBU_PACKET_SIZE);
 	len -= length;
 
+#if 0
 	p = malloc(sizeof(ibu_num_written_node_t));
 	p->next = NULL;
 	p->num_bytes = length;
@@ -742,6 +749,8 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    g_write_list_head = p;
 	}
 	g_write_list_tail = p;
+#endif
+	g_num_bytes_written_stack[g_cur_write_stack_index++] = length;
 	
 	mem_ptr = BlockAlloc(ibu->allocator);
 	memcpy(mem_ptr, buf, length);
@@ -1150,7 +1159,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	switch (completion_data.op_type)
 	{
 	case OP_SEND:
-	    num_bytes = ibui_next_num_written(ibu);
+	    //num_bytes = ibui_next_num_written(ibu);
+	    num_bytes = g_num_bytes_written_stack[--g_cur_write_stack_index];
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    /* put the receive packet back in the pool */
