@@ -50,13 +50,13 @@ errcodes.dvi: errcodes.tex
 pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	sed -e s/@dummy@/pt2ptdesc.tex/ \
 	    -e s/@paragraph@/paragraph/g \
-	    -e s/@newparagraph@/subsection/g \
+	    -e s/@newparagraph@/paragraph/g \
 	    -e s/@subsubsection@/subsubsection/g \
-	    -e s/@newsubsubsection@/section/g \
+	    -e s/@newsubsubsection@/subsubsection/g \
 	    -e s/@subsection@/subsection/g \
-	    -e s/@newsubsection@/relax/g \
+	    -e s/@newsubsection@/subsection/g \
 	    -e s/@section@/section/g \
-	    -e s/@newsection@/relax/g \
+	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
 	latex template
 	-bibtex template

@@ -27,7 +27,7 @@ if (found) {
 			 request_ptr->eager.ptr, &location, 
 			 request_ptr->status.count, request_ptr->msg_format );
         }
-        /* release data_avail (includes flow control) */
+        /* release eager.ptr (includes flow control) */
         MPID_EagerFree( rank, comm_ptr, request_ptr->eager.ptr, msg_size );
         MPID_MemWrite_ordered( request_ptr->complete, 1 );
     }
@@ -40,7 +40,7 @@ if (found) {
 	 request_ptr->buf.count    = count;
 	 request_ptr->buf.datatype = datatype;
 	 MPID_Datatype_incr(datatype,1);
-	 MPID_Comm_incr(datatype,1);
+	 MPID_Comm_incr(comm_ptr,1);
 
 	 /* Now, send the request to deliver the data */
          packet = (MPID_Hid_ok_to_send_t *)&request_ptr.packet;
@@ -60,8 +60,9 @@ else {
     request_ptr->buf.ptr      = buffer;
     request_ptr->buf.count    = count;
     request_ptr->buf.datatype = datatype;
+    request_ptr->buf.comm_ptr = comm_ptr;
     MPID_Datatype_incr(datatype,1);
-    MPID_Comm_incr(datatype,1);
+    MPID_Comm_incr(comm_ptr,1);
     MPID_MemWrite_ordered(request_ptr->busy,0);
 }
 *request = request_ptr->self;

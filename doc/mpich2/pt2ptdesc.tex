@@ -1,4 +1,4 @@
-\subsubsection{Scenarios}
+\section{Scenarios}
 \label{sec:pt-2-pt-scenarios}
 
 To best understand how the point-to-point communication routines work, we will
@@ -7,7 +7,7 @@ may implement communication.  We start with one of the more complex cases and
 then discuss optimizations for special cases such as sending and receiving
 contiguous messages.
 
-\paragraph{Nonblocking Send and Receive with Complex Datatypes.}
+\subsection{Nonblocking Send and Receive with Complex Datatypes.}
 This represents one of the more complex cases; most communication will offer
 some opportunities for exploiting special cases such as simple datatypes
 representing contiguous data or blocking communication.  
@@ -54,7 +54,7 @@ MPI_Wait( &req, &status );
 The following sample implementation assumes a homogeneous system (all
 processes use the same data representation).  
 
-\paragraph{\tcpname.}
+\subsubsection{\tcpname.}
 This method is a prototype for a TCP method.  
 
 The basic communication is provided by
@@ -106,7 +106,7 @@ may not be in contiguous locations.  Roughly, a stream used for
     use this, or is it better to just read some of the data (one system call)?
 
 
-  Question: Were is the buffer to pack into allocated?  Is this part of the 
+  Question: Where is the buffer to pack into allocated?  Is this part of the 
   \mpidconst{MPID_Segment} structure?  Part of the \mpidconst{MPID_Stream}
   structure? How do we make sure that the choice is
   good for this particular method (e.g., are segments allocated with a source
@@ -119,12 +119,17 @@ may not be in contiguous locations.  Roughly, a stream used for
   data; a \mpids{MPI_Datatype}{contiguous} flag value may be helpful.  Note
   that in the case of resized datatypes, a type that is contiguous with a
   \code{count} of $1$ may not be contiguous with a \code{count} greater than
-  one.  Do we want a separate flag for that?  
+  one (e.g., when the MPI UB (upperbound) is past the last data byte).  Do we
+  want a separate flag for that?  Or should we optimize only for 
+  the case of a datatype that is contiguous regardless of \code{count}?
 
-    A refinement that is not used here is to allow for \emph{double
+    A refinement that is not discussed in detail here is to allow for
+    \emph{double 
     buffering}; in the case of a stream used for sending, the next
     group of bytes to be sent is packed before the first is entirely
-    sent, overlapping the communication with the packing operation.
+    sent, overlapping the communication with the packing operation.  In fact,
+    this optimization can be implemented within the stream operations that are
+    discussed below without changing any of the sample code here.
 
 \item Direct read and write.  These are roughly like the Unix
   \code{read} and \code{write}.  They are not used directly, but are a special
@@ -169,7 +174,9 @@ routine to free up any temporary buffers.
 \implementation{{General Notes}}
 The basic structures include the following:
 \begin{verbatim}
-typedef struct { void *ptr;
+typedef struct { 
+     volatile void *ptr;
+     void *tempptr;
      MPID_Msg_format msg_format;   /* Only for heterogeneous systems */
      } MPID_Eager_info;   /* Info for eager delivery */
 typedef struct { 
@@ -180,10 +187,14 @@ typedef struct {
      void          *ptr;
      int           count;
      MPID_Datatype *dtype;
+     MPID_Comm     *comm_ptr;
 } MPID_Buf_info;
 
-typedef enum { MPID_REQ_ISEND, MPID_REQ_IRECV, MPID_REQ_PERSIST_ISEND,
-               MPID_REQ_PERSIST_IRECV, MPID_REQ_USER } MPID_Request_kind;
+#define MPID_REQ_REQULAR_MASK 0x1
+#define MPID_REQ_PERSIST_MASK 0x2
+#define MPID_REQ_USER_MASK    0x4
+typedef enum { MPID_REQ_ISEND=1, MPID_REQ_IRECV=3, MPID_REQ_PERSIST_ISEND=0,
+               MPID_REQ_PERSIST_IRECV=2, MPID_REQ_USER=4 } MPID_Request_kind;
 
 /* All packet types start with the same values */
 typedef struct {
@@ -200,6 +211,7 @@ typedef union {
 typedef struct {
      MPID_Request_kind kind;
      volatile int      busy;
+     volatile int      complete;
      int               self;    /* integer id of request */
      int               context_id;
      MPI_Status        status;  /* Stores tag, source, error, and n bytes */
@@ -211,6 +223,27 @@ typedef struct {
      MPID_Packet       packet;
      } MPID_Request;
 \end{verbatim}
+
+Notes:
+\begin{enumerate}
+\item \code{volatile} is required on \code{ptr} in the \code{MPID_Eager_info}
+  structure only for multithreaded versions, and then only because the code
+  below looks at \code{ptr} to see if data is available after an eager send.
+  If a separate flag indicated this, only the flag would have to be
+  \code{volatile}. 
+
+\item The \code{comm_ptr} is part of the \code{MPID_Buf_info} because it may
+  be necessary to decrement the reference count on a communicator once a
+  message has been received, just as the reference count on the datatype must
+  be decremented.  
+
+\item The values on the \code{MPID_Request_kind} are chosen to allow single
+  bit tests to distinguish between persistant and non-persistant requests.
+
+\item The \code{busy} and \code{complete} flags in \code{MPID_Request} need be
+  \code{volatile} only when either (a) the process is multithreaded or (b) the
+  device shares memory, particularly requests, among the processes.
+\end{enumerate}
 
 In the case where there are multiple threads, it is necessary to ensure that
 only one thread (usually) modifies a request at a time.  This can be
@@ -239,6 +272,12 @@ void MPID_MemWrite_ordered( int *var, int value )
 
 Question: are there any systems where it helps to flush only
 specific variables  (OpenMP allows this)?
+
+A single-threaded implementation might simply use
+\begin{verbatim}
+#define MPID_MemWrite_ordered( var, value ) 
+\end{verbatim}
+That is, the entire operation would be eliminated.
 
 Request allocation:
 
@@ -434,13 +473,18 @@ Notes:
   Question: what is the source value?  Is it the local process id (e.g., the
   connection number)?
 
+  Question: If we piggy-back flow-control information in the packets,
+  GetNextPacket could process that, eliminating that step from the
+  communication agent code.  This flow control information would contain
+  information such as ``2k of eager buffers released''.
+
 \item The blocking parameter to \code{GetNextPacket} has the following
   meanings:
   \begin{description}
-  \item[\code{MPID_BLOCKING}]Block until a packet is available.
-  \item[\code{MPID_NONBLOCKING}]Return a packet if one is available, otherwise
+  \item[\code{MPID_BLOCKING}:]Block until a packet is available.
+  \item[\code{MPID_NONBLOCKING}:]Return a packet if one is available, otherwise
     return \code{NULL}.
-  \item[\code{MPID_EXPECTING}]Like \code{MPID_NONBLOCKING}, except
+  \item[\code{MPID_EXPECTING}:]Like \code{MPID_NONBLOCKING}, except
     \code{GetNextPacket} may wait for a short time before returning.  For
     example, it may wait the time it takes a message to make a round trip in a
     case where a response is expected from another process.
@@ -454,7 +498,7 @@ Notes:
   communication agent.  However, the restriction that only one thread call the
   communication agent at a time is fairly natural.  In fact, the MPI thread
   mode \mpiconst{MPI_THREAD_SERIALIZED} expresses this; in such a case, the
-  communication agent does not need a acquire a thread lock in the case where
+  communication agent does not need acquire a thread lock in the case where
   many threads may call the communication agent (e.g., in a polling mode
   implementation where there is no separate thread running the communication
   agent).
@@ -538,6 +582,9 @@ Notes:
 \item Check to see if this is a ready-send.  If so, then there is an error
   because a matching request was not found.  Return an error indication to the
   sending process and tell the socket layer to discard the data.
+  Note that this process must read the data since it is being sent.  Since
+  this is an error case, there is no reason to try and optimize this case by
+  asking the sender to stop sending the data.
 
   Question: do we also want to generate an error message?  Do we want to
   invoke the error handler on the intended communicator on the receiving
@@ -606,7 +653,8 @@ Notes:
     stream.  
 
    Question: do we need to call a routine to release any stream or segment
-   resources when we are done?
+   resources when we are done?  Or do we make this automatic with the stream
+   routines? 
 
   \end{enumerate}
 \end{enumerate}
@@ -618,14 +666,16 @@ Notes:
   data may not be available yet.  
 
   Question: Do we need to call a routine at completion to release any stream
-  or segment resources when we are done?
+  or segment resources when we are done? Or do we make this automatic with the
+  stream routines?
 
 \end{enumerate}
 
 \mpidconst{MPID_Hid_control}:
 \begin{enumerate}
 \item This case is for miscellaneous control messages.  The only control
-  message defined so far is the ready-send error.
+  message defined so far is the ready-send error.  Others might include abort,
+  exit, are-you-alive, etc.
 \end{enumerate}
 
 \implementation{{MPI_Wait}}
@@ -648,7 +698,8 @@ Notes:
   \mpids{MPID_Request}{complete} flag.  However\index{thread overhead!request
     completion}, it does force the use of a thread mutex to guard the
   \code{complete} flag and a thread condition variable to release the
-  particular request.  
+  particular request.  (We are probably missing guards around \code{complete}
+  elsewhere as well.)
 
   The sample code shows the use of condition variables with pthreads.
   The routine \code{pthread_cond_wait} atomically releases the
@@ -675,6 +726,12 @@ Notes:
   platforms (e.g., Linux, Solaris, AIX, etc.)?  Is there a similar Windows NT
   approach, or is something different required?
 
+\item Missing from this routine is any processing that may be required after
+  the data transfer completes.  Note that, particularly in the case of
+  \mpidfunc{MPID_Rhcv}, the \code{complete} field is set once data is
+  transfered.  However, if some temporary buffer was allocated for sending or
+  a datatype reference count was incremented, some further steps must be taken
+  when finishing the request off.
 \end{enumerate}
 
 \pagerule\par
@@ -683,19 +740,56 @@ appropriate for new text.  Read at your own peril.
 
 \pagerule\par
 
-\paragraph{\shmemname}
+\subsubsection{\shmemname}
 (not done)
 
 We still need streams here, but since we're responsible for
 everything, we may need to send messages back and forth for each
 segment.  This may add an additional message type,
-\mpidconst{MPID_Hid_next_data_t}.  
+\mpidconst{MPID_Hid_next_data_t}.  However, this could be hidden within the
+lowest level code, making streams a good abstraction in this case as well.
 
 One approach to a shared memory device is to implement a \tcpname-set of
 operations for all control messages (the \mpidconst{MPID_Hid_xxx}), but
 arrange for data exchanges to use shared memory.  The description here takes
 this one step further; the message queues are in shared memory, allowing any
 process to update the queues.
+
+\paragraph{Implementing Streams in Shared Memory.}
+Streams are implemented by allocating \emph{two} (contiguous) regions in
+shared memory.  Call these region 1 and region 2.  The (send) stream starts by
+placing data in region 1.  It then informs the destination process that data
+is available in that region by providing the address and length of that
+region (probably by sending it a message).  The sending process then fills in
+region 2 with the next section of data and informs the destionation that that
+region is ready.  On the receiving side, as each region is read, the receiver
+indicates that to the sender.  Because two buffers are used, one process can
+be filling the one while the other process is reading the other buffer.  This
+can effectively double the bandwidth of a transfer that make use of a single
+buffer.
+
+
+Issues:
+\begin{enumerate}
+\item How does the sending process indicate that the next buffer is ready?
+  Does it set a flag at the end of the buffer?  Does it send a message?  The
+  advantage of sending a message is that it allows the destination process to
+  check one location (or queue) for input, regardless of how many streams and
+  other operations are taking place.  Since the message is short, it could be
+  sent in a single cache line, making the cost very low (particular in an
+  implementation that used lock-free queues for messages).  
+
+\end{enumerate}
+
+
+\paragraph{Allocating Eager Buffer Space.}
+In this device, the message queues are kept in shared memory, allowing a
+sending process to immediately know whether a posted receive exists.  In this
+case, an eager message can be delivered by allocating the eager buffer from
+shared memory.  The sending process then fills the eager buffer with the data,
+sets the eager buffer fields in the request (e.g., \code{MPID_Eager_info}),
+and clears the \code{busy} flag in the request.  When the eager message is
+finally received, the eager buffer is returned to shared memory.
 
 \mpifunc{MPI_Irecv}:
 The initial steps are the same as in the \tcpname\ case.  A major difference
@@ -735,10 +829,14 @@ queue element directly. The two cases are
 Check remote queue for matching receive request (using
 \mpidfunc{MPID_Request_send_FOA}?).  
 \begin{enumerate}
-\item If not found, insert (an unexpected receive), set the matching data
+\item If not found, insert (an unexpected receive).  There are two cases: a
+  short message that uses an eager delivery, and a long message that requires
+  a rendezvous.  If an eager delivery, allocate the space in shared memory,
+  copy into the eager buffer, and set the corresponding eager fields in the
+  request.  If a rendezvous, set the matching data
   including the sender's 
   request id, use \mpidfunc{MPID_MemWrite_ordered} to clear the busy flag, and
-  return. 
+  return.  
 \item If found, match (remove from queue) and begin transfer.  There are
   several cases:
     \begin{enumerate}
@@ -771,14 +869,14 @@ Check remote queue for matching receive request (using
 Again, this is much like the \tcpname\ case.  Note, however, that the
 \mpids{MPID_Request}{complete} field can, in some cases, be set by the
 sending process (particularly for contiguous receive buffers that are in
-shared memory), so this field must be marked \code{volatile}.
+shared memory), so this field must be marked \code{volatile}, even in the
+single-threaded process case.
 
 Also note the case that all of the data (or the last segment) has been
 delivered (by being placed 
 into shared memory), but the final \mpidconst{MPID_Unpack} to move that data
-into the user's buffer has not been performed.  How is this indicated?  In the
-\tcpname\ case, this is handled with the explicit delivery of an
-\mpidconst{MPID_Hid_data} message.  In the \shmemname\ case, do we indicate
+into the user's buffer has not been performed.  How is this indicated?  
+In the \shmemname\ case, do we indicate
 this with a bit or field in the \mpidconst{MPID_Request}?  For example, is
 there a \mpids{MPID_Request}{data_available} field that is used to indicate
 that memory is available?  This field could be used instead of an explicit
@@ -789,41 +887,44 @@ busy-waiting?  Do we simply poll and yield?
 
 \texttt{Communication agent:}
 
-The communication agent is responsible for making progress on a stream (the
-sending of segments).  There is no special action on the receiving end.  On
-the sending end, when the \mpidconst{MPID_Hid_ok_to_send} is received, the
-send is started.  Note that a handshake is required on the transfer of data
-from the sender to the receiver because the buffer that is used for the
-transfer must be explicitly filled by the sender and emptied by the receiver.
-Question: Do we want to double buffer?  How does that change the messages
-exchanged between the sender and receiver?
+% The communication agent is responsible for making progress on a stream (the
+% sending of segments).  There is no special action on the receiving end.  On
+% the sending end, when the \mpidconst{MPID_Hid_ok_to_send} is received, the
+% send is started.  Note that a handshake is required on the transfer of data
+% from the sender to the receiver because the buffer that is used for the
+% transfer must be explicitly filled by the sender and emptied by the receiver.
+% Question: Do we want to double buffer?  How does that change the messages
+% exchanged between the sender and receiver?
 
-If the communication agent is in a separate thread, we can wake up, spin a
-little (checking the incoming message queue), and yield.  If single-threaded,
-we should spin for roughly the round-trip message time (an internal message,
-not an MPI message) and then yield (on Linux, with \code{sched_yield}).
-Question: do we want the option of using something like the System V
-semaphores to implement a condition variable for the communication agent, so
-that updates to the incoming message queues would wake up the agent?
+% If the communication agent is in a separate thread, we can wake up, spin a
+% little (checking the incoming message queue), and yield.  If single-threaded,
+% we should spin for roughly the round-trip message time (an internal message,
+% not an MPI message) and then yield (on Linux, with \code{sched_yield}).
+% Question: do we want the option of using something like the System V
+% semaphores to implement a condition variable for the communication agent, so
+% that updates to the incoming message queues would wake up the agent?
 
-Question: How do we notify the agent that we are ready for another segment?
-Does the communication agent wait on something?  What?  What about the case
-where there are 100 pending requests?
-An easy way may simply be to send a message, following the approach in
-\tcpname.  A more complex approach, introduced in the discussion of
-\mpifunc{MPI_Wait} above, is to use a field within the request (or even in the
-shared-memory transfer area itself) to indicate that a segment has been copied
-into or out of shared memory.  
+% Question: How do we notify the agent that we are ready for another segment?
+% Does the communication agent wait on something?  What?  What about the case
+% where there are 100 pending requests?
+% An easy way may simply be to send a message, following the approach in
+% \tcpname.  A more complex approach, introduced in the discussion of
+% \mpifunc{MPI_Wait} above, is to use a field within the request (or even in the
+% shared-memory transfer area itself) to indicate that a segment has been copied
+% into or out of shared memory.  
 
-Note that waiting on fields in individual request items is ok in this simple
-example, but becomes less suitable when there are a significant number of
-pending requests.  Question: we could establish a bit vector of pending
-requests (each bit represents a request and the position matches the index);
-this could be atomically updated into indicate that a process's 
-request was ready for operation.  However, this may not be much better than
-sending a message to the communication agent.
+% Note that waiting on fields in individual request items is ok in this simple
+% example, but becomes less suitable when there are a significant number of
+% pending requests.  Question: we could establish a bit vector of pending
+% requests (each bit represents a request and the position matches the index);
+% this could be atomically updated into indicate that a process's 
+% request was ready for operation.  However, this may not be much better than
+% sending a message to the communication agent.
 
-\paragraph{\shmemallname}
+The major role of the communication agent is to respond to messages, and to
+ensure that the stream operations make progress.
+
+\subsubsection{\shmemallname}
 (not done)
 
 Note that in this case (all memory available), the simple transfers can be
@@ -834,11 +935,31 @@ datatype; in that case, the other process executes either
 processes specify complex datatypes may it be necessary to transfer data
 through a cannonical, contiguous representation.
 
-\paragraph{\vianame}
+\subsubsection{\vianame}
 (not done)
 
 This method is very similar to the \tcpname\ method, with the difference that
 data can be written into and read from remote memory that has been registered.
+
+The principle difference between this method and the \tcpname\ method is in
+the way in which messages are delivered and the ability to deliver contiguous
+(and perhaps simple \code{iovec} structures) directly.  Because of this, there
+are two different types of rendezvous:
+\begin{enumerate}
+\item A contiguous to contiguous (or \code{iovec} to \code{iovec}) transfer
+\item A stream transfer, requiring a copy into an intermediate buffer.
+  This has two subcases:
+  \begin{enumerate}
+  \item One process has contiguous data
+  This case is much like the \shmemname\ case, since the data in contiguous
+  form can be moved directly with a remote write or read, and the process with
+  the non-contiguous data either packs or unpacks it as appropriate.
+  \item Neither process has contiguous data.  This is similar to the
+  stream implementation for the \tcpname\ case (data is packed into a
+  contiguous buffer, copied to a remote contiguous buffer, and then unpacked).
+  \end{enumerate}
+\end{enumerate}
+These suggest special cases that can be optimized.
 
 \mpifunc{MPI_Irecv}:
 
@@ -884,7 +1005,7 @@ the process of sending a stream of segments may be different.
 Question: how do we want to tell the process at the other end of the stream to
 read the current block of data?
 
-\paragraph{Nonblocking Send and Receive with Contiguous Data.}
+\subsection{Nonblocking Send and Receive with Contiguous Data.}
 (not complete)
 
 The major difference in this case is for the \shmemname\ and \vianame\ cases,
@@ -900,7 +1021,7 @@ another.
 
 \end{via}
 
-\paragraph{Blocking Send and Receive with Noncontiguous Data.}
+\subsection{Blocking Send and Receive with Noncontiguous Data.}
 \label{sec:blocking-optimization}
 (not complete)
 
@@ -916,6 +1037,9 @@ transferred.  This ensures that the sender has received the
 knows (or has been told in the \mpidconst{MPID_Hid_ok_to_send} message) that
 the receiver is blocking, it can switch to this alternate method for
 indicating that data has been transferred.
+
+Note also that in this case the reference counts for the datatype and
+communicator in the operation do not need to be changed.
 
 
 

@@ -19,6 +19,7 @@
 \pagenumbering{arabic}
 \pagestyle{headings}
 
+\let\RealSection=\section
 \let\@paragraph@=\@newparagraph@
 \let\@subsubsection@=\@newsubsubsection@
 \let\@subsection@=\@newsubsection@
@@ -26,6 +27,7 @@
 \input{@dummy@}
 
 \let\SaveBibliography=\thebibliography
+\let\section=\RealSection
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
 \bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,mpich2}
 \bibliographystyle{plain}

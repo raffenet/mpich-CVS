@@ -674,6 +674,9 @@ at least in the development Makefiles, the \file{mpif.h.in} file
 should be created from the \file{mpi.h} automatically, at least with
 respect to any values. 
 
+% Scenarios (move to ADI doc?)
+\input{pt2ptdesc}
+
 \section{MPI Operations}
 \label{sec:mpi-operations}
 This section describes the implementation of the MPI operations.  The
@@ -2217,8 +2220,6 @@ Question:  There are a number of flags that we may want to check in order to
 drop into a special optimized case.  Should we set things up so that a single
 int of flags, where the ``good'' case is a zero bit for each flag, can be
 tested with a single compare against zero?
-
-\input{pt2ptdesc}
 
 \subsubsection{\mpidfunc{MPID_Rhcv}}
 This function is not part of MPI but is a critical part of the ADI.

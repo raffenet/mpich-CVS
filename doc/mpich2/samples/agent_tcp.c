@@ -15,6 +15,7 @@ enum { BLOCKING=0, NOTBLOCKING=1, EXPECTING=2 } MPID_Blocking_t;
    forever */
 while (1) 
 #elif defined(MULTITHREADED)
+/* this is the polling and multithreaded process case */
 if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
 #endif
 {
@@ -27,7 +28,7 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
        data portion.  ? How do we know how much of any data portion 
        is valid? */
     packet = GetNextPacket( blocking, &source );
-    if (!packet) break;
+    if (!packet) break;  /* or pthread_unlock/return in the polling case */
     switch (packet->type) {
         case MPID_Hid_eager:
         MPID_Hid_eager_t *lpacket = (MPID_Hid_eager_t *)packet;
@@ -49,7 +50,8 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
 				   &request_ptr->stream, 
 				   NULL, &request_ptr->complete );
 	    /* In the truncate error case, do we add a discard to the 
-	       input stream (see the MSG_READY case) */
+	       input stream (see the MSG_READY case)?  Also, we 
+	       need to decrement the refcounts on the datatype and comm_ptr */
         }
         else {
 	    # This is an eager message with no matching receive.
