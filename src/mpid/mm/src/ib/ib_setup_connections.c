@@ -262,19 +262,6 @@ int ib_setup_connections()
 	ib->m_max_wqes = 255;
 	ib->m_mtu_size = 3; /* 3 = 2048 */
 
-	/* ***************************************** */
-	/* These fields were used by the Paceline code.
-	   I suspect I won't need to use them */
-	/*
-	ib->m_rcv_completion_counter = 0;
-	ib->m_rcv_work_id = 0;
-	ib->m_rcv_posted = 0;
-	ib->m_snd_completion_counter = 0;
-	ib->m_snd_work_id = 0;
-	ib->m_snd_posted = 0;
-	*/
-	/* ***************************************** */
-
 	/* save the lkey for posting sends and receives */
 	ib->m_lkey = s_lkey;
 
