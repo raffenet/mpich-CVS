@@ -145,7 +145,7 @@ cleanall:
             echo cleaning directory $$dir ;\
             (cd $$dir; rm -f *.o Makefile *~) ;\
          done; \
-         (cd test; \rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests); \
+         (cd test; rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests); \
          echo " " ;\
          echo "cleaning directory include" ;\
          (cd include; rm -f *.h);\

@@ -117,7 +117,7 @@ if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
 fi
 #
-\rm -f include/*.h
+rm -f include/*.h
 #
 NOF77=0
 NOPROFILE=0
@@ -297,8 +297,7 @@ fi
 # check for valid architecture
 grep _"$ARCH"_ .config_params > /dev/null 2>&1
 if test $? != 0 ; then
-echo Error: Invalid architecture $arch
-exit 1
+   echo "Unknown architecture $arch... proceeding anyway"
 fi
 #
 # check for valid file system
@@ -307,8 +306,7 @@ if test -n "$FILE_SYSTEM" ; then
    do
       grep _"$x"_ .config_params > /dev/null 2>&1
       if test $? != 0 ; then
-          echo Error: Invalid file system $x
-          exit 1
+         echo "Unknown file system $x... proceeding anyway"
       fi
    done
 fi
@@ -317,8 +315,7 @@ fi
 if test -n "$MPI" ; then
    grep _"$MPI"_mpi .config_params > /dev/null 2>&1
    if test $? != 0 ; then
-      echo Error: Invalid MPI implementation $MPI
-      exit 1
+      echo "Unknown MPI implementation $MPI... proceeding anyway"
    fi
 fi
 #
@@ -734,6 +731,8 @@ if test -n "$arch_IRIX"; then
        if test "$file_system_xfs" = 1 ; then 
 	   AC_MSG_RESULT(yes)
        else
+	   FILE_SYSTEM="ufs $FILE_SYSTEM"
+	   file_system_ufs=1
            AC_MSG_RESULT(no)
        fi
        echo "configuring for file systems $FILE_SYSTEM"
@@ -750,7 +749,7 @@ if test $NOF77 = 0 ; then
     if test -n "$WDEF" ; then
         CFLAGS="$CFLAGS $WDEF"
     fi
-    \rm -f test/mpif.h
+    rm -f test/mpif.h
     if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
@@ -1001,42 +1000,42 @@ export CONFIG_FILES
 CONFIG_FILES=""
 # delete the first line created by configure in some files
 sed 1d util/romioinstall > util/tmp
-\mv util/tmp util/romioinstall
+mv util/tmp util/romioinstall
 chmod 755 util/romioinstall
 if test "$NOF77" = 0; then
    sed 1d test/fcoll_test.f > test/tmp
-   \mv test/tmp test/fcoll_test.f
+   mv test/tmp test/fcoll_test.f
    if test "$MPIOF_H_INCLUDED" = 1; then
       sed 5d test/fcoll_test.f > test/tmp
-      \mv test/tmp test/fcoll_test.f
+      mv test/tmp test/fcoll_test.f
    fi
    sed 1d test/fperf.f > test/tmp
-   \mv test/tmp test/fperf.f
+   mv test/tmp test/fperf.f
    if test "$MPIOF_H_INCLUDED" = 1; then
       sed 5d test/fperf.f > test/tmp
-      \mv test/tmp test/fperf.f
+      mv test/tmp test/fperf.f
    fi
    sed 1d test/fmisc.f > test/tmp
-   \mv test/tmp test/fmisc.f
+   mv test/tmp test/fmisc.f
    if test "$MPIOF_H_INCLUDED" = 1; then
       sed 5d test/fmisc.f > test/tmp
-      \mv test/tmp test/fmisc.f
+      mv test/tmp test/fmisc.f
    fi
 fi
 sed 1d test/misc.c > test/tmp
-\mv test/tmp test/misc.c
+mv test/tmp test/misc.c
 sed 1d test/large_file.c > test/tmp
-\mv test/tmp test/large_file.c
+mv test/tmp test/large_file.c
 sed 1d include/mpio.h > include/tmp
-\mv include/tmp include/mpio.h
+mv include/tmp include/mpio.h
 sed 1d include/mpiof.h > include/tmp
-\mv include/tmp include/mpiof.h
+mv include/tmp include/mpiof.h
 sed 1d test/runtests > test/tmp
-\mv test/tmp test/runtests
+mv test/tmp test/runtests
 #
 chmod 755 test/runtests
 #
-\rm -f *.o
+rm -f *.o
 print_error " "
 print_error Please register your copy of ROMIO with us by sending email
 print_error to majordomo@mcs.anl.gov with the message
