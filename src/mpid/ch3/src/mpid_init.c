@@ -22,6 +22,9 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
+#ifdef HAVE_WINDOWS_H
+    DWORD size = 128;
+#endif
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
     MPIDI_Process.recv_posted_head = NULL;
@@ -73,11 +76,19 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	/* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
 	MPIDI_Process.processor_name = MPIU_Malloc(128);
+#ifdef HAVE_WINDOWS_H
+	if (GetComputerName(MPIDI_Process.processor_name, &size) == 0)
+	{
+	    MPIU_Free(MPIDI_Process.processor_name);
+	    MPIDI_Process.processor_name = NULL;
+	}
+#else
 	if(gethostname(MPIDI_Process.processor_name, 128) != 0)
 	{
 	    MPIU_Free(MPIDI_Process.processor_name);
 	    MPIDI_Process.processor_name = NULL;
 	}
+#endif
     }
 #   else
     {
