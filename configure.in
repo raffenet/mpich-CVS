@@ -314,6 +314,10 @@ case "$enable_timing" in
     timing_name=none
     ;; 
 esac
+#
+# The default logging package is rlog; you can get it by 
+# specifying --with-logging or --with-logging=rlog
+#
 case $with_logging in 
     yes)
     logging_name=rlog
@@ -332,24 +336,71 @@ case $with_logging in
     logging_name=$with_logging
     ;;
 esac
+# 
+# Include the selected logging subsystem
+#
+# Choices:
+# 1) A subdir of src/util/logging
+#     This directory must contain a configure which will be executed
+#     to build the 
+# 2) An external directory
+#     This directory must contain 
+#          a mpilogging.h file
+#     It may contain 
+#          a setup_logging script
+#          a configure
+#     
+#   
 logging_subsystems=
 if test "$logging_name" != "none" ; then
-    logdir=$srcdir/src/util/logging
-    logging_subsystems="$logging_subsystems src/util/logging/$logging_name"
-    logging_subdirs=$logging_name
-    for dir in $logging_subdirs ; do
-        if test ! -d $logdir/$dir ; then
-	    AC_MSG_WARN([$logdir/$dir does not exist.  Logging library $logging_name has been diabled.])
+    # Check for an external name (directory containing a /)
+    hasSlash=`echo A$logging_name | sed -e 's%[^/]%%g'`
+    if test -n "$hasSlash" ; then
+        # Check that the external logging system is complete.
+	# Any failure will cause configure to abort
+        if test ! -d $logging_name ; then
+	    AC_MSG_ERROR([External logging directory $logging_name not found.  Configure aborted])
+	    logging_name=none
+        elif test ! -s $logging_name/mpilogging.h ; then
+	    AC_MSG_ERROR([External logging header $logging_name/mpilogging.h not found.  Configure aborted])
 	    logging_name=none
         fi
-    done
-    for dir in $logging_subsystems ; do
-        if test ! -x $srcdir/$dir/configure ; then
-	    AC_MSG_WARN([$logdir/$dir has no configure.  Logging library $logging_name has been disabled.])
-	    logging_name=none
-        fi
-    done
+
+        logdir=$logging_name
+	# Force the logdir to be absolute
+	logdir=`cd $logdir && pwd`
+	# Switch name to "external" because that is how the MPICH2
+	# code will know it
+	logging_name=external
+	# Add the dir to the include paths
+	CPPFLAGS="$CPPFLAGS -I$logdir"
+	# Add the dir to the external build dirs
+	EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS $logdir"
+	# Add to the list of external modules to setup
+	if test -x $logdir/setup_logging ; then
+	     EXTERNAL_SETUPS="$EXTERNAL_SETUPS $logdir/setup_logging"
+	fi
+    else
+        logdir=$srcdir/src/util/logging
+        logging_subsystems="$logging_subsystems src/util/logging/$logging_name"
+        logging_subdirs=$logging_name
+        for dir in $logging_subdirs ; do
+            if test ! -d $logdir/$dir ; then
+	        AC_MSG_ERROR([$logdir/$dir does not exist.  Configure aborted])
+	        logging_name=none
+            fi
+        done
+        for dir in $logging_subsystems ; do
+            if test ! -x $srcdir/$dir/configure ; then
+	        AC_MSG_ERROR([$logdir/$dir has no configure (required).  Configure aborted])
+	        logging_name=none
+            fi
+        done
+    fi
 fi
+#
+# FIXME: Logging doesn't necessarily require timing (e.g., simply logging the 
+# sequence of routines).  
 if test "$logging_name" != "none" ; then
     if test "$enable_timing" != "no" ; then
 	if test "$enable_timing" = "none" ; then
@@ -383,6 +434,7 @@ if test "$timing_name" != "none" ; then
         AC_DEFINE(COLLECT_STATS,1,[define to enable collection of statistics])
     fi
 fi
+#
 AC_SUBST(logging_dir)
 AC_SUBST(logging_name)
 AC_SUBST(logging_subdirs)
@@ -1060,9 +1112,30 @@ AC_ARG_ENABLE(dependencies,[
 --enable-dependencies - Generate dependencies for sourcefiles.  This
             requires that the Makefile.in files are also created
             to support dependencies (see maint/updatefiles)],,
-enable_dependencies=no)
+enable_dependencies=default)
+#
+#
+if test "$enable_dependencies" = "default" ; then
+    # Try to use gcc if available
+    enable_dependencies=no
+    if test "$ac_cv_prog_gcc" != "yes" ; then 
+         # See if gcc is available
+	 AC_CHECK_PROGS(GCC,gcc)
+	 if test -n "$GCC" ; then 
+	     enable_dependencies=yes
+         fi
+    else
+	enable_dependencies=yes
+    fi
+    if test "$enable_dependencies" = "yes" ; then
+        AC_MSG_RESULT([Using gcc to determine dependencies])
+    fi
+fi
 if test "$enable_dependencies" != "no" ; then
     if test "$enable_dependencies" = "yes" -o -z "$enable_dependencies" ; then
+        # Ensure that the profiling libraries get their targets into
+	# the files.  Use -MMD if you want the file in the build directory
+	# instead of a subdirectory
         MAKE_DEPEND_C="gcc -MM"
     else
         AC_MSG_RESULT([Using $enable_dependencies for MAKE_DEPEND_C])
@@ -2157,8 +2230,15 @@ if test -n "$DOCTEXT" ; then
         fi
     fi
 fi
+export DOCTEXT
+export DOCTEXTSTYLE
 AC_SUBST(DOCTEXT)
 AC_SUBST(DOCTEXTSTYLE)
+
+dnl
+dnl We can include external packages at configure/build time by 
+dnl adding them to EXTERNAL_SRC_DIRS.
+AC_SUBST(EXTERNAL_SRC_DIRS)
 
 dnl We can configure the test directory after the rest of the configure 
 dnl steps because it does not depend on them.
@@ -2167,6 +2247,29 @@ dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
+dnl
+dnl Run a setup command for any external modules (normally, this is empty)
+dnl Pass a subset of the environment to the invoked process.
+AC_OUTPUT_COMMANDS([
+for prog in $EXTERNAL_SETUPS - ; do
+    if test "$prog" != "-" ; then 
+      dir=`dirname $prog`
+      name=`basename $prog`
+      (cd $dir && ./$name)
+    fi
+done],[
+EXTERNAL_SETUPS="$EXTERNAL_SETUPS"
+LIBDIR="$libbuild_dir"
+MPILIBNAME="$MPILIBNAME"
+AR="$AR"
+CC="$CC"
+CC_SHL="$CC_SHL"
+CPPFLAGS="$CPPFLAGS"
+CFLAGS="$CFLAGS"
+ENABLE_SHLIB="$ENABLE_SHLIB"
+export LIBDIR ; export MPILIBNAME ; export AR ; export CC ; export CPPFLAGS 
+export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB
+])
 
 AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
 if test -z "$includebuild_dir" ; then
@@ -2215,7 +2318,7 @@ fi],enable_dependencies=$enable_dependencies)
 
 AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
 
-AC_OUTPUT(Makefile src/Makefile \
+AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
 	  src/env/mpicc.conf \
