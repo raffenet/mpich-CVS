@@ -28,6 +28,7 @@
 #define SMPD_CONNECTED                      3
 #define SMPD_EXIT                           4
 #define SMPD_DBS_RETURN                     5
+#define SMPD_ABORT                          6
 
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
@@ -460,5 +461,8 @@ int smpd_handle_barrier_command(smpd_context_t *context);
 int smpd_post_abort_command(char *fmt, ...);
 int smpd_kill_all_processes(void);
 int smpd_exit(int exitcode);
+#ifdef HAVE_WINDOWS_H
+void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, ...);
+#endif
 
 #endif

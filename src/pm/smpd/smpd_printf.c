@@ -20,6 +20,37 @@
 static char indent[SMPD_MAX_INDENT+1] = "";
 static int cur_indent = 0;
 
+#ifdef HAVE_WINDOWS_H
+void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, ...)
+{
+    HLOCAL str;
+    int num_bytes;
+    int len;
+    va_list list;
+
+    num_bytes = FormatMessage(
+	FORMAT_MESSAGE_FROM_SYSTEM |
+	FORMAT_MESSAGE_ALLOCATE_BUFFER,
+	0,
+	error,
+	MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+	(LPTSTR) &str,
+	0,0);
+    if (prepend == NULL)
+	memcpy(msg, str, min(maxlen, num_bytes+1));
+    else
+    {
+	va_start(list, prepend);
+	len = vsnprintf(msg, maxlen, prepend, list);
+	va_end(list);
+	msg += len;
+	maxlen -= len;
+	snprintf(msg, maxlen, "%s", str);
+    }
+    LocalFree(str);
+}
+#endif
+
 char * get_sock_error_string(int error)
 {
     static char str[256];
