@@ -55,6 +55,7 @@ public class TimelineFrame extends JFrame
     public void init()
     {
         top_panel.init();
+        // viewer.common.Routines.listAllComponents( this, 0 );
     }
 
     public static void checkVersion()

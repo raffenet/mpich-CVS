@@ -30,9 +30,7 @@ import logformat.slog2.input.TreeTrunk;
 import viewer.common.Dialogs;
 import viewer.common.Routines;
 import viewer.common.Parameters;
-import viewer.common.Dialogs;
-import viewer.common.Routines;
-import viewer.common.Parameters;
+import viewer.common.CustomCursor;
 import viewer.zoomable.Debug;
 import viewer.zoomable.Profile;
 import viewer.zoomable.ModelTime;
@@ -43,12 +41,12 @@ import viewer.zoomable.ScrollableObject;
 import viewer.zoomable.SearchableView;
 import viewer.zoomable.SummarizableView;
 import viewer.zoomable.InfoDialog;
-import viewer.zoomable.InfoPanelForDrawable;
+import viewer.zoomable.SearchPanel;
 import viewer.zoomable.InitializableDialog;
 import viewer.histogram.StatlineDialog;
 
-public class CanvasTime extends ScrollableObject
-                        implements SearchableView, SummarizableView
+public class CanvasTimeline extends ScrollableObject
+                            implements SearchableView, SummarizableView
 {
     private static final int            MIN_VISIBLE_ROW_COUNT = 2;
     private static final boolean        INCRE_STARTTIME_ORDER = true;
@@ -79,12 +77,12 @@ public class CanvasTime extends ScrollableObject
     private Date               zero_time, init_time, final_time;
 
 
-    public CanvasTime( ModelTime           time_model,
-                       TreeTrunk           treebody,
-                       BoundedRangeModel   yaxis_model,
-                       YaxisMaps           yaxis_maps,
-                       String[]            yaxis_colnames,
-                       Method[]            dobj_methods )
+    public CanvasTimeline( ModelTime           time_model,
+                           TreeTrunk           treebody,
+                           BoundedRangeModel   yaxis_model,
+                           YaxisMaps           yaxis_maps,
+                           String[]            yaxis_colnames,
+                           Method[]            dobj_methods )
     {
         super( time_model );
 
@@ -142,7 +140,7 @@ public class CanvasTime extends ScrollableObject
         int  min_view_height = 0;
         //  the width below is arbitary
         if ( Debug.isActive() )
-            Debug.println( "CanvasTime: min_size = "
+            Debug.println( "CanvasTimeline: min_size = "
                          + "(0," + min_view_height + ")" );
         return new Dimension( 0, min_view_height );
     }
@@ -150,7 +148,7 @@ public class CanvasTime extends ScrollableObject
     public Dimension getMaximumSize()
     {
         if ( Debug.isActive() )
-            Debug.println( "CanvasTime: max_size = "
+            Debug.println( "CanvasTimeline: max_size = "
                          + "(" + Short.MAX_VALUE
                          + "," + Short.MAX_VALUE + ")" );
         return new Dimension( Short.MAX_VALUE, Short.MAX_VALUE );
@@ -183,8 +181,15 @@ public class CanvasTime extends ScrollableObject
             root_frame  = (Frame) SwingUtilities.windowForComponent( this );
         if ( timeframe4imgs == null )
             timeframe4imgs = new TimeBoundingBox( imgs_times );
+
         // Read the SLOG-2 TreeNodes within TimeFrame into memory
-        Routines.setAllCursorsToWait( root_frame );
+        /*
+           The cursor needs to be set from the top container, so even when
+           the mouse is at other components, e.g. ScrollbarTime,
+           the cursor can still turn HourGlass.
+        */
+        Routines.setComponentAndChildrenCursors( root_frame,
+                                                 CustomCursor.Wait );
         num_rows    = tree_view.getRowCount();
         row_height  = tree_view.getRowHeight();
         isScrolling = ( treetrunk.updateTimeWindow( timeframe4imgs, imgs_times )
@@ -214,12 +219,13 @@ public class CanvasTime extends ScrollableObject
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
         timeframe4imgs.setLatestTime( imgs_times.getLatestTime() );
         this.fireChangeEvent();  // to update TreeTrunkPanel.
-        Routines.setAllCursorsToNormal( root_frame );
+        Routines.setComponentAndChildrenCursors( root_frame,
+                                                 CustomCursor.Normal );
 
         if ( Profile.isActive() )
             final_time = new Date();
         if ( Profile.isActive() )
-            Profile.println( "CanvasTime.finalize(): init. time = "
+            Profile.println( "CanvasTimeline.finalize(): init. time = "
                            + (init_time.getTime() - zero_time.getTime())
                            + " msec.,   total time = "
                            + (final_time.getTime() - zero_time.getTime())
@@ -230,7 +236,7 @@ public class CanvasTime extends ScrollableObject
                                     final TimeBoundingBox  timebounds )
     {
         if ( Debug.isActive() )
-            Debug.println( "CanvasTime: drawOneOffImage()'s offImage = "
+            Debug.println( "CanvasTimeline: drawOneOffImage()'s offImage = "
                          + offImage );
         if ( offImage != null ) {
             // int offImage_width = visible_size.width * NumViewsPerImage;
@@ -366,7 +372,7 @@ public class CanvasTime extends ScrollableObject
             }
 
             if ( Profile.isActive() )
-                Profile.println( "CanvasTime.drawOneOffImage(): "
+                Profile.println( "CanvasTimeline.drawOneOffImage(): "
                                + "R_NestAble = "
                                + N_nestable_drawn + "/" + N_nestable + ",  "
                                + "R_NestLess = "
@@ -506,7 +512,7 @@ public class CanvasTime extends ScrollableObject
         float                 nesting_ftr;
         float                 rStart, rFinal;
         int                   xloc, yloc, width, height;
-        // local_rect is created with CanvasTime's pixel coordinate system
+        // local_rect is created with CanvasTimeline's pixel coordinate system
         coord_xform = new CoordPixelImage( this, row_height,
                                            super.getTimeBoundsOfImages() );
         xloc   = coord_xform.convertTimeToPixel( dobj.getEarliestTime() );
@@ -536,7 +542,7 @@ public class CanvasTime extends ScrollableObject
     }
 
     // NEW search starting from the specified time
-    public Component searchPreviousComponent( double searching_time )
+    public SearchPanel searchPreviousComponent( double searching_time )
     {
         Drawable  dobj = tree_search.previousDrawable( searching_time );
         if ( dobj != null )
@@ -546,7 +552,7 @@ public class CanvasTime extends ScrollableObject
     }
 
     // CONTINUING search
-    public Component searchPreviousComponent()
+    public SearchPanel searchPreviousComponent()
     {
         Drawable  dobj = tree_search.previousDrawable();
         if ( dobj != null )
@@ -556,7 +562,7 @@ public class CanvasTime extends ScrollableObject
     }
 
     // NEW search starting from the specified time
-    public Component searchNextComponent( double searching_time )
+    public SearchPanel searchNextComponent( double searching_time )
     {
         Drawable  dobj = tree_search.nextDrawable( searching_time );
         if ( dobj != null )
@@ -566,7 +572,7 @@ public class CanvasTime extends ScrollableObject
     }
 
     // CONTINUING search
-    public Component searchNextComponent()
+    public SearchPanel searchNextComponent()
     {
         Drawable  dobj = tree_search.nextDrawable();
         if ( dobj != null )

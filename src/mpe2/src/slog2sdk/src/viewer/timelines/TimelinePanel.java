@@ -60,7 +60,7 @@ public class TimelinePanel extends JPanel
     private ViewportTime            time_ruler_vport;
     private ViewportTimePanel       time_ruler_panel;
 
-    private CanvasTime              time_canvas;
+    private CanvasTimeline          time_canvas;
     private ViewportTimeYaxis       time_canvas_vport;
     private ViewportTimePanel       time_canvas_panel;
 
@@ -147,8 +147,8 @@ public class TimelinePanel extends JPanel
                 /*
                    Since there is NOT a specific ViewportTime/ViewTimePanel
                    for RulerTime, so we need to set PreferredSize of RulerTime
-                   here.  Since CanvasTime's has its MaximumSize set to MAX,
-                   CanvasTime's ViewportTimePanel will become space hungary.
+                   here.  Since CanvasTimeline's has its MaximumSize set to MAX,
+                   CanvasTimeline's ViewportTimePanel will become space hungary.
                    As we want RulerTime to be fixed height during resize
                    of the top level window, So it becomes CRUCIAL to set 
                    Preferred Height of RulerTime's ViewportTimePanel equal
@@ -162,9 +162,9 @@ public class TimelinePanel extends JPanel
                      new Dimension( 100, ruler_panel_height ) );
 
                 /* The TimeLine Canvas */
-                time_canvas       = new CanvasTime( time_model, treetrunk,
-                                                    y_model, y_maps,
-                                                    y_colnames, methods );
+                time_canvas       = new CanvasTimeline( time_model, treetrunk,
+                                                        y_model, y_maps,
+                                                        y_colnames, methods );
                 time_canvas_vport = new ViewportTimeYaxis( time_model,
                                                            y_model, y_tree );
                 time_canvas_vport.setView( time_canvas );
@@ -374,7 +374,7 @@ public class TimelinePanel extends JPanel
 
         /*
             Initialize the YaxisTree properties as well its display size which
-            indirectly determines the size of CanvasTime
+            indirectly determines the size of CanvasTimeline
         */ 
             y_tree.init();
             row_adjs.initYLabelTreeSize();
