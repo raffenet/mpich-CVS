@@ -240,7 +240,7 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req);
 
   NOTE:
   This routine need only be called if the code might call MPIDI_CH3_Progress(TRUE).  For example:
-  .vb
+.vb
       while(*req->cc_ptr == FALSE)
       {
           MPIDI_CH3_Progress_start();
@@ -253,7 +253,7 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req);
               MPIDI_CH3_Progress_end();
           }
       }
-  .ve
+.ve
 
   IMPLEMENTORS:
   A multi-threaded implementation might simply save the current value of a request completion counter in thread specific storage.
