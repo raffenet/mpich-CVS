@@ -358,6 +358,14 @@ foreach $_ (@ARGV) {
 		 'Waitany-4' => 'in:status',
     'Waitsome' => '4:5', 'Waitsome-4' => 'out:index_array:*v3',
 		 'Waitsome-5' => 'in:status_array',
+# File routines separate
+    'File_open' => '2', 'File_open-2' => 'in:addnull',
+    'File_delete' => '1', 'File_delete-1' => 'in:addnull',
+    'File_set_view' => '5', 'File_set_view-5' => 'in:addnull',
+    'File_get_view' => '5', 'File_get_view-5' => 'out:blankpad',
+    'File_set_atomicity' => '2', 'File_set_atomicity-2' => 'in:logical',
+    'File_get_atomicity' => '2', 'File_get_atomicity-2' => 'out:logical',
+    'Register_datarep' => '1', 'Register_datarep-1' => 'in:addnull',
     );
 
 #
