@@ -17,7 +17,7 @@ struct ADIOI_Fns_struct ADIO_PVFS_operations = {
     ADIOI_PVFS_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
-    ADIOI_PVFS_SeekIndividual, /* SeekIndividual */
+    ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_PVFS_Fcntl, /* Fcntl */
     ADIOI_PVFS_SetInfo, /* SetInfo */
     ADIOI_PVFS_ReadStrided, /* ReadStrided */
@@ -25,10 +25,10 @@ struct ADIOI_Fns_struct ADIO_PVFS_operations = {
     ADIOI_PVFS_Close, /* Close */
     ADIOI_GEN_IreadContig, /* IreadContig */
     ADIOI_GEN_IwriteContig, /* IwriteContig */
-    ADIOI_PVFS_ReadDone, /* ReadDone */
-    ADIOI_PVFS_WriteDone, /* WriteDone */
-    ADIOI_PVFS_ReadComplete, /* ReadComplete */
-    ADIOI_PVFS_WriteComplete, /* WriteComplete */
+    ADIOI_GEN_IODone, /* ReadDone */
+    ADIOI_GEN_IODone, /* WriteDone */
+    ADIOI_GEN_IOComplete, /* ReadComplete */
+    ADIOI_GEN_IOComplete, /* WriteComplete */
     ADIOI_GEN_IreadStrided, /* IreadStrided */
     ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_PVFS_Flush, /* Flush */
