@@ -48,7 +48,8 @@ should add it to your PATH.
 Example and test programs (both source and executables) can be found
 in ./examples and ./test/mpi/basic, respectively.  To run any of these
 programs, you will need to start the MPD process management daemon.
-More on MPD can be found in mpich2/src/pm/mpd/README.
+More on MPD can be found in mpich2/src/pm/mpd/README.  An important
+prerequisite is that you need to have Python 2.2 installed.
 
    touch ~/.mpd.conf
    chmod 600 ~/.mpd.conf
