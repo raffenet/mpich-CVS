@@ -70,8 +70,10 @@ Major Changes in This Version:
 
 * This version is included in MPICH 1.2.0. If you are using MPICH, you
   need not download ROMIO separately; it gets built as part of MPICH.
-  The previous version of ROMIO is included in LAM, HP MPI, and SGI MPI.
-
+  The previous version of ROMIO is included in LAM, HP MPI, SGI MPI, and 
+  NEC MPI. NEC has also implemented the MPI-IO functions missing 
+  in ROMIO, and therefore NEC MPI has a complete implementation
+  of MPI-IO.
 
 
 Major Changes in Version 1.0.1:
@@ -165,8 +167,7 @@ file systems are IBM PIOFS, Intel PFS, HP/Convex HFS, SGI XFS, NEC
 SFS, PVFS, NFS, and any Unix file system (UFS).
 
 This version of ROMIO is included in MPICH 1.2.0; the previous version
-is included in LAM, HP MPI, and SGI MPI. ROMIO can also be used with
-NEC MPI.
+is included in LAM, HP MPI, SGI MPI, and NEC MPI. 
 
 You can open files on multiple file systems in the same program. The
 only restriction is that the directory where the file is to be opened
@@ -186,10 +187,10 @@ mv, cp, rm, ftp.
 Installation Instructions
 -------------------------
 
-Since ROMIO is included in MPICH, LAM, HP MPI, and SGI MPI, you don't
-need to install it separately if you are using any of these MPI
-implementations.  If you are using some other MPI, e.g., NEC MPI, you
-can configure and build ROMIO as follows:
+Since ROMIO is included in MPICH, LAM, HP MPI, SGI MPI, and NEC MPI,
+you don't need to install it separately if you are using any of these
+MPI implementations.  If you are using some other MPI, you can
+configure and build ROMIO as follows:
 
 Untar the tar file as
 
@@ -277,20 +278,33 @@ Note that on HP machines running HPUX and on NEC SX-4, you need to
 compile Fortran programs with mpif90, because the f77 compilers on
 these machines don't support 8-byte integers. 
 
-With MPICH or HP MPI, you can compile MPI-IO programs as 
+With MPICH, HP MPI, or NEC MPI, you can compile MPI-IO programs as 
    mpicc foo.c
 or 
    mpif77 foo.f
+or
+   mpif90 foo.f
+
+As mentioned above, mpif90 is preferred over mpif77 on HPUX and NEC
+because the f77 compilers on those machines do not support 8-byte integers.
 
 With SGI MPI, you can compile MPI-IO programs as 
    cc foo.c -lmpi
 or
    f77 foo.f -lmpi
-
-With NEC MPI, you can compile MPI-IO programs as 
-   mpicc -I$(ROMIO_PATH)/include foo.c $(ROMIO_PATH)/lib/SX4/libmpio.a
 or
-   mpif90 -I$(ROMIO_PATH)/include foo.f $(ROMIO_PATH)/lib/SX4/libmpio.a
+   f90 foo.f -lmpi
+
+With LAM, you can compile MPI-IO programs as 
+   hcc foo.c -lmpi
+or
+   hf77 foo.f -lmpi
+
+If you have built ROMIO with some other MPI implementation, you can
+compile MPI-IO programs by explicitly giving the path to the include
+file mpio.h or mpiof.h and explicitly specifying the path to the
+library libmpio.a, which is located in $(ROMIO_HOME)/lib/$(ARCH)/libmpio.a .
+
 
 Run the program as you would run any MPI program on the machine. If
 you use mpirun, make sure you use the correct mpirun for the MPI
