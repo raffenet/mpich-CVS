@@ -20,4 +20,5 @@ lwlog.h
 *Release*
 mpio.h
 mpicxx.h
+mpimcxx.h
 .deps
