@@ -169,7 +169,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	}
 	if (result == SMPD_SUCCESS)
 	{
-	    printf("%s = %s.\n", opt, opt_val);
+	    printf("%s = %s\n", opt, opt_val);
 	}
 	else
 	{

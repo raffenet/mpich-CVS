@@ -1436,7 +1436,7 @@ configfile_loop:
 	}
 	else
 	{
-	    /* Check to see if a specific channel is specified in the smpd settings */
+	    /* Check to see if a channel is specified in the smpd settings */
 	    result = smpd_get_smpd_data("channel", channel, SMPD_MAX_NAME_LENGTH);
 	}
 	if (result == SMPD_SUCCESS)
