@@ -1411,7 +1411,10 @@ matched by a posted receive.
 \mpidfunc{MPID_Segment}\\
 \mpidfunc{MPID_Stream_isend}
 \begin{core}
-\mpidfunc{MPID_Rhcv}
+If the message is small in total size and flow control allows it, send
+the data with \mpidconst{MPID_Hid_short} using \mpidfunc{MPID_Rhcv}.
+Otherwise, send a \mpidconst{MPID_Hid_request_to_send} with
+\mpidfunc{MPID_Rhcv}. 
 \end{core}
 \end{mmadi}
 \end{adi3}
@@ -1558,7 +1561,7 @@ Receive a message header.  This is a message sent with \mpidfunc{MPID_Rhcv},
 and the header is one of the \mpidconst{MPID_Hid_xxx_t} structures.
 Based on the header type, invoke the appropriate processing routine (there
 should be one for each header type, such as
-\mpidfunc{MPID_TCP_Hid_xxx_method}). 
+\mpidfunc{MPID_Hid_xxx_method}). 
 
 Still to do:  List the detailed behavior of head message type.
 \begin{description}
@@ -1566,11 +1569,84 @@ Still to do:  List the detailed behavior of head message type.
 Call \mpidfunc{MPID_Request_recv_FOA}.  If found, transfer data using
 \mpidfunc{MPID_Unpack}.  Otherwise, save data (transfer with \code{memcpy}) in
 message buffer area.  Update flow control.
+Special case: If ready-message bit is set and no matching message
+exists, use \mpidconst{MPID_Hid_control} to return a remote error indication.
 
 \item[\mpidconst{MPID_Hid_request_to_send}]
 Call \mpidfunc{MPID_Request_recv_FOA}.  If found, reply with
 \mpidconst{MPID_Hid_ok_to_send} sent with \mpidfunc{MPID_Rhcv}.  Otherwise,
 store message id in newly allocated request and mark request as ready for use.
+
+Question: In order to implement the store and forward stream
+operation, should there be a ``disposition'' field that indicates what
+to do with the raw (pre-unpacked) data?
+
+\item[\mpidconst{MPID_Hid_ok_to_send}]Send the requested data back
+with a header of \mpidconst{MPID_Hid_data}.  Note that this may be
+only a subset of the full data.  That is, a long message may be sent
+as multiple pieces.  Each piece requires an \mpidconst{MPID_Hid_data}
+header.
+
+\item[\mpidconst{MPID_Hid_data}]Is this just \mpidconst{MPID_Hid_put}
+where the address has been sent with \mpidconst{MPID_Hid_ok_to_send}?
+
+\item[\mpidconst{MPID_Hid_cancel}]Attempt to access a previous
+request.  If unmatched, remove it and return a success
+\mpidconst{MPID_Hid_cancel_ack} using \mpidfunc{MPID_Rhcv}.
+Otherwise, return a failure and leave the request as unchanged.
+
+\item[\mpidconst{MPID_Hid_cancel_ack}]Set the cancel success/failure
+field of the indicated request.  Question: Do requests need a separate
+field to indicate failed cancel, or can \mpifunc{MPI_Test_cancelled}
+return failure if it doesn't find success (e.g., do we need to
+distinquish between cancel attempted and failed and never attempted?
+Question: Should there be a single cancel type with an operation
+subfield that combines \mpidconst{MPID_Hid_cancel} and
+\mpidconst{MPID_Hid_cancel_ack}?
+
+\item[\mpidconst{MPID_Hid_lock_op}]Manipulate a lock on the indicated
+window object.  The operation are lock, lock-exclusive, unlock, and
+lock-grant (we don't need an unlock-grant).  The window object is
+specified by the window object id (previous set as part of the
+\mpifunc{MPI_Win_create} step).
+
+\item[\mpidconst{MPID_Hid_win_count_op}]Modify one of the local window
+start/complete counters (see \mpifunc{MPI_Win_start}).  
+
+\item[\mpidconst{MPID_Hid_put}]Emulate a put operation.  The handler
+contains the offset of the destination and window object id, as well
+as the size.  
+Question: should we have the sender convert the offset to an address?
+Question: does this assume contiguous data?  If it does, do we want a
+strided access version?
+
+\item[\mpidconst{MPID_Hid_accumulate}]Emulate an accumulate
+operation.  Much like \mpidconst{MPID_Hid_put}.
+
+\item[\mpidconst{MPID_Hid_get}]Like \mpidconst{MPID_Hid_put}, but for
+the get operation.  Question: Should there be a single RMA type, with
+put, get, and accumulate as separate subtypes?
+
+\item[\mpidconst{MPID_Hid_flow}]Flow control.  This sends an update
+about the free resources of the sender.  Should a variation of this
+request an update?  Also, do we want to a version that request more or
+less resources for buffering?  Do we want to piggyback flow control
+information on all headers?  E.g., we could use a single signed char
+(byte) to update the number of data blocks in use; this would reduce
+the number of flow-control only messages.
+
+\item[\mpidconst{MPID_Hid_datatype_desc}]Cache a datatype description
+to be used in RMA operations.  This is similar to a
+\mpidconst{MPID_Hid_request_to_send}, including the need to use a
+rendezvous to send complex and lengthy datatypes (e.g., indexed
+types).
+Question: As for \mpidconst{MPID_Hid_lock_op}, should there be a
+single type with subfields?  
+
+\item[\mpidconst{MPID_Hid_control}]This is a general-purpose control
+message.  For example, this could be used to implement an abort,
+disconnect, deadlock detection, remote error indication (e.g., a ready
+send that was not matched), and orderly exit.
 \end{description}
 
 Questions and comments:
@@ -1583,10 +1659,17 @@ to direct read).
 How is flow control handled?  Should flow control be bundled with the buffered
 read/write logic?
 
+Are there separate stream operations?  Are there stream operations
+instead of the \mpidconst{MPID_Hid_request_to_send} etc. operations?
 \end{tcp}
 
 \begin{shmem}
-Is this the same as \tcpname, but with slightly different message types?
+Is this the same as \tcpname, but with slightly different message
+types?
+Where are there differences?  For example, should datatypes be stored
+in shared memory, thus eliminating the
+\mpidconst{MPID_Hid_datatype_desc}?  Should the lock/unlock operations
+be direct rather than using \mpidconst{MPID_Hid_lock_op}?
 \end{shmem}
 
 \begin{via}
