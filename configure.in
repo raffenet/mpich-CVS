@@ -308,9 +308,12 @@ dnl Check for support for weak symbols.  If not found, set NO_WEAK_SYM
 dnl to the Make target name understood by simplemake.
 NO_WEAK_SYM_TARGET=build_proflib
 if test $with_weak_symbols = yes ; then
+    # Turn off weak symbols if they aren't available
     PAC_PROG_C_WEAK_SYMBOLS(,with_weak_symbols=no)
 fi
-if test $with_weak_symbols != "yes" ; then
+if test $with_weak_symbols = "yes" ; then
+    AC_DEFINE(USE_WEAK_SYMBOLS,,[Define if weak symbols should be used])
+else
     NO_WEAK_SYM=build_proflib
     PROFILE_DEF_MPI="-DMPICH_PROFILE_MPI -DMPICH_MPI_FROM_PMPI"
 fi

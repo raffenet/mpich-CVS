@@ -29,6 +29,14 @@
 #include <sys/types.h>
 #endif
 
+/* This allows us to keep names local to a single file when we can use
+   weak symbols */
+#ifdef  USE_WEAK_SYMBOLS
+#define PMPI_LOCAL static
+#else
+#define PMPI_LOCAL 
+#endif
+
 #include <stdio.h>
 /* 
    Include the implementation definitions (e.g., error reporting, thread
