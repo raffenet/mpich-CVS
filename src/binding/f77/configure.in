@@ -273,7 +273,7 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
    FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 elif test "$ENABLE_SHLIB" = "solaris" ; then
    FC_SHL="$F77 -xcode=pic32"
-   FC_LINKPATH_SHL=$CC_LINKPATH_SHL
+   FC_LINKPATH_SHL=$C_LINKPATH_SHL
 fi
 AC_SUBST(LIBTOOL)
 

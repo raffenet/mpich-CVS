@@ -168,6 +168,20 @@ AC_SUBST(MPIVERSION)
 # for simplemake shlib handling)
 if test -z "$ENABLE_SHLIB" ; then ENABLE_SHLIB=none ; fi
 AC_SUBST(ENABLE_SHLIB)
+# Here are the commands to substitute the compilers to be used to create
+# shared libraries.  The choices for the first two come down from the
+# top-level configure.  FC_SHL must be determined in this configure
+AC_SUBST(F90_SHL)
+AC_SUBST(F90_LINKPATH_SHL)
+if test "$ENABLE_SHLIB" = "gcc" ; then
+   # There is no GNU f90 compiler (the g95 project is not available
+   # to most users)
+   F90_SHL="$F90"
+   F90_LINKPATH_SHL=""
+elif test "$ENABLE_SHLIB" = "solaris" ; then
+   F90_SHL="$F90 -xcode=pic32"
+   F90_LINKPATH_SHL=$C_LINKPATH_SHL
+fi
 AC_SUBST(LIBTOOL)
 #
 # The following variables are used in mpif90.in and reflect the MPI
