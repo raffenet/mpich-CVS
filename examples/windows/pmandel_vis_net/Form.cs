@@ -13,6 +13,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Threading;
+using System.Text;
+using System.Collections.Specialized;
 
 namespace MandelViewer
 {
@@ -88,6 +90,12 @@ namespace MandelViewer
 						}
 					}
 
+					if (colors.Length != nMax + 1)
+					{
+						colors = new Color[nMax+1];
+						ColorRainbow.Make_color_array(nNumColors, colors);
+						colors[nMax] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
+					}
 					sock_writer.Write(xmin);
 					sock_writer.Write(ymin);
 					sock_writer.Write(xmax);
@@ -492,7 +500,8 @@ namespace MandelViewer
 					ymin = y1;
 					ymax = y2;
 
-					Text = "Mandelbrot Viewer";
+					ExamplePoint ep = new ExamplePoint(xmin, ymin, xmax, ymax, nMax, "dragged");
+					Text = "Mandelbrot Viewer" + ep.ToShortString();
 
 					bDrawing = true;
 					ThreadStart threadProc = new ThreadStart(work_thread);
@@ -541,108 +550,22 @@ namespace MandelViewer
 				using (StreamReader sr = new StreamReader(dlg.OpenFile()))
 				{
 					String line;
-					String [] elements;
-					double xmin=0, ymin=0, xmax=0, ymax=0;
-					double xcenter=0, ycenter=0, radius=0;
-					int max_iter=0;
-					string name=null;
+					bool first = true;
 
 					while ((line = sr.ReadLine()) != null) 
 					{
 						line.Trim();
 						if (line.Length > 0 && line[0] != '#')
 						{
-							xmin = 0;
-							ymin = 0;
-							xmax = 0;
-							ymax = 0;
-							xcenter = 0;
-							ycenter = 0;
-							radius = 0;
-							max_iter = 100;
-							name = null;
-							int num_empties = 0;
-							String [] elements_cropped;
-							//MessageBox.Show(line);
-							elements = line.Split(' ');
-							if (elements != null)
+							ExamplePoint node = new ExamplePoint();
+							if (node.FromString(line))
 							{
-								for (int i=0; i<elements.Length; i++)
+								if (first)
 								{
-									if (elements[i] == String.Empty)
-									{
-										num_empties++;
-									}
+									demo_list.Clear(); // new list replaces the old
+									first = false;
 								}
-							}
-							if (elements != null && num_empties < elements.Length)
-							{
-								int index = 0;
-								elements_cropped = new String[elements.Length - num_empties];
-								for (int i=0; i<elements.Length; i++)
-								{
-									if (elements[i] != String.Empty)
-									{
-										elements_cropped[index] = elements[i];
-										index++;
-									}
-								}
-								elements = elements_cropped;
-								for (int i=0; i<elements.Length-1; i++)
-								{
-									//MessageBox.Show(elements[i], "element");
-									if (elements[i] == "-rmin")
-									{
-										xmin = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-rmax")
-									{
-										xmax = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-imin")
-									{
-										ymin = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-imax")
-									{
-										ymax = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-maxiter")
-									{
-										max_iter = Convert.ToInt32(elements[i+1]);
-									}
-									if (elements[i] == "-rcenter")
-									{
-										xcenter = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-icenter")
-									{
-										ycenter = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-radius")
-									{
-										radius = Convert.ToDouble(elements[i+1]);
-									}
-									if (elements[i] == "-name")
-									{
-										name = elements[i+1];
-									}
-								}
-								if (xmin != xmax && ymin != ymax)
-								{
-									ExamplePoint node = new ExamplePoint(xmin, ymin, xmax, ymax, max_iter, name);
-									demo_list.Add(node);
-									//MessageBox.Show(node.ToString(), "box");
-								}
-								if (radius != 0)
-								{
-									ExamplePoint node = new ExamplePoint(
-										xcenter - radius, ycenter - radius,
-										xcenter + radius, ycenter + radius,
-										max_iter, name);
-									demo_list.Add(node);
-									//MessageBox.Show(node.ToString(), "center");
-								}
+								demo_list.Add(node);
 							}
 						}
 					}
@@ -691,30 +614,32 @@ namespace MandelViewer
 
 		private void points_comboBox_SelectedValueChanged(object sender, System.EventArgs e)
 		{
-			//MessageBox.Show(points_comboBox.SelectedItem.ToString(), "hi");
 			if (!bDrawing && thread != null)
 			{
 				thread.Join();
 
-				ExamplePoint p = new ExamplePoint(points_comboBox.SelectedItem.ToString());
+				ExamplePoint p = new ExamplePoint();
+				if (p.FromString(points_comboBox.SelectedItem.ToString()))
+				{
+					xmin = p.xmin;
+					xmax = p.xmax;
+					ymin = p.ymin;
+					ymax = p.ymax;
+					nMax = p.max_iter;
 
-				xmin = p.xmin;
-				xmax = p.xmax;
-				ymin = p.ymin;
-				ymax = p.ymax;
+					if (p.name != null && p.name != "")
+						Text = "Mandelbrot Viewer - " + p.name;
+					else
+						Text = "Mandelbrot Viewer";
 
-				if (p.name != null && p.name != "")
-					Text = "Mandelbrot Viewer - " + p.name;
-				else
-					Text = "Mandelbrot Viewer";
+					bDrawing = true;
+					ThreadStart threadProc = new ThreadStart(work_thread);
+					thread = new Thread(threadProc);
+					thread.Start();
 
-				bDrawing = true;
-				ThreadStart threadProc = new ThreadStart(work_thread);
-				thread = new Thread(threadProc);
-				thread.Start();
-
-				rBox = new Rectangle(0, 0, 0, 0);
-				outputBox.Invalidate();
+					rBox = new Rectangle(0, 0, 0, 0);
+					outputBox.Invalidate();
+				}
 			}
 		}
 
@@ -752,6 +677,15 @@ namespace MandelViewer
 		public int max_iter;
 		public string name;
 
+		public ExamplePoint()
+		{
+			xmin = -1;
+			xmax = 1;
+			ymin = -1;
+			ymax = 1;
+			max_iter = 100;
+			name = null;
+		}
 		public ExamplePoint(double x0, double y0, double x1, double y1, int m)
 		{
 			xmin = x0;
@@ -772,12 +706,185 @@ namespace MandelViewer
 		}
 		public ExamplePoint(string s)
 		{
+			xmin = -1;
+			xmax = 1;
+			ymin = -1;
+			ymax = 1;
+			max_iter = 100;
+			name = null;
+			FromString(s);
+		}
+		public bool FromString(string s)
+		{
+			double xcenter = 0;
+			double ycenter = 0;
+			double radius = 0;
 			xmin = -2;
 			xmax = 2;
 			ymin = -2;
 			ymax = 2;
 			max_iter = 100;
 			name = null;
+			bool bxmin=false, bxmax=false, bymin=false, bymax=false;
+
+			int index = 0;
+			string [] ss;
+			int n_range = 0;
+			StringArgParser p = new StringArgParser();
+			ss = p.ParseStrings(s);
+			if (ss != null && ss.Length > 0)
+			{
+				while (index < ss.Length)
+				{
+					string str;
+					str = ss[index];
+					str.Trim();
+					index++;
+					if (str.Length > 1 && str[0] == '(' && str[str.Length-1] == ')')
+					{
+						double x,y;
+						string inside = str.Substring(1, str.Length-2);
+						if (inside != null && inside.Length > 0)
+						{
+							string [] range_strings;
+							range_strings = inside.Split(',');
+							if (range_strings != null && range_strings.Length == 2)
+							{
+								x = Convert.ToDouble(range_strings[0]);
+								y = Convert.ToDouble(range_strings[1]);
+								if (n_range == 0)
+								{
+									xmin = x;
+									ymin = y;
+									bxmin = bymin = true;
+								}
+								else if (n_range == 1)
+								{
+									xmax = x;
+									ymax = y;
+									bxmax = bymax = true;
+								}
+								n_range++;
+							}
+						}
+					}
+					else if (str == "-rmin")
+					{
+						if (index < ss.Length)
+						{
+							xmin = Convert.ToDouble(ss[index]);
+							bxmin = true;
+							index++;
+						}
+					}
+					else if (str == "-rmax")
+					{
+						if (index < ss.Length)
+						{
+							xmax = Convert.ToDouble(ss[index]);
+							bxmax = true;
+							index++;
+						}
+					}
+					else if (str == "-imin")
+					{
+						if (index < ss.Length)
+						{
+							ymin = Convert.ToDouble(ss[index]);
+							bymin = true;
+							index++;
+						}
+					}
+					else if (str == "-imax")
+					{
+						if (index < ss.Length)
+						{
+							ymax = Convert.ToDouble(ss[index]);
+							bymax = true;
+							index++;
+						}
+					}
+					else if (str == "-rcenter")
+					{
+						if (index < ss.Length)
+						{
+							xcenter = Convert.ToDouble(ss[index]);
+							index++;
+						}
+					}
+					else if (str == "-icenter")
+					{
+						if (index < ss.Length)
+						{
+							ycenter = Convert.ToDouble(ss[index]);
+							index++;
+						}
+					}
+					else if (str == "-radius")
+					{
+						if (index < ss.Length)
+						{
+							radius = Convert.ToDouble(ss[index]);
+							index++;
+						}
+					}
+					else if (str == "max_iter" || str == "-max_iter" || str == "-maxiter")
+					{
+						if (index < ss.Length)
+						{
+							max_iter = Convert.ToInt32(ss[index]);
+							index++;
+						}
+					}
+					else if (str == "name" || str == "-name")
+					{
+						if (index < ss.Length)
+						{
+							name = ss[index];
+							index++;
+						}
+					}
+				}
+			}
+
+			if (radius != 0)
+			{
+				xmin = xcenter - radius;
+				xmax = xcenter + radius;
+				ymin = ycenter - radius;
+				ymax = ycenter + radius;
+				bxmin = bymin = bxmax = bymax = true;
+			}
+
+			if (xmin > xmax)
+			{
+				double d;
+				d = xmin;
+				xmin = xmax;
+				xmax = d;
+			}
+			if (ymin > ymax)
+			{
+				double d;
+				d = ymin;
+				ymin = ymax;
+				ymax = d;
+			}
+			if (xmin < -2)
+				xmin = -2;
+			if (xmax > 2)
+				xmax = 2;
+			if (ymin < -2)
+				ymin = -2;
+			if (ymax > 2)
+				ymax = 2;
+			if (max_iter < 1)
+				max_iter = 100;
+			if (max_iter > 10000)
+				max_iter = 100;
+			if (bxmin == true && bymin == true && bxmax == true && bymax == true)
+				return true;
+			return false;
 		}
 		public override string ToString()
 		{
@@ -790,6 +897,19 @@ namespace MandelViewer
 			{
 				return String.Format("({0},{1}) ({2},{3}) max_iter {4} name \"{5}\"",
 					xmin, ymin, xmax, ymax, max_iter, name);
+			}
+		}
+		public string ToShortString()
+		{
+			if (name == null)
+			{
+				return String.Format("({0},{1}) ({2},{3}) max_iter {4}",
+					xmin.ToString("#.##E0"), ymin.ToString("#.##E0"), xmax.ToString("#.##E0"), ymax.ToString("#.##E0"), max_iter);
+			}
+			else
+			{
+				return String.Format("({0},{1}) ({2},{3}) max_iter {4} name \"{5}\"",
+					xmin.ToString("#.##E0"), ymin.ToString("#.##E0"), xmax.ToString("#.##E0"), ymax.ToString("#.##E0"), max_iter, name);
 			}
 		}
 	}
@@ -898,6 +1018,79 @@ namespace MandelViewer
 				fraction = (double)(i % num_colors) / (double)num_colors;
 				colors[i] = getColor(fraction, intensity);
 			}
+		}
+	}
+	public class StringArgParser
+	{
+		public string [] ParseStrings(string str)
+		{
+			string [] stemp;
+			string [] return_strings;
+			StringCollection s = new StringCollection();
+			if (str.Length < 1)
+				return null;
+			while (str != null)
+			{
+				stemp = ParseString(str);
+				if (stemp != null)
+				{
+					s.Add(stemp[0]);
+					str = stemp[1];
+				}
+				else
+				{
+					str = null;
+				}
+			}
+			return_strings = new string[s.Count];
+			for (int i=0; i<s.Count; i++)
+				return_strings[i] = s[i];
+			return return_strings;
+		}
+		string [] ParseString(string str)
+		{
+			int index = 0;
+			StringBuilder s = new StringBuilder();
+			String s2;
+			string [] return_string;
+
+			if (str == null)
+				return null;
+			while (index < str.Length && str[index] == ' ')
+				index++;
+			if (index == str.Length)
+				return null;
+			if (str[index] == '"')
+			{
+				// parse quoted
+				index++; // step over the first quote character
+				while (index < str.Length && str[index] != '"')
+				{
+					s.Append(str[index]);
+					index++;
+				}
+				if (index < str.Length)
+					index++; // step over the second quote
+			}
+			else
+			{
+				// parse literal
+				while (index < str.Length && str[index] != ' ')
+				{
+					s.Append(str[index]);
+					index++;
+				}
+			}
+			while (index < str.Length && str[index] == ' ')
+				index++;
+			if (index < str.Length)
+				s2 = str.Substring(index, str.Length - index);
+			else
+				s2 = null;
+			return_string = new string[2];
+			return_string[0] = s.ToString();
+			return_string[1] = s2;
+			return return_string;
 		}
 	}
 }
