@@ -1,5 +1,4 @@
 dnl
-
 dnl/*D
 dnl PAC_PROG_F77_NAME_MANGLE - Determine how the Fortran compiler mangles
 dnl names 
@@ -354,7 +353,7 @@ dnl Because this is a long script, we have ensured that you can pass a
 dnl variable containing the option name as the first argument.
 dnl D*/
 AC_DEFUN(PAC_F77_CHECK_COMPILER_OPTION,[
-AC_MSG_CHECKING([that Fortran 77 compiler accepts option $1])
+AC_MSG_CHECKING([whether Fortran 77 compiler accepts option $1])
 ac_result="no"
 save_FFLAGS="$FFLAGS"
 FFLAGS="$1 $FFLAGS"
@@ -376,7 +375,7 @@ if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
    if AC_TRY_EVAL(ac_fscompilelink2) && test -x conftest ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
-         AC_MSG_CHECKING([that routines compiled with $1 can be linked with ones compiled  without $1])       
+         AC_MSG_CHECKING([whether routines compiled with $1 can be linked with ones compiled  without $1])       
          /bin/rm -f conftest2.out
          /bin/rm -f conftest.bas
 	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
@@ -508,7 +507,7 @@ EOF
     if test -z "$ac_fcompilelink" ; then
         ac_fcompilelink="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LDFLAGS $LIBS 1>&AC_FD_CC"
     fi
-    AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with GETARG and IARGC])
+    AC_MSG_CHECKING([whether ${F77-f77} $flags $libs works with GETARG and IARGC])
     if AC_TRY_EVAL(ac_fcompilelink) && test -x conftest ; then
 	# Check that cross != yes so that this works with autoconf 2.52
 	if test "$ac_cv_prog_f77_cross" != "yes" ; then
@@ -631,7 +630,7 @@ $libs"
         end
 EOF
 	    if test -n "$fflag" ; then flagval="with $fflag" ; else flagval="" ; fi
-	    AC_MSG_CHECKING([that Fortran 77 routine names are case-insensitive $flagval])
+	    AC_MSG_CHECKING([whether Fortran 77 routine names are case-insensitive $flagval])
 	    dnl we can use double quotes here because all is already
             dnl evaluated
             ac_fcompilelink_test="${F77-f77} -o conftest $fflag $FFLAGS conftest.f $LDFLAGS $LIBS 1>&AC_FD_CC"
@@ -744,7 +743,7 @@ EOF
 	    if test "$libs" = " " -o "$libs" = "0" ; then libs="" ; fi
             for flags in $trial_FLAGS ; do
 	        if test "$flags" = " " -o "$flags" = "000"; then flags="" ; fi
-                AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with $MSG])
+                AC_MSG_CHECKING([whether ${F77-f77} $flags $libs works with $MSG])
 		IFS="$save_IFS"
 		dnl We need this here because we've fiddled with IFS
 	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LDFLAGS $libs $LIBS 1>&AC_FD_CC"
@@ -1029,7 +1028,7 @@ dnl by trying to *run* a trivial program.  It only checks for *linking*.
 dnl 
 dnl
 AC_DEFUN(PAC_PROG_F77_IN_C_LIBS,[
-AC_MSG_CHECKING([what Fortran libraries are needed to link C with Fortran])
+AC_MSG_CHECKING([for which Fortran libraries are needed to link C with Fortran])
 F77_IN_C_LIBS="$FLIBS"
 /bin/rm -f conftest*
 cat <<EOF > conftest.f
@@ -1171,7 +1170,7 @@ AC_TRY_LINK(,[int a;],runs=yes,runs=no)
 LIBS="$save_LIBS"
 AC_MSG_RESULT($runs)
 if test "$runs" = "no" ; then
-    AC_MSG_CHECKING([which libraries can be used])
+    AC_MSG_CHECKING([for which libraries can be used])
     pac_ldirs=""
     pac_libs=""
     pac_other=""

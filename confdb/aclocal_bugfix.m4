@@ -171,6 +171,12 @@ dnl   soft link through /bin, which autoconf believes is good.
 dnl
 dnl   No variables are cached to ensure that we do not make a mistake in 
 dnl   our choice of install program.
+dnl
+dnl   The Solaris configure requires the directory name to immediately
+dnl   follow the '-c' argument, rather than the more common 
+dnl.vb
+dnl      args sourcefiles destination-dir
+dnl.ve
 dnl D*/
 AC_DEFUN([PAC_PROG_CHECK_INSTALL_WORKS],[
 if test -z "$INSTALL" ; then

@@ -57,7 +57,7 @@ dnl Because this is a long script, we have ensured that you can pass a
 dnl variable containing the option name as the first argument.
 dnl D*/
 AC_DEFUN(PAC_C_CHECK_COMPILER_OPTION,[
-AC_MSG_CHECKING([that C compiler accepts option $1])
+AC_MSG_CHECKING([whether C compiler accepts option $1])
 save_CFLAGS="$CFLAGS"
 CFLAGS="$1 $CFLAGS"
 rm -f conftest.out
@@ -67,7 +67,7 @@ if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas
    if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
-         AC_MSG_CHECKING([that routines compiled with $1 can be linked with ones compiled  without $1])       
+         AC_MSG_CHECKING([whether routines compiled with $1 can be linked with ones compiled  without $1])       
          /bin/rm -f conftest.out
          /bin/rm -f conftest.bas
          if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
@@ -321,7 +321,7 @@ dnl PAC_C_PROTOTYPES([action if true],[action if false])
 dnl
 dnl D*/
 AC_DEFUN(PAC_C_PROTOTYPES,[
-AC_CACHE_CHECK([if $CC supports function prototypes],
+AC_CACHE_CHECK([whether $CC supports function prototypes],
 pac_cv_c_prototypes,[
 AC_TRY_COMPILE([int f(double a){return 0;}],[return 0];,
 pac_cv_c_prototypes="yes",pac_cv_c_prototypes="no")])
@@ -427,7 +427,7 @@ dnl
 dnl D*/
 AC_DEFUN(PAC_C_CPP_CONCAT,[
 pac_pound="#"
-AC_CACHE_CHECK([that the compiler $CC accepts $ac_pound$ac_pound for concatenation in cpp],
+AC_CACHE_CHECK([whether the compiler $CC accepts $ac_pound$ac_pound for concatenation in cpp],
 pac_cv_c_cpp_concat,[
 AC_TRY_COMPILE([
 #define concat(a,b) a##b],[int concat(a,b);return ab;],
@@ -897,7 +897,7 @@ dnl incompatible one and trying to compile it.
 dnl Defines NEED_CRYPT_PROTOTYPE if no prototype is found.
 dnl D*/
 AC_DEFUN(PAC_FUNC_CRYPT,[
-AC_CACHE_CHECK([if crypt defined in unistd.h],
+AC_CACHE_CHECK([whether crypt defined in unistd.h],
 pac_cv_func_crypt_defined,[
 AC_TRY_COMPILE([
 #include <unistd.h>
@@ -905,7 +905,7 @@ double crypt(double a){return a;}],[return 0];,
 pac_cv_func_crypt_defined="no",pac_cv_func_crypt_defined="yes")])
 if test "$pac_cv_func_crypt_defined" = "no" ; then
     # check to see if defining _XOPEN_SOURCE helps
-    AC_CACHE_CHECK([if crypt defined in unistd with _XOPEN_SOURCE],
+    AC_CACHE_CHECK([whether crypt defined in unistd with _XOPEN_SOURCE],
 pac_cv_func_crypt_xopen,[
     AC_TRY_COMPILE([
 #define _XOPEN_SOURCE    
@@ -1376,7 +1376,7 @@ changequote(<<,>>)dnl
 define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
 define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
 changequote([,])dnl
-AC_MSG_CHECKING(size of $1)
+AC_MSG_CHECKING([for size of $1])
 AC_CACHE_VAL(AC_CV_NAME,
 [AC_TRY_RUN([#include <stdio.h>
 main()

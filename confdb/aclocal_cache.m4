@@ -83,7 +83,8 @@ dnl
 #
 # Get a test value and flag whether we should remove/replace the 
 # cache_system file (do so unless cache_system_ok is yes)
-cleanargs=`echo "$CC $F77 $CXX $F90 $PATH" | tr '"' ' '`
+# FC and F77 should be synonyms.  Save both in case
+cleanargs=`echo "$CC $F77 $FC $CXX $F90 $PATH" | tr '"' ' '`
 # We might want to add CFLAGS and some of the configure parms ($*)
 if uname -srm >/dev/null 2>&1 ; then
     cache_system_text="`uname -srm` $cleanargs"
