@@ -5,4 +5,4 @@ smvar_do_sharedlibs = 0
 
 errstring_SOURCES = errstring.c
 errcode_SOURCES = errcode.c errmsg.c
-
+errring_SOURCES = errring.c
