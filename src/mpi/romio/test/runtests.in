@@ -244,6 +244,16 @@ CheckOutput noncontig_coll
 CleanExe noncontig_coll
 #
 OutTime
+testfiles="$testfiles noncontig_coll2.out"
+\rm -f noncontig_coll2.out
+MakeExe noncontig_coll2
+\rm -f $FILENAME*
+echo '**** Testing noncontig_coll2.c ****'
+$mpirun -np 4 ./noncontig_coll2 -fname $FILENAME "$@" >> noncontig_coll2.out 2>&1
+CheckOutput noncontig_coll2
+CleanExe noncontig_coll2
+#
+OutTime
 testfiles="$testfiles misc.out"
 \rm -f misc.out
 MakeExe misc
