@@ -3265,7 +3265,7 @@ MPID_Attribute *MPID_Attr_list_walk( MPID_List *list, MPID_Attribute *prev )
 . flag - true if the attribute was found, false otherwise.
 
   Return value:
-  The attribute value (not the 'MPID_Attribute' entry, the user\'s attribute
+  The attribute value (not the 'MPID_Attribute' entry, the user''s attribute
   value.  Note that the attribute entry has been deleted from 
   the list but the attribute itself is property of the user.  This allows us
   to invoke the appropriate attribute delete function, if one is defined for 

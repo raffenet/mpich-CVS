@@ -214,7 +214,6 @@ be handled reliably, suggests communication type 2.
 \caption{Sample dependencies between communication approaches}
 \label{fig:comm-depend}
 \end{figure}
-\end{document}
 
 \subsection{Additional Goals}
 To ensure that short messages have the lowest possible latency, the
@@ -483,7 +482,7 @@ flag to be a counter that contains the number of uncompleted
 operations or a simple boolean that indicates whether the operation is
 busy.  The MPI calls that express this kind of synchronization are the
 misnamed 
-\code{MPI_Win_lock} and \MPI_Win_unlock}.  Note that calls by a
+\code{MPI_Win_lock} and \code{MPI_Win_unlock}.  Note that calls by a
 process to \code{MPI_Win_lock} for its own rank (i.e., ``lock my
 window'') are different in behavior from calls to a remote process
 because the local process may use non-MPI operations to access the
@@ -592,3 +591,5 @@ growth direction.  Passive RMA in terms of the AM handler
 
 Third, direct shared memory for passive operations: direct operation
 on memory.
+
+\end{document}

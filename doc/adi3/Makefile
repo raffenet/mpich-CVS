@@ -39,6 +39,7 @@ adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
+	bibtex adi3man ;\
 	latex adi3man < /dev/null ;\
 	dvips adi3man )
 	rm -f adi3man.ps

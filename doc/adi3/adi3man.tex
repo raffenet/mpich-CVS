@@ -307,7 +307,7 @@ but opens up the construction of the list of data to move so the more
 complex communications can be described.  This is important for
 optimizing collective communication.  It is a slighly different
 solution to the approach used in the second version of Illinois Fast
-Messages \cite{pakinxx}; FM provides a send-fragment operation.
+Messages \cite{Pakin97}; FM provides a send-fragment operation.
 
 \subsection{Dynamic}
 % \textbf{Should the routines in this section be replaced by BNR calls?
@@ -341,7 +341,7 @@ can implement these as routines that return failure.  Such an implementation
 will not implement all of MPI-2. 
 
 The implementation of these routines in the MPICH ADI3 device make use
-of the BNR dynamic process management routines \cite{butleretal-bnr}.
+of the BNR dynamic process management routines \cite{toas01:bnr-design}.
 These routines 
 provide portable access through a scalable API to third-party process
 managers.  
@@ -717,7 +717,7 @@ device's \file{Makefile}.
 
 \item Installation.  Define how \mpich\ gets the proper device-specific files
   installed; e.g., if the device uses the multi-purpose demon
-  (\code{mpd}}, ensure that the \code{mpd} is installed.  Provide an
+  (\code{mpd}), ensure that the \code{mpd} is installed.  Provide an
   \code{install} target in the device's \file{Makefile}.
 
 \item Device-specific documentation, such as environment variables and
@@ -732,7 +732,7 @@ should be performed through a \code{test} target in the device's
 
 \item Include files.  Any include files that are needed by
 \file{mpiimpl.h} (used to build the implementation of the MPI
-routines} should be \emph{copied} into \file{mpich/src/include} as
+routines) should be \emph{copied} into \file{mpich/src/include} as
 part of the device's configure step.  Provide the files
 \file{mpiddevpre.h} and \file{mpiddevpost.h}.  The implementation of all MPI
 routines include files in this order:
@@ -1126,8 +1126,8 @@ superceeded?  Are streams used to implement xfer?}
 \input StmOverview.tex
 %\subsection{Data Structures}
 %\input Stream-DS-list.tex
-\subsection{Functions}
-\input Stream-list.tex
+%\subsection{Functions}
+%\input Stream-list.tex
 
 \section{Collective Computation}
 Special structures are needed to support collective computation.
@@ -1580,7 +1580,7 @@ schedule operations.  Thus, the xfer interface defines a data transfer
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
-\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,/home/gropp/papers/MPI/mpich2-coding/mpich2}
 \bibliographystyle{plain}
 
 % Index
