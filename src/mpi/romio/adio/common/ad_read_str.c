@@ -59,6 +59,21 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     int new_brd_size, new_frd_size, info_flag, max_bufsize;
     ADIO_Status status1;
 
+    if (fd->hints->ds_read == ADIOI_HINT_DISABLE) {
+    	/* if user has disabled data sieving on reads, use naive
+	 * approach instead.
+	 */
+	ADIOI_GEN_ReadStrided_naive(fd, 
+				    buf,
+				    count,
+				    datatype,
+				    file_ptr_type,
+				    offset,
+				    status,
+				    error_code);
+    	return;
+    }
+
     *error_code = MPI_SUCCESS;  /* changed below if error */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
