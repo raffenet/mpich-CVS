@@ -99,6 +99,11 @@ if test "$JDK_TOPDIR" = "no" ; then
     PAC_MSG_ERROR($enable_softerror, [--without-java is specified, exit!])
 fi
 
+dnl Check if TRACE_CC has been set before AC_PROG_CC
+if test -n "$TRACE_CC" ; then
+    TRACE_ORIG_CC="$CC"
+    CC="$TRACE_CC"
+fi
 dnl Checks for programs.
 AC_PROG_CC
 dnl Checks for header files.
@@ -244,10 +249,15 @@ for script in $PATH_OLD_EXEFILES ; do
     fi
 done
 
-# Rename all the scripts in bindir according to the TRACE_NAME
+dnl Rename all the scripts in bindir according to the TRACE_NAME
 if test "X$TRACE_NAME" != "X" -a "$TRACE_NAME" != "trace" ; then
     for oldpgm in $OLD_EXEFILES ; do
         newpgm=$TRACE_NAME`echo $oldpgm | sed -e 's%trace%%'`
         $MV bin/$oldpgm bin/$newpgm
     done
+fi
+
+dnl Restore the original CC if it is needed
+if test -n "$TRACE_CC" ; then
+    CC="$TRACE_ORIG_CC"
 fi
