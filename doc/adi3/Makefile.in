@@ -1,5 +1,8 @@
 ALL: adi3new.ps tcpadi3.ps adi3new.pdf 
 SHELL = /bin/sh
+#
+# Grrr.  We need an absolute srcdir here for some of the steps below,
+# but configure will use . in some cases.
 srcdir = @srcdir@
 
 VPATH = .:@srcdir@
@@ -55,9 +58,10 @@ adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
 	for file in $(ADI3IMPLFILES) ; do \
+	sdir=`(cd $(srcdir) && pwd)` ; \
 	( cd adi3man ; \
-	${DOCTEXT} -latex -nolocation -quotefmt $(srcdir)/$$file ; \
-	perl $(srcdir)/manextract $(srcdir)/$$file ) ; done
+	${DOCTEXT} -latex -nolocation -quotefmt $$sdir/$$file ; \
+	perl $$sdir/manextract $$sdir/$$file ) ; done
 
 refman.sty: $(DOCTEXTSTYLE)/refman.sty
 	cp $(DOCTEXTSTYLE)/refman.sty .
