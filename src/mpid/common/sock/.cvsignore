@@ -6,3 +6,5 @@ Makefile
 *.bbg
 *.da
 *.gcov
+configure
+config.*
