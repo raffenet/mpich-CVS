@@ -148,6 +148,18 @@ AC_DEFUN(PAC_C_OPTIMIZATION,[
 	    break
         fi
     done
+    if test "$ac_cv_prog_gcc" = "yes" ; then
+	for copt in "-fomit-frame-pointer" "-finline-functions" \
+		 "-funroll-loops" ; do
+	    PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
+	    if test $found_opt = "yes" ; then
+	        ifelse($1,,COPTIONS="$COPTIONS $copt",$1)
+	        # no break because we're trying to add them all
+	    fi
+	done
+	# We could also look for architecture-specific gcc options
+    fi
+
 ])
 dnl
 dnl/*D
