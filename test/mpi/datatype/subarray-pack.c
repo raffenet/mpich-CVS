@@ -7,6 +7,8 @@
 static int verbose = 0;
 
 /* tests */
+int subarray_1d_c_test1(void);
+int subarray_1d_fortran_test1(void);
 int subarray_2d_c_test1(void);
 int subarray_4d_c_test1(void);
 int subarray_2d_c_test2(void);
@@ -28,6 +30,17 @@ int main(int argc, char **argv)
     parse_args(argc, argv);
 
     /* perform some tests */
+    err = subarray_1d_c_test1();
+    if (err && verbose) fprintf(stderr,
+				"%d errors in 1d subarray c test 1.\n", err);
+    errs += err;
+
+    err = subarray_1d_fortran_test1();
+    if (err && verbose) fprintf(stderr,
+				"%d errors in 1d subarray fortran test 1.\n",
+				err);
+    errs += err;
+
     err = subarray_2d_c_test1();
     if (err && verbose) fprintf(stderr,
 				"%d errors in 2d subarray c test 1.\n", err);
@@ -64,6 +77,147 @@ int main(int argc, char **argv)
     MPI_Finalize();
     return 0;
 }
+
+/* subarray_1d_c_test1()
+ *
+ * Returns the number of errors encountered.
+ */
+int subarray_1d_c_test1(void)
+{
+    MPI_Datatype subarray;
+    int array[9] = { -1, 1, 2, 3, -2, -3, -4, -5, -6 };
+    int array_size[] = {9};
+    int array_subsize[] = {3};
+    int array_start[] = {1};
+
+    int i, err, errs = 0, sizeoftype;
+
+    /* set up type */
+    err = MPI_Type_create_subarray(1, /* dims */
+				   array_size,
+				   array_subsize,
+				   array_start,
+				   MPI_ORDER_C,
+				   MPI_INT,
+				   &subarray);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr,
+		    "error in MPI_Type_create_subarray call; aborting after %d errors\n",
+		    errs);
+	}
+	return errs;
+    }
+
+    MPI_Type_commit(&subarray);
+    MPI_Type_size(subarray, &sizeoftype);
+    if (sizeoftype != 3 * sizeof(int)) {
+	errs++;
+	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
+			     sizeoftype, 3 * sizeof(int));
+	return errs;
+    }
+
+    err = pack_and_unpack((char *) array, 1, subarray, 9 * sizeof(int));
+
+    for (i=0; i < 9; i++) {
+	int goodval;
+	switch (i) {
+	    case 1:
+		goodval = 1;
+		break;
+	    case 2:
+		goodval = 2;
+		break;
+	    case 3:
+		goodval = 3;
+		break;
+	    default:
+		goodval = 0; /* pack_and_unpack() zeros before unpacking */
+		break;
+	}
+	if (array[i] != goodval) {
+	    errs++;
+	    if (verbose) fprintf(stderr, "array[%d] = %d; should be %d\n",
+				 i, array[i], goodval);
+	}
+    }
+
+    MPI_Type_free(&subarray);
+    return errs;
+}
+
+/* subarray_1d_fortran_test1()
+ *
+ * Returns the number of errors encountered.
+ */
+int subarray_1d_fortran_test1(void)
+{
+    MPI_Datatype subarray;
+    int array[9] = { -1, 1, 2, 3, -2, -3, -4, -5, -6 };
+    int array_size[] = {9};
+    int array_subsize[] = {3};
+    int array_start[] = {1};
+
+    int i, err, errs = 0, sizeoftype;
+
+    /* set up type */
+    err = MPI_Type_create_subarray(1, /* dims */
+				   array_size,
+				   array_subsize,
+				   array_start,
+				   MPI_ORDER_FORTRAN,
+				   MPI_INT,
+				   &subarray);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr,
+		    "error in MPI_Type_create_subarray call; aborting after %d errors\n",
+		    errs);
+	}
+	return errs;
+    }
+
+    MPI_Type_commit(&subarray);
+    MPI_Type_size(subarray, &sizeoftype);
+    if (sizeoftype != 3 * sizeof(int)) {
+	errs++;
+	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
+			     sizeoftype, 3 * sizeof(int));
+	return errs;
+    }
+
+    err = pack_and_unpack((char *) array, 1, subarray, 9 * sizeof(int));
+
+    for (i=0; i < 9; i++) {
+	int goodval;
+	switch (i) {
+	    case 1:
+		goodval = 1;
+		break;
+	    case 2:
+		goodval = 2;
+		break;
+	    case 3:
+		goodval = 3;
+		break;
+	    default:
+		goodval = 0; /* pack_and_unpack() zeros before unpacking */
+		break;
+	}
+	if (array[i] != goodval) {
+	    errs++;
+	    if (verbose) fprintf(stderr, "array[%d] = %d; should be %d\n",
+				 i, array[i], goodval);
+	}
+    }
+
+    MPI_Type_free(&subarray);
+    return errs;
+}
+
 
 /* subarray_2d_test()
  *
