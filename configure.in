@@ -25,14 +25,21 @@ dnl
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
 CFLAGS="$CFLAGS -O -Wall -Wstrict-prototypes -Wmissing-prototypes")
 dnl
-AC_ARG_ENABLE(error-checking,[--enable-error-checking=level - Control the
-amount of error checking.  level may be no (no error checking), runtime
-(error checking controlable at runtime through environment variables, or
-all (error checking always enabled)],,enable_error_checking=all)
+AC_ARG_ENABLE(error-checking,
+[--enable-error-checking=level - Control the amount of error checking.  
+level may be 
+    no        - no error checking
+    runtime   - error checking controlable at runtime through environment 
+                variables
+    all       - error checking always enabled],,enable_error_checking=all)
 dnl
-AC_ARG_ENABLE(timing,[--enable-timing=level - Control the
-amount of timing information collected by the MPICH implementation],,
-enable_timing=all)
+AC_ARG_ENABLE(timing,
+[--enable-timing=level - Control the amount of timing information 
+collected by the MPICH implementation.  level may be
+    none    - Collect no data
+    all     - Collect lots of data
+    runtime - Runtime control of data collected
+The default is all.],,enable_timing=all)
 dnl
 dnl Set single for now
 AC_ARG_ENABLE(threads,
@@ -50,6 +57,12 @@ implementation.  option may be a list of common separated names including
     all   - All of the above choices],,enable_g=none)
 dnl
 dnl
+AC_ARG_ENABLE(sharedlibs,
+[--enable-sharedlibs=kind - Enable shared libraries.  kind may be
+    gnu     - Standard gcc and GNU ld options for creating shared libraries
+    libtool - GNU libtool 
+This option is currently ignored])
+dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
 dnl the environment.
 AC_ARG_WITH(device,
