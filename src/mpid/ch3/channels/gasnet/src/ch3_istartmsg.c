@@ -46,7 +46,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 					    hdr, hdr_sz);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
     }
     else

@@ -24,7 +24,7 @@ static int do_put (MPIDI_VC_t * vc, MPID_Request *sreq);
 #define FUNCNAME MPIDI_CH3_Progress_start
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_start()
+void MPIDI_CH3_Progress_start(MPID_Progress_state * state)
 {
     /* MT - This function is empty for the single-threaded implementation */
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_START);
@@ -73,7 +73,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    mpi_errno = MPIDI_CH3_iWrite (sreq->gasnet.vc, sreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		MPID_Abort(NULL, mpi_errno, -1);
+		/* currently iwrite always returns MPI_SUCCESS */
+		MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 	    }
 	    
 	    if (sreq->dev.iov_count == 0)
@@ -82,7 +83,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 							sreq, &complete);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    MPID_Abort(NULL, mpi_errno, -1);
+		    MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 		}
 	    }
 	    
@@ -101,7 +102,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		mpi_errno = send_enqueuedv (sreq->gasnet.vc, sreq);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    MPID_Abort(NULL, mpi_errno, -1);
+		    MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 		}
 		if (sreq->dev.iov_count == 0)
 		{
@@ -109,7 +110,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 							    sreq, &complete);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			MPID_Abort(NULL, mpi_errno, -1);
+			MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 		    }
 		}
 		
@@ -160,7 +161,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 						    sreq->handle);
 			if (gn_errno != GASNET_OK)
 			{
-			    MPID_Abort (NULL, MPI_SUCCESS, -1);
+			    MPID_Abort (NULL, MPI_SUCCESS, -1,
+					"GASNet send failed");
 			}
 			
 			MPIDI_CH3I_SendQ_dequeue (CH3_RNDV_QUEUE);
@@ -175,7 +177,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 		break;
 	    default:
-		MPID_Abort (NULL, MPI_SUCCESS, -1);
+		MPID_Abort (NULL, MPI_SUCCESS, -1, "Internal error");
 	    }    
 	}
     }
@@ -213,17 +215,17 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     gn_errno = gasnet_AMGetMsgSource (token, &sender);
     if (gn_errno != GASNET_OK)
     {
-	MPID_Abort(NULL, MPI_SUCCESS, -1);
+	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet AMGetMesgSource failed");
     }
     printf_d ("  sender = %d\n", sender);
-    vc = &MPIDI_CH3_vc_table[sender];
+    MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
     vc->gasnet.data = buf + sizeof (MPIDI_CH3_Pkt_t);
     vc->gasnet.data_sz = data_sz - sizeof (MPIDI_CH3_Pkt_t);
     
     mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)buf, &rreq);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_Abort(NULL, mpi_errno, -1);
+	MPID_Abort(NULL, mpi_errno, -1, "Internal error");
     }
     
     if (rreq)
@@ -231,7 +233,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
 	mpi_errno = MPIDI_CH3_iRead (vc, rreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    MPID_Abort(NULL, mpi_errno, -1);
+	    MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 	}
     }
     
@@ -260,10 +262,10 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     gn_errno = gasnet_AMGetMsgSource (token, &sender);
     if (gn_errno != GASNET_OK)
     {
-	MPID_Abort(NULL, MPI_SUCCESS, -1);
+	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet AMGetMsgSource failed");
     }
     printf_d ("  sender = %d\n", sender);
-    vc = &MPIDI_CH3_vc_table[sender];
+    MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
     vc->gasnet.data = buf;
     vc->gasnet.data_sz = data_sz;
     rreq = vc->gasnet.recv_active;
@@ -273,7 +275,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     mpi_errno = MPIDI_CH3_iRead (vc, rreq);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_Abort(NULL, mpi_errno, -1);
+	MPID_Abort(NULL, mpi_errno, -1, "Internal error");
     }
     
     MPIDI_CH3I_inside_handler = 0;
@@ -318,7 +320,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
 						     &sreq->dev.iov_count);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    MPID_Abort(NULL, mpi_errno, -1);
+	    MPID_Abort(NULL, mpi_errno, -1, "Internal error");
 	}
     }
 
@@ -365,9 +367,9 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     gn_errno = gasnet_AMGetMsgSource (token, &sender);
     if (gn_errno != GASNET_OK)
     {
-	MPID_Abort (NULL, MPI_SUCCESS, -1);
+	MPID_Abort (NULL, MPI_SUCCESS, -1, "GASNet AMGetMsgSource failed");
     }
-    vc = &MPIDI_CH3_vc_table[sender];
+    MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
 
     MPID_Request_get_ptr (rreq_id, rreq);
 
@@ -382,7 +384,7 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
 					  sreq_id, rreq->dev.iov_count);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort (NULL, MPI_SUCCESS, -1);
+	    MPID_Abort (NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
     }
     
@@ -448,7 +450,7 @@ int MPIDI_CH3_Progress_poke()
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end()
+void MPIDI_CH3_Progress_end(MPID_Progress_state * state)
 {
     /* MT: This function is empty for the single-threaded implementation */
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_END);
@@ -536,7 +538,7 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 					    iov, i+1);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 
 	sreq->dev.iov[i].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
@@ -555,7 +557,7 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 					    iov, n_iov);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 	sreq->gasnet.iov_offset = 0;
 	sreq->dev.iov_count = 0;
@@ -637,6 +639,16 @@ static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_FUNC_EXIT(MPID_STATE_DO_PUT);
     return mpi_errno;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connection_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
+{
+    return MPI_SUCCESS;
+}
+/* end MPIDI_CH3_Connection_terminate() */
 
 
 #ifndef MPIDI_CH3_GASNET_TAKES_IOV

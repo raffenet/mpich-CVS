@@ -48,7 +48,7 @@ int MPIDI_CH3_do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, MPI_Request sreq_id,
 
     if (gn_errno != GASNET_OK)
     {
-	MPID_Abort(NULL, MPI_SUCCESS, -1);
+	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
     }
 
     printf_d ("Exiting "FCNAME"\n");

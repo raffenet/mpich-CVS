@@ -78,7 +78,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 						iov, i+1);
 	    if (gn_errno != GASNET_OK)
 	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
+		MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	    }
 
             /* Create a new request and save remaining portions of the
@@ -113,7 +113,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 						iov, n_iov);
 	    if (gn_errno != GASNET_OK)
 	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
+		MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	    }
 	}
     }

@@ -28,8 +28,6 @@ extern gasnet_token_t MPIDI_CH3I_gasnet_token;
 extern int MPIDI_CH3_packet_len;
 extern void *MPIDI_CH3_packet_buffer;
 
-extern MPIDI_VC_t *MPIDI_CH3_vc_table;
-
 #define CH3_NORMAL_QUEUE 0
 #define CH3_RNDV_QUEUE   1
 #define CH3_NUM_QUEUES   2

@@ -22,8 +22,6 @@ int MPIDI_CH3_Finalize()
     MPID_VCRT_Release (MPIR_Process.comm_self->vcrt);
     MPID_VCRT_Release (MPIR_Process.comm_world->vcrt);
     
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
-
     /* This is a hack to try to get around the fact that gasnet
      * doesn't have a finalize call, and so can't call gm_finalize().
      * This can lead to lost/corrupted messages if the process exits
@@ -31,11 +29,12 @@ int MPIDI_CH3_Finalize()
     gasnet_barrier_notify (0, 0);
     if (gasnet_barrier_wait (0, 0) != GASNET_OK)
     {
-	MPID_Abort(NULL, MPI_SUCCESS, -1);
+	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet barrier failed");
     }
     
     PMI_Finalize ();
     printf_d ("MPIDI_CH3_Finalize\n");
     
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
 }

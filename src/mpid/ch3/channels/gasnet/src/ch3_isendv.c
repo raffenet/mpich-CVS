@@ -58,7 +58,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 						iov, i+1);
 	    if (gn_errno != GASNET_OK)
 	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
+		MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	    }
 
 	    sreq->dev.iov[0].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
@@ -85,7 +85,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 						iov, n_iov);
 	    if (gn_errno != GASNET_OK)
 	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
+		MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	    }
 	    
 	    MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);

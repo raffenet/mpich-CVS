@@ -45,7 +45,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 					    hdr, hdr_sz);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 	
 	MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);

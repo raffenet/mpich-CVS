@@ -52,7 +52,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 					    &iov[iov_offset], i+1 - iov_offset);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 
 	/* update iov to reflect sent data */
@@ -72,7 +72,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 					    &iov[iov_offset], i - iov_offset);
 	if (gn_errno != GASNET_OK)
 	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
+	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 	req->gasnet.iov_offset = 0;
 	req->dev.iov_count = 0;
