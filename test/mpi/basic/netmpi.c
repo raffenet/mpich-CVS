@@ -18,7 +18,7 @@ typedef int BOOL;
 #define FALSE 0
 #endif
 
-#define  TRIALS 	7
+#define  TRIALS 	3
 #define  REPEAT 	1000
 int 	 g_NSAMP =	250;
 #define  PERT		3
@@ -630,16 +630,16 @@ void SendRecvData(ArgStruct *p)
     MPI_Status status;
     
     /*MPI_Sendrecv(p->buff, p->bufflen, MPI_BYTE, p->prot.nbor, 1, p->buff1, p->bufflen, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);*/
-    
-    /*
+
     MPI_Request request;
     MPI_Irecv(p->buff1, p->bufflen, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &request);
     MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
     MPI_Wait(&request, &status);
-    */
-    
+
+    /*
     MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
     MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
+    */
 }
 
 void SendData(ArgStruct *p)
