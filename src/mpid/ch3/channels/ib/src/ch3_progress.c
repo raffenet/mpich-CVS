@@ -197,7 +197,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	switch (wait_result)
 	{
 	case IBU_OP_TIMEOUT:
-	    MPIDU_Yield();
+	    /*MPIDU_Yield();*/
 	    /*sched_yield();*/
 	    break;
 	case IBU_OP_READ:
