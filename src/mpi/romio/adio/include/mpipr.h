@@ -340,7 +340,7 @@
 #undef MPI_Status_set_elements
 #define MPI_Status_set_elements PMPI_Status_set_elements
 
-#ifndef MPI_INFO_SRC  /* everywhere except in info source directory */
+#ifndef HAVE_MPI_INFO_SRC  /* everywhere except in info source directory */
 #undef MPI_Info_create
 #define MPI_Info_create PMPI_Info_create
 #undef MPI_Info_set
