@@ -65,6 +65,9 @@ noncontig.c: Tests noncontiguous accesses in memory and file using
 
 noncontig_coll.c: Same as noncontig.c, but uses collective I/O
 
+noncontig_coll2.c: Same as noncontig_coll.c, but exercises the 
+             cb_config_list hint and aggregation handling more. 
+
 i_noncontig.c: Same as noncontig.c, but uses nonblocking I/O
 
 shared_fp.c: Tests the shared file pointer functions
