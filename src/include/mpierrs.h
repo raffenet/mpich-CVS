@@ -161,8 +161,23 @@
    the macros should take handles.  We already have macros for validating
    pointers to various objects.
 */
-#define MPIR_ERRTEST_OP(op,err)
-#define MPIR_ERRTEST_GROUP(group,err)
+/* --BEGIN ERROR MACROS-- */
+#define MPIR_ERRTEST_VALID_HANDLE(handle_,kind_,err_,errclass_,gmsg_) {\
+    if (HANDLE_GET_MPI_KIND(handle_) != kind_ || \
+        HANDLE_GET_KIND(handle_) == HANDLE_KIND_INVALID) {\
+        MPIU_ERR_SETANDSTMT(err_,errclass_,goto fn_fail,gmsg_);\
+    }\
+}
+/* --END ERROR MACROS-- */
+
+#define MPIR_ERRTEST_OP(op,err) if (op == MPI_OP_NULL) {\
+    MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnull");\
+}else { MPIR_ERRTEST_VALID_HANDLE(op,MPID_OP,err,MPI_ERR_OP,"**op");}
+
+#define MPIR_ERRTEST_GROUP(group,err) if (group == MPI_GROUP_NULL) {\
+    MPIU_ERR_SETANDSTMT(err,MPI_ERR_GROUP,goto fn_fail,"**groupnull");\
+}else { MPIR_ERRTEST_VALID_HANDLE(group,MPID_GROUP,err,MPI_ERR_GROUP,"**group");}
+
 #define MPIR_ERRTEST_COMM(comm,err)											\
 {															\
     if (HANDLE_GET_MPI_KIND(comm) != MPID_COMM ||									\
@@ -177,7 +192,9 @@
     }															\
 }
 #define MPIR_ERRTEST_REQUEST(request,err)
-#define MPIR_ERRTEST_ERRHANDLER(errhandler,err)
+#define MPIR_ERRTEST_ERRHANDLER(errhandler,err) if (errhandler == MPI_ERRHANDLER_NULL) {\
+    MPIU_ERR_SETANDSTMT(err,MPI_ERR_OTHER,,"**errhandlernull");\
+}else { MPIR_ERRTEST_VALID_HANDLE(errhandler,MPID_ERRHANDLER,err,MPI_ERR_OTHER,"**errhandler");}
 
 /* Special MPI error "class/code" for out of memory */
 /* FIXME: not yet done */
