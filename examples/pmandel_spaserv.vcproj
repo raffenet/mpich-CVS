@@ -80,7 +80,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2.llib"
+				AdditionalDependencies="mpich2.lib"
 				OutputFile="$(OutDir)/pmandel_spaserv.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\lib"
