@@ -19,7 +19,7 @@ int MPIDI_CH3_Open_port(char *port_name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_OPEN_PORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_OPEN_PORT);
-
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_OPEN_PORT);
     return mpi_errno;
 }
