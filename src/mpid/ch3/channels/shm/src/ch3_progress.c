@@ -220,8 +220,11 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     int spin_count = 1;
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
+#ifdef USE_SLEEP_YIELD
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SLEEP_YIELD);
+#else
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
+#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
 
