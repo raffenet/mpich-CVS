@@ -1437,6 +1437,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		if (smpd_process.root_smpd)
 		{
+		    smpd_dbg_printf("root closing sock(%d) after fork.\n", sock_getid(context->sock));
 		    context->state = SMPD_CLOSING;
 		    context->read_state = SMPD_IDLE;
 		    context->write_state = SMPD_IDLE;
@@ -1451,6 +1452,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		else
 		{
+		    smpd_dbg_printf("child closing listener sock(%d) after fork.\n", sock_getid(smpd_process.listener_context->sock));
 		    /* close the listener in the child */
 		    smpd_process.listener_context->state = SMPD_CLOSING;
 		    result = sock_post_close(smpd_process.listener_context->sock);
