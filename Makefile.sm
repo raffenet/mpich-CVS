@@ -21,7 +21,7 @@ all-preamble:
 	@echo "Beginning make"
 # Add any final extras
 all-postamble:
-	if [ "@BUILD_TVDLL@" ] ; then \
+	if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.so ) ; fi
 	@echo "Make completed"
 
