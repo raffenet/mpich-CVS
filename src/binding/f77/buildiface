@@ -625,6 +625,15 @@ sub print_args {
     foreach $parm (@parms) {
 	# Match type to replacement
 	print "parm = :$parm:\n" if $debug;
+	# Remove qualifiers from the parm
+	$parm =~ s/^const\s//;
+	$parm =~ s/restrict\s//;
+	# Remove arg names from array types
+	if ($parm =~ /(\w*)\s+\w*\[\]/) {
+	    # Assume that this is <type> <name>[]; convert to
+	    # <type>[]
+	    $parm = "$1" . "[]";
+	}
 	# Remove blanks from the parm
 	$parm =~ s/\s//;
 	$arg_addresses[$count] = 0;
