@@ -117,8 +117,10 @@ int PMI_Barrier( )
 	return( 0 );
 }
 
+/* Inform the process manager that we're in finalize */
 int PMI_Finalize( )
 {
+    PMIU_writeline( PMI_fd, "cmd=finalize\n" );
     return( 0 );
 }
 
