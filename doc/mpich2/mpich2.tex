@@ -76,10 +76,96 @@ Section~\label{sec-mpi-operations}.
 
 % Outline:
 \section{General}
+\label{sec:general}
+
 This section contains general recommendations are requirements for
 writing the code.
 
+\subsection{Source Directory Structure}
+\label{sec:dir-structure}
+
+\begin{description}
+\item[src]Source files for the MPI implementation
+  \begin{description}
+  \item[mpi]
+    \begin{description}
+    \item[attr]Attributes (Section~\ref{sec:attr})
+    \item[info]Info (Section\ref{sec:info})
+    \item[datatype]Datatypes (Section~\ref{sec:datatypes})
+    \item[group]Groups (Section~\ref{sec:groups})
+    \item[comm]Communicators (Section~\ref{sec:communicators})
+      \textbf{intercomm separate?}
+    \item[pt2pt]Point-to-point (Section~\ref{sec:pt-2-pt})
+    \item[coll]Collective communication and computation
+      (Section~\ref{sec:collective-comm}) 
+      \textbf{Question: split into intercomm and intracomm?}
+    \item[topo]Process topology (Section~\ref{sec:topo})
+    \item[rma]Remote memory access (Section~\ref{sec:rma})
+    \item[init]Starting and ending MPI (Section~\ref{sec:init})
+    \item[spawn]Dynamic processes (Section~\ref{sec:spawn})
+      \textbf{spawn separate from attach/connect/lookup?}
+    \item[grequest]User-defined requests (Section~\ref{sec:grequest})
+      \textbf{Part of point-2-point?}
+    \item[errhan]Error handlers (Section~\ref{sec:errhand})
+    \item[handle]Handle transfers (Section~\ref{sec:handle-transfer})
+    \item[timer]Timers (Section~\ref{sec:timer})
+    \item[misc]Runtime (Section~\ref{sec:runtime-env}) and profiling
+      (Section~\ref{sec:profile}) 
+    \item[io]ROMIO implementation, possibly minus the miscellaneous MPI-2
+      routines such as the info support
+    \end{description}
+  \item[mpid]Implementation of the ADI3
+  \item[bnr]
+    \begin{description}
+      \item[include]BNR header files
+      \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}
+    \end{description}
+  \item[binding]Language bindings
+    \begin{description}
+    \item[c++]
+    \item[fortran]
+    \item[fortran90]
+    \end{description}
+  \item[env]Commands like \code{mpiexec}
+  \item[mpe]
+  \end{description}
+  
+\item[include]Main MPI includes (like \file{mpi.h} and \file{mpiimpl.h}).  
+\textbf{Should most include files go here?  What about replacable modules,
+  such as alternative datatype implementations?}
+
+\item[doc]
+  \begin{description}
+    \item[mpich2]
+    \item[adi3]
+    \item[userguide]
+    \item[installguide]
+  \end{description}
+\item[bin]
+
+\item[maint]
+  Contains scripts and tools used to manage the project.  Some of these may be
+  distributed.
+  \begin{description}
+  \item[config]\code{autoconf} macro files
+  \end{description}
+
+\item[test]
+  \begin{description}
+    \item[util]Contains utilities for running the tests
+    \item[mpi]
+      \begin{description}
+        \item[xxx]The directory structure should match that for the
+          \file{src/mpi}.
+      \end{description}
+    \item[mpid]
+  \end{description}
+\item[example]
+\end{description}
+
+
 \subsection{Error reporting}
+\label{sec:error-reporting}
 
 MPI routines should check all possible error conditions early, before
 calling any ADI routines.  The ADI routines perform little error
@@ -782,6 +868,7 @@ of this include VIA, Cray SHMEM, and IBM LAPI.
 \end{description}
 
 \subsection{Attributes}
+\label{sec:attr}
 
 Error classes defined for keyvals and attributes:
 \mpiconst{MPI_ERR_KEYVAL} (note that this is new in MPI-2).
@@ -949,6 +1036,7 @@ See \mpifunc{MPI_COMM_DELETE_ATTR}.
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
 \subsection{Info}
+\label{sec:info}
 \paragraph{Info.}
 
 Error values defined for info:
@@ -3341,6 +3429,7 @@ containing the root process; the other group refers to the rank of the root.
 % \subsubsection{\mpifunc{MPI_SCATTERV}}
 
 \subsection{Topology}
+\label{sec:topo}
 
 How do we implement \mpifunc{MPI_Cart_create} and \mpifunc{MPI_Dims_create}
 with the MPID routines?   
@@ -4075,6 +4164,7 @@ Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
 % \end{via}
 
 \subsection{Starting and Ending MPI}
+\label{sec:init}
 
 \subsubsection{\mpifunc{MPI_ABORT}}
 \begin{adi3}
@@ -4965,6 +5055,7 @@ For example, \mpids{MPI_Request(generalized)}{query_fn},
 (Need to describe the user-request handling)
 
 \subsection{Error Handlers}
+\label{sec:errhand}
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_FREE}}
 Calls \mpidfunc{MPID_Errhandler_free}
@@ -5051,6 +5142,7 @@ We need to ensure that ROMIO's error handlers are the same as the MPICH-2
 handlers.
 
 \subsection{Handle Transfers}
+\label{sec:handle-transfer}
 These provide for the conversion of handles to and from the C and
 Fortran representations.  C++ is handled as a descendant of C (that
 is, there is no Fortran representation of a C++ handle directly, but
@@ -5129,6 +5221,7 @@ Like \mpifunc{MPI_STATUS_F2C}, but must handle the C constants
 \mpiconst{MPI_STATUS_IGNORE} and \mpiconst{MPI_STATUSES_IGNORE}.
 
 \subsection{Timers}
+\label{sec:timer}
 The MPI standard allows \code{MPI_Wtime} and \code{MPI_Wtick} to be
 implemented as macros; we should also allow that, at least as an
 option.  Question:  should there be a
@@ -5151,6 +5244,7 @@ This requires that \mpifunc{MPI_Init} cause \mpidfunc{MPID_Wtime_init} to be
 called, and that an initial time stamp is stored.
 
 \subsection{Runtime Environment}
+\label{sec:runtime-env}
 \subsubsection{\mpifunc{MPI_GET_PROCESSOR_NAME}}
 Call \mpidfunc{MPID_Get_processor_name}.  
 
@@ -5163,6 +5257,7 @@ Note that this routine can be called anytime, even before \code{MPI_Init} or
 after \code{MPI_Finalize}.
 
 \subsection{Profiling}
+\label{sec:profile}
 
 \subsubsection{\mpifunc{MPI_PCONTROL}}
 This is a simple stub and performs no action other than returning
