@@ -14,13 +14,13 @@ struct ADIOI_Fns_struct ADIO_SFS_operations = {
     ADIOI_SFS_Open, /* Open */
     ADIOI_SFS_ReadContig, /* ReadContig */
     ADIOI_SFS_WriteContig, /* WriteContig */
-    ADIOI_SFS_ReadStridedColl, /* ReadStridedColl */
-    ADIOI_SFS_WriteStridedColl, /* WriteStridedColl */
-    ADIOI_SFS_SeekIndividual, /* SeekIndividual */
+    ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
+    ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
+    ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_SFS_Fcntl, /* Fcntl */
-    ADIOI_SFS_SetInfo, /* SetInfo */
-    ADIOI_SFS_ReadStrided, /* ReadStrided */
-    ADIOI_SFS_WriteStrided, /* WriteStrided */
+    ADIOI_GEN_SetInfo, /* SetInfo */
+    ADIOI_GEN_ReadStrided, /* ReadStrided */
+    ADIOI_GEN_WriteStrided, /* WriteStrided */
     ADIOI_SFS_Close, /* Close */
     ADIOI_SFS_IreadContig, /* IreadContig */
     ADIOI_SFS_IwriteContig, /* IwriteContig */

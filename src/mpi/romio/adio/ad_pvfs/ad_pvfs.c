@@ -19,7 +19,7 @@ struct ADIOI_Fns_struct ADIO_PVFS_operations = {
     ADIOI_PVFS_SeekIndividual, /* SeekIndividual */
     ADIOI_PVFS_Fcntl, /* Fcntl */
     ADIOI_PVFS_SetInfo, /* SetInfo */
-    ADIOI_PVFS_ReadStrided, /* ReadStrided */
+    ADIOI_GEN_ReadStrided, /* ReadStrided */
     ADIOI_PVFS_WriteStrided, /* WriteStrided */
     ADIOI_PVFS_Close, /* Close */
     ADIOI_PVFS_IreadContig, /* IreadContig */

@@ -13,13 +13,13 @@ struct ADIOI_Fns_struct ADIO_NTFS_operations = {
     ADIOI_NTFS_Open, /* Open */
     ADIOI_NTFS_ReadContig, /* ReadContig */
     ADIOI_NTFS_WriteContig, /* WriteContig */
-    ADIOI_NTFS_ReadStridedColl, /* ReadStridedColl */
-    ADIOI_NTFS_WriteStridedColl, /* WriteStridedColl */
+    ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
+    ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_NTFS_SeekIndividual, /* SeekIndividual */
     ADIOI_NTFS_Fcntl, /* Fcntl */
-    ADIOI_NTFS_SetInfo, /* SetInfo */
-    ADIOI_NTFS_ReadStrided, /* ReadStrided */
-    ADIOI_NTFS_WriteStrided, /* WriteStrided */
+    ADIOI_GEN_SetInfo, /* SetInfo */
+    ADIOI_GEN_ReadStrided, /* ReadStrided */
+    ADIOI_GEN_WriteStrided, /* WriteStrided */
     ADIOI_NTFS_Close, /* Close */
     ADIOI_NTFS_IreadContig, /* IreadContig */
     ADIOI_NTFS_IwriteContig, /* IwriteContig */

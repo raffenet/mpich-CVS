@@ -14,13 +14,13 @@ struct ADIOI_Fns_struct ADIO_PFS_operations = {
     ADIOI_PFS_Open, /* Open */
     ADIOI_PFS_ReadContig, /* ReadContig */
     ADIOI_PFS_WriteContig, /* WriteContig */
-    ADIOI_PFS_ReadStridedColl, /* ReadStridedColl */
-    ADIOI_PFS_WriteStridedColl, /* WriteStridedColl */
+    ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
+    ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_PFS_SeekIndividual, /* SeekIndividual */
     ADIOI_PFS_Fcntl, /* Fcntl */
     ADIOI_PFS_SetInfo, /* SetInfo */
-    ADIOI_PFS_ReadStrided, /* ReadStrided */
-    ADIOI_PFS_WriteStrided, /* WriteStrided */
+    ADIOI_GEN_ReadStrided, /* ReadStrided */
+    ADIOI_GEN_WriteStrided, /* WriteStrided */
     ADIOI_PFS_Close, /* Close */
     ADIOI_PFS_IreadContig, /* IreadContig */
     ADIOI_PFS_IwriteContig, /* IwriteContig */
