@@ -97,22 +97,30 @@ AC_DEFUN(PAC_F90_MODULE_INCFLAG,[
 AC_CACHE_CHECK([for Fortran 90 module include flag],
 pac_cv_f90_module_incflag,[
 AC_REQUIRE([PAC_F90_MODULE_EXT])
+#
+# Note that the name of the file and the name of the module must be
+# the same (some compilers use the module, some the file name)
+rm -f work.pc work.pcl conftest.$ac_f90ext
 cat >conftest.$ac_f90ext <<EOF
-        module conf
+        module conftest
         integer n
         parameter (n=1)
-        end module conf
+        end module conftest
 EOF
 pac_madedir="no"
 if test ! -d conftestdir ; then mkdir conftestdir ; pac_madedir="yes"; fi
 if test "$pac_cv_f90_module_case" = "upper" ; then
-    pac_module="CONF.$pac_cv_f90_module_ext"
+    pac_module="CONFTEST.$pac_cv_f90_module_ext"
 else
-    pac_module="conf.$pac_cv_f90_module_ext"
+    pac_module="conftest.$pac_cv_f90_module_ext"
 fi
 if AC_TRY_EVAL(ac_f90compile) ; then
     if test -s "$pac_module" ; then
-        cp $pac_module conftestdir
+        mv $pac_module conftestdir
+	# Remove any temporary files, and hide the work.pc file (if
+	# the compiler generates them)
+	mv -f work.pc conftest.pc
+	rm -f work.pcl
     else
 	AC_MSG_WARN([Unable to build a simple F90 module])
         echo "configure: failed program was:" >&AC_FD_CC
@@ -125,30 +133,30 @@ fi
 rm -f conftest.$ac_f90ext
 cat >conftest.$ac_f90ext <<EOF
     program main
-    use conf
+    use conftest
     end
 EOF
 pac_cv_f90_module_incflag="unknown"
-if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
+if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_f90ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-I"
-elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
+elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_f90ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-M"
-elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
+elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_f90ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-p"
 elif test -s work.pc ; then 
-     cp work.pc conftestdir/mpimod.pc
+     mv conftest.pc conftestdir/mpimod.pc
      echo "mpimod.pc" > conftestdir/mpimod.pcl
      echo "`pwd`/conftestdir/mpimod.pc" >> conftestdir/mpimod.pcl
-     if ${F90-f90} -c $F90FLAGS -cl,conftestdir/mpimod.pcl conftest.$ac_f90ext 1>&AC_FD_CC && test -s conftest.o ; then
+     if ${F90-f90} -c $F90FLAGS -cl,conftestdir/mpimod.pcl conftest.$ac_f90ext 1>&AC_FD_CC 2>&1 && test -s conftest.o ; then
          pac_cv_f90_module_incflag='-cl,'
 	# Not quite right; see the comments that follow
-dnl         AC_MSG_RESULT([-cl,filename where filename contains a list of files and directories])
-#	 F90_WORK_FILES_ARG="-cl,mpimod.pcl"
-#         F90MODINCSPEC="-cl,<dir>/<file>mod.pcl"
-dnl	 AC_SUBST(F90_WORK_FILES_ARG)
+         AC_MSG_RESULT([-cl,filename where filename contains a list of files and directories])
+	 F90_WORK_FILES_ARG="-cl,mpimod.pcl"
+         F90MODINCSPEC="-cl,<dir>/<file>mod.pcl"
+	 AC_SUBST(F90_WORK_FILES_ARG)
      else 
          # The version of the Intel compiler that I have refuses to let
 	 # you put the "work catalog" list anywhere but the current directory.
