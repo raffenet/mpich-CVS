@@ -6,7 +6,8 @@
 
 #include "mpidi_ch3_impl.h"
 
-#if 0
+#define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
+#define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
 
 #define DPRINTF(a) 
 #define DPRINTF1(a) 
@@ -23,14 +24,14 @@ extern int *g_pSharedProcessFileDescriptors;
 
 #ifdef USE_GARBAGE_COLLECTING
 /*@
-*MPIDI_SHM_Alloc - 
+*MPIDI_CH3I_SHM_Alloc - 
 
   Parameters:
   +  int size
   
     Notes:
 @*/
-void *MPIDI_SHM_Alloc(int size)
+void *MPIDI_CH3I_SHM_Alloc(unsigned int size)
 {
 /* allocate size bytes out of this process's shared memory pool
     return null if not available. */
@@ -38,8 +39,9 @@ void *MPIDI_SHM_Alloc(int size)
     MPIDI_Shm_mem_obj_hdr *mem_obj_hdr, *next_mem_obj_hdr, **mem_obj_hdr_ptr,
         **next_mem_obj_hdr_ptr;
     int i, j, k;
-    
-    MPID_PROFILE_IN(MPIDI_SHM_ALLOC);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
     
     /* find next largest size supported */
     for (i = 0; i < SHM_NSIZES; i++) 
@@ -50,7 +52,7 @@ void *MPIDI_SHM_Alloc(int size)
     
     if (i == SHM_NSIZES) 
     {
-        printf("MPIDI_SHM_Alloc: Memory requested, %d, is larger than maximum size allowed, %d\n", size, MPIDI_Shm_free_list[SHM_NSIZES-1].size);
+        printf("MPIDI_CH3I_SHM_Alloc: Memory requested, %d, is larger than maximum size allowed, %d\n", size, MPIDI_Shm_free_list[SHM_NSIZES-1].size);
         fflush(stdout);
         exit(0);
     }
@@ -59,13 +61,13 @@ void *MPIDI_SHM_Alloc(int size)
     
     /* every few times, do garbage collection first */
     /* maybe lock is not needed */
-    MPIDU_Lock(&MPIDI_Shm_gc_lock);
+    MPIDU_Process_lock(&MPIDI_Shm_gc_lock);
     k = MPIDI_Shm_gc_count;
     if (k == MPIDI_SHM_GC_COUNT_MAX)
         MPIDI_Shm_gc_count = 0;
     else
         MPIDI_Shm_gc_count++;
-    MPIDU_Unlock(&MPIDI_Shm_gc_lock);    
+    MPIDU_Process_unlock(&MPIDI_Shm_gc_lock);    
     
     /* Note: can't use the variable i in garbage collection code because it points to 
     the correct size bucket for the current request */
@@ -74,7 +76,7 @@ void *MPIDI_SHM_Alloc(int size)
         /*printf("SHM Garbage collecting.\n"); fflush(stdout); */
         for (j = 0; j < SHM_NSIZES; j++) 
         {
-            MPIDU_Lock(&(MPIDI_Shm_inuse_list[j].thr_lock));
+            MPIDU_Process_lock(&(MPIDI_Shm_inuse_list[j].thr_lock));
             mem_obj_hdr = MPIDI_Shm_inuse_list[j].ptr;
             mem_obj_hdr_ptr = &(MPIDI_Shm_inuse_list[j].ptr);
             while (mem_obj_hdr) 
@@ -87,7 +89,7 @@ void *MPIDI_SHM_Alloc(int size)
                     *mem_obj_hdr_ptr = mem_obj_hdr->next;
                     MPIDI_Shm_inuse_list[j].count--;
                     /* add to free list */
-                    MPIDU_Lock(&(MPIDI_Shm_free_list[j].thr_lock));
+                    MPIDU_Process_lock(&(MPIDI_Shm_free_list[j].thr_lock));
                     
                     mem_obj_hdr->next = MPIDI_Shm_free_list[j].ptr;
                     MPIDI_Shm_free_list[j].ptr = mem_obj_hdr;
@@ -95,7 +97,7 @@ void *MPIDI_SHM_Alloc(int size)
                     MPIDI_Shm_free_list[j].max_count = 
                         MPIDU_MAX(MPIDI_Shm_free_list[j].count, MPIDI_Shm_free_list[j].max_count);
                     
-                    MPIDU_Unlock(&(MPIDI_Shm_free_list[j].thr_lock));
+                    MPIDU_Process_unlock(&(MPIDI_Shm_free_list[j].thr_lock));
                 }
                 else 
                 {
@@ -103,13 +105,13 @@ void *MPIDI_SHM_Alloc(int size)
                 }
                 mem_obj_hdr = next_mem_obj_hdr;
             }
-            MPIDU_Unlock(&(MPIDI_Shm_inuse_list[j].thr_lock));
+            MPIDU_Process_unlock(&(MPIDI_Shm_inuse_list[j].thr_lock));
         }
     }
     
     
     /* see if available in free list first */
-    MPIDU_Lock(&(MPIDI_Shm_free_list[i].thr_lock));
+    MPIDU_Process_lock(&(MPIDI_Shm_free_list[i].thr_lock));
     mem_obj_hdr = MPIDI_Shm_free_list[i].ptr;
     
     /* printf("SZ %d, mem_obj_hdr %ld\n", size, mem_obj_hdr); */
@@ -117,14 +119,14 @@ void *MPIDI_SHM_Alloc(int size)
     {  /* take from free list */
         MPIDI_Shm_free_list[i].ptr = mem_obj_hdr->next;
         MPIDI_Shm_free_list[i].count--;
-        MPIDU_Unlock(&(MPIDI_Shm_free_list[i].thr_lock));
+        MPIDU_Process_unlock(&(MPIDI_Shm_free_list[i].thr_lock));
         mem_obj_hdr->inuse = 1;
     }
     else 
     {   /* take out of shared memory pool */
-        MPIDU_Unlock(&(MPIDI_Shm_free_list[i].thr_lock));
+        MPIDU_Process_unlock(&(MPIDI_Shm_free_list[i].thr_lock));
         /*printf("size %d, MPIDI_Shm_my_rem_size %d\n", size, MPIDI_Shm_my_rem_size); */
-        MPIDU_Lock(&MPIDI_Shm_addr_lock);
+        MPIDU_Process_lock(&MPIDI_Shm_addr_lock);
         if (size + (int)sizeof(MPIDI_Shm_mem_obj_hdr) <= MPIDI_Shm_my_rem_size) 
         {
             mem_obj_hdr = (MPIDI_Shm_mem_obj_hdr *) MPIDI_Shm_my_curr_addr;
@@ -134,69 +136,71 @@ void *MPIDI_SHM_Alloc(int size)
                 sizeof(MPIDI_Shm_mem_obj_hdr);
             MPIDI_Shm_my_curr_addr = ((char *) MPIDI_Shm_my_curr_addr) + size
                 + sizeof(MPIDI_Shm_mem_obj_hdr);
-            MPIDU_Unlock(&MPIDI_Shm_addr_lock);
+            MPIDU_Process_unlock(&MPIDI_Shm_addr_lock);
             
             mem_obj_hdr->inuse = 1;
         }
         else
         {
-            MPIDU_Unlock(&MPIDI_Shm_addr_lock);
+            MPIDU_Process_unlock(&MPIDI_Shm_addr_lock);
             printf("Unable to allocate a shared memory block of size: %d\n", size);
-            MPID_PROFILE_OUT(MPIDI_SHM_ALLOC);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
             return NULL;
         }
     }
     
     /* add to inuse list */
-    MPIDU_Lock(&(MPIDI_Shm_inuse_list[i].thr_lock));
+    MPIDU_Process_lock(&(MPIDI_Shm_inuse_list[i].thr_lock));
     mem_obj_hdr->next = MPIDI_Shm_inuse_list[i].ptr;
     MPIDI_Shm_inuse_list[i].ptr = mem_obj_hdr;
     MPIDI_Shm_inuse_list[i].count++;
     MPIDI_Shm_inuse_list[i].max_count = 
         MPIDU_MAX(MPIDI_Shm_inuse_list[i].count, MPIDI_Shm_inuse_list[i].max_count);
-    MPIDU_Unlock(&(MPIDI_Shm_inuse_list[i].thr_lock));
+    MPIDU_Process_unlock(&(MPIDI_Shm_inuse_list[i].thr_lock));
     
-    MPID_PROFILE_OUT(MPIDI_SHM_ALLOC);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
     return (void *) (mem_obj_hdr + 1);
 }
 
 /*@
-   MPIDI_SHM_Free - 
+   MPIDI_CH3I_SHM_Free - 
 
    Parameters:
 +  void *address
 
    Notes:
 @*/
-void MPIDI_SHM_Free(void *address)
+void MPIDI_CH3I_SHM_Free(void *address)
 {
     MPIDI_Shm_mem_obj_hdr *mem_obj_hdr;
-    
-    MPID_PROFILE_IN(MPIDI_SHM_FREE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_FREE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_FREE);
     mem_obj_hdr = ((MPIDI_Shm_mem_obj_hdr *) address) - 1;
     mem_obj_hdr->inuse = 0;
-    MPID_PROFILE_OUT(MPIDI_SHM_FREE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_FREE);
 }
 
 #else /* don't USE_GARBAGE_COLLECTING */
 
 /*@
-*MPIDI_SHM_Alloc - 
+*MPIDI_CH3I_SHM_Alloc - 
 
   Parameters:
   +  int size
   
     Notes:
 @*/
-void *MPIDI_SHM_Alloc(unsigned int size)
+void *MPIDI_CH3I_SHM_Alloc(unsigned int size)
 {
 /* allocate size bytes out of this process's shared memory pool
     return null if not available. */
     
     MPIDI_Shm_mem_obj_hdr *mem_obj_hdr;
     int i;
-    
-    MPID_PROFILE_IN(MPIDI_SHM_ALLOC);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
     
     /* find next largest size supported */
     for (i = 0; i < SHM_NSIZES; i++) 
@@ -207,7 +211,7 @@ void *MPIDI_SHM_Alloc(unsigned int size)
     
     if (i == SHM_NSIZES) 
     {
-        printf("MPIDI_SHM_Alloc: Memory requested, %d, is larger than maximum size allowed, %d\n", size, MPIDI_Shm_free_list[SHM_NSIZES-1].size);
+        printf("MPIDI_CH3I_SHM_Alloc: Memory requested, %d, is larger than maximum size allowed, %d\n", size, MPIDI_Shm_free_list[SHM_NSIZES-1].size);
         fflush(stdout);
         exit(0);
     }
@@ -215,7 +219,7 @@ void *MPIDI_SHM_Alloc(unsigned int size)
     size = MPIDI_Shm_free_list[i].size; /* allocate an entire bucket size, regardless of what was passed in. */
     
     /* see if available in free list first */
-    MPIDU_Lock(&(MPIDI_Shm_free_list[i].thr_lock));
+    MPIDU_Process_lock(&(MPIDI_Shm_free_list[i].thr_lock));
     mem_obj_hdr = MPIDI_Shm_free_list[i].ptr;
     
     /* printf("SZ %d, mem_obj_hdr %ld\n", size, mem_obj_hdr); */
@@ -224,13 +228,13 @@ void *MPIDI_SHM_Alloc(unsigned int size)
         MPIDI_Shm_free_list[i].ptr = mem_obj_hdr->next;
         MPIDI_Shm_free_list[i].count--;
         //mem_obj_hdr->inuse = 1;
-        MPIDU_Unlock(&(MPIDI_Shm_free_list[i].thr_lock));
+        MPIDU_Process_unlock(&(MPIDI_Shm_free_list[i].thr_lock));
     }
     else 
     {   /* take out of shared memory pool */
-        MPIDU_Unlock(&(MPIDI_Shm_free_list[i].thr_lock));
+        MPIDU_Process_unlock(&(MPIDI_Shm_free_list[i].thr_lock));
         /*printf("size %d, MPIDI_Shm_my_rem_size %d\n", size, MPIDI_Shm_my_rem_size); */
-        MPIDU_Lock(&MPIDI_Shm_addr_lock);
+        MPIDU_Process_lock(&MPIDI_Shm_addr_lock);
         if (size + (unsigned int)sizeof(MPIDI_Shm_mem_obj_hdr) <= MPIDI_Shm_my_rem_size) 
         {
             mem_obj_hdr = (MPIDI_Shm_mem_obj_hdr *) MPIDI_Shm_my_curr_addr;
@@ -240,45 +244,46 @@ void *MPIDI_SHM_Alloc(unsigned int size)
                 sizeof(MPIDI_Shm_mem_obj_hdr);
             MPIDI_Shm_my_curr_addr = ((char *) MPIDI_Shm_my_curr_addr) + size
                 + sizeof(MPIDI_Shm_mem_obj_hdr);
-            MPIDU_Unlock(&MPIDI_Shm_addr_lock);
+            MPIDU_Process_unlock(&MPIDI_Shm_addr_lock);
             
             mem_obj_hdr->index = i;
         }
         else
         {
-            MPIDU_Unlock(&MPIDI_Shm_addr_lock);
+            MPIDU_Process_unlock(&MPIDI_Shm_addr_lock);
             printf("Unable to allocate a shared memory block of size: %d\n", size);
-            MPID_PROFILE_OUT(MPIDI_SHM_ALLOC);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
             return NULL;
         }
     }
     
-    MPID_PROFILE_OUT(MPIDI_SHM_ALLOC);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ALLOC);
     return (void *) (mem_obj_hdr + 1);
 }
 
 /*@
-   MPIDI_SHM_Free - 
+   MPIDI_CH3I_SHM_Free - 
 
    Parameters:
 +  void *address
 
    Notes:
 @*/
-void MPIDI_SHM_Free(void *address)
+void MPIDI_CH3I_SHM_Free(void *address)
 {
     MPIDI_Shm_mem_obj_hdr *mem_obj_hdr;
-    
-    MPID_PROFILE_IN(MPIDI_SHM_FREE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_FREE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_FREE);
 
     mem_obj_hdr = ((MPIDI_Shm_mem_obj_hdr *) address) - 1;
 
-    MPIDU_Lock(&(MPIDI_Shm_free_list[mem_obj_hdr->index].thr_lock));
+    MPIDU_Process_lock(&(MPIDI_Shm_free_list[mem_obj_hdr->index].thr_lock));
     mem_obj_hdr->next = MPIDI_Shm_free_list[mem_obj_hdr->index].ptr;
     MPIDI_Shm_free_list[mem_obj_hdr->index].ptr = mem_obj_hdr;
-    MPIDU_Unlock(&(MPIDI_Shm_free_list[mem_obj_hdr->index].thr_lock));
+    MPIDU_Process_unlock(&(MPIDI_Shm_free_list[mem_obj_hdr->index].thr_lock));
 
-    MPID_PROFILE_OUT(MPIDI_SHM_FREE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_FREE);
 }
 #endif /* USE_GARBAGE_COLLECTING */
 
@@ -369,7 +374,7 @@ static void InitSharedProcesses(void *pShmem, int nRank, int nProc)
 
 static BOOL g_bGetMemSyncCalled = FALSE;
 /*@
-   MPIDI_SHM_Get_mem_sync - allocate and get address and size of memory shared by all processes. 
+   MPIDI_CH3I_SHM_Get_mem_sync - allocate and get address and size of memory shared by all processes. 
 
    Parameters:
 +  int nTotalSize
@@ -380,7 +385,7 @@ static BOOL g_bGetMemSyncCalled = FALSE;
     Set the global variables MPIDI_Shm_addr, MPIDI_Shm_size, MPIDI_Shm_id
     Ensure that MPIDI_Shm_addr is the same across all processes that share memory.
 @*/
-void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
+void *MPIDI_CH3I_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
 {
     struct ShmemRankAndAddressStruct
     {
@@ -397,6 +402,7 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
 #if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
     HANDLE hSyncEvent1, hSyncEvent2;
 #endif
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
     
     /* Setup and check parameters */
 #ifdef HAVE_WINDOWS_H
@@ -405,8 +411,8 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
     nPageSize = sysInfo.dwAllocationGranularity;
     DPRINTF(("[%d] nPageSize: %d\n", nRank, nPageSize));
 #endif
-    
-    MPID_PROFILE_IN(MPIDI_SHM_GET_MEM_SYNC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
     
 #if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
     hSyncEvent1 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent1");
@@ -422,7 +428,7 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
     if (nTotalSize < 1)
     {
         printf("Error: unable to allocate %d bytes of shared memory: must be greater than zero.\n", nTotalSize);
-        MPID_PROFILE_OUT(MPIDI_SHM_GET_MEM_SYNC);
+        MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
         return NULL;
     }
     
@@ -434,7 +440,7 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
         if (MPIDI_Shm_id == -1) 
         {
             printf("Error in shmget\n");
-            MPID_PROFILE_OUT(MPIDI_SHM_GET_MEM_SYNC);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
             exit(0);
         }
 #elif defined (HAVE_CREATEFILEMAPPING)
@@ -448,7 +454,7 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
         if (MPIDI_Shm_id == NULL) 
         {
             printf("Error in CreateFileMapping, %d\n", GetLastError());
-            MPID_PROFILE_OUT(MPIDI_SHM_GET_MEM_SYNC);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
             exit(0);
         }
 #else
@@ -623,23 +629,27 @@ void *MPIDI_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc)
         while (bRepeat == TRUE);
     }
     else
-        MPIDI_Shm_addr = MALLOC(nTotalSize);
+    {
+        MPIDI_Shm_addr = MPIU_Malloc(nTotalSize);
+    }
     
     MPIDI_Shm_size = nTotalSize;
     
     DPRINTF(("[%d] made it: shm address: %x\n", nRank, MPIDI_Shm_addr));
-    MPID_PROFILE_OUT(MPIDI_SHM_GET_MEM_SYNC);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
     return MPIDI_Shm_addr;
 }
 
 /*@
-   MPIDI_SHM_Release_mem - 
+   MPIDI_CH3I_SHM_Release_mem - 
 
    Notes:
 @*/
-void MPIDI_SHM_Release_mem()
+void MPIDI_CH3I_SHM_Release_mem()
 {
-    MPID_PROFILE_IN(MPIDI_SHM_RELEASE_MEM);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
     
     if (MPIDI_bUseShm)
     {
@@ -659,9 +669,8 @@ void MPIDI_SHM_Release_mem()
 #endif
     }
     else
-        FREE(MPIDI_Shm_addr);
-    MPID_PROFILE_OUT(MPIDI_SHM_RELEASE_MEM);
+    {
+        MPIU_Free(MPIDI_Shm_addr);
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
 }
-
-
-#endif

@@ -181,67 +181,67 @@ static int shmi_post_receive(shm_t shm)
 }
 
 #undef FUNCNAME
-#define FUNCNAME shm_write
+#define FUNCNAME MPIDI_CH3I_SHM_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_write(shm_t shm, void *buf, int len)
+int MPIDI_CH3I_SHM_write(shm_t shm, void *buf, int len)
 {
     int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_SHM_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_WRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     return total;
 }
 
 #undef FUNCNAME
-#define FUNCNAME shm_writev
+#define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_writev(shm_t shm, MPID_IOV *iov, int n)
+int MPIDI_CH3I_SHM_writev(shm_t shm, MPID_IOV *iov, int n)
 {
     int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_SHM_WRITEV);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_WRITEV);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WRITEV);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
     return total;
 }
 
 static shmBlockAllocator g_StateAllocator;
 
 #undef FUNCNAME
-#define FUNCNAME shm_init
+#define FUNCNAME MPIDI_CH3I_SHM_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_init()
+int MPIDI_CH3I_SHM_init()
 {
-    MPIDI_STATE_DECL(MPID_STATE_SHM_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_INIT);
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_INIT);
     return SHM_SUCCESS;
 }
 
 #undef FUNCNAME
-#define FUNCNAME shm_finalize
+#define FUNCNAME MPIDI_CH3I_SHM_finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_finalize()
+int MPIDI_CH3I_SHM_finalize()
 {
-    MPIDI_STATE_DECL(MPID_STATE_SHM_FINALIZE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_FINALIZE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_FINALIZE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_FINALIZE);
     shmBlockAllocFinalize(&g_StateAllocator);
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_FINALIZE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_FINALIZE);
     return SHM_SUCCESS;
 }
 
@@ -411,10 +411,10 @@ int shmi_readv_unex(shm_t shm)
 
 #if 0
 #undef FUNCNAME
-#define FUNCNAME shm_wait
+#define FUNCNAME MPIDI_CH3I_SHM_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
+int MPIDI_CH3I_SHM_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 {
     int i;
     ib_uint32_t status;
@@ -424,9 +424,9 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
     shm_t shm;
     int num_bytes;
     unsigned int offset;
-    MPIDI_STATE_DECL(MPID_STATE_SHM_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_WAIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
     /*MPIDI_DBG_PRINTF((60, FCNAME, "entering"));*/
     for (;;) 
     {
@@ -446,7 +446,7 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 	    {
 		shm = SHM_INVALID_QP;
 	    }
-	    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_SUCCESS;
 	}
 
@@ -464,7 +464,7 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 		out->error = 0;
 		out->user_ptr = NULL;
 		out->op_type = SHM_OP_TIMEOUT;
-		MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		return SHM_SUCCESS;
 	    }
 	    continue;
@@ -472,14 +472,14 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 	if (status != IBA_OK)
 	{
 	    err_printf("%s: error: ib_completion_poll_us did not return IBA_OK\n", FCNAME);
-	    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_FAIL;
 	}
 	if (completion_data.status != IB_COMP_ST_SUCCESS)
 	{
 	    err_printf("%s: error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
 		FCNAME, completion_data.status, iba_compstr(completion_data.status));
-	    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_FAIL;
 	}
 
@@ -523,7 +523,7 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 	    out->num_bytes = num_bytes;
 	    out->op_type = SHM_OP_WRITE;
 	    out->user_ptr = shm->user_ptr;
-	    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_SUCCESS;
 	    break;
 	case OP_RECEIVE:
@@ -601,7 +601,7 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 			MPIDI_DBG_PRINTF((60, FCNAME, "closing shmet after iov read completed."));
 			shm = SHM_INVALID_QP;
 		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		    return SHM_SUCCESS;
 		}
 		/* make the user upcall */
@@ -642,7 +642,7 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 			MPIDI_DBG_PRINTF((60, FCNAME, "closing shm after simple read completed."));
 			shm = SHM_INVALID_QP;
 		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		    return SHM_SUCCESS;
 		}
 		/* make the user upcall */
@@ -656,41 +656,41 @@ int shm_wait(shm_set_t set, int millisecond_timeout, shm_wait_t *out)
 	}
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_WAIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 }
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME shm_set_user_ptr
+#define FUNCNAME MPIDI_CH3I_SHM_set_user_ptr
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_set_user_ptr(shm_t shm, void *user_ptr)
+int MPIDI_CH3I_SHM_set_user_ptr(shm_t shm, void *user_ptr)
 {
-    MPIDI_STATE_DECL(MPID_STATE_SHM_SET_USER_PTR);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_SET_USER_PTR);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_SET_USER_PTR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_SET_USER_PTR);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     if (shm == SHM_INVALID_T)
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_SHM_SET_USER_PTR);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_SET_USER_PTR);
 	return SHM_FAIL;
     }
     shm->user_ptr = user_ptr;
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_SET_USER_PTR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_SET_USER_PTR);
     return SHM_SUCCESS;
 }
 
 /* non-blocking functions */
 
 #undef FUNCNAME
-#define FUNCNAME shm_post_read
+#define FUNCNAME MPIDI_CH3I_SHM_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_post_read(shm_t shm, void *buf, int len, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_read(shm_t shm, void *buf, int len, int (*rfn)(int, void*))
 {
-    MPIDI_STATE_DECL(MPID_STATE_SHM_POST_READ);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_POST_READ);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     shm->read.total = 0;
     shm->read.buffer = buf;
@@ -702,24 +702,24 @@ int shm_post_read(shm_t shm, void *buf, int len, int (*rfn)(int, void*))
     /* copy any pre-received data into the buffer */
     if (shm->unex_list)
 	shmi_read_unex(shm);
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_POST_READ);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     return SHM_SUCCESS;
 }
 
 #undef FUNCNAME
-#define FUNCNAME shm_post_readv
+#define FUNCNAME MPIDI_CH3I_SHM_post_readv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_post_readv(shm_t shm, MPID_IOV *iov, int n, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_readv(shm_t shm, MPID_IOV *iov, int n, int (*rfn)(int, void*))
 {
 #ifdef MPICH_DBG_OUTPUT
-    char str[1024] = "shm_post_readv: ";
+    char str[1024] = "MPIDI_CH3I_SHM_post_readv: ";
     char *s;
     int i;
 #endif
-    MPIDI_STATE_DECL(MPID_STATE_SHM_POST_READV);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SHM_POST_READV);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef MPICH_DBG_OUTPUT
     s = &str[16];
     for (i=0; i<n; i++)
@@ -741,6 +741,6 @@ int shm_post_readv(shm_t shm, MPID_IOV *iov, int n, int (*rfn)(int, void*))
     /* copy any pre-received data into the iov */
     if (shm->unex_list)
 	shmi_readv_unex(shm);
-    MPIDI_FUNC_EXIT(MPID_STATE_SHM_POST_READV);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     return SHM_SUCCESS;
 }

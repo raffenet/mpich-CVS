@@ -25,8 +25,8 @@ void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     req->shm.iov_offset = 0;
     vc->shm.send_active = req;
     nb = (req->ch3.iov_count == 1) ?
-	shm_write(vc->shm.shm, req->ch3.iov, req->ch3.iov->MPID_IOV_LEN) :
-	shm_writev(vc->shm.shm, req->ch3.iov, req->ch3.iov_count);
+	MPIDI_CH3I_SHM_write(vc->shm.shm, req->ch3.iov, req->ch3.iov->MPID_IOV_LEN) :
+	MPIDI_CH3I_SHM_writev(vc->shm.shm, req->ch3.iov, req->ch3.iov_count);
 
     if (nb > 0)
     {
