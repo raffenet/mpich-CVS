@@ -5,8 +5,12 @@
 #
 
 """
+This program has largely been replaced by mpdcheck.  It can sometimes
+still be useful to print the contents of some system config files, e.g. 
+/etc/hosts.
+
 To run:
-   testconfig.py
+   testconfig
 
 This script is a work in progress and may change frequently as we work
 with users and gain additional insights into how to improve it.
@@ -25,11 +29,22 @@ If you are having problems getting 2 computers to talk to each other,
 you might change the array named 'hostnames' below to contain those 2
 computers and then run the script twice, once on each computer.
 """
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
 
-from sys    import argv
+
+from sys    import argv, exit
 from os     import system, uname
 from socket import gethostname, gethostbyname_ex, socket
 from popen2 import popen4
+
+# provide 'something' if a user does pydoc on this module or asks for help
+if 'pydoc' in argv[0] or (len(argv) == 2 and (argv[1] == '-h'  or  argv[1] == '--help')):
+    print __doc__
+    exit(-1)
 
 hostnames = [
               'torvalds.cs.mtsu.edu',
