@@ -1091,7 +1091,7 @@ sub print_special_decls {
 
 &ReadInterfaceForDefinitions( $prototype_file );
 if ($build_io) {
-    &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h" );
+    &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h.in" );
 }
 #
 if ($write_mpif) {
@@ -1219,6 +1219,14 @@ $cchar       This file created by buildiface $arg_string\n";
 	# Seek
 	foreach $dir (SET, CUR, END) {
 	    &print_mpif_int( "MPI_SEEK_$dir" );
+	}
+	# Order
+	foreach $order (C, FORTRAN) {
+	    &print_mpif_int("MPI_ORDER_$order");
+	}
+	# direction
+	foreach $distrib (BLOCK, CYCLIC, NONE, DFLT_DARG) {
+	    &print_mpif_int("MPI_DISTRIBUTE_$distrib");
 	}
 	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT" );
 	&print_mpif_int( "MPI_MAX_DATAREP_STRING" );
