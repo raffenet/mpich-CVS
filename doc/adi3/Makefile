@@ -19,7 +19,8 @@ paper.dvi: paper.tex
 	-latex $*
 	-latex $*
 
-adi3man.dvi: adi3man.tex adi3.c adi3.h Makefile
+ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
+adi3man.dvi: $(ADI3FILES)
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
 	(cd adi3man ; \
@@ -43,6 +44,39 @@ adi3man.dvi: adi3man.tex adi3.c adi3.h Makefile
 	latex adi3man < /dev/null )
 	mv adi3man/adi3man.dvi .
 
+# adi3manpdf.dvi: $(ADI3FILES)
+# 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
+# 	-rm -f adi3man/*.tex adi3man/tmp.*
+# 	(cd adi3man ; \
+# 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
+# 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
+# 	${MAKE} lists
+# 	rm -f adi3man/adi3manpdf.tex
+# 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
+# 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
+# 	    -e '/usepackage{.*url}/d' \
+# 		adi3man.tex > adi3man/adi3manpdf.tex
+# 	(cd adi3man ; \
+# 	../manextract ../adi3.[ch] > /dev/null ;\
+# 	latex adi3manpdf < /dev/null ;\
+# 	bibtex adi3manpdf ;\
+# 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
+# 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
+# 	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
+# 		adi3man.idx > tmp.idx ; \
+# 	makeindex tmp ;\
+# 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+# 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
+# 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3manpdf.ind ; \
+# 	bibtex adi3manpdf ;\
+# 	latex adi3manpdf < /dev/null )
+# 	mv adi3man/adi3manpdf.dvi .
+
+# adi3man.pdf: adi3manpdf.dvi
+# 	dvipdfm adi3manpdf
+# 	rm -f adi3man.pdf
+# 	mv -f adi3manpdf.pdf adi3man.pdf
+
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the 
 adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
@@ -55,7 +89,8 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 #	tohtml -default adi3new.tex
 
-adi3new.ps: adi3new.tex adi3.c adi3.h adi-ov.eps Makefile
+ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps Makefile
+adi3new.ps: $(ADI3NEWFILES)
 	touch adi3new.ind
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
@@ -76,6 +111,35 @@ adi3new.ps: adi3new.tex adi3.c adi3.h adi-ov.eps Makefile
 	-bibtex adi3new 
 	latex adi3new < /dev/null
 	dvips adi3new
+
+adi3new.pdf: $(ADI3NEWFILES)
+	touch adi3new.ind
+	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
+	-rm -f adi3man/*.tex adi3man/tmp.*
+	(cd adi3man ; \
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;\
+	../manextract ../adi3.[ch] > /dev/null )
+	rm -f adi3newpdf.tex
+	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
+	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
+	    -e '/usepackage{.*url}/d' \
+		adi3new.tex > adi3newpdf.tex
+	latex adi3newpdf < /dev/null
+	-bibtex adi3newpdf
+	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
+	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
+	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
+		adi3newpdf.idx > tmp.idx
+	-makeindex tmp
+	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
+	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3newpdf.ind 
+	-bibtex adi3newpdf 
+	latex adi3newpdf < /dev/null
+	dvipdfm adi3newpdf
+	rm -f adi3new.pdf
+	mv -f adi3newpdf.pdf adi3new.pdf
 
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the adi document

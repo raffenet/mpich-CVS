@@ -31,9 +31,11 @@ SHELL = /bin/sh
 	mv template.dvi $*.dvi
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
-mpich2.dvi: mpich2.tex errcodes.tex pt2ptdesc.tex \
+MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps \
 	sendrecv.eps
+
+mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2
@@ -113,6 +115,35 @@ mmca.dvi: mmca.tex Makefile template.orig
 	-bibtex template
 	latex template
 	mv template.dvi mmca.dvi
+
+mpich2pdf.dvi: $(MPICH2FILES)
+	touch mpich2pdf.ind
+	rm -f mpich2pdf.tex
+	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
+	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
+	    -e '/usepackage{.*url}/d' \
+		mpich2.tex > mpich2pdf.tex
+	latex mpich2pdf
+	-bibtex mpich2pdf
+	-rm -f tmp.idx tmp.ind
+	cat mpich2pdf.idx | ./fixupindex > tmp.idx
+	makeindex tmp ;\
+	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPIi$$/MPIi_\1/g' \
+	    -e 's/\([A-Za-z0-9_!()]*\)_MPI,/MPI_\1,/g' \
+	    -e 's/\([A-Za-z0-9_!()]*\)_MPI$$/MPI_\1/g' \
+	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
+	    -e 's/_/\\texttt{\\char`\\_}/g' \
+		tmp.ind > mpich2pdf.ind ; \
+	latex mpich2pdf
+	latex mpich2pdf
+
+mpich2.pdf: mpich2pdf.dvi
+	dvipdfm mpich2pdf
+	rm -f mpich2.pdf
+	mv -f mpich2pdf.pdf mpich2.pdf
 
 mpich2/mpich2.htm: mpich2.tex
 	tohtml -default -dosnl mpich2.tex

@@ -11,6 +11,7 @@
 \usepackage{epsf}
 \usepackage{mpidoc}
 \usepackage{graphics}
+%hyperref - do not remove this comment
 
 \makeindex
 
@@ -3992,10 +3993,10 @@ is simply an affine one: if
 then the translation between the groups is simpler.  We might want the 
 special cases:
 \begin{description}
-\item{\code{MPID_GROUP_MAP_IDENT}} for \code{lpid = lrank}
-\item{\code{MPID_GROUP_MAP_AFFINE_UNIT}} for \code{lpid = offset + lrank}
-\item{\code{MPID_GROUP_MAP_AFFINE}} for \code{lpid = offset + lrank * stride}
-\item{\code{MPID_GROUP_MAP_GENERAL}} for the general case.
+\item[{\code{MPID_GROUP_MAP_IDENT}}] for \code{lpid = lrank}
+\item[{\code{MPID_GROUP_MAP_AFFINE_UNIT}}] for \code{lpid = offset + lrank}
+\item[{\code{MPID_GROUP_MAP_AFFINE}}] for \code{lpid = offset + lrank * stride}
+\item[{\code{MPID_GROUP_MAP_GENERAL}}] for the general case.
 \end{description}
 
 %\begin{algorithm}
