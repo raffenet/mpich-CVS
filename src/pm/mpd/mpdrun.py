@@ -444,6 +444,8 @@ def mpdrun():
                     else:
                         del socketsToSelect[stdin]
                         stdin.close()
+                        if manSocket:
+                            mpd_send_one_msg(manSocket,{ 'cmd' : 'stdin_from_user', 'eof' : '' })
                 else:
                     mpd_raise('unrecognized ready socket :%s:' % (readySocket) )
         except mpdError, errmsg:

@@ -639,7 +639,10 @@ def mpdman():
                     if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
                         if in_stdinRcvrs(myRank,stdinGoesToWho):
-                            write(fd_write_cli_stdin,msg['line'])
+			    if msg.has_key('eof'):
+			        close(fd_write_cli_stdin)
+			    else:
+                                write(fd_write_cli_stdin,msg['line'])
                 elif msg['cmd'] == 'stdin_goes_to_who':
                     if msg['src'] != myId:
                         stdinGoesToWho = msg['stdin_procs']
@@ -1131,7 +1134,10 @@ def mpdman():
                     mpd_send_one_msg(rhsSocket,msg)
                     if in_stdinRcvrs(myRank,stdinGoesToWho):
                         try:
-                            write(fd_write_cli_stdin,msg['line'])
+			    if msg.has_key('eof'):
+			        close(fd_write_cli_stdin)
+			    else:
+                                write(fd_write_cli_stdin,msg['line'])
                         except:
                             mpd_print(1, 'cannot send stdin to client')
                 elif msg['cmd'] == 'stdin_goes_to_who':
