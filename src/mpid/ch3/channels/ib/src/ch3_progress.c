@@ -5,7 +5,6 @@
  */
 
 #include "mpidi_ch3_impl.h"
-#include "pmi.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
@@ -47,9 +46,12 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	switch (out.op_type)
 	{
 	case IBU_OP_TIMEOUT:
+	    /*MPIDU_Yield();*/
+	    /*sched_yield();*/
 	    for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
 	    {
-		if (i != MPIR_Process.comm_world->rank)
+		if (MPIDI_CH3I_Process.pg->vc_table[i].ib.send_active != NULL)
+		/*if (i != MPIR_Process.comm_world->rank)*/
 		{
 		    handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
 		}
