@@ -52,10 +52,10 @@ Brian, David, and Bill are also involved in RMA.
 
 Rusty - BNR/PMI/MPD
 Rob R - IO/Datatypes
-Rajeev - RMA
+Rajeev - Collective/RMA/Dynamic
 David - Xfer/Windows/MM
 Brian - CH3
-Bill  - Collective/build environment/error handling
+Bill  - build environment/error handling
 
 Bill is also the tie-breaker and final decision maker
 
@@ -125,21 +125,21 @@ MPI_Pack_size,1,1,2,1,Rob,,1,08/15/2002,
 Collective Communication
 
 MPI_Barrier,,,,,Bill,,done
-MPI_Bcast,,,,,Rajeev,,done,,basic datatypes, and homogeneous only
-MPI_Gather,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Gatherv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Scatter,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Scatterv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Allgather,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Allgatherv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Alltoall,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Alltoallv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Reduce,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Bcast,,,,,Rajeev,,done
+MPI_Gather,,,,,Rajeev,,done
+MPI_Gatherv,,,,,Rajeev,,done
+MPI_Scatter,,,,,Rajeev,,done
+MPI_Scatterv,,,,,Rajeev,,done
+MPI_Allgather,,,,,Rajeev,,done
+MPI_Allgatherv,,,,,Rajeev,,done
+MPI_Alltoall,,,,,Rajeev,,done
+MPI_Alltoallv,,,,,Rajeev,,done
+MPI_Reduce,,,,,Rajeev,,done
 MPI_Op_create,1,3,2,3,Bill,,.1,5/21/02
 MPI_Op_free,1,3,2,3,Bill,,.1,5/21/02
-MPI_Allreduce,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Reduce_scatter,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Scan,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Allreduce,,,,,Rajeev,,done
+MPI_Reduce_scatter,,,,,Rajeev,,done
+MPI_Scan,,,,,Rajeev,,done
 
 Groups; Contexts; Communicators
 
@@ -279,44 +279,44 @@ MPI_Win_set_errhandler,1,1,1,2,Bill,MPI_Win_create_errhandler,.05,3/8/02
 
 Dynamic Processes
 
-MPI_Comm_spawn,1,3,2,3,Rajeev,MPID_Comm_spawn
-MPI_Comm_spawn_multiple,1,3,2,3,Rajeev,MPID_Comm_spawn_multiple
-MPI_Comm_get_parent,1,3,2,3,Rajeev,MPID_Comm_get_parent
+MPI_Comm_spawn,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Comm_spawn_multiple,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Comm_get_parent,,,,,Rajeev,,done
 
-MPI_Open_port,1,3,2,4,Rajeev,MPID_Open_port
-MPI_Close_port,1,3,2,4,Rajeev,MPID_Close_port
-MPI_Comm_accept,1,3,2,4,Rajeev,MPID_Comm_accept
-MPI_Comm_connect,1,3,2,4,Rajeev,MPID_Comm_connect
-MPI_Comm_disconnect,1,3,2,4,Rajeev,MPID_Comm_disconnect
+MPI_Open_port,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Close_port,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Comm_accept,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Comm_connect,,,,,Rajeev,,done,for sock channel and single process group
+MPI_Comm_disconnect,1,1,1,1,Rajeev,MPID_Comm_disconnect
 
-MPI_Lookup_name,1,3,2,5,Rajeev,MPID_Lookup_name
-MPI_Publish_name,1,3,2,5,Rajeev,MPID_Publish_name
-MPI_Unpublish_name,1,3,2,5,Rajeev,MPID_Unpublish_name
-MPI_Comm_join,1,3,2,5,Rajeev,MPID_Comm_join
+MPI_Lookup_name,1,3,2,2,Rajeev,MPID_Lookup_name
+MPI_Publish_name,1,3,2,2,Rajeev,MPID_Publish_name
+MPI_Unpublish_name,1,3,2,2,Rajeev,MPID_Unpublish_name
+MPI_Comm_join,1,3,2,3,Rajeev,MPID_Comm_join
 
 One-sided communication
 
-MPI_Win_create,1,3,2,1,Rajeev,MPID_Win_create
-MPI_Win_free,1,3,2,1,Rajeev,MPID_Win_free
-MPI_Put,1,3,2,1,Rajeev,MPID_Put
-MPI_Get,1,3,2,1,Rajeev,MPID_Get
-MPI_Accumulate,1,3,2,1,Rajeev,MPID_Accumulate
-MPI_Win_fence,1,3,2,1,Rajeev,MPID_Win_fence
+MPI_Win_create,,,,,Rajeev,,done
+MPI_Win_free,,,,,Rajeev,,done
+MPI_Put,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Get,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Accumulate,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Win_fence,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 
-MPI_Win_post,1,3,2,2,Rajeev,MPID_Win_post
-MPI_Win_start,1,3,2,2,Rajeev,MPID_Win_start
-MPI_Win_complete,1,3,2,2,Rajeev,MPID_Win_complete
-MPI_Win_wait,1,3,2,2,Rajeev,MPID_Win_wait
-MPI_Win_test,1,3,2,2,Rajeev,MPID_Win_test
-MPI_Win_get_group,1,3,2,2,Rajeev,
+MPI_Win_post,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Win_start,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Win_complete,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Win_wait,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPI_Win_test,1,1,1,1,Rajeev,MPID_Win_test
+MPI_Win_get_group,,,,,Rajeev,,done
 
-MPI_Win_lock,1,3,2,3,Rajeev,MPID_Win_lock
-MPI_Win_unlock,1,3,2,3,Rajeev,MPID_Win_unlock
+MPI_Win_lock,1,1,1,1,Rajeev,MPID_Win_lock
+MPI_Win_unlock,1,1,1,1,Rajeev,MPID_Win_unlock
 
 Extended Collective
 
-MPI_Alltoallw,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
-MPI_Exscan,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Alltoallw,,,,,Rajeev,,done
+MPI_Exscan,,,,,Rajeev,,done
 
 Extended Interfaces
 
@@ -516,43 +516,40 @@ RMA
 
 Initially for the CH3 TCP channel device; no asynchronous agent; no passive target:
 
-MPID_Win_create,2,4,3,1,Rajeev,
-MPID_Win_free,1,3,2,1,Rajeev,
-MPID_Put,2,6,4,1,Rajeev,MPID_Isend
-MPID_Get,1,3,2,1,Rajeev,MPID_Irecv/MPID_Put
-MPID_Accumulate,1,3,2,1,Rajeev,MPID_Put
-MPID_Win_fence,2,6,4,1,Rajeev,MPID_Progress_test_handles_rma_requests
+MPID_Win_create,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_free,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Put,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Get,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Accumulate,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_fence,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 
-MPID_Progress_test_handles_rma_requests,10,20,15,1,Rajeev,MPID_Progress_test_handles_isendirecv
-
-MPID_Win_post,1,3,2,2,Rajeev,
-MPID_Win_start,1,3,2,2,Rajeev,
-MPID_Win_complete,2,6,4,2,Rajeev,MPID_Win_fence
-MPID_Win_wait,2,6,4,2,Rajeev,MPID_Win_fence
-MPID_Win_test,1,3,2,2,Rajeev,MPID_Win_wait
+MPID_Win_post,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_start,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_complete,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_wait,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
+MPID_Win_test,1,3,2,1,Rajeev
 
 For passive target; initally asynchronous agent using threads:
 
-MPID_Win_lock,5,15,10,3,Rajeev,thread-safe-progress-engine
-MPID_Win_unlock,5,15,10,3,Rajeev,thread-safe-progress-engine
+MPID_Win_lock,5,15,10,2,Rajeev,thread-safe-progress-engine
+MPID_Win_unlock,5,15,10,2,Rajeev,thread-safe-progress-engine
 
 
 Dynamic Processes
 
-MPID_Comm_spawn,5,15,10,3,Rajeev,PMI/MPD/MPI_Intercomm_create/MPI_Info_xxx
-MPID_Comm_spawn_multiple,2,4,3,3,Rajeev,PMI/MPD/MPI_Comm_spawn
-MPID_Comm_get_parent,1,3,2,3,Rajeev,MPI_Comm_spawn
+MPID_Comm_spawn_multiple,,,,,Rajeev,,done,for sock channel and single process group
+MPID_Comm_get_parent,,,,,Rajeev,,done,for sock channel and single process group
 
-MPID_Open_port,,,,4,Rajeev,TBD
-MPID_Close_port,,,,4,Rajeev,TBD
-MPID_Comm_accept,,,,4,Rajeev,TBD
-MPID_Comm_connect,,,,4,Rajeev,TBD
-MPID_Comm_disconnect,,,,4,Rajeev,TBD
+MPID_Open_port,,,,,Rajeev,,done,for sock channel and single process group
+MPID_Close_port,,,,,Rajeev,,done,for sock channel and single process group
+MPID_Comm_accept,,,,,Rajeev,,done,for sock channel and single process group
+MPID_Comm_connect,,,,,Rajeev,,done,for sock channel and single process group
+MPID_Comm_disconnect,5,10,7,1,Rajeev,need connection-close support in channel
 
-MPID_Lookup_name,,,,5,Rajeev,TBD
-MPID_Publish_name,,,,5,Rajeev,TBD
-MPID_Unpublish_name,,,,5,Rajeev,TBD
-MPID_Comm_join,,,,5,Rajeev,TBD
+MPID_Lookup_name,5,10,7,2,Rajeev,TBD
+MPID_Publish_name,5,10,7,2,Rajeev,TBD
+MPID_Unpublish_name,5,10,7,2,Rajeev,TBD
+MPID_Comm_join,5,10,7,3,Rajeev,TBD
 
 Collective Communication
 
@@ -887,7 +884,7 @@ PMI_KVS_iter_first,,,,,David,,done
 PMI_KVS_iter_next,,,,,David,,done
 
 PMI_Spawn_multiple,,,,,David,,done
-PMI_Args_to_info,done,,,David
+PMI_Args_to_info,,,,,David,,done
 
 END winmpd
 
