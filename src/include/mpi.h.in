@@ -184,8 +184,6 @@ typedef int MPI_Op;
 #define MPI_BSEND_OVERHEAD @BSEND_OVERHEAD@
 
 /* Topology types */
-/* #define MPI_GRAPH  1 */
-/*   #define MPI_CART   2 */
 typedef enum MPIR_Topo_type { MPI_GRAPH=1, MPI_CART=2 } MPIR_Topo_type;
 
 #define MPI_BOTTOM      (void *)0
@@ -252,9 +250,7 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 #define MPI_SUBVERSION 0
 #define MPICH_NAME     2
 #define MPICH2         1
-
-/********************** MPI-2 FEATURES BEGIN HERE ***************************/
-#define MPICH_HAS_C2F
+#define MPICH_HAS_C2F  1
 
 /* for the datatype decoders */
 enum MPI_COMBINER_ENUM {
@@ -304,9 +300,11 @@ typedef int MPI_Info;
 /* Definitions that are determined by configure. */
 typedef @MPI_AINT@ MPI_Aint;
 typedef @MPI_FINT@ MPI_Fint;
-/* This define is temporary; it lets ROMIO know that MPI_Offset is already
-   defined */
+/* Let ROMIO know that MPI_Offset is already defined */
 #define HAVE_MPI_OFFSET
+/* MPI_OFFSET_TYPEDEF is set in configure and is 
+      typedef $MPI_OFFSET MPI_Offset;
+   where $MPI_OFFSET is the correct C type */
 @MPI_OFFSET_TYPEDEF@
 
 /* The order of these elements must match that in mpif.h */
@@ -376,8 +374,7 @@ typedef int (MPI_Grequest_cancel_function)(void *, int);
 typedef int (MPI_Grequest_free_function)(void *); 
 typedef int (MPI_Grequest_query_function)(void *, MPI_Status *); 
 
-/********************** MPI-2 FEATURES END HERE ***************************/
-
+#ifdef HAVE_MPICH2G2
 /*************** Experimental MPICH FEATURES BEGIN HERE *******************/
 /* Attribute keys.  These are set to MPI_KEYVAL_INVALID by default */
 extern int MPICHX_QOS_BANDWIDTH;
@@ -389,6 +386,7 @@ extern int MPICHX_QOS_PARAMETERS;
 extern int MPICHX_TOPOLOGY_DEPTHS;
 extern int MPICHX_TOPOLOGY_COLORS;
 /******** End of Globus-2 device keys *************************************/
+#endif
 
 /* MPI's error classes */
 #define MPI_SUCCESS          0      /* Successful return code */
@@ -475,20 +473,12 @@ typedef int (MPI_Datarep_conversion_function)(void *, MPI_Datatype, int,
 typedef int (MPI_Datarep_extent_function)(MPI_Datatype datatype, MPI_Aint *,
 					  void *);
 
-/* The following definitions are used to support a single source tree for
-   both Unix and Windows NT versions of MPICH.  For Unix users, the 
-   definition is empty */
-/*
-#ifdef HAVE_EXPORT_MPI_API
-#ifdef MPICH2_EXPORTS
-#define EXPORT_MPI_API __declspec(dllexport)
-#else
-#define EXPORT_MPI_API __declspec(dllimport)
-#endif
-#else
-#define EXPORT_MPI_API
-#endif
+/* 
+   For systems that may need to add additional definitions to support
+   different declaration styles and options (e.g., different calling 
+   conventions or DLL import/export controls).  
 */
+/* --Insert Additional Definitions Here-- */
 
 /*
  * Normally, we provide prototypes for all MPI routines.  In a few wierd
@@ -541,9 +531,9 @@ int MPI_Type_struct(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *);
 int MPI_Address(void*, MPI_Aint *);
 /* We could add __attribute__((deprecated)) to routines like MPI_Type_extent */
 int MPI_Type_extent(MPI_Datatype, MPI_Aint *);
-/* See the 1.1 version of the Standard; I think that the standard is in 
-   error; however, it is the standard.  The size returned by MPI_Type_size
-   is specified as an int, not an MPI_Aint */
+/* See the 1.1 version of the Standard.  The standard made an 
+   unfortunate choice here, however, it is the standard.  The size returned 
+   by MPI_Type_size is specified as an int, not an MPI_Aint */
 int MPI_Type_size(MPI_Datatype, int *);
 /* MPI_Type_count was withdrawn in MPI 1.1 */
 int MPI_Type_lb(MPI_Datatype, MPI_Aint *);
@@ -853,11 +843,7 @@ int PMPI_Type_hindexed(int, int *, MPI_Aint *, MPI_Datatype, MPI_Datatype *);
 int PMPI_Type_struct(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *);
 int PMPI_Address(void*, MPI_Aint *);
 int PMPI_Type_extent(MPI_Datatype, MPI_Aint *);
-/* See the 1.1 version of the Standard; I think that the standard is in 
-   error; however, it is the standard */
-/* int PMPI_Type_size(MPI_Datatype, MPI_Aint *); */
 int PMPI_Type_size(MPI_Datatype, int *);
-int PMPI_Type_count(MPI_Datatype, int *);
 int PMPI_Type_lb(MPI_Datatype, MPI_Aint *);
 int PMPI_Type_ub(MPI_Datatype, MPI_Aint *);
 int PMPI_Type_commit(MPI_Datatype *);
@@ -1043,25 +1029,6 @@ int PMPI_Type_create_f90_real( int, int, MPI_Datatype * );
 int PMPI_Type_create_f90_complex( int, int, MPI_Datatype * );
 
 /* Miscellany */
-#ifdef FOO
-MPI_Comm MPI_Comm_f2c(MPI_Fint);
-MPI_Datatype MPI_Type_f2c(MPI_Fint);
-MPI_File MPI_File_f2c(MPI_Fint);
-MPI_Fint MPI_Comm_c2f(MPI_Comm);
-MPI_Fint MPI_File_c2f(MPI_File);
-MPI_Fint MPI_Group_c2f(MPI_Group);
-MPI_Fint MPI_Info_c2f(MPI_Info);
-MPI_Fint MPI_Op_c2f(MPI_Op);
-MPI_Fint MPI_Request_c2f(MPI_Request);
-MPI_Fint MPI_Type_c2f(MPI_Datatype);
-MPI_Fint MPI_Win_c2f(MPI_Win);
-MPI_Group MPI_Group_f2c(MPI_Fint);
-MPI_Info MPI_Info_f2c(MPI_Fint);
-MPI_Op MPI_Op_f2c(MPI_Fint);
-MPI_Request MPI_Request_f2c(MPI_Fint);
-MPI_Win MPI_Win_f2c(MPI_Fint);
-#endif
-
 int PMPI_Alloc_mem(MPI_Aint, MPI_Info info, void *baseptr);
 int PMPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *, MPI_Errhandler *);
 int PMPI_Comm_get_errhandler(MPI_Comm, MPI_Errhandler *);
@@ -1127,12 +1094,12 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 }
 /* Add the C++ bindings */
 /* 
-   If MPICH_SKIP_MPICXX is defined, the mpi++.h file will *not* be included.
+   If MPICH_SKIP_MPICXX is defined, the mpicxx.h file will *not* be included.
    This is necessary, for example, when building the C++ interfaces.  It
    can also be used when you want to use a C++ compiler to compile C code,
    and do not want to load the C++ bindings.  These definitions can
-   be made by the C++ compilation script (e.g., it should do
-   -DHAVE_MPI_CXX, and this should be documented).
+   be made by the C++ compilation script (e.g., it must do
+   -DHAVE_MPI_CXX).
  */
 #if defined(HAVE_MPI_CXX) && !defined(MPICH_SKIP_MPICXX)
 #include "mpicxx.h"
