@@ -175,6 +175,34 @@ case "$timer_type" in
         AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available because clock_getres, also needed, is not available])
     fi
     MPID_TIMER_TYPE="struct timespec"
+    # AIX does not always define struct timespec (!)
+    # Make sure that we can use struct timespec
+    AC_CACHE_CHECK([whether struct timespec is defined in time.h],
+                    pac_cv_struct_timespec_defined,[
+    AC_TRY_COMPILE([
+#include <time.h>],[
+    struct timespec t;],pac_cv_struct_timespec_defined=yes,
+    pac_cv_struct_timespec_defined=no)
+])
+    if test "$pac_cv_struct_timespec_defined" != "yes" ; then
+        # Try again, but with -D_XOPEN_SOURCE=500 (works for AIX)
+        AC_CACHE_CHECK([whether struct timespec is defined in time.h with _XOPEN_SOURCE=500],
+                    pac_cv_struct_timespec_defined_with_xopen500,[
+        AC_TRY_COMPILE([
+#define _XOPEN_SOURCE 500
+#include <time.h>],[
+    struct timespec t;],pac_cv_struct_timespec_defined_with_xopen500=yes,
+    pac_cv_struct_timespec_defined_with_xopen500=no)
+])
+	if test "$pac_cv_struct_timespec_defined_with_xopen500" = "yes" ; then
+	    # We need to define _XOPEN_SOURCE=500, but we need to ensure that
+	    # this is done before any include files are loaded.  At
+	    # this point it is really too late to add this definition,
+	    # since it may make other tests incompatible.
+	    AC_MSG_ERROR([The available timer requires _XOPEN_SOURCE=500.  Add -D_XOPEN_SOURCE=500 to CFLAGS and rerun configure])
+        fi
+    fi
+    # 
     # FreeBSD 4.3 incorrectly puts the header into sys/time.h; 
     # time.h is required (see pages 45 and 46 in the POSIX standard).
     # See if we can compile
