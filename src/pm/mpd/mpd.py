@@ -1014,6 +1014,7 @@ def usage():
 def _cleanup():
     try:
         mpd_print(0, "CLEANING UP" )
+        syslog(LOG_INFO,"mpd ending mpdid=%s (inside _cleanup)" % (g.myId) )
         if g.conListenSocket in g.activeSockets:    # only delete if I put it there
             unlink(g.conListenName)
         closelog()
