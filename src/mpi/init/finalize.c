@@ -47,7 +47,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
     if (fstack_sp >= MAX_FINALIZE_FUNC) {
 	/* This is a little tricky.  We may want to check the state of
 	   MPIR_Process.initialized to decide how to signal the error */
-	fprintf( stderr, "Internal error: overflow in Finalize stack!\n" );
+	(void)MPIU_Internal_error_printf( "overflow in finalize stack!\n" );
 	if (MPIR_Process.initialized == MPICH_WITHIN_MPI) {
 	    MPID_Abort( 0, 1 );
 	}
