@@ -377,9 +377,6 @@
 			<File
 				RelativePath=".\mpidu_sock.h">
 			</File>
-			<File
-				RelativePath="winsockconf.h">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

@@ -2491,12 +2491,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			<File
 				RelativePath=".\src\include\rlog_macros.h">
 			</File>
-			<File
-				RelativePath=".\src\include\winmpichconf.h">
-			</File>
-			<File
-				RelativePath=".\src\include\winmpidconf.h">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

@@ -376,9 +376,6 @@
 			<File
 				RelativePath="..\..\include\mpidpre.h">
 			</File>
-			<File
-				RelativePath="..\..\include\winmpidi_ch3_conf.h">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
