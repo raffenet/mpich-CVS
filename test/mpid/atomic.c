@@ -11,14 +11,16 @@
 
 #include "mpiimpl.h"
 
+#if defined(MPICH_SINGLE_THREADED) || !defined(USE_ATOMIC_UPDATES)
 #define MPID_Atomic_incr( count_ptr ) \
    __asm__ __volatile__ ( "lock; incl %0" \
                          : "=m" (*count_ptr) :: "memory", "cc" )
 
-#define MPID_Atomic_decr_flag( count_ptr, flag ) \
-   __asm__ __volatile__ ( "lock; decl %0 ; sete %1" \
-                         : "=m" (*count_ptr) , "=q" (flag) :: "memory", "cc" )
-                      
+#define MPID_Atomic_decr_flag( count_ptr, nzflag )					\
+   __asm__ __volatile__ ( "xor %%ax,%%ax; lock; decl %0 ; setnz %%al"			\
+                         : "=m" (*count_ptr) , "=a" (nzflag) :: "memory", "cc" )
+#endif
+
 int main( int argc, char **argv )
 {
     int                i, n;
@@ -26,7 +28,7 @@ int main( int argc, char **argv )
     MPID_Time_t        start_t, end_t;
     double             time_lock, time_incr, time_single;
     int count;
-    char flag;
+    int nzflag;
 
     /* Set values */
     n = 10000000;
@@ -82,17 +84,16 @@ int main( int argc, char **argv )
 	printf( "Error in native atomic update (%d != %d)\n", count, n );
     }
     /* Check for dec sets zero flag */
-    flag = 0;
     for (i=0; i<n-1; i++) {
-	MPID_Atomic_decr_flag( &count, flag );
-	if (flag) {
-	    printf( "flag set on iteration %d\n", i );
+	MPID_Atomic_decr_flag( &count, nzflag );
+	if (!nzflag) {
+	    printf( "flag not set on iteration %d\n", i );
 	    break;
 	}
     }
-    MPID_Atomic_decr_flag( &count, flag );
-    if (!flag) {
-	printf( "Flag not set on final decrement\n" );
+    MPID_Atomic_decr_flag( &count, nzflag );
+    if (!nzflag) {
+	printf( "Flag still set on final decrement\n" );
     }
 
     /* convert times to microseconds */
