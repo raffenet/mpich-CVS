@@ -307,7 +307,7 @@ MPI_Win_post,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_start,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_complete,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_wait,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
-MPI_Win_test,1,1,1,1,Rajeev,MPID_Win_test
+MPI_Win_test,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_get_group,,,,,Rajeev,,done
 
 MPI_Win_lock,1,1,1,1,Rajeev,MPID_Win_lock
@@ -527,7 +527,7 @@ MPID_Win_post,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPID_Win_start,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPID_Win_complete,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPID_Win_wait,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
-MPID_Win_test,1,3,2,1,Rajeev
+MPID_Win_test,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 
 For passive target; initally asynchronous agent using threads:
 
