@@ -1,2 +1,3 @@
-lib${MPILIBNAME}_a_SOURCES = init.c initthread.c finalize.c
+lib${MPILIBNAME}_a_SOURCES = init.c initialized.c initthread.c ismain.c \
+	finalize.c finalized.c querythread.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

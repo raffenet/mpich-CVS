@@ -24,7 +24,7 @@
 #define MPI_Init_thread PMPI_Init_thread
 
 /* Any internal routines can go here.  Make them static if possible */
-MPICH_PerProcess_t MPIR_Process;
+MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
 #ifdef MPICH_SINGLE_THREADED
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread;
@@ -37,11 +37,31 @@ int MPIR_Init_thread( int required, int *provided )
     else {
 	*provided = required;
     }
-#ifndef MPICH_SINGLE_THREADED
+#ifdef MPICH_SINGLE_THREADED
+#else
     MPIR_Process.thread_key = MPID_GetThreadKey();
     MPIR_Process.master_thread = MPID_GetThreadId();
+    MPIR_Thread_lock_init( MPIR_Process.common_lock );
+    MPIR_Thread_lock_init( MPIR_Process.allocation_lock );
 #endif    
+    /* Remember level of thread support promised */
+    MPIR_Process.thread_provided = *provided;
+
+    /* Eventually this will support commandline and environment options
+     for controlling error checks.  It will use a common routine (pre init 
+     version) */
     MPIR_Process.do_error_checks = 1;
+
+    /* Initialize necessary subsystems and setup the predefined attribute
+       values.  Subsystems may change these values. */
+    MPIR_Process.PreDefined_attrs.appnum          = 0;
+    MPIR_Process.PreDefined_attrs.host            = 0;
+    MPIR_Process.PreDefined_attrs.io              = 0;
+    MPIR_Process.PreDefined_attrs.lastusedcode    = 0;
+    MPIR_Process.PreDefined_attrs.tag_ub          = 0;
+    MPIR_Process.PreDefined_attrs.universe        = 1;
+    MPIR_Process.PreDefined_attrs.wtime_is_global = 0;
+
     return 0;
 }
 #endif
