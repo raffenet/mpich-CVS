@@ -85,6 +85,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
 	    {
 		MPID_Abort(NULL, MPI_SUCCESS, -1);
 	    }
+	    sreq->gasnet.iov_offset = 0;
 	    MPIDI_CH3U_Handle_send_req(vc, sreq);
 	}    
     }

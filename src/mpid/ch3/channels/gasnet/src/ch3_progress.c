@@ -75,8 +75,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	    if (sreq->dev.iov_count == 0)
 	    {
-		MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
-		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+		if (sreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
+		{
+		    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+		    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+		}
 		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc, sreq);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -96,19 +99,19 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		 }
 		 if (sreq->dev.iov_count == 0)
 		 {
-		     mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc,
-							     sreq);
-		     if (mpi_errno != MPI_SUCCESS)
-		     {
-			 MPID_Abort(NULL, mpi_errno, -1);
-		     }
-		     if (sreq->dev.iov_count == 0)
+		     if (sreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
 		     {
 			 MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
 		     }
 		     else
 		     {
 			 MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+		     }
+		     mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc,
+							     sreq);
+		     if (mpi_errno != MPI_SUCCESS)
+		     {
+			 MPID_Abort(NULL, mpi_errno, -1);
 		     }
 		 }
 		 else
@@ -560,6 +563,7 @@ send_enqueuedv (MPIDI_VC * vc, MPID_Request * sreq)
 	{
 	    MPID_Abort(NULL, MPI_SUCCESS, -1);
 	}
+	sreq->gasnet.iov_offset = 0;
 	sreq->dev.iov_count = 0;
     }
 

@@ -28,6 +28,11 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
 
     printf_d ("Entering "FCNAME "\n");
+    if (n_iov == 0)
+    {
+	goto fn_exit;
+    }
+    
     /* get an iov that has no more than MPIDI_CH3_packet_len of data */
     msg_sz = 0;
     for (i = iov_offset; i < n_iov + iov_offset; ++i)
@@ -69,9 +74,10 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	{
 	    MPID_Abort(NULL, MPI_SUCCESS, -1);
 	}
+	req->gasnet.iov_offset = 0;
 	req->dev.iov_count = 0;
     }
-    
+ fn_exit:
     printf_d ("Exiting "FCNAME "\n");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
     return mpi_errno;
