@@ -211,7 +211,13 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	case SOCK_OP_READ:
 	    smpd_dbg_printf("SOCK_OP_READ\n");
 	    if (event.error != SOCK_SUCCESS)
-		smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+	    {
+		/* don't print EOF errors because they usually aren't errors */
+		if (event.error != SOCK_EOF)
+		{
+		    smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+		}
+	    }
 	    switch (context->read_state)
 	    {
 	    case SMPD_READING_CHALLENGE_STRING:
@@ -496,8 +502,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_read(context->sock, &context->read_cmd.cmd, 1, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
-			    get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+			if (result != SOCK_EOF)
+			{
+			    smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
+				get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+			}
 			context->state = SMPD_CLOSING;
 			result = sock_post_close(context->sock);
 			if (result != SOCK_SUCCESS)
@@ -510,8 +519,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		else
 		{
-		    smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
-			get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+		    if (event.error != SOCK_EOF)
+		    {
+			smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
+			    get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+		    }
 		    context->state = SMPD_CLOSING;
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
