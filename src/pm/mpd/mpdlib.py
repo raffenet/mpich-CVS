@@ -318,7 +318,7 @@ def mpd_socketpair():
         mpd_print(1, 'mpd_socketpair: sock2 failed' % ( data.__class__, data) )
         sock1.close()
         return (None,'sock2 failed')
-    rc = mpd_connect(sock2,'',port1)
+    rc = mpd_connect(sock2,'localhost',port1)  # RMB: may chg localhost to ''
     if rc == 0:
         mpd_print(1, 'mpd_socketpair: conn failed')
         sock1.close()
