@@ -1029,13 +1029,13 @@ End Function
 		f.CreateFolder("src\include\win64")
 	end if
 	cEcho "Creating src\include\win64\mpi.h"
-	set fout32 = f.CreateTextFile("src\include\win64\mpi.h")
+	set fout64 = f.CreateTextFile("src\include\win64\mpi.h")
 'else
 	if not f.FolderExists("src\include\win32") then
 		f.CreateFolder("src\include\win32")
 	end if
 	cEcho "Creating src\include\win32\mpi.h"
-	set fout64 = f.CreateTextFile("src\include\win32\mpi.h")
+	set fout32 = f.CreateTextFile("src\include\win32\mpi.h")
 'end if
 set fin = f.OpenTextFile("src\include\mpi.h.in")
 
