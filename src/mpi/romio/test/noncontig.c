@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     }
 
 /* process 0 takes the file name as a command-line argument and 
-   broadcasts it to other processes */
+   broadcasts it to other processes (length first, then string) */
     if (!mynod) {
 	i = 1;
 	while ((i < argc) && strcmp("-fname", *argv)) {
@@ -56,6 +56,10 @@ int main(int argc, char **argv)
 
     MPI_Type_vector(SIZE/2, 1, 2, MPI_INT, &typevec);
 
+    /* create a struct type with explicitly set LB and UB; displacements
+     * of typevec are such that the types for the two processes won't
+     * overlap.
+     */
     b[0] = b[1] = b[2] = 1;
     d[0] = 0;
     d[1] = mynod*sizeof(int);
@@ -64,6 +68,7 @@ int main(int argc, char **argv)
     t[1] = typevec;
     t[2] = MPI_UB;
 
+    /* keep the struct, ditch the vector */
     MPI_Type_struct(3, b, d, t, &newtype);
     MPI_Type_commit(&newtype);
     MPI_Type_free(&typevec);
@@ -83,17 +88,27 @@ int main(int argc, char **argv)
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
                   info, &fh);
 
+    /* set the file view for each process -- now writes go into the non-
+     * overlapping but interleaved region defined by the struct type up above
+     */
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 
+    /* fill our buffer with a pattern and write, using our type again */
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write(fh, buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    /* fill the entire buffer with -1's.  read back with type.
+     * note that the result of this read should be that every other value
+     * in the buffer is still -1, as defined by our type.
+     */
     for (i=0; i<SIZE; i++) buf[i] = -1;
-
     MPI_File_read_at(fh, 0, buf, 1, newtype, &status);
 
+    /* check that all the values read are correct and also that we didn't
+     * overwrite any of the -1 values that we shouldn't have.
+     */
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if ((i%2) && (buf[i] != -1))
@@ -122,15 +137,22 @@ int main(int argc, char **argv)
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
                   info, &fh);
 
+    /* in this case we write to either the first half or the second half
+     * of the file space, so the regions are not interleaved.  this is done
+     * by leaving the file view at its default.
+     */
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    /* same as before; fill buffer with -1's and then read; every other
+     * value should still be -1 after the read
+     */
     for (i=0; i<SIZE; i++) buf[i] = -1;
-
     MPI_File_read_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &status);
 
+    /* verify that the buffer looks like it should */
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if ((i%2) && (buf[i] != -1))
@@ -159,15 +181,17 @@ int main(int argc, char **argv)
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, 
                   info, &fh);
 
+    /* set the file view so that we have interleaved access again */
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 
+    /* this time write a contiguous buffer */
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write(fh, buf, SIZE, MPI_INT, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    /* fill buffer with -1's; this time they will all be overwritten */
     for (i=0; i<SIZE; i++) buf[i] = -1;
-
     MPI_File_read_at(fh, 0, buf, SIZE, MPI_INT, &status);
 
     for (i=0; i<SIZE; i++) {
