@@ -1,7 +1,11 @@
 /* simple test for multiple executables */
 #include "mpi.h"
 #include <stdio.h>
+#ifdef HAVE_WINDOWS_H
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #define MAX_DIRNAME_SIZE 256 
