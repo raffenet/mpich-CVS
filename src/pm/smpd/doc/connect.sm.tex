@@ -78,10 +78,10 @@ State [writing sspi_iter],[label="writing sspi_iter"]
                 Change_State([sspi_iter result],[style=dotted])
 State [sspi_iter result],[label="sspi_iter result"]
         Event [data read]
-		if no buffer returned
-			Change_State([reading client sspi header],[label="no data"]
-		else
-	                Change_State([writing client sspi header])
+				if more data
+						Change_State([writing client sspi header])
+				else
+						Change_State([reading client sspi header],[label="no data"])
 State [writing delegate yes],[label="writing delegate yes"]
         Event [data written]
                 Change_State([reading impersonate result])
