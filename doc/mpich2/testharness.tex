@@ -39,6 +39,10 @@ that uses \code{MPI_Comm_spawn}, then the first \code{MPI_COMM_WORLD}
 \code{MPI_Comm_accept}), then the test program should choose one
 \code{MPI_COMM_WORLD} to be responsible for this output.
 
+Tests must not rely on being able to detect the failure of any other
+processes.  In particular, an \code{MPI_Abort} is \emph{not} guaranteed to
+produce a detectable failure.
+
 \item On success, a process must exit with a zero status.
 
 \item The program must build with \code{make programname}, using the
