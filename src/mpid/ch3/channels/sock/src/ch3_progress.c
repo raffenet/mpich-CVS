@@ -50,9 +50,6 @@ static MPIDU_Sock_set_t sock_set;
 static int MPIDI_CH3I_listener_port = 0;
 static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
-/* XXX: remove this flag */
-static int shutting_down = FALSE;
-
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
 static inline int connection_alloc(MPIDI_CH3I_Connection_t **);
@@ -337,32 +334,6 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-# if 0
-    MPIR_Nest_incr();
-    {
-	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
-	if (mpi_errno != MPI_SUCCESS)
-	{ 
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**progress_finalize", NULL);
-	    MPIR_Nest_decr();
-	    goto fn_exit;
-	}
-
-	shutting_down = TRUE;
-	
-	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
-	if (mpi_errno != MPI_SUCCESS)
-	{ 
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**progress_finalize", NULL);
-	    MPIR_Nest_decr();
-	    goto fn_exit;
-	}
-    }
-    MPIR_Nest_decr();
-# endif
-    
     /* Shut down the listener */
     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
     if (mpi_errno != MPI_SUCCESS)
@@ -484,7 +455,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    if (event->error != MPI_SUCCESS)
 	    {
 		/* FIXME: the following should be handled by the close protocol */
-		if (!shutting_down || MPIR_ERR_GET_CLASS(event->error) != MPIDU_SOCK_ERR_CONN_CLOSED)
+		if (MPIR_ERR_GET_CLASS(event->error) != MPIDU_SOCK_ERR_CONN_CLOSED)
 		{
 		    mpi_errno = connection_recv_fail(conn, event->error);
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
