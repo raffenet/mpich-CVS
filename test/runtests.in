@@ -128,12 +128,14 @@ sub ProcessDir {
 # ---------------------------------------------------------------------------
 # Run the programs listed in the file given as the argument. 
 # This file describes the tests in the format
-#  programname number-of-processes
+#  programname number-of-processes [ routine to test success [ setup routine ] ]
 # If the second value is not given, the default value is used.
 # 
 sub RunList { 
     my $LIST = "LIST$depth"; $depth++;
     my $listfile = $_[0];
+    my $ResultTest = "";
+    my $InitForRun = "";
 
     print "Looking in $curdir/$listfile\n" if $debug;
     if (! -s "$listfile" && -s "$srcdir/$curdir/$listfile" ) {
@@ -148,7 +150,7 @@ sub RunList {
 	# Remove any trailing newlines/returns
 	s/\r?\n//;
 	# List files are "program <optional-np>"
-	my ($programname,$np,$ResultTest) = split(/\s+/,$_);
+	my ($programname,$np,$ResultTest,$InitForRun) = split(/\s+/,$_);
 	if ($np eq "") { $np = $np_default; }
 	if ($np_max > 0 && $np > $np_max) { $np = $np_max; }
 	# skip empty lines
@@ -160,7 +162,7 @@ sub RunList {
 	}
 	else {
 	    &BuildMPIProgram( $programname );
-	    &RunMPIProgram( $programname, $np, $ResultTest );
+	    &RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
 	    &CleanUpAfterRun( $programname );
 	}
     }
@@ -194,7 +196,7 @@ sub ProcessImplicitList {
 	    if (-d $programname) { next; }  # Ignore directories
 	    if ($programname eq "runtests") { next; } # Ignore self
 	    if (-x $programname) {
-		&RunMPIProgram( $programname, $np_default, "" );
+		&RunMPIProgram( $programname, $np_default, "", "" );
 	    }
 	}
 	close PGMS;
@@ -209,7 +211,7 @@ sub ProcessImplicitList {
 	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
 	    &BuildMPIProgram( $programname );
-	    &RunMPIProgram( $programname, $np_default, "" );
+	    &RunMPIProgram( $programname, $np_default, "", "" );
 	    &CleanUpAfterRun( $programname );
 	}
 	close PGMS;
@@ -222,7 +224,7 @@ sub ProcessImplicitList {
 # If the 3rd arg is not present, the a default that simply checks that the
 # return status is 0 and that the output is " No Errors" is used.
 sub RunMPIProgram {
-    my ($programname,$np,$ResultTest) = @_;
+    my ($programname,$np,$ResultTest,$InitForTest) = @_;
     my $found_error   = 0;
     my $found_noerror = 0;
     my $inline = "";
@@ -232,8 +234,14 @@ sub RunMPIProgram {
 	print STDERR "$mpiexec $np_arg $np ./$programname\n";
     }
     unlink "err";
-    # Set a timeout on tests (3 minutes for now)
+    # Set a default timeout on tests (3 minutes for now)
     $ENV{"MPIEXEC_TIMEOUT"} = 180;
+    
+    # Run the optional setup routine. For example, the timeout tests could
+    # be set to a shorter timeout.
+    if ($InitForTest ne "") {
+	&$InitForTest();
+    }
     open ( MPIOUT, "$mpiexec $np_arg $np ./$programname 2>&1 |" ) ||
 	 die "Could not run $programname\n";
     if ($ResultTest ne "") {
@@ -422,4 +430,7 @@ sub RunTestFailed {
     }
 }
 # ----------------------------------------------------------------------------
-
+# Alternate init routines
+sub InitQuickTimeout {
+    $ENV{"MPIEXEC_TIMEOUT"} = 10;
+}
