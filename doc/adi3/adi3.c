@@ -604,7 +604,7 @@ objects\:
   we let the timer package provide this value?  Similarly, the value
   of 'MPI_LASTUSECODE' is known by the error reporting module.  One 
   possibility is to require each of the modules to have an initialization 
-  step, and for each modules' initialization module to set the value for the
+  step, and for each modules'' initialization module to set the value for the
   appropriate attributes.
 
   @*/
@@ -2399,7 +2399,11 @@ double MPID_Wtick( void )
   MPID_Wtime_init - Initialize the timer
 
   Note:
-  This routine should 
+  This routine should perform any steps needed to initialize the timer.
+  In addition, it should set the value of the attribute 'MPI_WTIME_IS_GLOBAL'.
+
+  Module:
+  Timer
   @*/
 void MPID_Wtime_init( void )
 {}

@@ -4,7 +4,7 @@
 %
 \documentclass{article}
 \usepackage{/home/gropp/data/share/refman}
-\usepackage{/home/gropp/tex/inputs_local/tpage}
+\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
 \usepackage{epsf}
 \textheight=9in
 \textwidth=6.1in
@@ -28,7 +28,7 @@
 \catcode`\_=11
 \def\code#1{{\tt #1}}
 
-\tpageoneskip
+%\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
 Version 3\\
 Reference Manual\\\ \\Draft}{\em 
@@ -548,7 +548,7 @@ Still to do.  This section needs to cover:
 \input MPID_CORE-list.tex
 \input Handlers.tex
 
-\subsection{mpiexec}
+\section{mpiexec}
 \textbf{Need some discussion of mpiexec}
 
 \section{Attributes}
@@ -600,7 +600,7 @@ Still to do.  This section needs to cover:
 \section{Environment}
 \input Environment-list.tex
 
-\subsection{Error Reporting}
+\section{Error Reporting}
 MPI allows separate error codes and classes.  An error \emph{class} is
 a predefined value that roughly corresponds to a Unix error code
 (e.g., \code{E_NOMEM}).  From a user's perspective, the major problem
@@ -655,7 +655,7 @@ message as either \code{char} or \code{wchar_t}.
 
 \input Error-list.tex
 
-\subsection{Extensions}
+\section{Extensions}
 \input Extension-list.tex
 
 \openin\testfile{None-list.tex}
