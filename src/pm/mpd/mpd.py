@@ -1027,6 +1027,8 @@ def _enter_existing_ring():
     g.rhsPort = int(msg['rhsport'])
     # connect to rhs
     g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsHost,g.rhsPort)
+    if not g.rhsSocket:
+        mpd_raise('unable to obtain socket for rhs in ring')
     _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
     msgToSend = { 'cmd' : 'request_to_enter_as_lhs',
                   'host' : g.myHost,
