@@ -102,22 +102,15 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		if (offset == n_iov)
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
+		    /* FIXME: MT: this is not quite right since the queue interface is not thread safe */
 		    if (sreq->ch3.iov_count != 0)
 		    {
+			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			if (vc->ssm.bShm)
 			    vc->ssm.send_active = sreq;
 			else
 			    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
-		    }
-		    else
-		    {
-			if (MPIDI_CH3I_SendQ_head(vc) == sreq)
-			{
-			    MPIDI_CH3I_SendQ_dequeue(vc);
-			    /* vc->ssm.send_active = MPIDI_CH3I_SendQ_head(vc); ??? */
-			}
 		    }
 		}
 	    }

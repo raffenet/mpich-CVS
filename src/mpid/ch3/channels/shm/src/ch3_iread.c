@@ -97,6 +97,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     if (rreq->ch3.ca == MPIDI_CH3_CA_COMPLETE)
     {
 	/* mark data transfer as complete and decrement CC */
+	rreq->ch3.iov_count = 0;
 	MPIDI_CH3U_Request_complete(rreq);
     }
     else

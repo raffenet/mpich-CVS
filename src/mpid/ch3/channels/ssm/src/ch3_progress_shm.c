@@ -99,7 +99,7 @@ void handle_shm_read(MPIDI_VC *vc, int nb)
 		/* decrement the number of active reads */
 		MPIDI_CH3I_shm_read_active--;
 		MPIDI_CH3U_Handle_recv_req(vc, req);
-		if (vc->ssm.recv_active == NULL)
+		if (req->ch3.iov_count == 0)
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete, posting new recv packet"));
 		    vc->ssm.shm_reading_pkt = TRUE;
@@ -203,7 +203,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		    MPIDI_CH3U_Handle_send_req(vc, req);
-		    if (vc->ssm.send_active == NULL)
+		    if (req->ch3.iov_count == 0)
 		    {
 			/* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
 			   device has completed the current request.  As a result, the current request is dequeded and next request
