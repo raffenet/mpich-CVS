@@ -21,13 +21,25 @@
    values on which isascii returns true). */
 #include <ctype.h>
 
+/*
 #define MPIU_STR_QUOTE_CHAR     '\"'
+#define MPIU_STR_QUOTE_STR      "\""
 #define MPIU_STR_DELIM_CHAR     '='
 #define MPIU_STR_DELIM_STR      "="
 #define MPIU_STR_ESCAPE_CHAR    '\\'
 #define MPIU_STR_HIDE_CHAR      '*'
 #define MPIU_STR_SEPAR_CHAR     ' '
 #define MPIU_STR_SEPAR_STR      " "
+*/
+
+#define MPIU_STR_QUOTE_CHAR     '\"'
+#define MPIU_STR_QUOTE_STR      "\""
+#define MPIU_STR_DELIM_CHAR     '#'
+#define MPIU_STR_DELIM_STR      "#"
+#define MPIU_STR_ESCAPE_CHAR    '\\'
+#define MPIU_STR_HIDE_CHAR      '*'
+#define MPIU_STR_SEPAR_CHAR     '$'
+#define MPIU_STR_SEPAR_STR      "$"
 
 #define MPIU_STR_TRUNCATED MPIU_STR_NOMEM
 
@@ -40,9 +52,9 @@ static int encode_buffer(char *dest, int dest_length, const char *src, int src_l
     {
 	if (dest_length > 2)
 	{
-	    *dest = '\"';
+	    *dest = MPIU_STR_QUOTE_CHAR;
 	    dest++;
-	    *dest = '\"';
+	    *dest = MPIU_STR_QUOTE_CHAR;
 	    dest++;
 	    *dest = '\0';
 	    *num_encoded = 0;
@@ -91,7 +103,10 @@ static int decode_buffer(const char *str, char *dest, int length, int *num_decod
     if (*str == MPIU_STR_QUOTE_CHAR)
 	str++;
     hex[2] = '\0';
-    while (*str != '\0' && *str != ' ' && *str != MPIU_STR_QUOTE_CHAR && length)
+    while (*str != '\0' &&
+	   *str != MPIU_STR_SEPAR_CHAR &&
+	   *str != MPIU_STR_QUOTE_CHAR &&
+	   length)
     {
 	hex[0] = *str;
 	str++;
@@ -107,7 +122,9 @@ static int decode_buffer(const char *str, char *dest, int length, int *num_decod
     *num_decoded = n;
     if (length == 0)
     {
-	if (*str != '\0' && *str != ' ' && *str != MPIU_STR_QUOTE_CHAR)
+	if (*str != '\0' &&
+	    *str != MPIU_STR_SEPAR_CHAR &&
+	    *str != MPIU_STR_QUOTE_CHAR)
 	    return MPIU_STR_TRUNCATED;
     }
     return MPIU_STR_SUCCESS;
@@ -118,7 +135,7 @@ static const char * first_token(const char *str)
     if (str == NULL)
 	return NULL;
     /* isspace is defined only if isascii is true */
-    while (isascii(*str) && isspace(*str))
+    while (/*isascii(*str) && isspace(*str)*/ *str == MPIU_STR_SEPAR_CHAR)
 	str++;
     if (*str == '\0')
 	return NULL;
@@ -166,7 +183,11 @@ static const char * next_token(const char *str)
 	else
 	{
 	    /* move over literal */
-	    while ((isascii(*str) && !isspace(*str)) && *str != MPIU_STR_DELIM_CHAR && *str != '\0')
+	    while (/*(isascii(*str) &&
+		    !isspace(*str)) &&*/
+		    *str != MPIU_STR_SEPAR_CHAR &&
+		   *str != MPIU_STR_DELIM_CHAR &&
+		   *str != '\0')
 		str++;
 	}
     }
@@ -230,16 +251,20 @@ static int compare_token(const char *token, const char *str)
     }
 
     /* compare literals */
-    while (*token == *str && *str != '\0' && *token != MPIU_STR_DELIM_CHAR && 
-	   (isascii(*token) && !isspace(*token)) )
+    while (*token == *str &&
+	   *str != '\0' &&
+	   *token != MPIU_STR_DELIM_CHAR && 
+	   (/*isascii(*token) && !isspace(*token)*/ *token != MPIU_STR_SEPAR_CHAR) )
     {
 	token++;
 	str++;
     }
-    if ( (*str == '\0') && (*token == MPIU_STR_DELIM_CHAR || (isascii(*token) && isspace(*token)) || *token == '\0') )
+    if ( (*str == '\0') &&
+	 (*token == MPIU_STR_DELIM_CHAR ||
+	  (/*isascii(*token) && isspace(*token)*/ *token == MPIU_STR_SEPAR_CHAR) || *token == '\0') )
 	return 0;
     if (*token == MPIU_STR_DELIM_CHAR || 
-	(isascii(*token) && isspace(*token)) || *token < *str)
+	(/*isascii(*token) && isspace(*token)*/ *token == MPIU_STR_SEPAR_CHAR) || *token < *str)
 	return -1;
     return 1;
 }
@@ -309,7 +334,7 @@ static int token_copy(const char *token, char *str, int maxlen)
 
     /* literal copy */
     while (*token != MPIU_STR_DELIM_CHAR && 
-	   (isascii(*token) && !isspace(*token)) && *token != '\0' && maxlen)
+	   (/*isascii(*token) && !isspace(*token)*/ *token != MPIU_STR_SEPAR_CHAR) && *token != '\0' && maxlen)
     {
 	*str = *token;
 	str++;
@@ -375,7 +400,7 @@ static void token_hide(char *token)
 
     /* literal */
     while (*token != MPIU_STR_DELIM_CHAR && 
-	   (isascii(*token) && !isspace(*token)) && *token != '\0')
+	   (/*isascii(*token) && !isspace(*token)*/ *token != MPIU_STR_SEPAR_CHAR) && *token != '\0')
     {
 	*token = MPIU_STR_HIDE_CHAR;
 	token++;
@@ -541,7 +566,9 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
     str = *str_ptr;
     maxlen = *maxlen_ptr;
 
-    if (strchr(val, ' ') || strchr(val, MPIU_STR_QUOTE_CHAR) || strchr(val, MPIU_STR_DELIM_CHAR))
+    if (strchr(val, MPIU_STR_SEPAR_CHAR) ||
+	strchr(val, MPIU_STR_QUOTE_CHAR) ||
+	strchr(val, MPIU_STR_DELIM_CHAR))
     {
 	num_chars = quoted_printf(str, maxlen, val);
 	if (num_chars == maxlen)
@@ -552,7 +579,7 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
 	}
 	if (num_chars < maxlen - 1)
 	{
-	    str[num_chars] = ' ';
+	    str[num_chars] = MPIU_STR_SEPAR_CHAR;
 	    str[num_chars+1] = '\0';
 	    num_chars++;
 	}
@@ -565,11 +592,11 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
     {
 	if (*val == '\0')
 	{
-	    num_chars = snprintf(str, maxlen, "\"\"");
+	    num_chars = snprintf(str, maxlen, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
 	}
 	else
 	{
-	    num_chars = snprintf(str, maxlen, "%s ", val);
+	    num_chars = snprintf(str, maxlen, "%s%c", val, MPIU_STR_SEPAR_CHAR);
 	}
 	if (num_chars == maxlen)
 	{
@@ -637,7 +664,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 	return MPIU_STR_FAIL;
 
     /* add the flag */
-    if (strstr(flag, " ") || strstr(flag, MPIU_STR_DELIM_STR) || flag[0] == MPIU_STR_QUOTE_CHAR)
+    if (strstr(flag, MPIU_STR_SEPAR_STR) || strstr(flag, MPIU_STR_DELIM_STR) || flag[0] == MPIU_STR_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, flag);
     }
@@ -661,7 +688,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - 1;
 
     /* add the value string */
-    if (strstr(val, " ") || strstr(val, MPIU_STR_DELIM_STR) || val[0] == MPIU_STR_QUOTE_CHAR)
+    if (strstr(val, MPIU_STR_SEPAR_STR) || strstr(val, MPIU_STR_DELIM_STR) || val[0] == MPIU_STR_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, val);
     }
@@ -669,7 +696,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     {
 	if (*val == '\0')
 	{
-	    num_chars = snprintf(*str_ptr, *maxlen_ptr, "\"\"");
+	    num_chars = snprintf(*str_ptr, *maxlen_ptr, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
 	}
 	else
 	{
@@ -690,7 +717,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     }
     
     /* add the trailing space */
-    **str_ptr = ' ';
+    **str_ptr = MPIU_STR_SEPAR_CHAR;
     *str_ptr = *str_ptr + 1;
     **str_ptr = '\0';
     *maxlen_ptr = *maxlen_ptr - 1;
@@ -722,7 +749,7 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 	return MPIU_STR_FAIL;
 
     /* add the flag */
-    if (strstr(flag, " ") || strstr(flag, MPIU_STR_DELIM_STR) || flag[0] == MPIU_STR_QUOTE_CHAR)
+    if (strstr(flag, MPIU_STR_SEPAR_STR) || strstr(flag, MPIU_STR_DELIM_STR) || flag[0] == MPIU_STR_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, flag);
     }
@@ -767,7 +794,7 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     }
     
     /* add the trailing space */
-    **str_ptr = ' ';
+    **str_ptr = MPIU_STR_SEPAR_CHAR;
     *str_ptr = *str_ptr + 1;
     **str_ptr = '\0';
     *maxlen_ptr = *maxlen_ptr - 1;
