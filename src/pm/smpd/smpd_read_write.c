@@ -10,14 +10,17 @@ int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, i
 {
     int num_used;
     int n = 0;
+    char ch;
     while (src_length && dest_length)
     {
+	ch = *src;
 	num_used = snprintf(dest, dest_length, "%X", (int)*src);
 	if (num_used < 0)
 	{
 	    *num_encoded = n;
 	    return SMPD_SUCCESS;
 	}
+	smpd_dbg_printf(" %c = %c%c\n", ch, dest[0], dest[1]);
 	dest += num_used;
 	dest_length -= num_used;
 	src++;
