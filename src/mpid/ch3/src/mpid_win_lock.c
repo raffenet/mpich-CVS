@@ -18,6 +18,12 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK);
 
+#ifdef MPICH_SINGLE_THREADED
+    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
+    return mpi_errno;
+#endif
+
     curr_ptr = MPIU_RMA_ops_list;
     prev_ptr = MPIU_RMA_ops_list;
     while (curr_ptr != NULL) {

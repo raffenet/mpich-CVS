@@ -6,13 +6,16 @@
 
 #include "mpidimpl.h"
 
-/*
+/* 
  * MPID_Comm_spawn()
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Comm_spawn
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
+
+#define MPIDI_CH3_Comm_spawn MPIDI_CH3_Comm_spawn 
+
 int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 		    int root, MPID_Comm *comm, MPID_Comm *intercomm,
 		    int array_of_errcodes[])
@@ -26,7 +29,7 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 #   if defined(MPIDI_CH3_Comm_spawn)
     {
 	mpi_errno = MPIDI_CH3_Comm_spawn(command, argv, maxprocs, info, root,
-					 comm, intercomm, array_off_errcodes);
+					 comm, intercomm, array_of_errcodes);
     }
 #   else
     {

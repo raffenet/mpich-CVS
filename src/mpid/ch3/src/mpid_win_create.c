@@ -57,6 +57,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->attributes = NULL;
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
 
+#ifndef MPICH_SINGLE_THREADED
 #ifdef HAVE_PTHREAD_H
     pthread_create(&((*win_ptr)->passive_target_thread_id), NULL,
                    MPIDI_Win_passive_target_thread, (void *) (*win_ptr));  
@@ -64,6 +65,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->passive_target_thread_id = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)MPIDI_Win_passive_target_thread, (*win_ptr), 0, &dwThreadID);
 #else
 #error Error: No thread package specified.
+#endif
 #endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);

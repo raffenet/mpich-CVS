@@ -8,7 +8,10 @@
 
 int MPID_Win_free(MPID_Win **win_ptr)
 {
-    int mpi_errno=MPI_SUCCESS, err;
+    int mpi_errno=MPI_SUCCESS;
+#ifndef MPICH_SINGLE_THREADED
+    int err;
+#endif
 
     MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_FREE);
 
@@ -20,6 +23,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
 
     MPIDI_Passive_target_thread_exit_flag = 1;
 
+#ifndef MPICH_SINGLE_THREADED
 #ifdef HAVE_PTHREAD_H
     pthread_join((*win_ptr)->passive_target_thread_id, (void **) &err);
 #elif defined(HAVE_WINTHREADS)
@@ -31,6 +35,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
 #error Error: No thread package specified.
 #endif
     mpi_errno = err;
+#endif
 
     NMPI_Comm_free(&((*win_ptr)->comm));
 
