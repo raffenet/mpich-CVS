@@ -54,6 +54,9 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
 	MPIDI_CH3_Progress_signal_completion();
     }
 
+    /* return the request */
+    *rreqp = rreq;
+
  fn_exit:
     return mpi_errno;
 }
