@@ -333,20 +333,24 @@ public class Primitive extends Drawable
         return true;
     }
 
-    public void drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, NestingStacks nesting_stacks )
+    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
+                              Map map_line2row, DrawnBoxSet drawn_boxes,
+                              NestingStacks nesting_stacks )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
         if ( topo.isEvent() )
             System.err.println( "Not yet supported Event Primitive type." );
         else if ( topo.isState() )
-            this.drawState( g, coord_xform, map_line2row, type.getColor(),
-                            nesting_stacks );
+            return this.drawState( g, coord_xform, map_line2row,
+                                   drawn_boxes, type.getColor(),
+                                   nesting_stacks );
         else if ( topo.isArrow() )
-            this.drawArrow( g, coord_xform, map_line2row, type.getColor() );
+            return this.drawArrow( g, coord_xform, map_line2row,
+                                   drawn_boxes, type.getColor() );
         else
             System.err.println( "Non-recognized Primitive type! " + this );
+        return 0;
     }
 
     public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,
@@ -373,9 +377,9 @@ public class Primitive extends Drawable
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private void drawState( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, ColorAlpha color,
-                            NestingStacks nesting_stacks )
+    private int  drawState( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color, NestingStacks nesting_stacks )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -385,9 +389,9 @@ public class Primitive extends Drawable
         tStart = start_vtx.time;  /* different from Shadow */
         tFinal = final_vtx.time;  /* different form Shadow */
 
-        int       rowID;
-        float     nesting_ftr;
-        rowID  = ( (Integer)
+        int    rowID;
+        float  nesting_ftr;
+        rowID  = ( (Integer) 
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
         nesting_ftr = nesting_stacks.getNestingFactorAtRow( rowID, this );
@@ -395,35 +399,38 @@ public class Primitive extends Drawable
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
         
         float  rStart, rFinal;
-        rStart   = (float) rowID - nesting_ftr / 2.0f;
-        rFinal   = rStart + nesting_ftr;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
 
-        State.draw( g, color, null, coord_xform,
-                    tStart, rStart, tFinal, rFinal );
+        return State.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastStatePos( rowID ),
+                           tStart, rStart, tFinal, rFinal );
     }
 
     //  assume this Primitive overlaps with coord_xform.TimeBoundingBox
-    private void drawArrow( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, ColorAlpha color )
+    private int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
         final_vtx = this.getFinalVertex();
 
-        double   tStart, tFinal;
+        double tStart, tFinal;
         tStart = start_vtx.time;
         tFinal = final_vtx.time;
 
-        float    rStart, rFinal;
-        rStart = ( (Integer)
+        int    iStart, iFinal;
+        iStart = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).floatValue();
-        rFinal = ( (Integer)
+                 ).intValue();
+        iFinal = ( (Integer)
                    map_line2row.get( new Integer(final_vtx.lineID) )
-                 ).floatValue();
+                 ).intValue();
 
-        Arrow.draw( g, color, null, coord_xform,
-                    tStart, rStart, tFinal, rFinal );
+        return Arrow.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastArrowPos( iStart, iFinal ),
+                           tStart, (float) iStart, tFinal, (float) iFinal );
     }
 
     /* 
@@ -440,8 +447,8 @@ public class Primitive extends Drawable
         tStart = start_vtx.time;  /* different from Shadow */
         tFinal = final_vtx.time;  /* different form Shadow */
 
-        int       rowID;
-        float     nesting_ftr;
+        int    rowID;
+        float  nesting_ftr;
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
@@ -451,8 +458,8 @@ public class Primitive extends Drawable
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
 
         float  rStart, rFinal;
-        rStart   = (float) rowID - nesting_ftr / 2.0f;
-        rFinal   = rStart + nesting_ftr;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
 
         return State.containsPixel( coord_xform, pix_pt,
                                     tStart, rStart, tFinal, rFinal );
@@ -466,11 +473,11 @@ public class Primitive extends Drawable
         start_vtx = this.getStartVertex();
         final_vtx = this.getFinalVertex();
 
-        double   tStart, tFinal;
+        double tStart, tFinal;
         tStart = start_vtx.time;
         tFinal = final_vtx.time;
 
-        float    rStart, rFinal;
+        float  rStart, rFinal;
         rStart = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).floatValue();

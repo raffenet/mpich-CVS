@@ -83,9 +83,11 @@ public abstract class Drawable extends InfoBox
 
     public abstract Integer[] getArrayOfLineIDs();
 
-    public abstract void      drawOnCanvas( Graphics2D g,
+    /* return number of primitives drawn */
+    public abstract int       drawOnCanvas( Graphics2D      g,
                                             CoordPixelXform coord_xform,
                                             Map             map_line2row,
+                                            DrawnBoxSet     drawn_boxes,
                                             NestingStacks   nesting_stacks );
 
     public abstract Drawable  getDrawableWithPixel( CoordPixelXform coord_xform,

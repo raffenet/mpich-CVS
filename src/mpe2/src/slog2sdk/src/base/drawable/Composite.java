@@ -400,20 +400,24 @@ public class Composite extends Drawable
         return true;
     }
 
-    public void drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, NestingStacks nesting_stacks )
+    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
+                              Map map_line2row, DrawnBoxSet drawn_boxes,
+                              NestingStacks nesting_stacks )
     {
         Primitive  prime;
-        int        primes_length, idx;
+        int        primes_length, num_primes_drawn, idx;
 
+        num_primes_drawn = 0;
         primes_length = (short) primes.length;
         // primes[] needs to be iterated in decreasing endtime order
         for ( idx = primes_length-1; idx >= 0; idx-- ) {
             prime = primes[ idx ];
             if ( coord_xform.overlaps( prime ) )
-                prime.drawOnCanvas( g, coord_xform, map_line2row,
-                                    nesting_stacks );
+                num_primes_drawn
+                += prime.drawOnCanvas( g, coord_xform, map_line2row,
+                                       drawn_boxes, nesting_stacks );
         }
+        return num_primes_drawn;
     }
 
     public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,

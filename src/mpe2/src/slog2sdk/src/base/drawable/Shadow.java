@@ -158,19 +158,23 @@ public class Shadow extends Primitive
         return rep.toString();
     }
 
-    public void drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, NestingStacks nesting_stacks )
+    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
+                              Map map_line2row, DrawnBoxSet drawn_boxes,
+                              NestingStacks nesting_stacks )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
         if ( topo.isEvent() )
             System.err.println( "Non-supported yet Event Shadow type." );
         else if ( topo.isState() )
-            this.drawState( g, coord_xform, map_line2row, type.getColor() );
+            return this.drawState( g, coord_xform, map_line2row,
+                                   drawn_boxes, type.getColor() );
         else if ( topo.isArrow() )
-            this.drawArrow( g, coord_xform, map_line2row, type.getColor() );
+            return this.drawArrow( g, coord_xform, map_line2row,
+                                   drawn_boxes, type.getColor() );
         else
             System.err.println( "Non-recognized Shadow type! " + this );
+        return 0;
     }
 
     public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,
@@ -197,8 +201,9 @@ public class Shadow extends Primitive
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private void drawState( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, ColorAlpha color )
+    private int  drawState( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -208,23 +213,25 @@ public class Shadow extends Primitive
         tStart = super.getEarliestTime();    /* different from Primitive */
         tFinal = super.getLatestTime();      /* different from Primitive */
 
-        int       rowID;
-        float     nesting_ftr;
+        int    rowID;
+        float  nesting_ftr;
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
         nesting_ftr = NestingStacks.getShadowNestingHeight();
 
         float  rStart, rFinal;
-        rStart   = (float) rowID - nesting_ftr / 2.0f;
-        rFinal   = rStart + nesting_ftr;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
 
-        State.draw( g, color, null, coord_xform,
-                    tStart, rStart, tFinal, rFinal );
+        return State.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastStatePos( rowID ),
+                           tStart, rStart, tFinal, rFinal );
     }
 
-    private void drawArrow( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, ColorAlpha color )
+    private int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -234,16 +241,17 @@ public class Shadow extends Primitive
         tStart = super.getEarliestTime();    /* different from Primitive */
         tFinal = super.getLatestTime();      /* different from Primitive */
 
-        float  rStart, rFinal;
-        rStart   = ( (Integer)
-                     map_line2row.get( new Integer(start_vtx.lineID) )
-                   ).floatValue();
-        rFinal   = ( (Integer)
-                     map_line2row.get( new Integer(final_vtx.lineID) )
-                   ).floatValue();
+        int    iStart, iFinal;
+        iStart = ( (Integer)
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).intValue();
+        iFinal = ( (Integer)
+                   map_line2row.get( new Integer(final_vtx.lineID) )
+                 ).intValue();
 
-        Line.draw( g, color, STROKE, coord_xform,
-                   tStart, rStart, tFinal, rFinal );
+        return Line.draw( g, color, STROKE, coord_xform,
+                          drawn_boxes.getLastArrowPos( iStart, iFinal ),
+                          tStart, (float) iStart, tFinal, (float) iFinal );
     }
 
     /* 
@@ -260,8 +268,8 @@ public class Shadow extends Primitive
         tStart = super.getEarliestTime();    /* different from Primitive */
         tFinal = super.getLatestTime();      /* different from Primitive */
 
-        int       rowID;
-        float     nesting_ftr;
+        int    rowID;
+        float  nesting_ftr;
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
@@ -271,8 +279,8 @@ public class Shadow extends Primitive
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
 
         float  rStart, rFinal;
-        rStart   = (float) rowID - nesting_ftr / 2.0f;
-        rFinal   = rStart + nesting_ftr;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
 
         return State.containsPixel( coord_xform, pix_pt,
                                     tStart, rStart, tFinal, rFinal );
@@ -286,11 +294,11 @@ public class Shadow extends Primitive
         start_vtx = this.getStartVertex();
         final_vtx = this.getFinalVertex();
 
-        double   tStart, tFinal;
+        double tStart, tFinal;
         tStart = super.getEarliestTime();    /* different from Primitive */
         tFinal = super.getLatestTime();      /* different from Primitive */
 
-        float    rStart, rFinal;
+        float  rStart, rFinal;
         rStart = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).floatValue();
