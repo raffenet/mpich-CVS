@@ -1,4 +1,5 @@
 #! @PERL@
+# -*- Mode: perl; -*-
 #
 # This script extracts information from files produced by gcov showing what
 # parts of each file have *not* been executed by the test programs.
@@ -16,19 +17,44 @@
 # The script in mpich2-tests/getcoverage will perform all of these steps 
 # (this script is not yet included with the MPICH2 distribution)
 #
+# TODO:
+# As an option, create HTML versions of the files with the uncovered code
+# highlighted with a different background color (e.g., pale red).  These
+# should be placed into the same directory structure as the original source
+# files, but with a different root ($annoteSrcDir)
+#
+# Another useful option for graphical output would be to keep track of the
+# percentage of covered lines and produce an "xdu"-style map of the 
+# coverage, with color indicating the fraction of coverage.
 #
 $includeFileInOutput = 0;
 $skipErrExits = 1;
 $outputUncovered = 1;
 @UnCalled = ();
+# annoteSrcDir is where the annotation files are placed,
+# annoteBaseDir is the base file name that is stripped from the
+# file names
+$annoteSrcDir = "";
+$annoteFiles = 1;
+$annoteBaseDir = "";
+
 for (@ARGV) {
+    if (/-annote=(.*)/) {
+	# Create an annotation of the source data in the specified root
+	# directory
+	$annoteSrcDir = $1;
+	$annoteFiles  = 1;
+	next;
+    }
     my $filename = $_;
     if (-d $filename) {
 	@files = &ExpandDir( $filename );
 	foreach $file (@files) {
-	    $missed_lines = &CountUncoveredLines( $file );
+	    ($missed_lines,$total_lines) = &CountUncoveredLines( $file );
 	    if ($missed_lines) {
 		print "$missed_lines line(s) not covered by tests in $file\n";
+		&WriteAnnoteFile( $file );
+		}
 	    }
 	    else {
 		print "All code covered by tests in $file\n";
@@ -36,9 +62,10 @@ for (@ARGV) {
 	}
     }
     elsif (-s $filename) {
-	$missed_lines = &CountUncoveredLines( $filename );
+	($missed_lines,$total_lines) = &CountUncoveredLines( $filename );
 	if ($missed_lines) {
 	    print "$missed_lines line(s) not covered by tests in $filename\n";
+	    $WriteAnnoteFile( $filename );
 	}
 	else {
 	    print "All code covered by tests in $filename\n";
@@ -53,12 +80,14 @@ for $routine (@UnCalled) {
     print STDERR "$routine never called\n";
 }
 
+# Count the number of uncovered lines, and return that number.
 sub CountUncoveredLines {
     my $filename = $_[0];
     my $missed_lines = 0;
     my $headerOutput = 0;
-    my $linecount = 0;
-    my $lastLineOut = -1;
+    my $linecount    = 0;    # Line in the coverage file
+    my $fileline     = 0;    # Line in the original file
+    my $lastLineOut  = -1;
     my $oldLine;
     my $lastLine;
 
@@ -68,11 +97,14 @@ sub CountUncoveredLines {
     # original foo.c file.
     while (<FD>) {
 	$linecount++;
+	# Coverage messages appear to always begin in the first column.
+	if (/^\s/) { $fileline++; }
 	# Skip any error checking block
 	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    while (<FD>) {
 		$linecount++;
-		if (/^\s*#\s*endif/ || /^\s*#\s*els/) { 
+		if (/^\s/) { $fileline++; }
+		if (/^\s+#\s*endif/ || /^\s*#\s*els/) { 
 		    last; 
 		}
 	    }
@@ -83,6 +115,7 @@ sub CountUncoveredLines {
 	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
 	    while (<FD>) {
 		$linecount++;
+		if (/^\s/) { $fileline++; }
 		if (/^\s*\/\* --END DEBUG-- \*\//) {
 		    last; 
 		}
@@ -94,6 +127,7 @@ sub CountUncoveredLines {
 	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
 	    while (<FD>) {
 		$linecount++;
+		if (/^\s/) { $fileline++; }
 		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
 		    last; 
 		}
@@ -141,7 +175,7 @@ sub CountUncoveredLines {
 	$lastLine = $_;
     }
     close (FD);
-    return $missed_lines;
+    return ($missed_lines,$fileline);
 }
 
 # Get all of the .gcov files from the named directory, including any subdirs
@@ -170,6 +204,118 @@ sub ExpandDir {
     return @files;
 }
 
+#
+# Annotate a file by placing the uncovered lines in bgcolor
+# AnnotateUncoveredLines( coveragefile, bgcolor, filenhandle )
+sub AnnotateUncoveredLines {
+    my $filename = $_[0];
+    my $bgcolor  = $_[1];
+    my $outfile  = $_[2];
+    my $outstate = "init";
+    my $instate  = "init";
+    my $newline  = "\r\n";
+
+    open( FD, "<$filename" ) || die "Could not open $filename\n";
+
+    print $outfile "<TABLE>$newline";
+
+    # Note that linecount is relative to the foo.c.gcov file, not the
+    # original foo.c file.
+    while (<FD>) {
+	# Make sure that we're in the right state.  Check to see if the 
+	# next line is executed or not.
+	if (!/^\s*######/) {
+	    if ($outstate eq "unex") {
+		print $outfile "</TD><TR><TD WIDTH=100%><PRE>$newline";
+	    }
+	    elsif ($outstate eq "init") {
+		print $outfile "<TR><TD WIDTH=100%><PRE>$newline";
+	        $outstate = "exec";
+	    }
+	}
+
+	# Coverage messages appear to always begin in the first column.
+	if (!/^\s/) { next; }
+
+	# Skip any error checking block
+	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	    print $outfile $_;
+	    while (<FD>) {
+		if (!/^\s/) { next; }
+	        print $outfile $_;
+		if (/^\s+#\s*endif/ || /^\s*#\s*els/) { 
+		    last; 
+		}
+	    }
+	    next;	       
+	}
+	# Skip any blocks marked as debugging or unavoidable error checking
+	# code 
+	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
+	    print $outfile $_;
+	    while (<FD>) {
+		if (!/^\s/) { print $outfile $_;
+		if (/^\s*\/\* --END DEBUG-- \*\//) {
+		    last; 
+		}
+	    }
+	    next;	       
+	}
+	# Skip any blocks marked as debugging or unavoidable error checking
+	# code 
+	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
+	    print $outfile $_;
+	    while (<FD>) {
+		if (!/^\s/) { print $outfile $_;
+		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
+		    last; 
+		}
+	    }
+	    next;	       
+	}
+	# If requested, skip obvious error checking lines
+	if ($skipErrExits && 
+	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
+	     /MPIR_Err_create_code/)) {
+	    print $outfile $_;
+	    next;
+	}
+
+	if (/^\s*######/) {
+	    if ($outstate ne "unex") {
+		print $outfile "</TD></TR><TR><TD BGCOLOR=\"$bgcolor\" WIDTH=100%><PRE>$newline";
+		$outstate = "unex";
+	    }
+	    print $outfile $_;
+	    }
+	}
+    }
+    close (FD);
+    print $outfile "</PRE></TD></TR>$newline</TABLE>$newline";
+}
+
+# Write the annotation file as a simple HTML file
+sub WriteAnnoteFile {
+    my $filename =$_[0];
+    if ($annoteFiles) {
+	# Make a file name
+	my $basefile = $file;
+	$basefile =~ s/\.gcov//;
+	$basefile =~ s/$annoteBaseDir//;
+	my $OUTFD = OUTFD;
+	my $rc = open( $OUTFD, ">$annoteSrcDir/$basefile" );
+	if ($rc == 0) {
+	    $newline = "\r\n";
+	    print $OUTFD "<HTML><HEAD>$newline";
+	    print $OUTFD "<TITLE>Coverage for $file</TITLE>$newline";
+	    print $OUTFD "</HEAD>$newline";
+	    print $OUTFD "<BODY BGCOLOR=\"FFFFFF\">$newline";
+	    &AnnotateUncoveredLines( $file, "red", $OUTFD );
+	    print $OUTFD "</BODY></HTML>$newline";
+	    close( $OUTFD );
+	}
+    }
+}
 #
 # To generate a summary
 # cd mpich2/src 
