@@ -113,6 +113,7 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
 
 /* extended functions */
 int sock_getid(sock_t sock);
+int sock_getsetid(sock_set_t set);
 
 CPLUSPLUS_END
 
@@ -135,6 +136,8 @@ MPID_STATE_SOCK_POST_READ, \
 MPID_STATE_SOCK_POST_READV, \
 MPID_STATE_SOCK_POST_WRITE, \
 MPID_STATE_SOCK_POST_WRITEV, \
+MPID_STATE_SOCK_GETID, \
+MPID_STATE_SOCK_GETSETID, \
 SOCKI_STATE_LIST
 
 #endif /* !defined(SOCK_H_INCLUDED) */

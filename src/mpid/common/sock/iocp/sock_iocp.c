@@ -565,9 +565,9 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
     /*int ret_val;*/
     sock_state_t *sock_state;
     /*u_long optval;*/
-    MPIDI_STATE_DECL(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_NATIVE_TO_SOCK);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_NATIVE_TO_SOCK);
 
     /* setup the structures */
     sock_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
@@ -604,14 +604,14 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
 	/*
 	ret_val = WinToSockError(GetLastError());
 	MPIU_Error_printf("CreateIOCompletionPort failed, error %d\n", GetLastError());
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_NATIVE_TO_SOCK);
 	return ret_val;
 	*/
     }
 
     *sock_ptr = sock_state;
 
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_NATIVE_TO_SOCK);
     return SOCK_SUCCESS;
 }
 
@@ -1697,7 +1697,24 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
 
 int sock_getid(sock_t sock)
 {
-    return (int)sock->sock;
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_GETID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_GETID);
+    ret_val = (int)sock->sock;
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_GETID);
+    return ret_val;
+}
+
+int sock_getsetid(sock_set_t set)
+{
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_GETSETID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_GETSETID);
+    ret_val = (int)set;
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_GETSETID);
+    return ret_val;
 }
 
 int sock_easy_receive(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_read)
