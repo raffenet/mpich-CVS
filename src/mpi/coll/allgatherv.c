@@ -182,17 +182,17 @@ PMPI_LOCAL int MPIR_Allgatherv (
                 my_tree_root = rank >> i;
                 my_tree_root <<= i;
                 
-                send_offset = 0;
-                for (j=0; j<my_tree_root; j++)
-                    send_offset += recvcounts[j];
-                send_offset *= recv_extent;
-                
-                recv_offset = 0;
-                for (j=0; j<dst_tree_root; j++)
-                    recv_offset += recvcounts[j];
-                recv_offset *= recv_extent;
-
                 if (dst < comm_size) {
+                    send_offset = 0;
+                    for (j=0; j<my_tree_root; j++)
+                        send_offset += recvcounts[j];
+                    send_offset *= recv_extent;
+                    
+                    recv_offset = 0;
+                    for (j=0; j<dst_tree_root; j++)
+                        recv_offset += recvcounts[j];
+                    recv_offset *= recv_extent;
+
                     mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                                               curr_cnt, recvtype, dst,
                                               MPIR_ALLGATHERV_TAG,  
@@ -232,11 +232,6 @@ PMPI_LOCAL int MPIR_Allgatherv (
                     }
                     k--;
                     
-                    offset = 0;
-                    for (j=0; j<(my_tree_root+mask); j++)
-                        offset += recvcounts[j];
-                    offset *= recv_extent;
-
                     tmp_mask = mask >> 1;
                     
                     while (tmp_mask) {
@@ -251,6 +246,12 @@ PMPI_LOCAL int MPIR_Allgatherv (
                         if ((dst > rank) && 
                             (rank < tree_root + nprocs_completed)
                             && (dst >= tree_root + nprocs_completed)) {
+
+                            offset = 0;
+                            for (j=0; j<(my_tree_root+mask); j++)
+                                offset += recvcounts[j];
+                            offset *= recv_extent;
+
                             mpi_errno = MPIC_Send(((char *)tmp_buf + offset),
                                                   last_recv_cnt,
                                                   recvtype, dst,
@@ -265,6 +266,12 @@ PMPI_LOCAL int MPIR_Allgatherv (
                         else if ((dst < rank) && 
                                  (dst < tree_root + nprocs_completed) &&
                                  (rank >= tree_root + nprocs_completed)) {
+
+                            offset = 0;
+                            for (j=0; j<(my_tree_root+mask); j++)
+                                offset += recvcounts[j];
+                            offset *= recv_extent;
+
                             mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
                                                   total_count, recvtype,
                                                   dst, MPIR_ALLGATHERV_TAG,
