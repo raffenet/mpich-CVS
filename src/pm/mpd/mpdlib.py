@@ -1,4 +1,6 @@
-from sys        import version_info, stdout, exc_info
+#!/usr/bin/env python
+
+from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM
 from re         import sub, split
 from cPickle    import dumps, loads
@@ -214,3 +216,9 @@ def mpd_get_groups_for_username(username):
         if username in group[3]  and  group[2] not in userGroups:
             userGroups.append(group[2])
     return userGroups
+
+if __name__ == '__main__':
+    print 'mpdlib for mpd version: %s' % str(mpd_version)
+    print 'mpdlib does NOT run as a standalone console program;'
+    print '    it is a module (library) imported by other python programs'
+    exit(-1)
