@@ -406,6 +406,7 @@ int smpd_priority_to_win_priority(int *priority)
     return SMPD_SUCCESS;
 }
 
+/* Windows code */
 int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
 {
     HANDLE hStdin, hStdout, hStderr;
@@ -794,286 +795,90 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
     smpd_exit_fn("smpd_parse_account_domain.\n");
 }
 
-#if 0
-bool ValidateUser(char *pszAccount, char *pszPassword, bool bUseCache, int *pError)
+#else
+
+/* Unix code */
+int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
 {
-    HANDLE hUser;
-    char account[100], domain[100] = "", *pszDomain;
+    int result;
+    int stdin_pipe_fds[2], stdout_pipe_fds[2], stderr_pipe_fds[2];
+    int pid;
 
-    ParseAccountDomain(pszAccount, account, domain);
-    if (strlen(domain) < 1)
-	pszDomain = NULL;
+    smpd_enter_fn("smpd_launch_process");
+
+    /* create pipes for redirecting I/O */
+    pipe(stdin_pipe_fds);
+    pipe(stdout_pipe_fds);
+    pipe(stderr_pipe_fds);
+
+    pid = fork();
+    if (pid < 0)
+    {
+	smpd_err_printf("fork failed.\n");
+	smpd_exit_fn("smpd_launch_process");
+	return SMPD_FAIL;
+    }
+
+    if (pid == 0)
+    {
+	/* child process */
+	smpd_dbg_printf("client is alive and about to redirect io\n");
+
+	close(0); 		  /* close stdin     */
+	dup(stdin_pipe_fds[0]);   /* dup a new stdin */
+	close(stdin_pipe_fds[0]);
+	close(stdin_pipe_fds[1]);
+
+	close(1);		  /* close stdout     */
+	dup(stdout_pipe_fds[1]);  /* dup a new stdout */
+	close(stdout_pipe_fds[0]);
+	close(stdout_pipe_fds[1]);
+
+	close(2);		  /* close stderr     */
+	dup(stderr_pipe_fds[1]);  /* dup a new stderr */
+	close(stderr_pipe_fds[0]);
+	close(stderr_pipe_fds[1]);
+
+	/*sprintf( env_path_for_exec, "PATH=%s", getenv( "PATH" ) );*/
+	/*strcpy( pwd_for_exec, getenv( "PWD" ) );*/
+	result = chdir( dir );
+	if (result < 0)
+	    chdir( getenv( "HOME" ) );
+
+	result = execvp( cmd, NULL );
+
+	smpd_err_printf("execvp failed, exiting.\n");
+	smpd_exit_fn("smpd_launch_process");
+	exit(-1);
+    }
     else
-	pszDomain = domain;
+    {
+	/* parent process */
+	*pid_ptr = pid;
+	close(stdin_pipe_fds[0]);
+	close(stdout_pipe_fds[1]);
+	close(stderr_pipe_fds[1]);
 
-    if (bUseCache)
-	hUser = GetUserHandle(account, pszDomain, pszPassword, pError);
-    else
-	hUser = GetUserHandleNoCache(account, pszDomain, pszPassword, pError);
-
-    /* does hUser need to be closed? */
-
-    return (hUser != INVALID_HANDLE_VALUE);
-}
-
-HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *env, char *map, char *dir, int priorityClass, int priority, HANDLE *hIn, HANDLE *hOut, HANDLE *hErr, int *pdwPid, int *nError, char *pszError, bool bDebug)
-{
-    HANDLE hStdin, hStdout, hStderr;
-    HANDLE hPipeStdinR=NULL, hPipeStdinW=NULL;
-    HANDLE hPipeStdoutR=NULL, hPipeStdoutW=NULL;
-    HANDLE hPipeStderrR=NULL, hPipeStderrW=NULL;
-    STARTUPINFO saInfo;
-    PROCESS_INFORMATION psInfo;
-    void *pEnv=NULL;
-    char tSavedPath[MAX_PATH] = ".";
-    HANDLE hRetVal = INVALID_HANDLE_VALUE;
-    char account[100], domain[100] = "", *pszDomain = NULL;
-    HANDLE hUser;
-    int num_tries;
-    int error;
-    DWORD launch_flag;
-    
-    /* Launching of the client processes must be synchronized because
-       stdin,out,err are redirected for the entire process, not just this thread. */
-    WaitForSingleObject(g_hLaunchMutex, INFINITE);
-    
-    /* Don't handle errors, just let the process die.
-       In the future this will be configurable to allow various debugging options. */
-#ifdef USE_SET_ERROR_MODE
-    DWORD dwOriginalErrorMode;
-    dwOriginalErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-#endif
-    
-    /* Save stdin, stdout, and stderr */
-    hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    hStderr = GetStdHandle(STD_ERROR_HANDLE);
-    if (hStdin == INVALID_HANDLE_VALUE || hStdout == INVALID_HANDLE_VALUE  || hStderr == INVALID_HANDLE_VALUE)
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "GetStdHandle failed, ");
-	ReleaseMutex(g_hLaunchMutex);
-#ifdef USE_SET_ERROR_MODE
-	SetErrorMode(dwOriginalErrorMode);
-#endif
-	return INVALID_HANDLE_VALUE;
-    }
-    
-    /* Set the security attributes to allow handles to be inherited */
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.lpSecurityDescriptor = NULL;
-    saAttr.bInheritHandle = TRUE;
-    
-    /* Create pipes for stdin, stdout, and stderr */
-    if (!CreatePipe(&hPipeStdinR, &hPipeStdinW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    if (!CreatePipe(&hPipeStdoutR, &hPipeStdoutW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    if (!CreatePipe(&hPipeStderrR, &hPipeStderrW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    
-    /* Make the ends of the pipes that this process will use not inheritable */
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStdinW, GetCurrentProcess(), hIn, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	goto CLEANUP;
-    }
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStdoutR, GetCurrentProcess(), hOut, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	CloseHandle(*hIn);
-	goto CLEANUP;
-    }
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStderrR, GetCurrentProcess(), hErr, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	CloseHandle(*hIn);
-	CloseHandle(*hOut);
-	goto CLEANUP;
-    }
-    
-    /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
-    if (!SetStdHandle(STD_INPUT_HANDLE, hPipeStdinR))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	CloseHandle(*hIn);
-	CloseHandle(*hOut);
-	CloseHandle(*hErr);
-	goto CLEANUP;
-    }
-    if (!SetStdHandle(STD_OUTPUT_HANDLE, hPipeStdoutW))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	CloseHandle(*hIn);
-	CloseHandle(*hOut);
-	CloseHandle(*hErr);
-	goto RESTORE_CLEANUP;
-    }
-    if (!SetStdHandle(STD_ERROR_HANDLE, hPipeStderrW))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	CloseHandle(*hIn);
-	CloseHandle(*hOut);
-	CloseHandle(*hErr);
-	goto RESTORE_CLEANUP;
-    }
-    
-    /* Create the process */
-    memset(&saInfo, 0, sizeof(STARTUPINFO));
-    saInfo.cb         = sizeof(STARTUPINFO);
-    saInfo.hStdInput  = hPipeStdinR;
-    saInfo.hStdOutput = hPipeStdoutW;
-    saInfo.hStdError  = hPipeStderrW;
-    saInfo.dwFlags    = STARTF_USESTDHANDLES;
-    /*saInfo.lpDesktop = "WinSta0\\Default"; */
-    /*saInfo.wShowWindow = SW_SHOW; */
-    
-    SetEnvironmentVariables(env);
-    pEnv = GetEnvironmentStrings();
-    
-    ParseAccountDomain(domainaccount, account, domain);
-    if (strlen(domain) < 1)
-	pszDomain = NULL;
-    else
-	pszDomain = domain;
-
-    hUser = GetUserHandle(account, pszDomain, password, nError);
-    if (hUser == INVALID_HANDLE_VALUE)
-    {
-	strcpy(pszError, "LogonUser failed, ");
-	FreeEnvironmentStrings((TCHAR*)pEnv);
-	SetCurrentDirectory(tSavedPath);
-	RemoveEnvironmentVariables(env);
-	CloseHandle(*hIn);
-	CloseHandle(*hOut);
-	CloseHandle(*hErr);
-	goto RESTORE_CLEANUP;
-    }
-
-    if (ImpersonateLoggedOnUser(hUser))
-    {
-	if (!MapUserDrives(map, domainaccount, password, pszError))
+	/* make sock structures out of the sockets */
+	result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, sock_in);
+	if (result != SOCK_SUCCESS)
 	{
-	    err_printf("LaunchProcessLogon:MapUserDrives(%s, %s) failed, %s", map, domainaccount, pszError);
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
 	}
-
-	GetCurrentDirectory(MAX_PATH, tSavedPath);
-	SetCurrentDirectory(dir);
-
-	launch_flag = 
-	    /*
-	    //DETACHED_PROCESS | IDLE_PRIORITY_CLASS;
-	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS;
-	    //CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS;
-	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	    //DETACHED_PROCESS | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_SUSPENDED;
-	    */
-	    CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
-	if (bDebug)
-	    launch_flag = launch_flag | DEBUG_PROCESS;
-
-	/*PrintPriorities(priorityClass, priority);*/
-	num_tries = 4;
-	do
+	result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, sock_out);
+	if (result != SOCK_SUCCESS)
 	{
-	    if (CreateProcessAsUser(
-		hUser,
-		NULL,
-		cmd,
-		NULL, NULL, TRUE,
-		launch_flag,
-		pEnv,
-		NULL,
-		&saInfo, &psInfo))
-	    {
-		SetThreadPriority(psInfo.hThread, priority);
-
-                DWORD dwClass, dwPriority;
-		dwClass = GetPriorityClass(psInfo.hProcess);
-		dwPriority = GetThreadPriority(psInfo.hThread);
-		PrintPriorities(dwClass, dwPriority);
-
-		ResumeThread(psInfo.hThread);
-		hRetVal = psInfo.hProcess;
-		*pdwPid = psInfo.dwProcessId;
-
-		CloseHandle(psInfo.hThread);
-		num_tries = 0;
-	    }
-	    else
-	    {
-		error = GetLastError();
-		if (error == ERROR_REQ_NOT_ACCEP)
-		{
-		    Sleep(1000);
-		    num_tries--;
-		    if (num_tries == 0)
-		    {
-			*nError = error;
-			strcpy(pszError, "CreateProcessAsUser failed, ");
-		    }
-		}
-		else
-		{
-		    *nError = error;
-		    strcpy(pszError, "CreateProcessAsUser failed, ");
-		    num_tries = 0;
-		}
-	    }
-	} while (num_tries);
-	/*RevertToSelf(); */ /* If you call RevertToSelf, the network mapping goes away.*/
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	}
+	result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, sock_err);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	}
     }
-    else
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "ImpersonateLoggedOnUser failed, ");
-    }
-    
-    FreeEnvironmentStrings((TCHAR*)pEnv);
-    SetCurrentDirectory(tSavedPath);
-    RemoveEnvironmentVariables(env);
-    
-RESTORE_CLEANUP:
-    /* Restore stdin, stdout, stderr */
-    SetStdHandle(STD_INPUT_HANDLE, hStdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, hStdout);
-    SetStdHandle(STD_ERROR_HANDLE, hStderr);
-    
-CLEANUP:
-    ReleaseMutex(g_hLaunchMutex);
-    CloseHandle(hPipeStdinR);
-    CloseHandle(hPipeStdoutW);
-    CloseHandle(hPipeStderrW);
 
-#ifdef USE_SET_ERROR_MODE
-    SetErrorMode(dwOriginalErrorMode);
-#endif
-
-    return hRetVal;
+    smpd_exit_fn("smpd_launch_process");
+    return SMPD_SUCCESS;
 }
-#endif
 
 #endif
