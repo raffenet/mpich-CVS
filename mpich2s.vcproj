@@ -630,6 +630,96 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ch3sshmDebug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="lib/mpich2ssmd.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2ssmd.lib"
+				CommandLine="lib lib\mpich2ssmd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3sshmRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				OmitFramePointers="TRUE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="lib/mpich2ssm.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2ssm.lib"
+				CommandLine="lib lib\mpich2ssm.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -1074,6 +1164,18 @@
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="src\mpi\errhan\file_create_errhandler.c">
@@ -1157,6 +1259,18 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3rdmatpRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1251,6 +1365,18 @@
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="src\mpi\errhan\file_set_errhandler.c">
@@ -1334,6 +1460,18 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3rdmatpRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>

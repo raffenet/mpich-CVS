@@ -174,7 +174,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_Print_packet(pkt);
 
-    assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
+    /*assert(pkt->type < MPIDI_CH3_PKT_END_CH3);*/
     
     switch(pkt->type)
     {
@@ -309,7 +309,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 			
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
-		esa_pkt->sender_req_id = es_pkt->sender_req_id;
+		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -843,7 +843,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "null message, %s, decrementing completion counter",
 			  (found ? "posted request found" : "unexpected request allocated")));
-	/* mark data transfer as complete adn decrment CC */
+	/* mark data transfer as complete and decrment CC */
 	rreq->dev.iov_count = 0;
 	MPIDI_CH3U_Request_complete(rreq);
 	goto fn_exit;

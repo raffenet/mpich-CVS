@@ -43,6 +43,7 @@ namespace MandelViewer
 		private static ArrayList demo_list = null;
 		private static bool bDemoMode = false;
 		private static int demo_iter = 0;
+		private static MandelViewerForm form = null;
 
 		static void work_thread()
 		{
@@ -73,6 +74,10 @@ namespace MandelViewer
 								xmax = ((ExamplePoint)demo_list[demo_iter]).xmax;
 								ymax = ((ExamplePoint)demo_list[demo_iter]).ymax;
 								nMax = ((ExamplePoint)demo_list[demo_iter]).max_iter;
+								if (((ExamplePoint)demo_list[demo_iter]).name != null)
+									form.Text = "Mandelbrot Viewer - " + ((ExamplePoint)demo_list[demo_iter]).name;
+								else
+									form.Text = String.Format("Mandelbrot Viewer - {0}", demo_iter);
 								colors = new Color[nMax+1];
 								ColorRainbow.Make_color_array(nNumColors, colors);
 								colors[nMax] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
@@ -215,22 +220,23 @@ namespace MandelViewer
 			// 
 			this.connect_button.Location = new System.Drawing.Point(8, 8);
 			this.connect_button.Name = "connect_button";
+			this.connect_button.Size = new System.Drawing.Size(56, 23);
 			this.connect_button.TabIndex = 0;
 			this.connect_button.Text = "Connect";
 			this.connect_button.Click += new System.EventHandler(this.connect_button_Click);
 			// 
 			// host
 			// 
-			this.host.Location = new System.Drawing.Point(96, 8);
+			this.host.Location = new System.Drawing.Point(72, 8);
 			this.host.Name = "host";
 			this.host.TabIndex = 1;
 			this.host.Text = "host";
 			// 
 			// port
 			// 
-			this.port.Location = new System.Drawing.Point(200, 8);
+			this.port.Location = new System.Drawing.Point(176, 8);
 			this.port.Name = "port";
-			this.port.Size = new System.Drawing.Size(80, 20);
+			this.port.Size = new System.Drawing.Size(40, 20);
 			this.port.TabIndex = 2;
 			this.port.Text = "7470";
 			// 
@@ -242,7 +248,7 @@ namespace MandelViewer
 			this.outputBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.outputBox.Location = new System.Drawing.Point(8, 40);
 			this.outputBox.Name = "outputBox";
-			this.outputBox.Size = new System.Drawing.Size(768, 768);
+			this.outputBox.Size = new System.Drawing.Size(760, 760);
 			this.outputBox.TabIndex = 3;
 			this.outputBox.TabStop = false;
 			this.outputBox.Paint += new System.Windows.Forms.PaintEventHandler(this.outputBox_Paint);
@@ -252,7 +258,7 @@ namespace MandelViewer
 			// 
 			// demo_button
 			// 
-			this.demo_button.Location = new System.Drawing.Point(288, 8);
+			this.demo_button.Location = new System.Drawing.Point(224, 8);
 			this.demo_button.Name = "demo_button";
 			this.demo_button.Size = new System.Drawing.Size(88, 23);
 			this.demo_button.TabIndex = 4;
@@ -261,15 +267,17 @@ namespace MandelViewer
 			// 
 			// points_comboBox
 			// 
-			this.points_comboBox.Location = new System.Drawing.Point(384, 8);
+			this.points_comboBox.Location = new System.Drawing.Point(320, 8);
+			this.points_comboBox.MaxDropDownItems = 20;
 			this.points_comboBox.Name = "points_comboBox";
-			this.points_comboBox.Size = new System.Drawing.Size(344, 21);
+			this.points_comboBox.Size = new System.Drawing.Size(400, 21);
 			this.points_comboBox.TabIndex = 5;
 			this.points_comboBox.Text = "points";
+			this.points_comboBox.SelectedValueChanged += new System.EventHandler(this.points_comboBox_SelectedValueChanged);
 			// 
 			// go_stop_button
 			// 
-			this.go_stop_button.Location = new System.Drawing.Point(736, 8);
+			this.go_stop_button.Location = new System.Drawing.Point(728, 8);
 			this.go_stop_button.Name = "go_stop_button";
 			this.go_stop_button.Size = new System.Drawing.Size(40, 23);
 			this.go_stop_button.TabIndex = 6;
@@ -279,7 +287,7 @@ namespace MandelViewer
 			// MandelViewerForm
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.ClientSize = new System.Drawing.Size(788, 819);
+			this.ClientSize = new System.Drawing.Size(776, 811);
 			this.Controls.Add(this.go_stop_button);
 			this.Controls.Add(this.points_comboBox);
 			this.Controls.Add(this.demo_button);
@@ -288,7 +296,7 @@ namespace MandelViewer
 			this.Controls.Add(this.host);
 			this.Controls.Add(this.connect_button);
 			this.Name = "MandelViewerForm";
-			this.Text = "MandelViewerForm";
+			this.Text = "Mandelbrot Viewer";
 			this.Resize += new System.EventHandler(this.MandelViewerForm_Resize);
 			this.ResumeLayout(false);
 
@@ -303,8 +311,8 @@ namespace MandelViewer
 		{
 			double d = 0.0;
 			int i = 0;
-			MandelViewerForm f = new MandelViewerForm();
-			Application.Run(f);
+			form = new MandelViewerForm();
+			Application.Run(form);
 			try
 			{
 				// tell the mpi program to stop
@@ -389,6 +397,10 @@ namespace MandelViewer
 			connect_button.Enabled = false;
 			host.ReadOnly = true;
 			port.ReadOnly = true;
+			if (demo_list != null && demo_list.Count > 0)
+			{
+				go_stop_button.Enabled = true;
+			}
 
 			bDrawing = true;
 			pBox = outputBox;
@@ -479,6 +491,8 @@ namespace MandelViewer
 					ymin = y1;
 					ymax = y2;
 
+					Text = "Mandelbrot Viewer";
+
 					bDrawing = true;
 					ThreadStart threadProc = new ThreadStart(work_thread);
 					thread = new Thread(threadProc);
@@ -530,6 +544,7 @@ namespace MandelViewer
 					double xmin=0, ymin=0, xmax=0, ymax=0;
 					double xcenter=0, ycenter=0, radius=0;
 					int max_iter=0;
+					string name=null;
 
 					while ((line = sr.ReadLine()) != null) 
 					{
@@ -544,10 +559,34 @@ namespace MandelViewer
 							ycenter = 0;
 							radius = 0;
 							max_iter = 100;
+							name = null;
+							int num_empties = 0;
+							String [] elements_cropped;
 							//MessageBox.Show(line);
 							elements = line.Split(' ');
 							if (elements != null)
 							{
+								for (int i=0; i<elements.Length; i++)
+								{
+									if (elements[i] == String.Empty)
+									{
+										num_empties++;
+									}
+								}
+							}
+							if (elements != null && num_empties < elements.Length)
+							{
+								int index = 0;
+								elements_cropped = new String[elements.Length - num_empties];
+								for (int i=0; i<elements.Length; i++)
+								{
+									if (elements[i] != String.Empty)
+									{
+										elements_cropped[index] = elements[i];
+										index++;
+									}
+								}
+								elements = elements_cropped;
 								for (int i=0; i<elements.Length-1; i++)
 								{
 									//MessageBox.Show(elements[i], "element");
@@ -583,10 +622,14 @@ namespace MandelViewer
 									{
 										radius = Convert.ToDouble(elements[i+1]);
 									}
+									if (elements[i] == "-name")
+									{
+										name = elements[i+1];
+									}
 								}
 								if (xmin != xmax && ymin != ymax)
 								{
-									ExamplePoint node = new ExamplePoint(xmin, ymin, xmax, ymax, max_iter);
+									ExamplePoint node = new ExamplePoint(xmin, ymin, xmax, ymax, max_iter, name);
 									demo_list.Add(node);
 									//MessageBox.Show(node.ToString(), "box");
 								}
@@ -595,7 +638,7 @@ namespace MandelViewer
 									ExamplePoint node = new ExamplePoint(
 										xcenter - radius, ycenter - radius,
 										xcenter + radius, ycenter + radius,
-										max_iter);
+										max_iter, name);
 									demo_list.Add(node);
 									//MessageBox.Show(node.ToString(), "center");
 								}
@@ -611,7 +654,10 @@ namespace MandelViewer
 						points_comboBox.Items.Add(((ExamplePoint)demo_list[i]).ToString());
 					}
 					points_comboBox.SelectedIndex = 0;
-					go_stop_button.Enabled = true;
+					if (connect_button.Enabled == false)
+					{
+						go_stop_button.Enabled = true;
+					}
 				}
 			}
 		}
@@ -627,6 +673,47 @@ namespace MandelViewer
 			{
 				go_stop_button.Text = "Stop";
 				bDemoMode = true;
+				if (!bDrawing && thread != null)
+				{
+					thread.Join();
+
+					bDrawing = true;
+					ThreadStart threadProc = new ThreadStart(work_thread);
+					thread = new Thread(threadProc);
+					thread.Start();
+
+					rBox = new Rectangle(0, 0, 0, 0);
+					outputBox.Invalidate();
+				}
+			}
+		}
+
+		private void points_comboBox_SelectedValueChanged(object sender, System.EventArgs e)
+		{
+			//MessageBox.Show(points_comboBox.SelectedItem.ToString(), "hi");
+			if (!bDrawing && thread != null)
+			{
+				thread.Join();
+
+				ExamplePoint p = new ExamplePoint(points_comboBox.SelectedItem.ToString());
+
+				xmin = p.xmin;
+				xmax = p.xmax;
+				ymin = p.ymin;
+				ymax = p.ymax;
+
+				if (p.name != null && p.name != "")
+					Text = "Mandelbrot Viewer - " + p.name;
+				else
+					Text = "Mandelbrot Viewer";
+
+				bDrawing = true;
+				ThreadStart threadProc = new ThreadStart(work_thread);
+				thread = new Thread(threadProc);
+				thread.Start();
+
+				rBox = new Rectangle(0, 0, 0, 0);
+				outputBox.Invalidate();
 			}
 		}
 	}
@@ -638,6 +725,7 @@ namespace MandelViewer
 		public double xmax;
 		public double ymax;
 		public int max_iter;
+		public string name;
 
 		public ExamplePoint(double x0, double y0, double x1, double y1, int m)
 		{
@@ -646,11 +734,38 @@ namespace MandelViewer
 			xmax = x1;
 			ymax = y1;
 			max_iter = m;
+			name = null;
+		}
+		public ExamplePoint(double x0, double y0, double x1, double y1, int m, string n)
+		{
+			xmin = x0;
+			ymin = y0;
+			xmax = x1;
+			ymax = y1;
+			max_iter = m;
+			name = n;
+		}
+		public ExamplePoint(string s)
+		{
+			xmin = -2;
+			xmax = 2;
+			ymin = -2;
+			ymax = 2;
+			max_iter = 100;
+			name = null;
 		}
 		public override string ToString()
 		{
-			return String.Format("({0},{1}) ({2},{3}) max_iter {4}",
-				xmin, ymin, xmax, ymax, max_iter);
+			if (name == null)
+			{
+				return String.Format("({0},{1}) ({2},{3}) max_iter {4}",
+					xmin, ymin, xmax, ymax, max_iter);
+			}
+			else
+			{
+				return String.Format("({0},{1}) ({2},{3}) max_iter {4} name \"{5}\"",
+					xmin, ymin, xmax, ymax, max_iter, name);
+			}
 		}
 	}
 

@@ -70,10 +70,20 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    /*
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
-    */
+#ifdef MPICH_DBG_OUTPUT
+    if (n_iov > MPID_IOV_LIMIT)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+	return mpi_errno;
+    }
+    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+	return mpi_errno;
+    }
+#endif
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
@@ -98,26 +108,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		mpi_errno = MPIDU_Sock_writev(vc->ch.sock, iov, n_iov, &snb);
 		nb = snb;
 	    }
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-		return mpi_errno;
-#if 0
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, rc=%d", rc));
-		sreq = MPIDI_CH3_Request_create();
-		if (sreq == NULL)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		    return mpi_errno;
-		}
-		sreq->kind = MPID_REQUEST_SEND;
-		sreq->cc = 0;
-		/* TODO: Create an appropriate error message based on the return value */
-		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
-#endif
-	    }
-	    if (nb > 0)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		int offset = 0;
     
@@ -155,18 +146,9 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete"));
 		}
 	    }
-	    else if (nb == 0)
-	    {
-		MPIU_DBG_PRINTF(("ch3_istartmsgv: this should be an error because the sendQ is empty but shm_writev() returned 0 bytes.\n"));
-		create_request(sreq, iov, n_iov, 0, 0);
-		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		if (vc->ch.bShm)
-		    vc->ch.send_active = sreq;
-		else
-		    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
-	    }
 	    else
 	    {
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDI_CH3I_SHM_writev failed"));
 		sreq = MPIDI_CH3_Request_create();
 		if (sreq == NULL)
 		{
@@ -174,11 +156,10 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 		    return mpi_errno;
 		}
-		/*assert(sreq != NULL);*/
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
-		/* TODO: Create an appropriate error message based on the value of errno */
-		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+		/* TODO: Create an appropriate error message based on the return value */
+		sreq->status.MPI_ERROR = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
 	    }
 	}
 	else
@@ -253,5 +234,5 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

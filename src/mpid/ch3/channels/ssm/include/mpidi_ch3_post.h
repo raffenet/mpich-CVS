@@ -49,11 +49,21 @@ extern volatile unsigned int MPIDI_CH3I_progress_completions;
 #define MPIDI_CH3_Progress_end()
 #endif
 
+#ifdef USE_NAIVE_PROGRESS_ENGINE
+
+int MPIDI_CH3I_Progress(int blocking);
+#define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
+#define MPIDI_CH3_Progress_wait() MPIDI_CH3I_Progress(TRUE)
+
+#else
+
 #if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK) || defined(USE_FIXED_ACTIVE_PROGRESS)
 int MPIDI_CH3I_Progress(int blocking);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
 #define MPIDI_CH3_Progress_wait() MPIDI_CH3I_Progress(TRUE)
 #endif
+
+#endif /* USE_NAIVE_PROGRESS_ENGINE */
 
 /*
  * Enable optional functionality

@@ -52,7 +52,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 {														\
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));              	\
-    req->dev.next = vc->ch.sendq_tail;										\
+    req->dev.next = vc->ch.sendq_head;										\
     if (vc->ch.sendq_tail == NULL)										\
     {														\
 	vc->ch.sendq_tail = req;										\

@@ -1,4 +1,13 @@
-/* mpdconf.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+/* mpdconf.h.in.  Generated automatically from configure.in by autoheader.  */
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#ifndef MPDCONF_H
+#define MPDCONF_H
 
 /* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
 #undef HAVE_SYS_WAIT_H
@@ -26,3 +35,4 @@
 
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
+#endif

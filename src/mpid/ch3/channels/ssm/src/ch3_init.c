@@ -140,6 +140,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H
+    pg->nShmWaitSpinCount = 1;
     g_nLockSpinCount = 1;
 #endif
 
@@ -315,15 +316,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* FIXME: consider using sizeof(pg->shm_hostname) instead of
        MAXHOSTNAMELEN, in case the system and the ssm/include header files
        have a different interpretation of the size of MAXHOSTNAMELEN */
-    gethostname(pg->shm_hostname, MAXHOSTNAMELEN);
-    /*
-    MPIU_Strncpy(pg->shm_hostname, val, MAXHOSTNAMELEN);
-    if (strtok(pg->shm_hostname, ":") == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_strtok_host", "**init_strtok_host %s", val);
-	return mpi_errno;
-    }
-    */
+    gethostname(pg->shm_hostname, sizeof(pg->shm_hostname));
 
 #ifdef USE_MQSHM
 

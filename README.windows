@@ -24,11 +24,15 @@ Select the ch3sockDebug or ch3sockRelease configurations to build the sockets on
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
 Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
 
+Install the launcher:
+9) copy smpd.exe to a local directory on all the nodes.
+10) Log on to each node as an administrator and execute "smpd.exe -install"
+
 Compile and run an MPI application:
-9) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+10) compile an mpi application.  Use mpi.h from mpich2\src\include and 
 the mpich2 import libraries in mpich2\lib
-10) Place your executable along with the mpich2 dlls somewhere accessable to
+11) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
-11) Execute a job by running: mpiexec -n 3 myapp.exe
+12) Execute a job by running: mpiexec -n 3 myapp.exe
 
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.

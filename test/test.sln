@@ -23,10 +23,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adapt", "mpi\basic\adapt.vc
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contents", "mpi\datatype\contents\contents.vcproj", "{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "allmpi", "mpi\basic\allmpi.vcproj", "{D9F19E35-7870-4549-A69D-AD810E8BC167}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -79,6 +75,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MandelViewer", "..\examples
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bcast2", "mpi\coll\bcast2.vcproj", "{DF2577A1-B25E-4538-9183-40A7B9907B73}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "putfence1", "mpi\rma\putfence1.vcproj", "{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -109,10 +113,6 @@ Global
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Debug.Build.0 = Debug|Win32
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Release.ActiveCfg = Release|Win32
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Release.Build.0 = Release|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Debug.ActiveCfg = Debug|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Debug.Build.0 = Debug|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.ActiveCfg = Release|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.Build.0 = Release|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.ActiveCfg = Debug|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.Build.0 = Debug|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Release.ActiveCfg = Release|Win32
@@ -165,6 +165,14 @@ Global
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Debug.Build.0 = Debug|.NET
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release.ActiveCfg = Release|.NET
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release.Build.0 = Release|.NET
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Debug.ActiveCfg = Debug|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Debug.Build.0 = Debug|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Release.ActiveCfg = Release|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Release.Build.0 = Release|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Debug.ActiveCfg = Debug|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Debug.Build.0 = Debug|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Release.ActiveCfg = Release|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

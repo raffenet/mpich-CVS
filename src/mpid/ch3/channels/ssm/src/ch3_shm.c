@@ -290,25 +290,18 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
 		bSetPacket = pkt_ptr->num_bytes == 0 ? TRUE : FALSE;
-		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
+
+		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr);
+		if (mpi_errno != MPI_SUCCESS)
 		{
-		    /*printf("handling packet\n");fflush(stdout);*/
-		    MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
-		    if (recv_vc_ptr->ch.recv_active == NULL)
-		    {
-			/*printf("reading next packet\n");fflush(stdout);*/
-			recv_vc_ptr->ch.shm_reading_pkt = TRUE;
-		    }
-		}
-		else
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_type", "**pkt_type %d", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming packet");
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 		    return mpi_errno;
-		    /*
-		    MPIDI_err_printf("MPIDI_CH3I_SHM_read_progress", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
+		}
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		{
+		    /*printf("reading next packet\n");fflush(stdout);*/
 		    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
-		    */
 		}
 		if (bSetPacket)
 		{
