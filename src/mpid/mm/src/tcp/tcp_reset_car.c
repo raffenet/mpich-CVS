@@ -112,8 +112,8 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
 	car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
 	car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
-	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
-	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_IOV_BUF = (void*)&car_ptr->msg_header.pkt;
+	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_IOV_LEN = sizeof(MPID_Packet);
 	car_ptr->data.tcp.buf.vec_read.vec_size = 1;
 
 	/* readers have no data yet */
@@ -127,8 +127,8 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
 	car_ptr->data.tcp.buf.vec_write.cur_num_written = 0;
 	car_ptr->data.tcp.buf.vec_write.total_num_written = 0;
 	car_ptr->data.tcp.buf.vec_write.num_read_copy = 0;
-	car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
-	car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+	car_ptr->data.tcp.buf.vec_write.vec[0].MPID_IOV_BUF = (void*)&car_ptr->msg_header.pkt;
+	car_ptr->data.tcp.buf.vec_write.vec[0].MPID_IOV_LEN = sizeof(MPID_Packet);
 	car_ptr->data.tcp.buf.vec_write.vec_size = 1;
 	
 	/* writers have the data ready */
@@ -140,8 +140,8 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
     
     /* set up the buffer */
     buf_ptr->type = MM_VEC_BUFFER;
-    buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
-    buf_ptr->vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+    buf_ptr->vec.vec[0].MPID_IOV_BUF = (void*)&car_ptr->msg_header.pkt;
+    buf_ptr->vec.vec[0].MPID_IOV_LEN = sizeof(MPID_Packet);
     buf_ptr->vec.vec_size = 1;
     buf_ptr->vec.first = 0;
     buf_ptr->vec.last = sizeof(MPID_Packet);

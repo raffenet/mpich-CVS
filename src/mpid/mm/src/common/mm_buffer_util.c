@@ -93,7 +93,7 @@ int vec_buffer_init(MPID_Request *request_ptr)
     MM_ENTER_FUNC(VEC_BUFFER_INIT);
 
     request_ptr->mm.buf.type = MM_VEC_BUFFER;
-    request_ptr->mm.buf.vec.vec_size = MPID_VECTOR_LIMIT;
+    request_ptr->mm.buf.vec.vec_size = MPID_IOV_LIMIT;
     request_ptr->mm.buf.vec.num_read = 0;
     request_ptr->mm.buf.vec.first = 0;
     request_ptr->mm.buf.vec.last = 0;

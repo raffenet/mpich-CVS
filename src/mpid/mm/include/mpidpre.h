@@ -30,18 +30,18 @@
 
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#define MPID_VECTOR         WSABUF
-#define MPID_VECTOR_LEN     len
-#define MPID_VECTOR_BUF     buf
+#define MPID_IOV         WSABUF
+#define MPID_IOV_LEN     len
+#define MPID_IOV_BUF     buf
 #else
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
-#define MPID_VECTOR         struct iovec
-#define MPID_VECTOR_LEN     iov_len
-#define MPID_VECTOR_BUF     iov_base
+#define MPID_IOV         struct iovec
+#define MPID_IOV_LEN     iov_len
+#define MPID_IOV_BUF     iov_base
 #endif
-#define MPID_VECTOR_LIMIT   16
+#define MPID_IOV_LIMIT   16
 
 /* Buffer type */
 typedef enum MM_BUFFER_TYPE {
@@ -207,7 +207,7 @@ typedef union MM_Segment_buffer
     struct mm_segment_vec
     {
 	MM_BUFFER_TYPE type;
-	MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	MPID_IOV vec[MPID_IOV_LIMIT];
 	int vec_size;
 	int num_read;
 	int first, last, segment_last;
@@ -269,7 +269,7 @@ typedef struct MM_Car_data_unpacker
 	struct car_unpacker_vec_write
 	{
 	    int num_read_copy;
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    MPID_IOV vec[MPID_IOV_LIMIT];
 	    int vec_size;
 	    int total_num_written;
 	    int cur_num_written;

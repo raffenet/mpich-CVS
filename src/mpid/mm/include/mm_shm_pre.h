@@ -16,7 +16,7 @@ typedef struct MM_Car_data_shm
 	} tmp;
 	struct car_shm_vec
 	{
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    MPID_IOV vec[MPID_IOV_LIMIT];
 	    int len;
 	} vec;
 #ifdef WITH_METHOD_SHM

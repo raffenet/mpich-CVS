@@ -14,18 +14,18 @@
 
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#define MPID_VECTOR         WSABUF
-#define MPID_VECTOR_LEN     len
-#define MPID_VECTOR_BUF     buf
+#define MPID_IOV         WSABUF
+#define MPID_IOV_LEN     len
+#define MPID_IOV_BUF     buf
 #else
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
-#define MPID_VECTOR         struct iovec
-#define MPID_VECTOR_LEN     iov_len
-#define MPID_VECTOR_BUF     iov_base
+#define MPID_IOV         struct iovec
+#define MPID_IOV_LEN     iov_len
+#define MPID_IOV_BUF     iov_base
 #endif
-#define MPID_VECTOR_LIMIT   16
+#define MPID_IOV_LIMIT   16
 
 #define MPID_DTYPE_BEGINNING  0
 #define MPID_DTYPE_END       -1
@@ -79,12 +79,12 @@ void MPID_Segment_unpack(struct MPID_Segment *segp,
 void MPID_Segment_pack_vector(struct MPID_Segment *segp,
 			      int first,
 			      int *lastp,
-			      MPID_VECTOR *vector,
+			      MPID_IOV *vector,
 			      int *lengthp);
 
 void MPID_Segment_unpack_vector(struct MPID_Segment *segp,
 				int first,
 				int *lastp,
-				MPID_VECTOR *vector,
+				MPID_IOV *vector,
 				int *lengthp);
 #endif

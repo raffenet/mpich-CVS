@@ -22,9 +22,9 @@
 #define DLOOP_Count      int
 #define DLOOP_Handle     MPI_Datatype
 #define DLOOP_Buffer     void *
-#define DLOOP_VECTOR     MPID_VECTOR
-#define DLOOP_VECTOR_LEN MPID_VECTOR_LEN
-#define DLOOP_VECTOR_BUF MPID_VECTOR_BUF
+#define DLOOP_VECTOR     MPID_IOV
+#define DLOOP_VECTOR_LEN MPID_IOV_LEN
+#define DLOOP_VECTOR_BUF MPID_IOV_BUF
 
 /* The following accessor functions must also be defined:
  *

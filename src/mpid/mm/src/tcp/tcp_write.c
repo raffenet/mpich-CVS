@@ -124,7 +124,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
     int cur_index;
-    MPID_VECTOR *car_vec, *buf_vec;
+    MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
     
     MM_ENTER_FUNC(TCP_WRITE_VEC);
@@ -153,10 +153,10 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	
 	/* copy the buf vector into the car vector from the current index to the end */
 	memcpy(&car_vec[cur_index], &buf_vec[cur_index], 
-	    (buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_VECTOR));
-	car_vec[cur_index].MPID_VECTOR_BUF = 
-	    (char*)car_vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-	car_vec[cur_index].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+	    (buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_IOV));
+	car_vec[cur_index].MPID_IOV_BUF = 
+	    (char*)car_vec[cur_index].MPID_IOV_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+	car_vec[cur_index].MPID_IOV_LEN = car_vec[cur_index].MPID_IOV_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
 
 	/* modify the vector copied from buf_ptr->vec to represent only the data that has been read 
 	 * This is done by traversing the vector, subtracting the lengths of each buffer until all the read
@@ -172,14 +172,14 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	while (num_left > 0)
 	{
 	    car_ptr->data.tcp.buf.vec_write.vec_size++;
-	    num_left -= car_vec[i].MPID_VECTOR_LEN;
+	    num_left -= car_vec[i].MPID_IOV_LEN;
 	    i++;
 	}
 	/* if the last vector buffer is larger than the amount of data read into that buffer,
 	update the length field in the car's copy of the vector to represent only the read data */
 	if (num_left < 0)
 	{
-	    car_vec[i].MPID_VECTOR_LEN += num_left;
+	    car_vec[i].MPID_IOV_LEN += num_left;
 	}
 	
 	/* at this point the vec in the car describes all the currently read data */
@@ -195,8 +195,8 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	{
 	    MM_ENTER_FUNC(BWRITE);
 	    num_written = bwrite(vc_ptr->data.tcp.bfd, 
-		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_VECTOR_BUF,
-		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_VECTOR_LEN);
+		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_BUF,
+		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_LEN);
 	    MM_EXIT_FUNC(BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {
@@ -245,20 +245,20 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    i = car_ptr->data.tcp.buf.vec_write.cur_index;
 	    while (num_left > 0)
 	    {
-		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN;
+		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN;
 		if (num_left > 0)
 		{
 		    i++;
 		}
 		else
 		{
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = 
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF +
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN +
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_BUF = 
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_BUF +
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN +
 			num_left;
 		    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN + num_left;
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN = -num_left;
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN + num_left;
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN = -num_left;
 		}
 	    }
 	    car_ptr->data.tcp.buf.vec_write.cur_index = i;

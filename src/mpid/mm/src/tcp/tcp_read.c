@@ -189,7 +189,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* copy the vector from the buffer to the car */
 	memcpy(car_ptr->data.tcp.buf.vec_read.vec,
 	    buf_ptr->vec.vec,
-	    buf_ptr->vec.vec_size * sizeof(MPID_VECTOR));
+	    buf_ptr->vec.vec_size * sizeof(MPID_IOV));
 	car_ptr->data.tcp.buf.vec_read.vec_size = buf_ptr->vec.vec_size;
 	buf_ptr->vec.num_read = 0;
 	/* reset the number of outstanding write cars */
@@ -203,8 +203,8 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	{
 	    MM_ENTER_FUNC(BREAD);
 	    num_read = bread(vc_ptr->data.tcp.bfd,
-		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_BUF,
-		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_LEN);
+		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_IOV_BUF,
+		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_IOV_LEN);
 	    MM_EXIT_FUNC(BREAD);
 	    if (num_read == SOCKET_ERROR)
 	    {
@@ -251,18 +251,18 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    i = car_ptr->data.tcp.buf.vec_read.cur_index;
 	    while (num_left > 0)
 	    {
-		num_left -= car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN;
+		num_left -= car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_LEN;
 		if (num_left > 0)
 		{
 		    i++;
 		}
 		else
 		{
-		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF = 
-			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF +
-			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN +
+		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_BUF = 
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_BUF +
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_LEN +
 			num_left;
-		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN = -num_left;
+		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_LEN = -num_left;
 		}
 	    }
 	    car_ptr->data.tcp.buf.vec_read.cur_index = i;

@@ -11,7 +11,7 @@
 #endif
 
 #ifdef WITH_METHOD_SHM
-int tcp_stuff_vector_shm(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_shm(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_SHM);
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_SHM);
@@ -20,7 +20,7 @@ int tcp_stuff_vector_shm(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 #endif
 
 #ifdef WITH_METHOD_VIA
-int tcp_stuff_vector_via(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_via(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_VIA);
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_VIA);
@@ -29,7 +29,7 @@ int tcp_stuff_vector_via(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 #endif
 
 #ifdef WITH_METHOD_VIA_RDMA
-int tcp_stuff_vector_via_rdma(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_via_rdma(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_VIA_RDMA);
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_VIA_RDMA);
@@ -37,16 +37,16 @@ int tcp_stuff_vector_via_rdma(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, M
 }
 #endif
 
-int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_vec(MPID_IOV *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int cur_pos, cur_index, num_avail, final_segment;
-    MPID_VECTOR *car_vec, *buf_vec;
+    MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
 
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_VEC);
 
     /* check to see that there is space in the vector to put data */
-    if (*cur_pos_ptr == MPID_VECTOR_LIMIT)
+    if (*cur_pos_ptr == MPID_IOV_LIMIT)
     {
 	/* cur_pos has run off the end of the vector */
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
@@ -65,10 +65,10 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	
 	/* copy the buf vector into the car vector from the current index to the end */
 	memcpy(&car_vec[cur_index], &buf_vec[cur_index], 
-	    (buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_VECTOR));
-	car_vec[cur_index].MPID_VECTOR_BUF = 
-	    (char*)car_vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-	car_vec[cur_index].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+	    (buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_IOV));
+	car_vec[cur_index].MPID_IOV_BUF = 
+	    (char*)car_vec[cur_index].MPID_IOV_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+	car_vec[cur_index].MPID_IOV_LEN = car_vec[cur_index].MPID_IOV_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
 	
 	/* modify the vector copied from buf_ptr->vec to represent only the data that has been read 
 	* This is done by traversing the vector, subtracting the lengths of each buffer until all the read
@@ -84,14 +84,14 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	while (num_left > 0)
 	{
 	    car_ptr->data.tcp.buf.vec_write.vec_size++;
-	    num_left -= car_vec[i].MPID_VECTOR_LEN;
+	    num_left -= car_vec[i].MPID_IOV_LEN;
 	    i++;
 	}
 	/* if the last vector buffer is larger than the amount of data read into that buffer,
 	update the length field in the car's copy of the vector to represent only the read data */
 	if (num_left < 0)
 	{
-	    car_vec[i].MPID_VECTOR_LEN += num_left;
+	    car_vec[i].MPID_IOV_LEN += num_left;
 	}
 	
 	/* at this point the vec in the car describes all the currently read data */
@@ -114,10 +114,10 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     /*msg_printf("tcp_stuff_vector_vec: num_avail = %d\n", num_avail);*/
 
-    while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
+    while ((cur_pos < MPID_IOV_LIMIT) && num_avail)
     {
-	vec[cur_pos].MPID_VECTOR_BUF = car_vec[cur_index].MPID_VECTOR_BUF;
-	num_avail -= (vec[cur_pos].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN);
+	vec[cur_pos].MPID_IOV_BUF = car_vec[cur_index].MPID_IOV_BUF;
+	num_avail -= (vec[cur_pos].MPID_IOV_LEN = car_vec[cur_index].MPID_IOV_LEN);
 	cur_index++;
 	cur_pos++;
     }
@@ -134,12 +134,12 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     return FALSE;
 }
 
-int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_tmp(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_TMP);
 
     /* check to see that there is data available and space in the vector to put it */
-    if ((*cur_pos == MPID_VECTOR_LIMIT) ||
+    if ((*cur_pos == MPID_IOV_LIMIT) ||
         (car_ptr->data.tcp.buf.tmp.num_written == buf_ptr->tmp.num_read) ||
 	(buf_ptr->tmp.num_read == 0))
     {
@@ -153,8 +153,8 @@ int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
     /*msg_printf("tcp_stuff_vector_tmp: added %d byte buffer\n", buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written);*/
 
     /* add the tmp buffer to the vector */
-    vec[*cur_pos].MPID_VECTOR_BUF = (char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written;
-    vec[*cur_pos].MPID_VECTOR_LEN = buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written;
+    vec[*cur_pos].MPID_IOV_BUF = (char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written;
+    vec[*cur_pos].MPID_IOV_LEN = buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written;
     (*cur_pos)++;
 
     /* if the entire segment is in the vector then return true else false */
@@ -169,7 +169,7 @@ int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 }
 
 #ifdef WITH_METHOD_NEW
-int tcp_stuff_vector_new(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_new(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_NEW);
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_NEW);
@@ -239,7 +239,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    while (num_left > 0)
 	    {
 		/* subtract the length of the current vector */
-		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN;
+		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN;
 		if (num_left > 0)
 		{
 		    /* the entire vector was written so move to the next index */
@@ -248,13 +248,13 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		else
 		{
 		    /* this vector was only partially written, so update the buf and len fields */
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = 
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF +
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN + 
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_BUF = 
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_BUF +
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN + 
 			num_left;
 		    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 
-			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN + num_left;
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN = -num_left;
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN + num_left;
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_IOV_LEN = -num_left;
 		}
 	    }
 	    car_ptr->data.tcp.buf.vec_write.cur_index = i;
@@ -339,7 +339,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
-    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+    MPID_IOV vec[MPID_IOV_LIMIT];
     int cur_pos = 0;
     BOOL stop = FALSE;
     int num_written;
@@ -427,7 +427,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	if (cur_pos == 1)
 	{
 	    MM_ENTER_FUNC(BWRITE);
-	    num_written = bwrite(vc_ptr->data.tcp.bfd, vec[0].MPID_VECTOR_BUF, vec[0].MPID_VECTOR_LEN);
+	    num_written = bwrite(vc_ptr->data.tcp.bfd, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN);
 	    MM_EXIT_FUNC(BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {

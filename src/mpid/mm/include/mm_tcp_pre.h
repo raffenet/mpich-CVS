@@ -16,7 +16,7 @@ typedef struct MM_Car_data_tcp
 	} tmp;
 	struct car_tcp_vec_read
 	{
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    MPID_IOV vec[MPID_IOV_LIMIT];
 	    int vec_size;
 	    int total_num_read;
 	    int cur_num_read;
@@ -25,7 +25,7 @@ typedef struct MM_Car_data_tcp
 	struct car_tcp_vec_write
 	{
 	    int num_read_copy;
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    MPID_IOV vec[MPID_IOV_LIMIT];
 	    int vec_size;
 	    int total_num_written;
 	    int cur_num_written;
