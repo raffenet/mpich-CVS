@@ -41,6 +41,7 @@ void mp_print_options(void)
     printf("       each line contains a complete set of mpiexec options\n");
     printf("       including the executable and arguments\n");
     printf("-host <hostname>\n");
+    /*
     printf("-soft <Fortran90 triple> - acceptable number of processes up to maxprocs\n");
     printf("       a or a:b or a:b:c where\n");
     printf("       1) a = a\n");
@@ -48,8 +49,9 @@ void mp_print_options(void)
     printf("       3) a:b:c = a, a+c, a+2c, a+3c, ..., a+kc\n");
     printf("          where a+kc <= b if c>0\n");
     printf("                a+kc >= b if c<0\n");
+    */
     printf("-path <search path for executable, ; separated>\n");
-    printf("-arch <architecture> - sun, linux, rs6000, ...\n");
+    /*printf("-arch <architecture> - sun, linux, rs6000, ...\n");*/
     printf("\n");
     printf("extensions:\n");
     printf("-env <variable value>\n");
@@ -58,14 +60,17 @@ void mp_print_options(void)
     printf("-hosts <n host1 m1 host2 m2 ... hostn mn>\n");
     printf("-machinefile <filename> - one host per line, #commented\n");
     printf("-localonly <numprocs>\n");
-    printf("-nompi - processes never call any MPI functions\n");
+    /*printf("-nompi - processes never call any MPI functions\n");*/
     printf("-exitcodes - print the exit codes of processes as they exit\n");
+    /*
     printf("-genvall - pass all env vars in current environment\n");
     printf("-genvnone - pass no env vars\n");
-    printf("-genvlist <list of env var names> - pass current values of these vars\n");
-    printf("-genv <name> <value> - pass this value of this env var\n");
+    */
+    printf("-genvlist <list of env var names a,b,c,...> - pass current values of these vars\n");
+    /*printf("-genv <name> <value> - pass this value of this env var\n");*/
     printf("-g<local arg name> - global version of local options\n");
-    printf("  gwdir, ghost, gpath\n");
+    printf("  genv, gwdir, ghost, gpath, gmap\n");
+    printf("-file <filename> - old mpich1 job configuration file\n");
     printf("\n");
     printf("examples:\n");
     printf("mpiexec -n 4 cpi\n");
@@ -283,14 +288,18 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char machine_file_name[SMPD_MAX_FILENAME];
     int use_machine_file = SMPD_FALSE;
     smpd_map_drive_node_t *map_node, *drive_map_list;
+    smpd_map_drive_node_t *gmap_node, *gdrive_map_list;
     smpd_env_node_t *env_node, *env_list;
+    smpd_env_node_t *genv_list;
     char *env_str, env_data[SMPD_MAX_ENV_LENGTH];
     /*char *equal_sign_pos;*/
     char wdir[SMPD_MAX_DIR_LENGTH];
+    char gwdir[SMPD_MAX_DIR_LENGTH];
     int use_debug_flag;
     char pwd_file_name[SMPD_MAX_FILENAME];
     int use_pwd_file;
     smpd_host_node_t *host_node_ptr, *host_list, *host_node_iter;
+    smpd_host_node_t *ghost_list;
     int no_drive_mapping;
     int n_priority_class, n_priority, use_priorities;
     int index, i;
@@ -301,6 +310,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_launch_node_t *launch_node, *launch_node_iter;
     int exe_len_remaining;
     char path[SMPD_MAX_PATH_LENGTH];
+    char gpath[SMPD_MAX_PATH_LENGTH];
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
     FILE *fin_config;
     int result;
@@ -470,6 +480,11 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_get_default_hosts();
 
     cur_rank = 0;
+    gdrive_map_list = NULL;
+    genv_list = NULL;
+    gwdir[0] = '\0';
+    gpath[0] = '\0';
+    ghost_list = NULL;
     next_argc = *argcp;
     next_argv = *argvp + 1;
     exe_ptr = **argvp;
@@ -721,6 +736,31 @@ configfile_loop:
 		}
 		num_args_to_strip = 2;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "gmap") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no drive specified after -gmap option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
+		{
+		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
+		    if (map_node == NULL)
+		    {
+			printf("Error: malloc failed to allocate map structure.\n");
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
+		    map_node->ref_count = 0;
+		    map_node->drive = (*argvp)[2][0];
+		    strncpy(map_node->share, &(*argvp)[2][2], SMPD_MAX_EXE_LENGTH);
+		    map_node->next = gdrive_map_list;
+		    gdrive_map_list = map_node;
+		}
+		num_args_to_strip = 2;
+	    }
 	    else if ( (strcmp(&(*argvp)[1][1], "dir") == 0) || (strcmp(&(*argvp)[1][1], "wdir") == 0) )
 	    {
 		if (argc < 3)
@@ -740,8 +780,7 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		/*strncpy(wdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);*/
-		printf("%s option not implemented\n", (*argvp)[1]);
+		strncpy(gwdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
@@ -777,7 +816,7 @@ configfile_loop:
 		*/
 		if (argc < 4)
 		{
-		    printf("Error: no environment variables after -env option\n");
+		    printf("Error: no environment variable after -env option\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
@@ -798,11 +837,10 @@ configfile_loop:
 	    {
 		if (argc < 4)
 		{
-		    printf("Error: no environment variables after -genv option\n");
+		    printf("Error: no environment variable after -genv option\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		/*
 		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
@@ -812,10 +850,8 @@ configfile_loop:
 		}
 		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
 		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
-		env_node->next = env_list;
-		env_list = env_node;
-		*/
-		printf("-genv option not implemented\n");
+		env_node->next = genv_list;
+		genv_list = env_node;
 		num_args_to_strip = 3;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "genvall") == 0)
@@ -828,14 +864,42 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "genvlist") == 0)
 	    {
+		char *str, *token, *value;
 		if (argc < 4)
 		{
 		    printf("Error: no environment variables after -genvlist option\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		printf("-genvlist option not implemented\n");
-		num_args_to_strip = 3;
+		str = strdup((*argvp)[2]);
+		if (str == NULL)
+		{
+		    printf("Error: unable to allocate memory for a string - '%s'\n", (*argvp)[2]);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		token = strtok(str, ",");
+		while (token)
+		{
+		    value = getenv(token);
+		    if (value != NULL)
+		    {
+			env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
+			if (env_node == NULL)
+			{
+			    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+			    smpd_exit_fn("mp_parse_command_args");
+			    return SMPD_FAIL;
+			}
+			strncpy(env_node->name, token, SMPD_MAX_NAME_LENGTH);
+			strncpy(env_node->value, value, SMPD_MAX_VALUE_LENGTH);
+			env_node->next = genv_list;
+			genv_list = env_node;
+		    }
+		    token = strtok(NULL, ",");
+		}
+		free(str);
+		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
 	    {
@@ -902,7 +966,7 @@ configfile_loop:
 		}
 		if (host_list != NULL)
 		{
-		    printf("Error: -host option can only be called once and it cannot be combined with -hosts.\n");
+		    printf("Error: -host option can only be specified once and it cannot be combined with -hosts.\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
@@ -929,29 +993,25 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-#if 0
-		if (host_list != NULL)
+		if (ghost_list != NULL)
 		{
-		    printf("Error: -host option can only be called once and it cannot be combined with -hosts.\n");
+		    printf("Error: -ghost option can only be specified once.\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		/* create a host list of one and set nproc to -1 to be replaced by
 		   nproc after parsing the block */
-		host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
-		if (host_list == NULL)
+		ghost_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		if (ghost_list == NULL)
 		{
 		    printf("failed to allocate memory for a host node.\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		host_list->next = NULL;
-		host_list->connected = SMPD_FALSE;
-		host_list->nproc = -1;
-		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
-#else
-		printf("-ghost option not implemented\n");
-#endif
+		ghost_list->next = NULL;
+		ghost_list->connected = SMPD_FALSE;
+		ghost_list->nproc = -1;
+		strncpy(ghost_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
@@ -1168,8 +1228,7 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		/*strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);*/
-		printf("-gpath option not implemented\n");
+		strncpy(gpath, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
@@ -1221,6 +1280,11 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		smpd_process.timeout = atoi((*argvp)[2]);
+		if (smpd_process.timeout < 1)
+		{
+		    printf("Warning: invalid timeout specified, ignoring timeout value of '%s'\n", (*argvp)[2]);
+		    smpd_process.timeout = -1;
+		}
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hide_console") == 0)
@@ -1271,6 +1335,10 @@ configfile_loop:
 	    if (p)
 	    {
 		smpd_process.timeout = atoi(p);
+		if (smpd_process.timeout < 1)
+		{
+		    smpd_process.timeout = -1;
+		}
 	    }
 	}
 
@@ -1417,15 +1485,31 @@ configfile_loop:
 	    smpd_exit_fn("mp_parse_command_args");
 	    return SMPD_FAIL;
 	}
+	if (ghost_list != NULL && host_list == NULL && use_machine_file != SMPD_TRUE)
+	{
+	    host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	    if (host_list == NULL)
+	    {
+		printf("failed to allocate memory for a host node.\n");
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+	    }
+	    host_list->next = NULL;
+	    host_list->connected = SMPD_FALSE;
+	    host_list->nproc = -1;
+	    strncpy(host_list->host, ghost_list->host, SMPD_MAX_HOST_LENGTH);
+	}
 	if (host_list != NULL && host_list->nproc == -1)
 	{
 	    /* -host specified, replace nproc field */
 	    host_list->nproc = nproc;
 	}
 
+	/* add environment variables */
 	env_data[0] = '\0';
 	env_str = env_data;
 	maxlen = SMPD_MAX_ENV_LENGTH;
+	/* add and destroy the local environment variable list */
 	while (env_list)
 	{
 	    MPIU_Str_add_string_arg(&env_str, &maxlen, env_list->name, env_list->value);
@@ -1442,11 +1526,67 @@ configfile_loop:
 	    env_list = env_list->next;
 	    free(env_node);
 	}
+	/* add the global environment variable list */
+	env_node = genv_list;
+	while (env_node)
+	{
+	    MPIU_Str_add_string_arg(&env_str, &maxlen, env_node->name, env_node->value);
+	    env_node = env_node->next;
+	}
 	if (env_str > env_data)
 	{
 	    /* trim the trailing white space */
 	    env_str--;
 	    *env_str = '\0';
+	}
+
+	/* merge global drive mappings with the local drive mappings */
+	gmap_node = gdrive_map_list;
+	while (gmap_node)
+	{
+	    map_node = drive_map_list;
+	    while (map_node)
+	    {
+		if (map_node->drive == gmap_node->drive)
+		{
+		    /* local option trumps the global option */
+		    break;
+		}
+		if (map_node->next == NULL)
+		{
+		    /* add a copy of the global node to the end of the list */
+		    map_node->next = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
+		    if (map_node->next == NULL)
+		    {
+			printf("Error: malloc failed to allocate map structure.\n");
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
+		    map_node = map_node->next;
+		    map_node->ref_count = 0;
+		    map_node->drive = gmap_node->drive;
+		    strncpy(map_node->share, gmap_node->share, SMPD_MAX_EXE_LENGTH);
+		    map_node->next = NULL;
+		    break;
+		}
+		map_node = map_node->next;
+	    }
+	    if (drive_map_list == NULL)
+	    {
+		map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
+		if (map_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate map structure.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		map_node->ref_count = 0;
+		map_node->drive = gmap_node->drive;
+		strncpy(map_node->share, gmap_node->share, SMPD_MAX_EXE_LENGTH);
+		map_node->next = NULL;
+		drive_map_list = map_node;
+	    }
+	    gmap_node = gmap_node->next;
 	}
 
 	for (i=0; i<nproc; i++)
@@ -1465,16 +1605,37 @@ configfile_loop:
 	    launch_node->env = launch_node->env_data;
 	    strcpy(launch_node->env_data, env_data);
 	    if (wdir[0] != '\0')
+	    {
 		strcpy(launch_node->dir, wdir);
+	    }
 	    else
 	    {
-		launch_node->dir[0] = '\0';
-		getcwd(launch_node->dir, SMPD_MAX_DIR_LENGTH);
+		if (gwdir[0] != '\0')
+		{
+		    strcpy(launch_node->dir, gwdir);
+		}
+		else
+		{
+		    launch_node->dir[0] = '\0';
+		    getcwd(launch_node->dir, SMPD_MAX_DIR_LENGTH);
+		}
 	    }
 	    if (path[0] != '\0')
+	    {
 		strcpy(launch_node->path, path);
+		/* should the gpath be appended to the local path? */
+	    }
 	    else
-		launch_node->path[0] = '\0';
+	    {
+		if (gpath[0] != '\0')
+		{
+		    strcpy(launch_node->path, gpath);
+		}
+		else
+		{
+		    launch_node->path[0] = '\0';
+		}
+	    }
 	    launch_node->map_list = drive_map_list;
 	    if (drive_map_list)
 	    {
