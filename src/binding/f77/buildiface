@@ -327,6 +327,9 @@ foreach $_ (@ARGV) {
 #    addrint: Given the address of an int, provide the int.  Used
 #             for attr_put/set routines 
 #    attrint: Convert an attribute value to an int.
+#    addraint: Given the address of an address-sized int, provide the
+#             value of that item.  Used for the MPI-2 versions of the
+#             attribute caching routines
 #    bufaddr: Argument is *output* as a buffer address.  Discarded before
 #             passing to Fortran.
 # For MPI-2 routines that take MPI_Aints even in Fortran, we need a 
@@ -354,6 +357,15 @@ foreach $_ (@ARGV) {
     'Attr_put' => '3', 'Attr_put-3' => 'in:addrint',
     'Attr_get' => '3:4', 'Attr_get-4' => 'out:logical', 
 		 'Attr_get-3' => 'out:attrint:4',
+    'Comm_set_attr' => '3', 'Comm_set_attr-3' => 'in:addraint', 
+    'Type_set_attr' => '3', 'Type_set_attr-3' => 'in:addraint',
+    'Win_set_attr' => '3', 'Win_set_attr-3' => 'in:addraint',
+    'Comm_get_attr' => '3:4', 'Comm_get_attr-4' => 'out:logical',
+		  'Comm_get_attr-3' => 'out:attraint:4',
+    'Type_get_attr' => '3:4', 'Type_get_attr-4' => 'out:logical',
+		  'Type_get_attr-3' => 'out:attraint:4',
+    'Win_get_attr' => '3:4', 'Win_get_attr-4' => 'out:logical',		   
+		  'Win_get_attr-3' => 'out:attraint:4',
     'Buffer_detach' => '1', 'Buffer_detach-1' => 'out:bufaddr',		 
     'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array:*v2', 
     'Cart_create-5' => 'in:logical', 
@@ -374,9 +386,10 @@ foreach $_ (@ARGV) {
 		  'Info_get-5' => 'out:logical',
     'Info_set' => '2:3', 'Info_set-2' => 'in:addnull', 
 		  'Info_set-3' => 'in:addnull',
-    'Info_get_nthkey' => '3', 'Info_get_nthkey-3' => 'in:addnull',
+    'Info_get_nthkey' => '3', 'Info_get_nthkey-3' => 'out:blankpad',
     'Info_get_valuelen' => '2:4', 'Info_get_valuelen-2' => 'in:addnull',
 		  'Info_get_valuelen-4' => 'out:logical',
+    'Info_delete' => '2', 'Info_delete-2' => 'in:addnull',
     'Lookup_name' => '1:3', 'Lookup_name-1' => 'in:addnull', 
 		  'Lookup_name-3' => 'out:blankpad',
     'Open_port' => '2', 'Open_port-2' => 'in:addnull',
@@ -460,6 +473,20 @@ foreach $_ (@ARGV) {
     'File_get_atomicity' => '2', 'File_get_atomicity-2' => 'out:logical',
     'Register_datarep' => '1', 'Register_datarep-1' => 'in:addnull',
     );
+
+# 
+# These give special post processing after the MPI routine is called.  
+# The named routine is invoked with the argument number, e.g., 
+# &"setF90keyval"( FD,  1 );
+#
+%specialPost = (
+		'Type_create_keyval' => 3,
+		'Type_create_keyval-3' => 'setF90keyval',
+		'Comm_create_keyval' => 3,
+		'Comm_create_keyval-3' => 'setF90keyval',
+		'Win_create_keyval' => 3,
+		'Win_create_keyval-3' => 'setF90keyval', 
+		);
 
 #
 # Load any definition file
@@ -1251,6 +1278,44 @@ sub attrint_out_arg {
     print $OUTFD "&attrv$count";
 }
 # --------------------------------------------------------------------------
+# Address and attribute handling
+# This version of attrint uses Aints instead of ints, and is appropriate
+# for the MPI-2 attribute caching functions
+#in:addraint
+#out:attraint:4
+sub addraint_ftoc {
+    my $count = $_[0];
+}
+sub addraint_in_decl {
+}
+sub addraint_in_arg {
+    my $count = $_[0];
+    print $OUTFD "(void *)(MPI_Aint)((MPI_Aint)*(MPI_Aint *)v$count)";
+}
+
+sub attraint_ctof {
+    my $fvar = $_[0];
+    my $cvar = $_[1];
+    my $flagarg = 4; # get from option
+    print $OUTFD "
+    if ((int)*ierr || !l$flagarg) {
+        *(MPI_Aint*)$cvar = 0;
+    }
+    else {
+        *(MPI_Aint*)$cvar = (MPI_Aint)attr$cvar;
+    }\n";
+}
+
+sub attraint_out_decl {
+    my $count = $_[0];
+    print $OUTFD "    void *attrv$count;\n";
+}
+
+sub attraint_out_arg {
+    my $count = $_[0];
+    print $OUTFD "&attrv$count";
+}
+# --------------------------------------------------------------------------
 #
 # Buffer Address output handling (Buffer_detach)
 #out:bufaddr
@@ -1363,28 +1428,38 @@ sub aintToVal_in_arg {
 sub print_post_call {
     my $routine_name = $_[0];
     my $args = $_[1];
-    if (!defined($special_args{$routine_name})) { return; }
-    # Erg.  Special processing
-    foreach $count (split(/:/,$special_args{$routine_name})) {
-	$rule = $special_args{"${routine_name}-$count"};
-	($direction,$method,$Array_size) = split(/:/,$rule);
-	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
-        $processing_in_routine = "${method}_in_ctof";
-	if ($direction eq "out" || $direction eq "inout") {
-            $processing_routine = "${method}_ctof";
-	    &$processing_routine( "l$count", "v$count" );
-	}
-	elsif (defined(&$processing_in_routine)) {
-	    # Invoke even for "in" args incase we need to free a temp
-	    &$processing_in_routine( "l$count", "v$count" );
-	}
-	if ($clean_up ne "") {
-	    print $OUTFD $clean_up;
-	    $clean_up = "";
+    if (defined($special_args{$routine_name})) { 
+	# Erg.  Special processing
+	foreach $count (split(/:/,$special_args{$routine_name})) {
+	    $rule = $special_args{"${routine_name}-$count"};
+	    ($direction,$method,$Array_size) = split(/:/,$rule);
+	    print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
+	    $processing_in_routine = "${method}_in_ctof";
+	    if ($direction eq "out" || $direction eq "inout") {
+		$processing_routine = "${method}_ctof";
+		&$processing_routine( "l$count", "v$count" );
+	    }
+	    elsif (defined(&$processing_in_routine)) {
+		# Invoke even for "in" args incase we need to free a temp
+		&$processing_in_routine( "l$count", "v$count" );
+	    }
+	    if ($clean_up ne "") {
+		print $OUTFD $clean_up;
+		$clean_up = "";
+	    }
 	}
     }
+    
+    # Handle here any special post-only calls
+    if (defined($specialPost{$routine_name})) {
+	my $argnum = $specialPost{$routine_name};
+	my $postRoutine = $specialPost{"$routine_name-$argnum"};
+	&$postRoutine( $OUTFD, $argnum );
+    }
 }
-
+#
+# ---------------------------------------------------------------------------
+#
 # Blankpad strings
 sub blankpad_out_decl {
 }
@@ -1701,7 +1776,17 @@ sub FileToFint_out_arg {
     my $count = $_[0];
     print $OUTFD "&l$count";
 }
+# ---------------------------------------------------------------------------
+# Special post processing for some routines
+sub setF90keyval {
+    my $FD = $_[0];
+    my $argnum = $_[1];
 
+    print $FD "\
+    if (*ierr == MPI_SUCCESS) {
+         MPIR_Keyval_set_fortran90( *v$argnum );
+    }\n";
+}
 
 # ---------------------------------------------------------------------------
 # This routine handles the special arguments in the *call*
@@ -1900,6 +1985,20 @@ if ($write_mpif) {
     print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND\n";
     print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
     print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
+    # 
+    # Datatype combiners
+    foreach $key (NAMED, DUP, CONTIGUOUS, VECTOR, HVECTOR_INTEGER, HVECTOR, 
+                  INDEXED, HINDEXED_INTEGER, HINDEXED, INDEXED_BLOCK, 
+                  STRUCT_INTEGER, STRUCT, SUBARRAY, DARRAY, F90_REAL,
+                  F90_COMPLEX, F90_INTEGER, RESIZED) {
+	&print_mpif_int( "MPI_COMBINER_$key" );
+    }
+
+
+    # RMA Asserts
+    foreach $mode (NOCHECK, NOSTORE, NOPUT, NOPRECEDE, NOSUCCEED) {
+	&print_mpif_int( "MPI_MODE_$mode" );
+    }
 
     # MPI-2 types: Files
     if ($build_io) {
@@ -2024,6 +2123,24 @@ sub build_specials {
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "init" );
 	&print_args( PROTOFD, $args, 1, "init" );
+	print PROTOFD ";\n";
+    }
+
+    $OUTFD = "INITFFD";
+    open( $OUTFD, ">initthreadf.c" ) || die "Cannot open initthreadf.c\n";
+    $files[$#files+1] = "initthreadf.c";
+    $args = "int, int *";
+    &print_header( "MPI_Init_thread", "init_thread", $args );
+
+    &print_routine_type_decl( $OUTFD, "init_thread" );
+    &print_args( $OUTFD, $args, 0, "init_thread" );
+    print $OUTFD "{\n";
+    print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "init_thread" );
+	&print_args( PROTOFD, $args, 1, "init_thread" );
 	print PROTOFD ";\n";
     }
 
@@ -2579,7 +2696,7 @@ sub ReadInterfaceForDefinitions {
 		$mpidefFile{$name} = "$prototype_file:$linecount";
 	    }
 	}
-	elsif (/typedef\s+enum\s*[A-Za-z0-9_]*\s*{\s*(.*)/) {
+	elsif (/typedef\s+enum\s+[A-Za-z0-9_]*\s*{\s*(.*)/) {
 	    # Allow a named type
 	    # Eat until we find the closing right brace
 	    $enum_line = $1;
@@ -2593,6 +2710,30 @@ sub ReadInterfaceForDefinitions {
 		$mpidefFile{$1} = "$prototype_file:$linecount";
 		$enum_line = $3;
 		print "Defining $1 as $2\n" if $debug;
+	       }
+	       
+	   } 
+	elsif (/enum\s+([A-Za-z0-9_]*)\s*{\s*(.*)/) {
+	    # Allow a named type
+	    # Eat until we find the closing right brace
+	    my $enum_name = $1;
+	    my $enum_line = $2;
+	    while (! ($enum_line =~ /}/)) { 
+	        print "reading for $enum_name...\n" if $debug;
+	        my $newline = <MPIFD>;
+	        $newline =~ s/\r*\n//;
+	        $enum_line .= $newline;
+                $linecount++;
+            }
+	    # Now process for names and values
+	    while ( ($enum_line =~ /\s*(MPI_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/ ) ){
+		my $name = $1;
+		my $val = $2;
+		my $remainder = $3;
+		$mpidef{$name} = $val;
+		$mpidefFile{$name} = "$prototype_file:$linecount";
+		$enum_line = $remainder;
+		print "Defining $name as $val\n" if $debug;
 	       }
 	       
 	   } 
