@@ -981,7 +981,7 @@ sub DefaultRules {
 	# Use autoheader only if AC_CONFIG_HEADER is in the configure file
 	# 
 	if ($configure_has_config_headers ne "no") {
-	    &print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
+	    &print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs && \\$newline\t$autoconf $aargs )" );
 	}
 	else {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoconf $aargs )" );
@@ -1160,7 +1160,11 @@ sub ClearVars {
     # These may be overriden on a file by file basis
     $autoconf = "autoconf"; # Name of autoconf program to use
     $autoconf_version = ""; # Any version is allowed
-    $configure_has_config_headers = "no";
+    # We cannot clear config_headers here because we may still
+    # need to know that the configure in the current directory
+    # has a header file, and this routine to clear vars is called for
+    # every file.
+    #$configure_has_config_headers = "no";
     %simplemake_vars = ();
 }	
 
@@ -1208,6 +1212,7 @@ sub ProcessFile {
 
     &ResetFileName( "$curdir$file" );
     #print "Processing $curdir$file\n" if (!$quiet);
+    $configure_has_config_headers = "no";
     if (-s "configure.in") {
 	&ReadAutoconf;
 	print "Found configure.in in $curdir\n" if $debug_confdir;
