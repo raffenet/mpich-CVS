@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.1.0. September, 2004
+                          Version 2.2.0. January, 2005
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -628,16 +628,16 @@ CLOG_BUFFERED_BLOCKS: The integer value determines the number of blocks
                       logging overhead when large local memory is available.
                       The default value is 128.
 
-MPE_TMPDIR : MPE_TMPDIR takes precedence over TMPDIR.  It specifies a
-             directory to be used as temporary storage for each process.
-             By default, when MPE_TMPDIR and TMPDIR are NOT set,
-             /tmp will be used.  When user needs to generate a very large
-             logfile for long-running MPI job, user needs to make sure that
-             MPE_TMPDIR(or TMPDIR) is big enough to hold the temporary local
-             logfile which will be deleted if the merged logfile can be
-             created successfully.  In order to minimize the overhead of the
-             logging to the MPI program, it is highly recommended user to
-             use a *local* file system for TMPDIR.
+MPE_TMPDIR: MPE_TMPDIR takes precedence over TMPDIR.  It specifies a
+            directory to be used as temporary storage for each process.
+            By default, when MPE_TMPDIR and TMPDIR are NOT set,
+            /tmp will be used.  When user needs to generate a very large
+            logfile for long-running MPI job, user needs to make sure that
+            MPE_TMPDIR(or TMPDIR) is big enough to hold the temporary local
+            logfile which will be deleted if the merged logfile can be
+            created successfully.  In order to minimize the overhead of the
+            logging to the MPI program, it is highly recommended user to
+            use a *local* file system for TMPDIR.
 
              Note : The final merged logfile will be written back to the 
                     file system where process 0 is.
@@ -652,15 +652,22 @@ MPE_DELETE_LOCALFILE:  The boolean value determines whether to delete local
 MPE_CLOCKS_SYNC: The boolean value determines the behavior of
                  MPE_Log_sync_clocks()
 
-MPE_LOGFILE_PREFIX : specifies the filename prefix of the output logfile.
-                     The file extension will be determined by the output
-                     logfile format, i.e. MPE_LOG_FORMAT.
+MPE_LOGFILE_PREFIX: specifies the filename prefix of the output logfile.
+                    The file extension will be determined by the output
+                    logfile format, i.e. MPE_LOG_FORMAT.
 
+MPE_LOG_FORMAT: determines the format of the logfile generated from the 
+                execution of application linked with MPE logging libraries.  
+                The allowed value for MPE_LOG_FORMAT is CLOG2 only.
+                So there is no need to use this variable at the moment.
 
-MPE_LOG_FORMAT : determines the format of the logfile generated from the 
-                 execution of application linked with MPE logging libraries.  
-                 The allowed value for MPE_LOG_FORMAT is CLOG2 only.
-                 So there is no need to use this variable at the moment.
+MPE_LOG_OVERHEAD: The boolean value determines to log MPE/CLOG2's internal
+                  profiling state CLOG_Buffer_write2disk(). The default
+                  setting is yes.  CLOG_Buffer_write2disk labels region
+                  in each process that MPE/CLOG2 spends on flushing logging
+                  data in the memory to the disk.  The frequency and location
+                  of CLOG_Buffer_write2disk state can be altered by changing
+                  CLOG_BLOCK_SIZE and/or CLOG_BUFFERED_BLOCKS.
 
 Possible boolean values are "true", "false", "yes" and "no" in either
 all lower or upper cases.
