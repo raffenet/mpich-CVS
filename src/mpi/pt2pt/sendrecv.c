@@ -106,6 +106,9 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
             MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
 	    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,recvtype,mpi_errno);
+
+	    /* Validate status (status_ignore is not the same as null) */
+	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -196,7 +199,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	}
     }
 
-    if (status != NULL)
+    if (status != MPI_STATUS_IGNORE)
     {
 	*status = reqs[0]->status;
     }
