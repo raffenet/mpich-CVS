@@ -178,6 +178,12 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
                     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
                     return;
                 }
+#elif defined(HAVE__INTERLOCKEDEXCHANGE)
+                if (_InterlockedExchange((LPLONG)lock, 1) == 0)
+                {
+                    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
+                    return;
+                }
 #elif defined(HAVE_COMPARE_AND_SWAP)
                 if (compare_and_swap(lock, 0, 1) == 1)
                 {
