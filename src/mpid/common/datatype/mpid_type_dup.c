@@ -45,7 +45,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
     /* fill in datatype */
-    /* new_dtp->ref_count     = 1; NOTE: is this already filled in by allocator? */
+    new_dtp->ref_count     = 1;
     new_dtp->is_contig     = old_dtp->is_contig;
     new_dtp->size          = old_dtp->size;
     new_dtp->extent        = old_dtp->extent;

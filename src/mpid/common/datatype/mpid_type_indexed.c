@@ -57,14 +57,11 @@ int MPID_Type_indexed(int count,
 	return mpi_errno;
     }
 
-    /* Note: handle and ref_count, the first two parameters in the datatype
-     * structure, are filled in automatically by the handle allocation
-     * function.
-     */
-
+    /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
     if (dispinbytes) new_dtp->combiner = MPI_COMBINER_HINDEXED;
     else new_dtp->combiner             = MPI_COMBINER_INDEXED;
 
+    new_dtp->ref_ct       = 1;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes   = 0;

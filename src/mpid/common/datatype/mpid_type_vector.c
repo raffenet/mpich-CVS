@@ -51,11 +51,8 @@ int MPID_Type_vector(int count,
 	return mpi_errno;
     }
 
-    /* Note: handle and ref_count, the first two parameters in the datatype
-     * structure, are filled in automatically by the handle allocation
-     * function.
-     */
-
+    /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
+    new_dtp->ref_count    = 1;
     new_dtp->combiner     = MPI_COMBINER_VECTOR;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
