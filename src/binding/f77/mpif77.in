@@ -184,6 +184,7 @@ for arg in "$@" ; do
         fi
         addarg=no
         bfile=`basename $arg .F`
+	TMPDIR=${TMPDIR:-/tmp}
         tmpfile=$TMPDIR/f$$-$bfile.f
         if $F77CPP $cppflags $arg > $tmpfile ; then
             # Add this file to the commandline list
