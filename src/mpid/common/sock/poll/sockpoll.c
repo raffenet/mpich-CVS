@@ -189,13 +189,51 @@ int sock_set_user_ptr(sock_t sock, void * user_ptr)
 #define FUNCNAME sock_native_to_sock
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sock_ptr)
+int sock_native_to_sock(sock_set_t sock_set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sockp)
 {
+    struct sock * sock;
+    int rc;
+    long flags;
+    int sock_errno = SOCK_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_NATIVE_TO_SOCK);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_NATIVE_TO_SOCK);
+
+    /* set file descriptor to non-blocking */
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+    {
+	sock_errno = SOCK_FAIL;
+	goto fn_exit;
+    }
+    
+    rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (rc == -1)
+    {
+	sock_errno = SOCK_FAIL;
+	goto fn_exit;
+    }
+    
+    /* allocate and initialize sock and poll structures */
+    sock_errno = socki_sock_alloc(sock_set, &sock);
+    if (sock_errno != SOCK_SUCCESS)
+    {
+	sock_errno = SOCK_ERR_NOMEM;
+	goto fn_exit;
+    }
+
+    sock->fd = fd;
+    sock->pollfd->fd = fd;
+    sock->pollfd->events = 0;
+    sock->pollfd->revents = 0;
+    sock->pollinfo->user_ptr = user_ptr;
+    sock->pollinfo->state = SOCK_STATE_CONNECTED;
+
+    *sockp = sock;
+
+  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_NATIVE_TO_SOCK);
-    return SOCK_FAIL;
+    return sock_errno;
 }
 
 
