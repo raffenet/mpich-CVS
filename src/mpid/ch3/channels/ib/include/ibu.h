@@ -12,7 +12,8 @@ extern "C" {
 
 /* config header file */
 #include "mpidi_ch3i_ib_conf.h"
-#include "mpidi_ch3_impl.h"
+#include "mpichconf.h"
+#include "mpiiov.h"
 
 #ifdef MPID_IBU_TYPE_WINDOWS
 #include <winsock2.h>
@@ -81,7 +82,7 @@ int ibu_create_set(ibu_set_t *set);
 int ibu_destroy_set(ibu_set_t set);
 
 /*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);*/
-int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr);
+int ibu_set_vc_ptr(ibu_t ibu, void *vc_ptr);
 
 ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr);
 int ibu_finish_qp(ibu_t ibu, int dest_lid, int dest_qpnum);
@@ -91,7 +92,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr);
 int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr);
 
 /*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);*/
-int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
+int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
 
 #ifdef __cplusplus
 }
