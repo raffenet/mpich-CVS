@@ -75,8 +75,13 @@ int main( int argc, char *argv[] )
     MPI_Comm_free( &intercomm );
 
     /* Note that the MTest_Finalize get errs only over COMM_WORLD */
-    MTest_Finalize( errs );
+    /* Note also that both the parent and child will generate "No Errors"
+       if both call MTest_Finalize */
+    if (parentcomm == MPI_COMM_NULL) {
+	MTest_Finalize( errs );
+    }
 
+    /* FIXME: this sleep should not be required */
     sleep(5);
     MPI_Finalize();
     return 0;

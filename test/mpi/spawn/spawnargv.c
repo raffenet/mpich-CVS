@@ -59,6 +59,8 @@ int main( int argc, char *argv[] )
     }
     else {
 	/* Child */
+	/* FIXME: This assumes that stdout is handled for the children
+	   (the error count will still be reported to the parent) */
 	if (size != np) {
 	    errs++;
 	    printf( "(Child) Did not create %d processes (got %d)\n", 
@@ -69,9 +71,6 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    printf( "Unexpected rank on child %d (%d)\n", rank, i );
 	}
-	/* Send the errs back to the master process */
-	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
-
 	/* Check the command line */
 	for (i=1; i<argc; i++) {
 	    if (!outargv[i-1]) {
@@ -90,14 +89,19 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    printf( "Too few arguments to spawned command\n" );
 	}
+	/* Send the errs back to the master process */
+	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
     }
 
     /* It isn't necessary to free the intercomm, but it should not hurt */
     MPI_Comm_free( &intercomm );
 
     /* Note that the MTest_Finalize get errs only over COMM_WORLD */
-    MTest_Finalize( errs );
+    if (parentcomm == MPI_COMM_NULL) {
+	MTest_Finalize( errs );
+    }
 
+    /* FIXME: this sleep should not be required */
     sleep(5);
     MPI_Finalize();
     return 0;
