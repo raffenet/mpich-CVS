@@ -6,46 +6,18 @@
 
 #include "smpd.h"
 
-char * smpd_get_context_str(smpd_context_t *context)
-{
-    switch (context->type)
-    {
-    case SMPD_CONTEXT_INVALID:
-	return "invalid";
-    case SMPD_CONTEXT_STDIN:
-	return "stdin";
-    case SMPD_CONTEXT_STDOUT:
-	return "stdout";
-    case SMPD_CONTEXT_STDERR:
-	return "stderr";
-    case SMPD_CONTEXT_PARENT:
-	return "parent";
-    case SMPD_CONTEXT_LEFT_CHILD:
-	return "left";
-    case SMPD_CONTEXT_RIGHT_CHILD:
-	return "right";
-    case SMPD_CONTEXT_CHILD:
-	return "child";
-    case SMPD_CONTEXT_FREED:
-	return "freed";
-    default:
-	return "unknown";
-    }
-    return "error";
-}
-
-int smpd_create_process(int rank, smpd_process_t **process_ptr)
+int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 {
     int result;
     smpd_process_t *p;
 
-    smpd_enter_fn("smpd_create_process");
+    smpd_enter_fn("smpd_create_process_struct");
 
     p = (smpd_process_t*)malloc(sizeof(smpd_process_t));
     if (p == NULL)
     {
 	*process_ptr = NULL;
-	smpd_exit_fn("smpd_create_process");
+	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
     p->rank = rank;
@@ -60,7 +32,7 @@ int smpd_create_process(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stdin context.\n");
-	smpd_exit_fn("smpd_create_process");
+	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
     result = smpd_create_context(SMPD_CONTEXT_STDOUT, smpd_process.set, SOCK_INVALID_SOCK, -1, &p->out);
@@ -69,7 +41,7 @@ int smpd_create_process(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stdout context.\n");
-	smpd_exit_fn("smpd_create_process");
+	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
     result = smpd_create_context(SMPD_CONTEXT_STDERR, smpd_process.set, SOCK_INVALID_SOCK, -1, &p->err);
@@ -78,7 +50,7 @@ int smpd_create_process(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stderr context.\n");
-	smpd_exit_fn("smpd_create_process");
+	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
     p->in->rank = rank;
@@ -90,17 +62,17 @@ int smpd_create_process(int rank, smpd_process_t **process_ptr)
 
     *process_ptr = p;
 
-    smpd_exit_fn("smpd_create_process");
+    smpd_exit_fn("smpd_create_process_struct");
     return SMPD_SUCCESS;
 }
 
-int smpd_free_process(smpd_process_t *process)
+int smpd_free_process_struct(smpd_process_t *process)
 {
-    smpd_enter_fn("smpd_free_process");
+    smpd_enter_fn("smpd_free_process_struct");
     if (process == NULL)
     {
-	smpd_dbg_printf("smpd_free_process passed NULL process pointer.\n");
-	smpd_exit_fn("smpd_free_process");
+	smpd_dbg_printf("smpd_free_process_struct passed NULL process pointer.\n");
+	smpd_exit_fn("smpd_free_process_struct");
 	return SMPD_SUCCESS;
     }
     if (process->in)
@@ -120,7 +92,7 @@ int smpd_free_process(smpd_process_t *process)
     process->rank = -1;
     process->next = NULL;
     free(process);
-    smpd_exit_fn("smpd_free_process");
+    smpd_exit_fn("smpd_free_process_struct");
     return SMPD_SUCCESS;
 }
 
@@ -138,7 +110,7 @@ int handle_launch_command(smpd_context_t *context)
     /* parse the command */
     if (smpd_get_int_arg(cmd->cmd, "i", &iproc) == SMPD_FALSE)
 	iproc = 0;
-    result = smpd_create_process(iproc, &process);
+    result = smpd_create_process_struct(iproc, &process);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a process structure.\n");
@@ -169,7 +141,7 @@ int handle_launch_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a result command in response to launch command: '%s'\n", cmd->cmd);
-	    smpd_free_process(process);
+	    smpd_free_process_struct(process);
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
 	}
@@ -177,7 +149,7 @@ int handle_launch_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
-	    smpd_free_process(process);
+	    smpd_free_process_struct(process);
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
 	}
@@ -186,7 +158,7 @@ int handle_launch_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
-	    smpd_free_process(process);
+	    smpd_free_process_struct(process);
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
 	}
@@ -196,13 +168,13 @@ int handle_launch_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command in response to launch command: '%s'\n", cmd->cmd);
-	    smpd_free_process(process);
+	    smpd_free_process_struct(process);
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
 	}
 
 	/* free the failed process structure */
-	smpd_free_process(process);
+	smpd_free_process_struct(process);
 	process = NULL;
 
 	smpd_exit_fn("handle_launch_command");
@@ -847,7 +819,7 @@ int smpd_handle_read(smpd_context_t *context)
 	smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
 	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
 	buffer[num_encoded*2] = '\0';
-	smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);
+	/*smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);*/
 
 	/* create an output command */
 	result = smpd_create_command(
@@ -1505,7 +1477,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 			    }
 
 			    /* free the process structure */
-			    smpd_free_process(iter);
+			    smpd_free_process_struct(iter);
 			    iter = NULL;
 			}
 			context = NULL;
