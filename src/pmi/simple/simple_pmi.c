@@ -78,7 +78,7 @@ static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
 
 #ifdef USE_PMI_PORT
-static void mpd_singinit(void);
+static int mpd_singinit(void);
 static int PMI_totalview = 0;
 #endif
 static int accept_one_connection(int);
@@ -244,9 +244,26 @@ int PMI_Get_rank( int *rank )
 int PMI_Get_universe_size( int *size)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], size_c[PMIU_MAXLINE];
+    int rc;
 #ifdef USE_HUMAN_READABLE_TOKENS
     char *iter;
     int maxlen;
+#endif
+
+#ifdef USE_PMI_PORT
+    if (PMI_initialized < 2)
+    {
+	rc = mpd_singinit();
+	if (rc < 0)
+	    return(-1);
+	PMI_initialized = SINGLETON_INIT_MPD;    /* do this right away */
+	PMI_size = 1;
+	PMI_rank = 0;
+	PMI_debug = 0;
+	PMI_spawned = 0;
+	PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
+	PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
+    }
 #endif
 
     if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
@@ -792,7 +809,9 @@ int PMI_Spawn_multiple(int count,
 #ifdef USE_PMI_PORT
     if (PMI_initialized < 2)
     {
-	mpd_singinit();
+	rc = mpd_singinit();
+	if (rc < 0)
+	    return(-1);
 	PMI_initialized = SINGLETON_INIT_MPD;    /* do this right away */
 	PMI_size = 1;
 	PMI_rank = 0;
@@ -1277,8 +1296,8 @@ static int PMII_Set_from_port( int fd, int id )
 }
 
 
-static void mpd_singinit(void);
-static void mpd_singinit()
+static int mpd_singinit(void);
+static int mpd_singinit()
 {
     int pid, rc, len;
     int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
@@ -1310,9 +1329,9 @@ static void mpd_singinit()
 	newargv[3] = port_c;
 	newargv[4] = "unknown_via_singinit";
 	newargv[5] = NULL;
-	execvp(newargv[0],newargv);
+	rc = execvp(newargv[0],newargv);
 	perror("mpd_singinit: execv failed");
-	exit(-1);
+	return(-1);
     }
     else
     {
@@ -1327,6 +1346,7 @@ static void mpd_singinit()
 	dup2(stderr_sock,2);
 	/* printf("mpd_singinit: past accepting\n");  fflush(stdout); */
     }
+    return(0);
 }
 
 static int accept_one_connection(int list_sock)
