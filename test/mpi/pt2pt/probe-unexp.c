@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 #define MAX_BUF_SIZE_LG 22
 #define NUM_MSGS_PER_BUF_SIZE 5
@@ -133,7 +134,6 @@ int main(int argc, char **argv)
 	}
     }
 
-  test_complete:    
     MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
