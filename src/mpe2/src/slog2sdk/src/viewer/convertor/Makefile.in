@@ -42,8 +42,8 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 ALL: $(OBJ) $(TARGET)
 
 $(TARGET): $(OBJ)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).ConvertorFrame" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
@@ -56,7 +56,7 @@ $(TARGET): $(OBJ)
 	$(JAR) uvf $${jarfile} images/*.gif applet.html
 
 clean:
-	cd $(CLASSDIR) ; \
+	cd $(CLASSDIR) && \
 	$(RM) $(PKGDIR)/*.class
 
 rmlib:

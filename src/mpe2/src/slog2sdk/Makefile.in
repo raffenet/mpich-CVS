@@ -10,7 +10,7 @@ all:
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          echo "Making $$pkg" ; \
-	          ( cd $$pkg ; $(MAKE) ) ; \
+	          ( cd $$pkg && $(MAKE) ) ; \
 	      fi ; \
 	  done
 
@@ -27,7 +27,7 @@ uninstall:
 clean:
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
-	          ( cd $$pkg ; $(MAKE) clean ) ; \
+	          ( cd $$pkg && $(MAKE) clean ) ; \
 	      fi ; \
 	  done
 
@@ -42,9 +42,9 @@ rmprog:
 distclean: rmprog
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
-	          ( cd $$pkg ; $(MAKE) distclean ) ; \
+	          ( cd $$pkg && $(MAKE) distclean ) ; \
 	      fi ; \
 	  done
-	@-if [ -d doc/tex ] ; then cd doc/tex; $(MAKE) distclean ; fi
+	@-if [ -d doc/tex ] ; then cd doc/tex && $(MAKE) distclean ; fi
 	@-$(RM) sbin/*
 	@-$(RM) config.log config.status

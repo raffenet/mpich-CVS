@@ -13,20 +13,20 @@ TARGETS = base/io base/drawable base/statistics base/topology \
 
 all:
 	@for dir in $(TARGETS) ; do \
-	    ( cd $$dir ; $(MAKE) ) ; \
+	    ( cd $$dir && $(MAKE) ) ; \
 	 done
 
 clean:
 	@for dir in $(TARGETS) ; do \
-	    ( cd $$dir ; $(MAKE) clean ) ; \
+	    ( cd $$dir && $(MAKE) clean ) ; \
 	 done
 
 rmlib:
 	@for dir in $(TARGETS) ; do \
-	    ( cd $$dir ; $(MAKE) rmlib ) ; \
+	    ( cd $$dir && $(MAKE) rmlib ) ; \
 	 done
 
 realclean:
 	@for dir in $(TARGETS) ; do \
-	    ( cd $$dir ; $(MAKE) realclean ) ; \
+	    ( cd $$dir && $(MAKE) realclean ) ; \
 	 done

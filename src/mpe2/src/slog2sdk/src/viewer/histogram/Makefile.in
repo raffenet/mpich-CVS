@@ -45,7 +45,7 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 ALL: $(OBJ)
 
 clean:
-	cd $(CLASSDIR) ; \
+	cd $(CLASSDIR) && \
 	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class
 
 rmlib:

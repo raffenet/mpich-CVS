@@ -4,7 +4,7 @@ SHELL        = /bin/sh
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 
 all:	
-	cd src; $(MAKE)
+	cd src && $(MAKE)
 
 install:
 	@if [ -n "$(PREFIX)" ] ; then \
@@ -17,7 +17,7 @@ uninstall:
 	@-./sbin/uninstall-viewer
 
 clean:
-	-cd src; $(MAKE) clean
+	-cd src && $(MAKE) clean
 
 rmprog:
 	@-for file in bin/* sbin/* ; do \
@@ -28,7 +28,7 @@ rmprog:
 	  done
 
 distclean: rmprog
-	-cd src; $(MAKE) realclean
+	-cd src && $(MAKE) realclean
 	@-$(RM) sbin/*
 	@-$(RM) config.log config.status
 

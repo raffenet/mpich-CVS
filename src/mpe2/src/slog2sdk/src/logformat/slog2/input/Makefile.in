@@ -45,8 +45,8 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 ALL: $(TARGET0) $(TARGET1) $(TARGET2)
 
 $(TARGET0): $(OBJ)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).PrintRecursively" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
@@ -56,8 +56,8 @@ $(TARGET0): $(OBJ)
 	done
 
 $(TARGET1): $(OBJ)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).PrintSerially" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
@@ -67,8 +67,8 @@ $(TARGET1): $(OBJ)
 	done
 
 $(TARGET2): $(OBJ)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Navigator" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
@@ -78,7 +78,7 @@ $(TARGET2): $(OBJ)
 	done
 
 clean:
-	cd $(CLASSDIR) ; \
+	cd $(CLASSDIR) && \
 	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class 
 
 rmlib:

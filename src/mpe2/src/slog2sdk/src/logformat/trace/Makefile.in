@@ -48,8 +48,8 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 ALL: $(HDR) $(TARGET)
 
 $(TARGET): $(CLS) $(CLS4C)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Print" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
@@ -59,7 +59,7 @@ $(TARGET): $(CLS) $(CLS4C)
 	done
 
 clean:
-	cd $(CLASSDIR) ; \
+	cd $(CLASSDIR) && \
 	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class
 
 rmlib:
