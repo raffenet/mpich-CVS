@@ -1364,6 +1364,14 @@ if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
     AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(void*)])
 fi
 dnl
+dnl define MPIU_Size_t - used to express the size of objects
+dnl
+dnl FIXME: this should really be in a util configure file, but we don't
+dnl have one at the moment
+dnl
+MPIU_SIZE_T="unsigned $MPI_AINT"
+AC_DEFINE_UNQUOTED(MPIU_SIZE_T,$MPIU_SIZE_T,[Set to a type that can express the size of the entire address space]) 
+dnl
 #
 # If it is necessary for the device to update some of the variables,
 # this step allows that to happen.  Possible variables to update are
