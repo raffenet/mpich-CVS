@@ -33,7 +33,7 @@ SHELL = /bin/sh
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
 MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps \
-	sendrecv.eps handle.eps intercomm.eps
+	sendrecv.eps handle.eps intercomm.eps bsend.eps
 
 mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
