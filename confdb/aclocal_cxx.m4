@@ -189,8 +189,8 @@ dnl Some compilers support namespaces but don't know about std
 dnl
 AC_DEFUN([AC_CXX_NAMESPACE_STD],
 [AC_REQUIRE([AC_CXX_NAMESPACES])
-AC_CACHE_CHECK(whether the compiler implements namespaces,
-ac_cv_cxx_namespaces,
+AC_CACHE_CHECK(whether the compiler implements the namespace std,
+ac_cv_cxx_namespace_std,
 [ac_cv_cxx_namespace_std=no
 if test "$ac_cv_cxx_namespaces" = yes ; then 
    AC_LANG_SAVE
