@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_FUOAP
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3U_Request_FUOAP(
     int source, int tag, int context_id, int * found)
 {
@@ -105,6 +109,7 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
     if (req != NULL)
     {
 	req->ref_count = 2;
+	req->kind = MPID_REQUEST_RECV;
 	req->cc = 1;
 	req->cc_ptr = &(req->cc);
 	req->ch3.match.tag = tag;
@@ -127,6 +132,10 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
     return req;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_FPOAU
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3U_Request_FPOAU(
     MPIDI_Message_match * match, int * found)
 {
@@ -173,6 +182,7 @@ MPID_Request * MPIDI_CH3U_Request_FPOAU(
     if (req != NULL)
     {
 	req->ref_count = 2;
+	req->kind = MPID_REQUEST_RECV;
 	req->cc = 1;
 	req->cc_ptr = &(req->cc);
 	req->ch3.match = *match;
@@ -199,6 +209,10 @@ MPID_Request * MPIDI_CH3U_Request_FPOAU(
  * Adjust the iovec in the request by the supplied number of bytes.  If the
  * iovec has been consumed, return true; otherwise return false.
  */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_adjust_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Request_adjust_iov(MPID_Request * req, int nb)
 {
     int offset = req->ch3.iov_offset;
@@ -224,3 +238,54 @@ int MPIDI_CH3U_Request_adjust_iov(MPID_Request * req, int nb)
     return TRUE;
 }
 
+
+/*
+ * MPIDI_CH3U_Request_copy_tmp_data()
+ *
+ * Copy data from a temporary buffer attached to the receive request into the
+ * user data buffer.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_copy_tmp_data
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3U_Request_copy_tmp_data(MPID_Request * rreq)
+{
+    long dt_sz;
+    int dt_contig;
+	    
+    if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
+    {
+	dt_sz = MPID_Datatype_get_size(rreq->ch3.datatype);
+	dt_contig = TRUE;
+    }
+    else
+    {
+	MPIDI_err_printf(FCNAME, "only basic datatypes are supported");
+	abort();
+    }
+		    
+    if (dt_contig) 
+    {
+	if (rreq->ch3.recv_data_sz <= dt_sz * rreq->ch3.user_count)
+	{
+	    memcpy(rreq->ch3.user_buf, rreq->ch3.tmp_buf,
+		   rreq->ch3.recv_data_sz);
+	}
+	else
+	{
+	    MPIDI_err_printf(FCNAME, "receive buffer overflow");
+	    abort();
+	    /* TODO: handle buffer overflow properly */
+	}
+    }
+    else
+    {
+	MPIDI_err_printf(FCNAME, "only contiguous data is supported");
+	abort();
+    }
+		
+    MPIU_Free(rreq->ch3.tmp_buf);
+    rreq->ch3.tmp_buf = NULL;
+    rreq->ch3.tmp_sz = 0;
+}
