@@ -67,8 +67,10 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_2REAL,
     MPI_2DOUBLE_PRECISION,
     MPI_CHARACTER,
-#if 0
-/* Size-specific types */
+#ifdef HAVE_FORTRAN_BINDING
+/* Size-specific types; these are in section 10.2.4 (Extended Fortran Support)
+   as well as optional in MPI-1
+*/
     MPI_REAL4,
     MPI_REAL8,
     MPI_REAL16,
@@ -81,6 +83,8 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_INTEGER8,
     MPI_INTEGER16,
 #endif
+    /* This entry is a guaranteed end-of-list item */
+    (MPI_Datatype)-1,
 };
 
 void MPIR_Datatype_init( void )
@@ -91,12 +95,17 @@ void MPIR_Datatype_init( void )
     static int is_init = 0;
     
     if (is_init) return;
+
     {
 	MPID_Common_thread_lock();
 	if (!is_init) { 
 	    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
 		/* Compute the index from the value of the handle */
 		d                  = mpi_dtypes[i];
+		if (d == -1) {
+		    /* At the end of mpi_dtypes */
+		    break;
+		}
 		/* Some of the size-specific types may be null,
 		   so skip that case */
 		if (d == MPI_DATATYPE_NULL) continue;
@@ -113,6 +122,12 @@ void MPIR_Datatype_init( void )
 		dptr->true_ub	   = dptr->size;
 		dptr->contents     = NULL; /* should never get referenced? */
 	    }
+	    /* --BEGIN ERROR CHECKING-- */
+	    if (d != -1 && mpi_dtypes[i] != -1) {
+		/* We did not hit the end-of-list */
+		MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );
+	    }
+	    /* --END ERROR CHECKING-- */
 	    is_init = 1;
 	}
 	MPID_Common_thread_unlock();
