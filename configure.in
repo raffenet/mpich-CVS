@@ -1097,7 +1097,7 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
 	basedir='"."';
     fi
     # We would like to use strerror in the file namepublisher
-    PAC_FUNC_STRERROR
+    AC_CHECK_FUNCS(strerror)
     AC_DEFINE_UNQUOTED(FILE_NAMEPUB_BASEDIR,$basedir,[Directory to use in namepub])
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
