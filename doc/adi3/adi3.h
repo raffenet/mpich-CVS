@@ -59,13 +59,12 @@ typedef struct {
   the MPI implementation can choose the correct behavior.  An example of this
   are the keyval attribute copy and delete functions.
 
-  Module:
-  Attribute
   D*/
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
-/*D
+/*TKyOverview.tex
+
   Keyval functions - Data types for attribute copy and delete routines.
 
   Each keyval has a copy and a delete function associated with it.
@@ -84,7 +83,7 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 
   Module:
   Attribute
-  D*/
+  T*/
 typedef union {
   int  (*C_CopyFunction)  (MPI_Comm, int, void *, void *, void *, int *)
   void (*F77_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
@@ -133,9 +132,12 @@ typedef struct {
 
 /*D
   LocalPID - Description of the local process ids
-  
-  Module:
-  Group
+
+  (yet to do: write text describing local pids.  These are basically the 
+  id by which the calling process knows the other processes, and is not
+  guaranteed to be number as a different process may use to identify
+  the same (third) process.  This is the reason that this is a `local`
+  process id.
 
   Question:
   Do we want to have a local pid type that maps a virtual local process 
@@ -432,32 +434,32 @@ typedef struct {
      if stackelm[cur_sp].loopinfo.kind is final then
         // final means simple, consisting of basic datatypes, such 
         // as a vector datatype made up of bytes or doubles)
-	process datatype (this uses loopinfo.kind to pick the correct
-	    code fragments; we may also include some alignment tests
-	    so that longer word moves may be used for short (e.g.,
-	    one or two word) blocks).
-	cur_sp--;
+        process datatype (this uses loopinfo.kind to pick the correct
+            code fragments; we may also include some alignment tests
+            so that longer word moves may be used for short (e.g.,
+            one or two word) blocks).
+        cur_sp--;
      else if stackelm[cur_sp].cur_count == stackelm[cur_sp].loopinfo.cm_t.count
          then {
-	 // We are done with the datatype.
-	 cur_sp--;
+         // We are done with the datatype.
+         cur_sp--;
          }
      else {
         // need to push a datatype.  Two cases: struct or other
-	if (stack_elm[cur_sp].loopinfo.kind == struct_type) {
-	    stack_elm[cur_sp+1].loopinfo = 
-	   stack_elm[cur_sp].loopinfo.s_t.dataloop[stackelm[cur_sp].cur_count];
-	   }
-	else {
-	   if (valid_sp <= cur_sp) {
-	       stack_elm[cur_sp+1].loopinfo = 
-	       stack_elm[cur_sp].loopinfo.cm_t.dataloop;
-  	       valid_sp = cur_sp + 1;
-	    }
+        if (stack_elm[cur_sp].loopinfo.kind == struct_type) {
+           stack_elm[cur_sp+1].loopinfo = 
+           stack_elm[cur_sp].loopinfo.s_t.dataloop[stackelm[cur_sp].cur_count];
+           }
+        else {
+           if (valid_sp <= cur_sp) {
+               stack_elm[cur_sp+1].loopinfo = 
+               stack_elm[cur_sp].loopinfo.cm_t.dataloop;
+               valid_sp = cur_sp + 1;
+           }
         }
-	stack_elm[cur_sp].cur_count++;
-	cur_sp ++;
-	stack_elm[cur_sp].cur_count = 0;
+        stack_elm[cur_sp].cur_count++;
+        cur_sp ++;
+        stack_elm[cur_sp].cur_count = 0;
      }
   }
 .ve 
@@ -510,9 +512,14 @@ typedef struct {
   Handlers - Description of the remote handlers and their arguments
   
   Enumerate the possible Remote Handler Call types.  For each of these
-  handler id values, there is a corresponding structure of type <name>_t;
-  e.g., for handler id MPID_Hid_Cancel, there is a typedef defining
-  MPID_Hid_Cancel_t.
+  handler id values, there is a corresponding structure of 'type <name>_t';
+  e.g., for handler id 'MPID_Hid_Cancel', there is a typedef defining
+  'MPID_Hid_Cancel_t'.
+
+  Notes:
+  This is a typedef enum (not shown yet) that lists the possible call types
+  for 'MPID_Rhcv'.  The exact list will depend on the generic implementation 
+  of the other (i.e., not-\texttt{MPID_CORE}) modules.
 
   Module:
   MPID_CORE

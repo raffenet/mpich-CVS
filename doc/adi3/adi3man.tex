@@ -5,6 +5,7 @@
 \documentclass{article}
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/tex/inputs_local/tpage}
+\usepackage{epsf}
 \textheight=9in
 \textwidth=6.1in
 \oddsidemargin=.2in
@@ -21,12 +22,13 @@
 \catcode`\_=11
 \def\code#1{{\tt #1}}
 
-% \ANLTitle{MPICH Model MPI Implementation\\Reference Manual\\\ \\Draft}{\em 
-% William Gropp\\
-% Ewing Lusk
-% Mathematics and Computer Science Division\\
-% Argonne National Laboratory
-% }{00}{\today}
+\ANLTMTitle{MPICH Abstract Device Interface\\
+Version 3\\
+Reference Manual\\\ \\Draft}{\em 
+William Gropp\\
+Ewing Lusk\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
 
 \clearpage
 
@@ -83,27 +85,31 @@ The modules are (THIS LIST IS INCOMPLETE):
 \begin{description}
 \item[MPID CORE]Basic functions to start, stop, and communicate
 between processes.  This also includes the \code{mpiexec} program.
-\item[Attributes]MPI Keyvals and attributes
-\item[Datatypes]MPI Datatypes and pack/unpack operations and a new
+This is the only module for which there is no generic implementation; as
+described in Section~\ref{sec-minimal}, implementing just this module,
+combined with the generic implementation of the other modules, provides a
+complete ADI-3 implementation.
+\item[Attribute]MPI Keyvals and attributes
+\item[Datatype]MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the ADI.
-\item[Groups]MPI Groups
-\item[Communicators]MPI Communicators
-\item[Requests]MPI Requests.  Requests are fundemental to many
+\item[Group]MPI Groups
+\item[Communicator]MPI Communicators
+\item[Request]MPI Requests.  Requests are fundemental to many
 operations; most devices that implement more than MPID CORE will need
 to replace this module.
-\item[Windows]MPI Windows.
+\item[Window]MPI Windows.
 \item[Point to point]Functions directly implementing the MPI
 point-to-point communication functions or some key subsets.
 \item[Topology]Information on the physical interconnect.  Currently
 limited to hierarchical information necessary to support clusters of
 SMPs and similar systems.
-\item[Timers]Support for fast timers, including synchronized timers.
-\item[Streams]Communication routines designed to support
+\item[Timer]Support for fast timers, including synchronized timers.
+\item[Stream]Communication routines designed to support
 important algorithms for collective communication.
 \item[Collective]Alternate support for collective
 routines. \textbf{Note that this may end up being an MPI module, not
-and MPID module.}
-\item[Utilities]Routines to simplify correctness and performance
+an MPID module.}
+\item[Utility]Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
 \item[Environment]This module contains both compile-time and run-time
@@ -124,35 +130,52 @@ specific platform.
 \subsection{The Core}
 \label{sec-minimal}
 
-The core of MPID consists of the following routines:
+While ADI-3 defines a large number of routines, only a few must be implemented
+by a developer.  For all modules except the \code{MPID_CORE} module, MPICH
+provides a generic implementation.  Thus, only the routines in
+\code{MPID_CORE} must be implemented when porting MPICH to a new interprocess
+communication mechanism.  \code{MPID_CORE} consists of the following routines: 
 
 \begin{description}
-\item[MPID Init thread]This is the device's counterpart to
+\item[\code{MPID_Init_thread}]This is the device's counterpart to
 \code{MPI_Init_thread}. 
-\item[MPID Finalize]This is the devices's counterpart to
+\item[\code{MPID_Finalize}]This is the devices's counterpart to
 \code{MPI_Finalize}
-\item[MPID Abort]This is the device's counterpart to \code{MPI_Abort}.
-\item[MPID Put]This is used for data movement; it is roughly an
+\item[\code{MPID_Abort}]This is the device's counterpart to \code{MPI_Abort}.
+\item[\code{MPID_Put_contig}]This is used for data movement; it is roughly an
 \code{MPI_Put} using only contiguous data.  However, it uses a
-different mechanism for indicating completion of data transfers (see \code{MPID_Waitsome} and \code{MPID_Testsome})
-\item[MPID Rhcv]This is used for messages; it is roughly an
+different mechanism for indicating completion of data transfers (see \code{MPID_Flags_waitsome} and \code{MPID_Flags_testsome})
+\item[MPID_Rhcv]This is used for messages; it is roughly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
-\item[MPID Waitsome, MPID Testsome]These are used to complete \code{MPID_Rhcv}
-and \code{MPID_Put} operations
-\item[MPID Poll]This routine provides a way for a polling routine to
+\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}]These are used to
+  complete \code{MPID_Rhcv} 
+and \code{MPID_Put_contig} operations
+\item[\code{MPID_Poll}]This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
-\item[MPID Comm Spawn Multiple]
-\item[MPID Comm Connect]
-\item[MPID Comm Attach]
-\item[mpiexec]
+\item[\code{MPID_Comm_Spawn_Multiple}]Spawns new processes.  An implementation
+  that does not plan to support \code{MPI_Comm_spawn} or
+  \code{MPI_Comm_spawn_multiple} can implement these as routines that return
+  failure.  Such an implementation will not implement all of MPI-2.
+\item[\code{MPID_Open_port}]Open a port for connecting to processes.  The
+  routines \code{MPID_Open_port}, \code{MPID_Close_port},
+  \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
+  \code{MPID_Comm_disconnect} can be considered a 
+  ``submodule'' supporting the corresponding part of the MPI-2 standard.  Just
+  as for \code{MPID_Comm_spawn_multiple}, an implementation that chooses to
+  support only the subset of MPI-2 that does not include the MPI routines for
+  connecting two groups of MPI processes may implement these routines by
+  simply having them return failure.
+\item[\code{MPID_Close_port}]Close a port opened with \code{MPID_Open_port}.
+\item[\code{MPID_Comm_connect}]Connect to an MPI program.
+\item[\code{MPID_Comm_attach}]Attach to an MPI program.
+\item[\code{MPID_Comm_disconnect}]Detach from an MPI program.
+\item[\code{mpiexec}]An implementation of \code{mpiexec}, as defined in the
+  MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
+  provided by any device.  
 \end{description}
-
-\textbf{Note: this doesn't support Spawn etc. We need to decide how to
-add that, that is, what few other functions to add.}
-
 
 From these routines, together with the implementation of MPI in terms of MPID
 that we are planning to carry out, all of MPI can be implemented\footnote{See
@@ -170,7 +193,7 @@ it difficult to use a two-sided (message-passing-like) core.
 Alternately, \code{MPID_Put} isn't actually necessary; the same
 functionality is provided by \code{MPID_Rhcv}.  However, experience
 with active messages, as well as current trends in interconnects,
-suggests that a remote memory put operation that does require any
+suggests that a remote memory put operation that does not require any
 other processing at the target (destination) should be separated from
 the more general active-message invocation (\code{MPID_Rhcv}).
 
@@ -230,7 +253,8 @@ chunks, where each chunk is forwarded it as it is received.
 Just to make things more complex, in collective algorithms, the data
 received is often processed (e.g., for reduce) and/or forwarded to
 multiple destinations.  These needs, taken together, encourage the
-definition of the store and forward ``building block'' routines.
+definition of store and forward ``building block'' routines; the \code{Stream}
+module contains these routines.
 
 \item Scatter/Gather --- A number of algorithms rely on dividing the
 message up into separate pieces, based on viewing the message as a
@@ -245,7 +269,7 @@ operations is that they are blocking.  This allows the code
 implementing the collective operation to remain in control; in
 particular, it can wait for an operation to complete and then perform
 the next step.  This feature influenced the design of the
-store and forward routines.
+\code{Stream} module.
 \end{enumerate}
 
 \subsection{Multi-method Communication}
@@ -273,20 +297,36 @@ unpacking it after it was delivered (for a receive).  This was a
 reasonable expedient when the original MPICH implementation was done,
 but is not acceptable in a mature package.
 
+\texttt{MPID_CORE} in ADI-3 corresponds to the `channel' device in ADI-2 in
+the sense that it is a small set of routines, which, when combined with the
+generic implementations of the other modules, gives a complete ADI
+implementation.  
+
+The ADI-2 channel interface was designed to fit the high-performance system
+software of the day, which was proprietary message-passing libraries on
+distributed memory parallel computers.  With the success of MPI, these
+proprietary libraries have vanished, and advances in interconnect technology
+have changed the API used to access high-performance interprocess
+communication.  ADI-3 adapts to these changes.
+
 \section{Things Left to do}
-Dynamic processes.  What is the ADI interface?  What relationship does it
+What relationship does the ADI interface to dynamic processes 
 have to the BNR interface?  Should there be a connection between BNR groups
 and MPID groups?
+
 
 \code{MPID_Join} involves sockets, to we might make it part of the
 utility module.  But what routines from \code{MPID_Core} must it call
 to connect up the processes?
+
+Error reporting.  The ADI needs to know how to create MPI error codes.
 
 %\section{ADI-3 Routines}
 %\input adi3func.tex
 
 %\section{ADI-3 Datastructures}
 %\input adi3data.tex
+
 
 \section{Integrating a Device into the MPICH build tree}
 Still to do.  This section needs to cover:
@@ -302,8 +342,14 @@ Still to do.  This section needs to cover:
 \item Testing codes for device-specific functions
 \end{enumerate}
 
+% Add manual entries to the table of contents
+\mancontentstrue
+
+\section{Overview}
 \input Overview.tex
 \input OpaqOverview.tex
+
+\subsection{Data Structures and Constants}
 \input DSOverview.tex
 \input Constants.tex
 \input DyOverview.tex
@@ -457,7 +503,7 @@ Still to do.  This section needs to cover:
 
 \section{Attributes}
 \input AttrOverview.tex
-\input Keyval.tex
+\input KyOverview.tex
 \input Attribute-list.tex
 
 \section{Datatypes}

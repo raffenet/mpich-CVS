@@ -10,12 +10,13 @@
  by the code that implements the MPI communication operations.
 
  Note that some of these operations may be implemented using the others; for 
- example, MPID_Rhcv can use MPID_Rhc and a temporary memory buffer.  The
- routines that *must* be implemented are marked as MPID_CORE.  The other
+ example, 'MPID_Get_contig' can use 'MPID_Rhcv' and 'MPID_Put_contig'.  The
+ routines that `must` be implemented are marked as 'MPID_CORE'.  The other
  routines can be implemented (at some loss in efficiency) in terms of these
  or other standard operations.  The MPICH2000 implementation will include
- an implementation of all of these routines, using MPID_CORE for communication
- and other code for local operations (such as the datatype operations).
+ an implementation of all of these routines, using 'MPID_CORE' for 
+ communication and other code for local operations (such as the datatype 
+ operations).  
 
  Most "routines" may also be implemented as macros in cases (such as memory 
  allocation) where performance is critical.  Any function that must be a
@@ -25,8 +26,6 @@
 
  In a few places, a decision hasn't been made.  These are marked as "Question".
  When answered, these will turn into "Rationales".
-
- This is MPID, not just MPID_CORE.
 
  Error handling and reporting:
  
@@ -43,14 +42,21 @@
  Where possible, all errors should be recoverable.  That is, it should be
  possible for an MPI program to continue to run correctly.  When an error has 
  significant consequences, these should be limited to the smallest communicator
- possible.  For example, the failure of a process in MPI_COMM_WORLD should make
- MPI_COMM_WORLD invalid, but MPI_COMM_SELF and communicators that do not 
+ possible.  For example, the failure of a process in 'MPI_COMM_WORLD'
+ should make
+ 'MPI_COMM_WORLD' invalid, but 'MPI_COMM_SELF' and communicators that do not 
  involve the failed process should remain valid.  
 
  Many routines have no error returns.  This is a tough call, but the reason 
  is that the routines with no error returns have no opportunity to detect
  an error that should not have been caught by some other routine (remember,
  these aren't user-level routines).
+
+ Semantics of Routines:
+ The semantics of these routines normally follow the semantics of the 
+ related MPI routines, and the MPI standard should be consulted for any 
+ details.  Differences in the semantics are noted in the "Notes" section
+ of each routine.
  T*/
 
 /*
@@ -60,8 +66,7 @@
  *
  */
 /*TDSOverview.tex
-  Section : Data Structures
-
+  
   MPI has a number of data structures, most of which are represented by 
   an opaque handle in an MPI program.  In MPID, these handles are represented
   as integers; this makes implementation of the C/Fortran handle transfer 
@@ -214,9 +219,12 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
   Datatype
 
   Questions:
-  Do we really want this as a seperate routine, or can use the MPID_Segment_xxx
+  Do we really want this as a seperate routine, or can use the 
+  'MPID_Segment_xxx'
   routines?  If we can''t use the segment routines, does that mean that we 
   don''t have the right API yet, or is there an important difference?
+  Current thinking is yes, we should.  We should try to build an
+  implementation of 'MPI_Pack' using 'MPID_Segment_pack'.
 
   (The remaining apply only the the case of heterogeneous (in data 
   representation) systems.)
@@ -379,6 +387,33 @@ int MPID_Group_incr( MPID_Group *group, int incr )
   The call is collective over the old group, so some of the processes 
   calls may not be in the new group.  In that case, 'new_group' is null.
 
+  Module:
+  Communicator
+
+  Question: 
+  should there be an error return in case something more global
+  goes wrong?
+  @*/
+MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm, 
+			     MPID_Group *new_group, int context_id )
+{
+}
+
+/*@
+  MPID_Comm_context_id - Determine a new context id for a communicator
+
+  Input Parameters:
++  old_comm - Call is collective over old_comm.  
+-  new_group - Group of new communicator.  This may be an existing 
+   group (with an incremented reference count), a new group created
+   with 'MPID_Group_new', or NULL (see below).
+
+   Return value:
+   A context id that may be used, along with 'old_comm' and 'new_group', 
+   in a call to 'MPID_Comm_create' to create a new group.
+
+
+  Notes:
   Determining a value for 'context_id' in the multithreaded case is not easy.
   The simplest algorithms can dead-lock in a valid program.  Consider this 
   case\:
@@ -412,14 +447,9 @@ int MPID_Group_incr( MPID_Group *group, int incr )
   who was reserving context ids and provide a deterministic way to break
   livelock.
 
-  Module:
-  Communicator
-
-  Question:
-  Do we want to define an MPID_Comm_context_get that provides an algorithm
-  to return a new context?  Do we want to make this a part of MPID_Comm_create?
-  We''ll do an MPIR one if it isn''t part of MPID.  Here''s a reason why we
-  should make it part of the MPID level.  Consider a shared-memory system.
+  This routine is part of ADI-3 because some devices may be able to 
+  create new context ids with lower overhead than the generic implemention.
+  Consider a shared-memory system.
   Let there be a global queue of available context ids.  The lowest rank 
   process in the old communicator uses an atomic operation to remove the
   next value from the queue, and then broadcasts it to the members of the
@@ -427,15 +457,8 @@ int MPID_Group_incr( MPID_Group *group, int incr )
   used in MPICH-1).  Freeing a communicator returns the context id to the 
   shared pool.
 
-  If we''re going to have a collective call to find a context id, should we
-  just have a single call that has context_id as an output argument?
-
-  Question: 
-  should there be an error return in case something more global
-  goes wrong?
-  @*/
-MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm, 
-			     MPID_Group *new_group, int context_id )
+@*/
+int MPID_Comm_context_id( MPID_Comm *old_comm, MPID_Group *new_group )
 {
 }
 
@@ -469,9 +492,11 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
 {
 }
 
-/*TAttrOverview.tex
- *
+/*
  * Section : Communicator attributes
+ */
+
+/*TAttrOverview.tex
  *
  * These provide a way for the user to pass data to the MPI implementation,
  * on a communicator-by-communicator basis.  To allow an implementation to
@@ -486,14 +511,15 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
  * 'MPID_Attr_predefined'.
  T*/
 /*@
-  MPID_Comm_attr_set - Inform the device about a change to an attribute
+  MPID_Comm_attr_notify - Inform the device about a change to an attribute
   value for a particular communicator.
 
   Input Parameters:
 + comm  - Communicator with attribute
 . keyval - Key value for attribute
 . attr_val - Value of attribute
-- lang - Language that attribute was set from (see notes).
+. lang - Language that attribute was set from (see notes).
+- wasset - Indicates whether the attribute was set (1) or deleted (0)
 
   Notes:
   This routine allows the device to find out when an attribute value changes.
@@ -514,31 +540,21 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
 
   Question:
   We may want to register keyvals with the device so that only attributes
-  associated with the device call into it.  (e.g., MPID_Create_keyval( ... )).
+  associated with the device call into it.  (e.g., 
+  'MPID_Create_keyval( ... )').
   That also allows us to define
   "enhanced" keyvals that contain functions that validate any changes to the
-  attribute values (e.g. an 'MPID_Attr_validate_function( int keyval, 
-  void *attr_val, MPID_Lang_t lang )'.  
-  This also argues that MPID_Comm_attr_set routine should
+  attribute values (e.g. an 
+.vb
+  MPID_Attr_validate_function( int keyval, void *attr_val, 
+                               MPID_Lang_t lang )
+.ve
+  This also argues that 'MPID_Comm_attr_notify' routine should
   return an MPI error code, allowing the device to cleanly signal an error
   to the user.
   @*/
-void MPID_Comm_attr_set( MPID_Comm *comm, int keyval, void *attr_val, 
-			 MPID_Lang_t lang )
-{
-}
-/*@
-   MPID_Comm_attr_delete - Inform the device that an attribute has been 
-   removed from a communicator
-
-  Input Parameters:
-+ comm - Communicator
-- keyval - key value of attribute.
-
-  Module:
-  Attribute
-  @*/
-void MPID_Comm_attr_delete( MPID_Comm *comm, int keyval )
+void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val, 
+			 MPID_Lang_t lang, int wasset )
 {
 }
 
@@ -636,8 +652,8 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
  * information in a form that is easily communicated (e.g., can be sent
  * directly without copying or placed in shared memory).
  *
- * Requests contain a block of storage that may be used in an MPID_Rhc 
- * call as the argument data ((ptr,n) in that call).  
+ * Requests contain a block of storage that may be used in an MPID_Rhcv 
+ * call as the argument data (vector[0](ptr,n) in that call).  
  *
  * MPI has a number of different types of requests.  For example,
  * persistent requests and generalized (or user) requests.  The 
@@ -647,7 +663,8 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
  */
 
 /*@
-  MPID_Request_FOA - Find or allocate a request matching the conditions.
+  MPID_Request_recv_FOA - Find or allocate a request matching the conditions 
+  for receive operations
 
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
@@ -668,11 +685,10 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
   A request that is found is removed from the queue of pending requests.
 
   A request that is created will have the field 'ready' set to false; this
-  allows 'MPID_Request_FOA', called from another thread, to match this request
+  allows 'MPID_Request_recv_FOA', called from another thread, to match this 
+  request
   and wait for it to become ready.  The routine 'MPID_Request_ready' must
   be called to set the ready field.
-
-  As written, this is only for the receive queue.
 
   This design allows the device to choose either a single receive queue for
   all communicators or separate queues for each communicator.
@@ -692,14 +708,74 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
   another.
 
   @*/
-MPID_Request *MPID_Request_FOA( int tag, int rank, MPID_Comm *comm, 
-				int *found )
+MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm, 
+				     int *found )
 {
 }
 
 /*@
-   MPID_Request_iprobe - Look for a matching request in but do not remove or 
-   return it
+  MPID_Request_send_FOA - Find or allocate a request matching the conditions 
+  for send operations
+
+  Input Parameters:
++ tag - Tag to match (must be a valid tag; 'MPI_ANY_TAG' is not allowed)
+. rank - rank to match (must be a valid rank; 'MPI_ANY_SOURCE' is not allowed)
+- comm - communicator to match.
+
+  Output Parameter:
+. found - Set to true if the request was found, else false.  Found means that
+  the returned communicator was already in the queue; not found means that 
+  it was not found, but was inserted.
+
+  Return value:
+  A request is always returned.  If the request was found, it is removed from
+  the queue.
+
+  Notes:
+  A request that is not found is added to the queue of pending requests.
+  A request that is found is removed from the queue of pending requests.
+
+  A request that is created will have the field 'ready' set to false; this
+  allows 'MPID_Request_send_FOA', called from another thread, to match this 
+  request 
+  and wait for it to become ready.  The routine 'MPID_Request_ready' must
+  be called to set the ready field.
+
+  This design allows the device to choose either a single send queue for
+  all communicators or separate queues for each communicator.
+
+  This routine allows a device to implement the "speculative receive", where
+  a receive operation such as 'MPI_Irecv' sends a rendezvous message to the
+  specified source.  Particularly for wide-area-networks and 
+  shared-memory-only devices, this can reduce the latency for point-to-point
+  communications.  A device is free not to implement a speculative receive, 
+  in which case this routine simply allocates a request (i.e., it never 
+  finds one in the queue already because no code ever inserts one).
+
+  Module:
+  Request
+
+  Question:
+  Another design makes the queues explicit, and then makes the queue to
+  act on an argument.  This format leaves the queues implicit, but 
+  requires either more functions or another argument to select which queue
+  if more than one (e.g., both pending sends and receives) are used.
+
+  An advantage of this form is that the send queue can be spread across
+  the communicators, since there is no wild-card on communicator id.  Doing
+  so would help isolate the impact of communication on one communicator with
+  another.
+
+
+  @*/
+MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm, 
+				     int *found )
+{
+}
+
+/*@
+   MPID_Request_iprobe - Look for a matching request in the receive queue 
+   but do not remove or return it
 
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
@@ -714,21 +790,49 @@ MPID_Request *MPID_Request_FOA( int tag, int rank, MPID_Comm *comm,
   True if a matching request was found, false otherwise.
 
   Notes:
-  This is used to implement 'MPI_Iprobe' and possibly 'MPI_Probe'.
+  This is used to implement 'MPI_Iprobe'.
 
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
-  message.  See the discussion on this in the MPI-2 standard.
+  message.  See the discussion on this in the MPI-2 standard (See the 
+  discussion of probe in Section 8.7.2 Clarifications).
 
   Module:
   Request
 
-  Question:
-  Do we want a blocking version of this?  Or should there be a general
-  block-until-something-happens call?
   @*/
 int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm, 
 			 MPI_Status *status )
+{
+}
+
+/*@
+   MPID_Request_probe - Block until a matching request is found
+   return it
+
+  Input Parameters:
++ tag - Tag to match (or 'MPI_ANY_TAG')
+. rank - rank to match (or 'MPI_ANY_SOURCE')
+- comm - communicator to match.
+
+  Output Parameter:
+. status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
+  value is true).
+
+  Notes:
+  This is used to implement 'MPI_Probe'.
+
+  Note that the values returned in 'status' will be valid for a subsequent
+  MPI receive operation only if no other thread attempts to receive the same
+  message.  See the discussion on this in the MPI-2 standard (See the 
+  discussion of probe in Section 8.7.2 Clarifications).
+
+  Module:
+  Request
+
+  @*/
+void MPID_Request_probe( int tag, int rank, MPID_Comm *comm, 
+			  MPI_Status *status )
 {
 }
 
@@ -747,32 +851,8 @@ int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm,
   Module:
   Request
 
-  Question:
-  Does this apply only the an FOA-allocated (e.g., receive) request?  If
-  so, how are send requests cancelled?
-
   @*/
 void MPID_Request_cancel( MPID_Request *request )
-{
-}
-
-/*@
-  MPID_Request_new - Create a new request for send operations only.
-
-  Module:
-  Request
-
-  Question:
-  Should this also be a FOA?  That is necessary if we permit receives to 
-  posted to the requested sender (as we might want for WAN operation).
-
-  My feeling is that it should be an FOA.  A single method device
-  could use the speculative receive; alternately, even the fast
-  multimethod device could allow it on communicators where the user
-  has promised not to use 'MPI_ANY_SOURCE'.  For other devices, the
-  FOA version is simply implemented as a new request operation.
-  @*/
-MPID_Request *MPID_Request_new( int rank, MPID_Comm *comm )
 {
 }
 
@@ -840,13 +920,17 @@ void MPID_Request_free( MPID_Request *request )
   MPID_Alloc_mem - Allocate memory suitable for passive target RMA operations
 
   Input Parameter:
-. size - Number of types to allocate.
++ size - Number of types to allocate.
+- info - Info object
 
   Return value:
   Pointer to the allocated memory.  If the memory is not available, 
   returns null.
 
   Notes:
+  This routine is used to implement 'MPI_Alloc_mem'.  It is for that reason
+  that there is no communicator argument.  
+
   This memory may `only` be freed with 'MPID_Free_mem'.
 
   This is a `local`, not a collective operation.  It functions more like a
@@ -856,7 +940,7 @@ void MPID_Request_free( MPID_Request *request )
   Module:
   Win
   @*/
-void *MPID_Alloc_mem( size_t size )
+void *MPID_Alloc_mem( size_t size, MPID_Info *info )
 {
 }
 
@@ -880,8 +964,11 @@ int MPID_Free_mem( void *ptr )
 {
 }
 
-/*TCMOverview.tex
+/*
  * Section 2: Communication
+ */
+
+/*TCMOverview.tex
  *
  * General Notes: Communication operations are non-blocking, with a completion
  * flag.  In some cases, the flag may be specified as NULL; where this is
@@ -891,21 +978,22 @@ int MPID_Free_mem( void *ptr )
  * non-blocking, allowing the device to queue communication for
  * later completion.
  * 
- * Because the communication/data transfer routines (MPID_Put, MPID_Rhc, 
- * MPID_Get, MPID_Rhcv) are nonblocking, the buffers containing the data to
+ * Because the communication/data transfer routines ('MPID_Put_contig', 
+ * 'MPID_Get_contig', and 'MPID_Rhcv') are nonblocking, the buffers 
+ * containing the data to 
  * be transfered must not be modified until the operation has (locally) 
  * completed (as marked by the appropriate flag).
  T*/
+
 /*@
-  MPID_Put - Copy local memory to a remote process
+  MPID_Put_contig - Copy local memory to a remote process
 
   Input Parameters:
 + buf - Pointer to local memory to be copied
 . n   - Number of bytes to move
-. target_offset - Location of destination relative to the origin of the
- window
-. target_rank - Rank of the destination process in the group of the window
-. window - Memory window object
+. target_offset - Location of destination 
+. target_rank - Rank of the destination process in the communicator
+. comm - Communicator
 . local_flag - Address of a flag to be set when this call is locally complete.
 - target_flag - This is an id of a flag at the target process.  This value
   must have been specified by the target process in a previous communication
@@ -915,7 +1003,19 @@ int MPID_Free_mem( void *ptr )
   Notes:
   This routine is non-blocking.  It is responsible for any flow control.
 
-  The origin_buf `must` be acquired through 'MPID_Segment_init_pack'.
+  The 'origin_buf' `must` be acquired through 'MPID_Segment_init_pack'.
+  This restriction allows 'MPID_Put_contig' to assume that the origin 
+  memory is appropriate for the put operation.  However, the generic
+  implementation of 'MPID_Segment_init_pack' will not take any special steps;
+  an implementation of 'MPID_Put_contig' that requires such must also
+  provide the matching 'MPID_Segment_xxx' routines.
+
+  This routine uses a communicator instead of a window because it may be
+  used to implement `any` kind of data transfer between processes.  For
+  example, the generic implementation of 'MPID_Isend' may use 'MPID_Rhcv'
+  to implement a rendezvous with the destination process and 
+  'MPID_Put_contig' to move the data to the destination once the receive
+  buffer is allocated.  
 
   Module:
   MPID_CORE
@@ -930,48 +1030,14 @@ int MPID_Free_mem( void *ptr )
   to allocate and free them.  The device can easily include one within
   a MPID_Request structure.)
 
-  Is there a special window for all of memory?  How can 'MPID_Put' be
-  used when there is no user-specified window (e.g., in implementing
-  'MPI_Isend')?  In general, what window is used for point-to-point
-  communication (note that this appears in both the implementation of 
-  the `generic` point-to-point routines and in the implementation of the
-  generic collective routines.  Because of the latter, most devices
-  will see whatever we''ve done for the collective case.
+  Do we want to require that the buffer be setup with the segment routine, 
+  or is there a separate routine in 'MPID_CORE' that should be called for
+  any data moved with 'MPID_Put_contig'?
 
   @*/
-int MPID_Put( const void *origin_buf, int n, 
-	      MPI_Aint target_offset, int target_rank, MPID_Win window, 
-	      volatile int *local_flag, MPI_Aint target_flag )
-{
-}
-
-/*@
-  MPID_Rhc - Remote handler call.
-
-  Input Parameters:
-+ rank - Rank of process to invoke handler on
-. comm - Communicator that rank is relative to
-. id   - Id of handler
-. ptr  - Pointer to buffer to be sent to the handler.  
-. n    - length of buffer pointed at by 'ptr'
-- local_flag - The location specified by this pointer is set when the operation
-  has completed.  (what does completed mean? Does it only mean that ptr is
-  available for reused (locally completed, not globally completed)?)
-
-  Notes:
-  Invokes one of the known handlers at the target rank.
-  This call is non-blocking.
-  Note that it takes a communicator as an argument.  When used on behalf of
-  an 'MPI_Win' object, the communicator associated with the window is used.
-
-  Module:
-  Communication
-
-  Questions: 
-  The same as for MPID_Put on the local flag.
-  @*/
-int MPID_Rhc( int rank, MPID_Comm *comm, MPID_Handler_id id, void *ptr, int n,
-	      volatile int *local_flag )
+int MPID_Put_contig( const void *origin_buf, int n, 
+		     MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
+		     volatile int *local_flag, MPI_Aint target_flag )
 {
 }
 
@@ -1044,6 +1110,8 @@ int MPID_Flags_testall( int count, int *(flags[]), int *found )
 .ve
   This may be useful for some uses where the flags to complete on must be 
   copied first into a temporary (allocated on the stack) variable.
+
+  Votes: Rusty votes no.
   @*/
 int MPID_Flags_waitsome( int count, int *(flags[]) )
 {
@@ -1090,7 +1158,7 @@ int MPID_Flags_testsome( int count, int *(flags[]) )
  */
 
 /*@
-  MPID_Get - Get data from a target window to a local buffer
+  MPID_Get_contig - Get data from a target window to a local buffer
 
   Input Parameters:
 
@@ -1099,13 +1167,14 @@ int MPID_Flags_testsome( int count, int *(flags[]) )
   Notes:
   This is very similar to the 'MPI_Get' routine, restricted to
   datatype 'MPI_BYTE'.  The major differences are the completion
-  flags 'local_flag' and 'target_flag', which behave just as for 'MPID_Put'.
+  flags 'local_flag' and 'target_flag', which behave just as for 
+  'MPID_Put_contig'. 
 
   Module:
   Communication
   @*/
-int MPID_Get( void * origin_buf, int n, 
-	      MPI_Aint target_offset, int target_rank, MPID_Win window, 
+int MPID_Get_contig( void * origin_buf, int n, 
+	      MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
 	      volatile void *local_flag, MPI_Aint target_flag )
 {
 }
@@ -1117,34 +1186,48 @@ int MPID_Get( void * origin_buf, int n,
 + rank - Rank of process to invoke handler on
 . comm - Communicator that rank is relative to
 . id   - Id of handler
-- vector - vector of 'struct iovec' elements containing information to
-  be delivered to the remote handler.
+. vector - vector of 'struct iovec' elements containing information to
+  be delivered to the remote handler. 
+- count - Number of elements in 'vector'
 
   Output Parameter:
 . local_flag - The location specified by this pointer is set when the operation
   has completed.
 
-   Input Parameters:
+  Notes:
+  The first element of 'vector' points to a defined handler datatype that
+  corresponds to the handler 'id'; the remaining elements are data that 
+  the handler operation needs.  The handler 'id' can restrict the type of 
+  memory that 'vector' may point at (e.g., it may require memory allocated 
+  with 'MPID_Alloc_mem').
 
-   Notes:
-   The first element of 'vector' points to a defined handler datatype that
-   corresponds to the handler 'id'; the remaining elements are data that 
-   the handler operation needs.  The handler 'id' can restrict the type of 
-   memory that 'vector' may point at (e.g., it may require memory allocated 
-   with 'MPID_Alloc_mem').
+  The C struct type 'iovec' is defined in '<sys/uio.h>' and is the 
+  same structure used by the Unix 'readv' and 'writev' routines.  It has the
+  members
++ iov_base - Address of block
+- iov_len  - Length of block in bytes.
 
-  This is a nonblocking operation.  No buffer described by the 'vector'
+  'MPID_Rhcv' is a nonblocking operation.  No buffer described by the 'vector'
   argument may be modified until the 'local_flag' is set.
 
   Module:
   MPID_CORE
 
-  Questions and Discussion:
-  The more that I think about it, the more I want rhcv, not rhc, to be the
-  fundemental (MPID_CORE) routine.  For example, the collective calls
-  that are bypassing the send/receive routines will want to use this.
-  An MPI_Put with a (noncontiguous) datatype will want to used this
-  with a count of at least 3: vector[0] points to the header that 
+  Discussion:
+  Earlier drafts of ADI-3 contained the routine 'MPID_Rhc' as a special
+  case of 'MPID_Rhcv'; this special case provided a slightly more 
+  convenient interface for the case of a single block (e.g., for a 'count'
+  of '1').  However, many operations would not use this special case.
+  Here are 2 examples\:
+
+  The Stream routines define a separate header which is used to support
+  the generic implementation of the MPI collective operations.  To support
+  this, a count of at least 2 will be needed, with vector[0] pointing at
+  the packet describing the stream operation and vector[1] pointing at the
+  separate header.
+
+  An MPI_Put with a (noncontiguous) datatype will needs
+  a count of at least 3: vector[0] points to the header that 
   describes the basic put operation (window and offset), vector[1] points
   to a description of the datatype (if not cached at the destination), 
   and vector[3] points to the actual data.
@@ -1157,9 +1240,10 @@ int MPID_Get( void * origin_buf, int n,
   could move some of the data into a shared-memory destination location and
   enqueue an handler-activation request at the destination process.
 
-  Big question:  
+  Questions and Discussion:
   How many handler functions need be written to implement the core?
   What handler types are in the core?  
+
   @*/
 int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id, 
 	       const struct iovec vector[], int count, int *local_flag )
@@ -1314,9 +1398,9 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   MPID_Segment_pack - Pack up the designated buffer with a range of bytes.
 
   Input Parameters:
-+ buf_desc - Buffer descriptor (initialized with 'MPID_Segment_init_pack')
++ segment - Segment descriptor (initialized with 'MPID_Segment_init_pack')
 - send_buffer - Pointer to buffer to place data in.  May be 'NULL', in which 
-  case 'MPID_Segment_fill' uses an internal buffer (and returns it).
+  case 'MPID_Segment_pack' uses an internal buffer (and returns it).
 
   Inout Parameters:
 + first - Pointer to first byte index to be packed (on input) or actually
@@ -1361,14 +1445,26 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   to simplify the use of the result (which, after all, is a pointer `and`
   a length)?
   @*/
-void *MPID_Segment_pack MPID_Segment *buf_desc, int *first, int *last, 
+void *MPID_Segment_pack MPID_Segment *segment, int *first, int *last, 
 			void *send_buffer ) 
 {
 }
 
 /*@
-  MPID_Segment_init_unpack - .
+  MPID_Segment_init_unpack - Get a buffer ready for receiving and unpacking 
+  data 
   
+  Input Parameters:
++ buf   - Buffer to setup for receiving
+. maxcount - Number of items
+. dtype - Datatype of items
+. comm  - Communicator for communication
+- rank  - Rank of source.  Use 'MPI_ANY_SOURCE' for any member of the 
+          communicator
+
+  Output Parameter:
+. segment - Segment descriptor.  
+
   Module:
   Segment
 
@@ -1376,20 +1472,33 @@ void *MPID_Segment_pack MPID_Segment *buf_desc, int *first, int *last,
   Should there be a flag indicating that the buffer may be used in a 
   put operation (as part of a receive and forward operation)?
   @*/
-void * MPID_Segment_init_unpack( void *buf, int count, MPID_Datatype *dtype,
-			     MPID_Comm *comm, int rank, 
-			     MPID_Segment *segment )
+void * MPID_Segment_init_unpack( void *buf, int maxcount, MPID_Datatype *dtype,
+    MPID_Comm *comm, int rank, MPID_Segment *segment )
 {
 }
 
 /*@
-  MPID_Segment_unpack - .
+  MPID_Segment_unpack - Unpack the designated buffer with a range of bytes
+
+  Input Parameters:
++ segment - Segment descriptor (initialized with 'MPID_Segment_init_unpack')
+- recv_buffer - Pointer to buffer to place data in.  May be 'NULL', in which 
+  case 'MPID_Segment_unpack' uses an internal buffer (and returns it).
+
+  Inout Parameters:
++ first - Pointer to first byte index to be unpacked (on input) or actually
+          unpacked (on output)
+- last - Pointer to last byte index to be unpacked (on input) or actually
+         unpacked (on output)
+
+  Return value: 
+  Pointer to memory containing unpacked data.
 
   Module:
   Segment
   @*/
-int MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last, 
-		       void *recv_buffer )
+void *MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last, 
+			   void *recv_buffer )
 {
 }
 
@@ -1416,6 +1525,8 @@ int MPID_Segment_free( MPID_Segment *segment )
   Input Parameters:
 + buf - Pointer to start of memory
 . len - Length of buffer, in bytes
+. comm - Communicator
+. rank - rank 
 - rdwt - Indicate whether memory will be read ('MPID_MEM_READ'), 
          written ('MPID_MEM_WRITE'), 
          or both ('MPID_MEM_READ' | 'MPID_MEM_WRITE')
@@ -1433,6 +1544,13 @@ int MPID_Segment_free( MPID_Segment *segment )
  This call allows devices that can optimize transfers for predefined 
  memory to take advantage of these calls.
 
+ The 'comm' and 'rank' arguments allow this routine to pick the best way
+ to specify the memory based on how it will be used.  This may be important
+ for devices that use different methods for interprocess communication based
+ on the source or destination process.  The value 'MPI_ANY_SOURCE' is valid
+ for 'rank' and indicates that the memory may be used when communicating with
+ any process in 'comm'.
+
   It is possible and valid for the same memory region to be registered 
   several times.  It is not an error to attempt to register the same 
   memory; the return code should indicate success if the memory is
@@ -1442,7 +1560,8 @@ int MPID_Segment_free( MPID_Segment *segment )
   Module:
   Communication
   @*/
-int MPID_Memory_register( void *buf, int len, int rdwt )
+int MPID_Memory_register( void *buf, int len, MPID_Comm *comm, int rank, 
+			  int rdwt )
 {
 }
 /*@
@@ -1451,6 +1570,8 @@ int MPID_Memory_register( void *buf, int len, int rdwt )
   Input Parameters:
 + buf - Pointer to start of memory
 . len - Length of buffer, in bytes
+. comm - Communicator
+. rank - rank
 - rdwt - Indicate whether memory was registered to be read ('MPID_MEM_READ'), 
          written ('MPID_MEM_WRITE'), 
          or both ('MPID_MEM_READ' | 'MPID_MEM_WRITE').
@@ -1476,12 +1597,16 @@ int MPID_Memory_register( void *buf, int len, int rdwt )
   Module:
   Communication
   @*/
-int MPID_Memory_unregister( void *buf, int len, int rdwt )
+int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
+			    int rdwt )
 {
 }
 
-/*TStmOverview.tex
+/*
  * Section 4: Store, Process, and Forward Communication
+ */
+
+/*TStmOverview.tex
  *
  * Algorithms for collective communication are often of the
  * store and forward (to one or more processes); collective computation (such 
@@ -1516,7 +1641,7 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
  *
  * An implementation should also consider at least double buffering
  * the communication of a stream.  In other words, once one block is
- * delivered, allowing 'MPID_Wait_stream' to return with that block,
+ * delivered, allowing 'MPID_Stream_wait' to return with that block,
  * begin delivering the next block into a separate buffer.  Where it
  * makes sense, if there is storage for the entire message, an
  * implementation may choose to deliver the entire message as quickly
@@ -1528,7 +1653,7 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
  T*/
 
 /*@
-  MPID_Isend_stream - Initialize a stream and begin sending.
+  MPID_Stream_isend - Initialize a stream and begin sending.
 
   Input Parameters:
 + segment - The buffer to be sent, defined by a segment type.
@@ -1550,7 +1675,7 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
 
   This communication defines a `stream` consisting of several
   communication steps.  The data sent by this routine may only be
-  received with 'MPID_Irecv_stream'; this contrasts with other MPI
+  received with 'MPID_Stream_irecv'; this contrasts with other MPI
   point-to-point communication calls.
 
   Module:
@@ -1558,16 +1683,16 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
 
   Question:
   Can we modify the stream buffer?  E.g., for allreduce or scan?  
-  See 'MPID_Iforward_stream' below.
+  See 'MPID_Stream_iforward' below.
 
   We may sometimes want to send the stream starting from the last byte
   rather than the first byte, particularly in cases where we will be
   forwarding.
 
-  See the discussion on 'MPID_Wait_stream'.  Do we want to also define
-  an 'MPID_Send_stream'?  How often will we want the nonblocking version?
+  See the discussion on 'MPID_Stream_wait'.  Do we want to also define
+  an 'MPID_Stream_send'?  How often will we want the nonblocking version?
   @*/
-int MPID_Isend_stream( MPID_Segment *segment, 		       
+int MPID_Stream_isend( MPID_Segment *segment, 		       
 		       void *header, int header_size,
 		       int tag, int rank, MPID_Comm *comm, 
 		       int first, int last, MPID_Stream **stream )
@@ -1575,7 +1700,7 @@ int MPID_Isend_stream( MPID_Segment *segment,
 }
 
 /*@
-  MPID_Irecv_stream - Initialize a stream for receiving
+  MPID_Stream_irecv - Initialize a stream for receiving
 
   Input Parameters:
 + segment - The buffer to be sent, defined by a segment type.
@@ -1589,7 +1714,7 @@ int MPID_Isend_stream( MPID_Segment *segment,
 . rank - Rank of destination process
 . comm - Communicator to send stream in
 - will_forward - Set to true if the stream will be forward to other
-  processes, otherwise set it to false.   See 'MPID_Iforward_stream'.
+  processes, otherwise set it to false.   See 'MPID_Stream_iforward'.
  
   Output Parameter:
 . stream - Pointer to a stream object.  This is similar to an
@@ -1614,7 +1739,7 @@ int MPID_Isend_stream( MPID_Segment *segment,
   mismatch on the communicator.
 
   @*/
-int MPID_Irecv_stream( MPID_Segment *segment, int offset, 
+int MPID_Stream_irecv( MPID_Segment *segment, int offset, 
 		       void *header, int max_header_size, int tag, int rank, 
 		       MPID_Comm *comm, int will_forward, 
 		       MPID_Stream **stream )
@@ -1622,7 +1747,7 @@ int MPID_Irecv_stream( MPID_Segment *segment, int offset,
 }
 
 /*@
-  MPID_Wait_stream - Wait for a stream 
+  MPID_Stream_wait - Wait for a stream 
   
   Input Parameter:
 . stream - Stream to wait on.  See notes.
@@ -1633,10 +1758,10 @@ int MPID_Irecv_stream( MPID_Segment *segment, int offset,
   value is set when the last part of the stream has been received.
 
   Notes:  
-  The semantics of 'MPID_Wait_stream' are very similar to those for
-  'MPI_Wait'.  In particular, when 'MPID_Wait_stream' returns, the
+  The semantics of 'MPID_Stream_wait' are very similar to those for
+  'MPI_Wait'.  In particular, when 'MPID_Stream_wait' returns, the
   buffer is ready for use.  The difference from 'MPI_Wait' is in the
-  definition of the buffer; in the case of 'MPID_Wait_stream', it
+  definition of the buffer; in the case of 'MPID_Stream_wait', it
   refers to the current data block.  
 
   Rather than use a separate 'status' variable, the length of the data
@@ -1648,25 +1773,25 @@ int MPID_Irecv_stream( MPID_Segment *segment, int offset,
 .vb
     MPID_Segment_init_unpack( buf, count, datatype, comm, rank,
                               &segment );
-    MPID_Irecv_stream( segment, NULL, 0, tag, from_rank, comm, 1, 
+    MPID_Stream_irecv( segment, NULL, 0, tag, from_rank, comm, 1, 
                        &stream );
     first = 0;		       
     do {
-        eos = MPID_Wait_stream( stream );
-	if (eos > 0) error();
-	MPID_Iforward_stream( stream, NULL, 0, tag, 
+        eos = MPID_Stream_wait( stream );
+        if (eos > 0) error();
+        MPID_Stream_iforward( stream, NULL, 0, tag, 
                               &to_rank, 1, comm	);
-	last = first + stream->cur_length;		      
+        last = first + stream->cur_length;		      
         MPID_Segment_unpack( segment, &first, &last, stream->cur_ptr );
-	first = last + 1;
+        first = last + 1;
     } while( eos == 0 );
     MPID_Segment_free( segment );
 .ve
-  Once 'MPID_Wait_stream' returns '1', the stream is freed and the
+  Once 'MPID_Stream_wait' returns '1', the stream is freed and the
   pointer becomes invalid.
 
-  For a sending stream (e.g., one created with 'MPID_Isend_stream',
-  'MPID_Wait_stream' has the same semantics: it returns when the
+  For a sending stream (e.g., one created with 'MPID_Stream_isend',
+  'MPID_Stream_wait' has the same semantics: it returns when the
   current chunck has been sent, and that part of the stream is
   (logically) available for reuse.
 
@@ -1677,15 +1802,15 @@ int MPID_Irecv_stream( MPID_Segment *segment, int offset,
   Since wait frees the stream, do we want it to set the pointer to
   null, i.e., use 'MPID_Stream **stream' instead?
   @*/
-int MPID_Wait_stream( MPID_Stream *stream )
+int MPID_Stream_wait( MPID_Stream *stream )
 {
 }	       
 
 /*@
-  MPID_Iforward_stream - Forward a stream
+  MPID_Stream_iforward - Forward a stream
 
   Input Parameters:
-+ stream - A stream created with 'MPID_Irecv_stream'
++ stream - A stream created with 'MPID_Stream_irecv'
 . header  - An optional pointer to additional data to send.  If provided,
             the stream receivers must provide a matching buffer
 . header_size - Number of bytes in 'header' to send.  Use zero if 'header' is 
@@ -1698,7 +1823,7 @@ int MPID_Wait_stream( MPID_Stream *stream )
   Notes:
   This routine describes a common operation in collective communication and
   computation and it allows the device to optimize for this case.  For example,
-  the data that was received (with 'MPID_Irecv_stream') can be left in a 
+  the data that was received (with 'MPID_Stream_irecv') can be left in a 
   location and format convienent for further communication.   In a 
   shared-memory device, the message could be left in shared memory, allowing it
   to be sent to other destinations without making another copy of the data.
@@ -1712,14 +1837,17 @@ int MPID_Wait_stream( MPID_Stream *stream )
   There is no output stream because this is a forward of an existing 
   stream. Is this the right thing to do?  Yes, I think so.
   @*/
-int MPID_Iforward_stream( MPID_Stream *stream, void *header, 
+int MPID_Stream_iforward( MPID_Stream *stream, void *header, 
 			  int header_size, int tag, int ranks[],
 			  int nranks, MPID_Comm *comm )
 {
 }
 
-/*TTopoOverview.tex
+/*
  * Section : Topology
+ */
+
+/*TTopoOverview.tex
  *
  * The MPI collective and topology routines can benefit from information 
  * about the topology of the underlying interconnect.  Unfortunately, there
@@ -1734,11 +1862,16 @@ int MPID_Iforward_stream( MPID_Stream *stream, void *header,
  * Other useful information could be the topology information that matches
  * the needs of the collective operation, such as spanning trees and rings.
  * These may be added to adi3 later.
+ *
  T*/
 
 /*@
   MPID_Topo_cluster_info - Return information on the hierarchy of 
   interconnections
+
+  Input Parameter:
+. comm - Communicator to study.  Maybe NULL, in which case MPI_COMM_WORLD
+  is the effective communicator.
 
   Output Parameters:
 + levels - The number of levels in the hierarchy.  
@@ -1754,6 +1887,9 @@ int MPID_Iforward_stream( MPID_Stream *stream, void *header,
   each process may belong to no more than cluster; if a process is in any
   cluster at level i, it must be in some cluster at level i-1.
 
+  The communicator argument allows this routine to be used in the dynamic
+  process case (i.e., with communicators that are created after 'MPI_Init' 
+  and that involve processes that are not part of 'MPI_COMM_WORLD').
 
   Sample Outputs:
   For a single, switch-connected cluster or a uniform-memory-access (UMA)
@@ -1791,7 +1927,8 @@ int MPID_Iforward_stream( MPID_Stream *stream, void *header,
   Module: 
   Topology
   @*/
-int MPID_Topo_cluster_info( int *levels, int my_cluster[], int my_rank[] )
+int MPID_Topo_cluster_info( MPID_Comm *comm, 
+			    int *levels, int my_cluster[], int my_rank[] )
 {
 }
 
@@ -1834,14 +1971,32 @@ int MPID_Topo_cluster_info( int *levels, int my_cluster[], int my_rank[] )
    Questions:
   Should the thread support value be an enum type instead of an int?
 
-  Do we require that all processes get the same argument lists?
-  Return the same argument lists?  Can we fix the Fortran command-line
-  arguments?
+  Do we require that all processes get the same argument lists (in the
+  case where the user `wants` or expects that they get the same arguments)?
+  Return the same argument lists?  
+  Can we fix the Fortran command-line   arguments?
   Does each process have the same values for the environment variables 
   when this routine returns?
 
-  Are there recommended environment variable names?  Names that are
-  explicitly prohibited?
+  If we don''t require that all processes get the same argument list, 
+  we need to find out if they did anyway so that 'MPI_Init_thread' can
+  fixup the list for the user.  This argues for another return value that
+  flags how much of the environment the 'MPID_Thread_init' routine set up
+  so that the 'MPI_Init_thread' call can provide the rest.  The reason
+  for this is that, even though the MPI standard does not require it, 
+  a user-friendly implementation should, in the SPMD mode, give each
+  process the same environment and argument lists unless the user 
+  explicitly directed otherwise.
+
+  Are there recommended environment variable names?  For example, in ADI-2,
+  there are many debugging options that are part of the common device.
+  In MPI-2, we can''t require command line arguments, so any such options
+  must also have environment variables.  E.g., 'MPICH_ADI_DEBUG' or
+  'MPICH_ADI_DB'.
+
+  Names that are explicitly prohibited?  For example, do we want to 
+  reserve any names that 'MPI_Init_thread' (as opposed to 'MPID_Init_thread')
+  might use?  
 
   How does this interface to BNR?  Do we need to know anything?  Should
   this call have an info argument to support BNR?
@@ -1905,7 +2060,7 @@ value might be "not yet heterogeneous").
 
 ? Information on "good" message break points? (e.g., short/eager/rendezous)?
 ? This is useful for the "generic" implementations of Isend etc., based on
-? MPID_Put and MPID_Rhc.
+? MPID_Put_contig and MPID_Rhcv.
 
 /*T
  * Section : Service Routines
@@ -1940,8 +2095,6 @@ value might be "not yet heterogeneous").
   size will have to allocate memory (and can fail; note that there is an
   MPI error class for out-of-memory).
 
-  Module:
-  Utility
   D*/
 
 /*@
@@ -2139,7 +2292,7 @@ double MPID_Wtick( void )
 
   Module:
   Timer
-  *@/
+  @*/
 int MPID_Gwtime_init( MPID_Comm *comm )
 {
 }
@@ -2339,7 +2492,7 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   MPID_THREAD_LEVEL - Indicates the level of thread support provided
  
   Values:
-. Any of the 'MPI_THREAD_xxx' values.  
+  Any of the 'MPI_THREAD_xxx' values.  
 
   Notes:
   This variable allows implementations that support
@@ -2445,7 +2598,7 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
  *
  * I'd still like to have a fast way to perform MPI_Reduce on a single
  * double precision value, perhaps by providing a fast concatenate
- * operation in the device (an Rhc handler for it?) and then locally
+ * operation in the device (an Rhcv handler for it?) and then locally
  * applying the operation.
  */
 
