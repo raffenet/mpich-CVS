@@ -6,6 +6,9 @@
 
 #include "mpiimpl.h"
 #include "bsocket.h"
+#ifdef HAVE_ERRNO_H
+#include "errno.h"
+#endif
 
 int MM_Recv(int conn, char *buffer, int length)
 {

@@ -6,6 +6,9 @@
 
 #include "mpiimpl.h"
 #include "bsocket.h"
+#ifdef HAVE_ERRNO_H
+#include "errno.h"
+#endif
 
 int MM_Open_port(MPID_Info *info_ptr, char *port_name)
 {
