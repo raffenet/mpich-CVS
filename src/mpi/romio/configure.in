@@ -158,6 +158,7 @@ DEFS=""
 ROMIO_LFLAGS=""
 ROMIO_LIBLIST=""
 ROMIO_TCFLAGS=""
+ROMIO_TCPPFLAGS=""
 ROMIO_TFFLAGS=""
 MPIRUN=""
 # foll. needed for f77 test programs
@@ -269,6 +270,9 @@ case $arg in
      ;;
   -f90=* | --f90=*)
      F90=`echo $arg|sed 's/-*fc=//'`
+     ;;
+  -echo)
+     set -x
      ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
@@ -622,6 +626,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_TCFLAGS="-Ae"
+    ROMIO_TCPPLAGS="-ext"
     ROMIO_TFFLAGS="+U77"
 fi
 #
@@ -977,6 +982,7 @@ AC_SUBST(ROMIO_INCLUDE)
 AC_SUBST(ROMIO_LFLAGS)
 AC_SUBST(ROMIO_LIBLIST)
 AC_SUBST(ROMIO_TCFLAGS)
+AC_SUBST(ROMIO_TCPPFLAGS)
 AC_SUBST(ROMIO_TFFLAGS)
 AC_SUBST(MPIRUN)
 AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h)

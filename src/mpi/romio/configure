@@ -156,6 +156,7 @@ DEFS=""
 ROMIO_LFLAGS=""
 ROMIO_LIBLIST=""
 ROMIO_TCFLAGS=""
+ROMIO_TCPPFLAGS=""
 ROMIO_TFFLAGS=""
 MPIRUN=""
 # foll. needed for f77 test programs
@@ -267,6 +268,9 @@ case $arg in
      ;;
   -f90=* | --f90=*)
      F90=`echo $arg|sed 's/-*fc=//'`
+     ;;
+  -echo)
+     set -x
      ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
@@ -760,6 +764,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_TCFLAGS="-Ae"
+    ROMIO_TCPPLAGS="-ext"
     ROMIO_TFFLAGS="+U77"
 fi
 #
@@ -2610,6 +2615,7 @@ echo "setting USER_FFLAGS to $USER_FFLAGS"
 
 
 
+
 # Set default prefixes.
 if test -n "$prefix"; then
   test -z "$exec_prefix" && exec_prefix='${prefix}'
@@ -2703,6 +2709,7 @@ ROMIO_INCLUDE='$ROMIO_INCLUDE'
 ROMIO_LFLAGS='$ROMIO_LFLAGS'
 ROMIO_LIBLIST='$ROMIO_LIBLIST'
 ROMIO_TCFLAGS='$ROMIO_TCFLAGS'
+ROMIO_TCPPFLAGS='$ROMIO_TCPPFLAGS'
 ROMIO_TFFLAGS='$ROMIO_TFFLAGS'
 MPIRUN='$MPIRUN'
 LIBS='$LIBS'
@@ -2784,6 +2791,7 @@ s%@ROMIO_INCLUDE@%$ROMIO_INCLUDE%g
 s%@ROMIO_LFLAGS@%$ROMIO_LFLAGS%g
 s%@ROMIO_LIBLIST@%$ROMIO_LIBLIST%g
 s%@ROMIO_TCFLAGS@%$ROMIO_TCFLAGS%g
+s%@ROMIO_TCPPFLAGS@%$ROMIO_TCPPFLAGS%g
 s%@ROMIO_TFFLAGS@%$ROMIO_TFFLAGS%g
 s%@MPIRUN@%$MPIRUN%g
 s%@LIBS@%$LIBS%g
