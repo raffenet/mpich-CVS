@@ -92,7 +92,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 		/* The data is still being transfered across the net.  We'll
 		   leave it to the progress engine to handle once the entire
 		   message has arrived. */
-		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE;
+		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
 	    }
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)

@@ -305,9 +305,9 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 {
     MPID_Request * cur_rreq;
     MPID_Request * prev_rreq;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
     prev_rreq = NULL;
     cur_rreq = MPIDI_Process.recv_posted_head;
     while (rreq != NULL)
@@ -326,7 +326,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 	    {
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
 	    return TRUE;
 	}
 	    
@@ -334,7 +334,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 	rreq = rreq->ch3.next;
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
     return FALSE;
 }
 
@@ -348,7 +348,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3U_Request_FDP(
-    MPIDI_Message_match * match, int * found)
+    MPIDI_Message_match * match)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -377,7 +377,6 @@ MPID_Request * MPIDI_CH3U_Request_FDP(
 	    {
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
-	    *found = TRUE;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
 	    return rreq;
 	}
@@ -386,7 +385,6 @@ MPID_Request * MPIDI_CH3U_Request_FDP(
 	rreq = rreq->ch3.next;
     }
 
-    *found = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
     return NULL;
 }

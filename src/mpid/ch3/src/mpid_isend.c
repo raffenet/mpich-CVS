@@ -188,7 +188,6 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 			  MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
-	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
 	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;

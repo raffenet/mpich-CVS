@@ -207,7 +207,6 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 			  MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
-	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
 	
 	/* XXX - Since the request is never returned to the user and they can't
            do things like cancel it or wait on it, we may not need to fill in

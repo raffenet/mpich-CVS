@@ -166,14 +166,11 @@ MPIDI_CH3_Pkt_t;
  * An enumeration of the actions to perform when the requested I/O operation
  * has completed.
  *
- * MPIDI_CH3_CA_NONE - Do nothing.  Used in situations where the request will
- * be referenced later by an incoming packet.
- *
  * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
  * The completion counter should be decremented.  If it has reached zero, then
  * the request should be released by calling MPID_Request_release().
  *
- * MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE - This is a special case of the
+ * MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE - This is a special case of the
  * MPIDI_CH3_CA_COMPLETE.  The data for an unexpected eager messaage has been
  * stored into a temporary buffer and needs to be copied/unpacked into the user
  * buffer before the completion counter can be decremented, etc.
@@ -199,10 +196,9 @@ MPIDI_CH3_Pkt_t;
  */
 typedef enum
 {
-    MPIDI_CH3_CA_NONE,
     MPIDI_CH3_CA_COMPLETE,
     MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE,
-    MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE,
+    MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE,
     MPIDI_CH3_CA_RELOAD_IOV,
     MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV,
     MPIDI_CH3_CA_END_CH3,
@@ -297,6 +293,7 @@ MPID_STATE_MPIDI_BARRIER, \
 MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT, \
 MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ, \
 MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ, \
+MPID_STATE_MPIDI_CH3U_REQUEST_DP, \
 MPID_STATE_MPIDI_CH3U_REQUEST_FDP, \
 MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU, \
 MPID_STATE_MPIDI_CH3U_REQUEST_FDU, \

@@ -193,8 +193,6 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz="
 			  MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
-	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;
 	rts_pkt->match.tag = tag;

@@ -29,22 +29,17 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
     
     switch(rreq->ch3.ca)
     {
-	case MPIDI_CH3_CA_NONE:
+	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    /* as the action name says, do nothing... */
-	    break;
-	}
-
-	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV:
-	{
-	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
-	    MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}
 	
-	case MPIDI_CH3_CA_RELOAD_IOV:
+	case MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE:
 	{
-	    MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    MPIDI_CH3U_Request_unpack_uebuf(rreq);
+	    MPIU_Free(rreq->ch3.tmpbuf);
+	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}
 	
@@ -60,17 +55,16 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    break;
 	}
 	
-	case MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE:
+	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV:
 	{
-	    MPIDI_CH3U_Request_unpack_uebuf(rreq);
-	    MPIU_Free(rreq->ch3.tmpbuf);
-	    MPIDI_CH3U_Request_complete(rreq);
+	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
+	    MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    break;
 	}
 	
-	case MPIDI_CH3_CA_COMPLETE:
+	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
-	    MPIDI_CH3U_Request_complete(rreq);
+	    MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    break;
 	}
 	

@@ -39,21 +39,20 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank,
     {
 	MPIDI_Message_match match;
 	MPID_Request * rreq;
-	int found;
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending message to self"));
 	
 	match.rank = rank;
 	match.tag = tag;
 	match.context_id = comm->context_id + context_offset;
-	rreq = MPIDI_CH3U_Request_FDP(&match, &found);
+	rreq = MPIDI_CH3U_Request_FDP(&match);
 	if (rreq == NULL)
 	{
 	    mpi_errno = MPI_ERR_NOMEM;
 	    goto fn_exit;
 	}
 	
-	if (found)
+	if (rreq != NULL)
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "found posted receive request; "
 			      "copying data"));
