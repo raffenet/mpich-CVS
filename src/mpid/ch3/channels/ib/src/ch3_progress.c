@@ -316,8 +316,9 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 #define FUNCNAME handle_written
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void handle_written(MPIDI_VC * vc, int nb)
+static inline void handle_written(MPIDI_VC * vc)
 {
+    int nb;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
@@ -327,10 +328,9 @@ static inline void handle_written(MPIDI_VC * vc, int nb)
     {
 	MPID_Request * req = vc->ib.send_active;
 
-	/*
 	assert(req->ib.iov_offset < req->ch3.iov_count);
-	nb = writev(poll_fds[elem].fd, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
-	*/
+	//nb = writev(poll_fds[elem].fd, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
+	nb = ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
 
 	if (nb > 0)
 	{
@@ -431,7 +431,8 @@ static inline void make_progress(int is_blocking)
 	    break;
 	case IBU_OP_WRITE:
 	    MPIU_dbg_printf("make_progress: write finished %d bytes\n", out.num_bytes);
-	    handle_written(out.user_ptr, out.num_bytes);
+	    //handle_written(out.user_ptr, out.num_bytes);
+	    handle_written(out.user_ptr);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);
 	    return;
 	    break;

@@ -87,15 +87,14 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
            data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-/*	    int nb;*/
+	    int nb;
 
 	    /* MT - need some signalling to lock down our right to use the
                channel, thus insuring that the progress engine does also try to
                write */
 
-	    ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
 
-#if 0
 	    if (nb > 0)
 	    {
 		int offset = 0;
@@ -131,7 +130,6 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		/* TODO: Create an appropriate error message based on the value of errno */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    }
-#endif
 	}
 	else
 	{

@@ -63,15 +63,13 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
            data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-/*	    int nb;*/
+	    int nb;
 
 	    /* MT - need some signalling to lock down our right to use the
                channel, thus insuring that the progress engine does also try to
                write */
 
-	    ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
-#if 0
-	    nb = 0;
+	    nb = ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 	    
 	    if (nb == hdr_sz)
 	    {
@@ -98,7 +96,6 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
                    of errno */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    }
-#endif
 	}
 	else
 	{

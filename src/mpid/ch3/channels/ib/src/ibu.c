@@ -293,8 +293,14 @@ static void * BlockAlloc(BlockAllocator p)
     MPIDU_Lock(&p->lock);
 #endif
 
+    /*** don't allocate more memory ***/
+    if (p->pNextFree == NULL)
+	return NULL;
+    /******/
+
     pVoid = p->pNextFree + 1;
-    
+
+    /*
     if (*(p->pNextFree) == NULL)
     {
 	BlockAllocator pIter = p;
@@ -305,6 +311,8 @@ static void * BlockAlloc(BlockAllocator p)
     }
     else
 	p->pNextFree = *(p->pNextFree);
+    */
+    p->pNextFree = *(p->pNextFree);
 
 #ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Unlock(&p->lock);
@@ -723,6 +731,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
     void *mem_ptr;
     //ibu_num_written_node_t *p;
     int length;
+    int total = 0;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITE);
@@ -759,7 +768,12 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 #endif
 	
 	mem_ptr = BlockAlloc(ibu->allocator);
+	if (mem_ptr == NULL)
+	{
+	    return total;
+	}
 	memcpy(mem_ptr, buf, length);
+	total += length;
 	
 	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
 	g_num_bytes_written_stack[g_cur_write_stack_index++].mem_ptr = mem_ptr;
@@ -845,10 +859,15 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     while (n)
     {
 	len = iov[iov_index].IBU_IOV_LEN;
-	total += len;
+	//total += len;
 	if (len <= IBU_PACKET_SIZE)
 	{
 	    mem_ptr = BlockAlloc(ibu->allocator);
+	    if (mem_ptr == NULL)
+	    {
+		break;
+	    }
+	    total += len;
 	    memcpy(mem_ptr, iov[iov_index].IBU_IOV_BUF, len);
 
 	    data[index].length = len;
@@ -869,6 +888,11 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		len -= length;
 		
 		mem_ptr = BlockAlloc(ibu->allocator);
+		if (mem_ptr == NULL)
+		{
+		    break;
+		}
+		total += length;
 		memcpy(mem_ptr, ((char *)(iov[iov_index].IBU_IOV_BUF)) + cur_pos, length);
 		
 		data[index].length = length;
@@ -880,6 +904,11 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
 		cur_pos += length;
 		index++;
+	    }
+	    if (mem_ptr == NULL)
+	    {
+		// This is needed to break out of both while loops
+		break;
 	    }
 	}
 	iov_index++;
@@ -924,7 +953,8 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-    return IBU_SUCCESS;
+    //return IBU_SUCCESS;
+    return total;
 }
 
 static inline void init_state_struct(ibu_state_t *p)
@@ -1553,6 +1583,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
 
 int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
 {
+    int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
@@ -1564,13 +1595,15 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     ibu->write.progress_update = wfn;
     ibu->state |= IBU_WRITING;
     ibu->pending_operations++;
-    ibui_post_write(ibu, buf, len, wfn);
+    num_bytes = ibui_post_write(ibu, buf, len, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
-    return IBU_SUCCESS;
+    //return IBU_SUCCESS;
+    return num_bytes;
 }
 
 int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 {
+    int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
@@ -1596,9 +1629,10 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 	printf("%s", str);
     }
     */
-    ibui_post_writev(ibu, ibu->write.iov, n, wfn);
+    num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
-    return IBU_SUCCESS;
+    //return IBU_SUCCESS;
+    return num_bytes;
 }
 
 /* extended functions */

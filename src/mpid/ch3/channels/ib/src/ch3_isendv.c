@@ -55,7 +55,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-/*	    int nb;*/
+	    int nb;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	    
@@ -66,9 +66,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 
 	    MPIU_dbg_printf("ibu_post_writev(%d elements)\n", n_iov);
-	    ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
-#if 0
-	    nb = 0;
+	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
 	    
 	    if (nb > 0)
 	    {
@@ -94,7 +92,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 		}
 		if (offset == n_iov)
 		{
-#endif
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
 		    if (sreq->ch3.iov_count != 0)
@@ -104,7 +101,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			MPIDI_CH3I_IB_post_write(vc, sreq);
 		    }
-#if 0
 		}
 	    }
 	    else if (nb == 0)
@@ -123,7 +119,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 		 /* MT - CH3U_Request_complete performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
 	    }
-#endif
 	}
 	else
 	{
