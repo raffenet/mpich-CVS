@@ -357,7 +357,7 @@ def _handle_lhs_input():
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
     elif msg['cmd'] == 'mpdsigjob':
 	forwarded = 0
-        if msg['handled']:    # already handled on at least one other host
+        if msg['handled']  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
 	    forwarded = 1
         handledHere = 0
@@ -408,8 +408,9 @@ def _handle_lhs_input():
         if not forwarded  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['src'] == g.myId:
-            mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack',
-                                           'handled' : msg['handled'] } )
+	    if g.conSocket:
+                mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack',
+                                               'handled' : msg['handled'] } )
     elif msg['cmd'] == 'abortjob':
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
