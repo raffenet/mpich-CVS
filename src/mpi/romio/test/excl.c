@@ -15,6 +15,7 @@ int main(int argc, char **argv)
 {
     MPI_File fh;
     int rank, len, err, i;
+    int errs=0, toterrs;
     char *filename;
 
     MPI_Init(&argc,&argv);
@@ -52,8 +53,10 @@ int main(int argc, char **argv)
     /* this open should succeed */
     err = MPI_File_open(MPI_COMM_WORLD, filename, 
          MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
-    if (err != MPI_SUCCESS)
+    if (err != MPI_SUCCESS) {
+	errs++;
 	fprintf(stderr, "Process %d: open failed when it should have succeeded\n", rank);
+    }
     else MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -61,10 +64,20 @@ int main(int argc, char **argv)
     /* this open should fail */
     err = MPI_File_open(MPI_COMM_WORLD, filename, 
          MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
-    if (err == MPI_SUCCESS)
+    if (err == MPI_SUCCESS) {
+	errs++;
 	fprintf(stderr, "Process %d: open succeeded when it should have failed\n", rank);
+    }
 
-    if (!rank) fprintf(stderr, "Done\n");
+    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (rank == 0) {
+	if( toterrs > 0) {
+	    fprintf( stderr, "Found %d errors\n", toterrs );
+	}
+	else {
+	    fprintf( stdout, " No Errors\n" );
+	}
+    }
 
     free(filename);
     MPI_Finalize();

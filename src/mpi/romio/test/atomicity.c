@@ -16,11 +16,12 @@
 /* The file name is taken as a command-line argument. */
 
 #define BUFSIZE 10000    /* no. of integers */
-
+#define VERBOSE 0
 int main(int argc, char **argv)
 {
     int *writebuf, *readbuf, i, mynod, nprocs, len, err;
     char *filename;
+    int errs=0, toterrs;
     MPI_Datatype newtype;
     MPI_File fh;
     MPI_Status status;
@@ -68,7 +69,9 @@ int main(int argc, char **argv)
 	for (i=0; i<BUFSIZE; i++) writebuf[i] = 0;
 	MPI_File_write(fh, writebuf, BUFSIZE, MPI_INT, &status);
 	MPI_File_close(&fh);
+#if VERBOSE
 	fprintf(stderr, "\ntesting contiguous accesses\n");
+#endif
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -98,6 +101,7 @@ int main(int argc, char **argv)
 	    if (readbuf[0] == 0) { /* the rest must also be 0 */
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 0) {
+			errs++;
 			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
@@ -105,11 +109,15 @@ int main(int argc, char **argv)
 	    else if (readbuf[0] == 10) { /* the rest must also be 10 */
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 10) {
+			errs++;
 			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
-	    else fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
+	    else {
+		errs++;
+		fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	
+	    }    
 	}
     }
 
@@ -137,7 +145,9 @@ int main(int argc, char **argv)
 	MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 	MPI_File_write(fh, writebuf, BUFSIZE, MPI_INT, &status);
 	MPI_File_close(&fh);
+#if VERBOSE
 	fprintf(stderr, "\ntesting noncontiguous accesses\n");
+#endif
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -157,6 +167,7 @@ int main(int argc, char **argv)
 	    if (readbuf[0] == 0) {
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 0) {
+			errs++;
 			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
@@ -164,11 +175,15 @@ int main(int argc, char **argv)
 	    else if (readbuf[0] == 10) {
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 10) {
+			errs++;
 			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
-	    else fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
+	    else {
+		errs++;
+		fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
+	    }
 	}
     }
 
@@ -176,6 +191,15 @@ int main(int argc, char **argv)
 	
     MPI_Barrier(MPI_COMM_WORLD);
 
+    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (mynod == 0) {
+	if( toterrs > 0) {
+	    fprintf( stderr, "Found %d errors\n", toterrs );
+	}
+	else {
+	    fprintf( stdout, " No Errors\n" );
+	}
+    }
     MPI_Type_free(&newtype);
     MPI_Info_free(&info);
     free(writebuf);

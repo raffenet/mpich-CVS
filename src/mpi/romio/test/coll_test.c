@@ -27,6 +27,7 @@ int main(int argc, char **argv)
     int array_of_dargs[3], array_of_psizes[3];
     int *readbuf, *writebuf, bufcount, mynod, *tmpbuf, array_size;
     char *filename;
+    int errs=0, toterrs;
     MPI_File fh;
     MPI_Status status;
     MPI_Request request;
@@ -129,11 +130,22 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
 
     /* check the data read */
-    for (i=0; i<bufcount; i++) 
-	if (readbuf[i] != writebuf[i])
+    for (i=0; i<bufcount; i++) {
+	if (readbuf[i] != writebuf[i]) {
+	    errs++;
 	    fprintf(stderr, "Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
+	}
+    }
 
-    if (!mynod) fprintf(stderr, "Done\n");
+    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (mynod == 0) {
+	if( toterrs > 0) {
+	    fprintf( stderr, "Found %d errors\n", toterrs );
+	}
+	else {
+	    fprintf( stdout, " No Errors\n" );
+	}
+    }
 
     MPI_Type_free(&newtype);
     free(readbuf);

@@ -321,7 +321,7 @@ int main(int argc, char **argv)
     /* Q: SHOULD WE BOTHER LOOKING AT THE OTHER PROCESSES? */
     if (!mynod) {
 	if (errs) fprintf(stderr, "Found %d errors.\n", errs);
-	else printf("No errors.\n");
+	else printf(" No Errors\n");
     }
     
     MPI_File_close(&fh);

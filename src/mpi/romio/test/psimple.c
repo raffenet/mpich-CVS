@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 {
     int *buf, i, rank, nints, len;
     char *filename, *tmp;
+    int errs=0, toterrs;
     MPI_File fh;
     MPI_Status status;
 
@@ -77,11 +78,22 @@ int main(int argc, char **argv)
     PMPI_File_close(&fh);
 
     /* check if the data read is correct */
-    for (i=0; i<nints; i++) 
-	if (buf[i] != (rank*100000 + i))
+    for (i=0; i<nints; i++) {
+	if (buf[i] != (rank*100000 + i)) {
+	    errs++;
 	    fprintf(stderr, "Process %d: error, read %d, should be %d\n", rank, buf[i], rank*100000+i);
+	}
+    }
 
-    if (!rank) fprintf(stderr, "Done\n");
+    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (rank == 0) {
+	if( toterrs > 0) {
+	    fprintf( stderr, "Found %d errors\n", toterrs );
+	}
+	else {
+	    fprintf( stdout, " No Errors\n" );
+	}
+    }
 
     free(buf);
     free(filename);

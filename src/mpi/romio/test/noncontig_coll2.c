@@ -391,7 +391,7 @@ int main(int argc, char **argv)
 	 
     if (!mynod) {
 	    if (sum_errs) fprintf(stderr, "Found %d error cases\n", sum_errs);
-	    else printf("No errors.\n");
+	    else printf(" No Errors\n");
     }
     free(filename);
     free(cb_config_string);
