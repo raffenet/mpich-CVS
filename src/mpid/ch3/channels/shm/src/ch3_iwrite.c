@@ -90,7 +90,7 @@ void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     else
     {
 	/* Connection just failed.  Mark the request complete and return an error. */
-	/*vc->shm.state = MPIDI_CH3I_VC_STATE_FAILED;*/
+	vc->shm.state = MPIDI_CH3I_VC_STATE_FAILED;
 	/* TODO: Create an appropriate error message based on the value of errno */
 	req->status.MPI_ERROR = MPI_ERR_INTERN;
 	/* MT - CH3U_Request_complete performs write barrier */

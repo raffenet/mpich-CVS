@@ -194,6 +194,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     return TRUE;
 }
 
+/*
 #define post_pkt_recv(vc) \
 { \
     MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV); \
@@ -207,6 +208,8 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     MPIDI_CH3I_SHM_post_read(vc, &vc->shm.req->shm.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
 }
+*/
+#define post_pkt_recv(vc) vc->shm.shm_reading_pkt = TRUE
 
 #undef FUNCNAME
 #define FUNCNAME handle_read
@@ -238,12 +241,13 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 	    
 	    vc->shm.recv_active = NULL;
 	    
-	    if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
+	    /*if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
 	    {
 		MPIDI_CH3_Pkt_t * pkt = &req->shm.pkt;
 		
 		if (pkt->type < MPIDI_CH3_PKT_END_CH3)
 		{
+		    printf("I should never get here anymore.\n");fflush(stdout);
 		    MPIDI_DBG_PRINTF((65, FCNAME, "received CH3 packet %d, calllng CH3U_Handle_recv_pkt()", pkt->type));
 		    MPIDI_CH3U_Handle_recv_pkt(vc, pkt);
 		    MPIDI_DBG_PRINTF((65, FCNAME, "CH3U_Handle_recv_pkt() returned"));
@@ -257,7 +261,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 		    }
 		}
 	    }
-	    else if (ca == MPIDI_CH3_CA_COMPLETE)
+	    else */ if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
 		/* mark data transfer as complete adn decrment CC */
@@ -286,6 +290,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 	    }
 	    else
 	    {
+		assert(ca != MPIDI_CH3I_CA_HANDLE_PKT);
 		assert(ca < MPIDI_CH3_CA_END_CH3);
 	    }
 	}

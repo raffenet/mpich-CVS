@@ -101,7 +101,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.sendq_head = NULL;
 	vc_table[p].shm.sendq_tail = NULL;
 	vc_table[p].shm.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
-	vc_table[p].shm.shm_state = 0; /*MPIDI_CH3I_VC_STATE_CONNECTED;*/
+	vc_table[p].shm.state = MPIDI_CH3I_VC_STATE_IDLE;
+	vc_table[p].shm.shm_reading_pkt = TRUE;
+	vc_table[p].shm.shm_state = 0;
 	vc_table[p].shm.recv_active = NULL;
 	vc_table[p].shm.send_active = NULL;
 #ifdef USE_SHM_UNEX
@@ -216,6 +218,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	{
 	    vc_table[i].shm.shm += pg_rank;
 	    /* post a read of the first packet header */
+	    vc_table[i].shm.shm_reading_pkt = TRUE;
+	    /*
 	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc_table[i].shm.req->shm.pkt;
 	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 	    vc_table[i].shm.req->ch3.iov_count = 1;
@@ -223,6 +227,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    vc_table[i].shm.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
 	    vc_table[i].shm.recv_active = vc_table[i].shm.req;
 	    MPIDI_CH3I_SHM_post_read(&vc_table[i], &vc_table[i].shm.req->shm.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL);
+	    */
 	}
     }
 

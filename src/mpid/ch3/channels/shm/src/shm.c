@@ -13,7 +13,6 @@
 #define USE_IOV_LEN_2_SHORTCUT
 
 typedef int SHM_STATE;
-#define SHM_READING_HDR_BIT 0x0004
 #define SHM_READING_BIT     0x0008
 #define SHM_WRITING_BIT     0x0010
 
@@ -456,6 +455,31 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    num_bytes = vc->shm.shm[i].packet[index].num_bytes;
 	    recv_vc_ptr = &vc->shm.pg->vc_table[i]; /* This should be some GetVC function with a complete context */
 
+	    if (recv_vc_ptr->shm.shm_reading_pkt)
+	    {
+		/*assert(num_bytes > sizeof(packet));*/
+		pkt_ptr->cur_pos += sizeof(MPIDI_CH3_Pkt_t);
+		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
+		if (pkt_ptr->num_bytes == 0)
+		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
+		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
+		{
+		    /*printf("handling packet\n");fflush(stdout);*/
+		    MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
+		    if (recv_vc_ptr->shm.recv_active == NULL)
+		    {
+			/*printf("reading next packet\n");fflush(stdout);*/
+			recv_vc_ptr->shm.shm_reading_pkt = TRUE;
+		    }
+		}
+		else
+		{
+		    MPIDI_err_printf("MPIDI_CH3I_SHM_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
+		    recv_vc_ptr->shm.shm_reading_pkt = TRUE;
+		}
+		continue;
+	    }
+
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "shm_wait(recv finished %d bytes)", num_bytes));*/
 	    if (!(recv_vc_ptr->shm.shm_state & SHM_READING_BIT))
@@ -595,6 +619,7 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
     vc->shm.read.bufflen = len;
     vc->shm.read.use_iov = FALSE;
     vc->shm.shm_state |= SHM_READING_BIT;
+    vc->shm.shm_reading_pkt = FALSE;
 #ifdef USE_SHM_UNEX
     if (vc->shm.unex_list)
 	shmi_read_unex(vc);
@@ -628,6 +653,7 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
     vc->shm.read.index = 0;
     vc->shm.read.use_iov = TRUE;
     vc->shm.shm_state |= SHM_READING_BIT;
+    vc->shm.shm_reading_pkt = FALSE;
 #ifdef USE_SHM_UNEX
     if (vc->shm.unex_list)
 	shmi_readv_unex(vc);
