@@ -47,8 +47,11 @@ AC_DEFUN(PAC_F90_MODULE_EXT,
 [AC_CACHE_CHECK([for Fortran 90 module extension],
 pac_cv_f90_module_ext,[
 pac_cv_f90_module_case="unknown"
+rm -f conftest*
+# Intel ifc compiler generates files by the name of work.pc and work.pcl (!)
+rm -f work.pc work.pcl
 cat >conftest.$ac_f90ext <<EOF
-	module conftest
+        module conftest
         integer n
         parameter (n=1)
         end module conftest
@@ -78,6 +81,9 @@ else
 fi
 rm -f conftest*
 ])
+if test -s work.pcl ; then
+    AC_MSG_WARN([Compiler generates auxillery files (work.pcl)!])
+fi
 AC_SUBST(F90MODEXT)
 if test "$pac_cv_f90_module_ext" = "unknown" ; then
     ifelse($2,,:,[$2])
@@ -92,20 +98,26 @@ AC_CACHE_CHECK([for Fortran 90 module include flag],
 pac_cv_f90_module_incflag,[
 AC_REQUIRE([PAC_F90_MODULE_EXT])
 cat >conftest.$ac_f90ext <<EOF
-	module conf
+        module conf
         integer n
         parameter (n=1)
         end module conf
 EOF
 pac_madedir="no"
-if test ! -d conf ; then mkdir conf ; pac_madedir="yes"; fi
+if test ! -d conftestdir ; then mkdir conftestdir ; pac_madedir="yes"; fi
 if test "$pac_cv_f90_module_case" = "upper" ; then
     pac_module="CONF.$pac_cv_f90_module_ext"
 else
     pac_module="conf.$pac_cv_f90_module_ext"
 fi
 if AC_TRY_EVAL(ac_f90compile) ; then
-    cp $pac_module conf
+    if test -s "$pac_module" ; then
+        cp $pac_module conftestdir
+    else
+	AC_MSG_WARN([Unable to build a simple F90 module])
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftest.$ac_f90ext >&AC_FD_CC
+    fi
 else
     echo "configure: failed program was:" >&AC_FD_CC
     cat conftest.$ac_f90ext >&AC_FD_CC
@@ -116,19 +128,47 @@ cat >conftest.$ac_f90ext <<EOF
     use conf
     end
 EOF
-if ${F90-f90} -c $F90FLAGS -Iconf conftest.$ac_f90ext 1>&AC_FD_CC && \
+pac_cv_f90_module_incflag="unknown"
+if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-I"
-elif ${F90-f90} -c $F90FLAGS -Mconf conftest.$ac_f90ext 1>&AC_FD_CC && \
-	test-s conftest.o ; then
+elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
+	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-M"
-elif ${F90-f90} -c $F90FLAGS -pconf conftest.$ac_f90ext 1>&AC_FD_CC && \
+elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_f90ext 1>&AC_FD_CC && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-p"
+elif test -s work.pc ; then 
+     cp work.pc conftestdir/mpimod.pc
+     echo "mpimod.pc" > conftestdir/mpimod.pcl
+     echo "`pwd`/conftestdir/mpimod.pc" >> conftestdir/mpimod.pcl
+     if ${F90-f90} -c $F90FLAGS -cl,conftestdir/mpimod.pcl conftest.$ac_f90ext 1>&AC_FD_CC && test -s conftest.o ; then
+         pac_cv_f90_module_incflag='-cl,'
+	# Not quite right; see the comments that follow
+dnl         AC_MSG_RESULT([-cl,filename where filename contains a list of files and directories])
+#	 F90_WORK_FILES_ARG="-cl,mpimod.pcl"
+#         F90MODINCSPEC="-cl,<dir>/<file>mod.pcl"
+dnl	 AC_SUBST(F90_WORK_FILES_ARG)
+     else 
+         # The version of the Intel compiler that I have refuses to let
+	 # you put the "work catalog" list anywhere but the current directory.
+         pac_cv_f90_module_incflag="Unavailable!"
+     fi
 else
+    # Early versions of the Intel ifc compiler required a *file*
+    # containing the names of files that contained the names of the
+    # 
+    # -cl,filename.pcl
+    #   filename.pcl contains
+    #     fullpathname.pc
+    # The "fullpathname.pc" is generated, I believe, when a module is 
+    # compiled.  
+    # Intel compilers use a wierd system: -cl,filename.pcl .  If no file is
+    # specified, work.pcl and work.pc are created.  However, if you specify
+    # a file, it must contain a the name of a file ending in .pc .  Ugh!
     pac_cv_f90_module_incflag="unknown"
 fi
-if test "$pac_madedir" = "yes" ; then rm -rf conf ; fi
+if test "$pac_madedir" = "yes" ; then rm -rf conftestdir ; fi
 rm -f conftest*
 ])
 AC_SUBST(F90MODINCFLAG)
@@ -212,9 +252,15 @@ dnl
 dnl
 dnl Note: This checks for f95 before f90, since F95 is the more recent
 dnl revision of Fortran 90.  efc is the Intel Fortran 77/90/95 compiler
+dnl The compilers are:
+dnl ifc - Intel 
+dnl xlf90 - IBM 
+dnl pgf90 - Portland group
+dnl f90/f95 - Miscellaneous compilers, including NAG, Solaris, IRIX
+dnl efc - An older Intel compiler (?)
 AC_DEFUN(PAC_PROG_F90,[
 if test -z "$F90" ; then
-    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90 efc)
+    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90 ifc efc)
     test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
 fi
 if test -n "$F90" ; then
@@ -275,8 +321,11 @@ ac_ext=$pac_cv_f90_ext
 ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
 ac_link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'
 cross_compiling=$pac_cv_prog_f90_cross
+# Include a Fortran 90 construction to distinguish between Fortran 77 
+# and Fortran 90 compilers.
 cat >conftest.$ac_ext <<EOF
       program conftest
+      integer, dimension(10) :: n
       end
 EOF
 if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeect} ; then
