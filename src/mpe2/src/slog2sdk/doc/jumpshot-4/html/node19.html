@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.1.4.2 Duration Info Box</TITLE>
-<META NAME="description" CONTENT="3.3.1.4.2 Duration Info Box">
+<TITLE>3.4.1.4.1.1 Drawable Info Box for Preview Drawable</TITLE>
+<META NAME="description" CONTENT="3.4.1.4.1.1 Drawable Info Box for Preview Drawable">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -20,55 +20,56 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
 <LINK REL="next" HREF="node20.html">
-<LINK REL="previous" HREF="node16.html">
-<LINK REL="up" HREF="node15.html">
+<LINK REL="previous" HREF="node18.html">
+<LINK REL="up" HREF="node18.html">
 <LINK REL="next" HREF="node20.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html356"
+<A NAME="tex2html399"
   HREF="node20.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html352"
-  HREF="node15.html">
+<A NAME="tex2html395"
+  HREF="node18.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html346"
+<A NAME="tex2html389"
   HREF="node18.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html354"
+<A NAME="tex2html397"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html357"
-  HREF="node20.html">3.3.1.4.3 Time Info Box</A>
-<B> Up:</B> <A NAME="tex2html353"
-  HREF="node15.html">3.3.1.4 Information Dialog Box</A>
-<B> Previous:</B> <A NAME="tex2html347"
-  HREF="node18.html">3.3.1.4.1.2 Drawable Info Box</A>
- &nbsp; <B>  <A NAME="tex2html355"
+<B> Next:</B> <A NAME="tex2html400"
+  HREF="node20.html">3.4.1.4.1.2 Drawable Info Box</A>
+<B> Up:</B> <A NAME="tex2html396"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+<B> Previous:</B> <A NAME="tex2html390"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html398"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H4><A NAME="SECTION00431420000000000000">
-3.3.1.4.2 Duration Info Box</A>
-</H4>
+<H5><A NAME="SECTION00441411000000000000">
+3.4.1.4.1.1 Drawable Info Box for Preview Drawable</A>
+</H5>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_infobox_duration"></A><A NAME="434"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_infobox_preview_state"></A><A NAME="685"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.15:</STRONG>
-Duration Info Box shows the
-duration, starttime, and endtime of a time region marked by a pair
-of green lines.</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.16:</STRONG>
+Drawable Info Box for
+Preview State</CAPTION>
 <TR><TD>
+<DIV ALIGN="CENTER"></DIV>
+<P>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="545" HEIGHT="459" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_infobox_duration.png"
- ALT="Image timeline_infobox_duration">
+  WIDTH="679" HEIGHT="706" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_infobox_preview_state.png"
+ ALT="Image timeline_infobox_preview_state">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -76,18 +77,96 @@ of green lines.</CAPTION>
 </DIV>
 
 <P>
-Duration Info Box is created by right dragging a region of empty space
-in the timeline canvas or the time ruler canvas. The dragged region
-will be marked by a pair of green lines and is lightly shaded as well.
-One of the usages of Duration Info Box is to compare different durations
-to see if they are the same. For instance in Figure <A HREF="#fig:timeline_infobox_duration">3.15</A>,
-the 2 Duration Info Boxes mark 2 non-overlap regions on the 3rd timeline
-to check if the total duration taken up by the all consecutive small
-states within the 2 regions are the same. As shown in the Duration
-Info Box, it appears the total durations are the same. 
+Right mouse clicking on 2 of the preview states in the timeline canvas
+shown in Figure <A HREF="node7.html#fig:timeline_preview_detail_1_excl">2.9</A> will pop
+up 2 Drawable Info Boxes for the preview states. They are displayed
+in Figure <A HREF="#fig:timeline_infobox_preview_state">3.16</A>. The popup Info
+Box's upper left hand corner will be positioned at exactly where right
+mouse click is detected and a green line marker will appear on the
+canvas to indicate what time has been clicked in case the dialog box
+is moved from its original popup location. In order to best illustrate
+what information is presented by the Drawable Info Box, let's take
+the highlighted Drawable Info Box in Figure <A HREF="#fig:timeline_infobox_preview_state">3.16</A>
+as an example. The Drawable Info Box for preview state contains a
+pink label ``Preview State'', and the icon inside the dialog box
+shows the color and shape of the drawable. Below the icon, there is
+a big text area that prints all the detailed statistical information
+about this preview state. There are 6 timestamps in the text area:
+maximum duration, minimum starttime, maximum endtime, average duration,
+average starttime and average endtime. Here ``[0]'' refers
+to starting point, and ``[1]'' refers to the ending point.
+The 3 ``average'' timestamps are averaged over all the real drawables
+represented by this preview drawable. Besides timestamps, the info
+box also tells ``Number of Real Drawables'' represented by the
+preview object. In this case, 136 real states are amalgamated by the
+pure white preview state. Also, the text area lists all the categories
+of real drawables amalgamated and their ratios of the total duration
+of all real drawables to the duration of the preview states. In this
+case, there is only 1 category of real states in this preview state,
+so all 136 states are all PACKs. The sum of the durations of all PACKs
+is about half of the duration of the preview state as it is indicated
+by ``ratio=0.5021433''. 
 
 <P>
-<BR><HR>
+Another Drawable Info Box which is shown in Figure <A HREF="#fig:timeline_infobox_preview_state">3.16</A>
+has its upper left-hand pointed at a preview state that has 4 different
+strips of colors: yellow, royal blue, white and purple. Right mouse
+clicking at the yellow strip pops up a Drawable Info Box with a yellow
+state icon with label BARRIER. As shown in the figure, this preview
+state amalgamated 4 different categories of real states: ALLREDUCE,
+PACK, SSEND, and BARRIER, and the statistically most significant one
+is BARRIER. It proportionally and exclusively occupies 55% of the
+length of the preview state. Hence BARRIER strip has the tallest height
+among all the color strips shown in the preview state. Clicking on
+the different color strip in the same preview state will pop up a
+Drawable Info Box with a different labeled icon, but the content of
+the text area remains the same. In general, not every category listed
+in the text area is visible in the preview state display. Out of the
+4 categories mentioned in the text area, only 3 are visible noticeably
+in the figure given the limited pixel height available to the preview
+state. The least significant category ALLREDUCE is barely visible.
+But the limitation can be improved by selecting another display option
+for preview state in Preference window that does not rely on the category
+ratio<A NAME="tex2html45"
+  HREF="#foot686"><SUP>3.4</SUP></A>. As indicated, there are altogether 58 real drawables in the preview
+state, but no information is provided about how many real drawables
+are in each real category.
+
+<P>
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot686">...
+ratio</A><A
+ HREF="node19.html#tex2html45"><SUP>3.4</SUP></A></DT>
+<DD>i.e. by setting the PREVIEW_STATE_DISPLAY pulldown menu in Timeline
+window or Preference window to <I>FitMostLegends</I> message as listed
+in Table <A HREF="#table:preference_zoomable_timeline">3.18</A> .
+
+</DD>
+</DL><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html399"
+  HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html395"
+  HREF="node18.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html389"
+  HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html397"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html400"
+  HREF="node20.html">3.4.1.4.1.2 Drawable Info Box</A>
+<B> Up:</B> <A NAME="tex2html396"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+<B> Previous:</B> <A NAME="tex2html390"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html398"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
 
 </BODY>
 </HTML>

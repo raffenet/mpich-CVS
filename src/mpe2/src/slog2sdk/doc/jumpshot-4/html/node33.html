@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.3 Estimation of MPI Communication Overhead</TITLE>
+<META NAME="description" CONTENT="4.3 Estimation of MPI Communication Overhead">
+<META NAME="keywords" CONTENT="usersguide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="usersguide.css">
+
+<LINK REL="previous" HREF="node32.html">
+<LINK REL="up" HREF="node30.html">
+<LINK REL="next" HREF="node34.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html560"
+  HREF="node34.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html556"
+  HREF="node30.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html552"
+  HREF="node32.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html558"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html561"
+  HREF="node34.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html557"
+  HREF="node30.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html553"
+  HREF="node32.html">4.2 Tuning of the</A>
+ &nbsp; <B>  <A NAME="tex2html559"
+  HREF="node2.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00530000000000000000">
+4.3 Estimation of MPI Communication Overhead</A>
+</H1>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_mpi_overhead"></A><A NAME="717"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.4:</STRONG>
+Graphical MPI overhead profiling
+through the use of <I>BaseAlignedCumulativeExclusionRatio</I> view
+of Timeline window in Figure <A HREF="node12.html#fig:timeline_popup">3.9</A>.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="947" HEIGHT="725" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_mpi_overhead.png"
+ ALT="Image timeline_mpi_overhead">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+One of the questions that most MPI application developers always want
+to know is the overhead of MPI calls in their programs. Essentially
+they would like to know what is the communication overhead in their
+parallel programs. New SLOG-2 viewer provides a graphical answer to
+this question for most MPI profiling system. In MPE profiling system,
+MPI states are alway nested deeper than the user-defined states. Therefore
+disabling user-defined states and arrows in <I>CumulativeExclusionRatio</I>
+mode in the Timeline window still leaves all MPI exclusion ratios
+intact without distorted the collective meaning of exclusion ratios.
+Figure <A HREF="#fig:timeline_mpi_overhead">4.4</A> shows a <I>CumulativeExclusionRatio</I>
+view in <I>BaseAligned</I> mode which looks like a 2-dimensional projection
+of a 3-dimensional histogram for a timeline vs time coordinate system.
+The base aligned feature is for easy comparison of preview states'
+heights. It becomes apparent from the figure that not only do we know
+the yellow state, i.e. MPI_Barrier, takes up most time in the program,
+we also know when and where MPI_Barrier consumes most time. The combination
+of disabling user-defined states and use of <I>BaseAlignedCumulativeExclusionRatio</I>
+Timeline view provides a powerful and convenient way to estimate MPI
+communication overhead. Together with the zoomable capability of the
+Timeline window, user can easily zoom in to identify the time and
+location of the bottleneck that causes the biggest communication overhead.
+For an overall estimate of MPI overhead, a histogram window over the
+whole duration of the timeline canvas can be obtained and is shown
+in Figure <A HREF="#fig:histogram_mpi_overhead">4.5</A>. The vacuum region in
+each timeline is assumed to be used by user computation.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:histogram_mpi_overhead"></A><A NAME="718"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.5:</STRONG>
+An overall MPI overhead histogram
+for Figure <A HREF="#fig:timeline_mpi_overhead">4.4</A>.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="928" HEIGHT="725" ALIGN="BOTTOM" BORDER="0"
+ SRC="./histogram_mpi_overhead.png"
+ ALT="Image histogram_mpi_overhead">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html560"
+  HREF="node34.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html556"
+  HREF="node30.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html552"
+  HREF="node32.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html558"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html561"
+  HREF="node34.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html557"
+  HREF="node30.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html553"
+  HREF="node32.html">4.2 Tuning of the</A>
+ &nbsp; <B>  <A NAME="tex2html559"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.1.4 Information Dialog Box</TITLE>
-<META NAME="description" CONTENT="3.3.1.4 Information Dialog Box">
+<TITLE>3.4.1.2 Instant Zoom</TITLE>
+<META NAME="description" CONTENT="3.4.1.2 Instant Zoom">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,78 +19,75 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
+<LINK REL="next" HREF="node16.html">
 <LINK REL="previous" HREF="node14.html">
-<LINK REL="up" HREF="node11.html">
+<LINK REL="up" HREF="node13.html">
 <LINK REL="next" HREF="node16.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html303"
+<A NAME="tex2html346"
   HREF="node16.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html299"
-  HREF="node11.html">
+<A NAME="tex2html342"
+  HREF="node13.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html295"
+<A NAME="tex2html336"
   HREF="node14.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html301"
+<A NAME="tex2html344"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html304"
-  HREF="node16.html">3.3.1.4.1 Drawable Info Box</A>
-<B> Up:</B> <A NAME="tex2html300"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
-<B> Previous:</B> <A NAME="tex2html296"
-  HREF="node14.html">3.3.1.3 Grasp and Scroll</A>
- &nbsp; <B>  <A NAME="tex2html302"
+<B> Next:</B> <A NAME="tex2html347"
+  HREF="node16.html">3.4.1.3 Grasp and Scroll</A>
+<B> Up:</B> <A NAME="tex2html343"
+  HREF="node13.html">3.4.1 Zoomable and Scrollable</A>
+<B> Previous:</B> <A NAME="tex2html337"
+  HREF="node14.html">3.4.1.1 Dragged Zoom</A>
+ &nbsp; <B>  <A NAME="tex2html345"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H3><A NAME="SECTION00431400000000000000">
-3.3.1.4 Information Dialog Box</A>
+<H3><A NAME="SECTION00441200000000000000">
+3.4.1.2 Instant Zoom</A>
 </H3>
 
 <P>
-Jumpshot-4 wouldn't be complete if it cannot provide a way to tell
-user what exactly are being displayed. It is particularly important
-when there are many preview drawables. Following standard user interface
-practice, Jumpshot-4 uses <I>right mouse clicking</I> as an interface
-for user to tell Jumpshot-4 what object that more information is needed.
-In general, anywhere on the canvas, both timeline and time ruler canvases,
-can be inquired with right mouse clicks. Information dialog box will
-pop up accordingly to tell user more about object that is being clicked.
-There are 3 different types of information dialogs: Drawable Info
-Box, Duration Info Box and Time Info Box. All these info boxes remain
-in memory as long as they are not closed even if the canvas has been
-scrolled or zoomed. One of the usages of the info boxes is to serve
-as time markers in between zooming and scrolling.
+
+<DIV ALIGN="CENTER"><A NAME="fig:zoom_minus_cursor"></A><A NAME="682"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.13:</STRONG>
+Zoom-minus cursor that indicates the
+left mouse clicking is ready for zooming out.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./ZoomMinusUpLeft25.png"
+ ALT="Image ZoomMinusUpLeft25">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
 
 <P>
-<BR><HR>
-<!--Table of Child-Links-->
-<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+While the canvas is still in zoom mode, <I>instant zoom</I> is enabled
+by default. Instant zoom allows zooming in at the point of left mouse
+clicking by a factor of 1/2, i.e. the region centered at the point
+of left clicking will be magnified by a factor or 2. Also, the <I>Zoom
+Focus Time</I> in the time display panel will be updated with the time
+where left clicking on the canvas is detected. In the process, the
+cursor remain<I>s</I> zoom-plus cursor. <I>Shift-click</I>, on the
+other hand, will do the opposite. While holding down Shift key, the
+cursor will be changed to a zoom-minus cursor as in Figure <A HREF="#fig:zoom_minus_cursor">3.13</A>
+to indicate zooming out is the action associated with left clicking.
+The zoom factor is 2 in this case.
 
-<UL>
-<LI><A NAME="tex2html305"
-  HREF="node16.html">3.3.1.4.1 Drawable Info Box</A>
-<UL>
-<LI><A NAME="tex2html306"
-  HREF="node17.html">3.3.1.4.1.1 Drawable Info Box for Preview Drawable</A>
-<LI><A NAME="tex2html307"
-  HREF="node18.html">3.3.1.4.1.2 Drawable Info Box for Real Drawable</A>
-</UL>
-<BR>
-<LI><A NAME="tex2html308"
-  HREF="node19.html">3.3.1.4.2 Duration Info Box</A>
-<LI><A NAME="tex2html309"
-  HREF="node20.html">3.3.1.4.3 Time Info Box</A>
-</UL>
-<!--End of Table of Child-Links-->
+<P>
 <BR><HR>
 
 </BODY>

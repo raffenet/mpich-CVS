@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>4.1 Search and Scan Facility</TITLE>
-<META NAME="description" CONTENT="4.1 Search and Scan Facility">
+<TITLE>3.5 Histogram Zoomable Window</TITLE>
+<META NAME="description" CONTENT="3.5 Histogram Zoomable Window">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,93 +19,55 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
-<LINK REL="next" HREF="node27.html">
-<LINK REL="previous" HREF="node25.html">
-<LINK REL="up" HREF="node25.html">
+<LINK REL="next" HREF="node29.html">
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="up" HREF="node8.html">
 <LINK REL="next" HREF="node27.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html436"
+<A NAME="tex2html477"
   HREF="node27.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html432"
-  HREF="node25.html">
+<A NAME="tex2html473"
+  HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html426"
+<A NAME="tex2html467"
   HREF="node25.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html434"
+<A NAME="tex2html475"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html437"
-  HREF="node27.html">4.2 Tuning of the</A>
-<B> Up:</B> <A NAME="tex2html433"
-  HREF="node25.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html427"
-  HREF="node25.html">4. Special Features</A>
- &nbsp; <B>  <A NAME="tex2html435"
+<B> Next:</B> <A NAME="tex2html478"
+  HREF="node27.html">3.5.1 Summary States</A>
+<B> Up:</B> <A NAME="tex2html474"
+  HREF="node8.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html468"
+  HREF="node25.html">3.4.4 Row Adjustment Panel</A>
+ &nbsp; <B>  <A NAME="tex2html476"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00510000000000000000">
-4.1 Search and Scan Facility</A>
+<H1><A NAME="SECTION00450000000000000000">
+3.5 Histogram <I>Zoomable</I> Window</A>
 </H1>
 
 <P>
-The Level-of-detail support provided in SLOG-2 and Jumpshot-4 tends
-to help locate states which are either longer in time or occur very
-frequently. States that are short and occur rarely in a big logfile
-are very difficult to locate without any special tool. In Jumpshot-4,
-a search and scan facility is provided to facilitate this goal. There
-are 3 search criteria: search time, searchable timeline IDs and searchable
-categories. 
 
-<P>
-
-<OL>
-<LI><I>Search Time</I> is the time that search starts. It is marked by
-a yellow line calld search cursor. There are 2 differnt ways of setting
-the search cursor. When the timeline canvas is in Hand mode as described
-in Figure <A HREF="node11.html#fig:mouse_hand_mode">3.8</A> of section <A HREF="node11.html#sub:Zoomable-and-Scrollable">3.3.1</A>,
-left mouse clicking will set the search cursor. The other way can
-be done in either Hand or Zoom mode. First popup an information dialog
-box of any kind using right mouse clicking, then press the SearchInitialize
-button in the toolbar to replace the green line by the yellow search
-cursor. When there are more than one information dialog box, the information
-dialog box that is shown up last will have its green line used to
-initialize the search cursor. When Timeline window first starts up,
-the search cursor is set at the starttime of the logfile.
-</LI>
-<LI><I>Searchable Timeline IDs</I> are the timlines that search will operate
-on, i.e only states on the marked timelines will be returned by the
-search facility. These marked timelines can be selected by clicking
-on their timeline IDs on Yaxis label panel with rules described in
-Table <A HREF="#table:selection_rules">3.6</A>. When nothing is selected, all
-timelines are searchable.
-</LI>
-<LI><I>Searchable Categories</I> are categories that have their searchable
-checkboxes enabled as in Figure <A HREF="node9.html#fig:legend_checkbox_ops">3.5</A>. Only
-drawable with searchable category can be returned by the search facility.
-By default, all categories in Legend window are searchable. 
-</LI>
-</OL>
-
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview"></A><A NAME="447"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:histogram_state_all_cumu_excl"></A><A NAME="698"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.1:</STRONG>
-Search of state <I>eos</I> in
-preview stage. The returned state is a preview state containing state
-<I>eos</I> as shown in Search Box and Drawable Info Box.</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.22:</STRONG>
+A histogram window of the
+whole duration shown in Figure <A HREF="node12.html#fig:timeline_popup">3.9</A>.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="545" HEIGHT="672" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_search_preview.png"
- ALT="Image timeline_search_preview">
+  WIDTH="928" HEIGHT="725" ALIGN="BOTTOM" BORDER="0"
+ SRC="./histogram_state_all_cumu_excl.png"
+ ALT="Image histogram_state_all_cumu_excl">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -113,92 +75,89 @@ preview stage. The returned state is a preview state containing state
 </DIV>
 
 <P>
-After setting any needed search criteria, the search operation can
-be carried out by pressing either the SearchForeward or SearchBackward
-buttons shown in the Table <A HREF="#table:timeline_toolbar">3.8</A>. As shown
-in Figure <A HREF="#fig:timeline_search_preview">4.1</A>, the search facility
-returns a searched state which is bounded by a 3D raised bordered
-and transparent <A NAME="tex2html46"
-  HREF="#foot380"><SUP>4.1</SUP></A>box whose starttime is marked by a yellow search cursor and 2 3D arrowheads.
-The upper 3D arrow's color matches that of the returned state. In
-the figure, since the returned state is a preview state, so the upper
-3D arrow is grey in color as it is shown in Legend window. Accompanied
-with the 3D raised bordered box is a popup Search Box that shows the
-detailed of the preview state like the Drawable Info Box in Figure
-<A HREF="node17.html#fig:timeline_infobox_preview_state">3.13</A>. Since the search in the
-figure is looking for state <I>eos</I>, a Drawable Info Box is shown
-to indicate the returned 3D bordered box does contain category <I>eos</I>
-graphically. In order to locate the real state <I>eos</I>, a dragged
-zoom is performed around the 3D raised bordered box and the result
-is shown in Figure <A HREF="#fig:timeline_search_preview_zoomed">4.2</A>. In the
-figure, the real <I>eos</I> is located at the end of the original
-3D bordered box and it is marked by the Drawable Info Box.
+The Histogram window is created through clicking the statistics button
+located in the middle of Duration Info Box shown in Figure <A HREF="node21.html#fig:timeline_infobox_duration">3.18</A>.
+In Figure <A HREF="#fig:histogram_state_all_cumu_excl">3.22</A>, the histogram
+window is created for the whole duration of the timeline canvas in
+Figure <A HREF="node12.html#fig:timeline_popup">3.9</A>, i.e same duration as the complet
+slog2 file. In general, the total duration of the histogram canvas
+is the same as the duration marked by the Duration Info Box so that
+the histogram window functions like a graphical display of statistical
+summary of the duration of interest. For instance, it is obvious from
+Figure <A HREF="#fig:histogram_state_all_cumu_excl">3.22</A> that the yellow state,
+it is MPI_Barrier in this case, cumulatively takes up the most time.
+This is especially true in the last timeline.
 
 <P>
-
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview_zoomed"></A><A NAME="448"></A>
-<TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.2:</STRONG>
-Dragged zoom the region
-around the 3D raised bordered box in Figure <A HREF="#fig:timeline_search_preview">4.1</A>
-shows the real state <I>eos.</I></CAPTION>
-<TR><TD>
-<DIV ALIGN="CENTER"><IMG
-  WIDTH="545" HEIGHT="459" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_search_preview_zoomed.png"
- ALT="Image timeline_search_preview_zoomed">
-</DIV>
-<P>
-<DIV ALIGN="CENTER"></DIV></TD></TR>
-</TABLE>
-</DIV>
+Since Histogram window is also a <I>zoomable</I> window like Timeline
+window, a lot of features like those described in section <A HREF="node13.html#sub:Zoomable-and-Scrollable">3.4.1</A>
+for Timeline window are available for Histogram window as well, e.g.
+dragged-zoom, grasp and scroll, instant zoom in/out, easy vertical
+expansion of timeline, cut and paste of timelines. If some state categories
+or timelines need to be made invisible in histogram window, it can
+be achieved through disabling the corresponding categories in Legend
+window's column V or S or selected corresponding timelines in histogram
+window. It is just like that of Timeline window.
 
 <P>
-In general, when searching on big slog2 file, all preview categories
-should be set searchable, otherwise searching for real drawables may
-not return anything. Because at lower zoom level, there may not be
-any real drawable belong to the categories of interest, only preview
-drawable contains the categories of interest. Also, the search facility
-is carried out for the drawables that are in the physical memory.
-In some rare occasions, drawables in the memory may have been exhausted
-for searching but end of the logfile have not been reached, user may
-need to advance the search by scroll forward or backward to read in
-more drawables and to restart the search again. For a very big logfile,
-the search process of a real state may require repeated operations
-of search and dragged zoom before the real state can be found. This
-process will be automated in the later version of Jumpshot-4.
+Only summary objects can be displayed in the histogram window. Summary
+object is similar to preview object discussed earlier. Preview objects
+are created during logfile creation stage and cannot be modified during
+visualization. Summary objects, on the other hand, are created dynamically
+during visualization, i.e. during creation of a Duration Info Box,
+so they can be modified easy by end users. There are 2 different kinds
+of summary objects: summary state and summary arrow. There is only
+1 summary state per timeline and 1 summary arrow for each ordered
+pair of timelines<A NAME="tex2html56"
+  HREF="#foot478"><SUP>3.8</SUP></A>. Currently 3 different views are available in Histogram window: <I>States
+Only</I>, <I>Arrows Only</I> and <I>All</I>. In <I>States Only</I> view,
+only summary states are displayed. In <I>Arrows Only</I> view, only
+summary arrows are displayed. In <I>All</I> view, both summary states
+and arrows are displayed.
 
 <P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
-<DT><A NAME="foot380">...</A><A
- HREF="node26.html#tex2html46"><SUP>4.1</SUP></A></DT>
-<DD>the transparency of the 3D raised box can be made opaque by selecting
-the SEARCHED_OBJECT_ON_TOP true.
+<DT><A NAME="foot478">... timelines</A><A
+ HREF="node26.html#tex2html56"><SUP>3.8</SUP></A></DT>
+<DD>ordered pair of timelines means timeline pair (1,2) is different from
+pair (2,1).
 
 </DD>
-</DL><HR>
+</DL>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html479"
+  HREF="node27.html">3.5.1 Summary States</A>
+<LI><A NAME="tex2html480"
+  HREF="node28.html">3.5.2 Summary Arrows</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
 <!--Navigation Panel-->
-<A NAME="tex2html436"
+<A NAME="tex2html477"
   HREF="node27.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html432"
-  HREF="node25.html">
+<A NAME="tex2html473"
+  HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html426"
+<A NAME="tex2html467"
   HREF="node25.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html434"
+<A NAME="tex2html475"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html437"
-  HREF="node27.html">4.2 Tuning of the</A>
-<B> Up:</B> <A NAME="tex2html433"
-  HREF="node25.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html427"
-  HREF="node25.html">4. Special Features</A>
- &nbsp; <B>  <A NAME="tex2html435"
+<B> Next:</B> <A NAME="tex2html478"
+  HREF="node27.html">3.5.1 Summary States</A>
+<B> Up:</B> <A NAME="tex2html474"
+  HREF="node8.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html468"
+  HREF="node25.html">3.4.4 Row Adjustment Panel</A>
+ &nbsp; <B>  <A NAME="tex2html476"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.2 Tuning of the Timeline Window</TITLE>
+<META NAME="description" CONTENT="4.2 Tuning of the Timeline Window">
+<META NAME="keywords" CONTENT="usersguide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="usersguide.css">
+
+<LINK REL="next" HREF="node33.html">
+<LINK REL="previous" HREF="node31.html">
+<LINK REL="up" HREF="node30.html">
+<LINK REL="next" HREF="node33.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html550"
+  HREF="node33.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html546"
+  HREF="node30.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html540"
+  HREF="node31.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html548"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html551"
+  HREF="node33.html">4.3 Estimation of MPI</A>
+<B> Up:</B> <A NAME="tex2html547"
+  HREF="node30.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html541"
+  HREF="node31.html">4.1 Search and Scan</A>
+ &nbsp; <B>  <A NAME="tex2html549"
+  HREF="node2.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00520000000000000000">
+4.2 Tuning of the Timeline Window</A>
+</H1>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="716"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.3:</STRONG>
+The initial Timeline window with
+finer preview resolution.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="947" HEIGHT="725" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_popup_finer.png"
+ ALT="Image timeline_popup_finer">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+One of the major improvements in the new Jumpshot and SLOG-2 is the
+scalability in terms of visualization performance. As shown in Figure
+<A HREF="node12.html#fig:timeline_popup">3.9</A>, there are 14 bands of preview states covering
+the whole canvas in the initial Timeline window. By incrementing the
+parameter INIT_SLOG2_LEVEL_READ by 1 in Preference window as in
+Table <A HREF="#table:preference_zoomable_reinit">3.14</A>, the initial Timeline
+window is redisplayed and is shown in Figure <A HREF="#fig:timeline_popup_finer">4.3</A>.
+The new Timeline window has 27 bands of preview states instead of
+14. The increase preview resolution does offer a more detailed description
+of logfile but at the expense of graphical performance. Because every
+increment of INIT_SLOG2_LEVEL_READ will roughly double the number
+of drawables to be iterated during every zooming or scrolling<A NAME="tex2html72"
+  HREF="#foot623"><SUP>4.2</SUP></A>. The biggest demand of graphical performance occurs when the zooming
+to the level of only pure real drawables from the lower zoom level.
+The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
+does not appear to be too slow during the zooming to the pure real
+drawable level. For a fast graphics system, INIT_SLOG2_LEVEL_READ
+should be set higher than the default value 4, e.g. 5, so that more
+information is present during each view. Slow graphics system should
+set INIT_SLOG2_LEVEL_READ lower, e.g. 3.
+
+<P>
+Another parameter also significantly affects the graphical performance
+is ARROW_ANTIALIASING in Preference window. Setting the parameters
+to ON will force Jumpshot to draw all arrows including preview arrows
+with anti-aliasing lines. This proves to be an expensive graphical
+operation<A NAME="tex2html73"
+  HREF="#foot624"><SUP>4.3</SUP></A>. Except when high quality picture is needed like during screen capture
+for picture or when anti-aliasing lines are drawn with graphics hardware
+support, it is not recommended to turn on ARROW_ANTIALIASING. 
+
+<P>
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot623">... scrolling</A><A
+ HREF="node32.html#tex2html72"><SUP>4.2</SUP></A></DT>
+<DD>it is true for a binary tree
+
+</DD>
+<DT><A NAME="foot624">...
+operation</A><A
+ HREF="node32.html#tex2html73"><SUP>4.3</SUP></A></DT>
+<DD>A typical timeline canvas with arrows will draw roughly a factor 3
+slower with anti-aliasing on. 
+
+</DD>
+</DL><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html550"
+  HREF="node33.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html546"
+  HREF="node30.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html540"
+  HREF="node31.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html548"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html551"
+  HREF="node33.html">4.3 Estimation of MPI</A>
+<B> Up:</B> <A NAME="tex2html547"
+  HREF="node30.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html541"
+  HREF="node31.html">4.1 Search and Scan</A>
+ &nbsp; <B>  <A NAME="tex2html549"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

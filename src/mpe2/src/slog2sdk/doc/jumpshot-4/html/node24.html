@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.4 Preference Window</TITLE>
-<META NAME="description" CONTENT="3.4 Preference Window">
+<TITLE>3.4.3 Y-axis Label Panel</TITLE>
+<META NAME="description" CONTENT="3.4.3 Y-axis Label Panel">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,245 +19,106 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
-<LINK REL="previous" HREF="node10.html">
-<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node25.html">
+<LINK REL="previous" HREF="node23.html">
+<LINK REL="up" HREF="node12.html">
 <LINK REL="next" HREF="node25.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html410"
+<A NAME="tex2html455"
   HREF="node25.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html406"
-  HREF="node7.html">
+<A NAME="tex2html451"
+  HREF="node12.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html402"
+<A NAME="tex2html445"
   HREF="node23.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html408"
+<A NAME="tex2html453"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html411"
-  HREF="node25.html">4. Special Features</A>
-<B> Up:</B> <A NAME="tex2html407"
-  HREF="node7.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html403"
-  HREF="node23.html">3.3.4 Row Adjustment Panel</A>
- &nbsp; <B>  <A NAME="tex2html409"
+<B> Next:</B> <A NAME="tex2html456"
+  HREF="node25.html">3.4.4 Row Adjustment Panel</A>
+<B> Up:</B> <A NAME="tex2html452"
+  HREF="node12.html">3.4 Timeline Zoomable Window</A>
+<B> Previous:</B> <A NAME="tex2html446"
+  HREF="node23.html">3.4.2 Toolbar</A>
+ &nbsp; <B>  <A NAME="tex2html454"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00440000000000000000">
-3.4 Preference Window</A>
-</H1>
+<H2><A NAME="SECTION00443000000000000000">
+3.4.3 Y-axis Label Panel</A>
+</H2>
+
+<P>
+The concealable left panel in Timeline window is called Y-axis label
+panel which contains a tree-like representation for Y-axis label for
+the timelines. For a SLOG-2 file convertible from CLOG or RLOG with
+the default viewmap, the typical Y axis label panel looks like that
+is shown in Figure <A HREF="#fig:yaxis_label_panel">3.20</A>. Together with toolbar's
+label buttons, e.g. LabelMark and LabelMove, and standard mouse selection
+methods listed in Table <A HREF="#table:selection_rules">3.10</A>, labels can be
+rearranged easily to create a more easily understood timeline canvas.
+For multiple viewmaps SLOG-2 file from IBM's UTE trace environment,
+LabelExpand and LabelCollapse buttons will come in handy to expand
+and collapse the label tree by one whole level. In order to minimize
+unnecessary redraw of the timeline canvas, the synchronization between
+the label panel and the timeline canvas is carried out passively,
+i.e. user needs to press the CanvasReDraw button in the toolbar to
+update the Timeline window with the changes from the label panel.
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:preference_pview_state"></A><A NAME="442"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:yaxis_label_panel"></A><A NAME="693"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.19:</STRONG>
-The Preference window that shows
-PREVIEW_STATE_DISPLAY</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.20:</STRONG>
+A simple 1 level Y-axis label tree.
+The blue highlighted labels are those that have been selected. The
+pulldown menu at the top of panel indicates the value in PREVIEW_STATE_DISPLAY
+in Preference window</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="238" HEIGHT="490" ALIGN="BOTTOM" BORDER="0"
- SRC="./preference_pview_state.png"
- ALT="Image preference_pview_state">
+  WIDTH="148" HEIGHT="655" ALIGN="BOTTOM" BORDER="0"
+ SRC="./yaxis_label_panel_simple.png"
+ ALT="Image yaxis_label_panel_simple">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<IMG
+  WIDTH="216" HEIGHT="654" ALIGN="BOTTOM" BORDER="0"
+ SRC="./yaxis_label_panel_expanded.png"
+ ALT="Image yaxis_label_panel_expanded">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
 </TABLE>
 </DIV>
-
-<P>
-As shown in Figure <A HREF="#fig:preference_pview_state">3.19</A> is the Preference
-window that adjusts the various display properties of the visualization
-program. A list of the parameters and their definitions are listed
-in Tables <A HREF="#table:preference_data1">3.10</A> and <A HREF="#table:preference_data2">3.12</A>.
-
-<P>
-<BR><P></P>
-<DIV ALIGN="CENTER"><A NAME="444"></A>
-<TABLE>
-<CAPTION><STRONG>Table 3.10:</STRONG>
- Modifiable parameters in Preference
-window. </CAPTION>
-<TR><TD>
-<DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
-<TR><TD ALIGN="CENTER">Parameter</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>Values</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Description</TD>
-</TR>
-<TR><TD ALIGN="CENTER"><FONT SIZE="-1">Y_AXIS_ROOT_LABEL</FONT></TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>any text</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Label for the root node of the Y-axis tree label in the left panel.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">INIT_SLOG2_LEVEL_READ</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>+ve integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>The number of slog2 levels being read into memory when the Timeline
-window is initialized, the integer affects the zooming and scrolling
-performance exponentially (in a asymptotical sense).</TD>
-</TR>
-<TR><TD ALIGN="CENTER">AUTO_WINDOWS_LOCATION</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>true, false</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to let Jumpshot-4 automatically set windows placement</TD>
-</TR>
-<TR><TD ALIGN="CENTER">SCREEN_HEIGHT_RATIO</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>0.0 ... 1.0</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Ratio of the initial timeline canvas height to the screen height</TD>
-</TR>
-<TR><TD ALIGN="CENTER">TIME_SCROLL_UNIT_RATIO</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>0.0 ... 1.0</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Unit increment of the horizontal scrollbar in the fraction of timeline
-canvas's wdith.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">Y_AXIS_ROOT_VISIBLE</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>true, false</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to show the top of the Y-axis tree-styled directory label.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">BACKGROUND_COLOR</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>Black, DarkGray, Gray, LightGray, White</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Background color of the timeline canvas</TD>
-</TR>
-<TR><TD ALIGN="CENTER">ACTIVE_REFRESH</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>false</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to let Jumpshot-4 actively update the timeline canvas.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">STATE_BORDER</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>ColorRaised, ColorLowered, WhiteRaised, WhiteLowered, WhitePlain,
-Empty</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Border style of real states.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">STATE_HEIGHT_FACTOR</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>0.0 ... 1.0</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Ratio of the outermost rectangle height to row height. The larger
-the factor is, the larger the outermost rectangle will be with respect
-to the row height.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">NESTING_HEIGHT_FACTOR</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>0.0 ... 1.0</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>The gap ratio between successive nesting rectangles. The larger the
-factor is, the smaller the gap will be.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">ARROW_ANTIALIASING</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>default, on, off</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to draw arrow with anti-aliasing lines. Turning this on will
-slow down the canvas drawing by a factor of 3.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">ARROW_HEAD_LENGTH</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>+ve integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Length of arrow head in pixel.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">ARROW_HEAD_HALF_WIDTH</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>+ve integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Half width of arrow head's base in pixel.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">CLICK_RADIUS_TO_LINE</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>+ve integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Radius in pixel for a click to be considered on the arrow.</TD>
-</TR>
-</TABLE>
-</DIV>
-<P>
-<DIV ALIGN="CENTER"></DIV></TD></TR>
-</TABLE>
-</DIV><P></P>
-<BR>
-
-<P>
-<BR><P></P>
-<DIV ALIGN="CENTER"><A NAME="446"></A>
-<TABLE>
-<CAPTION><STRONG>Table 3.12:</STRONG>
-Modifiable parameters in Preference
-window</CAPTION>
-<TR><TD>
-<DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
-<TR><TD ALIGN="CENTER">Parameter</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>Values</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Description</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_STATE_DISPLAY</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>DecreLegendOrder, DecreWeightOrder, MostLegndsOrder</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Display option of Preview state.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_STATE_BORDER</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>ColorRaised, ColorLowered, WhiteRaised, WhiteLowered, WhitePlain,
-Empty</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Border style of Preview state.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_STATE_LEGEND_H</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Minimum height of the legend divison in pixel for the Preview state</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_STATE_BORDER_W</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>The empty border insets' width in pixel for the Preview state.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_STATE_BORDER_H</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>The empty border insets' height in pixel for the Preview state.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">PREVIEW_ARROW_LINE_W</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>float</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>The line thickness in pixel for the Preview arrow.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">MIN_WIDTH_TO_DRAG</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Minimum width in pixel to be considered a dragged operation.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">SEARCH_ARROW_LENGTH</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Length of the search marker's arrow in pixel</TD>
-</TR>
-<TR><TD ALIGN="CENTER">SEARCH_FRAME_THICKNES</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>integer</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Thickness in pixel of the popup frame that hightlights the searched
-drawable</TD>
-</TR>
-<TR><TD ALIGN="CENTER">SEARCHED_OBJECT_ON_TOP</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>true, false</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to display the searched object on top of the search frame.</TD>
-</TR>
-<TR><TD ALIGN="CENTER">LEFTCLICK_INSTANT_ZOOM</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=79>true, false</TD>
-<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=252>Whelther to zoom in immediately after left mouse click on canvas.</TD>
-</TR>
-</TABLE>
-</DIV>
-<P>
-<DIV ALIGN="CENTER"></DIV></TD></TR>
-</TABLE>
-</DIV><P></P>
-<BR>
 
 <P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html410"
+<A NAME="tex2html455"
   HREF="node25.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html406"
-  HREF="node7.html">
+<A NAME="tex2html451"
+  HREF="node12.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html402"
+<A NAME="tex2html445"
   HREF="node23.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html408"
+<A NAME="tex2html453"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html411"
-  HREF="node25.html">4. Special Features</A>
-<B> Up:</B> <A NAME="tex2html407"
-  HREF="node7.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html403"
-  HREF="node23.html">3.3.4 Row Adjustment Panel</A>
- &nbsp; <B>  <A NAME="tex2html409"
+<B> Next:</B> <A NAME="tex2html456"
+  HREF="node25.html">3.4.4 Row Adjustment Panel</A>
+<B> Up:</B> <A NAME="tex2html452"
+  HREF="node12.html">3.4 Timeline Zoomable Window</A>
+<B> Previous:</B> <A NAME="tex2html446"
+  HREF="node23.html">3.4.2 Toolbar</A>
+ &nbsp; <B>  <A NAME="tex2html454"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>4.2 Tuning of the Timeline Window</TITLE>
-<META NAME="description" CONTENT="4.2 Tuning of the Timeline Window">
+<TITLE>3.5.1 Summary States</TITLE>
+<META NAME="description" CONTENT="3.5.1 Summary States">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,54 +19,55 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
+<LINK REL="next" HREF="node28.html">
 <LINK REL="previous" HREF="node26.html">
-<LINK REL="up" HREF="node25.html">
+<LINK REL="up" HREF="node26.html">
 <LINK REL="next" HREF="node28.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html446"
+<A NAME="tex2html491"
   HREF="node28.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html442"
-  HREF="node25.html">
+<A NAME="tex2html487"
+  HREF="node26.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html438"
+<A NAME="tex2html481"
   HREF="node26.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html444"
+<A NAME="tex2html489"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html447"
-  HREF="node28.html">About this document ...</A>
-<B> Up:</B> <A NAME="tex2html443"
-  HREF="node25.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html439"
-  HREF="node26.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html445"
+<B> Next:</B> <A NAME="tex2html492"
+  HREF="node28.html">3.5.2 Summary Arrows</A>
+<B> Up:</B> <A NAME="tex2html488"
+  HREF="node26.html">3.5 Histogram Zoomable Window</A>
+<B> Previous:</B> <A NAME="tex2html482"
+  HREF="node26.html">3.5 Histogram Zoomable Window</A>
+ &nbsp; <B>  <A NAME="tex2html490"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00520000000000000000">
-4.2 Tuning of the Timeline Window</A>
-</H1>
+<H2><A NAME="SECTION00451000000000000000">
+3.5.1 Summary States</A>
+</H2>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="449"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:histogram_state_infobox"></A><A NAME="699"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.3:</STRONG>
-The initial Timeline window with
-finer preview resolution.</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.23:</STRONG>
+State Summary Info Boxes of
+the Histogram window.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="810" HEIGHT="629" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_popup_more.png"
- ALT="Image timeline_popup_more">
+  WIDTH="863" HEIGHT="500" ALIGN="BOTTOM" BORDER="0"
+ SRC="./histogram_state_infobox.png"
+ ALT="Image histogram_state_infobox">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -74,71 +75,105 @@ finer preview resolution.</CAPTION>
 </DIV>
 
 <P>
-One of the major improvements in the new Jumpshot and SLOG-2 is the
-scalability in terms of visualization performance. As shown in Figure
-<A HREF="node10.html#fig:timeline_popup">3.6</A>, there are 7 bands of preview states covering
-the whole canvas in the initial Timeline window. By incrementing the
-parameter, INIT_SLOG2_LEVEL_READ, by 1 in Preference window as
-in Table <A HREF="#table:preference_data1">3.10</A>, the initial Timeline window
-can be redisplayed and is shown in Figure <A HREF="#fig:timeline_popup_finer">4.3</A>.
-The new Timeline window has 14 bands of preview states instead of
-7. The increase preview resolution does offer a more detailed description
-of logfile but at the expense of graphical performance. Because every
-increment of INIT_SLOG2_LEVEL_READ will roughly double the number
-of drawables to be iterated during every zooming or scrolling<A NAME="tex2html49"
-  HREF="#foot401"><SUP>4.2</SUP></A>. The biggest demand of graphical performance occurs when the zooming
-to the level of only pure real drawables from the lower zoom level.
-The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
-does not appear to be too slow during the zooming to the pure real
-drawable level. For a fast graphics system, INIT_SLOG2_LEVEL_READ
-should be set higher than the default value 3, like 4 or 5, so that
-more information is present during each view.
+Since summary states are created through the statistics of real and
+preview states, summary states inherit properties of preview states,
+i.e. inclusion and exclusion ratios. Because of this, different representations
+of summary state are formed based on the PREVIEW_STATE_DISPLAY discussed
+earlier in section <A HREF="node7.html#sub:Preview-State-Display">2.2.1</A>. Different representation
+of summary state can be selected through SUMMARY_STATE_DISPLAY pulldown
+menu located at the top of the left panel in the histogram window
+or through a similar variable defined in Preference window and in
+Table <A HREF="#table:preference_zoomable_histogram">3.20</A>. Figure <A HREF="node26.html#fig:histogram_state_all_cumu_excl">3.22</A>
+is actually a <I>CumulativeExclusionRatio</I> view. Since the most
+time consuming timeline is the last one, we will zoom in the last
+three timelines and use them to discuss the visual representation
+of summary state. Figure <A HREF="#fig:histogram_state_infobox">3.23</A> shows
+the last three timelines of Figure <A HREF="node26.html#fig:histogram_state_all_cumu_excl">3.22</A>.
+Each summary state has a gray bordered box. Right mouse clicking at
+the bordered box pops up the Summary Info Box for the whole summary
+state. The info box lists the total number of real states it contains
+and detailed information of what state categories it contains. In
+the figure, the summary info boxes at timeline 15 and 13 show that
+the timeline 15 summary state contains about 148006 real states and
+the timeline 13 summary state has about 859613 real states, i.e. timeline
+13 has 5.8 times the number of real states than that of timeline 15
+within the same duration. Each summary state also displays the ratios
+of the total duration of each member state category to the duration
+of the canvas as colored boxes inside the gray bordered box. Right
+clicking at any of the colored boxes will display a summary info box
+that indicates the color and name of category and the corresponding
+ratio for the duration as the highlighted summary info box in the
+Figure <A HREF="#fig:histogram_state_infobox">3.23</A>.The remaining duration at
+the end of each timeline is unaccounted for. In this particular logfile,
+remaining time could be thought of being used for computation.
 
 <P>
-Another parameter also signifcantly affects the graphical performance
-is ARROW_ANTIALIASING in Preference window. Setting the paramters
-to ON will force Jumpshot to draw all arrows including preview arrows
-with anti-aliasing lines. This proves to be an expensive graphical
-operation<A NAME="tex2html50"
-  HREF="#foot402"><SUP>4.3</SUP></A>. Except when high quality picture is needed like during screen capture
-for picture or when antialiasing lines are drawn with graphics hardware
-support, it is not recommended to turn on ARROW_ANTIALIASING. 
+
+<DIV ALIGN="CENTER"><A NAME="fig:histogram_state_over_incl"></A><A NAME="700"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.24:</STRONG>
+The <I>OverlapInclusionRatio</I>
+view of Figure <A HREF="#fig:histogram_state_infobox">3.23</A>.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="864" HEIGHT="434" ALIGN="BOTTOM" BORDER="0"
+ SRC="./histogram_state_over_incl.png"
+ ALT="Image histogram_state_over_incl">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+Switching the SUMMARY_STATE_DISPLAY pulldown menu in histogram window
+in the figure to <I>OverlapInclusionRatio</I> redraws the histogram
+canvas. The histogram canvas now looks like one shown in Figure <A HREF="#fig:histogram_state_over_incl">3.24</A>.
+Since the sum of all inclusion ratios is greater than 1.0, <I>CumulativeInclusionRatio</I>
+view is not provided in the histogram window<A NAME="tex2html59"
+  HREF="#foot506"><SUP>3.9</SUP></A>. All the member categories of the summary states in <I>OverlapInclusionRatio</I>
+view are drawn from the beginning of the histogram canvas and they
+are nested one inside others in decreasing inclusion ratio order,
+so the largest inclusion ratios are easily noticeable. In order to
+see the smallest ratios, one needs to zoom in around the beginning
+of the canvas. In Figure <A HREF="#fig:histogram_state_over_incl">3.24</A>, the
+largest inclusion ratios in the 3 visible timelines are all royal
+blue and take up about the same amount of time. The 2nd largest ratios
+are all orange colored and is smallest in the timeline 15. Therefore
+<I>OverlapInclusionRatio</I> is good for comparison of member category
+contribution among different timelines.
+
+<P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
-<DT><A NAME="foot401">... scrolling</A><A
- HREF="node27.html#tex2html49"><SUP>4.2</SUP></A></DT>
-<DD>it is true for a binary tree
-
-</DD>
-<DT><A NAME="foot402">...
-operation</A><A
- HREF="node27.html#tex2html50"><SUP>4.3</SUP></A></DT>
-<DD>A typical timeline canvas with arrows will draw roughly a factor 3
-slower with anti-aliasing on. 
+<DT><A NAME="foot506">... window</A><A
+ HREF="node27.html#tex2html59"><SUP>3.9</SUP></A></DT>
+<DD>The view cannot be drawn within same duration as marked in the timeline
+window.
 
 </DD>
 </DL><HR>
 <!--Navigation Panel-->
-<A NAME="tex2html446"
+<A NAME="tex2html491"
   HREF="node28.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html442"
-  HREF="node25.html">
+<A NAME="tex2html487"
+  HREF="node26.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html438"
+<A NAME="tex2html481"
   HREF="node26.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html444"
+<A NAME="tex2html489"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html447"
-  HREF="node28.html">About this document ...</A>
-<B> Up:</B> <A NAME="tex2html443"
-  HREF="node25.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html439"
-  HREF="node26.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html445"
+<B> Next:</B> <A NAME="tex2html492"
+  HREF="node28.html">3.5.2 Summary Arrows</A>
+<B> Up:</B> <A NAME="tex2html488"
+  HREF="node26.html">3.5 Histogram Zoomable Window</A>
+<B> Previous:</B> <A NAME="tex2html482"
+  HREF="node26.html">3.5 Histogram Zoomable Window</A>
+ &nbsp; <B>  <A NAME="tex2html490"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

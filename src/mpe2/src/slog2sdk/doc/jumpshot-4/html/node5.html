@@ -27,26 +27,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html150"
+<A NAME="tex2html188"
   HREF="node6.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html146"
+<A NAME="tex2html184"
   HREF="node4.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html140"
+<A NAME="tex2html178"
   HREF="node4.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html148"
+<A NAME="tex2html186"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html151"
+<B> Next:</B> <A NAME="tex2html189"
   HREF="node6.html">2.2 Understanding the Preview</A>
-<B> Up:</B> <A NAME="tex2html147"
+<B> Up:</B> <A NAME="tex2html185"
   HREF="node4.html">2. Data Model</A>
-<B> Previous:</B> <A NAME="tex2html141"
+<B> Previous:</B> <A NAME="tex2html179"
   HREF="node4.html">2. Data Model</A>
- &nbsp; <B>  <A NAME="tex2html149"
+ &nbsp; <B>  <A NAME="tex2html187"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
@@ -66,23 +66,30 @@ a timeline ID. The canvas is where the graphical objects contained
 in SLOG-2 file are being drawn on. These objects are called <I>Drawables.</I>
 There are 2 kinds of drawable objects. They are <I>Primitive</I> and
 <I>Composite</I> drawables. The primitive drawables are the simplest
-drawables and are considered to be basic elements of slog2 file. They
-are categoried based on their topological structures. Currently, there
-are 3 topologies supported in SLOG-2. They are <I>State</I>, <I>Arrow</I>
-and <I>Event</I>. Both state and arrow are drawables identified by
-2 points in the timeline canvas, i.e. a pair of (timestamp, timelineID)
-coordinates. State's start timeline ID is the same as its final timeline
-ID, but arrow is different from state in the way that arrow's start
-and final timeline IDs may be different. Event consists of only 1
-point in the timeline canvas, i.e. it has only 1 timestamp and 1 timeline
-ID. Composite drawable is more complicated and is constructed by a
-collection of primitive drawables<A NAME="tex2html5"
+drawables and are considered to be basic elements of SLOG-2 file.
+They are categorized based on their topological structures. Currently,
+there are 3 topologies supported in SLOG-2. They are <I>State</I>,
+<I>Arrow</I> and <I>Event</I>. Both state and arrow are drawables
+identified by 2 points in the timeline canvas, i.e. a pair of (timestamp,
+timeline ID) coordinates. State's start timeline ID is the same as
+its final timeline ID, but arrow is different from state in the way
+that arrow's start and final timeline IDs may be different. Event
+consists of only 1 point in the timeline canvas, i.e. it has only
+1 timestamp and 1 timeline ID. Composite drawable is more complicated
+and is constructed by a collection of primitive drawables<A NAME="tex2html5"
   HREF="#foot44"><SUP>2.1</SUP></A>. In order to centralize the properties of drawables, all the displayable
-attributes of a drawable is stored in its corresponding <I>Category</I>
+attributes of a drawable are stored in its corresponding <I>Category</I>
 object, e.g. color, legend name, topology and other shared description
 of a drawable. Both the category and drawable definitions are stored
 in the SLOG-2 file. These definitions are interpreted and displayed
 by the display program, Jumpshot-4.
+
+<P>
+One of the distinct features of Jumpshot is that it uses nested states
+to show the relationship of functions in the call stack, i.e. nested
+states corresponds to the nested subroutine calls. Current implementation
+of the SLOG-2 format stores some of the state nesting information
+to optimize the performance of the visualization program.
 
 <P>
 <BR><HR><H4>Footnotes</H4>
@@ -95,26 +102,26 @@ composite drawables.
 </DD>
 </DL><HR>
 <!--Navigation Panel-->
-<A NAME="tex2html150"
+<A NAME="tex2html188"
   HREF="node6.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html146"
+<A NAME="tex2html184"
   HREF="node4.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html140"
+<A NAME="tex2html178"
   HREF="node4.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html148"
+<A NAME="tex2html186"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html151"
+<B> Next:</B> <A NAME="tex2html189"
   HREF="node6.html">2.2 Understanding the Preview</A>
-<B> Up:</B> <A NAME="tex2html147"
+<B> Up:</B> <A NAME="tex2html185"
   HREF="node4.html">2. Data Model</A>
-<B> Previous:</B> <A NAME="tex2html141"
+<B> Previous:</B> <A NAME="tex2html179"
   HREF="node4.html">2. Data Model</A>
- &nbsp; <B>  <A NAME="tex2html149"
+ &nbsp; <B>  <A NAME="tex2html187"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.1.4.3 Time Info Box</TITLE>
-<META NAME="description" CONTENT="3.3.1.4.3 Time Info Box">
+<TITLE>3.4.1.4.1.2 Drawable Info Box for Real Drawable</TITLE>
+<META NAME="description" CONTENT="3.4.1.4.1.2 Drawable Info Box for Real Drawable">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -20,53 +20,54 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
 <LINK REL="previous" HREF="node19.html">
-<LINK REL="up" HREF="node15.html">
+<LINK REL="up" HREF="node18.html">
 <LINK REL="next" HREF="node21.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html366"
+<A NAME="tex2html409"
   HREF="node21.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html362"
-  HREF="node15.html">
+<A NAME="tex2html405"
+  HREF="node18.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html358"
+<A NAME="tex2html401"
   HREF="node19.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html364"
+<A NAME="tex2html407"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html367"
-  HREF="node21.html">3.3.2 Toolbar</A>
-<B> Up:</B> <A NAME="tex2html363"
-  HREF="node15.html">3.3.1.4 Information Dialog Box</A>
-<B> Previous:</B> <A NAME="tex2html359"
-  HREF="node19.html">3.3.1.4.2 Duration Info Box</A>
- &nbsp; <B>  <A NAME="tex2html365"
+<B> Next:</B> <A NAME="tex2html410"
+  HREF="node21.html">3.4.1.4.2 Duration Info Box</A>
+<B> Up:</B> <A NAME="tex2html406"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+<B> Previous:</B> <A NAME="tex2html402"
+  HREF="node19.html">3.4.1.4.1.1 Drawable Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html408"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H4><A NAME="SECTION00431430000000000000">
-3.3.1.4.3 Time Info Box</A>
-</H4>
+<H5><A NAME="SECTION00441412000000000000">
+3.4.1.4.1.2 Drawable Info Box for Real Drawable</A>
+</H5>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_infobox_time"></A><A NAME="435"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_infobox_real_primitive"></A><A NAME="687"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.16:</STRONG>
-Time Info Box displays the time
-of where it pops up.</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.17:</STRONG>
+Drawable Info Box for
+real state and arrow. The Drawable Info Box for the arrow shows the
+message size, 1600 byte, and tag ID, 454.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="545" HEIGHT="459" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_infobox_time.png"
- ALT="Image timeline_infobox_time">
+  WIDTH="678" HEIGHT="515" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_infobox_real_primitive.png"
+ ALT="Image timeline_infobox_real_primitive">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -74,12 +75,50 @@ of where it pops up.</CAPTION>
 </DIV>
 
 <P>
-Time Info Box is created by right clicking in the empty space in either
-timeline or tthe time ruler canvas as in Figure <A HREF="#fig:timeline_infobox_time">3.16</A>.
-This Info Box is usually used as a marker for a single event in time.
+Similarly for real drawables, Drawable Info Box can be brought up
+by right mouse clicking on the real drawables. In Figure <A HREF="#fig:timeline_infobox_real_primitive">3.17</A>,
+Drawable Info Boxes for a real arrow and a real state are shown. The
+Drawable Info Box for the arrow is invoked by clicking anywhere within
+the vicinity of the arrow body<A NAME="tex2html47"
+  HREF="#foot688"><SUP>3.5</SUP></A>, and the info box shows the starttime, start timeline ID, endtime,
+and ending timeline ID and some extra information implemented by the
+native format. In this example, the message size carried by the specific
+arrow is 1600 byte.
 
 <P>
-<BR><HR>
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot688">... body</A><A
+ HREF="node20.html#tex2html47"><SUP>3.5</SUP></A></DT>
+<DD>The vicinity width can be adjusted by modifying the parameter CLICK_RADIUS_TO_LINE
+in Preference window as listed in Table <A HREF="#table:preference_zoomable_all">3.16</A>.
+The default is 3 pixels.
+
+</DD>
+</DL><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html409"
+  HREF="node21.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html405"
+  HREF="node18.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html401"
+  HREF="node19.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html407"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html410"
+  HREF="node21.html">3.4.1.4.2 Duration Info Box</A>
+<B> Up:</B> <A NAME="tex2html406"
+  HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
+<B> Previous:</B> <A NAME="tex2html402"
+  HREF="node19.html">3.4.1.4.1.1 Drawable Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html408"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
 
 </BODY>
 </HTML>

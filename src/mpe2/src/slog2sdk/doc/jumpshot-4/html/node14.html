@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.1.3 Grasp and Scroll</TITLE>
-<META NAME="description" CONTENT="3.3.1.3 Grasp and Scroll">
+<TITLE>3.4.1.1 Dragged Zoom</TITLE>
+<META NAME="description" CONTENT="3.4.1.1 Dragged Zoom">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -21,71 +21,53 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="next" HREF="node15.html">
 <LINK REL="previous" HREF="node13.html">
-<LINK REL="up" HREF="node11.html">
+<LINK REL="up" HREF="node13.html">
 <LINK REL="next" HREF="node15.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html293"
+<A NAME="tex2html334"
   HREF="node15.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html289"
-  HREF="node11.html">
+<A NAME="tex2html330"
+  HREF="node13.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html283"
+<A NAME="tex2html324"
   HREF="node13.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html291"
+<A NAME="tex2html332"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html294"
-  HREF="node15.html">3.3.1.4 Information Dialog Box</A>
-<B> Up:</B> <A NAME="tex2html290"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
-<B> Previous:</B> <A NAME="tex2html284"
-  HREF="node13.html">3.3.1.2 Instant Zoom</A>
- &nbsp; <B>  <A NAME="tex2html292"
+<B> Next:</B> <A NAME="tex2html335"
+  HREF="node15.html">3.4.1.2 Instant Zoom</A>
+<B> Up:</B> <A NAME="tex2html331"
+  HREF="node13.html">3.4.1 Zoomable and Scrollable</A>
+<B> Previous:</B> <A NAME="tex2html325"
+  HREF="node13.html">3.4.1 Zoomable and Scrollable</A>
+ &nbsp; <B>  <A NAME="tex2html333"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H3><A NAME="SECTION00431300000000000000">
-3.3.1.3 Grasp and Scroll</A>
+<H3><A NAME="SECTION00441100000000000000">
+3.4.1.1 Dragged Zoom</A>
 </H3>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:hand_open_cursor"></A><A NAME="428"></A>
-<TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.11:</STRONG>
-Open hand cursor indicates that left
-mouse clicking is ready to grasp and scroll.</CAPTION>
-<TR><TD>
-<DIV ALIGN="CENTER"><IMG
-  WIDTH="25" HEIGHT="25" ALIGN="BOTTOM" BORDER="0"
- SRC="./HandOpenUpLeft25.png"
- ALT="Image HandOpenUpLeft25">
-</DIV>
-<P>
-<DIV ALIGN="CENTER"></DIV></TD></TR>
-</TABLE>
-</DIV>
-
-<P>
-
-<DIV ALIGN="CENTER"><A NAME="fig:hand_close_cursor"></A><A NAME="429"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:zoom_plus_cursor"></A><A NAME="681"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.12:</STRONG>
-Close hand cursor indicates that left
-mouse clicking is scrolling.</CAPTION>
+Zoom-plus cursor that indicates the
+left mouse clicking is ready for zooming in.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="25" HEIGHT="25" ALIGN="BOTTOM" BORDER="0"
- SRC="./HandCloseUpLeft25.png"
- ALT="Image HandCloseUpLeft25">
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./ZoomPlusUpLeft25.png"
+ ALT="Image ZoomPlusUpLeft25">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -93,40 +75,48 @@ mouse clicking is scrolling.</CAPTION>
 </DIV>
 
 <P>
-<I>Grasp and Scroll</I> is active only when the left mouse click is
-in hand mode, i.e. when the open hand button is pressed as in Figure
-<A HREF="node11.html#fig:mouse_hand_mode">3.8</A>. The cursor in hand mode is an open hand
-as in Figure <A HREF="#fig:hand_open_cursor">3.11</A>. As soon as left mouse button
-is pressed down, the cursor turns to a close hand as in Figure <A HREF="#fig:hand_close_cursor">3.12</A>.
-It indicates the canvas will move in the same direction that the cursor
-moves as long as the left mouse button remain pressed. The grasp and
-scroll mode in time ruler canvas can only move horizontally, but the
-grasp and scroll mode in timeline canvas allows movement in both vertical
-and horizontal axes. 
+<I>Dragged zoom</I> is active only when the left mouse click is in
+zoom mode, i.e. when the the magnifying glass button is pressed in
+the toggled buttons as in Figure <A HREF="node13.html#fig:mouse_zoom_mode">3.10</A>. In zoom
+mode, the cursor within the canvas will appear like a magnifying glass
+with plus sign in the center as in Figure <A HREF="#fig:zoom_plus_cursor">3.12</A>.
+It is called zoom-plus cursor. The dragged zoom operation is initialized
+by pressing the left mouse button at the beginning of the zoom-in
+region, a white line will then appear. As soon as dragging is detected,
+another white line will appear to mark the current ending of the zoom-in
+region. The region that is marked by pair of white lines is lightly
+shaded as shown in Figure <A HREF="node6.html#fig:timeline_preview_detail_3">2.4</A>. The
+process can be canceled anytime by hitting the ESC key during dragging.
+Once the left mouse button is released, zooming will be carried out
+and the Timeline window will then be updated as in Figure <A HREF="node6.html#fig:timeline_preview_detail_4">2.5</A>.
+The time display panel is updated with the latest time related information
+of the zoom-in region. Notice that the zooming as well as scrolling
+can be achieved by explicitly editing the text fields in the time
+display panel.
 
 <P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html293"
+<A NAME="tex2html334"
   HREF="node15.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html289"
-  HREF="node11.html">
+<A NAME="tex2html330"
+  HREF="node13.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html283"
+<A NAME="tex2html324"
   HREF="node13.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html291"
+<A NAME="tex2html332"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html294"
-  HREF="node15.html">3.3.1.4 Information Dialog Box</A>
-<B> Up:</B> <A NAME="tex2html290"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
-<B> Previous:</B> <A NAME="tex2html284"
-  HREF="node13.html">3.3.1.2 Instant Zoom</A>
- &nbsp; <B>  <A NAME="tex2html292"
+<B> Next:</B> <A NAME="tex2html335"
+  HREF="node15.html">3.4.1.2 Instant Zoom</A>
+<B> Up:</B> <A NAME="tex2html331"
+  HREF="node13.html">3.4.1 Zoomable and Scrollable</A>
+<B> Previous:</B> <A NAME="tex2html325"
+  HREF="node13.html">3.4.1 Zoomable and Scrollable</A>
+ &nbsp; <B>  <A NAME="tex2html333"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

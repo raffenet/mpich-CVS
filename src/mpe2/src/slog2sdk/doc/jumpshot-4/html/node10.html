@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3 Timeline Window</TITLE>
-<META NAME="description" CONTENT="3.3 Timeline Window">
+<TITLE>3.2 Logfile Convertor Window</TITLE>
+<META NAME="description" CONTENT="3.2 Logfile Convertor Window">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,55 +19,55 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
-<LINK REL="next" HREF="node24.html">
+<LINK REL="next" HREF="node11.html">
 <LINK REL="previous" HREF="node9.html">
-<LINK REL="up" HREF="node7.html">
+<LINK REL="up" HREF="node8.html">
 <LINK REL="next" HREF="node11.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html223"
+<A NAME="tex2html264"
   HREF="node11.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html219"
-  HREF="node7.html">
+<A NAME="tex2html260"
+  HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html213"
+<A NAME="tex2html254"
   HREF="node9.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html221"
+<A NAME="tex2html262"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html224"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
-<B> Up:</B> <A NAME="tex2html220"
-  HREF="node7.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html214"
-  HREF="node9.html">3.2 Legend Window</A>
- &nbsp; <B>  <A NAME="tex2html222"
+<B> Next:</B> <A NAME="tex2html265"
+  HREF="node11.html">3.3 Legend Window</A>
+<B> Up:</B> <A NAME="tex2html261"
+  HREF="node8.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html255"
+  HREF="node9.html">3.1 Main Window</A>
+ &nbsp; <B>  <A NAME="tex2html263"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00430000000000000000">
-3.3 Timeline Window</A>
+<H1><A NAME="SECTION00420000000000000000">
+3.2 Logfile Convertor Window</A>
 </H1>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup"></A><A NAME="422"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:convertor_init"></A><A NAME="663"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.6:</STRONG>
-The initial display of the Timeline window
-of a 506 MB 16 processes slog2 file with default preview resolution.</CAPTION>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.2:</STRONG>
+The Logfile Convertor window that allows
+conversion of supported trace file format to SLOG-2 format.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
-  WIDTH="803" HEIGHT="640" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_popup.png"
- ALT="Image timeline_popup">
+  WIDTH="567" HEIGHT="523" ALIGN="BOTTOM" BORDER="0"
+ SRC="./convertor_init.png"
+ ALT="Image convertor_init">
 </DIV>
 <P>
 <DIV ALIGN="CENTER"></DIV></TD></TR>
@@ -75,85 +75,155 @@ of a 506 MB 16 processes slog2 file with default preview resolution.</CAPTION>
 </DIV>
 
 <P>
-Figure <A HREF="#fig:timeline_popup">3.6</A> is the initial display of the Timeline
-window of a big 16 timelines slog2 file. Several concealable and removable
-components are used to create the Timeline window. In the center of
-the window, there is the <I>timeline canvas</I>. Directly on top of
-the timeline canvas is the <I>time display panel</I>. On top of the
-display panel, there is the removable <I>toolbar</I>. To the left
-of the canvas is the concealable <I>Y-axis label panel</I>. To the
-right of the canvas is the concealable <I>row adjustment panel</I>.
-At the bottom of the canvas is the <I>time ruler canvas</I>. Both
-Y-axis label and the row adjustment panels can be put out of sight
-by clicking the tabs in the dividers or dragging the dividers. The
-top toolbar can be dragged out of the window or be repositioned in
-the other 3 sides of the window. After removal of the toolbar and
-hidding of the left and right panels, the bare minimal Timeline window
-looks like the one shown in Figure <A HREF="node6.html#fig:timeline_preview_detail_0">2.1</A>. 
+If a non-slog2 file is selected in the Main window, the Logfile Convertor
+as shown in Figure <A HREF="#fig:convertor_init">3.2</A> will be invoked to prompt
+user to convert the file to SLOG-2 format readable by this viewer.
+There are currently 3 supported convertors: <I>CLOG</I> -&gt;
+<I>SLOG-2</I>, <I>RLOG</I> -&gt; <I>SLOG-2</I> and <I>UTE</I>
+-&gt; <I>SLOG-2.</I> Convertor is generally selected based
+on the input file's file extension. In the case that wrong file convertor
+is selected, user can correct it through the pale blue pulldown menu
+located at the top of the window. The Logfile Convertor window can
+also be invoked by directly clicking on the Logfile Conversion button
+shown in the Table <A HREF="#table:main_toolbar">3.2</A>. The text field of the
+Output File Name usually displays the default slog2 filename recommended
+by the convertor based on the text field in the Input File Specification.
+If the text field does not display the default name as expected, hitting
+return key in the Input File Specification field will force the update
+of the Output File Name field with the default name. There are 4 major
+functions of the Logfile convertor and each of them is associated
+with a button in the lower panel of the window. They are listed in
+the Table <A HREF="#table:convertor_buttons">3.4</A>.
 
 <P>
-<BR><HR>
-<!--Table of Child-Links-->
-<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+<BR><P></P>
+<DIV ALIGN="CENTER"><A NAME="664"></A>
+<TABLE>
+<CAPTION><STRONG>Table 3.4:</STRONG>
+Functions of the major functions
+in the Logfile Convertor window.</CAPTION>
+<TR><TD><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="CENTER">Icon</TD>
+<TD ALIGN="CENTER">Description</TD>
+<TD ALIGN="CENTER">Function</TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Convert24.png"
+ ALT="Image Convert24"></TD>
+<TD ALIGN="CENTER">Start Conversion</TD>
+<TD ALIGN="CENTER">Start the logfile conversion of the selected convertor</TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Stop24.png"
+ ALT="Image Stop24"></TD>
+<TD ALIGN="CENTER">Stop Conversion</TD>
+<TD ALIGN="CENTER">Stop the ongoing logfile conversion of the selected convertor</TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Help24.png"
+ ALT="Image Help24"></TD>
+<TD ALIGN="CENTER">Usage of Convertor</TD>
+<TD ALIGN="CENTER">Print the usage information of the selected convertor</TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Home24.png"
+ ALT="Image Home24"></TD>
+<TD ALIGN="CENTER">Return Home</TD>
+<TD ALIGN="CENTER">Return to the previous component that spawns the Logfile Convertor</TD>
+</TR>
+</TABLE>
 
-<UL>
-<LI><A NAME="tex2html225"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable Canvas</A>
-<UL>
-<LI><A NAME="tex2html226"
-  HREF="node12.html">3.3.1.1 Dragged Zoom</A>
-<LI><A NAME="tex2html227"
-  HREF="node13.html">3.3.1.2 Instant Zoom</A>
-<LI><A NAME="tex2html228"
-  HREF="node14.html">3.3.1.3 Grasp and Scroll</A>
-<LI><A NAME="tex2html229"
-  HREF="node15.html">3.3.1.4 Information Dialog Box</A>
-<UL>
-<LI><A NAME="tex2html230"
-  HREF="node16.html">3.3.1.4.1 Drawable Info Box</A>
-<UL>
-<LI><A NAME="tex2html231"
-  HREF="node17.html">3.3.1.4.1.1 Drawable Info Box for Preview Drawable</A>
-<LI><A NAME="tex2html232"
-  HREF="node18.html">3.3.1.4.1.2 Drawable Info Box for Real Drawable</A>
-</UL>
-<LI><A NAME="tex2html233"
-  HREF="node19.html">3.3.1.4.2 Duration Info Box</A>
-<LI><A NAME="tex2html234"
-  HREF="node20.html">3.3.1.4.3 Time Info Box</A>
-</UL>
-</UL>
+<P>
+</TD></TR>
+</TABLE>
+</DIV><P></P>
 <BR>
-<LI><A NAME="tex2html235"
-  HREF="node21.html">3.3.2 Toolbar</A>
-<LI><A NAME="tex2html236"
-  HREF="node22.html">3.3.3 Y-axis Label Panel</A>
-<LI><A NAME="tex2html237"
-  HREF="node23.html">3.3.4 Row Adjustment Panel</A>
-</UL>
-<!--End of Table of Child-Links-->
+
+<P>
+Since the Logfile Convertor launches a separate java process to do
+the logfile conversion, it requires certain parameters to launch the
+process correctly. All the parameters that are needed by any logfile
+convertor are supplied through a panel hidden by a splitter in the
+convertor window. The splitter has a divider which can be lifted up
+to display all the parameters used to launch the java process as in
+the Figure <A HREF="#table:convertor_buttons">3.4</A>. In the rare occasion that
+the default parameters are not correct, the text fields can be modified
+to reflect the situation. 
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:convertor_parameters"></A><A NAME="665"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.3:</STRONG>
+The hidden parameters panel of the
+Logfile Convertor.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="567" HEIGHT="523" ALIGN="BOTTOM" BORDER="0"
+ SRC="./convertor_parameters.png"
+ ALT="Image convertor_parameters">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+The standard output and error streams of the process are being piped
+to the text area located in the middle of the window as the process
+is running. The Output File Size field displays the current size of
+the slog2 file as it is being generated, also the progress bar will
+be incremented to show the current ratio of the output to input file
+size as in the Figure <A HREF="#fig:convertor_progress">3.4</A>. If the logfile
+conversion fails, the error message will be printed in the text area
+for diagnosis or bug report.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:convertor_progress"></A><A NAME="666"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.4:</STRONG>
+Logfile conversion in progress.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="567" HEIGHT="480" ALIGN="BOTTOM" BORDER="0"
+ SRC="./convertor_progress.png"
+ ALT="Image convertor_progress">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+
+<P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html223"
+<A NAME="tex2html264"
   HREF="node11.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html219"
-  HREF="node7.html">
+<A NAME="tex2html260"
+  HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html213"
+<A NAME="tex2html254"
   HREF="node9.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html221"
+<A NAME="tex2html262"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html224"
-  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
-<B> Up:</B> <A NAME="tex2html220"
-  HREF="node7.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html214"
-  HREF="node9.html">3.2 Legend Window</A>
- &nbsp; <B>  <A NAME="tex2html222"
+<B> Next:</B> <A NAME="tex2html265"
+  HREF="node11.html">3.3 Legend Window</A>
+<B> Up:</B> <A NAME="tex2html261"
+  HREF="node8.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html255"
+  HREF="node9.html">3.1 Main Window</A>
+ &nbsp; <B>  <A NAME="tex2html263"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 
