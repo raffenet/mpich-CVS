@@ -298,10 +298,10 @@ void RedirectIOThread(HANDLE hReadyEvent)
     {
 	int error = WSAGetLastError();
 	printf("RedirectIOThread: easy_create listen socket failed: error %d\n", error);fflush(stdout);
-	bsocket_finalize();
+	easy_socket_finalize();
 	ExitProcess(error);
     }
-    blisten(g_sockListen, 5);
+    listen(g_sockListen, 5);
     easy_get_sock_info(g_sockListen, g_pszIOHost, &g_nIOPort);
 
     // Connect a stop socket to myself
