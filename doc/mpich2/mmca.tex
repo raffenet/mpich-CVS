@@ -3,7 +3,9 @@
 \def\mpiobj#1{\code{#1}\index{#1}}
 \def\term#1{\emph{\textbf{#1}}}
 \def\todo#1{\emph{\textbf{TODO:} #1}}
-
+\def\Q#1{\emph{\textbf{QUESTION:} #1}}
+\newenvironment{discussion}{\em\textbf{Discussion:} }{}
+\newenvironment{implnote}{\textbf{Note to implementor:} }{}
 
 \newenvironment{cmt}[1][]%
   {\begin{comment}\em\textbf{Comment\ifthenelse{\equal{#1}{}}{}{ [#1]}:}}%
@@ -46,11 +48,11 @@ architecture.  Many of the ideas presented within the section are as
 of yet unproven, and would be benefit greatly from rapid prototyping
 and performance analysis.
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 % \subsection{Architecture Overview}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Simple Messaging}
 
@@ -189,13 +191,6 @@ the incoming message must be matched to the envelope from the posted receive.
   any details???)
 \end{cmt}
 
-This matching process might seem trivial, but in fact the MPI semantics for
-wildcard operations and message ordering combined with the possibility of
-multiple methods make matching somewhat complicated.
-For this reason we will implement a separate \term{request arbiter}
-component for performing request matching for the
-system as a whole (both intra- and inter-method).
-
 % completion
 % - notification of completion (via decrement of counter - in MPI request)
 % - note that a counter becomes important when we get to collectives, kinda
@@ -231,6 +226,8 @@ necessary for our implementation of collective operations.
 The components that we introduced here are described in greater detail in the
 following section.
 
+%------------------------------------------------------------------------------
+
 \subsubsection{Interfaces, Objects and Components}
 
 In this section we introduce a series of interfaces, objects and components
@@ -255,6 +252,8 @@ about the components that bind methods into the MPICH implementation.
 %
 % talk about specific functions as they come up
 
+
+%----------
 
 \paragraph{MPI Communicators}
 
@@ -289,6 +288,7 @@ int MPID_Comm_get_VC([IN] MPID_Comm * comm, [IN] int rank, [OUT] MPID_VC * vc)
   process creation and connect/accept?
 \end{cmt}
 
+%----------
 
 \paragraph{MPI Requests}
 
@@ -313,6 +313,8 @@ by the device.  The only meaning the MPICH assigns to this counter is that a
 non-zero value indicates the request is still pending while a value of zero
 shows the request is complete.
 
+%----------
+
 \paragraph{MPI Datatypes}
 
 In MPI, a \term{datatype} expresses the layout of a data structure.  A datatype
@@ -326,6 +328,8 @@ direct representation in MPICH; however MPICH does introduce the notion of a
 segment, which describes a portion of a buffer.  Segments are used in MPICH to
 process a buffer in reasonably sized pieces.  A segment is respresent by an
 object tha has a type of \code{MPID_Segment}.
+
+%----------
 
 \paragraph{Method}
 
@@ -365,19 +369,27 @@ software that implements this multi-method interface for a particular
 networking model, device or interface such as TCP, VIA or shared memory.
 
 \begin{verbatim}
-int method::get_description([OUT] char description[])
 
-int method::match_description([IN] char description[])
+int method::init()
 
-int method::post_send(
+int method::finalize()
+
+void method::get_description([OUT] char description[])
+
+void method::match_description([IN] char description[], [INOUT] MPID_VC * vc,
+        [OUT] bool matched)
+
+void method::post_send(
         [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
-        [IN] int dest, [IN] int tag, [INOUT] int * completion_cntr)
+        [IN] int dest, [IN] int tag, [INOUT] int * completion_cntr,
+        [INOUT] MPID_Status * status)
 
-int method::post_recv(
+void method::post_recv(
         [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
-        [IN] int source, [IN] int tag, [INOUT] int * completion_cntr)
+        [IN] int source, [IN] int tag, [INOUT] int * completion_cntr,
+        [INOUT] MPID_Status * status)
 
-int method::poll([IN] int quanta)
+bool method::poll([IN] int quanta)
 \end{verbatim}
 
 \begin{cmt}[BRT]
@@ -470,44 +482,47 @@ can be performed when \code{poll} is called to determine the number of loops
 that may be performed before the \code{poll} function must return control to
 the progress engine.
 
-\begin{cmt}
+\begin{discussion}
   The rationale for using a quanta is to allow \code{select()} in the TCP
   method to block for periods of time to avoid chewing up the CPU
   unnecessarily.  It may also be useful to obtain tighter busy waiting loops in
   methods like shared memory when the polling engine knows that no other method
   needs to be serviced for a while.  Some experimentation is necessary to
   verify that the \code{quanta} argument is really useful.
-\end{cmt}
+\end{discussion}
 
-\begin{cmt}
-  The \code{method::poll} function needs provide to some indication of whether
-  or not completions occurred, so that a blocking PE operation knows when to
-  return.  It is unclear if such information should be return through a
-  parameter, a return value, or using one or more elements stored in the method
-  object.
-\end{cmt}
+The \code{method::poll} function returns a boolean value indicating if any
+completions since the previous call to the \code{method::poll}.  By providing
+this boolean value, we allow the calling routine to avoid expensive progress
+checking operations when no progress has been made.  For performance reasons,
+this boolean is provide as a return value rather than as a outgoing argument.
+A return value can often be transported between the callee and the caller using
+a register, whereas an outgoing argument requires the use of memory operations.
 
-\begin{cmt}
-  I had been assuming that the \code{method::poll} function would return an
-  error code.  Does this make sense?  If an error occurs, what can we do about
-  it in the PE?  Perhaps errors occurring during polling should be saved and
-  returned through other mechanisms.  What might these be?
-\end{cmt}
+It should be noted that, unlike most of the functions in MPICH, the
+\code{method::poll} function does not return an error code.  After careful
+thought, we realized that the calling routines, those providing an opportunity
+to make progress, would most likely be unable to react to any errors that might
+be reported to them.  It seemed far more appropriate for any errors that occur
+during polling to be attributed to the operations in progress.  Such
+attribution should be handled by having \code{method::poll} update the status
+structures associated with those operations.  In some circumstances,
+\code{method::poll} may also need to store error state within the method if the
+error affects the proper completion of operations which might be posted in the
+future.
 
+\begin{discussion}
+Initially, \code{poll} included a \code{completions} argument that returned the
+number of MPI requests that were completed during the call.  The purpose of
+returning this count was to allow the progress engine to provide feedback to
+calling routines such as \code{MPI_TEST} and \code{MPI_WAIT} so that they could
+limit the amount of work involved in determining which requests have been
+satisfied and need to be deallocated.  We eliminated this argument when we
+realized that the count was inexact in the face of multiple application threads
+and asynchronous completion of requests.
+\end{discussion}
 
-% [BRT] I removed the argument conveying the number of completion from poll()
-% because the count becomes useless in the face of multiple application threads
-% and asynchronous completion of requests.  
-%
-% The second argument to the \code{poll} function, \code{completions}, returns
-% the number of MPI requests that were completed during the call to
-% \code{poll}.  More specifically, it is the number of request completion
-% counters that when decremented reached zero.  The purpose of returning this
-% count is to allow the progress engine to provide feedback to calling routines
-% such as \code{MPI_TEST} and \code{MPI_WAIT}.  This feedback about the number
-% of requests serviced should allow the MPI functions to limit the amount of
-% work involved in determining which requests have been satisfied and need to
-% be deallocated.
+%----------
 
 \paragraph{Virtual Connections}
 
@@ -548,29 +563,26 @@ appropriate method for the VC when it detects that the VC is in the unbound
 state.  Once a VC is bound to a method, that binding persists for the remainder
 of the programs exectution.
 
+\begin{implnote}
+  For performance reasons, it may make sense to cache the method function table
+  in the VC object.  This would avoid an extra lookup each time a communication
+  operation needed to be performed.  The downside is that an ``unbound'' method
+  would need to be introduced which would contain a set of binding functions in
+  its function table.  These functions would be responsible for binding the VC
+  to a chosen method and then calling the equivalent function in that method's
+  function table.
+\end{implnote}
+
 The virtual connection object is also used to house any per connection data
 structures needed by the method, or what we refer to as \term{method specific
-  data}.  These data structures will likely include those necessary to track
-posted send and receive operations, and the state of the underlying connection.
-
-\begin{cmt}[BRT]
-  The above paragraph should fleshed out as the details become clear. I was
-  originally thinking that the send and receive operations lists could be
-  stored in method specific (private) data, but at least the receive list needs
-  to be publicly visible so that the request arbiter can operate on it.
-\end{cmt}
-
-\begin{cmt}[ROB]
-  So what, other than the receive list, needs to be method-independent?
-\end{cmt}
-
-\textbf{Note to implementor:} For performance reasons, it may make sense to
-cache the method function table in the VC object.  This would avoid an extra
-lookup each time a communication operation needed to be performed.  The
-downside is that an ``unbound'' method would need to be introduced which would
-contain a set of binding functions in its function table.  These functions
-would be responsible for binding the VC to a chosen method and then calling the
-equivalent function in that method's function table.
+  data}.  These data structures include those necessary to track posted send
+and receive operations, and the state of the underlying connection.  While the
+size of the method specific data may vary with the method, the size of the VC
+object is established at initialization time by calling
+\code{method::get_vc_data_size} for each of the methods and using the maximum
+value.  This may result in some wasted space, but it simplies allocation and
+binding.  It also results in the method specific data being colocated with the
+VC information, improving cached performance.
 
 \begin{cmt}[BRT]
   I did not include the original state machine diagram as it became clear that
@@ -579,6 +591,11 @@ equivalent function in that method's function table.
   reduced to unbound and bound.  Connection establishment state should be part
   of the method specific data.
 \end{cmt}
+
+\Q Should we include a statement about the VC not being responsible for forming
+any underlying connections?  Then we could get rid of the above comment.
+
+%----------
 
 \paragraph{Progress Engine}
 
@@ -596,24 +613,36 @@ opportunity to make progress.  This is accomplished by calling the method's
 all of the methods, calling each of their \code{poll} functions anytime an
 opportunity existed to make progress.  In practice, however, this would prove
 to be inefficient and result in poor communication performance.  Rather, we
-introduce a \term{progress engine} component which is responsible for
-presenting the methods with an opportunity to make progress on a schedule
-that accounts for communication performance and method workload.  By having a
-separate component and a well defined interface, optimizations can more
-easily evolve over time.
+introduce a \term{progress engine} component which implements a polling policy.
+The progress engine is responsible for presenting the methods with an
+opportunity to make progress on a schedule that accounts for issues such as
+communication performance and method workload.  By having a separate component
+and a well defined interface, optimizations can more easily evolve over time.
 
 \begin{verbatim}
-int MPID_PE_register_method(...)
+int MPID_PE_register_method(MPID_Method * method)
 
-int MPID_PE_poll_blocking_init()
+void MPID_PE_poll_blocking_init()
 
-int MPID_PE_poll_blocking_start()
+void MPID_PE_poll_blocking_start()
 
-int MPID_PE_poll_nonblocking()
+void MPID_PE_poll_nonblocking()
 \end{verbatim}
 
+The registration function, \code{MPIE_PE_register_method}, is called by each
+method at library initialization time.  The purpose of this call is to register
+the method with the progress engine, thus insuring that the progress engine
+gives the method sufficient opportunities to make progress throughout the
+execution.  In the simplified environment we have presented thus far, all
+oppportunities for making progress are driven by the progress engine.  Later,
+as we introduce more complex environments and performance enhancements, we will
+find it necessary to augment the information supplied to
+\code{MPID_PE_register_method}.
 
-While some methods may choose to only make ....
+\todo Talk about information needed from method.  Most of the information needed from the the method is for optimizations such as ``skip polling'' and ``adaptive skip polling''.
+
+\Q What information is needed in this section outside of the poll function
+pointer?  Does the rest belong in a later section?
 
 Progress is be made by calling one of two sets of functions: blocking and
 nonblocking.  The nonblocking set consists of a single function
@@ -624,12 +653,24 @@ and the point at which we call the
 blocking polling function.  
 
 \todo [BRT] rewrite the above paragraph and elaborate on the need for a pair
-of blocking functions
+of blocking functions.  how much do we want to talk about asynchronous 
 
-\todo talk about information needed from method.  should this be in the
-method section?
+\todo talk about policy for deciding when to quit polling and return from
+blocking and non-blocking routines.
 
-\todo talk about method registration
+\Q [BRT] Should we be defining policy here, or just pointing out options?  I
+feel like we have some ideas but not a well defined policy we know will work in
+all situations.  
+
+\todo talk about fairness issues - making sure that the first method doesn't
+receive an unfair amount of polling cycles just because it is the first method
+in a list
+
+\todo talk about the fact that the calling routines do not pass any information
+to the progress engine about what they are waiting for; that we believe that
+prioritizing progress oppportunities based on knowledge about the requests that
+we are blocking on would incur more overhead that it would provide benefit
+
 
 % For the time being, the progress engine has a single function,
 % \code{MPID_Make_progress}, which is called by the MPICH anytime an
@@ -651,6 +692,7 @@ method section?
 %   respect to any completion counter updates.
 % \end{cmt}
 
+%------------------------------------------------------------------------------
 
 \subsubsection{Walkthrough}
 \label{sssec:walkthrough}
@@ -773,6 +815,8 @@ the (publically accessible) receive list located in the VC.
 
 \todo{talk about completion}
 
+%------------------------------------------------------------------------------
+
 \subsubsection{Summary}
 
 % - what did we just talk about? -- state of the design
@@ -781,7 +825,27 @@ the (publically accessible) receive list located in the VC.
 % - tables describing interfaces (?)
 % - lead into next subsection (add some new capabilities)
 
-%------------------------------------------------------------------------------
+%==============================================================================
+
+\subsection{Method initialization and management}
+
+This section will talk about how methods are initialized and managed.
+
+This discussion will begin with an environment where all methods are
+statically bound to the executable.
+
+\begin{verbatim}
+MPID_Method * MPID_Method_%M_init()
+\end{verbatim}
+
+Then, we will discuss how method management changes if dynamic
+loading of methods is allowed.
+
+\begin{verbatim}
+MPID_Method * MPID_Method_init()
+\end{verbatim}
+
+%==============================================================================
 
 \subsection{Filling out point-to-point}
 
@@ -813,6 +877,13 @@ the (publically accessible) receive list located in the VC.
 % - requirement that certain structures be publically visible (e.g. receive 
 %   lists)
 
+This matching process might seem trivial, but in fact the MPI semantics for
+wildcard operations and message ordering combined with the possibility of
+multiple methods make matching somewhat complicated.
+For this reason we will implement a separate \term{request arbiter}
+component for performing request matching for the
+system as a whole (both intra- and inter-method).
+
 \begin{verbatim}
 int MPID_RA_post_foa(
         [IN] int dest, [IN] int tag, [IN] MPID_Comm * comm, [IN] MPID_VC * vc,
@@ -843,11 +914,11 @@ code must unlock the CAR
   to wait until active messages are introduced.
 \end{cmt}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Threads: implementation and usage}
 
-\paragraph [Method binding] threads, VCs, and changing methods (from unbound
+\paragraph{Method binding} threads, VCs, and changing methods (from unbound
 to bound) during runtime
 \begin{itemize}
 \item having the unbound method hold a lock on the vc can prevent additional
@@ -857,7 +928,7 @@ to bound) during runtime
   in the proper order once this connection is established
 \end{itemize}
 
-\paragraph [Request arbiter] The request matching process becomes much more
+\paragraph{Request arbiter} The request matching process becomes much more
 complex when multiple threads are introduced.  The arbiter and method must work
 together to insure that incoming unexpected message CARs and posted receive
 CARs do not bypass each other causing a match to be missed and MPI message
@@ -867,15 +938,23 @@ RA and the method.
 
 This two phase posting interface would consist of the functions
 \code{method::post_recv_init} and \code{method::post_recv_start}.  The first
-function would insur that the method did not attempt to post unexpected
+function would insure that the method did not attempt to post unexpected
 messages with the RA until after the second the function was called.  During
 the period of time between the calls to the first and second functions, the RA
 could safely scan the unexpected message list for matching messages without
 concern that a matching unexpected message might be posted after its scan of
 the unexpected list but before the CAR could be posted with the method.
 
+\paragraph{Polling} The semantics of \code{method::poll} must be modified
+slightly.  The boolean return value should express whether or not any
+completions have occurred since poll was last called the current thread.
 
-%------------------------------------------------------------------------------
+\paragraph{Progress Engine} The registration function needs to be augmented so
+that it know if completions may occur asynchronously.  This is not strictly an
+issues that arises with threads.  It is also an issue of the completion
+counters are capable of being updated remotely (ex: shared memory or LAPI).
+
+%==============================================================================
 
 \subsection{Vendor MPI}
 
@@ -900,7 +979,7 @@ point-to-point communication.
   \end{itemize}
 \end{itemize}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Optimizing Simple Messaging}
 
@@ -951,10 +1030,19 @@ shared memory method.
 special blocking send/recv optimizations?
 
 adaptive polling and such
-- perhaps methods have elements that hold progress information; progress 
-  engine looks at these elements when making decisions
+\begin{itemize}
+\item methods have elements that hold progress information
+\item progress engine looks at these elements when making decisions
+\end{itemize}
+  
+\todo Add discussion about need for \code{method:poll_sync()}.  This routine
+can be used to reset internal method state so that \code{method::poll} only
+returns true if any completions have occurred since the last call to
+\code{method::poll} or \code{method::poll_sync}.  This optimization should
+significantly reduce false positives, which do not affect correctness but will
+likely increase polling overhead and thus latency.
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Support for Collective Operations}
 
@@ -969,7 +1057,7 @@ adaptive polling and such
 \item new method functions
 \end{itemize}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Advanced Collective Operations}
 
@@ -979,23 +1067,23 @@ adaptive polling and such
 \item buffer management revisited (for what purpose???)
 \end{itemize}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Abnormal Termination}
 
 MPI_Abort() introduces the need for active messages in order to support clean
 and timely termination
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{RMA}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Advanced RMA}
 
-%------------------------------------------------------------------------------
+%==============================================================================
 
 \subsection{Connect and Attach}
 
-%------------------------------------------------------------------------------
+%==============================================================================
