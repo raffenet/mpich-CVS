@@ -48,13 +48,44 @@ int mp_err_printf(char *str, ...)
     return n;
 }
 
+#define MP_MAX_INDENT 20
+static char indent[MP_MAX_INDENT+1] = "";
+static int cur_indent = 0;
+
+int mp_enter_fn(char *fcname)
+{
+    printf("[%d]%sentering %s\n", smpd_process.id, indent, fcname);
+    fflush(stdout);
+    if (cur_indent >= 0 && cur_indent < MP_MAX_INDENT)
+    {
+	indent[cur_indent] = '.';
+	indent[cur_indent+1] = '\0';
+    }
+    cur_indent++;
+
+    return SMPD_SUCCESS;
+}
+
+int mp_exit_fn(char *fcname)
+{
+    if (cur_indent > 0 && cur_indent < MP_MAX_INDENT)
+    {
+	indent[cur_indent-1] = '\0';
+    }
+    cur_indent--;
+    printf("[%d]%sexiting %s\n", smpd_process.id, indent, fcname);
+    fflush(stdout);
+
+    return SMPD_SUCCESS;
+}
+
 int handle_command(smpd_context_t *context)
 {
     int result;
     smpd_context_t *dest;
     smpd_command_t *cmd;
 
-    mp_dbg_printf("entering handle_command.\n");
+    mp_enter_fn("handle_command");
 
     cmd = &context->read_cmd;
     
@@ -77,7 +108,7 @@ int handle_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("invalid command received, unable to determine the destination.\n");
-	mp_dbg_printf("exiting handle_command.\n");
+	mp_exit_fn("handle_command");
 	return SMPD_FAIL;
     }
     if (dest)
@@ -87,10 +118,10 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    mp_err_printf("unable to forward the command.\n");
-	    mp_dbg_printf("exiting handle_command.\n");
+	    mp_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	mp_dbg_printf("exiting handle_command.\n");
+	mp_exit_fn("handle_command");
 	return SMPD_SUCCESS;
     }
     if ((strcmp(cmd->cmd_str, "closed") == 0) || (strcmp(cmd->cmd_str, "down") == 0))
@@ -101,16 +132,16 @@ int handle_command(smpd_context_t *context)
 	{
 	    mp_err_printf("unable to post a close of the sock after receiving a '%s' command, sock error:\n%s\n",
 		cmd->cmd_str, get_sock_error_string(result));
-	    mp_dbg_printf("exiting handle_command.\n");
+	    mp_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	mp_dbg_printf("exiting handle_command.\n");
+	mp_exit_fn("handle_command");
 	return SMPD_CLOSE;
     }
 
     mp_err_printf("ignoring unknown command from the session: '%s'\n", cmd->cmd);
 
-    mp_dbg_printf("exiting handle_command.\n");
+    mp_exit_fn("handle_command");
     return SMPD_SUCCESS;
 }
 
@@ -121,7 +152,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
     smpd_command_t *cmd_ptr;
     int ret_val = SMPD_SUCCESS;
 
-    mp_dbg_printf("entering handle_read.\n");
+    mp_enter_fn("handle_read");
 
     if (error != SOCK_SUCCESS)
     {
@@ -129,19 +160,19 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    mp_err_printf("sock read error on sock connected to '%s':\n%s\n", context->host, get_sock_error_string(error));
 	else
 	    mp_err_printf("sock read error:\n%s\n", get_sock_error_string(error));
-	mp_dbg_printf("exiting handle_read.\n");
+	mp_exit_fn("handle_read");
 	return SMPD_FAIL;
     }
     if (context == NULL)
     {
 	mp_err_printf("Error: read on a NULL context of %d bytes\n", num_read);
-	mp_dbg_printf("exiting handle_read.\n");
+	mp_exit_fn("handle_read");
 	return SMPD_FAIL;
     }
     if (num_read < 1)
     {
 	mp_err_printf("Error: read %d bytes from '%s'\n", num_read, context->host);
-	mp_dbg_printf("exiting handle_read.\n");
+	mp_exit_fn("handle_read");
 	return SMPD_FAIL;
     }
     if (context->host[0] == '\0')
@@ -155,14 +186,14 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    if (result != SMPD_SUCCESS)
 	    {
 		mp_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", context->read_cmd.cmd);
-		mp_dbg_printf("exiting handle_read.\n");
+		mp_exit_fn("handle_read");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_create_command_copy(&context->read_cmd, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
 		mp_err_printf("unable to create a copy of the command read from stdin: \"%s\"\n", context->read_cmd.cmd);
-		mp_dbg_printf("exiting handle_read.\n");
+		mp_exit_fn("handle_read");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_post_write_command(session_context, cmd_ptr);
@@ -170,7 +201,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    {
 		mp_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
 		smpd_free_command(cmd_ptr);
-		mp_dbg_printf("exiting handle_read.\n");
+		mp_exit_fn("handle_read");
 		return SMPD_FAIL;
 	    }
 	    mp_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
@@ -184,7 +215,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	if (result != SOCK_SUCCESS)
 	{
 	    mp_err_printf("unable to post a read on the stdin sock, error:\n%s\n", get_sock_error_string(result));
-	    mp_dbg_printf("exiting handle_read.\n");
+	    mp_exit_fn("handle_read");
 	    return SMPD_FAIL;
 	}
     }
@@ -253,10 +284,10 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    ret_val = SMPD_FAIL;
 	    break;
 	}
-	mp_dbg_printf("exiting handle_read.\n");
+	mp_exit_fn("handle_read");
 	return ret_val;
     }
-    mp_dbg_printf("exiting handle_read.\n");
+    mp_exit_fn("handle_read");
     return SMPD_SUCCESS;
 }
 
@@ -265,7 +296,7 @@ int handle_written(smpd_context_t *context, int num_written, int error)
     smpd_command_t *cmd;
     int ret_val = SMPD_SUCCESS;
 
-    mp_dbg_printf("entering handle_written.\n");
+    mp_enter_fn("handle_written");
 
     if (error != SOCK_SUCCESS)
     {
@@ -273,13 +304,13 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	    mp_err_printf("sock write error on sock connected to '%s':\n%s\n", context->host, get_sock_error_string(error));
 	else
 	    mp_err_printf("sock write error:\n%s\n", get_sock_error_string(error));
-	mp_dbg_printf("exiting handle_written.\n");
+	mp_exit_fn("handle_written");
 	return SMPD_FAIL;
     }
     if (context == NULL)
     {
 	mp_err_printf("Error: write on a NULL context of %d bytes\n", num_written);
-	mp_dbg_printf("exiting handle_written.\n");
+	mp_exit_fn("handle_written");
 	return SMPD_FAIL;
     }
     if (context->host[0] == '\0')
@@ -291,7 +322,7 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	if (context->write_list == NULL)
 	{
 	    mp_err_printf("data written on a context with no write command posted.\n");
-	    mp_dbg_printf("exiting handle_written.\n");
+	    mp_exit_fn("handle_written");
 	    return SMPD_FAIL;
 	}
 	switch (context->write_list->state)
@@ -347,7 +378,7 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	}
     }
     mp_dbg_printf("wrote %d bytes\n", num_written);
-    mp_dbg_printf("exiting handle_written.\n");
+    mp_exit_fn("handle_written");
     return SMPD_SUCCESS;
 }
 
@@ -512,7 +543,7 @@ int mp_console(char *host)
     SOCKET hWrite;
 #endif
 
-    mp_dbg_printf("entering mp_console.\n");
+    mp_enter_fn("mp_console");
 
     /* set the id of the mpiexec node to zero */
     smpd_process.id = 0;
@@ -524,7 +555,7 @@ int mp_console(char *host)
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to connect to smpd on %s\n", host);
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return result;
     }
 
@@ -533,7 +564,7 @@ int mp_console(char *host)
     if (context == NULL)
     {
 	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
@@ -548,7 +579,7 @@ int mp_console(char *host)
     {
 	mp_err_printf("unable to post a read for an incoming command from the smpd on '%s', error:\n%s\n",
 	    context->host, get_sock_error_string(result));
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
 
@@ -557,7 +588,7 @@ int mp_console(char *host)
     if (context == NULL)
     {
 	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
 
@@ -567,7 +598,7 @@ int mp_console(char *host)
     if (result)
     {
 	mp_err_printf("Unable to make a local socket loop to forward stdin.\n");
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
 #else
@@ -579,7 +610,7 @@ int mp_console(char *host)
     if (result != SOCK_SUCCESS)
     {
 	mp_err_printf("unable to create a sock from stdin, sock error:\n%s\n", get_sock_error_string(result));
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_STDIN, set, insock, -1);
@@ -591,14 +622,14 @@ int mp_console(char *host)
     if (g_hCloseStdinThreadEvent == NULL)
     {
 	mp_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
     g_hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
     if (g_hStdinThread == NULL)
     {
 	mp_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
 #endif
@@ -609,7 +640,7 @@ int mp_console(char *host)
     {
 	mp_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
 	    get_sock_error_string(result));
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
 
@@ -623,7 +654,7 @@ int mp_console(char *host)
 	{
 	    mp_err_printf("sock_wait failed, error:\n%s\n", get_sock_error_string(result));
 	    smpd_close_connection(set, sock);
-	    mp_dbg_printf("exiting mp_console.\n");
+	    mp_exit_fn("mp_console");
 	    return SMPD_FAIL;
 	}
 
@@ -660,16 +691,16 @@ int mp_console(char *host)
 	    {
 		mp_dbg_printf("child context closed.\n");
 		free(smpd_process.left_context);
-		smpd_dbg_printf("closing the session.\n");
+		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)
 		{
 		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
-		    mp_dbg_printf("exiting mp_console.\n");
+		    mp_exit_fn("mp_console");
 		    return SMPD_FAIL;
 		}
 		mp_dbg_printf("mp_console returning SMPD_SUCCESS\n");
-		mp_dbg_printf("exiting mp_console.\n");
+		mp_exit_fn("mp_console");
 		return SMPD_SUCCESS;
 	    }
 	    else
@@ -688,11 +719,11 @@ int mp_console(char *host)
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to close the connection to smpd\n");
-	mp_dbg_printf("exiting mp_console.\n");
+	mp_exit_fn("mp_console");
 	return result;
     }
     mp_dbg_printf("mp_console returning SMPD_SUCCESS\n");
-    mp_dbg_printf("exiting mp_console.\n");
+    mp_exit_fn("mp_console");
     return SMPD_SUCCESS;
 }
 

@@ -71,7 +71,7 @@ int smpd_err_printf(char *str, ...)
 #endif
 
     /* prepend output with the process tree node id */
-    fprintf(stderr, "[%d]", smpd_process.id);
+    fprintf(stderr, "[%d]ERROR:", smpd_process.id);
 
     /* print the formatted string */
     va_start(list, str);
@@ -118,4 +118,61 @@ int smpd_dbg_printf(char *str, ...)
 #endif
 
     return n;
+}
+
+#define SMPD_MAX_INDENT 20
+static char indent[SMPD_MAX_INDENT+1] = "";
+static int cur_indent = 0;
+
+int smpd_enter_fn(char *fcname)
+{
+#ifdef HAVE_WINDOWS_H
+    if (!bInitialized)
+    {
+	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	bInitialized = TRUE;
+    }
+    WaitForSingleObject(hOutputMutex, INFINITE);
+#endif
+
+    printf("[%d]%sentering %s\n", smpd_process.id, indent, fcname);
+    fflush(stdout);
+    if (cur_indent >= 0 && cur_indent < SMPD_MAX_INDENT)
+    {
+	indent[cur_indent] = '.';
+	indent[cur_indent+1] = '\0';
+    }
+    cur_indent++;
+
+#ifdef HAVE_WINDOWS_H
+    ReleaseMutex(hOutputMutex);
+#endif
+
+    return SMPD_SUCCESS;
+}
+
+int smpd_exit_fn(char *fcname)
+{
+#ifdef HAVE_WINDOWS_H
+    if (!bInitialized)
+    {
+	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	bInitialized = TRUE;
+    }
+    WaitForSingleObject(hOutputMutex, INFINITE);
+#endif
+
+    if (cur_indent > 0 && cur_indent < SMPD_MAX_INDENT)
+    {
+	indent[cur_indent-1] = '\0';
+    }
+    cur_indent--;
+    printf("[%d]%sexiting %s\n", smpd_process.id, indent, fcname);
+    fflush(stdout);
+
+#ifdef HAVE_WINDOWS_H
+    ReleaseMutex(hOutputMutex);
+#endif
+
+    return SMPD_SUCCESS;
 }

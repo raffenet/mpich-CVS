@@ -16,7 +16,7 @@ int handle_command(smpd_context_t *context)
     int dest_id;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_dbg_printf("entering handle_command.\n");
+    smpd_enter_fn("handle_command");
 
     cmd = &context->read_cmd;
 
@@ -42,8 +42,8 @@ int handle_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("invalid command received, unable to determine the destination.\n");
-	smpd_dbg_printf("exiting handle_command.\n");
-	return SMPD_FAIL;
+	smpd_exit_fn("handle_command");
+	return SMPD_SUCCESS;
     }
     if (dest)
     {
@@ -52,10 +52,10 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to forward the command.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
-	    return SMPD_FAIL;
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
-	smpd_dbg_printf("exiting handle_command.\n");
+	smpd_exit_fn("handle_command");
 	return SMPD_SUCCESS;
     }
     if (strcmp(cmd->cmd_str, "close") == 0)
@@ -69,7 +69,7 @@ int handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a close command for the left context.\n");
-		    smpd_dbg_printf("exiting handle_command.\n");
+		    smpd_exit_fn("handle_command");
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("sending close command to left child: \"%s\"\n", temp_cmd->cmd);
@@ -77,7 +77,7 @@ int handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a write of a close command for the left context.\n");
-		    smpd_dbg_printf("exiting handle_command.\n");
+		    smpd_exit_fn("handle_command");
 		    return SMPD_FAIL;
 		}
 	    }
@@ -87,7 +87,7 @@ int handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a close command for the right context.\n");
-		    smpd_dbg_printf("exiting handle_command.\n");
+		    smpd_exit_fn("handle_command");
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("sending close command to right child: \"%s\"\n", temp_cmd->cmd);
@@ -95,18 +95,18 @@ int handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a write of a close command for the right context.\n");
-		    smpd_dbg_printf("exiting handle_command.\n");
+		    smpd_exit_fn("handle_command");
 		    return SMPD_FAIL;
 		}
 	    }
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the parent context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending closed command to parent: \"%s\"\n", temp_cmd->cmd);
@@ -114,11 +114,11 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("posted closed command.\n");
-	smpd_dbg_printf("exiting handle_command.\n");
+	smpd_exit_fn("handle_command");
 	return SMPD_CLOSE;
     }
     else if (strcmp(cmd->cmd_str, "closed") == 0)
@@ -126,7 +126,7 @@ int handle_command(smpd_context_t *context)
 	if (smpd_process.parent_context == NULL)
 	{
 	    smpd_dbg_printf("received a closed command but I have no parent context to forward it to.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (context == smpd_process.left_context)
@@ -134,10 +134,10 @@ int handle_command(smpd_context_t *context)
 	    smpd_dbg_printf("closed command received from left child, closing sock.\n");
 	    sock_post_close(smpd_process.left_context->sock);
 	    /*free(smpd_process.left_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
-	    smpd_process.left_context = NULL;
+	    /*smpd_process.left_context = NULL;*/
 	    if (smpd_process.right_context)
 	    {
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_CLOSE;
 	    }
 	}
@@ -146,24 +146,24 @@ int handle_command(smpd_context_t *context)
 	    smpd_dbg_printf("closed command received from right child, closing sock.\n");
 	    sock_post_close(smpd_process.right_context->sock);
 	    /*free(smpd_process.right_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
-	    smpd_process.right_context = NULL;
+	    /*smpd_process.right_context = NULL;*/
 	    if (smpd_process.left_context)
 	    {
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_CLOSE;
 	    }
 	}
 	else
 	{
 	    smpd_err_printf("closed command received from non-child context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	result = smpd_create_command("closed", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the parent context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending closed command to parent: \"%s\"\n", temp_cmd->cmd);
@@ -171,11 +171,11 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("posted closed command to parent.\n");
-	smpd_dbg_printf("exiting handle_command.\n");
+	smpd_exit_fn("handle_command");
 	return SMPD_CLOSE;
     }
     else if (strcmp(cmd->cmd_str, "launch") == 0)
@@ -188,7 +188,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create an 'all ok' command for the context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("replying to stat command: \"%s\"\n", temp_cmd->cmd);
@@ -196,7 +196,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the 'all ok' command to the context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
     }
@@ -206,7 +206,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("shutdown received, replying with down command: \"%s\"\n", temp_cmd->cmd);
@@ -214,7 +214,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the closed command to the context.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
     }
@@ -223,30 +223,32 @@ int handle_command(smpd_context_t *context)
 	if (smpd_process.closing)
 	{
 	    smpd_err_printf("connect command received while session is closing, ignoring connect.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (!smpd_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH))
 	{
-	    smpd_err_printf("connect command does not have a target host argument: \"%s\"\n", cmd->cmd);
-	    smpd_dbg_printf("exiting handle_command.\n");
-	    return SMPD_FAIL;
+	    smpd_err_printf("connect command does not have a target host argument, discarding: \"%s\"\n", cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
 	if (!smpd_get_int_arg(cmd->cmd, "id", &dest_id))
 	{
-	    smpd_err_printf("connect command does not have a target id argument: \"%s\"\n", cmd->cmd);
-	    smpd_dbg_printf("exiting handle_command.\n");
-	    return SMPD_FAIL;
+	    smpd_err_printf("connect command does not have a target id argument, discarding: \"%s\"\n", cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
 	if (dest_id < smpd_process.id)
 	{
-	    smpd_dbg_printf("connecting to an smpd with an invalid id: %d\n", dest_id);
+	    smpd_dbg_printf("connect command has an invalid id, discarding: %d\n", dest_id);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
 	if (smpd_process.left_context != NULL && smpd_process.right_context != NULL)
 	{
-	    smpd_err_printf("unable to connect to a new session, left and right sessions already exist.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
-	    return SMPD_FAIL;
+	    smpd_err_printf("unable to connect to a new session, left and right sessions already exist, discarding.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
 	smpd_dbg_printf("now connecting to %s\n", host);
 	/* create a new context */
@@ -254,7 +256,7 @@ int handle_command(smpd_context_t *context)
 	if (dest == NULL)
 	{
 	    smpd_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	dest_set = smpd_process.set;
@@ -263,14 +265,15 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to connect to %s\n", host);
-	    smpd_dbg_printf("exiting handle_command.\n");
-	    return SMPD_FAIL;
+	    /* send fail connect command back */
+	    smpd_exit_fn("handle_command");
+	    return SMPD_SUCCESS;
 	}
 	if (dest_set != smpd_process.set)
 	{
 	    smpd_err_printf("connect_to_smpd returned a new set instead of adding the new sock to the provided set.\n");
 	    smpd_err_printf("dest_set:%d != process_set:%d\n", sock_getsetid(dest_set), sock_getsetid(smpd_process.set));
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	if (smpd_process.left_context == NULL)
@@ -290,7 +293,7 @@ int handle_command(smpd_context_t *context)
 	else
 	{
 	    smpd_err_printf("impossible to be here, both left and right contexts are non-NULL.\n");
-	    smpd_dbg_printf("exiting handle_command.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	/* post a read for the next command to come over the new context */
@@ -317,14 +320,14 @@ int handle_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a 'print' command for the left context.\n");
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_post_write_command(smpd_process.left_context, temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to post a write for the 'print' command to the left context.\n");
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_FAIL;
 	    }
 	}
@@ -334,14 +337,14 @@ int handle_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a 'print' command for the right context.\n");
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_post_write_command(smpd_process.right_context, temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to post a write for the 'print' command to the right context.\n");
-		smpd_dbg_printf("exiting handle_command.\n");
+		smpd_exit_fn("handle_command");
 		return SMPD_FAIL;
 	    }
 	}
@@ -350,7 +353,7 @@ int handle_command(smpd_context_t *context)
     {
 	smpd_err_printf("ignoring unknown session command: \"%s\"\n", cmd->cmd);
     }
-    smpd_dbg_printf("exiting handle_command.\n");
+    smpd_exit_fn("handle_command");
     return SMPD_SUCCESS;
 }
 
@@ -358,7 +361,7 @@ int smpd_interpret_session_header(char *str)
 {
     char temp_str[100];
 
-    smpd_dbg_printf("entering smpd_interpret_session_header.\n");
+    smpd_enter_fn("smpd_interpret_session_header");
 
     smpd_dbg_printf("interpreting session header: \"%s\"\n", str);
 
@@ -398,7 +401,7 @@ int smpd_interpret_session_header(char *str)
 	}
     }
 
-    smpd_dbg_printf("exiting smpd_interpret_session_header.\n");
+    smpd_exit_fn("smpd_interpret_session_header");
     return SMPD_SUCCESS;
 }
 
@@ -406,7 +409,7 @@ int smpd_handle_read(smpd_context_t *context)
 {
     int ret_val = SMPD_SUCCESS;
 
-    smpd_dbg_printf("entering smpd_handle_read.\n");
+    smpd_enter_fn("smpd_handle_read");
 
     switch (context->read_cmd.state)
     {
@@ -474,7 +477,7 @@ int smpd_handle_read(smpd_context_t *context)
 	ret_val = SMPD_FAIL;
 	break;
     }
-    smpd_dbg_printf("exiting smpd_handle_read.\n");
+    smpd_exit_fn("smpd_handle_read");
     return ret_val;
 }
 
@@ -483,12 +486,12 @@ int smpd_handle_written(smpd_context_t *context)
     smpd_command_t *cmd;
     int ret_val = SMPD_SUCCESS;
 
-    smpd_dbg_printf("entering smpd_handle_written.\n");
+    smpd_enter_fn("smpd_handle_written");
 
     if (context->write_list == NULL)
     {
 	smpd_err_printf("data written on a context with no write command posted.\n");
-	smpd_dbg_printf("exiting smpd_handle_written.\n");
+	smpd_exit_fn("smpd_handle_written");
 	return SMPD_FAIL;
     }
     switch (context->write_list->state)
@@ -567,8 +570,47 @@ int smpd_handle_written(smpd_context_t *context)
 	break;
     }
 
-    smpd_dbg_printf("exiting smpd_handle_written.\n");
+    smpd_exit_fn("smpd_handle_written");
     return ret_val;
+}
+
+int smpd_post_close_context(smpd_context_t *context)
+{
+    int result;
+
+    if (context == NULL)
+    {
+	smpd_exit_fn("smpd_post_close_context");
+	return SMPD_FAIL;
+    }
+    
+    result = sock_post_close(context->sock);
+    if (result != SOCK_SUCCESS)
+    {
+	if (context == smpd_process.left_context)
+	{
+	    free(smpd_process.left_context);
+	    smpd_process.left_context = NULL;
+	}
+	else if (context == smpd_process.right_context)
+	{
+	    free(smpd_process.right_context);
+	    smpd_process.right_context = NULL;
+	}
+	else if (context == smpd_process.parent_context)
+	{
+	    free(smpd_process.parent_context);
+	    smpd_exit_fn("smpd_close_context");
+	    return SMPD_FAIL;
+	}
+	if (smpd_process.parent_context == NULL)
+	{
+	    smpd_exit_fn("smpd_post_close_context");
+	    return SMPD_FAIL;
+	}
+    }
+    smpd_exit_fn("smpd_post_close_context");
+    return SMPD_SUCCESS;
 }
 
 int smpd_session(sock_set_t set, sock_t sock)
@@ -577,17 +619,18 @@ int smpd_session(sock_set_t set, sock_t sock)
     smpd_context_t *context;
     sock_event_t event;
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
+    smpd_command_t *temp_cmd;
 
-    smpd_dbg_printf("entering smpd_session.\n");
+    smpd_enter_fn("smpd_session");
 
     /* read and interpret the session header */
     smpd_dbg_printf("reading and interpreting the session header on sock %d\n", sock_getid(sock));
-    result = smpd_read_string(sock, session_header, SMPD_MAX_SESSION_HEADER_LENGTH);
+    result = smpd_read(sock, session_header, SMPD_MAX_SESSION_HEADER_LENGTH);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to read the session header string.\n");
 	smpd_close_connection(set, sock);
-	smpd_dbg_printf("exiting smpd_session.\n");
+	smpd_exit_fn("smpd_session");
 	return SMPD_FAIL;
     }
     result = smpd_interpret_session_header(session_header);
@@ -595,7 +638,7 @@ int smpd_session(sock_set_t set, sock_t sock)
     {
 	smpd_err_printf("unable to interpret the session header string.\n");
 	smpd_close_connection(set, sock);
-	smpd_dbg_printf("exiting smpd_session.\n");
+	smpd_exit_fn("smpd_session");
 	return SMPD_FAIL;
     }
 
@@ -610,7 +653,7 @@ int smpd_session(sock_set_t set, sock_t sock)
     {
 	smpd_err_printf("malloc failed to allocate %d bytes for a context structure.\n", sizeof(smpd_context_t));
 	smpd_close_connection(set, sock);
-	smpd_dbg_printf("exiting smpd_session.\n");
+	smpd_exit_fn("smpd_session");
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_PARENT, set, sock, smpd_process.parent_id);
@@ -623,7 +666,7 @@ int smpd_session(sock_set_t set, sock_t sock)
     {
 	smpd_err_printf("unable to post a read for the first command header of the session.\n");
 	smpd_close_connection(set, sock);
-	smpd_dbg_printf("exiting smpd_session.\n");
+	smpd_exit_fn("smpd_session");
 	return SMPD_FAIL;
     }
 
@@ -635,7 +678,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 	{
 	    smpd_err_printf("session failure, sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_session.\n");
+	    smpd_exit_fn("smpd_session");
 	    return SMPD_FAIL;
 	}
 	context = (smpd_context_t*)event.user_ptr;
@@ -645,19 +688,20 @@ int smpd_session(sock_set_t set, sock_t sock)
 	    /* check for an error */
 	    if (event.error != SOCK_SUCCESS)
 	    {
-		smpd_err_printf("read failure, sock error:\n%s\n", get_sock_error_string(result));
-		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_session.\n");
-		return SMPD_FAIL;
+		smpd_err_printf("read failure, sock error:\n%s\nclosing sock %d\n",
+		    get_sock_error_string(result), sock_getid(context->sock));
+		result = smpd_post_close_context(context);
+		if (result != SMPD_SUCCESS)
+		    return result;
 	    }
 	    /*smpd_dbg_printf("calling smpd_handle_read.\n");*/
 	    result = smpd_handle_read(context);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to handle read data.\n");
-		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_session.\n");
-		return SMPD_FAIL;
+		result = smpd_post_close_context(context);
+		if (result != SMPD_SUCCESS)
+		    return result;
 	    }
 	    break;
 	case SOCK_OP_WRITE:
@@ -666,9 +710,9 @@ int smpd_session(sock_set_t set, sock_t sock)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to handle written data.\n");
-		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_session.\n");
-		return SMPD_FAIL;
+		result = smpd_post_close_context(context);
+		if (result != SMPD_SUCCESS)
+		    return result;
 	    }
 	    break;
 	case SOCK_OP_ACCEPT:
@@ -680,14 +724,14 @@ int smpd_session(sock_set_t set, sock_t sock)
 	case SOCK_OP_CLOSE:
 	    if (context == smpd_process.parent_context)
 	    {
-		smpd_dbg_printf("parent context closed.\n");
+		smpd_dbg_printf("sock_wait returned op_close, freeing parent context\n");
 		free(context);
 		smpd_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)
 		{
 		    smpd_err_printf("error destroying set: %s\n", get_sock_error_string(result));
-		    smpd_dbg_printf("exiting smpd_session.\n");
+		    smpd_exit_fn("smpd_session");
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("**** EXITING SMPD_SESSION ****\n");
@@ -695,20 +739,52 @@ int smpd_session(sock_set_t set, sock_t sock)
 	    }
 	    else if (context == smpd_process.left_context)
 	    {
-		smpd_err_printf("op_close returned, freeing left context");
+		smpd_dbg_printf("sock_wait returned op_close, freeing left context\n");
 		free(context);
 		smpd_process.left_context = NULL;
 	    }
 	    else if (context == smpd_process.right_context)
 	    {
-		smpd_err_printf("op_close returned, freeing right context");
+		smpd_dbg_printf("sock_wait returned op_close, freeing right context\n");
 		free(context);
 		smpd_process.right_context = NULL;
 	    }
 	    else
 	    {
-		smpd_err_printf("op_close returned, freeing context");
+		smpd_err_printf("sock_wait returned op_close for an unknown context, freeing context\n");
 		free(context);
+	    }
+	    if (smpd_process.closing)
+	    {
+		if (smpd_process.parent_context == NULL)
+		{
+		    smpd_err_printf("parent context is NULL during close command processing.\n");
+		    smpd_close_connection(set, sock);
+		    smpd_exit_fn("smpd_session");
+		    return SMPD_FAIL;
+		}
+		if (smpd_process.left_context == NULL && smpd_process.right_context == NULL)
+		{
+		    /* all children have closed, send a 'closed' command to the parent */
+		    result = smpd_create_command("closed", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create a closed command for the parent context.\n");
+			smpd_close_connection(set, sock);
+			smpd_exit_fn("smpd_session");
+			return SMPD_FAIL;
+		    }
+		    smpd_dbg_printf("sending 'closed' command to parent: \"%s\"\n", temp_cmd->cmd);
+		    result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
+			smpd_close_connection(set, sock);
+			smpd_exit_fn("smpd_session");
+			return SMPD_FAIL;
+		    }
+		    smpd_dbg_printf("posted 'closed' command to parent.\n");
+		}
 	    }
 	    break;
 	default:
@@ -718,6 +794,6 @@ int smpd_session(sock_set_t set, sock_t sock)
     }
 
     smpd_close_connection(set, sock);
-    smpd_dbg_printf("exiting smpd_session.\n");
+    smpd_exit_fn("smpd_session");
     return result;
 }

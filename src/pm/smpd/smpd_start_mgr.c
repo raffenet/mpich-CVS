@@ -15,7 +15,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     int result;
 #ifdef HAVE_WINDOWS_H
     char read_handle_str[20], write_handle_str[20];
-    char domainaccount[100], account[100], domain[100], port_str[20];
+    char domainaccount[SMPD_MAX_ACCOUNT_LENGTH], account[SMPD_MAX_ACCOUNT_LENGTH], domain[SMPD_MAX_ACCOUNT_LENGTH];
     char *pszDomain;
     HANDLE user_handle;
     int num_tries;
@@ -26,53 +26,62 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     HANDLE hRead, hWrite, hReadRemote, hWriteRemote;
     DWORD num_read, num_written;
 #endif
-    char session[100];
+    char port_str[SMPD_MAX_PORT_STR_LENGTH];
+    char session[SMPD_SESSION_REQUEST_LEN];
+    char pwd_request[SMPD_MAX_PWD_REQUEST_LENGTH] = SMPD_PWD_REQUEST;
+    char nopwd_request[SMPD_MAX_PWD_REQUEST_LENGTH] = SMPD_NO_PWD_REQUEST;
+    char cred_request[SMPD_MAX_CRED_REQUEST_LENGTH] = SMPD_CRED_REQUEST;
+    char nocred_request[SMPD_MAX_CRED_REQUEST_LENGTH] = SMPD_NO_CRED_REQUEST;
+    char accept[SMPD_AUTHENTICATION_REPLY_LENGTH] = SMPD_AUTHENTICATION_ACCEPTED_STR;
+    char reject[SMPD_AUTHENTICATION_REPLY_LENGTH] = SMPD_AUTHENTICATION_REJECTED_STR;
 
-    smpd_dbg_printf("entering smpd_start_mgr.\n");
+    smpd_enter_fn("smpd_start_mgr");
 
-    smpd_read_string(sock, session, 100);
+    /* read the session type request */
+    smpd_read(sock, session, SMPD_SESSION_REQUEST_LEN);
+
     if (strcmp(session, SMPD_SMPD_SESSION_STR) == 0)
     {
 	/* send password request or not */
 	if (smpd_process.bPasswordProtect)
 	{
-	    result = smpd_write_string(sock, SMPD_PWD_REQUEST);
+	    result = smpd_write(sock, pwd_request, SMPD_MAX_PWD_REQUEST_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(sock, password, 100);
+	    result = smpd_read(sock, password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	    if (strcmp(password, smpd_process.SMPDPassword) == 0)
-		result = smpd_write_string(sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
+		result = smpd_write(sock, accept, SMPD_AUTHENTICATION_REPLY_LENGTH);
 	    else
 	    {
-		result = smpd_write_string(sock, SMPD_AUTHENTICATION_REJECTED_STR);
+		result = smpd_write(sock, reject, SMPD_AUTHENTICATION_REPLY_LENGTH);
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_SUCCESS;
 	    }
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	}
 	else
 	{
-	    result = smpd_write_string(sock, SMPD_NO_PWD_REQUEST);
+	    result = smpd_write(sock, nopwd_request, SMPD_MAX_PWD_REQUEST_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	}
@@ -88,35 +97,35 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	password[0] = '\0';
 	if (smpd_process.bService)
 	{
-	    result = smpd_write_string(sock, SMPD_CRED_REQUEST);
+	    result = smpd_write(sock, cred_request, SMPD_MAX_CRED_REQUEST_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(sock, domainaccount, 100);
+	    result = smpd_read(sock, domainaccount, SMPD_MAX_ACCOUNT_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(sock, password, 100);
+	    result = smpd_read(sock, password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	}
 	else
 	{
-	    result = smpd_write_string(sock, SMPD_NO_CRED_REQUEST);
+	    result = smpd_write(sock, nocred_request, SMPD_MAX_CRED_REQUEST_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	}
@@ -130,7 +139,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	{
 	    smpd_err_printf("CreatePipe failed, error %d\n", GetLastError());
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	/* prevent the local read end of the pipe from being inherited */
@@ -140,7 +149,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hRead);
 	    CloseHandle(hWriteRemote);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	/* create a pipe to send the account information through */
@@ -150,7 +159,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hRead);
 	    CloseHandle(hWriteRemote);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	/* prevent the local write end of the pipe from being inherited */
@@ -162,7 +171,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    CloseHandle(hWrite);
 	    CloseHandle(hReadRemote);
 	    CloseHandle(hWriteRemote);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	/* encode the pipes on the command line */
@@ -188,7 +197,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		CloseHandle(hWrite);
 		CloseHandle(hReadRemote);
 		CloseHandle(hWriteRemote);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 
@@ -202,7 +211,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		CloseHandle(hWrite);
 		CloseHandle(hReadRemote);
 		CloseHandle(hWriteRemote);
-		smpd_dbg_printf("exiting smpd_start_mgr.\n");
+		smpd_exit_fn("smpd_start_mgr");
 		return SMPD_FAIL;
 	    }
 	}
@@ -256,7 +265,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    CloseHandle(hWrite);
 	    CloseHandle(hReadRemote);
 	    CloseHandle(hWriteRemote);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 
@@ -273,7 +282,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hRead);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	CloseHandle(hRead);
@@ -282,53 +291,53 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    smpd_err_printf("parital port string read, %d bytes of 20\n", num_read);
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	/* send the account and password to the manager */
 	smpd_dbg_printf("smpd sending the account and password to the manager\n");
-	if (!WriteFile(hWrite, domainaccount, 100, &num_written, NULL))
+	if (!WriteFile(hWrite, domainaccount, SMPD_MAX_ACCOUNT_LENGTH, &num_written, NULL))
 	{
 	    smpd_err_printf("WriteFile('%s') failed to write the account, error %d\n", domainaccount, GetLastError());
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
-	if (num_written != 100)
+	if (num_written != SMPD_MAX_ACCOUNT_LENGTH)
 	{
-	    smpd_err_printf("parital account string written, %d bytes of 100\n", num_written);
+	    smpd_err_printf("parital account string written, %d bytes of %d\n", num_written, SMPD_MAX_ACCOUNT_LENGTH);
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
-	if (!WriteFile(hWrite, password, 100, &num_written, NULL))
+	if (!WriteFile(hWrite, password, SMPD_MAX_PASSWORD_LENGTH, &num_written, NULL))
 	{
 	    smpd_err_printf("WriteFile() failed to write the password, error %d\n", GetLastError());
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
-	if (num_written != 100)
+	if (num_written != SMPD_MAX_PASSWORD_LENGTH)
 	{
-	    smpd_err_printf("parital password string written, %d bytes of 100\n", num_written);
+	    smpd_err_printf("parital password string written, %d bytes of %d\n", num_written, SMPD_MAX_PASSWORD_LENGTH);
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	CloseHandle(hWrite);
 
 	/* write the port to reconnect to back to mpiexec */
 	smpd_dbg_printf("smpd writing reconnect request: port %s\n", port_str);
-	result = smpd_write_string(sock, port_str);
+	result = smpd_write(sock, port_str, SMPD_MAX_PORT_STR_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("Unable to write the re-connect port number back to mpiexec.\n");
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 
@@ -339,20 +348,21 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	/************ Unix code to spawn the manager ************/
 
 	/* don't request user credentials */
-	result = smpd_write_string(sock, SMPD_NO_CRED_REQUEST);
+	result = smpd_write(sock, nocred_request, SMPD_MAX_CRED_REQUEST_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 
 	/* don't reconnect to a new sock */
-	result = smpd_write_string(sock, SMPD_NO_RECONNECT_PORT_STR);
+	strcpy(port_str, SMPD_NO_RECONNECT_PORT_STR);
+	result = smpd_write(sock, port_str, SMPD_MAX_PORT_STR_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 
@@ -361,7 +371,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	{
 	    smpd_err_printf("fork failed, errno %d\n", errno);
 	    smpd_close_connection(set, sock);
-	    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
 	if (result == 0)
@@ -370,7 +380,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    result = smpd_session(set, sock);
 	    if (result != SMPD_SUCCESS)
 		smpd_err_printf("smpd_session() failed.\n");
-	    smpd_dbg_printf("exiting smpd_start_mgr (exit).\n");
+	    smpd_exit_fn("smpd_start_mgr (exit)");
 	    exit(result);
 	}
 	/* I'm the parent so close my copy of the connection and return success */
@@ -380,9 +390,9 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     else
     {
 	smpd_err_printf("invalid session request: '%s'\n", session);
-	smpd_dbg_printf("exiting smpd_start_mgr.\n");
+	smpd_exit_fn("smpd_start_mgr");
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("exiting smpd_start_mgr.\n");
+    smpd_exit_fn("smpd_start_mgr");
     return SMPD_SUCCESS;
 }

@@ -21,7 +21,7 @@ int smpd_authenticate(sock_set_t set, sock_t sock, int type)
     int ret_val;
     char phrase[SMPD_PASSPHRASE_MAX_LENGTH];
 
-    smpd_dbg_printf("entering smpd_authenticate.\n");
+    smpd_enter_fn("smpd_authenticate");
 
     if (smpd_get_smpd_data("phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) != SMPD_SUCCESS)
     {
@@ -45,7 +45,7 @@ int smpd_authenticate(sock_set_t set, sock_t sock, int type)
 	break;
     }
 
-    smpd_dbg_printf("exiting smpd_authenticate.\n");
+    smpd_exit_fn("smpd_authenticate");
     return ret_val;
 }
 
@@ -55,7 +55,7 @@ static int smpd_gen_authentication_strings(char *phrase, char *append, char *cry
     char *crypted_internal;
     char phrase_internal[SMPD_PASSPHRASE_MAX_LENGTH+1];
 
-    smpd_dbg_printf("entering smpd_gen_authentication_strings.\n");
+    smpd_enter_fn("smpd_gen_authentication_strings");
 
     stamp = rand();
 
@@ -66,12 +66,12 @@ static int smpd_gen_authentication_strings(char *phrase, char *append, char *cry
     if (strlen(crypted_internal) > SMPD_PASSPHRASE_MAX_LENGTH)
     {
 	smpd_err_printf("internal crypted string too long: %d > %d\n", strlen(crypted_internal), SMPD_PASSPHRASE_MAX_LENGTH);
-	smpd_dbg_printf("exiting smpd_gen_authentication_strings.\n");
+	smpd_exit_fn("smpd_gen_authentication_strings");
 	return SMPD_FAIL;
     }
     strcpy(crypted, crypted_internal);
 
-    smpd_dbg_printf("exiting smpd_gen_authentication_strings.\n");
+    smpd_exit_fn("smpd_gen_authentication_strings");
     return SMPD_SUCCESS;
 }
 
@@ -79,14 +79,16 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 {
     int ret_val;
     char pszStr[SMPD_AUTHENTICATION_STR_LEN], pszCrypt[SMPD_AUTHENTICATION_STR_LEN];
+    char pszAccepted[SMPD_AUTHENTICATION_STR_LEN] = SMPD_AUTHENTICATION_ACCEPTED_STR;
+    char pszRejected[SMPD_AUTHENTICATION_STR_LEN] = SMPD_AUTHENTICATION_REJECTED_STR;
 
-    smpd_dbg_printf("entering smpd_server_authenticate.\n");
+    smpd_enter_fn("smpd_server_authenticate");
 
     /* generate the challenge string and the encrypted result*/
     if (smpd_gen_authentication_strings(passphrase, pszStr, pszCrypt) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: failed to generate the authentication strings\n");
-	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
+	smpd_exit_fn("smpd_server_authenticate");
 	return SMPD_FAIL;
     }
     /*
@@ -96,36 +98,36 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 
     /* write the challenge string*/
     /*smpd_dbg_printf("writing challenge string: %s\n", pszStr);*/
-    if (smpd_write_string(sock, pszStr) != SMPD_SUCCESS)
+    if (smpd_write(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Writing challenge string failed\n");
-	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
+	smpd_exit_fn("smpd_server_authenticate");
 	return SMPD_FAIL;
     }
 
     /* read the response*/
-    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Reading challenge response failed\n");
-	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
+	smpd_exit_fn("smpd_server_authenticate");
 	return SMPD_FAIL;
     }
 
     /*smpd_dbg_printf("read response, comparing with crypted string:\n%s\n%s\n", pszStr, pszCrypt);*/
     /* compare the response with the encrypted result and write success or failure*/
     if (strcmp(pszStr, pszCrypt) == 0)
-	ret_val = smpd_write_string(sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
+	ret_val = smpd_write(sock, pszAccepted, SMPD_AUTHENTICATION_STR_LEN);
     else
-	ret_val = smpd_write_string(sock, SMPD_AUTHENTICATION_REJECTED_STR);
+	ret_val = smpd_write(sock, pszRejected, SMPD_AUTHENTICATION_STR_LEN);
     if (ret_val != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Writing authentication result failed\n");
-	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
+	smpd_exit_fn("smpd_server_authenticate");
 	return SMPD_FAIL;
     }
 
     smpd_dbg_printf("successful server authentication\n");
-    smpd_dbg_printf("exiting smpd_server_authenticate.\n");
+    smpd_exit_fn("smpd_server_authenticate");
     return SMPD_SUCCESS;
 }
 
@@ -135,15 +137,15 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     char *result;
     char pszStr[SMPD_AUTHENTICATION_STR_LEN];
 
-    smpd_dbg_printf("entering smpd_client_authenticate.\n");
+    smpd_enter_fn("smpd_client_authenticate");
 
     strcpy(phrase, passphrase);
 
     /* read the challenge string*/
-    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: Reading challenge string failed\n");
-	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+	smpd_exit_fn("smpd_client_authenticate");
 	return SMPD_FAIL;
     }
     /*smpd_dbg_printf("challenge string read: %s\n", pszStr);*/
@@ -152,7 +154,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     if (strlen(phrase) + strlen(pszStr) > SMPD_PASSPHRASE_MAX_LENGTH)
     {
 	smpd_err_printf("smpd_client_authenticate: unable to process passphrase.\n");
-	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+	smpd_exit_fn("smpd_client_authenticate");
 	return SMPD_FAIL;
     }
     strcat(phrase, pszStr);
@@ -163,26 +165,26 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 
     /*smpd_dbg_printf("writing response: %s\n", pszStr);*/
     /* write the response*/
-    if (smpd_write_string(sock, pszStr) != SMPD_SUCCESS)
+    if (smpd_write(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: WriteString of the encrypted response string failed\n");
-	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+	smpd_exit_fn("smpd_client_authenticate");
 	return SMPD_FAIL;
     }
 
     /* read the result*/
-    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: reading authentication result failed\n");
-	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+	smpd_exit_fn("smpd_client_authenticate");
 	return SMPD_FAIL;
     }
     if (strcmp(pszStr, SMPD_AUTHENTICATION_ACCEPTED_STR))
     {
 	smpd_err_printf("smpd_client_authenticate: server returned - %s\n", pszStr);
-	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+	smpd_exit_fn("smpd_client_authenticate");
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("exiting smpd_client_authenticate.\n");
+    smpd_exit_fn("smpd_client_authenticate");
     return SMPD_SUCCESS;
 }

@@ -30,6 +30,8 @@ extern HANDLE g_hStdinThread;
 
 int mp_dbg_printf(char *str, ...);
 int mp_err_printf(char *str, ...);
+int mp_enter_fn(char *fcname);
+int mp_exit_fn(char *fcname);
 int mp_parse_command_args(int *argc, char **argv[]);
 void mp_get_account_and_password(char *account, char *password);
 int mp_console(char *host);

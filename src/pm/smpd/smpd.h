@@ -25,9 +25,16 @@
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_MAX_EXE_LENGTH              1024
+#define SMPD_MAX_ACCOUNT_LENGTH           100
+#define SMPD_MAX_PASSWORD_LENGTH          100
+#define SMPD_MAX_CRED_REQUEST_LENGTH      100
+#define SMPD_MAX_PWD_REQUEST_LENGTH       100
+#define SMPD_MAX_PORT_STR_LENGTH           20
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
 #define SMPD_SALT_VALUE                   "14"
+#define SMPD_SESSION_REQUEST_LEN          100
 #define SMPD_AUTHENTICATION_STR_LEN       256
+#define SMPD_AUTHENTICATION_REPLY_LENGTH  100
 #define SMPD_AUTHENTICATION_REJECTED_STR  "FAIL"
 #define SMPD_AUTHENTICATION_ACCEPTED_STR  "SUCCESS"
 #define SMPD_SMPD_SESSION_STR             "smpd"
@@ -145,14 +152,16 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value);
 int smpd_parse_command(smpd_command_t *cmd_ptr);
 int smpd_post_read_command(smpd_context_t *context);
 int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd);
-/*int smpd_read_command(smpd_context_t *context);*/
-/*int smpd_write_command(smpd_context_t *context);*/
 int smpd_package_command(smpd_command_t *cmd);
-int smpd_write_string(sock_t sock, char *str);
 int smpd_read_string(sock_t sock, char *str, int maxlen);
+int smpd_write_string(sock_t sock, char *str);
+int smpd_read(sock_t sock, void *buf, sock_size_t len);
+int smpd_write(sock_t sock, void *buf, sock_size_t len);
 int smpd_authenticate(sock_set_t set, sock_t sock, int type);
 int smpd_dbg_printf(char *str, ...);
 int smpd_err_printf(char *str, ...);
+int smpd_enter_fn(char *fcname);
+int smpd_exit_fn(char *fcname);
 int smpd_get_user_data(char *key, char *value, int value_len);
 int smpd_get_smpd_data(char *key, char *value, int value_len);
 int smpd_get_user_data_default(char *key, char *value, int value_len);

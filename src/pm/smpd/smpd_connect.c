@@ -49,7 +49,7 @@ int smpd_init_process(void)
     struct sigaction act;
 #endif
 
-    smpd_dbg_printf("entering smpd_init_process.\n");
+    smpd_enter_fn("smpd_init_process");
 
     /* tree data */
     smpd_process.parent_id = -1;
@@ -84,13 +84,13 @@ int smpd_init_process(void)
     sigaction(SIGCHLD, &act, NULL);
 #endif
 
-    smpd_dbg_printf("exiting smpd_init_process.\n");
+    smpd_exit_fn("smpd_init_process");
     return SMPD_SUCCESS;
 }
 
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id)
 {
-    smpd_dbg_printf("entering smpd_init_context.\n");
+    smpd_enter_fn("smpd_init_context");
     context->type = type;
     context->host[0] = '\0';
     context->id = id;
@@ -99,7 +99,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_se
     context->next = NULL;
     context->set = set;
     context->sock = sock;
-    smpd_dbg_printf("exiting smpd_init_context.\n");
+    smpd_exit_fn("smpd_init_context");
     return SMPD_SUCCESS;
 }
 
@@ -109,7 +109,7 @@ int smpd_generate_session_header(char *str, int session_id)
     int result;
     int len;
 
-    smpd_dbg_printf("entering smpd_generate_session_header.\n");
+    smpd_enter_fn("smpd_generate_session_header");
 
     str_orig = str;
     *str = '\0';
@@ -120,21 +120,21 @@ int smpd_generate_session_header(char *str, int session_id)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session id failed.\n");
-	smpd_dbg_printf("exiting smpd_generate_session_header.\n");
+	smpd_exit_fn("smpd_generate_session_header");
 	return SMPD_FAIL;
     }
     result = smpd_add_int_arg(&str, &len, "parent", smpd_process.id);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding parent id failed.\n");
-	smpd_dbg_printf("exiting smpd_generate_session_header.\n");
+	smpd_exit_fn("smpd_generate_session_header");
 	return SMPD_FAIL;
     }
     result = smpd_add_int_arg(&str, &len, "level", smpd_process.level + 1);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session level failed.\n");
-	smpd_dbg_printf("exiting smpd_generate_session_header.\n");
+	smpd_exit_fn("smpd_generate_session_header");
 	return SMPD_FAIL;
     }
 
@@ -143,7 +143,7 @@ int smpd_generate_session_header(char *str, int session_id)
     *str = '\0';
 
     smpd_dbg_printf("session header: (%s)\n", str_orig);
-    smpd_dbg_printf("exiting smpd_generate_session_header.\n");
+    smpd_exit_fn("smpd_generate_session_header");
     return SMPD_SUCCESS;
 }
 
@@ -152,7 +152,7 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
     int result;
     sock_event_t event;
 
-    smpd_dbg_printf("entering smpd_close_connection.\n");
+    smpd_enter_fn("smpd_close_connection");
 
     /* close the sock and its set */
     smpd_dbg_printf("closing sock %d\n", sock_getid(sock));
@@ -160,7 +160,7 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("error closing socket: %s\n", get_sock_error_string(result));
-	smpd_dbg_printf("exiting smpd_close_connection.\n");
+	smpd_exit_fn("smpd_close_connection");
 	return SMPD_FAIL;
     }
     do
@@ -169,7 +169,7 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("error waiting for socket to close: %s\n", get_sock_error_string(result));
-	    smpd_dbg_printf("exiting smpd_close_connection.\n");
+	    smpd_exit_fn("smpd_close_connection");
 	    return SMPD_FAIL;
 	}
 	/* there may be posted reads, writes, or accepts that may come before the SOCK_OP_CLOSE
@@ -185,10 +185,10 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("error destroying set: %s\n", get_sock_error_string(result));
-	smpd_dbg_printf("exiting smpd_close_connection.\n");
+	smpd_exit_fn("smpd_close_connection");
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("exiting smpd_close_connection.\n");
+    smpd_exit_fn("smpd_close_connection");
     return SMPD_SUCCESS;
 }
 
@@ -204,7 +204,7 @@ void smpd_get_password(char *password)
 #endif
     size_t len;
 
-    smpd_dbg_printf("entering smpd_get_password.\n");
+    smpd_enter_fn("smpd_get_password");
 
 #ifdef HAVE_WINDOWS_H
 
@@ -251,14 +251,14 @@ void smpd_get_password(char *password)
 	else
 	    break;
     }
-    smpd_dbg_printf("exiting smpd_get_password.\n");
+    smpd_exit_fn("smpd_get_password");
 }
 
 void smpd_get_account_and_password(char *account, char *password)
 {
     size_t len;
 
-    smpd_dbg_printf("entering smpd_get_account_and_password.\n");
+    smpd_enter_fn("smpd_get_account_and_password");
 
     fprintf(stderr, "credentials needed to launch processes:\n");
     do
@@ -282,20 +282,20 @@ void smpd_get_account_and_password(char *account, char *password)
     fflush(stderr);
 
     smpd_get_password(password);
-    smpd_dbg_printf("exiting smpd_get_account_and_password.\n");
+    smpd_exit_fn("smpd_get_account_and_password");
 }
 
 int smpd_get_credentials_from_parent(sock_set_t set, sock_t sock)
 {
-    smpd_dbg_printf("entering smpd_get_credentials_from_parent.\n");
-    smpd_dbg_printf("exiting smpd_get_credentials_from_parent.\n");
+    smpd_enter_fn("smpd_get_credentials_from_parent");
+    smpd_exit_fn("smpd_get_credentials_from_parent");
     return SMPD_FAIL;
 }
 
 int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock)
 {
-    smpd_dbg_printf("entering smpd_get_smpd_password_from_parent.\n");
-    smpd_dbg_printf("exiting smpd_get_smpd_password_from_parent.\n");
+    smpd_enter_fn("smpd_get_smpd_password_from_parent");
+    smpd_exit_fn("smpd_get_smpd_password_from_parent");
     return SMPD_FAIL;
 }
 
@@ -307,13 +307,16 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     sock_event_t event;
     char port_str[20];
     int port = SMPD_LISTENER_PORT;
-    char account[100] = "invalid account";
-    char password[100] = "invalid password";
-    char cred_request[100];
-    char response[100];
+    char account[SMPD_MAX_ACCOUNT_LENGTH] = "invalid account";
+    char password[SMPD_MAX_PASSWORD_LENGTH] = "invalid password";
+    char cred_request[SMPD_MAX_CRED_REQUEST_LENGTH];
+    char response[SMPD_AUTHENTICATION_REPLY_LENGTH];
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
+    char session_type_block[SMPD_SESSION_REQUEST_LEN];
 
-    smpd_dbg_printf("entering smpd_connect_to_smpd.\n");
+    smpd_enter_fn("smpd_connect_to_smpd");
+
+    strcpy(session_type_block, session_type);
 
     if (*set_ptr != SOCK_INVALID_SET)
     {
@@ -326,7 +329,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	    smpd_exit_fn("smpd_connect_to_smpd");
 	    return result;
 	}
     }
@@ -337,20 +340,20 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_post_connect failed, sock error:\n%s\n", get_sock_error_string(result));
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return result;
     }
     result = sock_wait(set, SOCK_INFINITE_TIME, &event);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return result;
     }
     if (event.op_type != SOCK_OP_CONNECT)
     {
 	smpd_err_printf("sock_wait returned op_type=%d\n", event.op_type);
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return -1;
     }
 
@@ -359,27 +362,27 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_authenticate(CLIENT) failed\n");
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return result;
     }
 
     /* request a session */
-    result = smpd_write_string(sock, session_type);
+    result = smpd_write(sock, session_type_block, SMPD_SESSION_REQUEST_LEN);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("smpd_write_string('%s') failed\n", session_type);
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_err_printf("smpd_write('%s') failed\n", session_type);
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return result;
     }
 
     if (strcmp(session_type, SMPD_PROCESS_SESSION_STR) == 0)
     {
 	/* provide credentials if necessary */
-	result = smpd_read_string(sock, cred_request, 100);
+	result = smpd_read(sock, cred_request, SMPD_MAX_CRED_REQUEST_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("smpd_read_string(cred_request) failed\n");
-	    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	    smpd_err_printf("smpd_read(cred_request) failed\n");
+	    smpd_exit_fn("smpd_connect_to_smpd");
 	    return result;
 	}
 	if (strcmp(cred_request, SMPD_CRED_REQUEST) == 0)
@@ -390,7 +393,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to get the user credentials from the parent.\n");
-		    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		    smpd_exit_fn("smpd_connect_to_smpd");
 		    return result;
 		}
 	    }
@@ -402,32 +405,32 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 	    if (strcmp(account, "invalid account") == 0)
 	    {
 		smpd_err_printf("attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return -1;
 	    }
-	    result = smpd_write_string(sock, account);
+	    result = smpd_write(sock, account, SMPD_MAX_ACCOUNT_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("smpd_write_string('%s') failed\n", account);
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_err_printf("smpd_write('%s') failed\n", account);
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
-	    result = smpd_write_string(sock, password);
+	    result = smpd_write(sock, password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("smpd_write_string('***') failed\n");
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_err_printf("smpd_write('***') failed\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	}
 
 	/* Receive the port re-connect request and reconnect if necessary. */
 	/* -1 means that no re-connect is necessary. */
-	result = smpd_read_string(sock, port_str, 20);
+	result = smpd_read(sock, port_str, SMPD_MAX_PORT_STR_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("Unable to read the reconnect port string request.\n");
-	    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	    smpd_exit_fn("smpd_connect_to_smpd");
 	    return result;
 	}
 	smpd_dbg_printf("reconnect request to port: %s\n", port_str);
@@ -439,20 +442,20 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 	    if (result != SOCK_SUCCESS)
 	    {
 		smpd_err_printf("sock_post_close failed, sock error:\n%s\n", get_sock_error_string(result));
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	    result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	    if (result != SOCK_SUCCESS)
 	    {
 		smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	    if (event.op_type != SOCK_OP_CLOSE)
 	    {
 		smpd_err_printf("While closing the old socket, sock_wait returned op_type=%d\n", event.op_type);
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return -1;
 	    }
 
@@ -462,27 +465,27 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 	    if (port < 1)
 	    {
 		smpd_err_printf("Invalid reconnect port read: %d\n", port);
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return -1;
 	    }
 	    result = sock_post_connect(set, NULL, host, port, &sock);
 	    if (result != SOCK_SUCCESS)
 	    {
 		smpd_err_printf("sock_post_connect failed, sock error:\n%s\n", get_sock_error_string(result));
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	    result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	    if (result != SOCK_SUCCESS)
 	    {
 		smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	    if (event.op_type != SOCK_OP_CONNECT)
 	    {
 		smpd_err_printf("sock_wait returned op_type=%d\n", event.op_type);
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return -1;
 	    }
 	}
@@ -490,11 +493,11 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     else if (strcmp(session_type, SMPD_SMPD_SESSION_STR) == 0)
     {
 	/* provide credentials if necessary */
-	result = smpd_read_string(sock, cred_request, 100);
+	result = smpd_read(sock, cred_request, SMPD_MAX_CRED_REQUEST_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("smpd_read_string(smpd_cred_request) failed\n");
-	    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	    smpd_err_printf("smpd_read(smpd_cred_request) failed\n");
+	    smpd_exit_fn("smpd_connect_to_smpd");
 	    return result;
 	}
 	if (strcmp(cred_request, SMPD_PWD_REQUEST) == 0)
@@ -505,7 +508,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to get the password from the parent.\n");
-		    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		    smpd_exit_fn("smpd_connect_to_smpd");
 		    return result;
 		}
 	    }
@@ -517,24 +520,24 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 		smpd_get_password(password);
 	    }
 
-	    result = smpd_write_string(sock, password);
+	    result = smpd_write(sock, password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("smpd_write_string('***') failed\n");
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_err_printf("smpd_write('***') failed\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
-	    result = smpd_read_string(sock, response, 100);
+	    result = smpd_read(sock, response, SMPD_AUTHENTICATION_REPLY_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("smpd_read_string(response) failed\n");
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_err_printf("smpd_read(response) failed\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return result;
 	    }
 	    if (strcmp(response, SMPD_AUTHENTICATION_ACCEPTED_STR))
 	    {
 		printf("management session rejected, incorrect password.\n");
-		smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+		smpd_exit_fn("smpd_connect_to_smpd");
 		return SMPD_FAIL;
 	    }
 	}
@@ -542,7 +545,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     else
     {
 	smpd_err_printf("Invalid session requested: '%s'\n", session_type);
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return SMPD_FAIL;
     }
 
@@ -551,20 +554,20 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to generate a session header.\n");
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return -1;
     }
-    result = smpd_write_string(sock, session_header);
+    result = smpd_write(sock, session_header, SMPD_MAX_SESSION_HEADER_LENGTH);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to send the session header.\n");
-	smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+	smpd_exit_fn("smpd_connect_to_smpd");
 	return -1;
     }
 
     *set_ptr = set;
     *sock_ptr = sock;
 
-    smpd_dbg_printf("exiting smpd_connect_to_smpd.\n");
+    smpd_exit_fn("smpd_connect_to_smpd");
     return SMPD_SUCCESS;
 }

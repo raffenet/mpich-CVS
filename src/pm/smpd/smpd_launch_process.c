@@ -286,7 +286,7 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
     int error;
     int num_tries = 3;
 
-    smpd_dbg_printf("entering smpd_get_user_handle.\n");
+    smpd_enter_fn("smpd_get_user_handle");
 
     /* logon the user */
     while (!LogonUser(
@@ -305,7 +305,7 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	    else
 	    {
 		*handle_ptr = INVALID_HANDLE_VALUE;
-		smpd_dbg_printf("exiting smpd_get_user_handle.\n");
+		smpd_exit_fn("smpd_get_user_handle");
 		return error;
 	    }
 	    num_tries--;
@@ -313,13 +313,13 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	else
 	{
 	    *handle_ptr = INVALID_HANDLE_VALUE;
-	    smpd_dbg_printf("exiting smpd_get_user_handle.\n");
+	    smpd_exit_fn("smpd_get_user_handle");
 	    return error;
 	}
     }
 
     *handle_ptr = hUser;
-    smpd_dbg_printf("exiting smpd_get_user_handle.\n");
+    smpd_exit_fn("smpd_get_user_handle");
     return SMPD_SUCCESS;
 }
 
@@ -581,7 +581,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 {
     char *pCh, *pCh2;
 
-    smpd_dbg_printf("entering smpd_parse_account_domain.\n");
+    smpd_enter_fn("smpd_parse_account_domain.\n");
 
     pCh = domain_account;
     pCh2 = domain;
@@ -603,7 +603,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 	domain[0] = '\0';
     }
 
-    smpd_dbg_printf("exiting smpd_parse_account_domain.\n");
+    smpd_exit_fn("smpd_parse_account_domain.\n");
 }
 
 #if 0
