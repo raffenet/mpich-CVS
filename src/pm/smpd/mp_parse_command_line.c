@@ -318,6 +318,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int result;
     int maxlen;
     int appnum = 0;
+    char channel[SMPD_MAX_NAME_LENGTH] = "";
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -922,7 +923,7 @@ configfile_loop:
 		free(str);
 		num_args_to_strip = 2;
 	    }
-	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
+	    else if ( (strcmp(&(*argvp)[1][1], "logon") == 0) || (strcmp(&(*argvp)[1][1], "login") == 0) )
 	    {
 		smpd_process.logon = SMPD_TRUE;
 	    }
@@ -1344,6 +1345,17 @@ configfile_loop:
 	    {
 		smpd_process.plaintext = SMPD_TRUE;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "channel") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no name specified after -channel option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(channel, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
+		num_args_to_strip = 2;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
@@ -1414,6 +1426,36 @@ configfile_loop:
 		}
 		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
 #endif
+	    }
+	}
+
+	if (channel[0] != '\0')
+	{
+	    /* channel specified on the command line */
+	    result = SMPD_SUCCESS;
+	}
+	else
+	{
+	    /* Check to see if a specific channel is specified in the smpd settings */
+	    result = smpd_get_smpd_data("channel", channel, SMPD_MAX_NAME_LENGTH);
+	}
+	if (result == SMPD_SUCCESS)
+	{
+	    if ((strcmp(channel, "auto") != 0) && (strcmp(channel, "default") != 0))
+	    {
+		/* FIXME: Should we check to make sure the channel is valid? */
+		/* Use the MPICH2_CHANNEL environment variable to pass the specified channel */
+		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
+		if (env_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(env_node->name, "MPICH2_CHANNEL", SMPD_MAX_NAME_LENGTH);
+		strncpy(env_node->value, channel, SMPD_MAX_VALUE_LENGTH);
+		env_node->next = genv_list;
+		genv_list = env_node;
 	    }
 	}
 
@@ -1740,6 +1782,67 @@ configfile_loop:
 
     /* create the cliques */
     smpd_create_cliques(smpd_process.launch_list);
+
+    /* If the user specified auto channel selection then set the channel here */
+    /* shm < 8 processes on one node
+     * sshm >= 8 processes on one node
+     * ssm multiple nodes
+     */
+    if ((strcmp(channel, "auto") == 0) && (smpd_process.launch_list != NULL))
+    {
+	smpd_launch_node_t *iter;
+	int id;
+	int multiple_nodes = 0;
+
+	/* determine whether or not there are multiple nodes */
+	id = smpd_process.launch_list->host_id;
+	iter = smpd_process.launch_list;
+	while (iter)
+	{
+	    if (iter->host_id != id)
+	    {
+		multiple_nodes = 1;
+		break;
+	    }
+	    iter = iter->next;
+	}
+
+	/* set the channel */
+	if (multiple_nodes)
+	{
+	    strcpy(channel, "ssm");
+	}
+	else
+	{
+	    if (smpd_process.launch_list->nproc < 8)
+	    {
+		strcpy(channel, "shm");
+	    }
+	    else
+	    {
+		strcpy(channel, "sshm");
+	    }
+	}
+
+	/* add the channel to the environment of each process */
+	iter = smpd_process.launch_list;
+	while (iter)
+	{
+	    maxlen = (int)strlen(iter->env);
+	    env_str = &iter->env[maxlen];
+	    maxlen = SMPD_MAX_ENV_LENGTH - maxlen - 1;
+	    if (maxlen > 15) /* At least 16 characters are needed to store MPICH2_CHANNEL=x */
+	    {
+		*env_str = ' ';
+		env_str++;
+		MPIU_Str_add_string_arg(&env_str, &maxlen, "MPICH2_CHANNEL", channel);
+		/* trim the trailing white space */
+		env_str--;
+		*env_str = '\0';
+	    }
+	    iter = iter->next;
+	}
+    }
 
     smpd_exit_fn("mp_parse_command_args");
     return SMPD_SUCCESS;
