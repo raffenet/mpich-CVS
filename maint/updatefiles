@@ -404,7 +404,7 @@ EOF
 		    echo " "
    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 		    echo "The available version of configure has a bug"
-		    echo "in handling Fortran programs and cannot be used"
+		    echo "in handling Fortran programs and should not be used."
 		    echo "This bug is an improper placement of the EOF"
 		    echo "token used to implement AC_TRY_COMPILE for Fortran."
 		    echo "A patch for this version is available in "
@@ -556,11 +556,11 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 	 	      -skipfile=./src/mpi/romio/adio/include/mpisgi2.h \
 		      -skipfile=./src/util/slog2sdk \
 		      -skipfile=./src/mpe \
-			$codecheck_args src 
+			$codecheck_args src
 fi
-if [ -s "$error_summary" ] ; then
+if [ -n "$error_summary" ] ; then
     echo " "
     echo "Problems encountered while running updatefiles"
     echo "These may cause problems when configuring or building MPICH2"
-    echo $error_summary
+    echo "$error_summary"
 fi
