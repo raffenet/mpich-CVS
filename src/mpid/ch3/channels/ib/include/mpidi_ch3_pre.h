@@ -15,8 +15,10 @@ typedef struct MPIDI_Process_group_s
 {
     volatile int ref_count;
     char * kvs_name;
+    char * pg_id;
     int size;
     struct MPIDI_VC * vc_table;
+    struct MPIDI_Process_group_s *next;
 }
 MPIDI_CH3I_Process_group_t;
 
