@@ -86,7 +86,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 		    if ((ip & nNicMask) == nNicNet)
 		    {
 			/* the current ip address matches the requested network so return these values */
-			strcpy(host, pszHost); /*pszIP);*/
+			strcpy(host, pszIP); /*pszHost);*/
 			*port = atoi(pszPort);
 			free(temp);
 			return MPI_SUCCESS;
