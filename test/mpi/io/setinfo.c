@@ -80,8 +80,11 @@ int main( int argc, char *argv[] )
     /* Note that an implementation is allowed to ignore the set_info,
        so we'll accept either the original or the updated version */
     if (!flag) {
+	;
+	/*
 	errs++;
 	printf( "Access style hint not saved\n" );
+	*/
     }
     else {
 	if (strcmp( value, "read_once" ) != 0 &&
