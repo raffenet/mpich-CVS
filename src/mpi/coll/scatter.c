@@ -230,6 +230,7 @@ PMPI_LOCAL int MPIR_Scatter (
         }
     }
     
+#ifdef MPID_HAS_HETERO
     else { /* communicator is heterogeneous */
             if (rank == root) {
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
@@ -348,6 +349,7 @@ PMPI_LOCAL int MPIR_Scatter (
                         recvtype, comm);
         MPIU_Free(tmp_buf);
     }
+#endif /* MPID_HAS_HETERO */
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

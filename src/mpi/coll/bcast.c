@@ -98,7 +98,7 @@ int MPIR_Bcast (
       is_contig = 1;
   else {
       is_contig = 0;
-      /* CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
+      /* FIXME: CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
   }
 
   is_homogeneous = 1;

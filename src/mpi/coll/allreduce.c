@@ -120,12 +120,18 @@ PMPI_LOCAL int MPIR_Allreduce (
         is_homogeneous = 0;
 #endif
     
+#ifdef MPID_HAS_HETERO
     if (!is_homogeneous) {
         /* heterogeneous. To get the same result on all processes, we
            do a reduce to 0 and then broadcast. */
 	MPIR_Nest_incr();
         mpi_errno = NMPI_Reduce ( sendbuf, recvbuf, count, datatype,
                                   op, 0, comm );
+	/* FIXME: mpi_errno is error CODE, not necessarily the error
+	   class MPI_ERR_OP.  In MPICH2, we can get the error class 
+	   with 
+	       errorclass = mpi_errno & ERROR_CLASS_MASK;
+	*/
         if (mpi_errno == MPI_ERR_OP || mpi_errno == MPI_SUCCESS) {
 	    /* Allow MPI_ERR_OP since we can continue from this error */
             rc = NMPI_Bcast  ( recvbuf, count, datatype, 0, comm );
@@ -133,7 +139,9 @@ PMPI_LOCAL int MPIR_Allreduce (
         }
 	MPIR_Nest_decr();
     }
-    else {
+    else 
+#endif /* MPID_HAS_HETERO */
+	{
         /* homogeneous */
         
         /* set op_errno to 0. stored in perthread structure */

@@ -210,6 +210,7 @@ int MPIR_Gather (
             MPIU_Free(tmp_buf);
     }
     
+#ifdef MPID_HAS_HETERO
     else { /* communicator is heterogeneous. pack data into tmp_buf. */
         if (rank == root)
             NMPI_Pack_size(recvcnt*comm_size, recvtype, comm,
@@ -289,6 +290,7 @@ int MPIR_Gather (
         
         MPIU_Free(tmp_buf);
     }
+#endif /* MPID_HAS_HETERO */
 
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

@@ -299,6 +299,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
             MPIU_Free((char *)tmp_buf+true_lb); 
         }
         
+#ifdef MPID_HAS_HETERO
         else {
             /* heterogeneous. need to use temp. buffer. */
             NMPI_Pack_size(total_count, recvtype, comm, &tmp_buf_size);
@@ -467,6 +468,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
             
             MPIU_Free(tmp_buf);
         }
+#endif /* MPID_HAS_HETERO */
     }
 
   /* Unlock for collective operation */
