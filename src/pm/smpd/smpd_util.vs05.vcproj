@@ -308,6 +308,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\smpd_delegation.c"
+				>
+			</File>
+			<File
 				RelativePath=".\smpd_do_console.c"
 				>
 			</File>
@@ -333,6 +337,10 @@
 			</File>
 			<File
 				RelativePath="smpd_launch_process.c"
+				>
+			</File>
+			<File
+				RelativePath=".\smpd_mapdrive.c"
 				>
 			</File>
 			<File
