@@ -47,9 +47,22 @@
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 #define MAX_ERROR_RING 32
 
-static char error_ring[MAX_ERROR_RING][MPI_MAX_ERROR_STRING+1];
-static int error_ring_seq[MAX_ERROR_RING];
+typedef struct {
+    int  seq;              /* Sequence number; used to check for validity
+			      of instance-specific messages */
+    int  severity;         /* Severity of the error */
+    int  next_idx;         /* Index in the ring of the next message; 
+			      this allows errors to be chained together */
+    char msg[MPI_MAX_ERROR_STRING+1];
+} ErrorMsg;
+/* Severity values.  Should these be an enum? */
+#define MPIU_ERR_SEVERITY_FATAL 0
+#define MPIU_ERR_SEVERITY_RECOVERED 1
+#define MPIU_ERR_SEVERITY_WARNING 2
+
+static ErrorMsg ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
+
 #endif
 
 /* Special error handler to call if we are not yet initialized */
@@ -142,7 +155,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 #ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX:
 #endif
-	    (*win_ptr->errhandler->errfn.C_Comm_Handler_function)( 
+	    (*win_ptr->errhandler->errfn.C_Win_Handler_function)( 
 		&win_ptr->handle, &errcode );
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
@@ -201,8 +214,8 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 #ifdef HAVE_CXX_BINDING
 	    case MPID_LANG_CXX:
 #endif
-		(*file_ptr->errhandler->errfn.C_Comm_Handler_function)( 
-		&file_ptr->handle, &errcode );
+		(*file_ptr->errhandler->errfn.C_File_Handler_function)( 
+		(MPI_File *)&file_ptr->handle, &errcode );
 		break;
 #ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN90:
@@ -252,6 +265,91 @@ static int FindMsgIndex( const char *msg )
 */
 #endif
 
+/* This is like MPIR_Err_create_code, except it appends an error message
+   to the specified error code.  The old error code is returned but currently
+   is not changed */
+int MPIR_Err_append_code( int oldcode, int severity, 
+			  int class, const char inst_string[], ... )
+{
+    va_list Argp;
+    int err_code, cnt;
+    int specific_idx = -1;
+    int old_ring_idx;
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    int  ring_idx=-1, ring_seq=0;
+    char *str;
+#endif
+
+    /* Create the code from the class and the message ring index */
+
+    va_start( Argp, inst_string );
+
+    err_code = class;
+
+    /* This is slightly simpler than the general case because 
+       no code is created and we don't need to worry about sequence numbers
+    */
+
+    /* Handle the generic message.  This selects a subclass, based on a 
+       text string */
+
+    /* Handle the instance-specific part of the error message */
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    /* FIXME: THIS NEEDS TO BE ATOMIC AND RELIABLE */
+    ring_idx = error_ring_loc++;
+    
+    if (ring_idx >= MAX_ERROR_RING) ring_idx %= MAX_ERROR_RING;
+    str = ErrorRing[ring_idx].msg;
+    
+    inst_string = va_arg( Argp, const char * );
+    if (inst_string) {
+	if (specific_idx >=0 && 
+	    specific_err_msgs[specific_idx].short_name &&
+	    strcmp( inst_string, 
+		    specific_err_msgs[specific_idx].short_name)==0) {
+	    /* If this name is in the lookup table, use the 
+	       replacement */
+	    inst_string = specific_err_msgs[specific_idx].long_name;
+	}
+	/* An instance string is available.  Use it */
+#ifdef HAVE_VSNPRINTF
+	vsnprintf( str, MPI_MAX_ERROR_STRING, inst_string, Argp );
+#elif defined(HAVE_VSPRINTF)
+	vsprintf( str, inst_string, Argp );
+#else
+	/* For now, just punt */
+	MPIU_Strncpy( str, inst_string, MPI_MAX_ERROR_STRING );
+#endif
+	/* Use the sequence number from the original code */
+	ring_seq    = (oldcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+	ErrorRing[ring_idx].seq      = ring_seq;
+	ErrorRing[ring_idx].severity = severity;
+	ErrorRing[ring_idx].next_idx = -1;
+    }
+    else if (specific_idx >= 0) {
+	MPIU_Strncpy( str, generic_err_msgs[specific_idx].long_name, 
+		      MPI_MAX_ERROR_STRING );
+    }
+    else {
+	MPIU_Strncpy( str, inst_string, MPI_MAX_ERROR_STRING );
+    }
+#endif
+    va_end( Argp );
+
+    /* Now, find the end of the current code and append this entry */
+    old_ring_idx = (oldcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+    cnt = 0;
+    while (ErrorRing[old_ring_idx].next_idx >= 0 && cnt++ < MAX_ERROR_RING) {
+	old_ring_idx = ErrorRing[old_ring_idx].next_idx;
+    }
+    if (cnt < MAX_ERROR_RING) {
+	/* Only insert the message if there aren't too many */
+	ErrorRing[old_ring_idx].next_idx = ring_idx;
+    }
+
+    return err_code;
+}
+
 int MPIR_Err_create_code( int class, const char def_string[], ... )
 {
     va_list Argp;
@@ -280,11 +378,11 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 	int  ring_idx, ring_seq=0;
 	char *str;
 	
-	/* THIS NEEDS TO BE ATOMIC AND RELIABLE */
+	/* FIXME: THIS NEEDS TO BE ATOMIC AND RELIABLE */
 	ring_idx = error_ring_loc++;
 	
 	if (ring_idx >= MAX_ERROR_RING) ring_idx %= MAX_ERROR_RING;
-	str = error_ring[ring_idx];
+	str = ErrorRing[ring_idx].msg;
 
 	inst_string = va_arg( Argp, const char * );
 	if (inst_string) {
@@ -315,7 +413,9 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 		ring_seq += (unsigned int)str[i];
 	    }
 	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
-	    error_ring_seq[ring_idx] = ring_seq;
+	    ErrorRing[ring_idx].seq      = ring_seq;
+	    ErrorRing[ring_idx].severity = MPIU_ERR_SEVERITY_FATAL;
+	    ErrorRing[ring_idx].next_idx = -1;
 	}
 	else if (specific_idx >= 0) {
 	    MPIU_Strncpy( str, generic_err_msgs[specific_idx].long_name, 
@@ -396,8 +496,8 @@ const char *MPIR_Err_get_string( int errorcode )
 	generic_idx = (errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
 
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
-	if (error_ring_seq[ring_idx] == ring_seq) {
-	    p = error_ring[ring_idx];
+	if (ErrorRing[ring_idx].seq == ring_seq) {
+	    p = ErrorRing[ring_idx].msg;
 	}
 	else if (generic_idx > 0) {
 	    p = generic_err_msgs[generic_idx].long_name;
