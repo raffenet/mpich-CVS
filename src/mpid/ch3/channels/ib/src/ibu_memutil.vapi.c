@@ -209,6 +209,7 @@ int ibuBlockAllocFinalizeIB(ibuQueue_t *p)
 	return 0;
     ibuBlockAllocFinalizeIB(p->next_q);
     ib_free_deregister(p);
+    return 0;
 }
 
 void * ibuBlockAlloc(ibuBlockAllocator p)
