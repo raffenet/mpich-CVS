@@ -28,7 +28,7 @@ dnl C program, since that is why we are doing this anyway.  A similar approach
 dnl is used by FFTW, though without some of the cases we check (specifically, 
 dnl mixed name mangling)
 dnl
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_F77_NAME_MANGLE,[
 AC_CACHE_CHECK([for Fortran 77 name mangling],
@@ -138,7 +138,7 @@ dnl Notes:
 dnl If the 'cross-size' argument is not given, 'autoconf' will issue an error
 dnl message.  You can use '0' to specify undetermined.
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_F77_CHECK_SIZEOF,[
 changequote(<<, >>)dnl
 dnl The name to #define.
@@ -214,7 +214,7 @@ dnl This macro requires a version of autoconf `after` 2.13; the 'acgeneral.m4'
 dnl file contains an error in the handling of Fortran programs in 
 dnl 'AC_TRY_COMPILE' (fixed in our local version).
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_F77_EXCLAIM_COMMENTS,[
 AC_CACHE_CHECK([whether Fortran accepts ! for comments],
 pac_cv_prog_f77_exclaim_comments,[
@@ -253,7 +253,7 @@ dnl that complain about poor code are in effect.
 dnl
 dnl Because this is a long script, we have ensured that you can pass a 
 dnl variable containing the option name as the first argument.
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_F77_CHECK_COMPILER_OPTION,[
 AC_MSG_CHECKING([that Fortran 77 compiler accepts option $1])
 ac_result="no"
@@ -361,10 +361,10 @@ dnl To work around this, we test whether iargc etc. work first.  This
 dnl will catch most systems and will speed up the tests.
 dnl
 dnl Next, the libraries are only added if they are needed to complete a 
-dnl link; they aren't added just because they exist.
+dnl link; they aren''t added just because they exist.
 dnl
 dnl f77argdef
-dnlD*/
+dnl D*/
 dnl
 dnl Random notes
 dnl You can export the command line arguments from C to the g77 compiler
@@ -714,7 +714,7 @@ dnl and require instead either '-Wl,-L,dir' or something else.  This
 dnl command attempts to determine what is accepted.  The flag is 
 dnl placed into 'F77_LIBDIR_LEADER'.
 dnl
-dnlD*/
+dnl D*/
 dnl
 dnl An earlier version of this only tried the arguments without using
 dnl a library.  This failed when the HP compiler complained about the
@@ -777,7 +777,7 @@ dnl not to the use of '#include' with the C preprocessor.
 dnl If directory does not exist, it will be created.  In that case, the 
 dnl directory should be a direct descendant of the current directory.
 dnl
-dnlD*/ 
+dnl D*/ 
 AC_DEFUN(PAC_PROG_F77_HAS_INCDIR,[
 checkdir=$1
 AC_CACHE_CHECK([for include directory flag for Fortran],
@@ -818,7 +818,7 @@ dnl
 dnl Syntax:
 dnl   PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS(action-if-true,action-if-false)
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS,[
 AC_CACHE_CHECK([whether Fortran allows unused externals],
 pac_cv_prog_f77_allows_unused_externals,[

@@ -167,7 +167,7 @@ dnl any effect.
 dnl
 dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_LANG_POP_COMPILERS,[
 pac_save_level=`expr $pac_save_level - 1`
 if test "X$pac_save_level" = "X0" ; then

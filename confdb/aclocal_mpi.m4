@@ -16,7 +16,7 @@ dnl when MPICH is being built.
 dnl
 dnl Prerequisites:
 dnl autoconf version 2.13 (for AC_SEARCH_LIBS)
-dnlD*/
+dnl D*/
 dnl Other tests to add:
 dnl Version of MPI
 dnl MPI-2 I/O?
@@ -69,7 +69,7 @@ dnl 'no' otherwise.
 dnl
 dnl See Also:
 dnl PAC_LIB_MPI
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_ARG_MPICH_BUILDING,[
 AC_ARG_WITH(mpichbuilding,
 [--with-mpichbuilding - Assume that MPICH is being built],
@@ -104,7 +104,7 @@ dnl 'MPIUNBOOT' will stop those demons.
 dnl
 dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_ARG_MPI_TYPES,[
 AC_PROVIDE([AC_PROG_CC])
 AC_SUBST(CC)
@@ -255,7 +255,7 @@ dnl Define 'HAVE_MPI_F2C' if the routines are found.
 dnl
 dnl Notes:
 dnl Looks only for 'MPI_Request_c2f'.
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_MPI_F2C,[
 AC_CACHE_CHECK([for MPI F2C and C2F routines],
 pac_cv_mpi_f2c,
@@ -274,7 +274,7 @@ dnl PAC_HAVE_ROMIO - make mpi.h include mpio.h if romio enabled
 dnl
 dnl Output Effect:
 dnl expands @HAVE_ROMIO@ in mpi.h into #include "mpio.h"
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_HAVE_ROMIO,[
 if test "$enable_romio" = "yes" ; then HAVE_ROMIO='#include "mpio.h"'; fi
 AC_SUBST(HAVE_ROMIO)

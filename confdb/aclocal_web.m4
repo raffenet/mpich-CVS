@@ -7,7 +7,7 @@ dnl Output Effects:
 dnl Sets the variable 'wwwdir' to the specified directory; if no directory
 dnl is given, it uses '${prefix}/www'.
 dnl
-dnlD*/
+dnl D*/
 dnl 
 AC_DEFUN(PAC_ARG_WWWDIR,[
 AC_ARG_WITH([wwwdir],[

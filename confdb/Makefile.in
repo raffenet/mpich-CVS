@@ -22,15 +22,17 @@ htmldoc: ${SOURCES}
 	@echo '<HTML><TITLE>PAC Documentation</TITLE>' >www/index.htm 
 	@echo '<BODY BGCOLOR="FFFFFF">' >>www/index.htm
 	@echo '<MENU>' >>www/index.htm
-	@(cd www ; ls -1 *.html | sed 's%^\(.*\)\.html%<LI> <A HREF="\1.html">\1</A>%g' >>\
+	@(cd www && ls -1 *.html | sed 's%^\(.*\)\.html%<LI> <A HREF="\1.html">\1</A>%g' >>\
 		index.htm )
 	@echo '</MENU></BODY></HTML>' >>www/index.htm
 texdoc: ${SOURCES}
 	${DOCTEXT} ${DOCTEXT_ARGS} -latex -mpath tex ${SOURCES}
 	rm -f tex/ref.tex
-	@(cd tex ; ls -1 *.tex | sed 's%^\(.*\)\.tex%\\input \1.tex%g' > ../ref.tex)
+	@(cd tex && ls -1 *.tex | sed 's%^\(.*\)\.tex%\\input \1.tex%g' > ../ref.tex)
 	@mv ref.tex tex/ref.tex
-	@(cd tex ; @LATEX@ ../pac ; dvips pac)
+	@(cd tex && @LATEX@ ../pac && dvips pac && dvipdfm pac)
+	@mv tex/pac.pdf .
+	@mv tex/pac.ps .
 
 acconfig.h: ${config_SOURCES}
 	@-rm -f acconfig.h

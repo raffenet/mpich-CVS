@@ -55,7 +55,7 @@ dnl that complain about poor code are in effect.
 dnl
 dnl Because this is a long script, we have ensured that you can pass a 
 dnl variable containing the option name as the first argument.
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_CHECK_COMPILER_OPTION,[
 AC_MSG_CHECKING([that C compiler accepts option $1])
 save_CFLAGS="$CFLAGS"
@@ -141,7 +141,7 @@ dnl It should try to match known systems to known compilers (checking, of
 dnl course), and then falling back to some common defaults.
 dnl Note that many compilers will complain about -g and aggressive
 dnl optimization.  
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_OPTIMIZATION,[
     for copt in "-O4 -Ofast" "-Ofast" "-fast" "-O3" "-xO3" "-O" ; do
         PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
@@ -213,7 +213,7 @@ dnl `dependsrule.in` in the same directory as the other auxillery configure
 dnl scripts (set with dnl 'AC_CONFIG_AUX_DIR').  If you use `dependsrule.in`,
 dnl you must have `dependsrule` in 'AC_OUTPUT' before this `Makefile`.
 dnl 
-dnlD*/
+dnl D*/
 dnl 
 dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
 dnl includes, such as /usr/xxxx and /opt/xxxx
@@ -343,7 +343,7 @@ dnl Sets 'HAVE_SEMCTL' if semctl is available.
 dnl Sets 'HAVE_UNION_SEMUN' if 'union semun' is available.
 dnl Sets 'SEMCTL_NEEDS_SEMUN' if a 'union semun' type must be passed as the
 dnl fourth argument to 'semctl'.
-dnlD*/ 
+dnl D*/ 
 dnl Check for semctl and arguments
 AC_DEFUN(PAC_FUNC_SEMCTL,[
 AC_CHECK_FUNC(semctl)
@@ -383,7 +383,7 @@ dnl
 dnl Output Effect:
 dnl Defines 'volatile' as empty if volatile is not available.
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_VOLATILE,[
 AC_CACHE_CHECK([for volatile],
 pac_cv_c_volatile,[
@@ -403,7 +403,7 @@ dnl
 dnl Output Effect:
 dnl Defines 'inline' as empty if inline is not available.
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_INLINE,[
 AC_CACHE_CHECK([for inline],
 pac_cv_c_inline,[
@@ -424,7 +424,7 @@ dnl
 dnl Output Effects:
 dnl Invokes the true or false action
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_CPP_CONCAT,[
 pac_pound="#"
 AC_CACHE_CHECK([that the compiler $CC accepts $ac_pound$ac_pound for concatenation in cpp],
@@ -448,7 +448,7 @@ dnl
 dnl Notes:
 dnl One version of Solaris accepted only one argument.
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_FUNC_GETTIMEOFDAY,[
 AC_CACHE_CHECK([whether gettimeofday takes 2 arguments],
 pac_cv_func_gettimeofday,[
@@ -478,7 +478,7 @@ dnl
 dnl Note that some compilers accept restrict only with additional options.
 dnl DEC/Compaq/HP Alpha Unix (Tru64 etc.) -accept restrict_keyword
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_RESTRICT,[
 AC_CACHE_CHECK([for restrict],
 pac_cv_c_restrict,[
@@ -526,7 +526,7 @@ dnl are quite happy to accept the *wrong* number of arguments to a macro!
 dnl Instead, we try to find a clean compile version, using our special
 dnl PAC_C_TRY_COMPILE_CLEAN command.
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_HEADER_STDARG,[
 AC_CHECK_HEADER(stdarg.h)
 dnl Sets ac_cv_header_stdarg_h
@@ -605,7 +605,7 @@ dnl Output Effect:
 dnl The 'flagvar' is set to 0 (clean), 1 (dirty but success ok), or 2
 dnl (failed).
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_TRY_COMPILE_CLEAN,[
 $3=2
 dnl Get the compiler output to test against
@@ -660,7 +660,7 @@ dnl       action-if-unknown)
 dnl
 dnl Notes:
 dnl 'action-if-unknown' is used in the case of cross-compilation.
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_C_UNALIGNED_DOUBLES,[
 AC_CACHE_CHECK([whether C compiler allows unaligned doubles],
 pac_cv_prog_c_unaligned_doubles,[
@@ -717,7 +717,7 @@ dnl.ve
 dnl if functions can be declared as 'int foo(...) __attribute__ ((weak));'
 dnl sets the shell variable pac_cv_attr_weak to yes.
 dnl 
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_C_WEAK_SYMBOLS,[
 pragma_extra_message=""
 AC_CACHE_CHECK([for type of weak symbol support],
@@ -845,7 +845,7 @@ dnl _XOPEN_SOURCE is defines and _XOPEN_VERSION is 4 or greater.
 dnl We test by looking for a missing crypt by defining our own
 dnl incompatible one and trying to compile it.
 dnl Defines NEED_CRYPT_PROTOTYPE if no prototype is found.
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_FUNC_CRYPT,[
 AC_CACHE_CHECK([if crypt defined in unistd.h],
 pac_cv_func_crypt_defined,[
@@ -902,7 +902,7 @@ dnl  -fd -v -Xc
 dnl IRIX
 dnl  -ansi -DEBUG:trap_uninitialized=ON:varargs_interface_check=ON:verbose_runtime=ON
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_ARG_STRICT,[
 AC_ARG_ENABLE(strict,
 [--enable-strict  - Turn on strict compilation testing when using gcc])
@@ -961,7 +961,7 @@ dnl done
 dnl IFS="$SaveIFS"
 dnl.ve
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_ARG_CC_G,[
 AC_ARG_ENABLE(g,
 [--enable-g  - Turn on debugging of the package (typically adds -g to COPTIONS)])
@@ -1227,7 +1227,7 @@ dnl
 dnl PAC_CHECK_SIZEOF_DERIVED(shortname,definition,defaultsize)
 dnl Like AC_CHECK_SIZEOF, but handles arbitrary types.
 dnl Unlike AC_CHECK_SIZEOF, does not define SIZEOF_xxx (because
-dnl autoheader can't handle this case)
+dnl autoheader can''t handle this case)
 dnl D*/
 AC_DEFUN(PAC_CHECK_SIZEOF_DERIVED,[
 changequote(<<,>>)dnl

@@ -37,7 +37,7 @@ dnl the "notgiven" value.
 dnl
 dnl See Also:
 dnl PAC_ARG_CACHING
-dnlD*/
+dnl D*/
 define([AC_CACHE_LOAD],
 [if test "X$cache_system" = "X" ; then
     # A default file name, just in case

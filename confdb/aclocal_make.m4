@@ -273,7 +273,11 @@ else
 fi
 ])dnl
 dnl/*D
+dnl PAC_PROG_MAKE_CLOCK_SKEW - Check whether there is a problem with 
+dnl clock skew in suing make.
 dnl
+dnl Effect:
+dnl Sets the cache variable 'pac_cv_prog_make_found_clock_skew' to yes or no
 dnl D*/
 AC_DEFUN(PAC_PROG_MAKE_CLOCK_SKEW,[
 AC_CACHE_CHECK([whether clock skew breaks make],

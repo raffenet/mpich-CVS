@@ -50,7 +50,7 @@ dnl
 dnl The environment variable 'CONFIG_AUX_DIR', if set, overrides the
 dnl directories listed.  This is an extension to the 'autoconf' version of
 dnl this macro. 
-dnlD*/
+dnl D*/
 undefine([AC_CONFIG_AUX_DIRS])
 AC_DEFUN(AC_CONFIG_AUX_DIRS,
 [if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR 

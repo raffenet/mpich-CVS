@@ -155,7 +155,7 @@ dnl
 dnl Synopsis:
 dnl  PAC_PROG_F90_INT_KIND(variable-to-set,number-of-bytes,[cross-size])
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_F90_INT_KIND,[
 # Set the default
 $1=-1
