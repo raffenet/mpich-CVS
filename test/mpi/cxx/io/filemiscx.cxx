@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 
     MPI::Init();
 
+    try {
     mynod = MPI::COMM_WORLD.Get_rank();
 
     /* process 0 takes the file name as a command-line argument and 
@@ -51,13 +52,13 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    len = strlen("iotest.txt");
+	    len = (int)strlen("iotest.txt");
 	    filename = new char [len+1];
 	    strcpy( filename, "iotest.txt" );
 	}
 	else {
 	    argv++;
-	    len = strlen(*argv);
+	    len = (int)strlen(*argv);
 	    filename = new char [len+1];
 	    strcpy(filename, *argv);
 	}
@@ -80,31 +81,63 @@ int main(int argc, char **argv)
 
     amode = fh.Get_amode();
 #if VERBOSE
-    if (!mynod) cout << "testing File::_get_amode\n";
+    if (!mynod)
+    {
+	cout << "testing File::_get_amode\n";
+	cout.flush();
+    }
 #endif
     if (amode != (MPI::MODE_CREATE | MPI::MODE_RDWR)) {
 	errs++;
 	cout << "amode is " << amode << ",  should be " << 
 		(int)(MPI::MODE_CREATE | MPI::MODE_RDWR) << "\n";
+	cout.flush();
     }
 
     flag = fh.Get_atomicity();
     if (flag) {
 	errs++;
 	cout << "atomicity is " << flag << ", should be false\n";
+	cout.flush();
     }
 #if VERBOSE
-    if (!mynod) cout << "setting atomic mode\n";
+    if (!mynod)
+    {
+	cout << "setting atomic mode\n";
+	cout.flush();
+    }
 #endif
-    fh.Set_atomicity( true );
-    flag = fh.Get_atomicity();
+    try
+    {
+	fh.Set_atomicity( true );
+    }
+    catch (MPI::Exception e)
+    {
+	cout << "Exception thrown in Set_atomicity, Error: " << e.Get_error_string() << endl;
+	cout.flush();
+    }
+    try
+    {
+	flag = fh.Get_atomicity();
+    }
+    catch (MPI::Exception e)
+    {
+	cout << "Exception thrown in Get_atomicity, Error: " << e.Get_error_string() << endl;
+	cout.flush();
+	flag = false;
+    }
     if (!flag) {
-	errs;
+	errs++;
 	cout << "atomicity is " << flag << ", should be true\n";
+	cout.flush();
     }
     fh.Set_atomicity( false );
 #if VERBOSE
-    if (!mynod) cout << "reverting back to nonatomic mode\n";
+    if (!mynod)
+    {
+	cout << "reverting back to nonatomic mode\n";
+	cout.flush();
+    }
 #endif
 
     newtype = MPI::INT.Create_vector( 10, 10, 20 );
@@ -112,28 +145,42 @@ int main(int argc, char **argv)
 
     fh.Set_view( 1000, MPI::INT, newtype, "native", MPI::INFO_NULL);
 #if VERBOSE
-    if (!mynod) cout << "testing File::_get_view\n";
+    if (!mynod)
+    {
+	cout << "testing File::_get_view\n";
+	cout.flush();
+    }
 #endif
     fh.Get_view( disp, etype, filetype, datarep );
     if ((disp != 1000) || strcmp(datarep, "native")) {
 	errs++;
 	cout << "disp = " << disp << " datarep = " << datarep << 
 ", should be 1000, native\n\n";
+	cout.flush();
     }
 #if VERBOSE
-    if (!mynod) cout << "testing File::_get_byte_offset\n");
+    if (!mynod)
+    {
+	cout << "testing File::_get_byte_offset\n";
+	cout.flush();
+    }
 #endif
     disp = fh.Get_byte_offset( 10 );
     if (disp != (1000+20*sizeof(int))) {
 	errs++;
 	cout << "byte offset = " << disp << ", should be " <<
 	    (int) (1000+20*sizeof(int)) << "\n";
+	cout.flush();
     }
 
     group = fh.Get_group();
 
 #if VERBOSE
-    if (!mynod) cout << "testing File::_set_size\n";
+    if (!mynod)
+    {
+	cout << "testing File::_set_size\n";
+	cout.flush();
+    }
 #endif
     fh.Set_size( 1000+15*sizeof(int) );
     MPI::COMM_WORLD.Barrier();
@@ -143,31 +190,46 @@ int main(int argc, char **argv)
 	errs++;
 	cout << "file size = " << disp << ", should be " <<
 	    (int) (1000+15*sizeof(int)) << "\n";
+	cout.flush();
     }
 
 #if VERBOSE
-    if (!mynod) cout << "seeking to eof and testing File::_get_position\n";
+    if (!mynod)
+    {
+	cout << "seeking to eof and testing File::_get_position\n";
+	cout.flush();
+    }
 #endif
     fh.Seek( 0, MPI_SEEK_END );
     disp = fh.Get_position();
     if (disp != 10) {
 	errs++;
 	cout << "file pointer posn = " << disp << ", should be 10\n\n";
+	cout.flush();
     }
 
 #if VERBOSE
-    if (!mynod) cout << "testing File::_get_byte_offset\n";
+    if (!mynod)
+    {
+	cout << "testing File::_get_byte_offset\n";
+	cout.flush();
+    }
 #endif
     offset = fh.Get_byte_offset( disp );
     if (offset != (1000+20*sizeof(int))) {
 	errs++;
 	cout << "byte offset = " << offset << ", should be " << 
 	    (int) (1000+20*sizeof(int)) << "\n";
+	cout.flush();
     }
     MPI::COMM_WORLD.Barrier();
 
 #if VERBOSE
-    if (!mynod) cout << "testing File::_seek with MPI_SEEK_CUR\n";
+    if (!mynod)
+    {
+	cout << "testing File::_seek with MPI_SEEK_CUR\n";
+	cout.flush();
+    }
 #endif
     fh.Seek( -10, MPI_SEEK_CUR );
     disp = fh.Get_position();
@@ -176,15 +238,24 @@ int main(int argc, char **argv)
 	errs++;
 	cout << "file pointer posn in bytes = " << offset << 
 	    ", should be 1000\n\n";
+	cout.flush();
     }
 
 #if VERBOSE
-    if (!mynod) cout << "preallocating disk space up to 8192 bytes\n";
+    if (!mynod)
+    {
+	cout << "preallocating disk space up to 8192 bytes\n";
+	cout.flush();
+    }
 #endif
     fh.Preallocate( 8192 );
 
 #if VERBOSE
-    if (!mynod) cout << "closing the file and deleting it\n";
+    if (!mynod)
+    {
+	cout << "closing the file and deleting it\n";
+	cout.flush();
+    }
 #endif
     fh.Close();
     
@@ -195,9 +266,11 @@ int main(int argc, char **argv)
     if (mynod == 0) {
 	if( toterrs > 0) {
 	    cout << "Found " << toterrs << "\n";
+	    cout.flush();
 	}
 	else {
 	    cout << " No Errors\n";
+	    cout.flush();
 	}
     }
     newtype.Free();
@@ -205,6 +278,17 @@ int main(int argc, char **argv)
     group.Free();
 
     delete [] filename;
-    MPI::Finalize(); 
+    }
+    catch (MPI::Exception e)
+    {
+	cout << "Unhandled MPI exception caught: code " << e.Get_error_code() << ", class " << e.Get_error_class() << ", string \"" << e.Get_error_string() << "\"" << endl;
+	cout.flush();
+    }
+    catch (...)
+    {
+	cout << "Unhandled exception caught.\n";
+	cout.flush();
+    }
+    MPI::Finalize();
     return 0;
 }
