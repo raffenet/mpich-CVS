@@ -10,6 +10,6 @@ transpose1
 transpose2
 transpose3
 transpose4
-fetchandadd.c
-fetchandadd_tree.c
+fetchandadd
+fetchandadd_tree
 

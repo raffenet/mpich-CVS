@@ -3,11 +3,13 @@
 #include "stdlib.h"
 
 /* This is the tree-based scalable version of the fetch-and-add
-   example from Using MPI-2, pg 206-207. This example DOES NOT RUN by
-   default because of lack of thread-safety in the progress engine. I
-   have tested it by making temporary tweaks to the RMA code to
-   account for thread-safety issues. It runs even on non-power-of-two
-   no. of processes. */ 
+   example from Using MPI-2, pg 206-207. The code in the book (Fig
+   6.16) has bugs that are fixed below.
+
+   This example DOES NOT RUN by default because of lack of
+   thread-safety in the progress engine. I have tested it by making
+   temporary tweaks to the RMA code to account for thread-safety
+   issues. It runs even on non-power-of-two no. of processes. */ 
 
 
 #define NTIMES 10  /* no of times each process calls the counter
