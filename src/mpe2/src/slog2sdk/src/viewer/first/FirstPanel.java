@@ -197,9 +197,21 @@ public class FirstPanel extends JPanel
         Object evt_src = evt.getSource();
         if (    evt_src == this.file_open_btn 
              || evt_src == this.logname_fld ) {
+            String err_msg = null;
             this.disposeInputLogResources();
             slog_ins  = this.getInputLog( logname_fld.getText() );
             if ( slog_ins != null ) {
+                if ( (err_msg = slog_ins.getCompatibleHeader() ) != null ) {
+                    if ( ! Dialogs.confirm( TopWindow.First.getWindow(),
+                                    err_msg
+                                  + logformat.slog2.Const.VERSION_HISTORY 
+                                  + "Do you still want to continue reading "
+                                  + "the logfile ?" ) ) {
+                         slog_ins = null;
+                         return;
+                    }
+                }
+                slog_ins.initialize();
                 this.setMapPullDownMenu( (List) slog_ins.getLineIDMapList() );
                 legend_frame = new LegendFrame( slog_ins );
                 legend_frame.pack();
