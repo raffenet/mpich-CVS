@@ -82,6 +82,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr(comm, comm_ptr);
+    MPIR_Nest_incr();
     
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -135,7 +136,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	int tmpbuf_size;
 	int tmpbuf_count;
 
-	mpi_errno = MPI_Pack_size(count, datatype, comm, &tmpbuf_size);
+	mpi_errno = NMPI_Pack_size(count, datatype, comm, &tmpbuf_size);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    goto blk_exit;
@@ -149,7 +150,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	}
 
 	tmpbuf_count = 0;
-	mpi_errno = MPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    goto blk_exit;
@@ -209,8 +210,9 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	}
     }
 #   endif
-    
+
+    MPIR_Nest_decr();
   fn_exit:
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV_REPLACE);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

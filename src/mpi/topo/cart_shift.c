@@ -134,6 +134,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	}
 	/* We must return MPI_PROC_NULL if shifted over the edge of a 
 	   non-periodic mesh */
+	MPIR_Nest_incr();
 	pos[direction] += displ;
 	if (!cart_ptr->topo.cart.periodic[direction] &&
 	    (pos[direction] >= cart_ptr->topo.cart.dims[direction] ||
@@ -141,7 +142,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	    *dest = MPI_PROC_NULL;
 	}
 	else {
-	    (void) PMPI_Cart_rank( comm, pos, dest );
+	    (void) NMPI_Cart_rank( comm, pos, dest );
 	}
 
 	pos[direction] = cart_ptr->topo.cart.position[direction] - displ;
@@ -151,8 +152,9 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	    *source = MPI_PROC_NULL;
 	}
 	else {
-	    (void) PMPI_Cart_rank( comm, pos, source );
+	    (void) NMPI_Cart_rank( comm, pos, source );
 	}
+	MPIR_Nest_decr();
     }
 
     /* ... end of body of routine ... */

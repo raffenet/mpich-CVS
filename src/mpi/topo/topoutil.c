@@ -62,6 +62,7 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 }
 
 /* Ignore p */
+/* begin:nested */
 static int MPIR_Topology_finalize( void *p )
 {
     if (MPIR_Topology_keyval != MPI_KEYVAL_INVALID) {
@@ -70,6 +71,7 @@ static int MPIR_Topology_finalize( void *p )
     }
     return 0;
 }
+/* end:nested */
 
 static int *MPIR_Copy_array( int n, const int a[], int *err )
 {
