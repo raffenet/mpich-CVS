@@ -25,6 +25,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
+typedef struct { int val, cnt; } Factors;
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Dims_create PMPI_Dims_create
 
@@ -49,7 +50,6 @@
 	  811,  821,  823,  827,  829,  839,  853,  857,  859,  863, 
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
-typedef struct { int val, cnt; } Factors;
 PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
 {
     int n_tmp, n_root;
