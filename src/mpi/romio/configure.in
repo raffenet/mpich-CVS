@@ -908,7 +908,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     F77=${FC:-f77}
     if test $DEBUG = "yes"; then
         dnl CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
-        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
+        CFLAGS="$CFLAGS -g -verbose"
     else 
         dnl CFLAGS="$CFLAGS -O -DAIO_PRIORITY_DEFAULT"
         CFLAGS="$CFLAGS -O"
