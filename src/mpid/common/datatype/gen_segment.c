@@ -288,8 +288,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					void *pieceparams)
 {
     int cur_sp, valid_sp;
-    DLOOP_Offset last;
-    DLOOP_Offset stream_off;
+    DLOOP_Offset last, stream_off;
     struct DLOOP_Dataloop_stackelm *cur_elmp;
 
     DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
@@ -333,8 +332,9 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
-	    int partial_flag, piecefn_indicated_exit, myblocks;
-	    DLOOP_Offset basic_size;
+	    int partial_flag, piecefn_indicated_exit;
+	    DLOOP_Offset myblocks, basic_size;
+
 	    /* process data region */
 
 	    /* First discover how large a region we *could* process, if it
@@ -372,7 +372,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 	    /* ??? SHOULD THIS BE >= FOR SOME REASON ??? */
-	    if (stream_off + myblocks * basic_size > (unsigned long) last) {
+	    if (stream_off + myblocks * basic_size > last) {
 		/* Cannot process the entire "piece" -- round down */
 		myblocks = ((last - stream_off) / basic_size);
 #ifdef DLOOP_M_VERBOSE
