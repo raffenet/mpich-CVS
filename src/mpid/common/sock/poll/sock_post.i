@@ -537,7 +537,7 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	pollfd->events &= ~POLLIN;
     }
 
-#warning need to handle outstanding posted reads and writes.  should pull data out of read buffer.
+/*#warning need to handle outstanding posted reads and writes.  should pull data out of read buffer.*/ /* Solaris complains about #warnings */
     
     mpi_errno = MPIDU_Socki_event_enqueue(sock->sock_set, MPIDU_SOCK_OP_CLOSE, 0, pollinfo->user_ptr, MPI_SUCCESS);
     if (mpi_errno != MPI_SUCCESS)
@@ -547,7 +547,7 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	goto fn_exit;
     }
 
-#warning where should the close really happen?  probably in sock_wait where it can block if need be.
+/*#warning where should the close really happen?  probably in sock_wait where it can block if need be.*/ /* Solaris complains about #warnings */
     if (pollinfo->fd != -1)
     { 
 	flags = fcntl(pollinfo->fd, F_GETFL, 0);
