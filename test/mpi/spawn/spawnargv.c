@@ -23,8 +23,8 @@ int main( int argc, char *argv[] )
     int errcodes[2];
     MPI_Comm      parentcomm, intercomm;
     MPI_Status    status;
-    const char * const inargv[]  = { "a", "b=c", "d e", "-pf" " Ss", 0 };
-    const char * const outargv[] = { "a", "b=c", "d e", "-pf" " Ss", 0 };
+    char * inargv[]  = { "a", "b=c", "d e", "-pf" " Ss", 0 };
+    char * outargv[] = { "a", "b=c", "d e", "-pf" " Ss", 0 };
 
     MTest_Init( &argc, &argv );
 
