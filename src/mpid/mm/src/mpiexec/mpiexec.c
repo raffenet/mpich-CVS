@@ -168,9 +168,9 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
     pszArgs[0] = '\0';
     for (i = 2; i<argc; i++)
     {
-	strcat(pszArgs, argv[i]);
+	strncat(pszArgs, argv[i], MAX_PATH);
 	if (i < argc-1)
-	    strcat(pszArgs, " ");
+	    strncat(pszArgs, " ", MAX_PATH);
     }
 
     printf("nProc %d\n", nProc);
