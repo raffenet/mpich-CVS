@@ -1318,7 +1318,16 @@ extern int MPID_THREAD_LEVEL;
  * Setmax atomically implements *a_ptr = max(b,*a_ptr) .  This can
  * be implemented using compare-and-swap (form max, if new max is 
  * larger, compare-and-swap against old max.  if failure, restart).
- * Fetch_and_increment can be implemented in a similar way.
+ * Fetch_and_increment can be implemented in a similar way; for
+ * example, in IA32, 
+ * loop:
+ *   mov eax, valptr
+ *   mov oldvalptr, eax
+ *   mov ebx, eax
+ *   inc ebx
+ *   lock: cmpxchg valptr, ebx
+ *   jnz loop
+ *
  * Implementations using LoadLink/StoreConditional are similar.
  *
  * Question: can we use the simple code for MPI_THREAD_SERIALIZED?
