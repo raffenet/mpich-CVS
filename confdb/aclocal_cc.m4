@@ -943,6 +943,8 @@ dnl If the value 'noopt' is given to '--enable-strict', no optimization
 dnl options are set.  For some compilers (including gcc), this may 
 dnl cause some strict complication tests to be skipped (typically, these are
 dnl tests for unused variables or variables used before they are defined).
+dnl
+dnl If the value 'posix' is given to '--enable-strict', 
 dnl 
 dnl This only works where 'gcc' is available.
 dnl In addition, it exports the variable 'enable_strict_done'. This
@@ -979,6 +981,14 @@ if test "$enable_strict_done" != "yes" ; then
             COPTIONS="${COPTIONS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
         fi
 	;;
+
+	posix)
+	enable_strict_done="yes"
+        if test "$CC" = "gcc" ; then
+            COPTIONS="${COPTIONS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+    	fi
+ 	;;	
+	
 	noopt)
         enable_strict_done="yes"
         if test "$CC" = "gcc" ; then 
@@ -1026,6 +1036,17 @@ if test "$enable_strict_done" != "yes" ; then
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
 	;;
+
+	posix)
+	enable_strict_done="yes"
+        if test "$ac_cv_prog_gcc" = "yes" ; then 
+            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+	    AC_MSG_RESULT([Adding strict check arguments (POSIX flavor) to CFLAGS])
+	else 
+	    AC_MSG_WARN([enable strict supported only for gcc])
+    	fi
+ 	;;	
+	
 	noopt)
         enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
