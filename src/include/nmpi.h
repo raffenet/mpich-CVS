@@ -38,6 +38,7 @@
 #define NMPI_Allgather MPI_Allgather
 #define NMPI_Comm_get_attr MPI_Comm_get_attr
 #define NMPI_Comm_set_attr MPI_Comm_set_attr
+#define NMPI_Comm_delete_attr MPI_Comm_delete_attr
 #define NMPI_Comm_create_keyval MPI_Comm_create_keyval 
 #define NMPI_Comm_free_keyval MPI_Comm_free_keyval 
 #define NMPI_Comm_group MPI_Comm_group
@@ -61,6 +62,8 @@
 #define NMPI_Type_indexed MPI_Type_indexed 
 #define NMPI_Type_commit MPI_Type_commit
 #define NMPI_Type_free MPI_Type_free
+#define NMPI_Type_size MPI_Type_size
+#define NMPI_Type_get_extent MPI_Type_get_extent
 #define NMPI_Cart_rank MPI_Cart_rank
 #define NMPI_Iprobe MPI_Iprobe
 #define NMPI_Barrier MPI_Barrier
@@ -72,6 +75,12 @@
 #define NMPI_Info_get_nthkey MPI_Info_get_nthkey
 #define NMPI_Info_get_valuelen MPI_Info_get_valuelen
 #define NMPI_Info_get MPI_Info_get
+#define NMPI_Info_create MPI_Info_create
+#define NMPI_Info_set MPI_Info_set
+#define NMPI_Comm_get_name MPI_Comm_get_name
+#define NMPI_Comm_get_errhandler MPI_Comm_get_errhandler
+#define NMPI_Comm_set_errhandler MPI_Comm_set_errhandler
+#define NMPI_Comm_create_errhandler MPI_Comm_create_errhandler
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -87,6 +96,7 @@
 #define NMPI_Allgather PMPI_Allgather
 #define NMPI_Comm_get_attr PMPI_Comm_get_attr
 #define NMPI_Comm_set_attr PMPI_Comm_set_attr
+#define NMPI_Comm_delete_attr PMPI_Comm_delete_attr
 #define NMPI_Comm_create_keyval PMPI_Comm_create_keyval 
 #define NMPI_Comm_free_keyval PMPI_Comm_free_keyval 
 #define NMPI_Comm_group PMPI_Comm_group
@@ -110,6 +120,8 @@
 #define NMPI_Type_indexed PMPI_Type_indexed 
 #define NMPI_Type_commit PMPI_Type_commit
 #define NMPI_Type_free PMPI_Type_free
+#define NMPI_Type_size PMPI_Type_size
+#define NMPI_Type_get_extent PMPI_Type_get_extent
 #define NMPI_Cart_rank PMPI_Cart_rank
 #define NMPI_Iprobe PMPI_Iprobe
 #define NMPI_Barrier PMPI_Barrier
@@ -121,6 +133,12 @@
 #define NMPI_Info_get_nthkey PMPI_Info_get_nthkey
 #define NMPI_Info_get_valuelen PMPI_Info_get_valuelen
 #define NMPI_Info_get PMPI_Info_get
+#define NMPI_Info_create PMPI_Info_create
+#define NMPI_Info_set PMPI_Info_set
+#define NMPI_Comm_get_name PMPI_Comm_get_name
+#define NMPI_Comm_get_errhandler PMPI_Comm_get_errhandler
+#define NMPI_Comm_set_errhandler PMPI_Comm_set_errhandler
+#define NMPI_Comm_create_errhandler PMPI_Comm_create_errhandler
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */
 
