@@ -70,6 +70,14 @@ extern int free( void *);
 
 /* HEADER_DOUBLES is the number of doubles in a trSPACE header */
 /* We have to be careful about alignment rules here */
+#define USE_LONG_NAMES_IN_TRMEM
+#ifdef USE_LONG_NAMES_IN_TRMEM
+/* Assume worst case and align on 8 bytes */
+#define TR_ALIGN_BYTES 8
+#define TR_ALIGN_MASK  0x7
+#define TR_FNAME_LEN   48
+#define HEADER_DOUBLES 19
+#else
 #if SIZEOF_VOID_P > 4
 #define TR_ALIGN_BYTES 8
 #define TR_ALIGN_MASK  0x7
@@ -81,6 +89,7 @@ extern int free( void *);
 #define TR_FNAME_LEN   12
 #define HEADER_DOUBLES 8
 #endif
+#endif
 
 #define COOKIE_VALUE   0xf0e0d0c9
 #define ALREADY_FREED  0x0f0e0d9c
@@ -89,11 +98,13 @@ typedef struct TRSPACE {
     unsigned long   size;
     int             id;
     int             lineno;
-    char            fname[TR_FNAME_LEN];
     int             freed_lineno;
     char            freed_fname[TR_FNAME_LEN];
-    unsigned long   cookie;        
+    char            fname[TR_FNAME_LEN];
     struct TRSPACE *next, *prev;
+    unsigned long   cookie;        /* Cookie is always the last element 
+				      inorder to catch the off-by-one
+				      errors */
     } TRSPACE;
 /* This union is used to insure that the block passed to the user is
    aligned on a double boundary */
@@ -110,6 +121,7 @@ static int     world_rank = -1;
 static long    allocated = 0, frags = 0;
 static TRSPACE *TRhead = 0;
 static int     TRid = 0;
+static int     TRidSet = 0;
 static int     TRlevel = 0;
 #define MAX_TR_STACK 20
 static int     TRdebugLevel = 0;
@@ -252,9 +264,16 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     }
     if (*nend != COOKIE_VALUE) {
 	if (*nend == ALREADY_FREED) {
-	    MPIU_Error_printf( 
+	    if (TRidSet) {
+		MPIU_Error_printf( 
 		     "[%d] Block [id=%d(%lu)] at address %lx was already freed\n", 
 		     world_rank, head->id, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
+	    }
+	    else {
+		MPIU_Error_printf( 
+		     "[%d] Block at address %lx was already freed\n", 
+		     world_rank, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
+	    }
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
 	    MPIU_Error_printf(
@@ -267,9 +286,16 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	}
 	else {
 	    /* Damaged tail */
-	    MPIU_Error_printf(
+	    if (TRidSet) {
+		MPIU_Error_printf(
 		     "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
 		     world_rank, head->id, head->size, MPIU_PtrToLong(a) );
+	    }
+	    else {
+		MPIU_Error_printf(
+		     "[%d] Block at address %lx is corrupted (probably write past end)\n", 
+		     world_rank, head->size, MPIU_PtrToLong(a) );
+	    }
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    MPIU_Error_printf(
 		     "[%d] Block allocated in %s[%d]\n", world_rank, 
@@ -358,9 +384,16 @@ int MPIU_trvalid( const char str[] )
 	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
-	    MPIU_Error_printf( 
+	    if (TRidSet) {
+		MPIU_Error_printf( 
 "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
 			 world_rank, head->id, head->size, MPIU_PtrToLong(a) );
+	    }
+	    else {
+		MPIU_Error_printf( 
+"[%d] Block at address %lx is corrupted (probably write past end)\n", 
+			 world_rank, head->size, MPIU_PtrToLong(a) );
+	    }
 	    MPIU_Error_printf(
 			 "[%d] Block allocated in %s[%d]\n", 
 			 world_rank, head->fname, head->lineno );
@@ -400,19 +433,17 @@ void MPIU_trdump( FILE *fp )
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
-	FPRINTF( fp, "[%d] %lu at [%lx], id = ", 
+	FPRINTF( fp, "[%d] %lu at [%lx], ", 
 		 world_rank, head->size, MPIU_PtrToLong(head) + sizeof(TrSPACE) );
-	if (head->id >= 0) {
-	    head->fname[TR_FNAME_LEN-1] = 0;
-	    FPRINTF( fp, "%d %s[%d]\n", 
+	head->fname[TR_FNAME_LEN-1] = 0; /* Be extra careful */
+	if (TRidSet) {
+	    /* For head->id >= 0, we can add code to map the id to
+	       the name of a package, rather than using a raw number */
+	    FPRINTF( fp, "id = %d %s[%d]\n", 
 		     head->id, head->fname, head->lineno );
 	}
 	else {
-	    /* Decode the package values */
-	    head->fname[TR_FNAME_LEN-1] = 0;
-	    id = head->id;
-	    FPRINTF( fp, "%d %s[%d]\n", 
-		     id, head->fname, head->lineno );
+	    FPRINTF( fp, "%s[%d]\n", head->fname, head->lineno );
 	}
 	head = head->next;
     }
@@ -508,7 +539,9 @@ void MPIU_trSummary( FILE *fp )
  +*/
 void MPIU_trid( int id )
 {
-    TRid = id;
+    TRid    = id;
+    TRidSet = 1;   /* Recall whether we ever use this feature to 
+		      help clean up output */
 }
 
 /*+C
