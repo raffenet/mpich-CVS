@@ -7,9 +7,10 @@
 from os     import environ, system, path
 from getopt import getopt
 from sys    import argv, exit
-from popen2 import Popen3
+from popen2 import Popen3, popen2
 from socket import gethostname
 from select import select, error
+from time   import sleep
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, mpd_same_ips
 
 def mpdboot():
@@ -99,6 +100,7 @@ def mpdboot():
             if totalNum == 0:
                 totalNum = len(hosts)
         if len(hosts) < (totalNum-1):    # one is local
+            print 'totalNum-1=%d len(hosts)=%d' % (totalNum-1,len(hosts))
             print 'there are not enough hosts specified on which to start all processes'
             exit(-1)
         bootHostsFromHere = hosts[0:numBoots-1]
@@ -182,6 +184,16 @@ def mpdboot():
         assert status is 0, '%s bombed with status %d' % (cmd,status)
         numStarted += 1
 
+    for cntr in range(10):
+        (sout,sin) = popen2('mpdtrace |wc -l')
+        line = sout.readline().strip().split(' ')
+        n = int(line[0])
+        if n >= totalNum:
+            break
+        print '%d out of %d mpds started; waiting for more ...' % (n,totalNum)
+        sleep(1)
+
+    print '%d out of %d mpds started ' % (n,totalNum)
 
 def usage():
     print 'usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ '
