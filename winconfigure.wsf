@@ -993,6 +993,10 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef USE_BUSY_LOCKS */")
 				Case "USE_MQSHM"
 					fout.WriteLine("/* #undef USE_MQSHM */")
+				Case "USE_ATOMIC_UPDATES"
+					fout.WriteLine("/* #undef USE_ATOMIC_UPDATES */")
+				Case "F77_NAME_LOWER_2USCORE"
+					fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
 				Case Else
 					MsgBox("Unhandled definition <" & define & ">")
 			End Select
