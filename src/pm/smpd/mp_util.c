@@ -33,8 +33,32 @@ int mp_err_printf(char *str, ...)
     return n;
 }
 
-int mp_parse_command_args(int argc, char *argv[])
+int mp_console(char *host)
 {
+    int result;
+    sock_set_t set;
+    sock_t sock;
+
+    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_SMPD_SESSION_STR, &set, &sock);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to connect to smpd on %s\n", host);
+	return result;
+    }
+
+    result = smpd_write_string(set, sock, "close");
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to write 'close' to the smpd\n");
+	return result;
+    }
+
+    result = smpd_close_connection(set, sock);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to close the connection to smpd\n");
+	return result;
+    }
     return SMPD_SUCCESS;
 }
 

@@ -57,8 +57,7 @@ extern char g_UserAccount[100];
 extern char g_UserPassword[100];
 
 /* smpd */
-int smpd_get_opt(int argc, char *argv[], char *opt, char *val, int len);
-int smpd_parse_command_args(int argc, char *argv[]);
+int smpd_parse_command_args(int *argcp, char **argvp[]);
 int smpd_session(sock_set_t set, sock_t sock);
 int smpd_start_mgr(sock_set_t set, sock_t sock);
 #ifdef HAVE_WINDOWS_H
@@ -88,5 +87,11 @@ void smpd_get_password(char *password);
 void smpd_get_account_and_password(char *account, char *password);
 int smpd_get_credentials_from_parent(sock_set_t set, sock_t sock);
 int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock);
+int smpd_get_opt(int *argc, char ***argv, char * flag);
+int smpd_get_opt_int(int *argc, char ***argv, char * flag, int *n);
+int smpd_get_opt_long(int *argc, char ***argv, char * flag, long *n);
+int smpd_get_opt_double(int *argc, char ***argv, char * flag, double *d);
+int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len);
+
 
 #endif

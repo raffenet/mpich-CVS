@@ -8,13 +8,31 @@
 #include "mpiexec.h"
 #include "smpd.h"
 
+int g_bDoConsole = 0;
+char g_pszConsoleHost[SMPD_MAX_HOST_LENGTH];
+
+int mp_parse_command_args(int *argcp, char **argvp[])
+{
+    /* check for console option */
+    if (smpd_get_opt_string(argcp, argvp, "-console", g_pszConsoleHost, SMPD_MAX_HOST_LENGTH))
+    {
+	g_bDoConsole = 1;
+    }
+    if (smpd_get_opt(argcp, argvp, "-console"))
+    {
+	g_bDoConsole = 1;
+	gethostname(g_pszConsoleHost, SMPD_MAX_HOST_LENGTH);
+    }
+    
+    /* check for mpi options */
+
+    return SMPD_SUCCESS;
+}
+
 int main(int argc, char* argv[])
 {
     int result;
-    sock_set_t set;
-    sock_t sock;
     int port = SMPD_LISTENER_PORT;
-    char host[SMPD_MAX_HOST_LENGTH];
 
     result = sock_init();
     if (result != SOCK_SUCCESS)
@@ -23,36 +41,20 @@ int main(int argc, char* argv[])
 	return result;
     }
 
-    result = mp_parse_command_args(argc, argv);
+    result = mp_parse_command_args(&argc, &argv);
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to parse the command arguments.\n");
 	return result;
     }
 
-    gethostname(host, SMPD_MAX_HOST_LENGTH);
-
-    /*result = mp_connect_to_smpd(host, SMPD_PROCESS_SESSION_STR, &set, &sock);*/
-    /*result = mp_connect_to_smpd(host, SMPD_SMPD_SESSION_STR, &set, &sock);*/
-    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, &set, &sock);
-    if (result != SMPD_SUCCESS)
+    if (g_bDoConsole)
     {
-	mp_err_printf("Unable to connect to smpd on %s\n", host);
-	return result;
+	result = mp_console(g_pszConsoleHost);
     }
-
-    result = smpd_write_string(set, sock, "close");
-    if (result != SMPD_SUCCESS)
+    else
     {
-	mp_err_printf("Unable to write 'close' to the smpd\n");
-	return result;
-    }
-
-    result = smpd_close_connection(set, sock);
-    if (result != SMPD_SUCCESS)
-    {
-	mp_err_printf("Unable to close the connection to smpd\n");
-	return result;
+	/* do mpi job */
     }
 
     result = sock_finalize();

@@ -99,6 +99,9 @@
 				RelativePath="smpd_connect.c">
 			</File>
 			<File
+				RelativePath="smpd_get_opt.c">
+			</File>
+			<File
 				RelativePath="smpd_printf.c">
 			</File>
 			<File

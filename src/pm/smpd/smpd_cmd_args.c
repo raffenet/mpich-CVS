@@ -6,27 +6,6 @@
 
 #include "smpd.h"
 
-int smpd_get_opt(int argc, char *argv[], char *opt, char *val, int len)
-{
-    int i;
-    for (i=1; i<argc; i++)
-    {
-	if (strcmp(argv[i], opt) == 0)
-	{
-	    if (val == NULL || len == 0)
-		return 1;
-	    if (i+1 < argc)
-	    {
-		strncpy(val, argv[i+1], len);
-		val[len-1] = '\0';
-		return 1;
-	    }
-	    smpd_err_printf("option '%s' matched but no value specified\n", opt);
-	}
-    }
-    return 0;
-}
-
 #ifdef HAVE_WINDOWS_H
 char *smpd_encode_handle(char *str, HANDLE h)
 {
@@ -42,7 +21,7 @@ HANDLE smpd_decode_handle(char *str)
 }
 #endif
 
-int smpd_parse_command_args(int argc, char *argv[])
+int smpd_parse_command_args(int *argcp, char **argvp[])
 {
 #ifdef HAVE_WINDOWS_H
     char str[20], read_handle_str[20], write_handle_str[20];
@@ -56,22 +35,18 @@ int smpd_parse_command_args(int argc, char *argv[])
 #endif
 
 #ifdef HAVE_WINDOWS_H
-    if (smpd_get_opt(argc, argv, "-mgr", NULL, 0))
+    if (smpd_get_opt(argcp, argvp, "-mgr"))
     {
-	if (!smpd_get_opt(argc, argv, "-read", read_handle_str, 20))
+	if (!smpd_get_opt_string(argcp, argvp, "-read", read_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a read pipe handle.\n");
 	    return SMPD_FAIL;
 	}
-	if (!smpd_get_opt(argc, argv, "-write", write_handle_str, 20))
+	if (!smpd_get_opt_string(argcp, argvp, "-write", write_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a write pipe handle.\n");
 	    return SMPD_FAIL;
 	}
-	/*
-	hRead = (HANDLE)atol(read_handle_str);
-	hWrite = (HANDLE)atol(write_handle_str);
-	*/
 	hRead = smpd_decode_handle(read_handle_str);
 	hWrite = smpd_decode_handle(write_handle_str);
 

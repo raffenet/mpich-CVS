@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     HMODULE hModule;
 #endif
 
-    result = smpd_parse_command_args(argc, argv);
+    result = smpd_parse_command_args(&argc, &argv);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to parse the command arguments.\n");
