@@ -251,6 +251,12 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
                             break;
                         }
                     }  
+                    for (i=0; i<comm_size; i++) {
+                        if (sendcnts[i] > 0) {
+                            MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnts[i], mpi_errno);
+                            break;
+                        }
+                    }
                 }
                 else 
                     MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnt, mpi_errno);
@@ -265,13 +271,6 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
                     }
                     MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnt,recvtype,mpi_errno);
                 }
-
-                for (i=0; i<comm_size; i++) {
-                    if (sendcnts[i] > 0) {
-                        MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnts[i], mpi_errno);
-                        break;
-                    }
-                }  
             }
 
             if (comm_ptr->comm_kind == MPID_INTERCOMM) {
