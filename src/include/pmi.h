@@ -80,7 +80,7 @@ Return values:
 - PMI_FAIL - unable to set the variable
 
 Notes:
-On successful output, initialized will either be 'PMI_TRUE' or 'PMI_FALSE.
+On successful output, initialized will either be 'PMI_TRUE' or 'PMI_FALSE'.
 PMI_TRUE - initialize has been called.
 PMI_FALSE - initialize has not been called or previously failed.
 
