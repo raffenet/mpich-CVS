@@ -4382,7 +4382,7 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
-		if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN || context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
+		if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN) /* || context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)*/
 		{
 		    smpd_command_t *cmd_ptr;
 		    smpd_dbg_printf("stdin to mpiexec closed.\n");
