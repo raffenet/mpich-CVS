@@ -312,12 +312,26 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     }
     if (connected)
     {
+	MPIDI_VC *iter;
+	int count = 0;
+
 	MPIU_Free(val);
 	MPIU_Free(key);
 
 	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
 	vc->ssm.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
 	MPIDI_CH3I_Process.shm_writing_list = vc;
+
+	/* If there are more shm connections than cpus, reduce the spin count to one. */
+	/* This does not take into account connections between other processes on the same machine. */
+	iter = MPIDI_CH3I_Process.shm_writing_list;
+	while (iter)
+	{
+	    count++;
+	    iter = iter->ssm.shm_next_writer;
+	}
+	if (count > MPIDI_CH3I_Process.num_cpus)
+	    MPIDI_CH3I_Process.pg->nShmWaitSpinCount = 1;
 
 	vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	vc->ssm.bShm = TRUE;

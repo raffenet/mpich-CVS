@@ -110,6 +110,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield();
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+	    spin_count = 1;
 #endif
 	}
 	spin_count++;
@@ -354,12 +355,16 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    vc_ptr = vc_ptr->ssm.shm_next_writer;
 		}
 	    }
-	    if (spin_count++ == MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+/*
+	    if (spin_count++ >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+		spin_count = 1;
 	    }
+*/
+	    MPIDU_Yield();
 	}
 after_shm_loop:
 	if (shmIter == shmReps)
@@ -672,11 +677,12 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    vc_ptr = vc_ptr->ssm.shm_next_writer;
 		}
 	    }
-	    if (spin_count++ == MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    if (spin_count++ >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+		spin_count = 1;
 	    }
 	}
 after_shm_loop:

@@ -84,6 +84,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPIDI_CH3I_Process.pg = pg;
     MPIDI_CH3I_Process.shm_reading_list = NULL;
     MPIDI_CH3I_Process.shm_writing_list = NULL;
+    MPIDI_CH3I_Process.num_cpus = -1;
     
     /* set the global variable defaults */
     pg->nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
@@ -106,6 +107,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node)
             pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
 	*/
+	if (info.dwNumberOfProcessors > 0)
+	    MPIDI_CH3I_Process.num_cpus = info.dwNumberOfProcessors;
     }
 #else
 #ifdef HAVE_SYSCONF
@@ -118,6 +121,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	else if (num_cpus > 0 && num_cpus < num_procs_per_node)
 	    pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
 	*/
+	if (num_cpus > 0)
+	    MPIDI_CH3I_Process.num_cpus = num_cpus;
     }
 #endif
 #endif

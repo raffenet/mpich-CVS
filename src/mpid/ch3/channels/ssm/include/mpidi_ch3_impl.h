@@ -137,6 +137,7 @@ typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
     MPIDI_VC *shm_reading_list, *shm_writing_list;
+    int num_cpus;
 }
 MPIDI_CH3I_Process_t;
 
