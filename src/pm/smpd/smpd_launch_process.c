@@ -1363,7 +1363,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
     process->context_refcount = 3;
     process->out->read_state = SMPD_READING_STDOUT;
-    result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+    result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, 1, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
@@ -1372,7 +1372,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	return SMPD_FAIL;
     }
     process->err->read_state = SMPD_READING_STDERR;
-    result = MPIDU_Sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+    result = MPIDU_Sock_post_read(sock_err, process->err->read_cmd.cmd, 1, 1, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",

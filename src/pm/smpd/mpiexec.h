@@ -7,7 +7,7 @@
 #define MPIEXEC_H
 
 #include "smpd.h"
-#include "sock.h"
+#include "mpidu_sock.h"
 #include <stdio.h>
 
 int mp_parse_command_args(int *argcp, char **argvp[]);

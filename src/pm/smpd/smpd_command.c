@@ -65,13 +65,13 @@ SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd
     if (*len_ptr < 1) return SMPD_FALSE;
     smpd_snprintf_update(str_pptr, len_ptr, "%sfreed: %d\n", indent_str, cmd_ptr->freed);
     if (*len_ptr < 1) return SMPD_FALSE;
-    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].buf: %p\n", indent_str, cmd_ptr->iov[0].SOCK_IOV_BUF);
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].buf: %p\n", indent_str, cmd_ptr->iov[0].MPID_IOV_BUF);
     if (*len_ptr < 1) return SMPD_FALSE;
-    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].len: %d\n", indent_str, cmd_ptr->iov[0].SOCK_IOV_LEN);
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].len: %d\n", indent_str, cmd_ptr->iov[0].MPID_IOV_LEN);
     if (*len_ptr < 1) return SMPD_FALSE;
-    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].buf: %p\n", indent_str, cmd_ptr->iov[1].SOCK_IOV_BUF);
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].buf: %p\n", indent_str, cmd_ptr->iov[1].MPID_IOV_BUF);
     if (*len_ptr < 1) return SMPD_FALSE;
-    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].len: %d\n", indent_str, cmd_ptr->iov[1].SOCK_IOV_LEN);
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].len: %d\n", indent_str, cmd_ptr->iov[1].MPID_IOV_LEN);
     if (*len_ptr < 1) return SMPD_FALSE;
     smpd_snprintf_update(str_pptr, len_ptr, "%sstdin_read_offset: %d\n", indent_str, cmd_ptr->stdin_read_offset);
     if (*len_ptr < 1) return SMPD_FALSE;
@@ -429,7 +429,7 @@ int smpd_free_context(smpd_context_t *context)
 	}
 	/* erase the contents to help track down use of freed structures */
 	memset(context, 0, sizeof(smpd_context_t));
-	smpd_init_context(context, SMPD_CONTEXT_FREED, SOCK_INVALID_SET, MPIDU_SOCK_INVALID_SOCK, -1);
+	smpd_init_context(context, SMPD_CONTEXT_FREED, MPIDU_SOCK_INVALID_SET, MPIDU_SOCK_INVALID_SOCK, -1);
 	free(context);
     }
     smpd_exit_fn("smpd_free_context");
@@ -597,14 +597,14 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 	return SMPD_SUCCESS;
     }
 
-    cmd->iov[0].SOCK_IOV_BUF = cmd->cmd_hdr_str;
-    cmd->iov[0].SOCK_IOV_LEN = SMPD_CMD_HDR_LENGTH;
-    cmd->iov[1].SOCK_IOV_BUF = cmd->cmd;
-    cmd->iov[1].SOCK_IOV_LEN = cmd->length;
+    cmd->iov[0].MPID_IOV_BUF = cmd->cmd_hdr_str;
+    cmd->iov[0].MPID_IOV_LEN = SMPD_CMD_HDR_LENGTH;
+    cmd->iov[1].MPID_IOV_BUF = cmd->cmd;
+    cmd->iov[1].MPID_IOV_LEN = cmd->length;
     /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
     smpd_dbg_printf("smpd_post_write_command on the %s context sock %d: %d bytes for command: \"%s\"\n",
 	smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock),
-	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,
+	cmd->iov[0].MPID_IOV_LEN + cmd->iov[1].MPID_IOV_LEN,
 	cmd->cmd);
     result = MPIDU_Sock_post_writev(context->sock, cmd->iov, 2, NULL);
     if (result != MPI_SUCCESS)

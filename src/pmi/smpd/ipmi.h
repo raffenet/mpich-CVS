@@ -33,6 +33,7 @@
 #include "pmi.h"
 #include "mpidu_sock.h"
 #include "smpd.h"
+#include "mpi.h"
 
 #define PMI_SUCCESS     0
 #define PMI_FAIL       -1

@@ -54,6 +54,8 @@ static pmi_process_t pmi_process =
 #ifdef HAVE_WINDOWS_H
     NULL,                /* root thread    */
     NULL,                /* hRootThreadReadyEvent */
+#else
+    0                    /* root pid       */
 #endif
     "",                  /* root host      */
     0,                   /* root port      */

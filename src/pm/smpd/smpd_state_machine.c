@@ -1816,7 +1816,7 @@ int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *eve
     smpd_dbg_printf("smpd writing noreconnect request\n");
     context->write_state = SMPD_WRITING_NO_RECONNECT_REQUEST;
     strcpy(context->port_str, SMPD_NO_RECONNECT_PORT_STR);
-    result = MPIDU_Sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, SMPD_MAX_PORT_STR_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
@@ -1932,7 +1932,7 @@ int smpd_state_writing_no_cred_request(smpd_context_t *context, MPIDU_Sock_event
     smpd_dbg_printf("smpd writing noreconnect request\n");
     context->write_state = SMPD_WRITING_NO_RECONNECT_REQUEST;
     strcpy(context->port_str, SMPD_NO_RECONNECT_PORT_STR);
-    result = MPIDU_Sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, SMPD_MAX_PORT_STR_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
@@ -2211,7 +2211,7 @@ int smpd_state_writing_no_reconnect_request(smpd_context_t *context, MPIDU_Sock_
 	}
 	/* post a read of the session header */
 	context->read_state = SMPD_READING_SESSION_HEADER;
-	result = MPIDU_Sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
+	result = MPIDU_Sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a read for the session header,\nsock error: %s\n",

@@ -36,6 +36,7 @@
 #include <uuid/uuid.h>
 #endif
 
+#include "mpi.h"
 #include "smpd_database.h"
 
 #define SMPD_LISTENER_PORT               8676
