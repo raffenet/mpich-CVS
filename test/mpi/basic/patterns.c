@@ -278,11 +278,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = SendRecvTest(rank, reps);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "isr") == 0))
@@ -293,11 +290,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = IsendIrecvTest(rank);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "iisr") == 0))
@@ -308,11 +302,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = IsendIrecvTest2(rank, 100);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "oo") == 0))
@@ -323,11 +314,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = OutOfOrderTest(rank, 100);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "unex") == 0))
@@ -338,11 +326,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = ForceUnexpectedTest(rank, 100);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "rndv") == 0))
@@ -359,11 +344,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = RndvTest(rank, rndv_size, 1);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "rndv_reps") == 0))
@@ -385,11 +367,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = RndvTest(rank, rndv_size, reps);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "rndv_iisr") == 0))
@@ -404,11 +383,8 @@ int main(int argc, char *argv[])
 		rndv_size = atoi(argv[2]);
 	    }
 	    result = IsendIrecvTest2(rank, rndv_size);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "rndv_oo") == 0))
@@ -423,11 +399,8 @@ int main(int argc, char *argv[])
 		rndv_size = atoi(argv[2]);
 	    }
 	    result = OutOfOrderTest(rank, rndv_size);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
 
 	if (bDoAll || (strcmp(argv[1], "rndv_unex") == 0))
@@ -444,11 +417,8 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = ForceUnexpectedTest(rank, rndv_size);
-	    if (rank == 0)
-	    {
-		printf(result ? "SUCCESS\n" : "FAILURE\n");
-		fflush(stdout);
-	    }
+	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    fflush(stdout);
 	}
     }
 
