@@ -260,7 +260,7 @@ fi
 # Handle the specification of the directory containing the modules
 # For now, these are in the includedir (no choice argument supported)
 moduledir=$includedir
-modulelib=${MPILIBNAME}f90nc
+modulelib=${MPILIBNAME}f90
 if [ -n "$F90MODINCSPEC" ] ; then
     newarg=`echo A"$F90MODINCSPEC" | \
 	sed -e 's/^A//' -e 's%<dir>%'"$moduledir%g" -e 's/<file>/mpi/g'`
