@@ -59,7 +59,7 @@ MPIDI_CH3I_RNDV_state_t;
 #define MPIDI_CH3_REQUEST_DECL						\
 struct MPIDI_CH3I_Request						\
 {									\
-    MPIDI_VC *vc;							\
+    MPIDI_VC_t *vc;							\
     /* iov_offset points to the current head element in the IOV */	\
     MPIDI_CH3I_RNDV_state_t rndv_state;					\
     gasnet_handle_t rndv_handle;					\

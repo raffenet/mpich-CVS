@@ -13,7 +13,7 @@
 #define FUNCNAME MPIDI_CH3_iRead
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3_iRead(MPIDI_VC_t * vc, MPID_Request * rreq)
 {
     int i;
     int complete;

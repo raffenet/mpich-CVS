@@ -13,7 +13,7 @@
 #define FUNCNAME MPIDI_CH3_iWrite
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
+int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
     int gn_errno;

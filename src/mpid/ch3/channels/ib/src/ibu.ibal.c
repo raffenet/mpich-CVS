@@ -140,7 +140,7 @@ typedef struct ibu_state_t
     ibu_buffer_t write;
     int nAvailRemote, nUnacked;
     /* vc pointer */
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     /*void *user_ptr;*/
     /* unexpected queue pointer */
     struct ibu_state_t *unex_finished_queue;
@@ -1611,7 +1611,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     static int total_num_completions = 0;
 #endif
 #ifdef USE_INLINE_PKT_RECEIVE
-    MPIDI_VC *recv_vc_ptr;
+    MPIDI_VC_t *recv_vc_ptr;
     void *mem_ptr_orig;
     int pkt_offset;
 #endif
@@ -1801,7 +1801,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    }
 	    num_bytes = completion_data.length;
 #ifdef USE_INLINE_PKT_RECEIVE
-	    recv_vc_ptr = (MPIDI_VC *)(ibu->vc_ptr);
+	    recv_vc_ptr = (MPIDI_VC_t *)(ibu->vc_ptr);
 	    pkt_offset = 0;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
@@ -2172,7 +2172,7 @@ int ibu_get_lid()
 #define FUNCNAME post_pkt_recv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int post_pkt_recv(MPIDI_VC *recv_vc_ptr)
+int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 {
     int mpi_errno;
     void *mem_ptr;

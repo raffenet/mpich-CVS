@@ -12,7 +12,7 @@ extern void *MPIDI_CH3_packet_buffer;
 #define FUNCNAME MPIDI_CH3_do_rts
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_do_rts(MPIDI_VC *vc, MPID_Request *sreq,
+int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 		     MPIDI_CH3_Pkt_t *rts_pkt, MPID_IOV *iov,
 		     int n_iov)
 {

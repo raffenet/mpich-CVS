@@ -16,8 +16,8 @@ struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES];
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES];
 struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
 
-static int send_enqueuedv (MPIDI_VC *vc, MPID_Request *sreq);
-static int do_put (MPIDI_VC * vc, MPID_Request *sreq);
+static int send_enqueuedv (MPIDI_VC_t *vc, MPID_Request *sreq);
+static int do_put (MPIDI_VC_t * vc, MPID_Request *sreq);
 
 #if !defined(MPIDI_CH3_Progress_start)
 #undef FUNCNAME
@@ -200,7 +200,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     int mpi_errno;
     int gn_errno;
     gasnet_node_t sender;
-    MPIDI_VC *vc;
+    MPIDI_VC_t *vc;
     MPID_Request *rreq;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
@@ -247,7 +247,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     int mpi_errno;
     int gn_errno;
     gasnet_node_t sender;
-    MPIDI_VC *vc;
+    MPIDI_VC_t *vc;
     MPID_Request * rreq;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
 
@@ -290,7 +290,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
     int mpi_errno;
     int gn_errno;
     gasnet_node_t sender;
-    MPIDI_VC *vc;
+    MPIDI_VC_t *vc;
     MPID_Request *sreq;
     MPID_IOV *iov = (MPID_IOV *)buf;
     int i;
@@ -353,7 +353,7 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     int gn_errno;
     gasnet_node_t sender;
     int complete;
-    MPIDI_VC *vc;
+    MPIDI_VC_t *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
@@ -495,7 +495,7 @@ int MPIDI_CH3I_Progress_finalize()
 }
 
 static int
-send_enqueuedv (MPIDI_VC * vc, MPID_Request * sreq)
+send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 {
     int mpi_errno = MPI_SUCCESS;
     int gn_errno;
@@ -567,7 +567,7 @@ send_enqueuedv (MPIDI_VC * vc, MPID_Request * sreq)
     return mpi_errno;
 }
 
-static int do_put (MPIDI_VC *vc, MPID_Request *sreq)
+static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
 {
     int mpi_errno = MPI_SUCCESS;
     int gn_errno;

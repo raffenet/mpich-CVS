@@ -17,7 +17,7 @@
 int MPIDI_CH3_packet_len;
 void *MPIDI_CH3_packet_buffer;
 
-MPIDI_VC *MPIDI_CH3_vc_table;
+MPIDI_VC_t *MPIDI_CH3_vc_table;
 
 int MPIDI_CH3I_my_rank;
 
@@ -60,7 +60,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int mpi_errno;    
     int pg_rank;
     int pg_size;
-    MPIDI_VC * vc_table;
+    MPIDI_VC_t * vc_table;
     MPID_Comm * comm, *commworld, *intercomm;
     int p;
     int name_sz;
@@ -143,7 +143,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     
     /* Allocate and initialize the VC table associated with this
      * process group (and thus COMM_WORLD) */
-    vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * pg_size);
+    vc_table = MPIU_Malloc(sizeof(MPIDI_VC_t) * pg_size);
     if (vc_table == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
