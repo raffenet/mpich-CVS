@@ -150,6 +150,13 @@ static int pmi_create_post_command(const char *command, const char *name, const 
     return PMI_SUCCESS;
 }
 
+int iPMI_Initialized()
+{
+    if (pmi_process.init_finalized == PMI_INITIALIZED)
+	return 1;
+    return 0;
+}
+
 int iPMI_Init(int *spawned)
 {
     char *p;
