@@ -30,7 +30,7 @@ from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
                             mpd_raise, mpdError, mpd_version, mpd_print, \
-                            mpd_read_one_line, mpd_send_one_line
+                            mpd_read_one_line, mpd_send_one_line, mpd_recv
 import xml.dom.minidom
 
 class mpdrunInterrupted(Exception):
@@ -360,7 +360,7 @@ def mpdrun():
                             linesPerRank[rank].append(rest)
                             print_ready_merged_lines(nprocs)
                     else:
-                        msg = manCliStdoutSocket.recv(1024)
+                        msg = mpd_recv(manCliStdoutSocket,1024)
                         if not msg:
                             del socketsToSelect[readySocket]
                             # readySocket.close()
@@ -369,7 +369,7 @@ def mpdrun():
                             stdout.write(msg)
                             stdout.flush()
                 elif readySocket == manCliStderrSocket:
-                    msg = manCliStderrSocket.recv(1024)
+                    msg = mpd_recv(manCliStderrSocket,1024)
                     if not msg:
                         del socketsToSelect[readySocket]
                         # readySocket.close()

@@ -182,7 +182,7 @@ def mpd_send_one_line_noprint(sock,line):
 def mpd_recv_one_line(sock):
     msg = ''
     try:
-        c = sock.recv(1)
+        c = mpd_recv(sock,1)
     except Exception, errmsg:
 	c = ''
 	msg = ''
@@ -191,7 +191,7 @@ def mpd_recv_one_line(sock):
 	while c != '\n':
 	    msg += c
 	    try:
-	        c = sock.recv(1)
+                c = mpd_recv(sock,1)
 	    except Exception, errmsg:
 		c = ''
 		msg = ''
@@ -232,14 +232,15 @@ def mpd_send_one_msg_noprint(sock,msg):
 def mpd_recv_one_msg(sock):
     msg = {}
     try:
-        pickledLen = sock.recv(8)  # socket.error: (104, 'Connection reset by peer')
+	# socket.error: (104, 'Connection reset by peer')
+        pickledLen = mpd_recv(sock,8)
         if pickledLen:
             pickledLen = int(pickledLen)
             pickledMsg = ''
             lenRecvd = 0
             lenLeft = pickledLen
             while lenLeft:
-                recvdMsg = sock.recv(lenLeft)  # socket.error: (104, 'Connection reset by peer')
+                recvdMsg = mpd_recv(sock,lenLeft)
                 pickledMsg += recvdMsg
                 lenLeft -= len(recvdMsg)
             msg = loads(pickledMsg)
