@@ -210,6 +210,70 @@ undefine([PAC_TYPE_NAME])
 undefine([PAC_CV_NAME])
 ])
 dnl
+dnl This version uses a Fortran program to link programs.
+dnl This is necessary because some compilers provide shared libraries
+dnl that are not within the default linker paths (e.g., our installation
+dnl of the Portland Group compilers)
+dnl
+AC_DEFUN(PAC_PROG_F77_CHECK_SIZEOF_EXT,[
+changequote(<<,>>)dnl
+dnl The name to #define.
+dnl If the arg value contains a variable, we need to update that
+define(<<PAC_TYPE_NAME>>, translit(sizeof_f77_$1, [a-z *], [A-Z__]))dnl
+dnl The cache variable name.
+define(<<PAC_CV_NAME>>, translit(pac_cv_f77_sizeof_$1, [ *], [__]))dnl
+changequote([,])dnl
+AC_CACHE_CHECK([for size of Fortran type $1],PAC_CV_NAME,[
+AC_REQUIRE([PAC_PROG_F77_NAME_MANGLE])
+/bin/rm -f conftest*
+cat <<EOF > conftestc.c
+#include <stdio.h>
+#include "confdefs.h"
+#ifdef F77_NAME_UPPER
+#define cisize_ CISIZE
+#define isize_ ISIZE
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define cisize_ cisize
+#define isize_ isize
+#endif
+int cisize_(char *,char*);
+int cisize_(char *i1p, char *i2p)
+{ 
+    int isize_val=0;
+    FILE *f = fopen("conftestval", "w");
+    if (!f) return 1;
+    isize_val = (int)(i2p - i1p);
+    fprintf(f,"%d\n", isize_val );
+    fclose(f);
+    return 0;
+}
+EOF
+pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
+    saveLIBS=$LIBS
+    LIBS="conftestc.o $LIBS"
+    AC_TRY_RUN([
+         program main
+         $1 a(2)
+         integer irc
+         irc = cisize(a(1),a(2))
+         end
+],,ifelse([$2],,,eval PAC_CV_NAME=$2))
+    if test -s conftestval ; then
+        eval PAC_CV_NAME=`cat conftestval`
+    else
+	eval PAC_CV_NAME=0
+    fi
+    LIBS=$saveLIBS
+else
+    AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
+fi
+])
+AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME,[Define size of PAC_TYPE_NAME])
+undefine([PAC_TYPE_NAME])
+undefine([PAC_CV_NAME])
+])
+dnl
 dnl/*D
 dnl PAC_PROG_F77_EXCLAIM_COMMENTS
 dnl
