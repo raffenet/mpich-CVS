@@ -75,7 +75,7 @@ sub CreateErrmsgsHeader {
  * This file automatically created by extracterrmsgs\
  * DO NOT EDIT\
  */\n";
-    print $FD "typedef struct {\
+    print $FD "typedef struct msgpair {\
         const char *short_name, *long_name; } msgpair;\n"
 }
 #
