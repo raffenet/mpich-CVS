@@ -134,124 +134,168 @@ int MPIDU_Describe_timer_states()
     /* describe the states used in the ch3/src directory */
 
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_IRSEND, "MPID_Irsend",
+		       MPID_STATE_MPID_IRSEND,
+		       "MPID_Irsend",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_ISEND, "MPID_Isend",
+		       MPID_STATE_MPID_ISEND,
+		       "MPID_Isend",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_ISSEND, "MPID_Issend",
+		       MPID_STATE_MPID_ISSEND,
+		       "MPID_Issend",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_PROBE, "MPID_Probe",
+		       MPID_STATE_MPID_PROBE,
+		       "MPID_Probe",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_PUT, "MPID_PUT",
+		       MPID_STATE_MPID_PUT,
+		       "MPID_PUT",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_RECV, "MPID_Recv",
+		       MPID_STATE_MPID_RECV,
+		       "MPID_Recv",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_RSEND, "MPID_Rsend",
+		       MPID_STATE_MPID_RSEND,
+		       "MPID_Rsend",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_SEND, "MPID_Send",
+		       MPID_STATE_MPID_SEND,
+		       "MPID_Send",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_SSEND, "MPID_Ssend",
+		       MPID_STATE_MPID_SSEND,
+		       "MPID_Ssend",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_WIN_CREATE, "MPID_Win_create",
+		       MPID_STATE_MPID_WIN_CREATE,
+		       "MPID_Win_create",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_WIN_FENCE, "MPID_Win_fence",
+		       MPID_STATE_MPID_WIN_FENCE,
+		       "MPID_Win_fence",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_WIN_FREE, "MPID_Win_free",
+		       MPID_STATE_MPID_WIN_FREE,
+		       "MPID_Win_free",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_CREATE_REQUEST, "Create_request",
+		       MPID_STATE_CREATE_REQUEST,
+		       "Create_request",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLIN, "Handle_pollin",
+		       MPID_STATE_HANDLE_POLLIN,
+		       "Handle_pollin",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLOUT, "Handle_pollout",
+		       MPID_STATE_HANDLE_POLLOUT,
+		       "Handle_pollout",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_ABORT, "MPID_Abort",
+		       MPID_STATE_MPID_ABORT,
+		       "MPID_Abort",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_CANCEL_RECV, "MPID_Cancel_recv",
+		       MPID_STATE_MPID_CANCEL_RECV,
+		       "MPID_Cancel_recv",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_CANCEL_SEND, "MPID_Cancel_send",
+		       MPID_STATE_MPID_CANCEL_SEND,
+		       "MPID_Cancel_send",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_IPROBE, "MPID_Iprobe",
+		       MPID_STATE_MPID_IPROBE,
+		       "MPID_Iprobe",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_IRECV, "MPID_Irecv",
+		       MPID_STATE_MPID_IRECV,
+		       "MPID_Irecv",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_BARRIER, "MPIDI_Barrier",
+		       MPID_STATE_MPIDI_BARRIER,
+		       "MPIDI_Barrier",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT, "MPIDI_CH3U_Handle_recv_pkt",
+		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT,
+		       "MPIDI_CH3U_Handle_recv_pkt",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ, "MPIDI_CH3U_Handle_recv_req",
+		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ,
+		       "MPIDI_CH3U_Handle_recv_req",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ, "MPIDI_CH3U_Handle_send_req",
+		       MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ,
+		       "MPIDI_CH3U_Handle_send_req",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP, "MPIDI_CH3U_Request_fdp",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP,
+		       "MPIDI_CH3U_Request_fdp",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU, "MPIDI_CH3U_Request_fdp_or_aeu",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU,
+		       "MPIDI_CH3U_Request_fdp_or_aeu",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU, "MPIDI_CH3U_Request_fdu",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU,
+		       "MPIDI_CH3U_Request_fdu",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP, "MPIDI_CH3U_Request_fdu_or_aep",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP,
+		       "MPIDI_CH3U_Request_fdu_or_aep",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FU, "MPIDI_CH3U_Request_fu",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FU,
+		       "MPIDI_CH3U_Request_fu",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV, "MPIDI_CH3U_Request_load_recv_iov",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV,
+		       "MPIDI_CH3U_Request_load_recv_iov",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV, "MPIDI_CH3U_Request_load_send_iov",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV,
+		       "MPIDI_CH3U_Request_load_send_iov",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF, "MPIDI_CH3U_Request_unpack_srbuf",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF,
+		       "MPIDI_CH3U_Request_unpack_srbuf",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF, "MPIDI_CH3U_Request_unpack_uebuf",
+		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF,
+		       "MPIDI_CH3U_Request_unpack_uebuf",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPID_VCRT_CREATE, "MPID_VCRT_Create",
+		       MPID_STATE_MPID_VCRT_CREATE,
+		       "MPID_VCRT_Create",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-			MPID_STATE_MPID_VCRT_ADD_REF, "MPID_VCRT_Add_ref",
+			MPID_STATE_MPID_VCRT_ADD_REF,
+		       "MPID_VCRT_Add_ref",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_VCRT_RELEASE, "MPID_VCRT_Release",
+			MPID_STATE_MPID_VCRT_RELEASE,
+		       "MPID_VCRT_Release",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_VCRT_GET_PTR, "MPID_VCRT_Get_ptr",
+			MPID_STATE_MPID_VCRT_GET_PTR,
+		       "MPID_VCRT_Get_ptr",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_VCR_DUP, "MPID_VCR_Dup",
+			MPID_STATE_MPID_VCR_DUP,
+		       "MPID_VCR_Dup",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_VCR_RELEASE, "MPID_VCR_Release",
+			MPID_STATE_MPID_VCR_RELEASE,
+		       "MPID_VCR_Release",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_VCR_GET_LPID, "MPID_VCR_Get_lpid",
+			MPID_STATE_MPID_VCR_GET_LPID,
+		       "MPID_VCR_Get_lpid",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_COMM_SPAWN,
+		       "MPID_Comm_spawn",
 		       get_random_color_str());
 
     /* call the channel function to describe the states found in the ch3/channels/xx/src directory */

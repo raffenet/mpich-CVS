@@ -1286,6 +1286,8 @@ int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
 int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
                              int, MPID_Comm *, MPID_Comm **, int []);
+int MPID_Comm_spawn(char *, char *[], int, MPI_Info, int, MPID_Comm *,
+		    MPID_Comm *, int []);
 
 int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	      MPID_Request **);

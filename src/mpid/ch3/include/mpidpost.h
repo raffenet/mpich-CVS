@@ -32,6 +32,10 @@ int MPIDI_CH3_Progress(int);
 void MPIDI_CH3_Progress_poke(void);
 void MPIDI_CH3_Progress_signal_completion(void);
 
+int MPIDI_CH3_Comm_spawn(char *f, char *[], int , MPI_Info, int, MPID_Comm *,
+			 MPID_Comm *, int []);
+
+
 /*
  * Channel utility prototypes
  */
