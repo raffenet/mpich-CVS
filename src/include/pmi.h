@@ -127,6 +127,26 @@ PMI
 int PMI_Get_id( char *id_str );
 
 /*@
+PMI_Get_kvs_domain_id - obtain the id of the PMI domain
+
+Output Parameters:
+. id_str - character array that receives the id of the PMI domain
+
+Return value: a PMI error code
++ PMI_SUCCESS - id successfully obtained
+- PMI_FAIL - unable to return the id
+
+Notes:
+This function returns a string that uniquely identifies the PMI domain
+where keyval spaces can be shared.  The string passed in must be at least
+as long as the number returned by PMI_Get_id_length_max().
+
+Module:
+PMI
+@*/
+int PMI_Get_kvs_domain_id( char *id_str );
+
+/*@
 PMI_Get_id_length_max - obtain the maximum length of an id string
 
 Return value: the maximum length of an id string
@@ -454,8 +474,7 @@ Input Parameters:
 - preput_keyval_vector - array of keyvals to be pre-put in the spawned keyval space
 
 Output Parameters:
-+ errors - array of errors for each command
-- same_domain - PMI same domain flag
+. errors - array of errors for each command
 
 Return value: a PMI error code
 + PMI_SUCCESS - spawn successful
@@ -474,9 +493,6 @@ maxprocs.  The acceptable number of processes spawned may be controlled by
 ``soft'' keyvals in the info arrays.  The ``soft'' option is specified by
 mpiexec in the MPI-2 standard.  Environment variables may be passed to the
 spawned processes through PMI implementation specific info_keyval parameters.
-The same_domain flag indicates if the spawned group is in the same PMI
-domain as the calling process.  Processes in the same PMI domain can
-access each others keyval spaces directly.
 
 Module:
 PMI
@@ -489,8 +505,7 @@ int PMI_Spawn_multiple(int count,
                        const PMI_keyval_t ** info_keyval_vectors,
                        int preput_keyval_size,
                        const PMI_keyval_t * preput_keyval_vector,
-                       int * errors,
-                       int * same_domain);
+                       int * errors);
 
 /*@
 PMI_Args_to_keyval - create keyval structures from command line arguments
