@@ -12,3 +12,5 @@
   or MPI_Finalize, whichever comes first.  Right now, none of the
   thread local storage in MPIR_Process is freed.
   
+- Fix the collective operation implementations so that nesting counter
+  gets decremented even when an error occurs.
