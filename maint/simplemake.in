@@ -1423,6 +1423,7 @@ sub ClearVars {
     %external_libraries = ();
     $found_profilelib = 0;
     $found_sharedlib  = 0;
+    $InitSharedLibraryFinal = 0;
     %programs = ();
     %pgm_ldadd = ();
     $ldadd_all = "";
@@ -1932,7 +1933,7 @@ sub TargetPostamble {
 #
 #
 sub TargetClean {
-    my $otherMakefiles;
+    my $otherMakefiles = "";
 
     $programnames = join( ' ', keys(%programs));
     print FD "clean:";
@@ -2314,6 +2315,10 @@ sub TargetSharedLibraries {
 # If we can't use .lo as an object extension, then after extracting,
 # rename everything as .o and then build.
 # TargetSharedLibraryFinal( "libmpich.la", "libmpich.so.1", dir )
+#
+# Note that we need to ensure that C_LINK_SHL is defined.  In turn,
+# C_LINK_SHL may need CC, so we add that
+#
 sub TargetSharedLibraryFinal {
     my $libname = $_[0];
     my $newlibname = $_[1];
@@ -2323,6 +2328,12 @@ sub TargetSharedLibraryFinal {
 	print STDOUT "Unable to create shared libary target (no directory\n\
 library, or new library name)\n" if $debug;
 	return;
+    }
+    if (!defined($ext_seen{"c"}) && $InitSharedLibraryFinal == 0) {
+	# Remember that we made this definition
+	$InitSharedLibraryFinal = 1;
+	my $rule = $extdef{"c:o"}; 
+	print FD "$rule\n";
     }
     print FD "# Build the shared library from the shared object files\n";
     print FD "$libdir/$newlibname: $libdir/$libname\n";
@@ -3120,9 +3131,12 @@ sub TargetDependenciesDynamic {
 		if (!$found_profilelib) {
 		    $targetOpts = "";
 		}
+		# We can not use $< in an explicit target context because
+		# some Make programs do not handle them properly (Solaris,
+		# for one)
 		if ($ext eq "c") {
 		    print FD "\$(DEPS_DIR)/$sourcebasename.d: \$(srcdir)/$sourcefile$newline";
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$< >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$(srcdir)/$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
 		}
 	    }
 	}
