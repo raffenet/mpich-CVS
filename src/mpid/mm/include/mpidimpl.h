@@ -10,6 +10,8 @@
 #include "bsocket.h"
 #include "blockallocator.h"
 
+#include "mm_events.h"
+
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
 #define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
 /* key used to tell comm_accept that it doesn't need to transfer pmi databases */
