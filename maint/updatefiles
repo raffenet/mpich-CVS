@@ -515,13 +515,14 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 	    # First, check for a configure target in Makefile.in
 	    if grep 'configure:' $dir/Makefile.in >/dev/null 2>&1 ; then
  	        # The make -q checks whether the target is upto date first;
-	        # if it isn't, we remake it.
+	        # if it isn't, we remake it.	
+		rm -f $dir/mf.out 
                 (cd $dir && rm -f mf.tmp ; \
 	        sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
 		    -e "s%@srcdir@%.%g" \
 		    -e '/include .deps/d' \
 		    -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-		    if make -q -f mf.tmp configure >/dev/null 2>&1 ; then \
+		    if make -q -f mf.tmp configure >mf.out 2>&1 ; then \
                 : ; else \
 	        echo "Found $dir/configure.in; executing make configure target" ; \
 	        make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
@@ -533,8 +534,14 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
                     echo "Error! autoconf did not find local macro definitions for configure in $dir"
 	            echo "The following (at most 40 lines) local macros were not found:"
 		    grep PAC_ $dir/configure | head -40
+		    if [ -s $dir/mf.out ] ; then
+ 	  	        echo "Output of make configure step was:"
+		        cat mf.out
+		    fi
 		    finalStatus=3
 		fi
+	  	# Remove make output now that we no longer need it.
+		rm -f $dir/mf.out
             else 
 		if [ -x $dir/makeconfigure ] ; then
 		    echo "Using makeconfigure in $dir"
