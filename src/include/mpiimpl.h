@@ -1327,7 +1327,8 @@ typedef struct MPID_Win {
     int start_assert;            /* assert passed to MPI_Win_start */
     MPI_Comm    comm;         /* communicator of window (dup) */
     volatile int my_counter;  /* completion counter for operations
-                                 targeting this window */
+                                 targeting this window, or for the source
+                                 window in the case of passive target RMA */
     void **base_addrs;     /* array of base addresses of the windows of
                               all processes */
     int *disp_units;      /* array of displacement units of all windows */
@@ -3116,6 +3117,7 @@ int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
                    MPI_Datatype sendtype, void *recvbuf, int recvcnt,
                    MPI_Datatype recvtype, int root, MPID_Comm
                    *comm_ptr );
+int MPIR_Barrier( MPID_Comm *comm_ptr );
 
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
