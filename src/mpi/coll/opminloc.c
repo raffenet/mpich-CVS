@@ -134,7 +134,8 @@ void MPIR_MINLOC(
 #endif
 
     /* now the Fortran types */
-
+#ifdef HAVE_FORTRAN_BINDING
+#ifndef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
     case MPI_2INTEGER: {
         int *a = (int *)inoutvec; int *b = (int *)invec;
         for ( i=0; i<flen; i+=2 ) {
@@ -171,6 +172,8 @@ void MPIR_MINLOC(
         }
         break;
     }
+#endif
+#endif
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);

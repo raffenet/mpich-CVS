@@ -925,6 +925,8 @@ else
 	fullname="MPI_$name"
 	eval $fullname=MPI_DATATYPE_NULL
     done
+    AC_MSG_WARN([Could not define Fortran MPI datatypes for C])
+    AC_DEFINE(HAVE_NO_FORTRAN_MPI_TYPES_IN_C,,[Define if the Fortran types are not available in C])
     # Temporary values for MPI_Fint (need help from the Fortran subsystem)
     MPI_FINT=int
 fi
