@@ -32,7 +32,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     if (strcmp(session, SMPD_SMPD_SESSION_STR) == 0)
     {
 	/* send password request or not */
-	if (g_bPasswordProtect)
+	if (smpd_process.bPasswordProtect)
 	{
 	    result = smpd_write_string(set, sock, SMPD_PWD_REQUEST);
 	    if (result != SMPD_SUCCESS)
@@ -46,7 +46,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		smpd_close_connection(set, sock);
 		return SMPD_FAIL;
 	    }
-	    if (strcmp(password, g_SMPDPassword) == 0)
+	    if (strcmp(password, smpd_process.SMPDPassword) == 0)
 		result = smpd_write_string(set, sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
 	    else
 	    {
@@ -79,7 +79,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 
 	domainaccount[0] = '\0';
 	password[0] = '\0';
-	if (g_bService)
+	if (smpd_process.bService)
 	{
 	    result = smpd_write_string(set, sock, SMPD_CRED_REQUEST);
 	    if (result != SMPD_SUCCESS)
@@ -151,12 +151,12 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    return SMPD_FAIL;
 	}
 	/* encode the pipes on the command line */
-	snprintf(cmd, 8192, "\"%s\" -mgr -read %s -write %s", g_pszSMPDExe, 
+	snprintf(cmd, 8192, "\"%s\" -mgr -read %s -write %s", smpd_process.pszExe, 
 	    smpd_encode_handle(read_handle_str, hReadRemote), 
 	    smpd_encode_handle(write_handle_str, hWriteRemote));
 	smpd_dbg_printf("starting command:\n%s\n", cmd);
 	GetStartupInfo(&sInfo);
-	if (g_bService)
+	if (smpd_process.bService)
 	{
 	    smpd_parse_account_domain(domainaccount, account, domain);
 	    if (strlen(domain) < 1)
@@ -193,7 +193,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	num_tries = 4;
 	do
 	{
-	    if (g_bService)
+	    if (smpd_process.bService)
 	    {
 		result = CreateProcessAsUser(
 		    user_handle,
@@ -219,18 +219,18 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		    num_tries--;
 		    if (num_tries == 0)
 		    {
-			smpd_err_printf("%s failed, error %d\n", g_bService ? "CreateProcessAsUser" : "CreateProcess", result);
+			smpd_err_printf("%s failed, error %d\n", smpd_process.bService ? "CreateProcessAsUser" : "CreateProcess", result);
 		    }
 		}
 		else
 		{
-		    smpd_err_printf("%s failed, error %d\n", g_bService ? "CreateProcessAsUser" : "CreateProcess", result);
+		    smpd_err_printf("%s failed, error %d\n", smpd_process.bService ? "CreateProcessAsUser" : "CreateProcess", result);
 		    num_tries = 0;
 		}
 	    }
 	} while (num_tries);
 
-	if (g_bService)
+	if (smpd_process.bService)
 	    RevertToSelf();
 	if (result != SMPD_SUCCESS)
 	{

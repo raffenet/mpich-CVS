@@ -50,12 +50,6 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	hRead = smpd_decode_handle(read_handle_str);
 	hWrite = smpd_decode_handle(write_handle_str);
 
-	result = sock_init();
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
-	    return SMPD_FAIL;
-	}
 	result = sock_create_set(&set);
 	if (result != SOCK_SUCCESS)
 	{
@@ -91,7 +85,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("manager reading account and password from smpd.\n");
-	if (!ReadFile(hRead, g_UserAccount, 100, &num_read, NULL))
+	if (!ReadFile(hRead, smpd_process.UserAccount, 100, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
 	    return SMPD_FAIL;
@@ -101,7 +95,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_err_printf("read only %d bytes of 100\n", num_read);
 	    return SMPD_FAIL;
 	}
-	if (!ReadFile(hRead, g_UserPassword, 100, &num_read, NULL))
+	if (!ReadFile(hRead, smpd_process.UserPassword, 100, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
 	    return SMPD_FAIL;

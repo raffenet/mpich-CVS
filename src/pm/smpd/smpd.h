@@ -19,9 +19,11 @@
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
 
+#define SMPD_MAX_SESSION_HEADER_LENGTH   1024
 #define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
 #define SMPD_MAX_HOST_LENGTH	           64
+#define SMPD_MAX_EXE_LENGTH              1024
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
 #define SMPD_SALT_VALUE                   "14"
 #define SMPD_AUTHENTICATION_STR_LEN       256
@@ -51,8 +53,19 @@
 #define snprintf _snprintf
 #endif
 
-typedef struct smpd_context
+typedef enum smpd_context_type_t
 {
+    SMPD_CONTEXT_INVALID,
+    SMPD_CONTEXT_STDIN,
+    SMPD_CONTEXT_PARENT,
+    SMPD_CONTEXT_LEFT_CHILD,
+    SMPD_CONTEXT_RIGHT_CHILD,
+    SMPD_CONTEXT_CHILD
+} smpd_context_type_t;
+
+typedef struct smpd_context_t
+{
+    smpd_context_type_t type;
     char input_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
     char input_str[SMPD_MAX_CMD_LENGTH];
     char output_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
@@ -62,15 +75,24 @@ typedef struct smpd_context
     int id;
     sock_set_t set;
     sock_t sock;
-    struct smpd_context *next;
-} smpd_context;
+    struct smpd_context_t *next;
+} smpd_context_t;
 
-extern char g_pszSMPDExe[1024];
-extern int  g_bService;
-extern int  g_bPasswordProtect;
-extern char g_SMPDPassword[100];
-extern char g_UserAccount[100];
-extern char g_UserPassword[100];
+typedef struct smpd_process_t
+{
+    int id, parent_id;
+    int level;
+    smpd_context_t *left_context, *right_context, *parent_context;
+    char host[SMPD_MAX_HOST_LENGTH];
+    char pszExe[SMPD_MAX_EXE_LENGTH];
+    int  bService;
+    int  bPasswordProtect;
+    char SMPDPassword[100];
+    char UserAccount[100];
+    char UserPassword[100];
+} smpd_process_t;
+
+extern smpd_process_t smpd_process;
 
 /* smpd */
 int smpd_parse_command_args(int *argcp, char **argvp[]);
@@ -82,11 +104,12 @@ HANDLE smpd_decode_handle(char *str);
 #endif
 
 /* smpd_util */
-int smpd_init_context(smpd_context *context, sock_set_t set, sock_t sock);
-int smpd_post_read_command(smpd_context *context);
-int smpd_read_command(smpd_context *context);
-int smpd_package_command(smpd_context *context);
-int smpd_write_command(smpd_context *context);
+int smpd_init_process(void);
+int smpd_init_context(smpd_context_t *context, sock_set_t set, sock_t sock);
+int smpd_post_read_command(smpd_context_t *context);
+int smpd_read_command(smpd_context_t *context);
+int smpd_package_command(smpd_context_t *context);
+int smpd_write_command(smpd_context_t *context);
 int smpd_write_string(sock_set_t set, sock_t sock, char *str);
 int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen);
 int smpd_authenticate(sock_set_t set, sock_t sock, int type);
@@ -103,7 +126,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase);
 int smpd_getpid();
 char * get_sock_error_string(int error);
 int smpd_close_connection(sock_set_t set, sock_t sock);
-int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, char *session_type, sock_set_t *set_ptr, sock_t *sock_ptr);
+int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, char *session_type, int session_id, sock_set_t *set_ptr, sock_t *sock_ptr);
 void smpd_get_password(char *password);
 void smpd_get_account_and_password(char *account, char *password);
 int smpd_get_credentials_from_parent(sock_set_t set, sock_t sock);
@@ -117,6 +140,12 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);
 #endif
-
+int smpd_generate_session_header(char *str, int session_id);
+int smpd_interpret_session_header(char *str);
+int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val);
+int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, char *flag, int val);
+int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
+int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_context);
+int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
 
 #endif

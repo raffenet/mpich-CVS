@@ -1,6 +1,128 @@
 #include "smpd.h"
 #include <stdio.h>
 
+int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
+{
+    char *pszFirst, *pszDelimLoc, *pszLast;
+    char *pszDelim = "=";
+    int bFirst = SMPD_TRUE;
+
+    if (str == NULL || flag == NULL || val == NULL)
+	return SMPD_FALSE;
+
+    while (SMPD_TRUE)
+    {
+	// Find the name
+	pszFirst = strstr(str, flag);
+	if (pszFirst == NULL)
+	    return SMPD_FALSE;
+
+	// Check to see if we have matched a sub-string
+	if (bFirst)
+	{
+	    bFirst = SMPD_FALSE;
+	    if ((pszFirst != str) && (!isspace(*(pszFirst-1))))
+	    {
+		str = pszFirst + strlen(flag);
+		continue;
+	    }
+	}
+	else
+	{
+	    if (!isspace(*(pszFirst-1)))
+	    {
+		str = pszFirst + strlen(flag);
+		continue;
+	    }
+	}
+
+	// Skip over any white space after the name
+	pszDelimLoc = &pszFirst[strlen(flag)];
+	while (isspace(*pszDelimLoc))
+	    pszDelimLoc++;
+
+	// Find the deliminator
+	if (strncmp(pszDelimLoc, pszDelim, strlen(pszDelim)) != 0)
+	{
+	    //str = &pszDelimLoc[strlen(pszDelim)];
+	    str = pszDelimLoc;
+	    continue;
+	}
+	
+	// Skip over the deliminator and any white space
+	pszFirst = &pszDelimLoc[strlen(pszDelim)];
+	while (isspace(*pszFirst))
+	    pszFirst++;
+
+	if (*pszFirst == '\'')
+	{
+	    pszFirst++;
+	    while (*pszFirst != '\'' && *pszFirst != '\0')
+	    {
+		*val++ = *pszFirst++;
+	    }
+	    *val = '\0';
+	    break;
+	}
+	else
+	{
+	    // Find the next deliminator
+	    pszLast = strstr(pszFirst, pszDelim);
+	    if (pszLast == NULL)
+	    {
+		strcpy(val, pszFirst);
+		break;
+	    }
+	    
+	    // Back up over any white space and name preceding the second deliminator
+	    pszLast--;
+	    while (pszLast > pszFirst && isspace(*pszLast))
+		pszLast--;
+	    while (pszLast > pszFirst && !isspace(*pszLast))
+		pszLast--;
+	    while (pszLast > pszFirst && isspace(*pszLast))
+		pszLast--;
+	    
+	    // Copy the data between first and last
+	    pszLast++;
+	    strncpy(val, pszFirst, pszLast-pszFirst);
+	    val[pszLast-pszFirst] = '\0';
+	}
+	break;
+    }
+    return SMPD_TRUE;
+}
+
+int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
+{
+    int num_chars;
+
+    if (strstr(flag, " "))
+    {
+	smpd_err_printf("invalid flag, spaces not allowed: %s\n", flag);
+	return SMPD_FAIL;
+    }
+    num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s='%s' ", flag, val);
+    *str_ptr = *str_ptr + num_chars;
+    *maxlen_ptr = *maxlen_ptr - num_chars;
+    return SMPD_SUCCESS;
+}
+
+int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, char *flag, int val)
+{
+    int num_chars;
+
+    if (strstr(flag, " "))
+    {
+	smpd_err_printf("invalid flag, spaces not allowed: %s\n", flag);
+	return SMPD_FAIL;
+    }
+    num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s=%d ", flag, val);
+    *str_ptr = *str_ptr + num_chars;
+    *maxlen_ptr = *maxlen_ptr - num_chars;
+    return SMPD_SUCCESS;
+}
+
 int smpd_get_opt(int *argc, char ***argv, char * flag)
 {
     int i,j;

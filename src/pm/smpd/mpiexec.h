@@ -4,6 +4,29 @@
 #include "sock.h"
 #include <stdio.h>
 
+#define MP_MAX_HOST_LENGTH  100
+#define MP_MAX_EXE_LENGTH  1024
+
+typedef struct mp_host_node_t
+{
+    char host[MP_MAX_HOST_LENGTH];
+    char ip_str[MP_MAX_HOST_LENGTH];
+    int id;
+    struct mp_host_node_t *next;
+} mp_host_node_t;
+
+typedef struct mp_launch_node_t
+{
+    char exe[MP_MAX_EXE_LENGTH];
+    int host_id;
+    long nproc;
+    struct mp_launch_node_t *next;
+} mp_launch_node_t;
+
+#ifdef HAVE_WINDOWS_H
+extern HANDLE g_hCloseStdinThreadEvent;
+#endif
+
 int mp_dbg_printf(char *str, ...);
 int mp_err_printf(char *str, ...);
 int mp_parse_command_args(int *argc, char **argv[]);

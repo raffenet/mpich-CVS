@@ -10,13 +10,6 @@
 #include <unistd.h>
 #endif
 
-/* global variables */
-char g_pszSMPDExe[1024];
-int  g_bService = SMPD_FALSE;
-int  g_bPasswordProtect = SMPD_FALSE;
-char g_SMPDPassword[100] = SMPD_DEFAULT_PASSWORD;
-char g_UserAccount[100], g_UserPassword[100];
-
 int main(int argc, char* argv[])
 {
     int result;
@@ -24,10 +17,23 @@ int main(int argc, char* argv[])
     sock_t listener, new_sock;
     sock_event_t event;
     int port = SMPD_LISTENER_PORT;
-#ifdef HAVE_WINDOWS_H
-    HMODULE hModule;
-#endif
 
+    /* initialization */
+    result = sock_init();
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	return result;
+    }
+
+    result = smpd_init_process();
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("smpd_init_process failed.\n");
+	return result;
+    }
+
+    /* parse the command line */
     result = smpd_parse_command_args(&argc, &argv);
     if (result != SMPD_SUCCESS)
     {
@@ -35,23 +41,8 @@ int main(int argc, char* argv[])
 	return result;
     }
 
-#ifdef HAVE_WINDOWS_H
-    hModule = GetModuleHandle(NULL);
-    if (!GetModuleFileName(hModule, g_pszSMPDExe, 1024)) 
-	strcpy(g_pszSMPDExe, "smpd.exe");
-#else
-    strcpy(g_pszSMPDExe, "smpd");
-#endif
-    smpd_set_smpd_data("path", g_pszSMPDExe);
+    /*smpd_set_smpd_data("path", smpd_process.pszExe);*/
 
-    srand(smpd_getpid());
-
-    result = sock_init();
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
-	return result;
-    }
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)
     {

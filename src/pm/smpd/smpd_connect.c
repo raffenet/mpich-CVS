@@ -17,8 +17,45 @@
 #include <termios.h>
 #endif
 
-int smpd_init_context(smpd_context *context, sock_set_t set, sock_t sock)
+smpd_process_t smpd_process;
+
+int smpd_init_process(void)
 {
+#ifdef HAVE_WINDOWS_H
+    HMODULE hModule;
+#endif
+
+    /* tree data */
+    smpd_process.parent_id = -1;
+    smpd_process.id = 0;
+    smpd_process.level = 0;
+    smpd_process.left_context = NULL;
+    smpd_process.right_context = NULL;
+    smpd_process.parent_context = NULL;
+
+    /* local data */
+#ifdef HAVE_WINDOWS_H
+    hModule = GetModuleHandle(NULL);
+    if (!GetModuleFileName(hModule, smpd_process.pszExe, SMPD_MAX_EXE_LENGTH)) 
+	smpd_process.pszExe[0] = '\0';
+#else
+    smpd_process.pszExe[0] = '\0';
+#endif
+    strcpy(smpd_process.SMPDPassword, SMPD_DEFAULT_PASSWORD);
+    smpd_process.bPasswordProtect = SMPD_FALSE;
+    smpd_process.bService = SMPD_FALSE;
+    gethostname(smpd_process.host, SMPD_MAX_HOST_LENGTH);
+    smpd_process.UserAccount[0] = '\0';
+    smpd_process.UserPassword[0] = '\0';
+
+    srand(smpd_getpid());
+
+    return SMPD_SUCCESS;
+}
+
+int smpd_init_context(smpd_context_t *context, sock_set_t set, sock_t sock)
+{
+    context->type = SMPD_CONTEXT_INVALID;
     context->host[0] = '\0';
     context->id = -1;
     context->input_cmd_hdr_str[0] = '\0';
@@ -29,6 +66,44 @@ int smpd_init_context(smpd_context *context, sock_set_t set, sock_t sock)
     context->read_offset = 0;
     context->set = set;
     context->sock = sock;
+    return SMPD_SUCCESS;
+}
+
+int smpd_generate_session_header(char *str, int session_id)
+{
+    char * str_orig;
+    int result;
+    int len;
+
+    str_orig = str;
+    *str = '\0';
+    len = SMPD_MAX_SESSION_HEADER_LENGTH;
+
+    /* add header fields */
+    result = smpd_add_int_arg(&str, &len, "id", session_id);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create session header, adding session id failed.\n");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_int_arg(&str, &len, "parent", smpd_process.id);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create session header, adding parent id failed.\n");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_int_arg(&str, &len, "level", smpd_process.level + 1);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create session header, adding session level failed.\n");
+	return SMPD_FAIL;
+    }
+
+    /* remove the trailing space */
+    str--;
+    *str = '\0';
+
+    smpd_dbg_printf("session header: <%s>\n", str_orig);
     return SMPD_SUCCESS;
 }
 
@@ -168,7 +243,7 @@ int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock)
     return SMPD_FAIL;
 }
 
-int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, char *session_type, sock_set_t *set_ptr, sock_t *sock_ptr)
+int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, char *session_type, int session_id, sock_set_t *set_ptr, sock_t *sock_ptr)
 {
     int result;
     sock_set_t set;
@@ -180,6 +255,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     char password[100] = "invalid password";
     char cred_request[100];
     char response[100];
+    char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
 
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)
@@ -375,6 +451,20 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     {
 	smpd_err_printf("Invalid session requested: '%s'\n", session_type);
 	return SMPD_FAIL;
+    }
+
+    /* generate and send the session header */
+    result = smpd_generate_session_header(session_header, session_id);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to generate a session header.\n");
+	return -1;
+    }
+    result = smpd_write_string(set, sock, session_header);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to send the session header.\n");
+	return -1;
     }
 
     *set_ptr = set;
