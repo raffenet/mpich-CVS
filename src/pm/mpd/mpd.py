@@ -153,8 +153,8 @@ def _mpd():
         for readySocket in inReadySockets:
             if readySocket not in g.activeSockets.keys():  # deleted on another iteration ?
                 print 'unexpected readySocket %d, console=%d' % (readysocket.fileno(), g.conSocket.fileno()) 
-                if readySocket in SocketsToSelect:
-                    del SocketsToSelect[readySocket]
+                if readySocket in socketsToSelect:
+                    del socketsToSelect[readySocket]
                     readySocket.close()
                 continue
             if readySocket == g.mySocket:
