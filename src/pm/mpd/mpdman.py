@@ -775,6 +775,7 @@ def mpdman():
                 msg = mpd_recv_one_msg(readySocket)
                 if not msg:
                     del socketsToSelect[readySocket]
+                    spawnedChildSockets.remove(readySocket)
                     readySocket.close()
                 elif msg['cmd'] == 'job_started'  or  msg['cmd'] == 'job_terminated':
                     pass
