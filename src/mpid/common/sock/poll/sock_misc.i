@@ -15,10 +15,13 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    
     if (MPIU_Strncpy(host_description, hostname, len))
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN, "**sock|badhdmax", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
+					 "**sock|badhdmax", 0);
     }
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
@@ -37,7 +40,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
     if (len < 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
@@ -61,7 +64,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 	else
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					     "**sock|oserror", "**sock|poll|oserror %d", errno);
+					     "**sock|oserror", "**sock|poll|oserror %d %s", errno, MPIU_Strerror(errno));
 	}
     }
 
@@ -89,6 +92,8 @@ int MPIDU_Sock_native_to_sock(struct MPIDU_Sock_set * sock_set, MPIDU_SOCK_NATIV
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_NATIVE_TO_SOCK);
 
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+
     /* allocate sock and poll structures */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
     if (mpi_errno != MPI_SUCCESS)
@@ -98,32 +103,34 @@ int MPIDU_Sock_native_to_sock(struct MPIDU_Sock_set * sock_set, MPIDU_SOCK_NATIV
 	goto fn_fail;
     }
     
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
     
     /* set file descriptor to non-blocking */
     flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d", errno);
+					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d", errno);
+					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
 
     /* initialize sock and poll structures */
-    pollfd->fd = fd;
+    pollfd->fd = -1;
     pollfd->events = 0;
     pollfd->revents = 0;
+    
     pollinfo->fd = fd;
     pollinfo->user_ptr = user_ptr;
-    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED;
+    pollinfo->type = MPIDU_SOCKI_TYPE_COMMUNICATION;
+    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
 
     *sockp = sock;
 
@@ -152,16 +159,17 @@ int MPIDU_Sock_set_user_ptr(struct MPIDU_Sock * sock, void * user_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_SET_USER_PTR);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
 
     if (sock != MPIDU_SOCK_INVALID_SOCK &&
 	sock->sock_set != MPIDU_SOCK_INVALID_SET)
     {
-	MPIDU_Socki_get_pollinfo_ptr(sock)->user_ptr = user_ptr;
+	MPIDU_Socki_sock_get_pollinfo(sock)->user_ptr = user_ptr;
     }
     else
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**sock|badsock", NULL);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
+					 "**sock|badsock", NULL);
     }
 
   fn_exit:
@@ -185,7 +193,7 @@ int MPIDU_Sock_get_sock_id(struct MPIDU_Sock * sock)
     {
 	if (sock->sock_set != MPIDU_SOCK_INVALID_SET)
 	{
-	    id = MPIDU_Socki_get_pollinfo_ptr(sock)->sock_id;
+	    id = MPIDU_Socki_sock_get_pollinfo(sock)->sock_id;
 	}
 	else
 	{

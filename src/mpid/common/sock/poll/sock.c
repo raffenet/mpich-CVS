@@ -5,6 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#define _XOPEN_SOURCE
+
 #include "mpidu_sock.h"
 #include "mpiimpl.h"
 
@@ -69,27 +71,58 @@
 #define MPIDU_SOCK_EVENTQ_POOL_SIZE 1
 #endif
 
+
 enum MPIDU_Socki_state
 {
-    MPIDU_SOCKI_STATE_UNCONNECTED = 1,
-    MPIDU_SOCKI_STATE_INTERRUPTER,
-    MPIDU_SOCKI_STATE_LISTENER,
+    MPIDU_SOCKI_STATE_FIRST = 0,
     MPIDU_SOCKI_STATE_CONNECTING,
-    MPIDU_SOCKI_STATE_CONNECTED,
-    MPIDU_SOCKI_STATE_CONN_CLOSED,
-    MPIDU_SOCKI_STATE_CONN_FAILED,
+    MPIDU_SOCKI_STATE_CONNECTED_RW,
+    MPIDU_SOCKI_STATE_CONNECTED_RO,
+    MPIDU_SOCKI_STATE_DISCONNECTED,
     MPIDU_SOCKI_STATE_CLOSING,
     MPIDU_SOCKI_STATE_LAST
 };
 
+enum MPIDU_Socki_type
+{
+    MPIDU_SOCKI_TYPE_FIRST = 0,
+    MPIDU_SOCKI_TYPE_COMMUNICATION,
+    MPIDU_SOCKI_TYPE_LISTENER,
+    MPIDU_SOCKI_TYPE_INTERRUPTER,
+    MPIDU_SOCKI_TYPE_LAST
+};
+
+/*
+ * struct pollinfo
+ * 
+ * sock_id - an integer id comprised of the sock_set id and the element number in the pollfd/info arrays
+ * 
+ * sock_set - a pointer to the sock set to which this connection belongs
+ * 
+ * elem - the element number of this connection in the pollfd/info arrays
+ * 
+ * sock - at present this is only used to free the sock structure when the close is completed by MPIDIU_Sock_wait()
+ * 
+ * fd - this file descriptor is used whenever the file descriptor is needed.  this descriptor remains open until the sock, and
+ * thus the socket, are actually closed.  the fd in the pollfd structure should only be used for telling poll() if it should
+ * check for events on that descriptor.
+ * 
+ * user_ptr - a user supplied pointer that is included with event associated with this connection
+ * 
+ * state - state of the connection
+ *
+ */
 struct pollinfo
 {
     int sock_id;
     struct MPIDU_Sock_set * sock_set;
     int elem;
+    struct MPIDU_Sock * sock;
     int fd;
     void * user_ptr;
+    enum MPIDU_Socki_type type;
     enum MPIDU_Socki_state state;
+    int os_errno;
     union
     {
 	struct
@@ -131,14 +164,13 @@ struct pollinfo
 struct MPIDU_Socki_eventq_elem
 {
     struct MPIDU_Sock_event event;
+    struct pollinfo * pollinfo;
     struct MPIDU_Socki_eventq_elem * next;
 };
 
 struct MPIDU_Sock_set
 {
-    /* MT: in poll lock? */
     int id;
-    /* MT: poll entry allocation/deallocation lock? */
     int poll_arr_sz;
     int poll_n_elem;
     int starting_elem;
@@ -146,7 +178,6 @@ struct MPIDU_Sock_set
     struct pollinfo * pollinfos;
     int intr_fds[2];
     struct MPIDU_Sock * intr_sock;
-    /* MT: lock for the enqueuing and dequeing events? */
     struct MPIDU_Socki_eventq_elem * eventq_head;
     struct MPIDU_Socki_eventq_elem * eventq_tail;
 };
@@ -160,10 +191,9 @@ struct MPIDU_Sock
 
 int MPIDU_Socki_initialized = 0;
 
-/* MT: lock for the pool of available event queue entries? */
 static struct MPIDU_Socki_eventq_elem * MPIDU_Socki_eventq_pool = NULL;
 
-/* MT: need to be atomically incremented */
+/* MT: needs to be atomically incremented */
 static int MPIDU_Socki_set_next_id = 0;
 
 

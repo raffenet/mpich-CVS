@@ -22,9 +22,11 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_CREATE_SET);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
 
-    /* alloc and initialized a new sock set structure */
+    /*
+     * Allocate and initialized a new sock set structure
+     */
     sock_set = MPIU_Malloc(sizeof(struct MPIDU_Sock_set));
     if (sock_set == NULL)
     { 
@@ -44,12 +46,14 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     sock_set->intr_fds[1] = -1;
     sock_set->intr_sock = NULL;
 
-    /* acquire a pipe to wake up a blocking poll should it become necessary */
+    /*
+     * Acquire a pipe (the interrupter) to wake up a blocking poll should it become necessary
+     */
     rc = pipe(sock_set->intr_fds);
     if (rc != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|pipe", "**sock|poll|pipe %d", errno);
+					 "**sock|poll|pipe", "**sock|poll|pipe %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
 
@@ -57,7 +61,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d", errno);
+					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d %s",
+					 errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
     
@@ -65,7 +70,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d", errno);
+					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d %s",
+					 errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
     
@@ -73,7 +79,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d", errno);
+					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d %s",
+					 errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
     
@@ -81,11 +88,14 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d", errno);
+					 "**sock|poll|pipenonblock", "**sock|poll|pipenonblock %d %s",
+					 errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
 
-    /* allocate and initialize a sock structure for the pipe */
+    /*
+     * Allocate and initialize a sock structure for the interrupter pipe
+     */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -94,16 +104,24 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 	goto fn_fail;
     }
     
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
     
     pollfd->fd = sock_set->intr_fds[0];
     pollfd->events = POLLIN;
     pollfd->revents = 0;
     pollinfo->user_ptr = NULL;
-    pollinfo->state = MPIDU_SOCKI_STATE_INTERRUPTER;
+    pollinfo->type = MPIDU_SOCKI_TYPE_INTERRUPTER;
+    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
+
     sock_set->intr_sock = sock;
-    /* MT: must be atomically incremented */
+
+    /*
+     * Finalize initialization of the sock set by assigning it an ID
+     *
+     * MT: MPIDU_Socki_set_next_id must be atomically incremented if multiple sock sets are ever allowed to be created
+     * simultaneously.
+     */
     sock_set->id = MPIDU_Socki_set_next_id++;
     
     *sock_setp = sock_set;
@@ -145,19 +163,28 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_DESTROY_SET);
 
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock_set->intr_sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock_set->intr_sock);
+    /*
+     * FIXME: check for open socks and return an error if any are found
+     */
+    
+    /*
+     * Close pipe for interrupting a blocking poll()
+     */
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock_set->intr_sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock_set->intr_sock);
 
-    /* close pipe for interrupting a blocking poll() */
-    pollinfo->state = MPIDU_SOCKI_STATE_UNCONNECTED;
+    pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
     pollfd->fd = -1;
     pollfd->events = 0;
     close(sock_set->intr_fds[1]);
     close(sock_set->intr_fds[0]);
     MPIDU_Socki_sock_free(sock_set->intr_sock);
 
+    /*
+     * Free structures used by the sock set
+     */
     MPIU_Free(sock_set->pollinfos);
     MPIU_Free(sock_set->pollfds);
     MPIU_Free(sock_set);

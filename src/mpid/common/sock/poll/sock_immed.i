@@ -26,14 +26,44 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_ACCEPT);
 
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
-    MPIDU_SOCKI_VALIDATE_SOCK(listener, mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK(listener, mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(listener);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(listener);
+    pollfd = MPIDU_Socki_sock_get_pollfd(listener);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(listener);
+
+    if (pollinfo->type != MPIDU_SOCKI_TYPE_LISTENER)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
+					 "**sock|listener_bad_sock", "**sock|listener_bad_sock %d %d",
+					 pollinfo->sock_set->id, pollinfo->sock_id);
+	goto fn_exit;
+    }
     
+    if (pollinfo->state != MPIDU_SOCKI_STATE_CONNECTED_RO && pollinfo->state != MPIDU_SOCKI_STATE_CLOSING)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
+					 "**sock|listener_bad_state", "**sock|listener_bad_state %d %d %d",
+					 pollinfo->sock_set->id, pollinfo->sock_id, pollinfo->state);
+	goto fn_exit;
+    }
+
+    /*
+     * Get a socket for the new connection from the operating system.  Make the socket nonblocking, and disable Nagle's
+     * alogorithm (to minimize latency of small messages).
+     */
     addr_len = sizeof(struct sockaddr_in);
-    fd = accept(pollfd->fd, (struct sockaddr *) &addr, &addr_len);
+    fd = accept(pollinfo->fd, (struct sockaddr *) &addr, &addr_len);
+
+    if (pollinfo->state != MPIDU_SOCKI_STATE_CLOSING)
+    {
+	/*
+	 * Unless the listener sock is being closed, add it back into the poll list so that new connections will be detected.
+	 */
+	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
+	/* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
+    }
+    
     if (fd == -1)
     {
 	if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -50,29 +80,29 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					     "**sock|badhandle", "**sock|poll|badhandle %d %d %d",
-					     pollinfo->sock_set->id, pollinfo->sock_id, pollfd->fd);
+					     pollinfo->sock_set->id, pollinfo->sock_id, pollinfo->fd);
 	}
 	else
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NO_NEW_SOCK,
-					     "**sock|poll|accept", "**sock|poll|accept %d", errno);
+					     "**sock|poll|accept", "**sock|poll|accept %d %s", errno, MPIU_Strerror(errno));
 	}
 	
 	goto fn_fail;
     }
-    
+
     flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d", errno);
+					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d", errno);
+					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
 
@@ -81,10 +111,17 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     if (rc != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nodelay", "**sock|poll|nodelay %d", errno);
+					 "**sock|poll|nodelay", "**sock|poll|nodelay %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
 
+    /*
+     * Allocate and initialize sock and poll structures.
+     *
+     * NOTE: pollfd->fd is initialized to -1.  It is only set to the true fd value when an operation is posted on the sock.  This
+     * (hopefully) eliminates a little overhead in the OS and avoids repetitive POLLHUP events when the connection is closed by
+     * the remote process.
+     */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -93,16 +130,18 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	goto fn_fail;
     }
     
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
-    pollfd->fd = fd;
-    pollfd->events = 0;
-    pollfd->revents = 0;
     pollinfo->fd = fd;
     pollinfo->user_ptr = user_ptr;
-    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED;
-
+    pollinfo->type = MPIDU_SOCKI_TYPE_COMMUNICATION;
+    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
+    pollinfo->os_errno = 0;
+    
+    pollfd->fd = -1;
+    pollfd->events = 0;
+    pollfd->revents = 0;
     *sockp = sock;
 
   fn_exit:
@@ -117,6 +156,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
     goto fn_exit;
 }
+/* end MPIDU_Sock_accept() */
 
 
 #undef FUNCNAME
@@ -134,15 +174,15 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_READ);
 
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
-    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
-    MPIDU_SOCKI_VERIFY_CONNECTED(pollinfo, mpi_errno);
-    MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
-    MPIDU_SOCKI_VERIFY_SOCK_READABLE(pollfd, pollinfo, mpi_errno);
+    MPIDU_SOCKI_VALIDATE_FD(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd, pollinfo, mpi_errno, fn_exit);
     
     /* FIXME: multiple passes should be made if len > SSIZE_MAX and nb == SSIZE_MAX */
     if (len > SSIZE_MAX)
@@ -153,7 +193,7 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
     do
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_READ);
-	nb = read(pollfd->fd, buf, len);
+	nb = read(pollinfo->fd, buf, len);
 	MPIDI_FUNC_EXIT(MPID_STATE_READ);
     }
     while (nb == -1 && errno == EINTR);
@@ -166,23 +206,51 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
     {
 	*num_read = 0;
 	
-	/* MT: what about other threads that are or might soon be using the fd? */
-	pollinfo->state = MPIDU_SOCKI_STATE_CONN_CLOSED;
-	close(pollfd->fd);
-	pollfd->fd = -1;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED,
-					 "**sock|connclosed", "**sock|connclosed %d %d",
-					 pollinfo->sock_set->id, pollinfo->sock_id);
+	mpi_errno = MPIR_Err_create_code(
+	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED,
+	    "**sock|connclosed", "**sock|connclosed %d %d", pollinfo->sock_set->id, pollinfo->sock_id);
+	
+	if (MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd, pollinfo, POLLOUT))
+	{ 
+	    /* A write is posted on this connection.  Enqueue an event for the write indicating the connection is closed. */
+	    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr,
+				      mpi_errno, mpi_errno, fn_exit);
+	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
+	}
+	
+	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
+    }
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
+    {
+	*num_read = 0;
     }
     else
     {
-	if (errno == EAGAIN || errno == EWOULDBLOCK)
+	int disconnected;
+	
+	*num_read = 0;
+	
+	mpi_errno = MPIDU_Socki_os_to_mpi_errno(pollinfo, errno, FCNAME, __LINE__, &disconnected);
+	if (MPIR_Err_is_fatal(mpi_errno))
 	{
-	    *num_read = 0;
+	    /*
+	     * A serious error occurred.  There is no guarantee that the data structures are still intact.  Therefore, we avoid
+	     * modifying them.
+	     */
+	    goto fn_exit;
 	}
-	else
+
+	if (disconnected)
 	{
-	    mpi_errno = MPIDU_Socki_handle_immediate_os_errors(pollfd, pollinfo, errno, FCNAME, __LINE__);
+	    if (MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd, pollinfo, POLLOUT))
+	    { 
+		/* A write is posted on this connection.  Enqueue an event for the write indicating the connection is closed. */
+		MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr,
+					  mpi_errno, mpi_errno, fn_exit);
+		MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
+	    }
+	    
+	    pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 	}
     }
 
@@ -190,6 +258,8 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READ);
     return mpi_errno;
 }
+/* end MPIDU_Sock_read() */
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_readv
@@ -206,23 +276,24 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_READV);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
-    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
-    MPIDU_SOCKI_VERIFY_CONNECTED(pollinfo, mpi_errno);
-    MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
-    MPIDU_SOCKI_VERIFY_SOCK_READABLE(pollfd, pollinfo, mpi_errno);
+    MPIDU_SOCKI_VALIDATE_FD(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd, pollinfo, mpi_errno, fn_exit);
 
-    /* FIXME: what happens if more than SSIZE_MAX data is read?  do we need to copy the iovec and limit it to requesting
-       SSIZE_MAX data at once?  Regardless, if SSIZE_MAX is returned, then we should (copy and) adjust the iovec and try
-       to read more data. */
+    /*
+     * FIXME: The IEEE 1003.1 standard says that if the sum of the iov_len fields exceeds SSIZE_MAX, an errno of EINVAL will be
+     * returned.  How do we handle this?  Can we place an equivalent limitation in the Sock interface?
+     */
     do
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_READV);
-	nb = readv(pollfd->fd, iov, iov_n);
+	nb = readv(pollinfo->fd, iov, iov_n);
 	MPIDI_FUNC_EXIT(MPID_STATE_READV);
     }
     while (nb == -1 && errno == EINTR);
@@ -235,23 +306,52 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
     {
 	*num_read = 0;
 	
-	/* MT: what about other threads that are or might soon be using the fd? */
-	pollinfo->state = MPIDU_SOCKI_STATE_CONN_CLOSED;
-	close(pollfd->fd);
-	pollfd->fd = -1;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED,
-					 "**sock|connclosed", "**sock|connclosed %d %d",
-					 pollinfo->sock_set->id, pollinfo->sock_id);
+	mpi_errno = MPIR_Err_create_code(
+	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED,
+	    "**sock|connclosed", "**sock|connclosed %d %d", pollinfo->sock_set->id, pollinfo->sock_id);
+	
+	if (MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd, pollinfo, POLLOUT))
+	{ 
+	    
+	    /* A write is posted on this connection.  Enqueue an event for the write indicating the connection is closed. */
+	    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr,
+				      mpi_errno, mpi_errno, fn_exit);
+	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
+	}
+	
+	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
+    }
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
+    {
+	*num_read = 0;
     }
     else
     {
-	if (errno == EAGAIN || errno == EWOULDBLOCK)
+	int disconnected;
+	
+	*num_read = 0;
+	
+	mpi_errno = MPIDU_Socki_os_to_mpi_errno(pollinfo, errno, FCNAME, __LINE__, &disconnected);
+	if (MPIR_Err_is_fatal(mpi_errno))
 	{
-	    *num_read = 0;
+	    /*
+	     * A serious error occurred.  There is no guarantee that the data structures are still intact.  Therefore, we avoid
+	     * modifying them.
+	     */
+	    goto fn_exit;
 	}
-	else
+
+	if (disconnected)
 	{
-	    mpi_errno = MPIDU_Socki_handle_immediate_os_errors(pollfd, pollinfo, errno, FCNAME, __LINE__);
+	    if (MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd, pollinfo, POLLOUT))
+	    { 
+		/* A write is posted on this connection.  Enqueue an event for the write indicating the connection is closed. */
+		MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr,
+					  mpi_errno, mpi_errno, fn_exit);
+		MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
+	    }
+	    
+	    pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 	}
     }
 
@@ -259,6 +359,8 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READV);
     return mpi_errno;
 }
+/* end MPIDU_Sock_readv() */
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_write
@@ -275,15 +377,15 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITE);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
-    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
-    MPIDU_SOCKI_VERIFY_CONNECTED(pollinfo, mpi_errno);
-    MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
-    MPIDU_SOCKI_VERIFY_SOCK_WRITABLE(pollfd, pollinfo, mpi_errno);
+    MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_FD(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd, pollinfo, mpi_errno, fn_exit);
     
     /* FIXME: multiple passes should be made if len > SSIZE_MAX and nb == SSIZE_MAX */
     if (len > SSIZE_MAX)
@@ -294,7 +396,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
     do
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
-	nb = write(pollfd->fd, buf, len);
+	nb = write(pollinfo->fd, buf, len);
 	MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
     }
     while (nb == -1 && errno == EINTR);
@@ -303,15 +405,33 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
     {
 	*num_written = nb;
     }
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
+    {
+	*num_written = 0;
+    }
     else
     {
-	if (errno == EAGAIN || errno == EWOULDBLOCK)
+	int disconnected;
+	
+	*num_written = 0;
+	
+	mpi_errno = MPIDU_Socki_os_to_mpi_errno(pollinfo, errno, FCNAME, __LINE__, &disconnected);
+	if (MPIR_Err_is_fatal(mpi_errno))
 	{
-	    *num_written = 0;
+	    /*
+	     * A serious error occurred.  There is no guarantee that the data structures are still intact.  Therefore, we avoid
+	     * modifying them.
+	     */
+	    goto fn_exit;
 	}
-	else
+
+	if (disconnected)
 	{
-	    mpi_errno = MPIDU_Socki_handle_immediate_os_errors(pollfd, pollinfo, errno, FCNAME, __LINE__);
+	    /*
+	     * The connection is dead but data may still be in the socket buffer; thus, we change the state and let
+	     * MPIDU_Sock_wait() clean things up.
+	     */
+	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
     }
 
@@ -319,6 +439,8 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
     return mpi_errno;
 }
+/* end MPIDU_Sock_write() */
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_writev
@@ -335,23 +457,24 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITEV);
     
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
-    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK(sock, mpi_errno, fn_exit);
 
-    pollfd = MPIDU_Socki_get_pollfd_ptr(sock);
-    pollinfo = MPIDU_Socki_get_pollinfo_ptr(sock);
+    pollfd = MPIDU_Socki_sock_get_pollfd(sock);
+    pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
-    MPIDU_SOCKI_VERIFY_CONNECTED(pollinfo, mpi_errno);
-    MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
-    MPIDU_SOCKI_VERIFY_SOCK_WRITABLE(pollfd, pollinfo, mpi_errno);
+    MPIDU_SOCKI_VALIDATE_FD(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd, pollinfo, mpi_errno, fn_exit);
     
-    /* FIXME: what happens if more than SSIZE_MAX data is read?  do we need to copy the iovec and limit it to requesting
-       SSIZE_MAX data at once?  Regardless, if SSIZE_MAX is returned, then we should (copy and) adjust the iovec and try
-       to read more data. */
+    /*
+     * FIXME: The IEEE 1003.1 standard says that if the sum of the iov_len fields exceeds SSIZE_MAX, an errno of EINVAL will be
+     * returned.  How do we handle this?  Can we place an equivalent limitation in the Sock interface?
+     */
     do
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
-	nb = writev(pollfd->fd, iov, iov_n);
+	nb = writev(pollinfo->fd, iov, iov_n);
 	MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
     }
     while (nb == -1 && errno == EINTR);
@@ -360,15 +483,33 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
     {
 	*num_written = (MPIU_Size_t) nb;
     }
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
+    {
+	*num_written = 0;
+    }
     else
     {
-	if (errno == EAGAIN || errno == EWOULDBLOCK)
+	int disconnected;
+	
+	*num_written = 0;
+	
+	mpi_errno = MPIDU_Socki_os_to_mpi_errno(pollinfo, errno, FCNAME, __LINE__, &disconnected);
+	if (MPIR_Err_is_fatal(mpi_errno))
 	{
-	    *num_written = 0;
+	    /*
+	     * A serious error occurred.  There is no guarantee that the data structures are still intact.  Therefore, we avoid
+	     * modifying them.
+	     */
+	    goto fn_exit;
 	}
-	else
+
+	if (disconnected)
 	{
-	    mpi_errno = MPIDU_Socki_handle_immediate_os_errors(pollfd, pollinfo, errno, FCNAME, __LINE__);
+	    /*
+	     * The connection is dead but data may still be in the socket buffer; thus, we change the state and let
+	     * MPIDU_Sock_wait() clean things up.
+	     */
+	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
     }
 
@@ -376,4 +517,4 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
     return mpi_errno;
 }
-
+/* end MPIDU_Sock_writev() */

@@ -13,7 +13,6 @@ int MPIDU_Sock_init(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_INIT);
 
-    /* MT: needs to be atomically incremented? */
     MPIDU_Socki_initialized++;
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_INIT);
@@ -31,8 +30,7 @@ int MPIDU_Sock_finalize(void)
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_FINALIZE);
 
-    /* MT: needs to be atomically tested and decremented? */
-    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
     MPIDU_Socki_initialized--;
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_FINALIZE);
