@@ -70,6 +70,7 @@ int handle_sigchild( int sig )
 {
     int prog_stat, pid, rc, sigval, i;
 
+    printf( "Entering sigchild handler\n" ); fflush(stdout);
     if (debug) {
 	DBG_FPRINTF( stderr, "Waiting for any child on signal\n" );
 	fflush( stderr );
@@ -89,7 +90,7 @@ int handle_sigchild( int sig )
 	/* Receives a child failure or exit.  
 	   If *failure*, kill the others */
 	if (debug) {
-	    DBG_FPRINTF( stderr, "Found process %d\n", pid );
+	    DBG_FPRINTF( stderr, "Found process %d in sigchld handler\n", pid );
 	    fflush( stderr );
 	}
 	rc = 0;
@@ -105,7 +106,7 @@ int handle_sigchild( int sig )
 	    for (i=0; i<ptable->nProcesses; i++) {
 		if (ptable->table[i].pid == pid) {
 		    if (debug) {
-			DBG_FPRINTF( stderr, "Found process %d\n", pid );
+			DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
 			fflush( stderr );
 		    }
 		    ptable->table[i].state      = GONE;

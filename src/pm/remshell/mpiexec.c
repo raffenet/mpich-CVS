@@ -292,6 +292,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
        process */
     snprintf( port_as_string, 1024, "%s:%d", myname, port );
 
+    PMIServInit( ptable->nProcesses );
     for (i=0; i<ptable->nProcesses; i++) {
 	int read_out_pipe[2], write_in_pipe[2], read_err_pipe[2],
 	    pmi_pipe[2];
@@ -397,6 +398,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		/* register this process in the PMI group */
 		/* FIXME: Adds to group 0 only */
 		PMIServAddtoGroup( 0, i, pid, ps->fdPMI );
+		PMIServSetupEntry( ps->fdPMI, 0, &ps->pmientry );
 		close( pmi_pipe[1] );
 	    }
 
@@ -656,6 +658,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	/* (A negative value is infinite) */
 	timeout = GetRemainingTime();
 
+	printf( "About to poll...\n" ); fflush(stdout);
 	/* 
 	 * Fill in poll array.  Initialize all of the fds.
 	 */
@@ -664,16 +667,22 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 						pollarray, handlearray );
 	    resetPollarray = 0;
 	    /* If only the mpiexec fds are set, exit */
-	    if (activeNfds <= 3) break;
+	    printf( "activeNfds = %d\n", activeNfds ) ; fflush(stdout);
+	    if (activeNfds <= 0) break;
 	}
 
 	/* Exit if no active processes */
 	if (ptable->nActive == 0) break;
 
-	rc = poll( pollarray, activeNfds, timeout );
+	/* poll's timeout is in milliseconds */
+	timeout = timeout * 1000;
+	do {
+	    rc = poll( pollarray, activeNfds, timeout );
+	} while (rc == -1 && errno == EINTR);
 
 	/* rc = 0 is a timeout, with nothing read */
 	if (rc == 0) {
+	    printf( "rc = 0, timeout = %d\n", timeout );
 	    break;
 	}
 
@@ -708,6 +717,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	   is not accepting input (don't read any more) */
 	
     }
+    printf( "Exiting poll...\n" ); fflush(stdout);
     return 0;
 }
 
@@ -784,39 +794,39 @@ int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[],
 #endif
 	/* Stdout FROM the process */
 	if (ptable->table[i].fdStdout >= 0) {
-	    pollarray[j].fd		  = ptable->table[i].fdStdout;
-	    pollarray[j].events	  = POLLIN;
-	    handlearray[j].fd	  = pollarray[j].fd;
+	    pollarray[j].fd	      = ptable->table[i].fdStdout;
+	    pollarray[j].events	      = POLLIN;
+	    handlearray[j].fd	      = pollarray[j].fd;
 	    handlearray[j].processIdx = i;
-	    handlearray[j].handleIO	  = mpiexecHandleOutput;
+	    handlearray[j].handleIO   = mpiexecHandleOutput;
 	    handlearray[j].extraData  = &ptable->table[i].stdoutBuf;
-	    handlearray[j].state	  = 0;
+	    handlearray[j].state      = 0;
 	    j++;
 	}
 	/* Stderr FROM the process */
 	if (ptable->table[i].fdStderr >= 0) {
-	    pollarray[j].fd		  = ptable->table[i].fdStderr;
-	    pollarray[j].events	  = POLLIN;
-	    handlearray[j].fd	  = pollarray[j].fd;
+	    pollarray[j].fd	      = ptable->table[i].fdStderr;
+	    pollarray[j].events	      = POLLIN;
+	    handlearray[j].fd	      = pollarray[j].fd;
 	    handlearray[j].processIdx = i;
-	    handlearray[j].handleIO	  = mpiexecHandleOutput;
+	    handlearray[j].handleIO   = mpiexecHandleOutput;
 	    handlearray[j].extraData  = &ptable->table[i].stderrBuf;
-	    handlearray[j].state	  = 0;
+	    handlearray[j].state      = 0;
 	    j++;
 	}
-#if 0
+
 	/* PMI requests from process */
 	if (ptable->table[i].fdPMI >= 0) {
-	    pollarray[j].fd		  = ptable->table[i].fdPMI;
-	    pollarray[j].events	  = POLLIN;
-	    handlearray[j].fd	  = pollarray[j].fd;
+	    pollarray[j].fd	      = ptable->table[i].fdPMI;
+	    pollarray[j].events	      = POLLIN;
+	    handlearray[j].fd	      = pollarray[j].fd;
 	    handlearray[j].processIdx = i;
-	    handlearray[j].handleIO	  = PMIServHandleInputFd;
-	    handlearray[j].extraData  = &ptable->table[i];
-	    handlearray[j].state	  = 0;
+	    handlearray[j].handleIO   = PMIServHandleInputFd;
+	    handlearray[j].extraData  = &ptable->table[i].pmientry;
+	    handlearray[j].state      = 0;
 	    j++;
 	}
-#endif
+
     }
 
     return j;

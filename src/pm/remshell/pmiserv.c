@@ -87,6 +87,7 @@ typedef struct {
     int            kvsid;
     PMIGroup       grouptable[MAXGROUPS];
     PMIKeyValSpace kvstable[MAXKVSS];
+    char           kvsname[MAXKVSNAME];
 } PMIState;
 
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
@@ -112,15 +113,18 @@ static void fPMI_Handle_getbyidx( PMI_Process * );
  * The return status indicates the state of the process that this
  * handler interacted with.
  */
-int PMIServHandleInputFd ( PMI_Process *pentry )
+int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 {
+    PMI_Process *pentry = (PMI_Process *)extra;
     int  rc;
     int  returnCode = 0;
     char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
 
+    printf( "Handling PMI input\n" ); fflush(stdout);
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
 	PMIU_parse_keyvals( inbuf );
 	PMIU_getval( "cmd", cmd, MAXPMICMD );
+	printf( "cmd = %s\n", cmd ); fflush(stdout);
 	if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
 	    fPMI_Handle_barrier( pentry );
 	}
@@ -175,7 +179,7 @@ int PMIServHandleInputFd ( PMI_Process *pentry )
  * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
  * Return value: groupid
  */
-int PMIServInit( int nprocs, char kvsname[] )
+int PMIServInit( int nprocs )
 {
     int i;
     for ( i = 0; i < MAXKVSS; i++ )
@@ -188,7 +192,7 @@ int PMIServInit( int nprocs, char kvsname[] )
     }
 
     /* set up keyval space for this group */
-    fPMI_Allocate_kvs( &pmi.kvsid, kvsname );
+    fPMI_Allocate_kvs( &pmi.kvsid, &pmi.kvsname );
 
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
@@ -197,6 +201,13 @@ int PMIServInitEntry( PMI_Process *pmientry )
 {
     pmientry->fd    = -1;
     pmientry->group = -1;
+    pmientry->kvs   = -1;
+}
+
+int PMIServSetupEntry( int pmifd, int pmigroup, PMI_Process *pmientry )
+{
+    pmientry->fd    = pmifd;
+    pmientry->group = pmigroup;
     pmientry->kvs   = -1;
 }
 

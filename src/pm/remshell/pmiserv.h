@@ -27,12 +27,13 @@ typedef struct PMI_Process {
 /* Note that the fd may be duplicated within the process structure managed by 
    the mpiexec implementation to simplify setting up the select/poll loops */
 
-extern int PMIServInit( int, char [] );
+extern int PMIServInit( int );
 extern int PMIServInitEntry( PMI_Process * );
+extern int PMIServSetupEntry( int, int, PMI_Process * );
 
 /* This routine is called when there is input on the fd for the given 
    process */
-extern int PMIServHandleInputFd ( PMI_Process * );
+extern int PMIServHandleInputFd ( int, int, void * );
 
 extern int PMIServAddtoGroup( int, int, pid_t, int );
 
