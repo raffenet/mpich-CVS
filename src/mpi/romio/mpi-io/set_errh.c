@@ -41,7 +41,7 @@ int MPI_File_set_errhandler(MPI_File fh, MPI_Errhandler errhandler)
     static char myname[] = "MPI_FILE_SET_ERRHANDLER";
 #endif
 
-    if ((errhandler != MPI_ERRORS_RETURN) || (errhandler != MPI_ERRORS_ARE_FATAL)) {
+    if ((errhandler != MPI_ERRORS_RETURN) && (errhandler != MPI_ERRORS_ARE_FATAL)) {
 	FPRINTF(stderr, "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported for MPI_File_set_errhandler\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
