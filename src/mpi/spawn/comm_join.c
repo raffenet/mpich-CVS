@@ -30,16 +30,23 @@
 /*@
    MPI_Comm_join - join
 
-   Arguments:
-+  int fd - socket
--  MPI_Comm *intercomm - intercommunicator
+   Input Parameter:
+. fd - socket file descriptor 
 
-   Notes:
+   Output Parameter:
+. intercomm - new intercommunicator (handle) 
+
+ Notes:
+  The socket must be quiescent before 'MPI_COMM_JOIN' is called and after 
+  'MPI_COMM_JOIN' returns. More specifically, on entry to 'MPI_COMM_JOIN', a 
+  read on the socket will not read any data that was written to the socket 
+  before the remote process called 'MPI_COMM_JOIN'.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
@@ -52,10 +59,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

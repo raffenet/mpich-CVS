@@ -30,24 +30,28 @@
 /*@
    MPI_Comm_spawn - spawn up to maxprocs instances of a single mpi application
 
-   Input Arguments:
-+  char *command
-.  char *argv[]
-.  int maxprocs
-.  MPI_Info info
-.  int root
--  MPI_Comm comm
+   Input Parameters:
++ command - name of program to be spawned (string, significant only at root) 
+. argv - arguments to command (array of strings, significant only at root) 
+. maxprocs - maximum number of processes to start (integer, significant only 
+  at root) 
+. info - a set of key-value pairs telling the runtime system where and how 
+   to start the processes (handle, significant only at root) 
+. root - rank of process in which previous arguments are examined (integer) 
+- comm - intracommunicator containing group of spawning processes (handle) 
 
-   Output Arguments:
-+  MPI_Comm *intercomm
--  int array_of_errcodes[]
-
-   Notes:
+   Output Parameters:
++ intercomm - intercommunicator between original group and the 
+   newly spawned group (handle) 
+- array_of_errcodes - one code per process (array of integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+.N MPI_ERR_INFO
 @*/
 int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, 
 		   int root, MPI_Comm comm, MPI_Comm *intercomm,

@@ -28,17 +28,20 @@
 #define FUNCNAME MPI_Get
 
 /*@
-   MPI_Get - get
+   MPI_Get - Get data from a remote process
 
-   Arguments:
-+  void *origin_addr - origin address
-.  int origin_count - origin count
-.  MPI_Datatype origin_datatype - origin datatype
-.  int target_rank - target rank
-.  MPI_Aint target_disp - target disp
-.  int target_count - target count
-.  MPI_Datatype target_datatype - target datatype
--  MPI_Win win - window
+ Input Parameters:
++ origin_count - number of entries in origin buffer (nonnegative integer) 
+. origin_datatype - datatype of each entry in origin buffer (handle) 
+. target_rank - rank of target (nonnegative integer) 
+. target_disp - displacement from window start to the beginning of the 
+  target buffer (nonnegative integer) 
+. target_count - number of entries in target buffer (nonnegative integer) 
+. target_datatype - datatype of each entry in target buffer (handle) 
+- win - window object used for communication (handle) 
+
+ Output Parameter:
+. origin_addr - initial address of origin buffer (choice) 
 
    Notes:
 
@@ -46,6 +49,9 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_TYPE
+.N MPI_ERR_WIN
 @*/
 int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,

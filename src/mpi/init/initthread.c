@@ -180,6 +180,16 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
    Note that the Fortran binding for this routine does not have the 'argc' and
    'argv' arguments. ('MPI_INIT_THREAD(required, provided, ierror)')
 
+   The valid values for the level of thread support are\:
++ MPI_THREAD_SINGLE - Only one thread will execute. 
+. MPI_THREAD_FUNNELED - The process may be multi-threaded, but only the main 
+  thread will make MPI calls (all MPI calls are funneled to the 
+   main thread). 
+. MPI_THREAD_SERIALIZED - The process may be multi-threaded, and multiple 
+  threads may make MPI calls, but only one at a time: MPI calls are not 
+  made concurrently from two distinct threads (all MPI calls are serialized). 
+- MPI_THREAD_MULTIPLE - Multiple threads may call MPI, with no restrictions. 
+
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER

@@ -30,15 +30,28 @@
 /*@
    MPI_Comm_get_parent - short description
 
-   Arguments:
-.  MPI_Comm *parent
+   Output Parameter:
+. parent - the parent communicator (handle) 
 
    Notes:
+
+ If a process was started with 'MPI_Comm_spawn' or 'MPI_Comm_spawn_multiple', 
+ 'MPI_Comm_get_parent' returns the parent intercommunicator of the current 
+  process. This parent intercommunicator is created implicitly inside of 
+ 'MPI_Init' and is the same intercommunicator returned by 'MPI_Comm_spawn'
+  in the parents. 
+
+  If the process was not spawned, 'MPI_Comm_get_parent' returns 
+  'MPI_COMM_NULL'.
+
+  After the parent communicator is freed or disconnected, 'MPI_Comm_get_parent'
+  returns 'MPI_COMM_NULL'. 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_get_parent(MPI_Comm *parent)
 {
@@ -51,10 +64,8 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(parent,"parent",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

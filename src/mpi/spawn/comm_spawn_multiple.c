@@ -30,25 +30,32 @@
 /*@
    MPI_Comm_spawn_multiple - short description
 
-   Input Arguments:
-+  int count - count
-.  char *array_of_commands[] - commands
-.  char* *array_of_argv[] - arguments
-.  int array_of_maxprocs[] - maxprocs
-.  MPI_Info array_of_info[] - infos
-.  int root - root
--  MPI_Comm comm - communicator
+   Input Parameters:
++ count - number of commands (positive integer, significant to MPI only at 
+  root 
+. array_of_commands - programs to be executed (array of strings, significant 
+  only at root) 
+. array_of_argv - arguments for commands (array of array of strings, 
+  significant only at root) 
+. array_of_maxprocs - maximum number of processes to start for each command 
+ (array of integer, significant only at root) 
+. array_of_info - info objects telling the runtime system where and how to 
+  start processes (array of handles, significant only at root) 
+. root - rank of process in which previous arguments are examined (integer) 
+- comm - intracommunicator containing group of spawning processes (handle) 
 
-   Output Arguments:
-+  MPI_Comm *intercomm - intercommunicator
--  int array_of_errcodes[] - error codes
-
-   Notes:
+  Output Parameters:
++ intercomm - intercommunicator between original group and newly spawned group
+  (handle) 
+- array_of_errcodes - one error code per process (array of integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+.N MPI_ERR_INFO
 @*/
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPI_Info array_of_info[], int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[]) 
 {
@@ -65,13 +72,10 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
