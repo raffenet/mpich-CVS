@@ -34,6 +34,7 @@ $curdir = ".";
 $line_num = 0;
 $allowRomioNames = 1;
 $withinRomio = 0;
+$skipTest = 1; 
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
@@ -43,6 +44,7 @@ foreach $arg (@ARGV) {
     elsif ( $arg =~ /-skipfile=(.*)/) { $skipfiles{$1} = 1; }
     elsif ( $arg =~ /-allowromio=no/) { $allowRomioNames = 0; }
     elsif ( $arg =~ /-allowromio/) { $allowRomioNames = 1; }
+    elsif ( $arg =~ /-checktest/) { $skipTest = 0; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -174,9 +176,12 @@ sub ProcessFile {
 		 "getmntent", "getpgrp", "memcmp", "mmap", 
 		 "setpgrp", "setvbuf", "strcoll", "strftime",
 		 "utime", "vfork", "vprintf", "wait3" );
+# Removed strcmp because it is ok if one string is guaranteed to 
+# have a terminating null.  This is still touchy, but it isn't the risk
+# posed by the copy or cat routines.
 %bettersubs = ( "strcpy" => "MPIU_Strncpy",
 	        "strncpy" => "MPIU_Strncpy",
-		"strcmp" => "strncmp",
+#		"strcmp" => "strncmp",
 		"strcat" => "MPIU_Strnapp",
 		);
 # We can't recommend snprintf because it isn't standard.  We need an 
@@ -200,12 +205,17 @@ sub CheckForBadSubs {
     # The guarded subs are ones that GNU autoconf is worried about.
     # This code should look for some sort of configure-style CPP value
     # and allow the ones that are properly guarded.
+    # The mysterious (?<!\w) is a "negative look-behind match".  That is,
+    # do *not* match a single "word" (alphanumeric+_) character.  This
+    # keeps us from matching MPIU_vprintf when vprintf is in the list
+    # of test routines and MPIU_vprintf is in the current line.
     foreach $subname (@guardedsubs) {
-	if (/$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
+	if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
 	    &PrintCurrentDirectory;
 	    print "Caution: found reference to routine $subname in $filename\n";
 	}
     }
+    # See above for an explanation of (?<!\w)
     foreach $subname (@guardsubs) {
         if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
             $msg = "Caution: found $subname in $filename";
@@ -218,7 +228,7 @@ sub CheckForBadSubs {
         }
     }
 #    foreach $subname (keys %bettersubs) {
-#	if (/$subname\s*\(/) {
+#	if (/(?<!\w)$subname\s*\(/) {
 #	    print "Caution: found reference to routine $subname in $filename\n";
 #	    print "Consider using $bettersubs{$subname} instead\n";
 #	}
@@ -325,6 +335,10 @@ sub CheckForBadDefines {
 foreach $file (@files) {
     print "$file\n" if $showfiles;
     if (-d $file) {
+	# Skip test directories if requested
+	if ($skipTest && $file =~ /test$/) {
+	    next;
+	}
 	&ProcessDir( $file );
     }
     else {
