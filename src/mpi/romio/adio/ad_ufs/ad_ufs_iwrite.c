@@ -29,7 +29,6 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
     len = count * typesize;
 
 #ifndef ROMIO_HAVE_WORKING_AIO
-    /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
@@ -108,10 +107,6 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 # else
     aiocbp->aio_reqprio = 0;
 # endif
-#endif
-
-#else
-    aiocbp->aio_sigevent.sigev_signo = 0;
 #endif
 
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES

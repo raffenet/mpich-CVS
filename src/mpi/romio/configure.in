@@ -444,8 +444,8 @@ fi
 #
 if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
-       longlongsize=${longlongsize:-0}
-# printf doesn't work properly and no integer*8 as far as I can tell
+        longlongsize=${longlongsize:-0}
+	# printf doesn't work properly and no integer*8 as far as I can tell
     fi
     # Find the CPP before the header check
     AC_PROG_CPP
@@ -521,13 +521,11 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
 fi
 #
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
-    AC_DEFINE(AIO_PRIORITY_DEFAULT,1,[Define for AIO priority is default])
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
     fi
 
-    AC_DEFINE(DEC,1,[Define for DEC/Compaq/HP Alpha])
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
@@ -1054,7 +1052,6 @@ fi
 # Q: Do we only want to do this if the user asked for aio?
 save_libs=$LIBS
 LIBS=
-AC_MSG_CHECKING(for aio_write function)
 #
 # Some systems need pthreads to get AIO to work
 #

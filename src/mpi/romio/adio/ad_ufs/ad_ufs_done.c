@@ -93,7 +93,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 						   myname, __LINE__,
 						   MPI_ERR_IO, "**io",
 						   "**io %s", strerror(errno));
-		return;
+		return 1;
 	    }
 	    else *error_code = MPI_SUCCESS;
 	}

@@ -113,10 +113,6 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 # endif
 #endif
 
-#else
-    aiocbp->aio_sigevent.sigev_signo = 0;
-#endif
-
     if (wr) ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
     else ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
 
