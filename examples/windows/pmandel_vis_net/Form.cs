@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 using System;
 using System.Drawing;
 using System.Collections;
@@ -364,7 +369,6 @@ namespace MandelViewer
 					thread.Join();
 
 					r = new Rectangle(x, y, Math.Max(p1.X, p2.X) - x, Math.Max(p1.Y, p2.Y) - y);
-					r.Offset(-outputBox.Location.X, -outputBox.Location.Y);
 					width = xmax - xmin;
 					height = ymax - ymin;
 					pixel_width = outputBox.Width; //nWidth;
