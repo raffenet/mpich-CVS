@@ -91,7 +91,66 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 #define FUNCNAME MPIDI_CH3U_Request_FDU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDU(int source, int tag, int context_id)
+MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id)
+{
+    MPID_Request * prev_rreq;
+    MPID_Request * cur_rreq;
+    MPID_Request * matching_prev_rreq;
+    MPID_Request * matching_cur_rreq;
+
+    matching_prev_rreq = NULL;
+    matching_cur_rreq = NULL;
+    prev_rreq = NULL;
+    cur_rreq = MPIDI_Process.recv_unexpected_head;
+    while(cur_rreq != NULL)
+    {
+	if (cur_rreq->ch3.sender_req_id == sreq_id)
+	{
+	    matching_prev_rreq = prev_rreq;
+	    matching_cur_rreq = cur_rreq;
+	}
+	    
+	prev_rreq = cur_rreq;
+	cur_rreq = cur_rreq->ch3.next;
+    }
+
+    if (matching_cur_rreq != NULL)
+    {
+	if (matching_prev_rreq != NULL)
+	{
+	    matching_prev_rreq->ch3.next = matching_cur_rreq->ch3.next;
+	}
+	else
+	{
+	    MPIDI_Process.recv_unexpected_head = matching_cur_rreq->ch3.next;
+	}
+	
+	if (matching_cur_rreq->ch3.next == NULL)
+	{
+	    MPIDI_Process.recv_unexpected_tail = matching_prev_rreq;
+	}
+
+	return matching_cur_rreq;
+    }
+    else
+    {
+	return NULL;
+    }
+}
+
+
+/*
+ * MPIDI_CH3U_Request_FDU_or_AEP()
+ *
+ * Atomically find a request in the unexpected queue and dequeue it, or
+ * allocate a new request and enqueue it in the posted queue
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_FDU_or_AEP
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
+    int source, int tag, int context_id, int * found)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -118,6 +177,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU(int source, int tag, int context_id)
 		{
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
+		*found = TRUE;
 		return rreq;
 	    }
 	    
@@ -173,6 +233,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU(int source, int tag, int context_id)
 		{
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
+		*found = TRUE;
 		return rreq;
 	    }
 	    
@@ -181,32 +242,6 @@ MPID_Request * MPIDI_CH3U_Request_FDU(int source, int tag, int context_id)
 	}
     }
 
-    return NULL;
-}
-
-
-/*
- * MPIDI_CH3U_Request_FDU_or_AEP()
- *
- * Atomically find a request in the unexpected queue and dequeue it, or
- * allocate a new request and enqueue it in the posted queue
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Request_FDU_or_AEP
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
-    int source, int tag, int context_id, int * found)
-{
-    MPID_Request * rreq;
-
-    rreq = MPIDI_CH3U_Request_FDU(source, tag, context_id);
-    if (rreq != NULL)
-    {
-	*found = TRUE;
-	return rreq;
-    }
-    
     /* A matching request was not found in the unexpected queue, so we need to
        allocate a new request and add it to the posted queue */
     rreq = MPIDI_CH3_Request_create();
@@ -246,7 +281,51 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 #define FUNCNAME MPIDI_CH3U_Request_FDP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
+int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
+{
+    MPID_Request * cur_rreq;
+    MPID_Request * prev_rreq;
+
+    prev_rreq = NULL;
+    cur_rreq = MPIDI_Process.recv_posted_head;
+    while (rreq != NULL)
+    {
+	if (cur_rreq == rreq)
+	{
+	    if (prev_rreq != NULL)
+	    {
+		prev_rreq->ch3.next = cur_rreq->ch3.next;
+	    }
+	    else
+	    {
+		MPIDI_Process.recv_posted_head = cur_rreq->ch3.next;
+	    }
+	    if (cur_rreq->ch3.next == NULL)
+	    {
+		MPIDI_Process.recv_posted_tail = prev_rreq;
+	    }
+	    return TRUE;
+	}
+	    
+	prev_rreq = rreq;
+	rreq = rreq->ch3.next;
+    }
+
+    return FALSE;
+}
+
+/*
+ * MPIDI_CH3U_Request_FDP_or_AEU()
+ *
+ * Locate a request in the posted queue and dequeue it, or allocate a new
+ * request and enqueue it in the unexpected queue
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_FDP_or_AEU
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
+    MPIDI_Message_match * match, int * found)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -275,6 +354,7 @@ MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
 		    {
 			MPIDI_Process.recv_posted_tail = prev_rreq;
 		    }
+		    *found = TRUE;
 		    return rreq;
 		}
 	    }
@@ -282,31 +362,6 @@ MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
 	    
 	prev_rreq = rreq;
 	rreq = rreq->ch3.next;
-    }
-
-    return NULL;
-}
-
-/*
- * MPIDI_CH3U_Request_FDP_or_AEU()
- *
- * Locate a request in the posted queue and dequeue it, or allocate a new
- * request and enqueue it in the unexpected queue
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Request_FDP_or_AEU
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
-    MPIDI_Message_match * match, int * found)
-{
-    MPID_Request * rreq;
-
-    rreq = MPIDI_CH3U_Request_FDP(match);
-    if (rreq != NULL)
-    {
-	*found = TRUE;
-	return rreq;
     }
 
     /* A matching request was not found in the posted queue, so we need to
