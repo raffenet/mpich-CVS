@@ -430,6 +430,7 @@ if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
 if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
     for dir in `find . -name 'configure.in' -print` ; do
         dir=`dirname $dir`
+	allowFailure=no
 	#echo $dir
 	if [ $dir = "./src/binding/f77" -a $do_f77 != yes ] ; then
 	    # Skip building the f77 configure (it requires special 
@@ -485,7 +486,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 	    fi # dir = src/binding/f77
 
             if [ $dir = "./src/mpi/romio" ] ; then
-		echo $dir
+		echo "Creating configure in $dir"
 		# Using an explicit acIncDirFlag will force
 		# a consistent choice of autoconf
 		# Only use autoheader if AC_CONFIG_HEADER is
@@ -511,7 +512,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		# Use acIncDirFlag to ensure that a consistent
 		# choice of autoconf is made by systems that 
 		# support 2.1x and 2.57+
-		echo $dir
+		echo "Creating configure in $dir"
  		if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
 		    (cd $dir && $autoheader $acIncDirFlag . )
 		fi
@@ -551,6 +552,9 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    else
 		        # Try autoconf-1.7; accepts failures gracefully
 		        echo "Trying simple autoconf using 1.7 in $dir"
+			# Don't panic if we can't build this configure; it
+			# is too old.
+			allowFailure=yes
 			(cd $dir && autoconf-1.7)
 		    fi
 		fi
@@ -572,31 +576,33 @@ EOF/g' $dir/configure > c.tmp
 	    # (the first removes case statements on \^M, the second
 	    # removes the \^M from the ac_config_files statement
 	    fixBackWhackCtrlMBug=no
-	    if [ ! -s $dir/configure ] ; then 
+	    if [ ! -s $dir/configure -a "$allowFailure" != yes ] ; then 
 		echo "PANIC: Could not make configure from configure.in"
 		echo "In directory $dir"
 		exit 1
-	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
-		fixBackWhackCtrlMBug=yes
-	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
-		fixBackWhackCtrlMBug=yes
-	    elif grep 'attr/Makefile \\ util' $dir/configure 2>&1 >/dev/null ; then 
-		fixBackWhackCtrlMBug=yes
-	    elif grep 'attr/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
-		fixBackWhackCtrlMBug=yes
-	    elif grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
-		fixBackWhackCtrlMBug=yes
+	    elif [ -s $dir/configure ] ; then
+	        if grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+	        elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+	        elif grep 'attr/Makefile \\ util' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+	        elif grep 'attr/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+	        elif grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+                fi
+ 	        # Add other tests here (sigh) as necessary
+	        if [ $fixBackWhackCtrlMBug = yes ] ; then
+		    rm -f c.tmp 
+  	  	    sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		    rm -f $dir/configure
+		    mv c.tmp $dir/configure
+		    chmod a+x $dir/configure
+	        fi
             fi
-	    # Add other tests here (sigh) as necessary
-	    if [ $fixBackWhackCtrlMBug = yes ] ; then
-		rm -f c.tmp 
-		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
-		rm -f $dir/configure
-		mv c.tmp $dir/configure
-		chmod a+x $dir/configure
-	    fi
         fi
-    if [ ! -x $dir/configure ] ; then
+    if [ ! -x $dir/configure -a "$allowFailure" != yes ] ; then
         # Check for a few allowed exceptions
         if [ "$dir" = "./src/pmi/winmpd" ] ; then
 	    continue
