@@ -80,7 +80,8 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     }
     /* Initialize the attribute dup function */
     if (!MPIR_Process.comm_attr_dup) {
-	MPIR_Process.comm_attr_dup = MPIR_Comm_attr_dup;
+	MPIR_Process.comm_attr_dup  = MPIR_Comm_attr_dup_list;
+	MPIR_Process.comm_attr_free = MPIR_Comm_attr_delete_list;
     }
 
     /* The handle encodes the keyval kind.  Modify it to have the correct
