@@ -26,10 +26,12 @@
 #error No shared memory subsystem defined
 #endif
 
+#ifndef USE_MQSHM
 #ifdef HAVE_MQ_OPEN
 #define USE_POSIX_MQ
 #elif defined(HAVE_MSGGET)
 #define USE_SYSV_MQ
+#endif
 #endif
 
 #define MPIDI_MAX_SHM_NAME_LENGTH 100
@@ -137,6 +139,7 @@ typedef struct MPIDI_CH3I_Shmem_block_request_result
 #else
 #error *** No shared memory mapping variables specified ***
 #endif
+    char name[MPIDI_MAX_SHM_NAME_LENGTH];
 } MPIDI_CH3I_Shmem_block_request_result;
 
 typedef struct MPIDI_CH3I_VC
