@@ -239,7 +239,7 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	qp_mod.req_state = IB_QPS_INIT;
 	qp_mod.state.init.pkey_index = 0;
 	qp_mod.state.init.primary_port = 1;
-	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE;
+	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE /*| IB_AC_MW_BIND*/;
     }
     else if (qp_state == IB_QPS_RTR) 
     {
@@ -258,9 +258,9 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	qp_mod.av.src_path_bits = 0;
 	qp_mod.av.dlid = ibu->dlid;
 #endif
-	qp_mod.state.rtr.rq_psn = 0;
+	qp_mod.state.rtr.rq_psn = cl_ntoh32(0x01);
 	qp_mod.state.rtr.dest_qp = ibu->dest_qp_num;
-	qp_mod.state.rtr.primary_av.port_num = 0;
+	qp_mod.state.rtr.primary_av.port_num = 1;
 	qp_mod.state.rtr.primary_av.sl = 0;
 	qp_mod.state.rtr.primary_av.dlid = ibu->dlid;
 	qp_mod.state.rtr.primary_av.grh_valid = FALSE;
@@ -275,12 +275,12 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	qp_mod.state.rtr.primary_av.static_rate = 0;
 	qp_mod.state.rtr.primary_av.path_bits = 0;
 	qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_1024;
-	qp_mod.state.rtr.primary_av.conn.local_ack_timeout = 0;
-	qp_mod.state.rtr.primary_av.conn.seq_err_retry_cnt = 0;
-	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 0;
-	qp_mod.state.rtr.resp_res = 1;
+	qp_mod.state.rtr.primary_av.conn.local_ack_timeout = 7;
+	qp_mod.state.rtr.primary_av.conn.seq_err_retry_cnt = 7;
+	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 7;
+	qp_mod.state.rtr.resp_res = 7;
 
-	qp_mod.state.rtr.opts = IB_MOD_QP_PKEY;
+	qp_mod.state.rtr.opts = 0; /*IB_MOD_QP_PKEY;*/
 /*
 IB_MOD_QP_ALTERNATE_AV
 IB_MOD_QP_PKEY
@@ -295,15 +295,15 @@ IB_MOD_QP_QKEY
 IB_MOD_QP_SQ_DEPTH
 IB_MOD_QP_RQ_DEPTH
 */
+        /*
 	qp_mod.state.rtr.pkey_index = 0;
-	/*
 	qp_mod.state.rtr.alternate_av;
 	qp_mod.state.rtr.qkey;
 	qp_mod.state.rtr.access_ctrl;
 	qp_mod.state.rtr.sq_depth;
 	qp_mod.state.rtr.rq_depth;
-	qp_mod.state.rtr.rnr_nak_timeout;
 	*/
+	qp_mod.state.rtr.rnr_nak_timeout = 7;
     }
     else if (qp_state == IB_QPS_RTS)
     {
@@ -316,15 +316,16 @@ IB_MOD_QP_RQ_DEPTH
 	qp_mod.ous_dst_rd_atom  = 1; /*255;*/
 #endif
 	qp_mod.state.rts.sq_psn = 0;
-	qp_mod.state.rts.retry_cnt = 1;
-	qp_mod.state.rts.rnr_retry_cnt = 3;
+	qp_mod.state.rts.retry_cnt = 7;
+	qp_mod.state.rts.rnr_retry_cnt = 7;
 	qp_mod.state.rts.rnr_nak_timeout = 0;
-	qp_mod.state.rts.local_ack_timeout = 0x20;
-	qp_mod.state.rts.init_depth = 0;
+	qp_mod.state.rts.local_ack_timeout = 7; /*0x20;*/
+	qp_mod.state.rts.init_depth = 3;
 
+	qp_mod.state.rts.opts = 0;
+	/*
 	qp_mod.state.rts.opts = IB_MOD_QP_RESP_RES;
 	qp_mod.state.rts.resp_res = 1;
-	/*
 	qp_mod.state.rts.qkey;
 	qp_mod.state.rts.access_ctrl;
 	qp_mod.state.rts.alternate_av;
@@ -552,6 +553,9 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     ib_local_ds_t data;
     ib_recv_wr_t work_req;
     void *mem_ptr;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
@@ -570,15 +574,16 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.wr_id == NULL)
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+    if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.wr_id)->ptr = (void*)ibu;
-    ((ibu_work_id_handle_t*)work_req.wr_id)->mem = (void*)mem_ptr;
+    id_ptr->ptr = (void*)ibu;
+    id_ptr->mem = (void*)mem_ptr;
 #endif
     work_req.p_next = NULL;
     work_req.num_ds = 1;
@@ -613,6 +618,9 @@ static int ibui_post_receive(ibu_t ibu)
     ib_local_ds_t data;
     ib_recv_wr_t work_req;
     void *mem_ptr;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
@@ -631,15 +639,16 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.wr_id == NULL)
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+    if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.wr_id)->ptr = (void*)ibu;
-    ((ibu_work_id_handle_t*)work_req.wr_id)->mem = (void*)mem_ptr;
+    id_ptr->ptr = (void*)ibu;
+    id_ptr->mem = (void*)mem_ptr;
 #endif
     work_req.p_next = NULL;
     work_req.num_ds = 1;
@@ -676,6 +685,9 @@ static int ibui_post_ack_write(ibu_t ibu)
 {
     ib_api_status_t status;
     ib_send_wr_t work_req;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
@@ -691,15 +703,16 @@ static int ibui_post_ack_write(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)-1;
 #else
-    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.wr_id == NULL)
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+    if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.wr_id)->ptr = (void*)ibu;
-    ((ibu_work_id_handle_t*)work_req.wr_id)->mem = (void*)-1;
+    id_ptr->ptr = (void*)ibu;
+    id_ptr->mem = (void*)-1;
 #endif
     
     MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(%d byte ack)", ibu->nUnacked));
@@ -732,6 +745,9 @@ int ibu_write(ibu_t ibu, void *buf, int len)
     void *mem_ptr;
     int length;
     int total = 0;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
@@ -779,15 +795,16 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.wr_id == NULL)
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	*((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+	if (id_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_FAIL;
 	}
-	((ibu_work_id_handle_t*)work_req.wr_id)->ptr = (void*)ibu;
-	((ibu_work_id_handle_t*)work_req.wr_id)->mem = (void*)mem_ptr;
+	id_ptr->ptr = (void*)ibu;
+	id_ptr->mem = (void*)mem_ptr;
 #endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_send(%d bytes)", length));
@@ -826,6 +843,9 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     int cur_index;
     unsigned int cur_len;
     unsigned char *cur_buf;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
@@ -896,15 +916,16 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.wr_id == NULL)
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	*((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+	if (id_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
-	((ibu_work_id_handle_t*)work_req.wr_id)->ptr = (void*)ibu;
-	((ibu_work_id_handle_t*)work_req.wr_id)->mem = (void*)mem_ptr;
+	id_ptr->ptr = (void*)ibu;
+	id_ptr->mem = (void*)mem_ptr;
 #endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(%d bytes)", msg_size));
@@ -993,12 +1014,13 @@ int ibu_init()
 	return status;
     }
     IBU_Process.lid = ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->lid;
-    MPIU_DBG_PRINTF(("port = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %d\n",
+    MPIU_DBG_PRINTF(("port = %d, lid = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %s\n",
 		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->port_num,
+		     cl_ntoh16(((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->lid),
 		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->mtu,
 		     ((ib_ca_attr_t*)ca_attr_ptr)->max_cqes,
 		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->max_msg_size,
-		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->link_state));
+		     ib_get_port_state_str(((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->link_state)));
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
@@ -1056,6 +1078,13 @@ int ibu_create_set(ibu_set_t *set)
 	MPIU_Internal_error_printf("ibu_create_set: ib_create_cq failed, error %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
+    }
+    status = ib_rearm_cq(*set, TRUE);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+	return IBU_FAIL;
     }
 
     MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
@@ -1296,6 +1325,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     ibu_t ibu;
     int num_bytes;
     unsigned int offset;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
@@ -1326,6 +1358,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	p_complete = NULL;
 	completion_data.p_next = NULL;
 	p_in = &completion_data;
+#if 0
 	status = ib_rearm_cq(set, TRUE);
 	if (status != IB_SUCCESS)
 	{
@@ -1334,6 +1367,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
+#endif
 	status = ib_poll_cq(set, &p_in, &p_complete); 
 	if (status == IB_NOT_FOUND && p_complete == NULL)
 	{
@@ -1368,13 +1402,23 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	}
 
 	/*printf("ib_poll_cq returned %d\n", completion_data.wc_type);fflush(stdout);*/
+	status = ib_rearm_cq(set, TRUE);
+	if (status != IB_SUCCESS)
+	{
+	    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait -2\n"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+	    return IBU_FAIL;
+	}
+
 #ifdef HAVE_32BIT_POINTERS
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.mem);
 #else
-	ibu = (ibu_t)(((ibu_work_id_handle_t*)completion_data.wr_id)->ptr);
-	mem_ptr = (void*)(((ibu_work_id_handle_t*)completion_data.wr_id)->mem);
-	ibuBlockFree(g_workAllocator, (void*)completion_data.wr_id);
+	id_ptr = *((ibu_work_id_handle_t**)&completion_data.wr_id);
+	ibu = (ibu_t)(id_ptr->ptr);
+	mem_ptr = (void*)(id_ptr->mem);
+	ibuBlockFree(g_workAllocator, (void*)id_ptr);
 #endif
 
 	switch (completion_data.wc_type)
