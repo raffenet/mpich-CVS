@@ -65,6 +65,7 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 	}
     }
 
+    ADIOI_Free(fd->hints->ranklist);
     ADIOI_Free(fd->hints->cb_config_list);
     ADIOI_Free(fd->hints);
     ADIOI_Free(fd->fns);
