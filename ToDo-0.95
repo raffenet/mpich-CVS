@@ -1,26 +1,44 @@
+Major Goals for the 0.95 (1.0?) release:
+
+* OSC: testing, active and passive target (requires internal threads
+  abstraction for current channels)
+
+* dynamic processes: correct device/channel abstractions, testing, correct
+  implementation for at least the sock channel
+
+* service routines: generalized requests
+
+* intercommunicator collectives
+
+* coverage analysis to be happy (test/mpi)
+
+* threads: internal abstraction, correct MPI interface, no thread-multiple
+
+* fix major bugs: ref of req after release, ?
+
+* factor out common device/channel code
+
+* full PMI support by PMs (define what this means)
+
+* documentation: ?
+
+  * user/installation
+
+  * MPID interface
+
+  * CH3 interface?
+
+* Infiniband channel: requirements for SC?
+
+* SHM/SSM ports: archs/compilers?
+
+--------------------
+
 Designs/Discussions/Decissions (to be made):
-
-* what are the requirements for the Sept 25 release?
-
-  * OSC: testing, active target only acceptible, passive target would be great
-
-  * dynamic processes: implementation and testing; doesn't need to be for all
-    channels
-
-  * service routines: generalized requests
-
-  * intercommunicator collectives
-
-  * coverage analysis to be happy (test/mpi)
-
-  * no thread-multiple
-
-* deprecate sock channel in favor of ssm? this depends on performance and CPU
-  load issues.  NOT YET
 
 * threads: user vs. device.  how do we separate them but reuse code and make
   them peacefully coexist?  (the device may use threads even if
-  MPICH_SINGLE_THREADED is defined)  <deferred>
+  MPICH_SINGLE_THREADED is defined)
 
 * fault tolerance: required for master/slave (Rusty) and dynamic process
   support.  we need a design that defines appropriate actions for fault
@@ -253,7 +271,7 @@ Deferred Items:
   [David/Brian]
 
 * (ch3) improve CH3 interface/protocols to beter support RDMA channel
-  [Brian/David]
+  [Brian/David/Darius]
 
 * (ch3:rdma) update RDMA interface to support pinning of memory for both send
   and receive [Brian/David]
