@@ -16,7 +16,8 @@ def mpdsigjob():
     if len(argv) < 3  or  argv[1] == '-h'  or  argv[1] == '--help':
         print 'usage: mpdsigjob  sigtype  jobnum  [mpdid]  # as obtained from mpdlistjobs'
         print '   or: mpdsigjob  sigtype  -a jobalias      # as obtained from mpdlistjobs'
-        print '    mpdid is mpd contacted by mpdrun to start the job (defaults to here)'
+        print '    mpdid is mpd where process 0 starts'
+        print '    mpdid of form 1@linux02_32996 (may need \@ in csh)'
         print 'Delivers a Unix signal to all the application processes in the job'
         exit(-1)
     username = mpd_get_my_username()
