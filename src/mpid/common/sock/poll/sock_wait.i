@@ -285,12 +285,14 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
     else if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO)
     {
 	/*
-	 * Do nothing.  The POLLIN handler with deal with data still sitting in the socket buffer.  The POLLIN handler will also
-	 * change the connection state once all of the data has been read and remove the connection from the active poll list.
+	 * If we are in the read-only state, then we should only get an error if we are looking to read data.  If we are not
+	 * reading data, then pollfd->fd should be set to -1 and we should not be getting a POLLHUP event.
 	 *
-	 * If the socket is actively being polled, it better be looking for a POLLIN event.
+	 * There may still be data in the socket buffer, so we will let the POLLIN handler deal with the error.  Once all of the
+	 * data has been read, the POLLIN handler will change the connection state and remove the connection from the active poll
+	 * list.
 	 */
-	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO && (pollfd->revents | POLLIN));
+	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO && (pollfd->events & POLLIN) && (pollfd->revents & POLLIN));
     }
     else if (pollinfo->state == MPIDU_SOCKI_STATE_DISCONNECTED)
     {
@@ -302,10 +304,10 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
     else if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING)
     {
 	/*
-	 * I don't belive this should ever happen; but, if it does, it is the POLLOUT handler that will deal with it.
+	 * The process we were connecting to died.  Let the POLLOUT handler deal with the error.
 	 */
-	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING && (pollfd->events & POLLOUT) &&
-		    (pollfd->revents & POLLOUT));
+	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING && (pollfd->events & POLLOUT));
+	pollfd->revents = POLLOUT;
     }
     else
     {
@@ -376,22 +378,26 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
     {
 	/*
 	 * If we are in the read-only state, then we should only get an error if we are looking to read data.  If we are not
-	 * reading data, then pollfd->fd should be set to -1 and we should not be getting a POLLERR event.
+	 * reading data, then pollfd->fd should be set to -1 and we should not be getting a POLLERR event.  
 	 *
-	 * There may still be data in the socket buffer, so we will let the POLLIN handler deal with the error.
+	 * There may still be data in the socket buffer, so we will let the POLLIN handler deal with the error.  Once all of the
+	 * data has been read, the POLLIN handler will change the connection state and remove the connection from the active poll
+	 * list.
 	 */
-	MPIU_Assert(pollfd->events & POLLIN);
+	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO && (pollfd->events & POLLIN) && (pollfd->revents & POLLIN));
     }
     else if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING)
     {
-	/* The connect error will be handled by the POLLOUT handler.  We may need to set revents here... */
-	MPIU_Assert((pollfd->events & POLLOUT) && (pollfd->revents & POLLOUT));
+	/*
+	 * The process we were connecting to died.  Let the POLLOUT handler deal with the error.
+	 */
+	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING && (pollfd->events & POLLOUT));
+	pollfd->revents = POLLOUT;
     }
     else if (pollinfo->state == MPIDU_SOCKI_STATE_DISCONNECTED)
     {
 	/* We are already disconnected!  Why are we handling an error? */
 	MPIU_Assert(pollfd->fd == -1);
-	MPIU_Assert(TRUE);
     }
     else
     {
