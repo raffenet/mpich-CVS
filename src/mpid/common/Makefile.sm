@@ -1,1 +1,4 @@
-SUBDIRS = datatype locks .
+# Other_dirs have Makefile.in built
+OTHER_DIRS = locks sock
+# Subdirs are *always* built
+SUBDIRS = datatype .

@@ -87,6 +87,12 @@ LDADD               = names of LD options to add to all programs
 DEPADD              = Additional dependencies for *all* programs
 
 SUBDIRS             = names of subsidiary directories
+EXTRA_DIRS          = names of other directories needed.  These should
+                      use either relative path from the current directory
+                      or a path that uses the master_top_srcdir variable.
+OTHER_DIRS          = names of other directories *provided* but not used
+                      by all tools.  This is used for directories that
+                      contain subdirectories refered to by EXTRA_DIRS
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
 install_<type>      = names of files to install when "make install" is
                       invoked.  <type> is a directory type, such as BIN, LIB,

@@ -503,6 +503,12 @@ sub ReadMfile {
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
 	    $extra_programs{$1} = 1;
 	}
+	elsif (/^EXTRA_DIRS\s*=\s*(.*)\s*$/) {
+	    @extra_dirs = split( /\s+/,$1);
+	}
+	elsif (/^OTHER_DIRS\s*=\s*(.*)\s*$/) {
+	    @other_dirs = split( /\s+/,$1);
+	}
 	elsif (/^EXTERNAL_LIBS\s*=\s*(.*)\s*$/) {
 	    foreach $lib (split(/\s+/,$1)) {
 		$external_libraries{$lib} = 1;
@@ -1069,6 +1075,8 @@ sub ClearVars {
     %pgmlinktypes = ();
     # Other directories
     @subdirs = ();
+    @extra_dirs = ();
+    @other_dirs = ();
     $subdirs_has_autoconf = 0;
     # Suffix definitions
     $ExplicitSuffixes = "";
@@ -1123,7 +1131,7 @@ sub ProcessFile {
     
     #&checkForTargets();
 
-    my @dirs = @subdirs;
+    my @dirs = (@subdirs,@other_dirs);
     # First, check for names that are replaced by autoconf (e.g., @name@)
     my @actdirs = ();
     foreach my $dir (@dirs) {
@@ -1220,7 +1228,7 @@ sub RecursiveOp {
     if ($#subdirs == 0 && $subdirs[0] eq ".") { return; }
     if ($#subdirs >= 0) { 
         print FD "\tfor dir in";
-        foreach $dir (@subdirs) {
+        foreach $dir (@subdirs, @extra_dirs) {
 	    if ($dir ne ".") { print FD " $dir"; }
 	    if ($dir =~ /@[^@]*@/) {
 		$subdirs_has_autoconf = 1;

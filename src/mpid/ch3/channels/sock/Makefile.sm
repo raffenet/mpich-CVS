@@ -1,4 +1,5 @@
-SUBDIRS = ../../../common/sock src .
+EXTRA_DIRS = ../../../common/sock
+SUBDIRS = src .
 
 distclean-local:
 	-rm -f include/mpidi_ch3i_sock_conf.h
