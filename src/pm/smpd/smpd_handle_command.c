@@ -307,6 +307,7 @@ int smpd_handle_close_stdin_command(smpd_context_t *context)
 	if ((piter->rank == 0 || smpd_process.stdin_toall) && piter->in != NULL)
 	{
 	    piter->in->state = SMPD_CLOSING;
+	    piter->in->process = NULL; /* NULL this out so the closing of the stdin context won't access it after it has been freed */
 	    result = MPIDU_Sock_post_close(piter->in->sock);
 	}
 	piter = piter->next;
