@@ -147,6 +147,9 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **nouniquehigh:Could not determine which group to place first in merged \
  intracommunicator.  Please use the parameter high to choose which group \
  should be placed first.
+**f90typetoomany: Too many requests for unnamed, predefined f90 types
+**f90typetoomany %s %d: Too many requests for unnamed, predefined f90 %s \
+ types; no more than %d allowed.
 #
 #---- The messages below this line haven't been used yet.
 #
