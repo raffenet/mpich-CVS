@@ -795,6 +795,10 @@ SOURCE=.\src\mpi\timer\mpidtime.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpi\pt2pt\mpir_request_complete.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mpi\pt2pt\mpir_wait.c
 # End Source File
 # Begin Source File
