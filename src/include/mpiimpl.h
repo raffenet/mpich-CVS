@@ -1649,6 +1649,11 @@ typedef struct MPID_Collops {
 /* ------------------------------------------------------------------------- */
 /* Files */
 /* FIXME: Make this compatible with ROMIO */
+/* The "USE_ROMIO_FILE" definition tells MPICH2 to use the MPI_File
+   defined by ROMIO, rather than the standard object handles used for the
+   other MPI objects.  This is temporary, until ROMIO is modified to 
+   work with the new object handles */
+#define USE_ROMIO_FILE
 typedef struct MPID_File {
     int           handle;             /* value of MPI_File for this structure */
     volatile int  ref_count;
