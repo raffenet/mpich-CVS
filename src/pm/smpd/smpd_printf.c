@@ -70,16 +70,18 @@ int smpd_err_printf(char *str, ...)
     WaitForSingleObject(hOutputMutex, INFINITE);
 #endif
 
+    /* use stdout instead of stderr so that ordering will be consistent with dbg messages */
+
     /* prepend output with the process tree node id */
-    fprintf(stderr, "[%d]ERROR:", smpd_process.id);
+    fprintf(stdout, "[%d]ERROR:", smpd_process.id);
 
     /* print the formatted string */
     va_start(list, str);
     format_str = str;
-    n = vfprintf(stderr, format_str, list);
+    n = vfprintf(stdout, format_str, list);
     va_end(list);
 
-    fflush(stderr);
+    fflush(stdout);
 
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(hOutputMutex);
