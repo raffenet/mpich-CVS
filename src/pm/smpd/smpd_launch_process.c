@@ -1295,8 +1295,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	result = execvp( argv[0], argv );
 
 	result = errno;
-	fprintf(stderr, "Unable to exec '%s'.\nError %d - %s", process->exe,
-		result, strerror(result));
+	/*fprintf(stderr, "Unable to exec '%s'.\nError %d - %s", process->exe, result, strerror(result));*/
 	sprintf(process->err_msg, "Error %d - %s", result, strerror(result));
 
 	if (process->pmi != NULL)
