@@ -1,4 +1,4 @@
-echo "RUNNING SETUP_DEVICE FOR THE CH3 DEVICE"
+echo "RUNNING SETUP_DEVICE FOR THE RDMA DEVICE"
 
 #
 # NOTE: This file is sourced from the top-level configure script with the
