@@ -27,7 +27,7 @@ int main( int argc, char *argv[] )
 	comm = MPI_COMM_WORLD;
 	/* Create key values */
 	for (i=0; i<3; i++) {
-	    MPI_Keyval_create( MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
+	    MPI_Comm_create_keyval( MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
 			       &key[i], (void *)0 );
 	    attrval[i] = 1024 * i;
 	}
@@ -35,44 +35,44 @@ int main( int argc, char *argv[] )
 	/* Insert attribute in several orders.  Test after put with get,
 	 then delete, then confirm delete with get. */
 
-	MPI_Attr_put( comm, key[2], &attrval[2] );
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[0], &attrval[0] );
+	MPI_Comm_set_attr( comm, key[2], &attrval[2] );
+	MPI_Comm_set_attr( comm, key[1], &attrval[1] );
+	MPI_Comm_set_attr( comm, key[0], &attrval[0] );
 
 	errs += checkAttrs( comm, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[0] );
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[2] );
+	MPI_Comm_delete_attr( comm, key[0] );
+	MPI_Comm_delete_attr( comm, key[1] );
+	MPI_Comm_delete_attr( comm, key[2] );
 
 	errs += checkNoAttrs( comm, 3, key );
 	
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[2], &attrval[2] );
-	MPI_Attr_put( comm, key[0], &attrval[0] );
+	MPI_Comm_set_attr( comm, key[1], &attrval[1] );
+	MPI_Comm_set_attr( comm, key[2], &attrval[2] );
+	MPI_Comm_set_attr( comm, key[0], &attrval[0] );
 
 	errs += checkAttrs( comm, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[2] );
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[0] );
+	MPI_Comm_delete_attr( comm, key[2] );
+	MPI_Comm_delete_attr( comm, key[1] );
+	MPI_Comm_delete_attr( comm, key[0] );
 
 	errs += checkNoAttrs( comm, 3, key );
 
-	MPI_Attr_put( comm, key[0], &attrval[0] );
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[2], &attrval[2] );
+	MPI_Comm_set_attr( comm, key[0], &attrval[0] );
+	MPI_Comm_set_attr( comm, key[1], &attrval[1] );
+	MPI_Comm_set_attr( comm, key[2], &attrval[2] );
 
 	errs += checkAttrs( comm, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[2] );
-	MPI_Attr_delete( comm, key[0] );
+	MPI_Comm_delete_attr( comm, key[1] );
+	MPI_Comm_delete_attr( comm, key[2] );
+	MPI_Comm_delete_attr( comm, key[0] );
 
 	errs += checkNoAttrs( comm, 3, key );
 	
 	for (i=0; i<3; i++) {
-	    MPI_Keyval_free( &key[i] );
+	    MPI_Comm_free_keyval( &key[i] );
 	}
     }
     
@@ -88,7 +88,7 @@ int checkAttrs( MPI_Comm comm, int n, int key[], int attrval[] )
     int i, flag, *val_p;
 
     for (i=0; i<n; i++) {
-	MPI_Attr_get( comm, key[i], &val_p, &flag );
+	MPI_Comm_get_attr( comm, key[i], &val_p, &flag );
 	if (!flag) {
 	    errs++;
 	    fprintf( stderr, "Attribute for key %d not set\n", i );
@@ -109,7 +109,7 @@ int checkNoAttrs( MPI_Comm comm, int n, int key[] )
     int i, flag, *val_p;
 
     for (i=0; i<n; i++) {
-	MPI_Attr_get( comm, key[i], &val_p, &flag );
+	MPI_Comm_get_attr( comm, key[i], &val_p, &flag );
 	if (flag) {
 	    errs++;
 	    fprintf( stderr, "Attribute for key %d set but should be deleted\n", i );

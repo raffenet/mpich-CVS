@@ -11,23 +11,23 @@
 static char MTestDescrip[] = "Test creating and inserting attributes in \
 different orders to ensure that the list management code handles all cases.";
 
-int checkAttrs( MPI_Comm comm, int n, int key[], int attrval[] );
-int checkNoAttrs( MPI_Comm comm, int n, int key[] );
+int checkAttrs( MPI_Datatype type, int n, int key[], int attrval[] );
+int checkNoAttrs( MPI_Datatype type, int n, int key[] );
 
 int main( int argc, char *argv[] )
 {
     int errs = 0;
     int key[3], attrval[3];
     int i;
-    MPI_Comm comm;
+    MPI_Datatype type;
 
     MTest_Init( &argc, &argv );
 
     {
-	comm = MPI_COMM_WORLD;
+	type = MPI_INT;
 	/* Create key values */
 	for (i=0; i<3; i++) {
-	    MPI_Keyval_create( MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
+	    MPI_Type_create_keyval( MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
 			       &key[i], (void *)0 );
 	    attrval[i] = 1024 * i;
 	}
@@ -35,44 +35,44 @@ int main( int argc, char *argv[] )
 	/* Insert attribute in several orders.  Test after put with get,
 	 then delete, then confirm delete with get. */
 
-	MPI_Attr_put( comm, key[2], &attrval[2] );
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[0], &attrval[0] );
+	MPI_Type_set_attr( type, key[2], &attrval[2] );
+	MPI_Type_set_attr( type, key[1], &attrval[1] );
+	MPI_Type_set_attr( type, key[0], &attrval[0] );
 
-	errs += checkAttrs( comm, 3, key, attrval );
+	errs += checkAttrs( type, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[0] );
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[2] );
+	MPI_Type_delete_attr( type, key[0] );
+	MPI_Type_delete_attr( type, key[1] );
+	MPI_Type_delete_attr( type, key[2] );
 
-	errs += checkNoAttrs( comm, 3, key );
+	errs += checkNoAttrs( type, 3, key );
 	
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[2], &attrval[2] );
-	MPI_Attr_put( comm, key[0], &attrval[0] );
+	MPI_Type_set_attr( type, key[1], &attrval[1] );
+	MPI_Type_set_attr( type, key[2], &attrval[2] );
+	MPI_Type_set_attr( type, key[0], &attrval[0] );
 
-	errs += checkAttrs( comm, 3, key, attrval );
+	errs += checkAttrs( type, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[2] );
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[0] );
+	MPI_Type_delete_attr( type, key[2] );
+	MPI_Type_delete_attr( type, key[1] );
+	MPI_Type_delete_attr( type, key[0] );
 
-	errs += checkNoAttrs( comm, 3, key );
+	errs += checkNoAttrs( type, 3, key );
 
-	MPI_Attr_put( comm, key[0], &attrval[0] );
-	MPI_Attr_put( comm, key[1], &attrval[1] );
-	MPI_Attr_put( comm, key[2], &attrval[2] );
+	MPI_Type_set_attr( type, key[0], &attrval[0] );
+	MPI_Type_set_attr( type, key[1], &attrval[1] );
+	MPI_Type_set_attr( type, key[2], &attrval[2] );
 
-	errs += checkAttrs( comm, 3, key, attrval );
+	errs += checkAttrs( type, 3, key, attrval );
 	
-	MPI_Attr_delete( comm, key[1] );
-	MPI_Attr_delete( comm, key[2] );
-	MPI_Attr_delete( comm, key[0] );
+	MPI_Type_delete_attr( type, key[1] );
+	MPI_Type_delete_attr( type, key[2] );
+	MPI_Type_delete_attr( type, key[0] );
 
-	errs += checkNoAttrs( comm, 3, key );
+	errs += checkNoAttrs( type, 3, key );
 	
 	for (i=0; i<3; i++) {
-	    MPI_Keyval_free( &key[i] );
+	    MPI_Type_free_keyval( &key[i] );
 	}
     }
     
@@ -82,13 +82,13 @@ int main( int argc, char *argv[] )
   
 }
 
-int checkAttrs( MPI_Comm comm, int n, int key[], int attrval[] )
+int checkAttrs( MPI_Datatype type, int n, int key[], int attrval[] )
 {
     int errs = 0;
     int i, flag, *val_p;
 
     for (i=0; i<n; i++) {
-	MPI_Attr_get( comm, key[i], &val_p, &flag );
+	MPI_Type_get_attr( type, key[i], &val_p, &flag );
 	if (!flag) {
 	    errs++;
 	    fprintf( stderr, "Attribute for key %d not set\n", i );
@@ -103,13 +103,13 @@ int checkAttrs( MPI_Comm comm, int n, int key[], int attrval[] )
     return errs;
 }
 
-int checkNoAttrs( MPI_Comm comm, int n, int key[] )
+int checkNoAttrs( MPI_Datatype type, int n, int key[] )
 {
     int errs = 0;
     int i, flag, *val_p;
 
     for (i=0; i<n; i++) {
-	MPI_Attr_get( comm, key[i], &val_p, &flag );
+	MPI_Type_get_attr( type, key[i], &val_p, &flag );
 	if (flag) {
 	    errs++;
 	    fprintf( stderr, "Attribute for key %d set but should be deleted\n", i );
