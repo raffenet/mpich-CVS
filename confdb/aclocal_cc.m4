@@ -889,20 +889,20 @@ fi
 #
 dnl --- insert 2.52 compatibility here ---
 dnl 2.52 does not have AC_PROG_CC_WORKS
-ifdef([AC_PROG_CC_WORKS],,[AC_DEFUN([AC_PROG_CC_WORKS],)])
+dnl ifdef([AC_PROG_CC_WORKS],,[AC_DEFUN([AC_PROG_CC_WORKS],)])
 dnl
-AC_DEFUN(PAC_PROG_CC_WORKS,
-[AC_PROG_CC_WORKS
-AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
-AC_LANG_SAVE
-AC_LANG_C
-AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
-AC_MSG_RESULT($notbroken)
-if test "$notbroken" = "no" ; then
-    AC_MSG_ERROR([installation or configuration problem: C compiler does not
-correctly set error code when a fatal error occurs])
-fi
-])
+dnl AC_DEFUN(PAC_PROG_CC_WORKS,
+dnl [AC_PROG_CC_WORKS
+dnl AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
+dnl AC_LANG_SAVE
+dnl AC_LANG_C
+dnl AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
+dnl AC_MSG_RESULT($notbroken)
+dnl if test "$notbroken" = "no" ; then
+dnl    AC_MSG_ERROR([installation or configuration problem: C compiler does not
+dnl correctly set error code when a fatal error occurs])
+dnl fi
+dnl ])
 dnl
 dnl/*D
 dnl PAC_FUNC_CRYPT - Check that the function crypt is defined

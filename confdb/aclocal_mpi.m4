@@ -123,6 +123,10 @@ ac_mpi_type=ibmmpi)
 AC_ARG_WITH(sgimpi,
 [--with-sgimpi    - Use the SGI implementation of MPI],
 ac_mpi_type=sgimpi)
+AC_ARG_WITH(mpichnt,
+[--with-mpichnt - Use MPICH for Windows NT ],
+ac_mpi_type=mpichnt)
+
 if test "X$ac_mpi_type" = "X" ; then
     if test "X$1" != "X" ; then
         ac_mpi_type=$1
@@ -171,6 +175,15 @@ case $ac_mpi_type in
 	    :
         fi
 	;;
+
+        mpichnt)
+        dnl
+        dnl This isn't adequate, but it helps with using MPICH-NT/SDK.gcc
+        CFLAGS="-I$with_mpichnt/include"
+        CPPFLAGS="-I$with_mpichnt/include"
+        LDFLAGS="-L$with_mpichnt/lib"
+        MPILIBNAME="mpich"
+        ;;
 
 	lammpi)
 	dnl
