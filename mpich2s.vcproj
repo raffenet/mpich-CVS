@@ -2226,6 +2226,9 @@
 				RelativePath="src\mpid\common\datatype\mpid_type_contiguous.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_type_create_pairtype.c">
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_type_create_resized.c">
 			</File>
 			<File
