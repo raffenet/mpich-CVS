@@ -6,11 +6,6 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-/* Set the style to c++ since this code will only be compiled with the
-   Windows C/C++ compiler that accepts C++ style comments and other 
-   constructions */
-/* style:c++ header */
-
 #include "ad_ntfs.h"
 
 void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count, 
@@ -76,13 +71,15 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     if (wr)
     {
 	ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, pOvl);
-	//ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, NULL);
-	//if (ret_val && dwNumWritten) printf("written immediately: %d\n", dwNumWritten);
+	/*
+	ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, NULL);
+	if (ret_val && dwNumWritten) printf("written immediately: %d\n", dwNumWritten);
+	*/
     }
     else
     {
 	ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, pOvl);
-	//ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, NULL);
+	/*ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, NULL);*/
     }
 
     if (ret_val == FALSE) 

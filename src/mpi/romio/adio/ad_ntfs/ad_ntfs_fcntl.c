@@ -6,11 +6,6 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-/* Set the style to c++ since this code will only be compiled with the
-   Windows C/C++ compiler that accepts C++ style comments and other 
-   constructions */
-/* style:c++ header */
-
 #include "ad_ntfs.h"
 #include "adio_extern.h"
 
