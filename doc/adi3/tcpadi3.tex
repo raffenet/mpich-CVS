@@ -31,7 +31,7 @@
 
 \title{The CH3 Design for a Simple Implementation of ADI-3 for MPICH with a
 TCP-based Implementation}
-\author{William Gropp and Brian Toonen and who else?}
+\author{David Ashton, William Gropp, Rajeev Thakur, and Brian Toonen}
 \maketitle
 
 \begin{abstract}
@@ -76,7 +76,8 @@ platforms.  This replaces the ADI-2 ``channel'' interface.
 transfers.  
 \end{enumerate}
 
-It is \emph{not} a goal to provide an optimally fast implementation. This is
+It is \emph{not} a goal of this device to provide an optimally fast
+implementation. This is  
 intended to be a relatively simple but reasonably efficient implementation.
 
 %------------------------------------------------------------------------------
@@ -132,7 +133,7 @@ dozen kinds of
     \item[put.]Address and length, followed immediately by data
     \item[rndv\_send.]send and receive request id, followed immediately by data
     \item[cancel\_send\_req.]Send request id to cancel
-    \item[cancel\_send\_resp.]Send request id and true/false (ack/nak) for was
+    \item[cancel\_send\_resp.]Send request id and true/false (ack/nack) for was
          cancelled
     \item[flow\_cntl\_update.]Flow control for eager messages and rendezvous
       requests.  This is separate from any low-level flow control, though it
@@ -146,8 +147,22 @@ dozen kinds of
   all packet layouts will have the same size in bytes; this simplifies
   the implementation.
 \item[Packet Handlers.]The code to be invoked when a packet arives at its
-  destination. 
+  destination.   Each of the packet types has an associated handler.
+  Viewed this way, the ch3 channel device has a straightforward
+  implementation in terms of active messages, using a restricted set
+  of remote functions.
 \end{description}
+
+Questions:
+\begin{enumerate}
+\item Why are there eager sync send and ack?  Synchronous sends can be
+  accomplished by always using the rendezvous send operation.
+\item Is the ``put'' operation obsolete (see the new RMA support)?
+  Note that we'd like the option to use a put operation to complete a
+  rendezvous send in the case that the destination buffer is
+  contiguous.  If the put operation is included, how is completion
+  signaled at the destination?
+\end{enumerate}
 
 \paragraph{Queues and Connections:}
 
@@ -168,7 +183,8 @@ Details in Appendix~\ref{app:ch3}.
    by one.  Returns non-zero if the count is non-zero and zero if the count
    is now zero.
 \item[CH3\_Request\_destroy.]Destroy an existing request. This is used
-after CH3\_Request\_release\_ref returns a count of zero.
+after CH3\_Request\_release\_ref indicates that the reference count is
+zero.
 \item[CH3\_iStartMsg.]Begin a message.  Return a request if the message has not
   been completely sent.
 \item[CH3\_iStartMsgv.]Like \code{CH3_iStartmsg}, but with an \code{struct
@@ -190,6 +206,19 @@ after CH3\_Request\_release\_ref returns a count of zero.
   routines necessary for implementing MPI-2 RMA).
 \end{description}
 
+Questions:
+\begin{enumerate}
+\item Why is there a separate \texttt{add\_ref} and
+  \texttt{release\_ref} from the MPIU routines?  Is this because the
+  channel device may be multithreaded even if MPI is supporting only
+  \texttt{MPI\_THREAD\_SINGLE}?  
+\item Does \texttt{CH3\_Init} really setup the initial communicators?
+  What does that mean?
+\item Exactly what does \texttt{CH3\_InitParent} do?  How does this
+  match the original ADI3 design of \texttt{MPID\_Init} (which
+  included a \texttt{parent} output argument)?
+\end{enumerate}
+
 The bindings for these routines are:
 \begin{verbatim}
 /* Routines that create and destroy requests */
@@ -205,7 +234,7 @@ void CH3_request_destroy( MPID_Request * req );
    These are used when incrementally processing communication, for
    example, when packing and sending the next segment from a
    non-contiguous datatype.  Each of these is nonblocking and
-   indicates completing by decrementing the completion count (cc)
+   indicates completion by decrementing the completion count (cc)
    field in the request. */
 void CH3_iSend( MPID_VC * vc, MPID_Request * sreq, void * header,
                 MPID_msg_sz_t header_sz )
@@ -263,7 +292,8 @@ We can summarize the requirements for the CH3 interface as:
   or write operation completing when first issued.  
 \item Contiguous (or simple iovec) data.  For simplicity, only contiguous byte
   ranges (or Unix-style iovec) data moves are handled at the lowest level
-\item Correctness.  MPI requires that the message envelopes are ordered; data
+\item Correctness and ordering.  MPI requires that the message
+  envelopes are ordered; data 
   transfers must also arrive in expected order.  However, individual
 data transfers are \emph{not} ordered.  Completion of a data transfer
 guarantees only that all the data have arrived, not the particular
@@ -299,14 +329,21 @@ that is already the active request (rather than creating a new request).
 
 To handle the communication of data, the CH3 device needs the following fields
 in the \code{MPID_Request}:
+\textbf{These need to be organized in a hierarchical way.  Partially done.}
 \begin{description}
 \item[match]Matching information: rank, tag, and context.
-\item[user\_buf.]Pointer to the user buffer.
-\item[user\_count.]Number of 
-\item[datatype.]Datatype describing the user buffer.
-\item[segment.]Segment used to process noncontiguous data.
-\item[segment\_size.]Size of the segment (in bytes).
-\item[segment\_first.]Current offset into the segment.
+\item[Rendezvous send information]
+  \begin{description}
+  \item[user\_buf.]Pointer to the user buffer.
+  \item[user\_count.]Number of 
+  \item[datatype.]Datatype describing the user buffer.
+  \end{description}
+\item[Information for processing data buffers]
+  \begin{description}
+  \item[segment.]Segment used to process noncontiguous data.
+  \item[segment\_size.]Size of the segment (in bytes).
+  \item[segment\_first.]Current offset into the segment.
+  \end{description}
 \item[vc.]A pointer to the virtual connection being used to satisfy
 the request.
 \item[iov.]I/O vector describing the buffer to be sent or received.
@@ -315,7 +352,7 @@ the request.
 performed when a data transfer is complete.
 \item[tmpbuf.]Pointer to a temporary buffer
 \item[tmpbuf\_sz.]Size of the temporary buffer (not necessarily the
-same as the size of the occupying the buffer).  The SRBuf flag in the
+same as the size of the occupying the buffer).  The \code{SRBuf} flag in the
 state field indicates if this temporary buffer is a buffer from the
 send/receiver buffer pool or an unexpected eager
 \item[recv\_data\_sz.]Size of the message data.
@@ -375,18 +412,288 @@ optional routine (at least while we target only MPI-1) and need not be
 implemented.  The packet handler descriptions given show how a put
 operation can be implemented, even in a TCP/sockets environment.
 
+In order to support MPI-2 remote memory operations, additional
+routines are necessary. 
+
+All of the routines in this section except those defined under the
+asynchronous operations section are optional.  The channel implementation
+will define CPP variables of the same name as the routine if an
+implementation of that routine is available.
+
+\subsubsection{Active target routines}
+
+The following three routines may be used to perform active target
+communication.  They may not be used for passive target communication as
+they are not require to complete asynchronously.
+
+\begin{verbatim}
+int MPIDI_CH3_iPutc(MPIDI_VC * vc, const void * buf, int count,
+                    MPID_RAint raddr, MPID_RAint rdaddr)
+
+int MPIDI_CH3_iGetc(MPIDI_VC * vc, void * buf, int count,
+                    MPID_RAint raddr, MPID_RAint rdaddr)
+
+int MPIDI_CH3_iAccc(MPIDI_VC * vc, const void * buf, int count, MPI_Op op,
+                    MPID_RAint rbaddr, MPID_RAint rdaddr)
+\end{verbatim}.
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which the operation takes place
+
+\item[buf]pointer to the local buffer
+
+\item[count]number of bytes (both local and remote)
+
+\item[rbaddr]address of remote buffer (may be NULL if count is zero)
+
+\item[rdaddr]address of a remote integer counter to be decremented when
+operation completes (may be NULL)
+
+\item[op] predefined \code{MPI_Reduce} operations (including
+  \code{MPI_REPLACE}) 
+\end{description}
+
+Note: the original specification of \code{MPID_iPut()} in the CH3/TCP design
+document called for the use of \code{MPID_RAint}.  I (Brian) continued
+to use it here, but 
+am not convinced it is necessary.  We said during the design meeting that
+these routines would only be used on homogeneous systems.  If that is true,
+\code{MPID_RAint} can be replaced with \code{MPI_Aint}.
+
+
+\subsubsection{Passive target atomic operations}
+
+The following routines are intended for passive target communication.  If
+implemented, the must complete asynchronously (independent of remote process
+activities).
+
+\begin{verbatim}
+int MPIDI_CH3_iPTPutc(MPID_Win * winp,  MPIDI_VC * vc,
+      		      MPIDI_CH3_Win_lock_type_t type,
+      		      MPIDI_CH3_Win_lock_state_t state,
+      		      void * buf, int count,
+      		      MPID_RAint rbaddr, MPID_RAint rdaddr)
+
+int MPIDI_CH3_iPTGetc(MPID_Win * winp,  MPIDI_VC * vc,
+ 		      MPIDI_CH3_Win_lock_type_t type,
+ 		      MPIDI_CH3_Win_lock_state_t state,
+ 		      void * buf, int count,
+ 		      MPID_RAint rbaddr, MPID_RAint rdaddr)
+
+int MPIDI_CH3_iPTAccc(MPID_Win * winp,  MPIDI_VC * vc,
+                      MPIDI_CH3_Win_lock_type_t type,
+                      MPIDI_CH3_Win_lock_state_t state,
+                      void * buf, int count, MPI_Op op,
+                      MPID_RAint rbaddr, MPID_RAint rdaddr)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[winp]pointer to the window object (necessary for some implementations to
+access data structures which manage exclusive access to the window)
+
+\item[vc]the virtual connection over which the operation takes place
+
+\item[type]\code{MPIDI_CH3_WIN_LOCK_EXCLUSIVE} or
+  \code{MPIDI_CH3_WIN_LOCK_SHARED} 
+
+\item[state]\code{MPIDI_CH3_WIN_LOCK_START},
+  \code{MPIDI_CH3_WIN_LOCK_CONTINUE}, or \code{MPIDI_CH3_WIN_LOCK_STOP}
+
+\item[buf]pointer to the local buffer
+
+\item[count]number of bytes (both local and remote)
+
+\item[rbaddr]address of remote buffer (may be NULL if count is zero)
+
+\item[rdaddr]address of a remote integer counter to be decremented when
+operation completes (may be NULL)
+
+\item[op]predefined \code{MPI_Reduce} operations (including \code{MPI_REPLACE})
+\end{description}
+
+
+\subsubsection{Local passive target locks}
+
+The following routines are used to control access to the local window.  If
+any of the passive target atomic operations are defined, then these
+functions must be defined.
+
+\begin{verbatim}
+int MPIDI_CH3_Win_local_lock(MPID_Win * winp, MPIDI_CH3_Win_lock_type_t
+type)
+
+int MPIDI_CH3_Win_local_unlock(MPID_Win * winp)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[winp]pointer to the window object (necessary for some implementations to
+access data structures which manage exclusive access to the window)
+
+\item[type]\code{MPIDI_CH3_WIN_LOCK_EXCLUSIVE} or
+  \code{MPIDI_CH3_WIN_LOCK_SHARED} 
+\end{description}
+
+\subsubsection{Passive target memory allocation}
+
+The following routine allocates memory upon which the passive target
+operations can be performed.  If any of the passive target atomic operations
+are defined, then this function must be defined.
+
+\begin{verbatim}
+int MPIDI_CH3_alloc_mem(MPID_Win * winp)
+\end{verbatim}
+
+\subsubsection{Asynchronous operations}
+
+The following routine sends an operation request to be performed
+asynchronously by a remote process.  This routine is similar to
+\code{MPIDI_CH3_iStartmsgv()} except that the operation must be
+handled by a remote 
+asynchronous agent.  If the send does not complete immediately, this routine
+returns a request object.  When the asynchronous agent completes the send,
+it calls \code{MPIDI_CH3U_Handle_async_send()} with \code{sreq->ch3.ca} set to
+\code{MPIDI_CH3_CA_COMPLETE}, causing the completion counter
+\code{(*sreq->cc_ptr)} to be decremented.
+
+\begin{verbatim}
+int MPIDI_CH3_arov(MPIDI_VC * vc, MPID_IOV * iov, int iov_n,
+                   MPID_Request **sreqp)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to send the request
+
+\item[iov]an I/O vector the first element of which contains a packet header
+(\code{MPIDI_CH3_Pkt_t}) defining the operation to be performed; if
+  the send cannot 
+be completed immediately, both the packet header and the I/O vector will be
+copied internally, allowing both of them to be allocated on the stack.
+
+\item[iov\_n]number of entries in the I/O vector
+
+\item[sreqp]pointer to a send request object pointer (may be NULL if the send
+completed locally before the routine returns)
+\end{description}
+
+The following routine is the same as \code{MPIDI_CH3_arov()} except it takes an
+existing request allowing remote operation requests that exceed the maximum
+number of I/O vector entries.  When the data described by I/O vector is
+completely sent (or buffered), \code{MPIDI_CH3U_Handle_async_send()}
+will be called 
+by the asynchronous agent.  \code{sreq->ch3.ca} should contain a
+completion action 
+so that \code{MPIDI_CH3U_Handle_async_send()} can act appropriately.
+
+\begin{verbatim}
+int MPIDI_CH3_alrov(MPIDI_VC * vc,  MPID_Request * sreq,
+                    MPID_IOV * iov, int iov_n)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[sreq]pointer to an existing send request object
+\end{description}
+(other parameters the same as \code{MPIDI_CH3_arov()}).
+
+The following routine is used to continue sending data as part of a
+previously started remote operation request.  The buffers to be sent are
+defined by \code{sreq->ch3.iov} and \code{sreq->ch3.iov_count}.
+\code{MPIDI_CH3U_Handle_async_send()} will be called by the
+asynchronous agent when 
+the send is complete (or buffered).  \code{sreq->ch3.ca} should contain a
+completion action so that \code{MPIDI_CH3U_Handle_async_send()} can act
+appropriately.
+
+\begin{verbatim}
+int MPIDI_CH3_awrite(MPIDI_VC * vc, MPID_Request * sreq)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to continue sending data
+
+\item[sreq]pointer to the send request object
+\end{description}
+
+The following routine requests that data continue to be read by the
+asynchronous agent and be placed in the buffers defined by
+\code{rreq->ch3.iov} and 
+\code{rreq->ch3.iov_count}.  When the data described by I/O vector is
+completely 
+read, \code{MPIDI_CH3U_Handle_async_recv()} will be called by the asynchronous
+agent.  \code{rreq->ch3.ca} should contain a completion action so that
+\code{MPIDI_CH3U_Handle_async_recv()} can act appropriately.
+
+\begin{verbatim}
+int MPIDI_CH3_aread(MPIDI_VC * vc, MPID_Request * rreq)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to read data
+
+\item[rreq]pointer to the receive request object
+\end{description}
+
+The following routine is called by the asynchronous agent (in the channel
+implementation) when an asynchronous operation request arrives.  If data
+follows the packet header, a receive request object must be created before
+the remainder of the data can be read using \code{MPIDI_CH3_aread()}.
+
+\begin{verbatim}
+int MPIDI_CH3U_Handle_async_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to send the request
+
+\item[pkt]the packet header
+\end{description}
+
+
+The following routine is called by the asynchronous agent when a previously
+requested read (using \code{MPIDI_CH3_aread()}) has completed.
+
+\begin{verbatim}
+int MPIDI_CH3U_Handle_async_recv(MPIDI_VC * vc, MPID_Request * rreq)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to read data
+
+\item[rreq]pointer to the receive request object
+\end{description}
+
+The following routine is called by the asynchronous agent when a previously
+requested write (using \code{MPIDI_CH3_awrite()}) has completed.
+
+\begin{verbatim}
+int MPIDI_CH3U_Handle_async_recv(MPIDI_VC * vc, MPID_Request * sreq)
+\end{verbatim}
+where the parameters have the following meanings:
+\begin{description}
+\item[vc]the virtual connection over which to read data
+
+\item[sreq]pointer to the send request object
+\end{description}
+
 \subsection{Thread Safety}
 
 % Who provides the queue manipulation routines (e.g., FOA)?  Is this part of the
 % base set of CH3 routines, or is it an MPID routine?  Or is it
 % something in the middle?  
 
-Thread-safety of FOA (currently, inserted request must be marked as unready
-unless the other receive parameters are passed to FOA so that the request can
-be atomically created).  One possibility is to combine this with the request
-state and have a state update function that ensures that any modifications are
-written to memory (e.g., using a write barrier) before another thread might
-access the request.
+Thread safe manipulation of the message queues requires careful
+handling.  Section~\ref{sec:msg-queues} discusses the message queue
+manipulation routines in depth; Section~\ref{sec:utility-routines}
+sketches some of the routines that are used for the message-queue
+operations.  In short, these routines performed atomic queue update
+operations, such as ``find or insert'' rather
+than separate ``find'' and ``insert'' operations.
+
+%% Thread-safety of FOA (currently, inserted request must be marked as unready
+%% unless the other receive parameters are passed to FOA so that the request can
+%% be atomically created).  One possibility is to combine this with the request
+%% state and have a state update function that ensures that any modifications are
+%% written to memory (e.g., using a write barrier) before another thread might
+%% access the request.
 
 \subsection{Data Structures}
 To allow the greatest efficiency, most of the data structures are
@@ -449,6 +756,7 @@ The assignment of data structures to layers is as follows.
 % \end{verbatim}
 
 \subsection{Utility Routines}
+\label{sec:utility-routines}
 (not written yet)
 This section should describe the queue operation routines, such as the
 find-or-post or find-or-allocate (FOA) operations.
@@ -502,7 +810,7 @@ buffer into the user's message buffer.
 \item[CH3U\_Buffer\_copy.]Copy the contents of a user's send buffer
 into a user's receive buffer.
 \item[CH3U\_SRBuf\_alloc.]Allocate a send/receive buffer and set
-req->ch3.tmpbuf to point to the buffer.  Send/receive buffers are
+\code{req->ch3.tmpbuf} to point to the buffer.  Send/receive buffers are
 temporary buffers used to hold a portion of the message data when
 user's buffer is non-contiguous.  The desired size of the buffer is
 specified when calling this routine; however the actual buffer size
@@ -556,7 +864,9 @@ the CH3 device, packing and unpacking may be done incrementally.  The
 routines such as \code{CH3\_iWrite} and \code{CH3\_iRead} are used for
 transfering these incrementally packed buffers.
 
-\section{Pseudo-code for some of the \protect\code{MPID\_} routines}
+\section{Pseudo-code for some of the
+  \texorpdfstring{\texttt{MPID\_}}{MPID} routines} 
+\label{sec:pseudo-code}
 This section outlines the pseudocode for some of the major MPID
 routines.
 Note that many of these operations only begin a communication.  The
@@ -566,6 +876,7 @@ communication agent, which are called message handlers, are described
 in Section~\ref{sec:agent}.
 
 \subsection{Sending}
+\label{sec:pseudocode-sending}
 The code for \code{MPID_Isend} and \code{MPID_Send} is shown below.  The code
 for the other 
 MPID send routines is similar, with the appropriate choice of eager
@@ -577,6 +888,8 @@ The envelopes for ready-send messages should include
 a flag that indicates that they are ready-send so that the user-error of an
 unmatched ready-send can be detected and reported.
 
+Question: is this code up-to-date?  Don't we send first and allocate
+the packet only if we need to?
 \begin{verbatim}
 MPID_Isend( )
 {
@@ -613,6 +926,13 @@ provide a way to create a new packet. The semantics would allow simple
 allocation as above, but would also allow the CH3 layer to provide specially
 allocated memory.  For the near term, however, we will not include this
 enhancement. 
+
+Another alternative is a ``fast send'' for short messages.  This would
+allow an implementation to optimize for the low-latency case; for
+example, a shared-memory implementation could use special allocation
+routines to reduce the number of operations.  This may be a better
+approach than trying to find a general model that achieves the
+lowest-possible latency.
 
 \code{MPID_Send} is slightly different because we want to avoid allocating a
 request if possible.  
@@ -752,6 +1072,7 @@ MPID_Send_init()
     request->send_packet = MPIU_Malloc( packet );
     setup fields in request, act_request, send_packet, 
         including a free-handler for the request
+    Ensure that the virtual connection is initialized
     return request   
 \end{verbatim}
 Rather than use \code{MPIU_Malloc}, we may want a \code{CH3} routine that can
@@ -844,6 +1165,8 @@ the request was posted).  We don't pass the buffer location to
 \code{CH3\_iRead} because (a) the location is already present in the
 request and (b) passing it as an argument to the routine unnecessarily
 adds to function call overhead.
+
+
 \subsection{RndvReqToSend}
 Action invoked by the reciever of a rendezvous message.
 \begin{verbatim}
@@ -994,6 +1317,7 @@ really need to worry about a message being too large for a single
 fragment in the eager buffer bool.
 
 \section{Message Queues}
+\label{sec:msg-queues}
 This section describes the routines for handling the message queues.  For
 thread safety, the queues of posted receive requests and of unexpected
 messages are accessed atomically rather than through separate routines.
@@ -1047,6 +1371,8 @@ MPIDI_CH3U_Request_FPOAU( int source, int tag, int context_id, int *found )
        if (tag == MPI_ANY_TAG) { mask.match.tag = 0; m.match.tag = 0; }
        if (source == MPI_ANY_SOURCE) { 
            mask.match.source = 0; m.match.source = 0; }
+       /* A further optimization for no wildcards would skip the mask
+          step */
        for (r = unexpected_queue->head; r; r = r->next ) {
            if ((r->match.match64 & mask.match64) == m.match64) {
                remove r from unexpected queue
@@ -1094,7 +1420,7 @@ MPIDI_CH3U_Request_FUOAP( MPID_Message_match *, int *found )
    return request
 \end{verbatim}
 
-Cancel operations require that requests be removed for the queues.
+Cancel operations require that requests be removed from the queues.
 
 This routine is required for cancelling sends.
 \begin{verbatim}
@@ -1128,7 +1454,7 @@ the debugger interface provides for both a receive and send queue
 interface; the debugger can get a list of the pending send and receive
 operations, along with the unexpected messages.
 
-\section{Implementing \protect\code{mpiexec}}
+\section{Implementing \texorpdfstring{\texttt{mpiexec}}{mpiexec}}
 \label{sec:mpiexec}
 
 (This is a temporary spot for these remarks, since they may apply to more than
@@ -1140,26 +1466,26 @@ should implement the quickest-to-implement first.
 
 \begin{description}
 \item[As MPD console program.] This is ready-to-go as a minor change to
-  \file{mpdcon.c}, except that the BNR interface might need to be updated to
+  \file{mpdcon.c}, except that the PMI interface might need to be updated to
   match 
   the current specification.  A version of \code{MPI_Info} is needed for the
   new 
-  \code{BNR_Spawn}, but not for anything else, so MPI-1 routines should be OK.
+  \code{PMI_Spawn}, but not for anything else, so MPI-1 routines should be OK.
   I.e, 
-  the database part of BNR is already running.  All handling of \code{stdio}
+  the database part of PMI is already running.  All handling of \code{stdio}
   is done.
-\item[As a BNR program.] This requires the above plus implementation of
-  \code{BNR_Spawn}, at least for use by console.  It could also be built to
+\item[As a PMI program.] This requires the above plus implementation of
+  \code{PMI_Spawn}, at least for use by console.  It could also be built to
   interact 
-  with a scheduler.  This (using \code{BNR_Spawn} to start the initial
+  with a scheduler.  This (using \code{PMI_Spawn} to start the initial
   processes as 
   well as for the implementation of \code{MPI_Spawn}) was the ``original''
   plan.
 \item[As an MPI program.] This is the idea in the current MPICH2 document.  It
   relies on \code{MPI_Connect}, etc.  It requires the above plus the MM
   component 
-  of the BNR interface, to set up the connections.  This approach as the
-  advantage of providinga ``universal'' \code{mpiexec}. 
+  of the PMI interface, to set up the connections.  This approach as the
+  advantage of providing a ``universal'' \code{mpiexec}. 
 \item[As an ``immediate scheduler''.] This makes \code{mpiexec} into a stand-in
   for the scheduler component of the Scalable System Software Project.  It is
   much like the ``MPD console'' option, but instead of using the existing
@@ -1169,7 +1495,7 @@ should implement the quickest-to-implement first.
   into the MPD and having \code{mpiexec} emit XML code.
 \item[As a ``one-host-only'' process starter.] The \code{mpiexec} process could
   simply fork the application processes.  This requires a new but simple
-  implementation of the put/get/fence part of the BNR interface.  The original
+  implementation of the put/get/fence part of the PMI interface.  The original
   \code{mpiexec} process could become the database server part after forking.
 \end{description}
 
@@ -1539,7 +1865,7 @@ CH3_Init( int *has_args, int *has_env, int *has_parent )
 \end{verbatim}
 This routine must
 \begin{itemize}
-\item Make any calls to BNR
+\item Make any calls to PMI
 \item Set the size, rank, and \code{MPID_VC} fields in
   \mpids{MPIR\_Process}{comm\_world} and \mpids{MPIR\_Process}{comm\_self}
 
@@ -1563,6 +1889,7 @@ create the parent communicator only if it is needed, and then initialize it in
 a separate step.
 
 \subsection{RMA}
+\textbf{This section may be obsolete}
 \begin{verbatim}
 CH3_iPut( MPID_VC *, void *buf, int count, MPID_RAint offset, 
           MPID_RAint cmpl_flag )
@@ -1584,4 +1911,14 @@ extension?  What would it cost other cases?  Can we do it from within
 \code{MPI_Sendrecv} and/or \code{MPI_Waitall} in such a way that we
 don't penalize other communication patterns?  What is the potential
 benefit?  Should we just concentrate on RMA instead?
+
+An alternative model for the receiving end is a
+\code{MPID_CH3_ReadProcess} call that reads a packet header and
+processes it.  This is really just an active message or remote routine
+handler, and is roughly the receiving end of the original ADI3
+\code{MPID_Rhcv} (remote handler call - vector arguments) routine.
+This has the advantage that fewer routines are defined, and in some
+sense, the code must be structured like this (since arbitrary incoming
+packets may arrive).  
+
 \end{document}
