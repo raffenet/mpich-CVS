@@ -100,6 +100,7 @@ int MPI_Comm_free(MPI_Comm *comm)
 
     if (mpi_errno == MPI_SUCCESS)
     {
+	*comm = MPI_COMM_NULL;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
 	return MPI_SUCCESS;
     }
