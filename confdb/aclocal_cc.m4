@@ -811,7 +811,7 @@ dnl
 dnl Output effects:
 dnl Adds '--enable-strict' to the command line.  If this is enabled, then
 dnl if no compiler has been set, set 'CC' to 'gcc'.
-dnl If the compiler is 'gcc', 'CFLAGS' is set to include
+dnl If the compiler is 'gcc', 'COPTIONS' is set to include
 dnl.vb
 dnl	-O -Wall -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL
 dnl.ve
@@ -819,8 +819,8 @@ dnl
 dnl This only works where 'gcc' is available.
 dnl In addition, it exports the variable 'enable_strict_done'. This
 dnl ensures that subsidiary 'configure's do not add the above flags to
-dnl 'CFLAGS' once the top level 'configure' sees '--enable-strict'.  To ensure
-dnl this, 'CFLAGS' is also exported.
+dnl 'COPTIONS' once the top level 'configure' sees '--enable-strict'.  To ensure
+dnl this, 'COPTIONS' is also exported.
 dnl
 dnl Not yet available: options when using other compilers.  However, 
 dnl here are some possible choices
@@ -832,13 +832,13 @@ AC_DEFUN(PAC_ARG_STRICT,[
 AC_ARG_ENABLE(strict,
 [--enable-strict  - Turn on strict compilation testing when using gcc])
 export enable_strict_done
-export CFLAGS
+export COPTIONS
 if test "$enable_strict" = "yes" -a "$enable_strict_done" != "yes" ; then
     enable_strict_done="yes"
     if test -z "CC" ; then
         AC_CHECK_PROGS(CC,gcc)
         if test "$CC" = "gcc" ; then 
-            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
+            COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
     	fi
     fi
 fi
@@ -850,7 +850,7 @@ dnl Synopsis:
 dnl PAC_ARG_CC_G
 dnl
 dnl Output Effect:
-dnl Adds '-g' to 'CFLAGS' and exports 'CFLAGS'.  Sets and exports the 
+dnl Adds '-g' to 'COPTIONS' and exports 'COPTIONS'.  Sets and exports the 
 dnl variable 'enable_g_simple' so that subsidiary 'configure's will not
 dnl add another '-g'.
 dnl
@@ -879,14 +879,14 @@ dnl
 dnlD*/
 AC_DEFUN(PAC_ARG_CC_G,[
 AC_ARG_ENABLE(g,
-[--enable-g  - Turn on debugging of the package (typically adds -g to CFLAGS)])
-export CFLAGS
+[--enable-g  - Turn on debugging of the package (typically adds -g to COPTIONS)])
+export COPTIONS
 export enable_g_simple
 if test -n "$enable_g" -a "$enable_g" != "no" -a \
    "$enable_g_simple" != "done" ; then
     enable_g_simple="done"
     if test "$enable_g" = "g" -o "$enable_g" = "yes" ; then
-        CFLAGS="$CFLAGS -g"
+        COPTIONS="$COPTIONS -g"
     fi
 fi
 ])
