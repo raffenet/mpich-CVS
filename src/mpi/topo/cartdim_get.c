@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Cartdim_get */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -46,6 +47,7 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
     static const char FCNAME[] = "MPI_Cartdim_get";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPIR_Topology *cart_ptr;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CARTDIM_GET);
@@ -55,13 +57,11 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(ndims,"ndims",mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CARTDIM_GET);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -72,6 +72,26 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    cart_ptr = MPIR_Topology_get( comm_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+						  "**notcarttopo", 0 );
+	    }
+	    if (mpi_errno) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_GET);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    *ndims = cart_ptr->topo.cart.ndims;
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CARTDIM_GET);
     return MPI_SUCCESS;
