@@ -7,11 +7,11 @@
 
 #include "adio.h"
 
-void ADIO_Delete(char *filename, int *error_code)
+void ADIOI_GEN_Delete(char *filename, int *error_code)
 {
     int err;
 #ifndef PRINT_ERR_MSG
-    static char myname[] = "ADIO_DELETE";
+    static char myname[] = "ADIOI_GEN_DELETE";
 #endif
 
     err = unlink(filename);
