@@ -88,7 +88,28 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", mpi_errno);
 	return mpi_errno;
     }
+
+    mpi_errno = PMI_Get_id_length_max(&id_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
+	return mpi_errno;
+    }
+    pg->pg_id = MPIU_Malloc(id_sz + 1);
+    if (pg->pg_id == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Get_id(pg->pg_id, id_sz);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id", "**pmi_get_id %d", mpi_errno);
+	return mpi_errno;
+    }
+
     pg->ref_count = 1;
+    pg->next = NULL;
     MPIDI_CH3I_Process.pg = pg;
     
     /* Allocate and initialize the VC table associated with this process
