@@ -1108,6 +1108,10 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_GCC_AND_IA64_ASM */")
 				Case "NEEDS_SYS_TIME_H"
 					fout.WriteLine("/* #undef NEEDS_SYS_TIME_H */")
+				Case "HAVE_ALARM"
+					fout.WriteLine("/* #undef HAVE_ALARM */")
+				Case "HAVE_SETITIMER"
+					fout.WriteLine("/* #undef HAVE_SETITIMER */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
