@@ -5,7 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-int MPIR_Group_create( int, MPID_Group ** );
+/* MPIR_Group_create is needed by some of the routines that return groups
+   from communicators, so it is in mpidimpl.h */
 void MPIR_Group_setup_lpid_list( MPID_Group * );
 int MPIR_Group_check_valid_ranks( MPID_Group *, int [], int );
 int MPIR_Group_check_valid_ranges( MPID_Group *, int [][3], int );

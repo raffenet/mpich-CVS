@@ -7,7 +7,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
 # This is a test for the document generation
-doc_HTML_SOURCES = ${mpi_sources}
-
-# c_create, c_sub, dims, 
-# g_map, g_create, cdims_get
+doc_HTML_SOURCES  = ${mpi_sources}
+doc_MAN_SOURCES   = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}
