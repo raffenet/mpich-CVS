@@ -937,12 +937,85 @@ allocated array
 (actually an array of pointers to arrays) is used for handles with
 type \code{CONSTRUCT_INDIRECT}.  Elements are allocated from these
 arrays by using a simple linked list, usually managed by a separate
-utility routine.  See \file{src/util/info/infoutil.c} for an example.
+utility routine.  See the file \file{src/util/mem/handlemem.c} for routines to
+manage the allocation and deallocation of objects and
+\file{src/util/info/infoutil.c} for an example that uses these routines for
+\code{MPI_Info} objects.
 Because these operations use a global linked list, a special thread
 lock, \code{allocation_lock}, is provided in the \code{MPIR_Process}
 data structure.  The macros \mpidfunc{MPID_Allocation_lock} and
 \mpidfunc{MPID_Allocation_unlock} are used to protect all allocation
 lists in a multithreaded environment.
+
+\subsubsection{Optimizing Allocation of Handles}
+In a multithreaded environment, it is necessary to ensure that there are no
+race conditions in accessing shared data structures.  In particular, since
+each object is accessed through an \code{avail} pointer, the code must ensure
+that two threads do not attempt to update the \code{avail} pointer at the same
+time.  The simplest way to do this is to use the general
+\mpids{MPIR_Process}{allocation_lock} around each access to any of these
+lists.  However, this can encur a significant overhead, particularly with
+heavy-weight thread lock libraries.  An alternative is to use atomic memory
+update instructions provided by most processor architectures.  For example,
+for the Intel x86, the compare and exchange operation may be used.  In
+pseudocode, 
+\begin{verbatim}
+while (ptr = avail) {
+    char flag;
+    nxt = ptr->next; 
+    flag = 0
+    asm( %eax = avail; lock ; cmpxchg avail,nxt ; sete flag );
+    if (flag) break;
+}
+\end{verbatim}
+The \code{asm} code is not correct and merely indicates the instructions
+needed; the \code{sete} instruction is used to set the flag if the compare and
+exchange (\code{cmpxchg}) succeeded.  The pseudoinstruction \code{lock} is
+actually an opcode prefix that causes the \code{cmpxchg} instruction to happen
+atomically (this is the default on some but not all Pentiums).
+Note that this code does not require any thread locks.
+
+For a generic RISC processor that supports a load-link and store-conditional
+instruction, the pseudocode is
+\begin{verbatim}
+    asm( L1: loadlink avail, r1 ;
+         bz r1, L2 ;         # break if avail is 0
+         load (r1)+4, r2 ;   # next is offset 4 bytes
+         storecond r2, avail ;
+         bc L1;              # if failed, retry
+         rtn ;               # return from routine.  new handle is in r1
+         L2: ;               # exit loop if avail is null
+     )
+\end{verbatim}
+As above, this \code{asm} code is not correct on simply sketches the
+operations that are necessary.
+In both of these cases, the \mpids{MPIR_Process}{allocation_lock} is still
+needed when allocating new blocks of storage; this code is invoked when a
+thread detects that \code{avail} is \code{NULL}.  A sketch of the appropriate
+code is
+\begin{verbatim}
+   top:
+   <appropriate code from above>
+
+   /* avail was null, so we try to allocate */
+   MPID_Allocation_lock();
+       if (avail) {
+           /* Another thread beat us to it */
+           MPID_Allocation_unlock();
+          goto top;
+       }   
+       /* Call routine to get new storage */
+       ptr = MPIU_Handle_indirect_init( ... );
+       if (ptr) {
+           avail = ptr->next;
+       }
+   MPID_Allocation_unlock();
+   return ptr;
+\end{verbatim}
+For time-sensitive handles such as \code{MPID_Request}s, it is possible to
+inline the basic code (atomically implementing the \code{ptr=avail;
+  avail=avail->next}) and call a routine in the case that \code{avail} was
+null.  
 
 \subsection{Error reporting}
 \label{sec:error-reporting}
@@ -2393,6 +2466,136 @@ unlock info
 \subsection{Datatypes}
 \label{sec:datatypes}
 
+MPI datatypes come in two forms: the basic, predefined types representing the
+natural types in the language (e.g., \code{MPI_DOUBLE}), and derived types,
+created from other types by combining them in different ways.  MPI provides a
+number of different ways to construct datatypes, but they are best described
+in terms of two properties:
+\begin{enumerate}
+\item A loop describing the \emph{typemap} of the datatype.  As described in
+  \cite{gropp-swider-lusk99}, a general MPI \emph{typemap} may be efficiently
+  described using one of a few forms of loops.
+\item The \emph{extent} of the datatype.  This tells MPI how to position the
+  successive uses of a datatype.
+\end{enumerate}
+In addition, there are a number of properties of a datatype that must be saved
+to handle both some oddities from MPI-1 (particularly the ``sticky'' upper and
+lower bounds) and the requirement from MPI-2 that it be possible to return to
+the user the exact calls used to construct a datatype.  This introduces some
+complications that are discussed below.
+
+A major goal of the MPICH2 datatypes is excellent performance for typical user
+datatypes, particularly strided (vector) and scatter/gather (indexed).  To
+achieve this requires storing an efficient representation of the data needed
+to pack and unpack a buffer using this datatype.  The data structure that
+contains this information is called a \emph{dataloop}
+(\mpidconst{MPID_Dataloop}) because it contains the information needed by a
+loop that packs or unpacks data.  Each dataloop represents a single loop and
+thus a single level of combiner in datatypes.  A very general datatype may be
+constructured from multiple derived datatypes.  Thus, in general, a datatype
+may need to be described with multiple dataloops.  
+
+Applying a dataloop to pack or unpack a datatype requires some additional
+data.  Since the datatype description in terms of dataloops is recursive, a
+stack is maintained while processing a datatype.  A stack is used both because
+it is faster than using recursive function calls and because in some cases it
+is necessary to halt a pack or unpack operation part of the way through and
+then continue the operation later; this is only possible with an explicit
+stack.   The datastructure that defines this stack is the
+\mpidconst{MPID_Dataloop_stackelm}.  This dataloop stack is not part of an
+\code{MPID_Datatype} structure but is used by routines that pack and unpack
+buffers using datatypes and by objects (such as \mpidconst{MPID_Request}s)
+that may need to incrementally pack or unpack a buffer).
+
+\subsubsection{The Predefined Datatypes}
+The handles for the predefined datatypes corresponding to the language types
+(e.g., \code{MPI_DOUBLE} but not \code{MPI_DOUBLE_INT}) use the
+\code{CONSTRUCT_BUILTIN} type and encode the length of the datatype in bytes
+within the handle.  The format is
+\begin{verbatim}
+    (in bits)
+    01 010 000 (16 bits for index ) (8 bits for the length in bytes)
+    (in hex)
+    0x50xxxxyy
+    xxxx is the index and yy the length
+\end{verbatim}
+The index values provides an index into the preallocated datatype storage for
+a \mpidconst{MPID_Datatype} structure for each datatype.  This contains, for
+example, the character name field for the datatype.
+An additional 3 bits could be used for the index, but in fact, there are fewer
+than 128 datatypes, even including the new C2000 datatypes (which do not have
+corresponding MPI types yet), and keeping these 3 bits zero makes it easier to
+setup the handles.
+
+The lengths of the language types are computed by \code{configure}.  For
+systems where cross compilation is used, these values must be provided by
+defining the appropriate \code{CROSS_SIZEOF_xxx} environment variables.
+
+\subsubsection{Creating a New Datatype}
+Here are the steps to create and return a new datatype.
+\begin{enumerate}
+\item Allocate a new object.
+\item Allocate two dataloops: one to hold the description as given (needed to
+  return the contents and envelope) and one to hold the optimized loop.
+\item Initialize the fields and datatype name.
+\item Setup the two dataloops.  For datatypes that require copies of input
+  arrays (e.g., \code{MPI_Type_indexed}), only the
+  \mpids{MPID_Datatype}{opt_loopinfo} should contain a copy if possible.  
+  Use \code{NULL} pointers in the \mpids{MPID_Datatype}{loopinfo} to indicate
+  that the corresponding fields in \mpids{MPID_Datatype}{opt_loopinfo} should
+  be used.  This will become clearer below.
+  
+  Setting up the \code{dataloop} is relatively easy.  The combiner (e.g.,
+  \mpiconst{MPI_COMBINER_HVECTOR} is stored in the combiner fields in the
+  datatype.  
+
+  For the basic types, just select the corresponding dataloop type,
+  noting that several combiner types often map to a single looptype.  For
+  example, \mpiconst{MPI_COMBINER_VECTOR}, \mpiconst{MPI_COMBINER_HVECTOR},
+  and \mpiconst{MPI_COMBINER_HVECTOR_INTEGER} all map to
+  \mpidconst{MPID_VECTOR}.  However, note that there are some special cases
+  detailed below.  
+  Next, determine the following about the specified datatype:
+  \begin{enumerate}
+    \item Are all of the input datatypes contiguous or basic?  If so, this is
+          a special case dataloop called a \emph{leaf}.  This is indicated 
+          by a bit in \mpids{MPID_Dataloop}{kind}.
+    \item Are the elements all multiples of 2, 4, or 8 bytes in size?
+    \item Are the elements aligned on a multiple of the element size?
+      If all elements are aligned on a multiple of 2, 4, or 8, the 
+      element-size field in \mpids{MPID_Dataloop}{kind} is set to 1, 2, or 3
+      respectively.  All values in the dataloop (including any offsets or
+      sizes) are adjusted to be in multiples of the element size.
+    \item Do the elements describe a contiguous section of memory (not
+      counting the effect of any extent)?
+      If so, replace the dataloop type with \code{MPID_CONTIG}.
+    \item If the type is indexed, are all block sizes the same?
+      If so, replace the dataloop type with \code{MPID_BLOCKINDEXED}.
+    \item Are any of the \mpiconst{MPI_UB} or \mpiconst{MPI_LB} markers
+      present in the input (old) datatypes?
+    If so, the various ``sticky'' ub and lb flags must be set.
+    \item Can multiple consecutive elements be contracted into a single 
+      larger section?  In a struct type, this may allow a reduction in
+      the number of elements (and may also change the alignment result).
+  \end{enumerate}
+  In some of the above cases, the \code{dataloop} and \code{opt_dataloop} will
+  either be the same or differ only in that \code{opt_dataloop} will use 
+  values that are multiples of the element size.  In these cases, any 
+  fields in the (non-optimized) \code{dataloop} that must be allocated and 
+  copied (e.g., offset fields in an indexed datatype) should be set to
+  \code{NULL} instead.  The code to process \code{MPI_Type_get_contents} must
+  understand how to compute the data from that stored in the
+  \code{opt_dataloop}.  
+
+  If the \code{opt_dataloop} represents a more radical change, for example,
+  replacing multiple items with a single item, then both the \code{dataloop}
+  and \code{opt_dataloop} should contain the necessary fields.  Any code that
+  attempts to further optimize the \code{opt_dataloop} must also ensure that
+  any \code{NULL} fields in the \code{dataloop} can be recovered.
+
+\end{enumerate}
+
+\subsubsection{Error classes}
 Error classes include \mpiconst{MPI_ERR_TYPE},
 \mpiconst{MPI_ERR_ARG}, and \mpiconst{MPI_ERR_OTHER} (for
 out-of-memory allocating internal fields).
@@ -2401,8 +2604,9 @@ The ADI defines a datatype structure that is believed to be a good
 choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
-All datatypes should call a function
-(\mpidfunc{MPIR_Type_compute_extent} to compute the extent because the
+\subsubsection{Computing the Extent}
+All datatypes should call the function
+\mpidfunc{MPIR_Type_compute_extent} to compute the extent because the
 computation is a bit complex.  Here is the rule for the extent:
 \begin{algorithm}
 /* Compute the \mpids{MPI_Datatype}{ub} */
