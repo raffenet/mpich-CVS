@@ -1010,7 +1010,15 @@ print $OUTFD "
 // Typedefs for basic int types
 typedef MPI_Offset Offset;
 typedef MPI_Aint   Aint;
-typedef MPI_Fint   Fint;\n";
+typedef MPI_Fint   Fint;
+
+// Forward class declarations
+class Comm;
+class Intercomm;
+class Intracomm;
+class Cartcomm;
+class Graphcomm;
+\n";
 
 
 #
