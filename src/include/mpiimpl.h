@@ -1096,6 +1096,13 @@ extern int MPID_THREAD_LEVEL;
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
   if ((root) <= MPI_PROC_NULL || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}
+#define MPIR_ERRTEST_PERSISTENT(reqp,err) \
+  if (reqp->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
+      mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
+#define MPIR_ERRTEST_PERSISTENT_ACTIVE(reqp,err) \
+  if ((reqp->kind == MPID_PREQUEST_SEND || \
+      reqp->kind == MPID_PREQUEST_RECV) && reqp->partner_request == NULL) { \
+      mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
 
 
 /* The following are placeholders.  We haven't decided yet whether these
