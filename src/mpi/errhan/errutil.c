@@ -471,18 +471,29 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	/* This is a dynamically created error code (e.g., with MPI_Err_add_class) */
 	if (!MPIR_Process.errcode_to_string)
 	{
-	    MPIU_Strncpy(msg, "Undefined dynamic error code", MPI_MAX_ERROR_STRING);
+	    if (MPIU_Strncpy(msg, "Undefined dynamic error code", MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	    
 	}
 	else
 	{
-	    MPIU_Strncpy(msg, MPIR_Process.errcode_to_string( errorcode ), MPI_MAX_ERROR_STRING);
+	    if (MPIU_Strncpy(msg, MPIR_Process.errcode_to_string( errorcode ), MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
 	}
     }
     else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
 	/* code is a raw error class.  Convert the class to an index */
-	MPIU_Strncpy(msg, get_class_msg( errorcode ), MPI_MAX_ERROR_STRING);
+	if (MPIU_Strncpy(msg, get_class_msg( errorcode ), MPI_MAX_ERROR_STRING))
+	{
+	    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	}
     }
-    else {
+    else
+    {
 	/* error code encodes a message.  Find it and make sure that
 	   it is still valid (seq number matches the stored value in the
 	   error message ring).  If the seq number is *not* valid,
@@ -506,7 +517,10 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 		{
 		    /* TODO: MT: this is not thread safe.  the string must be copied into a thread specific storage or the user
 		       must provide a buffer.  Otherwise the error message could be overwritten before it is used. */
-		    MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING);
+		    if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
+		    {
+			msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+		    }
 		    flag = TRUE;
 		}
 	    }
@@ -523,17 +537,23 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	{
 	    if (generic_idx != (ERROR_GENERIC_MASK >> ERROR_GENERIC_SHIFT))
 	    {
-		MPIU_Strncpy(msg, generic_err_msgs[generic_idx].long_name, MPI_MAX_ERROR_STRING);
+		if (MPIU_Strncpy(msg, generic_err_msgs[generic_idx].long_name, MPI_MAX_ERROR_STRING))
+		{
+		    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+		}
 		goto fn_exit;
 	    }
 	}
 #       endif
 
-	MPIU_Strncpy(msg, get_class_msg( ERROR_GET_CLASS(errorcode) ), MPI_MAX_ERROR_STRING);
+	if (MPIU_Strncpy(msg, get_class_msg( ERROR_GET_CLASS(errorcode) ), MPI_MAX_ERROR_STRING))
+	{
+	    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	}
     }
 
-  fn_exit:
-    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+fn_exit:
+    return;
 }
 
 
