@@ -147,7 +147,7 @@ AC_SUBST(includebuild_dir)
 AC_SUBST(libbuild_dir)
 AC_SUBST(binbuild_dir)
 
-PAC_PROG_CC
+AC_PROG_CC
 AC_OBJEXT
 AC_EXEEXT
 dnl Check for broken handling of common symbols
