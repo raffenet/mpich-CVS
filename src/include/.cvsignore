@@ -3,6 +3,7 @@ mpi.h
 *conf.h.in
 mpichtimer.h
 pmi.h
+bnr.h
 mpidpre.h
 mpidpost.h
 *pre.h
