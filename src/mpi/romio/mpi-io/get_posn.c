@@ -27,6 +27,11 @@ int MPI_File_get_position(MPI_File fh, MPI_Offset *offset)
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+	printf("MPI_File_get_position: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
     ADIOI_Get_position(fh, offset);
 
     return MPI_SUCCESS;

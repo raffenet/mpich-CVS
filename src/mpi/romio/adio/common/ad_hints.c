@@ -80,9 +80,9 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
     ADIOI_Free(value);
 
-    if (fd->file_system == ADIO_PIOFS) 
+    if ((fd->file_system == ADIO_PIOFS) && (fd->file_system == ADIO_PVFS))
 	MPI_Info_delete(info, "ind_wr_buffer_size");
-    /* no data sieving for writes in PIOFS, because it doesn't
+    /* no data sieving for writes in PIOFS and PVFS, because it doesn't
        support file locking */
 
     *error_code = MPI_SUCCESS;

@@ -79,16 +79,16 @@ int main(int argc, char **argv)
 
     if (!mynod) printf("testing MPI_File_get_byte_offset\n");
     MPI_File_get_byte_offset(fh, 10, &disp);
-    if (disp != 1080) printf("byte offset = @LL@, should be 1080\n\n", disp);
+    if (disp != (1000+20*sizeof(int))) printf("byte offset = @LL@, should be %d\n\n", disp, (int) (1000+20*sizeof(int)));
 
     MPI_File_get_group(fh, &group);
 
-    if (!mynod) printf("setting file size to 1060 bytes\n");
-    MPI_File_set_size(fh, 1060);
+    if (!mynod) printf("testing MPI_File_set_size\n");
+    MPI_File_set_size(fh, 1000+15*sizeof(int));
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_sync(fh);
     MPI_File_get_size(fh, &disp);
-    if (disp != 1060) printf("file size = @LL@, should be 1060\n\n", disp);
+    if (disp != 1000+15*sizeof(int)) printf("file size = @LL@, should be %d\n\n", disp, (int) (1000+15*sizeof(int)));
  
     if (!mynod) printf("seeking to eof and testing MPI_File_get_position\n");
     MPI_File_seek(fh, 0, MPI_SEEK_END);
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
     if (!mynod) printf("testing MPI_File_get_byte_offset\n");
     MPI_File_get_byte_offset(fh, disp, &offset);
-    if (offset != 1080) printf("byte offset = @LL@, should be 1080\n\n", offset);
+    if (offset != (1000+20*sizeof(int))) printf("byte offset = @LL@, should be %d\n\n", offset, (int) (1000+20*sizeof(int)));
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (!mynod) printf("testing MPI_File_seek with MPI_SEEK_CUR\n");

@@ -34,12 +34,7 @@ void ADIOI_SFS_Open(ADIO_File fd, int *error_code)
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND)) {
 	fd->fp_ind = llseek(fd->fd_sys, 0, SEEK_END);
-
 	fd->fp_sys_posn = fd->fp_ind;
-
-	MPI_Barrier(fd->comm);
-	/* the barrier ensures that no process races ahead and modifies
-           the file size before all processes have opened the file. */
     }
 
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;

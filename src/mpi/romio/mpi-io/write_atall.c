@@ -45,7 +45,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if (buf <= (void *) 0) {
+    if (buf < (void *) 0) {
         printf("MPI_File_write_at_all: buf is not a valid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -64,6 +64,11 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if ((count*datatype_size) % fh->etype_size != 0) {
         printf("MPI_File_write_at_all: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+	printf("MPI_File_write_at_all: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,

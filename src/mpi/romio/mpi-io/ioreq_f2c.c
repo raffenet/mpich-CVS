@@ -13,7 +13,7 @@
                        a C I/O-request handle
 
 Input Parameters:
-. fh - Fortran I/O-request handle (integer)
+. request - Fortran I/O-request handle (integer)
 
 Return Value:
   C I/O-request handle (handle)

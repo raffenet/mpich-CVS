@@ -13,10 +13,10 @@
                        Fortran I/O-request handle
 
 Input Parameters:
-. fh - C I/O-request handle (integer)
+. request - C I/O-request handle (handle)
 
 Return Value:
-  Fortran I/O-request handle (handle)
+  Fortran I/O-request handle (integer)
 @*/
 MPI_Fint MPIO_Request_c2f(MPIO_Request request)
 {

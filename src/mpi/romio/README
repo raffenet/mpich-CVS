@@ -1,12 +1,19 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                       Version 1.0.1 beta, May 1998
+                    Version 1.0.2 beta, September 1998
 
 
 Major Changes in This Version:
 -----------------------------
 
-* This version is included in MPICH 1.1.1 and HPMPI 1.4.
+* Implemented the shared file pointer functions (Section 9.4.4) and 
+  split collective I/O functions (Section 9.4.5).
+
+
+Major Changes in Version 1.0.1:
+------------------------------
+
+* This version is included in MPICH 1.1.1 and HP MPI 1.4.
 
 * Added support for NEC SX-4 and created a new device ad_sfs for
   NEC SFS file system.
@@ -72,17 +79,12 @@ http://www.mcs.anl.gov/home/thakur/romio . The MPI-2 standard itself
 is available at http://www.mpi-forum.org/docs/docs.html .
 
 This version of ROMIO includes everything defined in the MPI-2 I/O
-chapter except shared file pointer functions (Sec. 9.4.4), split
-collective data access functions (Sec. 9.4.5), support for file
-interoperability (Sec. 9.5), I/O error handling (Sec. 9.7), and I/O
-error classes (Sec. 9.8). Since shared file pointer functions are not
-supported, the MPI_MODE_SEQUENTIAL amode to MPI_File_open is also not
-supported.
-
-The subarray and distributed array datatype constructor functions from
-Chapter 4 (Sec. 4.14.4 & 4.14.5) have been implemented. They are
-useful for accessing arrays stored in files. The functions
-MPI_File_f2c and MPI_File_c2f (Sec. 4.12.4) are also implemented.
+chapter except support for file interoperability (Sec. 9.5), I/O error
+handling (Sec. 9.7), and I/O error classes (Sec. 9.8).  The subarray
+and distributed array datatype constructor functions from Chapter 4
+(Sec. 4.14.4 & 4.14.5) have been implemented. They are useful for
+accessing arrays stored in files. The functions MPI_File_f2c and
+MPI_File_c2f (Sec. 4.12.4) are also implemented.
 
 C, Fortran, and profiling interfaces are provided for all functions
 that have been implemented. 
@@ -98,7 +100,7 @@ Supported file systems are IBM PIOFS, Intel PFS, HP/Convex
 HFS, SGI XFS, NEC SFS, NFS, and any Unix file system (UFS).
 
 This version of ROMIO works with and is included in MPICH 1.1.1 and in
-HPMPI 1.4. It also works with SGI MPI 3.1 and higher and with NEC MPI.
+HP MPI 1.4. It also works with SGI MPI 3.1 and higher and with NEC MPI.
 
 You can open files on multiple file systems in the same program. The
 only restriction is that the directory where the file is to be opened
@@ -119,9 +121,9 @@ Installation Instructions
 -------------------------
 
 ROMIO is included in MPICH 1.1.1 and gets built as part of MPICH 1.1.1.
-ROMIO is also included in HPMPI 1.4 (see http://www.hp.com/go/mpi).
-Therefore, if you are using MPICH 1.1.1 or HPMPI, you need not install
-ROMIO separately. If you are using other versions of MPICH or HPMPI,
+ROMIO is also included in HP MPI 1.4 (see http://www.hp.com/go/mpi).
+Therefore, if you are using MPICH 1.1.1 or HP MPI 1.4, you need not install
+ROMIO separately. If you are using other versions of MPICH or HP MPI,
 we encourage you to upgrade to the latest versions, which include ROMIO. 
 
 If you are using SGI MPI or NEC MPI (NEC's version of MPICH), 
@@ -207,14 +209,14 @@ Compiling and Running MPI-IO Programs
 
 If you are using SGI MPI or NEC MPI, you need to include the file
 mpio.h for C or mpiof.h for Fortran in your MPI-IO program. 
-In MPICH 1.1.1 and HPMPI 1.4, these files are already included in
+In MPICH 1.1.1 and HP MPI 1.4, these files are already included in
 mpi.h and mpif.h, respectively.
 
 Note that on HP machines running HPUX and on NEC SX-4, you need to
 compile Fortran programs with mpif90, becuase the f77 compilers on
 these machines don't support 8-byte integers. 
 
-With MPICH or HPMPI, you can compile MPI-IO programs as 
+With MPICH or HP MPI, you can compile MPI-IO programs as 
    mpicc foo.c
 or 
    mpif77 foo.f
@@ -265,13 +267,13 @@ and only the "native" file data representation is supported.
 * All functions return only two possible error codes---MPI_SUCCESS on
 success and MPI_ERR_UNKNOWN on failure.
 
-* On HP machines running HPUX, atomic mode is not supported for files
-residing on HFS file systems.
-
 * On HP machines running HPUX and on NEC SX-4, you need to compile
 Fortran programs with mpif90 instead of mpif77, because the f77
 compilers on these machines don't support 8-byte integers.
- 
+
+* The file-open mode MPI_MODE_EXCL does not work on Intel PFS file system,
+due to a bug in PFS.
+
 
 
 Usage Tips
@@ -291,6 +293,16 @@ or MPI_File_f2c (see MPI-2 Section 4.12.4). Such a situation occurs,
 for example, if a Fortran program uses an I/O library written in C
 with MPI-IO calls. Similar functions MPIO_Request_f2c and
 MPIO_Request_c2f are also provided.
+
+* For Fortran programs on the Intel Paragon, you may need
+to provide the complete path to mpif.h in the include statement, e.g.,
+        include '/usr/local/mpich/include/mpif.h'
+instead of 
+        include 'mpif.h'
+This is because the -I option to the Paragon Fortran compiler if77
+doesn't work correctly. It always looks in the default directories first 
+and, therefore, picks up Intel's mpif.h, which is actually the
+mpif.h of an older version of MPICH. 
 
 
 

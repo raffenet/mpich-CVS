@@ -24,7 +24,11 @@ void *ADIOI_Malloc(size_t size, int lineno, char *fname)
 {
     void *new;
 
+#ifdef __XFS
+    new = (void *) memalign(__XFS_MEMALIGN, size);
+#else
     new = (void *) malloc(size);
+#endif
     if (!new) {
 	printf("Out of memory in file %s, line %d\n", fname, lineno);
 	MPI_Abort(MPI_COMM_WORLD, 1);

@@ -30,10 +30,17 @@ MPI_Info *MPIR_Infotable;
 int MPIR_Infotable_ptr, MPIR_Infotable_max;
 #endif
 
+#ifdef __XFS
+int ADIOI_Direct_read, ADIOI_Direct_write;
+#endif
+
 int ADIO_Init_keyval=MPI_KEYVAL_INVALID;
 
 void ADIO_Init(int *argc, char ***argv, int *error_code)
 {
+#ifdef __XFS
+    char *c;
+#endif
 
 /* initialize the linked list containing flattened datatypes */
     ADIOI_Flatlist = (ADIOI_Flatlist_node *) ADIOI_Malloc(sizeof(ADIOI_Flatlist_node));
@@ -58,6 +65,17 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
 #ifndef __HAS_MPI_INFO
     MPIR_Infotable = NULL;
     MPIR_Infotable_ptr = MPIR_Infotable_max = 0;
+#endif
+
+#ifdef __XFS
+    c = getenv("MPIO_DIRECT_READ");
+    if (c && (!strcmp(c, "true") || !strcmp(c, "TRUE"))) 
+	ADIOI_Direct_read = 1;
+    else ADIOI_Direct_read = 0;
+    c = getenv("MPIO_DIRECT_WRITE");
+    if (c && (!strcmp(c, "true") || !strcmp(c, "TRUE"))) 
+	ADIOI_Direct_write = 1;
+    else ADIOI_Direct_write = 0;
 #endif
 
     *error_code = MPI_SUCCESS;

@@ -121,6 +121,7 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	}
 
 	if (alloc_size > curr_fsize) {
+	    memset(buf, 0, ADIOI_PREALLOC_BUFSZ); 
 	    size = alloc_size - curr_fsize;
 	    ntimes = (size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
 	    for (i=0; i<ntimes; i++) {

@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     int i, len, nkeys, flag, mynod, default_striping_factor, nprocs;
     MPI_File fh;
     MPI_Info info, info_used;
-    char *filename, key[MPI_MAX_INFO_KEY+1], value[MPI_MAX_INFO_VAL+1];
+    char *filename, key[MPI_MAX_INFO_KEY], value[MPI_MAX_INFO_VAL];
 
     MPI_Init(&argc,&argv);
 

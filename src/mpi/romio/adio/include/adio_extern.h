@@ -28,3 +28,6 @@ extern int ADIOI_Reqtable_ptr, ADIOI_Reqtable_max;
 extern MPI_Info *MPIR_Infotable;
 extern int MPIR_Infotable_ptr, MPIR_Infotable_max;
 #endif
+#ifdef __XFS
+extern int ADIOI_Direct_read, ADIOI_Direct_write;
+#endif

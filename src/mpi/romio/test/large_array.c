@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
     array_of_gsizes[0] = 1024;
     array_of_gsizes[1] = 1024;
-    array_of_gsizes[2] = 1024;
+    array_of_gsizes[2] = 4*1024/sizeof(int);
 
     array_of_distribs[0] = MPI_DISTRIBUTE_BLOCK;
     array_of_distribs[1] = MPI_DISTRIBUTE_BLOCK;

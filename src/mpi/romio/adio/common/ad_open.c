@@ -16,7 +16,6 @@ ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
                     MPI_Info info, int perm, int *error_code)
 {
     ADIO_File fd;
-    MPI_Comm newcomm;
     int orig_amode, err;
 
     fd = (ADIO_File) ADIOI_Malloc(sizeof(struct ADIOI_FileD));
@@ -24,11 +23,12 @@ ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
     fd->cookie = ADIOI_FILE_COOKIE;
     fd->fp_ind = disp;
     fd->fp_sys_posn = 0;
-    MPI_Comm_dup(comm, &newcomm);
-    fd->comm = newcomm;
+    fd->comm = comm;       /* dup'ed in MPI_File_open */
     fd->filename = strdup(filename);
     fd->file_system = file_system;
     fd->disp = disp;
+    fd->split_coll_count = 0;
+    fd->shared_fp_fd = ADIO_FILE_NULL;
     fd->atomicity = 0;
 
     fd->etype = etype;          /* MPI_BYTE by default */

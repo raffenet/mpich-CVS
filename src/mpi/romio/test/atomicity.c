@@ -14,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-    int *writebuf, *readbuf, i, mynod, nprocs, flag, len, err;
+    int *writebuf, *readbuf, i, mynod, nprocs, len, err;
     char *filename;
     MPI_Datatype newtype;
     MPI_File fh;

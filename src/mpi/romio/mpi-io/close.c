@@ -29,6 +29,12 @@ int MPI_File_close(MPI_File *fh)
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    if (((*fh)->file_system != ADIO_PIOFS) && ((*fh)->file_system != ADIO_PVFS)) {
+	ADIOI_Free((*fh)->shared_fp_fname);
+	if ((*fh)->shared_fp_fd != ADIO_FILE_NULL)
+	    ADIO_Close((*fh)->shared_fp_fd, &error_code);
+    }
+
     ADIO_Close(*fh, &error_code);
 
     *fh = MPI_FILE_NULL;

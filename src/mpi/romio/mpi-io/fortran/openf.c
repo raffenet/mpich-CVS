@@ -5,6 +5,9 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+#if _UNICOS
+#include <fortran.h>
+#endif
 #include "mpio.h"
 #include "adio.h"
 
@@ -78,9 +81,17 @@ void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
 
 #else
 
+#if _UNICOS
+void mpi_file_open_(MPI_Comm *comm,_fcd filename_fcd,int *amode,
+                  MPI_Fint *info, MPI_Fint *fh, int *__ierr)
+{
+    char *filename = _fcdtocp(filename_fcd);
+    int str_len = _fcdlen(filename_fcd);
+#else
 void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *__ierr, int str_len )
 {
+#endif
     char *newfname;
     MPI_File fh_c;
     int real_len, i;

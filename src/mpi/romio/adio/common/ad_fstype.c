@@ -6,12 +6,13 @@
  */
 
 #include "adio.h"
-#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC))
+#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC) || defined(__CRAY))
 #include <sys/statvfs.h>
 #endif
 #ifdef __LINUX
 #include <sys/vfs.h>
-#include <linux/nfs_fs.h>
+/* #include <linux/nfs_fs.h> this file is broken in newer versions of linux */
+#define NFS_SUPER_MAGIC 0x6969
 #endif
 #ifdef __FREEBSD
 #include <sys/param.h>
@@ -31,7 +32,7 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 {
     char *dir, *slash;
     int err;
-#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC))
+#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC) || defined(__CRAY))
     struct statvfs vfsbuf;
 #endif
 #if (defined(__LINUX) || defined(__FREEBSD))
@@ -52,7 +53,7 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	else *slash = '\0';
     }
 
-#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC))
+#if (defined(__HPUX) || defined(__SPPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__AIX) || defined(__DEC) || defined(__CRAY))
     err = statvfs(filename, &vfsbuf);
     if (err && (errno == ENOENT)) err = statvfs(dir, &vfsbuf);
     free(dir);

@@ -61,6 +61,10 @@ noncontig_coll.c: Same as noncontig.c, but uses collective I/O
 
 i_noncontig.c: Same as noncontig.c, but uses nonblocking I/O
 
+shared_fp.c: Tests the shared file pointer functions.
+
+split_coll.c: Tests the split collective I/O functions.
+
 fperf.f: Fortran version of perf.c
 
 fcoll_test.f: Fortran version of coll_test.c

@@ -1,4 +1,4 @@
-.TH MPIO_Request_c2f 3 "5/20/1998" " " "MPI-2"
+.TH MPIO_Request_c2f 3 "11/3/1998" " " "MPI-2"
 .SH NAME
 MPIO_Request_c2f \-  Translates a C I/O-request handle to a  Fortran I/O-request handle 
 .SH SYNOPSIS
@@ -9,9 +9,9 @@ MPI_Fint MPIO_Request_c2f(MPIO_Request request)
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B fh 
-- C I/O-request handle (integer)
+.B request 
+- C I/O-request handle (handle)
 .PD 1
 
 .SH RETURN VALUE
-Fortran I/O-request handle (handle)
+Fortran I/O-request handle (integer)

@@ -88,8 +88,8 @@ int main(int argc, char **argv)
     }
     
     if (mynod == 0) {
-	read_bw = (SIZE*nprocs)/(min_read_tim*1000000.0);
-	write_bw = (SIZE*nprocs)/(min_write_tim*1000000.0);
+	read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
+	write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
 	printf("Write bandwidth without file sync = %f Mbytes/sec\n", write_bw);
 	printf("Read bandwidth without prior file sync = %f Mbytes/sec\n", read_bw);
     }
@@ -142,8 +142,8 @@ int main(int argc, char **argv)
     if (mynod == 0) {
 	if (flag) printf("MPI_File_sync returns error.\n");
 	else {
-	    read_bw = (SIZE*nprocs)/(min_read_tim*1000000.0);
-	    write_bw = (SIZE*nprocs)/(min_write_tim*1000000.0);
+	    read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
+	    write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
 	    printf("Write bandwidth including file sync = %f Mbytes/sec\n", write_bw);
 	    printf("Read bandwidth after file sync = %f Mbytes/sec\n", read_bw);
 	}

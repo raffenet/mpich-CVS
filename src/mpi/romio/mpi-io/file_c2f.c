@@ -12,10 +12,10 @@
     MPI_File_c2f - Translates a C file handle to a Fortran file handle
 
 Input Parameters:
-. fh - C file handle (integer)
+. fh - C file handle (handle)
 
 Return Value:
-  Fortran file handle (handle)
+  Fortran file handle (integer)
 @*/
 MPI_Fint MPI_File_c2f(MPI_File fh)
 {
