@@ -417,6 +417,8 @@ if (!$build_sep_files) {
 
 # Build the routines by class
 foreach $class (@classes) {
+    $Class = $fullclassname{$class};
+    $mpi_type = $class_type{$class};
     if ($build_sep_files) {
 	$filename = "${mpiclass}-cpp.h";
 	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
@@ -434,8 +436,6 @@ foreach $class (@classes) {
     foreach $mpilevel (@mpilevels) {
         $mpiclass = "$mpilevel$class";
         $class_hash = "class_$mpiclass";
-	$Class = $fullclassname{$class};
-	$mpi_type = $class_type{$class};
 	foreach $routine (keys(%$class_hash)) {
 	    $info = $$class_hash{$routine};
 	    print STDERR "processing $routine\n" if $debug;
