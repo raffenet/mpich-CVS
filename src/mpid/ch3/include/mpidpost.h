@@ -48,6 +48,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
 int MPIDI_CH3U_Request_DP(MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
+void MPIDI_CH3U_Request_incrementt_cc(MPID_Request *);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request *, int *);
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request *, MPID_IOV *, int *);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request *);
@@ -57,30 +58,34 @@ void MPIDI_CH3U_Buffer_copy(const void * const, int, MPI_Datatype, int *,
 			    void * const, int, MPI_Datatype, MPIDI_msg_sz_t *,
 			    int *);
 
-/* Include definitions from the channel which require items defined by this
-   file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include
-   requires the device to copy mpidi_ch3_post.h to the src/include directory in
-   the build tree. */
+/* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes
+   (mpiimpl.h).  NOTE: This include requires the device to copy mpidi_ch3_post.h to the src/include directory in the build
+   tree. */
 #include "mpidi_ch3_post.h"
 
 /*
  * Request utility macros (public - can be used in MPID macros)
  */
 #if defined(MPICH_SINGLE_THREADED)
-/* XXX - In the case of a single-threaded shmem channel sharing requests
-   between processes, a write barrier must be performed before decrementing the
-   completion counter.  This insures that other fields in the req structure are
-   updated before the completion is signaled.  How should that be incorporated
-   into this code at the device level? */
+/* SHMEM: In the case of a single-threaded shmem channel sharing requests between processes, a write barrier must be performed
+   before decrementing the completion counter.  This insures that other fields in the req structure are updated before the
+   completion is signaled.  How should that be incorporated into this code at the device level? */
 #define MPIDI_CH3U_Request_decrement_cc(_req, _flagp)	\
 {							\
-    *(_flagp) = --*(_req)->cc_ptr;			\
+    *(_flagp) = --(*(_req)->cc_ptr);			\
 }
 #else
-/* MT - A write barrier must be performed before decrementing the completion
-   counter .  This insures that other fields in the req structure are updated
-   before the completion is signaled. */
+/* MT: A write barrier must be performed before decrementing the completion counter .  This insures that other fields in the req
+   structure are updated before the completion is signaled. */
 #error Multi-threaded MPIDI_CH3U_Request_decrement_cc() not implemented.
+#endif
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_CH3U_Request_increment_cc(_req)	\
+{						\
+    (*(_req)->cc_ptr)++;			\
+}
+#else
+#error Multi-threaded MPIDI_CH3U_Request_increment_cc() not implemented.
 #endif
 
 /*
