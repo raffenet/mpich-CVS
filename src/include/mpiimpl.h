@@ -1463,8 +1463,8 @@ int MPID_Startall(int, MPID_Request * []);
 int MPID_Probe(int, int, MPID_Comm *, int, MPI_Status *);
 int MPID_Iprobe(int, int, MPID_Comm *, int, int *, MPI_Status *);
 
-void MPID_Cancel_send(MPID_Request *);
-void MPID_Cancel_recv(MPID_Request *);
+int MPID_Cancel_send(MPID_Request *);
+int MPID_Cancel_recv(MPID_Request *);
 
 int MPID_Win_create(void *, MPI_Aint, int, MPI_Info, MPID_Comm *,
                     MPID_Win **);
@@ -1485,8 +1485,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
 void MPID_Progress_start(void);
 void MPID_Progress_end(void);
 int MPID_Progress_test(void);
-void MPID_Progress_wait(void);
-void MPID_Progress_poke(void);
+int MPID_Progress_wait(void);
+int MPID_Progress_poke(void);
 
 MPID_Request * MPID_Request_create(void);
 void MPID_Request_set_completed(MPID_Request *);
