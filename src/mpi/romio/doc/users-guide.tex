@@ -562,6 +562,28 @@ to clean everything, including the Makefiles created by {\tt
 configure}.  Then run {\tt configure} again with the new options,
 followed by {\tt make}.
 
+\subsection{Configuring for Linux and Large Files }
+
+32-bit systems running linux kernel version 2.4.0 or newer and glibc
+version 2.2.0 or newer can support files greater than 2 GBytes in size.
+This support is not automatic, however.  
+
+The two macros {\tt\_FILE\_OFFSET\_BITS=64} and
+{\tt\_LARGEFILE64\_SOURCE} tell gnu libc it's ok to support large files
+on 32 bit platforms.  The former changes the size of {\tt off\_t} (no
+need to change source.  might affect interoperability with libraries
+compiled with a different size of {\tt off\_t}).   The latter exposes
+the gnu libc functions open64(), write64(), read64(), etc.   ROMIO does
+not make use of the 64 bit system calls directly at this time, but we
+add this flag for good measure.  
+
+If your linux system is relatively new, there is an excellent chance it
+is running kernel 2.4.0 or newer and glibc-2.2.0 or newer.  Add the
+string
+\begin{verbatim}
+"-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+\end{verbatim}
+to your CFLAGS environment variable before runnint {\tt./configure}
 
 %
 % TESTING ROMIO
