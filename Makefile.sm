@@ -156,7 +156,7 @@ install-local:
 			${libdir}/libtvmpich.so ; fi
 
 #install_DOC = 
-#install_HTML = 
-#install_MAN = 
+installdir_HTML = www
+installdir_MAN  = man
 #install_BIN = 
 #install_SBIN = 	
