@@ -316,6 +316,7 @@ int main(int argc, char **argv)
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynod); 
+
     
     /* process 0 takes the file name as a command-line argument and 
    broadcasts it to other processes */
@@ -411,8 +412,13 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg,
     int SIZE = (STARTING_SIZE/nprocs)*nprocs;
     MPI_Info info;
 
+    if (mynod==0 && verbose) fprintf(stderr, "%s\n", msg);
+
     buf = (int *) malloc(SIZE*sizeof(int));
-    if (verbose) fprintf(stderr, "[%d/%d] caller buffer: %p\n",mynod, nprocs, buf);
+    if (buf == NULL) {
+	    perror("test_file");
+	    MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
 
     if (cb_hosts != NULL ) {
