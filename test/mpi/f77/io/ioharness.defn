@@ -413,7 +413,7 @@ do k=1, b
     endif
 enddo
 if (r .eq. 0) then
-    call mpi_recv( MPI_BOTTOM, 0, MPI_INTEGER, dest, b+1, comm, MPI_STATUS_IGNORE, ierr )
+    call mpi_recv( MPI_BOTTOM, 0, MPI_INTEGER, src, b+1, comm, MPI_STATUS_IGNORE, ierr )
 endif
 </writefile>
 # No extra declarations are needed for the read step
@@ -442,7 +442,7 @@ do k=1, b
     endif
 enddo
 if (r .eq. 0) then
-    call mpi_recv( MPI_BOTTOM, 0, MPI_INTEGER, dest, b+1, comm, MPI_STATUS_IGNORE, ierr )
+    call mpi_recv( MPI_BOTTOM, 0, MPI_INTEGER, src, b+1, comm, MPI_STATUS_IGNORE, ierr )
 endif
 </readfile>
 </TESTDEFN>

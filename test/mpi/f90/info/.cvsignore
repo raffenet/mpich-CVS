@@ -1,0 +1,6 @@
+Makefile.sm
+infotestf.f90
+infotest
+*.o
+Makefile.in
+Makefile

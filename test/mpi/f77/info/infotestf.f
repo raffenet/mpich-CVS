@@ -1,5 +1,6 @@
 C Simple info test 
        program main
+       include 'mpif.h'
        integer i1, i2
        integer errs, ierr
        character*(64) value

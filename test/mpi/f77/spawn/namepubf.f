@@ -12,6 +12,7 @@ C
       character*(MPI_MAX_ERROR_STRING) errmsg
       integer msglen, rank
 
+      errs = 0
       call MTest_Init( ierr )
       call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr )
 

@@ -4,6 +4,7 @@ datatype
 pt2pt
 info
 spawn
+io
 # ext is not included because the only test so far is a test of the 
 # Fortran "pointer" extension, which is not implemented by some compilers,
 # particularly not by g77
