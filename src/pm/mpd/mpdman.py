@@ -178,7 +178,7 @@ def mpdman():
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
 	    pmiMsgToSend = 'cmd=invalid_executable\n'
 	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
-            exit(0)
+            _exit(0)
         _exit(0)  # just in case (does no cleanup)
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
                   'manpid' : getpid(), 'clipid' : clientPid }
