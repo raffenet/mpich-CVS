@@ -24,3 +24,5 @@ mpimcxx.h
 .deps
 mpiallstates.h
 lwnames.h
+mpitest.h
+mpitestconf.h
