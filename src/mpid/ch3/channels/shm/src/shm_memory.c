@@ -76,7 +76,7 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
             pg->pSharedProcessIDs[i] = pSharedProcess[i].nPid;
-            pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
+            pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDWR/*O_RDONLY*/);
             if (pg->pSharedProcessFileDescriptors[i] == -1)
 	    {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, pSharedProcess[i].nPid, errno);
