@@ -197,6 +197,7 @@ if ($intel_test_dir eq "") {
 # ---------------------------------------------------------------------------
 # Run one instance of the configuration
 sub RunTest {
+    my $makepgm;
     # 
     # Create the with and enable options
     @enable_chosen = ();
@@ -225,6 +226,14 @@ sub RunTest {
 	    $ENV{$name} = $value;
 	    $envset .= "$name = $value; ";
 	}
+    }
+
+    # Get the version of make to use
+    if (defined($ENV{"MAKE"})) {
+	$makepgm = $ENV{"MAKE"};
+    }
+    else {
+	$makepgm = "make";
     }
 
     # Check configure location
@@ -265,14 +274,14 @@ sub RunTest {
 	    print $OUTFD $MakeStart;
 	    # Remove mpd just in case (see below)
 	    unlink "bin/mpd";
-	    $rc = &RunProgram( "make" );
+	    $rc = &RunProgram( $makepgm );
 	    print $OUTFD $MakeEnd;
 	    $make_status = $rc;
 	    if ($rc == 0) {
 		print $OUTFD $MakeInstStart;
 		# Clean the install directory
 		# ????
-		$install_status = &RunProgram( "make install" );
+		$install_status = &RunProgram( "$makepgm install" );
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
 		    # Get mpd status from the with args ...
@@ -423,8 +432,11 @@ sub RunTestSuites {
 		$config[4] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
 	    }
 	    if (defined($ENV{"MAKE"})) {
-		$makename = $ENV{"MAKE"};
-		$config[5] = "-make=$makename";
+		$makepgm = $ENV{"MAKE"};
+		$config[5] = "-make=$makepgm";
+	    }
+	    else {
+		$makepgm = "make";
 	    }
 	    #$config[5] = "--enable-echo";
 	    %saveENV = %ENV;
@@ -447,7 +459,7 @@ sub RunTestSuites {
 			sleep 1;
 		    }
 		}
-		$rc = &RunProgram( "make testing" );
+		$rc = &RunProgram( "$makepgm testing" );
 		$test_status = $rc;
 		if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
 		if ($built_for_mpd) {
