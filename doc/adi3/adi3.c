@@ -956,8 +956,8 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
    but do not remove or return it
 
   Input Parameters:
-+ tag - Tag to match (or 'MPI_ANY_TAG')
-. rank - rank to match (or 'MPI_ANY_SOURCE')
++ source - rank to match (or 'MPI_ANY_SOURCE')
+. tag - Tag to match (or 'MPI_ANY_TAG')
 . comm - communicator to match.
 - context_offset - context id offset of communicator to match
 
@@ -985,7 +985,7 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   Request
 
   @*/
-int MPID_Iprobe( int tag, int rank, MPID_Comm *comm, int context_offset, 
+int MPID_Iprobe( int source, int taga, MPID_Comm *comm, int context_offset, 
 		 MPI_Status *status )
 {
 }
@@ -995,8 +995,8 @@ int MPID_Iprobe( int tag, int rank, MPID_Comm *comm, int context_offset,
    about it
 
   Input Parameters:
-+ tag - Tag to match (or 'MPI_ANY_TAG')
-. rank - rank to match (or 'MPI_ANY_SOURCE')
++ source - rank to match (or 'MPI_ANY_SOURCE')
+. tag - Tag to match (or 'MPI_ANY_TAG')
 . comm - communicator to match.
 - context_offset - context id offset of communicator to match
 
@@ -1024,8 +1024,8 @@ int MPID_Iprobe( int tag, int rank, MPID_Comm *comm, int context_offset,
   Request
 
   @*/
-void MPID_Request_probe( int tag, int rank, MPID_Comm *comm, int context_offset
-                         MPI_Status *status )
+void MPID_Request_probe( int source, int tag, MPID_Comm *comm,
+			 int context_offset, MPI_Status *status )
 {
 }
 
@@ -1668,7 +1668,7 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
 
   Notes:
   The only difference between this and 'MPI_Send' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, a context id offset is provided in addition to the 
   communicator, and a request may be returned.  The context offset is 
@@ -1685,7 +1685,7 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
 
   @*/
 int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1695,7 +1695,7 @@ int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Ssend' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, a context id offset is provided in addition to the 
   communicator, and a request may be returned.  The context offset is 
@@ -1712,7 +1712,7 @@ int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1722,7 +1722,7 @@ int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Rsend' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, a context id offset is provided in addition to the 
   communicator, and a request may be returned.  The context offset is 
@@ -1739,7 +1739,7 @@ int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1749,7 +1749,7 @@ int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Isend' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1760,7 +1760,7 @@ int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1770,7 +1770,7 @@ int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Issend' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1781,7 +1781,7 @@ int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1791,7 +1791,7 @@ int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Irsend' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1802,7 +1802,7 @@ int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1812,7 +1812,7 @@ int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Recv' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, source, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, a context id offset is provided in addition to the 
   communicator, and a request may be returned.  The context offset is added 
@@ -1826,7 +1826,7 @@ int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
-	       int tag, int rank, MPID_Comm *comm, int context_offset,
+	       int source, int tag, MPID_Comm *comm, int context_offset,
 	       MPI_Status *status, MPID_Request **request )
 {
 }
@@ -1836,7 +1836,7 @@ int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Irecv' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, source, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1847,7 +1847,7 @@ int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
+		int source, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1857,7 +1857,7 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Send_init' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1868,7 +1868,7 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
-		    int tag, int rank, MPID_Comm *comm, int context_offset,
+		    int dest, int tag, MPID_Comm *comm, int context_offset,
 		    MPID_Request **request )
 {
 }
@@ -1878,7 +1878,7 @@ int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Ssend_init' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1889,7 +1889,7 @@ int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
-		     int tag, int rank, MPID_Comm *comm, int context_offset,
+		     int dest, int tag, MPID_Comm *comm, int context_offset,
 		     MPID_Request **request )
 {
 }
@@ -1899,7 +1899,7 @@ int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Rsend_init' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, dest, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1910,7 +1910,7 @@ int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
-		     int tag, int rank, MPID_Comm *comm, int context_offset,
+		     int dest, int tag, MPID_Comm *comm, int context_offset,
 		     MPID_Request **request )
 {
 }
@@ -1920,7 +1920,7 @@ int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   The only difference between this and 'MPI_Recv_init' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
+  error checks (e.g., valid communicator, datatype, source, and tag)
   have been made, the MPI opaque objects have been replaced by
   MPID objects, and a context id offset is provided in addition to the 
   communicator.  This offset is added to the context of the communicator
@@ -1931,7 +1931,7 @@ int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
 
   @*/
 int MPID_Recv_init( void *buf, int count, MPID_Datatype *datatype,
-		    int tag, int rank, MPID_Comm *comm, int context_offset,
+		    int source, int tag, MPID_Comm *comm, int context_offset,
 		    MPID_Request **request )
 {
 }
@@ -2012,7 +2012,7 @@ int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
   Communication
   @*/
 int MPID_tBsend( const void *buf, int count, MPID_Datatype *datatype,
-		 int tag, int rank, MPID_Comm *comm, int context_offset )
+		 int dest, int tag, MPID_Comm *comm, int context_offset )
 {
 }
 
