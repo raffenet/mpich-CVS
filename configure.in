@@ -1105,6 +1105,34 @@ fi
 if test -n "$nameserv_name" ; then
    AC_DEFINE(HAVE_NAMEPUB_SERVICE,1,[Define if a name publishing service is available])
 fi
+# In case the documentation targets are used, find doctext and attempt to 
+# find the source for the doctext LaTeX style files
+AC_PATH_PROG(DOCTEXT,doctext)
+if test -n "$DOCTEXT" ; then
+    if test -z "$DOCTEXTSYTLE" ; then
+        AC_MSG_CHECKING([for location of doctext style files])
+        dpath=`doctext -debug_paths 2>&1 | grep 'default path' | \
+	      sed -e 's%.*default path\(.*\),%\1:%g'`
+        saveIFS="$IFS"
+        IFS=": "
+	for dir in $dpath ; do
+	    if test -s $dir/refman.sty ; then
+	       DOCTEXTSTYLE=$dir
+	       break
+	    fi
+	done
+        IFS="$saveIFS"
+	if test -n "$DOCTEXTSTYLE" ; then
+	    AC_MSG_RESULT($DOCTEXTSTYLE)
+        else
+	    AC_MSG_RESULT([unavailable])
+        fi
+    fi
+fi
+export DOCTEXT
+export DOCTEXTSTYLE
+AC_SUBST(DOCTEXT)
+AC_SUBST(DOCTEXTSTYLE)
 
 dnl
 dnl Now that CC is defined, get these values 
@@ -2291,34 +2319,6 @@ elif test -s "$srcdir/CVS/Root" ; then
     MPICVSHOME=`cat $srcdir/CVS/Root`
 fi
 AC_SUBST(MPICVSHOME)
-# In case the documentation targets are used, find doctext and attempt to 
-# find the source for the doctext LaTeX style files
-AC_PATH_PROG(DOCTEXT,doctext)
-if test -n "$DOCTEXT" ; then
-    if test -z "$DOCTEXTSYTLE" ; then
-        AC_MSG_CHECKING([for location of doctext style files])
-        dpath=`doctext -debug_paths 2>&1 | grep 'default path' | \
-	      sed -e 's%.*default path\(.*\),%\1:%g'`
-        saveIFS="$IFS"
-        IFS=": "
-	for dir in $dpath ; do
-	    if test -s $dir/refman.sty ; then
-	       DOCTEXTSTYLE=$dir
-	       break
-	    fi
-	done
-        IFS="$saveIFS"
-	if test -n "$DOCTEXTSTYLE" ; then
-	    AC_MSG_RESULT($DOCTEXTSTYLE)
-        else
-	    AC_MSG_RESULT([unavailable])
-        fi
-    fi
-fi
-export DOCTEXT
-export DOCTEXTSTYLE
-AC_SUBST(DOCTEXT)
-AC_SUBST(DOCTEXTSTYLE)
 
 dnl
 dnl We can include external packages at configure/build time by 
