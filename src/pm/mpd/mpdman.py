@@ -13,7 +13,8 @@ from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_bin
                    mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_send_one_line, mpd_recv_one_line, \
                    mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
-                   mpd_get_my_username, mpd_raise, mpdError, mpd_version
+                   mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
+                   mpd_socketpair
 
 
 global get_sigtype_from_mpd
@@ -119,6 +120,7 @@ def mpdman():
     (pipe_read_cli_stdout,pipe_write_cli_stdout) = pipe()
     (pipe_read_cli_stderr,pipe_write_cli_stderr) = pipe()
     (pipe_cli_end,pipe_man_end) = pipe()
+    (pmiSocket,pmiSocketClientEnd) = mpd_socketpair()
     clientPid = fork()
     if clientPid == 0:
         mpd_set_my_id(gethostname() + '_man_before_exec_client_' + `getpid()`)
@@ -127,6 +129,7 @@ def mpdman():
         listenSocket.close()
         if conSocket:
             conSocket.close()
+        pmiSocket.close()
 
         close(pipe_write_cli_stdin)
         dup2(pipe_read_cli_stdin,0)  # closes fd 0 (stdin) if open
@@ -144,15 +147,10 @@ def mpdman():
         if msg != 'go':
             mpd_raise('%s: invalid go msg from man :%s:' % (myId,msg) )
         close(pipe_cli_end)
-        (pmiSocket,pmiAddr) = clientListenSocket.accept()
-
-        msg = mpd_recv_one_msg(pmiSocket)
-        if not msg  or  msg['cmd'] != 'pmi_handler':    # handshake
-            mpd_raise('%d: invalid msg from handler :%s:' % (myRank,msg) )
 
         clientPgmArgs = [clientPgm] + clientPgmArgs
         environ['PATH'] = environ['MPDMAN_CLI_PATH']
-        environ['PMI_FD'] = str(pmiSocket.fileno())
+        environ['PMI_FD'] = str(pmiSocketClientEnd.fileno())
         environ['PMI_SIZE'] = str(nprocs)
         environ['PMI_RANK'] = str(myRank)
         environ['PMI_DEBUG'] = str(0)
@@ -183,12 +181,10 @@ def mpdman():
     clientStderrFile = fdopen(clientStderrFD,'r')
     socketsToSelect[clientStderrFD] = 1
     clientListenSocket.close()
+    pmiSocketClientEnd.close()
     numWithIO = 2    # stdout and stderr so far
     waitPids = [clientPid]
 
-    # connect to the client telling it that we are providing pmi service
-    pmiSocket = mpd_get_inet_socket_and_connect('localhost',clientListenPort)
-    mpd_send_one_msg(pmiSocket,{ 'cmd' : 'pmi_handler' } )  # handshake
     socketsToSelect[pmiSocket] = 1
 
     # begin setup of stdio tree
@@ -625,14 +621,15 @@ def mpdman():
                             pass    # client may already be gone
                 else:
                     parsedMsg = parse_pmi_msg(line)
-                    if parsedMsg['cmd'] == 'get_my_kvsname':
+                    if parsedMsg['cmd'] == 'init':
+                        pmiCollectiveJob = 1
+                    elif parsedMsg['cmd'] == 'get_my_kvsname':
                         pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     elif parsedMsg['cmd'] == 'get_maxes':
                         pmiMsgToSend = 'cmd=maxes kvsname_max=4096 ' + \
                                        'keylen_max=4096 vallen_max=4096\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        pmiCollectiveJob = 1    # really needs a pmi init
                     elif parsedMsg['cmd'] == 'create_kvs':
                         new_kvsname = kvsname_template + str(kvs_next_id)
                         exec('%s = {}' % (new_kvsname))

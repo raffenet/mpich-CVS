@@ -10,12 +10,17 @@ int main(int argc, char *argv[])
     pmi_rank = atoi(getenv("PMI_RANK"));
     pmi_fd   = atoi(getenv("PMI_FD"));
     printf("pmi_rank=%d pmi_fd=%d\n",pmi_rank,pmi_fd);
+
+    strcpy(msg_to_send,"cmd=init\n");
+    write(pmi_fd,msg_to_send,strlen(msg_to_send));
+
     strcpy(msg_to_send,"cmd=get_maxes\n");
     write(pmi_fd,msg_to_send,strlen(msg_to_send));
+
     n = read(pmi_fd,msg_recvd,1024);
     if (n >= 0)
         msg_recvd[n] = '\0';
-    printf("recvd msg=:%s:\n",msg_recvd);
+    printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
 
     /**********
     if (pmi_rank == 0)

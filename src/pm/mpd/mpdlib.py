@@ -202,13 +202,15 @@ def mpd_get_ranks_in_binary_tree(myRank,nprocs):
     return (parent,lchild,rchild)
 
 def mpd_socketpair():
-    socket1 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    socket1 = socket(AF_INET,SOCK_STREAM)
     socket1.bind(('localhost',0))
     socket1.listen(1)
     port1 = socket1.getsockname()[1]
-    socket2 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    socket2 = socket(AF_INET,SOCK_STREAM)
     socket2.connect(('localhost',port1))
-    return (socket1,socket2)
+    (socket3,addr) = socket1.accept()
+    socket1.close()
+    return (socket2,socket3)
 
 def mpd_get_my_username():
     return getpwuid(getuid())[0]    #### instead of environ['USER']
