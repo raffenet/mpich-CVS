@@ -37,7 +37,7 @@ int main( int argc, char *argv[] )
     */
     if (rank > 0) {
 	int result = (((rank) * (rank-1))/2);
-	printf( "%d: %d\n", rank, result );
+	/* printf( "%d: %d\n", rank, result ); */
 	if (recvbuf[0] != result) {
 	    errs++;
 	    fprintf( stderr, "Error in recvbuf = %d on %d, expected %d\n",
