@@ -25,7 +25,7 @@
 # --------------------------------------------------------------------------
 # Set the default values of all variables.
 #
-# Directory locations: Fixed for any MPI implementation
+# Directory locations: Fixed for any MPI implementation.
 # Set from the directory arguments to configure (e.g., --prefix=/usr/local)
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -58,7 +58,7 @@ Show=eval
 # default choices.
 # In addition, if there is a file $sysconfdir/mpif77-$F77name.conf, 
 # where F77name is the name of the compiler with all spaces replaced by hyphens
-# (e.g., "cc -64" becomes "cc--64", that file is sources, allowing other
+# (e.g., "f77 -64" becomes "f77--64", that file is sources, allowing other
 # changes to the compilation environment.  See the variables used by the 
 # script (defined above)
 if [ -n "$MPICH_F77" ] ; then
@@ -95,7 +95,7 @@ for arg in "$@" ; do
     ;;
 	# ----------------------------------------------------------------
 	# Options that control how we use mpif77 (e.g., -show, 
-	# -cc=* -config=*
+	# -f77=* -config=*
     -echo)
     addarg=no
     set -x
