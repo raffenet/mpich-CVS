@@ -377,7 +377,7 @@ void MPIOI_Type_cyclic(int *array_of_gsizes, int dim, int ndims, int nprocs,
         types[0] = MPI_LB;
         disps[0] = 0;
         types[1] = *type_new;
-        disps[1] = rank * blksize;
+        disps[1] = rank * blksize * orig_extent;
         types[2] = MPI_UB;
         disps[2] = orig_extent * array_of_gsizes[dim];
         blklens[0] = blklens[1] = blklens[2] = 1;
