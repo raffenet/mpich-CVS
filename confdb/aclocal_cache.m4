@@ -146,6 +146,12 @@ AC_DEFUN([PAC_CACHE_CLEAN],[
         fi
     fi	
     rm -f confcache
+    if test "$DEBUG_AUTOCONF_CACHE" = "yes" ; then
+        echo "Results of cleaned cache file:"
+	echo "--------------------------------------------------------"
+	cat $cache_file
+	echo "--------------------------------------------------------"
+    fi
 ])
 
 dnl/*D
