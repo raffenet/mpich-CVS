@@ -608,8 +608,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2socksd.lib"
-				CommandLine="lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib  lib\smpd_utild.lib"
+				Description="rem Combining libraries into mpich2socksd.lib"
+				CommandLine="rem lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib  lib\smpd_utild.lib"
 			/>
 		</Configuration>
 		<Configuration
@@ -676,8 +676,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2socksd.lib"
-				CommandLine="lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib  lib\smpd_utild.lib"
+				Description="rem Combining libraries into mpich2socksd.lib"
+				CommandLine="rem lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib  lib\smpd_utild.lib"
 			/>
 		</Configuration>
 		<Configuration
@@ -745,8 +745,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2socks.lib"
-				CommandLine="lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib   lib\smpd_util.lib"
+				Description="rem Combining libraries into mpich2socks.lib"
+				CommandLine="rem lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib   lib\smpd_util.lib"
 			/>
 		</Configuration>
 		<Configuration
@@ -815,8 +815,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2socks.lib"
-				CommandLine="lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib   lib\smpd_util.lib"
+				Description="rem Combining libraries into mpich2socks.lib"
+				CommandLine="rem lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib   lib\smpd_util.lib"
 			/>
 		</Configuration>
 		<Configuration
