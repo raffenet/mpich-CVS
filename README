@@ -148,8 +148,9 @@ Performance Options:
  --enable-timing=no - Turns off just the collection of internal timing
                  information
 MPI Features:
-  --enable-romio - Build the ROMIO implementation of MPI-IO.  This 
-                 *compiles* but does not *link*.  Wait for the next release.
+  --enable-romio - Build the ROMIO implementation of MPI-IO.  
+  --with-file-system - When used with --enable-romio, specifies filesystems
+                 ROMIO should support.  See README.romio
 
 Language bindings:
   --enable-f77 - Build the Fortran 77 bindings.  This has been tested with
