@@ -273,6 +273,13 @@ typedef int MPI_Info;
 
 #define MPI_IN_PLACE  (void *) -1  /* temporary, don't know the right value */
 
+/* asserts for one-sided communication */
+#define MPI_MODE_NOCHECK      1024
+#define MPI_MODE_NOSTORE      2048
+#define MPI_MODE_NOPUT        4096
+#define MPI_MODE_NOPRECEDE    8192
+#define MPI_MODE_NOSUCCEED   16384 
+
 /* Definitions that are determined by configure. */
 typedef @MPI_AINT@ MPI_Aint;
 typedef @MPI_FINT@ MPI_Fint;
