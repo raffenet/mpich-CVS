@@ -84,6 +84,9 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_get_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr );
+
 void mpi_file_get_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr )
 {
     MPI_File fh_c;

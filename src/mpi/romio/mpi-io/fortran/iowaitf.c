@@ -83,6 +83,9 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpio_wait_(MPI_Fint *request,MPI_Status *status, int *ierr );
+
 void mpio_wait_(MPI_Fint *request,MPI_Status *status, int *ierr )
 {
     MPIO_Request req_c;

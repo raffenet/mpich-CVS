@@ -84,6 +84,10 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Datatype *datatype,
+			       MPI_Fint *extent, int *ierr );
+
 #if defined(MPIHP) || defined(MPILAM)
 void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Fint *datatype,
                              MPI_Fint *extent, int *ierr )

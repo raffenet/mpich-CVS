@@ -87,6 +87,10 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
+		    MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len );
+
 #if defined(MPIHP) || defined(MPILAM)
 void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )

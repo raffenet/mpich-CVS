@@ -84,6 +84,9 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_sync_(MPI_Fint *fh, int *ierr );
+
 void mpi_file_sync_(MPI_Fint *fh, int *ierr )
 {
     MPI_File fh_c;

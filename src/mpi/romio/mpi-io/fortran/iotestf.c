@@ -83,6 +83,8 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
 
 void mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr )
 {
