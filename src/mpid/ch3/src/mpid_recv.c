@@ -48,9 +48,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 
     if (found)
     {
-	MPIDI_VC * vc;
-	
-	vc = comm->vcr[rreq->dev.match.rank];
+	MPIDI_VC_t * vc;
+
+	MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 
 	/* Message was found in the unexepected queue */
 	MPIDI_DBG_PRINTF((15, FCNAME, "request found in unexpected queue"));

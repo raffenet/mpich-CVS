@@ -22,7 +22,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPID_Request *req=NULL; 
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_t *lock_pkt = &upkt.lock;
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     int wait_for_rma_done_pkt;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
@@ -101,7 +101,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         lock_pkt->source_win_handle = win_ptr->handle;
         lock_pkt->lock_type = rma_op->lock_type;
         
-        vc = comm_ptr->vcr[dest];
+	MPIDI_Comm_get_vc(comm_ptr, dest, &vc);
         
         /* Set the lock granted flag to 0 */
         win_ptr->lock_granted = 0;
@@ -439,7 +439,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     int mpi_errno=MPI_SUCCESS, lock_type, origin_dt_derived, iov_n, iovcnt;
     MPIDI_RMA_ops *rma_op;
     MPID_Request *request=NULL;
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPID_Comm *comm_ptr;
     MPID_Datatype *origin_dtp=NULL;
@@ -497,7 +497,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     }
 
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
-    vc = comm_ptr->vcr[rma_op->target_rank];
+    MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
     if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN)
     {
@@ -632,7 +632,7 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
     int mpi_errno=MPI_SUCCESS, lock_type;
     MPIDI_RMA_ops *rma_op;
     MPID_Request *rreq=NULL, *sreq=NULL;
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPID_Comm *comm_ptr;
     MPID_Datatype *dtp;
@@ -685,7 +685,7 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
     iov[0].MPID_IOV_LEN = sizeof(*lock_get_unlock_pkt);
 
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
-    vc = comm_ptr->vcr[rma_op->target_rank];
+    MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
     mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_get_unlock_pkt, 
                                     sizeof(*lock_get_unlock_pkt), &sreq);

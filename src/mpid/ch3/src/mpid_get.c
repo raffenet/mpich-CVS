@@ -23,7 +23,7 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_GET);
 
-    MPIDI_CH3U_Datatype_get_info(origin_count, origin_datatype,
+    MPIDI_Datatype_get_info(origin_count, origin_datatype,
                                  dt_contig, data_sz, dtp, dt_true_lb); 
 
     if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))

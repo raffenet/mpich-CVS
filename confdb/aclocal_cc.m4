@@ -989,7 +989,7 @@ if test "$enable_strict_done" != "yes" ; then
             AC_CHECK_PROGS(CC,gcc)
         fi
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
 	    AC_MSG_RESULT([Adding strict check arguments to CFLAGS])
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
@@ -1000,7 +1000,7 @@ if test "$enable_strict_done" != "yes" ; then
             AC_CHECK_PROGS(CC,gcc)
         fi
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
+            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi

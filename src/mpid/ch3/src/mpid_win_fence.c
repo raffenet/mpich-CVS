@@ -382,7 +382,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_IOV iov[MPID_IOV_LIMIT];
     int mpi_errno=MPI_SUCCESS;
     int origin_dt_derived, target_dt_derived, origin_type_size, iovcnt, iov_n; 
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     MPID_Comm *comm_ptr;
     MPID_Datatype *target_dtp=NULL, *origin_dtp=NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
@@ -427,7 +427,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 */
 
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
-    vc = comm_ptr->vcr[rma_op->target_rank];
+    MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
     if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN)
     {
@@ -613,7 +613,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_get_t *get_pkt = &upkt.get;
     int mpi_errno;
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     MPID_Comm *comm_ptr;
     MPID_Request *req = NULL;
     MPID_Datatype *dtp;
@@ -660,7 +660,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 */
 	    
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
-    vc = comm_ptr->vcr[rma_op->target_rank];
+    MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
     if (HANDLE_GET_KIND(rma_op->target_datatype) ==
         HANDLE_KIND_BUILTIN)

@@ -234,7 +234,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 	{
             MPIDI_CH3_Pkt_t upkt;
             MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
-            MPIDI_VC *vc;
+            MPIDI_VC_t * vc;
 
             put_pkt->type = MPIDI_CH3_PKT_PUT;
             put_pkt->addr = NULL;
@@ -243,7 +243,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             put_pkt->target_win_handle = win_ptr->all_win_handles[dst];
             put_pkt->source_win_handle = win_ptr->handle;
 
-            vc = comm_ptr->vcr[dst];
+	    MPIDI_Comm_get_vc(comm_ptr, dst, &vc);
 
             mpi_errno = MPIDI_CH3_iStartMsg(vc, put_pkt,
                                             sizeof(*put_pkt),

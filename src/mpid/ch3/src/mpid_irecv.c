@@ -74,12 +74,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 
     if (found)
     {
-	MPIDI_VC * vc;
+	MPIDI_VC_t * vc;
 	
 	/* Message was found in the unexepected queue */
 	MPIDI_DBG_PRINTF((15, FCNAME, "request found in unexpected queue"));
 
-	vc = comm->vcr[rreq->dev.match.rank];
+	MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 	
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{

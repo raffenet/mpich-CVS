@@ -16,7 +16,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     MPIDI_Message_match match;
     MPID_Request * sreq;
     MPID_Request * rreq;
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum;
 #endif    
@@ -25,7 +25,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	
     MPIDI_DBG_PRINTF((15, FCNAME, "sending message to self"));
 	
-    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, type);
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_SELF_MSG);
     
@@ -44,10 +44,10 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     }
     /* --END ERROR HANDLING-- */
 
-    vc = comm->vcr[rank];
-    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
-    MPIDI_CH3U_Request_set_seqnum(rreq, seqnum);
+    MPIDI_Comm_get_vc(comm, rank, &vc);
+    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+    MPIDI_Request_set_seqnum(sreq, seqnum);
+    MPIDI_Request_set_seqnum(rreq, seqnum);
     
     rreq->status.MPI_SOURCE = rank;
     rreq->status.MPI_TAG = tag;

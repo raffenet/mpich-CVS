@@ -477,7 +477,7 @@ sub ProcessFile
 		{
 		    $bad_syntax_in_file{$filename} = 1;
 		    if ($args[3] ne "__LINE__" && $args[3] ne "line") {
-			print STDERR "Warning: Expected __LINE__ or line as 4th argument in MPIR_Err_create_code\n";
+			print STDERR "Warning: Expected __LINE__ or line as 4th argument of MPIR_Err_create_code() in $filename\n";
 		    }
 		    else {
 			print STDERR "Warning: MPIR_Err_create_code() call with too few arguments in $filename\n";

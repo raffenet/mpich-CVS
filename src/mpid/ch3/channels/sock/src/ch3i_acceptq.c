@@ -13,7 +13,7 @@
 #define FUNCNAME MPIDI_CH3I_Acceptq_enqueue
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC *vc)
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 {
     MPIDI_CH3I_Acceptq_t *q_item;
     int mpi_errno=MPI_SUCCESS;
@@ -52,7 +52,7 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC *vc)
 
 /* Attempt to dequeue a vc from the accept queue. If the queue is
    empty, return a NULL vc. */
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC **vc)
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc)
 {
     MPIDI_CH3I_Acceptq_t *q_item;
     int mpi_errno=MPI_SUCCESS;

@@ -10,7 +10,7 @@
 #define FUNCNAME MPIDI_CH3U_Handle_send_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete)
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *complete)
 {
     static int in_routine = FALSE;
     int mpi_errno = MPI_SUCCESS;

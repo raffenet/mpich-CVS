@@ -45,7 +45,7 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
 #define FUNCNAME MPIDI_CH3_iStartMsg
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_Request ** sreq_ptr)
+int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_Request ** sreq_ptr)
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;

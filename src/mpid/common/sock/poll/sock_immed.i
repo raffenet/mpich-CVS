@@ -78,7 +78,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	}
 	else if (errno == EBADF || errno == ENOTSOCK || errno == EOPNOTSUPP)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
 					     "**sock|badhandle", "**sock|poll|badhandle %d %d %d",
 					     pollinfo->sock_set->id, pollinfo->sock_id, pollinfo->fd);
 	}

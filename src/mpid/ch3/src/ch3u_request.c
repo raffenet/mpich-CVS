@@ -342,7 +342,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
-    MPIDI_CH3U_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
     
     if (rreq->dev.recv_data_sz <= userbuf_sz)
     {

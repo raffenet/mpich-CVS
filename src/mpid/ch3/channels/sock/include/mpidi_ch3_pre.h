@@ -9,18 +9,15 @@
 
 #include "mpidu_sock.h"
 
-/*#define MPID_USE_SEQUENCE_NUMBERS*/
-
-typedef struct MPIDI_CH3I_Process_group_s
-{
-    volatile int ref_count;
-    char * kvs_name;
-    char * pg_id;
-    int size;
-    struct MPIDI_VC * vc_table;
-    struct MPIDI_CH3I_Process_group_s *next; /* we keep track of all pg's in a list */
-}
-MPIDI_CH3I_Process_group_t;
+/*
+ * Features needed or implemented by the channel
+ */
+#undef MPID_USE_SEQUENCE_NUMBERS
+#undef MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT
+#define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
+#define MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+#define MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT
+#define MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
 
 typedef struct MPIDI_CH3I_Acceptq_s
 {
@@ -67,6 +64,14 @@ MPIDI_CH3I_Pkt_sc_conn_accept_t sc_conn_accept;	\
 MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
 MPIDI_CH3I_Pkt_sc_close_t sc_close;
 
+
+typedef struct MPIDI_CH3I_PG
+{
+    char * kvs_name;
+}
+MPIDI_CH3I_PG;
+
+
 typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
@@ -76,16 +81,16 @@ typedef enum MPIDI_CH3I_VC_state
 }
 MPIDI_CH3I_VC_state_t;
 
+#define MPIDI_CH3_PG_DECL MPIDI_CH3I_PG ch;
 typedef struct MPIDI_CH3I_VC
 {
-    MPIDI_CH3I_Process_group_t * pg;
-    int pg_rank;
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
     MPIDI_CH3I_VC_state_t state;
     MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
-} MPIDI_CH3I_VC;
+}
+MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 

@@ -74,7 +74,7 @@ AC_ARG_ENABLE(threads,
 MPICH implementation.  The following levels are supported.
     single - No threads (MPI_THREAD_SINGLE)
     funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
-    serial - User serializes calls to MPI (MPI_THREAD_SERIAL)
+    serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
     multiple[:impl] - Fully multi-threaded (MPI_THREAD_MULTIPLE)
 The default is funneled.  If enabled and no level is specified, the
 level is set to multiple.  If disabled, the level is set to single.
@@ -368,7 +368,7 @@ case "$enable_threads" in
     thread_pkg_required=no
     thread_impl=none
     ;;
-    serial)
+    serialized)
     AC_MSG_ERROR([MPI_THREAD_SERIALIZED not implemented])
     thread_pkg_required=yes
     thread_impl=none
@@ -397,7 +397,7 @@ case "$enable_threads" in
     ;;
 esac
 AC_DEFINE(MPICH_SINGLE_THREADED,1,[FIXME: for now always defined regardless of thread support])
-mpich_thread_level="MPICH_THREAD_LEVEL_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
+mpich_thread_level="MPI_THREAD_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$mpich_thread_level,[Level of thread support selected at compile time])
 mpich_thread_impl="MPICH_THREAD_IMPL_`echo $thread_impl | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 AC_DEFINE_UNQUOTED(USE_THREAD_IMPL,$mpich_thread_impl,[Multi-threaded implementation selected at compile time])

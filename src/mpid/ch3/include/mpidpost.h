@@ -17,12 +17,14 @@
   Output Parameters:
 + has_args - boolean value that is true if the command line arguments are available on every node
 . has_env - boolean value that is true if the environment variable settings are available on every node
-- has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
+. has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
+. pg_ptr - the new process group representing MPI_COMM_WORLD
+- pg_rank - my rank in the process group
 
   Return value:
   A MPI error class.
 E*/
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent);
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_ptr, int * pg_rank);
 
 
 /*E
@@ -34,8 +36,26 @@ E*/
 int MPIDI_CH3_Finalize(void);
 
 
+#if defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT)
 /*E
-  MPIDI_CH3_InitParent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
+  MPIDI_CH3_Get_parent_port - obtain the port name associated with the parent
+
+  Output Parameters:
+.  parent_port_name - the port name associated with the parent communicator
+
+  Return value:
+  A MPI error code.
+  
+  NOTE:
+  MPIDI_CH3_Get_parent_port() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
+E*/
+int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
+#endif
+
+
+#if defined(MPIDI_CH3_IMPLEMENTS_GET_COMM_PARENT)
+/*E
+  MPIDI_CH3_Get_comm_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
 
   Output Parameters:
 . comm_parent - new inter-communicator spanning the spawning processes and the spawned processes
@@ -43,10 +63,13 @@ int MPIDI_CH3_Finalize(void);
   Return value:
   A MPI error code.
   
-  NOTE:
+  NOTES:
+  MPIDI_CH3_Get_comm_parent() is intended for sophisticated channels.  Most channels should use MPIDI_CH3_Get_parent_port().
+
   MPIDI_CH3_InitParent() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
 E*/
-int MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
+int MPIDI_CH3_InitParent(MPID_Comm ** comm_parent);
+#endif
 
 
 /*E
@@ -72,7 +95,7 @@ int MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
   
   If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr);
+int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr);
 
 
 /*E
@@ -100,7 +123,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
   
   If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n, MPID_Request **sreq_ptr);
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, MPID_Request **sreq_ptr);
 
 
 /*E
@@ -124,7 +147,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n, MPID_Request 
 
   If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
+int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
 
 
 /*E
@@ -150,7 +173,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 
   If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
 
 
 /*E
@@ -169,7 +192,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int iov
   IMPLEMENTORS:
   The send request may not be removed from the send queue if one or more bytes of the message have already been sent.
 E*/
-int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq, int *cancelled);
+int MPIDI_CH3_Cancel_send(MPIDI_VC_t * vc, MPID_Request * sreq, int *cancelled);
 
 
 /*E
@@ -321,17 +344,12 @@ void MPIDI_CH3_Progress_signal_completion(void);
 
 int MPIDI_CH3_Open_port(char *port_name);
 
-int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands, 
-                                  char ***argvs, int *maxprocs, 
-                                  MPID_Info **info_ptrs, int root,
-                                  MPID_Comm *comm_ptr, MPID_Comm
-                                  **intercomm, int *errcodes);
+int MPIDI_CH3_Comm_spawn_multiple(int count, char ** commands, char *** argvs, int * maxprocs, MPID_Info ** info_ptrs, int root,
+                                  MPID_Comm * comm_ptr, MPID_Comm ** intercomm, int * errcodes);
 
-int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm
-                          *comm_ptr, MPID_Comm **newcomm); 
+int MPIDI_CH3_Comm_accept(char * port_name, int root, MPID_Comm * comm_ptr, MPID_Comm ** newcomm); 
 
-int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
-                           *comm_ptr, MPID_Comm **newcomm);
+int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPID_Comm ** newcomm);
 
 
 /*E
@@ -354,9 +372,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
 
   IMPLEMENTORS:
 E*/
-int MPIDI_CH3_do_rts (MPIDI_VC * vc, MPID_Request * sreq,
-		      MPIDI_CH3_Pkt_t * rts_pkt,
-		      MPID_IOV * iov, int n_iov);
+int MPIDI_CH3_do_rts (MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_pkt, MPID_IOV * iov, int n_iov);
 
 /*E
   MPIDI_CH3_do_cts - This function is used to indicate that a previous
@@ -379,9 +395,19 @@ int MPIDI_CH3_do_rts (MPIDI_VC * vc, MPID_Request * sreq,
 
   IMPLEMENTORS:
 E*/
-int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq, MPI_Request sreq_id,
-		      MPID_IOV * iov, int n_iov);
+int MPIDI_CH3_do_cts (MPIDI_VC_t * vc, MPID_Request * rreq, MPI_Request sreq_id, MPID_IOV * iov, int n_iov);
 
+
+/*E
+  MPIDI_CH3_Connection_terminate - terminate the underlying connection associated with the specified VC
+
+  Input Parameters:
+. vc - virtual connection
+
+  Return value:
+  An MPI error code
+E*/
+int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc);
 
 
 /*E
@@ -394,8 +420,7 @@ int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq, MPI_Request sreq_id,
   Return value:
   This function should not return.
 E*/
-
-int MPIDI_CH3_Abort(int exit_code, char *error_msg);
+int MPIDI_CH3_Abort(int exit_code, char * error_msg);
 
 
 /*
@@ -418,7 +443,7 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg);
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
 
 
 /*E
@@ -432,7 +457,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Reques
   Output Parameter:
 . complete - data transfer for the request has completed
 E*/
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complete);
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * complete);
 
 
 /*E
@@ -446,8 +471,20 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
   Output Parameter:
 . complete - data transfer for the request has completed
 E*/
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int * complete);
 
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int * complete);
+
+/*E
+  MPIDI_CH3U_Handle_connection - handle connection event
+
+  Input Parameters:
++ vc - virtual connection
+. event - connection event
+
+  NOTE:
+  At present this function is only used for connection termination
+E*/
+int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
 
 
 /*E
@@ -474,7 +511,6 @@ E*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
 
-
 /*
  * Channel utility prototypes
  */
@@ -495,7 +531,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
 void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
 			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
-int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp);
+int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rreqp);
 
 /* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes
    (mpiimpl.h). */
@@ -575,33 +611,33 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp
 
 #define MPID_Request_add_ref(req_) MPIDI_CH3_Request_add_ref(req_)
 
-#define MPID_Request_release(_req)			\
+#define MPID_Request_release(req_)			\
 {							\
     int ref_count;					\
 							\
-    MPIDI_CH3_Request_release_ref((_req), &ref_count);	\
+    MPIDI_CH3_Request_release_ref((req_), &ref_count);	\
     if (ref_count == 0)					\
     {							\
-	MPIDI_CH3_Request_destroy(_req);		\
+	MPIDI_CH3_Request_destroy(req_);		\
     }							\
 }
 
 #if defined(MPICH_SINGLE_THREADED)
-#define MPID_Request_set_completed(_req)	\
+#define MPID_Request_set_completed(req_)	\
 {						\
-    *(_req)->cc_ptr = 0;			\
+    *(req_)->cc_ptr = 0;			\
     MPIDI_CH3_Progress_signal_completion();	\
 }
 #else
 /* MT - If locks are not used, a write barrier must be performed before zeroing the completion counter.  This insures that other
    fields in the req structure are updated before the completion is signaled. */
-#define MPID_Request_set_completed(_req)	\
+#define MPID_Request_set_completed(req_)	\
 {						\
-    MPID_Request_thread_lock(_req);		\
+    MPID_Request_thread_lock(req_);		\
     {						\
-	*(_req)->cc_ptr = 0;			\
+	*(req_)->cc_ptr = 0;			\
     }						\
-    MPID_Request_thread_unlock(_req);		\
+    MPID_Request_thread_unlock(req_);		\
     						\
     MPIDI_CH3_Progress_signal_completion();	\
 }
