@@ -40,6 +40,7 @@ distclean-local:
 	-@rm -f src/include/${MPILIBNAME}conf.h
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
+	-@rm -f bin/mpich2version
 	-@cd test && $(MAKE) distclean
 
 PACKAGE = mpich2

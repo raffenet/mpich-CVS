@@ -511,6 +511,8 @@ if test "$with_device" = "default" ; then
     with_device=ch3
 fi
 dnl Extract the device name from any options
+DEVICE=$with_device
+AC_SUBST(DEVICE)
 device_name=`echo $with_device | sed -e 's/:.*$//'`
 changequote(<<,>>)
 device_args=`echo $with_device | sed -e 's/^[^:]*//' -e 's/^://'`
@@ -2030,6 +2032,13 @@ AC_OUTPUT_COMMANDS([chmod a+x src/env/mpicc ;
    chmod a+x bin/mpicc ],includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir)
 
+# move the mpich2version file into the bin directory of the build tree
+AC_OUTPUT_COMMANDS([
+   chmod a+x src/env/mpich2version ;
+   if test ! -d bin  ; then mkdir bin ; fi 
+   cp src/env/mpich2version bin/mpich2version ;
+   chmod a+x bin/mpich2version])
+
 # Move the mpio.h file into the build directories for testing
 #export top_srcdir
 #export enable_romio
@@ -2058,6 +2067,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
 	  src/env/mpicc.conf \
+          src/env/mpich2version \
 	  src/env/Makefile\
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
