@@ -61,7 +61,7 @@
    need to include romioconf before some system includes) */
 #ifndef ROMIOCONF_H_INCLUDED
 #include "romioconf.h"
-#define ROMIOCONG_H_INCLUDED
+#define ROMIOCONF_H_INCLUDED
 #endif
 
 #include "mpi.h"
