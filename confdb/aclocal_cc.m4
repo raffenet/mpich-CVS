@@ -990,6 +990,7 @@ if test "$enable_strict_done" != "yes" ; then
         fi
         if test "$ac_cv_prog_gcc" = "yes" ; then 
             CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+	    AC_MSG_RESULT([Adding strict check arguments to CFLAGS])
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
