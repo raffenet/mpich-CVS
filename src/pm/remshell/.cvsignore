@@ -2,6 +2,6 @@ Makefile
 Makefile.in
 configure
 config.*
-forkerconf.h.in
-forkerconf.h
+remshellconf.h.in
+remshellconf.h
 autom4te*

@@ -76,12 +76,18 @@ int myprefork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
 
+#ifndef MAX_PORT_STRING
+#define MAX_PORT_STRING 1024
+#endif
+
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
 {
     int          rc;
     int          reason;
     SetupInfo    s;
+    int          fdPMI;
+    char         portString[MAX_PORT_STRING];
 
     MPIE_ProcessInit();
     /* Set a default for the universe size */
@@ -96,12 +102,26 @@ int main( int argc, char *argv[], char *envp[] )
     /* Handle the command line arguments.  Use the routine from util/cmnargs.c
        to fill in the universe */
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
-    /* If there were any soft arguments, we need to handle them now */
     rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
+    /* If there were any soft arguments, we need to handle them now */
+    rc = MPIE_ChooseHosts( &pUniv.worlds[0] );
 
     if (MPIE_Debug) MPIE_PrintProcessUniverse( stdout, &pUniv );
 
     DBG_PRINTF( ("timeout_seconds = %d\n", pUniv.timeout) );
+
+    /* Get the common port for creating PMI connections to the created
+       processes */
+    PMIServGetPort( &fdPMI, portString, sizeof(portString) );
+    MPIE_IORegister( fdPMI, IO_READ, PMIServAcceptFromPort, 0 );
+
+#ifdef USE_MPI_STAGE_EXECUTABLES
+    /* Hook for later use in staging executables */
+    if (?stageExes) {
+	rc = MPIE_StageExecutables( &pUniv.worlds[0] );
+	if (!rc) ...;
+    }
+#endif    
 
     PMIServInit(myspawn,0);
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
@@ -196,4 +216,124 @@ int myspawn( ProcessWorld *pWorld, void *data )
     MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
 			myprefork, 0, mypostamble, 0 );
     return 0;
+}
+
+/* Temp test for the replacement for the simple "spawn == fork" */
+
+/*
+ * Approach:
+ * Processes are created using a remote shell program. This requires
+ * changing the command line from
+ *
+ *  a.out args ...
+ * 
+ * to 
+ *
+ * remshell-program remshell-args /bin/sh -c PMI_PORT=string && 
+ *            export PMI_PORT && PMI_ID=rank-in-world && export PMI_ID &&
+ *            a.out args
+ *
+ * (the export PMI_PORT=string syntax is not valid in all versions of sh)
+ *
+ * Using PMI_ID ensures that we correctly identify each process (this was
+ * a major problem in the setup used by the p4 device in MPICH1).  
+ * Using environment variables instead of command line arguments keeps
+ * the commaand line clean.  
+ *
+ * Two alternatives should be considered
+ * 1) Use an intermediate manager.  This would allow us to set up the
+ *    environment as well:
+ *    remshell-program remshell-args manager -port string
+ *    One possibilty for the manager is the mpd manager
+ * 2) Use the secure server (even the same one as in MPICH1); then 
+ *    there is no remote shell command.
+ * 
+ * We can handle the transformation of the command line by adding a
+ * to the postfork routine; this is called after the fork but before the
+ * exec, and it can change the command line by making a copy of the app 
+ * structure, changing the command line, and setting the pState structure 
+ * to point to this new app (after the fork, these changes are visable only
+ * to the forked process).
+ *
+ * Enhancements: 
+ * Allow the code to avoid the remote shell if the process is being created 
+ * on the local host. 
+ *
+ * Handle the user of -l username and -n options to remshell
+ * (-n makes stdin /dev/null, necessary for backgrounding).
+ * (-l username allows login to hosts where the user's username is 
+ * different)
+ *
+ * Provide an option to add a backslash before any - to deal with the
+ * serious bug in the GNU inetutils remote shell programs that process
+ * *all* arguments on the remote shell command line, even those for the
+ * *program*!
+ *
+ * To best support the errcodes return from MPI_Comm_spawn, 
+ * we need a way to communicate the array of error codes back to the
+ * spawn and spawn multiple commands.  Query: how is that done in 
+ * PMI?  
+ * 
+ */
+
+/* ----------------------------------------------------------------------- */
+/* Convert the remote shell command into argv format                       */
+/* The command may be specified as a string with blanks separating the     */
+/* arguments, either from the default, an environment variable, or         */
+/* eventually the machines file (allowing different options for each host  */
+/* or the command line.                                                    */
+/* Returns the number of arguments                                         */
+/* For example, this allows "ssh -2" as a command                          */
+/* Allow the environment variable MPIEXEC_REMSHELL to set the remote shell */
+/* program to use                                                          */
+/* ----------------------------------------------------------------------- */
+const char defaultRemoteshell[] = DEFAULT_REMOTE_SHELL;
+
+#define MAX_REMSHELL_ARGS 10
+int MPIE_GetRemshellArgv( char *argv[], int nargv )
+{
+    static char *(remshell[MAX_REMSHELL_ARGS]);
+    static int  remargs = 0;
+    int i;
+
+    /* Convert the string for the remote shell command into an argv list */
+    if (!remargs) {
+	const char *rem = getenv( "MPIEXEC_REMSHELL" );
+	char *next_parm;
+	if (!rem) rem = defaultRemoteshell;
+	
+	/* Unpack the string into remshell.  Allow 10 tokens */
+	while (rem) {
+	    int len;
+	    next_parm = strchr( rem, ' ' );
+	    if (next_parm) 
+		len = next_parm - rem;
+	    else 
+		len = strlen(rem);
+
+	    remshell[remargs] = (char *)MPIU_Malloc( len + 1 ); 
+	    MPIU_Strncpy( remshell[remargs], rem, len );
+	    remshell[remargs][len] = 0;
+	    remargs++;
+	    if (next_parm) {
+		rem = next_parm + 1;
+		while (*rem == ' ') rem++;
+		if (remargs >= MAX_REMSHELL_ARGS) {
+		    /* FIXME */
+		    MPIU_Error_printf( "Remote shell command is too complex\n" );
+		    exit(1);
+		}
+	    }
+	    else {
+		rem = 0;
+	    }
+	}
+    }
+
+    /* remshell contains the command.  Copy into argv and return the
+       number of args.  We just copy *pointers* because any variable 
+       fields will be replaced by the other commands */
+    for (i=0; i<remargs; i++) 
+	argv[i] = remshell[i];
+    return remargs;
 }

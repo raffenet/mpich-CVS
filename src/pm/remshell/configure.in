@@ -230,6 +230,16 @@ if test -z "$master_top_srcdir" ; then
    master_top_srcdir='${srcdir}/../../..'
 fi
 
+AC_PATH_PROG(SSH,ssh)
+if test -z "$SSH" ; then
+    AC_PATH_PROG(RSH,rsh)
+    if test -n "$RSH" ; then
+        remshell="$RSH"
+    fi
+else
+    remshell="$SSH"
+fi
+
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
@@ -240,5 +250,7 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
+AC_DEFINE_UNQUOTED(DEFAULT_MACHINES_PATH,"$eval_datadir:.",[Define the search path for machines files])
+AC_DEFINE_UNQUOTED(DEFAULT_REMOTE_SHELL,"$remshell",[Define the default remote shell program to use])
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile)
