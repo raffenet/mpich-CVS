@@ -1,12 +1,19 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifndef RLOG_H
 #define RLOG_H
 
-#include "trace_impl.h"
-#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
-#endif
 
-/* #include "mpi.h"  */
+/*
+#include "mpi.h"
+#define RLOG_timestamp PMPI_Wtime
+*/
 
 #if defined(__cplusplus)
 extern "C" {
@@ -219,8 +226,6 @@ int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, R
 int RLOG_PrintGlobalState(RLOG_IOStruct *pInput);
 
 /* macros */
-
-#define RLOG_timestamp PMPI_Wtime
 
 #define RLOG_HEADER_CAST() ((RLOG_HEADER*)pRLOG->pOutput->pCurHeader)
 #define RLOG_EVENT_CAST()  ((RLOG_EVENT*)((char*)pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER)))

@@ -1,14 +1,14 @@
-#include "trace_impl.h"
-#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
-#include <stdlib.h>
-#endif
-#if defined( STDC_HEADERS ) || defined( HAVE_STRING_H )
-#include <string.h>
-#endif
-#if defined( STDC_HEADERS ) || defined( HAVE_ERRNO_H )
-#include <errno.h>
-#endif
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include "rlog.h"
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 static int ReadFileData(char *pBuffer, int length, FILE *fin)
 {
