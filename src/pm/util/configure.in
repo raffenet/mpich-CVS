@@ -202,6 +202,10 @@ dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 
+if test -z "$master_top_srcdir" ; then
+   master_top_srcdir='${srcdir}/../../..'
+fi
+
 AC_CHECK_HEADERS(string.h sys/time.h unistd.h stdlib.h sys/socket.h wait.h errno.h)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)

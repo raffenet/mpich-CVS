@@ -14,11 +14,16 @@
 int main( int argc, char *argv[], char *envp[] )
 {
     ProcessUniverse pUniv;
+    int             rc;
 
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     MPIE_PrintProcessUniverse( stdout, &pUniv );
-    MPIE_ForkProcesses( &pUniv.worlds[0], envp );
-    return 0;
+    MPIE_ForkProcesses( &pUniv.worlds[0], envp, 0, 0, 0, 0, 0, 0 );
+    MPIE_WaitProcesses( &pUniv );
+    
+/*     rc = MPIE_GetExitStatus( &pUniv ); */
+    
+    return rc;
 }
 
 int mpiexec_usage( const char *str )

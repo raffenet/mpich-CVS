@@ -115,4 +115,7 @@ typedef struct ProcessUniverse {
 } ProcessUniverse;
 
     
-int MPIE_ForkProcesses( ProcessWorld *, char *[] );
+int MPIE_ForkProcesses( ProcessWorld *, char *[], 
+			int (*)(void*), void *,
+			int (*)(void*,void*), void *,
+			int (*)(void*,void*), void * );

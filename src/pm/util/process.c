@@ -9,6 +9,7 @@
 #define HAVE_SNPRINTF
 #include "mpimem.h"
 #include <errno.h>
+#include <sys/wait.h>
 
 /*
   Fork numprocs processes, with the current PMI groupid and kvsname 
@@ -25,6 +26,8 @@
            'ProcessApp' structures.  Each 'ProcessApp' specifies how many
 	   processes to create.
 . envp   - Environment to provide to each process
+. preamble - Routine executed before the fork for each created process
+. preambldData - Data passed to the preamble function
 - other - other
 
   Output Effects:
@@ -32,9 +35,21 @@
   and other information.
 
   Callbacks:
-  To 
++ preamble - called before fork
+. postfork - called after fork, but before exec, in the forked child
+- postamble - called after fork in the parent (the process that executed
+     the fork).  
+
+  A typical use of the 'preamble' function is to open a file descriptor
+  that is then inherited by the forked process.  The 'postfork' and
+  'postamble' can close any unneeded file descriptors
+
   @*/
-int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[] )
+int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
+			int (*preamble)(void*), void *preambleData,
+			int (*postfork)(void*,void*), void *postforkData,
+			int (*postamble)(void*,void*), void *postambleData
+			)
 {
     pid_t         pid;
     ProcessApp   *app;
@@ -46,7 +61,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[] )
     while (app) {
 	/* Allocate process state if necessary */
 	if (!app->pState) {
-	    pState = (ProcessState *)MPIU_Malloc( app->nProcess * sizeof(ProcessState) );
+	    pState = (ProcessState *)MPIU_Malloc( 
+		app->nProcess * sizeof(ProcessState) );
 	    if (!pState) {
 		return -1;
 	    }
@@ -60,6 +76,11 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[] )
 	    pState[i].exitStatus.exitReason = EXIT_NOTYET;
 	    pState[i].pid                   = -1;
 
+	    /* Execute any preamble */
+	    if (preamble) {
+		rc = (*preamble)( preambleData );
+	    }
+
 	    pid = fork();
 	    if (pid < 0) {
 		/* Error creating process */
@@ -69,7 +90,10 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[] )
 		/* Child */
 		/* exec the process (this call only returns if there is an 
 		   error */
-		rc = MPIE_ExecProgram( pState[i], envp );
+		if (postfork) {
+		    rc = (*postfork)( preambleData, postforkData );
+		}
+		rc = MPIE_ExecProgram( &pState[i], envp );
 		if (rc) {
 		    MPIU_Internal_error_printf( "mpiexec fork failed\n" );
 		    /* FIXME: kill children */
@@ -79,6 +103,10 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[] )
 	    else {
 		/* Parent */
 		pState[i].pid = pid;
+
+		if (postamble) {
+		    rc = (*postamble)( preambleData, postambleData );
+		}
 	    }
 	    
 	}
@@ -141,7 +169,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     client_env[j++] = env_appnum;
     MPIU_Snprintf( env_universesize, MAXNAMELEN, "MPI_UNIVERSE_SIZE=%d", 0 );
     client_env[j++] = env_universesize;
-    client_env[j] = NULL;
+    client_env[j]   = 0;
     for ( j = 0; client_env[j]; j++ )
 	if (putenv( client_env[j] )) {
 	    MPIU_Internal_sys_error_printf( "mpiexec", errno, 
@@ -186,6 +214,80 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 					"mpiexec could not exec %s\n", 
 					app->exename );
 	exit( 1 );
+    }
+}
+
+ProcessState *MPIE_FindProcessByPid( ProcessUniverse *pUniv, pid_t pid )
+{
+    ProcessWorld *world;
+    ProcessApp   *app;
+    ProcessState *pState;
+    int           i;
+
+    world = pUniv->worlds;
+    while (world) {
+	app = world->apps;
+	while (app) {
+	    pState = app->pState;
+	    for (i=0; i<app->nProcess; i++) {
+		if (pState[i].pid == pid) return &pState[i];
+	    }
+	    app = app->nextApp;
+	}
+	world = world->nextWorld;
+    }
+    return 0;
+}
+
+int MPIE_WaitProcesses( ProcessUniverse *pUniv )
+{
+    ProcessWorld *world;
+    ProcessApp   *app;
+    ProcessState *pState;
+    int           i, nactive;
+    pid_t         pid;
+    int           prog_stat;
+
+    /* Determine the number of processes that we have left to wait on */
+    nactive = 0;
+    world = pUniv->worlds;
+    while (world) {
+	app = world->apps;
+	while (app) {
+	    pState = app->pState;
+	    for (i=0; i<app->nProcess; i++) {
+		if (pState[i].status != PROCESS_GONE &&
+		    pState[i].pid > 0) nactive++;
+	    }
+	    app = app->nextApp;
+	}
+	world = world->nextWorld;
+    }
+
+    while (nactive > 0) {
+	pid = wait( &prog_stat );
+	pState = MPIE_FindProcessByPid( pUniv, pid );
+	if (pState) {
+	    int rc = 0, sigval = 0;
+	    if (WIFEXITED(prog_stat)) {
+		rc = WEXITSTATUS(prog_stat);
+	    }
+	    if (WIFSIGNALED(prog_stat)) {
+		sigval = WTERMSIG(prog_stat);
+	    }
+	    pState->exitStatus.exitStatus = rc;
+	    pState->exitStatus.exitSig    = sigval;
+	    if (sigval) 
+		pState->exitStatus.exitReason = EXIT_SIGNALLED;
+	    else {
+		if (pState->status >= PROCESS_ALIVE &&
+		    pState->status <= PROCESS_COMMUNICATING) 
+		    pState->exitStatus.exitReason = EXIT_NOFINALIZE;
+		else 
+		    pState->exitStatus.exitReason = EXIT_NORMAL;
+	    }
+	    nactive --;
+	}
     }
 }
 

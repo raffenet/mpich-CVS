@@ -3,7 +3,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 
 #libmpiexec_a_SOURCES = cmnargs.c pmiserv.c timelimit.c sigs.c iohandlers.c \
 #	newsession.c rm.c
-libmpiexec_a_SOURCES = cmnargs.c process.c
+libmpiexec_a_SOURCES = cmnargs.c process.c ioloop.c pmiserv.c
 
 OTHER_DIRS = test
 

@@ -106,6 +106,8 @@ static int pmidebug = 1;
 static int  fPMI_Allocate_kvs( int *, char [] );
 static int  fPMI_Allocate_kvs_group( void );
 
+static int fPMI_Handle_finalize( PMIProcess * );
+static int fPMI_Handle_abort( PMIProcess * );
 static int fPMI_Handle_barrier( PMIProcess * );
 static int fPMI_Handle_create_kvs( PMIProcess * );
 static int fPMI_Handle_destroy_kvs( PMIProcess * );
@@ -118,7 +120,7 @@ static int fPMI_Handle_getbyidx( PMIProcess * );
 static int fPMI_Handle_init_port( PMIProcess * );
 static int fPMI_Handle_spawn( PMIProcess * );
 
-int PMIServHandleInput( int fd, void *extra );
+int PMIServHandleInput( int, int, void * );
 
 typedef struct {
     ProcessState *pstate;
@@ -130,9 +132,9 @@ typedef struct {
  * All PMI commands are handled by calling a routine that is associated with
  * the command.  New PMI commands can be added by updating this table.
  */
-typedefs struct {
-    const char cmdName[];
-    int (*handler)( void * );
+typedef struct {
+    char *cmdName;
+    int (*handler)( PMIProcess * );
 } PMICmdMap;
 
 static PMICmdMap pmiCommands[] = { 
@@ -184,7 +186,7 @@ int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
  * The return status indicates the state of the process that this
  * handler interacted with.
  */
-int PMIServHandleInput( int fd, void *extra )
+int PMIServHandleInput( int fd, int rdwr, void *extra )
 {
     PMIData *pmidata = (PMIData *)extra;
     int     err;
@@ -214,14 +216,14 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	PMIU_getval( "cmd", cmd, MAXPMICMD );
 	DBG_PRINTF( "cmd = %s\n", cmd ); fflush(stdout);
 	p = pmiCommands;
-	while (p->handle) {
-	    if (strncmp( cmd, p->name, MAXPMICMD ) == 0) {
-		rc = (p->handle)( pentry );
+	while (p->handler) {
+	    if (strncmp( cmd, p->cmdName, MAXPMICMD ) == 0) {
+		rc = (p->handler)( pentry );
 		break;
 	    }
 	    p++;
 	}
-	if (!p->handle) {
+	if (!p->handler) {
 	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
 	}
 
@@ -269,6 +271,7 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	else {
 	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
 	}
+#endif
     }
     else {                        /* lost contact with client */
 	/* close( pentry->fd );  */
@@ -382,6 +385,14 @@ static int fPMI_Allocate_kvs_group( void )
  *
  * Need a structure that has the fds for all members of a pmi group
  */
+static int fPMI_Handle_finalize( PMIProcess *pentry )
+{
+    return PMI_FINALIZED;
+}
+static int fPMI_Handle_abort( PMIProcess *pentry )
+{
+    return PMI_ALLEXIT;
+}
 static int fPMI_Handle_barrier( PMIProcess *pentry )
 {
     int i;
