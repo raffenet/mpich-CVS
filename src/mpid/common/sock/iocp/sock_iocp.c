@@ -855,6 +855,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
     for (;;) 
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
+	/* initialize to NULL so we can compare the output of GetQueuedCompletionStatus */
+	sock = NULL;
+	ovl = NULL;
 	if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&sock, &ovl, millisecond_timeout))
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
@@ -1095,6 +1098,24 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		return SOCK_SUCCESS;
 	    }
+	    if (sock != NULL)
+	    {
+		if (sock->type == SOCK_SOCKET)
+		{
+		    out->num_bytes = 0;
+		    out->error = error;
+		    out->user_ptr = sock->user_ptr;
+		    if (ovl == &sock->read.ovl)
+			out->op_type = SOCK_OP_READ;
+		    else if (ovl == &sock->write.ovl)
+			out->op_type = SOCK_OP_WRITE;
+		    else
+			out->op_type = -1;
+		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+		    return SOCK_SUCCESS;
+		}
+	    }
+
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 	    return SOCK_FAIL;
 	}
