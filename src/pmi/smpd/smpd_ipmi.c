@@ -868,8 +868,7 @@ int iPMI_Spawn_multiple(int count,
                        const PMI_keyval_t ** info_keyval_vectors,
                        int preput_keyval_size,
                        const PMI_keyval_t * preput_keyval_vector,
-                       int * errors,
-                       int * same_domain)
+                       int * errors)
 {
     int result;
     smpd_command_t *cmd_ptr;
@@ -905,7 +904,7 @@ int iPMI_Spawn_multiple(int count,
     for (i=0; i<count; i++)
     {
 	sprintf(key, "cmd%d", i);
-	result = smpd_add_command_arg(cmd_ptr, key, cmds[i]);
+	result = smpd_add_command_arg(cmd_ptr, key, (char*)cmds[i]);
 	if (result != SMPD_SUCCESS)
 	{
 	    pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, cmds[i]);
