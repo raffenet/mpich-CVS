@@ -86,7 +86,6 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
     else
     {
 	/* rendezvous protocol */
-	MPID_Request * req;
 	MPIDI_CH3_Pkt_t rpkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const pkt =
 	    &(rpkt.rndv_req_to_send);
@@ -103,7 +102,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	req->ch3.user_count = count;
 	req->ch3.datatype = datatype;
 	req->ch3.vc = comm->vcr[rank];
-	req->ch3.ca = MPIDI_CA_NONE;
+	req->ch3.ca = MPIDI_CH3_CA_NONE;
 	
 	/* XXX - what other information needs to go into the request? */
 	
