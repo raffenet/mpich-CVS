@@ -63,13 +63,9 @@ int delete_fn( MPI_Comm comm, int keyval, void *attribute_val,
 
 int test_communicators( void )
 {
-    MPI_Comm dup_comm, lo_comm, rev_comm, dup_comm, 
-	split_comm, comm;
-    MPI_Group world_group, lo_group, rev_group;
+    MPI_Comm dup_comm, comm;
     void *vvalue;
-    int ranges[1][3];
-    int flag, world_rank, world_size, rank, size, n, key_1, key_3;
-    int color, key, result;
+    int flag, world_rank, world_size, key_1, key_3;
     int errs = 0;
     /*      integer n, ,
 	    .        key_2
