@@ -16,6 +16,7 @@ mpiexec [global args] [local args] executable [args]
       -bnr                         # MPICH1 compatibility mode
       -g<local arg name>           # global version of local arg (below)
       -machinefile                 # file mapping procs to machines
+      -s <spec>                    # direct stdin to "all" or 1,2 or 2-4,6 
     and local args may be
       -n <n> or -np <n>            # number of processes to start
       -wdir <dirname>              # working directory to start in
