@@ -76,7 +76,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 
 
 /*E
-  MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet and associated data.  A request object is allocated only if
+  MPIDI_CH3_iStartMsgv - A non-blocking request to send a CH3 packet and associated data.  A request object is allocated only if
   the send could not be completed immediately.
 
   Input Parameters:
@@ -257,10 +257,10 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req);
   NOTE:
   This routine need only be called if the code might call MPIDI_CH3_Progress(TRUE).  For example:
 .vb
-      while(*req->cc_ptr == FALSE)
+      while(*req->cc_ptr != 0)
       {
           MPIDI_CH3_Progress_start();
-          if (*req->cc_ptr == FALSE)
+          if (*req->cc_ptr != 0)
           {
               MPIDI_CH3_Progress(TRUE);
           }
