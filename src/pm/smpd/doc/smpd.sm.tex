@@ -39,6 +39,17 @@ State [reading cred ack],[label="reading cred ack"]
 			Change_State([reading account],[label="yes"])
 		else no
 			Change_State([closing],[label="no"])
+	        else sspi
+	                Change_State([reading sspi setup],[label="sspi"])
+State [reading sspi setup],[label="reading sspi setup"]
+        Event [data read]
+                Change_State([handle sspi result],[style=dotted])
+State [handle sspi result],[label="handle sspi result"]
+        Event [data read]
+                if success
+                        Change_State([writing reconnect request],[label="success"])
+                else fail
+                        Change_State([closing],[label="fail"])
 State [writing nocred request],[label="writing nocred request"]
 	Event [data written]
 		if win

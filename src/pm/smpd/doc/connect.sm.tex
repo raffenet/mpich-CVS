@@ -31,6 +31,8 @@ State [reading cred request],[label="reading cred request"]
 Action [have credentials],[label="have credentials"]
 	if have
 		Change_State([writing cred ack yes],[label="yes"])
+	if have sspi
+		Change_State([writing cred ack sspi],[label="sspi"])
 	else don't have
 		Change_State([writing cred_request command],[label="no"])
 State [writing cred_request command],[label="writing cred_request command"]
@@ -42,6 +44,18 @@ State [handle result]
 			Change_State([writing cred ack yes],[label="success"])
 		else fail
 			Change_State([writing cred ack no],[label="fail"])
+State [writing cred ack sspi]
+        Event [data written]
+                Change_State([writing sspi setup])
+State [writing sspi setup]
+        Event [data written]
+                Change_State([handle sspi result],[style=dotted])
+State [handle sspi result]
+        Event [data read]
+                if success
+                        Change_State([reading reconnect request],[label="success"])
+                else fail
+                        Change_State([closing],[label="fail"])
 State [writing cred ack yes],[label="writing cred ack yes"]
 	Event [data written]
 		Change_State([writing account])
