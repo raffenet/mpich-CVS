@@ -88,13 +88,28 @@ public class PrintSerially
                     System.out.print( "  *****  " );
             }
 
+
             System.out.println( (++dobj_count) + ": " + dobj );
             // System.out.println( dobj + " <=> " + (++dobj_count) );
             // System.out.println( dobj  );
+            // printClogArrowMessageSize( dobj );
             prev_starttime  = dobj.getEarliestTime();
         }
 
         slog_ins.close();
+    }
+
+    private static void printClogArrowMessageSize( Drawable dobj )
+    {
+        // Test code to extract InfoValue in Drawable
+        if ( dobj.getCategory().getTopology().isArrow() ) {
+            int infovals_length  = dobj.getInfoLength();
+            if ( infovals_length >= 2 ) {
+                Integer msg_sz = (Integer) dobj.getInfoValue( 1 ).getValue();
+                System.out.println( dobj.getInfoKey( 1 ) 
+                                  + msg_sz.intValue() );
+            }
+        }
     }
 
     private static void scaleTimeBounds( TimeBoundingBox endtimes )
