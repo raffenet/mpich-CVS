@@ -44,6 +44,17 @@ __attribute__ ((unused))
 }
 #endif
 
+#ifdef HAVE_GCC_AND_IA64_ASM
+#define HAVE__INTERLOCKEDEXCHANGE 1
+static inline unsigned long _InterlockedExchange(volatile void *ptr, unsigned long x)
+{
+   unsigned long result;
+   __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result)
+       : "r" (ptr), "r" (x) : "memory");
+   return result;
+}
+#endif
+
 extern int g_nLockSpinCount;
 
 /* Define MPIDU_Yield() */
