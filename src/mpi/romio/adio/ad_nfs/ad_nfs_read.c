@@ -43,16 +43,20 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
 	fd->fp_sys_posn = fd->fp_ind;
     }
 
-#ifdef HAVE_STATUS_SET_BYTES
-    if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
-#endif
-
+    /* --BEGIN ERROR HANDLING-- */
     if (err == -1) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**io", "**io %s", strerror(errno));
+	return;
     }
-    else *error_code = MPI_SUCCESS;
+    /* --END ERROR HANDLING-- */
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, datatype, err);
+#endif
+
+    *error_code = MPI_SUCCESS;
 }
 
 
