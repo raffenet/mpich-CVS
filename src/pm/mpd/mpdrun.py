@@ -135,8 +135,8 @@ def mpdrun():
         procSpec = createReq.getElementsByTagName('process-spec')
         for p in procSpec:
             if p.hasAttribute('range'):
-                range = p.getAttribute('range')
-                splitRange = range.split('-')
+                therange = p.getAttribute('range')
+                splitRange = therange.split('-')
                 if len(splitRange) == 1:
                     loRange = int(splitRange[0])
                     hiRange = loRange
