@@ -889,6 +889,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	case OP_SEND:
 	    /*ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());*/
 	    /*printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);*/
+	    num_bytes = ibui_next_num_written();
+	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    /* put the receive packet back in the pool */
 	    BlockFree(ibu->allocator, mem_ptr);
 	    ibu->write.total += num_bytes;
