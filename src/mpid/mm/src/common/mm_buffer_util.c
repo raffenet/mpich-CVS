@@ -68,9 +68,12 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
     MM_ENTER_FUNC(MM_GET_BUFFERS_VEC);
 
+    /* set first and last to be the current last and the end of the segment */
     request_ptr->mm.buf.vec.first = request_ptr->mm.buf.vec.last;
     request_ptr->mm.buf.vec.last = request_ptr->mm.last;
 
+    /* pack as much of the segment into the vector as possible */
+    /* note: this does not move data, it only fills in the vector buffers and lengths */
     MPID_Segment_pack_vector(
 	&request_ptr->mm.segment,
 	request_ptr->mm.buf.vec.first,
@@ -78,6 +81,7 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
 	request_ptr->mm.buf.vec.vec,
 	&request_ptr->mm.buf.vec.vec_size);
 
+    /* the size of the current vector is the amount of data that was packed */
     request_ptr->mm.buf.vec.buf_size = request_ptr->mm.buf.vec.last - request_ptr->mm.buf.vec.first;
 
     MM_EXIT_FUNC(MM_GET_BUFFERS_VEC);

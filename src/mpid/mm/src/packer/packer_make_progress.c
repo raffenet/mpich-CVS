@@ -92,7 +92,10 @@ int packer_make_progress()
 		{
 		    /* then update vec to point to the next pieces of data */
 		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
-		    buf_ptr->vec.num_read = buf_ptr->vec.last - buf_ptr->vec.first;
+		    /* In the vector packing case, once the vector is filled by the get_buffers call there is no need to move
+		     * any data.  So, num_read can be set to the amount of data that was packed into the vector. */
+		    buf_ptr->vec.num_read = buf_ptr->vec.buf_size; /* buf_size = last - first */
+		    /* signal the writers that data is available by setting num_cars_outstanding */
 		    buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
 		}
 		/* vec packing is finished when the current vec describes the last piece of the segment */
