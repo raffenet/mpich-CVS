@@ -45,11 +45,6 @@ C     Test support for MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE
          print *, 'Unexpected return from MPI_WAITALL', ierr 
       endif
 
+      call mtest_finalize( errs )
       call mpi_finalize( ierr )
-
-      if (errs .eq. 0) then
-         print *, ' No Errors'
-      else
-         print *, ' Found ', errs, ' errors'
-      endif
       end
