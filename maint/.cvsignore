@@ -1,6 +1,7 @@
 configure
 simplemake
 checkbuilds
+getstates
 config.log
 config.cache
 config.status
