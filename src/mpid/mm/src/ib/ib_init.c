@@ -119,9 +119,11 @@ int ib_init()
 	return status;
     }
     IB_Process.lid = IB_Process.attr.port_dynamic_info_p->lid;
-    // free this structure because the information is transient?
+    /* free this structure because the information is transient? */
+    /*
     free(IB_Process.attr.port_dynamic_info_p);
     IB_Process.attr.port_dynamic_info_p = NULL;
+    */
 
     sprintf(key, "ib_lid_%d", MPIR_Process.comm_world->rank);
     sprintf(value, "%d", IB_Process.lid);
