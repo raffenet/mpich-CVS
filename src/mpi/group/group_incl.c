@@ -72,6 +72,7 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_GROUP(group,mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not valid, it will be reset to null */
