@@ -5,6 +5,7 @@
 
 #ifdef MPE_NOMPI
 #define MPI_MAX_PROCESSOR_NAME 256
+#include "mpe_misc.h"
 #else
 #include "mpi.h"
 #endif
