@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_get_errhandler_ PMPI_FILE_GET_ERRHANDLER
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_get_errhandler_ pmpi_file_get_errhandler__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_errhandler pmpi_file_get_errhandler_
-#endif
-#define mpi_file_get_errhandler_ pmpi_file_get_errhandler
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_errhandler_ pmpi_file_get_errhandler
-#endif
-#define mpi_file_get_errhandler_ pmpi_file_get_errhandler_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_get_errhandler_ PMPI_FILE_GET_ERRHANDLER
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_get_errhandler_ pmpi_file_get_errhandler__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_errhandler pmpi_file_get_errhandler_
+#endif
+#define mpi_file_get_errhandler_ pmpi_file_get_errhandler
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_errhandler_ pmpi_file_get_errhandler
+#endif
+#define mpi_file_get_errhandler_ pmpi_file_get_errhandler_
 #endif
 
 #else

@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_get_type_extent_ PMPI_FILE_GET_TYPE_EXTENT
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_get_type_extent_ pmpi_file_get_type_extent__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent pmpi_file_get_type_extent_
-#endif
-#define mpi_file_get_type_extent_ pmpi_file_get_type_extent
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent_ pmpi_file_get_type_extent
-#endif
-#define mpi_file_get_type_extent_ pmpi_file_get_type_extent_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_get_type_extent_ PMPI_FILE_GET_TYPE_EXTENT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_get_type_extent_ pmpi_file_get_type_extent__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent pmpi_file_get_type_extent_
+#endif
+#define mpi_file_get_type_extent_ pmpi_file_get_type_extent
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent_ pmpi_file_get_type_extent
+#endif
+#define mpi_file_get_type_extent_ pmpi_file_get_type_extent_
 #endif
 
 #else

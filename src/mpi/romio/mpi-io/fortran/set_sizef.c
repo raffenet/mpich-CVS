@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_set_size_ PMPI_FILE_SET_SIZE
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_set_size_ pmpi_file_set_size__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_size pmpi_file_set_size_
-#endif
-#define mpi_file_set_size_ pmpi_file_set_size
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_size_ pmpi_file_set_size
-#endif
-#define mpi_file_set_size_ pmpi_file_set_size_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_set_size_ PMPI_FILE_SET_SIZE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_set_size_ pmpi_file_set_size__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_size pmpi_file_set_size_
+#endif
+#define mpi_file_set_size_ pmpi_file_set_size
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_size_ pmpi_file_set_size
+#endif
+#define mpi_file_set_size_ pmpi_file_set_size_
 #endif
 
 #else

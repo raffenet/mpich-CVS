@@ -13,21 +13,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_open_ PMPI_FILE_OPEN
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_open_ pmpi_file_open__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_open pmpi_file_open_
-#endif
-#define mpi_file_open_ pmpi_file_open
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_open_ pmpi_file_open
-#endif
-#define mpi_file_open_ pmpi_file_open_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -67,6 +52,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_open_ PMPI_FILE_OPEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_open_ pmpi_file_open__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_open pmpi_file_open_
+#endif
+#define mpi_file_open_ pmpi_file_open
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_open_ pmpi_file_open
+#endif
+#define mpi_file_open_ pmpi_file_open_
 #endif
 
 #else

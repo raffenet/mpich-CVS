@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_set_atomicity_ PMPI_FILE_SET_ATOMICITY
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_set_atomicity_ pmpi_file_set_atomicity__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity pmpi_file_set_atomicity_
-#endif
-#define mpi_file_set_atomicity_ pmpi_file_set_atomicity
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity_ pmpi_file_set_atomicity
-#endif
-#define mpi_file_set_atomicity_ pmpi_file_set_atomicity_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_set_atomicity_ PMPI_FILE_SET_ATOMICITY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_set_atomicity_ pmpi_file_set_atomicity__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity pmpi_file_set_atomicity_
+#endif
+#define mpi_file_set_atomicity_ pmpi_file_set_atomicity
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity_ pmpi_file_set_atomicity
+#endif
+#define mpi_file_set_atomicity_ pmpi_file_set_atomicity_
 #endif
 
 #else

@@ -13,21 +13,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_set_view_ PMPI_FILE_SET_VIEW
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_set_view_ pmpi_file_set_view__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_view pmpi_file_set_view_
-#endif
-#define mpi_file_set_view_ pmpi_file_set_view
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_view_ pmpi_file_set_view
-#endif
-#define mpi_file_set_view_ pmpi_file_set_view_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -67,6 +52,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_set_view_ PMPI_FILE_SET_VIEW
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_set_view_ pmpi_file_set_view__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_view pmpi_file_set_view_
+#endif
+#define mpi_file_set_view_ pmpi_file_set_view
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_view_ pmpi_file_set_view
+#endif
+#define mpi_file_set_view_ pmpi_file_set_view_
 #endif
 
 #else

@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_get_amode_ PMPI_FILE_GET_AMODE
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_get_amode_ pmpi_file_get_amode__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_amode pmpi_file_get_amode_
-#endif
-#define mpi_file_get_amode_ pmpi_file_get_amode
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_amode_ pmpi_file_get_amode
-#endif
-#define mpi_file_get_amode_ pmpi_file_get_amode_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_get_amode_ PMPI_FILE_GET_AMODE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_get_amode_ pmpi_file_get_amode__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_amode pmpi_file_get_amode_
+#endif
+#define mpi_file_get_amode_ pmpi_file_get_amode
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_amode_ pmpi_file_get_amode
+#endif
+#define mpi_file_get_amode_ pmpi_file_get_amode_
 #endif
 
 #else

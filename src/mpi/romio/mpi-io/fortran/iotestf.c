@@ -9,21 +9,6 @@
 #include "mpio.h"
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpio_test_ PMPIO_TEST
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpio_test_ pmpio_test__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpio_test pmpio_test_
-#endif
-#define mpio_test_ pmpio_test
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpio_test_ pmpio_test
-#endif
-#define mpio_test_ pmpio_test_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -63,6 +48,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpio_test_ PMPIO_TEST
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpio_test_ pmpio_test__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpio_test pmpio_test_
+#endif
+#define mpio_test_ pmpio_test
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpio_test_ pmpio_test
+#endif
+#define mpio_test_ pmpio_test_
 #endif
 
 #else

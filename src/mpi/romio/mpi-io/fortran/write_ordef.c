@@ -10,21 +10,6 @@
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
-#ifdef FORTRANCAPS
-#define mpi_file_write_ordered_end_ PMPI_FILE_WRITE_ORDERED_END
-#elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end__
-#elif !defined(FORTRANUNDERSCORE)
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_end pmpi_file_write_ordered_end_
-#endif
-#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end
-#else
-#if defined(HPUX) || defined(SPPUX)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_end_ pmpi_file_write_ordered_end
-#endif
-#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end_
-#endif
 
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +49,22 @@
 #endif
 /* Include mapping from MPI->PMPI */
 #include "mpioprof.h"
+#endif
+
+#ifdef FORTRANCAPS
+#define mpi_file_write_ordered_end_ PMPI_FILE_WRITE_ORDERED_END
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end__
+#elif !defined(FORTRANUNDERSCORE)
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_end pmpi_file_write_ordered_end_
+#endif
+#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end
+#else
+#if defined(HPUX) || defined(SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_end_ pmpi_file_write_ordered_end
+#endif
+#define mpi_file_write_ordered_end_ pmpi_file_write_ordered_end_
 #endif
 
 #else
