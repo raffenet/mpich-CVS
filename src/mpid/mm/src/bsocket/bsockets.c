@@ -212,10 +212,10 @@ int bsocket(int family, int type, int protocol)
     DBG_MSG("Enter bsocket\n");
     
     /*
-    pbfd = (BFD_Buffer *)MPIU_Handle_obj_new( &Bsocket_mem );
+    pbfd = (BFD_Buffer *)MPIU_Handle_obj_alloc( &Bsocket_mem );
     if (pbfd == 0) 
     {
-	DBG_MSG(("ERROR in bsocket: MPIU_Handle_obj_new returned NULL"));
+	DBG_MSG(("ERROR in bsocket: MPIU_Handle_obj_alloc returned NULL"));
 	return -1;
     }
     */
@@ -316,10 +316,10 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     }
     
     /*
-    new_bfd = (BFD_Buffer *)MPIU_Handle_obj_new( &Bsocket_mem );
+    new_bfd = (BFD_Buffer *)MPIU_Handle_obj_alloc( &Bsocket_mem );
     if (new_bfd == 0) 
     {
-	DBG_MSG(("ERROR in baccept: MPIU_Handle_obj_new return NULL\n"));
+	DBG_MSG(("ERROR in baccept: MPIU_Handle_obj_alloc return NULL\n"));
 	return BFD_INVALID_SOCKET;
     }
     */

@@ -78,14 +78,14 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
        and release the allocation lock.  If that is ever a problem, we
        may want to add an "allocate n elements" routine and execute this
        it two steps: count and then allocate */
-    curr_new        = (MPID_Info *)MPIU_Handle_obj_new( &MPID_Info_mem );
+    curr_new        = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
     curr_new->key   = 0;
     curr_new->value = 0;
     curr_new->next  = 0;
 
     curr_old        = info_ptr->next;
     while (curr_old) {
-	curr_new->next = (MPID_Info *)MPIU_Handle_obj_new( &MPID_Info_mem );
+	curr_new->next = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
 	if (!curr_new->next) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

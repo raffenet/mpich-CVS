@@ -210,7 +210,7 @@ typedef struct {
 					   for allocation */
     int                direct_size;     /* Size of direct block */
 } MPIU_Object_alloc_t;
-extern void *MPIU_Handle_obj_new( MPIU_Object_alloc_t * );
+extern void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t * );
 extern void MPIU_Handle_obj_free( MPIU_Object_alloc_t *, void * );
 void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 
@@ -291,15 +291,15 @@ int MPIU_Handle_free( void *((*)[]), int );
     }									\
 }
 
-#define MPID_Comm_get_ptr(a,ptr) MPID_Getb_ptr(Comm,a,ptr)
-#define MPID_Group_get_ptr(a,ptr) MPID_Getb_ptr(Group,a,ptr)
-#define MPID_Datatype_get_ptr(a,ptr) MPID_Getb_ptr(Datatype,a,ptr)
-#define MPID_File_get_ptr(a,ptr) MPID_Get_ptr(File,a,ptr)
+#define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,ptr)
+#define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,ptr)
+#define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,ptr)
+#define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
-#define MPID_Op_get_ptr(a,ptr) MPID_Get_ptr(Op,a,ptr)
-#define MPID_Info_get_ptr(a,ptr) MPID_Get_ptr(Info,a,ptr)
-#define MPID_Win_get_ptr(a,ptr) MPID_Get_ptr(Win,a,ptr)
-#define MPID_Request_get_ptr(a,ptr) MPID_Get_ptr(Request,a,ptr)
+#define MPID_Op_get_ptr(a,ptr)         MPID_Get_ptr(Op,a,ptr)
+#define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
+#define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
+#define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
 
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 

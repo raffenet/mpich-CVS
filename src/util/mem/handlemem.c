@@ -196,7 +196,7 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
     return 0;
 }
 /*+
-  MPIU_Handle_obj_new - Create an object using the handle allocator
+  MPIU_Handle_obj_alloc - Create an object using the handle allocator
 
   Input Parameter:
 . objmem - Pointer to object memory block.
@@ -211,7 +211,7 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
 
   This routine is thread-safe.
   +*/
-void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
+void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 {
     MPIU_Handle_common *ptr;
     int objsize, objkind;
@@ -283,8 +283,7 @@ void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
 }
 
 /* 
- * Get an pointer to dynamically allocated storage for Info objects.
- * This has an MPID prefix to simplify the "get object" routines
+ * Get an pointer to dynamically allocated storage for objects.
  */
 void *MPIU_Handle_get_ptr_indirect( int handle, MPIU_Object_alloc_t *objmem )
 {

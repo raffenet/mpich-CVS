@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "mpichinfo.h"
 
 #ifndef BOOL
 #define BOOL int
@@ -46,27 +47,25 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
     int argc;
     char **argv;
     int nProc = 0;
-    int bRunLocal = FALSE;
-    int bUseMachineFile = FALSE;
-    char pszMachineFileName[MAX_PATH];
     char pszDir[MAX_PATH] = ".";
-    char pszEnv[MAX_PATH] = "";
     char pszExe[MAX_PATH] = "";
     char pszArgs[MAX_PATH] = "";
-    char pszSoft[100];
-    char pszHost[100];
-    char pszArch[100];
-    char pszPath[MAX_PATH];
-    char pszFile[MAX_PATH];
+    char pszSoft[100] = "";
+    char pszHost[100] = "";
+    char pszArch[100] = "";
+    char pszPath[MAX_PATH] = ".";
+    char pszFile[MAX_PATH] = "";
 
-    PMI_Args_to_info(argcp, argvp, pInfos[0]);
+    MPICH_Info info;
+    MPICH_Info_create(&info);
+    PMI_Args_to_info(argcp, argvp, info);
 
     argc = *argcp;
     argv = *argvp;
     while (argv[1] && (argv[1][0] == '-' || argv[1][0] == '/'))
     {
 	nArgsToStrip = 1;
-	if (strcmp(&argv[1][1], "n") == 0 || strcmp(&argv[1][1], "np") == 0)
+	if ((strcmp(&argv[1][1], "n") == 0) || (strcmp(&argv[1][1], "np") == 0))
 	{
 	    if (argc < 3)
 	    {
@@ -141,94 +140,6 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
 	    strcpy(pszFile, argv[2]);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "localonly") == 0)
-	{
-	    bRunLocal = TRUE;
-	    if (argc > 2)
-	    {
-		if (isdigit(argv[2][0]))
-		{
-		    nProc = atoi(argv[2]);
-		    if (nProc < 1)
-		    {
-			printf("Error: If you specify a number after -localonly option,\n        it must be greater than 0.\n");
-			return 0;
-		    }
-		    nArgsToStrip = 2;
-		}
-	    }
-	}
-	else if (strcmp(&argv[1][1], "machinefile") == 0)
-	{
-	    if (argc < 3)
-	    {
-		printf("Error: no filename specified after -machinefile option.\n");
-		return 0;
-	    }
-	    strcpy(pszMachineFileName, argv[2]);
-	    bUseMachineFile = TRUE;
-	    nArgsToStrip = 2;
-	}
-	/*
-	else if (strcmp(&argv[1][1], "map") == 0)
-	{
-	    if (argc < 3)
-	    {
-		printf("Error: no drive specified after -map option.\n");
-		return 0;
-	    }
-	    if ((strlen(argv[2]) > 2) && argv[2][1] == ':')
-	    {
-		MapDriveNode *pNode = new MapDriveNode;
-		pNode->cDrive = argv[2][0];
-		strcpy(pNode->pszShare, &argv[2][2]);
-		pNode->pNext = g_pDriveMapList;
-		g_pDriveMapList = pNode;
-	    }
-	    nArgsToStrip = 2;
-	}
-	*/
-	else if (strcmp(&argv[1][1], "env") == 0)
-	{
-	    if (argc < 3)
-	    {
-		printf("Error: no environment variables after -env option\n");
-		return 0;
-	    }
-	    strcpy(pszEnv, argv[2]);
-	    nArgsToStrip = 2;
-	}
-	/*
-	else if (strcmp(&argv[1][1], "logon") == 0)
-	{
-	    bLogon = TRUE;
-	}
-	else if (strcmp(&argv[1][1], "tcp") == 0)
-	{
-	    bDoSMP = false;
-	}
-	else if (strcmp(&argv[1][1], "getphrase") == 0)
-	{
-	    GetMPDPassPhrase(phrase);
-	    bPhraseNeeded = false;
-	}
-	else if (strcmp(&argv[1][1], "nocolor") == 0)
-	{
-	    g_bDoMultiColorOutput = false;
-	}
-	else if (strcmp(&argv[1][1], "nompi") == 0)
-	{
-	    g_bNoMPI = TRUE;
-	}
-	else if (strcmp(&argv[1][1], "nodots") == 0)
-	{
-	    bLogonDots = false;
-	}
-	else if (strcmp(&argv[1][1], "nomapping") == 0)
-	{
-	    g_bNoDriveMapping = TRUE;
-	}
-	*/
 	else if (strcmp(&argv[1][1], "help") == 0 || argv[1][1] == '?')
 	{
 	    PrintOptions();
@@ -261,6 +172,16 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
 	if (i < argc-1)
 	    strcat(pszArgs, " ");
     }
+
+    printf("nProc %d\n", nProc);
+    printf("pszDir: %s\n", pszDir);
+    printf("pszExe: %s\n", pszExe);
+    printf("pszArgs: %s\n", pszArgs);
+    printf("pszSoft: %s\n", pszSoft);
+    printf("pszHost: %s\n", pszHost);
+    printf("pszArch: %s\n", pszArch);
+    printf("pszPath: %s\n", pszPath);
+    printf("pszFile: %s\n", pszFile);
     return 0;
 }
 
@@ -271,11 +192,12 @@ int main(int argc, char *argv[])
     char ***argvs;
     int *maxprocs;
     void *infos;
-    MPI_Comm intercomm;
+    //MPI_Comm intercomm;
     int *errors;
 
     CreateParameters(&argc, &argv, &count, &cmds, &argvs, &maxprocs, &infos, &errors);
 
+    /*
     MPI_Init(NULL, NULL);
 
     MPI_Comm_spawn_multiple(
@@ -290,4 +212,5 @@ int main(int argc, char *argv[])
 	errors);
 
     MPI_Finalize();
+    */
 }
