@@ -105,7 +105,6 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
     while (curr_old)
     {
 	curr_new->next = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
-	/* --BEGIN ERROR HANDLING-- */
 	MPIU_ERR_CHKANDJUMP1((!curr_new->next), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info");
 
 	curr_new	 = curr_new->next;
