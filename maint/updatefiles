@@ -316,7 +316,7 @@ fi
 
 # Run some of the simple codes
 if [ -x maint/getstates ] ; then
-    echo "Create the list of routine states"
+    echo "Creating the list of routine states into src/util/logging/lwlog/lwstates.c"
     maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
                     -namefile=src/util/logging/lwlog/lwnames.h src
 fi
