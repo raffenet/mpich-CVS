@@ -25,6 +25,7 @@ void smpd_print_options(void)
     printf(" -restart [hostname]\n");
     printf(" -shutdown [hostname]\n");
     printf(" -console [hostname]\n");
+    printf(" -status [hostname]\n");
     printf("unix only options:\n");
     printf(" -smpdfile <filename>\n");
     printf("windows only options:\n");
