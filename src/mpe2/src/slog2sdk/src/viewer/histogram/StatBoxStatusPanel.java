@@ -9,35 +9,77 @@
 
 package viewer.histogram;
 
-import javax.swing.*;
-import javax.swing.event.*;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JComboBox;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.BoxLayout;
 
 import base.statistics.BufForTimeAveBoxes;
+import viewer.common.Const;
 import viewer.common.LabeledTextField;
 
 public class StatBoxStatusPanel extends JPanel
-                                implements ChangeListener
 {
-    private BufForTimeAveBoxes      buf4statboxes;
-    private LabeledTextField        fld_status;
+    private static final String  DRAW_STATES = "States Only";
+    private static final String  DRAW_ARROWS = "Arrows Only";
+    private static final String  DRAW_ALL    = "All";
+
+    private JComboBox            combobox;
+    private BufForTimeAveBoxes   buf4statboxes;
+    private JButton              canvas_redraw_btn;
 
     public StatBoxStatusPanel( final BufForTimeAveBoxes statboxes )
     {
         super();
         buf4statboxes  = statboxes;
-        setLayout( new BoxLayout( this, BoxLayout.X_AXIS ) );
+        super.setLayout( new BoxLayout( this, BoxLayout.X_AXIS ) );
 
-        fld_status   = new LabeledTextField( "   Statline   ", null );
-        fld_status.setEditable( false );
-        fld_status.setHorizontalAlignment( JTextField.CENTER );
-        // fld_status.addActionListener( this );
-        add( fld_status );
+        combobox  = new JComboBox();
+        combobox.setFont( Const.FONT );
+        combobox.setEditable( false );
+        combobox.addItem( DRAW_STATES );
+        combobox.addItem( DRAW_ARROWS );
+        combobox.addItem( DRAW_ALL );
+        combobox.setToolTipText( "Display options for the Histogram" );
+        canvas_redraw_btn = null;
 
-        super.setBorder( BorderFactory.createEtchedBorder() );
+        // super.add( new LabeledTextField( " ", null ) ); // determin size
+        super.add( combobox );
     }
 
-    public void stateChanged( ChangeEvent evt )
+    public void init( JButton  btn )
     {
+        canvas_redraw_btn = btn;
+        combobox.addActionListener( new DisplayModeActionListener() );
+        combobox.setSelectedItem( DRAW_STATES );
     }
-    
+
+    private class DisplayModeActionListener implements ActionListener
+    {
+        public void actionPerformed( ActionEvent evt )
+        {
+            String display_str;
+            display_str = (String) combobox.getSelectedItem();
+            if ( display_str.equals( DRAW_STATES ) ) {
+                buf4statboxes.setDrawingStates( true );
+                buf4statboxes.setDrawingArrows( false );
+            }
+            else if ( display_str.equals( DRAW_ARROWS ) ) {
+                buf4statboxes.setDrawingStates( false );
+                buf4statboxes.setDrawingArrows( true );
+            }
+            else if ( display_str.equals( DRAW_ALL ) ) {
+                buf4statboxes.setDrawingStates( true );
+                buf4statboxes.setDrawingArrows( true );
+            }
+            else {
+                buf4statboxes.setDrawingStates( true );
+                buf4statboxes.setDrawingArrows( false );
+            }
+            canvas_redraw_btn.doClick();
+        }
+    }
 }

@@ -113,10 +113,16 @@ public class StatlinePanel extends JPanel
                 time_ruler_vport  = new ViewportTime( time_model );
                 time_ruler_vport.setView( time_ruler );
                 time_ruler_panel  = new ViewportTimePanel( time_ruler_vport );
-                time_ruler_panel.setBorderTitle( " Time (seconds) ",
-                                                 TitledBorder.RIGHT,
-                                                 TitledBorder.BOTTOM,
-                                                 Const.FONT, Color.red );
+                if ( Parameters.HISTOGRAM_ZERO_ORIGIN )
+                    time_ruler_panel.setBorderTitle( " Duration (seconds) ",
+                                                     TitledBorder.RIGHT,
+                                                     TitledBorder.BOTTOM,
+                                                     Const.FONT, Color.red );
+                else
+                    time_ruler_panel.setBorderTitle( " Time (seconds) ",
+                                                     TitledBorder.RIGHT,
+                                                     TitledBorder.BOTTOM,
+                                                     Const.FONT, Color.red );
                 time_ruler_vport.initLeftMouseToZoom( false );
                 /*
                    Propagation of AdjustmentEvent originating from scroller:
@@ -189,6 +195,13 @@ public class StatlinePanel extends JPanel
                                                  BoxLayout.Y_AXIS ) );
                 // Status of the BufForTimeAveBoxes
                 status_panel = new StatBoxStatusPanel( buf4statboxes );
+                int panel_height = time_display_panel.getPreferredSize().height;
+                status_panel.setMinimumSize(
+                  new Dimension( 85, panel_height ) );
+                status_panel.setMaximumSize(
+                  new Dimension( Short.MAX_VALUE, panel_height ) );
+                status_panel.setPreferredSize(
+                  new Dimension( 85, panel_height ) );
                 status_panel.setAlignmentX( Component.CENTER_ALIGNMENT );
 
                 /* "VIEW" title */
@@ -341,6 +354,7 @@ public class StatlinePanel extends JPanel
         */
             y_tree.init();
             row_adjs.initYLabelTreeSize();
+            status_panel.init( toolbar.getPropertyRefreshButton() );
             summary_state_combobox.init( toolbar.getPropertyRefreshButton() );
     }
 

@@ -19,12 +19,13 @@ import javax.swing.event.*;
 import javax.swing.tree.TreePath;
 
 import base.drawable.TimeBoundingBox;
-import base.drawable.CategoryWeight;
+import base.statistics.Summarizable;
 import base.statistics.BufForTimeAveBoxes;
 import logformat.slog2.LineIDMap;
 import viewer.common.Dialogs;
 import viewer.common.Routines;
 import viewer.common.Parameters;
+import viewer.common.CustomCursor;
 import viewer.zoomable.Debug;
 import viewer.zoomable.Profile;
 import viewer.zoomable.ModelTime;
@@ -137,8 +138,9 @@ public class CanvasStatline extends ScrollableObject
             root_dialog  = (Dialog) SwingUtilities.windowForComponent( this );
         if ( timeframe4imgs == null )
             timeframe4imgs = new TimeBoundingBox( imgs_times );
-        // Read the SLOG-2 TreeNodes within TimeFrame into memory
-        Routines.setAllCursorsToWait( root_dialog );
+
+        Routines.setComponentAndChildrenCursors( root_dialog,
+                                                 CustomCursor.Wait );
         num_rows    = tree_view.getRowCount();
         row_height  = tree_view.getRowHeight();
 
@@ -161,7 +163,8 @@ public class CanvasStatline extends ScrollableObject
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
         timeframe4imgs.setLatestTime( imgs_times.getLatestTime() );
         this.fireChangeEvent();  // to update TreeTrunkPanel.
-        Routines.setAllCursorsToNormal( root_dialog );
+        Routines.setComponentAndChildrenCursors( root_dialog,
+                                                 CustomCursor.Normal );
 
         if ( Profile.isActive() )
             final_time = new Date();
@@ -192,9 +195,8 @@ public class CanvasStatline extends ScrollableObject
             // offGraphics.getClipBounds() returns null
             // offGraphics.setClip( 0, 0, getWidth()/NumImages, getHeight() );
             // Do the ruler labels in a small font that's black.
-            // offGraphics.setPaint( BackgroundPaint );
-            offGraphics.setPaint(
-                        (Color) Parameters.BACKGROUND_COLOR.toValue() );
+            Color back_color = (Color) Parameters.BACKGROUND_COLOR.toValue();
+            offGraphics.setPaint( back_color );
             offGraphics.fillRect( 0, 0, offImage_width, offImage_height );
 
             int    irow;
@@ -225,11 +227,19 @@ public class CanvasStatline extends ScrollableObject
 
 
 
+            buf4statboxes.initializeDrawing( map_line2row, back_color,
+                                             Parameters.HISTOGRAM_ZERO_ORIGIN,
+                                             Parameters.STATE_HEIGHT_FACTOR,
+                                             Parameters.NESTING_HEIGHT_FACTOR );
             int N_nestable = 0, N_nestless = 0;
 
-            buf4statboxes.initializeDrawing( map_line2row,
-                                             Parameters.HISTOGRAM_ZERO_ORIGIN );
             N_nestable = buf4statboxes.drawAllStates( offGraphics,
+                                                      coord_xform );
+
+            // Set AntiAliasing from Parameters for all slanted lines
+            offGraphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+                                    Parameters.ARROW_ANTIALIASING.toValue() );
+            N_nestless = buf4statboxes.drawAllArrows( offGraphics,
                                                       coord_xform );
 
             if ( Profile.isActive() )
@@ -254,17 +264,13 @@ public class CanvasStatline extends ScrollableObject
         // Determine the timeframe of the current view by vport_timeframe
         // System.out.println( "CurrView's timeframe = " + vport_timeframe );
 
-        CategoryWeight  clicked_twgt;
-        TreePath        ylabel_path;
-
-        clicked_twgt = buf4statboxes.getCategoryWeightAt( coord_xform,
-                                                          local_click );
-        ylabel_path  = tree_view.getClosestPathForLocation( 0, local_click.y );
-        if (    clicked_twgt != null
-             && clicked_twgt.getCategory().isVisible() ) {
-            return new InfoDialogForCategory( root_dialog, clicked_time,
-                                              y_colnames, ylabel_path,
-                                              clicked_twgt );
+        Summarizable  clicked_summary;
+        clicked_summary = buf4statboxes.getSummarizableAt( coord_xform,
+                                                           local_click );
+        if ( clicked_summary != null) {
+            return new InfoDialogForSummary( root_dialog, clicked_time,
+                                             tree_view, y_colnames,
+                                             clicked_summary );
         }
 
         return super.getTimePropertyAt( local_click );

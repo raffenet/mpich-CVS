@@ -21,7 +21,7 @@ RM           = @RM@
 TARGET    = 
 PACKAGE   = viewer.histogram
 SRC       = SummaryStateComboBox.java \
-            InfoPanelForCategory.java InfoDialogForCategory.java \
+            InfoPanelForSummary.java InfoDialogForSummary.java \
             CanvasStatline.java StatBoxStatusPanel.java \
             StatlineToolBar.java StatlinePanel.java StatlineDialog.java
 
