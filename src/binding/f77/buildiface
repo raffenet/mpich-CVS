@@ -16,6 +16,9 @@
 #    
 #
 # Setup global variables
+%CtoFName = ();
+@ExtraRoutines = ();
+
 $buildfiles = 1;
 $build_prototypes = 1;
 $buildMakefile = 1;
@@ -134,6 +137,21 @@ foreach $_ (@ARGV) {
 	     'type_struct-3' => 'MPI_Fint *',   # Really [], but * is easier
              'type_hindexed-3' => 'MPI_Fint *', # As above
              'type_hvector-3' => 'MPI_Fint *',
+	     # The following are MPI-2 routines with address args.
+	     # For these, the user must pass in the correct arguments
+	     'file_get_type_extent-3' => 'MPI_FAint *',
+	     'pack_external-6' => 'MPI_Aint *',        # Value in C call
+	     'pack_external-7' => 'MPI_Aint *',
+	     'type_create_hvector-3' => 'MPI_Aint *',  # Value in C call
+	     'type_create_hindexed-3' => 'MPI_Aint *',
+	     'type_create_struct-3' => 'MPI_Aint *',
+             'type_get_contents-6' => 'MPI_Aint *',
+	     'type_get_extent-2' => 'MPI_Aint *',
+	     'type_get_extent-3' => 'MPI_Aint *',
+	     'type_create_resized-2' => 'MPI_Aint *',  # Value in C call
+	     'type_create_resized-3' => 'MPI_Aint *',  # Value in C call
+	     'unpack_external-3' => 'MPI_Aint *',      # Value in C call
+	     'unpack_external-4' => 'MPI_Aint *',
 	    );
 
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
@@ -220,7 +238,7 @@ foreach $_ (@ARGV) {
 	      'type_free_keyval' => 'typefreekey',
 	      'type_get_contents' => 'typegetcnts',
 	      'type_get_envelope' => 'typegetenv',
-	      'type_get_extent' => 'typeextent',
+	      'type_get_extent' => 'typegetextent',  # there is already a type_extent
 	      'type_get_name' => 'typegname',
 	      'type_get_true_extent' => 'typegtext',
 	      'type_set_attr' => 'typesetattr',
@@ -283,6 +301,11 @@ foreach $_ (@ARGV) {
 #    attrint: Convert an attribute value to an int.
 #    bufaddr: Argument is *output* as a buffer address.  Discarded before
 #             passing to Fortran.
+# For MPI-2 routines that take MPI_Aints even in Fortran, we need a 
+# special mapping when the value is passed to c
+#    aintToVal: Given the address of an Aint, pass the value to the C routine
+# (This should really be done by not applying the Aint->int mapping
+# for MPI-2 routines.  But for now, this hack will work)
 %special_args = ( 
 #    'Allreduce' => '1:2', 'Allreduce-1' => 'in:bufptr',	
 #		 'Allreduce-2' => 'in:bufptr', 
@@ -328,7 +351,8 @@ foreach $_ (@ARGV) {
     'Lookup_name' => '1:3', 'Lookup_name-1' => 'in:addnull', 
 		  'Lookup_name-3' => 'out:blankpad',
     'Open_port' => '2', 'Open_port-2' => 'in:addnull',
-    'Pack_external' => '1', 'Pack_external-1' => 'in:addnull',
+    'Pack_external' => '1:6', 'Pack_external-1' => 'in:addnull',
+		  'Pack_external-6' => 'in:aintToVal',
     'Pack_external_size' => '1', 'Pack_external_size-1' => 'in:addnull',
     'Publish_name' => '1:3', 'Publish_name-1' => 'in:addnull',
 		  'Publish_name-3' => 'in:addnull',
@@ -370,6 +394,10 @@ foreach $_ (@ARGV) {
 		 'Testany-5' => 'in:status',
     'Testsome' => '4:5', 'Testsome-4' => 'out:index_array:*v3',
 		 'Testsome-5' => 'in:status_array',
+    'Type_create_hvector' => 3, 'Type_create_hvector-3' => 'in:aintToVal',
+    'Type_create_resized' => '2:3', 
+		  'Type_create_resized-2' => 'in:aintToVal', 
+		  'Type_create_resized-3' => 'in:aintToVal',
     'Type_get_name' => '2', 'Type_get_name-2' => 'out:blankpad',
     'Type_set_name' => '2', 'Type_set_name-2' => 'in:addnull',
     'Type_extent' => '2', 'Type_extent-2' => 'out:aintToInt',	      
@@ -379,7 +407,8 @@ foreach $_ (@ARGV) {
     'Type_hindexed' => '3', 'Type_hindexed-3' => 'in:intToAintArr:*v1',
 # also need
     'Type_hvector' => '3', 'Type_hvector-3' => 'in:intToAint',
-    'Unpack_external' => '1', 'Unpack_external-1' => 'in:addnull',
+    'Unpack_external' => '1:3', 'Unpack_external-1' => 'in:addnull',
+		  'Unpack_external-3' => 'in:aintToVal',
     'Unpublish_name' => '1:3', 'Unpublish_name-1' => 'in:addnull',
 		  'Unpublish_name-3' => 'in:addnull',
     'Win_get_name' => '2', 'Win_get_name-2' => 'out:blankpad',
@@ -390,7 +419,7 @@ foreach $_ (@ARGV) {
 		 'Waitany-4' => 'in:status',
     'Waitsome' => '4:5', 'Waitsome-4' => 'out:index_array:*v3',
 		 'Waitsome-5' => 'in:status_array',
-# File routines separate
+# File routines are separate
     'File_open' => '2', 'File_open-2' => 'in:addnull',
     'File_delete' => '1', 'File_delete-1' => 'in:addnull',
     'File_set_view' => '5', 'File_set_view-5' => 'in:addnull',
@@ -432,6 +461,12 @@ if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) {
 if ($is_MPI) {
     # Build the special routines
     &build_specials;
+}
+else {
+    for ($i=0; $i<=$#ExtraRoutines; $i++) {
+	$r = $ExtraRoutines[$i];
+	&$r;
+    }
 }
 
 #
@@ -673,29 +708,34 @@ sub print_args {
 	# Match type to replacement
 	print "parm = :$parm:\n" if $debug;
 	# Remove qualifiers from the parm
-	if ($parm =~ /^const\s/) {
-	    $parm =~ s/^const\s//;
+	if ($parm =~ /^const\s+/) {
+	    $parm =~ s/^const\s+//;
 	    $arg_qualifiers[$count] .= "const ";
 	}
-	if ($parm =~ /^restrict\s/) {
-	    $parm =~ s/restrict\s//;
+	if ($parm =~ /^restrict\s+/) {
+	    $parm =~ s/restrict\s+//;
 	    $arg_qualifiers[$count] .= "restrict ";
 	}
 	# Remove arg names from array types
-	if ($parm =~ /(\w*)\s+\w*\[\]/) {
+	if ($parm =~ /(\w*)\s+(\w*)\[\]/) {
 	    # Assume that this is <type> <name>[]; convert to
 	    # <type>[]
+	    print "    Removing argname $2 from parm array\n" if $debug;
 	    $parm = "$1" . "[]";
 	}
 	# Remove arg names from pointer types
-	elsif ($parm =~ /(.*\*)\s+\w*/) {
+	elsif ($parm =~ /(.*\*)\s+(\w*)/) {
+	    print "    Removing argname $2 from parm pointer\n" if $debug;
 	    $parm = $1;
 	}
 	# Remove blanks from the parm
-	$parm =~ s/\s//;
+	$parm =~ s/\s+//;
 	$arg_addresses[$count] = 0;
-	
+
+	# This handles routines that have special declaration requirements
+	# for particular arguments
 	if (defined($declarg{"$routine-$count"})) {
+	    print "    Using declarg{$routine} for this parm\n" if $debug;
 	    $parm = $declarg{"$routine-$count"};
 	    if ($prototype_only) {
 		print $OUTFD "$parm, ";
@@ -712,6 +752,7 @@ sub print_args {
 	    # of each entry in the array is the "d" value).
 	    # FORT_END_LEN and FORT_MIXED_LEN contain the necessary comman
 	    # if they are prsent at all.
+	    print "    parm is a character string\n" if $debug;
 	    if ($prototype_only) {
 		print $OUTFD "char * FORT_MIXED_LEN_DECL, ";
 		$last_args .= "FORT_END_LEN_DECL ";
@@ -730,7 +771,7 @@ sub print_args {
 	    # Split into raw type and []
 	    $parm =~ /\s*([^\s]*)\s*(\[\s*\])/;
 	    $basetype = $1;
-	    print "\tparm is array of $basetype\n" if $debug;
+	    print "\tparm is array of >$basetype<\n" if $debug;
 	    #$foundbrack = $2;
 	    if ($basetype eq "int") {
 		# Do nothing because the [] added to the arg below
@@ -744,6 +785,7 @@ sub print_args {
 		print "Match to array type $basetype\[\]\n" if $debug;
 		$star_count = 0;
 		$arg_addresses[$count] = $star_count;
+		$basetype = $tof77{"$basetype\[\]"};
 	    }
 	    elsif (defined($tof77{$basetype})) {
 		# Is this code correct?  It isn't for ints
@@ -1176,6 +1218,19 @@ sub aintToInt_out_arg {
     print $OUTFD "\&l$count";
 }
 
+# aintToVal - Convert address of Aint to value
+sub aintToVal_ftoc {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+sub aintToVal_in_decl {
+    my $count = $_[0];
+}
+sub aintToVal_in_arg {
+    my $count = $_[0];
+    print $OUTFD "*v$count";
+}
+
 # ---------------------------------------------------------------------------
 # This is the routine that handles the post-call processing
 sub print_post_call {
@@ -1422,6 +1477,7 @@ sub intToAint_in_arg {
     my $count = $_[0];
     print $OUTFD "l$count";
 }
+
 
 # ---------------------------------------------------------------------------
 # This routine handles the special arguments in the *call*
@@ -2062,7 +2118,14 @@ sub ReadAndProcessInterface {
 	    # Convert MPIO_Request to MPI_Request (temporary)
 #	    $args =~ s/MPIO_Request/MPI_Request/g;
 
+	    # Get the name of the Fortran routine (without the prefix).  
+	    # Normally, the name is just the lower-case version, but
+	    # some libraries (such as NetCDF) use "real" in Fortran
+	    # where C uses "float".
 	    $lcname = lc($routine_name);
+	    if (defined($CtoFName{$lcname})) {
+		$lcname = $CtoFName{$lcname};
+	    }
 	    # Eventually, we'll create a new file here.  
 	    # For C++, we may create similar files by looking up 
 	    # the corresponding routines.
@@ -2109,7 +2172,7 @@ sub ReadAndProcessInterface {
 		# all Fortran parameters are passed either by value-result or
 		# by reference, many value parameters in the C calls are 
 		# replaced by reference parameters in the Fortran interface.
-		print "Printing arguments for mpi_${lcname}_\n" if $debug;
+		print "Printing arguments for $routine_prefix${lcname}_\n" if $debug;
 		&print_args( $OUTFD, $args, 0, $lcname );
 
 		#&print_attr;
