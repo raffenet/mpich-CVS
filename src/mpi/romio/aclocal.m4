@@ -75,9 +75,11 @@ if test -n "$arch_IRIX"; then
    changequote(,)dnl
    dnl Get the second field (looking for 6.1)
    osvminor=`uname -r | sed 's/[0-9]\.\([0-9]*\)\..*/\1/'`
+   changequote([,])dnl
    AC_MSG_RESULT($osversion)
    dnl Get SGI processor count by quick hack
    AC_MSG_CHECKING(for IRIX cpucount)
+   changequote(,)dnl
    cpucount=`hinv | grep '[0-9]* [0-9]* MHZ IP[0-9]* Proc' | cut -f 1 -d' '`
    if test "$cpucount" = "" ; then
      cpucount=`hinv | grep 'Processor [0-9]*:' | wc -l | sed -e 's/ //g'`
