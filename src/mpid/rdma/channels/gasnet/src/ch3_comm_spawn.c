@@ -18,10 +18,13 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
                                   **intercomm, int *errcodes)
 {
     int mpi_errno = MPI_SUCCESS;
-    /* gasnet can't spawn --Darius */
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
 				     "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
 }
 
@@ -32,9 +35,13 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 int MPIDI_CH3_Open_port(char *port_name)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_OPEN_PORT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_OPEN_PORT);
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
 				     "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_OPEN_PORT);
     return mpi_errno;
 }
 
@@ -46,9 +53,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm
                           *comm_ptr, MPID_Comm **newcomm)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
 				     "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
     return mpi_errno;
 }
 
@@ -61,8 +72,12 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
                            *comm_ptr, MPID_Comm **newcomm)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
 				     "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
     return mpi_errno;
 }
