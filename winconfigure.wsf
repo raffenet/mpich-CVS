@@ -241,17 +241,33 @@ MPI_2DOUBLE_PRECISION = "0x" + mpi_datatype_prefix + len_doublecplx + "21"
 MPI_2COMPLEX          = "0x" + mpi_datatype_prefix + len_doublecplx + "22"
 MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "23"
 
-F77_COMPLEX8          = MPI_COMPLEX
-F77_COMPLEX16         = MPI_DOUBLE_COMPLEX
-F77_COMPLEX32         = MPI_2DOUBLE_COMPLEX
-F77_INTEGER1          = "" '"0x" + mpi_datatype_prefix + "01"
-F77_INTEGER2          = "" '"0x" + mpi_datatype_prefix + "02"
-F77_INTEGER4          = "" '"0x" + mpi_datatype_prefix + "04"
-F77_INTEGER8          = "" '"0x" + mpi_datatype_prefix + "08"
-F77_INTEGER16         = "" '"0x" + mpi_datatype_prefix + "10"
-F77_REAL4             = "" '"0x" + mpi_datatype_prefix + "04"
-F77_REAL8             = "" '"0x" + mpi_datatype_prefix + "08"
-F77_REAL16            = "" '"0x" + mpi_datatype_prefix + "10"
+F77_MPI_2COMPLEX          = "1275072546"
+F77_MPI_2DOUBLE_COMPLEX   = "1275076643"
+F77_MPI_2DOUBLE_PRECISION = "1275072545"
+F77_MPI_2INTEGER          = "1275070494"
+F77_MPI_2REAL             = "1275070495"
+F77_MPI_CHARACTER         = "1275068696"
+F77_MPI_COMPLEX           = "1275070492"
+F77_MPI_DOUBLE_COMPLEX    = "1275072544"
+F77_MPI_DOUBLE_PRECISION  = "1275070493"
+F77_MPI_INTEGER           = "1275070489"
+F77_MPI_LB                = "1275068432"
+F77_MPI_LOGICAL           = "1275070491"
+F77_MPI_PACKED            = "1275068687"
+F77_MPI_REAL              = "1275070490"
+F77_MPI_UB                = "1275068433"
+
+F77_COMPLEX8          = "1275070492"
+F77_COMPLEX16         = "1275072544"
+F77_COMPLEX32         = "MPI_DATATYPE_NULL"
+F77_INTEGER1          = "1275068673" '"0x" + mpi_datatype_prefix + "01"
+F77_INTEGER2          = "1275068931" '"0x" + mpi_datatype_prefix + "02"
+F77_INTEGER4          = "1275069445" '"0x" + mpi_datatype_prefix + "04"
+F77_INTEGER8          = "1275070471" '"0x" + mpi_datatype_prefix + "08"
+F77_INTEGER16         = "MPI_DATATYPE_NULL" '"0x" + mpi_datatype_prefix + "10"
+F77_REAL4             = "1275069450" '"0x" + mpi_datatype_prefix + "04"
+F77_REAL8             = "1275070475" '"0x" + mpi_datatype_prefix + "08"
+F77_REAL16            = "MPI_DATATYPE_NULL" '"0x" + mpi_datatype_prefix + "10"
 
 '
 ' Miscellaneous settings
@@ -586,23 +602,24 @@ If f.FileExists("src\binding\f77\mpif.h.in") Then
   contents = Replace(contents, "@F77_REAL4@", F77_REAL4)
   contents = Replace(contents, "@F77_REAL8@", F77_REAL8)
   contents = Replace(contents, "@F77_REAL16@", F77_REAL16)
-  contents = Replace(contents, "@MPI_2COMPLEX@", MPI_2COMPLEX)
-  contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", MPI_2DOUBLE_COMPLEX)
-  contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", MPI_2DOUBLE_PRECISION)
-  contents = Replace(contents, "@MPI_2INTEGER@", MPI_2INTEGER)
-  contents = Replace(contents, "@MPI_2REAL@", MPI_2REAL)
-  contents = Replace(contents, "@MPI_CHARACTER@", MPI_CHARACTER)
-  contents = Replace(contents, "@MPI_COMPLEX@", MPI_COMPLEX)
-  contents = Replace(contents, "@MPI_DOUBLE_COMPLEX@", MPI_DOUBLE_COMPLEX)
-  contents = Replace(contents, "@MPI_DOUBLE_PRECISION@", MPI_DOUBLE_PRECISION)
-  contents = Replace(contents, "@MPI_INTEGER@", MPI_INTEGER)
-  contents = Replace(contents, "@MPI_LB@", MPI_LB)
-  contents = Replace(contents, "@MPI_LOGICAL@", MPI_LOGICAL)
+
+  contents = Replace(contents, "@MPI_2COMPLEX@", F77_MPI_2COMPLEX)
+  contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", F77_MPI_2DOUBLE_COMPLEX)
+  contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", F77_MPI_2DOUBLE_PRECISION)
+  contents = Replace(contents, "@MPI_2INTEGER@", F77_MPI_2INTEGER)
+  contents = Replace(contents, "@MPI_2REAL@", F77_MPI_2REAL)
+  contents = Replace(contents, "@MPI_CHARACTER@", F77_MPI_CHARACTER)
+  contents = Replace(contents, "@MPI_COMPLEX@", F77_MPI_COMPLEX)
+  contents = Replace(contents, "@MPI_DOUBLE_COMPLEX@", F77_MPI_DOUBLE_COMPLEX)
+  contents = Replace(contents, "@MPI_DOUBLE_PRECISION@", F77_MPI_DOUBLE_PRECISION)
+  contents = Replace(contents, "@MPI_INTEGER@", F77_MPI_INTEGER)
+  contents = Replace(contents, "@MPI_LB@", F77_MPI_LB)
+  contents = Replace(contents, "@MPI_LOGICAL@", F77_MPI_LOGICAL)
   contents = Replace(contents, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
-  contents = Replace(contents, "@MPI_PACKED@", MPI_PACKED)
-  contents = Replace(contents, "@MPI_REAL@", MPI_REAL)
+  contents = Replace(contents, "@MPI_PACKED@", F77_MPI_PACKED)
+  contents = Replace(contents, "@MPI_REAL@", F77_MPI_REAL)
   contents = Replace(contents, "@MPI_STATUS_SIZE@", "5")
-  contents = Replace(contents, "@MPI_UB@", MPI_UB)
+  contents = Replace(contents, "@MPI_UB@", F77_MPI_UB)
   fout.Write(contents)
   fin.Close()
   fout.Close()
