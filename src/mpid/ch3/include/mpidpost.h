@@ -40,6 +40,7 @@ int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
 int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC *, MPIDI_CH3_Pkt_t *);
 int MPIDI_CH3U_Handle_recv_req(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3U_Handle_send_req(MPIDI_VC *, MPID_Request *);
+void MPIDI_CH3U_Request_copy_tmp_data(MPID_Request *);
 
 /*
  * Macros defining both device and channel level request management routines
