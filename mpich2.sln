@@ -1,6 +1,4 @@
 Microsoft Visual Studio Solution File, Format Version 7.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MPIRun", "src\mpid\mm\src\mpiexec\MPIRun\MPIRun.vcproj", "{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mm", "src\mpid\mm\mm.vcproj", "{568A79C4-643B-43D9-BC49-2EE5EFAE6815}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpich2", "mpich2.vcproj", "{0FACD81A-FE33-4845-ACF6-A1D50BD35991}"
@@ -37,20 +35,6 @@ Global
 	GlobalSection(ProjectDependencies) = postSolution
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3mmDebug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3mmPDebug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3mmRelease.ActiveCfg = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3sockDebug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3sockPRelease.ActiveCfg = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.ch3sockRelease.ActiveCfg = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.Debug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.Debug.Build.0 = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.mmDebug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.mmRelease.ActiveCfg = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.Release.ActiveCfg = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.Release.Build.0 = Release|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.shmDebug.ActiveCfg = Debug|Win32
-		{724E8D13-BF92-4E91-A9D6-8F7CEF83BFD5}.shmRelease.ActiveCfg = Release|Win32
 		{568A79C4-643B-43D9-BC49-2EE5EFAE6815}.ch3mmDebug.ActiveCfg = mmRelease|Win32
 		{568A79C4-643B-43D9-BC49-2EE5EFAE6815}.ch3mmPDebug.ActiveCfg = mmRelease|Win32
 		{568A79C4-643B-43D9-BC49-2EE5EFAE6815}.ch3mmRelease.ActiveCfg = mmRelease|Win32
