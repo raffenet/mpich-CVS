@@ -1081,6 +1081,9 @@ extern int MPID_THREAD_LEVEL;
 
 #define MPID_ERROR_LEVEL_ALL 1
 #define MPID_ERROR_LEVEL_RUNTIME 2
+/* Use MPID_ERROR_DECL to wrap declarations that are needed only when
+   error checking is turned on */
+#define MPID_ERROR_DECL(a) a
 
 #if HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_ALL
 #define MPID_BEGIN_ERROR_CHECKS
@@ -1097,6 +1100,7 @@ extern int MPID_THREAD_LEVEL;
 #else
 #define MPID_BEGIN_ERROR_CHECKS
 #define MPID_END_ERROR_CHECKS
+#define MPID_ERROR_DECL(a)
 #endif /* HAVE_ERROR_CHECKING */
 
 /* 
@@ -1325,6 +1329,7 @@ int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... ) /* ATTRIBUTE((format(printf,3,4))) */;
+int MPIR_Err_append_code( int, int, int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
 const char * MPIR_Err_get_string(int);
