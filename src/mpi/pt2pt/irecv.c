@@ -52,7 +52,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    int context_offset = 0;
     MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
@@ -102,7 +101,8 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, context_offset, &request_ptr);
+    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr,
+			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (mpi_errno == MPI_SUCCESS)
     {

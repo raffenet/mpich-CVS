@@ -52,7 +52,6 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    int context_offset = 0;
     MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
@@ -101,7 +100,8 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr, context_offset, &request_ptr);
+    mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr,
+			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (!mpi_errno)
     {

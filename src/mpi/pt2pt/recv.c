@@ -102,8 +102,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr, 0,
-			  status, &request_ptr);
+    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr,
+			  MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
     if (mpi_errno == MPI_SUCCESS)
     {
 	if (request_ptr == NULL)
