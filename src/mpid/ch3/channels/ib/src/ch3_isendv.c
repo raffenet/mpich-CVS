@@ -65,8 +65,15 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 
-	    MPIU_dbg_printf("ibu_post_writev(%d elements)\n", n_iov);
-	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+	    if (n_iov > 1)
+	    {
+		MPIU_dbg_printf("ibu_post_writev(%d elements)\n", n_iov);
+		nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+	    }
+	    else
+	    {
+		nb = ibu_post_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, NULL);
+	    }
 	    
 	    if (nb > 0)
 	    {

@@ -90,8 +90,11 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	/* MT - need some signalling to lock down our right to use the
 	channel, thus insuring that the progress engine does also try to
 	write */
-	
-	nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+
+	if (n_iov > 1)
+	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+	else
+	    nb = ibu_post_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, NULL);
 	
 	MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb);
 	if (nb > 0)

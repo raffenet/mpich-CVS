@@ -16,16 +16,27 @@
 void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 {
     int nb;
+    int count;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
-    assert(vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED);
+    /*assert(vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED);*/
     req->ib.iov_offset = 0;
 
-    MPIU_dbg_printf("ch3_iwrite\n");
+    MPIDI_DBG_PRINTF((71, FCNAME, "entering"));
     /*MPIDI_CH3I_IB_post_write(vc, req);*/
     vc->ib.send_active = req;
-    nb = ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
+    count = req->ch3.iov_count - req->ib.iov_offset;
+    if (count > 1)
+    {
+	nb = ibu_post_writev(vc->ib.ibu, 
+	    req->ch3.iov + req->ib.iov_offset, count, NULL);
+    }
+    else
+    {
+	nb = ibu_post_write(vc->ib.ibu,
+	    req->ch3.iov + req->ib.iov_offset, count, NULL);
+    }
 
     if (nb > 0)
     {
