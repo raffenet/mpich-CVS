@@ -72,7 +72,7 @@ int MPID_Type_vector(int count,
      */
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
 	/* get old values directly from the handle using bit ops */
-	int oldsize = (oldtype & 0x000000ff); /* TODO: USE A NAMED CONSTANT */
+	int oldsize = MPID_Datatype_get_size(oldtype);
 
 	/* fill in remainder of new datatype */
 	new_dtp->size           = oldsize * count * blocklength;
