@@ -1,3 +1,4 @@
+#define VERIFY_USING_REGISTRY
 using System;
 using System.Drawing;
 using System.Collections;
@@ -85,6 +86,7 @@ namespace wmpiconfig
 			hash["app_path"] = new Setting("app_path", "", "", "path to search for user executables");
 			hash["plaintext"] = new Setting("plaintext", "", "no", "yes,no");
 			hash["localonly"] = new Setting("localonly", "", "no", "yes,no");
+			hash["nocache"] = new Setting("nocache", "", "no", "yes,no");
 
 			UpdateHash(get_settings(host_textBox.Text));
 			UpdateListBox();
@@ -383,7 +385,7 @@ namespace wmpiconfig
 
 		internal void PopulateDomainList()
 		{
-			CompEnum ce;
+			ComputerBrowser ce;
 			string domainName = "";
 			string currentDomain = System.Environment.UserDomainName;
 			int index = -1;
@@ -391,7 +393,7 @@ namespace wmpiconfig
 			Cursor.Current = Cursors.WaitCursor;
 
 			// browse for domains
-			ce = new CompEnum(0x80000000, null);
+			ce = new ComputerBrowser(ComputerBrowser.ServerType.SV_TYPE_DOMAIN_ENUM);
 			for (int i=0; i<ce.Length; i++)
 			{
 				domainName = ce[i].Name;
@@ -420,14 +422,14 @@ namespace wmpiconfig
 			Cursor.Current = Cursors.Default;
 		}
 
-		internal string [] GetMachines()
+		internal string [] GetHostNames()
 		{
-			CompEnum ce;
+			ComputerBrowser ce;
 			string [] results = null;
 
 			Cursor.Current = Cursors.WaitCursor;
 
-			ce = new CompEnum(0xFFFFFFFF, domain_comboBox.Text);
+			ce = new ComputerBrowser(domain_comboBox.Text);
 			int numServer = ce.Length;
 
 			if (ce.LastError.Length == 0)
@@ -564,7 +566,7 @@ namespace wmpiconfig
 			{
 				bool popup = true;
 				string mpiexec = get_mpiexec();
-
+#if VERIFY_USING_REGISTRY
 				// Check the registry for the encrypted password
 				// This code will have to be kept synchronized with the smpd code
 				// The advantage of this approach is that the credentials don't have to be valid on the local host
@@ -579,11 +581,10 @@ namespace wmpiconfig
 						popup = false;
 					}
 				}
-
+#else
 				// Or run "mpiexec -validate" and check the output for SUCCESS
-				// This code will last longer because it doesn't rely on known information about the smpd implementation
+				// This code will last longer because it doesn't rely on known information about the smpd implementation.
 				// The disadvantage of this code is that the user credentials have to be valid on the local host.
-				/*
 				Process p1 = new Process();
 				p1.StartInfo.RedirectStandardOutput = true;
 				p1.StartInfo.RedirectStandardError = true;
@@ -599,8 +600,7 @@ namespace wmpiconfig
 				{
 					popup = false;
 				}
-				*/
-
+#endif
 				if (popup)
 				{
 					string wmpiregister;
@@ -625,7 +625,7 @@ namespace wmpiconfig
 
 			Process p = new Process();
 			p.StartInfo.FileName = mpiexec;
-			p.StartInfo.Arguments = string.Format("-noprompt -path {{SMPD_PATH}} -n 1 -host {0} smpd.exe -enumerate", host);
+			p.StartInfo.Arguments = string.Format("-timeout 20 -noprompt -path {{SMPD_PATH}} -n 1 -host {0} smpd.exe -enumerate", host);
 			p.StartInfo.RedirectStandardOutput = true;
 			p.StartInfo.CreateNoWindow = true;
 			p.StartInfo.UseShellExecute = false;
@@ -641,7 +641,10 @@ namespace wmpiconfig
 						break;
 					hash.Add(option, val);
 				}
-				p.WaitForExit();
+				if (!p.WaitForExit(20000))
+				{
+					p.Kill();
+				}
 				if (p.ExitCode != 0)
 				{
 					hash.Clear();
@@ -667,7 +670,7 @@ namespace wmpiconfig
 
 			VerifyEncryptedPasswordExists();
 
-			str = new StringBuilder("-noprompt -path {SMPD_PATH} -n 1 -host ");
+			str = new StringBuilder("-timeout 20 -noprompt -path {SMPD_PATH} -n 1 -host ");
 			str.AppendFormat("{0} smpd.exe", host);
 			foreach (string key in h.Keys)
 			{
@@ -699,7 +702,10 @@ namespace wmpiconfig
 				{
 					output_textBox.AppendText(val + "\r\n");
 				}
-				p.WaitForExit();
+				if (!p.WaitForExit(20000))
+				{
+					p.Kill();
+				}
 				p.Close();
 			}
 			catch (Exception)
@@ -987,7 +993,7 @@ namespace wmpiconfig
 			}
 			else
 			{
-				hosts = GetMachines();
+				hosts = GetHostNames();
 			}
 			if (hosts != null)
 			{
@@ -995,6 +1001,9 @@ namespace wmpiconfig
 				{
 					hosts_list.Items.Clear();
 				}
+				// FIXME: This is an N^2 algorithm.
+				// It probably won't slow down until there are hundreds of hosts available.
+				// A Hashtable should be used instead.
 				foreach (string s in hosts)
 				{
 					bool found = false;
@@ -1022,7 +1031,7 @@ namespace wmpiconfig
 			//tool_tip.SetToolTip(scan_button, "Retrieve the settings from the hosts in the host list");
 			tool_tip.SetToolTip(scan_button, "Scan and remove hosts from the list that don't have MPICH2 installed");
 			tool_tip.SetToolTip(get_hosts_button, "Get the host names from the specified domain");
-			tool_tip.SetToolTip(toggle_button, "Check or uncheck all the checked settings"); //"Toggle all the checked settings");
+			tool_tip.SetToolTip(toggle_button, "Check or uncheck all the checked settings");
 		}
 
 		bool check_recursed = false;
@@ -1032,6 +1041,8 @@ namespace wmpiconfig
 			if (!check_recursed)
 			{
 				check_recursed = true;
+				// Each setting takes up two listbox entries so check and uncheck them together.
+				// Get the index of the sister checkbox.
 				other_index = ((e.Index & 0x1) == 0) ? e.Index + 1 : e.Index - 1;
 				list.Items[other_index].Checked = (e.NewValue == CheckState.Checked);
 				check_recursed = false;
@@ -1106,142 +1117,53 @@ namespace wmpiconfig
 		}
 	}
 
-	public class CompEnum : IEnumerable, IDisposable
+	public class ComputerBrowser : IEnumerable, IDisposable
 	{
 		#region "Server type enumeration"
-		// Possible types of servers
 		[FlagsAttribute]
-			public enum ServerType : uint
+		public enum ServerType : uint
 		{
-			/// <summary>
-			/// All workstations
-			/// </summary>
-			SV_TYPE_WORKSTATION   = 0x00000001,
-			/// <summary>
-			/// All computers that have the server service running
-			/// </summary>
-			SV_TYPE_SERVER    = 0x00000002,
-			/// <summary>
-			/// Any server running Microsoft SQL Server
-			/// </summary>
-			SV_TYPE_SQLSERVER   = 0x00000004,
-			/// <summary>
-			/// Primary domain controller
-			/// </summary>
-			SV_TYPE_DOMAIN_CTRL   = 0x00000008,
-			/// <summary>
-			/// Backup domain controller
-			/// </summary>
-			SV_TYPE_DOMAIN_BAKCTRL  = 0x00000010,
-			/// <summary>
-			/// Server running the Timesource service
-			/// </summary>
-			SV_TYPE_TIME_SOURCE   = 0x00000020,
-			/// <summary>
-			/// Apple File Protocol servers
-			/// </summary>
-			SV_TYPE_AFP     = 0x00000040,
-			/// <summary>
-			/// Novell servers
-			/// </summary>
-			SV_TYPE_NOVELL    = 0x00000080,
-			/// <summary>
-			/// LAN Manager 2.x domain member
-			/// </summary>
-			SV_TYPE_DOMAIN_MEMBER  = 0x00000100,
-			/// <summary>
-			/// Server sharing print queue
-			/// </summary>
-			SV_TYPE_PRINTQ_SERVER  = 0x00000200,
-			/// <summary>
-			/// Server running dial-in service
-			/// </summary>
-			SV_TYPE_DIALIN_SERVER  = 0x00000400,
-			/// <summary>
-			/// Xenix server
-			/// </summary>
-			SV_TYPE_XENIX_SERVER  = 0x00000800,
-			/// <summary>
-			/// Windows NT workstation or server
-			/// </summary>
-			SV_TYPE_NT     = 0x00001000,
-			/// <summary>
-			/// Server running Windows for Workgroups
-			/// </summary>
-			SV_TYPE_WFW     = 0x00002000,
-			/// <summary>
-			/// Microsoft File and Print for NetWare
-			/// </summary>
-			SV_TYPE_SERVER_MFPN   = 0x00004000,
-			/// <summary>
-			/// Server that is not a domain controller
-			/// </summary>
-			SV_TYPE_SERVER_NT   = 0x00008000,
-			/// <summary>
-			/// Server that can run the browser service
-			/// </summary>
-			SV_TYPE_POTENTIAL_BROWSER = 0x00010000,
-			/// <summary>
-			/// Server running a browser service as backup
-			/// </summary>
-			SV_TYPE_BACKUP_BROWSER  = 0x00020000,
-			/// <summary>
-			/// Server running the master browser service
-			/// </summary>
-			SV_TYPE_MASTER_BROWSER  = 0x00040000,
-			/// <summary>
-			/// Server running the domain master browser
-			/// </summary>
-			SV_TYPE_DOMAIN_MASTER  = 0x00080000,
-			/// <summary>
-			/// Windows 95 or later
-			/// </summary>
-			SV_TYPE_WINDOWS    = 0x00400000,
-			/// <summary>
-			/// Root of a DFS tree
-			/// </summary>
-			SV_TYPE_DFS     = 0x00800000,
-			/// <summary>
-			/// Terminal Server
-			/// </summary>
-			SV_TYPE_TERMINALSERVER  = 0x02000000,
-			/// <summary>
-			/// Server clusters available in the domain
-			/// </summary>
-			SV_TYPE_CLUSTER_NT   = 0x01000000,
-			/// <summary>
-			/// Cluster virtual servers available in the domain
-			/// (Not supported for Windows 2000/NT)
-			/// </summary>			
-			SV_TYPE_CLUSTER_VS_NT  = 0x04000000,
-			/// <summary>
-			/// IBM DSS (Directory and Security Services) or equivalent
-			/// </summary>
-			SV_TYPE_DCE     = 0x10000000,
-			/// <summary>
-			/// Return list for alternate transport
-			/// </summary>
-			SV_TYPE_ALTERNATE_XPORT  = 0x20000000,
-			/// <summary>
-			/// Return local list only
-			/// </summary>
-			SV_TYPE_LOCAL_LIST_ONLY  = 0x40000000,
-			/// <summary>
-			/// Lists available domains
-			/// </summary>
-			SV_TYPE_DOMAIN_ENUM		=  0x80000000
+			SV_TYPE_WORKSTATION       = 0x00000001, // All workstations
+			SV_TYPE_SERVER            = 0x00000002, // All computers that have the server service running
+			SV_TYPE_SQLSERVER         = 0x00000004, // Any server running Microsoft SQL Server
+			SV_TYPE_DOMAIN_CTRL       = 0x00000008, // Primary domain controller
+			SV_TYPE_DOMAIN_BAKCTRL    = 0x00000010, // Backup domain controller
+			SV_TYPE_TIME_SOURCE       = 0x00000020, // Server running the Timesource service
+			SV_TYPE_AFP               = 0x00000040, // Apple File Protocol servers
+			SV_TYPE_NOVELL            = 0x00000080, // Novell servers
+			SV_TYPE_DOMAIN_MEMBER     = 0x00000100, // LAN Manager 2.x domain member
+			SV_TYPE_PRINTQ_SERVER     = 0x00000200, // Server sharing print queue
+			SV_TYPE_DIALIN_SERVER     = 0x00000400, // Server running dial-in service
+			SV_TYPE_XENIX_SERVER      = 0x00000800, // Xenix server
+			SV_TYPE_NT                = 0x00001000, // Windows NT workstation or server
+			SV_TYPE_WFW               = 0x00002000, // Server running Windows for Workgroups
+			SV_TYPE_SERVER_MFPN       = 0x00004000, // Microsoft File and Print for NetWare
+			SV_TYPE_SERVER_NT         = 0x00008000, // Server that is not a domain controller
+			SV_TYPE_POTENTIAL_BROWSER = 0x00010000, // Server that can run the browser service
+			SV_TYPE_BACKUP_BROWSER    = 0x00020000, // Server running a browser service as backup
+			SV_TYPE_MASTER_BROWSER    = 0x00040000, // Server running the master browser service
+			SV_TYPE_DOMAIN_MASTER     = 0x00080000, // Server running the domain master browser
+			SV_TYPE_WINDOWS           = 0x00400000, // Windows 95 or later
+			SV_TYPE_DFS               = 0x00800000, // Root of a DFS tree
+			SV_TYPE_TERMINALSERVER    = 0x02000000, // Terminal Server
+			SV_TYPE_CLUSTER_NT        = 0x01000000, // Server clusters available in the domain
+			SV_TYPE_CLUSTER_VS_NT     = 0x04000000, // Cluster virtual servers available in the domain
+			SV_TYPE_DCE               = 0x10000000, // IBM DSS (Directory and Security Services) or equivalent
+			SV_TYPE_ALTERNATE_XPORT   = 0x20000000, // Return list for alternate transport
+			SV_TYPE_LOCAL_LIST_ONLY   = 0x40000000, // Return local list only
+			SV_TYPE_DOMAIN_ENUM		  = 0x80000000  // Lists available domains
 		}
 		#endregion
 		
-		// Holds computer information
+		// Server information structure
 		[StructLayoutAttribute(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-			internal struct SERVER_INFO_101
+		internal struct SERVER_INFO_101
 		{
-			public int sv101_platform_id;
+			public int    sv101_platform_id;
 			public string sv101_name;
-			public int sv101_version_major;
-			public int sv101_version_minor;
-			public int sv101_type;
+			public int    sv101_version_major;
+			public int    sv101_version_minor;
+			public int    sv101_type;
 			public string sv101_comment;
 		}
 
@@ -1261,8 +1183,7 @@ namespace wmpiconfig
    
 		// Frees buffer created by NetServerEnum
 		[DllImport("netapi32.dll")]
-		private extern static int NetApiBufferFree( 
-			IntPtr buf );
+		private extern static int NetApiBufferFree(IntPtr buf);
 
 		// Constants
 		private const int ERROR_ACCESS_DENIED = 5;
@@ -1272,21 +1193,22 @@ namespace wmpiconfig
 		private NetworkComputers[] _computers;
 		private string _lastError = "";
 
-		/// <summary>
-		/// Converts ServerType to its underlying value
-		/// </summary>
-		/// <param name="serverType">One of the ServerType values</param>
-		/// <param name="domain">The domain to search for computers in</param>
-		public CompEnum(ServerType serverType, string domain) : this(UInt32.Parse(Enum.Format(typeof(ServerType), serverType, "x"), System.Globalization.NumberStyles.HexNumber), domain)
+		public ComputerBrowser(ServerType serverType, string domain) : this(UInt32.Parse(Enum.Format(typeof(ServerType), serverType, "x"), System.Globalization.NumberStyles.HexNumber), domain)
 		{
-			
-		}		
+		}
+		public ComputerBrowser(ServerType serverType) : this(UInt32.Parse(Enum.Format(typeof(ServerType), serverType, "x"), System.Globalization.NumberStyles.HexNumber), null)
+		{
+		}
+		public ComputerBrowser(string domainName) : this(0xFFFFFFFF, domainName)
+		{
+		}
+
 		/// <summary>
-		/// Populates with broadcasting computers.
+		/// Enumerate the hosts of type serverType in the specified domain
 		/// </summary>
 		/// <param name="serverType">Server type filter</param>
 		/// <param name="domain">The domain to search for computers in</param>
-		public CompEnum(uint serverType, string domainName)
+		public ComputerBrowser(uint serverType, string domainName)
 		{			
 			int entriesread;  // number of entries actually read
 			int totalentries; // total visible servers and workstations
@@ -1298,19 +1220,10 @@ namespace wmpiconfig
 
 			// structure containing info about the server
 			SERVER_INFO_101 si;
-			
+
 			try
 			{
-				result = NetServerEnum(
-					null,
-					101,
-					out pBuf,
-					-1, 
-					out entriesread,
-					out totalentries,
-					serverType,
-					domainName,
-					IntPtr.Zero);
+				result = NetServerEnum(null, 101, out pBuf, -1, out entriesread, out totalentries, serverType, domainName, IntPtr.Zero);
 
 				// Successful?
 				if(result != 0) 
@@ -1324,7 +1237,7 @@ namespace wmpiconfig
 							_lastError = "Access was denied";
 							break;
 						case ERROR_NO_SERVERS:
-							_lastError = "So servers available for this domain";
+							_lastError = "No servers available for this domain";
 							break;
 						default:
 							_lastError = "Unknown error code "+result;
@@ -1408,8 +1321,8 @@ namespace wmpiconfig
 		// holds computer info.
 		public struct NetworkComputers
 		{
-			CompEnum.SERVER_INFO_101 _computerinfo;
-			internal NetworkComputers(CompEnum.SERVER_INFO_101 info)
+			ComputerBrowser.SERVER_INFO_101 _computerinfo;
+			internal NetworkComputers(ComputerBrowser.SERVER_INFO_101 info)
 			{
 				_computerinfo = info;
 			}
@@ -1470,12 +1383,17 @@ namespace wmpiconfig
 					return aryComputers[indexer];
 				}
 			}
+
 			public bool MoveNext()
 			{
-				if(aryComputers == null)
+				if (aryComputers == null)
+				{
 					return false;
+				}
 				if (indexer < aryComputers.Length)
+				{
 					indexer++;
+				}
 				return (!(indexer == aryComputers.Length));
 			}
 		}
