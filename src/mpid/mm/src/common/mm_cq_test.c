@@ -332,8 +332,6 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 
     MM_ENTER_FUNC(MM_CREATE_POST_UNEX);
 
-    err_printf("mm_creat_post_unex not implemented yet\n");
-
     hdr_ptr = &unex_head_car_ptr->msg_header.pkt.u.hdr;
 
     /* XFER_INIT */
