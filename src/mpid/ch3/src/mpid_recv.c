@@ -16,24 +16,28 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 {
     MPID_Request * rreq;
     int found;
+    int mpi_errno = MPI_SUCCESS;
 
     MPIDI_dbg_printf(10, FCNAME, "entering");
     MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		     comm->context_id + context_offset);
+    
     rreq = MPIDI_CH3U_Request_FUOAP(
 	rank, tag, comm->context_id + context_offset, &found);
     assert(rreq != NULL);
+
+    /* MT - thread safety? message could arrive while populating req */
+    rreq->comm = comm;
+    rreq->ch3.user_buf = buf;
+    rreq->ch3.user_count = count;
+    rreq->ch3.datatype = datatype;
+    rreq->ch3.vc = comm->vcr[rank];
 
     if (found)
     {
 	/* Message was found in the unexepected queue */
 	MPIDI_dbg_printf(15, FCNAME, "request found in unexpected queue");
 
-	/* XXX - this check needs to be thread safe; it may be already assuming
-           rreq->cc is declared volatile */
-	/* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are
-	   assuming that for simple sends and receives the request's internal
-	   completion counter will always be used. */
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    /* This is an eager send message.  Assuming all of the data has
@@ -42,34 +46,32 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		
 	    MPIDI_dbg_printf(15, FCNAME, "eager message in the request");
 	    
+	    /* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are
+	       assuming that for simple sends and receives the request's
+	       internal completion counter will always be used. */
+	    /* MT - this check needs to be thread safe; it may be already
+	       assuming rreq->cc is declared volatile */
 	    if (rreq->cc == 0)
 	    {
 		if (count > 0)
 		{
-		    rreq->ch3.user_buf = buf;
-		    rreq->ch3.user_count = count;
-		    rreq->ch3.datatype = datatype;
-		    
 		    MPIDI_CH3U_Request_copy_tmp_data(rreq);
 		}
 		
 		*status = rreq->status;
 		MPIU_Free(rreq->ch3.tmp_buf);
 		MPID_Request_free(rreq);
+		rreq = NULL;
 		
-		return status->MPI_ERROR;
+		mpi_errno = status->MPI_ERROR;
+		goto fn_exit;
 	    }
 	    else
 	    {
 		/* The data is still being transfered across the net.  We'll
 		   leave it to the progress engine to handle once the entire
 		   message has arrived. */
-		rreq->ch3.user_buf = buf;
-		rreq->ch3.user_count = count;
-		rreq->ch3.datatype = datatype;
-		rreq->ch3.vc = comm->vcr[rank];
 		rreq->ch3.ca = MPIDI_CH3_CA_COPY_COMPLETE;
-		*request = rreq;
 	    }
 	}
 	else
@@ -83,14 +85,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 			     "sending rndv CTS");
 	    
 	    /* A rendezvous request-to-send (RTS) message has arrived.  We need
-	       to repopulate the reequest with the information supplied in the
-	       arguments and then send a clear-to-send message to the remote
-	       process. */
-	    rreq->ch3.user_buf = buf;
-	    rreq->ch3.user_count = count;
-	    rreq->ch3.datatype = datatype;
-	    rreq->ch3.vc = comm->vcr[rank];
-
+	       to send a clear-to-send message to the remote process. */
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
 	    cts_pkt->req_id_sender = rreq->ch3.rndv_req_id;
 	    cts_pkt->req_id_receiver = rreq->handle;
@@ -103,26 +98,18 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		   on a req we don't want/need. */
 		MPID_Request_free(cts_req);
 	    }
-	    /* TODO - send Rndv CTS */
-		
-	    *request = rreq;
 	}
     }
     else
     {
 	/* Message has yet to arrived.  The request has been placed on the list
-           of posted receive requests.  The request still needs to be populated
-           with information supplied in the arguments. */
+           of posted receive requests and populated with information supplied
+           in the arguments. */
 	MPIDI_dbg_printf(15, FCNAME, "request allocated in posted queue");
-	rreq->comm = comm;
-	rreq->ch3.user_buf = buf;
-	rreq->ch3.user_count = count;
-	rreq->ch3.datatype = datatype;
-	rreq->ch3.vc = comm->vcr[rank];
-	*request = rreq;
-	/* XXX - thread safety? message could arrive while populating req */
     }
-    
+
+  fn_exit:
+    *request = rreq;
     MPIDI_dbg_printf(10, FCNAME, "exiting");
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

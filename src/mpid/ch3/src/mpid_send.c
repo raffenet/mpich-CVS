@@ -37,14 +37,12 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    pkt->data_sz = 0;
 
 	    sreq = MPIDI_CH3_iStartMsg(comm->vcr[rank], pkt, sizeof(*pkt));
-	    if (sreq)
+	    if (sreq != NULL)
 	    {
 		sreq->comm = comm;
 	    }
 
-	    MPIDI_dbg_printf(10, FCNAME, "exiting");
-	    *request = sreq;
-	    return MPI_SUCCESS;
+	    goto fn_exit;
     }
     
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
@@ -129,7 +127,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 
 	MPIDI_CH3_iSend(comm->vcr[rank], sreq, pkt, sizeof(*pkt));
     }
-    
+
+  fn_exit:
     MPIDI_dbg_printf(10, FCNAME, "exiting");
     *request = sreq;
     return MPI_SUCCESS;
