@@ -1,1 +1,2 @@
-SUBDIRS = util datatype .
+#SUBDIRS = util datatype .
+SUBDIRS = .
