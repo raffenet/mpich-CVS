@@ -11,6 +11,7 @@
 
 #ifdef F77_NAME_UPPER
 #define mpirinitc_ MPIRINITC
+#define mpirinitc2_ MPIRINITC2
 #elif defined(F77_NAME_LOWER_2USCORE) || defined(F77_NAME_LOWER_USCORE)
 /* leave name alone */
 #else
@@ -45,4 +46,11 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d,
     MPI_F_STATUSES_IGNORE = d;
     MPI_F_ERRCODES_IGNORE = (int *)e;
     MPI_F_ARGVS_NULL      = f;
+}
+/* Initialize the Fortran ARGV_NULL to a blank.  Using this routine
+   avoids potential problems with string manipulation routines that
+   exist in the Fortran runtime but not in the C runtime libraries */
+FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
+{
+    *a = ' ';
 }

@@ -15,7 +15,7 @@ C      MPI_ARGVS_NULL
 C      (Fortran requires character data in a separate common block)
        common /MPIPRIVC/ f, MPI_ARGV_NULL
        save /MPIPRIVC/       
-       MPI_ARGV_NULL(1) = " "
        call mpirinitc( a, b, c, d, e, f )
+       call mpirinitc2( MPI_ARGV_NULL )
        return
        end
