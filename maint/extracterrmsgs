@@ -41,7 +41,7 @@ else {
 # Setup before processing the files
 if ($build_test_pgm) {
     open( TESTFD, ">test/mpi/errhan/errcode.c" ) || die "Cannot create test program\n";
-    print TESTFD "#include <stdio.h>\n#include \"mpi.h\"\n";
+    print TESTFD "#include <stdio.h>\n#include <stdlib.h>\n#include \"mpi.h\"\n";
     print TESTFD "#define MPIR_ERR_FATAL 1\n";
     print TESTFD "#define MPIR_ERR_RECOVERABLE 0\n";
     print TESTFD "int MPIR_Err_create_code( int, int, char *, int, int, const char [], const char [], ... );\n";
