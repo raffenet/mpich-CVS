@@ -1,1 +1,1 @@
-SUBDIRS = errhan init timer .
+SUBDIRS = coll errhan init spawn timer .
