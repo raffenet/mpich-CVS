@@ -427,16 +427,16 @@ one where the MPICH2 source is installed.  This often allows faster
 building, as the sources can be placed in a shared filesystem and the
 builds done in a local (and hence usually much faster) filesystem.  To
 make this clear, the following example assumes that the sources are
-placed in /usr/me/mpich2-10-25-02, the build is done in /tmp/me/mpich2,
-and the installed version goes into /usr/local/mpich2-test:
+placed in /home/me/mpich2-<VERSION>, the build is done in /tmp/me/mpich2,
+and the installed version goes into /usr/local/mpich2-<VERSION>:
 
-  cd /usr/me
+  cd /home/me
   tar xzf mpich2-<VERSION>.tar.gz
   cd /tmp/me
   # Assume /tmp/me already exists
   mkdir mpich2
   cd mpich2
-  /usr/me/mpich2-<VERSION>/configure --prefix=/usr/local/mpich2-test
+  /home/me/mpich2-<VERSION>/configure --prefix=/usr/local/mpich2-<VERSION>
   make
   make install
 
