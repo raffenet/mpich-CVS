@@ -80,6 +80,8 @@ char * get_sock_error_string(int error)
 	return "socket operation in progress";
     case SOCK_ERR_OP_ABORTED:
 	return "socket operation aborted";
+    case SOCK_ERR_ADDR_INUSE:
+	return "socket address and or port already in use";
     case SOCK_ERR_OS_SPECIFIC:
 	sprintf(str, "operating system specific socket error %d occurred", sock_get_last_os_error());
 	return str;
