@@ -58,7 +58,7 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 
     if (size < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iobadsize", "**iobadsize");
+			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iobadsize", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_set_size: Invalid size argument\n");
@@ -75,7 +75,7 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 
     if (tmp_sz != size) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**notsame", "**notsame");
+			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**notsame", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_set_size: size argument must be the same on all processes\n");

@@ -59,7 +59,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-							"**ioamodeseq", "**ioamodeseq");
+							"**ioamodeseq", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_seek: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
@@ -76,7 +76,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	if (offset < 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**iobadoffset", "**iobadoffset");
+							"**iobadoffset", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: Invalid offset argument\n");
@@ -95,7 +95,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	if (offset < 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**ionegoffset", "**ionegoffset");
+							"**ionegoffset", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
@@ -114,7 +114,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	if (offset < 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**ionegoffset", "**ionegoffset");
+							"**ionegoffset", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
@@ -129,7 +129,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
     default:
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**iobadwhence", "**iobadwhence");
+							"**iobadwhence", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_seek: Invalid whence argument\n");

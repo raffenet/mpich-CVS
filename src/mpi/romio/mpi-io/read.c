@@ -68,7 +68,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     if (count < 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-							"**iobadcount", "**iobadcount");
+							"**iobadcount", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read: Invalid count argument\n");
@@ -83,7 +83,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
-							"**dtypenull", "**dtypenull");
+							"**dtypenull", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read: Invalid datatype\n");
@@ -106,7 +106,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**ioetype", "**ioetype");
+							"**ioetype", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read: Only an integral number of etypes can be accessed\n");
@@ -121,7 +121,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     if (fh->access_mode & MPI_MODE_WRONLY) {
 #ifdef MPICH2
 			error_code=  MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
-							"**ioneedrd", "**ioneedrd");
+							"**ioneedrd", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read: Can't read from a file opened with MPI_MODE_WRONLY\n");
@@ -136,7 +136,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-							"**ioamodeseq", "**ioamodeseq");
+							"**ioamodeseq", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");

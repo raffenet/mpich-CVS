@@ -59,7 +59,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if ((disp < 0) && (disp != MPI_DISPLACEMENT_CURRENT)) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-					    "**iobaddisp", 0);
+					"**iobaddisp", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Invalid disp argument\n");
@@ -74,7 +74,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     /* rudimentary checks for incorrect etype/filetype.*/
     if (etype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**ioetype", "**ioetype");
+	error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**ioetype", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Invalid etype\n");
@@ -88,7 +88,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 
     if (filetype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iofiletype", "**iofiletype");
+	error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iofiletype", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Invalid filetype\n");
@@ -103,7 +103,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if ((fh->access_mode & MPI_MODE_SEQUENTIAL) && (disp != MPI_DISPLACEMENT_CURRENT)) {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-			"**iodispifseq", "**iodispifseq");
+			"**iodispifseq", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_set_view: disp must be set to MPI_DISPLACEMENT_CURRENT since file was opened with MPI_MODE_SEQUENTIAL\n");
@@ -118,7 +118,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if ((disp == MPI_DISPLACEMENT_CURRENT) && !(fh->access_mode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-			"**iodispifseq", "**iodispifseq");
+			"**iodispifseq", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_set_view: disp can be set to MPI_DISPLACEMENT_CURRENT only if file was opened with MPI_MODE_SEQUENTIAL\n");
@@ -134,7 +134,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     MPI_Type_size(etype, &etype_size);
     if (filetype_size % etype_size != 0) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_ERR_IO, "**iofiletype", "**iofiletype");
+	error_code = MPIR_Err_create_code(MPI_ERR_IO, "**iofiletype", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Filetype must be constructed out of one or more etypes\n");
@@ -149,7 +149,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if (strcmp(datarep, "native") && strcmp(datarep, "NATIVE")) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_DATAREP, 
-			    "**unsupporteddatarep","**unsupporteddatarep");
+			    "**unsupporteddatarep",0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Only \"native\" data representation currently supported\n");

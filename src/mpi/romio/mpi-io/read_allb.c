@@ -58,7 +58,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     if (count < 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-							"**iobadcount", "**iobadcount");
+							"**iobadcount", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_all_begin: Invalid count argument\n");
@@ -73,7 +73,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
-							"**dtypenull", "**dtypenull");
+							"**dtypenull", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all_begin: Invalid datatype\n");
@@ -88,7 +88,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-							"**ioamodeseq", "**ioamodeseq");
+							"**ioamodeseq", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all_begin: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
@@ -103,7 +103,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     if (fh->split_coll_count) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**iosplitcoll", "**iosplitcoll");
+							"**iosplitcoll", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all_begin: Only one active split collective I/O operation allowed per file handle\n");
@@ -121,7 +121,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**ioetype", "**ioetype");
+							"**ioetype", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all_begin: Only an integral number of etypes can be accessed\n");

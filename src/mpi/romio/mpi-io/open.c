@@ -59,7 +59,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     if (comm == MPI_COMM_NULL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_COMM, "**comm", "**comm");
+			error_code = MPIR_Err_create_code(MPI_ERR_COMM, "**comm", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: Invalid communicator\n");
@@ -91,7 +91,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	 ((amode&MPI_MODE_WRONLY)?1:0) != 1 ) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamodeone", "**fileamodeone");
+							"**fileamodeone", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or MPI_MODE_RDWR must be specified\n");
@@ -107,7 +107,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
             ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL))) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamoderead", "**fileamoderead");
+							"**fileamoderead", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY\n");
@@ -122,7 +122,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamodeseq", "**fileamodeseq");
+							"**fileamodeseq", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR\n");
@@ -203,7 +203,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
         (amode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
-							"**iosequnsupported", "**iosequnsupported");
+							"**iosequnsupported", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: MPI_MODE_SEQUENTIAL not supported on PIOFS and PVFS\n");

@@ -63,7 +63,7 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
     if ((*request < (MPIO_Request) 0) || 
 	     ((*request)->cookie != ADIOI_REQ_COOKIE)) {
 #ifdef MPICH2
-			error_code = MPIR_create_code(MPI_ERR_REQUEST, "**request", "**request");
+			error_code = MPIR_create_code(MPI_ERR_REQUEST, "**request", 0);
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPIO_Test: Invalid request object\n");

@@ -67,7 +67,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if (offset < 0) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-			    "**iobadoffset", "**iobadoffset");
+			    "**iobadoffset", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif  PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_write_at_all: Invalid offset argument\n");
@@ -82,7 +82,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if (count < 0) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-			    "**iobadcount", "**iobadcount");
+			    "**iobadcount", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_at_all: Invalid count argument\n");
@@ -97,7 +97,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_TYPE,
-			    "**dtypenull", "**dtypenull");
+			    "**dtypenull", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_write_at_all: Invalid datatype\n");
@@ -113,7 +113,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_IO,
-			    "**ioetype", "**ioetype");
+			    "**ioetype", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_write_at_all: Only an integral number of etypes can be accessed\n");
@@ -128,7 +128,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-			    "**ioamodeseq", "**ioamodeseq");
+			    "**ioamodeseq", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_at_all: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");

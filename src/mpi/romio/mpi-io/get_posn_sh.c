@@ -55,7 +55,7 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
-							"**ioamodeseq", "**ioamodeseq");
+							"**ioamodeseq", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_get_position_shared: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
@@ -69,7 +69,7 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", "**iosharedunsupported");
+			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_get_position_shared: Shared file pointer not supported on PIOFS and PVFS\n");
