@@ -35,8 +35,11 @@ $outputUncovered = 1;
 # annoteBaseDir is the base file name that is stripped from the
 # file names
 $annoteSrcDir = "";
+$annoteWebPrefix = "";
+$indexfile = "";     # File to contain the index of files
 $annoteFiles = 0;
 $annoteBaseDir = "";
+%AnnoteFilesMap = ();   # Clear the list of files 
 
 for (@ARGV) {
     if (/-annote=(.*)/) {
@@ -46,8 +49,20 @@ for (@ARGV) {
 	$annoteFiles  = 1;
 	next;
     }
+    elsif (/-annoteweb=(.*)/) {
+	# annoteweb gives the URL that matches the annoteSrcDir.
+	$annoteWebPrefix = $1;
+    }
+    elsif (/-index=(.*)/) {
+	$indexfile = $1;
+	next;
+    }
+
     my $filename = $_;
     if (-d $filename) {
+	# Expand the directory into a list of files.  If there are 
+	# subdirectories, expand them too (e.g., get a list of 
+	# *every* file within the directory tree. 
 	@files = &ExpandDir( $filename );
 	foreach $file (@files) {
 	    ($missed_lines,$total_lines) = &CountUncoveredLines( $file );
@@ -77,6 +92,11 @@ for (@ARGV) {
 
 for $routine (@UnCalled) {
     print STDERR "$routine never called\n";
+}
+
+if ($annoteFiles && $indexfile ne "") {
+    # Here is where we could process the list of files that were annotated
+    &WriteAnnoteFileMap( $indexfile );
 }
 
 # Count the number of uncovered lines, and return that number.
@@ -206,12 +226,17 @@ sub ExpandDir {
 #
 # Annotate a file by placing the uncovered lines in bgcolor
 # AnnotateUncoveredLines( coveragefile, bgcolor, filenhandle )
+#
+# This uses a state machine to move between the states of:
+#   init - beginning (top of file)
+#   unex - within unexecuted code
+#   exec - within executed code
 sub AnnotateUncoveredLines {
     my $filename = $_[0];
     my $bgcolor  = $_[1];
     my $outfile  = $_[2];
-    my $outstate = "init";
-    my $instate  = "init";
+    my $curstate = "init";    # Current state
+    my $newstate;             # New state implied by the last line read
     my $newline  = "\r\n";
 
     open( FD, "<$filename" ) || die "Could not open $filename\n";
@@ -221,78 +246,130 @@ sub AnnotateUncoveredLines {
     # Note that linecount is relative to the foo.c.gcov file, not the
     # original foo.c file.
     while (<FD>) {
-	# Make sure that we're in the right state.  Check to see if the 
-	# next line is executed or not.
-	if (! /^\s*\#\#\#\#\#\#/) {
-	    if ($outstate eq "unex") {
-		print $outfile "</TD><TR><TD WIDTH=100%><PRE>$newline";
+	# Skip coverage messages (always start in the first column) 
+	if (! /^\s/) { next; }
+
+	# TODO:
+	# If there is neither a "######" nor a count in front of the
+	# line, and it is not a comment or blank space, it has
+	# the same state as currently in (e.g., it is probably a 
+	# continuation line).
+	# Determine what state this line is in
+	if (/^\s*\#\#\#\#\#\#/) {
+	    $newstate = "unex";
+	}
+	elsif (/^\s*[0-9]+\s/) {
+	    $newstate = "exec";
+	}
+	else {
+	    # Keep the same state...
+	    if ($curstate eq "init") {
+		$newstate = "exec";
 	    }
-	    elsif ($outstate eq "init") {
-		print $outfile "<TR><TD WIDTH=100%><PRE>$newline";
-	        $outstate = "exec";
+	    else {
+		$newstate = $curstate;
 	    }
 	}
 
-	# Coverage messages appear to always begin in the first column.
-	if (!/^\s/) { next; }
+	# Special cases for blocks that we skip (mark them as executed) 
+	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ || 
+	    /^\s*\/\* --BEGIN DEBUG-- \*\// ||
+	    /^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
+	    # This could be a "skip" state
+	    $newstate = "exec";
+	}
 
+	# If there is a change in state, generate the correct code
+	if ($newstate ne $curstate) {
+	    if ($curstate ne "init") {
+		# Finish off the current state
+		print $outfile "</PRE></TD></TR>";
+	    }
+	    if ($newstate eq "exec") { $bgcolor = "white"; } 
+	    else { $bgcolor = "red"; }
+	    print $outfile "<TR><TD BGCOLOR=\"$bgcolor\" WIDTH=100%><PRE>$newline";
+	}
+	$curstate = $newstate;
+	
+	# Add this line
+	# HTML-ify the line first (handle <,>,and &
+	s/\&/--AMP--/g;
+	s/>/&gt;/g;
+	s/</&lt;/g;
+	s/--AMP--/&amp;/g;
+	print $outfile $_;
+
+	# Now, for the blocks that we skip, read them until we reach the
+	# end of the block
 	# Skip any error checking block
 	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
-	    print $outfile $_;
+	    my $sawend = 0;
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile $_;
 		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/) { 
+		    $sawend = 1;
 		    last; 
 		}
+	    }
+	    if (!$sawend) {
+		print STDERR "File $filename ended in HAVE ERROR CHECKING block\n";
 	    }
 	    next;	       
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
 	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
-	    print $outfile $_;
+	    my $sawend=0;
 	    while (<FD>) {
-		if (!/^\s/) { print $outfile $_; }
+		if (/^\s/) { print $outfile $_; }
 		if (/^\s*\/\* --END DEBUG-- \*\//) {
+		    $sawend = 1;
 		    last; 
 		}
+	    }
+	    if (!$sawend) {
+		print STDERR "File $filename ended in --BEGIN DEBUG-- block\n";
 	    }
 	    next;	       
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
 	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
-	    print $outfile $_;
+	    my $sawend = 0;
 	    while (<FD>) {
-		if (!/^\s/) { print $outfile $_; }
+		if (/^\s/) { print $outfile $_; }
 		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
+		    $sawend = 1;
 		    last; 
 		}
 	    }
+	    if (!$sawend) {
+		print STDERR "File $filename ended in --BEGIN ERROR HANDLING-- block\n";
+	    }
 	    next;	       
 	}
-	# If requested, skip obvious error checking lines
-	if ($skipErrExits && 
-	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-	     /MPIR_Err_create_code/)) {
-	    print $outfile $_;
-	    next;
-	}
+#	# If requested, skip obvious error checking lines
+#	if ($skipErrExits && 
+#	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
+#	     /MPIR_Err_create_code/)) {
+#	    print $outfile $_;
+#	    next;
+#	}
 
-	if (/^\s*######/) {
-	    if ($outstate ne "unex") {
-		print $outfile "</TD></TR><TR><TD BGCOLOR=\"$bgcolor\" WIDTH=100%><PRE>$newline";
-		$outstate = "unex";
-	    }
-	    print $outfile $_;
-	}
     }
     close (FD);
     print $outfile "</PRE></TD></TR>$newline</TABLE>$newline";
 }
 
 # Write the annotation file as a simple HTML file
+# (returns immediately if annotations are not requested)
+# To aid in navigating the annotation pages
+# 
+# WriteAnnoteFile( filename )
+# Also inserts the generated filename to the hash %AnnoteFilesMap
+# with key the base filename (e.g., foo.c) and the value the
+# full directory path (e.g., $annoteSrcDir/foo.c.htm)
 sub WriteAnnoteFile {
     my $filename =$_[0];
     if ($annoteFiles) {
@@ -304,6 +381,7 @@ sub WriteAnnoteFile {
 	my $rc = &MakeDirs( "$annoteSrcDir/$basefile" );
 	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile.htm" );
 	if ($rc != 0) {
+	    $AnnoteFilesMap{$basefile} = "$annoteSrcDir/$basefile.htm";
 	    $newline = "\r\n";
 	    print $OUTFD "<HTML><HEAD>$newline";
 	    print $OUTFD "<TITLE>Coverage for $file</TITLE>$newline";
@@ -319,6 +397,36 @@ sub WriteAnnoteFile {
     }
 }
 
+#
+# TODO: Create a map of the annotated files by using AnnoteFilesMap
+# We need a better framework for this.  Perhaps a table with multiple
+# columns.  We could also arrange in groups by directory names
+#
+# WriteAnnoteFileMap( name-fo-file-to-write )
+sub WriteAnnoteFileMap {
+    my @names = sort(keys(%AnnoteFilesMap));
+    my $indexfile = $_[0];
+
+    open (IFD, ">$indexfile" ) || die "Could not open $indexfile\n";
+
+    print IFD "<HTML><HEAD><TITLE>Index to coverage analysis</TITLE></HEAD>\n";
+    print IFD "<BODY BGCOLOR=\"FFFFFF\">\n";
+    for ($i=0; $i<=$#names; $i++) {
+	my $file = $names[$i];
+	my $target = $AnnoteFilesMap{$file};
+
+	# Clean up filename
+	$file =~ s/^\.\///;
+	# Clean up target
+	if ($annoteWebPrefix ne "") {
+	    $target =~ s/$annoteSrcDir/$annoteWebPrefix/;
+	}
+	print IFD "<A HREF=\"$target\">$file</A><BR>\n";
+    }
+    print IFD "</BODY></HTML>\n";
+    close IFD;
+}
+
 # Make all of the directories in filename (which may include a 
 # final file).  If it contains only directories, make sure that 
 # the name ends in a /
@@ -326,7 +434,7 @@ sub MakeDirs {
     my $filename = $_[0];
     
     my @subdirs = split(/\//, $filename );
-    print "Size of subdirs is $#subdirs\n";
+    print "Size of subdirs is $#subdirs\n" if $debug;
     my $curdir = $subdirs[0];
     if ($curdir eq "") { $curdir = "/"; }
     my $rc = 0;
