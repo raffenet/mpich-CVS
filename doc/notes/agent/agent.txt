@@ -1231,6 +1231,63 @@ provide_bufs_and_progress(car, bufs, len, nbytes)
 {
 }
 
+
+- we want to have all the "code" in the arcs/edges
+
+- it might make sense to separate the vm, method buffer, recv, and send
+  into separate machines
+
+- do we want it to be ok for the buffering system to return 0?
+
+- concern: if we pound out a purely event-based system, can we then come
+  back and build an efficient implementation?  or are we screwing
+  ourselves?
+
+- get a state machine, so we can talk about the api...
+
+- we want this first cut to be event-driven
+
+- we also need some fast-path capabilities for some key
+  transitions/actions.
+
+- we see then that we have a very simple state machine really.  but we
+  think that we should have some flow diagrams that describe the
+  processing that happens on the edges of these simple state machines.
+
+- ugh.  then we start to see that we would like to differentiate between
+  receiving control and data?  i dunno.
+
+- looks like we have a couple of events/api functions for the vcs now: buffer
+  events and wire events.
+
+- not purely event driven, but bubbles are suspendible state and events are
+  what wake things up.
+
+buffer allocation:
+- receiver vs. sender buffer allocation relies on the sender to grab buffers
+  in all cases?  this is what we're saying in our state machine at the moment,
+  but it's NOT what we were saying previously.  we need to make a decision on
+  this one.
+  - maybe we're not going to ever eagerly receive(?)
+
+method.alloc()
+  - parameters:
+    maybe src_vc, dest_vc?
+	 maybe provider_vc, consumer_vc? (for notification, accounting)
+	 min_sz, max_sz?
+	 user_arg?  callback_fn?
+
+  - this function should return immediately, possibly showing failure.
+
+  - there is a separate issue of matching BETWEEN methods.  we haven't
+	 quite figured out how to do this...we were thinking that the
+	 source and dest could be used to pick more optimal buffers in
+	 the case where the method knows about pairings
+
+  - this gets us to a sticky point -- how much do we try to optimize as much
+	 as possible vs. how much do we try to make it easy to implement new
+	 methods
+
 -----
 
 Open Issues:
