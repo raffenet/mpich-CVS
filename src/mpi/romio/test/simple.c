@@ -78,7 +78,7 @@ main(int argc, char **argv)
 	    flag = 1;
 	}
 
-    if (!flag) printf("Process %d: data read back is correct\n", rank);
+    if (!rank) printf("Done\n");
 
     free(buf);
     free(filename);

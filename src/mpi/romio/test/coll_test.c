@@ -130,7 +130,7 @@ main(int argc, char **argv)
 	    printf("Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
             flag = 1;
 	}
-    if (!flag) printf("Process %d: data read back is correct\n", mynod);
+    if (!mynod) printf("Done\n");
 
     MPI_Type_free(&newtype);
     free(readbuf);

@@ -63,7 +63,7 @@ main(int argc, char **argv)
 	flag = 1;
     }
 
-    if (!flag) printf("Process %d: MPI_MODE_EXCL works fine\n", rank);
+    if (!rank) printf("Done\n");
 
     free(filename);
     MPI_Finalize(); 

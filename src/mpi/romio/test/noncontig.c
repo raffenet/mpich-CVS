@@ -119,8 +119,6 @@ main(int argc, char **argv)
 	}
     }
 
-    if (!flag) printf("noncontiguous in memory, noncontiguous in file works fine on process %d\n", mynod);
-
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -168,8 +166,6 @@ main(int argc, char **argv)
 	}
     }
 
-    if (!flag) printf("noncontiguous in memory, contiguous in file works fine on process %d\n", mynod);
-
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -210,8 +206,6 @@ main(int argc, char **argv)
 	    }
 	}
     }
-
-    if (!flag) printf("contiguous in memory, noncontiguous in file works fine on process %d\n", mynod);
 
     MPI_File_close(&fh);
 

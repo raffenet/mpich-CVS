@@ -174,3 +174,15 @@ cleanall:
 install:
 	$(MAKE) clean
 	@./util/romioinstall -prefix=$(PREFIX)
+
+romio_lflags:
+	@echo '@ROMIO_LFLAGS@'
+
+romio_liblist:
+	@echo '@ROMIO_LIBLIST@'
+
+romio_tcflags:
+	@echo '@ROMIO_TCFLAGS@'
+
+romio_tfflags:
+	@echo '@ROMIO_TFFLAGS@'

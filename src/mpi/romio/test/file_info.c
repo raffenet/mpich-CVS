@@ -54,7 +54,8 @@ main(int argc, char **argv)
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL, value, &flag);
-	printf("Process %d, Default:  key = %s, value = %s\n", mynod, 
+	if (!mynod) 
+	    printf("Process %d, Default:  key = %s, value = %s\n", mynod, 
                 key, value);
 	if (!strcmp("striping_factor", key))
 	  default_striping_factor = atoi(value);
@@ -124,7 +125,7 @@ main(int argc, char **argv)
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL, value, &flag);
-	printf("Process %d, key = %s, value = %s\n", mynod, 
+	if (!mynod) printf("Process %d, key = %s, value = %s\n", mynod, 
                 key, value);
     }
     

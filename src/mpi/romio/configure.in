@@ -125,8 +125,10 @@ ARCH=""
 arch_IRIX=""
 MPI=""
 MPI_INCLUDE_DIR=""
+ROMIO_INCLUDE=""
 MPI_LIB=""
 LIBNAME=""
+TEST_LIBNAME=""
 FILE_SYSTEM=""
 PREFIX=""
 DEBUG=0
@@ -151,6 +153,11 @@ MPI_FARRAY5=""
 MPI_FARRAY6=""
 MPI_FARRAY7=""
 DEFS=""
+ROMIO_LFLAGS=""
+ROMIO_LIBLIST=""
+ROMIO_TCFLAGS=""
+ROMIO_TFFLAGS=""
+MPIRUN=""
 # foll. needed for f77 test programs
 F77GETARG="call getarg(i,str)"
 F77IARGC="iargc()"
@@ -405,6 +412,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         MPI_LIB="$MPI_LIB -laio"
     fi
     AR="ar cr"
+    ROMIO_LIBLIST="-laio"
 # solaris does not have l option to ar
 # solaris f90 does not have 8-byte integer type
 fi
@@ -606,6 +614,8 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    ROMIO_TCFLAGS="-Ae"
+    ROMIO_TFFLAGS="+U77"
 fi
 #
 if test -n "$arch_alpha" ; then
@@ -630,6 +640,7 @@ if test -n "$arch_alpha" ; then
     CFLAGS="$CFLAGS -D__DEC"
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    ROMIO_LIBLIST="-laio"
 fi    
 #
 if test -n "$arch_sgi" ; then
@@ -811,18 +822,22 @@ if test -n "$file_system_piofs"; then
     CFLAGS="$CFLAGS -D__PIOFS"
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
+    ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
    CFLAGS="$CFLAGS -D__NEEDS_MPI_TEST -D__MPICH"
+   MPIOF_H_INCLUDED=1
 fi
 if test -n "$mpi_sgi"; then
    CFLAGS="$CFLAGS -D__MPISGI"
+   MPIRUN=mpirun
 fi
 if test -n "$mpi_hp"; then
    CFLAGS="$CFLAGS -D__MPIHP"
    if test "$NOF77" = 0; then
       PAC_CHECK_MPIOF_H
    fi
+   MPIRUN=mpirun
 fi
 CFLAGS="$CFLAGS $DEFS"
 PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
@@ -848,6 +863,27 @@ if test $FROM_MPICH = 0 ; then
    PAC_NEEDS_FINT
 else
    NEEDS_MPI_FINT=""
+fi
+#
+ROMIO_INCLUDE="-I$ROMIO_HOME/include"
+TEST_LIBNAME=$LIBNAME
+#
+# if MPICH, use mpicc in test programs
+#
+if test $MPI = "mpich" ; then
+   MPICH_HOME=`dirname $ROMIO_HOME`
+   TEST_CC=$MPICH_HOME/bin/mpicc
+   MPI_LIB=""
+   ROMIO_INCLUDE=""
+   USER_CFLAGS=""
+   USER_FFLAGS=""
+   TEST_LIBNAME=""
+   MPIRUN=$MPICH_HOME/bin/mpirun
+   if test -n "$arch_SX4" || test -n "$arch_hpux" ; then
+      TEST_F77=$MPICH_HOME/bin/mpif90
+   else
+      TEST_F77=$MPICH_HOME/bin/mpif77
+   fi     
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -883,6 +919,7 @@ AC_SUBST(PREFIX)
 AC_SUBST(arch_IRIX)
 AC_SUBST(ROMIO_HOME)
 AC_SUBST(LIBNAME)
+AC_SUBST(TEST_LIBNAME)
 AC_SUBST(LL)
 AC_SUBST(F77GETARG)
 AC_SUBST(F77IARGC)
@@ -911,7 +948,13 @@ AC_SUBST(MPI_OFFSET_KIND1)
 AC_SUBST(MPI_OFFSET_KIND2)
 AC_SUBST(TEST_CC)
 AC_SUBST(TEST_F77)
-AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c util/romioinstall include/mpio.h include/mpiof.h)
+AC_SUBST(ROMIO_INCLUDE)
+AC_SUBST(ROMIO_LFLAGS)
+AC_SUBST(ROMIO_LIBLIST)
+AC_SUBST(ROMIO_TCFLAGS)
+AC_SUBST(ROMIO_TFFLAGS)
+AC_SUBST(MPIRUN)
+AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h)
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/fperf.f"
 fi
@@ -971,6 +1014,10 @@ sed 1d include/mpio.h > include/tmp
 \mv include/tmp include/mpio.h
 sed 1d include/mpiof.h > include/tmp
 \mv include/tmp include/mpiof.h
+sed 1d test/runtests > test/tmp
+\mv test/tmp test/runtests
+#
+chmod 755 test/runtests
 #
 \rm -f *.o
 print_error " "

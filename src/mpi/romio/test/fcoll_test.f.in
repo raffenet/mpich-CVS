@@ -152,7 +152,9 @@
       end do
 
       call MPI_TYPE_FREE(newtype, ierr)
-      print *, 'Node ', mynod, ': data read back is correct'
+      if (mynod .eq. 0) then
+         print *, 'Done'
+      end if 
 
       call MPI_FINALIZE(ierr)
 

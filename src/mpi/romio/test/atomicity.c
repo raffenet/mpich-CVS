@@ -107,7 +107,6 @@ main(int argc, char **argv)
     MPI_File_close(&fh);
 	
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process %d: Atomic mode works correctly for contiguous accesses\n", mynod);
 
 
 /* repeat the same test with a noncontiguous filetype */
@@ -167,7 +166,6 @@ main(int argc, char **argv)
     MPI_File_close(&fh);
 	
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process %d: Atomic mode works correctly for noncontiguous accesses\n", mynod);
 
     MPI_Type_free(&newtype);
     MPI_Info_free(&info);
