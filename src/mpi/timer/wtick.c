@@ -42,7 +42,6 @@
 double MPI_Wtick( void )
 {
     static const char FCNAME[] = "MPI_Wtick";
-    int mpi_errno = MPI_SUCCESS;
     double tick;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WTICK);
 
@@ -55,9 +54,4 @@ double MPI_Wtick( void )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WTICK);
     return tick;
-fn_fail:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WTICK);
-    /* There is no valid object to use for the communicator */
-    MPID_Abort( 0, MPI_ERR_OTHER, MPI_ERR_OTHER, "" );
-    return 0.0;
 }
