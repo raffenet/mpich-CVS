@@ -46,8 +46,7 @@ typedef struct _trace_file *TRACE_file;
   the TRACE API will read the source trace file and create these from the 
   raw data in the original source file.
   E*/
-typedef enum TRACE_Rec_Kind_t {
-               TRACE_EOF=0, 
+typedef enum { TRACE_EOF=0, 
                TRACE_PRIMITIVE_DRAWABLE=1, 
                TRACE_COMPOSITE_DRAWABLE=2, 
                TRACE_CATEGORY=3,
@@ -89,7 +88,7 @@ TRACE_Rec_Kind_t;
   programs may ignore this value.
 
   S*/
-typedef struct TRACE_Category_head_t {
+typedef struct {
   int   index;
   int   shape;
   int   red, green, blue, alpha;
