@@ -8,7 +8,7 @@
 usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ 
                 [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>] \ 
                 [--loccons] [--remcons] [--shell] [--verbose] [-1]
-                [--ncpus=<ncpus>]
+                [--ncpus=<ncpus>] [--ifhn=<ifhn>]
  or, in short form, 
         mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ 
                 [-m <mpdcmd>]  -s -v [-1]
@@ -32,6 +32,8 @@ usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \
 --remcons says you do not want consoles available on remote mpd(s)
 --ncpus indicates how many cpus you want to show for the local machine;
   others are listed in the hosts file
+--ifhn indicates the interface hostname to use for the local mpd; others
+  may be specified in the hostsfile
 """
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
@@ -39,13 +41,14 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
+import re
+
 from os     import environ, system, path, kill, access, X_OK
 from sys    import argv, exit, stdout
 from popen2 import Popen4, popen2
 from socket import gethostname, gethostbyname_ex
 from select import select, error
 from signal import SIGKILL
-from re     import findall
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, \
                    mpd_same_ips, mpd_get_ranks_in_binary_tree, mpd_print, \
                    mpd_get_inet_socket_and_connect, mpd_send_one_msg, mpd_recv_one_msg
@@ -60,7 +63,7 @@ def mpdboot():
     user       = mpd_get_my_username()
     mpdCmd     = path.join(fullDirName,'mpd.py')
     mpdbootCmd = path.join(fullDirName,'mpdboot.py')
-    hostsFile  = 'mpd.hosts'
+    hostsFilename  = 'mpd.hosts'
     totalNum   = 1    # may get chgd below
     debug      = 0
     verbosity  = 0
@@ -73,6 +76,7 @@ def mpdboot():
     topMPDBoot = 1
     myHost = gethostname()
     myNcpus = 1
+    myIfhn = ''
     try:
         shell = path.split(environ['SHELL'])[-1]
     except:
@@ -105,12 +109,10 @@ def mpdboot():
         elif argv[argidx] == '-zhosts':
 	    zhosts = argv[argidx+1]
 	    zhosts = zhosts.split(',')
-            hosts = []
-            hosts2Ncpus = {}
+            hostsAndInfo = []
             for zhost in zhosts:
-                (host,ncpus) = zhost.split(':')
-                hosts.append(host)
-                hosts2Ncpus[host] = ncpus
+                (host,ncpus,ifhn) = zhost.split(':')
+                hostsAndInfo.append({'host':host,'ncpus':ncpus,'ifhn':ifhn})
             argidx += 2
         elif argv[argidx] == '-r':    # or --rsh=
             rshCmd = argv[argidx+1]
@@ -146,12 +148,12 @@ def mpdboot():
                 usage()
             argidx += 1
         elif argv[argidx] == '-f':    # or --file=
-            hostsFile = argv[argidx+1]
+            hostsFilename = argv[argidx+1]
             argidx += 2
         elif argv[argidx].startswith('--file'):
             splitArg = argv[argidx].split('=')
             try:
-                hostsFile = splitArg[1]
+                hostsFilename = splitArg[1]
             except:
                 print 'mpdboot: invalid argument:', argv[argidx]
                 usage()
@@ -163,6 +165,11 @@ def mpdboot():
             except:
                 print 'mpdboot: invalid argument:', argv[argidx]
                 usage()
+            argidx += 1
+        elif argv[argidx].startswith('--ifhn'):
+            splitArg = argv[argidx].split('=')
+            myIfhn = splitArg[1]
+            myHost = splitArg[1]
             argidx += 1
         elif argv[argidx] == '-n':    # or --totalnum=
             totalNum = int(argv[argidx+1])
@@ -198,40 +205,46 @@ def mpdboot():
             usage()
 
     if topMPDBoot:
+        lines = []
         if totalNum > 1:
             try:
-                f = open(hostsFile,'r')
-                lines  = f.readlines()
+                f = open(hostsFilename,'r')
+                for i in range(totalNum-1):
+                    line = f.readline()
+                    lines.append(line)
             except:
-                print 'unable to open (or read) hostsfile %s' % (hostsFile)
+                print 'unable to open (or read) hostsfile %s' % (hostsFilename)
                 exit(-1)
-        else:
-            lines = []
-        hosts = [myHost]
-        hosts2Ncpus = {}
-        hosts2Ncpus[myHost] = myNcpus
-        for host in lines:
-            host = host.strip()
-            if host != ''  and  host[0] != '#':
-                if ':' not in host:
-                    ncpus = 1
-                else:
-                    (host,ncpus) = host.split(':')
-                hosts.append(host)
-                hosts2Ncpus[host] = ncpus
+        hostsAndInfo = [ {'host' : myHost, 'ncpus' : myNcpus, 'ifhn' : myIfhn} ]
+        for line in lines:
+            line = line.strip()
+            if not line  or  line[0] == '#':
+                continue
+            splitLine = re.split(r'\s+',line)
+            host = splitLine[0]
+            ncpus = 1  # default
+            if ':' in host:
+                (host,ncpus) = host.split(':',1)
+                ncpus = int(ncpus)
+            ifhn = ''  # default
+            for kv in splitLine[1:]:
+                (k,v) = kv.split('=',1)
+                if k == 'ifhn':
+                    ifhn = v
+            hostsAndInfo.append( {'host' : host, 'ncpus' : ncpus, 'ifhn' : ifhn} )
         if oneMPDPerHost  and  totalNum > 1:
-	    oldHosts = hosts[:]
-	    hosts = []
+	    oldHosts = hostsAndInfo[:]
+	    hostsAndInfo = []
 	    for x in oldHosts:
 	       keep = 1
-	       for y in hosts:
-	           if mpd_same_ips(x,y):
+	       for y in hostsAndInfo:
+	           if mpd_same_ips(x['host'],y['host']):
 		       keep = 0
 		       break
 	       if keep:
-	           hosts.append(x)
-        if len(hosts) < totalNum:    # one is local
-            print 'totalNum=%d  num hosts=%d' % (totalNum,len(hosts))
+	           hostsAndInfo.append(x)
+        if len(hostsAndInfo) < totalNum:    # one is local
+            print 'totalNum=%d  num hosts=%d' % (totalNum,len(hostsAndInfo))
             print 'there are not enough hosts on which to start all processes'
             exit(-1)
         myBootRank = 0
@@ -240,13 +253,13 @@ def mpdboot():
     else:
         if remoteConsoleArg:
             myConsoleVal = '-n'
-    anMPDALreadyHere = 0
+    anMPDalreadyHere = 0
     for i in range(myBootRank):
-        if mpd_same_ips(hosts[i],myHost):    # if one before me on this host
+        if mpd_same_ips(hostsAndInfo[i]['host'],myHost):    # if one before me on this host
             myConsoleVal = '-n'
-	    anMPDALreadyHere = 1
+	    anMPDalreadyHere = 1
 	    break
-    if not anMPDALreadyHere:
+    if not anMPDalreadyHere:
         try:
             system('%s/mpdallexit.py > /dev/null' % (fullDirName))  # stop any current mpds
         except:
@@ -259,12 +272,18 @@ def mpdboot():
     if debug:
         mpd_print(1, 'p=%d l=%d r=%d' % (parent,lchild,rchild) )
 
-    if entryHost:
-        cmd = '%s %s -h %s -p %s -d -e --ncpus=%s' % \
-	      (mpdCmd,myConsoleVal,entryHost,entryPort,myNcpus)
+    if myIfhn:
+        ifhnVal = '--if %s' % (myIfhn)
+    elif hostsAndInfo[myBootRank]['ifhn']:
+        ifhnVal = '--if %s' % (hostsAndInfo[myBootRank]['ifhn'])
     else:
-        cmd = '%s %s -d -e --ncpus=%s' % \
-	      (mpdCmd,myConsoleVal,myNcpus)
+        ifhnVal = ''
+    if entryHost:
+        cmd = '%s %s -h %s -p %s -d -e --ncpus %s %s' % \
+	      (mpdCmd,myConsoleVal,entryHost,entryPort,myNcpus,ifhnVal)
+    else:
+        cmd = '%s %s -d -e --ncpus %s %s' % \
+	      (mpdCmd,myConsoleVal,myNcpus,ifhnVal)
     if verbosity:
         mpd_print(1,'starting local mpd on %s' % (myHost) )
     if debug:
@@ -311,28 +330,38 @@ def mpdboot():
     else:
         verboseArg = ''
     if lchild >= 0:
-        zhosts = [ "%s:%s" % (h,hosts2Ncpus[h]) for h in hosts ]
-        cmd = "%s %s %s -n '%s --ncpus=%s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
-              (rshCmd, xOpt, hosts[lchild], mpdbootCmd, hosts2Ncpus[hosts[lchild]],
+        zhosts = [ "%s:%s:%s" % (h['host'],h['ncpus'],h['ifhn']) for h in hostsAndInfo ]
+	if hostsAndInfo[lchild]['ifhn']:
+	    ifhnVal = '--ifhn=%s' % (hostsAndInfo[lchild]['ifhn'])
+        else:
+	    ifhnVal = ''
+        cmd = "%s %s %s -n '%s --ncpus=%s %s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
+              (rshCmd, xOpt, hostsAndInfo[lchild]['host'], mpdbootCmd,
+               hostsAndInfo[lchild]['ncpus'],ifhnVal,
 	       rshCmd, mpdCmd, totalNum, debugArg, verboseArg, remoteConsoleArg, entryHost,
 	       entryPort, lchild,
 	       ','.join(zhosts) )
         if verbosity:
-            mpd_print(1, 'starting remote mpd on %s' % (hosts[lchild]) )
+            mpd_print(1, 'starting remote mpd on %s' % (hostsAndInfo[lchild]) )
         if debug:
             mpd_print(1, 'cmd to run lchild boot = :%s:' % (cmd) )
         lchildMPDBoot = Popen4(cmd, 0)
         lfd = lchildMPDBoot.fromchild
         fdsToSelect.append(lfd)
     if rchild >= 0:
-        zhosts = [ "%s:%s" % (h,hosts2Ncpus[h]) for h in hosts ]
-        cmd = "%s %s %s -n '%s --ncpus=%s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
-              (rshCmd, xOpt, hosts[rchild], mpdbootCmd, hosts2Ncpus[hosts[lchild]],
+        zhosts = [ "%s:%s:%s" % (h['host'],h['ncpus'],h['ifhn']) for h in hostsAndInfo ]
+	if hostsAndInfo[rchild]['ifhn']:
+	    ifhnVal = '--ifhn=%s' % (hostsAndInfo[rchild]['ifhn'])
+        else:
+	    ifhnVal = ''
+        cmd = "%s %s %s -n '%s --ncpus=%s %s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
+              (rshCmd, xOpt, hostsAndInfo[rchild]['host'], mpdbootCmd,
+               hostsAndInfo[rchild]['ncpus'],ifhnVal,
 	       rshCmd, mpdCmd, totalNum, debugArg, verboseArg, remoteConsoleArg, entryHost,
 	       entryPort, rchild,
 	       ','.join(zhosts) )
         if verbosity:
-            mpd_print(1, 'starting remote mpd on %s' % (hosts[rchild]) )
+            mpd_print(1, 'starting remote mpd on %s' % (hostsAndInfo[rchild]) )
         if debug:
             mpd_print(1, 'cmd to run rchild boot = :%s:' % (cmd) )
         rchildMPDBoot = Popen4(cmd, 0)
@@ -354,8 +383,8 @@ def mpdboot():
                 else:
 		    if lfd_first_line:
 		        lfd_first_line = 0
-			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (lchild,hosts[lchild]))
-                    print line, ; stdout.flush()
+			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (lchild,hostsAndInfo[lchild]))
+                    print '  ', line, ; stdout.flush()
             else:
                 lfd.close()
                 fdsToSelect.remove(lfd)
@@ -367,8 +396,8 @@ def mpdboot():
                 else:
 		    if rfd_first_line:
 		        rfd_first_line = 0
-			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (rchild,hosts[rchild]))
-                    print line, ; stdout.flush()
+			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (rchild,hostsAndInfo[rchild]))
+                    print '  ', line, ; stdout.flush()
             else:
                 rfd.close()
                 fdsToSelect.remove(rfd)
@@ -386,7 +415,7 @@ def err_exit(msg):
             for line in logfile:
                 print '    ', line, ; stdout.flush()
 	        if line.startswith('logfile for mpd with pid'):
-	            mpdPid = findall(r'logfile for mpd with pid (\d+)',line)
+	            mpdPid = re.findall(r'logfile for mpd with pid (\d+)',line)
         except:
             pass
         try:
