@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="rlogd.lib"
+				AdditionalDependencies="rlogd.lib dbgd.lib"
 				OutputFile="$(OutDir)/minalignrlog.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\lib"
@@ -85,7 +85,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="rlog.lib"
+				AdditionalDependencies="rlog.lib dbg.lib"
 				OutputFile="$(OutDir)/minalignrlog.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\lib"

@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mpimem.h"
 
 void PrintState(RLOG_STATE *pState)
 {
@@ -132,7 +131,7 @@ int main(int argc, char *argv[])
 	}
     }
 
-    pOffset = (double*)MPIU_Malloc(range * sizeof(double));
+    pOffset = (double*)malloc(range * sizeof(double));
     if (pOffset == NULL)
     {
 	printf("malloc failed\n");
