@@ -238,10 +238,10 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
-				RelativePath="iocp\sock_describe_states.c">
+				RelativePath="iocp\sock_iocp.c">
 			</File>
 			<File
-				RelativePath="iocp\sock_iocp.c">
+				RelativePath="iocp\socki_describe_states.c">
 			</File>
 		</Filter>
 		<Filter
@@ -254,16 +254,13 @@
 				RelativePath="sockconf.h">
 			</File>
 			<File
-				RelativePath="iocp\sockimpl.h">
+				RelativePath="iocp\socki.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		</Filter>
-		<File
-			RelativePath="ReadMe.txt">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
