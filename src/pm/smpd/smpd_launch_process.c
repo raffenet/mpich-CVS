@@ -791,7 +791,7 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     return SMPD_FAIL;
 #else
     int status;
-    waitpid(wait, &status, 0);
+    waitpid(wait, &status, WUNTRACED);
     *exit_code_ptr = (WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
     return SMPD_SUCCESS;
 #endif
