@@ -72,8 +72,14 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    *errhandler = win_ptr->errhandler->handle;
-    MPIU_Object_add_ref(win_ptr->errhandler);
+    if (win_ptr->errhandler) {
+	*errhandler = win_ptr->errhandler->handle;
+	MPIU_Object_add_ref(win_ptr->errhandler);
+    }
+    else {
+	/* Use the default */
+	*errhandler = MPI_ERRORS_ARE_FATAL;
+    }
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
