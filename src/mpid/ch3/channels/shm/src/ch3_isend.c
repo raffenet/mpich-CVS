@@ -27,6 +27,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -40,7 +41,6 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
     
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
-	int error;
 	int nb;
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -49,8 +49,13 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	   also try to write */
 	
 	MPIU_DBG_PRINTF(("shm_write(%d bytes)\n", pkt_sz));
-	error = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
-	assert(error == MPI_SUCCESS);
+	mpi_errno = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
+	    return mpi_errno;
+	}
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	

@@ -60,11 +60,11 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request **sreq_ptr)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-    MPIU_DBG_PRINTF(("ch3_istartmsgv\n"));
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(n_iov <= MPID_IOV_LIMIT);
@@ -88,7 +88,12 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	error = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb) :
 	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
-	assert(error == MPI_SUCCESS);
+	if (error != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+	    return mpi_errno;
+	}
 	
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: shm_writev returned %d bytes\n", nb));
 	if (nb > 0)

@@ -36,6 +36,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -50,7 +51,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
-	int error;
 	int nb;
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -61,10 +61,15 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	/* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
 	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	
-	error = (n_iov > 1) ?
+	mpi_errno = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb) :
 	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
-	assert(error == MPI_SUCCESS);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	    return mpi_errno;
+	}
 
 	if (nb > 0)
 	{
