@@ -15,6 +15,10 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#ifndef isascii
+#define isascii(c) (((c)&~0x7f)==0)
+#endif
+
 /*
   This file implements the parameter routines.  These routines provide a 
   uniform mechanism to access parameters that are used within the mpich2 code.
