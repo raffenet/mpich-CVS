@@ -162,6 +162,10 @@ MPICH_TIMER_KIND=USE_$timer_type
 AC_SUBST(MPICH_TIMER_KIND)
 dnl
 dnl Setup other replaceable values
+dnl These are exported by the top-level configure
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
+AC_SUBST(PROFILE_DEF_MPI)
 dnl MPILIBNAME is exported from the calling environment
 dnl
 dnl Choose the timer type (e.g., long, double, array).  long is the default

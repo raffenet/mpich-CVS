@@ -1,7 +1,12 @@
-lib${MPILIBNAME}_a_SOURCES = wtime.c mpidtime.c wtick.c
-profilelib_${MPILIBNAME} = p${MPILIBNAME}
+mpi_sources = wtime.c wtick.c
+lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} mpidtime.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 distclean-local:
 	@-rm -f ${master_top_srcdir}/src/include/mpichtimer.h \
 	    ../../include/mpichtimer.h ./timerconf.h
+
+profilelib_${MPILIBNAME} = p${MPILIBNAME}
+#
+# This is a test for the document generation
+doc_HTML_SOURCES = ${mpi_sources}

@@ -8,3 +8,7 @@ lib${MPILIBNAME}_a_SOURCES = bsend.c send.c recv.c wait.c test.c testany.c \
  mpir_wait.c mpir_test.c irecv.c isend.c bufattach.c buffree.c bsendutil.c 
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+profilelib_${MPILIBNAME} = p${MPILIBNAME}
+#
+# This is a test for the document generation
+doc_HTML_SOURCES = ${mpi_sources}
