@@ -739,9 +739,9 @@ static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 {
 /* this function is only called if buftype is not contig */
 
-    int i, p, flat_buf_idx, rem_len, size;
-    int flat_buf_sz, len, buf_incr, size_in_buf, jj, n_buftypes;
-    ADIO_Offset off, user_buf_idx;
+    int i, p, flat_buf_idx, size;
+    int flat_buf_sz, buf_incr, size_in_buf, jj, n_buftypes;
+    ADIO_Offset off, len, rem_len, user_buf_idx;
 
 /*  curr_to_proc[p] = amount of data sent to proc. p that has already
     been accounted for so far
@@ -766,52 +766,24 @@ static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 	                 flattened buf */
 
     for (i=0; i<contig_access_count; i++) { 
-	p = (int) ((offset_list[i]-min_st_offset+fd_size)/fd_size - 1);
-	off = offset_list[i];
-	len = (int) (((off+len_list[i]-1) <= fd_end[p]) ? 
-		len_list[i] : (fd_end[p] - off + 1));
+	off     = offset_list[i];
+	rem_len = (ADIO_Offset) len_list[i];
 
-	if (send_buf_idx[p] < send_size[p]) {
-	    if (curr_to_proc[p]+len > done_to_proc[p]) {
-		if (done_to_proc[p] > curr_to_proc[p]) {
-		    size = ADIOI_MIN(curr_to_proc[p]+len-done_to_proc[p], 
-                                         send_size[p]-send_buf_idx[p]);
-		    buf_incr = done_to_proc[p] - curr_to_proc[p];
-		    ADIOI_BUF_INCR
-		    buf_incr = curr_to_proc[p] + len - done_to_proc[p];
-		    curr_to_proc[p] = done_to_proc[p] + size;
-		    ADIOI_BUF_COPY
-		}
-		else {
-		    size = ADIOI_MIN(len, send_size[p]-send_buf_idx[p]); 
-		    buf_incr = len;
-		    curr_to_proc[p] += size;
-		    ADIOI_BUF_COPY
-		}
-		if (send_buf_idx[p] == send_size[p]) {
-		    MPI_Isend(send_buf[p], send_size[p], MPI_BYTE, p, 
-                                myrank+p+100*iter, fd->comm, requests+jj);
-		    jj++;
-		}
-	    }
-	    else {
-		curr_to_proc[p] += len;
-		buf_incr = len;
-		ADIOI_BUF_INCR
-	    }
-	}
-	else {
-	    buf_incr = len;
-	    ADIOI_BUF_INCR
-	}
-            
 	/*this request may span the file domains of more than one process*/
-	rem_len = len_list[i] - len;
 	while (rem_len != 0) {
-	    p++;
-	    off = fd_start[p];
-	    len = (int) (((off+rem_len-1) <= fd_end[p]) ? rem_len : 
-		    (fd_end[p] - off + 1));
+	    len = rem_len;
+	    /* NOTE: len value is modified by ADIOI_Calc_aggregator() to be no
+	     * longer than the single region that processor "p" is responsible
+	     * for.
+	     */
+	    p = ADIOI_Calc_aggregator(fd,
+				      off,
+				      min_st_offset,
+				      &len,
+				      fd_size,
+				      fd_start,
+				      fd_end);
+
 	    if (send_buf_idx[p] < send_size[p]) {
 		if (curr_to_proc[p]+len > done_to_proc[p]) {
 		    if (done_to_proc[p] > curr_to_proc[p]) {
@@ -845,6 +817,7 @@ static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 		buf_incr = len;
 		ADIOI_BUF_INCR
             }
+	    off     += len;
 	    rem_len -= len;
 	}
     }

@@ -36,7 +36,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 				  int *recv_buf_idx, int *curr_from_proc,
 				  int *done_from_proc, int iter, 
 				  MPI_Aint buftype_extent, int *buf_idx);
-static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
+static void ADIOI_Fill_user_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 				   *flat_buf, char **recv_buf, ADIO_Offset 
 				   *offset_list, int *len_list, 
 				   int *recv_size, 
@@ -848,7 +848,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
      /* +1 to avoid a 0-size malloc */
 
     if (!buftype_is_contig && nprocs_recv) 
-	ADIOI_Fill_user_buffer(buf, flat_buf, recv_buf,
+	ADIOI_Fill_user_buffer(fd, buf, flat_buf, recv_buf,
 			       offset_list, len_list, recv_size, 
 			       requests, statuses, recd_from_proc, 
 			       nprocs, contig_access_count,
@@ -926,7 +926,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 }
 
 
-static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
+static void ADIOI_Fill_user_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 				   *flat_buf, char **recv_buf, ADIO_Offset 
 				   *offset_list, int *len_list, 
 				   int *recv_size, 
@@ -941,9 +941,9 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
 {
 /* this function is only called if buftype is not contig */
 
-    int i, p, flat_buf_idx, rem_len, size, buf_incr;
-    int flat_buf_sz, len, size_in_buf, jj, n_buftypes;
-    ADIO_Offset off, user_buf_idx;
+    int i, p, flat_buf_idx, size, buf_incr;
+    int flat_buf_sz, size_in_buf, jj, n_buftypes;
+    ADIO_Offset off, len, rem_len, user_buf_idx;
 #ifdef NEEDS_MPI_TEST
     int j;
 #endif
@@ -971,57 +971,23 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
                 flattened buf */
 
     for (i=0; i<contig_access_count; i++) { 
-	p = (int) ((offset_list[i] - min_st_offset + fd_size)/fd_size - 1);
-	off = offset_list[i];
-	len = (int) (((off+len_list[i]-1) <= fd_end[p]) ? len_list[i] : 
-	           (fd_end[p] - off + 1));
+	off     = offset_list[i];
+	rem_len = (ADIO_Offset) len_list[i];
 
-	if (recv_buf_idx[p] < recv_size[p]) {
-	    if (curr_from_proc[p]+len > done_from_proc[p]) {
-		if (!recv_buf_idx[p]) {
-#ifdef NEEDS_MPI_TEST
-		    j = 0;
-		    while (!j) MPI_Test(requests+jj, &j, statuses+jj);
-#else
-		    MPI_Wait(requests+jj, statuses+jj);
-#endif
-		    jj++;
-		}
-		if (done_from_proc[p] > curr_from_proc[p]) {
-		    size = ADIOI_MIN(curr_from_proc[p] + len - 
-			     done_from_proc[p], recv_size[p]-recv_buf_idx[p]);
-		    buf_incr = done_from_proc[p] - curr_from_proc[p];
-		    ADIOI_BUF_INCR
-                    buf_incr = curr_from_proc[p] + len - done_from_proc[p];
-		    curr_from_proc[p] = done_from_proc[p] + size;
-		    ADIOI_BUF_COPY
-		}
-		else {
-		    size = ADIOI_MIN(len, recv_size[p]-recv_buf_idx[p]); 
-		    buf_incr = len;
-		    curr_from_proc[p] += size;
-		    ADIOI_BUF_COPY
-		}
-	    }
-	    else {
-		curr_from_proc[p] += len;
-		buf_incr = len;
-		ADIOI_BUF_INCR
-	    }
-	}
-	else {
-	    buf_incr = len;
-	    ADIOI_BUF_INCR
-	}
-
-	/* this request may span the file domains of more 
-	          than one process */
-	rem_len = len_list[i] - len;
+	/* this request may span the file domains of more than one process */
 	while (rem_len != 0) {
-	    p++;
-	    off = fd_start[p];
-	    len = (int) (((off+rem_len-1) <= fd_end[p]) ? rem_len : 
-			(fd_end[p] - off + 1));
+	    len = rem_len;
+	    /* NOTE: len value is modified by ADIOI_Calc_aggregator() to be no
+	     * longer than the single region that processor "p" is responsible
+	     * for.
+	     */
+	    p = ADIOI_Calc_aggregator(fd,
+				      off,
+				      min_st_offset,
+				      &len,
+				      fd_size,
+				      fd_start,
+				      fd_end);
 
 	    if (recv_buf_idx[p] < recv_size[p]) {
 		if (curr_from_proc[p]+len > done_from_proc[p]) {
@@ -1060,9 +1026,14 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
 		buf_incr = len;
 		ADIOI_BUF_INCR
 	    }
+	    off     += len;
 	    rem_len -= len;
 	}
     }
     for (i=0; i < nprocs; i++) 
 	if (recv_size[i]) recd_from_proc[i] = curr_from_proc[i];
 }
+
+
+
+
