@@ -50,8 +50,6 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
                          value, &flag);
     if (flag && (atoi(value) >= 0)) pstat.base = atoi(value);
 
-    ADIOI_Free(value);
-
     fd->fd_sys = pvfs_open(fd->filename, amode, perm, &pstat, NULL);
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
@@ -66,6 +64,8 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 	sprintf(value, "%d", pstat.base);
 	MPI_Info_set(fd->info, "start_iodevice", value);
     }
+
+    ADIOI_Free(value);
 
 #ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
