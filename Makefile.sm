@@ -82,7 +82,6 @@ dist-with-version:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
 	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2all >cvsexp.log 2>&1 ) ;\
-	cp -rp ${srcdir}/confdb tmpdir/mpich2
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles --with-codecheck=-distcheck )
@@ -119,7 +118,6 @@ snap:
 	rm -f cvsexp.log 
 	( cd tmpdir && \
 	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 )
-	cp -rp ${srcdir}/confdb tmpdir/mpich2
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = snap/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-snap
 	(cd tmpdir/${PACKAGE}-snap && maint/updatefiles --without-codecheck )
