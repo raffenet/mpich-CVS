@@ -4,6 +4,10 @@ dnl We need install.sh, config.guess, etc. for the code that
 dnl finds the Fortran libraries
 AC_CONFIG_AUX_DIR(../../../confdb)
 
+AC_ARG_ENABLE(coverage,
+[--enable-coverage - Turn on coverage analysis using g++ and gcov],,
+enable_coverage=no)
+
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
@@ -36,6 +40,17 @@ HAVE_CXX_EXCEPTIONS=0
 AC_SUBST(HAVE_CXX_EXCEPTIONS)
 if test "$ac_cv_cxx_exceptions" = "yes" ; then
     HAVE_CXX_EXCEPTIONS=1
+fi
+
+dnl Check for support of enable-coverage.  Put this near the end of the tests
+dnl because the coverage options may affect the other tests.
+if test "$enable_coverage" = "yes" ; then
+    if test "$ac_cv_prog_gxx" = "yes" ; then
+        # g++ does not recognize -fprofile-arcs
+        CXXFLAGS="$CXXFLAGS -ftest-coverage"
+    else
+        AC_MSG_WARN([--enable-coverage only supported for G++])
+    fi
 fi
 
 # Here are the commands to substitute the compilers to be used to create
