@@ -103,9 +103,6 @@ MPIDI_CH3I_CA_END_SOCK_CHANNEL
 #define MPIDI_CH3_REQUEST_DECL									\
 struct MPIDI_CH3I_Request									\
 {												\
-    /* iov_offset points to the current head element in the IOV */				\
-    int iov_offset;										\
-												\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
     MPIDI_CH3_Pkt_t pkt;									\
 } ch;
