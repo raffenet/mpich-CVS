@@ -131,6 +131,8 @@ static char *get_random_color_str()
 
 int CH3U_Describe_timer_states()
 {
+    int mpi_errno;
+
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3_CANCEL_SEND,
 		       "MPIDI_CH3_Cancel_send",
@@ -405,7 +407,14 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE,
 		       "MPIDI_CH3I_mqshm_receive",
 		       get_random_color_str());
-return Sock_describe_timer_states();
+
+    mpi_errno = MPIDU_Sock_describe_timer_states();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        mpi_errno = MPI_ERR_OTHER;
+    }
+
+    return mpi_errno;
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */

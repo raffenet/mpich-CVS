@@ -272,7 +272,7 @@ int CH3U_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIDI_CH3I_PROGRESS_INIT, "MPID_STATE_MPIDI_CH3I_PROGRESS_INIT",
                        get_random_color_str());
 
-    return Sock_describe_timer_states();
+    return MPIDU_Sock_describe_timer_states();
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
