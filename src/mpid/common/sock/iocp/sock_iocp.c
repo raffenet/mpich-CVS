@@ -909,20 +909,36 @@ int sock_post_close(sock_t sock)
 
     if (sock->pending_operations != 0)
     {
+#ifdef MPICH_DBG_OUTPUT
+	if (sock->state & SOCK_CONNECTING)
+	    MPIU_DBG_PRINTF(("sock_post_close called while sock is connecting.\n"));
+	if (sock->state & SOCK_READING)
+	    MPIU_DBG_PRINTF(("sock_post_close called while sock is reading.\n"));
+	if (sock->state & SOCK_WRITING)
+	    MPIU_DBG_PRINTF(("sock_post_close called while sock is writing.\n"));
+	fflush(stdout);
+#endif
+	/*
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
 	return SOCK_ERR_OP_IN_PROGRESS;
+	*/
+	/* posting a close cancels all outstanding operations */
     }
 
     sock->closing = TRUE;
+    /*
     if (sock->pending_operations == 0)
     {
+    */
 	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
 	FlushFileBuffers((HANDLE)sock->sock);
 	shutdown(sock->sock, SD_BOTH);
 	closesocket(sock->sock);
 	sock->sock = INVALID_SOCKET;
 	PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL);
+    /*
     }
+    */
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
     return SOCK_SUCCESS;
 }
@@ -992,9 +1008,11 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    out->error = SOCK_SUCCESS;
 		    out->op_type = SOCK_OP_CLOSE;
 		    out->user_ptr = sock->user_ptr;
-#if 0
 		    CloseHandle(sock->read.ovl.hEvent);
 		    CloseHandle(sock->write.ovl.hEvent);
+		    sock->read.ovl.hEvent = NULL;
+		    sock->write.ovl.hEvent = NULL;
+#if 0
 		    BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
 #endif
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
@@ -1030,6 +1048,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    out->op_type = SOCK_OP_READ;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
+			    sock->state ^= SOCK_READING; /* remove the SOCK_READING bit */
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
 				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
@@ -1045,7 +1064,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (sock->read.progress_update != NULL)
 			    sock->read.progress_update(num_bytes, sock->user_ptr);
 			/* post a read of the remaining data */
-			//WSARecv(sock->sock, sock->read.iov, sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);
+			/*WSARecv(sock->sock, sock->read.iov, sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);*/
 			WSARecv(sock->sock, &sock->read.iov[sock->read.index], sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);
 		    }
 		    else
@@ -1060,6 +1079,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    out->op_type = SOCK_OP_READ;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
+			    sock->state ^= SOCK_READING; /* remove the SOCK_READING bit */
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
 				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple read completed.\n", sock_getid(sock)));
@@ -1084,12 +1104,11 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    {
 			/* insert code here to determine that the connect succeeded */
 			/* ... */
-			sock->state ^= SOCK_CONNECTING; /* remove the SOCK_CONNECTING bit */
-
 			out->error = SOCK_SUCCESS;
 			out->op_type = SOCK_OP_CONNECT;
 			out->user_ptr = sock->user_ptr;
 			sock->pending_operations--;
+			sock->state ^= SOCK_CONNECTING; /* remove the SOCK_CONNECTING bit */
 			if (sock->closing && sock->pending_operations == 0)
 			{
 			    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after connect completed.\n", sock_getid(sock)));
@@ -1138,6 +1157,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				out->op_type = SOCK_OP_WRITE;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
+				sock->state ^= SOCK_WRITING; /* remove the SOCK_WRITING bit */
 				if (sock->closing && sock->pending_operations == 0)
 				{
 				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", sock_getid(sock)));
@@ -1173,6 +1193,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				out->op_type = SOCK_OP_WRITE;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
+				sock->state ^= SOCK_WRITING; /* remove the SOCK_WRITING bit */
 				if (sock->closing && sock->pending_operations == 0)
 				{
 				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple write completed.\n", sock_getid(sock)));
@@ -1498,9 +1519,9 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 {
     int iter;
     int e = SOCK_SUCCESS;
-//#ifdef MPICH_DBG_OUTPUT
+#ifdef MPICH_DBG_OUTPUT
     int i;
-//#endif
+#endif
     DWORD flags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READV);
 #ifdef USE_SOCK_IOV_COPY
