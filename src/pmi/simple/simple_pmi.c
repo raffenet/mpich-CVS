@@ -44,8 +44,14 @@ int PMI_Init( int *spawned )
 
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
-    else 
+    else if ( ( p = getenv( "PMI_PORT" ) ) ) {
+	/* Not yet implemented.  Connect to the indicated port (in
+	   format hostname:portnumber) and get the fd for the socket */
+	PMP_fd = -1;
+    }
+    else {
 	PMI_fd = -1;
+    }
 
     if ( PMI_fd == -1 ) {
 	/* Singleton init: Process not started with mpiexec, 
