@@ -32,7 +32,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
 
-    MPIDI_DBG_PRINTF((65, "ch3_init", "entering ch3_init.\n"));fflush(stdout);
+    MPIU_DBG_PRINTF(("entering ch3_init.\n"));
     /*
      * Extract process group related information from PMI and initialize
      * structures that track the process group connections, MPI_COMM_WORLD, and
@@ -56,8 +56,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
 	return mpi_errno;
     }
-    
+
     /*MPIU_Timer_init(pg_rank, pg_size);*/
+    MPIU_dbg_init(pg_rank);
 
     /* Allocate process group data structure and populate */
     pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
@@ -208,7 +209,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
 
-    MPIU_DBG_PRINTF(("[%d] Published lid=%d\n", pg_rank, port));
+    MPIU_DBG_PRINTF(("Published lid=%d\n", port));
     
     mpi_errno = PMI_KVS_Commit(pg->kvs_name);
     if (mpi_errno != 0)
@@ -237,7 +238,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
     }
     */
-    
+
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
@@ -275,9 +276,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
     MPIU_Free(val);
     MPIU_Free(key);
-    
+
     return MPI_SUCCESS;
 }
-
-
 
