@@ -169,6 +169,9 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     {
 	if (iter->id == id)
 	{
+#ifdef USE_SYSV_SHM
+	    unlink(iter->shm_info.name);
+#endif
 	    mpi_errno = MPIDI_CH3I_SHM_Unlink_mem(&iter->shm_info);
 	    if (mpi_errno != MPI_SUCCESS)
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mqshm_unlink", 0);
