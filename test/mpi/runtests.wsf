@@ -1,7 +1,7 @@
 <package>
 <job id="runtests">
     <runtime>
-        <description>This script searches for runtests files and executes the tests</description>
+        <description>This script searches for runtests files and executes the tests described therein</description>
         <named
             name = "echo"
             helpstring = "Echo each mpiexec command"
@@ -83,26 +83,35 @@ Function RunTests(filename)
 	Set fin = f.OpenTextFile(filename)
 	while not fin.AtEndOfStream
 		line = fin.ReadLine()
+		line = Trim(line)
 		twostrings = split(line, " ", -1, 1)
 		if not IsNull(twostrings) then
 			count = 0
 			for each s in twostrings
 				count = count + 1
 			next
-			if count = 2 And Left(twostrings(0), 1) <> "#" then
+			if count = 2 then
+			 if Left(twostrings(0), 1) <> "#" then
+			  if Len(twostrings(1)) > 0 then
 				exe = Replace( filename, "testlist", config + twostrings(0) + ".exe" )
 				cmd = "mpiexec -timeout 180 -n " + twostrings(1) + " " + exe
 				if bEcho = true then
-					WScript.Echo cmd + vbCrLf
+			 		WScript.Echo cmd + vbCrLf
 				end if
 				set fout = f.OpenTextFile(outfile_name, 8, True)
 				fout.Write( cmd + vbCrLf )
-				result = RunTest(cmd)
+				if f.FileExists(exe) then
+					result = RunTest(cmd)
+				else
+					result = "no executable, test skipped"
+				end if
 				if bEcho = true then
 					WScript.Echo result + vbCrLf
 				end if
 				fout.Write( result + vbCrLf )
 				fout.Close()
+			  end if
+			 end if
 			end if
 		end if
 	wend
