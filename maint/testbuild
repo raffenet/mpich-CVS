@@ -12,13 +12,21 @@ if [ ! -d $srcdir ] ; then
         srcdir=
     fi
 fi
+outdir=/home/gropp/projects/mpich2-tests
+if [ ! -d $outdir ] ; then
+    if [ -d /homes/gropp/projects/mpich2-tests ] ; then
+        outdir=/homes/gropp/projects/mpich2-tests
+    else
+        # We'll check for it later, after the args
+        outdir=
+    fi
+fi
 if [ -z "$tmpdir" ] ; then tmpdir=/sandbox/gropp ; fi
 if [ -z "$rundir" ] ; then rundir=$tmpdir/cb/mpich2 ; fi
 if [ -z "$mpichtestdir" ] ; then mpichtestdir=$tmpdir/cb/mpitest ; fi
 if [ -z "$mpicxxtestdir" ] ; then mpicxxtestdir=$tmpdir/cb/mpicxxtest ; fi
 if [ -z "$inteltestdir" ] ; then inteltestdir=$tmpdir/cb/MPITEST ; fi
 
-outdir=/home/gropp/projects/mpich2-tests
 date=`date "+%Y-%m-%d"`
 # default outfile
 outfile=testbuild.xml
@@ -113,4 +121,3 @@ eval $rundir/maint/checkbuilds -rundir=$rundir \
 			$envargs \
 			  "-tests='""$tests""'" -tmpdir=$tmpdir \
 			  -xml -maxcount=1 -outfile=$outfile $other_opts
-

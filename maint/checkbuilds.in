@@ -6,6 +6,9 @@
 #
 # Set default values
 $projects_dir = "/home/gropp/projects";
+if (! -d $projects_dir && -d "/homes/gropp/projects" ) {
+    $projects_dir = "/homes/gropp/projects";
+}
 $srcdir  = "$projects_dir/mpich2";
 $tmpdir = "/sandbox/gropp";
 # rundir is the directory in which to run the tests.
