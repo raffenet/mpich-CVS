@@ -4,7 +4,7 @@ mpi_sources = comm_disconnect.c comm_get_parent.c comm_join.c \
 lib${MPILIBNAME}_a_SOURCES = close_port.c comm_connect.c \
  comm_spawn_multiple.c open_port.c comm_accept.c comm_spawn.c \
  lookup_name.c publish_name.c unpublish_name.c comm_get_parent.c \
- comm_disconnect.c
+ comm_disconnect.c comm_join.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 #
