@@ -19,7 +19,10 @@ $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
 $root_tags = 1;
 $local_tags = 0;
 $fixup_for_timestamps = 1; # make is broken
-$Sleep = "sleep 1";
+$SleepSlow = "sleep 1";
+$SleepFast = "perl -e \'\$\$now=time;\$\$now-=10;utime \$\$now, \$\$now, \"LIB\";\'";
+$Sleep = $SleepFast;
+
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
                               # for file.sm to file .
 $debug = 0;
@@ -122,6 +125,7 @@ foreach $_ (@ARGV) {
     elsif (/-common=(.*)$/) {
 	open( CD,"<$1" ) || die "Could not open $1\n";
 	while (<CD>) {
+	    s/\r//g; # Strip \r for DOS
 	    $commonmake .= $_;
 	}
 	close(CD);
@@ -135,6 +139,8 @@ foreach $_ (@ARGV) {
     elsif (/-distrib/) {
 	# Turn off the maintenance targets in the distribution version
 	$maint_targets = 0;
+	# Use the robust sleep, not the fast perl version
+	$Sleep = $SleepSlow;
     }
     elsif (/-shared/) {
 	$do_sharedlibs = 1;
@@ -188,13 +194,16 @@ sub ReadMfile {
     &ClearVars;
     while (<MFILE>) {
 	$origline = $_;
+	$origline =~ s/\r//g; # Remove \r for DOS
         # Handle continuation lines
         #chomp;
         s/[\r\n]*$//; # David added
 		#strip;
         while (s/\\$//) {  # Match and remove a trailing \
 	    $nextline = <MFILE>;
-	    $origline .= $nextline;
+	    $nline = $nextline;
+	    $nline =~ s/\r//g; # Remove \r for DOS
+	    $origline .= $nline;
 	    #chomp $nextline;
 	    $nextline =~ s/[\r\n]*$//; # David added
 		#strip $nextline;
@@ -865,7 +874,9 @@ sub TargetLibraries {
 	}
 	# To handle timestamp problems with recursive makes, add a delay
 	if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
-	     print FD "\t$Sleep\n"; 
+ 	    $SleepText = $Sleep;
+	    $SleepText =~ s/LIB/${libloc}lib$lib.a/;
+	    print FD "\t$SleepText\n"; 
         }
 
 #        if ($doprofilelib) {
