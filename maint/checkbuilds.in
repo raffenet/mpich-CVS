@@ -203,15 +203,6 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
 if ($instdir eq "") {
     $instdir = "$tmpdir/cb/mpi2-inst";
 }
-if ($mpich_test_dir eq "") {
-    $mpich_test_dir = "$tmpdir/cb/mpitest";
-}
-if ($intel_test_dir eq "") {
-    $intel_test_dir = "$tmpdir/cb/MPITEST";
-}
-if ($mpicxx_test_dir eq "") {
-    $mpicxx_test_dir = "$tmpdir/cb/mpicxxtest";
-}
 
 # ---------------------------------------------------------------------------
 
@@ -489,10 +480,14 @@ sub RunTestSuites {
 	print $OUTFD $RunTestStart;
 	if ($is_xml) { 
 	    print $OUTFD "<TESTNAME>$testname</TESTNAME>\n";
+	    print $OUTFD "<TESTOUT>\n";
 	    }
 	else {
 	    print $OUTFD "Running test $testname...\n";
 	}
+	# Eventually, we should store the test routines in a hash, 
+	# with the key the test name and the value the name of the 
+	# routine.  
 	if ($testname eq "mpich") {
 	    &RunMpichTestSuite;
 	}
@@ -502,9 +497,15 @@ sub RunTestSuites {
 	elsif ($testname eq "mpicxx") {
 	    &RunCxxTestSuite;
 	}
+	elsif ($testname eq "mpich2") {
+	    &RunMPICH2TestSuite;
+	}
 	else {
 	    print $OUTFD "Unrecognized test $testname\n";
 	}
+	if ($is_xml) { 
+	    print $OUTFD "</TESTOUT>\n";
+	    }
 	print $OUTFD $RunTestEnd;
 	if ($run_status != 0) { 
 	    # If any test fails, record its status.
@@ -519,6 +520,11 @@ sub RunMpichTestSuite {
     $cwd = `pwd`;
     chomp $cwd;
     my @config;
+
+    if ($mpich_test_dir eq "") {
+	$mpich_test_dir = "$tmpdir/cb/mpitest";
+    }
+
 # Make sure that the tests run past a failure to build an
 # executable.  Without this, the summary doesn't include
 # any tests in the same directory that completed.
@@ -621,6 +627,9 @@ sub RunCxxTestSuite {
     chomp $cwd;
     my @config;
 
+    if ($mpicxx_test_dir eq "") {
+	$mpicxx_test_dir = "$tmpdir/cb/mpicxxtest";
+    }
     #
     # First, check for the mpicxx program
     if (! -x "$instdir/bin/mpicxx" || !defined($chosenEnable{"cxx"})) { 
@@ -683,6 +692,10 @@ sub RunIntelTestSuite {
 
     my @config;
 
+    if ($intel_test_dir eq "") {
+	$intel_test_dir = "$tmpdir/cb/MPITEST";
+    }
+
     $rc = chdir $intel_test_dir;
     if (!$rc) {
 	#print STDERR "Cannot change to $intel_test_dir\n";
@@ -727,6 +740,42 @@ sub RunIntelTestSuite {
 	foreach $key (keys(%ENV)) {
 	    print $OUTFD "$key = $ENV{$key}\n";
 	}
+    }
+    %ENV = %saveENV;
+    chdir $cwd;
+}
+
+sub RunMPICH2TestSuite {
+    my $nargs = 0;
+
+    $cwd = `pwd`;
+    chomp $cwd;
+
+    if ($mpich2_test_dir eq "") {
+	$mpich2_test_dir = "$tmpdir/cb/mpich2/test";
+    }
+
+    $rc = chdir $mpich2_test_dir;
+    if (!$rc) {
+	#print STDERR "Cannot change to $mpich2_test_dir\n";
+	return;
+    }
+
+    # MPICH2 tests are already built, so no configure step required
+    %saveENV = %ENV;
+    # This timeout needs to be made uniform for all mpiruns
+    # 3 minutes is enough for some of our slower machines
+    $ENV{MPIEXEC_TIMEOUT} = "180";
+    # HACK for mpd for now.
+    if ($built_for_mpd) {
+	&RunMPD;
+    }
+    # The MPICH2 test suite has a program for running the tests
+    $rc = &RunProgram( "./runtests -mpiexec=$instdir/bin/mpiexec -tests=testlist -xmlfile=summary.xml" );
+    $test_status = $rc;
+    if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
+    if ($built_for_mpd) {
+	&StopMPD;
     }
     %ENV = %saveENV;
     chdir $cwd;
