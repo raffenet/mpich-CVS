@@ -3,6 +3,8 @@
 In this section, we present a multi-method communication architecture
 for MPICH2.
 
+What is a ``method'' anyway?  Why are multiple methods important?
+
 Rather than present the entire architecture at once, we will start
 with a basic system and modify it as we add capabilities.  The reason
 for such a presentation is two-fold.  First, the intricate details of
@@ -26,6 +28,9 @@ and performance analysis.
 goal: describe components necessary for unoptimized, multi-method
 point-to-point
 
+narrow scope for this subsection: no wildcards, persistent sends, etc...(look
+at lists below :)).  also not dealing with complex datatypes or heterogeneity.
+
 
 \subsubsection{Overview}
 
@@ -36,12 +41,56 @@ major steps in point-to-point communication:
 \item completion
 \end{itemize}
 
+go through one step at a time
+
+for each step:
+- components used in that step? (also assumed knowledge?)
+- paragraph summary of what happens in that step
+
+scenario: send posted, recv posted, data arrives after recv posted.
+- trivial mpi program example here
+- note that there is another ordering, and we will discuss that in the
+  walkthrough
+
+posting (async send case)
+- allocation/initialization of MPI request (must initialize completion counter)
+- determine the vc from the communicator (so we can get to method)
+- calling of method function to post
+
+posting (async recv, posted before data arrives)
+- allocation of MPI req
+- buffers, datatypes
+- vc determination
+- calling method fn to post
+- is there anything really different from above (at this level)?
+
+progress 
+- what is the issue?  we want data movement.  it's acceptable to make progress
+  only when mpi calls are made.  we might want to use threads (just mention 
+  the opportunity)
+- progress engine - motivate why we need a component to do this
+- method functions called
+- datatypes, segments (packing and unpacking mentioned in passing?)
+- request matching going on too, mention relationship to vc data structures?
+- trust us, the request matching does need to be cross-method
+
+[something here is still bugging brian]
+
+
+completion
+- notification of completion (via decrement of counter - in MPI request)
+- note that a counter becomes important when we get to collectives, kinda
+  overkill for this.
+- deallocation of MPI request?  nope.  deallocated by wait/test instead.  
+  do we want to mention this here?
+
+
 
 \subsubsection{Components}
 
 components needs to perform point-to-point communication:
 \begin{itemize}
-\item assumed knowledge stuff -- 
+\item assumed knowledge stuff -- requests, communicators, datatypes, segments, buffers, messages, envelopes
 \item virtual connections
 \item methods --
 interface to convey messages to be sent and received
@@ -51,24 +100,27 @@ only poll methods that might have work to do.  need a low cost way to
 communicate amount of work between method and progress engine.
 \end{itemize}
 
+talk about specific functions as they come up
 
 \subsubsection{Walkthrough}
 
 
 \subsubsection{Summary}
 
+tables describing interfaces
 
 %------------------------------------------------------------------------------
 
 \subsection{Filling out point-to-point}
 
 wildcards
+- request matching as a cross-method component (see, we told you!)
 
 persistent sends
 
 request cancellation
 
-
+threaded implementation and usage???
 
 %------------------------------------------------------------------------------
 
@@ -83,6 +135,8 @@ request cancellation
 for contiguous data, send directly from and receive directly into the
 user buffer.
 
+packing and unpacking, segments, datatypes...
+
 receiving a message by reading it directly from the memory of the
 sending process (e.g., ptrace and /proc/PID/mem) or sending a message
 by writing it directly to the memory of the receiving process.
@@ -90,6 +144,8 @@ by writing it directly to the memory of the receiving process.
 allow the user to MPI_Alloc_mem() to allocate a buffer in shared
 memory, reducing the number of data from two to one when using the
 shared memory method.
+
+special blocking send/recv optimizations?
 
 %------------------------------------------------------------------------------
 
