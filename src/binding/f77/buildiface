@@ -1204,6 +1204,8 @@ void *MPIR_F_MPI_BOTTOM = 0;
     open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
     $files[$#files+1] = "wtimef.c";
     &print_header( "MPI_Wtime", "wtime" );
+    # mpiimpl.h is needed for the timer definitions
+    print $OUTFD "#include \"mpiimpl.h\"\n";
     print $OUTFD "double mpi_wtime_( void )";
     &print_attr;
     print $OUTFD "{\n";
@@ -1221,6 +1223,8 @@ void *MPIR_F_MPI_BOTTOM = 0;
     open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
     $files[$#files+1] = "wtickf.c";
     &print_header( "MPI_Wtick", "wtick" );
+    # mpiimpl.h is needed for the timer definitions
+    print $OUTFD "#include \"mpiimpl.h\"\n";
     print $OUTFD "double mpi_wtick_( void )";
     &print_attr;
     print $OUTFD "{\n";
