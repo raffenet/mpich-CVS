@@ -44,7 +44,7 @@ int main( int argc, char *argv[] )
 	errval = MPI_Waitsome( 2, r, &outcount, indices, s );
 	if (errval != MPI_ERR_IN_STATUS) {
 	    errs++;
-	    printf( "Did not get ERR_IN_STATUS in Waitsome\n" );
+	    printf( "Did not get ERR_IN_STATUS in Waitsome.  Got %d.\n", errval );
 	}
 	else if (outcount != 2) {
 	    errs++;
