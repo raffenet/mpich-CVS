@@ -7,7 +7,6 @@
 
 #ifdef HAVE_WINDOWS_H
 
-#include <stdio.h>
 #include <windows.h>
 #include <wincrypt.h>
 
@@ -82,6 +81,7 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 
 int smpd_hash(char *input, int input_length, char *output, int output_length)
 {
+    /*int i;*/
     unsigned char hash[MD5_DIGEST_LENGTH];
 
     if (output_length < (MD5_DIGEST_LENGTH * 2 + 1))
@@ -90,6 +90,14 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
     }
 
     MD5(input, input_length, hash);
+
+    /*
+    for (i=0; i<MD5_DIGEST_LENGTH; i++)
+    {
+	sprintf(output, "%02x", hash[i]);
+	output += 2;
+    }
+    */
     sprintf(output, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
 	hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
 	hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]);
