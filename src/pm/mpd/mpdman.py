@@ -24,11 +24,12 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
                      mpd_socketpair, mpd_get_ranks_in_binary_tree
 
-global clientPid, clientExited, clientExitStatus
+global clientPid, clientExited, clientExitStatus, clientExitStatusSent
 
 def mpdman():
-    global clientPid, clientExited, clientExitStatus
+    global clientPid, clientExited, clientExitStatus, clientExitStatusSent
     clientExited = 0
+    clientExitStatusSent = 0
     signal(SIGCHLD,sigchld_handler)
 
     myHost = environ['MPDMAN_MYHOST']
@@ -228,8 +229,8 @@ def mpdman():
         if errmsg:
             pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
-	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
-	    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+            pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
+            mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
@@ -248,8 +249,8 @@ def mpdman():
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
-	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
-	    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+            pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
+            mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         exit(0)
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
@@ -266,6 +267,7 @@ def mpdman():
     socketsToSelect[clientStderrFD] = 1
     clientListenSocket.close()
     numWithIO = 2    # stdout and stderr so far
+    numConndWithIO = 2
     waitPids = [clientPid]
 
     socketsToSelect[pmiListenSocket] = 1
@@ -292,8 +294,6 @@ def mpdman():
     if myRank == 0:
         parentStdoutSocket = stdoutToConSocket
         parentStderrSocket = stderrToConSocket
-        msgToSend = { 'cmd' : 'jobgo' }
-        mpd_send_one_msg(rhsSocket,msgToSend)
     else:
         parentStdoutSocket = 0
         parentStderrSocket = 0
@@ -320,12 +320,22 @@ def mpdman():
 
     pmiBarrierInRecvd = 0
     holdingPMIBarrierLoop1 = 0
-    holdingEndBarrierLoop1 = 0
+    if myRank == 0:
+        holdingEndBarrierLoop1 = 1
+        holdingJobgoLoop1 = 1
+    else:
+        holdingEndBarrierLoop1 = 0
+        holdingJobgoLoop1 = 0
+    jobStarted = 0
     endBarrierDone = 0
     numDone = 0
     while not endBarrierDone:
+        if holdingJobgoLoop1 or clientExited:
+            selectTime = 0.05
+        else:
+            selectTime = 4
         try:
-            (inReadySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],30)
+            (inReadySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],selectTime)
         except error, data:
             if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue
@@ -333,17 +343,26 @@ def mpdman():
                 mpd_raise('select error: %s' % strerror(data[0]))
         except Exception, data:
             mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
+        if holdingJobgoLoop1 and numConndWithIO >= numWithIO:
+            holdingJobgoLoop1 = 0
+            msgToSend = { 'cmd' : 'jobgo_loop_1' }
+            mpd_send_one_msg(rhsSocket,msgToSend)
         if clientExited:
-            clientExited = 0
-            msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
-                          'cli_status' : clientExitStatus, 'cli_host' : gethostname(),
-                          'cli_pid' : clientPid, 'cli_rank' : myRank }
-            if myRank == 0:
-                if conSocket:
-                    mpd_send_one_msg_noprint(conSocket,msgToSend)
-            else:
-                if rhsSocket:
-                    mpd_send_one_msg(rhsSocket,msgToSend)
+            if jobStarted  and  not clientExitStatusSent:
+                msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
+                              'cli_status' : clientExitStatus, 'cli_host' : gethostname(),
+                              'cli_pid' : clientPid, 'cli_rank' : myRank }
+                if myRank == 0:
+                    if conSocket:
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
+                else:
+                    if rhsSocket:
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                clientExitStatusSent = 1
+            if holdingEndBarrierLoop1 and (myRank == 0 or numDone >= numWithIO):
+                holdingEndBarrierLoop1 = 0
+                msgToSend = {'cmd' : 'end_barrier_loop_1'}
+                mpd_send_one_msg(rhsSocket,msgToSend)
         for readySocket in inReadySockets:
             if readySocket not in socketsToSelect.keys():
                 continue
@@ -354,9 +373,11 @@ def mpdman():
                     if msg['cmd'] == 'child_in_stdout_tree':
                         socketsToSelect[tempSocket] = 1
                         childrenStdoutTreeSockets.append(tempSocket)
+                        numConndWithIO += 1
                     elif msg['cmd'] == 'child_in_stderr_tree':
                         socketsToSelect[tempSocket] = 1
                         childrenStderrTreeSockets.append(tempSocket)
+                        numConndWithIO += 1
                     elif msg['cmd'] == 'spawned_child_is_up':
                         socketsToSelect[tempSocket] = 1
                         spawnedChildSockets.append(tempSocket)
@@ -367,7 +388,7 @@ def mpdman():
                         mpd_send_one_msg(tempSocket,msgToSend)
                         msgToSend = { 'cmd' : 'ringsize', 'ringsize' : universeSize }
                         mpd_send_one_msg(tempSocket,msgToSend)
-		        if pmiSocket:  # may have disappeared in early shutdown
+                        if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
@@ -378,14 +399,24 @@ def mpdman():
                     mpd_print(0000, 'lhs died' )
                     del socketsToSelect[lhsSocket]
                     lhsSocket.close()
-                elif msg['cmd'] == 'jobgo':
-		    if myRank == 0:
-			msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
-			mpd_send_one_msg_noprint(conSocket,msgToSend)
-		    else:
-			mpd_send_one_msg(rhsSocket,msg)  # forward it on
-		    write(pipe_man_end,'go')
-		    close(pipe_man_end)
+                elif msg['cmd'] == 'jobgo_loop_1':
+                    if myRank == 0:
+			# let console pgm proceed
+                        msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
+                        msgToSend = { 'cmd' : 'jobgo_loop_2' }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                    else:
+                        if numConndWithIO >= numWithIO:
+                            mpd_send_one_msg(rhsSocket,msg)  # forward it on
+                        else:
+                            holdingJobgoLoop1 = 1
+                elif msg['cmd'] == 'jobgo_loop_2':
+                    if myRank != 0:
+                       mpd_send_one_msg(rhsSocket,msg)  # forward it on
+                    write(pipe_man_end,'go')
+                    close(pipe_man_end)
+                    jobStarted = 1
                 elif msg['cmd'] == 'info_for_parent_in_tree':
                     if int(msg['to_rank']) == myRank:
                         parentHost = msg['parent_host']
@@ -406,7 +437,8 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msgToSend)
                     else:
                         if numDone >= numWithIO:
-                            mpd_send_one_msg(rhsSocket,msg)
+			    if rhsSocket:
+                                mpd_send_one_msg(rhsSocket,msg)
                         else:
                             holdingEndBarrierLoop1 = 1
                 elif msg['cmd'] == 'end_barrier_loop_2':
@@ -444,7 +476,7 @@ def mpdman():
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
-			if pmiSocket:  # may have disappeared in early shutdown
+                        if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = 'cmd=get_result rc=-1 key="%s"\n' % msg['key']
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
@@ -458,7 +490,7 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'pmi_getbyidx':
                     if msg['from_rank'] == myRank:
-			if pmiSocket:  # may have disappeared in early shutdown
+                        if pmiSocket:  # may have disappeared in early shutdown
                             KVSs[default_kvsname].update(msg['kvs'])
                             if KVSs[default_kvsname].keys():
                                 key = KVSs[default_kvsname].keys()[0]
@@ -473,7 +505,7 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'response_to_pmi_get':
                     if msg['to_rank'] == myRank:
-			if pmiSocket:  # may have disappeared in early shutdown
+                        if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
@@ -571,7 +603,7 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
                     if int(msg['torank']) == myRank:
-			if pmiSocket:  # may have disappeared in early shutdown
+                        if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = '%s\n' % (msg['msg'])
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                             select([],[],[],0.1)  # minor pause before intr
@@ -601,10 +633,6 @@ def mpdman():
                         if parentStderrSocket:
                             parentStderrSocket.close()
                             parentStderrSocket = 0
-                        if myRank == 0 or holdingEndBarrierLoop1:
-                            holdingEndBarrierLoop1 = 0
-                            msgToSend = {'cmd' : 'end_barrier_loop_1'}
-                            mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStdoutSocket:
                         if lineLabels:
@@ -639,10 +667,6 @@ def mpdman():
                         if parentStderrSocket:
                             parentStderrSocket.close()
                             parentStderrSocket = 0
-                        if myRank == 0 or holdingEndBarrierLoop1:
-                            holdingEndBarrierLoop1 = 0
-                            msgToSend = {'cmd' : 'end_barrier_loop_1'}
-                            mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStderrSocket:
                         if lineLabels:
@@ -675,10 +699,6 @@ def mpdman():
                         if parentStderrSocket:
                             parentStderrSocket.close()
                             parentStderrSocket = 0
-                        if myRank == 0 or holdingEndBarrierLoop1:
-                            holdingEndBarrierLoop1 = 0
-                            msgToSend = {'cmd' : 'end_barrier_loop_1'}
-                            mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStdoutSocket:
                         mpd_send_one_line_noprint(parentStdoutSocket,line)
@@ -696,10 +716,6 @@ def mpdman():
                         if parentStderrSocket:
                             parentStderrSocket.close()
                             parentStderrSocket = 0
-                        if myRank == 0 or holdingEndBarrierLoop1:
-                            holdingEndBarrierLoop1 = 0
-                            msgToSend = {'cmd' : 'end_barrier_loop_1'}
-                            mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStderrSocket:
                         mpd_send_one_line_noprint(parentStderrSocket,line)
@@ -731,7 +747,7 @@ def mpdman():
                 if not line:
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
-		    pmiSocket = 0
+                    pmiSocket = 0
                     if pmiCollectiveJob:
                         if rhsSocket:  # still alive ?
                             if not jobEndingEarly:  # if I did not already know this
@@ -959,7 +975,7 @@ def mpdman():
                         parentStderrSocket.close()
                         parentStderrSocket = 0
                     if rhsSocket:
-	                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
+                        msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
                     try:
                         pgrp = clientPid * (-1)   # neg Pid -> group
@@ -1138,7 +1154,7 @@ def set_limits(limits):
     return 0
 
 def sigchld_handler(signum,frame):
-    global clientPid, clientExited, clientExitStatus
+    global clientPid, clientExited, clientExitStatus, clientExitStatusSent
     done = 0
     while not done:
         try:
