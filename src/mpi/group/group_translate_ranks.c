@@ -120,14 +120,18 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 	       optimization: start from the last position in the lpid list
 	       if possible.  A more sophisticated version could use a 
 	       tree based or even hashed search to speed the translation. */
-	    if (l1_pid < l2_pid) {
+	    if (l1_pid < l2_pid || g2_idx < 0) {
 		/* Start over from the beginning */
 		g2_idx = group_ptr2->idx_of_first_lpid;
 		l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
 	    }
 	    while (g2_idx >= 0 && l1_pid > l2_pid) {
 		g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
-		l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+		if (g2_idx >= 0) {
+		    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+		}
+		else 
+		    l2_pid = -1;
 	    }
 	    if (l1_pid == l2_pid) {
 		ranks2[i] = group_ptr2->lrank_to_lpid[g2_idx].lrank;
