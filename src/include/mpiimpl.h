@@ -237,6 +237,20 @@ void MPIU_dump_dbg_memlog(FILE * fp);
 #define DBG_FPRINTF fprintf
 
 #define MPIU_Assert assert
+
+/* Define MPICH_DEBUG_INTERNAL to compile in optional debugging
+   tests and routines.  These are enabled with the appropriate 
+   value for MPICH_DEBUG_ITEM, an environment variable that contains
+   a string.  This string is matched in the routine
+   MPIR_IDebug .
+
+   MPICH_DEBUG_INTERNAL is selected with a suitably high level choice of the
+   --enable-g option to configure.
+ */
+#ifdef MPICH_DEBUG_INTERNAL
+extern int MPIR_IDebug( const char * );
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* end of mpidebug.h */
 /* ------------------------------------------------------------------------- */
