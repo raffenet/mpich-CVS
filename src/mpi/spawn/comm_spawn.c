@@ -101,14 +101,14 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
     if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 
-    printf( "calling MPID_Comm_spawn\n" );
+    /* printf( "calling MPID_Comm_spawn\n" ); */
     mpi_errno = MPID_Comm_spawn(command, argv, maxprocs, info, root,
 			 comm_ptr, newcomm_ptr, array_of_errcodes);
-    printf( "back from MPID_Comm_spawn, errno = %d\n", mpi_errno );
+    /* printf( "back from MPID_Comm_spawn, errno = %d\n", mpi_errno ); */
 
     *intercomm = newcomm_ptr->handle;
 
