@@ -84,6 +84,9 @@ lib<name>_a_DIR     = directory in which lib<name> will exist
 		      the EXTERNAL_LIBS variable
 SUBDIRS             = names of subsidiary directories
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
+install_<type>      = names of files to install when "make install" is
+                      invoked.  <type> is a directory type, such as BIN, LIB,
+                      or INCLUDE.
 doc_<type>_SOURCES  = Source files for building documentation using doctext.
                       Type may be MAN, HTML, or LATEX.
 doc_<type>_DIR      = Installation directory for documentation (some 

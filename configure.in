@@ -795,6 +795,8 @@ dnl
 dnl Get the value of MPI_MAX_PROCESSOR_NAME
 if test -s src/mpid/$device_name/Makefile ; then
     maxproc="`${MAKE} -f src/mpid/$device_name/Makefile echomaxprocname`"
+    # Note: if this is more than one line, there will be problems with
+    # the final step.  
 fi
 if test -z "$maxproc" ; then
     maxproc=128

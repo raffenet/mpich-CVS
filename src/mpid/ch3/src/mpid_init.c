@@ -74,6 +74,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
     
 #   if defined(HAVE_GETHOSTNAME)
     {
+	/* The value 128 is returned by the ch3/Makefile for the
+	   echomaxprocname target.  */
 	MPIDI_Process.processor_name = MPIU_Malloc(128);
 	if(gethostname(MPIDI_Process.processor_name, 128) != 0)
 	{

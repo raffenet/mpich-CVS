@@ -198,15 +198,24 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 		 'INCLUDE' => 'includedir', 
 		 'MAN' => 'mandir',
 		 'HTML' => 'htmldir',
-		'DOC' => 'docdir' );
+		'DOC' => 'docdir',
+		);
+%install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
+		     'BIN'     => '$(INSTALL_PROGRAM)',
+		     'SHLIB'   => '$(INSTALL_PROGRAM)',
+		     'INCLUDE' => '$(INSTALL_DATA)',
+		     'MAN'     => '$(INSTALL_DATA)',
+		     'HTML'    => '$(INSTALL_DATA)',
+		     'DOC'     => '$(INSTALL_DATA)',
+		    );
 # These give the directories that autoconf will require for the 
-%required_dirs = ( 'libdir' =>  'exec_prefix',
-		   'bindir' =>  'exec_prefix',
-		   'mandir' =>  'prefix',
-		   'htmldir' => 'prefix',
-		   'docdir' =>  'prefix',
-		   'includedir' => 'prefix',
-		  'exec_prefix' => 'prefix' );
+%required_dirs = ( 'libdir'      => 'exec_prefix',
+		   'bindir'      => 'exec_prefix',
+		   'mandir'      => 'prefix',
+		   'htmldir'     => 'prefix',
+		   'docdir'      => 'prefix',
+		   'includedir'  => 'prefix',
+ 		   'exec_prefix' => 'prefix' );
 # etc.
 #
 # Rules
@@ -940,6 +949,7 @@ sub ClearVars {
     %libraries = ();
     %profile_libraries = ();
     %install_files = ();
+    @install_subdirs = ();
     %optinstall_files = ();
     %external_libraries = ();
     $found_profilelib = 0;
@@ -1548,7 +1558,11 @@ sub TargetInstall {
 	foreach $file ($install_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t\$(INSTALL_PROGRAM) $file \${$dir}/$destfile$newline";
+	    $this_install_method = $install_methods{$kind};
+	    if ($this_install_method eq "") {
+		$this_install_method = '\$(INSTALL)';
+		}
+	    print FD "\t$this_install_method $file \${$dir}/$destfile$newline";
 	}
     }
     foreach $kind (keys(%optinstall_files)) {

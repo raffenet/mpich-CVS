@@ -76,3 +76,8 @@ distclean-local:
 	       ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
 	       ../../include/gen_dataloop.h \
 	       ../../include/mpidi_ch3_conf.h
+#
+# echomaxprocname gives the maximum lenght of a processor name, as used
+# by MPI_GET_PROCESSOR_NAME.  This is initialized in mpid_init
+echomaxprocname:
+	@echo 128
