@@ -16,8 +16,11 @@ int main( int argc, char *argv[] )
     int merr, mclass;
     char errmsg[MPI_MAX_ERROR_STRING];
     int msglen;
+    int rank;
 
     MTest_Init( &argc, &argv );
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     /* Note that according to the MPI standard, port_name must
        have been created by MPI_Open_port.  For current testing
@@ -29,34 +32,50 @@ int main( int argc, char *argv[] )
 
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    merr = MPI_Publish_name( serv_name, MPI_INFO_NULL, port_name );
-    if (merr) {
-	errs++;
-	MPI_Error_string( merr, errmsg, &msglen );
-	printf( "Error in Publish_name %s\n", errmsg );
-    }
-    
-    merr = MPI_Lookup_name( serv_name, MPI_INFO_NULL, port_name_out );
-    if (merr) {
-	errs++;
-	MPI_Error_string( merr, errmsg, &msglen );
-	printf( "Error in Lookup name %s\n", errmsg );
-    }
-    else {
-	if (strcmp( port_name, port_name_out )) {
+    if (rank == 0)
+    {
+	merr = MPI_Publish_name( serv_name, MPI_INFO_NULL, port_name );
+	if (merr) {
 	    errs++;
-	    printf( "Lookup name returned the wrong value (%s)\n", 
-		    port_name_out );
+	    MPI_Error_string( merr, errmsg, &msglen );
+	    printf( "Error in Publish_name %s\n", errmsg );
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	merr = MPI_Unpublish_name( serv_name, MPI_INFO_NULL, port_name );
+	if (merr) {
+	    errs++;
+	    MPI_Error_string( merr, errmsg, &msglen );
+	    printf( "Error in Unpublish name %s\n", errmsg );
+	}
+
+    }
+    else
+    {
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	merr = MPI_Lookup_name( serv_name, MPI_INFO_NULL, port_name_out );
+	if (merr) {
+	    errs++;
+	    MPI_Error_string( merr, errmsg, &msglen );
+	    printf( "Error in Lookup name %s\n", errmsg );
+	}
+	else {
+	    if (strcmp( port_name, port_name_out )) {
+		errs++;
+		printf( "Lookup name returned the wrong value (%s)\n", 
+			port_name_out );
+	    }
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    merr = MPI_Unpublish_name( serv_name, MPI_INFO_NULL, port_name );
-    if (merr) {
-	errs++;
-	MPI_Error_string( merr, errmsg, &msglen );
-	printf( "Error in Unpublish name %s\n", errmsg );
-    }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    
     merr = MPI_Lookup_name( serv_name, MPI_INFO_NULL, port_name_out );
     if (!merr) {
 	errs++;
