@@ -1,2 +1,5 @@
-lib${MPILIBNAME}_a_SOURCES = getcount.c dataloop.c
+lib${MPILIBNAME}_a_SOURCES = getcount.c dataloop.c getelements.c pack.c pack_size.c \
+                             type_commit.c type_contig.c type_extent.c type_free.c \
+                             type_hind.c type_hvec.c type_ind.c type_lb.c type_size.c \
+                             type_struct.c type_ub.c type_vec.c unpack.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

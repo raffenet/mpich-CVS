@@ -1,1 +1,1 @@
-SUBDIRS = coll comm datatype errhan init timer .
+SUBDIRS = coll comm datatype errhan init timer pt2pt topo .
