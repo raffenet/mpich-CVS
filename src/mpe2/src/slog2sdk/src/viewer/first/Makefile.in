@@ -21,8 +21,8 @@ RM           = @RM@
 TARGET    = $(libbuild_dir)/jumpshot.jar
 PACKAGE   = viewer.first
 SRC       = LogPermitDirFilter.java LogRefuseDirFilter.java \
-            LogFileChooser.java HTMLviewer.java \
-            FirstMenuBar.java FirstPanel.java FirstFrame.java
+            LogFileChooser.java HTMLviewer.java LogFileOperations.java \
+            FirstPanel.java FirstMenuBar.java FirstFrame.java
 
 OBJ       = $(SRC:.java=.class)
 
@@ -54,7 +54,7 @@ $(TARGET): $(OBJ)
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} images/*.gif applet.html
+	$(JAR) uvf $${jarfile} images/*.gif images/checkbox/*.gif applet.html
 
 $(TS_TARGET): $(OBJ)
 	cd $(CLASSDIR) ; \

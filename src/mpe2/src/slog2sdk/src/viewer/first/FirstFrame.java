@@ -31,7 +31,7 @@ public class FirstFrame extends JFrame
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.First.setWindow( this );
 
-        top_panel    = new FirstPanel( filename, view_ID );
+        top_panel    = new FirstPanel( isApplet, filename, view_ID );
         super.setContentPane( top_panel );
         top_menubar  = new FirstMenuBar( isApplet, top_panel );
         super.setJMenuBar( top_menubar );
