@@ -865,7 +865,6 @@ SOURCE=.\src\mpi\coll\opsum.c
 # Begin Source File
 
 SOURCE=.\src\mpi\datatype\pack.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -880,7 +879,6 @@ SOURCE=.\src\mpi\datatype\pack_external_size.c
 # Begin Source File
 
 SOURCE=.\src\mpi\datatype\pack_size.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -1148,7 +1146,6 @@ SOURCE=.\src\mpi\datatype\type_hind.c
 # Begin Source File
 
 SOURCE=.\src\mpi\datatype\type_lb.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -1187,7 +1184,6 @@ SOURCE=.\src\mpi\datatype\typeutil.c
 # Begin Source File
 
 SOURCE=.\src\mpi\datatype\unpack.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 

@@ -258,6 +258,10 @@ SOURCE=.\src\init\mpid_abort.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\rma\mpid_accumulate.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\spawn\mpid_close_port.c
 # End Source File
 # Begin Source File
@@ -282,6 +286,10 @@ SOURCE=.\src\init\mpid_finalize.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\rma\mpid_get.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\init\mpid_init.c
 # End Source File
 # Begin Source File
@@ -298,11 +306,19 @@ SOURCE=.\src\spawn\mpid_open_port.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\rma\mpid_put.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\pt2pt\mpid_recv.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\src\pt2pt\mpid_send.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\rma\mpid_win_fence.c
 # End Source File
 # Begin Source File
 

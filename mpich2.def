@@ -363,14 +363,14 @@ EXPORTS
 ;	MPI_Op_free=PMPI_Op_free
 	PMPI_Open_port
 	MPI_Open_port=PMPI_Open_port
-;	PMPI_Pack
-;	MPI_Pack=PMPI_Pack
+	PMPI_Pack
+	MPI_Pack=PMPI_Pack
 ;	PMPI_Pack_external
 ;	MPI_Pack_external=PMPI_Pack_external
 ;	PMPI_Pack_external_size
 ;	MPI_Pack_external_size=PMPI_Pack_external_size
-;	PMPI_Pack_size
-;	MPI_Pack_size=PMPI_Pack_size
+	PMPI_Pack_size
+	MPI_Pack_size=PMPI_Pack_size
 ;	PMPI_Pcontrol
 ;	MPI_Pcontrol=PMPI_Pcontrol
 ;	PMPI_Probe
@@ -499,8 +499,8 @@ EXPORTS
 ;	MPI_Type_hvector=PMPI_Type_hvector
 ;	PMPI_Type_indexed
 ;	MPI_Type_indexed=PMPI_Type_indexed
-;	PMPI_Type_lb
-;	MPI_Type_lb=PMPI_Type_lb
+	PMPI_Type_lb
+	MPI_Type_lb=PMPI_Type_lb
 ;	PMPI_Type_match_size
 ;	MPI_Type_match_size=PMPI_Type_match_size
 ;	PMPI_Type_set_attr
@@ -515,8 +515,8 @@ EXPORTS
 ;	MPI_Type_ub=PMPI_Type_ub
 ;	PMPI_Type_vector
 ;	MPI_Type_vector=PMPI_Type_vector
-;	PMPI_Unpack
-;	MPI_Unpack=PMPI_Unpack
+	PMPI_Unpack
+	MPI_Unpack=PMPI_Unpack
 ;	PMPI_Unpack_external
 ;	MPI_Unpack_external=PMPI_Unpack_external
 ;	PMPI_Unpublish_name
