@@ -442,7 +442,9 @@ bsocket - socket
 @*/
 int bsocket(int family, int type, int protocol)
 {
+#ifdef HAVE_WINSOCK2_H
     int bfdtemp;
+#endif
     BFD_Buffer *pbfd;
 
     DBG_MSG("Enter bsocket\n");
@@ -458,8 +460,12 @@ int bsocket(int family, int type, int protocol)
     memset(pbfd, 0, sizeof(BFD_Buffer));
     pbfd->state = BFD_FD_NOT_IN_USE;
 
+#ifdef HAVE_WINSOCK2_H
     bfdtemp = socket(family, type, protocol);
     DuplicateHandle(GetCurrentProcess(), (HANDLE)bfdtemp, GetCurrentProcess(), &(HANDLE)(pbfd->real_fd), 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
+#else
+    pbfd->real_fd = socket(family, type, protocol);
+#endif
 
     if (pbfd->real_fd == SOCKET_ERROR) 
     {
@@ -557,7 +563,11 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 	return BFD_INVALID_SOCKET;
     }
 
+#ifdef HAVE_WINSOCK2_H
     DuplicateHandle(GetCurrentProcess(), (HANDLE)bfdtemp, GetCurrentProcess(), &(HANDLE)conn_fd, 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
+#else
+    conn_fd = bfdtemp;
+#endif
 
     memset(new_bfd, 0, sizeof(BFD_Buffer));
     new_bfd->real_fd = conn_fd;
