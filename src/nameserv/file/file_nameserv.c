@@ -11,8 +11,13 @@
  * data.  
  */
 #include <stdio.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "mpiimpl.h"
+
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
 
 /* Define the name service handle */
 #define MPID_MAX_NAMEPUB 64
@@ -33,6 +38,7 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     static const char FCNAME[] = "MPID_NS_Create";
     int        i;
     const char *dirname;
+    struct stat st;
     int        err;
 
     *handle_ptr = (MPID_NS_Handle)MPIU_Malloc( sizeof(struct MPID_NS_Handle) );
@@ -54,8 +60,12 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 
     /* Make the directory if necessary */
     /* FIXME: Determine if the directory exists before trying to create it */
-    if (1) {
-	mkdir( (*handle_ptr)->dirname );
+    
+    if (stat( (*handle_ptr)->dirname, &st ) || !S_ISDIR(st.st_mode) ) {
+	if (mkdir( (*handle_ptr)->dirname, 0x777 )) {
+	    /* An error.  Ignore most ? */
+	    ;
+	}
     }
     
     return 0;
