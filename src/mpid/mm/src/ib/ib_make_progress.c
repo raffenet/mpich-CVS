@@ -36,7 +36,7 @@ int ib_handle_accept()
 @*/
 int ib_make_progress()
 {
-    static int count = 0;
+    /*static int count = 0;*/
     ib_uint32_t status;
     ib_work_completion_t completion_data;
     MPIDI_VC *vc_ptr;
@@ -51,9 +51,11 @@ int ib_make_progress()
 	&completion_data);
     if (status == IBA_CQ_EMPTY)
     {
+	/*
 	count++;
 	if (count > 500)
 	    usleep(1);
+	*/
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
@@ -70,7 +72,7 @@ int ib_make_progress()
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return -1;
     }
-    count = 0;
+    /*count = 0;*/
 
     /* Get the vc_ptr and mem_ptr out of the work_id */
     vc_ptr = (MPIDI_VC*)(((ib_work_id_handle_t*)&completion_data.work_req_id)->data.vc);
@@ -81,7 +83,7 @@ int ib_make_progress()
     case OP_SEND:
 	g_num_send_posted--;
 	/*printf("%d:s%d ", MPIR_Process.comm_world->rank, g_num_send_posted);*/
-	msg_printf("s%d ", g_num_send_posted);
+	/*msg_printf("s%d ", g_num_send_posted);*/
 	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
 	/* put the send packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
@@ -89,7 +91,7 @@ int ib_make_progress()
     case OP_RECEIVE:
 	g_num_receive_posted--;
 	/*printf("%d:r%d ", MPIR_Process.comm_world->rank, g_num_receive_posted);*/
-	msg_printf("r%d ", g_num_receive_posted);
+	/*msg_printf("r%d ", g_num_receive_posted);*/
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);
 	/* put the receive packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);

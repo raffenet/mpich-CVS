@@ -17,10 +17,10 @@
 #define IB_ERROR_MSG_LENGTH       256
 #define IB_LISTENER_POINTER       &IB_Process
 //#define IB_PINNED_MEMORY_SIZE  2*1024*1024
-#define IB_PACKET_SIZE            (1024 * 32)
-#define IB_PACKET_COUNT           192
-#define IB_NUM_PREPOSTED_RECEIVES 20
-#define IB_MAX_CQ_ENTRIES         100
+#define IB_PACKET_SIZE            (1024 * 64)
+#define IB_PACKET_COUNT           64
+#define IB_NUM_PREPOSTED_RECEIVES 32
+#define IB_MAX_CQ_ENTRIES         255
 
 typedef struct IB_PerProcess {
     MPID_Thread_lock_t lock;
