@@ -118,12 +118,12 @@ Or things not checked for but desired
    Don't do this.  Formally, users should never define anything that starts
    with __ (two underscores).  The reason is that these names are used by the
    compilation system, and they may have strange interactions, particularly if
-   they expect that other definitions are made.  Instead, either find out how
+   they expect that other definitions are made.  Instead, try to find out how
    to put the compiler into this mode.  If the compiler doesn't *have* a mode
    for this, then try to avoid depending on these functions.  Under Linux, the
    proper definitions may be found in the file /usr/include/features.h .  For
    example, to get the BSD features, the correct approach is to define
-   _BSD_SOURCE .
+   _BSD_SOURCE rather than __USE_BSD.
 
 3. Macros with comparisons.  Make sure that these are parenthesized.  E.g.,
      #define foo(a) ((a) > 1)
