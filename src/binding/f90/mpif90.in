@@ -38,6 +38,18 @@ libdir=@libdir@
 # configure (e.g., determining whehter -lsocket is needee)
 F90="@F90@"
 F90CPP="@F90CPP@"
+#
+# Fortran 90 Compiler characteristics
+F90INC="@F90INC@"
+# f90modinc specifies how to add a directory to the search path for modules.
+# Some compilers (Intel ifc version 5) do not support this concept, and 
+# instead need 
+# a specific list of files that contain module names and directories.
+# The F90MODINCSPEC is a more general approach that uses <dir> and <file>
+# for the directory and file respectively.
+F90MODINC="@F90_MODINCFLAG@"
+F90MODINCSPEC="@F90MODINCSPEC@"
+#
 MPI_F90FLAGS="@MPI_F90FLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
@@ -213,16 +225,53 @@ mpilibs=-l$MPILIBNAME
 # Concatenate the user flags with the ones needed by MPI
 F90FLAGS="$F90FLAGS $MPI_F90FLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
+
+# Construct the line to add the include directory (not all compilers 
+# use -I, unfortunately)
+if [ -z "${F90INC}" ] ; then
+    # If there is no path, add a link to the mpif.h file.
+    # There *must* be a way to provide the path the any modules (there
+    # may be too many to link)
+    if [ ! -r mpif.h ] ; then
+        #echo "Adding a symbolic link for mpif.h"
+	trap "$Show /bin/rm mpif.h" 0
+	# This should really be the (related) f77includedir (see mpif77).
+	$Show ln -s ${includedir}/mpif.h mpif.h
+	# Remember to remove this file
+	rmfiles="$rmfiles mpif.h"
+    fi
+    F90INCDIRS=
+else
+    # Normally, F90INC is just -I, but some compilers have used different
+    # command line arguments
+    F90INCDIRS=${F90INC}${includedir}
+fi
+
+# Handle the specification of the directory containing the modules
+# For now, these are in the includedir (no choice argument supported)
+moduledir=$includedir
+modulelib=${MPILIBNAME}f90nc
+if [ -n "$F90MODINCSPEC" ] ; then
+    newarg=`echo A"$F90MODINCSPEC" | \
+	sed -e 's/^A//' -e 's%<dir>%'"$moduledir%g" -e 's/<file>/mpi/g'`
+    F90MODDIRS="$newarg"
+    F90MODLIBS="-l$modulelib"
+elif [ -n "$F90MODINC" ] ; then
+    F90MODDIRS="${F90MODINC}$moduledir"
+    F90MODLIBS="-l$modulelib"
+fi
+
 #
 # A temporary statement to invoke the compiler
 # Place the -L before any args incase there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries
+
 if [ "$linking" = yes ] ; then
-    $Show $F90 $F90FLAGS $LDFLAGS -I$includedir -L$libdir $allargs $mpilibs $MPI_OTHERLIBS
+    $Show $F90 $F90FLAGS $LDFLAGS $F90INCDIRS $F90MODDIRS -L$libdir $allargs $F90MODLIBS $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
-    $Show $F90 $F90FLAGS -I$includedir $allargs
+    $Show $F90 $F90FLAGS $F90INCDIRS $F90MODDIRS $allargs
     rc=$?
 fi
 if [ -n "$rmfiles" ] ; then

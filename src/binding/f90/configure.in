@@ -77,6 +77,9 @@ fi
 # Sets F90MODEXT (and adds it to the list substed)
 # Sets F90MODINCFLAG (and adds it to the list substed)
 PAC_F90_MODULE
+#
+# For now, assume that all f90 compilers accept -I for include directories
+F90INC=-I
 
 #
 # Determine the extension for f90 files (it isn't always .f90)

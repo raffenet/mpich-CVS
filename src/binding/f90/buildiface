@@ -452,7 +452,14 @@ print MAKEFD "# the mpif90 script before an install takes place\n";
 print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpi_base.\$(MOD)\
 \t\$(F90_COMPILE_MODS) -c \$(srcdir)/mpi.f90\n";
 print MAKEFD "\tcp mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) ../../../src/include\n";
-
+#
+# Some versions of the Intel f90 compiler require special files that 
+# describe which modules to load.
+print MAKEFD "\t\@if [ -n \"\@F90_WORK_FILES_ARG\@\" ] ; then \\\
+\t    cp work.pc ../../../src/include/mpimod.pc ; \\\
+\t    echo \"mpimod.pc\" > ../../../src/include/mpimod.pcl ; \\\
+\t    echo \"\${includedir}/mpimod.pcl\" >> ../../../src/include/mpimod.pcl ;\\\
+\tfi\n";
 
 print MAKEFD "clean-local:\n";
 print MAKEFD "\trm -f *.\$(MOD)\n";
@@ -463,6 +470,7 @@ print MAKEFD "maint-clean:\
 print MAKEFD "install_BIN     = mpif90\n";
 print MAKEFD "install_ETC     = mpif90.conf\n";
 print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD)\n";
+print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
 
 # ----------------------------------------------------------------------------
 # FIXME: Add the steps to handle the choice arguments.  They should be
