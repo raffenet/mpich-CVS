@@ -197,9 +197,9 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     char *value_orig;
     struct hostent *h;
     int port;
-    MPIDI_STATE_DECL(MPIDI_CH3I_GET_BUSINESS_CARD);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
 
-    MPIDI_FUNC_ENTER(MPIDI_CH3I_GET_BUSINESS_CARD);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
 
     port = MPIDI_CH3I_Listener_get_port();
 
@@ -231,6 +231,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     }
     /*printf("Business card:\n<%s>\n", value_orig);*/
 
-    MPIDI_FUNC_EXIT(MPIDI_CH3I_GET_BUSINESS_CARD);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }

@@ -263,6 +263,10 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_CONNECTION_RECV_FAIL,
 		       "connection_recv_fail",
 		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD,
+		       "MPIDI_CH3I_Get_business_card",
+		       get_random_color_str());
     return Sock_describe_timer_states();
 }
 

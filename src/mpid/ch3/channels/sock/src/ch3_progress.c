@@ -554,12 +554,18 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 		    }
 		    token = strtok(NULL, ":\r\n");
 		}
-		MPIU_Free(temp);
+		if (temp)
+		    MPIU_Free(temp);
 	    }
 	}
     }
 
     temp = MPIU_Strdup(business_card);
+    if (temp == NULL)
+    {
+	/*err_printf("GetHostAndPort: MPIU_Strdup failed\n");*/
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
+    }
     /* move to the host part */
     token = strtok(temp, ":");
     if (token == NULL)
