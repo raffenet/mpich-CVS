@@ -73,7 +73,7 @@ do_ssh = 0
 fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
 hostsFromFile = []
 verbose = 0
-long_messsages = 0
+long_messages = 0
 argidx = 1
 while argidx < len(argv):
     if argv[argidx] == '-h'  or argv[argidx] == '--help':
