@@ -317,7 +317,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int clas
 	generic_idx = FindGenericMsgIndex(generic_msg);
 	if (generic_idx >= 0)
 	{
-	    err_code |= generic_idx << ERROR_GENERIC_SHIFT;
+	    err_code |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
 	}
 	else
 	{
@@ -505,37 +505,40 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 
 	ring_idx    = (errorcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
 	ring_seq    = (errorcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
-	generic_idx = (errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
+	generic_idx = ((errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
 #       if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 	{
-	    int flag = FALSE;
-	    
-	    MPID_Thread_lock(error_ring_mutex);
+	    if (generic_idx >= 0)
 	    {
-		if (ErrorRing[ring_idx].seq == ring_seq)
-		{
-		    /* TODO: MT: this is not thread safe.  the string must be copied into a thread specific storage or the user
-		       must provide a buffer.  Otherwise the error message could be overwritten before it is used. */
-		    if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
-		    {
-			msg[MPI_MAX_ERROR_STRING - 1] = '\0';
-		    }
-		    flag = TRUE;
-		}
-	    }
-	    MPID_Thread_unlock(error_ring_mutex);
+		int flag = FALSE;
 
-	    if (flag)
-	    {
-		goto fn_exit;
+		MPID_Thread_lock(error_ring_mutex);
+		{
+		    if (ErrorRing[ring_idx].seq == ring_seq)
+		    {
+			/* TODO: MT: this is not thread safe.  the string must be copied into a thread specific storage or the user
+			   must provide a buffer.  Otherwise the error message could be overwritten before it is used. */
+			if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
+			{
+			    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+			}
+			flag = TRUE;
+		    }
+		}
+		MPID_Thread_unlock(error_ring_mutex);
+
+		if (flag)
+		{
+		    goto fn_exit;
+		}
 	    }
 	}
 #       endif
 	
 #       if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
 	{
-	    if (generic_idx != (ERROR_GENERIC_MASK >> ERROR_GENERIC_SHIFT))
+	    if (generic_idx >= 0)
 	    {
 		if (MPIU_Strncpy(msg, generic_err_msgs[generic_idx].long_name, MPI_MAX_ERROR_STRING))
 		{
@@ -559,44 +562,46 @@ fn_exit:
 
 void MPIR_Err_print_stack(FILE * fp, int errcode)
 {
+    int generic_idx;
+    int ring_idx;
+    int ring_seq;
+	
+    generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+    ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+    ring_seq    = (errcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+		    
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(error_ring_mutex);
+	if (generic_idx >= 0)
 	{
-	    while (errcode != MPI_SUCCESS)
+	    MPID_Thread_lock(error_ring_mutex);
 	    {
-		int ring_idx;
-		int ring_seq;
-		
-		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_seq    = (errcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
-		    
-		if (ErrorRing[ring_idx].seq == ring_seq)
+		while (errcode != MPI_SUCCESS)
 		{
-		    fprintf(fp, "%s(): %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
-		    errcode = ErrorRing[ring_idx].prev_error;
-		}
-		else
-		{
-		    break;
+		    if (ErrorRing[ring_idx].seq == ring_seq)
+		    {
+			fprintf(fp, "%s(): %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+			errcode = ErrorRing[ring_idx].prev_error;
+		    }
+		    else
+		    {
+			break;
+		    }
 		}
 	    }
-	}
-	MPID_Thread_unlock(error_ring_mutex);
+	    MPID_Thread_unlock(error_ring_mutex);
 
-	if (errcode == MPI_SUCCESS)
-	{
-	    goto fn_exit;
+	    if (errcode == MPI_SUCCESS)
+	    {
+		goto fn_exit;
+	    }
 	}
     }
 #   endif
 
 #   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
     {
-	int generic_idx;
-
-	generic_idx = (errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
-	if (generic_idx != (ERROR_GENERIC_MASK >> ERROR_GENERIC_SHIFT))
+	if (generic_idx >= 0)
 	{
 	    fprintf(fp, "(unknown)(): %s\n", generic_err_msgs[generic_idx].long_name);
 	    goto fn_exit;
