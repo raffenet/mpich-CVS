@@ -40,5 +40,5 @@ typedef unsigned __int64 MPID_CPU_Tick_t;
 #endif
 
 extern volatile unsigned int MPIDI_CH3I_progress_completions;
-int handle_shm_read(MPIDI_VC *vc, int nb);
-int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc);
+int handle_shm_read(MPIDI_VC_t *vc, int nb);
+int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc);
