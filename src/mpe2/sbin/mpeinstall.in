@@ -161,11 +161,12 @@ if [ -z "$3" ] ; then
 else
     mode=$3
 fi
-dest=$DESTDIR$2
-if [ -d $dest ] ; then
-    dest=$dest/`basename $1`
+if [ -d $DESTDIR$2 ] ; then
+    dest=$DESTDIR$2/`basename $1`
+    destfile=$2/`basename $1`
 else
-    dest=$dest
+    dest=$DESTDIR$2
+    destfile=$2
 fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
@@ -177,9 +178,16 @@ elif [ ! -f $1 ] ; then
     echo "**File $1 does not exist (or is not a regular file)!"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
+elif [ "$1" = "$dest" ] ; then
+    echo "**File $1 is being copied to itself!"
+    errs=`expr $errs + 1`
+    if [ $failmode = "hard" ] ; then exit 1 ; fi
 else
     if [ $verbose = 1 ] ; then echo "Copying $1 to $dest" ; fi
-    if [ -f $dest ] ; then $Show $RM -f $dest ; fi
+    if [ -f $dest ] ; then
+        echo "Replacing existing file $dest..."
+        $Show $RM -f $dest
+    fi
     $Show $CP $1 $dest
     rc=$?
     if [ $rc != 0 ] ; then
@@ -188,7 +196,7 @@ else
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
         # store the destination filename copied
-        filelist="$filelist $dest"
+        filelist="$filelist $destfile"
     fi
     $Show chmod $mode $dest
     rc=$?
@@ -211,44 +219,11 @@ CopyFileP() {
 
 
 #
-# A version of recursive directory copy that copy only missing files
-# and preserves copied file dates but does NOT copy CVS, old, tex directory.
+# A version of recursive directory copy that copies or replaces files
+# ( file replacement of replace=1 ) and reserves copied file dates
+# but does NOT copy directories, CVS/, old/ and tex/.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-CopyDirRecurMissingP() {
-if [ -n "$1" -a -n "$2" ] ; then
-    if [ -d $1 ] ; then
-        MkDir $2
-        # use $4 as a local variable
-        # & set it as the original PWD before "cd $1"
-        set $1 $2 ${3:-$MODE} `pwd`
-        cd $1
-        for file in * ; do
-            if [ -f $file -a ! -f $DESTDIR$2/$file ] ; then
-                CopyFileP $file $2/$file $3
-            fi
-        done
-        for dir in * ; do
-            if [ -d $dir \
-                 -a "$dir" != "CVS" -a "$dir" != "old" \
-                 -a "$dir" != "tex" \
-               ] ; then
-                CopyDirRecurMissingP $dir $2/$dir $3
-            fi
-        done
-        # cd back where it comes from
-        # counter the effect of "cd $1" above,
-        # so "for" loop still works
-        cd $4
-    fi 
-fi
-}
-
-
-#
-# A version of recursive directory copy that copies and replaces files
-# and reserves copied file dates but does NOT copy CVS, old, tex directory.
-# $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-CopyDirRecurReplaceP() {
+CopyDirRecurP() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -258,9 +233,6 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                if [ -f $DESTDIR$2/$file ] ; then
-                    $RM -f $DESTDIR$2/$file
-                fi
                 CopyFileP $file $2/$file $3
             fi
         done
@@ -269,7 +241,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                CopyDirRecurReplaceP $dir $2/$dir $3
+                CopyDirRecurP $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -286,17 +258,18 @@ fi
 # Make the given directory.  This handles building intermediate directories
 # as required, and maintains a list of created directories in dirlist.
 MkDir() {
-if [ ! -d $DESTDIR$1 ] ; then
-    dir=`echo $DESTDIR$1 | sed 's%/% /%g'`
+dest=$DESTDIR$1
+if [ ! -d $dest ] ; then
+    dir=`echo $dest | sed 's%/% /%g'`
     path_to_date=''
     for path in $dir ; do
         path_to_date="$path_to_date$path"
         if [ ! -d $path_to_date ] ; then
-            if [ $verbose = 1 ] ; then echo "Creating directory $1" ; fi
+            if [ $verbose = 1 ] ; then echo "Creating directory $dest" ; fi
             $Show "mkdir $path_to_date"
             rc=$?
             if [ $rc != 0 ] ; then
-                echo "**Error making directory $1**"
+                echo "**Error making directory $dest**"
                 errs=`expr $errs + 1`
                 if [ $failmode = "hard" ] ; then exit $rc ; fi
                 echo "Failed to create directory $path_to_date"
@@ -323,11 +296,12 @@ fi
 # Fixup files with various xxxxbuild_dir to xxxxdir, install directory.
 #
 FixInstallFile() {
-dest=$DESTDIR$2
-if [ -d $dest ] ; then
-    dest=$dest/`basename $1`
+if [ -d $DESTDIR$2 ] ; then
+    dest=$DESTDIR$2/`basename $1`
+    destfile=$2/`basename $1`
 else
-    dest=$dest
+    dest=$DESTDIR$2
+    destfile=$2
 fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
@@ -356,7 +330,7 @@ else
             if [ $failmode = "hard" ] ; then exit $rc ; fi
         else
             # store the destination filename fixed
-            filelist="$filelist $dest"
+            filelist="$filelist $destfile"
         fi
     else
         if [ $verbose = 1 ] ; then echo "Fixup $1 and copy to $dest" ; fi
@@ -370,7 +344,7 @@ fi
 $Show chmod $mode $dest
 rc=$?
 if [ $rc != 0 ] ; then
-    echo "**Error setting mode on file $2**"
+    echo "**Error setting mode on file $dest**"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit $rc ; fi
 fi
@@ -396,8 +370,10 @@ if [ $verbose = 1 ] ; then
     echo "Install into $prefix"
 fi
 
-if [ -d $prefix ] ; then
-    if [ $verbose = 1 ] ; then echo "using existing directory $prefix" ; fi
+if [ -d $DESTDIR$prefix ] ; then
+    if [ $verbose = 1 ] ; then
+        echo "using existing directory $DESTDIR$prefix"
+    fi
 else
     MkDir $prefix
 fi
@@ -419,21 +395,20 @@ if [ "$prefix_override" = 1 ] ; then
     sbindir=$prefix/sbin
     datadir=$prefix/share
     if [ $appendUninstall = 0 ] ; then
-        UNINSTALLFILE=${sbindir}/${UNINSTALL_base}
+        UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
     fi
 fi
 
 # Copy end-user MPE include Files, i.e. mpe*h
 if [ -n "$includebuild_dir" ] ; then
     if [ -d $includebuild_dir ] ; then
-        echo "Copying MPE include files to $includedir"
+        echo "Copying MPE include files to $DESTDIR$includedir"
         if [ ! -d $DESTDIR$includedir ] ; then
             MkDir $includedir
         fi
         cd $includebuild_dir
-        for file in `/bin/ls mpe*h` ; do
-            if [    -f $includebuild_dir/$file \
-                 -a ! -f $DESTDIR$includedir/$file ] ; then
+        for file in mpe*.h ; do
+            if [ -f $includebuild_dir/$file ] ; then
                 CopyFileP $includebuild_dir/$file $includedir/$file $MODE
             fi
         done
@@ -443,16 +418,16 @@ fi
 # Copy MPE libraries
 if [ -n "$libbuild_dir" ] ; then
     if [ -d $libbuild_dir ] ; then
-        echo "Copying MPE libraries to $libdir"
-        CopyDirRecurReplaceP $libbuild_dir $libdir $MODE
+        echo "Copying MPE libraries to $DESTDIR$libdir"
+        CopyDirRecurP $libbuild_dir $libdir $MODE
     fi
 fi
 
 # Copy MPE utility programs
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
-         echo "Copying MPE utility programs to $bindir"
-         CopyDirRecurReplaceP $binbuild_dir $bindir $XMODE
+         echo "Copying MPE utility programs to $DESTDIR$bindir"
+         CopyDirRecurP $binbuild_dir $bindir $XMODE
     fi
 fi
 
@@ -469,33 +444,33 @@ for pkg in logging graphics ; do
         examplesdir=$datadir/examples_${pkg}
         MkDir $examplesdir
 #       Copy MPE Example C and Fortran programs
-        CopyDirRecurReplaceP $top_srcdir/$dirvalue $examplesdir
+        CopyDirRecurP $top_srcdir/$dirvalue $examplesdir
     
 #       Create MPE examples Makefile
-        ( cd $DESTDIR$examplesdir ; \
-          FixInstallFile $libbuild_dir/../$dirvalue/Makefile \
-                         $examplesdir/Makefile ) 
-        filelist="$filelist $examplesdir/Makefile"
+        cd $DESTDIR$examplesdir && \
+        FixInstallFile $libbuild_dir/../$dirvalue/Makefile \
+                       $examplesdir/Makefile
     
-        if [ -x $bindir/mpiexec ] ; then
-            $Show "( cd $DESTDIR$examplesdir ; \
-                     $RM -f mpiexec ; \
+        if [ -x $bindir/mpiexec -o -x $DESTDIR$bindir/mpiexec ] ; then
+            $Show "( cd $DESTDIR$examplesdir && \
+                     $RM -f mpiexec && \
                      $LN_S $bindir/mpiexec mpiexec )"
             filelist="$filelist $examplesdir/mpiexec" 
-        elif [ -x $bindir/mpirun ] ; then
-            $Show "( cd $DESTDIR$examplesdir ; \
-                     $RM -f mpirun ; \
+        elif [ -x $bindir/mpirun -o -x $DESTDIR$bindir/mpirun ] ; then
+            $Show "( cd $DESTDIR$examplesdir && \
+                     $RM -f mpirun && \
                      $LN_S $bindir/mpirun mpirun )"
             filelist="$filelist $examplesdir/mpirun" 
         fi
     
-        if [ -z "$DESTDIR" ]; then 
-            if [ -f $DESTDIR$examplesdir/Makefile ] ; then
+#       Run installation test only if DESTDIR is empty
+        if [ -z "$DESTDIR" ] ; then
+            if [ -f $examplesdir/Makefile ] ; then
                 echo "Running installation test for C $pkg program..."
-                $Show "( cd $DESTDIR$examplesdir ; $MAKE linktest_C )"
+                $Show "( cd $examplesdir && $MAKE linktest_C )"
                 if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
                     echo "Running installation test for Fortran $pkg program..."
-                    $Show "( cd $examplesdir ; $MAKE linktest_F77 )"
+                    $Show "( cd $examplesdir && $MAKE linktest_F77 )"
                 fi
             fi
         fi
@@ -521,11 +496,11 @@ chmod u+x $UNINSTALLFILE
 # Don't set the prefix if the default is chosen.
 if [ -x $libbuild_dir/../src/slog2sdk/sbin/install-package ] ; then
     if [ "$prefix_override" = "1" ] ; then
-        ( cd $libbuild_dir/../src/slog2sdk ; \
+        ( cd $libbuild_dir/../src/slog2sdk && \
           ./sbin/install-package -prefix=$prefix -uninstall=$UNINSTALLFILE \
                                  -mode=$MODE -xmode=$XMODE -copymode=core )
     else
-        ( cd $libbuild_dir/../src/slog2sdk ; \
+        ( cd $libbuild_dir/../src/slog2sdk && \
           ./sbin/install-package -uninstall=$UNINSTALLFILE \
                                  -mode=$MODE -xmode=$XMODE -copymode=core )
     fi
@@ -536,7 +511,7 @@ for pkg in logging graphics ; do
     dirname=${pkg}_dirname
     examplesdir=$datadir/examples_${pkg}
     if [ -s $DESTDIR$examplesdir/Makefile ] ; then
-       echo "( cd $examplesdir ; $MAKE clean )" >> $UNINSTALLFILE
+       echo "( cd $examplesdir && $MAKE clean )" >> $UNINSTALLFILE
     fi
 done
 
@@ -558,7 +533,7 @@ done
 if [ "$appendUninstall" = 0 ] ; then
     cp $UNINSTALLFILE $sbinbuild_dir/mpeuninstall
 #
-    echo "Installed MPE in $prefix"
+    echo "Installed MPE in $DESTDIR$prefix"
     echo "$UNINSTALLFILE may be used to remove the installation"
 fi
  
