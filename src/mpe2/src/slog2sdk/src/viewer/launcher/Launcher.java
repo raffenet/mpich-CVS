@@ -50,13 +50,21 @@ public class Launcher
         UserHome       = sys_pptys.getProperty( "user.home" );
     }
 
+    private static void initializeLauncherConstants()
+    {
+        if ( FileSeparator.equals( "/" ) )
+            JVM = "java";
+        else
+            JVM = "javaw.exe";
+    }
+
     private static final String CONFIGURATION_HEADER
                    = "# Jumpshot-4 Launcher setup file.\n"
                    + "#JVM: Java Virtual Machine name, can be absolute path.\n"
                    + "#JVM_OPTIONS: JVM launch parameters.\n"
                    + "#VIEWER_JAR: executable jar file to be launched.";
 
-    private static void initializeLauncherConstants()
+    private static boolean readLauncherConstants()
     {
         Properties   setup_pptys;
         String       setupfile_path;
@@ -71,17 +79,28 @@ public class Launcher
             JVM_OPTIONS  = setup_pptys.getProperty( "JVM_OPTIONS" );
             VIEWER_JAR   = setup_pptys.getProperty( "VIEWER_JAR" );
         } catch ( FileNotFoundException fioerr ) {
-            try {
-                FileOutputStream fouts = new FileOutputStream( setupfile_path );
-                setup_pptys.setProperty( "JVM", JVM );
-                setup_pptys.setProperty( "JVM_OPTIONS", JVM_OPTIONS );
-                setup_pptys.setProperty( "VIEWER_JAR", VIEWER_JAR );
-                setup_pptys.store( fouts, CONFIGURATION_HEADER );
-                fouts.close();
-            } catch ( IOException ioerr ) {
-                ioerr.printStackTrace();
-                System.exit( 1 );
-            }
+            return false;
+        } catch ( IOException ioerr ) {
+            ioerr.printStackTrace();
+            System.exit( 1 );
+        }
+        return true;
+    }
+
+    private static void writeLauncherConstants()
+    {
+        Properties   setup_pptys;
+        String       setupfile_path;
+
+        setupfile_path = UserHome + FileSeparator + SETUP_FILENAME;
+        setup_pptys    = new Properties();
+        try {
+            FileOutputStream fouts = new FileOutputStream( setupfile_path );
+            setup_pptys.setProperty( "JVM", JVM );
+            setup_pptys.setProperty( "JVM_OPTIONS", JVM_OPTIONS );
+            setup_pptys.setProperty( "VIEWER_JAR", VIEWER_JAR );
+            setup_pptys.store( fouts, CONFIGURATION_HEADER );
+            fouts.close();
         } catch ( IOException ioerr ) {
             ioerr.printStackTrace();
             System.exit( 1 );
@@ -99,13 +118,6 @@ public class Launcher
             path2jvm = JVM;
         else
             path2jvm = JavaHome + FileSeparator + "bin" + FileSeparator + JVM;
-
-        if ( ! FileSeparator.equals( "/" ) ) {
-            //  Assume MS Windows
-            if ( ! path2jvm.endsWith( ".exe" ) ) {
-                path2jvm = path2jvm + ".exe";
-            }
-        }    
         return path2jvm;
     }
 
@@ -188,6 +200,13 @@ public class Launcher
 
         Launcher.initializeSystemProperties();
         Launcher.initializeLauncherConstants();
+        if ( ! Launcher.readLauncherConstants() ) {
+            Dialogs.info( null, "This is your first time using the launcher.\n"
+                              + "A launcher setup file will be written to\n"
+                              + "your home directory " + UserHome + ".", null );
+            Launcher.writeLauncherConstants();
+        }
+
         path2jardir = Launcher.getDefaultPathToJarDir();
         jar_path    = Launcher.getDefaultJarPath( path2jardir );
         jar_file    = new File( jar_path );
@@ -230,6 +249,9 @@ public class Launcher
                                + exec_cmd + "\n" + exec_err_msg );
             System.exit( 1 );
         }
+
+        // Preventive System.exit() to guarantee the launcher exits cleanly
+        System.exit( 0 );
     }
 
 
