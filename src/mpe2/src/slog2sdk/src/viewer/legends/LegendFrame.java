@@ -15,6 +15,7 @@ import javax.swing.*;
 
 import logformat.slog2.input.InputLog;
 import viewer.common.TopWindow;
+import viewer.common.Dialogs;
 
 public class LegendFrame extends JFrame
 {
@@ -52,8 +53,19 @@ public class LegendFrame extends JFrame
         System.out.print( "Reading the SLOG-2 file ...... " );
         in_slog_ins  = new InputLog( in_filename );
         System.out.println( "Done." );
+        String err_msg;
+        if ( (err_msg = in_slog_ins.getCompatibleHeader() ) != null ) {
+            if ( ! Dialogs.confirm( null, err_msg
+                                  + logformat.slog2.Const.VERSION_HISTORY
+                                  + "Do you still want to continue reading "
+                                  + "the logfile ?" ) ) {
+                in_slog_ins = null;
+                return;
+            }
+        }
 
         System.out.println( "Starting the SLOG-2 Legend .... " );
+        in_slog_ins.initialize();
         frame     = new LegendFrame( in_slog_ins );
         // frame.pack() has to be called after the object is created
         frame.pack();

@@ -18,9 +18,11 @@ JC           = @JC@
 JAR          = @JAR@
 RM           = @RM@
 
-TARGET    =
+TARGET    = $(libbuild_dir)/legends.jar
 PACKAGE   = viewer.legends
-SRC       = Const.java CategoryIcon.java CategoryLabel.java LegendList.java \
+SRC       = Const.java CategoryIcon.java CategoryLabel.java \
+            CategoryIconRenderer.java CategoryIconEditor.java \
+            LegendTableModel.java LegendTable.java \
             LegendPanel.java LegendFrame.java
 
 OBJ       = $(SRC:.java=.class)
@@ -40,10 +42,25 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 
 ALL: $(OBJ)
 
+$(TARGET): $(OBJ)
+	cd $(CLASSDIR) ; \
+	$(RM) $(PACKAGE).manifest ; \
+	echo "Main-Class: $(PACKAGE).LegendFrame" > $(PACKAGE).manifest ; \
+	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
+	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	for dir in base/io/ base/topology/ base/drawable/ \
+	           logformat/slog2/ logformat/slog2/input/ \
+	           viewer/common/ $(PKGDIR)/ ; do \
+	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
+	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	done ; \
+	$(JAR) uvf $${jarfile} images/*.gif applet.html
+
 clean:
 	cd $(CLASSDIR) ; \
 	$(RM) $(PKGDIR)/*.class
 
 rmlib:
+	$(RM) $(TARGET)
 
 realclean: clean rmlib

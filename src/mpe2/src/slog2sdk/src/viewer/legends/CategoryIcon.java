@@ -24,6 +24,8 @@ import viewer.common.Parameters;
 
 public class CategoryIcon implements Icon
 {
+    public  static final CategoryIcon  BLANK_ICON    = new CategoryIcon();
+
     private static final int    ICON_WIDTH           = Const.ICON_WIDTH;
     private static final int    ICON_HEIGHT          = Const.ICON_HEIGHT;
     private static final int    ICON_HALF_WIDTH      = Const.ICON_WIDTH / 2;
@@ -33,25 +35,42 @@ public class CategoryIcon implements Icon
     private static final int    XOFF                 = 3;
     private static final int    YOFF                 = 2;
 
-    private Topology    topo;
-    private Color       color;
-    private Color       color_shown;
+    private       Topology    topo;
+    private final ColorAlpha  color_orig;
+    private       Color       color_shown;
+
+    private CategoryIcon()
+    {
+        topo        = null;
+        color_orig  = null;
+        color_shown = null;
+    }
 
     public CategoryIcon( Category type )
     {
-        this.topo        = type.getTopology();
-        this.color       = (Color) type.getColor();
-        this.resetColor();
-    }
-
-    public void resetColor()
-    {
-        this.color_shown = this.color;
+        topo        = type.getTopology();
+        color_orig  = type.getColor();
+        color_shown = (Color) color_orig;
     }
 
     public void setDisplayedColor( Color new_color )
     {
-        this.color_shown = new_color;
+        color_shown = new_color;
+    }
+
+    public Color getDisplayedColor()
+    {
+        return color_shown;
+    }
+
+    public ColorAlpha getOriginalColor()
+    {
+        return color_orig;
+    }
+
+    public void resetColor()
+    {
+        color_shown = (Color) color_orig;
     }
 
     public int getIconWidth()
@@ -67,14 +86,18 @@ public class CategoryIcon implements Icon
     public void paintIcon( Component cmpo, Graphics g, int x, int y )
     {
         Color old_color = g.getColor();
-        if ( topo.isEvent() )
-            this.paintEventIcon( g, x, y );
-        else if ( topo.isState() )
-            this.paintStateIcon( g, x, y );
-        else if ( topo.isArrow() )
-            this.paintArrowIcon( g, x, y );
+        if ( topo != null ) {
+            if ( topo.isEvent() )
+                this.paintEventIcon( g, x, y );
+            else if ( topo.isState() )
+                this.paintStateIcon( g, x, y );
+            else if ( topo.isArrow() )
+                this.paintArrowIcon( g, x, y );
+            else
+                this.paintBlankIcon( g, x, y );
+        }
         else
-            Dialogs.error( null, "Non-recongnized Topology type " + topo );
+            this.paintBlankIcon( g, x, y );
         g.setColor( old_color );
     }
 
@@ -153,6 +176,12 @@ public class CategoryIcon implements Icon
         g.drawLine( x1, y1, x2, y2 );
         g.drawLine( x1, y1, x3, y3 );
         g.drawLine( x2, y2, x3, y3 );
+    }
+
+    private void paintBlankIcon( Graphics g, int x, int y )
+    {
+        g.setColor( Color.black );
+        g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
     }
 
 }
