@@ -17,8 +17,8 @@ extern "C" {
 #include <winsock2.h>
 #include <windows.h>
 #endif
-#include "iba.h"
-#include "psc_iba.h"
+#include <vapi.h>
+#include <mpga.h>
 
 
 /* definitions */

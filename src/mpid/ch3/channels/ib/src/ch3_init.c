@@ -115,13 +115,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     
     /* initialize the infinband functions */
     rc = ibu_init();
-    assert(rc == IBU_SUCCESS);
+    assert(rc == VAPI_OK);
     /* create a completion set for this process */
     rc = ibu_create_set(&MPIDI_CH3I_Process.set);
-    assert(rc == IBU_SUCCESS);
+    assert(rc == VAPI_OK);
     /* get and put the local id for this process in the PMI database */
     port = ibu_get_lid();
-    
+
     rc = snprintf(key, key_max_sz, "P%d-lid", pg_rank);
     assert(rc > -1 && rc < key_max_sz);
     rc = snprintf(val, val_max_sz, "%d", port);
@@ -163,3 +163,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
     return MPI_SUCCESS;
 }
+
+
+
