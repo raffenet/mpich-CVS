@@ -164,7 +164,7 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
    The pro is that any incr(-1) will then automatically check for a need
    to free the storage.  The con is that the incr routine must now know 
    about freeing a datatype.  And it really is only one line of code (and
-   it isn't hard to check).
+   it isn''t hard to check).
   @*/
 int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
 {
@@ -202,7 +202,7 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
 
   Questions:
   Do we really want this as a seperate routine, or can use the MPID_Segment_xxx
-  routines?  If we can't use the segment routines, does that mean that we 
+  routines?  If we can''t use the segment routines, does that mean that we 
   don't have the right API yet, or is there an important difference?
 
   (The remaining apply only the the case of heterogeneous (in data 
@@ -222,7 +222,7 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
 
   Do we want to mandate receiver-makes-right?  Globus guys, speak up.
 
-  Note that XDR isn't really an option, because it doesn't handle all of the
+  Note that XDR isn''t really an option, because it doesn't handle all of the
   C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICIAL').
 
   Another option is to add the packed type to the head of the output buffer;
@@ -356,9 +356,9 @@ int MPID_Group_incr( MPID_Group *group, int incr )
 
   Determining a value for 'context_id' in the multithreaded case is not easy.
   The simplest algorithms can dead-lock in a valid program.  Consider this 
-  case:
+  case\:
+  (this isn''t right yet)
 .vb
-  (this isn't right yet)
   process 1                      process 2
   thread 1        thread2          thread1        thread2
   Comm_dup(comm1)                                 Comm_dup(comm2)
@@ -371,7 +371,7 @@ int MPID_Group_incr( MPID_Group *group, int incr )
 
   There is a way to avoid the process lock at the cost of additional
   collective operations.  The steps necessary to get a new context_id
-  are sketched below:
+  are sketched below\:
 .vb
   MPI_Allreduce( over bitmask of available values )
   Find candidate value.
@@ -390,7 +390,7 @@ int MPID_Group_incr( MPID_Group *group, int incr )
   Question:
   Do we want to define an MPID_Comm_context_get that provides an algorithm
   to return a new context?  Do we want to make this a part of MPID_Comm_create?
-  We'll do an MPIR one if it isn't part of MPID.  Here's a reason why we
+  We'll do an MPIR one if it isn''t part of MPID.  Here's a reason why we
   should make it part of the MPID level.  Consider a shared-memory system.
   Let there be a global queue of available context ids.  The lowest rank 
   process in the old communicator uses an atomic operation to remove the
@@ -480,7 +480,7 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
   That also allows us to define
   "enhanced" keyvals that contain functions that validate any changes to the
   attribute values (e.g. an 'MPID_Attr_validate_function( int keyval, 
-  void *attr_val, MPID_Lang_t lang ).  
+  void *attr_val, MPID_Lang_t lang )'.  
   This also argues that MPID_Comm_attr_set routine should
   return an MPI error code, allowing the device to cleanly signal an error
   to the user.
@@ -571,7 +571,8 @@ void MPID_Comm_thread_lock( MPID_Comm *comm )
 
   Input Parameter:
 . comm - Communicator to unlock
-  @*/
+
+@*/
 void MPID_Comm_thread_unlock( MPID_Comm *comm )
 {
 }
@@ -942,7 +943,7 @@ int MPID_Flags_testall( int count, int *(flags[]), int *found )
       1           count        waitsome
       count       count        waitall
 .ve
-  This allows the generalization:
+  This allows the generalization\:
 .vb
       0           4            testforatmost(4)
 .ve
@@ -1047,7 +1048,7 @@ int MPID_Get( void * origin_buf, int n,
   and vector[3] points to the actual data.
 
   In terms of implementation, for a put to a strided datatype using TCP,
-  we'd want to send the header describing the destination, the datatype
+  we''d want to send the header describing the destination, the datatype
   description, and the data.  In a shared-memory case, where the destination
   window is in shared-memory, this routine may run locally.  Alternately,
   or where the window is not in shared-memory, the shared-memory verison
@@ -1186,7 +1187,7 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   buffers.
 
   The values of 'first' and 'last' that are returned must satisfy the 
-  following restrictions:
+  following restrictions\:
 + 1 -  (last-first) on output must be less than or equal to (last-first) on 
 input.
 . 2 -  (last+1) on output must have the property that when used as first on a 
@@ -1200,7 +1201,7 @@ input.
 
   Questions:
   If 'MPID_Segment_pack' returns an internal buffer, who is responsible for
-  freeing it?  It can't be a single static buffer because that isn't 
+  freeing it?  It can''t be a single static buffer because that isn''t 
   thread-safe.
 
   If a send buffer is going to be provided, do we want to tell 
@@ -1233,6 +1234,8 @@ void * MPID_Segment_init_unpack( void *buf, int count, MPID_Datatype *dtype,
   @*/
 int MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last, 
 		       void *recv_buffer )
+{
+}
 
 /*@
   MPID_Segment_free - .
@@ -1555,6 +1558,7 @@ void *MPID_Malloc( size_t len )
   Input Parameter:
 . ptr - Pointer to memory to be freed.  This memory must have been allocated
   with 'MPID_Malloc'.
+
   @*/
 void MPID_Free( void * ptr )
 {

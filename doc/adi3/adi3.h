@@ -1,7 +1,7 @@
 /***********************************************************************
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
- * This DRAFT dated September 10, 2000
+ * This DRAFT dated September 14, 2000
  ***********************************************************************/
 
 /*
@@ -13,7 +13,7 @@
  * together near the top of the structure.
  *
  * Some fields are needed only if the device uses ADI3 support routines.
- * These are marked 'Friend'
+ * These are marked 'Friend' (no elements marked Friend yet).
  *
  * Question:
  * Do we want to mark parts 'Public' or 'Private'
@@ -30,7 +30,7 @@
 
   Question:
   Should they be?  For example, should MPID_List * really be MPID_List_t, 
-  with something like:
+  with something like\:
 .vb
  typedef struct MPID_List *MPID_List_t;
 .ve
@@ -71,7 +71,7 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   in a single union type.
 
   Notes:
-  One potential user ierror is to access an attribute in one language (say
+  One potential user error is to access an attribute in one language (say
   Fortran) that was created in another (say C).  We could add a check and
   generate an error message in this case; note that this would have to 
   be an option, because (particularly when accessing the attribute from C), 
@@ -88,11 +88,11 @@ typedef union {
 } MPID_Copy_function;
 
 typedef union {
-  int (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
-  int (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-			     MPI_Fint * );
-  int (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
-			     MPI_Fint * );
+  int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
+  void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
+			      MPI_Fint * );
+  void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
+			      MPI_Fint * );
   
 } MPID_Delete_function;
 typedef struct {
@@ -121,7 +121,7 @@ typedef struct {
 typedef struct {
     void *      value;              /* Stored value */
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
-  /* other, device-specific information */
+    /* other, device-specific information */
 } MPID_Attribute;
 
 /*D
@@ -145,16 +145,16 @@ typedef struct {
   Note that groups can not use these because groups need ordering
   information (e.g., pid 0 might have rank in the group of 245).
 
-  This structure is manipulated with the routines:
-
+  This structure is manipulated with the routines\:
+.vb
   void MPID_Lpid_set( MPID_lpidmask *, int pid )
   void MPID_Lpid_init( MPID_lpidmask * )
   int MPID_Lpid_isset( MPID_lpidmask *, int pid )
   int MPID_Lpid_nextset( MPID_lpidmask *, int lastpid ) 
-  
+.ve  
   D*/
 typedef struct {
-  /* other, device-specific information */
+    /* other, device-specific information */
 } MPID_lpidmask;
 
 
@@ -166,53 +166,53 @@ typedef struct {
  * For each such type, we define a struct that describes these parameters
  */
 typedef struct {
-  int count;
-  struct dataloop_ datatype;
+    int count;
+    struct dataloop_ datatype;
 } datatype_contig;
 typedef struct { 
-  int count;
-  int blocksize;
-  int stride;
-  struct dataloop_ datatype;
+    int count;
+    int blocksize;
+    int stride;
+    struct dataloop_ datatype;
 } datatype_vector;
 
 typedef struct {
-  int count;
-  int blocksize;
-  int *offset;
-  struct dataloop_ datatype;
+    int count;
+    int blocksize;
+    int *offset;
+    struct dataloop_ datatype;
 } datatype_blockindexed;
 
 typedef struct {
-  int count;
-  int *blocksize;
-  int *offset;
-  struct dataloop_ datatype;
+    int count;
+    int *blocksize;
+    int *offset;
+    struct dataloop_ datatype;
 } datatype_indexed;
 
 typedef struct {
-  int count;
-  int *blocksize;
-  int *offset;
-  struct dataloop_ *datatype;
+    int count;
+    int *blocksize;
+    int *offset;
+    struct dataloop_ *datatype;
 } datatype_struct;
 
 typedef struct datatloop_ { 
-  int kind;                     /* Contains both the loop type (of the 5 above)
-				   and a bit that indicates whether the
-				   datatype is a leaf type. */
-  union {
-    int                   count;
-    datatype_contig       c_t;
-    datatype_vector       v_t;
-    datatype_blockindexed bi_t;
-    datatype_indexed      i_t;
-    datatype_struct       s_t;
-  } loop_params;
-  MPI_Aint extent;
-  int id;                       /* Having the id here allows us to find the
-				   full datatype structure from the 
-				   Dataloop description */
+    int kind;                  /* Contains both the loop type (of the 5 above)
+				  and a bit that indicates whether the
+				  datatype is a leaf type. */
+    union {
+	int                   count;
+	datatype_contig       c_t;
+	datatype_vector       v_t;
+	datatype_blockindexed bi_t;
+	datatype_indexed      i_t;
+	datatype_struct       s_t;
+    } loop_params;
+    MPI_Aint extent;
+    int id;                       /* Having the id here allows us to find the
+				     full datatype structure from the 
+				     Dataloop description */
 } MPID_Dataloop;
 
 /*D
@@ -234,7 +234,7 @@ typedef struct datatloop_ {
 
   For MPI_Type_dup, we may want to do a shallow copy.  For example, 
   if the original type was created with MPI_Type_indexed with a large, 
-  user-provided array, then we'd like not to copy that large array.
+  user-provided array, then we''d like not to copy that large array.
   That arguments for another pointer: MPID_Datatype *dup_parent; 
   When MPI_Type_dup is executed, a new datatype is created and setup, but
   the dup_parent is set to the previous datatype (or its parent if it has 
@@ -253,17 +253,28 @@ typedef struct {
     int           is_perm;       /* True if datatype is a predefined type */
     MPID_Dataloop loopinfo;
 
+    int           size;
+    MPI_Aint      extent;        /* MPI-2 allows a type to created by
+				    resizing (the extent of) an existing 
+				    type */
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
+    int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
+    int           has_mpi1_lb;
+    int           is_permanent;  /* */
+    int           is_committed;  /* */
+
     int           loopinfo_depth; /* Depth of dataloop stack needed
 				     to process this datatype.  This 
 				     information is used to ensure that
 				     no datatype is constructed that
 				     cannot be processed (see MPID_Segment) */
-    MPID_List     attributes;
+
+    MPID_List     attributes;    (* MPI-2 adds datatype attributes */
 
     int32_t       cache_id;      /* These are used to track which processes */
     MPID_lpidmask mask;          /* have cached values of this datatype */
+
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 
   /* The following describes a generate datatype */
@@ -339,6 +350,11 @@ typedef struct {
 				    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
   /* other, device-specific information */
+    int           is_singlemethod; /* An example, device-specific field,
+				      this is used in a multi-method
+				      device to indicate that all processes
+				      in this communicator belong to the
+				      same method */
 } MPID_Comm;
 
 /*D
@@ -356,18 +372,23 @@ typedef struct {
     MPID_List     attributes;
     MPID_Comm     *comm;         /* communicator of window */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
-    /* other, device-specific information */
+    /* other, device-specific information 
+       This is likely to include a list of pending RMA operations
+       (i.e., MPI_Put, MPI_Get, and MPI_Accumulate)
+     */
 } MPID_Win;
 
 /* The max datatype depth is the maximum depth of the stack used to 
    evaluate datatypes.  It represents the length of the chain of 
-   datatype dependencies */
+   datatype dependencies.  Defining this and testing when a datatype
+   is created removes a test for the datatype evaluation loop. */
 #define MPID_MAX_DATATYPE_DEPTH 8
 
 typedef struct {
-  int curcount;               /* Current loop count value (between 0
-				 and loopinfo.loop_params.count-1;
-  MPID_Dataloop loopinfo;
+    int curcount;               /* Current loop count value (between 0
+				 and loopinfo.loop_params.count-1) */
+    MPI_Aint curoffset;         /* Offset for relative offsets in datatypes */
+    MPID_Dataloop loopinfo;
 } MPID_Dataloop_stackelm;
 
 /*D
