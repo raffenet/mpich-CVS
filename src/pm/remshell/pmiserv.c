@@ -169,6 +169,9 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	else if ( strncmp( cmd, "initack", MAXPMICMD ) == 0) {
 	    fPMI_Handle_init_port( pentry );
 	}
+	else if (strncmp( cmd, "spawn", MAXPMICMD ) == 0) {
+	    fPMI_Handle_spawn( pentry );
+	}
 	else {
 	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
 	}
@@ -524,6 +527,16 @@ static void fPMI_Handle_init_port( PMI_Process *pentry )
     PMIU_writeline( pentry->fd, outbuf );
     snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
+}
+
+static void fPMI_Handle_spawn( PMI_Process *pentry )
+{
+    /* Input:
+       nprocs=%d execname=%s arg=%s
+
+       Output:
+       cmd=spawn_result remote_kvsname=name rc=integer
+    */
 }
 
 void PMI_Init_remote_proc( int fd, PMI_Process *pentry,
