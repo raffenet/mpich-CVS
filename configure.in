@@ -1760,6 +1760,8 @@ AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
     find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
 fi],enable_dependencies=$enable_dependencies)
 
+AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
+
 AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
@@ -1810,6 +1812,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/util/logging/common/Makefile \
           src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
+	  doc/mansrc/createhtmlindex \
 	  doc/adi3/Makefile doc/installguide/Makefile doc/userguide/Makefile \
 	  doc/develop/Makefile \
 )
