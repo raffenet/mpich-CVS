@@ -1,1 +1,1 @@
-SUBDIRS = bsocket mm init spawn pt2pt .
+SUBDIRS = bsocket mm init spawn pt2pt request .
