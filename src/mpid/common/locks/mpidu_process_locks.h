@@ -108,7 +108,6 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 #ifdef HAVE_INTERLOCKEDEXCHANGE
                 if (InterlockedExchange((LPLONG)lock, 1) == 0)
                 {
-                    /*printf("lock %x\n", lock);fflush(stdout);*/
                     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
                     return;
                 }
