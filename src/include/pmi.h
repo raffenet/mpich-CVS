@@ -14,18 +14,33 @@ extern "C" {
 #endif
 
 /*D
-PMI_ - return code definitions
+PMI_CONSTANTS - PMI definitions
+
+Error Codes:
++ PMI_SUCCESS - operation completed successfully
+. PMI_FAIL - operation failed
+. PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_KEY - invalid key argument
+. PMI_ERR_INVALID_KEY_LENGTH - invalid key length argument
+. PMI_ERR_INVALID_VAL - invalid val argument
+. PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
+- PMI_ERR_INVALID_LENGTH - invalid length argument
+
+Booleans:
++ PMI_TRUE - true
+- PMI_FALSE - false
+
 Module:
 PMI
 D*/
-#define PMI_SUCCESS                0
-#define PMI_FAIL                  -1
-#define PMI_ERR_INVALID_ARG        1
-#define PMI_ERR_INVALID_KEY
-#define PMI_ERR_INVALID_KEY_LENGTH 2
-#define PMI_ERR_INVALID_VAL
-#define PMI_ERR_INVALID_VAL_LENGTH 3
-#define PMI_ERR_INVALID_LENGTH
+#define PMI_SUCCESS                 0
+#define PMI_FAIL                   -1
+#define PMI_ERR_INVALID_ARG         1
+#define PMI_ERR_INVALID_KEY         2
+#define PMI_ERR_INVALID_KEY_LENGTH  3
+#define PMI_ERR_INVALID_VAL         4
+#define PMI_ERR_INVALID_VAL_LENGTH  5
+#define PMI_ERR_INVALID_LENGTH      6
 
 typedef int PMI_BOOL;
 #define PMI_TRUE     1
