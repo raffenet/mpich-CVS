@@ -235,6 +235,7 @@ sub CreateErrMsgMapping {
 		# If the message begins with text, assume that it is a 
 		# litteral message
 		print STDERR "Shortname $key for generic messages has no expansion (first seen in file $seenfile)\n";
+		print STDERR "(Add expansion to $sourcefile)\n";
 	    }
 	    next;
 	}
