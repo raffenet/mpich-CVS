@@ -21,9 +21,7 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
 
-    MPI_Comm_rank(fd->comm, &rank)
-
-
+    MPI_Comm_rank(fd->comm, &rank);
 
     /* We desginate one node in the communicator to be an 'io_worker' in 
      * ADIO_Open.  This node can perform operations on files and then 
