@@ -140,6 +140,7 @@ fn_fail:
 	"**mpi_bsend", "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
     /* We'll wait on the request, if any, within the bsendutil.c functions
        that advance active sends */
 }
