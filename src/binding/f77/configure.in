@@ -1074,14 +1074,22 @@ EOF
     true_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/ .*//g'`"
     false_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/.*  *//g'`"
     if test -n "$true_val" -a -n "$false_val" ; then
-        AC_DEFINE(F77_TRUE_VALUE_SET,1,[Define if we know the value of Fortran true and false])
-        AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
-        AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
 	AC_MSG_RESULT([True is $true_val and False is $false_val])
     else
 	AC_MSG_RESULT([could not determine])
     fi
+else
+    # Cross-compiling.  Allow the user to set the values
+    if test -n "$CROSS_F77_TRUE_VALUE" -a -n "$CROSS_F77_FALSE_VALUE" ; then
+        true_val=$CROSS_F77_TRUE_VALUE
+	false_val=$CROSS_F77_FALSE_VALUE
+    fi	
 fi
+if test -n "$true_val" -a -n "$false_val" ; then
+    AC_DEFINE(F77_TRUE_VALUE_SET,1,[Define if we know the value of Fortran true and false])
+    AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
+    AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
+    fi
 
 PAC_LANG_POP_COMPILERS
 
