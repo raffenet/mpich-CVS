@@ -6,6 +6,10 @@
 
 #include "tcpimpl.h"
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 #ifdef WITH_METHOD_SHM
 int tcp_stuff_vector_shm(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
