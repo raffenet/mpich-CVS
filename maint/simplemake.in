@@ -251,9 +251,11 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 # chosen.  It may contain ROOTDIR.
 $globaldocdir  = 'ROOTDIR/$dockinddirval';
 # Directories for documentation 
+# These may be overridden how by setting docthiskinddir
 %dockinddir = ( "html" => "www/www3", 
 	        "man" => "man/man3", 
 	        "latex" => "doc/refman" );
+%docthiskinddir = ();
 # man targets for documentation
 %docTargetName = ( "html" => "htmldoc",
 		   "man" => "mandoc",
@@ -278,6 +280,7 @@ $found_profilelib = 0;
 $distcleanfiles = "";
 
 @subdirs = ();
+@doc_subdirs = ();
 @keepargs = ();    # Used to recreate simplemake invocation for make target
 foreach $_ (@ARGV) {
     $keepargs[$#keepargs+1] = $_;    # Add all args by default
@@ -428,6 +431,8 @@ sub ReadMfile {
         #lib([\w-]*)_SOURCES = names
         #lib([\w-]*)_DIR = name
         #SUBDIRS = names
+        #DOC_SUBDIRS = names
+	#DOCDESTDIRS = kind:dir [, kind:dir ]*
 	# Also keep track of Makefile usages:
 	#target: ...
 	#variable = value
@@ -509,6 +514,17 @@ sub ReadMfile {
 	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/\s+/,$1);
 	    $subdirs_has_autoconf = 0;
+        }
+        elsif (/^DOC_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
+	    # The \r is used to remove any \r in DOS-style files
+            @doc_subdirs = split(/\s+/,$1);
+        }
+	elsif (/^DOCDESTDIRS\s*=\s*(.*)\s*\r?$/) {
+	# kind:dir [, kind:dir ]*
+	    for $pair (split(/,\s*/,$1)) {
+		$pair =~ /(.*):(.*)/;
+		$docthiskinddir{$1} = $2;
+	    }
         }
 	elsif (/^INSTALL_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    @install_subdirs = split(/\s+/,$1);
@@ -604,10 +620,6 @@ sub ReadMfile {
     }
 }
 
-#foreach $dir (split(/\s+/,$subdirs)) {
-#    ReadMfile( "$dir/m.s" );
-#}
-#
 sub WriteMfile {
     $maxline = 80;
     $output_filename = $_[0];
@@ -819,7 +831,8 @@ sub DefaultRules {
     }
 
     # If there are subdirs, we need make
-    if ($#subdirs >= 0 && ! defined($makevars{"MAKE"})) {
+    if (($#subdirs >= 0 || $#doc_subdirs >= 0) && 
+	! defined($makevars{"MAKE"})) {
 	print FD "MAKE            = \@MAKE\@$newline";
     }
 
@@ -1113,6 +1126,7 @@ sub ClearVars {
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
     %libraries = ();
+    %shared_libraries = ();
     %profile_libraries = ();
     %install_files = ();
     @install_subdirs = ();
@@ -1131,6 +1145,8 @@ sub ClearVars {
     %pgmlinktypes = ();
     # Other directories
     @subdirs = ();
+    @doc_subdirs = ();
+    %docthiskinddir = ();
     @extra_dirs = ();
     @other_dirs = ();
     $subdirs_has_autoconf = 0;
@@ -1203,7 +1219,7 @@ sub ProcessFile {
     
     #&checkForTargets();
 
-    my @dirs = (@subdirs,@other_dirs);
+    my @dirs = (@subdirs,@other_dirs,@doc_subdirs);
     # First, check for names that are replaced by autoconf (e.g., @name@)
     my @actdirs = ();
     foreach my $dir (@dirs) {
@@ -1296,14 +1312,21 @@ sub ListTargets {
 
 #
 # Add to a target the designate operation in all subdirs (except for .)
-#     &RecursiveOp( "target" );
+#     &RecursiveOp( "target" [, optional array of directories ] );
 sub RecursiveOp {
     $target = $_[0];
-    print "n subdirs = $#subdirs\n" if $debug;
-    if ($#subdirs == 0 && $subdirs[0] eq ".") { return; }
-    if ($#subdirs >= 0) { 
+    $subdirname = $_[1];
+    if ($subdirname ne "") {
+	@dirs = @$subdirname;
+    }
+    else {
+	@dirs = (@subdirs, @extra_dirs);
+    }
+    print "n dirs = $#dirs\n" if $debug;
+    if ($#dirs == 0 && $dirs[0] eq ".") { return; }
+    if ($#dirs >= 0) { 
         print FD "\tfor dir in";
-        foreach $dir (@subdirs, @extra_dirs) {
+        foreach $dir (@dirs) {
 	    if ($dir ne ".") { print FD " $dir"; }
 	    if ($dir =~ /@[^@]*@/) {
 		$subdirs_has_autoconf = 1;
@@ -1855,10 +1878,15 @@ sub VariableDocs {
     }
 }
 
+#
+# Generate the rule for generating documentation from the source files
+# 
 sub RuleDocs {
     # global: do_docs, docsrc, FD, newline
     if (! $do_docs) { return; }
     foreach my $kind (keys(%docsrc)) {
+	# Set the default suffix
+	$docsrcsuffix = ".c";
 	if ($docsrc{$kind} ne "") {
 	    $docdestdir = $globaldocdir;
 	    if ($docdir{$kind} ne "") {
@@ -1868,20 +1896,72 @@ sub RuleDocs {
 	    $docdestdir =~ s/ROOTDIR/$rootdir/g;
 	    $docdestdir =~ s/\/\//\//g;
 	    # Replace any occurance of $dockinddirval is docdestdir
-	    $dockinddirval = $dockinddir{$kind};
+	    if (defined($docthiskinddir{$kind})) {
+		$dockinddirval = $docthiskinddir{$kind};
+	    }
+	    else {
+		$dockinddirval = $dockinddir{$kind};
+	    }
 	    $docdestdir =~ s/(\$\w+)/$1/eeg;     # see man perlfaq4
 	    #
 	    # Replace ROOTDIR etc in any doc_namedefs
 	    $docargs = $doc_namedefs;
 	    $docargs =~ s/ROOTDIR/$rootdir/g;
 	    $docargs =~ s/\/\//\//g;
-	    print FD ".c.$kind:$newline";
+	    
+	    # Check for an alternative suffix
+	    $docfiles = &ExpandMakeVars( $docsrc{$kind} );
+	    print "file list = $docfiles\n" if $debug;
+	    for $file (split(/\s+/,$docfiles)) {
+		$file =~ /.*(\..*)$/;
+		$suffix = $1;
+		if ($docsrcsuffix ne $suffix) {
+		    $docsrcsuffix = $suffix;
+		}
+	    }
+	    print FD "$docsrcsuffix.$kind:$newline";
 	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir -heading $doc_heading \\$newline";
 	    print FD "\t\t-quotefmt $docargs \$<$newline";
 	}
     }
 }
 
+#
+# Given a list of sources, return an array containing the distinct suffixes
+# (without the leading .)
+sub GetSuffixList {
+    my %suffixSeen = ();
+    my $vars = $_[0];
+    my @suffixes = ();
+
+    # Check for an alternative suffix
+    $vars = &ExpandMakeVars( $vars );
+    print "file list = $vars\n" if $debug;
+    for $file (split(/\s+/,$vars)) {
+	$file =~ /.*\.(.*)$/;
+	$suffix = $1;
+	if (!defined($suffixSeen{$suffix})) {
+	    $suffixSeen{$suffix} = 1;
+	    $suffixes[$#suffixes+1] = $suffix
+	}
+    }
+    return @suffixes;
+}
+
+sub SubForSuffixes {
+    my $src = $_[0];
+    my $suffixarrayName = $_[1];
+    my $repSuffix = $_[2];
+ 
+    for $suffix (@$suffixarrayName) {
+	$src =~ s/\.$suffix/\.$kind/;
+    }
+    return $src;
+}
+
+#
+# Generate the documentation targets.
+#
 sub TargetDocs {
     if (! $do_docs) { return; }
     my %didkind = ( "html" => 0, "man" => 0, "latex" => 0 );
@@ -1891,13 +1971,24 @@ sub TargetDocs {
 	my $src = $docsrc{$kind};
 	if ($src ne "") {
 	    if ($src =~ /^\s*\$[\{\(][_\w]*[\}\)]\s*$/) {
-		# a single variable: use make substitution
-		$src =~ s/\}/:.c=.$kind\}/;
+		# a single variable: use make substitution if a single
+		# suffix
+		@suffixes = &GetSuffixList( $src );
+		if ($#suffixes == 0) {
+		    $src =~ s/\}/:.$suffixes[0]=.$kind\}/;
+		}
+		else {
+		    # manually substitute
+		    $src = &SubForSuffixes( $src, "suffixes", $kind );
+		}
 	    }
 	    elsif ($src =~ /\$/) {
 		# Perform variable expansion if possible
 		$src = &ExpandMakeVars( $src );
-		$src =~ s/\.c/.$kind/;
+		@suffixes = &GetSuffixList( $src );
+		# Convert the extensions to the document type
+		#$src =~ s/\.c/.$kind/;
+		$src = &SubForSuffixes( $src, "suffixes", $kind );
 	    }
 	    else {
 		$src =~ s/\.c/.$kind/;
@@ -1914,10 +2005,12 @@ sub TargetDocs {
 	if ($doc_attop) {
 	    if ($kind eq "html") {
 		print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
+		print FD "\tif [ ! -d www/www1 ] ; then mkdir www/www1 ; fi$newline";
 		print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
 	    }
 	    elsif ($kind eq "man") {
 		print FD "\tif [ ! -d man ] ; then mkdir man ; fi$newline";
+		print FD "\tif [ ! -d man/man1 ] ; then mkdir man/man1 ; fi$newline";
 		print FD "\tif [ ! -d man/man3 ] ; then mkdir man/man3 ; fi$newline";
 	    }
 	    elsif ($kind eq "latex") {
@@ -1929,6 +2022,9 @@ sub TargetDocs {
 	    }
 	}
 	&RecursiveOp( $targetKind );
+	if ($#doc_subdirs >= 0) {
+	    &RecursiveOp( $targetKind, "doc_subdirs" );
+	}
 	$didkind{$kind} = 1;
     }
     # 
@@ -1939,6 +2035,9 @@ sub TargetDocs {
 	if (! $didkind{$kind} && $globaldockind{$kind}) {
 	    print FD "$targetKind:$newline";
 	    &RecursiveOp( $targetKind );
+	    if ($#doc_subdirs >= 0) {
+		&RecursiveOp( $targetKind, "doc_subdirs" );
+	    }
 	}
     }
 }
@@ -2133,6 +2232,9 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     libname_a_DIR     = location of directory into which lib \"name\" goes\
     SUBDIRS = blank separated list of subdirectories to process.  Use \".\"\
               to control the order in which the current directory is processed\
+    DOC_SUBDIRS = blank separate list of subdirectories containing \
+              documentation but no code source.  These directories may\
+              contain files used as input to documentation generators.\
     EXTRA_PROGRAMS = names of programs to define rules for but not to build\
                      by default\
     name_SOURCES = source files for program \"name\"\
