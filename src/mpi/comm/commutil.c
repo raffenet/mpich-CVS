@@ -58,7 +58,8 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     newptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
     /* --BEGIN ERROR HANDLING-- */
     if (!newptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+		   "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -72,7 +73,8 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     newptr->attributes = 0;
     /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER,
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+                                 "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER,
 					  "**toomanycomm", 0 );
 	return mpi_errno;
     }
@@ -93,13 +95,20 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     localcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
     /* --BEGIN ERROR HANDLING-- */
     if (!localcomm_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Setup_intercomm_localcomm", __LINE__,
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+                                 "MPIR_Setup_intercomm_localcomm", __LINE__,
 					  MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
     MPIU_Object_set_ref( localcomm_ptr, 1 );
-    localcomm_ptr->context_id = intercomm_ptr->context_id + 2;
+    /* Note that we must not free this context id since we are sharing it
+       with the intercomm's context */
+    /* FIXME: This was + 2 (in agreement with the docs) but that
+       caused some errors with an apparent use of the same context id
+       by operations in different communicators.  Switching this to +1
+       seems to have fixed that problem, but this isn't the right answer. */
+    localcomm_ptr->context_id = intercomm_ptr->context_id + 1;
 
     /* Duplicate the VCRT references */
     MPID_VCRT_Add_ref( intercomm_ptr->local_vcrt );
@@ -334,7 +343,8 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     }
     /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+               "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -350,7 +360,8 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
     /* --BEGIN ERROR HANDLING-- */
     if (!newcomm_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+                     "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -412,7 +423,8 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
         if (MPIR_Process.comm_parent == comm_ptr)
             MPIR_Process.comm_parent = NULL;
 
-	/* Remove the attributes, executing the attribute delete routine.  Do this only if the attribute functions are defined. */
+	/* Remove the attributes, executing the attribute delete routine.  
+           Do this only if the attribute functions are defined. */
 	if (MPIR_Process.attr_free && comm_ptr->attributes) {
 	    mpi_errno = MPIR_Process.attr_free( comm_ptr->handle, 
 						comm_ptr->attributes );
