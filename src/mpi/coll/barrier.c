@@ -64,7 +64,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        mpi_errno = NMPI_Sendrecv(NULL, 0, MPI_BYTE, dst,
+        mpi_errno = MPIC_Sendrecv(NULL, 0, MPI_BYTE, dst,
                                   MPIR_BARRIER_TAG, NULL, 0, MPI_BYTE,
                                   src, MPIR_BARRIER_TAG, comm,
                                   MPI_STATUS_IGNORE);
