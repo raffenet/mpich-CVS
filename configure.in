@@ -1827,6 +1827,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  examples/f77/Makefile \
 	  examples/f90/Makefile \
 	  examples/cxx/Makefile \
+          examples/mpiexec/Makefile \
           src/util/logging/Makefile \
           src/util/logging/common/Makefile \
           src/util/timing/Makefile \

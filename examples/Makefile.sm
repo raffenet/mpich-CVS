@@ -1,3 +1,4 @@
+SUBDIRS = mpiexec
 #OTHER_DIRS = f77 f90 cxx
 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include

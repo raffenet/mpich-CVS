@@ -6,16 +6,16 @@
 /*
 Mpiexec:main()
 {
-  /-->MPI_Init()
-  |   parse standard mpiexec arguments - host, n, path, wdir, etc
-  |/->MPID_Args_to_info()
-  ||    parse device specific options and call PMI_args_to_info()
-  ||    if necessary
-  |\-loop
-  \--loop
-     MPI_Finalize()
-        MPID_Finalize()
-          PMI_Finalize() - block until output is redirected if singleton.
+  MPI_Init()
+  foreach option in (cmd line options)
+    parse standard mpiexec option - n, host, path, wdir, etc
+    if !standard option
+      MPID_Parse_option()
+        parse device specific option and call PMI_Parse_option() if necessary
+  next option
+  MPI_Finalize()
+    MPID_Finalize()
+      PMI_Finalize() - block until output is redirected if singleton.
 }
 */
 
