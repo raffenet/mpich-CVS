@@ -6,8 +6,14 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
+#include <process.h> /* getpid() */
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+
+static void generate_shm_string(char *str)
+{
+    sprintf(str, "%d", getpid());
+}
 
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
@@ -25,10 +31,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
 
-    char *pszEnvVariable;
     char shmemkey[100];
     void *shm_addr;
-    int i, j;
+    int i, j, k;
     int shm_block;
 
     /*
@@ -133,26 +138,30 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     assert(val != NULL);
 
     /* initialize the shared memory */
-    shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) + MPID_SHMEM_PER_PROCESS;
+    shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) * pg_size; //+ MPID_SHMEM_PER_PROCESS;
     if (pg_size > 1)
     {
-	pszEnvVariable = getenv("SHMEMKEY");
-	if (pszEnvVariable == NULL)
+	if (pg_rank == 0)
 	{
-	    MPIU_DBG_PRINTF(("getting SHMEMKEY\n"));
-	    rc = PMI_KVS_Get(pg->kvs_name, "SHMEMKEY", val);
-	    strcpy(shmemkey, val);
+	    generate_shm_string(shmemkey);
+	    strcpy(key, "SHMEMKEY");
+	    strcpy(val, shmemkey);
+	    PMI_KVS_Put(pg->kvs_name, key, val);
+	    PMI_KVS_Commit(pg->kvs_name);
+	    PMI_Barrier();
 	}
 	else
 	{
-	    strcpy(shmemkey, pszEnvVariable);
+	    strcpy(key, "SHMEMKEY");
+	    PMI_Barrier();
+	    PMI_KVS_Get(pg->kvs_name, key, val);
 	}
+
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
 #ifdef HAVE_SHMGET
 	pg->key = atoi(shmemkey);
 #elif defined (HAVE_MAPVIEWOFFILE)
-	strcpy(pg->key, "shm");
-	strcat(pg->key, shmemkey);
+	sprintf(pg->key, "shm.%s", shmemkey);
 #else
 #error *** No shared memory variables specified ***
 #endif
@@ -170,11 +179,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
 	if (pg_rank == 0)
 	{
-	    vc_table[p].shm.shm->head_index = 0;
-	    vc_table[p].shm.shm->tail_index = 0;
-	    for (j=0; j<MPIDI_CH3I_NUM_PACKETS; j++)
+	    for (j=0; j<pg_size; j++)
 	    {
-		vc_table[p].shm.shm->packet[j].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		vc_table[p].shm.shm[j].head_index = 0;
+		vc_table[p].shm.shm[j].tail_index = 0;
+		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
+		{
+		    vc_table[p].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		}
 	    }
 	}
     }

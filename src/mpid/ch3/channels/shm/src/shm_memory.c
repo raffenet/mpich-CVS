@@ -151,7 +151,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     g_bGetMemSyncCalled = TRUE;
     if (nTotalSize < 1)
     {
-        printf("Error: unable to allocate %d bytes of shared memory: must be greater than zero.\n", nTotalSize);
+        err_printf("Error: unable to allocate %d bytes of shared memory: must be greater than zero.\n", nTotalSize);
         MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
         return NULL;
     }
