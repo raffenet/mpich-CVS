@@ -16,17 +16,20 @@
 int MPID_Startall(int count, MPID_Request * requests[])
 {
     int i;
+    int rc = MPI_SUCCESS;
     int mpi_errno = MPI_SUCCESS;
 
     for (i = 0; i < count; i++)
     {
 	MPID_Request * const preq = requests[i];
 
+	MPIR_Status_set_empty(preq->status);
+
 	switch (MPIDI_Request_get_persistent_type(preq))
 	{
 	    case MPIDI_REQUEST_PERSISTENT_RECV:
 	    {
-		mpi_errno = MPID_Irecv(
+		rc = MPID_Irecv(
 		    preq->ch3.user_buf, preq->ch3.user_count,
 		    preq->ch3.datatype, preq->ch3.match.rank,
 		    preq->ch3.match.tag, preq->comm,
@@ -37,7 +40,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    
 	    case MPIDI_REQUEST_PERSISTENT_SEND:
 	    {
-		mpi_errno = MPID_Isend(
+		rc = MPID_Isend(
 		    preq->ch3.user_buf, preq->ch3.user_count,
 		    preq->ch3.datatype, preq->ch3.match.rank,
 		    preq->ch3.match.tag, preq->comm,
@@ -48,7 +51,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		
 	    case MPIDI_REQUEST_PERSISTENT_RSEND:
 	    {
-		mpi_errno = MPID_Irsend(
+		rc = MPID_Irsend(
 		    preq->ch3.user_buf, preq->ch3.user_count,
 		    preq->ch3.datatype, preq->ch3.match.rank,
 		    preq->ch3.match.tag, preq->comm,
@@ -59,7 +62,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		
 	    case MPIDI_REQUEST_PERSISTENT_SSEND:
 	    {
-		mpi_errno = MPID_Issend(
+		rc = MPID_Issend(
 		    preq->ch3.user_buf, preq->ch3.user_count,
 		    preq->ch3.datatype, preq->ch3.match.rank,
 		    preq->ch3.match.tag, preq->comm,
@@ -69,9 +72,18 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    }
 	}
 	
-	if (mpi_errno != MPI_SUCCESS)
+	if (rc == MPI_SUCCESS)
 	{
-	    return mpi_errno;
+	    preq->cc_ptr = &preq->partner_request->cc;
+	}
+	else
+	{
+	    /* If a failure occurs atttempt to start the request, then we
+	       assume that partner request was not created, and stuff the
+	       error code in the persistent request.  The wait and test
+	       routines will look at the error code in the persistent request
+	       if a partner request is not found. */
+	    preq->status.MPI_ERROR = rc;
 	}
     }
 

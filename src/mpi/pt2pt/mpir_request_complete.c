@@ -59,8 +59,20 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	    }
 	    else
 	    {
-		*active = FALSE;
-		MPIR_Status_set_empty(status);
+		if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
+		{
+		    /* if the persistent request failed to start then make the
+		       error code available */
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			*status = request_ptr->status;
+		    }
+		}
+		else
+		{
+		    *active = FALSE;
+		    MPIR_Status_set_empty(status);
+		}
 	    }
 	    
 	    break;
