@@ -24,7 +24,9 @@ int main( int argc, char *argv[] )
 {
     int errs = 0;
     int b1[MSG_SIZE], b2[MSG_SIZE], b3[MSG_SIZE], b4[MSG_SIZE];
-    int src, dest, size, rank;
+    int src, dest, size, rank, i;
+    MPI_Comm comm;
+    MPI_Status status;
 
     MTest_Init( &argc, &argv );
 
