@@ -330,7 +330,7 @@ fout.Close()
 
 If Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
 
-  Dim WshShell, oExec
+  Dim WshShell
   Set WshShell = CreateObject("WScript.Shell")
   WshShell.CurrentDirectory = "src\binding\cxx"
   WshShell.Run "perl buildiface -nosep -noromio", 0, true
@@ -350,9 +350,66 @@ If f.FileExists("src\binding\cxx\mpicxx.h.in") Then
 
 Else
 
-  WScript.Echo("Run ""perl -nosep -noromio"" from the src\binding\cxx directory before running winconfigure")
+  WScript.Echo("Run ""perl buildiface -nosep -noromio"" from the src\binding\cxx directory before running winconfigure")
   
 End IF
+
+If Not f.FileExists("src\binding\f77\mpif.h.in") Then
+
+  Set WshShell = CreateObject("WScript.Shell")
+  WshShell.CurrentDirectory = "src\binding\f77"
+  WshShell.Run "perl buildiface", 0, true
+  WshShell.CurrentDirectory = "..\..\.."
+
+End If
+
+If f.FileExists("src\binding\f77\mpif.h.in") Then
+
+  set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
+  set fout = f.CreateTextFile("src\include\mpif.h")
+  contents = fin.ReadAll()
+' Add the replacements for mpif.h here
+'  contents = Replace(contents, "@ADDRESS_KIND@", "foo")
+  contents = Replace(contents, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
+'  contents = Replace(contents, "@F77_COMPLEX16@", "foo")
+'  contents = Replace(contents, "@F77_COMPLEX32@", "foo")
+'  contents = Replace(contents, "@F77_COMPLEX8@", "foo")
+'  contents = Replace(contents, "@F77_INTEGER1@", "foo")
+'  contents = Replace(contents, "@F77_INTEGER2@", "foo")
+'  contents = Replace(contents, "@F77_INTEGER4@", "foo")
+'  contents = Replace(contents, "@F77_INTEGER8@", "foo")
+'  contents = Replace(contents, "@F77_INTEGER16@", "foo")
+'  contents = Replace(contents, "@F77_REAL4@", "foo")
+'  contents = Replace(contents, "@F77_REAL8@", "foo")
+'  contents = Replace(contents, "@F77_REAL16@", "foo")
+  contents = Replace(contents, "@MPI_2COMPLEX@", MPI_2COMPLEX)
+  contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", MPI_2DOUBLE_COMPLEX)
+  contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", MPI_2DOUBLE_PRECISION)
+  contents = Replace(contents, "@MPI_2INTEGER@", MPI_2INTEGER)
+  contents = Replace(contents, "@MPI_2REAL@", MPI_2REAL)
+  contents = Replace(contents, "@MPI_CHARACTER@", MPI_CHARACTER)
+  contents = Replace(contents, "@MPI_COMPLEX@", MPI_COMPLEX)
+  contents = Replace(contents, "@MPI_DOUBLE_COMPLEX@", MPI_DOUBLE_COMPLEX)
+  contents = Replace(contents, "@MPI_DOUBLE_PRECISION@", MPI_DOUBLE_PRECISION)
+  contents = Replace(contents, "@MPI_INTEGER@", MPI_INTEGER)
+  contents = Replace(contents, "@MPI_LB@", MPI_LB)
+  contents = Replace(contents, "@MPI_LOGICAL@", MPI_LOGICAL)
+  contents = Replace(contents, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
+  contents = Replace(contents, "@MPI_PACKED@", MPI_PACKED)
+  contents = Replace(contents, "@MPI_REAL@", MPI_REAL)
+'  contents = Replace(contents, "@MPI_STATUS_SIZE@", "foo")
+  contents = Replace(contents, "@MPI_UB@", MPI_UB)
+'  contents = Replace(contents, "@OFFSET_KIND@", "foo")
+  fout.Write(contents)
+  fin.Close()
+  fout.Close()
+
+Else
+
+  WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
+  
+End IF
+
 
 </script>
 </job>
