@@ -13,9 +13,13 @@
 extern "C" {
 #endif
 
+/*D
+PMI return code definitions
+Module:
+PMI
+D*/
 #define PMI_SUCCESS  0
 #define PMI_FAIL    -1
-
 #define PMI_TRUE     1
 #define PMI_FALSE    0
 
