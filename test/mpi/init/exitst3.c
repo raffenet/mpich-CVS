@@ -6,10 +6,12 @@
  */
 int main( int argc, char *argv[] )
 {
-    int rank;
+    int rank, size;
     MPI_Init( 0, 0 );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
-    if (rank > 0) {
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
+    MPI_Barrier( MPI_COMM_WORLD );
+    if (rank == size-1) {
 	/* Cause some processes to exit */
 	int *p =0 ;
 	*p = rank;
