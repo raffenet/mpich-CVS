@@ -121,8 +121,12 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
                returned. */
 	    if (request_ptr->partner_request != NULL)
 	    {
-		request_ptr = request_ptr->partner_request;
-		MPIR_Wait(request_ptr);
+		MPID_Request * req;
+
+		req = request_ptr->partner_request;
+		MPIR_Wait(req);
+		request_ptr->partner_request = NULL;
+		request_ptr = req;
 	    }
 	    else
 	    {
