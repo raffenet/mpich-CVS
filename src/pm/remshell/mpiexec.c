@@ -31,79 +31,24 @@
 #include <string.h>
 #endif
 
-/*
- * Define Data structures.
- *
- * ProcessState - Each process has one of these entries, stored in any
- * array, and ordered by rank in comm_world (for the initial processes)
- *
- * PMIState - mpiexec provides the process management interface (PMI)
- * services.  PMIState contains the information needed for this,
- * other than the fds used to communicate with each created process's
- * PMI interface.  
- */
+/* Include the definitions of the data structures, particularly the 
+   process table */
+#include "remshell.h"
 
-#define MAXNAMELEN  256		/* max length of vairous names */
-#ifndef PATH_MAX
-#define PATH_MAX 2048		/* max length of PATH */
+/* Temporary definitions for memory management */
+#ifndef MPIU_Malloc
+#define MPIU_Malloc(a)    malloc((unsigned)(a))
+#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPIU_Free(a)      free((void *)(a))
+#ifdef HAVE_STRDUP
+#ifdef NEEDS_STRDUP_DECL
+extern char *strdup( const char * );
 #endif
-#define MAXPROCESSES     64	/* max number of processes to manage */
-
-#ifndef MAX_HOST_NAME
-#define MAX_HOST_NAME 512
+#define MPIU_Strdup(a)    strdup(a)
+#else
+/* Don't define MPIU_Strdup, provide it in safestr.c */
 #endif
-
-/* ----------------------------------------------------------------------- */
-/* ProcessState                                                            */
-/* ----------------------------------------------------------------------- */
-typedef enum { UNINITIALIZED=-1, 
-	       UNKNOWN, ALIVE, COMMUNICATING, FINALIZED, EXITING, GONE } 
-    client_state_t;
-
-/* Record the return value from each process */
-typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
-	       SIGNALLED,  /* Process died on an uncaught signal (e.g., 
-			      SIGSEGV) */
-	       NOFINALIZE, /* Process exited without calling finalize */
-	       ABORTED,    /* Process killed by mpiexec after a PMI abort */
-	       KILLED      /* Process was killed by mpiexec */ 
-             } exit_state_t;
-
-/* Record each process, including the fd's used to handle standard input
-   and output, and any process-specific details about each process, 
-   such as the working directory and specific requirements about the 
-   host */
-typedef struct { 
-    int            fdStdin, fdStdout, fdStderr, /* fds for std io */
-	fdPMI;                       /* fds for process management */
-    client_state_t state;            /* state of process */
-    const char    *exename;          /* Executable to run */
-    const char    **args;            /* Pointer into the array of args */
-    const char    *hostname;         /* Host for process */
-    const char    *arch;             /* Architecture type */
-    const char    *path;             /* Search path for executables */
-    const char    *wdir;             /* Working directory */
-    int            nArgs;            /* Number of args (list is *not* null
-					terminated) */
-    int            rank;             /* rank in comm_world (or universe) */
-    int            pmiGroup;         /* PMI group index (into array of 
-					PMI Groups */
-    int            pmiKVS;           /* PMI kvs index (into array of 
-					key-value-spaces) */
-    exit_state_t   exitReason;       /* how/why did the process exit */
-    int            exitSig;          /* exit signal, if any */
-    int            exitStatus;       /* exit statue */
-    int            exitOrder;        /* indicates order in which processes
-					exited */
-} ProcessState;
-
-/* We put both the array and the count of processes into a single
-   structure to make it easier to pass this information to other routines */
-typedef struct {
-    int          nProcesses;         /* Number of processes created */
-    int          maxProcesses;
-    ProcessState table[MAXPROCESSES];
-} ProcessTable_t;
+#endif
 
 ProcessTable_t processTable;
 
@@ -157,7 +102,8 @@ static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
 /* ----------------------------------------------------------------------- */
 /* Debugging                                                               */
 /* ----------------------------------------------------------------------- */
-static int debug = 1;
+/* (this is exten in remshell.h) */
+int debug = 1;
 /* ----------------------------------------------------------------------- */
 /* Prototypes                                                              */
 /* ----------------------------------------------------------------------- */
@@ -176,14 +122,24 @@ int main( int argc, char *argv[] )
     int fdPMI, portnum;             /* fd and port for PMI messages */
     char myname[MAX_HOST_NAME+1];
     processTable.maxProcesses = MAXPROCESSES;
+    processTable.nProcesses   = 0;
 
     /* Process the command line arguments to build the table of 
        processes to create */
     rc = mpiexecArgs( argc, argv, &processTable, 0, 0 );
     if (rc) return rc;
 
+    if (processTable.nProcesses == 0) {
+	MPIU_Error_printf( "No program specified" );
+	return 1;
+    }
+
     /* Determine the hosts to run on */
     rc = mpiexecChooseHosts( &processTable );
+    if (rc) {
+	MPIU_Error_printf( "Unable to choose hosts" );
+	return 1;
+    }
 
     if (debug) 
 	mpiexecPrintTable( &processTable );
@@ -198,6 +154,11 @@ int main( int argc, char *argv[] )
     /* Optionally stage the executables */
     
     /* Start the remote shell processes ooncurrently */
+    rc = mpiexecGetMyHostName( myname );
+    if (rc) {
+	MPIU_Internal_error_printf( "Could not get my hostname\n" );
+	return 1;
+    }
     rc = mpiexecStartProcesses( &processTable, myname, portnum );
 
     /* Poll on the active FDs and handle each input type */
@@ -208,342 +169,6 @@ int main( int argc, char *argv[] )
     return rc;
 }
 
-/* ----------------------------------------------------------------------- */
-/* Process options                                                         */
-/* The process options steps loads up the processTable with entries,       */
-/* including the hostname, for each process.  If no host is specified,     */
-/* one will be provided in a subsequent step
-/* ----------------------------------------------------------------------- */
-/*
--host hostname
--arch architecture name
--wdir working directory (cd to this one BEFORE running executable?)
--path pathlist - use this to find the executable
--file filename - use this to specify other info
--soft comma separated triplets (ignore for now)
-*/
-/*
- * MPIExecArgs processes the arguments for mpiexec.  For any argument that 
- * is not recognized, it calls the ProcessArg routine, which returns the
- * number of arguments that should be skipped.  The void * pointer in
- * the call to ProcessArg is filled with the "extraData" pointer.  If
- * ProcessArg is null, then any unrecognized argument causes mpiexec to 
- * print a help message and exit.
- *
- * In addition the the arguments specified by the MPI standard, 
- * -np is accepted as a synonym for -n and -hostfile is allowed
- * to specify the available hosts.
- *
- * The implementation understands the ":" notation to separate out 
- * different executables.  Since no ordering of these arguments is implied,
- * other than that the executable comes last, we store the values until
- * we see an executable.
- */
-static int getInt( int, int, char *[] );
-
-int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
-		 int (*ProcessArg)( int, char *[], void *), void *extraData )
-{
-    int         i, j;
-    int         np=1;      /* These 6 values are set by command line options */
-    const char *host=0;    /* These are the defaults.  When a program name */
-    const char *arch=0;    /* is seen, the values in these variables are */
-    const char *wdir=0;    /* used to initialize the ProcessState entries */
-    const char *path=0;
-    const char *soft=0;
-    const char *exename=0;
-    int        indexOfFirstArg=-1;
-
-    for (i=1; i<argc; i++) {
-	if ( strncmp( argv[i], "-n",  strlen( argv[i] ) ) == 0 ||
-	     strncmp( argv[i], "-np", strlen( argv[i] ) ) == 0 ) {
-	    np = getInt( i+1, argc, argv );
-	    i++;
-	}
-	else if ( strncmp( argv[i], "-soft", 6 ) == 0 )
-	    if ( i+1 < argc )
-		soft = argv[++i];
-	    else {
-		mpiexec_usage( "Missing argument to -soft\n" );
-	    }
-	else if ( strncmp( argv[i], "-host", 6 ) == 0 )
-	    if ( i+1 < argc )
-		host = argv[++i];
-	    else 
-		mpiexec_usage( "Missing argument to -host\n" );		    
-	else if ( strncmp( argv[i], "-arch", 6 ) == 0 )
-	    if ( i+1 < argc )
-		arch = argv[++i];
-	    else
-		mpiexec_usage( "Missing argument to -arch\n" );		    
-	else if ( strncmp( argv[i], "-wdir", 6 ) == 0 )
-	    if ( i+1 < argc )
-		wdir = argv[++i];
-	    else
-		mpiexec_usage( "Missing argument to -wdir\n" );		    
-	else if ( strncmp( argv[i], "-path", 6 ) == 0 )
-	    if ( i+1 < argc )
-		path = argv[++i];
-	    else
-		mpiexec_usage( "Missing argument to -path\n" );		    
-	else if (argv[i][0] != '-') {
-	    exename = argv[i];
-	    /* Skip arguments until we hit either the end of the args
-	       or a : */
-	    i++;
-	    indexOfFirstArg = i;
-	    while (i < argc && argv[i][0] != ':') i++;
-	    if (i == indexOfFirstArg) { 
-		/* There really wasn't an argument */
-		indexOfFirstArg = -1;
-	    }
-	    
-	    if (ptable->nProcesses + np > ptable->maxProcesses) {
-		mpiexec_usage( "Too many processes requested\n" );
-	    }
-
-	    /* Now, we are ready to update the process table */
-	    for (j=0; j<np; j++) {
-		ProcessState *ps;
-		ps = &ptable->table[ptable->nProcesses + j];
-		ps->fdStdin = ps->fdStdout = ps->fdStderr = -1;
-		ps->fdPMI = -1;
-		ps->state = UNINITIALIZED;
-		ps->exename = exename;
-		if (indexOfFirstArg > 0) {
-		    ps->args = (const char **)(argv + indexOfFirstArg);
-		    ps->nArgs = i - indexOfFirstArg;
-		}
-		else {
-		    ps->args = 0;
-		    ps->nArgs = 0;
-		}
-		ps->hostname = host;
-		ps->arch = arch;
-		ps->path = path;
-		ps->wdir = wdir;
-		ps->rank = ptable->nProcesses + i;
-		ps->pmiGroup = -1;
-		ps->pmiKVS = -1;
-		ps->exitReason = 0;
-		ps->exitSig = 0;
-		ps->exitStatus = 0;
-		ps->exitOrder = -1;
-	    }
-	    ptable->nProcesses += np;
-
-	    /* Now, clear all of the values for the next set */
-	    host = arch = wdir = path = soft = exename = 0;
-	    indexOfFirstArg = -1;
-	    np              = 1;
-	}
-	else {
-	    int incr = 0;
-	    if (ProcessArg) {
-		incr = ProcessArg( argc, argv, extraData );
-	    }
-	    if (incr) {
-		/* increment by one less because the for loop will also
-		   increment i */
-		i += (incr-1);
-	    }
-	    else {
-		MPIU_Error_printf( "invalid mpiexec argument %s\n", argv[i] );
-		mpiexec_usage( NULL );
-	    }
-	}
-    }
-    return 0;
-}
-
-/* Return the int-value of the given argument.  If there is no 
-   argument, or it is not a valid int, exit with an error message */
-static int getInt( int argnum, int argc, char *argv[] )
-{
-    char *p;
-    long i;
-
-    if (argnum < argc) {
-	p = argv[argnum];
-	i = strtol( argv[argnum], &p, 0 );
-	if (p == argv[argnum]) {
-	    MPIU_Error_printf( "Invalid parameter value %s to argument %s\n",
-		     argv[argnum], argv[argnum-1] );
-	    mpiexec_usage( NULL );
-	    /* Does not return */
-	}
-	return (int)i;
-    }
-    else {
-	MPIU_Error_printf( "Missing argument to %s\n", argv[argnum-1] );
-	mpiexec_usage( NULL );
-	/* Does not return */
-    }
-}
-
-/* ----------------------------------------------------------------------- */
-/* Determine the hosts                                                     */
-/*                                                                         */
-/* For each requested process that does not have an assigned host yet,     */
-/* use information from a machines file to fill in the choices             */
-/* ----------------------------------------------------------------------- */
-/* This structure is used as part of the code to assign machines to 
-   processes */
-typedef struct {
-    int nHosts; 
-    char **hname;
-} MachineTable;
-MachineTable *mpiexecReadMachines( const char *, int );
-
-int mpiexecChooseHosts( ProcessTable_t *ptable )
-{
-    int i, j, k, nNeeded=0;
-    const char *arch;
-    MachineTable *mt;
-
-    /* First, determine how many processes require host names */
-    for (i=0; i<ptable->nProcesses; i++) {
-	if (!ptable->table[i].hostname) nNeeded++;
-    }
-    if (nNeeded == 0) return 0;
-
-    /* Read the appropriate machines file.  There may be multiple files, 
-       one for each requested architecture.  We'll read one machine file
-       at a time, filling in all of the processes for each particular 
-       architecture */
-    while (nNeeded) {
-	for (i=0; i<ptable->nProcesses; i++) {
-	    if (!ptable->table[i].hostname) break;
-	}
-	/* Read the machines file for this architecture.  Use the
-	   default architecture if none selected */
-	arch = ptable->table[i].arch;
-	mt = mpiexecReadMachines( arch, nNeeded );
-	if (!mt) {
-	    /* FIXME : needs an error message */
-	    exit(-1);
-	}
-	/* Assign machines to all processes with this arch */
-	k = 0;
-	for (; i<ptable->nProcesses; i++) {
-	    if (ptable->table[i].arch == arch &&
-		!ptable->table[i].hostname) {
-		ptable->table[i].hostname = mt->hname[k++];
-		if (k >= mt->nHosts) k = 0;
-		nNeeded--;
-	    }
-	}
-    }
-    return 0;
-}
-
-#define MAXLINE 256
-const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
-
-/* Read the associate machines file for the given architecture, returning
-   a table with nNeeded machines.  The format of this file is
-
-   # comments
-   hostname
-   
-   Eventually, we'll allow
-   hostname [ : nproc [ : login ] ]
-
-   The files are for the format:
-
-   path/machines.<arch>
-   or
-   path/machines 
-   (if no arch is specified)
-   
-*/
-MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
-{
-    FILE *fp;
-    char buf[MAXLINE+1];
-    char machinesfile[PATH_MAX];
-    char dirname[PATH_MAX];
-    char *p;
-    const char *path=getenv("MPIEXEC_MACHINES_PATH");
-    MachineTable *mt;
-    int len, nFound = 0;
-    
-    /* Try to open the machines file.  arch may be null, in which 
-       case we open the default file */
-    /* FIXME: need path and external designation of file names */
-    /* Partly done */
-    if (!path) path = defaultMachinesPath;
-
-    while (path) {
-	char *next_path;
-	/* Get next path member */
-	next_path = strchr( path, ':' );
-	if (next_path) 
-	    len = next_path - path;
-	else
-	    len = strlen(path);
-	
-	/* Copy path into the file name */
-	MPIU_Strncpy( dirname, path, len );
-
-	dirname[len] = 0;
-
-	/* Construct the final path name */
-	if (arch) {
-	    sprintf( machinesfile, "%s/machines.%s", dirname, arch );
-	}
-	else {
-	    MPIU_Strncpy( machinesfile, dirname, PATH_MAX );
-	    MPIU_Strncat( machinesfile, "/machines", PATH_MAX );
-	}
-	if (debug) {
-	    DBG_PRINTF( "Attempting to open %s\n", machinesfile );
-	}
-	fp = fopen( machinesfile, "r" );
-	if (fp) break;  /* Found one */
-
-	if (next_path) 
-	    path = next_path + 1;
-	else
-	    path = 0;
-    }
-	
-    if (!fp) {
-	MPIU_Error_printf( "Could not open machines file %s\n", machinesfile );
-	return 0;
-    }
-    mt = (MachineTable *)MPIU_Malloc( sizeof(MachineTable) );
-    if (!mt) {
-	MPIU_Error_printf( "Internal error: could not allocate machine table\n" );
-	return 0;
-	}
-    
-    mt->hname = (char **)MPIU_Malloc( nNeeded * sizeof(char *) );
-    if (!mt->hname) {
-	return 0;
-    }
-    while (nNeeded) {
-	if (!fgets( buf, MAXLINE, fp )) break;
-	if (debug) {
-	    DBG_PRINTF( "line: %s", buf );
-	}
-	/* Skip comment lines */
-	p = buf;
-	while (isascii(*p) && isspace(*p)) p++;
-	if (*p == '#') continue;
-	
-	len = strlen( p );
-	if (p[len-1] == '\n') p[--len] = 0;
-	if (p[len-1] == '\r') p[--len] = 0;   /* Handle DOS files */
-	mt->hname[nFound] = (char *)MPIU_Malloc( len + 1 );
-	if (!mt->hname[nFound]) return 0;
-	MPIU_Strncpy( mt->hname[nFound], p, len+1 );
-	nFound++;
-	nNeeded--;
-    }
-    mt->nHosts = nFound;
-    return mt;	
-}
 /* ----------------------------------------------------------------------- */
 /* Get a port for the PMI interface                                        */
 /* Ports can be allocated within a requested range using the runtime       */
@@ -682,7 +307,6 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	char **myargv;
 	int rshNargs, j, rc;
 
-
 	ps = &ptable->table[i];
 
 	/* Build the array to pass to exec before calling fork.  
@@ -710,12 +334,13 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	for (j=0; j<ps->nArgs; j++) 
 	    myargv[rshNargs++] = (char *)(ps->args[j]);
 	myargv[rshNargs++] = 0;
+#define DEBUG
 #ifdef DEBUG
 	{ int k;
-	for (k=0; myargv[k]; k++) {
-	    DBG_PRINTF( "%s ", myargv[k] );
-	}
-	DBG_PRINTF( "\n" );
+	  for (k=0; myargv[k]; k++) {
+	      DBG_PRINTF( "%s ", myargv[k] );
+	  }
+	  DBG_PRINTF( "\n" );
 	}
 #endif
 	
@@ -728,8 +353,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    DBG_PRINTF( "About to fork process %d\n", i );
 	}
 
-	    pid = fork();
-	}
+	pid = fork();
 	if (pid > 0) {
 	    /* We are (and remain) the parent */
 	    /* Close unused portion of pipes */
@@ -773,6 +397,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		MPIU_Error_printf( "Error from execvp: %d\n", errno );
 	    }
 	    /* should never return */
+	    exit(-1);
 	}
 	else {
 	    /* Error on fork */
@@ -908,17 +533,17 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	j++;
     }
     /* Add the last three */
-    pollarray[j].fd = stdin;
+    pollarray[j].fd = 0; 
     pollarray[j].events = POLLIN;
     j++;
-    pollarray[j].fd = stdout;
+    pollarray[j].fd = 1; 
     pollarray[j].events = POLLOUT;
     j++;
-    pollarray[j].fd = stderr;
+    pollarray[j].fd = 2;
     pollarray[j].events = POLLOUT;
 
     while (1) {
-	int timeout;
+	int timeout, rc;
 	/* Compute the timeout until we must abort this run */
 	/* (A negative value is infinite) */
 	rc = poll( pollarray, nfds, timeout );
@@ -926,7 +551,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	/* loop through the entries, looking at the processes first */
 	j = 0;
 	for (i=0; i<nprocess; i++) {
-	    if (pollarray[j].revent == POLLOUT) {
+	    if (pollarray[j].revents == POLLOUT) {
 		;
 	    }
 	    
@@ -940,4 +565,43 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	   is not accepting input (don't read any more) */
 	
     }
+}
+
+/*
+ * Provide a simple timeout capability.  Initialize the time with 
+ * InitTimeout.  Call GetRemainingTime to get the time in seconds left.
+ */
+int end_time = -1;  /* Time of timeout in seconds */
+void InitTimeout( int seconds )
+{
+#ifdef HAVE_TIME
+    time_t t;
+    t = time( NULL );
+    end_time = seconds + t;
+#elif defined(HAVE_GETTIMEOFDAY)
+    struct timeval tp;
+    gettimeofday( &tp, NULL );
+    end_time = seconds + tp.tv_sec;
+#else
+#   error 'No timer available'
+#endif
+}
+
+/* Return remaining time in seconds */
+int GetRemainingTime( void )
+{
+    int time_left;
+#ifdef HAVE_TIME
+    time_t t;
+    t = time( NULL );
+    time_left = end_time - t;
+#elif defined(HAVE_GETTIMEOFDAY)
+    struct timeval tp;
+    gettimeofday( &tp, NULL );
+    time_left = end_time - tp.tv_sec;
+#else
+#   error 'No timer available'
+#endif
+    if (time_left < 0) time_left = 0;
+    return time_left;
 }

@@ -1,7 +1,9 @@
-mpiexec_SOURCES = mpiexec.c 
+INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
+    -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple
+mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
+install_BIN = mpiexec
+mpiexec_SOURCES = mpiexec.c rm.c cmnargs.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include 
-#    -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple
-#mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
 install_BIN = mpiexec
 distclean-local:
 	@-rm -f forkerconf.h
