@@ -995,7 +995,6 @@ def parse_pmi_msg(msg):
     return parsed_msg
 
 def set_limits(limits):
-    print "RMB MAN LIMITS=", limits
     for type in limits.keys():
         limit = int(limits[type])
         if   type == 'core':
