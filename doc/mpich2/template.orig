@@ -5,6 +5,7 @@
 \documentclass{article}
 \usepackage{verbatim}
 \usepackage{version}
+\usepackage{ifthen}
 \usepackage{psfig}
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/bin/share/tex/fileinclude}

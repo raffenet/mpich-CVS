@@ -1,11 +1,36 @@
 \includeversion{comment}
 
+\def\mpiobj#1{\code{#1}\index{#1}}
+
+
+\newenvironment{cmt}[1][]%
+  {\begin{comment}\em\textbf{Comment\ifthenelse{\equal{#1}{}}{}{ [#1]}:}}%
+  {\end{comment}}
+%\newenvironment{cmt}{\begin{comment}\em\textbf{Comment:} }{\end{comment}}
+%\newenvironment{cmtx}[1]{\begin{comment}\em\textbf{Comment [#1]:} }
+%  {\end{comment}}
+
 \section{Multi-method Communication Architecture}
+
+\begin{cmt}
+  Remember this comment:
+  is it ok to use the term operation in here?  is there a better one?  we could
+  use the term ``request''.  operation isn't too confusing right now, but it
+  may be later.  then again, the MPI standard talks about ``posting nonblocking
+  operations''...
+\end{cmt}
+
 
 In this section, we present a multi-method communication architecture
 for MPICH2.
 
-What is a ``method'' anyway?  Why are multiple methods important?
+A \emph{communication method} is a means for passing messages between two
+processes.  Because different methods have different connectivity and
+performance characteristics, it is desirable for an MPI implementation to
+support multiple methods simultaneously.  For example, in a cluster of SMPs one
+might want to use a shared memory method for communicating within a node and a
+TCP/IP method for communicating between nodes.
+
 
 Rather than present the entire architecture at once, we will start
 with a basic system and modify it as we add capabilities.  The reason
@@ -31,8 +56,8 @@ and performance analysis.
 % point-to-point
 % 
 % narrow scope for this subsection: no wildcards, persistent sends, etc...(look
-% at lists below :)).  also not dealing with complex datatypes or
-% heterogeneity.
+% at lists below :)).  also not dealing with complex datatypes, heterogeneity,
+% vendor MPI.
 
 In this section we will describe the components necessary for an unoptimized,
 multi-method, point-to-point (P2P) messaging system.  The scope of this system
@@ -75,9 +100,9 @@ arrives after the receive has been posted.  This is of course not the only
 possible ordering, and we will discuss other possibilities in
 Section~\ref{sssec:walkthrough}.
 
-\begin{comment}
-  \emph{include a figure showing the actual code snippets}
-\end{comment}
+\begin{cmt}
+  include a figure showing the actual code snippets
+\end{cmt}
 
 % posting (async send case)
 % - allocation/initialization of MPI request (must initialize completion counter)
@@ -85,20 +110,10 @@ Section~\ref{sssec:walkthrough}.
 % - calling of method function to post
 
 An asynchronous send (\mpifunc{MPI_ISEND}) first results in the allocation and
-initialization of a \mpids{MPI_Request} object (described previously in
-XXX).  A \emph{completion counter} is included in this structure, and it is
-initialized at this point (to 1).
-
-\begin{comment}
-  \emph{we should explain why the completion counter is set to a value of 1, or
-    do something to clear this up.}
-\end{comment}
-
-\begin{comment}
-  \emph{do we want to say something about the buffer in here?}  The buffer does
-  not become an issue until we call the method's post function passing it the
-  buffer.
-\end{comment}
+initialization of a \mpiobj{MPI_Request} object (described previously in XXX).
+A \emph{completion counter} is included in this structure, and it is
+initialized at this point to 1 (corresponding to the number of method sends
+which must complete).
 
 Next the \emph{virtual connection} (VC) is determined from the communicator
 passed into the send call.  A reference to the appropriate method for moving
@@ -115,9 +130,9 @@ and envelope information supplied to \code{MPI_SEND}.
 % - calling method fn to post
 % - is there anything really different from above (at this level)?
 
-An asynchronous receive (\mpifunc{MPI_IRECV} is handled in a similar manner.  A
-\code{MPI_Request} object is allocated and the completion counter is
-initialized (to 1).
+An asynchronous receive (\mpifunc{MPI_IRECV}) is handled in a similar manner.
+A \code{MPI_Request} object is allocated and the completion counter is
+initialized (also to 1).
 
 The appropriate VC is determined by looking at the communicator passed to the
 receive call.  From the VC object the appropriate method function for posting a
@@ -135,12 +150,6 @@ receive is found and called.
 % 
 % [something here is still bugging brian]
 
-\begin{comment}
-  \emph{is it ok to use the term operation in here?  is there a better one?  we
-    could use the term ``request''.  operation isn't too confusing right now,
-    but it may be later.  then again, the MPI standard talks about ``posting
-    nonblocking operations''...}
-\end{comment}
 
 Progress is simply the act of performing a set of operations necessary to
 complete a pending request.  For example, a send request might require data to
@@ -152,10 +161,10 @@ are made; however, we might want to make progress at other times.  This could
 be accomplished through the use of threads or other system capabilities (see
 Section XXXX).
 
-\begin{comment}
+\begin{cmt}
   it would be great if there were clear definitions of ``requests'' and
   ``operations'' around somewhere.
-\end{comment}
+\end{cmt}
 
 In our multi-method P2P communication system a \emph{progress engine} component
 is responsible for orchestrating progress on all posted requests.  This is
@@ -172,22 +181,18 @@ arrived.  The posted received is associated with the VC on which data will be
 passed.  At some point that data does arrive, and the \emph{envelope} from
 the incoming message must be matched to the envelope from the posted receive.
 
-\begin{comment}
-  \emph{define envelope?  point out that it should have been defined?}  briefly
+\begin{cmt}
+  define envelope?  point out that it should have been defined?  briefly
   mention a definition and then point at another section for details (are there
   any details???)
-\end{comment}
+\end{cmt}
 
 This matching process might seem trivial, but in fact the MPI semantics for
 wildcard operations and message ordering combined with the possibility of
 multiple methods make matching somewhat complicated.
-For this reason we will implement a separate \emph{request arbitrator}
-component (do you like that name?) for performing request matching for the
+For this reason we will implement a separate \emph{request arbiter}
+component for performing request matching for the
 system as a whole (both intra- and inter-method).
-
-\begin{comment}
-  \emph{arbitrator: find something better than matcher that doesn't have the negative conotation of arbitrator.}
-\end{comment}
 
 % completion
 % - notification of completion (via decrement of counter - in MPI request)
@@ -216,10 +221,10 @@ The use of a counter when the value may only be one or zero might seem
 unnecessary, but we will see in Section~XXXX that having a counter is
 necessary for our implementation of collective operations.
 
-\begin{comment}
-  \emph{\code{MPI_TEST} and \code{MPI_WAIT} do the same thing on
-    completion.  The above text needs a little cleanup to make that clear.}
-\end{comment}
+\begin{cmt}
+  \code{MPI_TEST} and \code{MPI_WAIT} do the same thing on completion.  The
+  above text needs a little cleanup to make that clear.
+\end{cmt}
 
 The components that we introduced here are described in greater detail in the
 following section.
@@ -280,30 +285,33 @@ software that implements this multi-method interface for a particular
 networking model, device or interface such as TCP, VIA or shared memory.
 
 \begin{verbatim}
-int method::get_description(char ** description)
+int method::get_description([OUT] char description[])
 
-int method::match_description(char * description)
+int method::match_description([IN] char description[])
 
-int method::post_send(void * buf, int count, MPI_Datatype datatype,
-                      int dest, int tag, MPI_Comm comm,
-                      MPI_Request * request)
+int method::post_send([IN] MPID_Segment * segment,
+                      [IN] int dest, [IN] int tag, [IN] MPID_Comm * comm,
+                      [INOUT] int * completion_cntr)
 
-int method::post_recv(void * buf, int count, MPI_Datatype datatype,
-                      int source, int tag, MPI_Comm comm,
-                      MPI_Request * request)
+int method::post_recv([IN] MPID_Segment * segment,
+                      [IN] int source, [IN] int tag, [IN] MPID_Comm * comm,
+                      [INOUT] int * completion_cntr)
 
-int method::poll(int quanta, int * completions)
+int method::poll([IN] int quanta, [OUT] int completions)
 \end{verbatim}
 
+\begin{cmt}[BRT]
+Should we put the function table in a \LaTeX table or leave it as is?
+\end{cmt}
 
 Since several methods of communication are likely to be at the disposal of a
 process, we need a mechanism for resolving which method will be used for
 communicating between a particular pair of processes.  This mechanism should
 include utilizing user supplied information that dictates the method to be used
-for each process pair; however it is desirable to automate the selection of
-communication methods when the user chooses not supply the necessary
+for each process pair; however, it is desirable to automate the selection of
+communication methods when the user chooses not to supply the necessary
 information.  Therefore, we need a mechanism whereby a remote process can
-describe its communication capabilities in such as way that the local process
+describe its communication capabilities in such a way that the local process
 can programmatically determine the method it will use to communicate with a
 remote process.
 
@@ -317,21 +325,29 @@ description strings can be constructed, the result of which describes the set
 of communication capabilities and contact information for the process.  This
 collection can then be published into a database available to all processes in
 the job, making the capabilities and contact information known to all
-processes.
+processes.  This database functionality is provided as part of the BNR
+interface, which is described in Section~\ref{sec:bnr}.
 
-Given the collection of descriptions for a remote process, a local process can
+Given a collection of descriptions for a remote process, a local process can
 now select a method.  The capability description string for a particular method
-is passed to the \code{method::match_description} function which is responsible
-for determining if it is capable of communicating with the remote process using
-the method in question.  If the processes are capable of communicating using
-the method, \code{match_description} extract the contact information from the
-description string and stores it for later use.
+is passed to the \code{method::match_description} function, which is
+responsible for determining if it is capable of communicating with the remote
+process using the method in question.  If the processes are capable of
+communicating using that method, \code{match_description} extracts the contact
+information from the description string and stores it for later use.
 
-\begin{comment}
-  \emph{Where does the contact information get stored?  In the VC?  What if
-    multiple method match?  Does only the last method get to store its contact
-    information?}
-\end{comment}
+
+\begin{cmt}[BRT]
+  Where does the contact information get stored?  In the VC?  What if multiple
+  method match?  Does only the last method get to store its contact
+  information?
+\end{cmt}
+
+\begin{cmt}[ROB]
+  The binding code (whatever that is) has a preferred ordering for attempting
+  to match methods (or can it?).  The first match wins, so there is never an
+  issue.  maybe :).  dynamic loading of methods would make this more difficult.
+\end{cmt}
 
 \emph{TODO: describe communication functions...}
 
@@ -343,9 +359,52 @@ performance networking resources.  Therefore, while the use of threads may be
 acceptible for some methods, we need to provide a low overhead means of polling
 in order to make progress on outstanding requests.
 
-\emph{TODO: describe poll function...}
+The \code{method::poll} function is the mechanism for providing the method will
+an opportunity to make progress.  We envision this method being called by the
+progress engine which we will describe shortly.  The \code{poll} function takes
+two arguments which are described in the paragraphs that follow.
 
-\paragraph{Virtual Connection}
+This first argument, \code{quanta}, conveys the amount of time the function is
+allowed to block waiting for an event.  This argument should be viewed as a
+soft upper bound used to impose a rough schedule between the methods.  It is
+intended to limit non-productive blocking or busy waiting only and should not
+be viewed as a limit on the amount of useful work that can be completed by the
+method.  A method may choose to ignore the argument and return immediately if
+it has no work to perform.  Likewise, if the method has work to perform it
+should do so without worry about exceeding the limits expressed by the
+\code{quanta} argument.
+
+The reason for expressing time in quanta rather than realtime is twofold.
+First, we were attempting to dispell the notion that it was necessary to
+``watch the clock'' which on many system can be a very expensive operation.
+Second, we believed that having an integer value instead of a timeval structure
+would be simply the computation required in critical path components.  We
+expect that, at startup, methods wishing to utilize the \code{quanta} argument
+will measure the busy waiting algorithm used in their \code{poll} functions to
+establish an estimated number of loops per quanta.  Then a quick multiplication
+can be performed when \code{poll} is called to determine the number of loops
+that may be performed before the \code{poll} function must return control to
+the progress engine.
+
+\begin{cmt}
+  The rationale for using a quanta is to allow \code{select()} in the TCP
+  method to block for periods of time to avoid chewing up the CPU
+  unnecessarily.  It may also be useful to obtain tighter busy waiting loops in
+  methods like shared memory when the polling engine knows that no other method
+  needs to be serviced for a while.  Some experimentation is necessary to
+  verify that the \code{quanta} argument is really useful.
+\end{cmt}
+
+The second argument to the \code{poll} function, \code{completions}, returns
+the number of MPI requests that were completed during the call to \code{poll}.
+More specifically, it is the number of request completion counters that when
+decremented reached zero.  The purpose of returning this count is to allow the
+progress engine to provide feedback to calling routines such as \code{MPI_TEST}
+and \code{MPI_WAIT}.  This feedback about the number of requests serviced
+should allow the MPI functions to limit the amount of work involved in
+determining which requests have been satisfied and need to be deallocated.
+
+\paragraph{Virtual Connections}
 
 % virtual connections
 % - object representing an abstract connection between two processes
@@ -373,7 +432,7 @@ set of network resources and performing the communication using those
 resources.  To minimize startup time and avoid unnecessary resource
 consumption, it is desirable for the multi-method implementation to defer
 binding to specific network resoures until those resources are needed.  To
-faciliate late binding, we introduce \emph{virtual connection object}.
+faciliate late binding, we introduce the \emph{virtual connection} object.
 
 The virtual connection object, or VC, represents an abstract connection between
 two processes.  To communicate, the VC must be bound to a communication method
@@ -389,25 +448,32 @@ structures needed by the method, or what we refer to as \emph{method specific
   data}.  These data structures will likely include those necessary to track
 posted send and receive operations, and the state of the underlying connection.
 
-\begin{comment}
-  \emph{The above paragraph should fleshed out as the details become clear.}
-\end{comment}
+\begin{cmt}[BRT]
+  The above paragraph should fleshed out as the details become clear. I was
+  originally thinking that the send and receive operations lists could be
+  stored in method specific (private) data, but at least the receive list needs
+  to be publicly visible so that the request arbiter can operate on it.
+\end{cmt}
 
-\emph{Note to implementor:} For performance reasons, it may make sense to cache
-the method function table in the VC object.  This would avoid an extra lookup
-each time a communication operation needed to be performed.  The downside is
-that an ``unbound'' method would need to be introduced which would contain a
-set of binding functions in its function table.  These functions would be
-responsible for binding the VC to a chosen method and then calling the
+\begin{cmt}[ROB]
+  So what, other than the receive list, needs to be method-independent?
+\end{cmt}
+
+\textbf{Note to implementor:} For performance reasons, it may make sense to
+cache the method function table in the VC object.  This would avoid an extra
+lookup each time a communication operation needed to be performed.  The
+downside is that an ``unbound'' method would need to be introduced which would
+contain a set of binding functions in its function table.  These functions
+would be responsible for binding the VC to a chosen method and then calling the
 equivalent function in that method's function table.
 
-\begin{comment}
-  \emph{I did not include the original state machine diagram as it became clear
-    that the VC object was not responsible for establishing connections as the
-    original diagram depicted.  The states for the VC object itself have been
-    reduced to unbound and bound.  Connection establishment state should be
-    part of the method specific data.}
-\end{comment}
+\begin{cmt}[BRT]
+  I did not include the original state machine diagram as it became clear that
+  the VC object was not responsible for establishing connections as the
+  original diagram depicted.  The states for the VC object itself have been
+  reduced to unbound and bound.  Connection establishment state should be part
+  of the method specific data.
+\end{cmt}
 
 
 \paragraph{Request Arbiter}
@@ -426,7 +492,9 @@ equivalent function in that method's function table.
 %     allocate a new request and place it on the ordered unexpected list
 % - elements:
 %   - ordered unexpected list
-
+%
+% - requirement that certain structures be publically visible (e.g. receive 
+%   lists)
 
 \paragraph{Progress Engine}
 
@@ -472,12 +540,18 @@ involved.
 To post a send request, the application code calls \mpifunc{MPI_ISEND} which in
 turn calls \mpidfunc{MPID_Isend}, the device-level function responsible for
 responsible for initiating a send.  \code{MPID_Isend} begins by allocating the
-\mpids{MPI_Request} object using \mpidfunc{MPID_Request_alloc}.  Next, the
+\mpiobj{MPI_Request} object using \mpidfunc{MPID_Request_alloc}.  Next, the
 request completion counter, \mpids{MPI_Request}{ccnt}, is set to one indicating
 that a single operation is outstanding.  Once the request structure is
 initialized, the communicator and destination rank supplied by the application
 are passed to \mpidfunc{MPID_Comm_get_vc} to obtain the associated virtual
 connection object.
+
+\begin{cmt}
+  We need a name for ``a unit of work for a method''.  We're using
+  ``operation'' here, but that is really too generic/overloaded.  We should
+  make up an acronym, like CAR, but different :).
+\end{cmt}
 
 As mentioned earlier, the virtual connection object allows us to defer
 selecting a method of communication until the connection will be used.  The
@@ -487,13 +561,13 @@ the VC will be in the unbound state, meaning that it is presently not
 associated with any method.  In this case, \code{MPID_VC_get_method} will
 select select an appropriate communication method and bind it to the VC.
 
-\begin{comment}
-  \emph{An interesting artifact of not caching the method function table in the
-    virtual connection object is that we no longer need the ``unbound'' method.
-    Instead, \code{MPID_VC_get_method} becomes solely responsible for binding
-    to a method should the VC not already be bound.  This seems much cleaner,
-    at least from a design perspective.}
-\end{comment}
+\begin{cmt}
+  An interesting artifact of not caching the method function table in the
+  virtual connection object is that we no longer need the ``unbound'' method.
+  Instead, \code{MPID_VC_get_method} becomes solely responsible for binding to
+  a method should the VC not already be bound.  This seems much cleaner, at
+  least from a design perspective.
+\end{cmt}
 
 Once we have both the method and virtual connection objects, we can use the
 \code{method::post_send} function to post a send operation on the VC.  This
@@ -502,7 +576,7 @@ according to MPI messaging semantics.  To help accomplish this task, the VC has
 space for method specific data, which \code{post_send} can use to track
 outstanding posted messaging requests.
 
-In an atttempt to be more specific, we shall look at one possible
+In an attempt to be more specific, we shall look at one possible
 implementation of the \code{post_send} function for the TCP method.  In the TCP
 method, socket connections are only formed between processes when it becomes
 necessary for those processes to communicate.  This implies that a socket
@@ -515,33 +589,34 @@ VC.  If other requests are present, then \code{post_send} will need to enqueue
 the request and let the progress engine handle sending the message once
 previous requests have been satisfied.
 
-To post a receive request the application calls \mpifunc{MPI_IRECV} which in
+To post a receive request, the application calls \mpifunc{MPI_IRECV} which in
 turn calls \mpidfunc{MPID_Irecv}.  \code{MPID_Irecv} is the device-level
 function responsible for posting receive requests to the appropriate method.
 For the moment, we are ignoring receive requests posted with a source of
 \code{MPI_ANY_SOURCE}, or what are frequently referred to as ``wildcard
 receives''.  Wildcard receives present an interesting set of challenges for a
-multi-method device and will be discussed later.
+multi-method device and will be discussed in Section~\ref{FOO}.
 
 Like \code{MPID_Isend}, \code{MPID_Irecv} must resolve the (communicator, rank)
 tuple to a virutal connection and obtain a reference to the method associated
 with that virtual connection.  All of the previous discussion concerning the
 binding of a VC to a method applies here as well.
 
-The ordering of a incoming message with the posting of a matching requests
-presents two possible execution paths.  We determine which of those paths apply
-to a particular request having \code{MPID_Irecv} call
-\code{MPID_Recv_post_foa}.  \code{MPID_Recv_post_foa} either finds an already
-arrived message that matches the envelope supplied to \code{MPI_Irecv} and
-returns an associated existing request, or it returns a new request object
-which has been atomically added to the receive list (\emph{hmm, that can't be
-  stored in method specific data -- may have to rethink above text}).
+The ordering of an incoming message with the posting of a matching request
+presents two possible execution paths.  An incoming message may arrive before
+or after the posting of a matching receive request.  We determine this ordering
+for a particular request by having \code{MPID_Irecv} call
+\code{MPID_Recv_post_foa} (foa stands for ``find or allocate'').
+\code{MPID_Recv_post_foa} either finds an already arrived message that matches
+the envelope supplied to \code{MPI_Irecv} and returns an associated existing
+request, or it returns a new request object which has been atomically added to
+the (publically accessible) receive list located in the VC.
 
-\begin{comment}
-  \emph{The use of request within the device is getting confusing.  We may need
-    to introduce multi-method requests now in order to avoid confusing the
-    reader later (or now for that matter).}
-\end{comment}
+\begin{cmt}
+  The use of request within the device is getting confusing.  We may need to
+  introduce multi-method requests now in order to avoid confusing the reader
+  later (or now for that matter).
+\end{cmt}
 
 \emph{TODO: need to talk about \code{method::post_recv}}
 
@@ -576,22 +651,50 @@ which has been atomically added to the receive list (\emph{hmm, that can't be
 
 \subsection{Filling out point-to-point}
 
-wildcards
-- request matching as a cross-method component (see, we told you!)
-- request abritrator element - secret magic wildcard stuff
+\subsubsection{Wildcard Receives}
+\begin{itemize}
+  \item request matching as a cross-method component (see, we told you!)
+  \item request abritrator element - secret magic wildcard stuff
+\end{itemize}
 
+\subsubsection{Persistent Sends}
 
-persistent sends
+\subsubsection{Request Cancellation}
 
-request cancellation
+%------------------------------------------------------------------------------
 
-threaded implementation and usage???
+\subsection{Threads: implementation and usage}
 - threads, VCs, and changing methods (from unbound to bound) during runtime
   - having the unbound method hold a lock on the vc can prevent additional
     threads from also attempting to rebind the VC
   - the newly bound method may receive requests from other threads while
     it is forming a connection.  it must insure that requests are queued
     and handled in the proper order once this connection is established
+
+%------------------------------------------------------------------------------
+
+\subsection{Vendor MPI}
+
+Discuss the enhancements required to support vendor MPI as a method for
+point-to-point communication.
+\begin{itemize}
+\item datatypes
+  \begin{itemize}
+  \item to track the construction, destruction and committing of datatypes so
+    that the process can be duplicated in an underlying vendor MPI
+  \item need method specific space in datatype object 
+  \end{itemize}
+\item communicators
+  \begin{itemize}
+  \item track the creation (and destruction) of intra- and inter-communicators
+    so that they can be duplicated in the underlying vendor MPI
+  \item need method specific space in communicator object 
+  \end{itemize}
+\item groups
+  \begin{itemize}
+  \item it may be desirable to track groups much like communicators
+  \end{itemize}
+\end{itemize}
 
 %------------------------------------------------------------------------------
 
@@ -624,3 +727,46 @@ adaptive polling and such
 
 %------------------------------------------------------------------------------
 
+\subsection{Support for Collective Operations}
+
+\begin{itemize}
+\item recv-and-forward messaging operation to support pipelining
+  \begin{itemize}
+  \item concurrency (rules)
+  \item progress notification (rules)
+  \item inter-method buffer management
+  \end{itemize}
+\item requests and descriptors
+\item new method functions
+\end{itemize}
+
+%------------------------------------------------------------------------------
+
+\subsection{Advanced Collective Operations}
+
+\begin{itemize}
+\item multi-forward to support pipelined tree-based algorithms
+\item reduction operations
+\item buffer management revisited (for what purpose???)
+\end{itemize}
+
+%------------------------------------------------------------------------------
+
+\subsection{Abnormal Termination}
+
+MPI_Abort() introduces the need for active messages in order to support clean
+and timely termination
+
+%------------------------------------------------------------------------------
+
+\subsection{RMA}
+
+%------------------------------------------------------------------------------
+
+\subsection{Advanced RMA}
+
+%------------------------------------------------------------------------------
+
+\subsection{Connect and Attach}
+
+%------------------------------------------------------------------------------
