@@ -208,7 +208,7 @@ static char * g_XColors[] = {
 static void random_X_color_string(char *str)
 {
     int i = (int)(((double)rand() / (double)RAND_MAX) * (double)(NUM_X_COLORS-1));
-    strcpy(str, g_XColors[i]);
+    MPIU_Strncpy( str, g_XColors[i], MPID_MAX_COLOR_STR );
 }
 
 int MPIU_Timer_init(int rank, int size)
@@ -245,7 +245,7 @@ int MPIU_Timer_finalize(void)
 {
     int i;
     
-    printf( "Writing logfile.\n");fflush(stdout);
+    MPIU_Msg_printf( "Writing logfile.\n");fflush(stdout);
     for (i=0; i<MPID_NUM_TIMER_STATES; i++) 
     {
 	/*DLOG_DescribeState(g_pDLOG, i, g_timer_state[i].name, g_timer_state[i].color_str);*/
@@ -260,7 +260,7 @@ int MPIU_Timer_finalize(void)
 
     DLOG_FinishLog(g_pDLOG, "mpid_prof");
 
-    printf("finished.\n");fflush(stdout);
+    MPIU_Msg_printf("finished.\n");fflush(stdout);
 
     return MPI_SUCCESS;
 }
@@ -310,9 +310,9 @@ int MPIU_Timer_finalize()
 {
     RLOG_DisableLogging(g_pRLOG);
 
-    printf( "Writing logfile.\n");fflush(stdout);
+    MPIU_Msg_printf( "Writing logfile.\n");fflush(stdout);
     RLOG_FinishLog(g_pRLOG, "mpi_logfile.rlog");
-    printf("finished.\n");fflush(stdout);
+    MPIU_Msg_printf("finished.\n");fflush(stdout);
 
     return MPI_SUCCESS;
 }
