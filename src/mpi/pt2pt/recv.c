@@ -53,6 +53,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request * request_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

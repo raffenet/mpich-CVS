@@ -54,6 +54,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPID_Info *info_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CONNECT);
     /* Get handles to MPI objects. */

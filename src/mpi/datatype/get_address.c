@@ -51,6 +51,7 @@ int MPI_Get_address(void *location, MPI_Aint *address)
 {
     static const char FCNAME[] = "MPI_Get_address";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ADDRESS);
 #   ifdef HAVE_ERROR_CHECKING

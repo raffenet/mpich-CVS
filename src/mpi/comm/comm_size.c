@@ -51,6 +51,7 @@ int MPI_Comm_size( MPI_Comm comm, int *size )
     static const char FCNAME[] = "MPI_Comm_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = 0;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SIZE);
     /* Get handles to MPI objects. */

@@ -76,6 +76,7 @@ int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
 

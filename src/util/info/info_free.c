@@ -45,6 +45,7 @@ int MPI_Info_free( MPI_Info *info )
     static const char FCNAME[] = "MPI_Info_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Info *info_ptr=0;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_FREE);
     /* Get handles to MPI objects. */

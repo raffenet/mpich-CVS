@@ -54,6 +54,7 @@ int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK);
     /* Get handles to MPI objects. */

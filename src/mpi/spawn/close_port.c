@@ -44,6 +44,7 @@ int MPI_Close_port(char *port_name)
 {
     static const char FCNAME[] = "MPI_Close_port";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CLOSE_PORT);
 #   ifdef HAVE_ERROR_CHECKING

@@ -46,6 +46,7 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     static const char FCNAME[] = "MPI_Open_port";
     int mpi_errno = MPI_SUCCESS;
     MPID_Info *info_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OPEN_PORT);
     /* Get handles to MPI objects. */

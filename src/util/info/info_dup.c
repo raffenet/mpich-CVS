@@ -49,6 +49,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
     MPID_Info *info_ptr=0, *curr_old, *curr_new;
     static const char FCNAME[] = "MPI_Info_dup";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_DUP);
     /* Get handles to MPI objects. */

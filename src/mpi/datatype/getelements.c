@@ -69,6 +69,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
     int mpi_errno = MPI_SUCCESS;
     int m_count, m_rem;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ELEMENTS);
     /* Get handles to MPI objects. */

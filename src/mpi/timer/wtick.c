@@ -43,6 +43,7 @@ double MPI_Wtick( void )
     static const char FCNAME[] = "MPI_Wtick";
     int mpi_errno = MPI_SUCCESS;
     double tick;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WTICK);
 #   ifdef HAVE_ERROR_CHECKING

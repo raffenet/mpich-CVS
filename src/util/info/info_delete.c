@@ -47,6 +47,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
     static const char FCNAME[] = "MPI_Info_delete";
     int mpi_errno = MPI_SUCCESS;
     MPID_Info *info_ptr=0, *prev_ptr, *curr_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_DELETE);
     /* Get handles to MPI objects. */

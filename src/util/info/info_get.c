@@ -53,6 +53,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
     MPID_Info *curr_ptr, *info_ptr=0;
     static const char FCNAME[] = "MPI_Info_get";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET);
     /* Get handles to MPI objects. */

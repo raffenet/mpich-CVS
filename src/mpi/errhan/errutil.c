@@ -18,7 +18,7 @@
 /*
  * Instance-specific error messages are stored in a ring.
  * Messages are written into the error_ring; the corresponding entry in
- * error_ring_idx is used to keep a sort of "checkvalue" to ensure that the
+ * error_ring_seq is used to keep a sort of "checkvalue" to ensure that the
  * error code that points at this message is in fact for this particular 
  * message.  This is used to handle the unlikely but possible situation where 
  * so many error messages are generated that the ring is overlapped.
@@ -28,7 +28,7 @@
 #define MAX_ERROR_BIGRING 8192
 
 static char error_ring[MAX_ERROR_RING][MPI_MAX_ERROR_STRING+1];
-static int error_ring_idx[MAX_ERROR_RING];
+static int error_ring_seq[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
 #endif
 

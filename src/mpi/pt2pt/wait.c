@@ -47,6 +47,7 @@ int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
     static const char FCNAME[] = "MPI_Wait";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *request_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

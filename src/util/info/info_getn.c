@@ -50,6 +50,7 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
     int      n;
     static const char FCNAME[] = "MPI_Info_get_nkeys";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET_NKEYS);
     /* Get handles to MPI objects. */

@@ -54,6 +54,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
     static const char FCNAME[] = "MPI_Type_vector";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *old_ptr = NULL, *new_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_VECTOR);
     /* Get handles to MPI objects. */

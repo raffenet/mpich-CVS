@@ -34,7 +34,7 @@
 #define ERROR_SPECIFIC_INDEX_MASK 0x01FE0000
 #define ERROR_SPECIFIC_INDEX_SHIFT 17
 #define ERROR_SPECIFIC_SEQ_MASK   0x7E000000
-# Size is size of field as an integer, not the number of bits
+/* Size is size of field as an integer, not the number of bits */
 #define ERROR_SPECIFIC_SEQ_SIZE   64
 #define ERROR_SPECIFIC_SEQ_SHIFT  25
 

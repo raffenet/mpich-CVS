@@ -51,6 +51,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     int       nkeys;
     static const char FCNAME[] = "MPI_Info_get_nthkey";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET_NTHKEY);
     /* Get handles to MPI objects. */
