@@ -121,7 +121,7 @@ PMPI_LOCAL int MPIR_Allreduce (
            INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
            SO IT'S OK */
 #ifdef UNIMPLEMENTED
-        MPI_Type_lb( datatype, &lb );
+        NMPI_Type_lb( datatype, &lb );
 #endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
@@ -352,11 +352,6 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLREDUCE);
 
-    if ((op == MPI_MAXLOC) || (op == MPI_MINLOC)) {
-        printf("ERROR: MAXLOC and MINLOC not yet implemented\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -385,8 +380,12 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	    if ((op == MPI_MAXLOC) || (op == MPI_MINLOC)) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 
+				    "**notimpl %s", "MAXLOC and MINLOC" );
+	    }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
@@ -394,20 +393,16 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                }
             }
 
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                }
             }
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
         }
         MPID_END_ERROR_CHECKS;
     }

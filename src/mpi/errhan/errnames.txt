@@ -7,6 +7,7 @@
 **nomem:Out of memory
 **nomem %d %d:Out of memory (requested %d but only %d available)
 **notimpl:Function not implemented
+**notimpl %s:Function %s not implemented
 **nullptr:Null pointer
 **nullptr %s:Null pointer in parameter %s
 **commnamelen: Specified communicator name is too long
