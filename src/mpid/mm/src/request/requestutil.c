@@ -48,6 +48,8 @@ void mm_request_free(MPID_Request *request_ptr)
 {
     MM_ENTER_FUNC(MM_REQUEST_FREE);
 
+    /* insert reference count code here */
+
     /* free the buffer attached to this request */
     if (request_ptr->mm.release_buffers)
 	request_ptr->mm.release_buffers(request_ptr);
