@@ -160,7 +160,7 @@ MPI_Info PMPI_Info_f2c(MPI_Fint info);
 typedef struct ADIOI_Fns_struct ADIOI_Fns;
 typedef struct ADIOI_Hints_struct ADIOI_Hints;
 
-struct ADIOI_FileD {
+typedef struct ADIOI_FileD {
     int cookie;              /* for error checking */
     FDTYPE fd_sys;              /* system file descriptor */
 #ifdef XFS
@@ -198,7 +198,7 @@ struct ADIOI_FileD {
     int iomode;             /* reqd. to implement Intel PFS modes */
     MPI_Errhandler err_handler;
     void *fs_ptr;            /* file-system specific information */
-};
+} ADIOI_FileD;
 
 typedef struct ADIOI_FileD *ADIO_File;
 
