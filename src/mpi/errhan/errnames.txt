@@ -439,7 +439,8 @@ with MPI_Alloc_mem.
 **join_send %d:send on the socket failed (errno %d)
 **join_recv:recv from the socket failed
 **join_recv %d:recv from the socket failed (errno %d)
-
+**flag:invalid flag parameter
+**flag %d:invalid flag parameter (flag = %d)
 
 # Duplicates?
 #**argnull:Invalid null parameter

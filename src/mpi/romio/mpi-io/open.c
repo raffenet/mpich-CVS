@@ -60,8 +60,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_COMM,
-					  "**comm",
-					  "Invalid communicator");
+					  "**comm", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
     /* --END ERROR HANDLING-- */
@@ -72,8 +71,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_COMM, 
-					  "**commnotintra",
-					  "Intercommunicator cannot be passed to MPI_File_open");
+					  "**commnotintra", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
 
@@ -82,8 +80,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
-					  "**fileamodeone",
-					  "Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or MPI_MODE_RDWR must be specified");
+					  "**fileamodeone", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
 
@@ -92,8 +89,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
-					  "**fileamoderead",
-					  "It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY");
+					  "**fileamoderead", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
 
@@ -101,8 +97,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
-					  "**fileamodeseq",
-					  "It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR");
+					  "**fileamodeseq", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
     /* --END ERROR HANDLING-- */
@@ -178,8 +173,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__,
 					  MPI_ERR_UNSUPPORTED_OPERATION, 
-					  "**iosequnsupported",
-					  "Sequential I/O mode not supported on this file system type");
+					  "**iosequnsupported", 0);
 	return MPIO_Err_return_comm(comm, error_code);
     }
     /* --END ERROR HANDLING-- */
