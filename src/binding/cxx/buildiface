@@ -1759,12 +1759,14 @@ sub build_specials {
 
     print $OUTFD "int Init_thread";
     # The two args are needed to tell print_args that one is the output
-    $args = "int,int";
+    #$args = "int,int";
+    # Grr.  Under Cygwin, we needed two...
+    $args = "int";
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{
     int provided;
-    MPI_Init_thread( 0, 0, v2, &provided );\n";
+    MPI_Init_thread( 0, 0, v1, &provided );\n";
     &printCoverageInitialize( $OUTFD );
     print $OUTFD "\
     return provided;
