@@ -84,13 +84,19 @@ public class BufForShadows extends BufForObjects
 
     public void add( final Primitive prime )
     {
-        List key = new ArrayList();
-        Topology topo = prime.getCategory().getTopology();
+        List      key;
+        Topology  topo;
+        Category  shadowdef;
+
+        key = new ArrayList();
+        topo = prime.getCategory().getTopology();
         key.add( topo );
         key.addAll( prime.getListOfVertexLineIDs() );
         Shadow sobj = (Shadow) buf4shadows.get( key );
         if ( sobj == null ) {
-            sobj = new Shadow( (Category) shadowdefs_map.get( topo ), prime );
+            shadowdef = (Category) shadowdefs_map.get( topo );
+            shadowdef.setUsed( true );
+            sobj = new Shadow( shadowdef, prime );
             buf4shadows.put( key, sobj );
             total_bytesize += sobj.getByteSize();
         }

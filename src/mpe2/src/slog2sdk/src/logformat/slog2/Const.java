@@ -11,7 +11,7 @@ package logformat.slog2;
 
 public class Const
 {
-           static final String  version_ID     = "SLOG 2.0.3";
+           static final String  version_ID     = "SLOG 2.0.4";
            static final byte    INVALID_byte   = Byte.MIN_VALUE;
            static final short   INVALID_short  = Short.MIN_VALUE;
            static final int     INVALID_int    = Integer.MIN_VALUE;
@@ -36,9 +36,14 @@ public class Const
                                 + "  in legend order to shadow states.\n"
                                 + "- Version SLOG 2.0.3 changed preview data\n"
                                 + "  from legend order to weight order.\n"
+                                + "- Version SLOG 2.0.4 removed unused\n"
+                                + "  category objects.\n"
+                                + "  \n"
                                 + "- 2.0.1 viewer draws 2.0.0 logfile's\n"
                                 + "  state nesting stack incorrectly!\n"
-                                + "- 2.0.2 viewer cannot read 2.0.1 logfile\n"
+                                + "- 2.0.2 viewer cannot read 2.0.1 logfile.\n"
                                 + "- 2.0.3 viewer draws 2.0.2 logfile's\n"
-                                + "  preview weight incorrectly\n";
+                                + "  preview weight incorrectly.\n"
+                                + "- 2.0.4 viewer supports JOIN method and\n"
+                                + "  can display 2.0.3 logfile correctly.\n";
 }

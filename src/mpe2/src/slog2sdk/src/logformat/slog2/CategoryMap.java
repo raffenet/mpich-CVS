@@ -28,11 +28,23 @@ public class CategoryMap extends HashMap
         super();
     }
 
+    public void removeUnusedCategories()
+    {
+        Iterator   objdefs_itr;
+        Category   objdef;
+        objdefs_itr = super.values().iterator();
+        while ( objdefs_itr.hasNext() ) {
+            objdef  = (Category) objdefs_itr.next();
+            if ( ! objdef.isUsed() ) 
+                objdefs_itr.remove();
+        }
+    }
+
     public void writeObject( MixedDataOutput outs )
     throws java.io.IOException
     {
         outs.writeInt( super.size() );
-        Iterator objdefs = this.values().iterator();
+        Iterator objdefs = super.values().iterator();
         while ( objdefs.hasNext() )
             ( (Category) objdefs.next() ).writeObject( outs );
     }
