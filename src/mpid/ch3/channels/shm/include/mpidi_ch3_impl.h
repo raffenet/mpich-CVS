@@ -47,15 +47,101 @@
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#ifdef HAVE_GCC_AND_PENTIUM_ASM
+#define HAVE_COMPARE_AND_SWAP
+static inline char
+__attribute__ ((unused))
+     compare_and_swap (volatile long int *p, long int oldval, long int newval)
+{
+  char ret;
+  long int readval;
+
+  __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
+                : "=q" (ret), "=m" (*p), "=a" (readval)
+            : "r" (newval), "m" (*p), "a" (oldval));
+  return ret;
+}
+#endif
 
 /* This value is defined in sys/param.h under Linux but in netdb.h 
    under Solaris */
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 256
 #endif
+
+#ifdef USE_GARBAGE_COLLECTING
+typedef struct MPIDI_Shm_mem_obj_hdr_st {
+    struct MPIDI_Shm_mem_obj_hdr_st *next;
+    int inuse;
+} MPIDI_Shm_mem_obj_hdr;
+#else
+typedef struct MPIDI_Shm_mem_obj_hdr_st {
+    struct MPIDI_Shm_mem_obj_hdr_st *next;
+    int index;
+} MPIDI_Shm_mem_obj_hdr;
+#endif
+
+typedef struct {
+    unsigned int size;
+    MPIDU_Process_lock_t thr_lock;
+    int count;
+    int max_count;
+    MPIDI_Shm_mem_obj_hdr *ptr;
+} MPIDI_Shm_list;
+
+typedef struct MPIDU_Queue_st {
+    MPID_Request *head;
+    MPID_Request *tail;
+    MPIDU_Process_lock_t lock;
+#ifdef CHECK_LOCKING
+    int nCount; /*Used to check the locking code */
+#endif
+} MPIDU_Queue;
+
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
+    int nShmEagerLimit;
+#ifdef HAVE_SHARED_PROCESS_READ
+    int nShmRndvLimit;
+#ifdef HAVE_WINDOWS_H
+    HANDLE *pSharedProcessHandles;
+#else
+    int *pSharedProcessIDs;
+    int *pSharedProcessFileDescriptors;
+#endif
+#endif
+    void *addr, *my_curr_addr;
+#ifdef HAVE_SHMGET
+    int key;
+    int id;
+#elif defined (HAVE_MAPVIEWOFFILE)
+    char key[MAX_PATH];
+    HANDLE id;
+#else
+#error *** No shared memory mapping variables specified ***
+#endif
+    unsigned int size, my_rem_size;
+#ifdef USE_GARBAGE_COLLECTING
+    int gc_count;
+    MPIDU_Process_lock_t gc_lock;     /* lock for garbage collection counter */
+#endif
+    MPIDU_Process_lock_t addr_lock;   /* lock for local (remaining) shared memory pool size */
+
+#if 0
+    MPIDU_Queue_ptr recv_queues;  /* array of recv queues of all processes that share memory */
+    MPIDU_Queue active_queue;     /* queue of active rendezvous requests that MPID_SHM_Test must cause progress on */
+#endif
+
+    MPIDI_Shm_list *free_list;
+#ifdef USE_GARBAGE_COLLECTING
+    MPIDI_Shm_list *inuse_list;
+#endif
+    int nShmWaitSpinCount;
 }
 MPIDI_CH3I_Process_t;
 
@@ -107,66 +193,9 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->shm.sendq_head == NULL)
 
-/* global variables */
-extern void *MPIDI_Shm_addr, *MPIDI_Shm_my_curr_addr;
-#ifdef HAVE_SHMGET
-extern int MPIDI_Shm_key;
-extern int MPIDI_Shm_id;
-#elif defined (HAVE_MAPVIEWOFFILE)
-extern char MPIDI_Shm_key[MAX_PATH];
-extern HANDLE MPIDI_Shm_id;
-#else
-#error You must have some shared memory variables
-#endif
-extern unsigned int MPIDI_Shm_size, MPIDI_Shm_my_rem_size;
-#ifdef USE_GARBAGE_COLLECTING
-extern int MPIDI_Shm_gc_count;
-extern MPIDU_Process_lock_t MPIDI_Shm_gc_lock;     /* lock for garbage collection counter */
-#endif
-extern int MPIDI_bUseShm;
-extern int g_nShmWaitSpinCount;
-
-extern MPIDU_Process_lock_t MPIDI_Shm_addr_lock;   /* lock for local shared memory pool size (remaining) */
-
-#if 0
-extern MPIDU_Queue *MPIDI_Shm_recv_queues;  /* array of recv queues of all  
-                                               processes that share memory */
-
-extern MPIDU_Queue MPIDI_Shm_active_queue;  /* queue of active rendezvous requests that
-                                               MPID_SHM_Test must cause progress on */
-#endif
-
-#ifdef USE_GARBAGE_COLLECTING
-typedef struct MPIDI_Shm_mem_obj_hdr_st {
-    struct MPIDI_Shm_mem_obj_hdr_st *next;
-    int inuse;
-} MPIDI_Shm_mem_obj_hdr;
-#else
-typedef struct MPIDI_Shm_mem_obj_hdr_st {
-    struct MPIDI_Shm_mem_obj_hdr_st *next;
-    int index;
-} MPIDI_Shm_mem_obj_hdr;
-#endif
-
-typedef struct {
-    unsigned int size;
-    MPIDU_Process_lock_t thr_lock;
-    int count;
-    int max_count;
-    MPIDI_Shm_mem_obj_hdr *ptr;
-} MPIDI_Shm_list;
-
-extern MPIDI_Shm_list *MPIDI_Shm_free_list;
-#ifdef USE_GARBAGE_COLLECTING
-extern MPIDI_Shm_list *MPIDI_Shm_inuse_list;
-#endif
-
-#define MPIDI_SHM_SHORT_LIMIT MPIDI_SHORT_MSG_LIMIT
 #define MPIDI_SHM_EAGER_LIMIT 10240
-extern int g_nShmEagerLimit;
 #ifdef HAVE_SHARED_PROCESS_READ
 #define MPIDI_SHM_RNDV_LIMIT 10240
-extern int g_nShmRndvLimit;
 #endif
 
 #define MPIDI_SHM_GC_COUNT_MAX 10
