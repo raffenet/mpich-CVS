@@ -6,13 +6,14 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Simple intercomm broadcast test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0;
+    int errs = 0, err;
     int *buf = 0;
     int leftGroup, i, count, rank;
     MPI_Comm comm;
@@ -30,14 +31,34 @@ int main( int argc, char *argv[] )
 		if (rank == 0) {
 		    for (i=0; i<count; i++) buf[i] = i;
 		}
-		MPI_Bcast( buf, count, datatype, 
-			   rank == 0 ? MPI_ROOT : MPI_PROC_NULL,
-			   comm );
+		else {
+		    for (i=0; i<count; i++) buf[i] = -1;
+		}
+		err = MPI_Bcast( buf, count, datatype, 
+				 (rank == 0) ? MPI_ROOT : MPI_PROC_NULL,
+				 comm );
+		if (err) {
+		    errs++;
+		    MTestPrintError( err );
+		}
+		/* Test that no other process in this group received the 
+		   broadcast */
+		if (rank != 0) {
+		    for (i=0; i<count; i++) {
+			if (buf[i] != -1) {
+			    errs++;
+			}
+		    }
+		}
 	    }
 	    else {
 		/* In the right group */
 		for (i=0; i<count; i++) buf[i] = -1;
-		MPI_Bcast( buf, count, datatype, 0, comm );
+		err = MPI_Bcast( buf, count, datatype, 0, comm );
+		if (err) {
+		    errs++;
+		    MTestPrintError( err );
+		}
 		/* Check that we have received the correct data */
 		for (i=0; i<count; i++) {
 		    if (buf[i] != i) {
