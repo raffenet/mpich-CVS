@@ -730,7 +730,7 @@ int smpd_handle_result(smpd_context_t *context)
 					smpd_exit_fn("smpd_handle_result");
 					return SMPD_FAIL;
 				    }
-				    smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+				    smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_stdin_thread, (void*)hWrite, 0, &dwThreadID);
 				    if (smpd_process.hStdinThread == NULL)
 				    {
 					smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
@@ -2334,6 +2334,7 @@ int smpd_handle_init_command(smpd_context_t *context)
     char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
     char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
     char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
+    char fail_str[SMPD_MAX_DBS_VALUE_LEN+1] = "";
     char ctx_key[100];
     char *result_str;
     int rank, size, node_id;
@@ -2377,7 +2378,10 @@ int smpd_handle_init_command(smpd_context_t *context)
     /* do init stuff */
     if ((get_name_key_value(cmd->cmd, name, key, value) != SMPD_SUCCESS) || (MPIU_Str_get_int_arg(cmd->cmd, "node_id", &node_id) != MPIU_STR_SUCCESS))
     {
-	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");
+	snprintf(fail_str, SMPD_MAX_DBS_VALUE_LEN, SMPD_FAIL_STR" - invalid init command, name = %s, key = %s, value = %s, node_id = %d.",
+	    name, key, value, node_id);
+	result = smpd_add_command_arg(temp_cmd, "result", fail_str);
+	/*result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");*/
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);
@@ -2400,7 +2404,9 @@ int smpd_handle_init_command(smpd_context_t *context)
     size = atoi(value);
     if (rank < 0 || size < 1)
     {
-	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");
+	snprintf(fail_str, SMPD_MAX_DBS_VALUE_LEN, SMPD_FAIL_STR" - invalid init command, rank = %d, size = %d.", rank, size);
+	result = smpd_add_command_arg(temp_cmd, "result", fail_str);
+	/*result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");*/
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);

@@ -215,8 +215,11 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_INVALID,
     SMPD_CONTEXT_STDIN,
     SMPD_CONTEXT_MPIEXEC_STDIN,
+    SMPD_CONTEXT_MPIEXEC_STDIN_RSH,
     SMPD_CONTEXT_STDOUT,
+    SMPD_CONTEXT_STDOUT_RSH,
     SMPD_CONTEXT_STDERR,
+    SMPD_CONTEXT_STDERR_RSH,
     SMPD_CONTEXT_PARENT,
     SMPD_CONTEXT_LEFT_CHILD,
     SMPD_CONTEXT_RIGHT_CHILD,
@@ -527,6 +530,9 @@ typedef struct smpd_global_t
     int abort_exit_code;
     SMPD_BOOL verbose_abort_output;
     int mpiexec_exit_code;
+    SMPD_BOOL map0to1;
+    SMPD_BOOL rsh_mpiexec;
+    SMPD_BOOL mpiexec_inorder_launch;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -619,7 +625,7 @@ int smpd_start_win_mgr(smpd_context_t *context);
 int smpd_start_unx_mgr(smpd_context_t *context);
 #endif
 #ifdef HAVE_WINDOWS_H
-void StdinThread(SOCKET hWrite);
+void smpd_stdin_thread(SOCKET hWrite);
 #endif
 int smpd_handle_command(smpd_context_t *context);
 int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
@@ -677,5 +683,6 @@ int smpd_kill_process(smpd_process_t *process, int exit_code);
 int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str);
 int smpd_watch_processes();
 int smpd_get_hostname(char *host, int length);
+int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port);
 
 #endif

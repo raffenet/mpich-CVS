@@ -19,7 +19,7 @@ static void get_uuid(char *str)
     CFStringRef     myUUIDString;
     char            strBuffer[100];
     myUUID = CFUUIDCreate(kCFAllocatorDefault);
-    myUUIDString = CFUUIDCreateString(kCFAllocatorDefault, myUUID);// This is the safest way to obtain a C string from a CFString.
+    myUUIDString = CFUUIDCreateString(kCFAllocatorDefault, myUUID);/* This is the safest way to obtain a C string from a CFString.*/
     CFStringGetCString(myUUIDString, str, SMPD_MAX_DBS_NAME_LEN, kCFStringEncodingASCII);
     CFRelease(myUUIDString);
 #elif defined(HAVE_UUID_GENERATE)
@@ -131,6 +131,15 @@ int smpd_dbs_create(char *name)
 	smpd_process.nNextAvailableDBSID++;
 	*/
 	get_uuid(pNode->pszName);
+	if (pNode->pszName[0] == '\0')
+	{
+#ifdef USE_WIN_MUTEX_PROTECT
+	    /* Unlock */
+	    ReleaseMutex(smpd_process.hDBSMutex);
+#endif
+	    smpd_exit_fn("smpd_dbs_create");
+	    return SMPD_DBS_FAIL;
+	}
 	pNodeTest = smpd_process.pDatabase;
 	while (strcmp(pNodeTest->pszName, pNode->pszName) != 0)
 	    pNodeTest = pNodeTest->pNext;

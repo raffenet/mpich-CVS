@@ -8,14 +8,14 @@
 #include "crypt.h"
 
 #ifdef HAVE_WINDOWS_H
-void StdinThread(SOCKET hWrite)
+void smpd_stdin_thread(SOCKET hWrite)
 {
     DWORD len;
     char str[SMPD_MAX_CMD_LENGTH];
     HANDLE h[2];
     int result;
 
-    smpd_dbg_printf("StdinThread started.\n");
+    smpd_dbg_printf("smpd_stdin_thread started.\n");
     h[0] = GetStdHandle(STD_INPUT_HANDLE);
     if (h[0] == NULL)
     {
@@ -511,6 +511,43 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	    return SMPD_FAIL;
 	}
     }
+    else if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
+    {
+	MPIU_Size_t total, num_written;
+	smpd_dbg_printf("read from %s\n", smpd_get_context_str(context));
+
+	/* one byte read, attempt to read up to the buffer size */
+	result = MPIDU_Sock_read(context->sock, &context->read_cmd.cmd[1], SMPD_STDIN_PACKET_SIZE-1, &num_read);
+	if (result != MPI_SUCCESS)
+	{
+	    num_read = 0;
+	    smpd_dbg_printf("MPIDU_Sock_read(%d) failed (%s), assuming %s is closed.\n",
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
+	}
+	smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
+
+	/* write stdin to root rsh process */
+	total = num_read+1;
+	while (total > 0)
+	{
+	    result = MPIDU_Sock_write(context->process->in->sock, context->read_cmd.cmd, total, &num_written);
+	    if (result != MPI_SUCCESS)
+	    {
+		num_read = 0;
+		total = 0;
+		smpd_dbg_printf("MPIDU_Sock_write(%d) failed (%s), assuming %s is closed.\n",
+		    MPIDU_Sock_get_sock_id(context->process->in->sock), get_sock_error_string(result), smpd_get_context_str(context));
+	    }
+	    else
+	    {
+		total = total - num_written;
+		if (num_written == 0)
+		{
+		    /* FIXME: what does 0 bytes written mean? */
+		}
+	    }
+	}
+    }
     else
     {
 	if (context->read_cmd.stdin_read_offset == SMPD_STDIN_PACKET_SIZE ||
@@ -692,42 +729,66 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
 	    MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
     }
     smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
-    smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
-    buffer[num_encoded*2] = '\0';
-    /*smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);*/
+    if (context->type == SMPD_CONTEXT_STDOUT_RSH || context->type == SMPD_CONTEXT_STDERR_RSH)
+    {
+	size_t total;
+	size_t num_written;
 
-    /* create an output command */
-    result = smpd_create_command(
-	smpd_get_context_str(context),
-	smpd_process.id, 0 /* output always goes to node 0? */, SMPD_FALSE, &cmd_ptr);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to create an output command.\n");
-	smpd_exit_fn("smpd_state_reading_stdouterr");
-	return SMPD_FAIL;
+	total = num_read;
+	while (total > 0)
+	{
+	    num_written = fwrite(context->read_cmd.cmd, 1, total, context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr);
+	    if (num_written < 1)
+	    {
+		num_read = 0;
+		total = 0;
+		smpd_dbg_printf("fwrite failed: error %d\n", ferror(context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr));
+	    }
+	    else
+	    {
+		total = total - num_written;
+	    }
+	}
     }
-    result = smpd_add_command_int_arg(cmd_ptr, "rank", context->rank);
-    if (result != SMPD_SUCCESS)
+    else
     {
-	smpd_err_printf("unable to add the rank to the %s command.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_state_reading_stdouterr");
-	return SMPD_FAIL;
-    }
-    result = smpd_add_command_arg(cmd_ptr, "data", buffer);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to add the data to the %s command.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_state_reading_stdouterr");
-	return SMPD_FAIL;
-    }
+	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
+	buffer[num_encoded*2] = '\0';
+	/*smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);*/
 
-    /* send the stdout command */
-    result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to post a write of the %s command.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_state_reading_stdouterr");
-	return SMPD_FAIL;
+	/* create an output command */
+	result = smpd_create_command(
+	    smpd_get_context_str(context),
+	    smpd_process.id, 0 /* output always goes to node 0? */, SMPD_FALSE, &cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create an output command.\n");
+	    smpd_exit_fn("smpd_state_reading_stdouterr");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_int_arg(cmd_ptr, "rank", context->rank);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the rank to the %s command.\n", smpd_get_context_str(context));
+	    smpd_exit_fn("smpd_state_reading_stdouterr");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(cmd_ptr, "data", buffer);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the data to the %s command.\n", smpd_get_context_str(context));
+	    smpd_exit_fn("smpd_state_reading_stdouterr");
+	    return SMPD_FAIL;
+	}
+
+	/* send the stdout command */
+	result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the %s command.\n", smpd_get_context_str(context));
+	    smpd_exit_fn("smpd_state_reading_stdouterr");
+	    return SMPD_FAIL;
+	}
     }
 
     /* post a read for the next byte of data */
@@ -2765,7 +2826,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    smpd_exit_fn("smpd_state_writing_session_header");
 	    return SMPD_FAIL;
 	}
-	smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+	smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_stdin_thread, (void*)hWrite, 0, &dwThreadID);
 	if (smpd_process.hStdinThread == NULL)
 	{
 	    smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
@@ -3528,6 +3589,103 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 		}
 	    }
 	}
+	else if (context->process && (context->type == SMPD_CONTEXT_STDOUT_RSH || context->type == SMPD_CONTEXT_STDERR_RSH))
+	{
+	    context->process->context_refcount--;
+	    if (context->process->context_refcount < 1)
+	    {
+		smpd_process_t *trailer, *iter;
+
+		smpd_dbg_printf("process refcount == %d, waiting for the process to finish exiting.\n", context->process->context_refcount);
+		/*printf("process refcount == %d, waiting for the process to finish exiting.\n", context->process->context_refcount);fflush(stdout);*/
+
+#ifdef HAVE_WINDOWS_H
+		smpd_process_from_registry(context->process);
+#endif
+		result = smpd_wait_process(context->process->wait, &context->process->exitcode);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to wait for the process to exit: '%s'\n", context->process->exe);
+		    smpd_exit_fn("smpd_handle_op_close");
+		    return SMPD_FAIL;
+		}
+
+		/* remove the process structure from the global list */
+		trailer = iter = smpd_process.process_list;
+		while (iter)
+		{
+		    if (context->process == iter)
+		    {
+			if (iter == smpd_process.process_list)
+			{
+			    smpd_process.process_list = smpd_process.process_list->next;
+			}
+			else
+			{
+			    trailer->next = iter->next;
+			}
+			/* NULL the context pointer just to be sure no one uses it after it is freed. */
+			switch (context->type)
+			{
+			case SMPD_CONTEXT_STDIN:
+			    context->process->in = NULL;
+			    break;
+			case SMPD_CONTEXT_STDOUT_RSH:
+			    context->process->out = NULL;
+			    break;
+			case SMPD_CONTEXT_STDERR_RSH:
+			    context->process->err = NULL;
+			    break;
+			case SMPD_CONTEXT_PMI:
+			    context->process->pmi = NULL;
+			    break;
+			}
+			/* free the process structure */
+			smpd_free_process_struct(iter);
+			context->process = NULL;
+			iter = NULL;
+		    }
+		    else
+		    {
+			if (trailer != iter)
+			    trailer = trailer->next;
+			iter = iter->next;
+		    }
+		}
+
+		smpd_process.nproc_exited++;
+		/*printf("nproc_exited = %d\n", smpd_process.nproc_exited);fflush(stdout);*/
+		if (smpd_process.nproc_exited >= smpd_process.nproc)
+		{
+		    /*smpd_free_context(context);*/
+		    smpd_dbg_printf("process exited and all contexts closed, exiting state machine.\n");
+		    /*printf("process exited and all contexts closed, exiting state machine.\n");fflush(stdout);*/
+		    smpd_exit_fn("smpd_handle_op_close");
+		    return SMPD_EXIT;
+		}
+	    }
+	    else
+	    {
+		smpd_dbg_printf("process refcount == %d, %s closing.\n", context->process->context_refcount, smpd_get_context_str(context));
+		/* NULL the context pointer just to be sure no one uses it after it is freed. */
+		switch (context->type)
+		{
+		case SMPD_CONTEXT_STDIN:
+		    context->process->in = NULL;
+		    break;
+		case SMPD_CONTEXT_STDOUT_RSH:
+		    context->process->out = NULL;
+		    break;
+		case SMPD_CONTEXT_STDERR_RSH:
+		    context->process->err = NULL;
+		    break;
+		case SMPD_CONTEXT_PMI:
+		    context->process->pmi = NULL;
+		    break;
+		}
+	    }
+	    break;
+	}
 	else
 	{
 	    smpd_dbg_printf("Unaffiliated %s context closing.\n", smpd_get_context_str(context));
@@ -3584,8 +3742,8 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	}
 	break;
     default:
-	smpd_err_printf("sock_op_close returned while context is in state: %s\n",
-	    smpd_get_state_string(context->state));
+	smpd_err_printf("sock_op_close returned while %s context is in state: %s\n",
+	    smpd_get_context_str(context), smpd_get_state_string(context->state));
 	break;
     }
     /* free the context */
@@ -3647,9 +3805,9 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    /* don't print errors from the pmi context because processes that don't 
 		       call PMI_Finalize will get read errors that don't need to be printed.
 		       */
-		    if (context->type != SMPD_CONTEXT_PMI)
+		    if (context->type != SMPD_CONTEXT_PMI && context->type != SMPD_CONTEXT_STDOUT_RSH && context->type != SMPD_CONTEXT_STDERR_RSH && context->type != SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
 		    {
-			smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+			smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
 		    }
 		}
 	    }
@@ -3701,7 +3859,7 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    smpd_dbg_printf("SOCK_OP_WRITE\n");
 	    if (event.error != MPI_SUCCESS)
 	    {
-		smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+		smpd_err_printf("op_write error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
 	    }
 	    result = smpd_handle_op_write(context, &event, set);
 	    if (result == SMPD_DBS_RETURN)
@@ -3766,7 +3924,9 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	case MPIDU_SOCK_OP_CONNECT:
 	    smpd_dbg_printf("SOCK_OP_CONNECT\n");
 	    if (event.error != MPI_SUCCESS)
-		smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+	    {
+		smpd_err_printf("op_connect error: %s\n", get_sock_error_string(event.error));
+	    }
 	    result = smpd_handle_op_connect(context, &event);
 	    if (result == SMPD_DBS_RETURN)
 	    {

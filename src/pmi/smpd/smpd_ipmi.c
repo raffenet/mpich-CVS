@@ -10,6 +10,8 @@
 
 /* pmiimpl.h */
 
+static int root_smpd(void *p);
+
 /* Define to prevent an smpd root thread or process from being created when there is only one process. */
 /* Currently, defining this prevents the use of the spawn command. */
 /*#define SINGLE_PROCESS_OPTIMIZATION*/
@@ -52,8 +54,6 @@ typedef struct pmi_process_t
     char host[100];
     int port;
 } pmi_process_t;
-
-static int root_smpd(void *p);
 
 /* global variables */
 static pmi_process_t pmi_process =
@@ -134,11 +134,11 @@ static int pmi_create_post_command(const char *command, const char *name, const 
 	    /* done commands go to the immediate smpd, not the root */
 	    dest = pmi_process.smpd_id;
 	}
-	if ((strcmp(command, "init") == 0) || (strcmp(command, "finalize") == 0))
-	{
-	    add_id = 1;
-	    dest = 0;
-	}
+    }
+    if ((strcmp(command, "init") == 0) || (strcmp(command, "finalize") == 0))
+    {
+	add_id = 1;
+	dest = 0;
     }
 
     result = smpd_create_command((char*)command, pmi_process.smpd_id, dest, SMPD_TRUE, &cmd_ptr);
@@ -386,6 +386,8 @@ static int rPMI_Init(int *spawned)
 {
     char *p;
     int result;
+    char rank_str[100], size_str[100];
+    char str[1024];
 
     if (spawned == NULL)
 	return PMI_ERR_INVALID_ARG;
@@ -609,12 +611,35 @@ static int rPMI_Init(int *spawned)
 
     pmi_process.init_finalized = PMI_INITIALIZED;
 
+    sprintf(rank_str, "%d", pmi_process.iproc);
+    sprintf(size_str, "%d", pmi_process.nproc);
+    result = pmi_create_post_command("init", pmi_process.kvs_name, rank_str, size_str);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: unable to create an init command.\n");
+	return PMI_FAIL;
+    }
+
+    /* parse the result of the command */
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: no result string in the result command.\n");
+	return PMI_FAIL;
+    }
+    if (strcmp(str, SMPD_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_Init failed: %s\n", str);
+	return PMI_FAIL;
+    }
+
     return PMI_SUCCESS;
 }
 
 static int rPMI_Finalize()
 {
     int result;
+    char rank_str[100];
+    char str[1024];
 #ifndef HAVE_WINDOWS_H
     int status;
 #endif
@@ -627,6 +652,26 @@ static int rPMI_Finalize()
 	smpd_dbs_finalize();
 	pmi_process.init_finalized = PMI_FINALIZED;
 	return PMI_SUCCESS;
+    }
+
+    sprintf(rank_str, "%d", pmi_process.iproc);
+    result = pmi_create_post_command("finalize", pmi_process.kvs_name, rank_str, NULL);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Finalize failed: unable to create an finalize command.\n");
+	return PMI_FAIL;
+    }
+
+    /* parse the result of the command */
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
+    {
+	pmi_err_printf("PMI_Finalize failed: no result string in the result command.\n");
+	return PMI_FAIL;
+    }
+    if (strcmp(str, SMPD_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_Finalize failed: %s\n", str);
+	return PMI_FAIL;
     }
 
     if (pmi_process.iproc == 0)
@@ -2092,14 +2137,82 @@ int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     return PMI_SUCCESS;
 }
 
+int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port)
+{
+#ifdef HAVE_WINDOWS_H
+    DWORD dwLength = len;
+#else
+    int pipe_fd[2];
+    int result;
+#endif
+
+    pmi_process.nproc = nproc;
+
+#ifdef HAVE_WINDOWS_H
+    pmi_process.hRootThreadReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (pmi_process.hRootThreadReadyEvent == NULL)
+    {
+	pmi_err_printf("unable to create the root listener synchronization event, error: %d\n", GetLastError());
+	return PMI_FAIL;
+    }
+    pmi_process.hRootThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)root_smpd, NULL, 0, NULL);
+    if (pmi_process.hRootThread == NULL)
+    {
+	pmi_err_printf("unable to create the root listener thread: error %d\n", GetLastError());
+	return PMI_FAIL;
+    }
+    if (WaitForSingleObject(pmi_process.hRootThreadReadyEvent, 60000) != WAIT_OBJECT_0)
+    {
+	pmi_err_printf("the root process thread failed to initialize.\n");
+	return PMI_FAIL;
+    }
+    GetComputerName(host, &dwLength);
+#else
+    pipe(pipe_fd);
+    result = fork();
+    if (result == -1)
+    {
+	pmi_err_printf("unable to fork the root listener, errno %d\n", errno);
+	return PMI_FAIL;
+    }
+    if (result == 0)
+    {
+	close(pipe_fd[0]); /* close the read end of the pipe */
+	root_smpd(&pipe_fd[1]);
+	exit(0);
+    }
+
+    /* close the write end of the pipe */
+    close(pipe_fd[1]);
+    /* read the port from the root_smpd process */
+    read(pipe_fd[0], &pmi_process.root_port, sizeof(int));
+    /* read the kvs name */
+    read(pipe_fd[0], smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    /* close the read end of the pipe */
+    close(pipe_fd[0]);
+    pmi_process.root_pid = result;
+    gethostname(host, len);
+#endif
+
+    *port = pmi_process.root_port;
+
+    return PMI_SUCCESS;
+}
+
 static int root_smpd(void *p)
 {
     int result;
     MPIDU_Sock_set_t set;
     MPIDU_Sock_t listener;
+    smpd_process_group_t *pg;
+    int i;
+#ifndef HAVE_WINDOWS_H
+    int send_kvs = 0;
+#endif
 
     smpd_process.id = 1;
     smpd_process.root_smpd = SMPD_FALSE;
+    smpd_process.map0to1 = SMPD_TRUE;
 
     result = MPIDU_Sock_create_set(&set);
     if (result != MPI_SUCCESS)
@@ -2133,21 +2246,78 @@ static int root_smpd(void *p)
 
     smpd_dbs_init();
     smpd_process.have_dbs = SMPD_TRUE;
-    result = smpd_dbs_create_name_in(smpd_process.kvs_name);
+    if (smpd_process.kvs_name[0] != '\0')
+    {
+	result = smpd_dbs_create_name_in(smpd_process.kvs_name);
+    }
+    else
+    {
+	result = smpd_dbs_create(smpd_process.kvs_name);
+#ifndef HAVE_WINDOWS_H
+	send_kvs = 1;
+#endif
+    }
     if (result != SMPD_DBS_SUCCESS)
     {
 	pmi_err_printf("unable to create a kvs database: name = <%s>.\n", smpd_process.kvs_name);
 	return PMI_FAIL;
     }
 
+    /* Set up the process group */
+    /* initialize a new process group structure */
+    pg = (smpd_process_group_t*)malloc(sizeof(smpd_process_group_t));
+    if (pg == NULL)
+    {
+	pmi_err_printf("unable to allocate memory for a process group structure.\n");
+	return PMI_FAIL;
+    }
+    pg->aborted = SMPD_FALSE;
+    pg->any_init_received = SMPD_FALSE;
+    pg->any_noinit_process_exited = SMPD_FALSE;
+    strncpy(pg->kvs, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    pg->num_procs = pmi_process.nproc;
+    pg->processes = (smpd_exit_process_t*)malloc(pmi_process.nproc * sizeof(smpd_exit_process_t));
+    if (pg->processes == NULL)
+    {
+	pmi_err_printf("unable to allocate an array of %d process exit structures.\n", pmi_process.nproc);
+	return PMI_FAIL;
+    }
+    for (i=0; i<pmi_process.nproc; i++)
+    {
+	pg->processes[i].ctx_key[0] = '\0';
+	pg->processes[i].errmsg = NULL;
+	pg->processes[i].exitcode = -1;
+	pg->processes[i].exited = SMPD_FALSE;
+	pg->processes[i].finalize_called = SMPD_FALSE;
+	pg->processes[i].init_called = SMPD_FALSE;
+	pg->processes[i].node_id = i+1;
+	pg->processes[i].host[0] = '\0';
+	pg->processes[i].suspended = SMPD_FALSE;
+	pg->processes[i].suspend_cmd = NULL;
+    }
+    /* add the process group to the global list */
+    pg->next = smpd_process.pg_list;
+    smpd_process.pg_list = pg;
+
 #ifdef HAVE_WINDOWS_H
     SetEvent(pmi_process.hRootThreadReadyEvent);
+#else
+    if (p != NULL)
+    {
+	/* send the root port back over the pipe */
+	write(*(int*)p, &pmi_process.root_port, sizeof(int));
+	if (send_kvs)
+	{
+	    write(*(int*)p, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
+	}  
+	close(*(int*)p);
+    }
 #endif
 
     result = smpd_enter_at_state(set, SMPD_SMPD_LISTENING);
     if (result != SMPD_SUCCESS)
     {
-	pmi_err_printf("state machine failed.\n");
+	pmi_err_printf("root_smpd state machine failed.\n");
 	return PMI_FAIL;
     }
 

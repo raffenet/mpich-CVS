@@ -15,5 +15,6 @@
 
 int mp_parse_command_args(int *argcp, char **argvp[]);
 void mp_print_options(void);
+int mpiexec_rsh(void);
 
 #endif

@@ -604,6 +604,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
     }
+    if (process->pmi != NULL)
+    {
     if (smpd_process.use_inherited_handles)
     {
 	if (nError = smpd_make_socket_loop(&hSockPmiR, &hSockPmiW))
@@ -646,6 +648,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	/* save the listener sock in the slot reserved for the client sock so we can match the listener
 	to the process structure when the client sock is accepted */
 	process->pmi->sock = sock_pmi_listener;
+    }
     }
 
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -702,7 +705,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (smpd_process.use_inherited_handles)
+    if (process->pmi != NULL && smpd_process.use_inherited_handles)
     {
 	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockPmiR, GetCurrentProcess(), (LPHANDLE)&hSockPmiR, 
 	    0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
@@ -800,6 +803,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     saInfo.dwFlags = STARTF_USESTDHANDLES;
 
     SetEnvironmentVariables(process->env);
+    if (process->pmi != NULL)
+    {
     sprintf(str, "%d", process->rank);
     smpd_dbg_printf("env: PMI_RANK=%s\n", str);
     SetEnvironmentVariable("PMI_RANK", str);
@@ -842,6 +847,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     sprintf(str, "%d", process->spawned);
     smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
     SetEnvironmentVariable("PMI_SPAWN", str);
+    }
     pEnv = GetEnvironmentStrings();
 
     GetCurrentDirectory(MAX_PATH, tSavedPath);
@@ -879,6 +885,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     FreeEnvironmentStrings((TCHAR*)pEnv);
     SetCurrentDirectory(tSavedPath);
     RemoveEnvironmentVariables(process->env);
+    if (process->pmi != NULL)
+    {
     SetEnvironmentVariable("PMI_RANK", NULL);
     SetEnvironmentVariable("PMI_SIZE", NULL);
     SetEnvironmentVariable("PMI_KVS", NULL);
@@ -895,6 +903,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetEnvironmentVariable("PMI_SMPD_ID", NULL);
     SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
     SetEnvironmentVariable("PMI_SPAWN", NULL);
+    }
 
     if (bSuccess)
     {
@@ -914,7 +923,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	{
 	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	{
 	    nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
 	    if (nError != MPI_SUCCESS)
@@ -926,13 +935,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	process->in->sock = sock_in;
 	process->out->sock = sock_out;
 	process->err->sock = sock_err;
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	    process->pmi->sock = sock_pmi;
 	process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
 	MPIDU_Sock_set_user_ptr(sock_in, process->in);
 	MPIDU_Sock_set_user_ptr(sock_out, process->out);
 	MPIDU_Sock_set_user_ptr(sock_err, process->err);
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	    MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
     }
     else
@@ -941,7 +950,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	CloseHandle(hIn);
 	CloseHandle((HANDLE)hSockStdoutR);
 	CloseHandle((HANDLE)hSockStderrR);
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	    CloseHandle((HANDLE)hSockPmiR);
     }
 
@@ -959,7 +968,7 @@ CLEANUP:
     */
     CloseHandle((HANDLE)hPipeStdoutW);
     CloseHandle((HANDLE)hPipeStderrW);
-    if (smpd_process.use_inherited_handles)
+    if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	CloseHandle((HANDLE)hSockPmiW);
 
     if (psInfo.hProcess != INVALID_HANDLE_VALUE)
@@ -978,7 +987,7 @@ CLEANUP:
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	    process->context_refcount = 3;
 	else
 	    process->context_refcount = 2;
@@ -1000,7 +1009,7 @@ CLEANUP:
 	    smpd_exit_fn("smpd_launch_process");
 	    return SMPD_FAIL;
 	}
-	if (smpd_process.use_inherited_handles)
+	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	{
 	    result = smpd_post_read_command(process->pmi);
 	    if (result != SMPD_SUCCESS)
@@ -1197,7 +1206,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     socketpair(AF_UNIX, SOCK_STREAM, 0, stdin_pipe_fds);
     socketpair(AF_UNIX, SOCK_STREAM, 0, stdout_pipe_fds);
     socketpair(AF_UNIX, SOCK_STREAM, 0, stderr_pipe_fds);
-    socketpair(AF_UNIX, SOCK_STREAM, 0, pmi_pipe_fds);
+    if (process->pmi != NULL)
+    {
+	socketpair(AF_UNIX, SOCK_STREAM, 0, pmi_pipe_fds);
+    }
 
     pid = fork();
     if (pid < 0)
@@ -1212,6 +1224,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	/* child process */
 	smpd_dbg_printf("client is alive and about to exec '%s'\n", argv[0]);
 
+	if (process->pmi != NULL)
+	{
 	sprintf(str, "%d", process->rank);
 	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
 	setenv("PMI_RANK", str, 1);
@@ -1236,7 +1250,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	sprintf(str, "%d", process->spawned);
 	smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
 	setenv("PMI_SPAWN", str, 1);
-
+	}
 	set_environment_variables(process->env);
 
 	result = dup2(stdin_pipe_fds[0], 0);   /* dup a new stdin */
@@ -1263,7 +1277,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	close(stderr_pipe_fds[0]);
 	close(stderr_pipe_fds[1]);
 
-	close(pmi_pipe_fds[0]); /* close the other end */
+	if (process->pmi != NULL)
+	{
+	    close(pmi_pipe_fds[0]); /* close the other end */
+	}
 
 	/* change the working directory */
 	result = -1;
@@ -1282,6 +1299,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 		result, strerror(result));
 	sprintf(process->err_msg, "Error %d - %s", result, strerror(result));
 
+	if (process->pmi != NULL)
+	{
 	/* create the result command */
 	result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
 	if (result != SMPD_SUCCESS)
@@ -1322,6 +1341,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	}
 
 	/* send a closed message on the pmi socket? */
+	}
 
 	exit(result);
     }
@@ -1331,7 +1351,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     close(stdin_pipe_fds[0]);
     close(stdout_pipe_fds[1]);
     close(stderr_pipe_fds[1]);
-    close(pmi_pipe_fds[1]);
+    if (process->pmi != NULL)
+    {
+	close(pmi_pipe_fds[1]);
+    }
 
     /* make sock structures out of the sockets */
     result = MPIDU_Sock_native_to_sock(set, stdin_pipe_fds[1], NULL, &sock_in);
@@ -1349,15 +1372,21 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
+    if (process->pmi != NULL)
+    {
     result = MPIDU_Sock_native_to_sock(set, pmi_pipe_fds[0], NULL, &sock_pmi);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
+    }
     process->in->sock = sock_in;
     process->out->sock = sock_out;
     process->err->sock = sock_err;
-    process->pmi->sock = sock_pmi;
+    if (process->pmi != NULL)
+    {
+	process->pmi->sock = sock_pmi;
+    }
     process->pid = process->in->id = process->out->id = process->err->id = pid;
     result = MPIDU_Sock_set_user_ptr(sock_in, process->in);
     if (result != MPI_SUCCESS)
@@ -1374,13 +1403,16 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
+    if (process->pmi != NULL)
+    {
     result = MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
+    }
 
-    process->context_refcount = 3;
+    process->context_refcount = (process->pmi != NULL) ? 3 : 2;
     process->out->read_state = SMPD_READING_STDOUT;
     result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, 1, NULL);
     if (result != MPI_SUCCESS)
@@ -1399,12 +1431,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;
     }
+    if (process->pmi != NULL)
+    {
     result = smpd_post_read_command(process->pmi);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a read of the first command on the pmi control context.\n");
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;
+    }
     }
     process->wait = process->in->wait = process->out->wait = process->err->wait = pid;
 
@@ -1522,7 +1557,7 @@ static BOOL SafeTerminateProcess(HANDLE hProcess, UINT uExitCode)
 		// This relies on the probability that Kernel32.dll is mapped to the same place on all processes
 		// If it gets relocated, this function will produce spurious results
 		(LPTHREAD_START_ROUTINE)pfnExitProc,
-		(LPVOID)uExitCode, 0, &dwTID);
+		UintToPtr(uExitCode)/*(LPVOID)uExitCode*/, 0, &dwTID);
 	}
 	
 	if (hRT == NULL)
@@ -1593,7 +1628,19 @@ int smpd_kill_all_processes(void)
     while (iter)
     {
 #ifdef HAVE_WINDOWS_H
+	/*DWORD dwProcessId;*/
 	smpd_process_from_registry(iter);
+	/* For some reason break signals don't work on processes created by smpd_launch_process
+	printf("ctrl-c process: %s\n", iter->exe);fflush(stdout);
+	dwProcessId = GetProcessId(iter->wait.hProcess);
+	GenerateConsoleCtrlEvent(CTRL_C_EVENT, dwProcessId);
+	if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	{
+	    printf("breaking process: %s\n", iter->exe);fflush(stdout);
+	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, dwProcessId);
+	if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	{
+	*/
 	if (!SafeTerminateProcess(iter->wait.hProcess, 123))
 	{
 	    if (GetLastError() != ERROR_PROCESS_ABORTED)
@@ -1601,6 +1648,10 @@ int smpd_kill_all_processes(void)
 		TerminateProcess(iter->wait.hProcess, 255);
 	    }
 	}
+	/*
+	}
+	}
+	*/
 #else
 	kill(iter->wait, /*SIGTERM*/SIGKILL);
 #endif

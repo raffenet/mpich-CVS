@@ -113,7 +113,7 @@ void mp_print_extra_options(void)
     printf("-exitcodes\n");
     printf("  print the process exit codes when each process exits.\n");
     printf("-noprompt\n");
-    printf("  prevent mpirun from prompting for user credentials.\n");
+    printf("  prevent mpiexec from prompting for user credentials.\n");
     printf("-priority class[:level]\n");
     printf("  set the process startup priority class and optionally level.\n");
     printf("  class = 0,1,2,3,4   = idle, below, normal, above, high\n");
@@ -1016,6 +1016,24 @@ configfile_loop:
 	    {
 		smpd_process.verbose_abort_output = SMPD_FALSE;
 	    }
+	    else if ((strcmp(&(*argvp)[1][1], "rsh") == 0) || (strcmp(&(*argvp)[1][1], "ssh") == 0))
+	    {
+		smpd_process.rsh_mpiexec = SMPD_TRUE;
+		if (smpd_process.mpiexec_inorder_launch == SMPD_FALSE)
+		{
+		    smpd_launch_node_t *temp_node, *ordered_list = NULL;
+		    /* sort any existing reverse order nodes to be in order */
+		    while (smpd_process.launch_list)
+		    {
+			temp_node = smpd_process.launch_list->next;
+			smpd_process.launch_list->next = ordered_list;
+			ordered_list = smpd_process.launch_list;
+			smpd_process.launch_list = temp_node;
+		    }
+		    smpd_process.launch_list = ordered_list;
+		}
+		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
@@ -1199,30 +1217,33 @@ configfile_loop:
 	    }
 	    strcpy(launch_node->exe, exe);
 	    launch_node->args[0] = '\0';
-#ifdef MPIEXEC_INORDER_LAUNCH
-	    /* insert the node in order */
-	    launch_node->next = NULL;
-	    if (smpd_process.launch_list == NULL)
+	    if (smpd_process.mpiexec_inorder_launch == SMPD_TRUE)
 	    {
-		smpd_process.launch_list = launch_node;
-		launch_node->prev = NULL;
+		/* insert the node in order */
+		launch_node->next = NULL;
+		if (smpd_process.launch_list == NULL)
+		{
+		    smpd_process.launch_list = launch_node;
+		    launch_node->prev = NULL;
+		}
+		else
+		{
+		    launch_node_iter = smpd_process.launch_list;
+		    while (launch_node_iter->next)
+			launch_node_iter = launch_node_iter->next;
+		    launch_node_iter->next = launch_node;
+		    launch_node->prev = launch_node_iter;
+		}
 	    }
 	    else
 	    {
-		launch_node_iter = smpd_process.launch_list;
-		while (launch_node_iter->next)
-		    launch_node_iter = launch_node_iter->next;
-		launch_node_iter->next = launch_node;
-		launch_node->prev = launch_node_iter;
+		/* insert the node in reverse order */
+		launch_node->next = smpd_process.launch_list;
+		if (smpd_process.launch_list)
+		    smpd_process.launch_list->prev = launch_node;
+		smpd_process.launch_list = launch_node;
+		launch_node->prev = NULL;
 	    }
-#else
-	    /* insert the node in reverse order */
-	    launch_node->next = smpd_process.launch_list;
-	    if (smpd_process.launch_list)
-		smpd_process.launch_list->prev = launch_node;
-	    smpd_process.launch_list = launch_node;
-	    launch_node->prev = NULL;
-#endif
 	}
 
 	if (smpd_process.s_host_list)

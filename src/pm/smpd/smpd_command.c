@@ -100,6 +100,13 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
 	smpd_exit_fn("smpd_command_destination");
 	return SMPD_SUCCESS;
     }
+    if (src == 1 && dest == 0 && smpd_process.map0to1)
+    {
+	*dest_context = NULL;
+	smpd_dbg_printf("%d -> %d : returning NULL context\n", src, dest);
+	smpd_exit_fn("smpd_command_destination");
+	return SMPD_SUCCESS;
+    }
 
     if (src == 0)
     {
@@ -463,9 +470,11 @@ int smpd_free_context(smpd_context_t *context)
 		context->process->in = NULL;
 		break;
 	    case SMPD_CONTEXT_STDOUT:
+	    case SMPD_CONTEXT_STDOUT_RSH:
 		context->process->out = NULL;
 		break;
 	    case SMPD_CONTEXT_STDERR:
+	    case SMPD_CONTEXT_STDERR_RSH:
 		context->process->err = NULL;
 		break;
 	    case SMPD_CONTEXT_PMI:

@@ -88,10 +88,16 @@ char * smpd_get_context_str(smpd_context_t *context)
 	return "stdin";
     case SMPD_CONTEXT_MPIEXEC_STDIN:
 	return "mpi_stdin";
+    case SMPD_CONTEXT_MPIEXEC_STDIN_RSH:
+	return "mpi_stdin_rsh";
     case SMPD_CONTEXT_STDOUT:
 	return "stdout";
+    case SMPD_CONTEXT_STDOUT_RSH:
+	return "stdout_rsh";
     case SMPD_CONTEXT_STDERR:
 	return "stderr";
+    case SMPD_CONTEXT_STDERR_RSH:
+	return "stderr_rsh";
     case SMPD_CONTEXT_PARENT:
 	return "parent";
     case SMPD_CONTEXT_LEFT_CHILD:

@@ -144,7 +144,10 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* use_abort_exit_code     */
       0,                /* abort_exit_code         */
       SMPD_TRUE,        /* verbose_abort_output    */
-      0                 /* mpiexec_exit_code       */
+      0,                /* mpiexec_exit_code       */
+      SMPD_FALSE,       /* map0to1                 */
+      SMPD_FALSE,       /* rsh_mpiexec             */
+      SMPD_FALSE        /* mpiexec_inorder_launch  */
     };
 
 int smpd_post_abort_command(char *fmt, ...)

@@ -180,6 +180,9 @@
 			<File
 				RelativePath="mpiexec.c">
 			</File>
+			<File
+				RelativePath=".\mpiexec_rsh.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

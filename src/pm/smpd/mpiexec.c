@@ -63,23 +63,6 @@ int main(int argc, char* argv[])
 	smpd_err_printf("Unable to parse the mpiexec command arguments.\n");
 	goto quit_job;
     }
-
-    /* make sure we have a passphrase to authenticate connections to the smpds */
-    if (smpd_process.passphrase[0] == '\0')
-	smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-    if (smpd_process.passphrase[0] == '\0')
-    {
-	if (smpd_process.noprompt)
-	{
-	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
-	    result = SMPD_FAIL;
-	    goto quit_job;
-	}
-	printf("Please specify an authentication passphrase for smpd: ");
-	fflush(stdout);
-	smpd_get_password(smpd_process.passphrase);
-    }
-
     /* print and see what we've got */
     /* debugging output *************/
     smpd_dbg_printf("host tree:\n");
@@ -106,6 +89,9 @@ int main(int argc, char* argv[])
     }
     /* end debug output *************/
 
+    /* set the id of the mpiexec node to zero */
+    smpd_process.id = 0;
+
     result = MPIDU_Sock_create_set(&set);
     if (result != MPI_SUCCESS)
     {
@@ -114,8 +100,34 @@ int main(int argc, char* argv[])
     }
     smpd_process.set = set;
 
-    /* set the id of the mpiexec node to zero */
-    smpd_process.id = 0;
+    /* Check to see if the user wants to use a remote shell mechanism for launching the processes
+     * instead of using the smpd process managers.
+     */
+    if (smpd_process.rsh_mpiexec == SMPD_TRUE)
+    {
+	/* Do rsh stuff */
+	result = mpiexec_rsh();
+
+	/* skip over the non-rsh code and go to the cleanup section */
+	goto quit_job;
+    }
+
+    /* make sure we have a passphrase to authenticate connections to the smpds */
+    if (smpd_process.passphrase[0] == '\0')
+	smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    if (smpd_process.passphrase[0] == '\0')
+    {
+	if (smpd_process.noprompt)
+	{
+	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
+	    result = SMPD_FAIL;
+	    goto quit_job;
+	}
+	printf("Please specify an authentication passphrase for smpd: ");
+	fflush(stdout);
+	smpd_get_password(smpd_process.passphrase);
+    }
+
     /* set the state to create a console session or a job session */
     state = smpd_process.do_console ? SMPD_MPIEXEC_CONNECTING_SMPD : SMPD_MPIEXEC_CONNECTING_TREE;
 
