@@ -32,7 +32,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
 	    goto error_request;
 	}
-	ret = PVFS_sys_read( pvfs_fs->pinode, io_req, buf, len, 
+	ret = PVFS_sys_read( pvfs_fs->pinode_refn, io_req, buf, len, 
 	    pvfs_fs->credentials, &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);
@@ -45,7 +45,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
 	    goto error_request;
 	}
-	ret = PVFS_sys_read( pvfs_fs->pinode, io_req, buf, len, 
+	ret = PVFS_sys_read( pvfs_fs->pinode_refn, io_req, buf, len, 
 	    pvfs_fs->credentials, &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);
