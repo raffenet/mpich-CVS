@@ -841,6 +841,9 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   MPI threads.  Another example is the hash value of the datatype signature,
   used to provide more complete error checking. 
 
+  Polling:
+  This handler may be processed with polling.
+
   Module:
   MPID_CORE
 
@@ -863,6 +866,10 @@ typedef struct {
 
    Notes: 
    This is an example of a message the may be sent using 'MPID_Rhcv'.
+
+  Polling:
+  This handler may be processed with polling.  However, an implementation
+  that does not require polling is prefered.
 
    Module:
    MPID_CORE

@@ -1424,6 +1424,24 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
   could move some of the data into a shared-memory destination location and
   enqueue an handler-activation request at the destination process.
 
+  Threads and Polling:
+  This routine is designed to allow (for most operations) either a 
+  threaded or a polling implementation.  For each 'id' (i.e., operation
+  type), the operation specifies whether a polling implementation is
+  allowed.  Since each operation is deffined by an id rather than a
+  function pointer, the implementation of 'MPID_Rhcv' can use the 'id' 
+  value to decide how to implement each operation.  In the simplest 
+  implementation, 'MPID_Rhcv' could send a message to a thread running 
+  in the destination process and that thread could execute a function 
+  to process the request.  However, other implementations are possible.
+  For example, based on the 'id' value, messages could be sent to a 
+  polling routine or a thread agent.  In the simple TCP case, separate
+  sockets could be used for actions requiring a thread and those that 
+  can be handled by polling.  In an implementation with shared memory, 
+  some operations can be handled directly without invoking any code at the 
+  destination process (for example, a window lock could access the 
+  window directly).
+  
   Questions and Discussion:
   How many handler functions need be written to implement the core?
   What handler types are in the core?  
