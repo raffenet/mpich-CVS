@@ -20,16 +20,27 @@ Designs/Discussions/Decissions (to be made):
 * define CH3 interface to support the use of RDMA operations for OSC (first
   draft complete but needs work) [Bill/Rajeev/Brian/others?]
 
+* (req #122) additional requirements from TG project?
+
 --------------------
 
 Open Tasks:
 
-* documentation: installation and usage document(s) [Bill/Rusty/others?]
+* (doc) installation and usage document(s) [Bill/Rusty/others?]
+
+* (doc, req #114) ADI3 documentation
+
+* (doc, req #125) documentation generator [Bill/?]
+
+* (util, req #125) parameter interface and implementation [Bill/?]
 
 * (util/sock) revisit the sock interface and redo sock implementations to
   support multi-threaded progress engine, and increase robustness and error
   reporting (needed for fault tolerance and dynamic process support)
   [Brian/David]
+
+* (util/sock, req #93) select() implementation of sock for Mac OS X (possibly
+  augment poll() implementation) [Brian/David]
 
 * (ch3:sock/ssm) rework progress engine to use improved sock interface and
   significant improve dynamic process support.  also, increase robustness and
@@ -38,18 +49,23 @@ Open Tasks:
 * (ch3:all) threaded progress engine to support passive target RMA
   [Brian/David]
 
-* (ssm/sock) replace abort(), assert() and MPID_Abort() calls with proper error
-  handling (require reworking progress engine which has to be done anyway for
-  MPI-2 support) [Brian/David]
+* (ch3:ssm/sock) replace abort(), assert() and MPID_Abort() calls with proper
+  error handling (require reworking progress engine which has to be done anyway
+  for MPI-2 support) [Brian/David]
 
-* (sock/ssm) connection formation code should not fail after the first attempt
-  since the listener has a limited queue of pending connections [Brian/David]
+* (ch3:sock/ssm, req #125) allow user to specify range of ports to be used
+  (for both listener and connect()?).  the parameter interface should be used
+  to obtain such information. [Brian/David]
 
-* (ssm/sock) if the business card of a remote process contains multiple socket
-  listeners, try each until a connection is formed [Brian/David]
+* (ch3:sock/ssm) connection formation code should not fail after the first
+  attempt since the listener has a limited queue of pending connections
+  [Brian/David]
 
-* (req #93) select() implementation of sock for Mac OS X (possibly augment
-  poll() implementation) [Brian/David]
+* (ch3:ssm/sock) if the business card of a remote process contains multiple
+  socket listeners, try each until a connection is formed [Brian/David]
+
+* (ch3:ssm/sock, req #108) require better detection of IPv6 for GetLocalIPs()
+  [Brian]
 
 * (ch3:shm/ssm) IA-64 assembly [Brian/David]
 
@@ -64,41 +80,49 @@ Open Tasks:
 
 * (ch3) flow control [Brian]
 
-* (ch3) move active target handlers into there own complete actions (CAs);
+* (osc, ch3) move active target handlers into there own complete actions (CAs);
   update load_send/recv_iov routines to allow completion actions to be
   specified.  this is neceesary to allow the active target ONC implementation
   to work with optimized code in the shm and ssm channels.  [Brian/Rajeev]
 
-* (ch3:all) active target OSC for all channels (includes moving code from
+* (osc, ch3:all) active target OSC for all channels (includes moving code from
   existing CAs to special OSC CAs) [Rajeev/Brian]
 
-* (ch3) add new function to notify the channel when the VC reference count
+* (dp, ch3) add new function to notify the channel when the VC reference count
   reaches zero.  this gives the channel an opportunity to release references to
   internal channel structures and cleanly shutdown of the any underlying
   connection(s) (this is needed for MPI_Comm_free() and MPI_Comm_disconnect())
   [Brian]
 
-* (ch3:all) dynamic process (spawn/connect/accept) implementation (partially
-  working for sock channel) [Rajeev/Brian/David]
+* (dp, ch3:all) dynamic process (spawn/connect/accept) implementation (partially
+  working for sock channel).  see req #123 for interested beta
+  testers. [Rajeev/Brian/David]
 
-* (mpi) MPI_Comm_disconnect() must wait for all bsend communication associated
-  with the comm to complete.  It should call MPID_Comm_disconnect() so that
-  devices that buffer sends can complete those sends and release VC
-  resources. [Brian/Rajeev?]
+* (dp, mpi/ch3/ch3:all) MPI_Comm_disconnect() must wait for all bsend
+  communication associated with the comm to complete.  It should call
+  MPID_Comm_disconnect() so that devices that buffer sends can complete those
+  sends and release VC resources. [Brian/Rajeev?]
 
-* (ch3) free parent in MPID_Finalize() but only if it hasn't already been
+* (dp, ch3) free parent in MPID_Finalize() but only if it hasn't already been
   freed. [Brian/Rajeev]
 
-* (mpi/ch3/ch3:all) fault tolerance.  requires tracking communicators
+* (dp,test) (req #123) integrate tests from etienne.gondet@mercator-ocean.fr
+
+* (dp/ft, mpi/ch3/ch3:all) fault tolerance.  requires tracking communicators
   associated with a VC, requests associated with a communicator, etc.  (we need
-  to think about the requirement and design a bit more before; see note above)
+  to think about the requirement and design a bit more before; see note in
+  discussion section)
 
-* add MPI_Type_create_{darray,subarray} to MPICH2 and update ROMIO to properly
-  handle these new types [Rob R.]
+* (dt) add MPI_Type_create_{darray,subarray} to MPICH2 and update ROMIO to
+  properly handle these new types [Rob R.]
 
-* (romio) extern32 support (requires pack external) [??? Rob R./Rob L.]
+* (dt, req #94) alignment issues on Solaris64
+
+* (romio/dt) extern32 support (requires pack external) [??? Rob R./Rob L.]
 
 * (romio) more complete test suite [??? Rob R./Rob L./Rajeev]
+
+* (romio, req #112) doesn't handle --disable-f77
 
 * (mpe) full integration and testing (slog2sdk is now being checked out into
   src/util/slog2sdk to support rlog) [Bill/Anthony/David/Brian] -- partially
@@ -114,7 +138,12 @@ Open Tasks:
   ensures that these are tested.  Note that the nightlies will do this
   as part of the random tests.
 
-* (req #124,110,104,91,84,76,71,70,62,36,33) MPD problems [Rusty/Ralph]
+* (pm, mpd, req #124,111,110,104,91,84,76,71,70,62,36,33) various MPD reqs
+  [Rusty/Ralph]
+
+* (pm, forker, req 107) empty string from PMI_KVS_Get() on peta01
+
+* (pm, forker, req #98) by default, the forker PM should not timeout
 
 * have configure print out available channels, process managers, etc. for
   current machine [Bill/Brian]
@@ -123,8 +152,6 @@ Open Tasks:
   [Brian] (could be deferred)
 
 * (req #23) remove uni implementation of PMI [Bill/Brian]
-
-* (req #98) by default, the forker PM should not timeout
 
 * (req #104) sock does not run under Cygwin
 
@@ -141,7 +168,7 @@ Open Tasks:
 * (req #63) SysV IPC resource recovery for all systems (not just Linux)
   [David/Brian]
 
-* performance tuning of ssm and shm progress engines [David/Brian]
+* (ch3:shm/ssm) performance tuning of progress engines [David/Brian]
 
 * (req #35) buffer alignment issues with Red Hat libraries on Alpha ev5
   processors
@@ -164,6 +191,10 @@ Completed?
 * add PMI_Get_id() to obtain unique job identifier [Brian/David/Rusty/Rajeev]
   (done, right?)
 
+* (req #113) configure scripts should enumerate list of letters when using tr
+  rather than using short for of [A-Z][a-z].  [Bill]
+
+* (ch3:ssm, req #105) hang in message queue code [David]
 
 --------------------
 
@@ -178,14 +209,16 @@ Deferred Items:
 * work with Phil on writing directly to user space of other processes
   [David/Brian]
 
-* improve CH3 interface/protocols to beter support RDMA channel [Brian/David]
-
-* update RDMA interface to support pinning of memory for both send and receive
+* (ch3) improve CH3 interface/protocols to beter support RDMA channel
   [Brian/David]
 
-* write CH3 design and implementation guide [Brian]
+* (ch3:rdma) update RDMA interface to support pinning of memory for both send
+  and receive [Brian/David]
 
-* write CH3 design paper [Brian/Bill/others?]
+* (doc, ch3) write CH3 design and implementation guide [Brian]
+
+* (doc, ch3) write CH3 design paper [Brian/Bill/others?]
+
 
 ===============================================================================
 
