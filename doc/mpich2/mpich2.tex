@@ -464,7 +464,7 @@ several variations on this described in Section~\ref{sec:builtin-timing}.
 \end{enumerate}
 
 \begin{verbatim}
-/* -*- Mode: C; eval: (c-set-style "mpich"); -*-
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
  *  $Id$
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -1677,23 +1677,24 @@ A common indentation style, \code{mpich}, is specified for all files.
 %will use the correct style for users with other styles or projects.
 All C source files (including header files) begin with 
 \begin{verbatim}
-/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
-\end{verbatim}
-This is interpreted by Emacs and allows us to set a style for MPICH
-that can be different from each developer's personnal style.
-The style \code{mpich} is defined in \file{maint/mpich.el}.
-
-Question: Is there a predefined style that we can agree on?  Is there a
-variable (rather than a function to eval) that we can use to set the
-style?
-Note: Current homework assignment.  If we can all agree on a base
-style such as \code{k&r} or \code{bsd} and a few specific variable
-values, such as 
-\begin{verbatim}
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 \end{verbatim}
-we can avoid the eval.
-We might need to set \code{c-offsets-alist} which would be messy.
+%/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
+This is interpreted by Emacs and allows us to control the 
+indentation style for MPICH 
+that can be different from each developer's personnal style.
+%The style \code{mpich} is defined in \file{maint/mpich.el}.
+
+% Question: Is there a predefined style that we can agree on?  Is there a
+% variable (rather than a function to eval) that we can use to set the
+% style?
+% Note: Current homework assignment.  If we can all agree on a base
+% style such as \texttt{k\&r} or \code{bsd} and a few specific variable
+% values, such as 
+% \begin{verbatim}
+% \end{verbatim}
+% we can avoid the eval.
+% We might need to set \code{c-offsets-alist} which would be messy.
 
 % Comment [BRT]: Yes.  Having a style standard makes it much easier to
 % read and modify code written by others.
