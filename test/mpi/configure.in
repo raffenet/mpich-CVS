@@ -154,7 +154,6 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
-AC_OUTPUT_COMMANDS([chmod a+x f90/misc/f77tof90])
 AC_OUTPUT(Makefile \
           basic/Makefile \
 	  attr/Makefile \
@@ -178,7 +177,10 @@ AC_OUTPUT(Makefile \
 	  f77/rma/Makefile \
 	  f90/Makefile \
 	  f90/misc/Makefile \
-	  f90/misc/f77tof90 \
+	  f90/util/Makefile \
+	  f90/attr/Makefile \
+	  f90/coll/Makefile \
+	  f90/rma/Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/coll/Makefile \
