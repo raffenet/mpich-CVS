@@ -390,6 +390,7 @@ PAC_PROG_F77_HAS_POINTER(f77_has_pointer=yes,f77_has_pointer=no)
 rm -f mpif_bottom.h
 if test "$f77_has_pointer" = "yes" -a "$use_pointer_in_f77" = "yes" ; then
     cat >>mpif_bottom.h <<EOF
+C -*- Mode:Fortran; -*-
 C
 C     (C) 2001 by Argonne National Laboratory.
 C     See COPYRIGHT in top-level directory.
