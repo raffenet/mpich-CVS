@@ -475,6 +475,9 @@ dnl defines 'restrict' as empty.  This allows you to include 'restrict' in
 dnl declarations in the same way that 'AC_C_CONST' allows you to use 'const'
 dnl in declarations even when the C compiler does not support 'const'
 dnl
+dnl Note that some compilers accept restrict only with additional options.
+dnl DEC/Compaq/HP Alpha Unix (Tru64 etc.) -accept restrict_keyword
+dnl
 dnlD*/
 AC_DEFUN(PAC_C_RESTRICT,[
 AC_CACHE_CHECK([for restrict],
@@ -717,6 +720,7 @@ pac_cv_prog_c_weak_symbols,[
 # We can't put # in the message because it causes autoconf to generate
 # incorrect code
 AC_TRY_LINK([
+extern int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(a) { return a; }
 ],[return PFoo(1);],has_pragma_weak=yes)
@@ -731,6 +735,7 @@ int Foo(int);
 int Foo(a) { return a; }
 EOF
     cat >>conftest2.c <<EOF
+extern int PFoo(int);
 int main() {
 return PFoo(0);}
 EOF
@@ -751,6 +756,7 @@ fi
 dnl
 if test -z "$pac_cv_prog_c_weak_symbols" ; then 
     AC_TRY_LINK([
+extern int PFoo(int);
 #pragma _HP_SECONDARY_DEF Foo  PFoo
 int Foo(a) { return a; }
 ],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _HP_SECONDARY_DEF")
@@ -758,6 +764,7 @@ fi
 dnl
 if test -z "$pac_cv_prog_c_weak_symbols" ; then
     AC_TRY_LINK([
+extern int PFoo(int);
 #pragma _CRI duplicate PFoo as Foo
 int Foo(a) { return a; }
 ],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _CRI duplicate x as y")
