@@ -12,7 +12,7 @@ void MPIR_Wait(MPID_Request * request)
     MPID_MPI_STATE_DECL(MPID_STATE_MPIR_WAIT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_WAIT);
-    while(1)
+    while((*request->cc_ptr) != 0)
     {
 	MPID_Progress_start();
 	
