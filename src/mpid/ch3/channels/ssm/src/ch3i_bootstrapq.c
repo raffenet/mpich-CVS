@@ -259,7 +259,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
     g_queue_list = queue;
 
     key = MPICH_MSG_QUEUE_ID;
-    id = msgget(key, IPC_CREAT | SHM_R | SHM_W);
+    id = msgget(key, IPC_CREAT | MSG_R | MSG_W | MSG_R >> 3 | MSG_W >> 3 | MSG_R >> 6 | MSG_W >> 6);
     if (id == -1)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgget", "**msgget %d", errno);
