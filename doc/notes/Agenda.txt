@@ -1,8 +1,12 @@
-* RMA
-
 * agent (bottom up)
 
-* pt2pt - wildcard receives (and matching in general)
+* pt2pt
+
+  - wildcard receives (and matching in general)
+
+* make progress
+
+* inter-method interface
 
 the next thing to do:
 - define CARs for the send and receive case

@@ -104,7 +104,10 @@ Structures
   mechanism for avoiding locking this queue each time we receive an incoming
   send.  some alternatives are: one wc queue per method, an is-empty flag for
   the wildcard queue (which must be capable of being atomically read or written
-  without a lock).
+  without a lock).  WE WILL HAVE ONE WILDCARD QUEUE ONLY.
+
+- this will let us do per-communicator "no wildcard" attributes if we like as
+  well :).
 
 - a receive call from above matches the unexpected queue and then inserts
   itself into the wildcard of vc-specific queue
@@ -129,9 +132,31 @@ should allow for higher performance and parallelism across VCs that share a
 common method at least in the well-behaved case of pre-posted, known-source
 receives (which is the approach we should reward :)).
 
-we decided to use a single unexpected queue since having multiple unexpected
-queues requires timestamp to order the messages.  the timestamp counter is a
-point of global contention, just like the global unexpect queue.
+- we decided to use a single unexpected queue since having multiple unexpected
+  queues requires timestamp to order the messages.  the timestamp counter is a
+  point of global contention, just like the global unexpect queue.
+
+- this same argument can be applied to the posted queue case, but allowing for
+  multiple queues here creates a much nicer search situation for the case where
+  people prepost their receives.  is this worth the cost of the counter
+  manipulation?
+
+  for the non-threaded, non-shmem case we think this will be a win.  for the
+  case of threads or shmem, we are unsure if the lock overhead of the queues
+  and counter increment will result in a loss.
+
+  SINCE WE CAN'T COME TO A REAL CONSENSUS, WE WILL HIDE THIS BEHIND AN API.
+  then we can play with the implementation ad nauseum, just as we have with
+  this conversation :).
+
+
+
+ASIDE:
+  rusty and rajeev broke queues into a queue per method, with each method
+  implementing its own queue code.  they then had a separate wildcard queue,
+  and wildcards were ALSO posted in each method queue.
+
+
 
 interface:
 
@@ -225,12 +250,13 @@ mpi_send(tag, context, dest, buf, ...)
 
 Rusty was right!
 
+
 MPID_Send()
 {
     int counter = 1;
     /* error checking */
     vc = get_vc(comm, dest);
-    vc->alloc_car(&car, SEND_CAR);
+    vc->alloc_car(vc, &car, SEND_CAR);
     /* construct send car */
     car->type = SEND;
     car->context = context;
@@ -1056,3 +1082,70 @@ options:
   VC queue before we really start giving lots of buffers to that operation.
 
 
+-----
+
+MPID_Irecv(buf, count, datatype, ...)
+{
+    /* foa() - looks up VC (among other things.  if rank is ANY_SOURCE, get 
+     * back NULL 
+     */
+    recv_posted_foa(comm, rank, tag, &car, &vc, &found);
+
+    car->buf = buf;
+    car->count = count;
+    car->datatype = datatype;
+    unlock(car->mutex);
+
+    if (found)
+    {
+        /* some indication of the sent message has already arrived */
+
+	/* process_recv() can make progress implicitly if they like */
+	vc->process_recv(vc, car);
+	/* after this call, make_progress() must be the only call 
+         * necessary to finish this message.  make_progress may need to be 
+         * called more than once.  this function may _optionally_ also make 
+         * progress.
+         */
+    }
+}
+
+/* this isn't necessarily a function... */
+method_specific_send_envelope_arrived_on_the_wire()
+{
+    /* y'all, the envelope has been yanked */
+
+    comm = get_comm_from_context(context_id);
+
+    /* we won't know if we really want the vc in here until we start 
+     * implementiong this...but this isn't method specific, so we need to
+     * make up our minds sooner or later.
+     *
+     * this is pretty much the least number of parameters from which we can
+     * reasonably extract all the information we might need (vc, context)
+     */
+    recv_incoming_foa(comm, rank, tag, &car, &found);
+    /* recv_incoming_foa() returns an existing CAR if a matching recv was
+     * found in the "posted queue"; otherwise it allocates an new CAR and
+     * returns a pointer to it.  found is true if an existing CAR was matched
+     * in the posted queue.
+     */
+
+    if (data with header)
+    {
+        car->data = p_data;
+    }
+
+    unlock(car->mutex);
+
+    if (found)
+    {
+        /* we could do a lot of work in this function if we like */
+        method_specific_process_recv(vc, car);
+    }
+}
+
+- we will allocate cars by determining the maximum needed size at runtime and
+  allocating all cars to that size.  preserves locality while simultaneously
+  separating the generic "car" from any method-specific info, allowing 3rd
+  party methods to be added without modifying the generic car
