@@ -7,8 +7,8 @@
 from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex
 from re         import sub, split
-# from cPickle    import dumps, loads
-from marshal    import dumps, loads
+from cPickle    import dumps, loads
+# from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
 from syslog     import syslog
