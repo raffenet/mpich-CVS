@@ -48,7 +48,13 @@ if test "$enable_pmiport" = "yes" ; then
     missing_headers=no
     AC_CHECK_HEADERS(sys/param.h sys/socket.h netinet/in.h netinet/tcp.h sys/un.h netdb.h,,missing_headers=yes )
     missing_functions=no
-    AC_CHECK_FUNCS(socket setsockopt,,missing_functions=yes)
+    AC_CHECK_FUNCS(socket setsockopt gethostbyname,,missing_functions=yes)
+    saveLIBS="$LIBS"
+    LIBS=""
+    AC_SEARCH_LIBS(socket,socket,,,$saveLIBS)
+    AC_SEARCH_LIBS(gethostbyname,nsl,,,$saveLIBS)
+    PMI_LIBS="$PMI_LIBS $LIBS"
+    LIBS="$saveLIBS $LIBS"
     
     if test "$missing_functions" = "no" -a "$missing_headers" = "no" ; then
         AC_DEFINE(USE_PMI_PORT,1,[Define if access to PMI information through a port rather than just an fd is allowed])
@@ -69,7 +75,7 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile localdefs)
 
 
 PAC_SUBDIR_CACHE_CLEANUP
