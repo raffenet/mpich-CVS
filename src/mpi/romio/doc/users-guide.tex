@@ -300,9 +300,15 @@ this same hostname will be used..
 
 Leftmost components of the info value take precedence.
 
-% All three of the info keys can be specified when a file is opened
-% with \texttt{MPI\_File\_open} or after the file is opened with
-% \texttt{MPI\_File\_set\_info} or \texttt{MPI\_File\_set\_view}.
+Note: Matching of processor names to \texttt{cb\_config\_list} entries
+is performed with string matching functions and is independent of the
+listing of machines that the user provides to mpirun/mpiexec.  In other
+words, listing the same machine multiple times in the list of hosts to
+run on will not cause a \texttt{*:1} to assign the same host four
+aggregators, because the matching code will see that the processor name
+is the same for all four and will assign exactly one aggregator to the
+processor.
+
 The value of this info key must be the same for all processes (i.e., the
 call is collective and each process must receive the same hint value for
 these collective buffering hints).  Further, in the ROMIO implementation
