@@ -93,6 +93,12 @@ dnl    AC_CHECK_PROGS(LIBTOOL,libtool,false)
     ;;
 dnl
 dnl Other, such as solaris-cc
+    solaris|solaris-cc)
+    AC_MSG_RESULT([Creating shared libraries using Solaris])
+    C_LINK_SHL='${CC} -G -xcode=pic32'
+    CC_SHL='${CC} -xcode=pic32'
+    C_LINKPATH_SHL="-R"
+    ;;
     *)
     AC_MSG_WARN([Unknown value $enable_sharedlibs for enable-sharedlibs])
     enable_sharedlibs=no

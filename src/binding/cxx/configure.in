@@ -163,6 +163,9 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
    # Assume that the compiler is g++ if gcc style shared libraries chosen
    CXX_SHL="$CXX -shared -fpic"
    CXX_LINKPATH_SHL="-Wl,-rpath -Wl,"
+elif test "$ENABLE_SHLIB" = "solaris" ; then
+   CXX_SHL="$CXX -xcode=pic32"
+   CXX_LINKPATH_SHL=$CC_LINKPATH_SHL
 fi
 AC_SUBST(LIBTOOL)
 dnl     checks for library functions

@@ -271,6 +271,8 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
    # Assume that the compiler is g77 if gcc style shared libraries chosen
    FC_SHL="$F77 -shared -fpic"
    FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
+elif test "$ENABLE_SHLIB" = "solaris" ; then
+   FC_SHL="$F77 -xcode=pic32"
 fi
 AC_SUBST(LIBTOOL)
 
