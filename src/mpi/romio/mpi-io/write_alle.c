@@ -43,6 +43,7 @@ int MPI_File_write_all_end(MPI_File fh, void *buf, MPI_Status *status)
     static char myname[] = "MPI_FILE_WRITE_ALL_END";
 #endif
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_write_all_end: Invalid file handle\n");
@@ -52,7 +53,6 @@ int MPI_File_write_all_end(MPI_File fh, void *buf, MPI_Status *status)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    /* --BEGIN ERROR HANDLING-- */
     if (!(fh->split_coll_count))
     {
 #ifdef MPICH2
