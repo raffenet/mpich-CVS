@@ -27,9 +27,9 @@ SOURCES   = ${mpdroot_SOURCES} ${example_SOURCES}
 OBJECTS   = ${mpdroot_OBJECTS} ${example_OBJECTS}
 HEADERS   = mpdconf.h mpdroot.h
 
-CMDS_ROOT     =  mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob
+CMDS_ROOT     =  mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob
 CMDS_NO_ROOT  =  mpdallexit mpdcleanup mpdhelp mpdboot mpd
-PYTHON_SOURCE =  mpdrun.py mpdtrace.py mpdringtest.py mpdlistjobs.py mpdkilljob.py \
+PYTHON_SOURCE =  mpiexec.py mpdrun.py mpdtrace.py mpdringtest.py mpdlistjobs.py mpdkilljob.py \
                  mpdsigjob.py mpdallexit.py mpdcleanup.py mpdhelp.py mpdboot.py \
 		 mpd.py mpdman.py mpdlib.py
 
@@ -104,8 +104,6 @@ install:
 	done
 	-@cp -f ${srcdir}/mpdman.py ${bindir}/mpdman.py
 	-@cp -f ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
-	-@( rm -f ${bindir}/mpiexec >/dev/null 2>&1 || exit 0 )
-	-@cd ${bindir} && @LN_S@ -f mpdrun mpiexec
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
 

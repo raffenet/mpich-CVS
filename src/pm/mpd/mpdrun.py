@@ -2,7 +2,7 @@
 
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
-                            close, wait, waitpid, kill, _exit,  \
+                            close, wait, waitpid, kill, unlink, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
 from select          import select
@@ -18,12 +18,14 @@ class mpdrunInterrupted(Exception):
     def __init__(self,args=None):
         self.args = args
 
-global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels
+global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
+       try0Locally, lineLabels
 global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
 
 def mpdrun():
-    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels, jobalias
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
+           try0Locally, lineLabels, jobalias
     global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
@@ -33,6 +35,7 @@ def mpdrun():
     nprocs = 0
     jobalias = ''
     argsFilename = ''
+    delArgsFile = 0
     try0Locally = 1
     lineLabels = 0
     stdinGoesToWho = 0
@@ -72,6 +75,8 @@ def mpdrun():
     if argsFilename:
         argsFile = open(argsFilename,'r')
         args = argsFile.read()
+	if delArgsFile:
+	    unlink(argsFilename)
         parsedArgs = parseString(args)
         if parsedArgs.doctype.name != 'PMRequests':
             print 'expecting PMRequests; got unrecognized doctype %s' 
@@ -128,7 +133,7 @@ def mpdrun():
 	    if not covered[i]:
 	        s = i
 	        while i < len(covered)  and  not covered[i]:
-		    i += 1
+	            i += 1
 	        args[(s,i-1)] = defaultArgs
 	    else:
 	        i += 1
@@ -377,12 +382,16 @@ def sig_handler(signum,frame):
 	exit(-1)
 
 def process_cmdline_args():
-    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, \
-           lineLabels, jobalias, stdinGoesToWho
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
+           try0Locally, lineLabels, jobalias, stdinGoesToWho
 
     if len(argv) < 3:
         usage()
-    if argv[1] == '-f':
+    if argv[1] == '-mpiexec':  # special case for MPI
+        argsFilename = argv[2]   # initialized to '' in main
+	argidx = 3
+	delArgsFile = 1
+    elif argv[1] == '-f':
         argsFilename = argv[2]   # initialized to '' in main
 	argidx = 3
     else:
