@@ -62,7 +62,7 @@ if test "$with_device" = "default" ; then
     with_device=mm:shm:tcp
 fi
 dnl Extract the methods
-method_subdirs=`echo $with_device | sed -e 's/mm://g' | sed -e 's/://g' | sed -e 's/://g' | sed -e 's/://g'`
+method_subdirs=`echo $with_device | sed -e 's/mm://g' | sed -e 's/:/ /g' | sed -e 's/:/ /g' | sed -e 's/:/ /g'`
 AC_SUBST(method_subdirs)
 dnl error-checking
 case "$enable_error_checking" in 
