@@ -166,17 +166,21 @@ dnl  systems that do not provide dependency information
 dnl- C_DEPEND_MV - Command to move created dependency file
 dnl Also creates a Depends file in the top directory (!).
 dnl
+dnl In addition, the variable 'C_DEPEND_DIR' must be set to indicate the
+dnl directory in which the dependency files should live.  
+dnl
 dnl Notes:
 dnl A typical Make rule that exploits this macro is
 dnl.vb
 dnl #
 dnl # Dependency processing
 dnl .SUFFIXES: .dep
-dnl DEP_SOURCES = ${SOURCES:.c=.dep}
+dnl DEP_SOURCES = ${SOURCES:%.c=.dep/%.dep}
 dnl Depends: ${DEP_SOURCES}
 dnl         @-rm -f Depends
-dnl         cat *.dep >Depends
-dnl .c.dep:
+dnl         cat .dep/*.dep >Depends
+dnl .dep/%.dep:%.c
+dnl	    @if [ ! -d .dep ] ; then mkdir .dep ; fi
 dnl         @@C_DEPEND_PREFIX@ ${C_COMPILE} @C_DEPEND_OPT@ $< @C_DEPEND_OUT@
 dnl         @@C_DEPEND_MV@
 dnl
@@ -187,6 +191,9 @@ dnl.ve
 dnl
 dnl For each file 'foo.c', this creates a file 'foo.dep' and creates a file
 dnl 'Depends' that contains all of the '*.dep' files.
+dnl
+dnl For your convenience, the autoconf variable 'C_DO_DEPENDS' contains 
+dnl this code (you must have `dependsrule` in directory '???dir')
 dnl 
 dnlD*/
 dnl 
@@ -197,12 +204,17 @@ AC_DEFUN(PAC_C_DEPENDS,[
 AC_SUBST(C_DEPEND_OPT)
 AC_SUBST(C_DEPEND_OUT)
 AC_SUBST(C_DEPEND_MV)
+AC_SUBST_FILE(C_DO_DEPENDS) 
+dnl set the value of the variable to a 
+dnl file that contains the dependency code, such as
+dnl ${top_srcdir}/maint/dependrule 
 if test -n "$ac_cv_c_depend_opt" ; then
     AC_MSG_RESULT([Option $ac_cv_c_depend_opt creates dependencies (cached)])
     C_DEPEND_OUT="$ac_cv_c_depend_out"
     C_DEPEND_MV="$ac_cv_c_depend_mv"
     C_DEPEND_OPT="$ac_cv_c_depend_opt"
     C_DEPEND_PREFIX="$ac_cv_c_depend_prefix"
+    C_DO_DEPENDS="$ac_cv_c_do_depends"
 else
    # Determine the values
 rm -f conftest*
@@ -227,14 +239,14 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
         dnl Check for dependency info in conftest.out
         if test -s conftest.u ; then 
 	    C_DEPEND_OUT=""
-	    C_DEPEND_MV='mv $[*].u $[*].dep'
+	    C_DEPEND_MV='mv $[*].u ${C_DEPEND_DIR}/$[*].dep'
             pac_dep_file=conftest.u 
         elif test -s conftest.d ; then
 	    C_DEPEND_OUT=""
-	    C_DEPEND_MV='mv $[*].d $[*].dep'
+	    C_DEPEND_MV='mv $[*].d ${C_DEPEND_DIR}/$[*].dep'
             pac_dep_file=conftest.d 
         else
-	    C_DEPEND_OUT='>$[*].dep'
+	    C_DEPEND_OUT='>${C_DEPEND_DIR}/$[*].dep'
 	    C_DEPEND_MV=:
             pac_dep_file=conftest.out
         fi
@@ -261,6 +273,11 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
     fi
     copt=""
 done
+    if test -f $CONFIG_AUX_DIR/dependsrule ; then
+	C_DO_DEPENDS="$CONFIG_AUX_DIR/dependsrule"
+    else 
+	C_DO_DEPENDS="/dev/null"
+    fi
     AC_SUBST(C_DEPEND_PREFIX)
     if test "X$copt" = "X" ; then
         C_DEPEND_PREFIX="true"
@@ -271,7 +288,7 @@ done
     ac_cv_c_depend_mv="$C_DEPEND_MV"
     ac_cv_c_depend_opt="$C_DEPEND_OPT"
     ac_cv_c_depend_prefix="$C_DEPEND_PREFIX"
-rm -f conftest*
+    ac_cv_c_do_depends="$C_DO_DEPENDS"
 fi
 ])
 dnl
