@@ -1,4 +1,4 @@
-ALL: adi3man.ps
+ALL: adi3new.ps
 SHELL = /bin/sh
 
 #
@@ -54,31 +54,26 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 	tohtml -default adi3man.tex
 
 adi3new.ps: adi3new.tex adi3.c adi3.h Makefile
+	touch ad3new.ind
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
 	(cd adi3man ; \
 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
-	${MAKE} lists
-	-cp adi3new.tex adi3man/adi3new.tex
-	(cd adi3man ; \
-	../manextract ../adi3.[ch] > /dev/null ;\
-	latex adi3new < /dev/null ;\
-	bibtex adi3new ;\
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;\
+	../manextract ../adi3.[ch] > /dev/null )
+	latex adi3new < /dev/null
+	-bibtex adi3new
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
 	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
-		adi3new.idx > tmp.idx ; \
-	makeindex tmp ;\
+		adi3new.idx > tmp.idx
+	-makeindex tmp
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
-	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3new.ind ; \
-	bibtex adi3new ;\
-	latex adi3new < /dev/null ;\
-	dvips adi3new )
-	rm -f adi3new.ps
-	mv adi3man/adi3new.ps .
-	mv adi3man/adi3new.dvi .
+	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3new.ind 
+	-bibtex adi3new 
+	latex adi3new < /dev/null
+	dvips adi3new
 
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the 
@@ -93,7 +88,16 @@ core.dvi: core.tex adi3.c adi3.h
 	-latex core
 
 # This uses the full-featured date program in Linux
-install-web: adi3man.ps adi3man.pdf
+install-web: adi3new.ps adi3new.pdf
+	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
+	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
+	cp adi3new.ps /mcs/www-unix/mpi/mpich/adi3/adi3man.ps
+	cp adi3new.pdf /mcs/www-unix/mpi/mpich/adi3/adi3man.pdf
+	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
+	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
+		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
+	rm -f .foo
+install-web-old: adi3man.ps adi3man.pdf
 	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
 	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
 	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3

@@ -30,7 +30,8 @@ happens only within MPI calls, not asynchronously.  An alternative
 approach uses either one more more separate threads or an interrupt to
 cause communication to happen outside of MPI calls made by the
 user\footnote{MPICH-1 supported both modes but most implementations chose the
-  polling mode.}.
+  polling mode.  All ADI-2 implementation distributed with MPICH-1 used
+  polling mode; some built by outside groups did \emph{not} use polling mode.}.
 
 MPI-2 introduced additional operations including remote memory access (RMA),
 dynamic process management, and parallel I/O.  Remote memory
@@ -112,7 +113,7 @@ passive target case.
 \item Collective operations are built out of point to point operations
 (though provision is made to replace each collective operation with an
 optimized function).  An enhancement is planned that allows the use of
-store and forward and scatter/gather (to collections of processes)
+pipelined store and forward and scatter/gather (to collections of processes)
 communication.  
 
 \item Dynamic process operations use a similar interface to MPI, but the
@@ -122,7 +123,8 @@ through the use of \emph{virtual connections}.
 
 In addition, the ADI is \emph{not} responsible for the construction
 and management of other MPI objects such as datatypes, attributes,
-error handlers, and reduction operations.  
+error handlers, and reduction operations.  However, hooks are provided to
+allow the MPI level to notify the ADI of changes in the other MPI objects.
 
 Most implementors will choose to use a simpler interface that is
 (will be) documented separately---the method interface.  This defines
@@ -159,6 +161,10 @@ example, the message format used with TCP communication need not look anything
 like the message format used by VIA communication within the same device.
 Similarly, flow control is handled on a connection basis, allowing the use of
 whatever method is appropriate for each communication method.
+%
+% Brian notes that connection oriented is a constraint.  Bill is leaving it in
+% because I don't think that it is much of a constraint, and MPID_Comm
+% contains a (pointer to a?) MPID_VC array.  
 
 While the term ``connection'' is used, there is no requirement that an MPI
 program create all possible connections or use a connection-oriented low-level
@@ -454,9 +460,12 @@ without forcing the ADI to provide a complete implementation.
 Whenever an object is created or destroyed, the MPI layer can call a
 \emph{hook} routine with a name of the form
 \begin{verbatim}
-    MPID_Dev_xxxx_create_hook( pointer to object )
-    MPID_Dev_xxxx_destroy_hook( pointer to object )
+    MPID_Dev_xxxx_create_hook( pointer to object, ... )
+    MPID_Dev_xxxx_destroy_hook( pointer to object, ... )
 \end{verbatim}
+The other parameters will be defined as it becomes clear what is needed.  For
+example, in the case of communicator creation, a pointer to the old
+communicator may be needed.
 
 \subsubsection{Communication Contexts and Groups}
 
@@ -469,11 +478,16 @@ integer.  The target process of communication in MPI is described by a
 rank in a group associated with a communicator.  While this suggests
 that MPI groups are fundamental data structures, in MPICH-2, groups
 are not used in the ADI at all.  Instead, each communicator maintains
-an array of \emph{connections} that are indexed by the rank (there is
-a special connection for receives with rank \code{MPI_ANY_SOURCE}).
+an array of \emph{connections} that are indexed by the rank.
 The MPI implementation provides complete support for the MPI group
 operations (e.g., \code{MPI_Group_union}), but the ADI does not use
 groups at all.  
+
+% The following comment was made when I thought that we would just use the
+% rank to index into the connection table.  Instead, a multimethod device
+% should trap the any-source case and call a special routine.
+% (there is
+%a special connection for receives with rank \code{MPI_ANY_SOURCE}).
 
 \subsection{Completing Point-to-Point Operations}
 
@@ -727,7 +741,8 @@ communication implementing collective operations.
 
 However, this approach has a number of drawbacks, particularly in
 organizing the code.  In addition, with files and windows as well,
-three hidden communicators might be needed\footnote{An alternative is
+three hidden communicators (in addition to the one used for point-to-point
+communication) might be needed\footnote{An alternative is
 to perform a shallow duplicate (without invoking attribute copy
 functions) of the communicators passed into the file and window
 creation routines.}.  Finally, the implementation of intercommunicator
@@ -818,8 +833,8 @@ however, that for correct behavior, the receive agent must be called
 at least occasionally, even if the target process makes no MPI calls.
 \end{enumerate}
 
-The progress engine is implemented by using \code{select}, and is a
-pure polling approach. 
+The progress engine is implemented by using \code{select} or \code{poll}, and
+is a pure polling approach. 
 
 To correctly handle the local completion (type 2) and passive target
 (type 4) communication when using sockets, there must be an
@@ -834,7 +849,8 @@ between communicating pairs of processes.  The first socket is used in
 a polling mode for point-to-point and active target communication
 (types 1 and 3).  This provides the low-latency associated with
 polling models.  The second socket is used for the locally-completing
-communication (types 2 and 4).  This approach provides correctness
+communication (types 2 and 4), and uses a separate thread, process, or
+\code{SIGIO} to ensure local completion.  This approach provides correctness
 with the MPI progress model without sacrificing the low latency of the
 polling approach for the more common operations.  
 
@@ -967,6 +983,9 @@ MPID_Win_local_unlock
 provides a pointer to a description and an indication of whether this starts,
 ends, or continues a sequence of RMA operations.  \code{MPID_Win_start} and
 \code{MPID_Win_end} are used for nonlocal uses of \code{MPI_Win_lock} and \code{MPI_Win_unlock}.
+
+We may want \code{MPID_Win_do_put}, \code{MPID_Win_do_get}, and
+\code{MPID_Win_do_accumulate} instead of a single \code{MPID_Win_do}.
 
 \subsection{Dynamic Processes}
 The MPID routines are similar to the MPI routines.  Undecided: does

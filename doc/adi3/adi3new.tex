@@ -7,6 +7,7 @@
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
 \usepackage{url} 
 \usepackage{epsf}
+\usepackage{psfig}
 \textheight=9in
 \textwidth=6.1in
 \oddsidemargin=.2in
@@ -126,3 +127,19 @@ Argonne National Laboratory}{00}{\today}
 \section{Device Hooks}
 \input adi3man/MPID_Dev_xxx_create_hook.tex
 \input adi3man/MPID_Dev_xxx_destroy_hook.tex
+
+\let\SaveBibliography=\thebibliography
+\def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,/home/gropp/papers/MPI/mpich2-coding/mpich2}
+\bibliographystyle{plain}
+
+% Index
+%\openin\testfile{adi3new.ind}
+%\ifeof\testfile\else
+\let\SaveIndex=\theindex
+\long\def\theindex#1{\SaveIndex{#1}\addcontentsline{toc}{section}{Index}}
+\input adi3new.ind
+%\fi
+%\closein\testfile
+
+\end{document}

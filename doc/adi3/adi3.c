@@ -715,6 +715,9 @@ void MPID_Dev_comm_attr_set_hook( MPID_Comm *comm, int keyval, void *attr_val,
 
     This may be defined as an empty macro.
 
+    The exact parameter list may depend on the object.  These have not yet been
+    defined.
+
     See also 'MPID_Dev_xxx_destroy_hook'
   @*/
 void MPID_Dev_xxx_create_hook( MPID_xxx *obj )
@@ -1106,7 +1109,7 @@ void MPID_Request_ready( MPID_Request *request )
 {
 }
 
-/* @
+/*@
   MPID_Request_free - Free a request 
 
   Input Parameter:
@@ -1119,7 +1122,7 @@ void MPID_Request_ready( MPID_Request *request )
 
   Module:
   Request
-@ */
+@*/
 void MPID_Request_free( MPID_Request *request )
 {
 }
@@ -2090,6 +2093,19 @@ void MPID_Progress_wait( void )
 int MPID_Progress_test( void )
 {}
 
+/*@
+  MPID_Progress_poke - Allow a progress engine to check for pending 
+  communication
+
+  Notes:
+  This routine provides a way to invoke the progress engine in a polling 
+  implementation of the ADI.  This routine must be nonblocking.
+
+  A multithreaded implementation is free to define this as an empty macro.
+  @*/
+void MPID_Progress_poke( void )
+{}
+
 /*TSGOverview.tex 
  * Section 3: Communication Buffer management
  *
@@ -2816,7 +2832,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   Output Parameter:
 + provided - Provided level of thread support.  May be less than the 
   requested level of support.
-. parent_group - MPID group of parent.  This is null for all MPI-1 uses and 
+. parent_comm - 'MPID_Comm' of parent.  This is null for all MPI-1 uses and 
   for processes that are `not` started with 'MPI_Comm_spawn' or 
   'MPI_Comm_spawn_multiple'.
 . has_args - Set to true if 'argc_p' and 'argv_p' contain the command
@@ -2857,6 +2873,8 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   Setting the environment requires a 'setenv' function.  Some
   systems may not have this.  In that case, the documentation must make 
   clear that the environment may not be propagated to the generated processes.
+
+  The 'parent_comm' argument may not be the right interface.  
 
   Module:
   MPID_CORE
@@ -2938,7 +2956,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   @*/
 int MPID_Init( int *argc_p, char *(*argv_p)[], 
 	       int requested, int *provided,
-	       MPID_Group **parent_group, int *has_args, int *has_env )
+	       MPID_Comm **parent_comm, int *has_args, int *has_env )
 {
 }
 
