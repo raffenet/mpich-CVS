@@ -74,13 +74,14 @@ routines],[FWRAPNAME=$withval;set_FWRAPNAME="yes"],FWRAPNAME=fmpich)
 AC_SUBST(FWRAPNAME)
 
 AC_ARG_WITH(cross,
-[--with-cross=file - Use the file for cross compilation.  The file should 
-             contain assignments of the form
-             CROSS_SIZEOF_INT=4
-             for each cross compilation variable.  The command
-                egrep 'CROSS_[A-Z_]*=' configure | sed 's/=.*//g'
-             will list each variable],
-cross_file=$withval,cross_file=/dev/null)
+[--with-cross=file - Specify the values of variables that configure cannot
+determine in a cross-compilation environment],,with_cross=no)
+dnl [--with-cross=file - Use the file for cross compilation.  The file should 
+dnl             contain assignments of the form
+dnl             CROSS_SIZEOF_INT=4
+dnl              for each cross compilation variable.  The command
+dnl                 egrep 'CROSS_[A-Z_]*=' configure | sed 's/=.*//g'
+dnl              will list each variable],
 
 AC_ARG_WITH(mpichconfig,
 [--with-mpichconfig=file - Use file for the MPICH configuration.
@@ -101,6 +102,24 @@ AC_ARG_WITH(subname,
               a single MPICH build.  It must be used in conjunction with
               --with-mpichconfig],
 subname=$withval,subname="")
+
+if test "$with_cross" != "no" ; then
+    if test -s "$with_cross" ; then
+        AC_MSG_RESULT([Reading values from cross-compilation file $with_cross])
+        . $with_cross
+    fi
+    # with_cross may have been passed down from above (in a calling configure)
+    # so set the cross-compilation options independent of whether the
+    # file exists.
+    # Autoconf 2.52 no longer sets cross_compiling except with the
+    # awkward "targethost" options.
+    pac_cross_compiling=yes
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_cxx_cross=yes
+    export cross_compiling
+fi
 
 if test "$use_runtimevalues" = "yes" ; then
     AC_DEFINE(F77RUNTIME_VALUES,,[Define if Fortran environment should be determined at runtime])
@@ -192,6 +211,16 @@ dnl Autoconf bug: AC_PROG_F77 sets FFLAGS
 save_FFLAGS="$FFLAGS"
 AC_PROG_F77
 FFLAGS="$save_FFLAGS"
+# Bug in autoconf.  Restore cross settings
+if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_f77_cross" = "no" ; then
+    AC_MSG_RESULT([Resetting cross compilation to yes])
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_f90_cross=yes
+    ac_cv_prog_cxx_cross=yes
+fi
+
 AC_SUBST(FOPTIONS)
 if test -z "$FLINKER" ; then
    FLINKER="$F77"
@@ -362,7 +391,7 @@ dnl Cross-compilation results can be included with the --with-cross=file
 dnl option.
 CROSS_F77_SIZEOF_INTEGER=${CROSS_F77_SIZEOF_INTEGER:-0}
 CROSS_F77_SIZEOF_REAL=${CROSS_F77_SIZEOF_REAL:-0}
-CROSS_F77_SIZEOF_DOUBLE_PRECISION=${CROSS_F77_SIZEOF_PRECISION:-0}
+CROSS_F77_SIZEOF_DOUBLE_PRECISION=${CROSS_F77_SIZEOF_DOUBLE_PRECISION:-0}
 PAC_PROG_F77_CHECK_SIZEOF(integer,$CROSS_F77_SIZEOF_INTEGER)
 PAC_PROG_F77_CHECK_SIZEOF(real,$CROSS_F77_SIZEOF_REAL)
 PAC_PROG_F77_CHECK_SIZEOF(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISION)
@@ -766,11 +795,11 @@ if test "$testsize" = 0 ; then
     testsize=4
 fi
 dnl Using the {} around testsize helps the comments work correctly
-PAC_PROG_F90_INT_KIND(ADDRESS_KIND,${testsize},$CROSS_ADDRESS_KIND)
+PAC_PROG_F90_INT_KIND(ADDRESS_KIND,${testsize},$CROSS_F90_ADDRESS_KIND)
 if test "$ac_cv_sizeof_void_p" = 8 ; then
     OFFSET_KIND=$ADDRESS_KIND
 else
-    PAC_PROG_F90_INT_KIND(OFFSET_KIND,8,$CROSS_OFFSET_KIND)
+    PAC_PROG_F90_INT_KIND(OFFSET_KIND,8,$CROSS_F90_OFFSET_KIND)
 fi
 #
 # Some compilers won't allow a -1 kind (e.g., absoft).  In this case, 

@@ -106,6 +106,12 @@ AC_ARG_ENABLE(weak-symbols,
 [--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
 enable_weak_symbols=yes)
 dnl
+dnl
+dnl
+AC_ARG_WITH(cross,
+[--with-cross=file - Specify the values of variables that configure cannot
+determine in a cross-compilation environment],,with_cross=no)
+dnl
 dnl Flavor is used to setup separate directories for the flavor-specific
 dnl code (e.g., libraries that depend on a particular thread library) from
 dnl the generic files (e.g., the manual pages).
@@ -221,6 +227,28 @@ if test "$enable_cxx" = "yes" ; then
    AC_SUBST(bindings)
 fi
 dnl
+pac_cross_compiling=no
+if test "$with_cross" != "no" ; then
+    if test -s "$with_cross" ; then
+        AC_MSG_RESULT([Reading values from cross-compilation file $with_cross])
+        . $with_cross
+	# Autoconf 2.52 no longer sets cross_compiling except with the
+	# awkward "targethost" options.
+	pac_cross_compiling=yes
+	cross_compiling=yes
+	ac_cv_prog_cc_cross=yes
+	ac_cv_prog_f77_cross=yes
+        ac_cv_prog_cxx_cross=yes
+        export cross_compiling
+	# Export all cross variables.  Any subsidiary configure should also
+        # export CROSS_xxx
+	rm -f confcross
+	(set) 2>&1 | grep CROSS_ | \
+	      sed -e 's/^/export /g' -e 's/=.*//g' > confcross
+	. confcross
+	rm -f confcross      
+    fi
+fi
 dnl
 PAC_ARG_SHAREDLIBS
 dnl
@@ -353,8 +381,18 @@ dnl     check for library functions
 dnl     check for system services
 dnl Here are some sample tests
 dnl
-dnl Find a C compiler (choose gcc first)
+dnl Find a C compiler (choose gcc first).
+dnl Autoconf 2.13 has the feature that you cannot override the test for
+dnl cross-compilation made in [AC_PROG_CC].  
 AC_PROG_CC
+# Bug in autoconf.  Restore cross settings
+if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
+    AC_MSG_RESULT([Resetting cross compilation to yes])
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_cxx_cross=yes
+fi
 AC_PATH_PROG(AR,ar)
 AC_PATH_PROG(RANLIB,ranlib)
 AC_PROG_INSTALL
@@ -400,15 +438,15 @@ PAC_C_STRUCT_ALIGNMENT
 dnl
 dnl Get the size of the C types for encoding in the basic datatypes and for
 dnl the specific-sized integers
-AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
-AC_CHECK_SIZEOF(int,CROSS_SIZEOF_INT)
-AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
-AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
-AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
-AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
-AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
-AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
-AC_CHECK_SIZEOF(void *,CROSS_SIZEOF_VOID_P)
+AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(float,$CROSS_SIZEOF_FLOAT)
+AC_CHECK_SIZEOF(double,$CROSS_SIZEOF_DOUBLE)
+AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
+AC_CHECK_SIZEOF(wchar_t,$CROSS_SIZEOF_WCHAR_T)
+AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
 dnl
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
 AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],

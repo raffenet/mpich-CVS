@@ -54,6 +54,11 @@ fi
 rm -fr conftest*])
 ])
 dnl
+dnl pac_cross_compiling overrides all tests if set to yes.  This allows
+dnl us to test the cross-compilation branches of the code, and to use
+dnl compilers that can both cross-compile and build code for the current
+dnl platform
+dnl 
 AC_DEFUN(PAC_LANG_PUSH_COMPILERS,[
 if test "X$pac_save_level" = "X" ; then
     pac_save_CC="$CC"
@@ -81,16 +86,26 @@ if test "X$pac_save_level" = "X" ; then
     # This is just:
     AC_LANG_SAVE
     AC_LANG_C
-    AC_TRY_COMPILER([main(){return(0);}], ac_cv_prog_cc_works, ac_cv_prog_cc_cross)
+    if test "$pac_cross_compiling" = "yes" ; then
+        ac_cv_prog_cc_cross=yes
+	ac_cv_prog_cc_works=yes
+    else
+        AC_TRY_COMPILER([main(){return(0);}], ac_cv_prog_cc_works, ac_cv_prog_cc_cross)
+    fi
     AC_LANG_RESTORE
     # Ignore Fortran if we aren't using it.
     if test -n "$F77" ; then
         AC_LANG_SAVE
         AC_LANG_FORTRAN77
-        AC_TRY_COMPILER(dnl
+	if test "$pac_cross_compiling" = "yes" ; then
+	    ac_cv_prog_f77_cross=yes
+	    ac_cv_prog_f77_works=yes
+	else
+            AC_TRY_COMPILER(dnl
 [      program conftest
       end
 ], ac_cv_prog_f77_works, ac_cv_prog_f77_cross)
+	fi
         AC_LANG_RESTORE
     fi
     # Ignore C++ if we aren't using it.
@@ -106,23 +121,28 @@ if test "X$pac_save_level" = "X" ; then
         PAC_LANG_FORTRAN90
 	dnl We can't use AC_TRY_COMPILER because it doesn't know about 
         dnl Fortran 90
-        cat > conftest.$ac_ext << EOF
+	if test "$pac_cross_compiling" = "yes" ; then
+	    ac_cv_prog_f90_cross=yes
+	    ac_cv_prog_f90_works=yes
+	else
+            cat > conftest.$ac_ext << EOF
       program conftest
       end
 EOF
-        if { (eval echo configure:2324: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-          ac_cv_prog_f90_works=yes
-          # If we can't run a trivial program, we are probably using a cross compiler.
-          if (./conftest; exit) 2>/dev/null; then
-              ac_cv_prog_f90_cross=no
-          else
-              ac_cv_prog_f90_cross=yes
-          fi
-        else
-          echo "configure: failed program was:" >&5
-          cat conftest.$ac_ext >&5
-          ac_cv_prog_f90_works=no
-        fi
+            if { (eval echo configure:2324: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+              ac_cv_prog_f90_works=yes
+              # If we can't run a trivial program, we are probably using a cross compiler.
+              if (./conftest; exit) 2>/dev/null; then
+                  ac_cv_prog_f90_cross=no
+              else
+                  ac_cv_prog_f90_cross=yes
+              fi
+            else
+              echo "configure: failed program was:" >&5
+              cat conftest.$ac_ext >&5
+              ac_cv_prog_f90_works=no
+            fi
+	fi
 	pac_cv_prog_f90_cross="$ac_cv_prog_f90_cross"
 	pac_cv_prog_f90_works="$ac_cv_prog_f90_works"
         rm -fr conftest*
