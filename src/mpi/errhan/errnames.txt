@@ -472,3 +472,4 @@ with MPI_Alloc_mem.
 **ch3progress:Unable to handle an event in the progress engine
 **read_progress:Unable to make read progress
 **handle_read:Unable to handle the read data
+**process_group:Process group initializatio failed
