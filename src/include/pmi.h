@@ -11,6 +11,7 @@ extern "C" {
 int PMI_Init( int *spawned );  /* initialize PMI for this process group
                                   The value of spawned indicates whether this process
                                   was created by PMI_Spawn_multiple. */
+int PMI_Initialized( void );   /* Return true if PMI has been initialized */
 int PMI_Get_size( int *size ); /* get size of process group */
 int PMI_Get_rank( int *rank ); /* get rank in process group */
 int PMI_Barrier( void );       /* barrier across processes in process group */
