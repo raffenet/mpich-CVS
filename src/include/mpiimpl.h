@@ -36,6 +36,9 @@
 /* Fix me (short may not be correct) */
 typedef short int16_t;
 #endif
+#ifndef HAVE_INT32_T
+typedef int int32_t;
+#endif
 
 /* Thread basics */
 #ifdef MPICH_SINGLE_THREADED

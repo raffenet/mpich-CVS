@@ -195,6 +195,24 @@ if test "$pac_cv_int16_t" = "no" ; then
 else
     AC_DEFINE(HAVE_INT16_T,,[Define if int16_t is supported by the C compiler])
 fi
+AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
+AC_TRY_COMPILE([#include <sys/types.h>],[int32_t a=0;],
+pac_cv_int32_t=yes,pac_cv_int32_t=no)])
+dnl
+dnl If there is not int32_t, try to define one
+if test "$pac_cv_int32_t" = "no" ; then
+    if test -z "$CROSS_SIZEOF_INT" ; then CROSS_SIZEOF_INT=4 ; fi
+    AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+    if test "$ac_cv_sizeof_int" = 4 ; then 
+        INT32_T=int
+    else
+        # No good alternative
+        INT32_T=int
+    fi
+    AC_SUBST(INT32_T)
+else
+    AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
+fi
 dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
