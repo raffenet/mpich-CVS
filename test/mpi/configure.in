@@ -38,6 +38,9 @@ AC_OUTPUT(Makefile \
 	  datatype/Makefile \
 	  errhan/Makefile \
 	  group/Makefile \
+	  info/Makefile \
 	  init/Makefile \
 	  pt2pt/Makefile \
-          rma/Makefile )
+          rma/Makefile \
+	  spawn/Makefile \
+	  topo/Makefile )

@@ -1,1 +1,1 @@
-SUBDIRS = util attr basic datatype coll comm errhan group init pt2pt rma .
+SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo .

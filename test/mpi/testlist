@@ -3,8 +3,11 @@ attr
 coll
 comm
 datatype
-#errhan
+errhan
 group
+info
 init
 pt2pt
 #rma
+spawn
+topo
