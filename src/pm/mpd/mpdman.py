@@ -344,6 +344,19 @@ def mpdman():
                         else:
                             pmiMsgToSend = 'cmd=barrier_out\n'
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        if spawned  and  not exchanged_kvss:
+                            ## NOTE: a non-MPI job might not call the pmi barrier code;
+                            ## this may cause the pgm to hang if it does spawns
+                            exec('default_kvs = %s' % default_kvsname)
+                            default_kvs['rmb_test'] = 'magpie'  # just for testing
+                            msgToSend = { 'cmd' : 'spawned_childs_kvs',
+                                          'kvsname' : default_kvsname,
+                                          'kvs' : default_kvs }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                            msg = mpd_recv_one_msg(conSocket)
+                            exec('%s = %s' % (msg['kvsname'],msg['kvs']))  # get parentkvs
+                            default_kvs['PMI_PARENT_KVSNAME'] = msg['kvsname']
+                            exchanged_kvss = 1
                     else:
                         holdingPMIBarrierLoop1 = 1
                         if pmiBarrierInRecvd:
@@ -362,6 +375,17 @@ def mpdman():
                         else:
                             pmiMsgToSend = 'cmd=barrier_out\n'
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif msg['cmd'] == 'pmi_put':
+                    if msg['to_rank'] == myRank:
+                        cmd = default_kvsname + \
+                              '["' + msg['key'] + '"] = "' + \
+                              msg['value'] + '"'
+                        try:
+                            exec(cmd)
+                        except:
+                            pass
+                    else:
+                        mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
@@ -664,24 +688,16 @@ def mpdman():
                         except Exception, errmsg:
                             pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        if spawned  and  myRank != 0:
+                            msgToSend = parsedMsg
+                            msgToSend['cmd'] = 'pmi_put'    # chg it to pmi_put
+                            msgToSend['to_rank'] = 0
+                            mpd_send_one_msg(rhsSocket,msgToSend)
                     elif parsedMsg['cmd'] == 'barrier_in':
                         pmiBarrierInRecvd = 1
                         if myRank == 0  or  holdingPMIBarrierLoop1:
                             msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
                             mpd_send_one_msg(rhsSocket,msgToSend)
-                        if myRank == 0  and  spawned  and  not exchanged_kvss:
-                            ## NOTE: a non-MPI job might not call the pmi barrier code;
-                            ## this may cause the pgm to hang if it does spawns
-                            exec('default_kvs = %s' % default_kvsname)
-                            default_kvs['rmb_test'] = 'magpie'  # just for testing
-                            msgToSend = { 'cmd' : 'spawned_childs_kvs',
-                                          'kvsname' : default_kvsname,
-                                          'kvs' : default_kvs }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            msg = mpd_recv_one_msg(conSocket)
-                            exec('%s = %s' % (msg['kvsname'],msg['kvs']))  # get parentkvs
-                            default_kvs['PMI_PARENT_KVSNAME'] = msg['kvsname']
-                            exchanged_kvss = 1
                     elif parsedMsg['cmd'] == 'get':
                         kvsname = parsedMsg['kvsname']
                         key = parsedMsg['key']
