@@ -158,7 +158,7 @@ typedef struct IBU_Global {
     char             err_msg[IBU_ERROR_MSG_LENGTH];
     /* hack to get around zero sized messages */
     void *           ack_mem_ptr;
-    /*ib_mr_handle_t   ack_mr_handle;*/
+    ib_mr_handle_t   ack_mr_handle;
     uint32_t         ack_lkey;
 #ifdef TRACE_IBU
     int outstanding_recvs, outstanding_sends, total_recvs, total_sends;
