@@ -392,7 +392,7 @@ int smpd_add_string(char *str, int maxlen, const char *val)
 	num_chars = quoted_printf(str, maxlen, val);
 	if (num_chars < maxlen)
 	{
-	    str[num_chars] = ' ';
+	    str[num_chars] = SMPD_SEPAR_CHAR;
 	    str[num_chars+1] = '\0';
 	}
 	num_chars++;
@@ -480,7 +480,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
     }
     
     /* add the trailing space */
-    **str_ptr = ' ';
+    **str_ptr = SMPD_SEPAR_CHAR;
     *str_ptr = *str_ptr + 1;
     **str_ptr = '\0';
     *maxlen_ptr = *maxlen_ptr - 1;
