@@ -105,6 +105,8 @@ be in the range 0 to %d
 **count:Invalid count
 **count %d:Invalid count, value = %d
 **bufnull:Null buffer pointer
+**intercommcoll:Intercommunicator collective operations have not been implemented
+**intercommcoll %s:Intercommunicator collective operation for %s has not been implemented
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
@@ -269,11 +271,9 @@ Fortran integer (value is %ld)
 **allocmem:Unable to allocate memory for MPI_Alloc_mem
 **allocmem %d %d:Unable to allocate %d memory for MPI_Alloc_mem; only %d available
 **notsame:Inconsistent arguments to collective routine 
-(optional arguments: name of collective routine (string), name of argument
-that is not consistent (string))
-**notsamevalue:Arguments to collective routine must be the same (optional arguments: name of collective routine
-      (string), name of argument (string), null terminated array of values
-      (array of int))
+**notsame %s %s:Inconsistent arguments %s to collective routine %s
+**notsamevalue:Arguments to collective routine must be the same
+**notsamevalue %s %s:Argument %s to collective routine %s must be the same
 **notsameroot:Inconsistent root 
 **notsameorder:Collective routines called in an inconsistent order (optional arguments: null terminated
       array of names (array of string))
