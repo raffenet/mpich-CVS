@@ -338,7 +338,9 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_SSEND, "MPI_Ssend", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_ALLTOALL, "MPI_Alltoall", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_ALLTOALLV, "MPI_Alltoallv", get_random_color_str());
-
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_TYPE_MATCH_SIZE, "MPI_Type_match_size", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_REGISTER_DATAREP, "MPI_Register_datarep", get_random_color_str());
+    
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SEND, "MPIC_Send", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_RECV, "MPIC_Recv", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SENDRECV, "MPIC_Sendrecv", get_random_color_str());
