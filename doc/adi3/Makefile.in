@@ -197,6 +197,8 @@ lists: findmod
 	if [ ! -s $*.eps ] ; then \
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
 
+goals.dvi: goals.tex adi-ov.eps
+
 install-devdocs: adi3new.pdf tcpadi3.pdf
 	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
 	    echo "You must set DEV_INSTALL_PREFIX first" ; \
