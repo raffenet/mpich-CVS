@@ -43,8 +43,6 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	fcntl_struct->fsize = resp_getattr.attr.size;
 	return;
 
-    /* --BEGIN ERROR HANDLING-- */
-    case ADIO_FCNTL_SET_ATOMICITY:
     case ADIO_FCNTL_SET_DISKSPACE:
 	/* TODO:this code is only slightly changed from every other 
 	 * file system without a preallocate function.  Find some way to
@@ -72,17 +70,12 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	    ADIO_ReadContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
-#ifdef MPICH2
-		*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-		FPRINTF(stderr, "ADIOI_UFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_PREALLOC_PERM,
-			      myname, (char *) 0, (char *) 0);
-		ADIOI_Error(fd, *error_code, myname);
-#endif
+		/* --BEGIN ERROR HANDLING-- */
+		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+						MPIR_ERR_RECOVERABLE,
+						myname, __LINE__,
+						MPI_ERR_IO, "**io",
+						"Error in ADIO_ReadContig", 0);
                 return;  
 	    }
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
@@ -106,18 +99,8 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-	/* a relic from PFS */
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
+    /* --BEGIN ERROR HANDLING-- */
     case ADIO_FCNTL_SET_ATOMICITY:
-	*error_code = MPI_ERR_UNKNOWN;
-	break;
     default:
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					   MPIR_ERR_RECOVERABLE,
