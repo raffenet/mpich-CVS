@@ -420,7 +420,7 @@
     }                                                           \
 }
 #else
-#define MPIR_ERRTEST_INITIALIZED_ORRETURN(err_) {return MPI_ERR_OTHER;}
+#define MPIR_ERRTEST_INITIALIZED_ORRETURN(err_) {}
 #endif
 #define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP MPIR_ERRTEST_INITIALIZED_ORRETURN()
 
