@@ -220,6 +220,10 @@ typedef struct {
   Question:
   Do we really want to mandate that this is a linked list, or do we want
   to make use of the 'MPID_List'?
+
+  Do we want to have a separate info header and info element?  We may want 
+  that inorder to implement the access locks needed by a multithreaded 
+  implementation.
   S*/
 typedef struct MPID_Info_s {
     int                id;
