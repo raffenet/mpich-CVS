@@ -4,6 +4,17 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+This program is not to be executed from the command line.  It is 
+exec'd by mpdman to support mpigdb.
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from sys    import argv, exit, stdin, stdout, stderr
 from os     import kill, getpid, write, strerror
 from popen2 import Popen4
@@ -32,6 +43,11 @@ def sig_handler(signum,frame):
         except:
             pass
 
+
+# This block will provide 'something' if a user does pydoc on this module
+if 'pydoc' in argv[0]  or  len(argv) == 1:
+    print __doc__
+    exit(-1)
 
 signal(SIGINT,sig_handler)
 signal(SIGUSR1,sig_handler)
