@@ -23,7 +23,7 @@ void ADIOI_GEN_Delete(char *filename, int *error_code)
 #ifdef MPICH2
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 							"**io %s", strerror(errno));
-			MPIR_Err_return_file(MPI_FILE_NULL, myname, *error_code);
+			MPIR_Err_return_file(NULL, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 			*error_code = MPI_ERR_UNKNOWN;
 #else /* MPICH-1 */
