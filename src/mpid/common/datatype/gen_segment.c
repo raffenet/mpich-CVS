@@ -417,41 +417,36 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		 * Note that this will get more complicated as I add the ability
 		 * to handle more of the partial processing cases. ???
 		 */
-		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
-		    case DLOOP_KIND_CONTIG:
-			/* cur_elmp->curoffset += piece_size; */ /* shouldn't need since popping */
-			DLOOP_SEGMENT_POP_AND_MAYBE_EXIT; /* currently always handling the whole contig */
-			break;
-		    case DLOOP_KIND_BLOCKINDEXED:
-			assert(0);
-			break;
-		    case DLOOP_KIND_INDEXED:
-			cur_elmp->curcount--;
-			if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
-			else {
-			    int count_index = cur_elmp->orig_count - cur_elmp->curcount;
+		cur_elmp->curcount--;
+		if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+		else {
+		    /* didn't finish with the type. */
+		    int count_index;
+
+		    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
+			case DLOOP_KIND_CONTIG:
+			    assert(cur_elmp->curcount == 1);
+			    /* cur_elmp->curoffset += piece_size; */ /* shouldn't need since popping */
+			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT; /* currently always handling the whole contig */
+			    break;
+			case DLOOP_KIND_BLOCKINDEXED:
+			    assert(0);
+			    break;
+			case DLOOP_KIND_INDEXED:
+			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
 
 			    cur_elmp->orig_block = DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
 			    cur_elmp->curblock   = cur_elmp->orig_block;
-			    cur_elmp->curoffset  = cur_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
-			}
-			break;
-		    case DLOOP_KIND_VECTOR:
-			cur_elmp->curcount--;
-			if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
-			else {
+			    cur_elmp->curoffset  = cur_elmp->orig_offset +
+				DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
+			    break;
+			case DLOOP_KIND_VECTOR:
 			    cur_elmp->curblock = cur_elmp->orig_block;
 			    /* NOTE: stride is in bytes */
 			    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
 				cur_elmp->loop_p->loop_params.v_t.stride;
-#if 0
-			    /* ABOVE LINE SHOULD REPLACE THESE TWO */
-			    cur_elmp->curoffset += piece_size;
-			    cur_elmp->curoffset += cur_elmp->loop_p->loop_params.v_t.stride - 
-				(cur_elmp->orig_block * cur_elmp->loop_p->el_extent);
-#endif
-			}
-			break;
+			    break;
+		    }
 		}
 	    }
 		
@@ -555,10 +550,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    /* now we update the curoffset based on the next type */
 	    switch (next_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
-		    next_elmp->curcount  = next_elmp->orig_count;
-		    next_elmp->curblock  = next_elmp->orig_block;
-		    next_elmp->curoffset = next_elmp->orig_offset;
-		    break;
 		case DLOOP_KIND_VECTOR:
 		    next_elmp->curcount  = next_elmp->orig_count;
 		    next_elmp->curblock  = next_elmp->orig_block;
