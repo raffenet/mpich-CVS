@@ -84,6 +84,17 @@ int MPI_Request_free(MPI_Request *request)
     
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
 
+    /* If this is an active persistent request, we must also release the
+       partner request. */
+    if (request_ptr->kind == MPID_PREQUEST_SEND ||
+	request_ptr->kind == MPID_PREQUEST_RECV)
+    {
+	if (request_ptr->partner_request != NULL)
+	{
+	    MPID_Request_release(request_ptr->partner_request);
+	}
+    }
+
     MPID_Request_release(request_ptr);
     *request = MPI_REQUEST_NULL;
     
