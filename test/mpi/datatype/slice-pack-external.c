@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     MPI_Pack_external_size("external32", 1, threeslice, &bufsize);
     if (bufsize != 2916)
     {
-        fprintf(stderr," Error on pack size! Got %d; expecting %d\n");
+        fprintf(stderr," Error on pack size! Got %d; expecting %d\n", bufsize, 2916);
     }
     buffer = (void *) malloc((unsigned) bufsize);
 
