@@ -57,6 +57,22 @@ int handle_command(smpd_context_t *context)
     mp_dbg_printf("entering handle_command.\n");
 
     cmd = &context->read_cmd;
+    
+    mp_dbg_printf("handle_command:\n");
+    mp_dbg_printf(" src  = %d\n", cmd->src);
+    mp_dbg_printf(" dest = %d\n", cmd->dest);
+    mp_dbg_printf(" cmd  = %s\n", cmd->cmd_str);
+    mp_dbg_printf(" str = %s\n", cmd->cmd);
+    mp_dbg_printf(" len = %d\n", cmd->length);
+    if (context == smpd_process.left_context)
+	mp_dbg_printf(" context = left\n");
+    else if (context == smpd_process.right_context)
+	mp_dbg_printf(" context = right\n");
+    else if (context == smpd_process.parent_context)
+	mp_dbg_printf(" context = parent\n");
+    else
+	mp_dbg_printf(" context = unknown\n");
+
     result = smpd_command_destination(cmd->dest, &dest);
     if (result != SMPD_SUCCESS)
     {
@@ -66,7 +82,7 @@ int handle_command(smpd_context_t *context)
     }
     if (dest)
     {
-	smpd_dbg_printf("forwarding command to %d\n", dest->id);
+	mp_dbg_printf("forwarding command to %d\n", dest->id);
 	result = smpd_forward_command(context, dest);
 	if (result != SMPD_SUCCESS)
 	{
@@ -77,8 +93,16 @@ int handle_command(smpd_context_t *context)
 	mp_dbg_printf("exiting handle_command.\n");
 	return SMPD_SUCCESS;
     }
-    if (strcmp(cmd->cmd_str, "close") == 0)
+    if ((strcmp(cmd->cmd_str, "closed") == 0) || (strcmp(cmd->cmd_str, "down") == 0))
     {
+	mp_dbg_printf("handling %s command, posting close of the sock.\n", cmd->cmd_str);
+	result = sock_post_close(context->sock);
+	if (result != SOCK_SUCCESS)
+	{
+	    mp_err_printf("unable to post a close of the sock, sock error:\n%s\n",
+		get_sock_error_string(result));
+	    return SMPD_FAIL;
+	}
 	mp_dbg_printf("exiting handle_command.\n");
 	return SMPD_CLOSE;
     }
@@ -198,7 +222,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 		mp_err_printf("unable to parse the read command: (%s)\n", context->read_cmd.cmd);
 		break;
 	    }
-	    smpd_dbg_printf("read command: (%s)\n", context->read_cmd.cmd);
+	    mp_dbg_printf("read command: (%s)\n", context->read_cmd.cmd);
 	    ret_val = handle_command(context);
 	    if (ret_val != SMPD_SUCCESS && ret_val != SMPD_CLOSE)
 	    {
@@ -477,7 +501,7 @@ int mp_console(char *host)
     sock_t sock, insock;
     sock_event_t event;
     SOCK_NATIVE_FD stdin_fd;
-    smpd_context_t *list, *context;
+    smpd_context_t *context;
     smpd_context_t *session_context;
 #ifdef HAVE_WINDOWS_H
     DWORD dwThreadID;
@@ -510,9 +534,9 @@ int mp_console(char *host)
     }
     smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
     strcpy(context->host, host);
-    list = context;
     sock_set_user_ptr(sock, context);
     session_context = context;
+    smpd_process.left_context = context;
 
     /* post a read for a possible incoming command */
     result = smpd_post_read_command(context);
@@ -555,8 +579,6 @@ int mp_console(char *host)
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_STDIN, set, insock, -1);
-    context->next = list;
-    list = context;
 
 #ifdef HAVE_WINDOWS_H
     /* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
@@ -591,6 +613,7 @@ int mp_console(char *host)
     result = SMPD_SUCCESS;
     while (result == SMPD_SUCCESS)
     {
+	mp_dbg_printf("sock_waiting for next event.\n");
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	if (result != SOCK_SUCCESS)
 	{
@@ -607,6 +630,7 @@ int mp_console(char *host)
 	    if (result == SMPD_CLOSE)
 	    {
 		mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		result = SMPD_SUCCESS;
 		break;
 	    }
 	    if (result != SMPD_SUCCESS)
@@ -628,7 +652,26 @@ int mp_console(char *host)
 	    mp_err_printf("unexpected connect event returned by sock_wait.\n");
 	    break;
 	case SOCK_OP_CLOSE:
-	    mp_err_printf("unexpected close event returned by sock_wait.\n");
+	    if (event.user_ptr == smpd_process.left_context)
+	    {
+		mp_dbg_printf("child context closed.\n");
+		free(smpd_process.left_context);
+		smpd_dbg_printf("closing the session.\n");
+		result = sock_destroy_set(set);
+		if (result != SOCK_SUCCESS)
+		{
+		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
+		    mp_dbg_printf("exiting mp_console.\n");
+		    return SMPD_FAIL;
+		}
+		mp_dbg_printf("mp_console returning SMPD_SUCCESS\n");
+		mp_dbg_printf("exiting mp_console.\n");
+		return SMPD_SUCCESS;
+	    }
+	    else
+	    {
+		mp_err_printf("unexpected close event returned by sock_wait.\n");
+	    }
 	    break;
 	default:
 	    mp_err_printf("unknown event returned by sock_wait: %d\n", event.op_type);
