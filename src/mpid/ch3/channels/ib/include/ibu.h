@@ -17,8 +17,21 @@ extern "C" {
 #include <winsock2.h>
 #include <windows.h>
 #endif
+
+#ifdef USE_IB_VAPI
+
 #include <vapi.h>
 #include <mpga.h>
+typedef VAPI_cq_hndl_t ibu_set_t;
+
+#elif defined(USE_IB_IBAL)
+
+#include <ib_al.h>
+typedef ib_cq_handle_t ibu_set_t;
+
+#else
+#error No infiniband access layer specified
+#endif
 
 
 /* definitions */
@@ -67,7 +80,6 @@ typedef enum IBU_OP
 #error Error: MPID_IBU_TYPE not defined
 #endif
 
-typedef VAPI_cq_hndl_t ibu_set_t;
 typedef struct ibu_state_t * ibu_t;
 
 
