@@ -165,7 +165,7 @@ install:
 
 # LAM added uninstall target
 uninstall:
-        @./util/romioinstall -prefix=$(PREFIX) -uninstall
+	@./util/romioinstall -prefix=$(PREFIX) -uninstall
 
 romio_lflags:
 	@echo '@ROMIO_LFLAGS@'
