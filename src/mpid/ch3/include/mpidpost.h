@@ -57,6 +57,10 @@ MPIU_Object_add_ref(req)
     assert(req->ref_count >= 0);				\
 }
 
+#define MPID_Request_create() (MPIDI_CH3_Request_create())
+
+#define MPID_Request_set_complete(req) {*req->cc_ptr = 0;}
+
 #define MPID_Request_release(req)				\
 {								\
     int ref_count;						\
