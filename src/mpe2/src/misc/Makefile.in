@@ -67,5 +67,13 @@ clean: clean_bin clean_lib
 
 distclean: clean_include clean_bin clean_lib
 	@-( cd src && $(MAKE) distclean )
-	@-$(RM) -f mpe*conf.h
-	@-$(RM) -f Makefile config.log config.status
+	@-$(RM) -f mpe_misc_conf.h
+	@-$(RM) -f Makefile
+	@-$(RM) -f config.log config.status
+	@-$(RM) -rf autom4te*.cache
+
+maintainer-clean: distclean
+	@-$(RM) -f mpe_misc_conf.h.in
+
+owner-clean: maintainer-clean
+	@-$(RM) -f configure

@@ -89,21 +89,44 @@ clean_lib:
 	 -$(RM) -f $(libbuild_dir)/*.o
 
 clean: clean_bin clean_lib
-	@-$(RM) -f work.pc work.pcl
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) clean ) ; \
 	      fi ; \
 	  done
+	@-$(RM) -f work.pc work.pcl
 
-distclean: clean_bin clean_lib
+distclean-misc: clean_include
+	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
+	@-$(RM) -f Makefile
+	@-$(RM) -f mpe_conf.h
+	@-$(RM) -r f77tmpdir
+	@-$(RM) -f config.log config.status
+	@-$(RM) -rf autom4te*.cache
+
+distclean: clean_bin clean_lib distclean-misc
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) distclean ) ; \
 	      fi ; \
 	  done
-	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
-	@-$(RM) -f Makefile mpe_conf.h config.log config.status
+
+maintainer-clean: clean_bin clean_lib distclean-misc
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg && $(MAKE) maintainer-clean ) ; \
+	      fi ; \
+	  done
+	@-$(RM) -f mpe_conf.h.in
+
+owner-clean: clean_bin clean_lib distclean-misc
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg && $(MAKE) owner-clean ) ; \
+	      fi ; \
+	  done
+	@-$(RM) -f mpe_conf.h.in
+	@-$(RM) -f configure
 
 configure: configure.in aclocal_core.m4 aclocal_f77.m4 aclocal_make.m4 \
 	aclocal_mpi.m4 aclocal.m4
