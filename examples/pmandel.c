@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 	{
 	    addr.sin_family = AF_INET;
 	    addr.sin_addr.s_addr = INADDR_ANY;
-	    addr.sin_port = DEFAULT_PORT;
+	    addr.sin_port = htons(DEFAULT_PORT);
 
 	    listener = socket(AF_INET, SOCK_STREAM, 0);
 	    if (listener == -1)
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 	    len = sizeof(addr);
 	    getsockname(listener, &addr, &len);
 	    
-	    printf("%s listening on port %d\n", processor_name, addr.sin_port);
+	    printf("%s listening on port %d\n", processor_name, ntohs(addr.sin_port));
 	    fflush(stdout);
 
 	    sock = accept(listener, NULL, NULL);
