@@ -51,7 +51,7 @@ C
 C check rbuf(i) = data from the ith location of the ith send buf, or
 C       rbuf(i) = (i-1) * size + i   
          do i=1, size
-            ans = (i-1) * size + i
+            ans = (i-1) * size + rank + 1
             if (rbuf(i) .ne. ans) then
                errs = errs + 1
                print *, rank, ' rbuf(', i, ') = ', rbuf(i), 
