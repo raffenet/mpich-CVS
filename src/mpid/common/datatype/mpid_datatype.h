@@ -181,12 +181,23 @@ do {								\
 				   0);				\
 } while (0)
 
+/*S
+  MPID_Datatype_contents - Holds envelope and contents data for a given
+                           datatype
+
+  Notes:
+  Space is allocated beyond the structure itself in order to hold the
+  arrays of types, ints, and aints, in that order.
+
+  S*/
 typedef struct MPID_Datatype_contents {
     int combiner;
     int nr_ints;
     int nr_aints;
     int nr_types;
-    /* space allocated beyond structure used to store the types[], ints[], aints[], in that order */
+    /* space allocated beyond structure used to store the types[],
+     * ints[], and aints[], in that order.
+     */
 } MPID_Datatype_contents;
 
 /* Datatype Structure */
@@ -218,19 +229,16 @@ typedef struct MPID_Datatype_contents {
   could be combined and stored in a single bit vector.  
 
   'MPI_Type_dup' could be implemented with a shallow copy, where most of the
-  data fields, particularly the 'opt_dataloop' field, would not be copied into
-  the new object created by 'MPI_Type_dup'; instead, the new object could 
-  point to the data fields in the old object.  However, this requires 
-  more code to make sure that fields are found in the correct objects and that
-  deleting the old object doesn't invalidate the dup'ed datatype.
+  data fields, would not be copied into the new object created by
+  'MPI_Type_dup'; instead, the new object could point to the data fields in
+  the old object.  However, this requires more code to make sure that fields
+  are found in the correct objects and that deleting the old object doesn't
+  invalidate the dup'ed datatype.
 
-  A related optimization would point to the 'opt_dataloop' and 'dataloop' 
-  fields in other datatypes.  This has the same problems as the shallow 
-  copy implementation.
-
-  In addition to the separate 'dataloop' and 'opt_dataloop' fields, we could
-  in addition have a separate 'hetero_dataloop' optimized for heterogeneous
-  communication for systems with different data representations. 
+  Originally we attempted to keep contents/envelope data in a non-optimized
+  dataloop.  The subarray and darray types were particularly problematic,
+  and eventually we decided it would be simpler to just keep contents/
+  envelope data in arrays separately.
 
   Earlier versions of the ADI used a single API to change the 'ref_count', 
   with each MPI object type having a separate routine.  Since reference
@@ -241,49 +249,57 @@ typedef struct MPID_Datatype_contents {
 
   S*/
 typedef struct MPID_Datatype { 
-    int           handle;            /* value of MPI_Datatype for structure */
-    volatile int  ref_count;
-    int           is_contig;     /* True if data is contiguous (even with 
-                                    a (count,datatype) pair) */
-    int           n_contig_blocks; /* number of contiguous blocks in one instance of this type */
-    int           size;          /* Q: maybe this should be in the dataloop? */
-    MPI_Aint      extent;        /* MPI-2 allows a type to be created by
-                                    resizing (the extent of) an existing 
-                                    type */
-    MPI_Aint      ub, lb,        /* MPI-1 upper and lower bounds */
-                  true_ub, true_lb; /* MPI-2 true upper and lower bounds */
-    int           alignsize;     /* size of datatype to align (affects pad) */
-    /* The remaining fields are required but less frequently used, and
-       are placed after the more commonly used fields */
-    int dataloop_size; /* size of loops for this datatype in bytes; derived value */
-    struct MPID_Dataloop *dataloop; /* default dataloop; might be optimized */
-    int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
-    int           has_sticky_lb;
-    int           is_permanent;  /* True if datatype is a predefined type */
-    int           is_committed;  /* */
+    /* handle and ref_count are filled in by MPIU_Handle_obj_alloc() */
+    int          handle; /* value of MPI_Datatype for structure */
+    volatile int ref_count;
 
-    int           eltype;      /* type of elementary datatype. Needed
-                                 to implement MPI_Accumulate */
+    /* basic parameters for datatype, accessible via MPI calls */
+    int      size;
+    MPI_Aint extent, ub, lb, true_ub, true_lb;
 
-    int           dataloop_depth; /* Depth of dataloop stack needed
-                                     to process this datatype.  This 
-                                     information is used to ensure that
-                                     no datatype is constructed that
-                                     cannot be processed (see MPID_Segment) */
+    /* chars affecting subsequent datatype processing and creation */
+    int alignsize, has_sticky_ub, has_sticky_lb;
+    int is_permanent; /* non-zero if datatype is a predefined type */
+    int is_committed;
 
-    struct MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
+    /* element information; used for accumulate and get elements
+     *
+     * if type is composed of more than one element type, then
+     * eltype == MPI_DATATYPE_NULL and element_size == -1
+     */
+    int      eltype, n_elements;
+    MPI_Aint element_size;
 
-    int32_t       cache_id;      /* These are used to track which processes */
-    /* MPID_Lpidmask mask; */         /* have cached values of this datatype */
+    /* information on contiguity of type, for processing shortcuts.
+     *
+     * is_contig is non-zero only if N instances of the type would be
+     * contiguous.
+     */
+    int is_contig;
+    int n_contig_blocks; /* # of contig blocks in one instance */
 
-    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
-
-    /* The following is needed to efficiently implement MPI_Get_elements */
-    int           n_elements;   /* Number of basic elements in this datatype */
-    MPI_Aint      element_size; /* Size of each element or -1 if elements are
-                                   not all the same size */
+    /* pointer to contents and envelope data for the datatype */
     MPID_Datatype_contents *contents;
+
+    /* dataloop members, including a pointer to the loop, the size in bytes,
+     * and a depth used to verify that we can process it (limited stack depth
+     */
+    struct MPID_Dataloop *dataloop; /* default dataloop; might be optimized */
+    int                   dataloop_size;
+    int                   dataloop_depth;
+
+    /* MPI-2 attributes and name */
+    struct MPID_Attribute *attributes;
+    char                  name[MPI_MAX_OBJECT_NAME];
+
+    /* not yet used; will be used to track what processes have cached
+     * copies of this type.
+     */
+    int32_t cache_id;
+    /* MPID_Lpidmask mask; */
+
     /* int (*free_fn)( struct MPID_Datatype * ); */ /* Function to free this datatype */
+
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
     MPID_DEV_DATATYPE_DECL
@@ -302,6 +318,15 @@ extern MPID_Datatype MPID_Datatype_direct[];
 
 /* LB/UB calculation helper macros */
 
+/* MPID_DATATYPE_CONTIG_LB_UB()
+ *
+ * Determines the new LB and UB for a block of old types given the
+ * old type's LB, UB, and extent, and a count of these types in the
+ * block.
+ *
+ * Note: if the displacement is non-zero, the MPID_DATATYPE_BLOCK_LB_UB()
+ * should be used instead (see below).
+ */
 #define MPID_DATATYPE_CONTIG_LB_UB(__cnt,		\
 				   __old_lb,		\
 				   __old_ub,		\
@@ -325,6 +350,9 @@ do {							\
 
 /* MPID_DATATYPE_VECTOR_LB_UB()
  *
+ * Determines the new LB and UB for a vector of blocks of old types
+ * given the old type's LB, UB, and extent, and a count, stride, and
+ * blocklen describing the vectorization.
  */
 #define MPID_DATATYPE_VECTOR_LB_UB(__cnt,			\
 				   __stride,			\
@@ -360,6 +388,10 @@ do {								\
 } while (0)
 
 /* MPID_DATATYPE_BLOCK_LB_UB()
+ *
+ * Determines the new LB and UB for a block of old types given the LB,
+ * UB, and extent of the old type as well as a new displacement and count
+ * of types.
  *
  * Note: we need the extent here in addition to the lb and ub because the
  * extent might have some padding in it that we need to take into account.
