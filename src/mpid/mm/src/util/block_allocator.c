@@ -99,7 +99,7 @@ int BlockFree(BlockAllocator p, void *pBlock)
 #endif
 
 #ifdef MPICH_DEV_BUILD
-    memset(pBlock, 0, p->nBlockSize);
+    memset(pBlock, -1, p->nBlockSize);
 #endif
     ((void**)pBlock)--;
     *((void**)pBlock) = p->pNextFree;
