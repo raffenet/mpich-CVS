@@ -1179,7 +1179,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
-	&print_routine_type_decl( PROTOFD, "pcontrol" );
+	&print_routine_type_decl( PROTOFD, "address" );
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
