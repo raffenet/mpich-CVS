@@ -8,4 +8,6 @@ srvec_SOURCES = srvec.c
 sr_LDADD = -L ../lib 
 srtest_SOURCES = srtest.c
 srtest_LDADD = -L ../lib 
+spawntest_SOURCES = spawntest.c
+spawntest_LDADD = -L ../lib 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
