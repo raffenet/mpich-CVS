@@ -1,4 +1,53 @@
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
+	 -I${srcdir}/../../include
 LDADD = -L../../../../lib ../util/mtest.o 
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
+
+iwriteat_SOURCES     = iwriteat.cxx
+iwrite_SOURCES       = iwrite.cxx
+iwritesh_SOURCES     = iwritesh.cxx
+write_SOURCES        = write.cxx
+writeat_SOURCES      = writeat.cxx
+writeall_SOURCES     = writeall.cxx
+writeatall_SOURCES   = writeatall.cxx
+writeallbe_SOURCES   = writeallbe.cxx
+writeord_SOURCES     = writeord.cxx
+writeordbe_SOURCES   = writeordbe.cxx
+writesh_SOURCES      = writesh.cxx
+writeatallbe_SOURCES = writeatallbe.cxx
+
+iwriteatnos_SOURCES     = iwriteatnos.cxx
+iwritenos_SOURCES       = iwritenos.cxx
+iwriteshnos_SOURCES     = iwriteshnos.cxx
+writenos_SOURCES        = writenos.cxx
+writeatnos_SOURCES      = writeatnos.cxx
+writeallnos_SOURCES     = writeallnos.cxx
+writeatallnos_SOURCES   = writeatallnos.cxx
+writeallbenos_SOURCES   = writeallbenos.cxx
+writeordnos_SOURCES     = writeordnos.cxx
+writeordbenos_SOURCES   = writeordbenos.cxx
+writeshnos_SOURCES      = writeshnos.cxx
+writeatallbenos_SOURCES = writeatallbenos.cxx
+
+
+fileerrx_SOURCES      = fileerrx.cxx
+fileinfox_SOURCES     = fileinfox.cxx
+shpositionx_SOURCES   = shpositionx.cxx
+setinfox_SOURCES      = setinfox.cxx
+filemiscx_SOURCES     = filemiscx.cxx
+
+# These IO tests are build from a template and a set of definitions.
+iwriteat.cxx write.cxx writeat.cxx writeatall.cxx writeall.cxx writeallbe.cxx \
+writeord.cxx writeordbe.cxx writesh.cxx writeatallbe.cxx \
+iwrite.cxx iwritesh.cxx \
+iwriteatnos.cxx iwritenos.cxx iwriteshnos.cxx writenos.cxx \
+writeatnos.cxx writeallnos.cxx writeatallnos.cxx writeallbenos.cxx \
+writeordnos.cxx writeordbenos.cxx writeshnos.cxx \
+writeatallbenos.cxx : ioharness.tlt ioharness.defn
+	../../maint/testmerge -defn=$(top_srcdir)/maint/common.defn \
+		$(srcdir)/ioharness.defn $(srcdir)/ioharness.tlt
+
+../util/mtestf.o: 
+	(cd ../util && $(MAKE) mtestf.o)
 
