@@ -143,7 +143,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     }
     /* --END ERROR HANDLING-- */
 
-    cart_ptr->kind          = MPI_CART;
+    cart_ptr->kind               = MPI_CART;
     cart_ptr->topo.cart.nnodes   = newsize;
     cart_ptr->topo.cart.ndims    = ndims;
     cart_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims * sizeof(int) );
