@@ -184,6 +184,12 @@ distclean: clean
 		scanpattern.eps sendrecv.eps agent.ps mpich2-arch.eps \
 		ca-nomenclature.eps vc-sm.eps send-sm.eps mmca.ps 
 
+install-devdocs: mpich2.pdf
+	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
+	    echo "You must set DEV_INSTALL_PREFIX first" ; \
+	    exit 1 ; fi
+	cp -f mpich2.pdf $(DEV_INSTALL_PREFIX)
+
 # Handle older fig2dev programs
 .fig.eps:
 	-fig2dev -L eps -l landscape $*.fig > $*.eps

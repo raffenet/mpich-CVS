@@ -13,9 +13,11 @@ by the make target \code{testing}.  These tests are designed to be run
 by both developers and automated test scripts, and follow fairly
 simple rules to make it easy to determine if the test succeeded or
 failed.  It is recommended that each test program test a single
-characteristic or function.
+characteristic or function.  There are routines in
+\file{test/mpi/util/mtest.c} to help in writing new tests, described
+in Section~\ref{sec:test-utilities}.
 
-A test in the MPICH2 test set must follow these rules:
+A test in the MPICH2 test suite must follow these rules:
 \begin{enumerate}
 \item On success (no errors or problems detected), the process with
 rank zero in \code{MPI_COMM_WORLD} must write
@@ -101,6 +103,7 @@ suite.  The next section describes utilities that can help write more
 comprehensive and flexible tests.
 
 \subsubsection{Utilities for Test Programs}
+\label{sec:test-utilities}
 The file \file{test/mpi/util/mtest.c} provides some routines that make
 it easier to write test programs that try a variety of communicators
 and datatypes.  It also provides for several levels of informational
