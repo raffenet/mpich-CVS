@@ -67,6 +67,15 @@
 #endif
 
 /* 
+   If we do not have the GCC attribute, then make this empty.  We use
+   the GCC attribute to improve error checking by the compiler, particularly 
+   for printf/sprintf strings 
+*/
+#ifndef HAVE_GCC_ATTRIBUTE
+#define __attribute__(a)
+#endif
+
+/* 
    Include the implementation definitions (e.g., error reporting, thread
    portability)
    More detailed documentation is contained in the MPICH2 and ADI3 manuals.
@@ -79,16 +88,16 @@
 #endif
 
 #ifndef HAVE_INT16_T 
-#ifdef INT16_T
-typedef INT16_T int16_t;
+#ifdef MPIU_INT16_T
+typedef MPIU_INT16_T int16_t;
 #else
 typedef short int16_t;
 #endif
 #endif
 
 #ifndef HAVE_INT32_T
-#ifdef INT32_T
-typedef INT32_T int32_t;
+#ifdef MPIU_INT32_T
+typedef MPIU_INT32_T int32_t;
 #else
 typedef int int32_t;
 #endif
@@ -98,8 +107,8 @@ typedef int int32_t;
 #ifdef HAVE_WINDOWS_H
 typedef __int64 int64_t;
 #else
-#ifdef INT64_T
-typedef INT64_T int64_t;
+#ifdef MPIU_INT64_T
+typedef MPIU_INT64_T int64_t;
 #else
 typedef long long int64_t;
 #endif
@@ -157,8 +166,8 @@ typedef enum MPIU_dbg_state_t
     MPIU_DBG_STATE_MEMLOG = 4
 }
 MPIU_dbg_state_t;
-int MPIU_dbg_printf(char *str, ...);
-int MPIU_dbglog_printf(char *str, ...);
+int MPIU_dbg_printf(char *str, ...) __attribute__((format(printf,1,2)));
+int MPIU_dbglog_printf(char *str, ...) __attribute__((format,(printf,1,2)));
 int MPIU_dbglog_vprintf(char *str, va_list ap);
 #if defined(MPICH_DBG_OUTPUT)
 extern MPIU_dbg_state_t MPIUI_dbg_state;
@@ -179,10 +188,14 @@ void MPIU_dump_dbg_memlog(FILE * fp);
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
 #define dbg_printf MPIU_dbg_printf
 /* The following are temporary definitions */
-int msg_printf(char *str, ...);
+int msg_printf(char *str, ...) __attribute__((format,(printf,1,2)));
 #define msg_fprintf fprintf
-int err_printf(char *str, ...);
+int err_printf(char *str, ...) __attribute__((format,(printf,1,2)));
 #define err_fprintf fprintf
+
+/* For unconditional debug output, use the following */
+#define DBG_PRINTF printf
+#define DBG_FPRINTF fprintf
 
 #define MPIU_Assert assert
 
@@ -200,6 +213,7 @@ int err_printf(char *str, ...);
 /* Define the string copy and duplication functions */
 /* Safer string routines */
 int MPIU_Strncpy( char *, const char *, size_t );
+int MPIU_Strnapp( char *, const char *, size_t );
 char *MPIU_Strdup( const char * );
 
 #ifdef USE_MEMORY_TRACING
@@ -257,8 +271,10 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
 
 /* Message printing */
-int MPIU_usage_printf( char *str, ... );
-int MPIU_error_printf( char *str, ... );
+int MPIU_Usage_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
+int MPIU_Msg_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
+int MPIU_Error_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
+int MPIU_Internal_error_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
 
 /* Utilities */
 int MPIU_Strncpy( char *dest, const char *src, size_t n );
@@ -266,7 +282,8 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n );
 #ifdef HAVE_SNPRINTF
 #define MPIU_Snprintf snprintf
 #else
-int MPIU_Snprintf( char *str, size_t size, const char *format, ... );
+int MPIU_Snprintf( char *str, size_t size, const char *format, ... ) 
+     __attribute__((format,(printf,3,4)));
 #endif
 
 /* Known language bindings */
@@ -1294,7 +1311,7 @@ void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
-int MPIR_Err_create_code( int, const char [], ... );
+int MPIR_Err_create_code( int, const char [], ... ) __attribute__((format,(printf,3,4)));
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
 const char * MPIR_Err_get_string(int);
