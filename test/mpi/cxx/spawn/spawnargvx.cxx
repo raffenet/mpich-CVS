@@ -44,7 +44,7 @@ int main( int argc, char *argv[] )
 	/* ./ is unix specific .
 	   The more generic approach would be to specify "spawnargv" as the 
 	   executable and pass an info with ("path", ".") */
-	intercomm = MPI::COMM_WORLD.Spawn( "./spawnargv", inargv, np,
+	intercomm = MPI::COMM_WORLD.Spawn( "./spawnargvx", inargv, np,
 			MPI::INFO_NULL, 0, errcodes );
     }
     else 

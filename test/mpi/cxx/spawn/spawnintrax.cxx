@@ -38,7 +38,7 @@ int main( int argc, char *argv[] )
 
     if (parentcomm == MPI::COMM_NULL) {
 	/* Create 2 more processes */
-	intercomm = MPI::COMM_WORLD.Spawn( "./spawnintra", MPI::ARGV_NULL, np,
+	intercomm = MPI::COMM_WORLD.Spawn( "./spawnintrax", MPI::ARGV_NULL, np,
 			MPI::INFO_NULL, 0, errcodes );
     }
     else 
