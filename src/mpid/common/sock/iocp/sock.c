@@ -744,7 +744,6 @@ static int socki_get_host_list(char *hostname, socki_host_name_t **listp)
     if (getaddrinfo(hostname, NULL, NULL/*&hint*/, &res))
     {
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**getinfo", "**getinfo %s %d", strerror(errno), errno);
-        MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
         return mpi_errno;
     }
 
