@@ -19,7 +19,9 @@ dnl   not yet check for some special options needed in particular for
 dnl   parallel computers, such as -Tcray-t3e, or special options to get
 dnl   full ANSI/ISO C, such as -Aa for HP.
 dnl
-dnlD*/
+dnl D*/
+dnl 2.52 doesn't have AC_PROG_CC_GNU
+ifdef([AC_PROG_CC_GNU],,[AC_DEFUN([AC_PROG_CC_GNU],)])
 AC_DEFUN(PAC_PROG_CC,[
 AC_PROVIDE([AC_PROG_CC])
 AC_CHECK_PROGS(CC, cc xlC xlc pgcc icc gcc )
@@ -792,6 +794,8 @@ fi
 # compiler, but they should not HAVE to
 #
 dnl --- insert 2.52 compatibility here ---
+dnl 2.52 does not have AC_PROG_CC_WORKS
+ifdef([AC_PROG_CC_WORKS],,[AC_DEFUN([AC_PROG_CC_WORKS],)])
 dnl
 AC_DEFUN(PAC_PROG_CC_WORKS,
 [AC_PROG_CC_WORKS

@@ -15,7 +15,7 @@ dnl any effect.
 dnl
 dnl See also:
 dnl PAC_LANG_POP_COMPILERS
-dnlD*/
+dnl D*/
 dnl
 dnl These two name allow you to use TESTCC for CC, etc, in all of the 
 dnl autoconf compilation tests.  This is useful, for example, when the
@@ -25,6 +25,34 @@ dnl Instead, define TESTCC, TESTCXX, TESTF77, and TESTF90 as the "local"
 dnl compilers.  Because autoconf insists on calling cpp for the header 
 dnl checks, we use TESTCPP for the CPP test as well.  And if no TESTCPP 
 dnl is defined, we create one using TESTCC.
+dnl
+dnl 2.52 does not have try_compiler, which is like try_compile, but 
+dnl it doesn't force a main program 
+dnl Not quite correct, but adequate for here
+ifdef([AC_TRY_COMPILER],,[AC_DEFUN([AC_TRY_COMPILER],
+[cat > conftest.$ac_ext <<EOF
+ifelse(_AC_LANG, [Fortran 77], ,
+[
+[#]line __oline__ "configure"
+#include "confdefs.h"
+])
+[$1]
+EOF
+if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+  [$2]=yes
+  # If we can't run a trivial program, we are probably using a cross compiler.
+  if (./conftest; exit) 2>/dev/null; then
+    [$3]=no
+  else
+    [$3]=yes
+  fi
+else
+  echo "configure: failed program was:" >&AC_FD_CC
+  cat conftest.$ac_ext >&AC_FD_CC
+  [$2]=no
+fi
+rm -fr conftest*])
+])
 dnl
 AC_DEFUN(PAC_LANG_PUSH_COMPILERS,[
 if test "X$pac_save_level" = "X" ; then
