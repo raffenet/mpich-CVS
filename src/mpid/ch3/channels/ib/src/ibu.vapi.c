@@ -16,6 +16,10 @@
 
 #ifdef USE_IB_VAPI
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 #define IBU_ERROR_MSG_LENGTH       255
 #define IBU_PACKET_SIZE            (1024 * 64)
 #define IBU_PACKET_COUNT           128
@@ -739,10 +743,6 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
     return MPI_SUCCESS;
 }
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
 #undef FUNCNAME
 #define FUNCNAME ibui_post_receive_unacked
 #undef FCNAME
@@ -1316,7 +1316,6 @@ int ibu_finalize()
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
-    /*VAPI_close_hca(IBU_Process.hca_handle);*/ /* This never returns on the macs */
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
@@ -1541,7 +1540,7 @@ int ibui_readv_unex(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-#define PRINT_IBU_WAIT
+/*#define PRINT_IBU_WAIT*/
 #ifdef PRINT_IBU_WAIT
 #define MPIU_DBG_PRINTFX(a) MPIU_DBG_PRINTF(a)
 #else
