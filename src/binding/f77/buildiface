@@ -1632,7 +1632,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     /* Check for truncation */
     if ((MPI_Aint)*v2 - b != 0) {
         *ierr = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-			  \"MPI_Address\", MPI_ERR_ARG, \"**inttoosmall\", 0 );
+			  \"MPI_Address\", __LINE__, MPI_ERR_ARG, \"**inttoosmall\", 0 );
 	(void)MPIR_Err_return_comm( 0, \"MPI_Address\",  *ierr );
     }
 #endif
@@ -1789,7 +1789,7 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
     if (f_status == MPI_F_STATUS_IGNORE) {
 	/* The call is erroneous (see 4.12.5 in MPI-2) */
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-		 \"MPI_Status_f2c\", MPI_ERR_OTHER, \"**notfstatignore\", 0 );
+		 \"MPI_Status_f2c\", __LINE__, MPI_ERR_OTHER, \"**notfstatignore\", 0 );
 	return MPIR_Err_return_comm( 0, \"MPI_Status_f2c\",  mpi_errno );
     }
     *c_status = *(MPI_Status *)	f_status;
@@ -1819,7 +1819,7 @@ int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 	c_status == MPI_STATUSES_IGNORE) {
 	/* The call is erroneous (see 4.12.5 in MPI-2) */
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-		 \"MPI_Status_c2f\", MPI_ERR_OTHER, \"**notcstatignore\", 0 );
+		 \"MPI_Status_c2f\", __LINE__, MPI_ERR_OTHER, \"**notcstatignore\", 0 );
 	return MPIR_Err_return_comm( 0, \"MPI_Status_c2f\",  mpi_errno );
     }
     *(MPI_Status *)f_status = *c_status;
