@@ -1018,7 +1018,7 @@ dnl
 dnl NOT TESTED
 AC_DEFUN(PAC_PROG_C_BROKEN_COMMON,[
 AC_MSG_CHECKING([whether global variables handled properly])
-AC_MSG_REQUIRE([AC_PROG_RANLIB])
+AC_REQUIRE([AC_PROG_RANLIB])
 ac_cv_prog_cc_globals_work=no
 echo 'extern int a; int a;' > conftest1.c
 echo 'extern int a; int main( ){ return a; }' > conftest2.c
@@ -1253,12 +1253,25 @@ dnl #define __attribute__(a)
 dnl #endif
 dnl If *not*, define __attribute__(a) as null
 dnl
+dnl We start by requiring Gcc.  Some other compilers accept __attribute__
+dnl but generate warning messages, or have different interpretations 
+dnl (which seems to make __attribute__ just as bad as #pragma) 
+dnl For example, the Intel icc compiler accepts __attribute__ and
+dnl __attribute__((pure)) but generates warnings for __attribute__((format...))
+dnl
 AC_DEFUN([PAC_C_GNU_ATTRIBUTE],[
-AC_CACHE_CHECK([whether __attribute__ allowed],
-pac_cv_gnu_attr,[
+AC_REQUIRE([AC_PROG_CC_GNU])
+if test "$ac_cv_prog_gcc" = "yes" ; then
+    AC_CACHE_CHECK([whether __attribute__ allowed],
+pac_cv_gnu_attr_pure,[
 AC_TRY_COMPILE([int foo(int) __attribute__ ((pure));],[int a;],
-pac_cv_gnu_attr=yes,pac_cv_gnu_attr=no)])
-if test "$pac_cv_gnu_attr" = "yes" ; then
-    AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
+pac_cv_gnu_attr_pure=yes,pac_cv_gnu_attr_pure=no)])
+AC_CACHE_CHECK([whether __attribute__((format)) allowed],
+pac_cv_gnu_attr_format,[
+AC_TRY_COMPILE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;],
+pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
+    if test "$pac_cv_gnu_attr_pure" = "yes" -a "$pac_cv_gnu_attr_format" = "yes" ; then
+        AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
+    fi
 fi
 ])
