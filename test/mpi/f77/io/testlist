@@ -1,0 +1,10 @@
+iwriteatf 4
+writef    4
+writeatf  4
+writeallf 4
+writeshf  4
+writeordf 4
+writeatallf 4
+writeatallbef 4
+writeallbef 4
+writeordbef 4
