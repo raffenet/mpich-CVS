@@ -1177,6 +1177,8 @@ void MPIR_Nest_incr( void );
 void MPIR_Nest_decr( void );
 int MPIR_Nest_value( void );
 #endif
+void MPIR_Wait(MPID_Request *);
+int MPIR_Test(MPID_Request *);
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);
