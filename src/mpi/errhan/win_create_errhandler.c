@@ -53,7 +53,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *e
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZE(mpi_errno);
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
@@ -74,7 +74,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *e
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_WIN;
-    errhan_ptr->errfn	 = (MPID_Errhandler_fn) function;
+    errhan_ptr->errfn.C_Win_Handler_function = function;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);

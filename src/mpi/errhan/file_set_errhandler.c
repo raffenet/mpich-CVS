@@ -53,6 +53,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
     /* Get handles to MPI objects. */
     MPID_File_get_ptr( file, file_ptr );
+    MPID_Errhandler_get_ptr( errhandler, errhan_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -62,7 +63,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
             MPID_File_valid_ptr( file_ptr, mpi_errno );
 	    /* If file_ptr is not value, it will be reset to null */
 
-	    MPIR_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
                 return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
@@ -75,7 +76,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     /* ... body of routine ...  */
     MPIU_Object_release_ref(file_ptr->errhandler,&in_use);
     if (!in_use) {
-	MPIR_Errhandler_free( file_ptr->errhandler );
+	MPID_Errhandler_free( file_ptr->errhandler );
     }
     MPIU_Object_add_ref(errhan_ptr);
     file_ptr->errhandler = errhan_ptr;

@@ -58,6 +58,7 @@ int MPIR_Err_get_string( int code, char *msg, int msg_len );
 @*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
+    return MPI_SUCCESS;
 }
 
 /*+
@@ -108,6 +109,7 @@ int MPIR_Err_add_class( const char *msg_string,
     else {
 	user_class_msgs[new_class] = 0;
     }
+    return MPI_SUCCESS;
 }
 
 /*+
@@ -133,6 +135,7 @@ int MPIR_Err_add_class( const char *msg_string,
 int MPIR_Err_add_code( int class, const char *msg_string, 
 		       const char *instance_msg_string )
 {
+    return MPI_SUCCESS;
 }
 
 /*+
@@ -202,5 +205,6 @@ void MPIR_Err_delete_class( int class )
   @*/
 int MPIR_Err_get_string( int code, char *msg, int msg_len )
 {
+    return MPI_SUCCESS;
 }
 

@@ -63,7 +63,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
 
-	    MPIR_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -76,7 +76,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
     /* ... body of routine ...  */
     MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
     if (!in_use) {
-	MPIR_Errhandler_free( comm_ptr->errhandler );
+	MPID_Errhandler_free( comm_ptr->errhandler );
     }
     MPIU_Object_add_ref(errhan_ptr);
     comm_ptr->errhandler = errhan_ptr;

@@ -57,7 +57,7 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    
-	    MPID_Valid_errhandler_ptr( errhan_ptr, mpi_errno );
+	    MPID_Errhandler_valid_ptr( errhan_ptr, mpi_errno );
 
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_FREE);

@@ -254,3 +254,7 @@ MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER,
 				      sizeof(MPID_Errhandler), MPID_Errhandler_direct,
                                       MPID_ERRHANDLER_PREALLOC, };
 
+void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr)
+{
+    MPIU_Handle_obj_free(&MPID_Errhandler_mem, errhan_ptr);
+}

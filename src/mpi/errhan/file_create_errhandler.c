@@ -73,7 +73,7 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_FILE;
-    errhan_ptr->errfn	 = (MPID_Errhandler_fn) function;
+    errhan_ptr->errfn.C_File_Handler_function = function;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
