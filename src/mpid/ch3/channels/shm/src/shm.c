@@ -47,6 +47,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	total += length;
 	len -= length;
+	vc->shm.shm->tail_index = (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
     }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -238,6 +239,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
     MPIDI_VC *recv_vc_ptr;
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     int i;
+    register int index;
     MPIDI_VC *temp_vc_ptr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 
@@ -263,12 +265,19 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 
 	for (i=0; i<vc->shm.pg->size; i++)
 	{
-	    if (vc->shm.shm[i].packet[vc->shm.shm[i].head_index].avail == MPIDI_CH3I_PKT_AVAILABLE)
+	    /* skip over the vc to myself */
+	    if (vc->shm.pg_rank == i)
 		continue;
 
-	    mem_ptr = (void*)vc->shm.shm[i].packet[vc->shm.shm[i].head_index].data;
-	    pkt_ptr = &vc->shm.shm[i].packet[vc->shm.shm[i].head_index];
-	    num_bytes = vc->shm.shm[i].packet[vc->shm.shm[i].head_index].num_bytes;
+	    index = vc->shm.shm[i].head_index;
+
+	    /* if the packet at the head index is available, the queue is empty */
+	    if (vc->shm.shm[i].packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE)
+		continue;
+
+	    mem_ptr = (void*)vc->shm.shm[i].packet[index].data;
+	    pkt_ptr = &vc->shm.shm[i].packet[index];
+	    num_bytes = vc->shm.shm[i].packet[index].num_bytes;
 	    recv_vc_ptr = &vc->shm.pg->vc_table[i]; /* This should be some GetVC function with a complete context */
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
@@ -312,8 +321,8 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		if (num_bytes == 0)
 		{
 		    /* put the shm buffer back in the queue */
-		    vc->shm.shm[i].packet[vc->shm.shm[i].head_index].avail = MPIDI_CH3I_PKT_AVAILABLE;
-		    vc->shm.shm[i].head_index = (vc->shm.shm[i].head_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
 		else
 		{
@@ -349,8 +358,8 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    recv_vc_ptr->shm.read.buffer = (char*)(recv_vc_ptr->shm.read.buffer) + num_bytes;
 		    recv_vc_ptr->shm.read.bufflen -= num_bytes;
 		    /* put the shm buffer back in the queue */
-		    vc->shm.shm[i].packet[vc->shm.shm[i].head_index].avail = MPIDI_CH3I_PKT_AVAILABLE;
-		    vc->shm.shm[i].head_index = (vc->shm.shm[i].head_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
 		if (recv_vc_ptr->shm.read.bufflen == 0)
 		{

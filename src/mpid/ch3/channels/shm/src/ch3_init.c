@@ -41,7 +41,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int val_max_sz;
 
     char shmemkey[100];
-    void *shm_addr;
     int i, j, k;
     int shm_block;
 
@@ -63,6 +62,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
     assert(pg != NULL);
     pg->size = pg_size;
+    pg->rank = pg_rank;
     pg->kvs_name = MPIU_Malloc(PMI_KVS_Get_name_length_max() + 1);
     assert(pg->kvs_name != NULL);
     rc = PMI_KVS_Get_my_name(pg->kvs_name);
@@ -105,6 +105,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.send_active = NULL;
 	vc_table[p].shm.unex_finished_next = NULL;
 	vc_table[p].shm.unex_list = NULL;
+	vc_table[p].shm.shm = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -176,28 +177,40 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #error *** No shared memory variables specified ***
 #endif
 
-	shm_addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
+	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
     }
     else
     {
-        shm_addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
+        pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
     }
 
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
-	vc_table[p].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
-	if (pg_rank == 0)
+	vc_table[i].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
+	if (i == pg_rank)
 	{
 	    for (j=0; j<pg_size; j++)
 	    {
-		vc_table[p].shm.shm[j].head_index = 0;
-		vc_table[p].shm.shm[j].tail_index = 0;
+		vc_table[i].shm.shm[j].head_index = 0;
+		vc_table[i].shm.shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
-		    vc_table[p].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc_table[i].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }
+	}
+	else
+	{
+	    vc_table[i].shm.shm += pg_rank;
+	    // post a read of the first packet header
+	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc_table[i].shm.req->shm.pkt;
+	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+	    vc_table[i].shm.req->ch3.iov_count = 1;
+	    vc_table[i].shm.req->shm.iov_offset = 0;
+	    vc_table[i].shm.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
+	    vc_table[i].shm.recv_active = vc_table[i].shm.req;
+	    MPIDI_CH3I_SHM_post_read(&vc_table[i], &vc_table[i].shm.req->shm.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL);
 	}
     }
 
