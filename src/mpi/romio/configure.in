@@ -133,6 +133,10 @@ AC_CONFIG_AUX_DIR(confdb)
 # Check that an arch was set
 # If it wasn't set, try to guess using "util/tarch"
 #
+# Sometimes tarch looses its execute bit (!)
+if test -s $srcdir/util/tarch -a ! -x $srcdir/util/tarch ; then
+    chmod a+x $srcdir/util/tarch
+fi
 if test -z "$ARCH" -a -x $srcdir/util/tarch ; then
     AC_MSG_CHECKING(for architecture)
     ARCH=`$srcdir/util/tarch | sed s/-/_/g`
