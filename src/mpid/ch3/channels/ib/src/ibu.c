@@ -782,8 +782,10 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	memcpy(mem_ptr, buf, length);
 	total += length;
 	
+	msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, length);
 	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
-	g_num_bytes_written_stack[g_cur_write_stack_index++].mem_ptr = mem_ptr;
+	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
+	g_cur_write_stack_index++;
 
 	sg_list.data_seg_p = &data;
 	sg_list.data_seg_num = 1;
@@ -881,8 +883,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 	    data[index].l_key = ibu->lkey;
 
+	    msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, len);
 	    g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
-	    g_num_bytes_written_stack[g_cur_write_stack_index++].mem_ptr = mem_ptr;
+	    g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
+	    g_cur_write_stack_index++;
 
 	    index++;
 	}
@@ -906,8 +910,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 		data[index].l_key = ibu->lkey;
 
+		msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, length);
 		g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
-		g_num_bytes_written_stack[g_cur_write_stack_index++].mem_ptr = mem_ptr;
+		g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
+		g_cur_write_stack_index++;
 
 		cur_pos += length;
 		index++;
@@ -923,7 +929,9 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     }
 
     // tell the stack how many elements were pushed on it
-    g_num_bytes_written_stack[g_cur_write_stack_index++].length = -index;
+    msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, -index);
+    g_num_bytes_written_stack[g_cur_write_stack_index].length = -index;
+    g_cur_write_stack_index++;
     msg_printf("ibui_post_writev: posting send with %d ib buffers\n", index);
 
     sg_list.data_seg_p = data;
@@ -1444,18 +1452,22 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	{
 	case OP_SEND:
 	    //num_bytes = ibui_next_num_written(ibu);
-	    num_bytes = g_num_bytes_written_stack[--g_cur_write_stack_index].length;
+	    g_cur_write_stack_index--;
+	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
+	    msg_printf("ibu_wait: send num_bytes = %d\n", num_bytes);
 	    if (num_bytes < 0)
 	    {
 		i = num_bytes;
 		num_bytes = 0;
 		for (; i<0; i++)
 		{
+		    msg_printf("num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length);
 		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
 		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
 			err_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
 		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
-		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index--].mem_ptr);
+		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
+		    g_cur_write_stack_index--;
 		}
 	    }
 	    else
