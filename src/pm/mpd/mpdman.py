@@ -589,8 +589,15 @@ def mpdman():
                              'cmd=spawn_result status=spawn_done remote_kvsname=%s\n' % \
                                  msg['kvsname']
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif msg['cmd'] == 'client_exit_status':
+                    if myRank == 0:
+                        if conSocket:
+                            mpd_send_one_msg_noprint(conSocket,msg)
+                    else:
+                        if rhsSocket:
+                            mpd_send_one_msg(rhsSocket,msg)
                 else:
-                    mpd_print(1, "unrecognized msg from spawned child :%s:" % line )
+                    mpd_print(1, "unrecognized msg from spawned child :%s:" % msg )
             elif readySocket == pmiSocket:
                 # print "RMB: MAN: RECVING ON PMISOCK"
                 line = mpd_recv_one_line(pmiSocket)
@@ -685,34 +692,13 @@ def mpdman():
                                           'kvsname' : kvsname, 'from_rank' : myRank }
                             mpd_send_one_msg(rhsSocket,msgToSend)
                     elif parsedMsg['cmd'] == 'spawn':
-                        mpdSocket = mpd_get_inet_socket_and_connect('localhost',mpdPort)
-                        msgToSend = { 'cmd' : 'manager_needs_help',
-                                      'host' : myHost,
-                                      'port' : myPort }
-                        mpd_send_one_msg(mpdSocket,msgToSend)
-                        msg = mpd_recv_one_msg(mpdSocket)
-                        if (not msg.has_key('cmd')) or  \
-                           (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')):
-                            mpd_raise('%s: failed to recv challenge from rhs; msg=:%s:' \
-                                      % (myId,msg) )
-                        response = new(''.join([mpdConfPasswd,msg['randnum']])).digest()
-                        msgToSend = { 'cmd' : 'challenge_response',
-                                      'response' : response,
-                                      'host' : myHost,
-                                      'port' : myPort }
-                        mpd_send_one_msg(mpdSocket,msgToSend)
-                        msg = mpd_recv_one_msg(mpdSocket)
-                        if (not msg.has_key('cmd')) or  \
-                           (msg['cmd'] != 'OK_to_send_requests'):
-                            mpd_raise('%s: NOT OK to send requests to mpd; msg=:%s:' \
-                                      % (myId,msg) )
                         nprocs  = int(parsedMsg['nprocs'])
                         hosts   = { (0,nprocs-1) : '_any_' }
                         execs   = { (0,nprocs-1) : parsedMsg['execname'] }
                         users   = { (0,nprocs-1) : mpd_get_my_username() }
                         cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
                         paths   = { (0,nprocs-1) : '' }
-                        args    = { (0,nprocs-1) : parsedMsg['arg'] } # fix later to handle
+                        args    = { (0,nprocs-1) : [ parsedMsg['arg'] ] } # fix later to handle
                                                                       # more than 1 arg
                         envvars = { (0,nprocs-1) : '' }
                         msgToSend = { 'cmd' : 'spawn',
@@ -732,8 +718,6 @@ def mpdman():
                         numWithIO += 2    # this proc may produce stdout and stderr
                         mpd_send_one_msg(mpdSocket,msgToSend)
                         # we send a result back to client after exchging kvs with spawnee
-                        mpdSocket.close()
-                        mpdSocket = 0
                     elif parsedMsg['cmd'] == 'finalize':
                         pmiCollectiveJob = 0
                     elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
