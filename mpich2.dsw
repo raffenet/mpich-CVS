@@ -129,7 +129,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "pmi"=.\src\pmi\impls\winmpd\pmi.dsp - Package Owner=<4>
+Project: "pmi"=.\src\pmi\winmpd\pmi.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
