@@ -83,6 +83,7 @@ allargs=""
 for arg in "$@" ; do
     # Set addarg to no if this arg should be ignored by the C compiler
     addarg=yes
+    qarg=$arg
     case $arg in 
  	# ----------------------------------------------------------------
 	# Compiler options that affect whether we are linking or no
@@ -135,16 +136,17 @@ for arg in "$@" ; do
 	# any spaces)
     *\"*) 
     qarg="'"$arg"'"
-    allargs="$allargs $qarg"
     ;;
     *\'*) 
     qarg='\"'"$arg"'\"'
-    allargs="$allargs $qarg"
     ;;
     *)
     ;;
 
     esac
+    if [ $addarg = yes ] ; then
+        allargs="$allargs $qarg"
+    fi
 done
 
 # -----------------------------------------------------------------------
