@@ -19,15 +19,15 @@
 #endif
 
 #define  TRIALS 	7
-#define  REPEAT 	1000
 int 	 g_NSAMP =	250;
 #define  PERT		3
 #define  LONGTIME	1e99
 #define  CHARSIZE	8
-#define  RUNTM		0.25
+#define  RUNTM		0.1
 double	 g_STOPTM = 	0.1;
 #define  MAXINT 	2147483647
 int      g_latency012_reps = 1000;
+#define  MAX_LAT_TIME   2
 
 #define MIN(x, y)	(((x) < (y))?(x):(y))
 #define MAX(x, y)	(((x) > (y))?(x):(y))
@@ -45,8 +45,8 @@ int g_nIproc = 0, g_nNproc = 0;
 typedef struct argstruct ArgStruct;
 struct argstruct 
 {
-    char *buff;	        /* Send buffer      */
-    char *buff1;        /* Recv buffer      */
+    char *sbuff;        /* Send buffer      */
+    char *rbuff;        /* Recv buffer      */
     int  bufflen;       /* Length of buffer */
     int  nbor,          /* neighbor */
 	 iproc,         /* rank */
@@ -66,9 +66,8 @@ struct data
 int Setup(ArgStruct *p01, ArgStruct *p12);
 void Sync(ArgStruct *p);
 void Sync012();
-#define SendData( p ) MPI_Send( p . buff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD)
-#define RecvData( p ) MPI_Recv( p . buff1,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD, &status)
-void SendRecvData(ArgStruct *p);
+#define SendData( p ) MPI_Send( p . sbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD)
+#define RecvData( p ) MPI_Recv( p . rbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD, &status)
 void SendTime(ArgStruct *p, double *t);
 void RecvTime(ArgStruct *p, double *t);
 void SendReps(ArgStruct *p, int *rpt);
@@ -118,7 +117,7 @@ int main(int argc, char *argv[])
     
     ArgStruct	args01, args12, args012;/* Argumentsfor all the calls		*/
     
-    double t, t0, t1, t2,	/* Time variables				*/
+    double t, t0, t1,	/* Time variables				*/
 	tlast01, tlast12, tlast012,/* Time for the last transmission		*/
 	latency01, latency12,	/* Network message latency			*/
 	latency012;             /* Network message latency to go from 0 -> 1 -> 2 */
@@ -206,9 +205,9 @@ int main(int argc, char *argv[])
 
     if ((g_nIproc == 0) && printopt)
     {
-	printf("Latency01 : %0.9f\n", latency01);
-	printf("Latency12 : %0.9f\n", latency12);
-	printf("Latency012: %0.9f\n", latency012);
+	printf("Latency01_ : %0.9f\n", latency01);
+	printf("Latency_12 : %0.9f\n", latency12);
+	printf("Latency012 : %0.9f\n", latency012);
 	fflush(stdout);
 	printf("Now starting main loop\n");
 	fflush(stdout);
@@ -266,7 +265,7 @@ int main(int argc, char *argv[])
 	    /* printf("allocating %d bytes\n", args01.bufflen * nrepeat + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args01.buff = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args01.sbuff = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -275,15 +274,15 @@ int main(int argc, char *argv[])
 	    }
 	    else
 	    {
-		if ((args01.buff = (char *)malloc(args01.bufflen + bufalign)) == (char *)NULL)
+		if ((args01.sbuff = (char *)malloc(args01.bufflen + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
 		    break;
 		}
 	    }
-	    /* if ((args01.buff1 = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL) */
-	    if ((args01.buff1 = (char *)malloc(args01.bufflen + bufalign)) == (char *)NULL)
+	    /* if ((args01.rbuff = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    if ((args01.rbuff = (char *)malloc(args01.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
 		fflush(stdout);
@@ -291,19 +290,19 @@ int main(int argc, char *argv[])
 	    }
 
 	    /* save the original pointers in case alignment moves them */
-	    memtmp = args01.buff;
-	    memtmp1 = args01.buff1;
+	    memtmp = args01.sbuff;
+	    memtmp1 = args01.rbuff;
 
 	    /* Possibly align the data buffer */
 	    if (!bNoCache)
 	    {
 		if (bufalign != 0)
 		{
-		    args01.buff += (bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign;
-		    /* args01.buff1 += (bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign; */
+		    args01.sbuff += (bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign;
+		    /* args01.rbuff += (bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
-	    args01.buff1 += (bufalign - (POINTER_TO_INT(args01.buff1) % bufalign) + bufoffset) % bufalign;
+	    args01.rbuff += (bufalign - (POINTER_TO_INT(args01.rbuff) % bufalign) + bufoffset) % bufalign;
 	    
 	    if (args01.tr && printopt)
 	    {
@@ -316,20 +315,20 @@ int main(int argc, char *argv[])
 	    if (args01.tr)
 	    {
 		bwdata01[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args01.buff = memtmp + ((bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args01.buff1 = memtmp1 + ((bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args01.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args01.rbuff = memtmp1 + ((bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args01.buff = memtmp;
-			    /* args01.buff1 = memtmp1; */
+			    args01.sbuff = memtmp;
+			    /* args01.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -341,13 +340,12 @@ int main(int argc, char *argv[])
 			RecvData(args01);
 			if (bNoCache)
 			{
-			    args01.buff += args01.bufflen;
-			    /* args01.buff1 += args01.bufflen; */
+			    args01.sbuff += args01.bufflen;
+			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 
-		    t2 += t*t;
 		    t1 += t;
 		    bwdata01[n].t = MIN(bwdata01[n].t, t);
 		}
@@ -356,20 +354,20 @@ int main(int argc, char *argv[])
 	    else
 	    {
 		bwdata01[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args01.buff = memtmp + ((bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args01.buff1 = memtmp1 + ((bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args01.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args01.rbuff = memtmp1 + ((bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args01.buff = memtmp;
-			    /* args01.buff1 = memtmp1; */
+			    args01.sbuff = memtmp;
+			    /* args01.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -381,8 +379,8 @@ int main(int argc, char *argv[])
 			SendData(args01);
 			if (bNoCache)
 			{
-			    args01.buff += args01.bufflen;
-			    /* args01.buff1 += args01.bufflen; */
+			    args01.sbuff += args01.bufflen;
+			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
@@ -451,7 +449,7 @@ skip_01_trial:
 	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args12.buff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args12.sbuff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -460,15 +458,15 @@ skip_01_trial:
 	    }
 	    else
 	    {
-		if ((args12.buff = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
+		if ((args12.sbuff = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
 		    break;
 		}
 	    }
-	    /* if ((args12.buff1 = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL) */
-	    if ((args12.buff1 = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
+	    /* if ((args12.rbuff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    if ((args12.rbuff = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
 		fflush(stdout);
@@ -476,19 +474,19 @@ skip_01_trial:
 	    }
 
 	    /* save the original pointers in case alignment moves them */
-	    memtmp = args12.buff;
-	    memtmp1 = args12.buff1;
+	    memtmp = args12.sbuff;
+	    memtmp1 = args12.rbuff;
 	    
 	    /* Possibly align the data buffer */
 	    if (!bNoCache)
 	    {
 		if (bufalign != 0)
 		{
-		    args12.buff += (bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign;
-		    /* args12.buff1 += (bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign; */
+		    args12.sbuff += (bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign;
+		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
-	    args12.buff1 += (bufalign - (POINTER_TO_INT(args12.buff1) % bufalign) + bufoffset) % bufalign;
+	    args12.rbuff += (bufalign - (POINTER_TO_INT(args12.rbuff) % bufalign) + bufoffset) % bufalign;
 	    
 	    if (args12.tr && printopt)
 	    {
@@ -500,20 +498,20 @@ skip_01_trial:
 	    if (args12.tr)
 	    {
 		bwdata12[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args12.buff = memtmp + ((bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args12.buff1 = memtmp1 + ((bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args12.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args12.rbuff = memtmp1 + ((bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args12.buff = memtmp;
-			    /* args12.buff1 = memtmp1; */
+			    args12.sbuff = memtmp;
+			    /* args12.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -525,13 +523,12 @@ skip_01_trial:
 			RecvData(args12);
 			if (bNoCache)
 			{
-			    args12.buff += args12.bufflen;
-			    /* args12.buff1 += args12.bufflen; */
+			    args12.sbuff += args12.bufflen;
+			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 
-		    t2 += t*t;
 		    t1 += t;
 		    bwdata12[n].t = MIN(bwdata12[n].t, t);
 		}
@@ -540,20 +537,20 @@ skip_01_trial:
 	    else
 	    {
 		bwdata12[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args12.buff = memtmp + ((bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args12.buff1 = memtmp1 + ((bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args12.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args12.rbuff = memtmp1 + ((bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args12.buff = memtmp;
-			    /* args12.buff1 = memtmp1; */
+			    args12.sbuff = memtmp;
+			    /* args12.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -565,8 +562,8 @@ skip_01_trial:
 			SendData(args12);
 			if (bNoCache)
 			{
-			    args12.buff += args12.bufflen;
-			    /* args12.buff1 += args12.bufflen; */
+			    args12.sbuff += args12.bufflen;
+			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
@@ -634,7 +631,7 @@ skip_12_trial:
 	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args012.buff = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args012.sbuff = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -643,15 +640,15 @@ skip_12_trial:
 	    }
 	    else
 	    {
-		if ((args012.buff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
+		if ((args012.sbuff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
 		    break;
 		}
 	    }
-	    /* if ((args012.buff1 = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL) */
-	    if ((args012.buff1 = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
+	    /* if ((args012.rbuff = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    if ((args012.rbuff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
 		fflush(stdout);
@@ -659,19 +656,19 @@ skip_12_trial:
 	    }
 
 	    /* save the original pointers in case alignment moves them */
-	    memtmp = args012.buff;
-	    memtmp1 = args012.buff1;
+	    memtmp = args012.sbuff;
+	    memtmp1 = args012.rbuff;
 	    
 	    /* Possibly align the data buffer */
 	    if (!bNoCache)
 	    {
 		if (bufalign != 0)
 		{
-		    args012.buff += (bufalign - (POINTER_TO_INT(args012.buff) % bufalign) + bufoffset) % bufalign;
-		    /* args12.buff1 += (bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign; */
+		    args012.sbuff += (bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign;
+		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
-	    args012.buff1 += (bufalign - (POINTER_TO_INT(args012.buff1) % bufalign) + bufoffset) % bufalign;
+	    args012.rbuff += (bufalign - (POINTER_TO_INT(args012.rbuff) % bufalign) + bufoffset) % bufalign;
 	    
 	    if (g_nIproc == 0 && printopt)
 	    {
@@ -684,20 +681,20 @@ skip_12_trial:
 	    {
 	    case 0:
 		bwdata012[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args012.buff = memtmp + ((bufalign - (POINTER_TO_INT(args012.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.buff1 = memtmp1 + ((bufalign - ((int)args012.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args012.buff = memtmp;
-			    /* args012.buff1 = memtmp1; */
+			    args012.sbuff = memtmp;
+			    /* args012.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -705,39 +702,37 @@ skip_12_trial:
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Send(args012.buff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.buff1, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
-			    args012.buff += args012.bufflen;
-			    /* args012.buff1 += args012.bufflen; */
+			    args012.sbuff += args012.bufflen;
+			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 
-		    t2 += t*t;
 		    t1 += t;
 		    bwdata012[n].t = MIN(bwdata012[n].t, t);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		/*SendTime(&args012, &bwdata012[n].t);*/
 		break;
 	    case 1:
 		bwdata012[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args012.buff = memtmp + ((bufalign - (POINTER_TO_INT(args012.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.buff1 = memtmp1 + ((bufalign - ((int)args012.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args012.buff = memtmp;
-			    /* args012.buff1 = memtmp1; */
+			    args012.sbuff = memtmp;
+			    /* args012.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -745,37 +740,36 @@ skip_12_trial:
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Recv(args012.buff1, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.buff, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.buff1, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.buff, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
-			    args012.buff += args012.bufflen;
-			    /* args012.buff1 += args012.bufflen; */
+			    args012.sbuff += args012.bufflen;
+			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		/*RecvTime(&args012, &bwdata012[n].t);*/
 		break;
 	    case 2:
 		bwdata012[n].t = LONGTIME;
-		t2 = t1 = 0;
+		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
 		    if (bNoCache)
 		    {
 			if (bufalign != 0)
 			{
-			    args012.buff = memtmp + ((bufalign - (POINTER_TO_INT(args012.buff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.buff1 = memtmp1 + ((bufalign - ((int)args012.buff1 % bufalign) + bufoffset) % bufalign); */
+			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
-			    args012.buff = memtmp;
-			    /* args012.buff1 = memtmp1; */
+			    args012.sbuff = memtmp;
+			    /* args012.rbuff = memtmp1; */
 			}
 		    }
 		    
@@ -783,18 +777,17 @@ skip_12_trial:
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Recv(args012.buff1, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.buff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
-			    args012.buff += args012.bufflen;
-			    /* args012.buff1 += args012.bufflen; */
+			    args012.sbuff += args012.bufflen;
+			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		/*RecvTime(&args012, &bwdata012[n].t);*/
 		break;
 	    }
 	    tlast012 = bwdata012[n].t;
@@ -981,8 +974,8 @@ int DetermineLatencyReps(ArgStruct *p)
     t0 = When();
     t0 = When();
     t0 = When();
-    while ( (duration < 1) ||
-	    (duration < 3 && reps < 1000))
+    while ( (duration < RUNTM) ||
+	    (duration < MAX_LAT_TIME && reps < 1000))
     {
 	t0 = When();
 	for (i=0; i<reps-prev_reps; i++)
@@ -1020,8 +1013,8 @@ int DetermineLatencyReps012()
     t0 = When();
     t0 = When();
     t0 = When();
-    while ( (duration < 1) ||
-	    (duration < 3 && reps < 1000))
+    while ( (duration < RUNTM) ||
+	    (duration < MAX_LAT_TIME && reps < 1000))
     {
 	t0 = When();
 	for (i=0; i<reps-prev_reps; i++)
@@ -1041,8 +1034,8 @@ int DetermineLatencyReps012()
 
 double TestLatency(ArgStruct *p)
 {
-    double latency, t0;
-    int i;
+    double latency, t0, min_latency = LONGTIME;
+    int i, j;
     MPI_Status status;
 
     /* calculate the latency between rank 0 and rank 1 */
@@ -1053,36 +1046,37 @@ double TestLatency(ArgStruct *p)
 	fflush(stdout);
     }
 
-    p->bufflen = 0;
-    p->buff = NULL;
-    p->buff1 = NULL;
-    Sync(p);
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    for (i = 0; i < p->latency_reps; i++)
+    for (j=0; j<TRIALS; j++)
     {
-	if (p->tr)
+	Sync(p);
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	for (i = 0; i < p->latency_reps; i++)
 	{
-	    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
-	    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	    if (p->tr)
+	    {
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	    }
+	    else
+	    {
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+	    }
 	}
-	else
-	{
-	    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
-	    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
-	}
+	latency = (When() - t0)/(2 * p->latency_reps);
+	min_latency = MIN(min_latency, latency);
     }
-    latency = (When() - t0)/(2 * p->latency_reps);
 
-    return latency;
+    return min_latency;
 }
 
 double TestLatency012()
 {
-    double latency, t0;
-    int i;
+    double latency, t0, min_latency = LONGTIME;
+    int i, j;
     MPI_Status status;
 
     /* calculate the latency between rank 0 and rank 1 */
@@ -1093,51 +1087,38 @@ double TestLatency012()
 	fflush(stdout);
     }
 
-    Sync012();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    for (i = 0; i < g_latency012_reps; i++)
+    for (j=0; j<TRIALS; j++)
     {
-	switch (g_nIproc)
+	Sync012();
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	for (i = 0; i < g_latency012_reps; i++)
 	{
-	case 0:
-	    MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-	    MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-	    break;
-	case 1:
-	    MPI_Recv(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-	    MPI_Send(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
-	    MPI_Recv(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
-	    MPI_Send(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
-	    break;
-	case 2:
-	    MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-	    MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-	    break;
+	    switch (g_nIproc)
+	    {
+	    case 0:
+		MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+		break;
+	    case 1:
+		MPI_Recv(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+		break;
+	    case 2:
+		MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+		break;
+	    }
 	}
+	latency = (When() - t0)/(2 * g_latency012_reps);
+	min_latency = MIN(min_latency, latency);
     }
-    latency = (When() - t0)/(2 * g_latency012_reps);
 
-    return latency;
-}
-
-void SendRecvData(ArgStruct *p)
-{
-    MPI_Status status;
-    
-    /*MPI_Sendrecv(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);*/
-    
-    /*
-    MPI_Request request;
-    MPI_Irecv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &request);
-    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
-    MPI_Wait(&request, &status);
-    */
-    
-    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
-    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+    return min_latency;
 }
 
 void SendTime(ArgStruct *p, double *t)
