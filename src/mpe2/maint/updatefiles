@@ -1,8 +1,8 @@
 #! /bin/sh
-MPE_AUTOHEADER=${MPE_AUTOHEADER:-"autoheader"}
-MPE_AUTOCONF=${MPE_AUTOCONF:-"autoconf"}
-AUTOHEADER=${AUTOHEADER:-${MPE_AUTOHEADER}}
-AUTOCONF=${AUTOCONF:-${MPE_AUTOCONF}}
+AUTOHEADER=${AUTOHEADER:-autoheader}
+AUTOCONF=${AUTOCONF:-autoconf}
+MPE_AUTOHEADER=${MPE_AUTOHEADER:-$AUTOHEADER}
+MPE_AUTOCONF=${MPE_AUTOCONF:-$AUTOCONF}
 
 # The directory of this script is located
 # PWD is not guaranteed to be set to the current directory in all cases
@@ -20,7 +20,7 @@ for cfgin in $cfgins ; do
     echo "Creating configure in $dir/ ..."
     cd $dir
     if [ -n "`grep AC_CONFIG_HEADER $cfgin`" ] ; then
-        $AUTOHEADER
+        $MPE_AUTOHEADER
     fi
-    $AUTOCONF
+    $MPE_AUTOCONF
 done
