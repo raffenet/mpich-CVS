@@ -319,6 +319,18 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
      ADIOI_Set_lock64((fd)->fd_sys, F_SETLK64, F_UNLCK, offset, whence, len); \
    else ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len)
 
+#elif (defined(NTFS))
+
+#define ADIOI_LOCK_CMD		0
+#define ADIOI_UNLOCK_CMD	1
+
+#   define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
+          ADIOI_Set_lock((fd)->fd_sys, ADIOI_LOCK_CMD, LOCKFILE_EXCLUSIVE_LOCK, offset, whence, len)
+#   define ADIOI_READ_LOCK(fd, offset, whence, len) \
+          ADIOI_Set_lock((fd)->fd_sys, ADIOLOCK, 0, offset, whence, len)
+#   define ADIOI_UNLOCK(fd, offset, whence, len) \
+          ADIOI_Set_lock((fd)->fd_sys, ADIOI_UNLOCK_CMD, LOCKFILE_FAIL_IMMEDIATELY, offset, whence, len)
+
 #else
 
 #   define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
@@ -330,8 +342,8 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
 
 #endif
 
-int ADIOI_Set_lock(int fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
-int ADIOI_Set_lock64(int fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
+int ADIOI_Set_lock(FDTYPE fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
+int ADIOI_Set_lock64(FDTYPE fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
 
 #define ADIOI_Malloc(a) ADIOI_Malloc(a,__LINE__,__FILE__)
 #define ADIOI_Calloc(a,b) ADIOI_Calloc(a,b,__LINE__,__FILE__)
