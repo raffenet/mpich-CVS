@@ -54,6 +54,12 @@ static inline unsigned long _InterlockedExchange(volatile void *ptr, unsigned lo
 }
 #endif
 
+#ifdef HAVE_ICC_AND_IA64
+#define HAVE__INTERLOCKEDEXCHANGE 1
+#include <ia64intrin.h>
+#define _InterlockedExchange(ptr,x) _InterlockedExchange((volatile void *)ptr,x)
+#endif
+
 extern int g_nLockSpinCount;
 
 /* Define MPIDU_Yield() */
