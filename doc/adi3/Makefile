@@ -1,4 +1,4 @@
-ALL: adi3new.ps tcpadi3.ps
+ALL: adi3new.ps tcpadi3.ps adi3new.pdf 
 SHELL = /bin/sh
 
 #
@@ -19,7 +19,7 @@ paper.dvi: paper.tex
 	-latex $*
 	-latex $*
 
-adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
+adi3man.dvi: adi3man.tex adi3.c adi3.h Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
 	(cd adi3man ; \
@@ -40,10 +40,7 @@ adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
 	bibtex adi3man ;\
-	latex adi3man < /dev/null ;\
-	dvips adi3man )
-	rm -f adi3man.ps
-	mv adi3man/adi3man.ps .
+	latex adi3man < /dev/null )
 	mv adi3man/adi3man.dvi .
 
 # This isn't ready yet.  We'd like to use doctext to generate the 

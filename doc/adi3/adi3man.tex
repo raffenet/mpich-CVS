@@ -2,10 +2,11 @@
 %   This is a latex file that generates a reference manual for 
 %   ADI-3 
 %
-\documentclass{article}
+\documentclass[dvipdfm]{article}
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
-\usepackage{url} 
+\usepackage[dvipdfm]{hyperref} % Upgraded url package
+%\usepackage{url} 
 \usepackage{epsf}
 \textheight=9in
 \textwidth=6.1in
@@ -712,7 +713,7 @@ MPICH implementation, depending on their objectives.
   interface and library routines, and not implement any of the ADI-3 functions.
 \end{enumerate}
 
-\input ../adi3implrules.tex
+\input ../adiimplrules.tex
 
 \section{Motivation}
 \label{sec:motivation}
