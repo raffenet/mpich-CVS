@@ -11,23 +11,29 @@ To update files faster, use:
     maint/updatefiles --without-codecheck
 
 
-Within MCS (Windows), assuming cygwin and that drive f: is mapped to
-/home/gropp:
+Within MCS (Windows), assuming cygwin (and the cvs available as part of
+cygwin, not the cvs for windows) and that drive f: is mapped to
+/home:
 
-    cvs -d :local:f:/MPI-home/cvsMaster checkout mpich2all
+    cvs -d /cygdrive/f/MPI/cvsMaster checkout mpich2all
     cd mpich2
-    cvs -d :local:f:/cvsMaster_z checkout confdb
+    cvs -d /cygdrive/f/MPI/cvsMaster_z checkout confdb
     maint/updatefiles
 
+Note that the cygwin cvs may not properly handle the defined modules; in that 
+case, use the directory names for each component:
+
+    cvs -d /cygdrive/f/MPI/cvsMaster checkout mpich2-01
+    ...
 
 Outside of MCS, but with an MCS account (replace "yourname" with your
 MCS login name):
 
     setenv CVS_RSH ssh
  
-    cvs -d :ext:yournamer@shakey.mcs.anl.gov:/home/MPI/cvsMaster checkout mpich2all
+    cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/MPI/cvsMaster checkout mpich2all
     cd mpich2
-    cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/gropp/cvsMaster_z checkout confdb
+    cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/MPI/cvsMaster_z checkout confdb
     maint/updatefiles
 
 
