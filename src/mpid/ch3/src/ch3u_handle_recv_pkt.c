@@ -153,6 +153,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
+    MPIU_DBG_PRINTF(("Entering MPIDI_CH3U_Handle_ordered_recv_pkt\n"));
+
     assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
     
     switch(pkt->type)
@@ -509,7 +511,9 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    abort();
 	}
     }
-    
+
+    MPIU_DBG_PRINTF(("Exiting MPIDI_CH3U_Handle_ordered_recv_pkt\n"));
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 }
 
@@ -525,7 +529,9 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     MPIDI_msg_sz_t userbuf_sz;
     MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t data_sz;
-    
+
+    MPIU_DBG_PRINTF(("Entering post_data_receive\n"));
+
     if (rreq->ch3.recv_data_sz == 0)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "null message, %s, decrementing completion counter",
@@ -600,6 +606,6 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     MPIDI_DBG_PRINTF((35, FCNAME, "posting iRead"));
     MPIDI_CH3_iRead(vc, rreq);
     
-  fn_exit:
-    ;
+fn_exit:
+    MPIU_DBG_PRINTF(("Exiting post_data_receive\n"));
 }
