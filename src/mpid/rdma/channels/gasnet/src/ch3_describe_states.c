@@ -136,8 +136,8 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3_Cancel_send",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_MPIDI_CH3_COMM_SPAWN,
-		       "MPIDI_CH3_Comm_spawn",
+		       MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE,
+		       "MPIDI_CH3_Comm_spawn_multiple",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_FINALIZE,
