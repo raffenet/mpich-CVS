@@ -597,7 +597,7 @@ fi
 # Get default structure alignment
 dnl PAC_C_STRUCT_ALIGNMENT places the default alignment into
 dnl pac_cv_c_struct_align, with possible values including
-dnl packed (byte), largest, two, four, eight.
+dnl packed (byte), largest, two, four, eight (or other failure message).
 PAC_C_STRUCT_ALIGNMENT
 dnl
 dnl Get the size of the C types for encoding in the basic datatypes and for
