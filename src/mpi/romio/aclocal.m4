@@ -660,7 +660,7 @@ define(PAC_MPI_DARRAY_SUBARRAY,[
 #include "mpi.h"
      main(int argc, char **argv)
      {
-         int i=4;
+         int i=MPI_DISTRIBUTE_CYCLIC;
          MPI_Datatype t;
          MPI_Init(&argc,&argv);
          MPI_Type_create_darray(i, i, i, &i, &i, &i, &i, i, MPI_INT, &t);
