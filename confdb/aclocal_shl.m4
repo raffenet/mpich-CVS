@@ -39,7 +39,7 @@ AC_ARG_ENABLE(sharedlibs,
     gcc     - Standard gcc and GNU ld options for creating shared libraries
     libtool - GNU libtool 
     none    - same as --disable-sharedlibs
-Only gcc is currently ignored],
+Only gcc is currently supported],
 ,enable_sharedlibs=none)
 dnl
 CC_SHL=true
@@ -59,6 +59,18 @@ case "$enable_sharedlibs" in
     ;;
     libtool)
     AC_MSG_RESULT([Creating shared libraries using libtool (not yet supported)])
+    AC_CHECK_PROGS(LIBTOOL,libtool,false)
+    if test "$LIBTOOL" = "false" ; then
+	AC_MSG_WARN([Could not find libtool])
+    else
+        # Likely to be
+        # either CC or CC_SHL is libtool $cc
+        CC_SHL='libtool ${CC}'
+        # CC_LINK_SHL includes the final installation path
+        # For many systems, the link may need to include *all* libraries
+        # (since many systems don't allow any unsatisfied dependencies)
+        C_LINK_SHL='libtool ${CC} -rpath ${libdir}'
+    fi
     ;;
 dnl
 dnl Other, such as solaris-cc
