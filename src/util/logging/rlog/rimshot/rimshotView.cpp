@@ -30,6 +30,7 @@ BEGIN_MESSAGE_MAP(CRimshotView, CView)
 	ON_COMMAND(ID_ZOOM_TO, OnZoomTo)
 	ON_WM_SIZE()
 	ON_WM_ERASEBKGND()
+	ON_COMMAND(ID_TOGGLE_ARROWS, OnToggleArrows)
 	//}}AFX_MSG_MAP
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
@@ -561,6 +562,7 @@ void CRimshotView::OnInitialUpdate()
     m_Draw.hMutex = CreateMutex(NULL, FALSE, NULL);
     m_Draw.bStop = false;
     m_Draw.nCmd = -1;
+    m_Draw.bDrawArrows = true;
     m_hDrawThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RimshotDrawThread, &m_Draw, 0, &dwThreadID);
 }
 
@@ -658,4 +660,11 @@ void CRimshotView::StartDrawing()
 BOOL CRimshotView::OnEraseBkgnd(CDC* pDC) 
 {
     return TRUE;
+}
+
+void CRimshotView::OnToggleArrows() 
+{
+    StopDrawing();
+    m_Draw.bDrawArrows = !m_Draw.bDrawArrows;
+    StartDrawing();
 }

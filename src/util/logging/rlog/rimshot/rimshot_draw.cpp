@@ -130,41 +130,44 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		if (pArg->bStop)
 		    break;
 		
-		// draw the arrows
-		if (RLOG_FindArrowBeforeTimestamp(pArg->pDoc->m_pInput, pArg->pDoc->m_dLeft, &arrow, NULL) == 0)
+		if (pArg->bDrawArrows)
 		{
-		    if (arrow.end_time < pArg->pDoc->m_dLeft)
-			RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow);
-		    pArg->pCanvas->SelectObject(GetStockObject(WHITE_PEN));
-		    while (arrow.start_time < pArg->pDoc->m_dRight)
+		    // draw the arrows
+		    if (RLOG_FindArrowBeforeTimestamp(pArg->pDoc->m_pInput, pArg->pDoc->m_dLeft, &arrow, NULL) == 0)
 		    {
-			if (pArg->bStop)
-			    break;
-			if (arrow.leftright == RLOG_ARROW_LEFT)
+			if (arrow.end_time < pArg->pDoc->m_dLeft)
+			    RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow);
+			pArg->pCanvas->SelectObject(GetStockObject(WHITE_PEN));
+			while (arrow.start_time < pArg->pDoc->m_dRight)
 			{
-			    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
-			    y = big_rect.top + (height * arrow.dest) + (height / 2);
-			    //pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
-			    pArg->pCanvas->MoveTo(x, y);
-			    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
-			    y = big_rect.top + (height * arrow.src) + (height / 2);
-			    pArg->pCanvas->LineTo(x, y);
-			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+			    if (pArg->bStop)
+				break;
+			    if (arrow.leftright == RLOG_ARROW_LEFT)
+			    {
+				x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
+				y = big_rect.top + (height * arrow.dest) + (height / 2);
+				//pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+				pArg->pCanvas->MoveTo(x, y);
+				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
+				y = big_rect.top + (height * arrow.src) + (height / 2);
+				pArg->pCanvas->LineTo(x, y);
+				pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+			    }
+			    else
+			    {
+				x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
+				y = big_rect.top + (height * arrow.src) + (height / 2);
+				pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+				pArg->pCanvas->MoveTo(x, y);
+				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
+				y = big_rect.top + (height * arrow.dest) + (height / 2);
+				pArg->pCanvas->LineTo(x, y);
+				//pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+			    }
+			    if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
+				//arrow.start_time = pArg->pDoc->m_dRight + 1;
+				break;
 			}
-			else
-			{
-			    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
-			    y = big_rect.top + (height * arrow.src) + (height / 2);
-			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
-			    pArg->pCanvas->MoveTo(x, y);
-			    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
-			    y = big_rect.top + (height * arrow.dest) + (height / 2);
-			    pArg->pCanvas->LineTo(x, y);
-			    //pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
-			}
-			if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
-			    //arrow.start_time = pArg->pDoc->m_dRight + 1;
-			    break;
 		    }
 		}
 		

@@ -17,6 +17,7 @@ struct RimshotDrawStruct
     HANDLE hDrawEvent, hStoppedEvent, hMutex;
     bool bStop;
     int nCmd;
+    bool bDrawArrows;
     CDC *pCanvas;
     CBitmap *pBitmap, *pOriginalBmp;
     CDC *pCopyCanvas;

@@ -11,3 +11,4 @@
       integer, parameter :: ID_ZOOM_OUT                     = 32774
       integer, parameter :: ID_RESET_ZOOM                   = 32775
       integer, parameter :: ID_ZOOM_TO                      = 32776
+      integer, parameter :: ID_TOGGLE_ARROWS                = 32777

@@ -94,6 +94,8 @@ BEGIN
     BUTTON      ID_ZOOM_TO
     BUTTON      ID_RESET_ZOOM
     SEPARATOR
+    BUTTON      ID_TOGGLE_ARROWS
+    SEPARATOR
     BUTTON      ID_FILE_PRINT
     BUTTON      ID_APP_ABOUT
 END
@@ -260,13 +262,13 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     ID_FILE_NEW             "Create a new document\nNew"
-    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_OPEN            "Open an existing rlog file\nOpen"
     ID_FILE_CLOSE           "Close the active document\nClose"
     ID_FILE_SAVE            "Save the active document\nSave"
     ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
     ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
     ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
-    ID_FILE_PRINT           "Print the active document\nPrint"
+    ID_FILE_PRINT           "Print the current view\nPrint"
     ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
 END
 
@@ -352,12 +354,13 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    ID_PREVIOUS             "Move the cursor to the previous event."
-    ID_NEXT                 "Move the cursor to the next event."
+    ID_PREVIOUS             "Move the cursor a fixed percentage to the left"
+    ID_NEXT                 "Move the cursor a fixed percentage to the right"
     ID_ZOOM_IN              "Zoom in"
     ID_ZOOM_OUT             "Zoom out"
-    ID_RESET_ZOOM           "Reset the zoom"
+    ID_RESET_ZOOM           "Reset the zoom to show the entire file"
     ID_ZOOM_TO              "Zoom to the current event"
+    ID_TOGGLE_ARROWS        "Toggle arrows"
 END
 
 #endif    // English (U.S.) resources
