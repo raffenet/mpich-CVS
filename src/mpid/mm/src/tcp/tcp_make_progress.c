@@ -119,6 +119,11 @@ int tcp_accept_connection()
     return MPI_SUCCESS;
 }
 
+/*@
+   tcp_make_progress - make progress
+
+   Notes:
+@*/
 int tcp_make_progress()
 {
     int nready = 0;

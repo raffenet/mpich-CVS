@@ -52,9 +52,32 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	car_ptr->data.tcp.buf.tmp.num_read += num_read;
 	break;
     case MM_VEC_BUFFER:
-	num_read = breadv(vc_ptr->data.tcp.bfd,
-	    car_ptr->data.tcp.buf.vec.vec,
-	    car_ptr->data.tcp.buf.vec.len);
+	if (car_ptr->data.tcp.buf.vec.len > 1)
+	{
+	    num_read = breadv(vc_ptr->data.tcp.bfd,
+		car_ptr->data.tcp.buf.vec.vec,
+		car_ptr->data.tcp.buf.vec.len);
+	    if (num_read == SOCKET_ERROR)
+	    {
+		TCP_Process.error = beasy_getlasterror();
+		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		err_printf("tcp_read: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		return -1;
+	    }
+	}
+	else
+	{
+	    num_read = bread(vc_ptr->data.tcp.bfd,
+		car_ptr->data.tcp.buf.vec.vec[0].MPID_VECTOR_BUF,
+		car_ptr->data.tcp.buf.vec.vec[0].MPID_VECTOR_LEN);
+	    if (num_read == SOCKET_ERROR)
+	    {
+		TCP_Process.error = beasy_getlasterror();
+		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		return -1;
+	    }
+	}
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
