@@ -35,10 +35,19 @@
 # fact in $errorFound{name}, and a routine &${name}Explanation( fd ) that
 # writes the explanation out to the given file.
 #
+# Add a way to select specific tests rather than performing all tests.
+# Also summarize by issue/routine, providing for each problem a list of files
+# to which the problem applies.
+#
 # For Fortran programs (.f, .f90, and .h with style Fortran), check for 
 # tabs.
 
 # Find parse.sub; expect it in the tree or the INC array
+#
+# Old-style (traditional) C requires that the # for a preprocessor directive 
+# must be in the first column.  We may want to check for that; we also
+# want to accept ^\s*#, not just ^# for preprocessor directives
+#
 $topdir = ".";
 if (! -s "$topdir/maint/parse.sub") {
     my $curdir = `pwd`;
@@ -266,7 +275,7 @@ sub ProcessFile {
 	    # File, Info, Datatype .
 	    if ($notInNested) {
 		&CheckForNested( FD, $_, $filename );
-	    }			# 
+	    }
 	    if (! $filename =~ /binding\/f77/ &&
 		! $filename =~ /include \/nmpi.h/) {
 		# Allow PMPI calls within the f77 binding
