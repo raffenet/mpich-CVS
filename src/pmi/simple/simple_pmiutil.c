@@ -9,10 +9,16 @@
    the PMI interface itself.  Reading and writing on pipes, signals, and parsing
    key=value messages
 */
+#include "pmiconf.h"
+
 #include <stdio.h>
 #include <stdarg.h>
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include "simple_pmiutil.h"
 
