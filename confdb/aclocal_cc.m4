@@ -1019,7 +1019,8 @@ dnl the system to find common symbols.
 dnl
 dnl NOT TESTED
 AC_DEFUN(PAC_PROG_C_BROKEN_COMMON,[
-AC_MSG_CHECKING([whether global variables handled properly])
+AC_CACHE_CHECK([whether global variables handled properly],
+ac_cv_prog_cc_globals_work,[
 AC_REQUIRE([AC_PROG_RANLIB])
 ac_cv_prog_cc_globals_work=no
 echo 'extern int a; int a;' > conftest1.c
@@ -1039,13 +1040,26 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
 	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
 		    ac_cv_prog_cc_globals_work="needs -fno-common"
 		    CFLAGS="$CFLAGS -fno-common"
+                elif test -n "$RANLIB" ; then 
+		    # Try again, with ranlib changed to ranlib -c
+		    ${RANLIB} -c libconftest.a
+		    if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
+			RANLIB="$RANLIB -c"
+	 	    #else
+		    #	# That didn't work
+		    #	:
+		    fi
+	        #else 
+		#    :
 		fi
 	    fi
         fi
     fi
 fi
-rm -f conftest* libconftest*
-AC_MSG_RESULT($ac_cv_prog_cc_globals_work)
+rm -f conftest* libconftest*])
+if test "$ac_cv_prog_cc_globals_work" = no ; then
+    AC_MSG_WARN([Common symbols not supported on this system!])
+fi
 ])
 dnl
 dnl
