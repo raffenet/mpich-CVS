@@ -183,7 +183,8 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    {
 			int mpi_errno;
 			
-			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "[ch3:sock] received packet of unknown type", 0);
+			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "[ch3:sock] received packet of unknown type %d",
+							 conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
 		    }
 		}
@@ -208,7 +209,8 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    conn->send_active = NULL;
 		    MPIDI_CH3U_Handle_send_req(conn->vc, sreq);
 		    if (conn->send_active == NULL)
-		    { 
+		    {
+			MPIDI_CH3I_SendQ_dequeue(conn->vc);
 			connection_post_sendq_req(conn);
 		    }
 		}
