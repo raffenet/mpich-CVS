@@ -1043,3 +1043,58 @@ communicator in the operation do not need to be changed.
 
 
 
+\subsection{Cancel}
+Cancelling a receive is relatively easy (unless speculative receives
+are implemented).   This simply removes a posted but unmatched receive
+from the receive queue.  This needs a
+\mpidfunc{MPID_Request_recv_remove} call.
+
+Cancelling a send requires more effort, particularly when the receive
+queue is not directly accessible to the sender (as it is in the
+\shmemname\ method).  
+
+\subsubsection{\tcpname}
+\fileinclude{samples/cancel_tcp.c}
+
+Notes:
+\begin{enumerate}
+\item A request is identified by the pair of sender request id and
+source process.  Question: should this be the local process id or the
+pair of context id and rank in communicator?
+
+\item Where are the packets allocated for the cancel acknowledgement?
+How are they recovered once 
+they are sent? One possibility is to first link the packets onto a
+pending list and include a flag in the packet that is used as the
+completion flag by the \code{MPID_Rhcv_tcp} call.  Then this list can
+be occassionally checked for complete items, particularly when such a
+packet must be allocated.  This list then become a list of ``items to
+be freed soon''.
+
+\item The code shows a request \code{state}.  Do we really need this?
+If we do, we need to check this elsewhere.  We could use this to
+remember other states, such as ``delete temporary buffers when
+complete''.
+
+\end{enumerate}
+
+\subsubsection{\shmemname}
+(not done)
+(direct access to receiver's queue may make this relatively easy)
+
+Question: Do we just want to have \mpidfunc{MPID_Request_recv_cancel}
+and \mpidfunc{MPID_Request_send_cancel} (instead of the current
+\mpidfunc{MPID_Request_cancel})? 
+
+\subsubsection{\shmemallname}
+(not done)
+
+\subsubsection{\vianame}
+(not done)
+(Is this like \tcpname?)
+
+\subsection{Multiple Completion}
+(not done)
+
+(This section needs to examine testsome and similar routines)
+
