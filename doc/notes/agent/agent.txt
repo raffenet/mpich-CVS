@@ -1027,7 +1027,8 @@ options:
   collectives are in a different context from p2p
 
 - senders in the rendezvous protocol with progress dependencies may eagerly
-  send their RTS...didn't end this thought.
+  send their RTS.  likewise the CTS may also be sent eagerly when the matching
+  receive is seen.
 
 - we need to keep a small number of buffers in reserve on some methods
   (e.g. VIA) in order to guarantee that we can make progress.  the example is a
@@ -1149,3 +1150,97 @@ method_specific_send_envelope_arrived_on_the_wire()
   allocating all cars to that size.  preserves locality while simultaneously
   separating the generic "car" from any method-specific info, allowing 3rd
   party methods to be added without modifying the generic car
+
+
+
+MPI_Wait()
+{
+    int backoff_cnt = 0;
+
+    while(req->counter > 0)
+    {
+        if (backoff_cnt++ > SPIN_THRESHOLD)
+        {
+            if (backoff_cnt < SLEEP_THRESHOLD)
+            {
+    		/* may want to do this only if you have limited processor
+    		   resources */
+    		mpid_yield();
+            }
+            else
+            {    
+    		mpid_lock(req->mutex);
+                req->state = BLOCKING_WAIT;
+                while (req->counter > 0) 
+                    mpid_cond_wait(req->mutex, req->cond);
+                mpid_unlock(req->mutex);
+            }
+        }
+    }
+}
+
+
+tcp_make_progress()
+{
+    /* assuming a set of global FD set which contain the current "list" of
+       active FDs, we simply make a copy of those  
+    fd_set local_read_set = global_read_set;
+    fd_set local_write_set = global_write_set;
+    nset = select(nfds, local_read_set, local_write_set, NULL, timeout);
+
+    foreach fd (set in local_read_set)
+    {
+        get_header();
+        if (new incoming message)
+        {
+            comm = get_comm_from_context(context_id);
+	    recv_incoming_foa(comm, rank, tag, &car, &found);
+            if (found)
+            {
+                if (car->type & PACKED_BUF_DEPENDENCY != 0)
+                {
+                }
+
+                if (car->type & UNPACK == UNPACK)
+                {
+		    MPID_Segment_init(car->segment, car->buf, car->count,
+                                      car->datatype);
+                }
+                
+            } 
+        }
+    }
+}
+
+Inter-method interface
+
+progress reporting:
+
+recv CAR has new data available and want to allow the method associated with
+the send CAR to make progress on the send CAR.  This implies that we need a
+function provided by the send CAR's method which the recv CAR's method can call
+directly.
+
+car_r.car_s.vc.recv_ready(car_s)
+
+provide_bufs(car_s, <bufs>, length)
+
+report_progress(car, nbytes)
+
+provide_bufs_and_progress(car, bufs, len, nbytes)
+{
+}
+
+-----
+
+Open Issues:
+
+- When should the ready signal be triggered from the receive car to the send
+  car?
+
+- When should buffers be allocated when forwarding eager messages so as to
+  avoid buffer copies?
+
+- Need to define the communication agent
+
+

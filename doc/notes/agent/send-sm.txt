@@ -1,0 +1,112 @@
+Prototype Method Send State Machine
+
+This state machine is targeted towards packet based systems such as VIA.  Some
+simplifications may be possible for stream based model like TCP.
+
+Tasks for this state machine:
+
+- send message at the head of the queue
+
+  - message data source exists in two forms:
+
+    - provided by user - potentially needing to be packed but guaranteed to be
+      available when the request is enqueued
+
+    - provided by associated recv CAR - may not be (completely) available until
+      later (i.e., send could stall)
+
+- track buffers provided by associated recv CAR
+
+- provide buffers to associated recv CAR
+
+- enforce flow control
+
+
+This version of the state machine only handles sending from a user provided
+buffer.  It needs to be expanded to include the forwarding cases.
+
+State [Awaiting Request]
+    Event [Request Available]
+	// always need a buffer for control information
+	Invoke_Action([Decide Msg Type])
+
+Action [Decide Msg Type]
+    // If the message type has not been determined before, process the
+    // envelope CAR to determine the type of message to send (short, eager,
+    // rndv-RTS).  Note: An otherwise eager message may get converted to a
+    // rndv-RTS message if too many outstanding eager messages have already
+    // been sent to the receiving process.
+    Invoke_Action([Check Buffers for Ctrl Pkt])
+
+Action [Check Buffers for Ctrl Pkt]
+    // get buffers if we don't already have some
+    if buffers are not available
+	State_Change([Awaiting Buffers for Ctrl Pkt])
+    else
+        Invoke_Action([Check Flow Control for Ctrl Pkt])
+
+State [Awaiting Buffers for Ctrl Pkt]
+    Event [Buffers Available]
+	Invoke_Action([Check Flow Control for Ctrl Pkt])
+
+Action [Check Flow Control for Ctrl Pkt]
+    if flow restricted // all tensed up
+        State_Change([Awaiting Flow for Ctrl Pkt])
+    else
+        Invoke_Action([Post Send for Ctrl Pkt])
+
+State [Awaiting Flow for Ctrl Pkt]
+    Event [Flow Enabled]
+        Invoke_Action([Post Send for Ctrl Pkt])
+
+Action [Post Send for Ctrl Pkt]
+    // post the send
+    if there are no more data packets to send
+        State_Change([Awaiting Request])
+    else if we are sending directly from user buffer
+        Invoke_Action([Check Flow Control for Data Pkts])
+    else
+        Invoke_Action([Check Buffers for Data Pkts])
+    
+Action [Check Buffers for Data Pkts]
+    // try to get buffers if we need them
+    if buffers aren't available
+        State_Change([Awaiting Buffers for Data Pkts])
+    else
+        Invoke_Action([Check Flow Control for Data Pkts])
+
+State [Awaiting Buffers for Data Pkts]
+    Event [Buffers Available]
+        Invoke_Action([Check Flow Control for Data Pkts])
+
+Action [Check Flow Control for Data Pkts]
+    if flow restricted
+        State_Change([Awaiting Flow Control for Data Pkts])
+    else
+        Invoke_Action([Post Send for Data Pkts])
+
+State [Awaiting Flow Control for Data Pkts]
+    Event [Flow Enabled]
+        Invoke_Action([Post Send for Data Pkts])
+
+// TODO: Add buffer packing into flow
+
+Action [Post Send for Data Pkts]
+    post send
+    // Note: In the implementation, we may want to post multiple packets sends
+    // at one time, amortizing the cost of checking for buffers and checking
+    // flow control over a set of outgoing packets.  We are uncertain how
+    // packing multiple buffers then posting multiple sends will affect
+    // peformance, but clearly amortizing costs when sending straight out of
+    // the user buffer will be a win.
+
+    if there are more data packets to send
+        if we are sending directly from the user buffer
+	    Invoke_Action([Check Flow for Data Pkts])
+	else
+            Invoke_Action([Check Buffers for Data Pkts])
+    else
+        if more requests are on the send queue
+            Invoke_Action([Decide Msg Type])
+        else
+            State_Change([Awaiting Request])
