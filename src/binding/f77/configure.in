@@ -224,8 +224,21 @@ AC_SUBST(libbuild_dir)
 
 PAC_PROG_CC
 AC_C_CONST
-AC_TRY_COMPILE(,[long long i;],AC_DEFINE(HAVE_LONG_LONG,1,[Define if C compiler supports long long type]))
-AC_TRY_COMPILE(,[long double d;],AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if C compiler supports long double type]))
+# Check on support for long double and long long types.
+AC_CACHE_CHECK([whether long double is supported],
+pac_cv_have_long_double,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+if test "$pac_cv_have_long_double" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_DOUBLE,,[Define if long double is supported])
+fi
+AC_CACHE_CHECK([whether long long is supported],
+pac_cv_have_long_long,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+if test "$pac_cv_have_long_long" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_LONG_INT,,[Define if long long is supported])
+fi
 dnl
 dnl Autoconf bug: AC_PROG_F77 sets FFLAGS 
 save_FFLAGS="$FFLAGS"
