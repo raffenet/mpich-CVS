@@ -1331,7 +1331,7 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\romio\mpi-io\delete.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\init\describe_mpi_states.c">
+				RelativePath=".\src\util\logging\common\describe_states.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\dims_create.c">
@@ -2046,9 +2046,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\seek_sh.c">
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\segment_describe_states.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\send.c">

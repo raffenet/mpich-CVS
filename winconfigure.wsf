@@ -528,6 +528,32 @@ End If
 
 
 '
+' Generate mpiallstates.h and describe_states.c
+'
+If bForce Or Not f.FileExists("maint\genstates") Then
+
+	If f.FileExists("maint\genstates.in") Then
+
+		set fin = f.OpenTextFile("maint\genstates.in")
+		set fout = f.CreateTextFile("maint\genstates")
+		contents = fin.ReadAll()
+		contents = Replace(contents, "@PERL@", "perl")
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()
+
+	Else
+
+		WScript.Echo("Missing file: maint\genstates.in")
+  
+	End If
+	
+	Set WshShell = CreateObject("WScript.Shell")
+	WshShell.Run "perl maint\genstates", 0, true
+
+End If
+
+'
 ' Generate mpif.h
 '
 
