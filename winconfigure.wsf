@@ -2352,7 +2352,9 @@ Sub AddDefinitions( fout, filename )
 				Case "C_ALLOCA"
 					fout.WriteLine("/* #undef C_ALLOCA */")
 				Case "HAVE_ALLOCA"
-					fout.WriteLine("/* #undef HAVE_ALLOCA */")
+					'fout.WriteLine("/* #undef HAVE_ALLOCA */")
+					fout.WriteLine("#define HAVE_ALLOCA 1")
+					fout.WriteLine("#define alloca _alloca")
 				Case "HAVE_ALLOCA_H"
 					fout.WriteLine("/* #undef HAVE_ALLOCA_H */")
 				Case "HAVE_PTHREAD_YIELD"
