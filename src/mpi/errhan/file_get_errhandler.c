@@ -97,8 +97,14 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
      *errhandler = e->handle;
  }
 #else
-    *errhandler = file_ptr->errhandler->handle;
-    MPIU_Object_add_ref(file_ptr->errhandler);
+    /* Check for default error handler */
+    if (!file_ptr->errhandler) {
+	*errhandler = MPI_ERRORS_RETURN;
+    }
+    else {
+	*errhandler = file_ptr->errhandler->handle;
+	MPIU_Object_add_ref(file_ptr->errhandler);
+    }
 #endif
     /* ... end of body of routine ... */
 

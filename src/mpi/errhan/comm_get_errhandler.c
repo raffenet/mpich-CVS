@@ -69,13 +69,14 @@ int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    /* Check for default error handler */
     if (!comm_ptr->errhandler) {
-	/* Set the default error handler if not already set */
-	comm_ptr->errhandler = &MPID_Errhandler_builtin[MPI_ERRORS_ARE_FATAL];
+	*errhandler = MPI_ERRORS_ARE_FATAL;
     }
-
-    *errhandler = comm_ptr->errhandler->handle;
-    MPIU_Object_add_ref(comm_ptr->errhandler);
+    else {
+	*errhandler = comm_ptr->errhandler->handle;
+	MPIU_Object_add_ref(comm_ptr->errhandler);
+    }
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_ERRHANDLER);
