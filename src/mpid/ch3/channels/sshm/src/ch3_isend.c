@@ -65,13 +65,13 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 		if (nb == pkt_sz)
 		{ 
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
-		    /* ssm version:
+		    /* ssm version: */
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
 		    if (sreq->dev.iov_count != 0)
 		    {
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    }
-		    */
+		    /*
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
 		    if (sreq->dev.iov_count == 0)
@@ -81,6 +81,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 			    MPIDI_CH3I_SendQ_dequeue(vc);
 			}
 		    }
+		    */
 		}
 		else
 		{
