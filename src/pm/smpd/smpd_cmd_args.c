@@ -8,8 +8,12 @@
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
 #endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
@@ -280,35 +284,37 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
 
     smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-    if (smpd_get_opt_string(argcp, argvp, "pwdfile", pwdfile, SMPD_MAX_FILENAME))
+    if (smpd_get_opt_string(argcp, argvp, "-pwdfile", pwdfile, SMPD_MAX_FILENAME) ||
+	smpd_get_opt_string(argcp, argvp, "-smpdpwdfile", pwdfile, SMPD_MAX_FILENAME))
     {
 	FILE *fin;
 	char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
 	struct stat s;
 
-	fin = fopen(pwdfile, "r");
-	if (fin != NULL)
+	if (stat(pwdfile, &s) == 0)
 	{
-	    if (fstat(fileno(fin), &s) == 0)
+	    if (s.st_mode & 0x00077)
 	    {
-		/* fail if the file is read/writeable by more than the current user */
-		if (s.st_mode && 0x077)
-		{
-		    printf("pwdfile cannot be readable by anyone other than the current user.\n");
-		}
+		printf("pwdfile cannot be readable by anyone other than the current user.\n");
+		smpd_exit_fn("smpd_parse_command_args");
+		return SMPD_FAIL;
 	    }
-	    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
-	    line[SMPD_PASSPHRASE_MAX_LENGTH] = '\0';
-	    if (strlen(line) > 0)
+	    fin = fopen(pwdfile, "r");
+	    if (fin != NULL)
 	    {
-		while (strlen(line) > 0 && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
-		    line[strlen(line)-1] = '\0';
+		fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
+		line[SMPD_PASSPHRASE_MAX_LENGTH] = '\0';
 		if (strlen(line) > 0)
 		{
-		    strcpy(smpd_process.passphrase, line);
+		    while (strlen(line) > 0 && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+			line[strlen(line)-1] = '\0';
+		    if (strlen(line) > 0)
+		    {
+			strcpy(smpd_process.passphrase, line);
+		    }
 		}
+		fclose(fin);
 	    }
-	    fclose(fin);
 	}
     }
 

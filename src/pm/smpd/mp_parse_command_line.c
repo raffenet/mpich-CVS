@@ -350,6 +350,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int total;
     char path[SMPD_MAX_PATH_LENGTH];
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
+    char smpdpwdfilename[SMPD_MAX_FILENAME];
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -928,6 +929,48 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
 	    {
 		smpd_process.noprompt = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "smpdpwdfile") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no file name specified after -smpdpwdfile option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(smpdpwdfilename, (*argvp)[2], SMPD_MAX_FILENAME);
+		{
+		    FILE *fin;
+		    char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
+		    struct stat s;
+
+		    if (stat(smpdpwdfile, &s) == 0)
+		    {
+			if (s.st_mode & 0x00077)
+			{
+			    printf("Error: smpd password file cannot be readable by anyone other than the current user.\n");
+			    smpd_exit_fn("mp_parse_command_args");
+			    return SMPD_FAIL;
+			}
+			fin = fopen(smpdpwdfile, "r");
+			if (fin != NULL)
+			{
+			    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
+			    line[SMPD_PASSPHRASE_MAX_LENGTH] = '\0';
+			    if (strlen(line) > 0)
+			    {
+				while (strlen(line) > 0 && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+				    line[strlen(line)-1] = '\0';
+				if (strlen(line) > 0)
+				{
+				    strcpy(smpd_process.passphrase, line);
+				}
+			    }
+			    fclose(fin);
+			}
+		    }
+		}
+		num_args_to_strip = 2;
 	    }
 	    else
 	    {
