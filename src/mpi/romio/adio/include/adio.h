@@ -57,7 +57,12 @@
 # define FORTRAN_API
 #endif
 
+/* Include romioconf.h if we haven't already (some include files may
+   need to include romioconf before some system includes) */
+#ifndef ROMIOCONF_H_INCLUDED
 #include "romioconf.h"
+#define ROMIOCONG_H_INCLUDED
+#endif
 
 #include "mpi.h"
 #include <fcntl.h>

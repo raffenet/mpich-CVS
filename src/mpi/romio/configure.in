@@ -1224,8 +1224,29 @@ main() {
 fi
 
 if test -n "$file_system_pvfs"; then
-   # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
-    AC_DEFINE(ROMIO_PVFS,1,[Define for Romio with PVFS])
+    # Check for missing int64_t (intel version 8 compiler and -no-gcc
+    # selected)
+    AC_MSG_CHECKING([that pvfs.h can be compiled])
+    AC_TRY_COMPILE([
+#include <pvfs.h>
+],[],pvfs_header_ok=yes,pvfs_header_ok=no)
+    AC_MSG_RESULT($pvfs_header_ok)
+    if test "$pvfs_header_ok" = no ; then
+        AC_MSG_CHECKING([if pvfs.h can be compiled if we define int64_t])
+        # Try again, but with int64_t
+        AC_TRY_COMPILE([
+typedef long long int int64_t;
+#include <pvfs.h>
+],[],pvfs_header_ok="yes with int64 definition")
+        AC_MSG_RESULT($pvfs_header_ok)
+    fi
+    if test "$pvfs_header_ok" = "yes with int64 definition" ; then
+        AC_DEFINE(ROMIO_PVFS_NEEDS_INT64_DEFINITION,1,[Define if int64_t must be defined for PVFS])
+    fi
+    if test "$pvfs_header_ok" != "no" ; then
+        # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
+        AC_DEFINE(ROMIO_PVFS,1,[Define for Romio with PVFS])
+    fi
 fi
 if test -n "$file_system_pvfs2"; then
     AC_DEFINE(ROMIO_PVFS2,1,[Define for Romio with PVFS2])
@@ -1479,7 +1500,7 @@ else
 fi
 
 AC_CHECK_HEADERS(unistd.h,
-        AC_MSG_CHECKING(for large file defines)
+        AC_MSG_CHECKING([for large file defines])
         AC_TRY_COMPILE([
                 #include <unistd.h>
                 ], [
