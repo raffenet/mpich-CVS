@@ -9,6 +9,7 @@
 
 package base.drawable;
 
+import java.util.Comparator;
 import java.io.DataOutput;
 import java.io.DataInput;
 
@@ -17,6 +18,12 @@ public class TimeBoundingBox
     public  static final TimeBoundingBox  ALL_TIMES
                          = new TimeBoundingBox( Double.NEGATIVE_INFINITY,
                                                 Double.POSITIVE_INFINITY );
+
+    public  static final Comparator       INCRE_STARTTIME_ORDER
+                         = new IncreasingStarttimeComparator();
+
+    public  static final Comparator       INCRE_FINALTIME_ORDER
+                         = new IncreasingFinaltimeComparator();
 
     public  static final int              BYTESIZE = 8  /* earliest_time */
                                                    + 8  /* latest_time */  ;
@@ -325,4 +332,63 @@ public class TimeBoundingBox
         System.out.println( timebox );
     }
 */
+
+/*
+    This comparator to Collections.sort() will arrange TimeBoundingBoxs
+    in increasing starttime order.  If starttimes are equals, TimeBoundingBox
+    will then be arranged in decreasing finaltime order.
+*/
+    private static class IncreasingStarttimeComparator implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            TimeBoundingBox  timebox1, timebox2;
+            timebox1 = (TimeBoundingBox) o1;
+            timebox2 = (TimeBoundingBox) o2;
+            if ( timebox1.earliest_time != timebox2.earliest_time )
+                // increasing starttime order ( 1st order )
+                return ( timebox1.earliest_time < timebox2.earliest_time
+                       ? -1 : 1 );
+            else {
+                if ( timebox1.latest_time != timebox2.latest_time )
+                    // decreasing finaltime order ( 2nd order )
+                    return ( timebox1.latest_time > timebox2.latest_time
+                           ? -1 : 1 );
+                else {
+                    // if ( timebox1 == timebox2 )
+                        return 0;
+                }   // FinalTime
+            }   // StartTime
+        }
+    }
+
+/*
+    This comparator to Collections.sort() will arrange TimeBoundingBoxs
+    in increasing finaltime order.  If finaltimes are equals, TimeBoundingBox
+    will then be arranged in decreasing starttime order.
+*/
+    private static class IncreasingFinaltimeComparator implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            TimeBoundingBox  timebox1, timebox2;
+            timebox1 = (TimeBoundingBox) o1;
+            timebox2 = (TimeBoundingBox) o2;
+            if ( timebox1.latest_time != timebox2.latest_time )
+                // increasing finaltime order ( 1st order )
+                return ( timebox1.latest_time < timebox2.latest_time
+                       ? -1 : 1 );
+            else {
+                if ( timebox1.earliest_time != timebox2.earliest_time )
+                    // decreasing starttime order ( 2nd order )
+                    return ( timebox1.earliest_time > timebox2.earliest_time
+                           ? -1 : 1 );
+                else {
+                    // if ( timebox1 == timebox2 )
+                        return 0;
+                }   // StartTime
+            }   // FinalTime
+        }
+    }
+
 }
