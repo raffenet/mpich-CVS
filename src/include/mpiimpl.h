@@ -1951,8 +1951,14 @@ extern int MPID_THREAD_LEVEL;
 #endif
 /* ------------------------------------------------------------------------- */
 
-/* set up the timing macros */
-#include "mpitimerimpl.h"
+/* if fine-grain nest testing is enabled then define the function enter/exit
+   macros to track the nesting level; otherwise, allow the timing module the
+   opportunity to define the macros */
+#if defined(MPICH_DEBUG_FINE_GRAIN_NESTING)
+#   include "mpidu_func_nesting.h"
+#else
+#   include "mpitimerimpl.h"
+#endif
 
 /* Definitions for error handling and reporting */
 #include "mpierror.h"

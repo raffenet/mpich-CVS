@@ -521,6 +521,9 @@ for option in $enable_g ; do
 	nesting)
 	perform_nesttesting=yes
 	;;	
+	fine-grain-nesting|fg-nesting)
+	perform_fg_nesttesting=yes
+	;;	
 	mem)
 	perform_memtracing=yes
 	;;
@@ -546,6 +549,9 @@ if test -n "$perform_memtracing" ; then
 fi
 if test -n "$perform_nesttesting" ; then
     AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
+fi
+if test -n "$perform_fg_nesttesting" ; then
+    AC_DEFINE(MPICH_DEBUG_FINE_GRAIN_NESTING,1,[Define to perform a fine-grain nesting level check on exit])
 fi
 if test "$enable_debuginfo" = "yes" ; then
     debugger_dir=debugger
