@@ -32,7 +32,7 @@ volatile int MPIDI_Passive_target_thread_exit_flag=0;
 int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
                     MPID_Comm *comm_ptr, MPID_Win **win_ptr)
 {
-#ifdef HAVE_WINTHREADS
+#if defined(HAVE_WINTHREADS) && !defined(MPICH_SINGLE_THREADED)
     DWORD dwThreadID;
 #endif
     int mpi_errno;

@@ -25,7 +25,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg);
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
-#ifdef HAVE_WINTHREADS
+#if defined(HAVE_WINTHREADS) && !defined(MPICH_SINGLE_THREADED)
     DWORD dwThreadID;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_POST);
