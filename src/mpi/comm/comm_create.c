@@ -145,6 +145,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     }
 
     newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
+    newcomm_ptr->rank        = group_ptr->rank;
     /* Since the group has been provided, let the new communicator know
        about the group */
     newcomm_ptr->local_group  = group_ptr;
@@ -159,10 +160,14 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/* For rank i in the new communicator, find the corresponding
 	   rank in the input communicator */
 	MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], &newcomm_ptr->vcr[i] );
+
+	printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] );
     }
 
     /* Notify the device of this new communicator */
+    printf( "about to notify device\n" );
     MPID_Dev_comm_create_hook( newcomm_ptr );
+    printf( "about to return from comm_create\n" );
 
     *newcomm = newcomm_ptr->handle;
 
