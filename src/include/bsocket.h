@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "mpidconf.h"
 #include "mpichconf.h"
 
 /* sockaddr_in (Internet) */
