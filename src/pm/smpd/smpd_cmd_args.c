@@ -154,27 +154,31 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     if (smpd_get_opt_two_strings(argcp, argvp, "-set", opt, SMPD_MAX_NAME_LENGTH, opt_val, SMPD_MAX_VALUE_LENGTH))
     {
-	if (strlen(opt) == 0)
+	/* The do loop allows for multiple -set operations to be specified on the command line */
+	do
 	{
-	    printf("invalid option specified.\n");
-	    smpd_exit(-1);
-	}
-	if (strlen(opt_val) == 0)
-	{
-	    result = smpd_delete_smpd_data(opt);
-	}
-	else
-	{
-	    result = smpd_set_smpd_data(opt, opt_val);
-	}
-	if (result == SMPD_SUCCESS)
-	{
-	    printf("%s = %s\n", opt, opt_val);
-	}
-	else
-	{
-	    printf("unable to set %s option.\n", opt);
-	}
+	    if (strlen(opt) == 0)
+	    {
+		printf("invalid option specified.\n");
+		smpd_exit(-1);
+	    }
+	    if (strlen(opt_val) == 0)
+	    {
+		result = smpd_delete_smpd_data(opt);
+	    }
+	    else
+	    {
+		result = smpd_set_smpd_data(opt, opt_val);
+	    }
+	    if (result == SMPD_SUCCESS)
+	    {
+		printf("%s = %s\n", opt, opt_val);
+	    }
+	    else
+	    {
+		printf("unable to set %s option.\n", opt);
+	    }
+	} while (smpd_get_opt_two_strings(argcp, argvp, "-set", opt, SMPD_MAX_NAME_LENGTH, opt_val, SMPD_MAX_VALUE_LENGTH));
 	smpd_exit(0);
     }
 
