@@ -10,20 +10,24 @@
 #include "ad_pvfs2_common.h"
 
 /* as with ADIOI_PVFS2_Flush, implement the resize operation in a scalable
- * manner.  fortunately, this operation is defined to be collective */
+ * manner. one process does the work, then broadcasts the result to everyone
+ * else.  fortunately, this operation is defined to be collective */
 void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-    int ret, dummy1, dummy2;
+    int ret;
     ADIOI_PVFS2_fs *pvfs_fs;
 
     *error_code = MPI_SUCCESS;
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
 
-    /* the cheapest way we know to let one process know everyone is here */
-    MPI_Gather(&dummy1, 1, MPI_INT, &dummy2, 1, MPI_INT, 0, fd->comm);
+    /* We desginate one node in the communicator to be an 'io_worker' in 
+     * ADIO_Open.  This node can perform operations on files and then 
+     * inform the other nodes of the result */
 
-    /* io_worker computed in ADIO_Open */
+    /* we know all processes have reached this point because we did an
+     * MPI_Barrier in MPI_File_set_size() */
+
     if (fd->io_worker) {
 	ret = PVFS_sys_truncate(pvfs_fs->pinode_refn, 
 		size, pvfs_fs->credentials);
