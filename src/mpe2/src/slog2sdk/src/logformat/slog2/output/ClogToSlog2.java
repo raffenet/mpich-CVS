@@ -132,19 +132,19 @@ public class ClogToSlog2
         dobj_ins.close();
 
         /* */    Date time3 = new Date();
-        System.err.println( "\n" );
-        System.err.println( "Number of Drawables = " + Nobjs );
-        System.err.println( "Number of Unmatched Events = "
+        System.out.println( "\n" );
+        System.out.println( "Number of Drawables = " + Nobjs );
+        System.out.println( "Number of Unmatched Events = "
                           + dobj_ins.getNumberOfUnMatchedEvents() );
 
-        System.err.println( "Total ByteSize of the logfile = "
+        System.out.println( "Total ByteSize of the logfile = "
                           + dobj_ins.getTotalBytesRead() );
-        // System.err.println( "time1 = " + time1 + ", " + time1.getTime() );
-        // System.err.println( "time2 = " + time2 + ", " + time2.getTime() );
-        // System.err.println( "time3 = " + time3 + ", " + time3.getTime() );
-        System.err.println( "timeElapsed between 1 & 2 = "
+        // System.out.println( "time1 = " + time1 + ", " + time1.getTime() );
+        // System.out.println( "time2 = " + time2 + ", " + time2.getTime() );
+        // System.out.println( "time3 = " + time3 + ", " + time3.getTime() );
+        System.out.println( "timeElapsed between 1 & 2 = "
                           + ( time2.getTime() - time1.getTime() ) + " msec" );
-        System.err.println( "timeElapsed between 2 & 3 = "
+        System.out.println( "timeElapsed between 2 & 3 = "
                           + ( time3.getTime() - time2.getTime() ) + " msec" );
     }
 
