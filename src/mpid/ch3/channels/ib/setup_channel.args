@@ -36,3 +36,7 @@ fi
 if test "$ibu_name" = ibal -a -z "$ibu_path" ; then
     ibu_path=/usr/sf-iba
 fi
+
+if test "$ibu_name" = vapi -a -z "$ibu_path" ; then
+    ibu_path=/usr/mellanox
+fi
