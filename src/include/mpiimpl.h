@@ -201,6 +201,9 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
 int MPIU_usage_printf( char *str, ... );
 int MPIU_error_printf( char *str, ... );
 
+/* Utilities */
+int MPIU_Strncpy( char *dest, const char *src, size_t n );
+
 /* Known language bindings */
 typedef enum MPID_Lang_t { MPID_LANG_C, 
 #ifdef HAVE_FORTRAN_BINDING
