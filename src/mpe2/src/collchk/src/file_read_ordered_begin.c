@@ -26,7 +26,7 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buff, int cnt,
         }
 
         /* check for call consistancy */
-        CollChk_err_same_call(comm, call);
+        CollChk_same_call(comm, call);
 
         /* check for previous begin */
         if(COLLCHK_CALLED_BEGIN) {
