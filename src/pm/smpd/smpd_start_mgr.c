@@ -184,6 +184,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
 
     if (smpd_process.bService)
 	RevertToSelf();
+    CloseHandle(user_handle);
     if (result != SMPD_SUCCESS)
     {
 	CloseHandle(hRead);
