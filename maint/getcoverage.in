@@ -144,17 +144,17 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
+	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\* --BEGIN/) {
+		if (/^\s*\/\*\s+--BEGIN/) {
 		    my $cleanline = $_;
 		    $cleanline =~ s/^\s*//;
 		    chop $cleanline;
 		    print STDERR "Possible missing END DEBUG in $filename at $linecount; saw $cleanline\n";
 		}
-		if (/^\s*\/\* --END DEBUG-- \*\//) {
+		if (/^\s*\/\*\s+--END DEBUG--\s+\*\//) {
 		    last; 
 		}
 	    }
@@ -162,17 +162,17 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
+	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s--BEGIN/) {
+		if (/^\s*\/\*\s+--BEGIN/) {
 		    my $cleanline = $_;
 		    $cleanline =~ s/^\s*//;
 		    chop $cleanline;
-		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw $cleanline\n";
+		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw \"$cleanline\"\n";
 		}
-		if (/^\s*\/\*\s--END ERROR HANDLING-- \*\//) {
+		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
 		    last; 
 		}
 	    }
@@ -256,12 +256,22 @@ sub ExpandDir {
 #   init - beginning (top of file)
 #   unex - within unexecuted code
 #   exec - within executed code
+#   skip - within skipped code (code that we don't care whether it is
+#          executed).  Currently contains 3 sub states:
+#             errcheck (error checking code)
+#             errhandle (error handling code)
+#             debug     (debug code)
+#          Currently, the skipcolors are 
 sub AnnotateUncoveredLines {
     my $filename = $_[0];
     my $bgcolor  = $_[1];
+    my %skipcolors = ( "errcheck" => "lightblue",
+		       "errhandle" => "lightblue",
+		       "debug" => "lightblue" );
     my $outfile  = $_[2];
     my $curstate = "init";    # Current state
     my $newstate;             # New state implied by the last line read
+    my $substate;             # Used for substates within a state (skip only)
     my $newline  = "\r\n";
 
     open( FD, "<$filename" ) || die "Could not open $filename\n";
@@ -297,11 +307,17 @@ sub AnnotateUncoveredLines {
 	}
 
 	# Special cases for blocks that we skip (mark them as executed) 
-	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ || 
-	    /^\s*\/\*\s--BEGIN DEBUG-- \*\// ||
-	    /^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
-	    # This could be a "skip" state
-	    $newstate = "exec";
+	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	    $newstate = "skip";
+	    $substate = "errcheck";
+	}
+	elsif (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
+	    $newstate = "skip";
+	    $substate = "debug";
+	}
+	elsif (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
+	    $newstate = "skip";
+	    $substate = "errhandle";
 	}
 
 	# If there is a change in state, generate the correct code
@@ -310,8 +326,14 @@ sub AnnotateUncoveredLines {
 		# Finish off the current state
 		print $outfile "</PRE></TD></TR>";
 	    }
-	    if ($newstate eq "exec") { $bgcolor = "white"; } 
-	    else { $bgcolor = "red"; }
+	    if ($newstate eq "exec")    { $bgcolor = "white"; } 
+	    elsif ($newstate eq "unex") { $bgcolor = "red"; }
+	    elsif ($newstate eq "skip") {
+		$bgcolor = $skipcolors{$substate};
+	    }
+	    else {
+		print STDERR "Internal error: unrecognized state $newstate\n";
+	    }
 	    print $outfile "<TR><TD BGCOLOR=\"$bgcolor\" WIDTH=100%><PRE>$newline";
 	}
 	$curstate = $newstate;
@@ -339,11 +361,11 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s--BEGIN DEBUG-- \*\//) {
+	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    my $sawend=0;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s--END DEBUG-- \*\//) {
+		if (/^\s*\/\*\s+--END DEBUG--\s+\*\//) {
 		    $sawend = 1;
 		    last; 
 		}
@@ -355,11 +377,11 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
+	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    my $sawend = 0;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s--END ERROR HANDLING-- \*\//) {
+		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\//) {
 		    $sawend = 1;
 		    last; 
 		}
