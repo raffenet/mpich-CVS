@@ -1,0 +1,4 @@
+# This is temporary until the tests have their own configure
+grouptest_SOURCES = grouptest.c
+grouptest_LDADD = -L ../../../lib
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
