@@ -27,10 +27,7 @@ int g_ps = 0;
 int g_pr = 0;
 #endif
 
-ibuBlockAllocator g_workAllocator = NULL;
 IBU_Global IBU_Process;
-ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
-int g_cur_write_stack_index = 0;
 
 /* utility ibu functions */
 
@@ -313,9 +310,7 @@ int ibui_post_receive_unacked(ibu_t ibu)
     VAPI_sg_lst_entry_t data;
     VAPI_rr_desc_t work_req;
     void *mem_ptr;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
@@ -329,11 +324,7 @@ int ibui_post_receive_unacked(ibu_t ibu)
 	return IBU_FAIL;
     }
 
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
     *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -341,9 +332,8 @@ int ibui_post_receive_unacked(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = ibu;
     id_ptr->mem = (void*)mem_ptr;
-#endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
@@ -383,9 +373,7 @@ int ibui_post_receive(ibu_t ibu)
     VAPI_sg_lst_entry_t data;
     VAPI_rr_desc_t work_req;
     void *mem_ptr;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
@@ -399,11 +387,7 @@ int ibui_post_receive(ibu_t ibu)
 	return IBU_FAIL;
     }
 
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
     *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -411,9 +395,8 @@ int ibui_post_receive(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = ibu;
     id_ptr->mem = (void*)mem_ptr;
-#endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
@@ -493,20 +476,15 @@ int ibui_post_ack_write(ibu_t ibu)
     work_req.r_key = 0;
     work_req.compare_add = 0;
     work_req.swap = 0;
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)-1;
-#else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    work_req.id = (u_int64_t)ibuBlockAlloc(IBU_Process.workAllocator);
     if ((void*)work_req.id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+    ((ibu_work_id_handle_t*)work_req.id)->ibu = ibu;
     ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)-1;
-#endif
 
     /*sanity_check_send(&work_req);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "EVAPI_post_inline_sr(%d byte ack)", ibu->nUnacked));
@@ -543,9 +521,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
     void *mem_ptr;
     int length;
     int total = 0;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
@@ -575,11 +551,6 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	memcpy(mem_ptr, buf, length);
 	total += length;
 	
-	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, length));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
-	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	g_cur_write_stack_index++;
-
 	data.len = length;
 	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
 	data.lkey = GETLKEY(mem_ptr);
@@ -602,12 +573,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	work_req.compare_add = 0;
 	work_req.swap = 0;
 
-#ifdef HAVE_32BIT_POINTERS
-	/* store the ibu ptr and the mem ptr in the work id */
-	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
-#else
-	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
 	*((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
 	if (id_ptr == NULL)
 	{
@@ -615,9 +581,9 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_FAIL;
 	}
-	id_ptr->ptr = (void*)ibu;
+	id_ptr->ibu = ibu;
 	id_ptr->mem = (void*)mem_ptr;
-#endif
+	id_ptr->length = length;
 
 	/*sanity_check_send(&work_req);*/
 	if (length < ibu->max_inline_size)
@@ -673,9 +639,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
     int cur_index;
     unsigned int cur_len;
     unsigned char *cur_buf;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
@@ -728,11 +692,6 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	}
 	msg_size = IBU_PACKET_SIZE - num_avail;
 	
-	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, msg_size));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
-	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	g_cur_write_stack_index++;
-
 	data.len = msg_size;
 	assert(data.len);
 	data.addr = (VAPI_virt_addr_t)mem_ptr;
@@ -756,12 +715,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	work_req.compare_add = 0;
 	work_req.swap = 0;
 	
-#ifdef HAVE_32BIT_POINTERS
-	/* store the ibu ptr and the mem ptr in the work id */
-	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
-#else
-	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
 	*((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
 	if (id_ptr == NULL)
 	{
@@ -769,9 +723,9 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
-	id_ptr->ptr = (void*)ibu;
+	id_ptr->ibu = ibu;
 	id_ptr->mem = (void*)mem_ptr;
-#endif
+	id_ptr->length = msg_size;
 
 	/*sanity_check_send(&work_req);*/
 	if (msg_size < (unsigned int)ibu->max_inline_size)
@@ -892,9 +846,7 @@ int ibu_init()
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
-#ifndef HAVE_32BIT_POINTERS
-    g_workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
-#endif
+    IBU_Process.workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
     MPIU_DBG_PRINTF(("exiting ibu_init\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
     return IBU_SUCCESS;
@@ -910,9 +862,7 @@ int ibu_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     MPIU_DBG_PRINTF(("entering ibu_finalize\n"));
-#ifndef HAVE_32BIT_POINTERS
-    ibuBlockAllocFinalize(&g_workAllocator);
-#endif
+    ibuBlockAllocFinalize(&IBU_Process.workAllocator);
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;

@@ -43,9 +43,6 @@ typedef struct ibuQueue_t
     ibuBlock_t block[IBU_PACKET_COUNT];
 } ibuQueue_t;
 
-extern int g_offset;
-#define GETLKEY(p) (((ibuBlock_t*)((char *)p - g_offset))->lkey)
-
 struct ibuBlockAllocator_struct
 {
     void **pNextFree;
@@ -58,27 +55,12 @@ struct ibuBlockAllocator_struct
 
 typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
 
-#ifdef HAVE_32BIT_POINTERS
-
-typedef union ibu_work_id_handle_t
-{
-    u_int64_t id;
-    struct ibu_data
-    {
-	u_int32_t ptr, mem;
-    } data;
-} ibu_work_id_handle_t;
-
-#else
-
 typedef struct ibu_work_id_handle_t
 {
-    void *ptr, *mem;
+    void *mem;
+    ibu_t ibu;
+    int length;
 } ibu_work_id_handle_t;
-
-extern ibuBlockAllocator g_workAllocator /*= NULL*/;
-
-#endif
 
 typedef int IBU_STATE;
 #define IBU_READING      0x0001
@@ -151,18 +133,13 @@ typedef struct IBU_Global {
     void *           ack_mem_ptr;
     /*VAPI_mr_hndl_t   ack_mr_handle;*/
     VAPI_lkey_t      ack_lkey;
+    int offset_to_lkey;
+    ibuBlockAllocator workAllocator;
 } IBU_Global;
 
 extern IBU_Global IBU_Process;
 
-typedef struct ibu_num_written_t
-{
-    void *mem_ptr;
-    int length;
-} ibu_num_written_t;
-
-extern ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
-extern int g_cur_write_stack_index /*= 0*/;
+#define GETLKEY(p) (((ibuBlock_t*)((char *)p - IBU_Process.offset_to_lkey))->lkey)
 
 /* prototypes */
 int ibui_post_receive(ibu_t ibu);

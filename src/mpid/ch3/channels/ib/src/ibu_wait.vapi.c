@@ -93,9 +93,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     ibu_t ibu;
     int num_bytes;
     unsigned int offset;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
+    int send_length;
 #ifdef USE_INLINE_PKT_RECEIVE
     MPIDI_VC_t *recv_vc_ptr;
     void *mem_ptr_orig;
@@ -170,15 +169,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	}
 	*/
 
-#ifdef HAVE_32BIT_POINTERS
-	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.id)->data.ptr);
-	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.id)->data.mem);
-#else
 	id_ptr = *((ibu_work_id_handle_t**)&completion_data.id);
-	ibu = (ibu_t)(id_ptr->ptr);
+	ibu = id_ptr->ibu;
 	mem_ptr = (void*)(id_ptr->mem);
-	ibuBlockFree(g_workAllocator, (void*)id_ptr);
-#endif
+	send_length = id_ptr->length;
+	ibuBlockFree(IBU_Process.workAllocator, (void*)id_ptr);
 #ifdef USE_INLINE_PKT_RECEIVE
 	mem_ptr_orig = mem_ptr;
 #endif
@@ -407,31 +402,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		break;
 	    }
 	    MPIU_DBG_PRINTF(("___total_s: %d\n", ++g_num_sent));
-	    g_cur_write_stack_index--;
-	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
+	    num_bytes = send_length;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "send num_bytes = %d\n", num_bytes));
-	    if (num_bytes < 0)
-	    {
-		i = num_bytes;
-		num_bytes = 0;
-		for (; i<0; i++)
-		{
-		    g_cur_write_stack_index--;
-		    MPIDI_DBG_PRINTF((60, FCNAME, "num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length));
-		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
-		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
-			MPIU_Internal_error_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
-		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
-		    ibuBlockFreeIB(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
-		}
-	    }
-	    else
-	    {
-		if (mem_ptr == NULL)
-		    MPIU_Internal_error_printf("ibu_wait: send mem_ptr == NULL\n");
-		assert(mem_ptr != NULL);
-		ibuBlockFreeIB(ibu->allocator, mem_ptr);
-	    }
+	    ibuBlockFreeIB(ibu->allocator, mem_ptr);
 
 	    *num_bytes_ptr = num_bytes;
 	    *op_ptr = IBU_OP_WRITE;

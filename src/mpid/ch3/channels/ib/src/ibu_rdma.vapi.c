@@ -28,9 +28,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     VAPI_sg_lst_entry_t data;
     VAPI_sr_desc_t work_req;
     int total = 0;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_WRITE);
@@ -56,12 +54,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     work_req.compare_add = 0;
     work_req.swap = 0;
 
-#ifdef HAVE_32BIT_POINTERS
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)sreq;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
     *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -69,9 +62,8 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_WRITE);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = ibu;
     id_ptr->mem = (void*)sreq;
-#endif
 
     ibu->state |= IBU_RDMA_WRITING;
 
@@ -102,9 +94,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     VAPI_sg_lst_entry_t data;
     VAPI_sr_desc_t work_req;
     int total = 0;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_READ);
@@ -130,12 +120,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     work_req.compare_add = 0;
     work_req.swap = 0;
 
-#ifdef HAVE_32BIT_POINTERS
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)rreq;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
     *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -143,9 +128,8 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_READ);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = ibu;
     id_ptr->mem = (void*)rreq;
-#endif
 
     ibu->state |= IBU_RDMA_READING;
 

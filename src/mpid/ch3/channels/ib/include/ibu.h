@@ -93,7 +93,7 @@ typedef struct ibu_state_t * ibu_t;
 int ibu_init(void);
 int ibu_finalize(void);
 
-int ibu_get_lid();
+int ibu_get_lid(void);
 
 int ibu_create_set(ibu_set_t *set);
 int ibu_destroy_set(ibu_set_t set);

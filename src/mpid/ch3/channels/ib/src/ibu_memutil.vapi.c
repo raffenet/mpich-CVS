@@ -18,8 +18,6 @@
 
 #include "ibuimpl.vapi.h"
 
-int g_offset = 0;
-
 #if 0
 typedef struct mem_node_t
 {
@@ -188,7 +186,7 @@ ibuQueue_t *ibuBlockAllocInitIB()
     }
     q->block[IBU_PACKET_COUNT-1].next = NULL;
     q->pNextFree = &q->block[0];
-    g_offset = (char*)&b[1].data - (char*)&b[1];
+    IBU_Process.offset_to_lkey = (char*)&b[1].data - (char*)&b[1];
     return q;
 }
 
@@ -283,7 +281,7 @@ void * ibuBlockAllocIB(ibuQueue_t *p)
 	}
 	q->block[IBU_PACKET_COUNT-1].next = NULL;
 	q->pNextFree = &q->block[0];
-	g_offset = (char*)&b[1].data - (char*)&b[1];
+	IBU_Process.offset_to_lkey = (char*)&b[1].data - (char*)&b[1];
 
 	p->next_q = q;
 	p->pNextFree = q->pNextFree;
@@ -316,7 +314,7 @@ int ibuBlockFreeIB(ibuQueue_t *p, void *pBlock)
     checklist(pBlock);
 #endif
 
-    b = (ibuBlock_t *)((char *)pBlock - g_offset);
+    b = (ibuBlock_t *)((char *)pBlock - IBU_Process.offset_to_lkey);
     b->next = p->pNextFree;
     p->pNextFree = b;
     return 0;
