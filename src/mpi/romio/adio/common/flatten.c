@@ -17,7 +17,24 @@
 #define HAVE_MPIR_TYPE_GET_CONTIG_BLOCKS 1
 #endif
 
+#undef HAVE_MPI_COMBINER_DUP
+#undef HAVE_MPI_COMBINER_SUBARRAY
+
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
+void ADIOI_Flatten_subarray(int ndims,
+			    int *array_of_sizes,
+			    int *array_of_subsizes,
+			    int *array_of_starts,
+			    int order,
+			    MPI_Datatype oldtype,
+			    ADIOI_Flatlist_node *flat,
+			    ADIO_Offset start_offset,
+			    int *inout_index_p);
+void ADIOI_Flatten_copy_type(ADIOI_Flatlist_node *flat,
+			     int old_type_start,
+			     int old_type_end,
+			     int new_type_start,
+			     ADIO_Offset offset_adjustment);
 
 /* flatten datatype and add it to Flatlist */
 void ADIOI_Flatten_datatype(MPI_Datatype datatype)
@@ -37,7 +54,9 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     /* has it already been flattened? */
     flat = ADIOI_Flatlist;
     while (flat) {
-	if (flat->type == datatype) return;
+	if (flat->type == datatype) {
+		return;
+	}
 	else {
 	    prev = flat;
 	    flat = flat->next;
@@ -92,7 +111,10 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 
 }
 
-
+/* ADIOI_Flatten()
+ *
+ * Assumption: input datatype is not a basic!!!!
+ */
 void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat, 
 		  ADIO_Offset st_offset, int *curr_index)  
 {
@@ -111,7 +133,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
     MPI_Type_get_contents(datatype, nints, nadds, ntypes, ints, adds, types);
 
     switch (combiner) {
-#ifdef MPICH2
+#ifdef HAVE_MPI_COMBINER_DUP
     case MPI_COMBINER_DUP:
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
 			      &old_ntypes, &old_combiner); 
@@ -119,6 +141,23 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 	if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig))
             ADIOI_Flatten(types[0], flat, st_offset, curr_index);
         break;
+#endif
+#ifdef HAVE_MPI_COMBINER_SUBARRAY
+    case MPI_COMBINER_SUBARRAY:
+	{
+	    int dims = ints[0];
+	    ADIOI_Flatten_subarray(dims,
+				   &ints[1],        /* sizes */
+				   &ints[dims+1],   /* subsizes */
+				   &ints[2*dims+1], /* starts */
+				   ints[3*dims+1],  /* order */
+				   types[0],        /* type */
+				   flat,
+				   st_offset,
+				   curr_index);
+				   
+	}
+	break;
 #endif
     case MPI_COMBINER_CONTIGUOUS:
 	top_count = ints[0];
@@ -455,6 +494,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
  *
  * Returns number of contiguous blocks in type, and also saves this value in
  * curr_index.
+ *
+ * ASSUMES THAT TYPE IS NOT A BASIC!!!
  */
 int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 {
@@ -479,7 +520,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
     MPI_Type_get_contents(datatype, nints, nadds, ntypes, ints, adds, types);
 
     switch (combiner) {
-#ifdef MPICH2
+#ifdef HAVE_MPI_COMBINER_DUP
     case MPI_COMBINER_DUP:
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
                               &old_ntypes, &old_combiner); 
@@ -488,6 +529,34 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	    count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
 	else count = 1;
         break;
+#endif
+#ifdef HAVE_MPI_COMBINER_SUBARRAY
+    case MPI_COMBINER_SUBARRAY:
+	/* first get an upper bound (since we're not optimizing) on the
+	 * number of blocks in the child type.
+	 */
+	MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
+			      &old_ntypes, &old_combiner);
+	ADIOI_Datatype_iscontig(types[0], &old_is_contig);
+	if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig))
+	    count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
+	else count = 1;
+
+	/* now multiply that by the number of types in the subarray.
+	 *
+	 * note: we could be smarter about this, because chances are
+	 * our data is contiguous in the first dimension if the child
+	 * type is contiguous.
+	 *
+	 * ints[0] - ndims
+	 * ints[ndims+1..2*ndims] - subsizes
+	 */
+	n = 1; /* going to tally up # of types in here */
+	for (i=0; i < ints[0]; i++) {
+	    n *= ints[ints[0]+1+i];
+	}
+	count *= n;
+	break;	    
 #endif
     case MPI_COMBINER_CONTIGUOUS:
         top_count = ints[0];
@@ -636,6 +705,8 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
  * Scans the blocks of a flattened type and merges adjacent blocks 
  * together, resulting in a shorter blocklist (and thus fewer
  * contiguous operations).
+ *
+ * Q: IS IT SAFE TO REMOVE THE 0-LENGTH BLOCKS TOO?
  */
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type)
 {
@@ -699,3 +770,193 @@ void ADIOI_Delete_flattened(MPI_Datatype datatype)
     }
 }
 
+/****************************************************************/
+
+#ifdef HAVE_MPI_COMBINER_SUBARRAY
+/* ADIOI_Flatten_subarray()
+ *
+ * ndims - number of dimensions in the array
+ * array_of_sizes - dimensions of the array (one value per dim)
+ * array_of_subsizes - dimensions of the subarray (one value per dim)
+ * array_of_starts - starting offsets of the subarray (one value per dim)
+ * order - MPI_ORDER_FORTRAN or MPI_ORDER_C
+ * oldtype - type on which this subarray as built
+ * flat - ...
+ * start_offset - offset of this type to begin with
+ * inout_index_p - as an input holds the count of indices (and blocklens)
+ *                 that have already been used (also the index to the next
+ *                 location to fill in!)
+ */
+void ADIOI_Flatten_subarray(int ndims,
+			    int *array_of_sizes,
+			    int *array_of_subsizes,
+			    int *array_of_starts,
+			    int order,
+			    MPI_Datatype oldtype,
+			    ADIOI_Flatlist_node *flat,
+			    ADIO_Offset start_offset,
+			    int *inout_index_p)
+{
+    int i, j, oldtype_extent, total_types, *dim_sz, flatten_start_offset,
+	flatten_end_offset;
+    int old_nints, old_nadds, old_ntypes, old_combiner;
+    ADIO_Offset subarray_start_offset, type_offset, *dim_skipbytes;
+
+    MPI_Type_extent(oldtype, &oldtype_extent);
+
+    /* TODO: optimization for 1-dimensional types -- treat like a contig */
+
+    /* general case - make lots of copies of the offsets, adjusting 
+     * the indices as necessary.
+     */
+
+    /* allocate space for temporary values */
+    dim_sz = (int *) ADIOI_Malloc(sizeof(int)*(ndims));
+    dim_skipbytes = (ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset)*(ndims));
+
+    /* get a count of the total number of types (of type oldtype) in
+     * the subarray.
+     */
+    total_types = 1;
+    for (i=0; i < ndims; i++) total_types *= array_of_subsizes[i];
+
+    /* fill in the temporary values dim_sz and dim_skipbytes.
+     *
+     * these are used to calculate the starting offset for each instance
+     * of oldtype in the subarray.  we precalculate these values so that
+     * we can avoid calculating them for every instance.  this is all done
+     * so that we can avoid a recursive algorithm here, which could be very
+     * expensive if done for every dimension.
+     *
+     * finally, we're going to store these in C order regardless of how the
+     * arrays were described in the first place.
+     *
+     * dim_sz is a value describing the number of types that go into a single
+     * block in this dimension.  dim_skipbytes is the distance necessary to
+     * move from one block to the next in this dimension.
+     *
+     * this is a little misleading, because actually dim_sz[ndims-1] is
+     * always 1 and the dim_skipbytes[ndims-1] is always the extent...
+     *
+     * the dim_sz values are in terms of types, the dim_skipbytes are in
+     * terms of bytes, and do *not* include the starting offset calculated
+     * above.
+     */
+
+    /* priming the loop more or less */
+    dim_sz[ndims-1] = 1;
+    dim_skipbytes[ndims-1] = oldtype_extent;
+
+    for (i=ndims-2; i >= 0; i--) {
+	dim_sz[i] = dim_sz[i+1];
+	dim_skipbytes[i] = dim_skipbytes[i+1];
+	if (order == MPI_ORDER_FORTRAN) {
+	    dim_sz[i] *= array_of_subsizes[ndims-2-i];
+	    dim_skipbytes[i] *= array_of_sizes[ndims-2-i];
+	}
+	else {
+	    dim_sz[i] *= array_of_subsizes[i+1];
+	    dim_skipbytes[i] *= array_of_sizes[i+1];
+	}
+    }
+
+    /* determine our starting offset for use later; this is a lot
+     * easier to do now that we have the dim_skipbytes[] array from
+     * above.
+     */
+    subarray_start_offset = 0;
+    for (i=0; i < ndims; i++) {
+	if (order == MPI_ORDER_FORTRAN) {
+	    subarray_start_offset += array_of_starts[ndims-1-i]*dim_skipbytes[i];
+	}
+	else {
+	    subarray_start_offset += array_of_starts[i]*dim_skipbytes[i];
+	}
+    }
+    subarray_start_offset += start_offset; /* add in input parameter */
+
+    /* flatten one of the type to get the offsets that we need;
+     * really we need the starting offset to be right in order to
+     * do this in-place.
+     *
+     * we save the offset to the first piece of the flattened type
+     * so we can know what to make copies of in the next step.
+     */
+    flatten_start_offset = *inout_index_p;
+    MPI_Type_get_envelope(oldtype, &old_nints, &old_nadds,
+			  &old_ntypes, &old_combiner); 
+    if (old_combiner != MPI_COMBINER_NAMED)
+    {
+	ADIOI_Flatten(oldtype, flat, subarray_start_offset, inout_index_p);
+    }
+    else {
+	int oldtype_size;
+
+	flat->indices[flatten_start_offset] = subarray_start_offset;
+	MPI_Type_size(oldtype, &oldtype_size);
+	flat->blocklens[flatten_start_offset] = oldtype_size;
+	(*inout_index_p)++;
+    }
+
+    /* note this is really one larger than the end offset, but
+     * that's what we want below.
+     */
+    flatten_end_offset = *inout_index_p;
+
+    /* now we run through all the blocks, calculating their effective
+     * offset and then making copies of all the regions for the type
+     * for this instance.
+     */
+    for (i=1; i < total_types; i++) {
+	int block_nr = i;
+	type_offset = 0;
+
+	for (j=0; j < ndims; j++) {
+	    /* move through dimensions from least frequently changing
+	     * to most frequently changing, calculating offset to get
+	     * to a particular block, then reducing our block number
+	     * so that we can correctly calculate based on the next 
+	     * dimension's size.
+	     */
+	    int dim_index = block_nr / dim_sz[j];
+
+	    if (dim_index) type_offset += dim_index * dim_skipbytes[j];
+	    block_nr %= dim_sz[j];
+	}
+
+	/* do the copy */
+	ADIOI_Flatten_copy_type(flat,
+				flatten_start_offset,
+				flatten_end_offset,
+				flatten_start_offset + i * (flatten_end_offset - flatten_start_offset),
+				type_offset);
+    }
+
+    /* free our temp space */
+    ADIOI_Free(dim_sz);
+    ADIOI_Free(dim_skipbytes);
+    *inout_index_p = flatten_start_offset + total_types * (flatten_end_offset - flatten_start_offset);
+}
+#endif
+
+/* ADIOI_Flatten_copy_type()
+ * flat - pointer to flatlist node holding offset and lengths
+ * start - starting index of src type in arrays
+ * end - one larger than ending index of src type (makes loop clean)
+ * offset_adjustment - amount to add to "indices" (offset) component
+ *                     of each off/len pair copied
+ */
+void ADIOI_Flatten_copy_type(ADIOI_Flatlist_node *flat,
+			     int old_type_start,
+			     int old_type_end,
+			     int new_type_start,
+			     ADIO_Offset offset_adjustment)
+{
+    int i, out_index = new_type_start;
+
+    for (i=old_type_start; i < old_type_end; i++) {
+	flat->indices[out_index]   = flat->indices[i] + offset_adjustment;
+	flat->blocklens[out_index] = flat->blocklens[i];
+	out_index++;
+    }
+}
