@@ -50,50 +50,50 @@ struct MPID_Segment_piece_params {
     } u;
 };
 
-#define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count)			\
-do {										\
-    type * l_src = (type *)src, * l_dest = (type *)dest;                    	\
-    int i, j;									\
-    const int l_stride = stride;						\
-    if (nelms == 1) {								\
-        for (i=count;i!=0;i--) {						\
-            *l_dest++ = *l_src;							\
-            l_src = (type *) ((char *) l_src + l_stride);			\
-        }									\
-    }										\
-    else {									\
-        for (i=count; i!=0; i--) {						\
-            for (j=0; j<nelms; j++) {						\
-                *l_dest++ = l_src[j];						\
-	    }									\
-            l_src = (type *) ((char *) l_src + l_stride);			\
-        }									\
-    }                                                                           \
-    dest = (char *) l_dest;                                                     \
-    src  = (char *) l_src;                                                      \
+#define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count)	\
+do {								\
+    type * l_src = (type *)src, * l_dest = (type *)dest;	\
+    int i, j;							\
+    const int l_stride = stride;				\
+    if (nelms == 1) {						\
+        for (i=count;i!=0;i--) {				\
+            *l_dest++ = *l_src;					\
+            l_src = (type *) ((char *) l_src + l_stride);	\
+        }							\
+    }								\
+    else {							\
+        for (i=count; i!=0; i--) {				\
+            for (j=0; j<nelms; j++) {				\
+                *l_dest++ = l_src[j];				\
+	    }							\
+            l_src = (type *) ((char *) l_src + l_stride);	\
+        }							\
+    }								\
+    dest = (char *) l_dest;					\
+    src  = (char *) l_src;                                      \
 } while (0)
 
-#define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)			\
-do {										\
-    type * l_src = (type *)src, * l_dest = (type *)dest;                    	\
-    int i, j;									\
-    const int l_stride = stride;						\
-    if (nelms == 1) {								\
-        for (i=count;i!=0;i--) {						\
-            *l_dest = *l_src++;							\
-            l_dest = (type *) ((char *) l_dest + l_stride);			\
-        }									\
-    }										\
-    else {									\
-        for (i=count; i!=0; i--) {						\
-            for (j=0; j<nelms; j++) {						\
-                l_dest[j] = *l_src++;						\
-	    }									\
-            l_dest = (type *) ((char *) l_dest + l_stride);			\
-        }									\
-    }                                                                           \
-    dest = (char *) l_dest;                                                     \
-    src  = (char *) l_src;                                                      \
+#define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)	\
+do {								\
+    type * l_src = (type *)src, * l_dest = (type *)dest;	\
+    int i, j;							\
+    const int l_stride = stride;				\
+    if (nelms == 1) {						\
+        for (i=count;i!=0;i--) {				\
+            *l_dest = *l_src++;					\
+            l_dest = (type *) ((char *) l_dest + l_stride);	\
+        }							\
+    }								\
+    else {							\
+        for (i=count; i!=0; i--) {				\
+            for (j=0; j<nelms; j++) {				\
+                l_dest[j] = *l_src++;				\
+	    }							\
+            l_dest = (type *) ((char *) l_dest + l_stride);	\
+        }							\
+    }								\
+    dest = (char *) l_dest;					\
+    src  = (char *) l_src;                                      \
 } while (0)
 
 /* prototypes of internal functions */

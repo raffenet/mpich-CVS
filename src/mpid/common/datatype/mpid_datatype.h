@@ -432,7 +432,7 @@ void MPID_Dataloop_copy(void *dest,
 void MPID_Dataloop_print(struct MPID_Dataloop *dataloop,
 			 int depth);
 
-struct MPID_Dataloop * MPID_Dataloop_alloc(void);
+struct MPID_Dataloop * MPID_Dataloop_alloc(int sz);
 
 void MPID_Dataloop_free(struct MPID_Dataloop *dataloop);
 
@@ -485,8 +485,8 @@ void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
 
 void MPID_Datatype_free(struct MPID_Datatype *ptr);
 
-void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-                           MPI_Aint ptrdiff);
+void MPID_Dataloop_update(struct DLOOP_Dataloop *dataloop,
+			  MPI_Aint ptrdiff);
 
 int MPIR_Type_get_contig_blocks(MPI_Datatype type,
 				int *nr_blocks_p);

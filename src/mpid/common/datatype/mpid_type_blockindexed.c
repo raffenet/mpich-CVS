@@ -369,7 +369,7 @@ void MPID_Dataloop_create_blockindexed(int count,
 	(count * sizeof(MPI_Aint)) + old_loop_sz;
     /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 
-    new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
+    new_dlp = MPID_Dataloop_alloc(new_loop_sz);
     assert(new_dlp != NULL);
 
     if (is_builtin)

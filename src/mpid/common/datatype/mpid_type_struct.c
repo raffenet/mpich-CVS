@@ -674,7 +674,7 @@ void MPID_Dataloop_create_struct(int count,
 	     (sizeof(int) + 2*sizeof(MPI_Aint) + sizeof(struct MPID_Dataloop *))) +
 	    (nr_basics * sizeof(struct MPID_Dataloop));
 
-	new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
+	new_dlp = (struct MPID_Dataloop *) MPID_Dataloop_alloc(new_loop_sz);
 	assert(new_dlp != NULL);
 
 	new_dlp->kind = DLOOP_KIND_STRUCT;
@@ -736,7 +736,7 @@ void MPID_Dataloop_create_struct(int count,
 		new_dlp->loop_params.s_t.blocksize_array[loop_idx] = 1;
 		new_dlp->loop_params.s_t.el_extent_array[loop_idx] =
 		    blklen_array[i] * dummy_dlp->el_extent;
-		MPIU_Free(dummy_dlp);
+		MPID_Dataloop_free(dummy_dlp);
 	    }
 	    else
 	    {

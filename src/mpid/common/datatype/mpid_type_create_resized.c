@@ -60,17 +60,18 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
         new_dtp->eltype         = oldtype;
 
 	/* allocate dataloop */
-	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
-	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
+	new_dtp->loopsize = sizeof(struct MPID_Dataloop);
+	dlp               = MPID_Dataloop_alloc(sizeof(struct MPID_Dataloop));
 	if (dlp == NULL) assert(0);
-	new_dtp->loopinfo       = dlp;
+
+	new_dtp->loopinfo = dlp;
 
 	/* fill in dataloop */
-	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	dlp->loop_params.c_t.count      = 1;
-	dlp->el_size                    = oldsize;
-	dlp->el_extent                  = extent;
-	dlp->el_type                    = oldtype;
+	dlp->kind                  = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+	dlp->loop_params.c_t.count = 1;
+	dlp->el_size               = oldsize;
+	dlp->el_extent             = extent;
+	dlp->el_type               = oldtype;
     }
     else
     {
@@ -99,10 +100,11 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
         new_dtp->eltype         = old_dtp->eltype;
 
 	/* allocate dataloop */
-	new_dtp->loopsize       = old_dtp->loopsize;
-	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(new_dtp->loopsize);
+	new_dtp->loopsize = old_dtp->loopsize;
+	dlp               = MPID_Dataloop_alloc(new_dtp->loopsize);
 	if (dlp == NULL) assert(0);
-	new_dtp->loopinfo       = dlp;
+
+	new_dtp->loopinfo = dlp;
 
 	/* make a copy of the dataloop from the old type (no changes) */
 	curpos = (char *) dlp;

@@ -321,7 +321,7 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth);
 
-struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(void);
+struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(int sz);
 
 void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop);
 

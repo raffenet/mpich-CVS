@@ -51,11 +51,11 @@
   Dataloop_alloc - allocate the resources used to store a dataloop
 
   Input Parameters:
-. none
+. size - size of resulting dataloop structure
 @*/
-struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(void)
+struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(int sz)
 {
-    return DLOOP_Malloc(sizeof(struct DLOOP_Dataloop));
+    return (struct DLOOP_Dataloop *) DLOOP_Malloc(sz);
 }
 
 /*@

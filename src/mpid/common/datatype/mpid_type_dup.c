@@ -76,8 +76,8 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->element_size  = old_dtp->element_size;
 	new_dtp->eltype        = old_dtp->eltype;
 	
-	/* copy dataloop - simple, not worth separating out */
-	dlp = (struct MPID_Dataloop *) MPIU_Malloc(old_dtp->loopsize);
+	/* copy dataloop */
+	dlp = MPID_Dataloop_alloc(old_dtp->loopsize);
 	if (dlp == NULL) assert(0);
 	
 	new_dtp->loopinfo       = dlp;

@@ -214,7 +214,7 @@ void MPID_Dataloop_create_contiguous(int count,
 	}
     }
 
-    new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
+    new_dlp = MPID_Dataloop_alloc(new_loop_sz);
     assert(new_dlp != NULL);
 
     if (is_builtin)
