@@ -5,3 +5,7 @@ config.cache
 *conf.cache
 config.system
 config.h.in
+autom4te.cache
+Makefile
+mpe_misc_conf.h
+
