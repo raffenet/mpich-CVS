@@ -23,7 +23,9 @@ default: all
 	$(F77) $(USER_FFLAGS) -c $<
 
 clean: 
-	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc psimple pfcoll_test test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out
+	rm -f .P* PI* *.o 
+	rm -f simple async coll_test coll_perf misc perf fcoll_test fperf fmisc psimple pfcoll_test test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out
+	@-rm -f work.pc work.pcl
 
 simple: simple.o
 	$(CC) $(USER_CFLAGS) -o simple simple.o $(LIBS)
