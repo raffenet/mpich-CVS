@@ -358,6 +358,10 @@ if test -n "$arch_sun4" ; then
         AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
     else
         AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
+	AC_SEARCH_LIBS(aiowait,aio,
+		[ AC_DEFINE(AIO_SUN,,[Define for SUNOS 4])
+        	  ROMIO_LIBLIST="$ROMIO_LIBLIST -laio" ]
+	)
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -387,6 +391,10 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
     else
         AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
+	AC_SEARCH_LIBS(aiowait,aio,
+		[ AC_DEFINE(AIO_SUN,,[Define for SUNOS 4])
+        	  ROMIO_LIBLIST="$ROMIO_LIBLIST -laio" ]
+	)
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -405,10 +413,6 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     else
         TEST_CC="$CC"
         TEST_F77="$F77"
-    fi
-    if test "$enable_aio" != "no" ; then
-        MPI_LIB="$MPI_LIB -laio"
-        ROMIO_LIBLIST="-laio"
     fi
     AR="ar cr"
 # solaris does not have l option to ar
@@ -585,7 +589,6 @@ has_pthread=yes],[has_pthread=no])
 	    AC_DEFINE(NEEDS_AIOCB_T,,[Define for aiocb_t definition needed])
         fi
 	if test "$use_aio" = "yes" ; then
-	    MPI_LIB="$MPI_LIB $add_lib"
 	    ROMIO_LIBLIST="$ROMIO_LIBLIST $add_lib"
 	else
             AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
@@ -713,7 +716,6 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
         CFLAGS="$CFLAGS -O"
     fi
     AC_DEFINE(AIO_PRIORITY_DEFAULT,,[Define for AIO priority is default])
-    MPI_LIB="$MPI_LIB -laio"
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -727,7 +729,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     AC_DEFINE(DEC,,[Define for DEC/Compaq/HP Alpha])
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
-    ROMIO_LIBLIST="-laio"
+    ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
 fi    
 #
 if test -n "$arch_CRAY" ; then
