@@ -1120,9 +1120,9 @@ else
     LIBS="-lmpich $LIBS"
 fi
 
-# not sure where these should go, but they are left untreated in the mpicc file
-dnl
 dnl default settings for compiler and linker flags 
+MPI_CFLAGS="$MPI_CFLAGS"
+MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS"
 AC_SUBST(MPI_CFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 dnl
