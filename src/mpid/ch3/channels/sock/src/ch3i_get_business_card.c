@@ -83,8 +83,10 @@ static int GetLocalIPs(int32_t *pIP, int max)
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-
-static int GetLocalIPs(int32_t *pIP, int max)
+/* FIXME: THIS CODE DOES NOT WORK FOR CYGWIN */
+/* Fill in the array pIP[max] with available IP addresses for this machine.
+   Return the number of IP addresses found */
+static int GetLocalIPs(int32_t pIP[], int max)
 {
     int					fd;
     char *				buf_ptr;
@@ -165,13 +167,18 @@ static int GetLocalIPs(int32_t *pIP, int max)
 		break;
 	    }
 */
-	    pIP[n] = addr.s_addr;
-	    n++;
+	    if (addr.s_addr) {
+		/* Ignore any 0 addresses (CYGWIN generates 0 addresses
+		   as the first entry */
+		/*dbg*//*printf("adding %x as %d IP address\n", addr.s_addr, n+1);*/
+		pIP[n] = addr.s_addr;
+		n++;
+	    }
 	}
 
 	/*
 	 *  Increment pointer to the next ifreq; some adjustment may be required if the address is an IPv6 address.  Stevens states
-	 *  that there is not standard regarding whether SIOCGIFCONF may return IPv6 addresses, and thus we need to account for
+	 *  that there is no standard regarding whether SIOCGIFCONF may return IPv6 addresses, and thus we need to account for
 	 *  the size difference should a IPv6 address be returned.
 	 */
 	ptr += sizeof(struct ifreq);
@@ -247,6 +254,8 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_gro
 				 port);
 	}
     }
+
+    /* FIXME: If numnics == 0, we don't get a useful error message */
 
 /*    printf("Business card:\n<%s>\n", value_orig); */
 
