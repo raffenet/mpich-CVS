@@ -4,8 +4,8 @@
 #define SOCK_IOV_LEN         len
 #define SOCK_IOV_BUF         buf
 #define SOCK_IOV_MAXLEN      16
-#define SOCK_INFINITE        INFINITE
-#define SOCK_INVALID_SOCKET  INVALID_SOCKET
+#define SOCK_INFINITE_TIME   INFINITE
+#define SOCK_INVALID_SOCK    INVALID_SOCKET
 #define SOCK_SIZE_MAX	     INT_MAX
 
 typedef HANDLE sock_set_t;
