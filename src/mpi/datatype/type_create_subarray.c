@@ -283,7 +283,7 @@ int MPI_Type_create_subarray(int ndims,
     /* Save contents */
     ints = (int *) MPIU_Malloc((3 * ndims + 2) * sizeof(int));
     /* --BEGIN ERROR HANDLING-- */
-    assert(ints != NULL);
+    MPIU_Assert(ints != NULL);
     /* --END ERROR HANDLING-- */
 
     ints[0] = ndims;

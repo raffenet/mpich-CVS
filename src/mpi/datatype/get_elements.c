@@ -5,7 +5,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include <assert.h>
 #include "mpiimpl.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Get_elements */
@@ -243,8 +242,7 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 								  types[i]);
 			nr_elements += last_nr_elements;
 
-			/* FIXME - no asserts in final code */
-			assert(last_nr_elements >= 0);
+			MPIU_Assert(last_nr_elements >= 0);
 
 			if (last_nr_elements == 0) break;
 		    }
@@ -257,8 +255,7 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 	    case MPI_COMBINER_F90_COMPLEX:
 	    case MPI_COMBINER_F90_INTEGER:
 	    default:
-		/* FIXME: no asserts in final code */
-		assert(0);
+		MPIU_Assert(0);
 		return -1;
 		break;
 	}
@@ -346,8 +343,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 							  -1,
 							  datatype);
 	}
-	/* FIXME: no asserts in final code */
-	assert(byte_count >= 0);
+	MPIU_Assert(byte_count >= 0);
     }
     else if (datatype_ptr->size == 0) {
 	if (status->count > 0) {
@@ -362,8 +358,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	}
     }
     else /* derived type with weird element type or weird size */ {
-	/* FIXME: no asserts in final code */
-	assert(datatype_ptr->element_size == -1);
+	MPIU_Assert(datatype_ptr->element_size == -1);
 
 	byte_count = status->count;
 	*elements = MPIR_Type_get_elements(&byte_count, -1, datatype);

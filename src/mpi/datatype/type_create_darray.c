@@ -438,7 +438,7 @@ int MPI_Type_create_darray(int size,
 /* calculate position in Cartesian grid as MPI would (row-major
    ordering) */
     coords = (int *) MPIU_Malloc(ndims*sizeof(int));
-    assert(coords != NULL);
+    MPIU_Assert(coords != NULL);
 
     procs = size;
     tmp_rank = rank;

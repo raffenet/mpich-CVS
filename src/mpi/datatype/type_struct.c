@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include <assert.h>
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_struct */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -151,7 +150,7 @@ int MPI_Type_struct(int count,
 	MPID_Datatype *new_dtp;
 
 	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
-	assert(ints != NULL);
+	MPIU_Assert(ints != NULL);
 
 	ints[0] = count;
 	for (i=0; i < count; i++) {
