@@ -88,10 +88,11 @@
 #ifdef HAVE___ASM_AND_X86_MFENCE
 /*#define MPID_READ_WRITE_BARRIER() __asm __emit 0x0f __asm __emit 0xae __asm __emit 0xf0*/
 #define MPID_READ_WRITE_BARRIER()
-
 #else
 #define MPID_READ_WRITE_BARRIER()
 #endif
+
+#else
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
 #define MPID_READ_WRITE_BARRIER()
