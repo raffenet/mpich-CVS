@@ -5,7 +5,10 @@
 #
 # Get the Autoconf macro files
 if [ ! -d confdb ] ; then
-    if [ -d /home/gropp/cvsMaster_z ] ; then 
+    # setup to allow CVSROOT instead of an absolute directory path
+    if [ -n "$CVSROOT" -a -d "$CVSROOT/fpmpi" ] ; then
+        cvs -q checkout confdb
+    elif [ -d /home/gropp/cvsMaster_z ] ; then 
         cvs -q -d /home/gropp/cvsMaster_z checkout confdb
     else
         echo "Checkout confdb from /home/gropp/cvsMaster_z" and rerun
