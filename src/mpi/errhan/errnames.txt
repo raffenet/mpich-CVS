@@ -412,6 +412,13 @@ with MPI_Alloc_mem.
 **notcstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_c2f()
 **notfstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_f2c()
 **abort:application called MPI_ABORT
+**user:user defined function returned an error code
+**userdel %d:user delete function returned error code %d
+**usercopy %d:user copy function returned error code %d
+**userquery %d:user request query function returned error code %d
+**usercancel %d:user request cancel function returned error code %d
+**userfree %d:user request free function returned error code %d
+**oremote_fail:open failed on a remote node
 
 # Duplicates?
 #**argnull:Invalid null parameter
@@ -932,7 +939,7 @@ with MPI_Alloc_mem.
 **mpi_send:MPI_Send failed
 **mpi_send %p %d %D %d %d %C:MPI_Send(buf=%p, count=%d, %D, dest=%d, tag=%d, %C) failed
 **mpi_recv:MPI_Recv failed
-**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(buf=%p, count=%d, %D, src=%d, %C, status=%p) failed
+**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(buf=%p, count=%d, %D, src=%d, tag=%d, %C, status=%p) failed
 **mpi_get_count:MPI_Get_count failed
 **mpi_get_count %p %D %p:MPI_Get_count(status=%p, %D, count=%p) failed
 **mpi_bsend:MPI_Bsend failed
