@@ -130,7 +130,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 #endif
 #endif
+#ifndef HAVE_WINDOWS_H
     g_nLockSpinCount = 1;
+#endif
 
     /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
     vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * pg_size);
