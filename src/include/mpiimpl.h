@@ -3246,4 +3246,6 @@ int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
 
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
+int MPIR_Comm_create( MPID_Comm *, MPID_Comm ** );
+
 #endif /* MPIIMPL_INCLUDED */
