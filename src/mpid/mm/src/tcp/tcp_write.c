@@ -254,7 +254,7 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 
     MM_ENTER_FUNC(TCP_WRITE_TMP);
 
-    if (buf_ptr->tmp.num_read == 0)
+    if ((car_ptr->data.tcp.buf.tmp.num_written == buf_ptr->tmp.num_read) || (buf_ptr->tmp.num_read == 0))
     {
 	return MPI_SUCCESS;
     }

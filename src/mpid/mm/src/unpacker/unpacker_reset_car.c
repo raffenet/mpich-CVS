@@ -23,12 +23,9 @@ int unpacker_reset_car(MM_Car *car_ptr)
 	car_ptr->data.unpacker.buf.tmp.last = 0;
 	break;
     case MM_VEC_BUFFER:
-	//car_ptr->data.unpacker.buf.vec_write.cur_index = 0;
 	car_ptr->data.unpacker.buf.vec_write.num_read_copy = 0;
 	car_ptr->data.unpacker.buf.vec_write.cur_num_written = 0;
 	car_ptr->data.unpacker.buf.vec_write.total_num_written = 0;
-	//car_ptr->data.unpacker.buf.vec_write.num_written_at_cur_index = 0;
-	//car_ptr->data.unpacker.buf.vec_write.vec_size = 0;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:

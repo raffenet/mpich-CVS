@@ -32,5 +32,6 @@ extern TCP_PerProcess TCP_Process;
 
 int tcp_read(MPIDI_VC *vc_ptr);
 int tcp_write(MPIDI_VC *vc_ptr);
+int tcp_write_aggressive(MPIDI_VC *vc_ptr);
 
 #endif
