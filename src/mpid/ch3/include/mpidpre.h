@@ -66,7 +66,10 @@ typedef enum MPIDI_CH3_Pkt_type
     MPIDI_CH3_PKT_ACCUMULATE,
     MPIDI_CH3_PKT_LOCK,
     MPIDI_CH3_PKT_LOCK_GRANTED,
-    MPIDI_CH3_PKT_SHARED_LOCK_OPS_DONE,
+    MPIDI_CH3_PKT_PT_RMA_DONE,
+    MPIDI_CH3_PKT_LOCK_PUT_UNLOCK, /* optimization for single puts */
+    MPIDI_CH3_PKT_LOCK_GET_UNLOCK, /* optimization for single gets */
+    MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK, /* optimization for single accumulates */
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
     MPIDI_CH3_PKT_END_CH3
 # if defined(MPIDI_CH3_PKT_ENUM)
@@ -213,7 +216,45 @@ typedef struct MPIDI_CH3_Pkt_lock_granted
 }
 MPIDI_CH3_Pkt_lock_granted_t;
 
-typedef MPIDI_CH3_Pkt_lock_granted_t MPIDI_CH3_Pkt_shared_lock_ops_done_t;
+typedef MPIDI_CH3_Pkt_lock_granted_t MPIDI_CH3_Pkt_pt_rma_done_t;
+
+typedef struct MPIDI_CH3_Pkt_lock_put_unlock
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int target_win_handle;
+    int source_win_handle;
+    int lock_type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+}
+MPIDI_CH3_Pkt_lock_put_unlock_t;
+
+typedef struct MPIDI_CH3_Pkt_lock_get_unlock
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int target_win_handle;
+    int source_win_handle;
+    int lock_type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    int request_handle;
+}
+MPIDI_CH3_Pkt_lock_get_unlock_t;
+
+typedef struct MPIDI_CH3_Pkt_lock_accum_unlock
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int target_win_handle;
+    int source_win_handle;
+    int lock_type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    MPI_Op op;
+}
+MPIDI_CH3_Pkt_lock_accum_unlock_t;
 
 typedef union MPIDI_CH3_Pkt
 {
@@ -233,7 +274,10 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_accum_t accum;
     MPIDI_CH3_Pkt_lock_t lock;
     MPIDI_CH3_Pkt_lock_granted_t lock_granted;
-    MPIDI_CH3_Pkt_shared_lock_ops_done_t shared_lock_ops_done;    
+    MPIDI_CH3_Pkt_pt_rma_done_t pt_rma_done;    
+    MPIDI_CH3_Pkt_lock_put_unlock_t lock_put_unlock;
+    MPIDI_CH3_Pkt_lock_get_unlock_t lock_get_unlock;
+    MPIDI_CH3_Pkt_lock_accum_unlock_t lock_accum_unlock;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif
@@ -381,6 +425,8 @@ struct MPIDI_Request														\
     int request_handle;											                        \
     int target_win_handle;   										                        \
     int source_win_handle;   										                        \
+    int single_op_opt;   /* to indicate a lock-put-unlock optimization case */                                                  \
+    MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */		                        \
 																\
     MPIDI_REQUEST_SEQNUM													\
 																\
@@ -412,11 +458,23 @@ typedef struct MPIDI_RMA_ops {
     int lock_type;  /* for win_lock */
 } MPIDI_RMA_ops;
 
+typedef struct MPIDI_PT_single_op {
+    int type;  /* put, get, or accum. */
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    MPI_Op op;
+    void *data;  /* for queued puts and accumulates, data is copied here */
+    int request_handle;  /* for gets */
+    int data_recd;  /* to indicate if the data has been received */
+} MPIDI_PT_single_op;
+
 typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_Win_lock_queue *next;
     int lock_type;
     int source_win_handle;
     MPIDI_VC *vc;
+    struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

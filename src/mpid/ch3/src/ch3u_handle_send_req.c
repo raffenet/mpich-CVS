@@ -32,7 +32,8 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
                     /* Last RMA operation from source. If active target RMA,
                        decrement window counter. If passive target RMA, 
                        release lock on window and grant next lock in the 
-                       lock queue if there is any. */
+                       lock queue if there is any; no need to send rma done 
+                       packet since the last operation is a get. */
 
                     MPID_Win_get_ptr(sreq->dev.target_win_handle, win_ptr);
                     if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
@@ -40,11 +41,6 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
                         win_ptr->my_counter -= 1;
                     }
                     else {
-                        if (win_ptr->current_lock_type == MPI_LOCK_SHARED) {
-                            mpi_errno = 
-                                MPIDI_CH3I_Send_shared_lock_ops_done_pkt(vc, 
-                                     sreq->dev.source_win_handle);
-                        }
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
                 }

@@ -62,7 +62,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     }
 
     else {
-        /* target is some other process. queue up the lock request */
+        /* target is some other process. add the lock request to rma_ops_list */
 
         new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
         /* --BEGIN ERROR HANDLING-- */

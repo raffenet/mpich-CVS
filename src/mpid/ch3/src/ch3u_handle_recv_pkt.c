@@ -1003,6 +1003,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 new_ptr->lock_type = lock_pkt->lock_type;
                 new_ptr->source_win_handle = lock_pkt->source_win_handle;
                 new_ptr->vc = vc;
+                new_ptr->pt_single_op = NULL;
             }
 
             *rreqp = NULL;
@@ -1026,19 +1027,326 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             break;
         }
 
-	case MPIDI_CH3_PKT_SHARED_LOCK_OPS_DONE:
+	case MPIDI_CH3_PKT_PT_RMA_DONE:
 	{
-	    MPIDI_CH3_Pkt_shared_lock_ops_done_t * shared_lock_ops_done_pkt = &pkt->shared_lock_ops_done;
+	    MPIDI_CH3_Pkt_pt_rma_done_t * pt_rma_done_pkt = &pkt->pt_rma_done;
             MPID_Win *win_ptr;
 
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received shared lock ops done pkt"));
 
-            MPID_Win_get_ptr(shared_lock_ops_done_pkt->source_win_handle, win_ptr);
+            MPID_Win_get_ptr(pt_rma_done_pkt->source_win_handle, win_ptr);
             /* reset the lock_granted flag in the window */
             win_ptr->lock_granted = 0;
 
             *rreqp = NULL;
             MPIDI_CH3_Progress_signal_completion();	
+
+            break;
+        }
+
+        case MPIDI_CH3_PKT_LOCK_PUT_UNLOCK:
+	{
+	    MPIDI_CH3_Pkt_lock_put_unlock_t * lock_put_unlock_pkt = &pkt->lock_put_unlock;
+            MPID_Win *win_ptr;
+            MPID_Request *req;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock_put_unlock pkt"));
+
+            req = MPID_Request_create();
+            MPIU_Object_set_ref(req, 1);
+                
+            req->dev.datatype = lock_put_unlock_pkt->datatype;
+            MPID_Datatype_get_size_macro(lock_put_unlock_pkt->datatype, type_size);
+            req->dev.recv_data_sz = type_size * lock_put_unlock_pkt->count;
+            req->dev.user_count = lock_put_unlock_pkt->count;
+            req->dev.target_win_handle = lock_put_unlock_pkt->target_win_handle;
+            
+            MPID_Win_get_ptr(lock_put_unlock_pkt->target_win_handle, win_ptr);
+
+            if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, 
+                                        lock_put_unlock_pkt->lock_type) == 1)
+	    {
+                /* do the put. for this optimization, only basic datatypes supported. */
+                MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP);
+                req->dev.user_buf = lock_put_unlock_pkt->addr;
+                req->dev.source_win_handle = lock_put_unlock_pkt->source_win_handle;
+                req->dev.single_op_opt = 1;
+            }
+
+            else {
+                /* queue the information */
+                MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
+
+                new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
+                /* --BEGIN ERROR HANDLING-- */
+                if (!new_ptr)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+
+                new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
+                /* --BEGIN ERROR HANDLING-- */
+                if (new_ptr->pt_single_op == NULL)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+
+                /* FIXME: MT: The queuing may need to be done atomically. */
+
+                curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+                prev_ptr = curr_ptr;
+                while (curr_ptr != NULL)
+                {
+                    prev_ptr = curr_ptr;
+                    curr_ptr = curr_ptr->next;
+                }
+
+                if (prev_ptr != NULL)
+                    prev_ptr->next = new_ptr;
+                else 
+                    win_ptr->lock_queue = new_ptr;
+        
+                new_ptr->next = NULL;  
+                new_ptr->lock_type = lock_put_unlock_pkt->lock_type;
+                new_ptr->source_win_handle = lock_put_unlock_pkt->source_win_handle;
+                new_ptr->vc = vc;
+                
+                new_ptr->pt_single_op->type = MPIDI_RMA_PUT;
+                new_ptr->pt_single_op->addr = lock_put_unlock_pkt->addr;
+                new_ptr->pt_single_op->count = lock_put_unlock_pkt->count;
+                new_ptr->pt_single_op->datatype = lock_put_unlock_pkt->datatype;
+                /* allocate memory to receive the data */
+                new_ptr->pt_single_op->data = MPIU_Malloc(req->dev.recv_data_sz);
+                /* --BEGIN ERROR HANDLING-- */
+                if (new_ptr->pt_single_op->data == NULL)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+
+                new_ptr->pt_single_op->data_recd = 0;
+
+                MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PT_SINGLE_PUT);
+                req->dev.user_buf = new_ptr->pt_single_op->data;
+                req->dev.lock_queue_entry = new_ptr;
+            }
+
+            *rreqp = req;
+            mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_LOCK_PUT_UNLOCK");
+            }
+            /* --END ERROR HANDLING-- */
+
+            break;
+        }
+
+        case MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK:
+	{
+	    MPIDI_CH3_Pkt_lock_accum_unlock_t * lock_accum_unlock_pkt = &pkt->lock_accum_unlock;
+            MPID_Request *req;
+            MPID_Win *win_ptr;
+            MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock_accum_unlock pkt"));
+
+            /* no need to acquire the lock here because we need to receive the 
+               data into a temporary buffer first */
+
+            req = MPID_Request_create();
+            MPIU_Object_set_ref(req, 1);
+                
+            req->dev.datatype = lock_accum_unlock_pkt->datatype;
+            MPID_Datatype_get_size_macro(lock_accum_unlock_pkt->datatype, type_size);
+            req->dev.recv_data_sz = type_size * lock_accum_unlock_pkt->count;
+            req->dev.user_count = lock_accum_unlock_pkt->count;
+            req->dev.target_win_handle = lock_accum_unlock_pkt->target_win_handle;
+            
+            /* queue the information */
+
+            new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
+            /* --BEGIN ERROR HANDLING-- */
+            if (!new_ptr)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+
+            new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
+            /* --BEGIN ERROR HANDLING-- */
+            if (new_ptr->pt_single_op == NULL)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+
+            MPID_Win_get_ptr(lock_accum_unlock_pkt->target_win_handle, win_ptr);
+
+            /* FIXME: MT: The queuing may need to be done atomically. */
+            
+            curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+            prev_ptr = curr_ptr;
+            while (curr_ptr != NULL)
+            {
+                prev_ptr = curr_ptr;
+                curr_ptr = curr_ptr->next;
+            }
+
+            if (prev_ptr != NULL)
+                prev_ptr->next = new_ptr;
+            else 
+                win_ptr->lock_queue = new_ptr;
+        
+            new_ptr->next = NULL;  
+            new_ptr->lock_type = lock_accum_unlock_pkt->lock_type;
+            new_ptr->source_win_handle = lock_accum_unlock_pkt->source_win_handle;
+            new_ptr->vc = vc;
+                
+            new_ptr->pt_single_op->type = MPIDI_RMA_ACCUMULATE;
+            new_ptr->pt_single_op->addr = lock_accum_unlock_pkt->addr;
+            new_ptr->pt_single_op->count = lock_accum_unlock_pkt->count;
+            new_ptr->pt_single_op->datatype = lock_accum_unlock_pkt->datatype;
+            new_ptr->pt_single_op->op = lock_accum_unlock_pkt->op;
+            /* allocate memory to receive the data */
+            new_ptr->pt_single_op->data = MPIU_Malloc(req->dev.recv_data_sz);
+            /* --BEGIN ERROR HANDLING-- */
+            if (new_ptr->pt_single_op->data == NULL)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
+            new_ptr->pt_single_op->data_recd = 0;
+            
+            MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PT_SINGLE_ACCUM);
+            req->dev.user_buf = new_ptr->pt_single_op->data;
+            req->dev.lock_queue_entry = new_ptr;
+
+            *rreqp = req;
+            mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK");
+            }
+            /* --END ERROR HANDLING-- */
+
+            break;
+        }
+
+        case MPIDI_CH3_PKT_LOCK_GET_UNLOCK:
+	{
+	    MPIDI_CH3_Pkt_lock_get_unlock_t * lock_get_unlock_pkt = &pkt->lock_get_unlock;
+            MPID_Win *win_ptr;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock_get_unlock pkt"));
+
+            MPID_Win_get_ptr(lock_get_unlock_pkt->target_win_handle, win_ptr);
+
+            if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, 
+                                        lock_get_unlock_pkt->lock_type) == 1)
+	    {
+                /* do the get. for this optimization, only basic datatypes supported. */
+                MPIDI_CH3_Pkt_t upkt;
+                MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
+                MPID_Request *req;
+                MPID_IOV iov[MPID_IOV_LIMIT];
+
+                req = MPID_Request_create();
+                req->dev.target_win_handle = lock_get_unlock_pkt->target_win_handle;
+                req->dev.source_win_handle = lock_get_unlock_pkt->source_win_handle;
+                req->dev.single_op_opt = 1;
+                req->dev.ca = MPIDI_CH3_CA_COMPLETE;
+
+                MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
+                req->kind = MPID_REQUEST_SEND;
+
+                get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+                get_resp_pkt->request_handle = lock_get_unlock_pkt->request_handle;
+                
+                iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+                iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
+
+                iov[1].MPID_IOV_BUF = lock_get_unlock_pkt->addr;
+                MPID_Datatype_get_size_macro(lock_get_unlock_pkt->datatype, type_size);
+                iov[1].MPID_IOV_LEN = lock_get_unlock_pkt->count * type_size;
+	    
+                mpi_errno = MPIDI_CH3_iSendv(vc, req, iov, 2);
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    MPIU_Object_set_ref(req, 0);
+                    MPIDI_CH3_Request_destroy(req);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**ch3|rmamsg", 0);
+                    return mpi_errno;
+                }
+		/* --END ERROR HANDLING-- */
+            }
+
+            else {
+                /* queue the information */
+                MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
+
+                /* FIXME: MT: This may need to be done atomically. */
+
+                curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+                prev_ptr = curr_ptr;
+                while (curr_ptr != NULL)
+                {
+                    prev_ptr = curr_ptr;
+                    curr_ptr = curr_ptr->next;
+                }
+
+                new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
+                /* --BEGIN ERROR HANDLING-- */
+                if (!new_ptr)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+                new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
+                /* --BEGIN ERROR HANDLING-- */
+                if (new_ptr->pt_single_op == NULL)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+
+                if (prev_ptr != NULL)
+                    prev_ptr->next = new_ptr;
+                else 
+                    win_ptr->lock_queue = new_ptr;
+        
+                new_ptr->next = NULL;  
+                new_ptr->lock_type = lock_get_unlock_pkt->lock_type;
+                new_ptr->source_win_handle = lock_get_unlock_pkt->source_win_handle;
+                new_ptr->vc = vc;
+
+                new_ptr->pt_single_op->type = MPIDI_RMA_GET;
+                new_ptr->pt_single_op->addr = lock_get_unlock_pkt->addr;
+                new_ptr->pt_single_op->count = lock_get_unlock_pkt->count;
+                new_ptr->pt_single_op->datatype = lock_get_unlock_pkt->datatype;
+                new_ptr->pt_single_op->data = NULL;
+                new_ptr->pt_single_op->request_handle = lock_get_unlock_pkt->request_handle;
+                new_ptr->pt_single_op->data_recd = 0;
+            }
+
+            *rreqp = NULL;
 
             break;
         }
