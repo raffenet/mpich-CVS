@@ -99,29 +99,34 @@ OutTime() {
 
 # Do an "on the fly" check for problems.
 CheckOutput() {
+  bfile=$1
   if [ $check_at_once = 1 ] ; then
-    stdfile=${srcdir}/std/$1.std
-    if [ ! -s $1.out ] ; then
-        echo "No output file $1.out!"
+    stdfile=${srcdir}/std/$bfile.std
+    if [ ! -s $bfile.out ] ; then
+        echo "No output file $bfile.out!"
     elif [ -s $stdfile ] ; then
         stdfile2=${stdfile}2
-        if diff -b $1.out $stdfile > /dev/null ; then
+        # Handle Fortran systems that generate stop statements
+        rm -f ${bfile}.tout
+	grep -v 'FORTRAN STOP' ${bfile}.out > ${bfile}.tout
+        if diff -b $bfile.tout $stdfile > /dev/null ; then
 	    true
 	elif [ -s $stdfile2 ] ; then 
 	    # check for alternate in case configuration has fewer datatypes
-	    if diff -b $1.out $stdfile2 > /dev/null ; then
+	    if diff -b $bfile.tout $stdfile2 > /dev/null ; then
 	        true
             else
-	        echo "Differences in $1.out"
-	        diff -b $1.out $stdfile
+	        echo "Differences in $bfile.out"
+	        diff -b $bfile.tout $stdfile
 	        nodiff=0
 	    fi
         else
-	    echo "Differences in $1.out"
-	    diff -b $1.out $stdfile
+	    echo "Differences in $bfile.out"
+	    diff -b $bfile.tout $stdfile
 	fi
+        rm -f ${bfile}.tout
     else
-        echo "Can not find file $stdfile to compare against for test $1"
+        echo "Can not find file $stdfile to compare against for test $bfile"
     fi
   fi
 }
@@ -340,22 +345,27 @@ for file in $testfiles ; do
     # tests ...
     if [ -s $stdfile ] ; then
 	stdfile2=${stdfile}2
-        if diff -b $file $stdfile > /dev/null ; then
+        # Handle Fortran systems that generate stop statements
+	bfile="`basename $file .out`.tout"
+        rm -f ${bfile}
+	grep -v 'FORTRAN STOP' ${file} > ${bfile}
+        if diff -b $bfile $stdfile > /dev/null ; then
 	    true
 	elif [ -s $stdfile2 ] ; then 
 	    # check for alternate in case configuration has fewer datatypes
-	    if diff -b $file $stdfile2 > /dev/null ; then
+	    if diff -b $bfile $stdfile2 > /dev/null ; then
 	        true
             else
 	        echo "Differences in `basename $file .out`" >> iotests.diff
-	        diff -b $file $stdfile >> iotests.diff
+	        diff -b $bfile $stdfile >> iotests.diff
 	        nodiff=0
 	    fi
         else
 	    echo "Differences in `basename $file .out`" >> iotests.diff
-	    diff -b $file $stdfile >> iotests.diff
+	    diff -b $bfile $stdfile >> iotests.diff
 	    nodiff=0
 	fi
+        rm -f ${bfile}
     else
         echo "Can not find file $stdfile to compare against for test `basename $file .out`"
 	nodiff=0
