@@ -24,5 +24,5 @@ void ChkMsg( int err, int msgclass, const char msg[] )
 
     MPI_Error_string( err, errmsg, &len );
     
-    fprintf( stdout, "[%10d] %2d %s \tgives %s\n", err, msgclass, msg, errmsg );
+    fprintf( stdout, "[0x%08x] %2d %s \tgives %s\n", err, msgclass, msg, errmsg );
 }
