@@ -850,6 +850,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 }
 */
 
+#if 0
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -955,6 +956,84 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     /* store the ibu ptr and the mem ptr in the work id */
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)NULL;
+
+    MPIU_dbg_printf("ibui_post_write(%d bytes)\n", total);
+    status = ib_post_send_req_us( IBU_Process.hca_handle,
+	ibu->qp_handle, 
+	&work_req);
+    if (status != IBU_SUCCESS)
+    {
+	err_printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+	return status;
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+    //return IBU_SUCCESS;
+    return total;
+}
+#endif
+
+static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
+{
+    ib_uint32_t status;
+    ib_scatter_gather_list_t sg_list;
+    ib_data_segment_t data;
+    ib_work_req_send_t work_req;
+    void *mem_ptr;
+    unsigned int len;
+    int iov_index = 0;
+    int total = 0;
+    unsigned int num_avail = IBU_PACKET_SIZE;
+    unsigned char *buf;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
+
+    mem_ptr = ibuBlockAlloc(ibu->allocator);
+    buf = mem_ptr;
+    for (iov_index = 0; iov_index<n, num_avail; iov_index++)
+    {
+	len = min (num_avail, iov[iov_index].IBU_IOV_LEN);
+	num_avail -= len;
+	total += len;
+	memcpy(buf, iov[iov_index].IBU_IOV_BUF, len);
+	/*
+	if (len < iov[iov_index].IBU_IOV_LEN)
+	    break;
+	*/
+    }
+
+    MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, total));
+    g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
+    g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
+    g_cur_write_stack_index++;
+
+    data.length = total;
+    data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
+    data.l_key = ibu->lkey;
+
+    sg_list.data_seg_p = &data;
+    sg_list.data_seg_num = 1;
+
+    work_req.dest_address      = 0;
+    work_req.dest_q_key        = 0;
+    work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+    work_req.eecn              = 0;
+    work_req.ethertype         = 0;
+    work_req.fence_f           = 0;
+    work_req.immediate_data    = 0;
+    work_req.immediate_data_f  = 0;
+    work_req.op_type           = OP_SEND;
+    work_req.remote_addr.va    = 0;
+    work_req.remote_addr.key   = 0;
+    work_req.se_f              = 0;
+    work_req.sg_list           = sg_list;
+    work_req.signaled_f        = 0;
+	
+    /* store the ibu ptr and the mem ptr in the work id */
+    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
+    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
     MPIU_dbg_printf("ibui_post_write(%d bytes)\n", total);
     status = ib_post_send_req_us( IBU_Process.hca_handle,
