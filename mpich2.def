@@ -1,6 +1,14 @@
 ;LIBRARY mpich
 
 EXPORTS
+; Fortran values
+	MPIR_Keyval_set_fortran
+	MPIR_F_TRUE
+	MPIR_F_FALSE
+	MPIR_F_MPI_BOTTOM
+	MPI_F_STATUS_IGNORE
+	MPI_F_STATUSES_IGNORE
+; MPI
 	PMPI_Abort
 	MPI_Abort=PMPI_Abort
 	PMPI_Accumulate
