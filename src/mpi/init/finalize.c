@@ -44,7 +44,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
     fstack[fstack_sp].f            = f;
     fstack[fstack_sp++].extra_data = extra_data;
 }
-static void MPIR_Call_finalize_callbacks( void )
+PMPI_LOCAL void MPIR_Call_finalize_callbacks( void )
 {
     int i;
     for (i=fstack_sp-1; i>=0; i--) {

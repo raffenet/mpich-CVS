@@ -95,9 +95,9 @@ dnl
 AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],,
 with_pmi=default)
 dnl
-AC_ARG_WITH(weak-symbols,
-[--with-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
-with_weak_symbols=yes)
+AC_ARG_ENABLE(weak-symbols,
+[--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
+enable_weak_symbols=yes)
 dnl
 dnl Flavor is used to setup separate directories for the flavor-specific
 dnl code (e.g., libraries that depend on a particular thread library) from
@@ -289,6 +289,7 @@ dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
 AC_PATH_PROG(AR,ar)
 AC_PATH_PROG(RANLIB,ranlib)
+AC_PROG_INSTALL
 dnl
 dnl Now that CC is defined, get these values 
 dnl eval C_LINK_SHL=$C_LINK_SHL
@@ -307,11 +308,11 @@ dnl     check for compiler characteristics
 dnl Check for support for weak symbols.  If not found, set NO_WEAK_SYM
 dnl to the Make target name understood by simplemake.
 NO_WEAK_SYM_TARGET=build_proflib
-if test $with_weak_symbols = yes ; then
+if test $enable_weak_symbols = yes ; then
     # Turn off weak symbols if they aren't available
-    PAC_PROG_C_WEAK_SYMBOLS(,with_weak_symbols=no)
+    PAC_PROG_C_WEAK_SYMBOLS(,enable_weak_symbols=no)
 fi
-if test $with_weak_symbols = "yes" ; then
+if test $enable_weak_symbols = "yes" ; then
     AC_DEFINE(USE_WEAK_SYMBOLS,,[Define if weak symbols should be used])
 else
     NO_WEAK_SYM=build_proflib

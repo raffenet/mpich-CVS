@@ -1,3 +1,5 @@
 *.o
+*.lo
+*.pf
 Makefile
 Makefile.in

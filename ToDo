@@ -1,0 +1,9 @@
+MPI Profiling interface
+   If weak symbols are not present, you must use
+
+     -lmpich -lpmpich -lmpich
+
+   to link programs.  This is due to the fact that some of the helper functions
+   for the MPI calls are defined only for the pmpi versions (as they should
+   be) but some of the ADI routines are only in the mpich library.  
+

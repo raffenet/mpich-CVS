@@ -4,3 +4,6 @@ all-local:
 distclean-local:
 	-@rm -f lib/libmpich.a
 	-@rm -f src/include/mpichconf.h
+
+install_LIB = lib/libmpich.a
+	

@@ -155,6 +155,22 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
 	    );
+
+#install_dir maps XXX from install_XXX into the GNU name
+%install_dir = ( 'LIB' => 'libdir', 
+		 'BIN' => 'bindir',
+		 'INCLUDE' => 'includedir', 
+		 'MAN' => 'mandir',
+		 'HTML' => 'htmldir',
+		'DOC' => 'docdir' );
+# These give the directories that autoconf will require for the 
+%required_dirs = ( 'libdir' =>  'exec_prefix',
+		   'bindir' =>  'exec_prefix',
+		   'mandir' =>  'prefix',
+		   'htmldir' => 'prefix',
+		   'docdir' =>  'prefix',
+		   'includedir' => 'prefix',
+		  'exec_prefix' => 'prefix' );
 # etc.
 #
 # Rules
@@ -338,6 +354,9 @@ sub ReadMfile {
 	    $profile_libraries{$1} = $2;
 	    $found_profilelib = 1;
 	}
+	elsif (/^install_(\w*)\s*=\s*(.*)\s*$/) {
+	    $install_files{$1} = $2;
+	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/ /,$1);
@@ -455,6 +474,8 @@ sub WriteMfile {
 	&TargetDocs;
     }
 
+    &TargetInstall;
+
     if ($do_dependencies) {
 	&TargetDependencies;
     }
@@ -479,7 +500,7 @@ sub WriteMfile {
 # routine, or an include of a set of base rules.
 #
 sub DefaultRules {
-    print FD "shell       = \@SHELL\@$newline";
+    print FD "SHELL       = \@SHELL\@$newline";
 
     # Library definitions
     if (scalar(%libraries)) {
@@ -494,9 +515,32 @@ sub DefaultRules {
 	    }
 	}
     }
+    if (scalar(%install_files)) { 
+	print FD "INSTALL     = \@INSTALL\@$newline";
+    }
 
     # Directory definitions
     foreach $dir (keys(%dirs_seen)) {
+	print FD "$dirdefs{$dir}$newline";
+    }
+    %dir_added = ();
+    if (scalar(%install_files)) {
+	$dir_added{'prefix'} = 1;
+	print FD "$dirdefs{'prefix'}$newline";
+    }
+    foreach $dir (keys(%install_files)) {
+	# Handle the derived dirs for the install directories
+	$dir = $install_dir{$dir};
+	foreach $rdir ($required_dirs{$dir}) {
+	    if (!defined($dir_added{$rdir})) {
+		print FD "$dirdefs{$rdir}$newline";
+		$dir_added{$rdir} = 1;
+	    }
+	}
+    }
+    foreach $dir (keys(%install_files)) {
+	$dir = $install_dir{$dir};
+	$resultdir = $dirdefs{$dir};
 	print FD "$dirdefs{$dir}$newline";
     }
 
@@ -711,6 +755,7 @@ sub ClearVars {
     %extra_programs = ();
     %libraries = ();
     %profile_libraries = ();
+    %install_files = ();
     $found_profilelib = 0;
     %programs = ();
     %pgm_ldadd = ();
@@ -1032,11 +1077,13 @@ sub TargetLibraries {
 
 # This code is similar to TargetLibraries.
 sub TargetProfileLibraries {
+    $found_source_files = 0;
     foreach $lib (keys(%profile_libraries)) {
 	$proflib_name = $profile_libraries{$lib};
 	$libloc = &GetLibLoc( $lib );
 	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
         foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+	    $found_source_files = 1;
             $obj = $sourcefile;
             # Convert to object file
 	    $ext = $sourcefile;
@@ -1050,16 +1097,18 @@ sub TargetProfileLibraries {
 	    &print_make_line( FD, "$obj " );
         }
 	&print_make_endline( FD );
-	# Add these files as objects to the archive
-	print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
-	print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
-	print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file \$\${bname}.o ; done;)$newline";
-	print FD "\tfor file in .tmp/*.o ; do \\$newline";
-	print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
-        if ($ranliblib) { 
-	    print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+	if ($found_source_files) {
+	    # Add these files as objects to the archive
+	    print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
+	    print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
+	    print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file \$\${bname}.o ; done;)$newline";
+	    print FD "\tfor file in .tmp/*.o ; do \\$newline";
+	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
+	    if ($ranliblib) { 
+		print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+	    }
+	    print FD "\t-rm -rf .tmp$newline";
 	}
-	print FD "\t-rm -rf .tmp$newline";
     }
 }
 
@@ -1189,6 +1238,21 @@ sub TargetDocs {
     }
 }
 
+sub TargetInstall {
+    if (!scalar(%install_files)) { return ; }
+    print FD "# Install target$newline";
+    print FD "install:$newline";
+    foreach $kind (keys(%install_files)) {
+	$dir = $install_dir{$kind};
+	print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	foreach $file ($install_files{$kind}) {
+	    $destfile = $file;
+	    $destfile =~ s/.*\///;
+	    print FD "\t\@INSTALL_PROGRAM\@ $file \${$dir}/$destfile$newline";
+	}
+    }
+    print FD "$newline";
+}
 #
 # ===========================================================================
 # Other targets and stuff to be added:

@@ -1,4 +1,6 @@
 *.o
+*.lo
+*.pf
 Makefile
 Makefile.in
 defmsg.h
