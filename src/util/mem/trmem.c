@@ -87,7 +87,7 @@ extern int free( void *);
 #define COOKIE_VALUE   0xf0e0d0c9
 #define ALREADY_FREED  0x0f0e0d9c
 
-typedef struct _trSPACE {
+typedef struct TRSPACE {
     unsigned long   size;
     int             id;
     int             lineno;
@@ -95,7 +95,7 @@ typedef struct _trSPACE {
     int             freed_lineno;
     char            freed_fname[TR_FNAME_LEN];
     unsigned long   cookie;        
-    struct _trSPACE *next, *prev;
+    struct TRSPACE *next, *prev;
     } TRSPACE;
 /* This union is used to insure that the block passed to the user is
    aligned on a double boundary */
