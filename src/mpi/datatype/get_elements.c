@@ -88,10 +88,10 @@ PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,
 	case MPI_2INTEGER:
  	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(MPI_INTEGER);
 	    break;
+#endif
 	case MPI_2INT:
  	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
 	    break;
-#endif
 	case MPI_FLOAT_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_FLOAT);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
@@ -243,6 +243,7 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 								  types[i]);
 			nr_elements += last_nr_elements;
 
+			/* FIXME - no asserts in final code */
 			assert(last_nr_elements >= 0);
 
 			if (last_nr_elements == 0) break;
@@ -256,6 +257,7 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 	    case MPI_COMBINER_F90_COMPLEX:
 	    case MPI_COMBINER_F90_INTEGER:
 	    default:
+		/* FIXME: no asserts in final code */
 		assert(0);
 		return -1;
 		break;
@@ -347,6 +349,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 							  -1,
 							  datatype);
 	}
+	/* FIXME: no asserts in final code */
 	assert(byte_count >= 0);
     }
     else if (datatype_ptr->size == 0) {
@@ -362,6 +365,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	}
     }
     else /* derived type with weird element type or weird size */ {
+	/* FIXME: no asserts in final code */
 	assert(datatype_ptr->element_size == -1);
 
 	byte_count = status->count;
