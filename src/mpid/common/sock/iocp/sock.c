@@ -13,12 +13,12 @@
 #define SOCKI_TCP_BUFFER_SIZE       32*1024
 #define SOCKI_STREAM_PACKET_LENGTH  8*1024
 #define SOCKI_DESCRIPTION_LENGTH    256
+#define SOCKI_NUM_PREPOSTED_ACCEPTS 32
 
 typedef enum SOCKI_TYPE { SOCKI_INVALID, SOCKI_LISTENER, SOCKI_SOCKET } SOCKI_TYPE;
 
 typedef int SOCKI_STATE;
 #define SOCKI_ACCEPTING  0x0001
-#define SOCKI_ACCEPTED   0x0002
 #define SOCKI_CONNECTING 0x0004
 #define SOCKI_READING    0x0008
 #define SOCKI_WRITING    0x0010
@@ -61,12 +61,16 @@ typedef struct sock_state_t
     char host_description[SOCKI_DESCRIPTION_LENGTH];
     /* user pointer */
     void *user_ptr;
+    /* internal list */
+    struct sock_state_t *list, *next;
+    int accepted;
 } sock_state_t;
 
 static int g_num_cp_threads = 2;
 static int g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
 static int g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
 static int g_init_called = 0;
+static int g_num_posted_accepts = SOCKI_NUM_PREPOSTED_ACCEPTS;
 
 /* utility allocator functions */
 
@@ -343,6 +347,9 @@ static inline void init_state_struct(sock_state_t *p)
     p->write.ovl.Offset = 0;
     p->write.ovl.OffsetHigh = 0;
     p->write.progress_update = NULL;
+    p->list = NULL;
+    p->next = NULL;
+    p->accepted = 0;
 }
 
 #undef FUNCNAME
@@ -353,6 +360,8 @@ static inline int post_next_accept(sock_state_t * listen_state)
 {
     int mpi_errno;
     listen_state->state = SOCKI_ACCEPTING;
+    listen_state->accepted = 0;
+    /*printf("posting an accept.\n");fflush(stdout);*/
     listen_state->sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (listen_state->sock == INVALID_SOCKET)
     {
@@ -433,6 +442,15 @@ int MPIDU_Sock_init()
 	g_stream_packet_length = atoi(szNum);
 	if (g_stream_packet_length < 1)
 	    g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
+    }
+
+    /* get the number of accepts to pre-post */
+    szNum = getenv("SOCK_NUM_PREPOSTED_ACCEPTS");
+    if (szNum != NULL)
+    {
+	g_num_posted_accepts = atoi(szNum);
+	if (g_num_posted_accepts < 1)
+	    g_num_posted_accepts = SOCKI_NUM_PREPOSTED_ACCEPTS;
     }
 
     g_StateAllocator = BlockAllocInit(sizeof(sock_state_t), 1000, 500, malloc, free);
@@ -765,7 +783,8 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
     int mpi_errno;
     char host[100];
     DWORD num_read = 0;
-    sock_state_t * listen_state;
+    sock_state_t * listen_state, **listener_copies;
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_LISTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_LISTEN);
@@ -800,15 +819,31 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
     easy_get_sock_info(listen_state->listen_sock, host, port);
     listen_state->user_ptr = user_ptr;
     listen_state->type = SOCKI_LISTENER;
-    /* do this last to make sure the listener state structure is completely initialized before
+
+    /* post the accept(s) last to make sure the listener state structure is completely initialized before
        a completion thread has the chance to satisfy the AcceptEx call */
-    mpi_errno = post_next_accept(listen_state);
-    if (mpi_errno != MPI_SUCCESS)
+
+    listener_copies = (sock_state_t**)MPIU_Malloc(g_num_posted_accepts * sizeof(sock_state_t*));
+    for (i=0; i<g_num_posted_accepts; i++)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**post_accept", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_LISTEN);
-	return mpi_errno;
+	listener_copies[i] = (sock_state_t*)BlockAlloc(g_StateAllocator);
+	memcpy(listener_copies[i], listen_state, sizeof(*listen_state));
+	if (i > 0)
+	{
+	    listener_copies[i]->next = listener_copies[i-1];
+	}
+	mpi_errno = post_next_accept(listener_copies[i]);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPIU_Free(listener_copies);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**post_accept", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_LISTEN);
+	    return mpi_errno;
+	}
     }
+    listen_state->list = listener_copies[g_num_posted_accepts-1];
+    MPIU_Free(listener_copies);
+
     *sock = listen_state;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_LISTEN);
     return MPI_SUCCESS;
@@ -824,21 +859,13 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
     BOOL b;
     struct linger linger;
     int optval, len;
-    sock_state_t *accept_state;
+    sock_state_t *accept_state, *iter;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_ACCEPT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_ACCEPT);
     if (!g_init_called)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
-	return mpi_errno;
-    }
-
-    if (!(listener_sock->state & SOCKI_ACCEPTED))
-    {
-	*sock = NULL;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NO_NEW_SOCK, "**sock_nop_accept", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
 	return mpi_errno;
     }
@@ -855,8 +882,17 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
 
     accept_state->type = SOCKI_SOCKET;
 
-    accept_state->sock = listener_sock->sock;
-    mpi_errno = post_next_accept(listener_sock);
+    iter = listener_sock->list;
+    while (iter != NULL && iter->accepted == 0)
+	iter = iter->next;
+    if (iter == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_nop_accept", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
+	return mpi_errno;
+    }
+    accept_state->sock = iter->sock;
+    mpi_errno = post_next_accept(iter);
     if (mpi_errno != MPI_SUCCESS)
     {
 	*sock = NULL;
@@ -926,6 +962,7 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
     sock_state_t *connect_state;
     u_long optval;
     char host[100];
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
@@ -988,11 +1025,26 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
     }
 
     /* connect */
-    if (connect(connect_state->sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+    for (i=0; i<5; i++)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_connect", "**sock_connect %d", WSAGetLastError());
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
-	return mpi_errno;
+	if (connect(connect_state->sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+	{
+	    int random_time;
+	    int error = WSAGetLastError();
+	    if (error != WSAECONNREFUSED || i == 4)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_connect", "**sock_connect %s %d %d", host, port, error);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
+		return mpi_errno;
+	    }
+	    random_time = (int)((double)rand() / (double)RAND_MAX * 250.0);
+	    Sleep(random_time);
+	}
+	else
+	{
+	    /*printf("connect to %s:%d succeeded.\n", host, port);fflush(stdout);*/
+	    break;
+	}
     }
 
     /* set the socket to non-blocking */
@@ -1379,7 +1431,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 {
     int mpi_errno;
     DWORD num_bytes;
-    sock_state_t *sock;
+    sock_state_t *sock, *iter;
     OVERLAPPED *ovl;
     DWORD dwFlags = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WAIT);
@@ -1893,7 +1945,11 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 		    return MPI_SUCCESS;
 		}
-		sock->state |= SOCKI_ACCEPTED;
+		iter = sock->list;
+		while (iter && &iter->read.ovl != ovl)
+		    iter = iter->next;
+		if (iter != NULL)
+		    iter->accepted = 1;
 		out->op_type = MPIDU_SOCK_OP_ACCEPT;
 		out->num_bytes = num_bytes;
 		out->error = MPI_SUCCESS;
@@ -1922,8 +1978,10 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", mpi_errno));
 	    if (sock != NULL)
 	    {
+		MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, sock != null\n"));
 		if (sock->type == SOCKI_SOCKET)
 		{
+		    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, sock == SOCKI_SOCKET \n"));
 		    if (ovl == &sock->read.ovl)
 			out->op_type = MPIDU_SOCK_OP_READ;
 		    else if (ovl == &sock->write.ovl)
@@ -1938,6 +1996,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		}
 		if (sock->type == SOCKI_LISTENER)
 		{
+		    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, sock == SOCKI_LISTENER \n"));
 		    /* this only works if the aborted operation is reported before the close is reported
 		       because the close will free the sock structure causing these dereferences bogus.
 		       I need to reference count the sock */
