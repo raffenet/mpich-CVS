@@ -76,8 +76,12 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 # Directories needed.  These are the prefix etc.  Many are needed only
 # at the top level, particularly for installation.  srcdir is needed only for
 # VPATH builds
-%dirdefs = ( 'srcdir'     => 'srcdir      = @srcdir@',
-	     'top_srcdir' => 'top_srcdir  = @top_srcdir@',
+# We must build the srcdir and top_srcdir specially because autoconf
+# insists on replacing this text.
+$srcdir_name =               'srcdir      =@' . "srcdir" . '@';
+$topsrcdir_name =            'top_srcdir  =@' . "top_srcdir" . '@';
+%dirdefs = ( 'srcdir'     => $srcdir_name,
+	     'top_srcdir' => $topsrcdir_name,
 	     'prefix'     => 'prefix      = @prefix@',
 	     'exec_prefix'=> 'exec_prefix = @exec_prefix@',
 	     'bindir'     => 'bindir      = @bindir@',
@@ -592,13 +596,16 @@ sub ProcessFile {
 
     my @dirs = @subdirs;
     # First, check for names that are replaced by autoconf (e.g., @name@)
-    my @actdirs = ()
+    my @actdirs = ();
     foreach my $dir (@dirs) {
 	$sdir = $dir;
+	#print "Checking $sdir\n";
 	if ($sdir =~ /@([^@]*)@/) {
 	    $subst_name = $1;
+	    #print "Found $subst_name\n";
 	    # Look up the special name
 	    $var_name = "SUBDIRS_$subst_name";
+	    #print "varname is $var_name\n";
 	    if (defined( $makevars{$var_name} )) {
 		# Concatenate the value of the variable name to the list
 		# of directories

@@ -17,11 +17,22 @@ if [ ! -d confdb ] ; then
 fi
 #
 # Build simplemake if necessary
+made_simplemake=no
 if [ ! -x maint/configure ] ; then
     (cd maint && autoconf )
 fi
+# The following relies on the Unix find command
+if find -name 'maint/configure.in' -newer 'maint/configure' ; then
+    (cd maint && autoconf)
+fi
 if [ ! -x maint/simplemake ] ; then
     (cd maint && ./configure )
+    made_simplemake=yes
+fi
+# The following relies on the Unix find command
+if find -name 'maint/simplemake.in' -newer 'maint/simplemake' ; then
+    (cd maint && ./configure)
+    made_simplemake=yes
 fi
 #
 if [ ! -x maint/simplemake ] ; then
@@ -30,6 +41,22 @@ if [ ! -x maint/simplemake ] ; then
     echo "path to Perl (version5).  Make sure the resulting file has"
     echo "execute permissions set."
     exit 1
+fi
+#
+if [ $made_simplemake != "no" ] ; then
+    # Check that only the first line was changed:
+    rm -f .t1 .t2
+    sed -e 1d maint/simplemake.in > .t1
+    sed -e 1d maint/simplemake > .t2
+    if diff .t1 .t2 >/dev/null 2>&1 ; then
+        :
+    else
+        echo "Something is wrong with simplemake; configure may have"
+        echo "replaced variables that it should not have."
+        diff .t1 .t2
+        exit 1
+    fi
+    rm -f .t1 .t2
 fi
 #
 # Create the Makefile.in files
