@@ -119,6 +119,9 @@ typedef struct {
     int          nProcesses;         /* Number of processes created */
     int          maxProcesses;       /* Maximum number of processes available;
 					set to MAXPROCESSES */
+    int          timeout_seconds;    /* Maximum time to run (from start);
+					-1 is infinity */
+    int          nActive;            /* Number of active processes. */
     ProcessState table[MAXPROCESSES];
 } ProcessTable_t;
 

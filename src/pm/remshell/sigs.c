@@ -49,6 +49,22 @@
  * through a global variable, ptable.
  */
 
+
+static ProcessTable_t *ptable = 0;
+
+/* Call this routine to initialize the sigchild and set the process table
+   pointer */
+void initPtableForSigchild( ProcessTable_t *t )
+{
+    ptable = t;
+    setup_sigchild( void );
+}
+
+/*
+ * Note that signals are not queued.  Thus we must process all pending
+ * processes, and not be concerned if we are invoked but we have already
+ * waited on all processes.
+ */
 int handle_sigchild( int sig )
 {
     int prog_stat, pid, rc, sigval, i;
@@ -57,10 +73,20 @@ int handle_sigchild( int sig )
 	DBG_FPRINTF( stderr, "Waiting for any child on signal\n" );
 	fflush( stderr );
     }
-    pid = waitpid( (pid_t)(-1), &prog_stat, WNOHANG );
+
+    while (1) {
+	/* Find out about any children that have exited */
+	pid = waitpid( (pid_t)(-1), &prog_stat, WNOHANG );
     
-    if (pid > 0) {
-	/* Receives a child failure or exit.  If *failure*, kill the others */
+	if (pid <= 0) {
+	    if (debug) {
+		DBG_FPRINTF( stderr, "Did not find child process!\n" );
+		fflush( stderr );
+	    }
+	    break;
+	}
+	/* Receives a child failure or exit.  
+	   If *failure*, kill the others */
 	if (debug) {
 	    DBG_FPRINTF( stderr, "Found process %d\n", pid );
 	    fflush( stderr );
@@ -84,6 +110,7 @@ int handle_sigchild( int sig )
 		    ptable->table[i].state      = GONE;
 		    ptable->table[i].exitStatus = rc;
 		    ptable->table[i].exitSig    = sigval;
+		    ptable->nActive--;
 		    break;
 		}
 	    }
@@ -93,12 +120,6 @@ int handle_sigchild( int sig )
 	    }
 	    if (killOnAbort) 
 		KillChildren();
-	}
-    }
-    else {
-	if (debug) {
-	    DBG_FPRINTF( stderr, "Did not find child process!\n" );
-	    fflush( stderr );
 	}
     }
 }

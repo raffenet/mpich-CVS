@@ -146,6 +146,8 @@ elif test "$ac_cv_func_signal" = "yes" ; then
     AC_DEFINE(USE_SIGNAL,,[Define if signal should be used to set signals])
 fi
 dnl
+AC_DEFINE(USE_SIGCHLD_HANDLER,,[Define if mpiexec should use sigchild to handle process exit])
+
 AC_PATH_PROG(SSH,ssh)
 if test -z "$SSH" ; then
     AC_PATH_PROG(RSH,rsh)

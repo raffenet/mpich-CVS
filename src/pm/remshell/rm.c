@@ -75,6 +75,7 @@ int mpiexecChooseHosts( ProcessTable_t *ptable )
 	mt = mpiexecReadMachines( arch, nNeeded );
 	if (!mt) {
 	    /* FIXME : needs an error message */
+	    /* By default, run on local host? */
 	    return 1;
 	}
 	if (mt->nHosts == 0) {

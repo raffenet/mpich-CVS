@@ -55,7 +55,29 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
     const char *path=0;
     const char *soft=0;
     const char *exename=0;
+    /*char pathname[PATH_MAX]; 
+      char wdirname[MAXNAMELEN]; */
     int        indexOfFirstArg=-1;
+
+    /* Get values from the environment first.  Command line options
+       override the environment */
+
+    /* set defaults for arguments.  Most of these can also be set
+       with environment variables */
+
+    /* Simple test for debugging */
+    if (getenv( "MPIEXEC_DEBUG" )) debug = 1;
+    /* Value is now in seconds */
+    ptable->timeout_seconds = GetIntValue( "MPIEXEC_TIMEOUT", 60 );
+    if (debug) DBG_PRINTF( "timeout_seconds = %d\n", timeout_seconds );
+
+    /* 
+    if ( !getcwd( wdirname, MAXNAMELEN ) ) {
+	mpiexec_usage( "current working directory name too long\n" );
+    }
+
+    MPIU_Strncpy( pathname, getenv( "PATH" ), PATH_MAX );
+    */
 
     for (i=1; i<argc; i++) {
 	if ( strncmp( argv[i], "-n",  strlen( argv[i] ) ) == 0 ||

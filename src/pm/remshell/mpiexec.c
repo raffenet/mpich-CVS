@@ -83,8 +83,11 @@ int main( int argc, char *argv[] )
     int rc = 0;
     int fdPMI=-1, portnum;             /* fd and port for PMI messages */
     char myname[MAX_HOST_NAME+1];
+
     processTable.maxProcesses = MAXPROCESSES;
     processTable.nProcesses   = 0;
+    processTable.nActive      = 0;
+    processTable.timeout_seconds = -1;
 
     /* Process the command line arguments to build the table of 
        processes to create */
@@ -95,6 +98,10 @@ int main( int argc, char *argv[] )
 	MPIU_Error_printf( "No program specified" );
 	return 1;
     }
+
+    /* Initialiaze the timeout handling (get the current time and remember
+       the timelimit) */
+    InitTimeout( processTable.timeout_seconds );
 
     /* Determine the hosts to run on */
     rc = mpiexecChooseHosts( &processTable );
@@ -129,6 +136,10 @@ int main( int argc, char *argv[] )
 	MPIU_Internal_error_printf( "Could not get my hostname\n" );
 	return 1;
     }
+
+    /* Pass the process table to the file that contains the SIGCHLD handler.
+       It will use this to process any child that exits */
+    initPtableForSigchild( &processTable );
 
     /* Start the remote shell processes ooncurrently */
     rc = mpiexecStartProcesses( &processTable, myname, portnum );
@@ -362,6 +373,8 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 
 	pid = fork();
 	if (pid > 0) {
+	    /* Increment the number of created processes */
+	    ptable->nActive++;
 	    /* We are (and remain) the parent */
 	    /* Close unused portion of pipes */
 	    close(read_out_pipe[1]); 
@@ -459,6 +472,8 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 /* or the command line.                                                    */
 /* Returns the number of arguments                                         */
 /* For example, this allows "ssh -2" as a command                          */
+/* Allow the environment variable MPIEXEC_REMSHELL to set the remote shell */
+/* program to use                                                          */
 /* ----------------------------------------------------------------------- */
 const char defaultRemoteshell[] = DEFAULT_REMOTE_SHELL;
 
@@ -613,7 +628,8 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 {
     struct pollfd *pollarray;
     int i, j, nfds, nprocess;
-    int activeNfds;
+    int resetPollarray = 1;
+    int activeNfds = 0;
     fdHandle_t *handlearray;
 
     /* Compute the array size needed for the poll operation */
@@ -631,6 +647,74 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 				    ptable->nProcesses );
 	return 1;
     }
+
+    /* Loop until we exit or timeout */
+    while (1) {
+	int timeout, rc;
+
+	/* Compute the timeout until we must abort this run */
+	/* (A negative value is infinite) */
+	timeout = GetRemainingTime();
+
+	/* 
+	 * Fill in poll array.  Initialize all of the fds.
+	 */
+	if (resetPollarray) {
+	    activeNfds = mpiexecSetupPollArray( ptable, 
+						pollarray, handlearray );
+	    resetPollarray = 0;
+	    /* If only the mpiexec fds are set, exit */
+	    if (activeNfds <= 3) break;
+	}
+
+	/* Exit if no active processes */
+	if (ptable->nActive == 0) break;
+
+	rc = poll( pollarray, activeNfds, timeout );
+
+	/* rc = 0 is a timeout, with nothing read */
+	if (rc == 0) {
+	    break;
+	}
+
+	/* loop through the entries */
+	for (j=0; j<activeNfds; j++) {
+	    if (pollarray[j].revents & (POLLOUT | POLLIN)) {
+		rc = handlearray[j].handleIO( handlearray[j].fd, 
+					      handlearray[j].processIdx,
+					      handlearray[j].extraData );
+		if (rc != 0) {
+		    /* State change */
+		    handlearray[j].state = rc;
+		    resetPollarray = 1;
+		}
+	    }
+	    else if (pollarray[j].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
+		/* Error condition.  Likely that the socket 
+		   has disconnected.  Look at the client state to 
+		   understand how to handle */
+		rc = mpiexecCloseProcess( handlearray[j].fd, 
+					  handlearray[j].processIdx,
+					  handlearray[j].extraData );
+		resetPollarray = 1;
+	    }
+	}
+
+	/* If the mpiexec stdout or stdin becomes full, turn off 
+	   the check for data available from the processes on 
+	   those fds */
+	
+	/* Similarly, do the same if the designated stdin process
+	   is not accepting input (don't read any more) */
+	
+    }
+}
+
+/* This routine sets up the pollarray, given the process table. */
+int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[], 
+			   fdHandle_t handlearray[] )
+{
+    int j, i;
 
     /* 
      * Fill in poll array.  Initialize all of the fds.
@@ -680,96 +764,60 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
     j++;
 #endif
 
+    /* Only include fd's that are positive; fds for closed pipes/sockets
+       are set to -1 */
     for (i=0; i<nprocess; i++) {
 #if 0
 	/* Stdin TO the process (if enabled) */
-	pollarray[j].fd		  = ptable->table[i].fdStdin;
-	pollarray[j].events	  = POLLOUT;
-	handlearray[j].fd	  = pollarray[j].fd;
-	handlearray[j].processIdx = i;
-	handlearray[j].handleIO	  = mpiexecHandleStdin;
-	handlearray[j].extraData  = &ptable->table[i].stdinBuf;
-	handlearray[j].state	  = 0;
-	j++;
+	if (ptable->table[i].fdStdin >= 0) {
+	    pollarray[j].fd		  = ptable->table[i].fdStdin;
+	    pollarray[j].events	  = POLLOUT;
+	    handlearray[j].fd	  = pollarray[j].fd;
+	    handlearray[j].processIdx = i;
+	    handlearray[j].handleIO	  = mpiexecHandleStdin;
+	    handlearray[j].extraData  = &ptable->table[i].stdinBuf;
+	    handlearray[j].state	  = 0;
+	    j++;
+	}
 #endif
 	/* Stdout FROM the process */
-	pollarray[j].fd		  = ptable->table[i].fdStdout;
-	pollarray[j].events	  = POLLIN;
-	handlearray[j].fd	  = pollarray[j].fd;
-	handlearray[j].processIdx = i;
-	handlearray[j].handleIO	  = mpiexecHandleOutput;
-	handlearray[j].extraData  = &ptable->table[i].stdoutBuf;
-	handlearray[j].state	  = 0;
-	j++;
+	if (ptable->table[i].fdStdout >= 0) {
+	    pollarray[j].fd		  = ptable->table[i].fdStdout;
+	    pollarray[j].events	  = POLLIN;
+	    handlearray[j].fd	  = pollarray[j].fd;
+	    handlearray[j].processIdx = i;
+	    handlearray[j].handleIO	  = mpiexecHandleOutput;
+	    handlearray[j].extraData  = &ptable->table[i].stdoutBuf;
+	    handlearray[j].state	  = 0;
+	    j++;
+	}
 	/* Stderr FROM the process */
-	pollarray[j].fd		  = ptable->table[i].fdStderr;
-	pollarray[j].events	  = POLLIN;
-	handlearray[j].fd	  = pollarray[j].fd;
-	handlearray[j].processIdx = i;
-	handlearray[j].handleIO	  = mpiexecHandleOutput;
-	handlearray[j].extraData  = &ptable->table[i].stderrBuf;
-	handlearray[j].state	  = 0;
-	j++;
+	if (ptable->table[i].fdStderr >= 0) {
+	    pollarray[j].fd		  = ptable->table[i].fdStderr;
+	    pollarray[j].events	  = POLLIN;
+	    handlearray[j].fd	  = pollarray[j].fd;
+	    handlearray[j].processIdx = i;
+	    handlearray[j].handleIO	  = mpiexecHandleOutput;
+	    handlearray[j].extraData  = &ptable->table[i].stderrBuf;
+	    handlearray[j].state	  = 0;
+	    j++;
+	}
 #if 0
 	/* PMI requests from process */
-	pollarray[j].fd		  = ptable->table[i].fdPMI;
-	pollarray[j].events	  = POLLIN;
-	handlearray[j].fd	  = pollarray[j].fd;
-	handlearray[j].processIdx = i;
-	handlearray[j].handleIO	  = PMIServHandleInputFd;
-	handlearray[j].extraData  = &ptable->table[i];
-	handlearray[j].state	  = 0;
-	j++;
+	if (ptable->table[i].fdPMI >= 0) {
+	    pollarray[j].fd		  = ptable->table[i].fdPMI;
+	    pollarray[j].events	  = POLLIN;
+	    handlearray[j].fd	  = pollarray[j].fd;
+	    handlearray[j].processIdx = i;
+	    handlearray[j].handleIO	  = PMIServHandleInputFd;
+	    handlearray[j].extraData  = &ptable->table[i];
+	    handlearray[j].state	  = 0;
+	    j++;
+	}
 #endif
     }
 
-    /* reset nfds */
-    activeNfds = j;
-    /* Loop until we exit or timeout */
-    while (1) {
-	int timeout, rc;
-
-	/* Compute the timeout until we must abort this run */
-	/* (A negative value is infinite) */
-	timeout = GetRemainingTime();
-	printf( "Timeout = %d\n", timeout );
-	timeout = -1;
-	rc = poll( pollarray, activeNfds, timeout );
-
-	/* rc = 0 is a timeout, with nothing read */
-	if (rc == 0) {
-	    break;
-	}
-
-	/* loop through the entries */
-	for (j=0; j<activeNfds; j++) {
-	    if (pollarray[j].revents & (POLLOUT | POLLIN)) {
-		rc = handlearray[j].handleIO( handlearray[j].fd, 
-					      handlearray[j].processIdx,
-					      handlearray[j].extraData );
-		if (rc != 0) {
-		    /* State change */
-		    handlearray[j].state = rc;
-		}
-	    }
-	    else if (pollarray[j].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
-		/* Error condition.  Likely that the socket 
-		   has disconnected.  Look at the client state to 
-		   understand how to handle */
-		rc = mpiexecCloseProcess( handlearray[j].fd, 
-					  handlearray[j].processIdx,
-					  handlearray[j].extraData );
-	    }
-	}
-
-	/* If the mpiexec stdout or stdin becomes full, turn off 
-	   the check for data available from the processes on 
-	   those fds */
-	
-	/* Similarly, do the same if the designated stdin process
-	   is not accepting input (don't read any more) */
-	
-    }
+    return j;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -889,7 +937,8 @@ int mpiexecGetPMIsock( int fd, int pidx, void *extra )
 }
 
 /* An error or hangup occured for this process.  Close the fd
-   and mark the process as exiting */
+   and mark the process as exiting.  Processes are *NOT* marked as
+   exited until they are waited on in the sigchld handler */
 int mpiexecCloseProcess( int fd, int pidx, void *extra )
 {
     ProcessTable_t *ptable = extra;
@@ -898,7 +947,23 @@ int mpiexecCloseProcess( int fd, int pidx, void *extra )
 	    ptable->table[pidx].state = EXITING;
     }
     close (fd);  /* Ignore any errors */
-    /* Should we attempt to close any other fds on this process? */
+
+    /* Find this fd in the process entry and set it to -1 */
+    if (ptable->table[pidx].fdStdin == fd) {
+	ptable->table[pidx].fdStdin = -1;
+    }
+    if (ptable->table[pidx].fdStdout == fd) {
+	ptable->table[pidx].fdStdout = -1;
+    }
+    if (ptable->table[pidx].fdStderr == fd) {
+	ptable->table[pidx].fdStderr = -1;
+    }
+    if (ptable->table[pidx].fdPMI == fd) {
+	ptable->table[pidx].fdPMI = -1;
+    }
+
+    /* Should we attempt to close any other fds on this process? 
+       No, let them exit normally. */
 
     return 0;
 }
