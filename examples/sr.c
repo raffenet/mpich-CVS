@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>
 
@@ -5,13 +6,16 @@ int main(int argc, char **argv)
 {
     int size;
     int rank;
-    int msg = 0;
-
+    int * msg = NULL;
+    int msg_sz = 0;
+    int niter = 1;
+    int iter;
+    
     if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     {
         printf("ERROR: problem with MPI_Init\n"); fflush(stdout);
     }
-    
+
     if (MPI_Comm_size(MPI_COMM_WORLD, &size) != MPI_SUCCESS)
     {
 	printf("ERROR: problem with MPI_Comm_size\n"); fflush(stdout);
@@ -29,29 +33,64 @@ int main(int argc, char **argv)
 	printf("ERROR: needs to be run with at least 2 procs\n");
 	fflush(stdout);
     }
-    else if (rank == 0)
-    {
-	/* msg = 2222;
-	if (MPI_Send(&msg, 1, MPI_INT, 1, 5, MPI_COMM_WORLD) != MPI_SUCCESS) */
-	if (MPI_Send(NULL, 0, MPI_INT, 1, 5, MPI_COMM_WORLD) != MPI_SUCCESS)
-	{
-	    printf("ERROR: problem with MPI_Send\n"); fflush(stdout);
-	}
-    }
-    else if (rank == 1)
-    {
-	MPI_Status status;
 
-	/* if (MPI_Recv(&msg, 1, MPI_INT, 0, 5, MPI_COMM_WORLD, &status) */
-	if (MPI_Recv(NULL, 0, MPI_INT, 0, 5, MPI_COMM_WORLD, &status)
-	    != MPI_SUCCESS)
-	{
-	    printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
-	}
+    if (argc > 1)
+    {
+	sscanf(argv[1], "%d", &msg_sz);
+    }
+    
+    if (argc > 2)
+    {
+	sscanf(argv[2], "%d", &niter);
+    }
+
+    if (msg_sz > 0)
+    {
+	msg = (int *) malloc(msg_sz * sizeof(int));
+    }
+
+    for (iter = 0; iter < niter; iter++)
+    {
+	int i;
 	
-	printf("app: rcvd message %d\n", msg); fflush(stdout);
+	if (rank == 0)
+	{
+	    for (i = 0; i < msg_sz; i++)
+	    {
+		msg[i] = iter * msg_sz + i;
+	    }
+	    
+	    if (MPI_Send(&msg, msg_sz, MPI_INT, 1, iter, MPI_COMM_WORLD)
+		!= MPI_SUCCESS)
+	    {
+		printf("ERROR: problem with MPI_Send\n"); fflush(stdout);
+	    }
+	}
+	else if (rank == 1)
+	{
+	    MPI_Status status;
+	    
+	    if (MPI_Recv(&msg, msg_sz, MPI_INT, 0, iter, MPI_COMM_WORLD,
+			 &status) != MPI_SUCCESS)
+	    {
+		printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
+	    }
+	
+	    for (i = 0; i < msg_sz; i++)
+	    {
+		if (msg[i] != iter * msg_sz + i)
+		{
+		    printf("ERROR: %d != %d, i=%d iter=%d\n", msg[i],
+			   iter * msg_sz + i, i, iter);
+		    fflush(stdout);
+		    abort();
+		}
+	    }
+	}
     }
 
+    printf("sr: process %d finished\n", rank); fflush(stdout);
+    
     if (MPI_Finalize() != MPI_SUCCESS)
     {
         printf("ERROR: problem with MPI_Finalize\n"); fflush(stdout);
