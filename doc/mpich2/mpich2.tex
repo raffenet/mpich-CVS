@@ -199,7 +199,7 @@ because an MPI implementation is not complete without these components.
     \item[mem]Memory allocation and management.  These include the tracing
       malloc routines (\file{tr2} in the MPICH implementation).
     \item[thread]Thread portability layer.  Supports at least pthreads,
-      openmp, and Windows.  Possibly also Solaris threads.
+      openmp, Solaris threads, and Windows.
     \end{description}
   \item[mpid]Implementation of the ADI3.  There are many subdirectories here.
   \item[bnr]Process manager interface.  This contains the BNR
@@ -285,9 +285,13 @@ because an MPI implementation is not complete without these components.
 \item[maint]
   Contains scripts and tools used to manage the project.  Some of these may be
   distributed.
-  \begin{description}
-  \item[config]\code{autoconf} macro files
-  \end{description}
+%  \begin{description}
+%  \end{description}
+
+\item[confdb]\code{autoconf} macro files and scripts.  This is a
+separate directory from \file{maint} because it is must be distributed
+with mpich2 (since it is used by \code{autoconf} to build
+\code{configure}, and GNU wants you to include all sources).
 
 \item[test]Testing tools and programs
   \begin{description}
@@ -429,12 +433,19 @@ for an opaque handle.  These do no (or limited) error checking (see
 %         MPID_END_ERROR_CHECKS;
 %     }
 % #   endif /* defined(HAVE_ERROR_CHECKING) */
-\item Pointers to opaque objects are validated with routines of the
+\item Pointers to opaque objects are validated with macros of the
 form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
-error message if the pointer is not valid.
+error message if the pointer is not valid, and also resets the pointer
+to null. 
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual and
 Appendix~\ref{sec:error-codes}). 
+\item If an error is detected, the proper error handler is invoked
+with \code{MPID_Err_return_xxx}, where \code{xxx} is either
+\code{comm}, \code{win}, or \code{file} (the MPI objects with attached
+error handlers).  If the object pointer is \code{NULL}, the
+appropriate error handler will be used (usually the handler on
+\code{MPI_COMM_WORLD} or \code{MPI_FILE_NULL}).
 \item The example shows the use of MPID routines to lock the communicator
   against other threads.  As with the error checking code above, a
 block is used to visually indicate the extent of the code that is
@@ -538,7 +549,6 @@ int MPI_Foo( MPI_Comm comm, int a )
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
                 return MPIR_Err_return_comm( comm_ptr, mpi_errno, FCNAME );
@@ -819,6 +829,9 @@ We will use the 2 highest bits to encode a type of construct.  These are:
 \item[\code{CONSTRUCT_DIRECT}]   (10)
 \item[\code{CONSTRUCT_INDIRECT}] (11)
 \end{description}
+In addition, the macro \code{CONSTRUCT_MASK} may be used to return
+just these bits and \code{CONSTRUST_TYPE(id)} returns these values as the
+integers $0$--$3$.
 
 Using 00 as invalid, especially in the two high bits, will help detect
 bad parameters passed to us (although negative ints won't be caught).
@@ -838,6 +851,8 @@ The next three highest bits will encode the MPI type stored:
 \item[\code{MPI_Info}]     (110)
 \item[\code{MPI_Win}]      (111)
 \end{description}
+The macro \code{HANDLE_KIND(id)} returns this value as an integer in
+the range $0$--$7$.
 
 At this point we can reasonably expect to have at least 11 bits remaining
 to work with, usually 27 and for some architectures 59.
@@ -864,6 +879,7 @@ removes one indirect reference and ensures that storage is available at init
 time).  This table should be 
 a memory page or two in size, 
 minus estimated \code{malloc} overhead (if we dynamically allocate).
+The macro \code{HANDLE_INDEX(id)} returns this index value.
 
 For indirectly accessed values the remaining bits specify an allocated block
 for storing pointers and an index into that block.  We'll split the bits
@@ -871,6 +887,8 @@ based on the number of pointers we can store in a block (which will need
 to be statically calculable; the \code{_SC_PAGE_SIZE} value in the
 \code{sysconf} call is a starting point, or we can  do a configure test and
 define \code{MPID_BLOCK_SIZE}). 
+The macros \code{HANDLE_BLOCK(id)} and \code{HANDLE_BLOCK_INDEX(id)}
+return these values.
 
 \subsubsection{Converting Handles To Pointers}
 \label{sec:handle-to-ptr}
@@ -893,6 +911,26 @@ handle, there is no need to have an object to point to.  Current
 thinking on this is that there should be such an object, even if it is
 rarely referred to, just to allow code to work with the single general
 case if it chooses to.
+
+\subsubsection{Memory Management for Handles}
+Because handles are not pointers, we need an easy way to find the
+memory block that contains the data to which the handle refers.  
+This is done though a combination of preallocated and dynamically
+allocated arrays; the handle contains an index into the appropriate
+array.  
+
+Each object has a separate set of arrays.  One is preallocated and is
+used by handles with type \code{CONSTRUCT_DIRECT}.  The dynamically
+allocated array 
+(actually an array of pointers to arrays) is used for handles with
+type \code{CONSTRUCT_INDIRECT}.  Elements are allocated from these
+arrays by using a simple linked list, usually managed by a separate
+utility routine.  See \file{src/util/info/infoutil.c} for an example.
+Because these operations use a global linked list, a special thread
+lock, \code{allocation_lock}, is provided in the \code{MPIR_Process}
+data structure.  The macros \mpidfunc{MPID_Allocation_lock} and
+\mpidfunc{MPID_Allocation_unlock} are used to protect all allocation
+lists in a multithreaded environment.
 
 \subsection{Error reporting}
 \label{sec:error-reporting}
@@ -1102,13 +1140,29 @@ Similarly, there is a per-process type
 \begin{verbatim}
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
                MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
+typedef PreDefined_attrs struct {
+    int appnum;          /* Application number provided by mpiexec (MPI-2) */
+    int host;            /* host */
+    int io;              /* standard io allowed */
+    int lastusedcode;    /* last used error code (MPI-2) */
+    int tag_ub;          /* Maximum message tag */
+    int universe;        /* Universe size from mpiexec (MPI-2) */
+    int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
+};
 typedef struct {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
+    int               thread_provided;  /* Provided level of thread support */
     MPID_Thread_key_t thread_key;       /* Id for perthread data */
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
+    MPID_Thread_lock_t allocation_lock; /* Used to lock around 
+                                           list-allocations */
+    MPID_Thread_lock_t allocation_lock; /* Used to lock around 
+                                           list-allocations */
+    MPID_Thread_lock_t common_lock;     /* General purpose common lock */
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
+    PreDefined        attrs;            /* Predefined attribute values */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 \end{verbatim}
@@ -1127,7 +1181,7 @@ extern MPICH_PerThread_t MPIR_Thread;
 #else /* Assumes pthreads for simplicity */
 #define MPID_GetPerThread(p) {\
      p = pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPID_Calloc( 1, sizeof(MPID_PerThread_t ) );\
+     if (!p) { p = MPIU_Calloc( 1, sizeof(MPID_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
 #endif
 \end{verbatim}
@@ -1201,8 +1255,8 @@ timestamps, along with the number of calls.  These are defined in the file
 Simple informational routines such as \code{MPI_Comm_size} and
 \code{MPI_Wtime} will not be timed.
 
-\textbf{Question: Also keep track of max/min times and either sum of squares
-  or a histogram of times?  See the discussion of the statistics routines}
+%\textbf{Question: Also keep track of max/min times and either sum of squares
+%  or a histogram of times?  See the discussion of the statistics routines}
 
 Question: should we allow func enter/exit at general
 locations, so that it can be used to surround other routines, rather
@@ -1608,6 +1662,7 @@ package.  At least four different packages are of interest:
 \begin{enumerate}
 \item pthreads.  This provides a powerful model with reasonable
 portability to most Unix platforms, including Linux.  
+\item Solaris threads.
 \item Windows threads.  
 \item OpenMP threads.  OpenMP has a small set of thread runtime
 routines (such as lock/unlock), including the ability to run different blocks
@@ -1626,12 +1681,21 @@ spinlocks, but not efficiently.  Instead of only providing a functional (but
 not performant) implementation of a condition variable, there should also be
 an indicator that the condition variable is emulated.
 
-Question: Whare are the MPID versions of the thread operations?  What
+Question: Where are the MPID versions of the thread operations?  What
 is the include file that contains the definition of these operations?
 What is the set of operations?  Note that in most cases, no thread
 operations should be used explicitly; instead, higher-level
 abstractions such as reference count increment and
 \code{MPID_Comm_thread_lock}. 
+Currently these are in \file{include/mpiimpl.h} and
+\file{src/util/thread/gthread.c}.  
+
+Note that threads may be used in two places.  One is in the
+implementation of the ADI, such as the use of a thread to provide for
+progress.  The other is the use of threads by the users application
+which requires that the MPI routines use compatible thread routines to
+provide for thread private storage.  To keep it simple, we require
+that only one thread package be chosen.
 
 \subsection{Initialization and Finalization}
 \label{sec:initialization}
@@ -2177,6 +2241,17 @@ values.
 Question: Do we want the list to be sorted by key name?  The current
 implementation uses a linear list, which is probably ok for most uses.
 
+Question: The implementation outlines for the info routines shown
+below use a lock around the info object to prevent separate user
+threads from updating the same info object concurrently.  This is
+(probably) not necessary; it is (need to check the standard) a
+user-error to update the same object simultaneously from two separate
+threads.  In that case, a lock is needed only to update the common
+info allocation array, since all info objects share that common
+storage.  The current implementation does not contain the general
+locks but does use an allocation lock for updating the common info
+allocation array.
+
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
 Call \mpidfunc{MPID_Info_create}.
 
@@ -2262,19 +2337,25 @@ find indicated key and return name
 unlock info
 \end{algorithm}
 
+The following has not yet been implemented:
+
+Since the most likely use of this routine is to search for all keys,
+we remember the index and location in the list of the last key
+returned (or modified).  This value is stored in the 
+first info element (using the otherwise ununsed \code{key} and
+\code{value} fields.  This change lowers the cost of extracting every 
+key from $n^2$ in the length of the list to $n$.  
+
+Inorder to get the
+\emph{value} that matches the key, we may want to check that
+particular entry first when searching for a \code{key}.
+
+
 Question:  Do we want to have this return an error if the info list is 
 modified by another thread?  Is there any way to actually do this?  For
 example, the self-id of a thread could record itself in the info object when
 ever the object is modified.  This routine could (optionally) return an error
 if the list is modified by another thread after \code{MPI_INFO_GET_NKEYS}.
-
-Since the most likely use of this routine is to search for all keys,
-should we remember the index and location in the list of the last key
-returned (or modified)?  That converts the process of extracting every
-key from $n^2$ in the length of the list to $n$.  Naturally, we put
-this information into the list header.  Inorder to get the
-\emph{value} that matches the key, we may want to check that
-particular entry first when searching for a \code{key}.
 
 \subsubsection{\mpifunc{MPI_INFO_GET_VALUELEN}}
 \begin{algorithm}
@@ -3316,7 +3397,7 @@ group id of zero and the rank in \code{MPI_COMM_WORLD}.  More complex jobs
 % (e)         (intercomm_merge using (g1-g2) as peer comm, and 
 %             (g1+g3) and (g2+g4) as the local groups.
 % \end{verbatim}
-\centerline{\psfig{file=intercomm.eps}}
+\centerline{\psfig{file=intercomm.eps,height=4in}}
 \caption{Example of MPI process creation and
 \mpifunc{MPI_Intercomm_merge}}\label{fig:spawn-ic} 
 \end{figure}
@@ -5385,6 +5466,7 @@ callbacks include
 \item Generalized requests
 \item Datareps
 \item Fortran 90 types created with \mpifunc{MPI_Type_create_f90_int} etc.
+\item Info (for info structure allocation)
 %\item RMA (e.g., free any allocated shared memory)
 %\item I/O (e.g., close any open files)
 \end{enumerate}
@@ -5406,11 +5488,21 @@ implementation.  Although we intend to provide at least one implementation of
 BNR (MPD), we will encourage other process manager suppliers to implement is
 as well.
 
-\subsubsection{The BNR Process Manager Interface}
+\subsubsection{The BNR Interface}
 \label{sec:bnr}
 
+The purpose of the BNR is to provide an interface to external process
+managers and related resources.  The external process manager may be
+very sophisticated and offer many useful functions or it may be very
+simple and capable of few operations beyond starting a process.  The
+BNR interface provides an interface that allows us to exploit the
+capabilities of a powerful process manager while also (by providing
+implementations of any missing functionality ourselves) allowing us to
+use more limited process managers.  An example of functionality that
+not all process managers provide is the ``precommunication'' setup. 
+
 The primitive concepts of the BNR interface are the {\em group}, the {\em
-  database},
+  keymap},
 and the {\em domain}.  Each of these was chosen in order to
 provide a simple, MPI-independent interface that would be straightforward for
 process managers to implement.
@@ -5419,7 +5511,7 @@ A BNR {\em group\/} (or process group) is a set of processes started by the
 process manager ``at the same time.''  It is designed to fit the process
 manager's own concept of a related set of parallel processes belonging to a
 single parallel job.  A process belongs to only one process group and can be
-identified by (group, rank) 
+identified by (group, rank).  Thus, these are different from MPI groups.
 
 ({\em Rationale:\/}  This approach in discussion was called ``big groups.''
 An alternative approach is to have BNR process groups correspond to MPI groups
@@ -5427,53 +5519,56 @@ An alternative approach is to have BNR process groups correspond to MPI groups
 assortment of group construction and manipulation routines and imposes a new
 concept on the process manager.)
 
-A BNR {\em database\/} is a collection of key=value pairs associated with a
-job and database name.  Its purpose is to provide certain services to the
-library linked with the application.
-One type of service required by the library from the process manger might be
-called ``precommunication.''  Since only the process manager knows where other
-processes have been started, it may be necessary to ask at run time how to
-communicate with other processes.  We allow other processes to deposit their
-``business cards'' into a database accessible to other processes in the same
-job, with information on who they may be contacted (shmem keys, IP host/ports,
-switch ports, etc.)  Thus precommunication takes place through this database.
-Databases are identified by name, names are assigned by the process manger;
-no process is allowed access to the database of another job (maybe ``job''
-needs a definition).  Each process group does automatically have access to a
-database, but some databases may be shared among process groups.
+A BNR {\em keymap\/} is a collection of key=value pairs associated
+with a job and keymap handle.  Its purpose is to provide certain
+services to the library linked with the application.  One type of
+service required by the library from the process manager might be
+called ``precommunication.''  Since only the process manager knows
+where other processes have been started, it may be necessary to ask at
+run time how to communicate with other processes.  We allow other
+processes to deposit their ``business cards'' into a keymap accessible
+to other processes in the same job, with information on who they may
+be contacted (shmem keys, IP host/ports, switch ports, etc.)  Thus
+precommunication takes place through this keymap.  Keymap are
+identified by name, names are assigned by the process manger; no
+process is allowed access to the keymap of another job (maybe ``job''
+needs a definition).  Each process group does automatically have
+access to a keymap, but some keymaps may be shared among process
+groups.  A keymap is a very simple database; to emphasize that fact,
+we use the term keymap instead of database in this text.
 
-({\em Rationale:\/}  An alternate approach is to attach databases to process
-groups.  This requires too much duplication of data in multiple databases in
-environments where it is easy for multiply groups to share the same database.)
+({\em Rationale:\/}  An alternate approach is to attach keymaps to process
+groups.  This requires too much duplication of data in multiple keymaps in
+environments where it is easy for multiply groups to share the same keymap.)
 
 A BNR {\em domain\/} is an environment managed by a single instance of a
-process manager.  Thus within a domain databases may be shared among multiple
+process manager.  Thus within a domain, keymaps may be shared among multiple
 process groups.  In order to support distributed computing applications,
-multiple domains are allowed, in which case databases may need to be copied
+multiple domains are allowed, in which case keymaps may need to be copied
 rather than shared.  The mechanisms for doing so are included in the BNR
 interface. 
 
-({\em Rationale:\/}  In our initial design, we said that a database would be
+({\em Rationale:\/}  In our initial design, we said that a keymap would be
 local to a process group.  All process in the process group would be able to
-insert (put) or extract (get) information from the database.  If a member of
+insert (put) or extract (get) information from the keymap.  If a member of
 the process group desired to share the information contained within one of its
-databases, it could extract the information using the iterator functions, and
+keymaps, it could extract the information using the iterator functions, and
 communicate the key-value pairs to a non-member using a mechanism external to
 BNR.  If the recipient of this information was also using BNR, it could create
-a new database using BNR and populate the database with the key-value pairs it
+a new keymap using BNR and populate the keymap with the key-value pairs it
 received, thus making the information available to all members of its process
 group.
 
 Rusty pointed out that the recipient process group might very well be in the
-same database domain, and that extracting and communicating all of the data
-within a database would be unnecessary and costly.  We realized that if we
-associated a database to some notion of a domain rather than a particular
+same keymap domain, and that extracting and communicating all of the data
+within a keymap would be unnecessary and costly.  We realized that if we
+associated a keymap to some notion of a domain rather than a particular
 process group then we might be able to avoid this potentially costly
 replication of information when process groups needed to exchange information.
 
 To make this practical, we restrict a process group to a single BNR domain.  A
-database is accessible to any process in the domain so long as that process
-knows the name of the database.
+keymap is accessible to any process in the domain so long as that process
+knows the name of the keymap.
 
 BNR-Spawn-multiple may instantiate the set of requested processes in a domain
 outside of the one its calling process belongs to so long as the entire process
@@ -5504,49 +5599,53 @@ belongs entirely to the BNR implementation and to the matching process
 manager.) 
 
 
-\subsubsection{The BNR Database Functions}
-\label{sec:bnr-database}
+\subsubsection{The BNR Keymap Functions}
+\label{sec:bnr-keymap}
 
-These functions are the interface to BNR databases.  Some implementations might
+These functions are the interface to BNR keymaps.  Some implementations might
 be integrated with the process manager; other implementations could be
 independent of the process manager (e.g. separate server). 
 
+Question: Why are keymaps (old databases) managed by string name
+instead of a handle?  If a serialized name is needed for external
+identification, that could be given by a separate function.  - WDG.
+
 \begin{verbatim}
-  int BNR_DB_Get_my_name(char *dbname)        - get name of database
-  int BNR_DB_Get_name_length_max( )           - needed since might be sent
-  int BNR_DB_Create(char *dbname [OUT})       - make a new one, get name 
-  int BNR_DB_Destroy(char *dbname [IN])       - finish with one 
+  int BNR_Key_Get_my_name(char *dbname)        - get name of keymap
+  int BNR_Key_Get_name_length_max( )           - needed since might be sent
+  int BNR_Key_Create(char *dbname [OUT})       - make a new one, get name 
+  int BNR_Key_Destroy(char *dbname [IN])       - finish with one 
   int BNR_Put(char *dbname,
-              char key[BNR_MAX_KEY_LEN],
+              const char key[BNR_MAX_KEY_LEN],
               char value[BNR_MAX_VALUE_LEN]); - put data
   int BNR_Commit(char *dbname)                - block until all pending put
                                                 operations from this process
                                                 are complete.  This is a process
                                                 local operation.
   int BNR_Get(char *dbname,
-              char *key,
+              const char key[],
               char value[BNR_MAX_VALUE_LEN]); - get value associated with key
-  int BNR_DB_iter_first(char *dbname, char *key, char *val)  - loop through the
-  int BNR_DB_iter_next(char *dbname, char *key, char *val)      pairs in the db
+  int BNR_Key_iter_first(char *dbname, char *key, char *val)  - loop through the
+  int BNR_Key_iter_next(char *dbname, char *key, char *val)      pairs in the db
 \end{verbatim}
   
-One a \code{BNR_Put}, if a pair with the same key is already in the database,
+On a \code{BNR_Put}, if a pair with the same key is already in the keymap,
 the value is overwritten.  On a \code{BNR_Get}, if there is no pair with
 matching key, the return value is -1.  
 
 ({\em Rationale:\/}  Note that there is no fence operation, since process
-groups are separate from databases.  Since \code{BNR_Put}s and \code{BNR_Get}s
+groups are separate from keymaps.  Since \code{BNR_Put}s and \code{BNR_Get}s
 are globally asynchronous, it is the responsibility of the user to ensure that
-the data sought by a get operation has been placed in the database by a put
+the data sought by a get operation has been placed in the keymap by a put
 operation.  The \code{BNR_Commit} ensures that the put has taken place
-``locally'' (synchronization between a process and the database), and then
+``locally'' (synchronization between a process and the keymap); 
 another mechanism is required for synchronization across processes.  Within
 a process group this can be accomplished by the \code{BNR_Barrier}; across
 process groups it can be accomplished by message passing (See the {\tt MM}
 interface below.)
 
 ({\em Rationale:\/}  The iteration scheme for extracting the total contents
-of a database is obviously not thread safe.  This is not viewed as a problem.
+of a keymap is obviously not thread safe.  This is not viewed as a problem.)
 
 \subsubsection{The BNR Process Creation Functions}
 \label{sec:bnr-spawn}
@@ -5560,9 +5659,9 @@ int BNR_Spawn_multiple(count, cmds, argvs, maxprocs, infos, errors,
 \end{verbatim}
 
 ({\em Rationale:\/}  The \code{same_domain} argument lets the process manager
-tell us whether the database associated with the new process group is shared,
-or whether we will need to receive the contents of the new group's database
-and add it to our own.
+tell us whether the keymap associated with the new process group is shared,
+or whether we will need to receive the contents of the new group's keymap
+and add it to our own.)
 
 Note that there is no new process group identifier returned.  The only real
 need for it would be to implement a \code{BNR_Kill} function, which is not
@@ -5585,11 +5684,11 @@ MM_receive
 MM_???
 \end{verbatim}
 
-One use of this form of communication is to copy databases between domains.
+One use of this form of communication is to copy keymaps between domains.
 Here are functions to carry this out:
 
 \begin{verbatim}
-SendDatabases([IN] conn, [IN] comm)
+SendKeymaps([IN] conn, [IN] comm)
 {
     MM_send(conn, Ndb)
     foreach dbname (used in a vc in comm)
@@ -5605,7 +5704,7 @@ SendDatabases([IN] conn, [IN] comm)
     }
 }
 
-RecvDatabases([IN] conn, [OUT] dbmap)
+RecvKeymaps([IN] conn, [OUT] dbmap)
 {
     MM_recv(conn, Ndb);
     dbmap = malloc(Ndb * sizeof(int));
@@ -5636,6 +5735,8 @@ routines in terms of the BNR functions defined above, together with the
 MM utility communication functions.  We will also assume that certain
 MPI functions have been implemented.  (Note:  we need to explain why we are
 not in an infinite loop here.)
+
+Question: Is \code{BNR_Convert_args_to_info} defined?
 
 \begin{verbatim}
 mpiexec::main()
@@ -5737,14 +5838,14 @@ int MPI_Comm_accept(port_name, info, root, comm, intercomm)
         SendCommVCTable(conn, comm->VCTable, comm->size);
         if (!bnr_same_domain)
         {
-            SendDatabases(conn, comm);
+            SendKeymaps(conn, comm);
         }
         
         RecvCommVCTable(conn, intercomm->remote_VCTable,
                         intercomm->remote_size);
         if (!bnr_same_domain)
         {
-            RecvDatabases(conn, dbmap);
+            RecvKeymaps(conn, dbmap);
             FixVCTable(dbmap, intercomm->remote_VCTable);
         }
 
@@ -5781,14 +5882,14 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
                         intercomm->remote_size);
         if (!bnr_same_domain)
         {
-            RecvDatabases(conn, dbmap);
+            RecvKeymaps(conn, dbmap);
             FixVCTable(dbmap, intercomm->remote_VCTable);
         }
         
         SendCommVCTable(conn, comm->VCTable, comm->size);
         if (!bnr_same_domain)
         {
-            SendDatabases(conn, comm);
+            SendKeymaps(conn, comm);
         }
         
         MPI_Bcast(remote_size, root, comm);

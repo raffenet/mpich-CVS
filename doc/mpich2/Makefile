@@ -129,4 +129,4 @@ clean:
 		pt2ptdesc.ps
 
 .fig.eps:
-	fig2dev -L ps -l landscape $*.fig > $*.eps
+	fig2dev -L eps -l landscape $*.fig > $*.eps
