@@ -37,7 +37,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
     rreq->ch3.user_buf = buf;
     rreq->ch3.user_count = count;
     rreq->ch3.datatype = datatype;
-    rreq->ch3.vc = comm->vcr[rank];
 
     if (found)
     {
