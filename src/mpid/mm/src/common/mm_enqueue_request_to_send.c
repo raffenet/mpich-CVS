@@ -22,6 +22,7 @@ int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
     car_ptr->qnext_ptr = NULL;
     car_ptr->next_ptr = NULL;
     car_ptr->opnext_ptr = NULL;
+    car_ptr->vcqnext_ptr = NULL;
     car_ptr->type = MM_READ_CAR | MM_HEAD_CAR;
 
     /* enqueue the car in the unexpected queue */

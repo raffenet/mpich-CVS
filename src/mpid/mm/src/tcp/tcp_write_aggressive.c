@@ -61,6 +61,8 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
        of the segment (segment_last) then set final_segment to TRUE */
     final_segment = (num_avail + car_ptr->data.tcp.buf.vec_write.total_num_written) == buf_ptr->vec.segment_last;
 
+    /*msg_printf("tcp_stuff_vector_vec: num_avail = %d\n", num_avail);*/
+
     /* set the first vector to be the buf_ptr vector offset by the amount previously written */
     vec[cur_pos].MPID_VECTOR_BUF = 
 	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
@@ -106,6 +108,8 @@ int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
 	return FALSE;
     }
+
+    /*msg_printf("tcp_stuff_vector_tmp: added %d byte buffer\n", buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written);*/
 
     /* add the tmp buffer to the vector */
     vec[*cur_pos].MPID_VECTOR_BUF = (char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written;
@@ -163,6 +167,8 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    buf_ptr->vec.segment_last - car_ptr->data.tcp.buf.vec_write.cur_num_written,
 	    /* the actual amount written */
 	    num_written);
+
+	/*msg_printf("num_written vec: %d\n", num_written);*/
 	
 	/* update vector */
 	car_ptr->data.tcp.buf.vec_write.cur_num_written += num_written;
@@ -208,15 +214,19 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
 	{
 #ifdef MPICH_DEV_BUILD
-	if (car_ptr != car_ptr->vc_ptr->writeq_head)
-	{
-	    err_printf("Error: tcp_update_car_num_written not dequeueing the head write car.\n");
-	}
+	    if (car_ptr != car_ptr->vc_ptr->writeq_head)
+	    {
+		err_printf("Error: tcp_update_car_num_written not dequeueing the head write car.\n");
+	    }
 #endif
 	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
+	}
+	else
+	{
+	    /*msg_printf("partial buffer written, total_num_written %d, segment_last %d\n", car_ptr->data.tcp.buf.vec_write.total_num_written, buf_ptr->vec.segment_last);*/
 	}
 	break;
     case MM_TMP_BUFFER:
@@ -226,6 +236,8 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    /* the actual amount written */
 	    num_written);
 	
+	/*msg_printf("num_written tmp: %d\n", num_written);*/
+
 	/* update the amount written */
 	car_ptr->data.tcp.buf.tmp.num_written += num_written;
 	
@@ -292,6 +304,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 
     if (vc_ptr->writeq_head == NULL)
     {
+	msg_printf("tcp_write_aggressive: write signalled with no vc's in the write queue.\n");
 	MM_EXIT_FUNC(TCP_WRITE_AGGRESSIVE);
 	return MPI_SUCCESS;
     }
@@ -322,10 +335,14 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	case MM_VEC_BUFFER:
 	    if (buf_ptr->vec.num_cars_outstanding > 0)
 	    {
+		/* num_cars_outstanding means that the reader has provided the data and is waiting for the writers to complete */
 		stop = !tcp_stuff_vector_vec(vec, &cur_pos, car_ptr, buf_ptr);
 	    }
 	    else
+	    {
+		/* the reader hasn't read the data yet, so we can't write anything. */
 		stop = TRUE;
+	    }
 	    break;
 	case MM_TMP_BUFFER:
 	    stop = !tcp_stuff_vector_tmp(vec, &cur_pos, car_ptr, buf_ptr);
@@ -386,15 +403,18 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	    }
 	}
 
-	/* update all the cars and buffers affected by the bwrite action */
+	/* update all the cars and buffers affected by the bwrite(v) action */
+	/*msg_printf("write_aggressive: num_written %d\n", num_written);*/
 	while (num_written)
 	{
-	    /* the head gets dequeued and the next car takes its place */
+	    /* tcp_update_car_num_written causes the head to get dequeued and the next car to take its place 
+	     * until all the data is accounted for or there is an error. */
 	    if (tcp_update_car_num_written(vc_ptr->writeq_head, &num_written) != MPI_SUCCESS)
 	    {
 		err_printf("tcp_write_aggressive:tcp_update_car_num_written failed.\n");
 		return -1;
 	    }
+	    /*msg_printf("write_aggressive: num_written updated %d\n", num_written);*/
 	}
     }
 

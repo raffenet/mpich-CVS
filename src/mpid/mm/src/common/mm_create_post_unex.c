@@ -53,7 +53,6 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
     car_ptr->buf_ptr = &car_ptr->msg_header.buf;
     car_ptr->opnext_ptr = &request_ptr->mm.rcar[1];
-    car_ptr->next_ptr = &request_ptr->mm.rcar[1];
     car_ptr->qnext_ptr = NULL;
     /*mm_inc_cc(request_ptr);*/ /* the head car has already been received */
 

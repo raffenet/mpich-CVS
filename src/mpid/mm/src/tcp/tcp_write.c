@@ -33,6 +33,7 @@ int tcp_write(MPIDI_VC *vc_ptr)
 
     if (vc_ptr->writeq_head == NULL)
     {
+	msg_printf("tcp_write: write called with no vc's in the write queue.\n");
 	MM_EXIT_FUNC(TCP_WRITE);
 	return MPI_SUCCESS;
     }
@@ -205,7 +206,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 		return -1;
 	    }
 	}
-	
+
 	/* update vector */
 	car_ptr->data.tcp.buf.vec_write.cur_num_written += num_written;
 	car_ptr->data.tcp.buf.vec_write.total_num_written += num_written;
@@ -273,7 +274,7 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	return MPI_SUCCESS;
     }
 
-    /* read as much as possible */
+    /* write as much as possible */
     MM_ENTER_FUNC(BWRITE);
     num_written = bwrite(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written,

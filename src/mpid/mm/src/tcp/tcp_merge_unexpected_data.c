@@ -177,8 +177,11 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 		}
 		else
 		{
-		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF = car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF - num_left;
-		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN += num_left;
+		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF = 
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF +
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN +
+			num_left;
+		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN -= num_left;
 		}
 	    }
 	    car_ptr->data.tcp.buf.vec_read.cur_index = i;
@@ -192,6 +195,7 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
     }
     else
     {
+	msg_printf("total_num_read %d, segment_last %d\n", car_ptr->data.tcp.buf.vec_read.total_num_read, buf_ptr->vec.segment_last);
 	/* somehow save the extra data because it must be completely read or it will be lost */
 	err_printf("Error: tcp_merge_vec: data lost.\n");
     }

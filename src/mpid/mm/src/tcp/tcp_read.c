@@ -183,6 +183,8 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 		return -1;
 	    }
 	}
+
+	/*msg_printf("num_read vec: %d\n", num_read);*/
 	
 	/* update vectors */
 	buf_ptr->vec.num_read += num_read;
@@ -252,6 +254,9 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     {
 	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
     }
+
+    /*msg_printf("num_read tmp: %d\n", num_read);*/
+
     /* update the amount read */
     buf_ptr->tmp.num_read += num_read;
 

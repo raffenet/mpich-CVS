@@ -25,6 +25,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	(car_ptr->msg_header.pkt.u.hdr.size < TCP_EAGER_LIMIT))
     {
 	/* enqueue the head packet car */
+	/*msg_printf("tcp_post_write: enqueueing packet\n");*/
 	tcp_car_enqueue(vc_ptr, car_ptr);
     }
     else
