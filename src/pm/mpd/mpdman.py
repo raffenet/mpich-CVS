@@ -642,8 +642,9 @@ def mpdman():
                 line = mpd_recv_one_line(pmiSocket)
                 if not line:
                     (donePid,status) = waitpid(clientPid,0)
-                    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,
-                                  'id' : myId, 'rank' : myRank }
+                    msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
+                                  'cli_status' : status, 'cli_host' : gethostname(),
+                                  'cli_pid' : clientPid, 'cli_rank' : myRank }
                     if myRank == 0:
                         if conSocket:
                             mpd_send_one_msg_noprint(conSocket,msgToSend)

@@ -27,6 +27,7 @@ from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
                             mpd_raise, mpdError, mpd_version, mpd_print
+import xml.dom.minidom
 
 class mpdrunInterrupted(Exception):
     def __init__(self,args=None):
@@ -34,13 +35,15 @@ class mpdrunInterrupted(Exception):
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
        try0Locally, lineLabels, jobAlias, hostsFile
-global timeoutVal, stdinGoesToWho, myExitStatus, manSocket
+global timeoutVal, stdinGoesToWho, myExitStatus, manSocket, jobid
+global outXmlDoc, outXmlEC, outXmlFile
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile
-    global timeoutVal, stdinGoesToWho, myExitStatus, manSocket
+    global timeoutVal, stdinGoesToWho, myExitStatus, manSocket, jobid
+    global outXmlDoc, outXmlEC, outXmlFile
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -49,6 +52,10 @@ def mpdrun():
     nprocs = 0
     jobAlias = ''
     argsFilename = ''
+    outExitCodesFilename = ''
+    outXmlFile = ''
+    outXmlDoc = ''
+    outXmlEC = ''
     delArgsFile = 0
     try0Locally = 1
     lineLabels = 0
@@ -327,7 +334,10 @@ def mpdrun():
     if (not msg  or  not msg.has_key('cmd')):
         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
     if (msg['cmd'] == 'job_started'):
-        # print 'mpdrun: job %s started' % (msg['jobid'])
+        jobid = msg['jobid']
+        if outXmlEC:
+            outXmlEC.setAttribute('jobid',jobid.strip())
+        # print 'mpdrun: job %s started' % (jobid)
         pass
     else:
 	mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
@@ -379,17 +389,24 @@ def mpdrun():
                     elif msg['cmd'] == 'job_aborted':
                         print 'job aborted; reason = %s' % (msg['reason'])
                     elif msg['cmd'] == 'client_exit_status':
-			status = msg['status']
-			if WIFSIGNALED(status):
-			    if status > myExitStatus:
-			        myExitStatus = status
-			    killed_status = status & 0x007f  # AND off core flag
-		            # print 'exit status of rank %d: killed by signal %d ' % (msg['rank'],killed_status)
-			else:
-			    exit_status = WEXITSTATUS(status)
-			    if exit_status > myExitStatus:
-			        myExitStatus = exit_status
-		            # print 'exit status of rank %d: return code %d ' % (msg['rank'],exit_status)
+                        if outXmlDoc:
+                            outXmlProc = outXmlDoc.createElement('exit-code')
+                            outXmlEC.appendChild(outXmlProc)
+                            outXmlProc.setAttribute('rank',str(msg['cli_rank']))
+                            outXmlProc.setAttribute('status',str(msg['cli_status']))
+                        # print "exit info: rank=%d  host=%s  pid=%d  status=%d" % \
+                              # (msg['cli_rank'],msg['cli_host'],
+                               # msg['cli_pid'],msg['cli_status'])
+			# if WIFSIGNALED(status):
+			    # if status > myExitStatus:
+			        # myExitStatus = status
+			    # killed_status = status & 0x007f  # AND off core flag
+		            # # print 'exit status of rank %d: killed by signal %d ' % (msg['cli_rank'],killed_status)
+			# else:
+			    # exit_status = WEXITSTATUS(status)
+			    # if exit_status > myExitStatus:
+			        # myExitStatus = exit_status
+		            # # print 'exit status of rank %d: return code %d ' % (msg['cli_rank'],exit_status)
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
@@ -454,6 +471,9 @@ def mpdrun():
                 mpd_raise('mpdrun: select failed: errmsg=:%s:' % (errmsg) )
     if mshipPid:
         (donePid,status) = wait()    # waitpid(mshipPid,0)
+    if outXmlFile:
+        print >>outXmlFile, outXmlDoc.toprettyxml(indent='   ')
+        outXmlFile.close()
 
 def sig_handler(signum,frame):
     # for some reason, I (rmb) was unable to handle TSTP and CONT in the same way
@@ -474,8 +494,9 @@ def sig_handler(signum,frame):
             mpd_send_one_msg(manSocket,msgToSend)
 
 def process_cmdline_args():
-    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, stdinGoesToWho, hostsFile
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
+           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid
+    global outXmlDoc, outXmlEC, outXmlFile
 
     hostsFile = ''
     if len(argv) < 3:
@@ -486,11 +507,19 @@ def process_cmdline_args():
         argsFilename = argv[2]   # initialized to '' in main
 	argidx = 3
     elif argv[1] == '-f':
-	if len(argv) > 3:
-            print 'cannot use -f with other args'
-	    usage()
         argsFilename = argv[2]   # initialized to '' in main
-        argidx = 3
+        argidx += 2
+	if len(argv) > 3:
+            if len(argv) > 5  or  argv[3] != '-r':
+                print '-r is the only arg that can be used with -f'
+                usage()
+            else:
+                outExitCodesFilename = argv[4]   # initialized to '' in main
+                outXmlFile = open(outExitCodesFilename,'w')
+                outXmlDoc = xml.dom.minidom.Document()
+                outXmlEC = outXmlDoc.createElement('exit-codes')
+                outXmlDoc.appendChild(outXmlEC)
+                argidx += 2
     if not argsFilename:
         while pgm == '':
 	    if argidx >= len(argv):
@@ -507,8 +536,15 @@ def process_cmdline_args():
                         else:
                             argidx += 2
                 elif argv[argidx] == '-f':
-	            print 'cannot use -f with other args'
+	            print '-f must be first and only -r can appear with it'
 		    usage()
+                elif argv[argidx] == '-r':
+                    outExitCodesFilename = argv[argidx+1]   # initialized to '' in main
+                    outXmlFile = open(outExitCodesFilename,'w')
+                    outXmlDoc = xml.dom.minidom.Document()
+                    outXmlEC = outXmlDoc.createElement('exit-codes')
+                    outXmlDoc.appendChild(outXmlEC)
+                    argidx += 2
                 elif argv[argidx] == '-a':
                     jobAlias = argv[argidx+1]
                     argidx += 2
@@ -555,7 +591,7 @@ def usage():
     print '       (-1 means do NOT start the first process locally)'
     print '       (-a means assign this alias to the job)'
     print '       (-s means send stdin to all processes; not just first)'
-    print 'or:    mpdrun -f filename'
+    print 'or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]'
     print '   where filename contains all the arguments in xml format'
     exit(-1)
 
