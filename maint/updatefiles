@@ -229,7 +229,7 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
 #	`find src/mpid -name '*.[ch]' -print` > .tmp 2>.err
     maint/extracterrmsgs src/mpi src/nameserv src/util src/binding \
         src/include/*.h src/mpid \
-	`find src/mpid -name '*.h' -print` > .tmp 2>.err
+	`find src/mpid -name '*.[hi]' -print` > .tmp 2>.err
     # (error here is ok)
     update_errdefs=yes
     if [ -s .err ] ; then 

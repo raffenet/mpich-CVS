@@ -371,7 +371,7 @@ sub ProcessFile
 	    }
 	    
 	    # if signature does not match new function prototype, then skip it
-	    if ($#args < 6 || $args[3] ne "__LINE__")
+	    if ($#args < 6 || ($args[3] ne "__LINE__" && $args[3] ne "line"))
 	    {
 		if (!defined($bad_syntax_in_file{$filename}))
 		{
