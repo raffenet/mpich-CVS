@@ -13,6 +13,8 @@
 #include "mpisgi2.h"
 #endif
 
+static int is_aggregator(int rank, ADIO_File fd);
+
 ADIO_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm comm, char *filename, int file_system,
 		    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
@@ -29,6 +31,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
     int rank_ct;
     int *tmp_ranklist;
+    MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
 
     *error_code = MPI_SUCCESS;
 
@@ -126,6 +129,33 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 	return fd;
     }
 
+    /* deferred open: 
+     * we can only do this if 'fd->hints->deferred_open' is set (which means
+     * the user hinted 'no_indep_rw' and collective buffering).  Furthermore,
+     * we only do this if our collective read/write routines use our generic
+     * function, and not an fs-specific routine (we can defer opens only if we
+     * use our aggreagation code). 
+     *
+     * if we are an aggregator, create a new communicator.  we'll use this
+     * aggregator communicator for opens and closes.  otherwise, we have a NULL
+     * communicator until we try to do independent IO */
+    fd->agg_comm = MPI_COMM_NULL;
+    fd->is_open = 0;
+    if (fd->hints->deferred_open && 
+		    ADIOI_Uses_generic_read(fd) &&
+		    ADIOI_Uses_generic_write(fd) ) {
+	    if (is_aggregator(rank, fd)) {
+		    MPI_Comm_split(fd->comm, 1, 0, &aggregator_comm);
+		    fd->agg_comm = aggregator_comm;
+	    } else {
+		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
+		    fd->agg_comm = aggregator_comm;
+		    /* the non-aggregators have to return now  */
+		    *error_code = MPI_SUCCESS;
+		    return fd;
+	    }
+    }
+
 /* For writing with data sieving, a read-modify-write is needed. If 
    the file is opened for write_only, the read will fail. Therefore,
    if write_only, open the file as read_write, but record it as write_only
@@ -147,6 +177,10 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     if (*error_code != MPI_SUCCESS) 
         (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
 
+    /* for deferred open: this process has opened the file (because if we are
+     * not an aggregaor and we are doing deferred open, we returned earlier*/
+    fd->is_open = 1;
+
     /* if error, free and set fd to NULL */
     if (*error_code != MPI_SUCCESS) {
 	ADIOI_Free(fd->fns);
@@ -159,3 +193,23 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
     return fd;
 }
+
+/* a simple linear search. possible enancement: add a my_cb_nodes_index member
+ * ( index into cb_nodes, else -1 if not aggregator ) for faster lookups 
+ *
+ * fd->hints->cb_nodes is the number of aggregators
+ * fd->hints->ranklist[] is an array of the ranks of aggregators
+ *
+ * might want to move this to adio/common/cb_config_list.c 
+ */
+int is_aggregator(int rank, ADIO_File fd ) {
+        int i;
+        
+        for (i=0; i< fd->hints->cb_nodes; i++ ) {
+                if ( rank == fd->hints->ranklist[i] )
+                        return 1;
+        }
+        return 0;
+}
+
+

@@ -34,16 +34,48 @@ void ADIO_Close(ADIO_File fd, int *error_code)
         return;
     }
 
-    (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+    /* because of deferred open, this warants a bit of explaining.  First, if
+     * we've done aggregation (fd->agg_comm has a non-nulll communicator ),
+     * then close the file.  Then, if any process left has done independent
+     * i/o, close the file.  Otherwise, we'll skip the fs-specific close and
+     * just say everything is a-ok.
+     *
+     * XXX: is it ok for those processes with a "real" communicator and those
+     * with "MPI_COMM_SELF" to both call ADIOI_xxx_Close at the same time ?
+     * everyone who ever opened the file will close it. Is order important? Is
+     * timing important?
+     */
+    if (fd->agg_comm != MPI_COMM_NULL) {
+	    (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+    } else {
+	    if(fd->is_open)  {
+		    (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+	    } else {
+		    *error_code = MPI_SUCCESS;
+	    }
+	    
+    }
 
     if (fd->access_mode & ADIO_DELETE_ON_CLOSE) {
-	MPI_Comm_rank(fd->comm, &myrank);
-	MPI_Barrier(fd->comm);
+	/* if we are doing aggregation and deferred open, then it's possible
+	 * that rank 0 does not have access to the file. make sure only an
+	 * aggregator deletes the file.*/
+	if (fd->agg_comm != MPI_COMM_NULL ) {
+		MPI_Comm_rank(fd->agg_comm, &myrank);
+		MPI_Barrier(fd->agg_comm);
+	} else {
+		MPI_Comm_rank(fd->comm, &myrank);
+		MPI_Barrier(fd->comm);
+	}
 	if (!myrank) ADIO_Delete(fd->filename, &err);
     }
 
     ADIOI_Free(fd->fns);
     MPI_Comm_free(&(fd->comm));
+    /* deferred open: if we created an aggregator communicator, free it */
+    if (fd->agg_comm != MPI_COMM_NULL) {
+	    MPI_Comm_free(&(fd->agg_comm));
+    }
     free(fd->filename);  /* should not use ADIOI_Free here, because
                             it was strdup'ed */
 
