@@ -35,6 +35,8 @@ mpich2.ps: mpich2.tex errcodes.tex pt2ptdesc.tex \
 
 errcodes.dvi: errcodes.tex
 	sed -e s/@dummy@/errcodes.tex/ \
+	    -e s/@paragraph@/paragraph/g \
+	    -e s/@newparagraph@/subsection/g \
 	    -e s/@subsubsection@/subsubsection/g \
 	    -e s/@newsubsubsection@/section/g \
 	    -e s/@subsection@/subsection/g \
@@ -47,6 +49,8 @@ errcodes.dvi: errcodes.tex
 
 pt2ptdesc.dvi: pt2ptdesc.tex
 	sed -e s/@dummy@/pt2ptdesc.tex/ \
+	    -e s/@paragraph@/paragraph/g \
+	    -e s/@newparagraph@/subsection/g \
 	    -e s/@subsubsection@/subsubsection/g \
 	    -e s/@newsubsubsection@/section/g \
 	    -e s/@subsection@/subsection/g \

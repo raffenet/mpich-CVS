@@ -18,6 +18,7 @@
 \pagenumbering{arabic}
 \pagestyle{headings}
 
+\let\@paragraph@=\@newparagraph@
 \let\@subsubsection@=\@newsubsubsection@
 \let\@subsection@=\@newsubsection@
 \let\@section@=\@newsection@

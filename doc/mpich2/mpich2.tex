@@ -756,7 +756,7 @@ implementation of MPI.
 In cases where the implementation depends on the properties of the
 underlying communication layer, the different implementations are
 shown.  For the purposes of illustration in this document, there are
-three different classes of communication layers:
+four different classes of communication layers:
 \begin{description}
 \item[\tcpname.]Conventional, two-sided (e.g., send/receive)
 messaging.  Examples are TCP, UDP, and MPI-1.  
@@ -767,6 +767,16 @@ accomplished using the usual language-defined methods for accessing
 memory.  However, most user memory (e.g., user-declared
 variables) is not shared.  Examples are Unix System V shared memory
 segments and shared \code{mmap} regions.  
+
+\item[\shmemallname.]All memory is shared.  This assumes that separate
+  processes have some way to access all of the memory in another process.
+  Under Linux, this can be accomplished using \code{ptrace} and the
+  \file{/dev/proc} filesystem.  Under IRIX, processes created with
+  \code{sproc} may use \code{prctl} with \code{PR_ATTACHADDR} to share
+  memory. Another possibility is a system where MPI 
+  processes are really just separate threads in a single OS process; this
+  requires that the compiler make all global variables thread-private (the NEC
+  SX-4 offered such an option).
 
 \item[\vianame.]Distributed memory.  This assumes that there is a
 method for remotely accessing memory in another process.  Operations
