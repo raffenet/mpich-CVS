@@ -190,7 +190,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		
 		MPIDI_CH3U_Buffer_copy(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->status.MPI_ERROR,
 				       buf, count, datatype, &data_sz, &rreq->status.MPI_ERROR);
-		rreq->status.count = data_sz;
+		rreq->status.count = (int)data_sz;
 		MPID_Request_set_completed(sreq);
 		MPID_Request_release(sreq);
 	    }
