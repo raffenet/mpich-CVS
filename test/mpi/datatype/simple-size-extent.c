@@ -20,7 +20,7 @@ int parse_args(int argc, char **argv);
 int main(int argc, char **argv)
 {
     int mpi_err, errs = 0, size;
-    MPI_Aint lb, extent;
+    MPI_Aint lb, ub, extent;
     MPI_Datatype type;
 
     struct { float a; int b; } foo;
@@ -53,15 +53,29 @@ int main(int argc, char **argv)
     }
     if (extent != sizeof(int)) {
 	if (verbose) {
-	    fprintf(stderr, "MPI_Type_get_extent of MPI_INT incorrect extent (%d); should be %d.\n",
-		    size, sizeof(int));
+	    fprintf(stderr, "MPI_Type_get_extent of MPI_INT returned incorrect extent (%d); should be %d.\n",
+		    (int) extent, sizeof(int));
 	}
 	errs++;
     }
     if (lb != 0) {
 	if (verbose) {
-	    fprintf(stderr, "MPI_Type_get_extent of MPI_INT incorrect lb (%d); should be 0.\n",
-		    size);
+	    fprintf(stderr, "MPI_Type_get_extent of MPI_INT returned incorrect lb (%d); should be 0.\n",
+		    (int) lb);
+	}
+	errs++;
+    }
+    mpi_err = MPI_Type_ub(type, &ub);
+    if (mpi_err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr, "MPI_Type_ub of MPI_INT failed.\n");
+	}
+	errs++;
+    }
+    if (ub != extent - lb) {
+	if (verbose) {
+	    fprintf(stderr, "MPI_Type_ub of MPI_INT returned incorrect ub (%d); should be %d.\n",
+		    (int) ub, (int) (extent - lb));
 	}
 	errs++;
     }
@@ -76,7 +90,7 @@ int main(int argc, char **argv)
     }
     if (size != sizeof(float) + sizeof(int)) {
 	if (verbose) {
-	    fprintf(stderr, "MPI_Type_size of MPI_FLOAT_INT incorrect size (%d); should be %d.\n",
+	    fprintf(stderr, "MPI_Type_size of MPI_FLOAT_INT returned incorrect size (%d); should be %d.\n",
 		    size, sizeof(float) + sizeof(int));
 	}
 	errs++;
@@ -91,15 +105,29 @@ int main(int argc, char **argv)
     }
     if (extent != sizeof(foo)) {
 	if (verbose) {
-	    fprintf(stderr, "MPI_Type_get_extent of MPI_FLOAT_INT incorrect extent (%d); should be %d.\n",
-		    size, sizeof(foo));
+	    fprintf(stderr, "MPI_Type_get_extent of MPI_FLOAT_INT returned incorrect extent (%d); should be %d.\n",
+		    (int) extent, sizeof(foo));
 	}
 	errs++;
     }
     if (lb != 0) {
 	if (verbose) {
-	    fprintf(stderr, "MPI_Type_get_extent of MPI_FLOAT_INT incorrect lb (%d); should be 0.\n",
-		    size);
+	    fprintf(stderr, "MPI_Type_get_extent of MPI_FLOAT_INT returned incorrect lb (%d); should be 0.\n",
+		    (int) lb);
+	}
+	errs++;
+    }
+    mpi_err = MPI_Type_ub(type, &ub);
+    if (mpi_err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr, "MPI_Type_ub of MPI_FLOAT_INT failed.\n");
+	}
+	errs++;
+    }
+    if (ub != extent - lb) {
+	if (verbose) {
+	    fprintf(stderr, "MPI_Type_ub of MPI_FLOAT_INT returned incorrect ub (%d); should be %d.\n",
+		    (int) ub, (int) (extent - lb));
 	}
 	errs++;
     }
