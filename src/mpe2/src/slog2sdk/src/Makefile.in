@@ -5,7 +5,8 @@ TARGETS = base/io base/drawable base/statistics base/topology \
           logformat/clog logformat/clogTOdrawable \
           logformat/trace logformat/slog2 \
           viewer/common viewer/convertor viewer/legends \
-          viewer/zoomable viewer/histogram viewer/timelines viewer/first
+          viewer/zoomable viewer/histogram viewer/timelines viewer/first \
+          viewer/launcher
 
 #          viewer/swingextn viewer/timelines
 

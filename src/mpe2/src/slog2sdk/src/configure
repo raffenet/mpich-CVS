@@ -1776,7 +1776,7 @@ done
 
 ac_given_srcdir=$srcdir
 
-trap 'rm -fr `echo "Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile viewer/launcher/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1867,7 +1867,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile viewer/launcher/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
