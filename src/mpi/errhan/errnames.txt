@@ -574,9 +574,6 @@ with MPI_Alloc_mem.
 **bootqmsg %d %d:invalid bootstrap queue message size (%d bytes > %d)
 **ca:invalid completion action
 **ca %d:invalid completion action (%d)
-**ca_guids: FIXME MISSING TEXT
-**noca: FIXME MISSING TEXT
-**ca_guids %s: FIXME MISSING TEXT %s
 **conn_still_active:connection closed while still active
 **handle_written:unable to handle written data
 **init_vcrdup:failed to duplicate the virtual connection reference
@@ -651,6 +648,12 @@ with MPI_Alloc_mem.
 **ibu_wait %d:ibu_wait failed (errno %d)
 **init_ibu:infiniband initialization failed
 **init_ibu_set:unable to create an infinband completion queue
+**ca_guids:unable to get the guids from the infiniband access layer
+**ca_guids %s:unable to get the infiniband guids - %s
+**get_guids:unable to get the guids for the infiniband channel adapter
+**noca:unable to find an active infiniband channel adapter
+**pd_alloc:unable to allocate a protection domain
+**pd_alloc %s:unable to allocate a protection domain - %s
 
 #
 # pmi
