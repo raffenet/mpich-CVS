@@ -905,7 +905,7 @@ int beasy_connect(int bfd, char *host, int port)
 #ifdef HAVE_WINSOCK2_H
 	error = WSAGetLastError();
 	srand(clock());
-	if( (error == WSAECONNREFUSED || error == WSAETIMEDOUT || error == WSAENETUNREACH)
+	if( (error == WSAECONNREFUSED || error == WSAETIMEDOUT || error == WSAENETUNREACH || error == WSAEADDRINUSE)
 	    && (reps < g_beasy_connection_attempts) )
 	{
 	    double d = (double)rand() / (double)RAND_MAX;
