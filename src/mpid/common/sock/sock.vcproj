@@ -325,7 +325,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\ssm\include,..\..\ch3\include,..\datatype"
-				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"

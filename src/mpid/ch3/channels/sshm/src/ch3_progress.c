@@ -14,7 +14,10 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
-    int register count, bShmProgressMade;
+#ifdef MPICH_DBG_OUTPUT
+    int count;
+#endif
+    int bShmProgressMade;
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
@@ -82,7 +85,9 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 
 	if (!bShmProgressMade)
 	{
+	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield(); /* always yield for now */
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	}
 
 	if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)

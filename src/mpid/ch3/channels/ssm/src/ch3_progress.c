@@ -204,7 +204,10 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
-    int register count, bShmProgressMade;
+#ifdef MPICH_DBG_OUTPUT
+    int count;
+#endif
+    int bShmProgressMade;
     MPIDU_Sock_event_t event;
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_CH3I_Shmem_queue_info info;

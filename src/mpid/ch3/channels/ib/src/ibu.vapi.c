@@ -261,7 +261,7 @@ ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, VAPI_rkey_t* rkey)
 
     *rkey = ibu->local_RDMA_buf_hndl.rkey;
     MPIU_DBG_PRINTF(("ibui_RDMA_buf_init   rkey = %x  buf= %p\n", *rkey, buf));
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_RDMA_BUF_INIT);
     return buf;
 }
 
@@ -370,12 +370,13 @@ int ibui_post_ack_write(ibu_t ibu)
     int num_bytes;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_rdma_limit_upt_t * const ack_pkt = &upkt.limit_upt;
-    ack_pkt->iov_len = 0;
-    ack_pkt->type = MPIDI_CH3_PKT_LMT_UPT;
-
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
+
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
     MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
+
+    ack_pkt->iov_len = 0;
+    ack_pkt->type = MPIDI_CH3_PKT_LMT_UPT;
 
 #ifdef MPICH_DBG_OUTPUT
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)ack_pkt);
@@ -407,14 +408,15 @@ int ibui_post_rndv_cts_iov_reg_err(ibu_t ibu, MPID_Request * rreq)
     int num_bytes;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_rndv_reg_error_t* const cts_iov_reg_err_pkt = &upkt.rndv_reg_error;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+    MPIU_DBG_PRINTF(("entering ibui_post_rndv_cts_iov_reg_err\n"));
+
     cts_iov_reg_err_pkt->iov_len = 0;
     cts_iov_reg_err_pkt->type = MPIDI_CH3_PKT_RNDV_CTS_IOV_REG_ERR;
     cts_iov_reg_err_pkt->sreq = rreq->dev.sender_req_id;
     cts_iov_reg_err_pkt->rreq = rreq->handle;
-
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
-    MPIU_DBG_PRINTF(("entering ibui_post_rndv_cts_iov_reg_err\n"));
 
 #ifdef MPICH_DBG_OUTPUT
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)cts_iov_reg_err_pkt);
