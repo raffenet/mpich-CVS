@@ -121,7 +121,8 @@ static void MPIR_Init_err_dyncodes( void )
 @*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
-    int errcode, errclass, msg_len;
+    int errcode, errclass;
+    size_t msg_len;
     char *str;
 
     if (not_initialized)
