@@ -66,6 +66,8 @@ typedef struct sock_state_t
 
 static int g_connection_attempts = DEFAULT_NUM_RETRIES;
 static int g_num_cp_threads = 2;
+static int g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
+static int g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
 
 
 /* utility allocator functions */
@@ -452,13 +454,13 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = SOCKI_TCP_BUFFER_SIZE;
+	optval = g_socket_buffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = SOCKI_TCP_BUFFER_SIZE;
+	optval = g_socket_buffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -646,6 +648,25 @@ int sock_init()
 	g_connection_attempts = atoi(szNum);
 	if (g_connection_attempts < 1)
 	    g_connection_attempts = DEFAULT_NUM_RETRIES;
+    }
+
+    /* get the socket buffer size */
+    szNum = getenv("SOCK_TCP_BUFFER_SIZE");
+    if (szNum != NULL)
+    {
+	g_socket_buffer_size = atoi(szNum);
+	if (g_socket_buffer_size < 1)
+	    g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
+    }
+
+    /* get the stream packet size */
+    /* messages larger than this size will be broken into pieces of this size when sending */
+    szNum = getenv("SOCK_STREAM_PACKET_SIZE");
+    if (szNum != NULL)
+    {
+	g_stream_packet_length = atoi(szNum);
+	if (g_stream_packet_length < 1)
+	    g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
     }
 
     g_StateAllocator = BlockAllocInit(sizeof(sock_state_t), 1000, 500, malloc, free);
@@ -878,13 +899,13 @@ int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t * accep
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = SOCKI_TCP_BUFFER_SIZE;
+	optval = g_socket_buffer_size;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = SOCKI_TCP_BUFFER_SIZE;
+	optval = g_socket_buffer_size;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -1729,7 +1750,7 @@ int sock_write(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_written
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITE);
-    if (len < SOCKI_STREAM_PACKET_LENGTH)
+    if (len < g_stream_packet_length)
     {
 	total = send(sock->sock, buf, len, 0);
 	if (total == SOCKET_ERROR)
@@ -1750,7 +1771,7 @@ int sock_write(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_written
     *num_written = 0;
     while (len)
     {
-	length = min(len, SOCKI_STREAM_PACKET_LENGTH);
+	length = min(len, g_stream_packet_length);
 	num_sent = send(sock->sock, buf, length, 0);
 	if (num_sent == SOCKET_ERROR)
 	{
@@ -1794,7 +1815,7 @@ int sock_writev(sock_t sock, SOCK_IOV *iov, int n, sock_size_t *num_written)
 	return 0;
     }
     */
-    if (n>1 && iov[1].MPID_IOV_LEN > SOCKI_STREAM_PACKET_LENGTH)
+    if (n>1 && (int)iov[1].MPID_IOV_LEN > g_stream_packet_length)
     {
 	int total = 0;
 	int i;
