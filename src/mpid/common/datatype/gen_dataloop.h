@@ -251,8 +251,10 @@ typedef struct DLOOP_Dataloop {
   Fields:
 + curcount - Current loop count value (between 0 and 
              loop.loop_params.count-1) 
-. curoffset - Offset for relative offsets in dataloops 
-. curblock - Current block value
+. curoffset - Offset into memory relative to the pointer to the buffer
+              passed in by the user.  Used to maintain our position as we
+              move up and down the stack.  NEED MORE NOTES ON THIS!!!
+. curblock - Current block value...NEED MORE NOTES ON THIS!!!
 - loop_p  - pointer to Loop-based description of the dataloop
 
 S*/
@@ -261,6 +263,9 @@ typedef struct DLOOP_Dataloop_stackelm {
     DLOOP_Offset curoffset;
     DLOOP_Count curblock; /* NOTE: THIS WASN'T HERE IN MPICH2 VERSION??? */
     struct DLOOP_Dataloop *loop_p;
+    DLOOP_Count orig_count;
+    DLOOP_Count orig_block;
+    /* TODO: DON'T NEED ORIG_OFFSET, RIGHT? */
 } DLOOP_Dataloop_stackelm;
 
 

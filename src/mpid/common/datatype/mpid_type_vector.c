@@ -142,7 +142,7 @@ int MPID_Type_vector(int count,
 	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
-	dlp->loop_params.v_t.stride     = stride * old_dtp->size; /* in bytes */
+	dlp->loop_params.v_t.stride     = stride * old_dtp->extent; /* in bytes */
 	dlp->el_extent                  = old_dtp->extent;
 	dlp->el_size                    = old_dtp->size;
 
