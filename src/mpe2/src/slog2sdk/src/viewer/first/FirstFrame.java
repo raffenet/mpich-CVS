@@ -86,8 +86,8 @@ public class FirstFrame extends JFrame
         checkVersion();
         parseCmdLineArgs( args );
 
-	viewer.timelines.Debug.initTextArea();
-        // viewer.timelines.Profile.initTextArea();
+	viewer.zoomable.Debug.initTextArea();
+        // viewer.zoomable.Profile.initTextArea();
 
         System.out.println( "Starting the SLOG-2 Display Program ..... " );
         frame     = new FirstFrame();
@@ -133,11 +133,11 @@ public class FirstFrame extends JFrame
                         idx++;
                     }
                     else if ( argv[ idx ].equals( "-debug" ) ) {
-                        viewer.timelines.Debug.setActive( true );
+                        viewer.zoomable.Debug.setActive( true );
                         idx++;
                     }
                     else if ( argv[ idx ].equals( "-profile" ) ) {
-                        viewer.timelines.Profile.setActive( true );
+                        viewer.zoomable.Profile.setActive( true );
                         idx++;
                     }
                     else {

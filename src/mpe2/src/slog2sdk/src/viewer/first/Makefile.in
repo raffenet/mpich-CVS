@@ -41,6 +41,8 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 .java.class:
 	$(JC) $(JFLAGS) @JPATH_START@$<@JPATH_FINAL@
 
+ALL: $(TARGET)
+
 $(TARGET): $(OBJ)
 	cd $(CLASSDIR) ; \
 	$(RM) $(PACKAGE).manifest ; \
@@ -50,7 +52,7 @@ $(TARGET): $(OBJ)
 	for dir in base/io/ base/topology/ base/drawable/ base/statistics/ \
 	           logformat/slog2/ logformat/slog2/input/ \
 	           viewer/common/ viewer/legends/ \
-	           viewer/timelines/ \
+	           viewer/zoomable/ viewer/histogram/ viewer/timelines/ \
 	           $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \

@@ -22,7 +22,6 @@ import logformat.slog2.LineIDMap;
 import viewer.common.Const;
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
-import viewer.common.SwingWorker;
 
 public class FirstPanel extends JPanel
 {
