@@ -6,6 +6,7 @@ Makefile.sm
 mpicxx
 mpicxx.h
 mpicxx.h.in
+mpicxx.conf
 mpicxxconf.h
 mpicxxconf.h.in
 *.o
