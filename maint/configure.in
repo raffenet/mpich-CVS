@@ -1,6 +1,6 @@
 AC_INIT
 AC_PATH_PROG(PERL,perl)
-AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes ])
+AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes getcoverage])
 # We have to redefine the variables that autoconf always substitutes and that
 # are used in simplemake
 CFLAGS='@CFLAGS@'

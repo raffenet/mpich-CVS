@@ -8,7 +8,19 @@ $outputUncovered = 1;
 @UnCalled = ();
 for (@ARGV) {
     my $filename = $_;
-    if (-s $filename) {
+    if (-d $filename) {
+	@files = &ExpandDir( $filename );
+	foreach $file (@files) {
+	    $missed_lines = &CountUncoveredLines( $file );
+	    if ($missed_lines) {
+		print "$missed_lines line(s) not covered by tests in $file\n";
+	    }
+	    else {
+		print "All code covered by tests in $file\n";
+	    }
+	}
+    }
+    elsif (-s $filename) {
 	$missed_lines = &CountUncoveredLines( $filename );
 	if ($missed_lines) {
 	    print "$missed_lines line(s) not covered by tests in $filename\n";
@@ -21,6 +33,7 @@ for (@ARGV) {
 	print "Cannot open $filename\n";
     }
 }
+
 for $routine (@UnCalled) {
     print STDERR "$routine never called\n";
 }
@@ -94,7 +107,41 @@ sub CountUncoveredLines {
     return $missed_lines;
 }
 
+# Get all of the .gcov files from the named directory, including any subdirs
+sub ExpandDir {
+    my $dir = $_[0];
+    my @otherdirs = ();
+    my @files = ();
+    opendir DIR, "$dir";
+    while ($filename = readdir DIR) {
+	if ($filename =~ /^\./ || $filename eq "CVS") {
+	    next;
+	}
+	elsif (-d "$dir/$filename") {
+	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
+	}
+	elsif ($filename =~ /(.*\.gcov)$/) {
+	    $files[$#files + 1] = "$dir/$filename";
+	}
+    }
+    closedir DIR;
+    # (almost) tail recurse on otherdirs (we've closed the directory handle,
+    # so we don't need to worry about it anymore)
+    foreach $dir (@otherdirs) {
+	@files = (@files, &ExpandDir( $dir ) );
+    }
+    return @files;
+}
+
 #
 # To generate a summary
 # cd mpich2/src 
-# ~/projects/mpich2/maint/getcoverage.in mpi/*/*.gcov util/info/*.gcov mpid/ch3/src/*.gcov mpid/ch3/channels/sock/src/*.gcov > coverage.txt
+# ~/projects/mpich2/maint/getcoverage mpi/*/*.gcov mpi/romio/mpi-io/*.gcov \
+# mpi/romio/adio/ad_nfs/*.gcov mpi/romio/adio/ad_ufs/*.gcov \
+# util/info/*.gcov \
+# mpid/ch3/src/*.gcov mpid/ch3/channels/sock/src/*.gcov > coverage.txt
+
+# Now can use
+# maint/getcoverage src/mpi src/util/info >coveragebase.txt
+# maint/getcoverage src/mpid/ch3/src/*.gcov \
+#  src/mpid/ch3/channels/sock/src/*.gcov > coveragempid.txt
