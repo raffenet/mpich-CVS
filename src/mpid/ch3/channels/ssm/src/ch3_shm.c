@@ -248,10 +248,10 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
     MPIDI_CH3I_SHM_Queue_t *shm_ptr;
     register int index, working;
     BOOL bSetPacket;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 
     for (;;) 
     {
@@ -330,7 +330,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		/*
 		if (millisecond_timeout == 0)
 		{
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 		    *shm_out = SHM_WAIT_TIMEOUT;
 		    return MPI_SUCCESS;
 		}
@@ -412,7 +412,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    recv_vc_ptr->ch.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->ch.read.total;
 		    *vc_pptr = recv_vc_ptr;
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 		    return MPI_SUCCESS;
 		}
 	    }
@@ -462,7 +462,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    recv_vc_ptr->ch.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->ch.read.total;
 		    *vc_pptr = recv_vc_ptr;
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 		    return MPI_SUCCESS;
 		}
 	    }
@@ -471,13 +471,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 
 	if (millisecond_timeout == 0 && !working)
 	{
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+	    /* FIXME: This is wrong because SHM_WAIT_TIMEOUT might conflict with a real mpi error code */
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 	    return SHM_WAIT_TIMEOUT;
 	}
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-    return SHM_FAIL;
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+    return mpi_errno;
 }
 
 /* non-blocking functions */
