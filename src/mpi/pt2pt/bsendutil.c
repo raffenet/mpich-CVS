@@ -326,7 +326,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 		 p,p->size, ((char *)p)+p->total_size));
 
 #ifdef DBG_PRINT_ARENA
-    printf( "At the begining of free_segment with size %d:\n", p->total_size );
+    PRINTF( "At the begining of free_segment with size %d:\n", p->total_size );
     MPIR_Bsend_dump();
 #endif    
 
@@ -348,9 +348,9 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 #ifdef DBG_PRINT_AVAIL_LIST
     {
 	BsendData_t *a = BsendBuffer.avail;
-	printf( "Avail list is:\n" );
+	PRINTF( "Avail list is:\n" );
 	while (a) {
-	    printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+	    PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
 		   a->total_size );
 	    a = a->next;
 	}
@@ -404,7 +404,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	p->prev           = 0;
     }
 #ifdef DBG_PRINT_ARENA
-    printf( "At the end of free_segment:\n" );
+    PRINTF( "At the end of free_segment:\n" );
     MPIR_Bsend_dump();
 #endif    
 }
@@ -494,7 +494,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
        allocate for this buffer. */
 
 #ifdef DBG_PRINT_ARENA
-    printf( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
+    PRINTF( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
 	    p->total_size );
 #endif
 
@@ -524,7 +524,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
 
 #ifdef DBG_PRINT_ARENA
-	printf( "broken blocks p (%d) and new (%d)\n",
+	PRINTF( "broken blocks p (%d) and new (%d)\n",
 		p->total_size, newp->total_size ); fflush(stdout);
 #endif
     }
@@ -550,7 +550,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     BsendBuffer.active = p;
 
 #ifdef DBG_PRINT_ARENA
-    printf( "At end of take buffer\n" );
+    PRINTF( "At end of take buffer\n" );
     MPIR_Bsend_dump();
 #endif
     DEBUG(printf("segment %x now head of active\n", p ));
@@ -574,30 +574,30 @@ void MPIR_Bsend_dump( void )
 {
     BsendData_t *a = BsendBuffer.avail;
 
-    printf( "Total size is %d\n", BsendBuffer.buffer_size );
-    printf( "Avail list is:\n" );
+    PRINTF( "Total size is %d\n", BsendBuffer.buffer_size );
+    PRINTF( "Avail list is:\n" );
     while (a) {
-	printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+	PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
 		a->total_size );
 	if (a == a->next) {
-	    printf( "@@@Corrupt list; avail block points at itself\n" );
+	    PRINTF( "@@@Corrupt list; avail block points at itself\n" );
 	    break;
 	}
 	a = a->next;
     }
 
-    printf( "Active list is:\n" );
+    PRINTF( "Active list is:\n" );
     a = BsendBuffer.active;
     while (a) {
-	printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+	PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
 		a->total_size );
 	if (a == a->next) {
-	    printf( "@@@Corrupt list; active block points at itself\n" );
+	    PRINTF( "@@@Corrupt list; active block points at itself\n" );
 	    break;
 	}
 	a = a->next;
     }
-    printf( "end of list\n" );
+    PRINTF( "end of list\n" );
     fflush( stdout );
 }
 #endif
