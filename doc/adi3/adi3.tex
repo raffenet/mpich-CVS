@@ -21,8 +21,10 @@ This section lists requirements that we address in the ADI-3 design.
 \subsection{General Capabilities}
 \begin{enumerate}
 \item Thread-safe
-\item Full MPI-2
+\item Full MPI-2 (and MPI-1, including cancel for sends)
 \item Support multimethod, including IMPI
+\item Uniform configuration support (e.g., environment variables for tuning)
+\item Complete and deep instrumentation (e.g., ADI instrumented)
 \end{enumerate}
 
 \subsection{Performance Issues}
@@ -36,6 +38,7 @@ This section lists requirements that we address in the ADI-3 design.
 \item Asymptotically fast bandwidth
 \item Fast and efficient non-contiguous datatypes
 \item Fast one-sided support
+\item Are there opportunities for I/O communication?
 \end{enumerate}
 
 \subsection{Job Startup and Rundown}
@@ -43,6 +46,9 @@ This section lists requirements that we address in the ADI-3 design.
 \item Abort must be rock solid.
 \item Process creation through an API that allows use of third-party job
   managers and schedulers.
+\item Scalable delivery of executable to hosts when (a) executable is not on a
+  shared system and/or (b) it is preferable to run from a local disk.  Should
+  there be version   control when running the same, unchanged, executable?
 \end{enumerate}
 
 \subsection{Interoperability (IMPI and Java)}
@@ -59,7 +65,14 @@ This section lists requirements that we address in the ADI-3 design.
 \item Support pipelined collective algorithms (this requires a byte-stream
   data model for implemententing the collective algorithms, not MPI
   point-to-point) 
+\item Support for topology information (e.g., the MPID\_Depth and
+  MPID\_Clusterid in the current experimental WAN version)
 \item Fast datatype support
+\item There has been some work on different approaches, such as having
+  receives with a particular source send a ready-to-receive.
+\item Support for error detection and reporting on non-local events.  For
+  example, a mismatch in collective communication parameters, or a failed
+  ready-send. 
 \end{enumerate}
 
 \subsection{Device-Specific Issues}
@@ -101,6 +114,11 @@ This section lists requirements that we address in the ADI-3 design.
 This section contains ideas.  As we evaluate them, we will keep the reasons
 why design choices were made.
 
+\subsection{Job Startup/Rundown API}
+
+Should we divide this into two parts: the actual job creation/management and
+the ``database query'' operation?
+
 \subsection{Queue-based ADI}
 The building blocks for this approach are queue operations combined with
 remote memory operations.  Any method (TCP, VIA, shared-memory) is implemented
@@ -113,6 +131,35 @@ One question is ``how many queues should there be?''
 \item One per communicator (allows single-threaded communicator optimizations)
 \item One per remote process (Tony/Boris approach)
 \end{enumerate}
+
+Another question is whether the ``packets'' should be specified.  In other
+words, is there a prefered header format that matches, for example, the queue
+contents (a method can always translate between internal and external forms,
+but if the external format is defined, it may be easier to define the
+interfaces for the queue operations, and to handle things like collective
+shortcuts).
+
+\subsubsection{Packet Types}
+This enumerates all of the packet types supported in the queue oriented
+device.  For each type, there is a rationale for that type.  Some are
+optional, provided for performance optimizations.
+
+\begin{description}
+\item[SHORT]
+\item[LONG]
+\item[RENDEVOUS-REQ]
+\item[RENDEVOUS-ACK]
+\item[FLOW-ACK]
+\item[CANCEL-RENDEVOUS]
+\item[CANCEL-RENDEVOUS-ACK]
+\item[BYPASS-ACK]This is used for data transfered ``out of band,'' for example
+  by a remote memory operation or a shared-memory store.
+
+\item[JOIN]
+\item[CAT]
+\item[COPY]
+\item[REGISTER-GROUP]
+\end{description}
 
 \subsection{Thread Safety Issues}
 The biggest problem is the implementation of \texttt{MPI\_Comm\_dup}.  The
