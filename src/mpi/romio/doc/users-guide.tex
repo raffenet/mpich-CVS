@@ -256,7 +256,7 @@ applied to collective write operations.  Valid values are
 \texttt{automatic}.  See the description of \texttt{romio\_cb\_read} for
 an explanation of the values.
 \item \texttt{romio\_no\_indep\_rw} -- This hint controls when ``deferred
-open'' is used.  When set to \textt{true}, ROMIO will make an effort to avoid
+open'' is used.  When set to \texttt{true}, ROMIO will make an effort to avoid
 performing any file operation on non-aggregator nodes.  The application is
 expected to use only collective operations.  This is discussed in further
 detail below.
@@ -350,10 +350,10 @@ that they are listed in \texttt{cb\_config\_list}.
 The following hint controls the deferred open feature of romio and are also
 applicable to all file system types: 
 \begin{itemize}
-\item \textt{no\_indep\_rw} -- If the application plans on performing only 
+\item \texttt{no\_indep\_rw} -- If the application plans on performing only 
    collecitve operations and this hint is set to ``true'', then ROMIO can
-   have just the aggregators open a file.   The \textt{cb\_config\_list} and
-   \text{cb\_nodes} hints can be given to further control which nodes are
+   have just the aggregators open a file.   The \texttt{cb\_config\_list} and
+   \texttt{cb\_nodes} hints can be given to further control which nodes are
    aggregators.  
 \end{itemize}
 
