@@ -159,7 +159,7 @@ int MPIDI_CH3I_mqshm_close(int id)
 		q_list = iter->next;
 	    }
 	    MPIU_Free(iter);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_UNLINK);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_CLOSE);
 	    return MPI_SUCCESS;
 	}
 	if (trailer != iter)

@@ -1117,7 +1117,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_HANDLE_SOCK_EVENT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_HANDLE_SOCK_EVENT);
     return mpi_errno;
 }
 /* end MPIDI_CH3I_Progress_handle_sock_event() */

@@ -15,7 +15,8 @@ int MPID_Finalize()
 {
     MPID_Progress_state progress_state;
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
+
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
