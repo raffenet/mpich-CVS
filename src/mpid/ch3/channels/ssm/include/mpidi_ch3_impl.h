@@ -65,6 +65,9 @@
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
+#ifdef HAVE_MQUEUE_H
+#include <mqueueu.h>
+#endif
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define HAVE_COMPARE_AND_SWAP
@@ -224,7 +227,8 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
-#define BOOTSTRAP_MAX_MSG_SIZE 8192
+#define BOOTSTRAP_MAX_NUM_MSGS 8192
+#define BOOTSTRAP_MAX_MSG_SIZE sizeof(MPIDI_CH3I_Shmem_queue_info)
 
 int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr);
 int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int length);
@@ -238,7 +242,9 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #define SHM_FAIL        -1
 
 int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOutput);
+int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result *pInOutput);
 int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, MPIDI_CH3I_Shmem_block_request_result *pOutput);
+int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p);
 int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p);
 int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
