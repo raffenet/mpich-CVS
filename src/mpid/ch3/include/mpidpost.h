@@ -379,15 +379,15 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 /*
  * Channel utility prototypes
  */
-void MPIDI_CH3U_Request_complete(MPID_Request * req);
-MPID_Request * MPIDI_CH3U_Request_FU(int, int, int);
-MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request, MPIDI_Message_match *);
-MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int * found);
-int MPIDI_CH3U_Request_DP(MPID_Request * rreq);
-MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match);
-MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match * match, int * found);
-void MPIDI_CH3U_Request_increment_cc(MPID_Request * req);
-void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * inuse);
+void MPIDI_CH3U_Recvq_complete(MPID_Request * req);
+MPID_Request * MPIDI_CH3U_Recvq_FU(int, int, int);
+MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
+MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
+int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
+MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match);
+MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * found);
+void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_complete);
+void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * complete);
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
@@ -408,28 +408,45 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 /* SHMEM: In the case of a single-threaded shmem channel sharing requests between processes, a write barrier must be performed
    before decrementing the completion counter.  This insures that other fields in the req structure are updated before the
    completion is signaled.  How should that be incorporated into this code at the device level? */
-#define MPIDI_CH3U_Request_decrement_cc(_req, _inuse)	\
-{							\
-    *(_inuse) = --(*(_req)->cc_ptr);			\
+#define MPIDI_CH3U_Request_decrement_cc(req_, complete_)	\
+{								\
+    *(complete_) = --(*(req_)->cc_ptr);				\
 }
 #else
-/* MT: A write barrier must be performed before decrementing the completion counter .  This insures that other fields in the req
-   structure are updated before the completion is signaled. */
-#error Multi-threaded MPIDI_CH3U_Request_decrement_cc() not implemented.
+/* MT: If locks are not used, a write barrier must be performed before decrementing the completion counter .  This insures that
+   other fields in the req structure are updated before the completion is signaled. */
+#define MPIDI_CH3U_Request_decrement_cc(req_, complete_)	\
+{								\
+    MPID_Request_thread_lock(req_);				\
+    {								\
+	*(inuse_) = --(*(req_)->cc_ptr);			\
+    }								\
+    MPID_Request_thread_unlock(req_);				\
+}
 #endif
 #if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_CH3U_Request_increment_cc(_req)	\
-{						\
-    (*(_req)->cc_ptr)++;			\
+#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
+{								\
+    *(was_incomplete_) = (*(req_)->cc_ptr)++;			\
 }
 #else
-#error Multi-threaded MPIDI_CH3U_Request_increment_cc() not implemented.
+/* MT: To avoid the use of locks, an atomic fetch and increment can be used here */
+#define MPIDI_CH3U_Request_increment_cc(req_, was_complete_)	\
+{								\
+    MPID_Request_thread_lock(req_);				\
+    {								\
+	*(was_incomplete_) = (*(req_)->cc_ptr)++;		\
+    }								\
+    MPID_Request_thread_unlock(req_);				\
+}
 #endif
 
 /*
  * Device level request management macros
  */
 #define MPID_Request_create() (MPIDI_CH3_Request_create())
+
+#define MPID_Request_add_ref(req_) MPIDI_CH3_Request_add_ref(req_)
 
 #define MPID_Request_release(_req)			\
 {							\
@@ -449,22 +466,36 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
     MPIDI_CH3_Progress_signal_completion();	\
 }
 #else
-/* MT - A write barrier must be performed before decrementing the completion
-   counter .  This insures that other fields in the req structure are updated
-   before the completion is signaled. */
-#error Multi-threaded MPID_Request_set_completed() not implemented.
+/* MT - If locks are not used, a write barrier must be performed before zeroing the completion counter.  This insures that other
+   fields in the req structure are updated before the completion is signaled. */
+#define MPID_Request_set_completed(_req)	\
+{						\
+    MPID_Request_thread_lock(_req);		\
+    {						\
+	*(_req)->cc_ptr = 0;			\
+    }						\
+    MPID_Request_thread_unlock(_req);		\
+    						\
+    MPIDI_CH3_Progress_signal_completion();	\
+}
 #endif
 
 
 /*
  * Device level progress engine macros
- *
- * MT - these macros need thread-safety updates
  */
+#if defined(MPICH_SINGLE_THREADED)
 #define MPID_Progress_start()
 #define MPID_Progress_end()
 #define MPID_Progress_test() (MPIDI_CH3_Progress(FALSE))
 #define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
 #define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
+#else
+#define MPID_Progress_start() {MPIDI_CH3_Progress_start();}
+#define MPID_Progress_end()   {MPIDI_CH3_Progress_end();}
+#define MPID_Progress_test()  (MPIDI_CH3_Progress(FALSE))
+#define MPID_Progress_wait()  {MPIDI_CH3_Progress(TRUE);}
+#define MPID_Progress_poke()  {MPIDI_CH3_Progress_poke();}
+#endif
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */

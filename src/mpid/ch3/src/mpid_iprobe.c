@@ -18,7 +18,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_IPROBE);
     
-    rreq = MPIDI_CH3U_Request_FU(source, tag, context);
+    rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
     if (rreq != NULL)
     {
 	if (status != MPI_STATUS_IGNORE)

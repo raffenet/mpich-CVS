@@ -17,10 +17,13 @@
 
 typedef struct MPIDI_Process
 {
-    MPID_Request * recv_posted_head;
-    MPID_Request * recv_posted_tail;
-    MPID_Request * recv_unexpected_head;
-    MPID_Request * recv_unexpected_tail;
+    MPID_Request * recvq_posted_head;
+    MPID_Request * recvq_posted_tail;
+    MPID_Request * recvq_unexpected_head;
+    MPID_Request * recvq_unexpected_tail;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_t recvq_mutex;
+#endif
     char * processor_name;
 }
 MPIDI_Process_t;
@@ -86,6 +89,7 @@ extern MPIDI_Process_t MPIDI_Process;
  */
 #define MPIDI_CH3U_Request_create(_req)				\
 {								\
+    MPID_Request_construct(_req);				\
     MPIU_Object_set_ref((_req), 1);				\
     (_req)->cc = 1;						\
     (_req)->cc_ptr = &(_req)->cc;				\
@@ -94,9 +98,10 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->status.MPI_ERROR = MPI_SUCCESS;			\
     (_req)->status.count = 0;					\
     (_req)->status.cancelled = FALSE;				\
-    MPIDI_Request_state_init((_req));				\
     (_req)->comm = NULL;					\
     (_req)->ch3.datatype_ptr = NULL;				\
+    MPIDI_Request_state_init((_req));				\
+    (_req)->ch3.cancel_pending = FALSE;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(_req)			\
@@ -105,16 +110,18 @@ extern MPIDI_Process_t MPIDI_Process;
     {								\
 	MPIR_Comm_release((_req)->comm);			\
     }								\
-    								\
+								\
     if ((_req)->ch3.datatype_ptr != NULL)			\
     {								\
 	MPID_Datatype_release((_req)->ch3.datatype_ptr);	\
     }								\
-    								\
+								\
     if (MPIDI_Request_get_srbuf_flag(_req))			\
     {								\
 	MPIDI_CH3U_SRBuf_free(_req);				\
     }								\
+								\
+    MPID_Request_destruct(_req);				\
 }
 
 #define MPIDI_CH3U_Request_complete(_req)		\
@@ -237,16 +244,40 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.state |= ((_type) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
 }
 
-#define MPIDI_REQUEST_CANCEL_MASK (0x1 << MPIDI_REQUEST_CANCEL_SHIFT)
-#define MPIDI_REQUEST_CANCEL_SHIFT 7
 #if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_Request_cancel_pending(_req, _flag)						\
-{												\
-    *(_flag) = ((_req)->ch3.state & MPIDI_REQUEST_CANCEL_MASK) >> MPIDI_REQUEST_CANCEL_SHIFT;	\
-    (_req)->ch3.state |= MPIDI_REQUEST_CANCEL_MASK;						\
+#define MPIDI_Request_cancel_pending(_req, _flag)	\
+{							\
+    *(_flag) = (_req)->ch3.cancel_pending;		\
+    (_req)->ch3.cancel_pending = TRUE;			\
 }
 #else
-#error Multi-threaded MPIDI_Request_cancel_pending() not implemented.
+/* MT: to make this code lock free, an atomic exchange can be used here. */ 
+#define MPIDI_Request_cancel_pending(_req, _flag)	\
+{							\
+    MPID_Request_thread_lock(_req);			\
+    {							\
+	*(_flag) = ((_req)->ch3.cancel_pending;		\
+	(_req)->ch3.cancel_pending = TRUE;		\
+    }							\
+    MPID_Request_thread_unlock(_req);			\
+}
+#endif
+
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_Request_recv_pending(req_, recv_pending_)		\
+{								\
+    *(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
+}
+#else
+/* MT: to make this code lock free, an atomic decrement that sets a zero flag can be used here. */ 
+#define MPIDI_Request_recv_pending(req_, recv_pending_)		\
+{								\
+    MPID_Request_thread_lock(req_);				\
+    {								\
+	*(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
+    }								\
+    MPID_Request_thread_unlock(req_);				\
+}
 #endif
 
 /*
@@ -292,7 +323,15 @@ extern MPIDI_Process_t MPIDI_Process;
     (_seqnum_out) = (_vc)->seqnum_send++;		\
 }
 #else
-#error Multi-threaded MPIDI_Seqnum_fetch_and_inc_send() not implemented.
+/* MT: To avoid the use of locks, an atomic fetch and increment can be used here */
+#define MPIDI_CH3U_VC_FAI_send_seqnum(_vc, _seqnum_out)	\
+{							\
+    MPID_Thread_lock((_vc)->mutex);			\
+    {							\
+	(_seqnum_out) = (_vc)->seqnum_send++;		\
+    }							\
+    MPID_Thread_unlock((_vc)->mutex);			\
+}
 #endif
 #define MPIDI_CH3U_Request_set_seqnum(_req, _seqnum)	\
 {							\

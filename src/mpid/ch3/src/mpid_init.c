@@ -27,11 +27,12 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 #endif
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
-    MPIDI_Process.recv_posted_head = NULL;
-    MPIDI_Process.recv_posted_tail = NULL;
-    MPIDI_Process.recv_unexpected_head = NULL;
-    MPIDI_Process.recv_unexpected_tail = NULL;
-
+    MPIDI_Process.recvq_posted_head = NULL;
+    MPIDI_Process.recvq_posted_tail = NULL;
+    MPIDI_Process.recvq_unexpected_head = NULL;
+    MPIDI_Process.recvq_unexpected_tail = NULL;
+    MPID_Thread_lock_init(MPIDI_Process.recvq_mutex);
+    
     /*
      * Initialize the collective operations for the MPI_COMM_WORLD and MPI_COMM_SELF
      *

@@ -22,7 +22,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_St
     {
 	MPIDI_CH3_Progress_start();
 
-	rreq = MPIDI_CH3U_Request_FU(source, tag, context);
+	rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
 	if (rreq != NULL)
 	{
 	    if (status != MPI_STATUS_IGNORE)

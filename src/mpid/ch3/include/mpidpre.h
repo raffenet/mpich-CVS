@@ -215,6 +215,9 @@ typedef struct MPIDI_VC
 {
     int handle;  /* not used; exists so that we may use the MPIU_Object routines for reference counting */
     volatile int ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     int lpid;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum_send;
@@ -272,6 +275,8 @@ struct MPIDI_Request														\
     MPI_Request sender_req_id;													\
 																\
     unsigned state;														\
+    int cancel_pending;													        \
+    int recv_pending_count;												        \
 																\
     MPIDI_REQUEST_SEQNUM													\
 																\
@@ -331,12 +336,12 @@ MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT, \
 MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT, \
 MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ, \
 MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ, \
-MPID_STATE_MPIDI_CH3U_REQUEST_DP, \
-MPID_STATE_MPIDI_CH3U_REQUEST_FDP, \
-MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU, \
-MPID_STATE_MPIDI_CH3U_REQUEST_FDU, \
-MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP, \
-MPID_STATE_MPIDI_CH3U_REQUEST_FU, \
+MPID_STATE_MPIDI_CH3U_RECVQ_DP, \
+MPID_STATE_MPIDI_CH3U_RECVQ_FDP, \
+MPID_STATE_MPIDI_CH3U_RECVQ_FDP_OR_AEU, \
+MPID_STATE_MPIDI_CH3U_RECVQ_FDU, \
+MPID_STATE_MPIDI_CH3U_RECVQ_FDU_OR_AEP, \
+MPID_STATE_MPIDI_CH3U_RECVQ_FU, \
 MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV, \
 MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV, \
 MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF, \

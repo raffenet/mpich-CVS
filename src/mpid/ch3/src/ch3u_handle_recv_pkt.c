@@ -170,7 +170,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
 			      eager_pkt->sender_req_id, eager_pkt->match.rank, eager_pkt->match.tag, eager_pkt->match.context_id));
 	    
-	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&eager_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eager_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
 		/* FIXME - need to handle memory allocation problems */
@@ -193,7 +193,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received ready send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
 			      ready_pkt->sender_req_id, ready_pkt->match.rank, ready_pkt->match.tag, ready_pkt->match.context_id));
 	    
-	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&ready_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&ready_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
 		/* FIXME - need to handle memory allocation problems */
@@ -215,6 +215,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		/* We need to consume any outstanding associated data and mark the request with an error. */
 		int rc;
 
+		MPID_Request_initialized_set(rreq);
 		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 		rreq->status.count = 0;
 		if (rreq->ch3.recv_data_sz > 0)
@@ -251,7 +252,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager sync send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
 			      es_pkt->sender_req_id, es_pkt->match.rank, es_pkt->match.tag, es_pkt->match.context_id));
 	    
-	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&es_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&es_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
 		/* FIXME - need to handle memory allocation problems */
@@ -308,7 +309,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
 			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id, rts_pkt->data_sz));
 	    
-	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&rts_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
 	    assert(rreq != NULL);
 
 	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
@@ -337,6 +338,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    else
 	    {
 		MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
+		MPID_Request_initialized_set(rreq);
 	    }
 
 	    break;
@@ -427,7 +429,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received cancel send req pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
 			      req_pkt->sender_req_id, req_pkt->match.rank, req_pkt->match.tag, req_pkt->match.context_id));
 	    
-	    rreq = MPIDI_CH3U_Request_FDU(req_pkt->sender_req_id, &req_pkt->match);
+	    rreq = MPIDI_CH3U_Recvq_FDU(req_pkt->sender_req_id, &req_pkt->match);
 	    if (rreq != NULL)
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "message cancelled"));
@@ -602,7 +604,9 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmpbuf;
 	rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
 	rreq->ch3.iov_count = 1;
-	rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
+	rreq->ch3.recv_pending_count = 2;
+	MPID_Request_initialized_set(rreq);
     }
 
     MPIDI_DBG_PRINTF((35, FCNAME, "posting iRead"));

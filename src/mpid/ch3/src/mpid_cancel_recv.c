@@ -19,7 +19,7 @@ void MPID_Cancel_recv(MPID_Request * rreq)
     
     assert(rreq->kind == MPID_REQUEST_RECV);
     
-    if (MPIDI_CH3U_Request_DP(rreq))
+    if (MPIDI_CH3U_Recvq_DP(rreq))
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "request 0x%08x cancelled", rreq->handle));
 	rreq->status.cancelled = TRUE;

@@ -55,7 +55,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	goto fn_exit;
     }
 
-    rreq = MPIDI_CH3U_Request_FDU_or_AEP(rank, tag, comm->context_id + context_offset, &found);
+    rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(rank, tag, comm->context_id + context_offset, &found);
     if (rreq == NULL)
     {
 	mpi_errno = MPIR_ERR_MEMALLOCFAILED;
@@ -83,6 +83,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	   internal completion counter will always be used. */
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
+	    int recv_pending;
+	    
 	    /* This is an eager message */
 	    MPIDI_DBG_PRINTF((15, FCNAME, "eager message in the request"));
 	    
@@ -103,7 +105,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		}
 	    }
 
-	    if (*rreq->cc_ptr == 0)
+            MPIDI_Request_recv_pending(rreq, &recv_pending);
+	    if (!recv_pending)
 	    {
 		/* All of the data has arrived, we need to copy the data and then free the buffer and the request. */
 		if (rreq->ch3.recv_data_sz > 0)
@@ -119,13 +122,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    {
 		/* The data is still being transfered across the net.  We'll leave it to the progress engine to handle once the
 		   entire message has arrived. */
-		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
-		
 		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 		{
 		    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
 		    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
 		}
+	    
 	    }
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
@@ -195,6 +197,9 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
 	    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
 	}
+
+	rreq->ch3.recv_pending_count = 1;
+        MPID_Request_initialized_set(rreq);
     }
 
   fn_exit:

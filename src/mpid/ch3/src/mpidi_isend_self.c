@@ -32,7 +32,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     match.rank = rank;
     match.tag = tag;
     match.context_id = comm->context_id + context_offset;
-    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&match, &found);
+    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&match, &found);
     if (rreq == NULL)
     {
 	MPIU_Object_set_ref(sreq, 0);
@@ -94,6 +94,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
+	MPID_Request_initialized_set(rreq);
     }
 
   fn_exit:

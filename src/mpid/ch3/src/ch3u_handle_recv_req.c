@@ -39,10 +39,20 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	case MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE:
 	{
-	    if (rreq->ch3.recv_data_sz > 0)
+	    int recv_pending;
+	    
+            MPIDI_Request_recv_pending(rreq, &recv_pending);
+	    if (!recv_pending)
+	    { 
+		if (rreq->ch3.recv_data_sz > 0)
+		{
+		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
+		    MPIU_Free(rreq->ch3.tmpbuf);
+		}
+	    }
+	    else
 	    {
-		MPIDI_CH3U_Request_unpack_uebuf(rreq);
-		MPIU_Free(rreq->ch3.tmpbuf);
+		/* The receive has not been posted yet.  MPID_{Recv/Irecv}() is responsible for unpacking the buffer. */
 	    }
 	    
 	    /* mark data transfer as complete and decrement CC */

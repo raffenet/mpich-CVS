@@ -134,10 +134,6 @@ int MPIDU_Describe_timer_states()
     /* describe the states used in the ch3/src directory */
 
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_DP,
-		       "MPIDI_CH3U_Request_DP",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPI_ACCUMULATE,
 		       "MPI_Accumulate",
 		       get_random_color_str());
@@ -286,24 +282,28 @@ int MPIDU_Describe_timer_states()
 		       "MPIDI_CH3U_Handle_send_req",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP,
-		       "MPIDI_CH3U_Request_fdp",
+		       MPID_STATE_MPIDI_CH3U_RECVQ_FU,
+		       "MPIDI_CH3U_Recvq_FU",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU,
-		       "MPIDI_CH3U_Request_fdp_or_aeu",
+		       MPID_STATE_MPIDI_CH3U_RECVQ_FDU,
+		       "MPIDI_CH3U_Recvq_FDU",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU,
-		       "MPIDI_CH3U_Request_fdu",
+		       MPID_STATE_MPIDI_CH3U_RECVQ_FDU_OR_AEP,
+		       "MPIDI_CH3U_Recvq_FDU_or_AEP",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP,
-		       "MPIDI_CH3U_Request_fdu_or_aep",
+		       MPID_STATE_MPIDI_CH3U_RECVQ_DP,
+		       "MPIDI_CH3U_Recvq_DP",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_REQUEST_FU,
-		       "MPIDI_CH3U_Request_fu",
+		       MPID_STATE_MPIDI_CH3U_RECVQ_FDP,
+		       "MPIDI_CH3U_Recvq_FDP",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_RECVQ_FDP_OR_AEU,
+		       "MPIDI_CH3U_Recvq_FDP_or_AEU",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV,

@@ -38,7 +38,7 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "attempting to cancel message sent to self"));
 	
-	rreq = MPIDI_CH3U_Request_FDU(sreq->handle, &sreq->ch3.match);
+	rreq = MPIDI_CH3U_Recvq_FDU(sreq->handle, &sreq->ch3.match);
 	if (rreq)
 	{
 	    assert(rreq->partner_request == sreq);
@@ -104,7 +104,7 @@ void MPID_Cancel_send(MPID_Request * sreq)
     /* Part or all of the message has already been sent, so we need to send a cancellation request to the receiver in an attempt
        to catch the message before it is matched. */
     {
-	int cc_was_zero;
+	int was_incomplete;
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_cancel_send_req_t * const csr_pkt = &upkt.cancel_send_req;
 	MPID_Request * csr_sreq;
@@ -113,12 +113,10 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	
 	/* The completion counter and reference count are incremented to keep the request around long enough to receive a
 	   response regardless of what the user does (free the request before waiting, etc.). */
-	cc_was_zero = (sreq->cc == 0);
-	MPIDI_CH3U_Request_increment_cc(sreq);
-	/* FIXME - MT: the reference count should only be incremented if the completion was zero before the increment.  This
-           requires an atomic test for zero and increment. */
-	if (cc_was_zero)
+	MPIDI_CH3U_Request_increment_cc(sreq, &was_incomplete);
+	if (!was_incomplete)
 	{
+	    /* The reference count is incremented only if the request was complete before the increment. */
 	    MPIDI_CH3_Request_add_ref(sreq);
 	}
 
