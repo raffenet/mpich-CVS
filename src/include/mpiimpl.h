@@ -188,6 +188,7 @@ int MPIU_Usage_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Msg_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Internal_sys_error_printf( const char *, int, const char *str, ... ) ATTRIBUTE((format(printf,3,4)));
 
 /* ------------------------------------------------------------------------- */
 /* end of mpimsg.h */
