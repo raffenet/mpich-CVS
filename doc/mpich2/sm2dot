@@ -32,12 +32,17 @@ my (@sm, $sm);
 $sm = "\n" . join("", @sm) . "\n";
 
 my($re_keyword, $re_str, $re_params, $re);
-$re_keyword = "State|Event|State_Change|Change_State|Action|Invoke_Action";
+$re_keyword = "Graph|State|Event|State_Change|Change_State|" .
+  "Action|Invoke_Action";
 $re_str = "\\s*\\[[^\]]*\\]\\s*";
 $re_params = "((${re_str})?,)*(($re_str))";
 $re = "(^|\\n)\\s*($re_keyword)\\s*\\(?$re_params\\)?";
 
-my($keyword, @params_tmp, %nodes, @node_names, @edges, $cur_node, $tmp);
+my($keyword, @params_tmp, $graph_name, $graph_params, 
+   %nodes, @node_names, @edges, $cur_node, $tmp);
+
+$graph_name = "My Graph";
+$graph_params = "";
 
 while (($tmp, $keyword, @params_tmp) = ($sm =~ /$re/))
 {
@@ -95,6 +100,11 @@ while (($tmp, $keyword, @params_tmp) = ($sm =~ /$re/))
 	    print STDERR "Warning state $cur_node defined multiple times\n";
 	}
     }
+    elsif ($keyword eq "Graph")
+    {
+	$graph_name = $params[0] if defined($params[0]);
+	$graph_params = $params[1] if defined($params[1]);
+    }
 
     # print STDERR "DECL - $keyword", join("|","", @params, ""),"\n";
 
@@ -124,9 +134,9 @@ foreach $edge (@edges)
 
 exit(1) if ($error != 0);
 
-print "digraph foo {\n";
-#print "graph [size=\"10,7.5\",orientation=landscape];\n";
-print "graph [size=\"7.5,10\"];\n";
+print "digraph \"$graph_name\" {\n";
+print "graph [$graph_params];\n" if $graph_params ne "";
+
 my($node,$attrs);
 
 foreach $node (@node_names)

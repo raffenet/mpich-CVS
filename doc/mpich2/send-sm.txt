@@ -1,30 +1,35 @@
-% Prototype Method Send State Machine
-% 
-% This state machine is targeted towards packet based systems such as VIA.
-% Some simplifications may be possible for stream based model like TCP.
-% 
-% Tasks for this state machine:
-% 
-% - send message at the head of the queue
-% 
-%   - message data source exists in two forms:
-% 
-%     - provided by user - potentially needing to be packed but guaranteed to be
-%       available when the CAR is enqueued
-% 
-%     - provided by associated recv CAR - may not be (completely) available
-%       until later (i.e., send could stall)
-% 
-% - track buffers provided by associated recv CAR
-% 
-% - provide buffers to associated recv CAR
-% 
-% - enforce flow control
-% 
-% 
-% This version of the state machine only handles sending from a user provided
-% buffer.  It needs to be expanded to include the forwarding cases.
+\begin{comment}
+Prototype Method Send State Machine
 
+This state machine is targeted towards packet based systems such as VIA.
+Some simplifications may be possible for stream based model like TCP.
+
+Tasks for this state machine:
+
+- send message at the head of the queue
+
+  - message data source exists in two forms:
+
+    - provided by user - potentially needing to be packed but guaranteed to be
+      available when the CAR is enqueued
+
+    - provided by associated recv CAR - may not be (completely) available
+      until later (i.e., send could stall)
+
+- track buffers provided by associated recv CAR
+
+- provide buffers to associated recv CAR
+
+- enforce flow control
+
+
+This version of the state machine only handles sending from a user provided
+buffer.  It needs to be expanded to include the forwarding cases.
+
+Graph [Send State Machine],
+      [size="6.5,8"]
+
+\end{comment}
 \begin{verbatim}
 State [Awaiting CAR],[label="Awaiting\nCAR"]
     Event [CAR Available]
@@ -50,7 +55,7 @@ Action [Check Buffers for Ctrl],
                      [label="no bufs"])
     else
         Invoke_Action([Check Flow for Ctrl],
-	              [label="bufs ok"])
+                      [label="bufs ok"])
 
 State [Awaiting Buffers for Ctrl],
       [label="Awaiting Buffers\nfor Ctrl Pkt"]
@@ -84,7 +89,7 @@ Action [Post Send Ctrl],
         put the envelope info and rsend bit in the packet buffer
     else if type is rndv-rts message
         put the envelope and LIBA(OD) into the packet buffer
-	OD.type = rndv-data
+        OD.type = rndv-data
     else if type is rndv-cts
         put the two LIBAs in the packet buffer
     else if type is rndv-data
@@ -103,7 +108,7 @@ Action [Post Send Ctrl],
     post the send to the network device
     if there are no data packets to send (i.e., short)
         Invoke_Action([Signal CAR Completion],
-	              [label="msg complete"])
+                      [label="msg complete"])
     else if direct access flag is set
         Invoke_Action([Check Flow for Data],
                       [label="more data,\ndirect send"])
@@ -116,10 +121,10 @@ Action [Check Buffers for Data],
     // try to get buffers if we need them
     if buffers aren't available
         Change_State([Awaiting Buffers for Data],
-		     [label="no bufs"])
+                     [label="no bufs"])
     else
         Invoke_Action([Check Flow for Data],
-		      [label="bufs ok"])
+                      [label="bufs ok"])
 
 State [Awaiting Buffers for Data],
       [label="Awaiting Buffers\nfor Data Pkts"]
@@ -134,7 +139,7 @@ Action [Check Flow for Data],
                      [label="flow\nrestricted"])
     else
         Invoke_Action([Post Send Data],
-		      [label="flow ok"])
+                      [label="flow ok"])
 
 State [Awaiting Flow for Data],
       [label="Awaiting Flow Control\nfor Data Pkts"]
@@ -167,21 +172,21 @@ Action [Post Send Data],
                           [label="more data,\nbuffered send"])
     else
         Invoke_Action([Signal CAR Completion],
-	              [label="msg complete"])
+                      [label="msg complete"])
     
 Action [Signal CAR Completion], [label="Check/Signal\nCAR Completion"]
     if we did not send all data directly from the user buffer
         reset (local) completion flag
         if we send some of the data directly from the user buffer
-            lock CAR.mutex
-	        decrement CAR outstanding activities counter
-		if outstanding activity counter reaches zero
+            lock OD.mutex
+                decrement CAR outstanding activities counter
+                if outstanding activity counter reaches zero
                     set completion flag
-            unlock CAR.mutex
+            unlock OD.mutex
         else // all data sent using packet buffers
             set completion flag
         if completion flag is set
-	    decrement completion counter associated with CAR
+            decrement completion counter associated with CAR
         
     Invoke_Action([Check Ready CAR])
 
@@ -192,6 +197,5 @@ Action [Check Ready CAR],[label="Check for Ready\nSend CAR"]
     else
         Change_State([Awaiting CAR],
                      [label="no more\nCARs"])
-   
-
 \end{verbatim}
+

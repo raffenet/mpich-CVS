@@ -1,3 +1,8 @@
+\begin{comment}
+Graph [Virtual Connection State Machine],
+      [size="6.5,8"]
+
+\end{comment}
 \begin{verbatim}
 State [Unbound]
     Event [VC-Open] 
