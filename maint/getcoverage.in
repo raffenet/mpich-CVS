@@ -531,6 +531,8 @@ sub WriteAnnoteFileMap {
         $percent = sprintf( "%.2f", $percent );
 	$covered = sprintf( "%.2f", $covered );
 	print IFD "or $percent% missed ($covered% covered)\n";
+	my $date = `date "+%Y-%m-%d-%H-%M"`;
+	print IFD "<br>This index created on $date\n";
 	print IFD "<p>\n";
 	print IFD "The following files contained some code that was not executed.  Files in which all non-error-handling, non-debug code was executed are not shown\n"
     }
@@ -581,6 +583,8 @@ sub WriteAnnoteFileMap {
 	    my ($missed,$total) = split(/;/,$AnnoteMissed{$origFileName});
 	    $label = "$label ($missed)";
 	}
+	# FIXME: 
+	# Allow relative rather than absolute targets
 	print IFD "<TD><A HREF=\"$target\">$label</A></TD>\n";
 	if ($col++ == $maxcol) {
 	    print IFD "</TR>\n";
