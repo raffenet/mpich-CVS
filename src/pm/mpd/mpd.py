@@ -513,6 +513,7 @@ def _do_mpdrun(msg):
             jobid = msg['jobid']
         users = msg['users']
         for ranks in users.keys():
+            (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
                 username = users[ranks]
                 break
