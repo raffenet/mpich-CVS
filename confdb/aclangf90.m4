@@ -179,7 +179,8 @@ AU_DEFUN([ac_cv_prog_g90],
 # epcf90 is the "Edinburgh Portable Compiler" F90.
 # fort is the Compaq Fortran 90 (now 95) compiler for Tru64 and Linux/Alpha.
 AC_DEFUN([AC_PROG_F90],
-[AC_LANG_PUSH(Fortran 90)dnl
+[# This is the aclangf90 version of f90 language support
+AC_LANG_PUSH(Fortran 90)dnl
 AC_ARG_VAR([F90],    [Fortran 90 compiler command])dnl
 AC_ARG_VAR([F90FLAGS], [Fortran 90 compiler flags])dnl
 _AC_ARG_VAR_LDFLAGS()dnl
