@@ -73,6 +73,10 @@ fi
 # Create the Makefile.in files
 # Make sure that these files exist so that the gcc dependency creation
 # can work
+rm_prepost=no
+if [ ! -s src/include/mpidpre.h ] ; then
+    rm_prepost=yes
+fi
 touch src/include/mpidpre.h src/include/mpidpost.h
 otherargs="$@"
 if [ ! -s src/include/mpi.h ] ; then 
@@ -102,4 +106,7 @@ if [ "$has_unix_find" = "yes" ] ; then
 else
     echo "You need to install find (in findutils)"
     exit 1
+fi
+if [ $rm_prepost = yes ] ; then
+    rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
