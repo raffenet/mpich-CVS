@@ -17,8 +17,8 @@ public class Print
     public static final void main( String[] args )
     {
         if ( args.length != 1 ) {
-            System.err.println( "It needs the filename to be the only command "
-                              + "line arguemnt" );
+            System.err.println( "It needs the filename to be the only "
+                              + "command line arguemnt" );
             System.exit( 0 );
         }
 
@@ -27,7 +27,8 @@ public class Print
         int total_bytesize, bytes_read;
         int rectype;
 
-        clog_ins = new InputLog( args[ 0 ] );
+        clog_ins      = new InputLog( args[ 0 ] );
+        System.out.println( clog_ins.getPreamble().toString() );
 
         RecHeader     header    = new RecHeader();
         RecDefState   statedef  = new RecDefState();

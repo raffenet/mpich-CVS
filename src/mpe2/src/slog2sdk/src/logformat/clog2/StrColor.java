@@ -9,8 +9,8 @@
 
 package logformat.clog2;
 
-// specify the logfile bytesize of CLOG_CNAME
-class StrCname
+// specify the logfile bytesize of CLOG_STR_COLOR
+class StrColor
 {
     public static final int BYTESIZE = 3 * 8;
 }

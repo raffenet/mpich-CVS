@@ -13,10 +13,10 @@ import java.io.*;
 import java.util.*;
 
 
-// Class corresponds to CLOG_BARE
+// Class corresponds to CLOG_Rec_BareEvt
 public class RecBare
 {
-    public  static final int RECTYPE  = Const.RecType.BAREEVENT;
+    public  static final int RECTYPE  = Const.RecType.BAREEVT;
     private static final int BYTESIZE = 4 + 4;
 
     public         Integer etype;                  // bare event number

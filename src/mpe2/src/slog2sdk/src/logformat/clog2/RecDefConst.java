@@ -13,7 +13,7 @@ import java.io.*;
 import java.util.*;
 
 
-// Class corresponds to CLOG_CONST
+// Class corresponds to CLOG_Rec_ConstDef
 public class RecDefConst
 {
     public  static final int RECTYPE  = Const.RecType.CONSTDEF;

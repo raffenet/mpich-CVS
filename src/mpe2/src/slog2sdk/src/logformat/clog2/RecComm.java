@@ -12,10 +12,10 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_COMM
+// Class corresponds to CLOG_Rec_CommEvt
 public class RecComm
 {
-    public  static final int RECTYPE  = Const.RecType.COMMEVENT;
+    public  static final int RECTYPE  = Const.RecType.COMMEVT;
     private static final int BYTESIZE = 4 * 4;
     public         Integer   etype;            // type of communicator creation
     public         int       parent;           // parent communicator

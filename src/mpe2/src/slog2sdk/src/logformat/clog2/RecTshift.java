@@ -12,7 +12,7 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_TSHIFT
+// Class corresponds to CLOG_Rec_Timeshift
 public class RecTshift
 {
     public  static final int RECTYPE  = Const.RecType.SHIFT;

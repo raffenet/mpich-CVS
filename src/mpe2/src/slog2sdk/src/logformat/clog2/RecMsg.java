@@ -12,10 +12,10 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_MSG
+// Class corresponds to CLOG_Rec_MsgEvt
 public class RecMsg 
 {
-    public  static final int RECTYPE  = Const.RecType.MSGEVENT;    
+    public  static final int RECTYPE  = Const.RecType.MSGEVT;    
     private static final int BYTESIZE = 6 * 4;
     public         Integer   etype;       // kind of message event 
     public         int       tag;         // message tag 

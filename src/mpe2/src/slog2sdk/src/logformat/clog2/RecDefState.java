@@ -15,12 +15,12 @@ import java.util.Iterator;
 import java.io.*;
 
 
-// Class corresponds to CLOG_STATE
+// Class corresponds to CLOG_Rec_StateDef
 public class RecDefState
 {
     public  final static int RECTYPE  = Const.RecType.STATEDEF;
     private final static int BYTESIZE = 4 * 4
-                                      + StrCname.BYTESIZE
+                                      + StrColor.BYTESIZE
                                       + StrDesc.BYTESIZE
                                       + StrFormat.BYTESIZE;
     public         int     stateID;        // integer identifier for the state
@@ -39,7 +39,7 @@ public class RecDefState
             startetype   = new Integer( in.readInt() );
             finaletype   = new Integer( in.readInt() );
             pad          = in.readInt();
-            color        = in.readString( StrCname.BYTESIZE );
+            color        = in.readString( StrColor.BYTESIZE );
             name         = in.readString( StrDesc.BYTESIZE );
             format       = in.readString( StrFormat.BYTESIZE );
         } catch ( IOException ioerr ) {
@@ -62,18 +62,19 @@ public class RecDefState
         return BYTESIZE;
     }
 
-    // Mimic <MPE>/src/log_wrap.c's definition of MPI_Init() in initialization
-    // of states[] and the way MPI_xxx routines's CLOG_STATE is defined
-    // in MPI_Finalize();
+    // Mimic <MPE>/src/wrappers/src/log_mpe_core.c's definition of MPI_Init()
+    // in initialization of states[] and the way MPI_xxx routines's 
+    // CLOG_Rec_statedef is defined in MPI_Finalize();
     public static List getMPIinitUndefinedStateDefs()
     {
         RecDefState def;
 
-        // evtID is equivalent to the variable "stateid" MPI_Init() 
-        // in <MPE>/src/log_wrap.c
-        int evtID = Const.MPE_1ST_EVENT;  
-        List defs = new ArrayList( Const.MPE_MAX_STATES );
-        for ( int idx = 0; idx < Const.MPE_MAX_STATES; idx++ ) {
+        // evtIDs are used in a way similar to how the start_evt & final_evt
+        // of the MPE_State[] are set by MPE_Log_get_known_eventID() as
+        // in <MPE>/src/wrappers/src/log_mpi_core.c
+        int evtID = Const.MPE_1ST_KNOWN_EVENT;  
+        List defs = new ArrayList( Const.MPE_MAX_KNOWN_STATES );
+        for ( int idx = 0; idx < Const.MPE_MAX_KNOWN_STATES; idx++ ) {
             def              = new RecDefState();
             def.startetype   = new Integer( evtID++ );
             def.finaletype   = new Integer( evtID++ );
@@ -90,10 +91,10 @@ public class RecDefState
         RecDefState def;
 
         // evtID is equivalent to the variable "stateid" MPI_Init() 
-        // in <MPE>/src/log_wrap.c
-        int evtID = Const.MPE_USER_1ST_EVENT;  
-        List defs = new ArrayList( Const.MPE_USER_MAX_STATES );
-        for ( int idx = 0; idx < Const.MPE_USER_MAX_STATES; idx++ ) {
+        // in <MPE>/src/wrappers/src/log_mpi_core.c
+        int evtID = Const.MPE_1ST_USER_EVENT;  
+        List defs = new ArrayList( Const.MPE_MAX_USER_STATES );
+        for ( int idx = 0; idx < Const.MPE_MAX_USER_STATES; idx++ ) {
             def              = new RecDefState();
             def.startetype   = new Integer( evtID++ );
             def.finaletype   = new Integer( evtID++ );

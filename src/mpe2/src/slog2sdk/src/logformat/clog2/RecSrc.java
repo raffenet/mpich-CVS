@@ -12,7 +12,7 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_SRC
+// Class corresponds to CLOG_Rec_Srcloc
 public class RecSrc
 {
     public  static final int RECTYPE  = Const.RecType.SRCLOC;

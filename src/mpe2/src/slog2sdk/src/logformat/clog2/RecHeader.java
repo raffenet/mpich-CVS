@@ -11,23 +11,19 @@ package logformat.clog2;
 
 import java.io.*;
 
-// Class corresponds to CLOG_HEADER
+// Class corresponds to CLOG_Rec_Header
 public class RecHeader
 {
-    private static final int BYTESIZE = 8 + 4 * 4;
+    private static final int BYTESIZE = 8 + 2 * 4;
     public         double timestamp;
     public         int    rectype;
-    public         int    length;	
     public         int    taskID;   // i.e. procid, = rank in MPI_COMM_WORLD
-    private static int    pad;
 
     public RecHeader()
     {
         timestamp  = Const.INVALID_double;
         rectype    = Const.INVALID_int;
-        length     = Const.INVALID_int;
         taskID     = Const.INVALID_int;
-        pad        = Const.INVALID_int;
     }
 
     public RecHeader( DataInputStream istm )
@@ -40,9 +36,7 @@ public class RecHeader
         try {
             timestamp  = istm.readDouble();
             rectype    = istm.readInt();
-            length     = istm.readInt();
             taskID     = istm.readInt();
-            pad        = istm.readInt();
         } catch ( IOException ioerr ) {
             ioerr.printStackTrace();
             return 0;
@@ -70,9 +64,7 @@ public class RecHeader
         RecHeader cp  = new RecHeader();
         cp.timestamp  = this.timestamp;
         cp.rectype    = this.rectype;
-        cp.length     = this.length;
         cp.taskID     = this.taskID;
-        // cp.pad        = this.pad;
         return cp;
     }
 */
@@ -87,9 +79,7 @@ public class RecHeader
         return ( "RecHeader"
                + "[ timestamp=" + timestamp
                + ", rectype=" + rectype
-               + ", length=" + length
                + ", taskID=" + taskID
-               // + ", pad =" + pad
                // + ", BYTESIZE=" + BYTESIZE
                + " ]" );
     } 

@@ -9,7 +9,7 @@
 
 package logformat.clog2;
 
-// specify the logfile bytesize of CLOG_FILE
+// specify the logfile bytesize of CLOG_STR_FILE
 class StrFile
 {
     public static final int BYTESIZE = 5 * 8;

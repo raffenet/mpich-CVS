@@ -12,12 +12,12 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_EVENT
+// Class corresponds to CLOG_Rec_EventDef
 public class RecDefEvent
 {
     public  static final int RECTYPE  = Const.RecType.EVENTDEF;
     private static final int BYTESIZE = 2 * 4
-                                      + StrCname.BYTESIZE
+                                      + StrColor.BYTESIZE
                                       + StrDesc.BYTESIZE
                                       + StrFormat.BYTESIZE;
     public         Integer     etype;            // event
@@ -31,7 +31,7 @@ public class RecDefEvent
         try {
             etype        = new Integer( in.readInt() );
             pad          = in.readInt();
-            color        = in.readString( StrCname.BYTESIZE );
+            color        = in.readString( StrColor.BYTESIZE );
             name         = in.readString( StrDesc.BYTESIZE );
             format       = in.readString( StrFormat.BYTESIZE );
         } catch ( IOException ioerr ) {

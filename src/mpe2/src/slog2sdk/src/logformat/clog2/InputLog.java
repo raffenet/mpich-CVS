@@ -13,9 +13,10 @@ import java.io.*;
 
 public class InputLog
 {
-    private static final int    BLOCKSIZE = Const.BLOCK_SIZE;
+    private static final int    INPUT_STREAM_BUFSIZE = 1024;
     private String              filename;
     private DataInputStream     main_ins;
+    private Preamble            preamble;
     private byte[]              buffer;
 
     public InputLog( String pathname )
@@ -31,15 +32,36 @@ public class InputLog
             ferr.printStackTrace();
             System.exit( 0 );
         }
-        buf_ins  = new BufferedInputStream( fins, BLOCKSIZE );
+        buf_ins  = new BufferedInputStream( fins, INPUT_STREAM_BUFSIZE );
 
         main_ins = new DataInputStream( buf_ins );
+
+        preamble = new Preamble();
+        preamble.readFromDataStream( main_ins );
+        if ( ! preamble.isVersionMatched() ) {
+            System.err.println( "Error: CLOG version mismatched !\n"
+                              + "\t" + "The input logfile version is "
+                              + preamble.getVersionString() + "\n"
+                              + "\t" + "But this tool is of version "
+                              + Const.VERSION );
+            System.exit( 1 );
+        }
+        if ( ! preamble.isBigEndian() ) {
+            System.err.println( "Error: input logfile is little-endian!" );
+            System.exit( 1 );
+        }
+
         buffer   = null;
     }
 
     public String getFileName()
     {
         return filename;
+    }
+
+    public Preamble getPreamble()
+    {
+        return preamble;
     }
 
     public MixedDataInputStream getBlockStream()
@@ -50,7 +72,7 @@ public class InputLog
         }
 
         if ( buffer == null )
-            buffer = new byte[ BLOCKSIZE ];
+            buffer = new byte[ preamble.getBlockSize() ];
 
         try {
             main_ins.readFully( buffer );

@@ -12,10 +12,10 @@ package logformat.clog2;
 import java.io.*;
 
 
-// Class corresponds to CLOG_COLL
+// Class corresponds to CLOG_Rec_CollEvt
 public class RecColl
 {
-    public  static final int RECTYPE  = Const.RecType.COLLEVENT;
+    public  static final int RECTYPE  = Const.RecType.COLLEVT;
     private static final int BYTESIZE = 4 * 4;
     public         Integer  etype;       // type of collective event 
     public         int      root;        // root of collective op 

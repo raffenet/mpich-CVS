@@ -13,10 +13,10 @@ import java.io.*;
 import java.util.*;
 
 
-// Class corresponds to CLOG_BARE
+// Class corresponds to CLOG_Rec_CargoEvt
 public class RecCargo
 {
-    public  static final int RECTYPE  = Const.RecType.CARGOEVENT;
+    public  static final int RECTYPE  = Const.RecType.CARGOEVT;
     private static final int BYTESIZE = 4 + 4 
                                       + StrBytes.BYTESIZE;
     public         Integer etype;                  // bare event number
