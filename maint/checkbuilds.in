@@ -45,6 +45,16 @@ $n_env     = $#env_array + 1;
 $show      = 0;
 $debug     = 0;
 $max_count = 5;
+$OUTFD     = OUTFD;
+#
+# The following variable separate the various sections
+$TestStart = "-----------------------------------------------------------\n";
+$TestEnd   = "-----------------------------------------------------------\n";
+$ConfigStart = " -- Begin Configure Step -- \n";
+$ConfigEnd   = " -- End   Configure Step -- \n";
+$MakeStart   = " -- Begin Make Step --\n";
+$MakeEnd     = " -- End   Make Step --\n";
+
 
 # Read the arguments
 foreach $_ (@ARGV) {
@@ -79,16 +89,25 @@ foreach $_ (@ARGV) {
 	# max time in seconds
 	set_time_left( $1 );
     }
+    elsif (/-outfile=(.*)/) {
+	$outfile = $1;
+    }
+    elsif (/-xml/) {
+	&XMLStyle;
+    }
     elsif (/-help/) {
 	print STDERR "\
 checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
-            [-srcdir=SRCDIR] [-instdir=INSTALLDIR]
+            [-srcdir=SRCDIR] [-instdir=INSTALLDIR] 
+            [-maxcount=MAXCNT] [-maxtime=MAXTIME] 
         -enable-n=d sets the number of --enable options to try
         -with=n=d set the number of --with options to try
         -envopt=name;value;... adds an environment variable with possible
                  values (quote the text so that the semicolons do not
                  cause trouble)
 
+        -maxcount sets the number of builds to try
+        -maxtime sets the maximum length of time to run
         Example:
         checkbuilds -envopt=\"CC;gcc;pgcc;ecc\"\n";
         exit(0);
@@ -99,6 +118,15 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
 	exit(1);
     }
 }
+
+# Select the output file
+if ($outfile ne "") {
+    open( $OUTFD, ">$outfile" ) || die "Could not open $outfile for writing\n";
+}
+else {
+    $OUTFD = STDOUT;
+}
+
 
 # ---------------------------------------------------------------------------
 #
@@ -154,14 +182,20 @@ sub RunTest {
 	}
     }
     else {
+	print $OUTFD $TestStart;
+	print $OUTFD $ConfigStart;
 	@config = split( / /, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
 	print "Configure: " . join(" ", @config) . "\n";
 	if ($envset ne "") {
 	    print "Environment = $envset\n";
 	}
 	$rc = system @config;
+	print $OUTFD $ConfigEnd;
 	# print "rc = $rc\n";
+	print $OUTFD $MakeStart;
 	system "make";
+	print $OUTFD $MakeEnd;
+	print $OUTFD $TestEnd;
     }
 }
 
@@ -209,6 +243,17 @@ sub time_left {
     else                    { return 1; }
 }
 
+# ---------------------------------------------------------------------------
+#
+# Change output style
+sub XMLStyle {
+    $TestStart = "<BUILDTEST>\n";
+    $TestEnd   = "</BUILDTEST>\n";
+    $ConfigStart = "<CONFIG>\n";
+    $ConfigEnd   = "</CONFIG>\n";
+    $MakeStart   = "<MAKE>\n";
+    $MakeEnd     = "</MAKE>\n";
+}
 # ---------------------------------------------------------------------------
 #
 # Other options

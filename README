@@ -46,7 +46,7 @@ Once you have MPD running, you may run the hello world program as
 follows.
 
     cd examples
-    ../bin/mpiexec -np 2 hellow
+    ../bin/mpiexec -n 2 hellow
 
 To shut MPD down, run
 

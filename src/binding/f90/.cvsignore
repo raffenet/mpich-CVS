@@ -1,0 +1,6 @@
+mpif90.conf
+mpif90
+Makefile
+Makefile.in
+configure
+config.*
