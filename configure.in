@@ -1475,6 +1475,10 @@ dnl
 dnl Check for functions.  This invokes another test if the function is 
 dnl found.  The braces around the second test are essential. 
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
+dnl
+dnl These are used to support timeouts
+AC_CHECK_FUNCS(setitimer alarm)
+dnl
 dnl These are used for error reporting
 AC_CHECK_FUNCS(vsnprintf vsprintf)
 dnl Use snprintf if possible when creating messages
