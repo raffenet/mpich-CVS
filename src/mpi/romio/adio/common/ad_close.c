@@ -7,9 +7,9 @@
  */
 
 #include "adio.h"
-#ifdef MPISGI
+/* #ifdef MPISGI
 #include "mpisgi2.h"
-#endif
+#endif */
 
 void ADIO_Close(ADIO_File fd, int *error_code)
 {

@@ -8,9 +8,9 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-#ifdef MPISGI
+/* #ifdef MPISGI
 #include "mpisgi2.h"
-#endif
+#endif */
 
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
 void ADIOI_Flatten_subarray(int ndims,

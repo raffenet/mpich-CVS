@@ -1027,9 +1027,9 @@ else
 fi   
 #
 if test -n "$mpi_sgi"; then
-   if test -z "$HAVE_MPI_INFO" ; then
-      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
-   fi
+#   if test -z "$HAVE_MPI_INFO" ; then
+#      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
+#   fi
    PAC_TEST_MPI_SGI_type_is_contig
    PAC_TEST_MPI_COMBINERS
    PAC_TEST_MPI_HAVE_OFFSET_KIND
