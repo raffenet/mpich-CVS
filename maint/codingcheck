@@ -33,6 +33,7 @@ foreach $arg (@ARGV) {
 sub ProcessFile {
     $filename = $_[0];
     %AllowedRoutines = ();
+    %AllowedDefines = ();
     $cxx_comments_found = 0;
     &ClearPreamble;
     %warningmsgs = ();
@@ -54,6 +55,10 @@ sub ProcessFile {
 	    # Signature => $3, Key => $public ) && $AllowedRoutines{$1}=$2;
             # But for now, we do:
 	    $AllowedRoutines{$1} = $2;
+	}
+	elsif ( /\/\* style: *define:([_\w]*):(\d*) *sig:(\d*)/) {
+	    # This style comment permits special definitions
+	    $AllowedDefines{$1} = $2;
 	}
 	# The preamble is within a comment
 	&CheckForPreamble( $_ );
@@ -188,7 +193,8 @@ sub CheckForBadDefines {
 	    $defname = $1;
 	    $defname =~ s/\r*\n*//g;
 	    print "$defname\n" if $debug;
-	    if (&CheckName( $defname ) ) {
+	    if (! defined($AllowedDefines{$defname}) && 
+		&CheckName( $defname ) ) {
 		print "Warning: ifdef name $defname used in $filename is nonstandard\n"
 	    }
 	}

@@ -91,6 +91,8 @@ int err_printf(char *str, ...);
 /* style: allow:free:2 sig:0 */
 /* style: allow:strdup:2 sig:0 */
 /* style: allow:calloc:2 sig:0 */
+/* style: define:__strdup:1 sig: 0 */
+/* style: define:strdup:1 sig: 0 */
 
 #ifdef USE_MEMORY_TRACING
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)

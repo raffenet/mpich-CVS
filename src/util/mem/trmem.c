@@ -15,6 +15,8 @@
 /* style: allow:calloc:2 sig:0 */
 /* style: allow:free:3 sig:0 */
 /* style: allow:strdup:1 sig:0 */
+/* style: define:malloc:1 sig:0 */
+/* style: define:__strdup:1 sig: 0 */
 
 #ifdef malloc
 /* Undefine these in case they were set to 'error' */
