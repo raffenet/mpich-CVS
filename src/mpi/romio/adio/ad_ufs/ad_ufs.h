@@ -79,7 +79,6 @@ void ADIOI_UFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Request *request, int
 		       *error_code);
-void ADIOI_UFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_UFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 
 #endif
