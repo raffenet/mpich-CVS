@@ -24,14 +24,20 @@ public class PreferencePanel extends JPanel
 
     private        LabeledComboBox        lst_Y_AXIS_ROOT_VISIBLE;
     private        LabeledComboBox        lst_BACKGROUND_COLOR;
+
     private        LabeledTextField       fld_Y_AXIS_ROW_HEIGHT;
     private        LabeledComboBox        lst_STATE_BORDER_STYLE;
     private        LabeledTextField       fld_STATE_HEIGHT_FACTOR;
     private        LabeledTextField       fld_NESTING_HEIGHT_FACTOR;
+
     private        LabeledComboBox        lst_ARROW_ANTIALIASING;
     private        LabeledTextField       fld_ARROW_HEAD_LENGTH;
     private        LabeledTextField       fld_ARROW_HEAD_HALF_WIDTH;
     private        LabeledTextField       fld_CLICK_RADIUS_TO_LINE;
+
+    private        LabeledTextField       fld_SHADOW_STATE_BDR_WID;
+    private        LabeledTextField       fld_SHADOW_STATE_BDR_HGT;
+    private        LabeledTextField       fld_SHADOW_ARROW_LINE_WID;
 
     private        LabeledTextField       fld_MIN_WIDTH_TO_DRAG;
     private        LabeledTextField       fld_SEARCH_ARROW_LENGTH;
@@ -216,6 +222,38 @@ public class PreferencePanel extends JPanel
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
+        fld_SHADOW_STATE_BDR_WID = new LabeledTextField(
+                                       "SHADOW_STATE_BDR_WID",
+                                       Const.INTEGER_FORMAT );
+        fld_SHADOW_STATE_BDR_WID.setToolTipText(
+        "The empty border insets' width in pixel for the Shadow state." );
+        fld_SHADOW_STATE_BDR_WID.setHorizontalAlignment( JTextField.CENTER );
+        fld_SHADOW_STATE_BDR_WID.addSelfDocumentListener();
+        fld_SHADOW_STATE_BDR_WID.setEditable( true );
+        super.add( fld_SHADOW_STATE_BDR_WID );
+
+        fld_SHADOW_STATE_BDR_HGT = new LabeledTextField(
+                                       "SHADOW_STATE_BDR_HGT",
+                                       Const.INTEGER_FORMAT );
+        fld_SHADOW_STATE_BDR_HGT.setToolTipText(
+        "The empty border insets' height in pixel for the Shadow state." );
+        fld_SHADOW_STATE_BDR_HGT.setHorizontalAlignment( JTextField.CENTER );
+        fld_SHADOW_STATE_BDR_HGT.addSelfDocumentListener();
+        fld_SHADOW_STATE_BDR_HGT.setEditable( true );
+        super.add( fld_SHADOW_STATE_BDR_HGT );
+
+        fld_SHADOW_ARROW_LINE_WID = new LabeledTextField(
+                                        "SHADOW_ARROW_LINE_WID",
+                                        Const.FLOAT_FORMAT );
+        fld_SHADOW_ARROW_LINE_WID.setToolTipText(
+        "The line thickness in pixel for the Shadow arrow." );
+        fld_SHADOW_ARROW_LINE_WID.setHorizontalAlignment( JTextField.CENTER );
+        fld_SHADOW_ARROW_LINE_WID.addSelfDocumentListener();
+        fld_SHADOW_ARROW_LINE_WID.setEditable( true );
+        super.add( fld_SHADOW_ARROW_LINE_WID );
+
+        super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
+
         fld_MIN_WIDTH_TO_DRAG = new LabeledTextField(
                                     "MIN_WIDTH_TO_DRAG",
                                     Const.INTEGER_FORMAT );
@@ -271,15 +309,21 @@ public class PreferencePanel extends JPanel
         lst_Y_AXIS_ROOT_VISIBLE.setSelectedBooleanItem(
                                 Parameters.Y_AXIS_ROOT_VISIBLE );
         lst_BACKGROUND_COLOR.setSelectedItem( Parameters.BACKGROUND_COLOR );
+
         fld_Y_AXIS_ROW_HEIGHT.setInteger( Parameters.Y_AXIS_ROW_HEIGHT );
         lst_STATE_BORDER_STYLE.setSelectedItem( Parameters.STATE_BORDER_STYLE );
         fld_STATE_HEIGHT_FACTOR.setFloat( Parameters.STATE_HEIGHT_FACTOR );
         fld_NESTING_HEIGHT_FACTOR.setFloat( Parameters.NESTING_HEIGHT_FACTOR );
+
         lst_ARROW_ANTIALIASING.setSelectedItem( Parameters.ARROW_ANTIALIASING );
         fld_ARROW_HEAD_LENGTH.setInteger( Parameters.ARROW_HEAD_LENGTH );
         fld_ARROW_HEAD_HALF_WIDTH.setInteger(
                                   Parameters.ARROW_HEAD_HALF_WIDTH );
         fld_CLICK_RADIUS_TO_LINE.setInteger( Parameters.CLICK_RADIUS_TO_LINE );
+
+        fld_SHADOW_STATE_BDR_WID.setInteger( Parameters.SHADOW_STATE_BDR_WID );
+        fld_SHADOW_STATE_BDR_HGT.setInteger( Parameters.SHADOW_STATE_BDR_HGT );
+        fld_SHADOW_ARROW_LINE_WID.setFloat( Parameters.SHADOW_ARROW_LINE_WID );
 
         fld_MIN_WIDTH_TO_DRAG.setInteger( Parameters.MIN_WIDTH_TO_DRAG );
         fld_SEARCH_ARROW_LENGTH.setInteger( Parameters.SEARCH_ARROW_LENGTH );
@@ -304,6 +348,7 @@ public class PreferencePanel extends JPanel
                   = lst_Y_AXIS_ROOT_VISIBLE.getSelectedBooleanItem();
         Parameters.BACKGROUND_COLOR
                   = (Alias) lst_BACKGROUND_COLOR.getSelectedItem();
+
         Parameters.Y_AXIS_ROW_HEIGHT
                   = fld_Y_AXIS_ROW_HEIGHT.getInteger();
         Parameters.STATE_BORDER_STYLE
@@ -312,6 +357,7 @@ public class PreferencePanel extends JPanel
                   = fld_STATE_HEIGHT_FACTOR.getFloat();
         Parameters.NESTING_HEIGHT_FACTOR
                   = fld_NESTING_HEIGHT_FACTOR.getFloat();
+
         Parameters.ARROW_ANTIALIASING
                   = (Alias) lst_ARROW_ANTIALIASING.getSelectedItem();
         Parameters.ARROW_HEAD_LENGTH
@@ -320,6 +366,13 @@ public class PreferencePanel extends JPanel
                   = fld_ARROW_HEAD_HALF_WIDTH.getInteger();
         Parameters.CLICK_RADIUS_TO_LINE
                   = fld_CLICK_RADIUS_TO_LINE.getInteger();
+
+        Parameters.SHADOW_STATE_BDR_WID
+                  = fld_SHADOW_STATE_BDR_WID.getInteger();
+        Parameters.SHADOW_STATE_BDR_HGT
+                  = fld_SHADOW_STATE_BDR_HGT.getInteger();
+        Parameters.SHADOW_ARROW_LINE_WID
+                  = fld_SHADOW_ARROW_LINE_WID.getFloat();
 
         Parameters.MIN_WIDTH_TO_DRAG
                   = fld_MIN_WIDTH_TO_DRAG.getInteger();

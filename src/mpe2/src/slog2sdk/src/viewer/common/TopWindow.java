@@ -79,6 +79,9 @@ public abstract class TopWindow
             if ( bounds.x > Screen_Size.width-20 )
                 bounds.x = Screen_Size.width - prefer_frame.getWidth();
             prefer_frame.setLocation( bounds.getLocation() );
+            if ( bounds.y + prefer_frame.getHeight() > Screen_Size.height )
+                prefer_frame.setSize( prefer_frame.getWidth(),
+                                      Screen_Size.height - bounds.y );
         }
     }
 

@@ -38,7 +38,7 @@ public class PreferenceFrame extends JFrame
 
         pptys_panel = new PreferencePanel();
         pptys_panel.updateAllFields();
-        root_panel.add( pptys_panel );
+        root_panel.add( new JScrollPane( pptys_panel ) );
 
         JPanel mid_panel = new JPanel();
         mid_panel.setLayout( new BoxLayout( mid_panel, BoxLayout.X_AXIS ) );
