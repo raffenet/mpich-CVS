@@ -47,9 +47,10 @@ $(TARGET): $(OBJ)
 	echo "Main-Class: $(PACKAGE).FirstFrame" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
-	for dir in base/io/ base/topology/ base/drawable/ \
+	for dir in base/io/ base/topology/ base/drawable/ base/statistics/ \
 	           logformat/slog2/ logformat/slog2/input/ \
-	           viewer/common/ viewer/legends/ viewer/timelines/ \
+	           viewer/common/ viewer/legends/ \
+	           viewer/timelines/ \
 	           $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
