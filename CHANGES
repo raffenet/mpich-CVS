@@ -32,7 +32,7 @@ both the code and the configure scripts.
 And, as always, many bugs have been fixed :-).
 
 
-***** INTEFACE CHANGEES ****
+***** INTEFACE CHANGES ****
 
 The parameters to MPID_Abort() have changed.  MPID_Abort() now takes a pointer
 to communicator object, an MPI error code, and an exit code.
