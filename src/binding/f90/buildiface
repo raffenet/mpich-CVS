@@ -445,7 +445,7 @@ print MAKEFD "mpi_sources = create_f90_int.c create_f90_real.c \\\
 # Add the C versions to the C library
 print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
-INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
+INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\n";
 
 print MAKEFD "all-preamble: mpi.\$(MOD)\n";
 
