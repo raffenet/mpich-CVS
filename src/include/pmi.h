@@ -14,15 +14,17 @@ extern "C" {
 #endif
 
 /* PMI Group functions */
-int PMI_Init( int *spawned );  /* initialize PMI for this process group
-                                  The value of spawned indicates whether this process
-                                  was created by PMI_Spawn_multiple. */
-int PMI_Initialized( void );   /* Return true if PMI has been initialized */
-int PMI_Get_size( int *size ); /* get size of process group */
-int PMI_Get_rank( int *rank ); /* get rank in process group */
-int PMI_Barrier( void );       /* barrier across processes in process group */
-int PMI_Finalize( void );      /* finalize PMI for this process group */
-int PMI_Get_clique_size( int *size ); /* get the number of processes on my node */
+int PMI_Init( int *spawned );           /* initialize PMI for this process group
+                                           The value of spawned indicates whether this process
+                                           was created by PMI_Spawn_multiple. */
+int PMI_Initialized( void );            /* Return true if PMI has been initialized */
+int PMI_Finalize( void );               /* finalize PMI for this process group */
+int PMI_Get_size( int *size );          /* get size of process group */
+int PMI_Get_rank( int *rank );          /* get rank in process group */
+int PMI_Get_id( char *id_str );         /* get a string to uniquely identify the process group */
+int PMI_Get_id_length_max( void );      /* get the maximum length the id string can be. Must return >= 40 */
+int PMI_Barrier( void );                /* barrier across processes in process group */
+int PMI_Get_clique_size( int *size );   /* get the number of processes on my node */
 int PMI_Get_clique_ranks( int *ranks ); /* get the ranks on my node */
 
 /* PMI Keymap functions */
