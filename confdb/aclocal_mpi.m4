@@ -81,13 +81,15 @@ dnl PAC_ARG_MPI_TYPES - Add command-line switches for different MPI
 dnl environments
 dnl
 dnl Synopsis:
-dnl PAC_ARG_MPI_TYPES
+dnl PAC_ARG_MPI_TYPES([default])
 dnl
 dnl Output Effects:
 dnl Adds the following command line options to configure
 dnl+ \-\-with\-mpich[=path] - MPICH.  'path' is the location of MPICH commands
 dnl. \-\-with\-ibmmpi - IBM MPI
 dnl- \-\-with\-sgimpi - SGI MPI
+dnl If no type is selected, and a default ("mpich", "ibmmpi", or "sgimpi")
+dnl is given, that type is used as if '--with-<default>' was given.
 dnl
 dnl Sets 'CC', 'F77', 'TESTCC', and 'TESTF77'.
 dnl
@@ -101,34 +103,52 @@ AC_SUBST(F77)
 AC_SUBST(F90)
 AC_ARG_WITH(mpich,
 [--with-mpich=path  - Assume that we are building with MPICH],[
+ac_mpi_type=mpich
 save_PATH="$PATH"
 if test "$withval" != "yes" -a "$withval" != "no" ; then 
-    PATH=$withval:${PATH}
-fi
-dnl 
-dnl This isn't correct.  It should try to get the underlying compiler
-dnl from the mpicc and mpif77 scripts or mpireconfig
-AC_PATH_PROG(MPICC,mpicc)
-TESTCC=${CC-cc}
-CC="$MPICC"
-AC_PATH_PROG(MPIF77,mpif77)
-TESTF77=${F77-f77}
-F77="$MPIF77"
-AC_PATH_PROG(MPIF90,mpif90)
-TESTF90=${F90-f90}
-F90="$MPIF90"
-AC_PATH_PROG(MPICXX,mpiCC)
-TESTCXX=${CXX-CC}
-CXX="$MPICXX"
-PATH="$save_PATH"
-])
+PATH=$withval:${PATH}
+fi])
 AC_ARG_WITH(ibmmpi,
 [--with-ibmmpi    - Use the IBM SP implementation of MPI],
-TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf)
+ac_mpi_type=ibmmpi)
 AC_ARG_WITH(sgimpi,
 [--with-sgimpi    - Use the SGI implementation of MPI],
-TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
-AC_CHECK_LIB(mpi,MPI_Init))
+ac_mpi_type=sgimpi)
+if test "X$ac_mpi_type" = "X" -a "X$1" != "X" ; then
+    ac_mpi_type=$1
+else
+    ac_mpi_type=unknown
+fi
+case $ac_mpi_type in
+	mpich)
+        dnl 
+        dnl This isn't correct.  It should try to get the underlying compiler
+        dnl from the mpicc and mpif77 scripts or mpireconfig
+        AC_PATH_PROG(MPICC,mpicc)
+        TESTCC=${CC-cc}
+        CC="$MPICC"
+        AC_PATH_PROG(MPIF77,mpif77)
+        TESTF77=${F77-f77}
+        F77="$MPIF77"
+        AC_PATH_PROG(MPIF90,mpif90)
+        TESTF90=${F90-f90}
+        F90="$MPIF90"
+        AC_PATH_PROG(MPICXX,mpiCC)
+        TESTCXX=${CXX-CC}
+        CXX="$MPICXX"
+        PATH="$save_PATH"
+	;;
+	ibmmpi)
+	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
+	;;
+	sgimpi)
+	TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; 
+	TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
+	AC_CHECK_LIB(mpi,MPI_Init)
+	;;
+	*)
+	;;
+esac
 ])
 dnl
 dnl/*D
