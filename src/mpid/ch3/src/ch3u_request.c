@@ -565,16 +565,17 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	       of the buffer.  This data is left over from the previous unpack, most like a result of alignment issues.  NOTE: we
 	       could force the use of the SRBuf only when (rreq->ch3.tmpbuf_off > 0)... */
 	    
-	    data_sz = rreq->ch3.segment_size - rreq->ch3.segment_first;
+	    data_sz = rreq->ch3.segment_size - rreq->ch3.segment_first - rreq->ch3.tmpbuf_off;
+	    assert(data_sz > 0);
 	    tmpbuf_sz = rreq->ch3.tmpbuf_sz - rreq->ch3.tmpbuf_off;
-	    if (tmpbuf_sz < data_sz)
+	    if (data_sz > tmpbuf_sz)
 	    {
 		data_sz = tmpbuf_sz;
 	    }
-	    rreq->ch3.iov[0].MPID_IOV_BUF = (char *) rreq->ch3.tmpbuf +
-		rreq->ch3.tmpbuf_off;
+	    rreq->ch3.iov[0].MPID_IOV_BUF = (char *) rreq->ch3.tmpbuf + rreq->ch3.tmpbuf_off;
 	    rreq->ch3.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->ch3.iov_count = 1;
+	    assert(rreq->ch3.segment_first + data_sz + rreq->ch3.tmpbuf_off <= rreq->ch3.recv_data_sz);
 	    if (rreq->ch3.segment_first + data_sz + rreq->ch3.tmpbuf_off == rreq->ch3.recv_data_sz)
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data into the SRBuf"));
