@@ -1,0 +1,4 @@
+LDADD = -L../../../../lib ../util/mtest.o 
+DEPADD = ../../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
+
