@@ -35,18 +35,25 @@ hostnames = [
               'ccn55-68.mcs.anl.gov',
             ]
 
-print "----- checking info for ", gethostname()
+myhostname = gethostname()
+print "----- checking info for ", myhostname
 print "--- uname: "
-print "   ", uname()
+try:
+    print "   ", uname()
+except:
+    print "    uname failed for %s" % (myhostname)
 print "--- hostbyname info: "
-print "   ", gethostbyname_ex(gethostname())
+try:
+    print "   ", gethostbyname_ex(myhostname)
+except:
+    print "    gethostbyname failed for my host %s" % (myhostname)
 print "--- remote hosts info"
 for hostname in hostnames:
     print "- hostbyname info for %s: " % hostname
     try:
         print "    ", gethostbyname_ex(hostname)
     except:
-        print "could not get the scoop "
+        print "    gethostbyname_ex failed for %s" % (hostname)
 
 try:
     s = socket()
