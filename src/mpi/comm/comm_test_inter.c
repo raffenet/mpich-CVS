@@ -28,24 +28,28 @@
 #define FUNCNAME MPI_Comm_test_inter
 
 /*@
-   MPI_Comm_test_inter - comm_test_inter
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int *flag - flag
+MPI_Comm_test_inter - Tests to see if a comm is an inter-communicator
 
-   Notes:
+Input Parameter:
+. comm - communicator (handle) 
 
-.N Fortran
+Output Parameter:
+. flag - (logical) 
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 {
     static const char FCNAME[] = "MPI_Comm_test_inter";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_TEST_INTER);
     /* Get handles to MPI objects. */
@@ -54,13 +58,12 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -69,6 +72,10 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    *flag = (comm_ptr->comm_kind == MPID_INTERCOMM);
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
     return MPI_SUCCESS;
