@@ -22,7 +22,6 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
-#undef MPIO_BUILD_PROFILING
 #endif
 
 int MPIOI_Type_block(int *array_of_gsizes, int dim, int ndims, int nprocs,
@@ -345,7 +344,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
 }
 
 
-#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
+#ifdef MPIO_BUILD_PROFILING
 /* Returns MPI_SUCCESS on success, an MPI error code on failure.  Code above
  * needs to call MPIO_Err_return_xxx.
  */

@@ -22,7 +22,6 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
-#undef MPIO_BUILD_PROFILING
 #endif
 
 /*@
@@ -49,7 +48,7 @@ int MPI_File_read_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 }
 
 /* prevent multiple definitions of this routine */
-#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
+#ifdef MPIO_BUILD_PROFILING
 int MPIOI_File_read_all_end(MPI_File mpi_fh,
 			    void *buf,
 			    char *myname,

@@ -22,7 +22,6 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
-#undef MPIO_BUILD_PROFILING
 #endif
 /*@
     MPI_File_iread - Nonblocking read using individual file pointer
@@ -90,7 +89,7 @@ int MPI_File_iread(MPI_File mpi_fh, void *buf, int count,
 
 #ifndef HAVE_MPI_GREQUEST
 /* prevent multiple definitions of this routine */
-#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
+#ifdef MPIO_BUILD_PROFILING
 int MPIOI_File_iread(MPI_File mpi_fh,
 		     MPI_Offset offset,
 		     int file_ptr_type,

@@ -20,7 +20,6 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
-#undef MPIO_BUILD_PROFILING
 #endif
 
 /* status object not filled currently */
@@ -60,7 +59,7 @@ int MPI_File_write(MPI_File mpi_fh, void *buf, int count,
 }
 
 /* prevent multiple definitions of this routine */
-#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
+#ifdef MPIO_BUILD_PROFILING
 int MPIOI_File_write(MPI_File mpi_fh,
 		     MPI_Offset offset,
 		     int file_ptr_type,
