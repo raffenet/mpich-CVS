@@ -933,8 +933,9 @@ def mpdman():
                                       'args'        : spawnArgs,
                                       'envvars'     : spawnEnvvars,
                                       'limits'      : spawnLimits,
-                                      'line_labels' : str(lineLabels),
                                     }
+                        if lineLabels:
+                            msgToSend['line_labels'] = str(lineLabels),
                         mpd_send_one_msg(mpdSocket,msgToSend)
                         # I could send the preput_info along but will keep it here
                         # and let the spawnee call me up and ask for it; he will
