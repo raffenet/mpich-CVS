@@ -252,7 +252,7 @@ void MPE_Thread_tls_set(MPE_Thread_tls_t * tls, void * value, int * err);
 + value - value associated with current thread
 - err - location to store the error code; pointer may be NULL; error is zero for success, non-zero if a failure occurred
 @*/
-void MPE_Thread_tls_get(MPE_Thread_tls_t tls, void ** value, int * err);
+void MPE_Thread_tls_get(MPE_Thread_tls_t * tls, void ** value, int * err);
 
 
 /*
