@@ -411,6 +411,7 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
     while (!done) {
 	switch (interCommIdx) {
 	case 0:
+	    /* Split comm world in half */
 	    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 	    MPI_Comm_size( MPI_COMM_WORLD, &size );
 	    if (size > 1) {
@@ -436,6 +437,62 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 	    else 
 		*comm = MPI_COMM_NULL;
 	    break;
+	case 1:
+	    /* Split comm world in to 1 and the rest */
+	    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	    MPI_Comm_size( MPI_COMM_WORLD, &size );
+	    if (size > 1) {
+		MPI_Comm_split( MPI_COMM_WORLD, rank == 0, rank, 
+				&mcomm );
+		if (rank == 0) {
+		    rleader = 1;
+		}
+		else if (rank == 1) {
+		    rleader = 0;
+		}
+		else {
+		    /* Remote leader is signficant only for the processes
+		       designated local leaders */
+		    rleader = -1;
+		}
+		*isLeftGroup = rank == 0;
+		MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader, 12346,
+				      comm );
+		MPI_Comm_free( &mcomm );
+		interCommName = "Intercomm by splitting MPI_COMM_WORLD into 1, rest";
+	    }
+	    else 
+		*comm = MPI_COMM_NULL;
+	    break;
+
+	case 2:
+	    /* Split comm world in to 2 and the rest */
+	    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	    MPI_Comm_size( MPI_COMM_WORLD, &size );
+	    if (size > 3) {
+		MPI_Comm_split( MPI_COMM_WORLD, rank < 2, rank, 
+				&mcomm );
+		if (rank == 0) {
+		    rleader = 2;
+		}
+		else if (rank == 2) {
+		    rleader = 0;
+		}
+		else {
+		    /* Remote leader is signficant only for the processes
+		       designated local leaders */
+		    rleader = -1;
+		}
+		*isLeftGroup = rank < 2;
+		MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader, 12347,
+				      comm );
+		MPI_Comm_free( &mcomm );
+		interCommName = "Intercomm by splitting MPI_COMM_WORLD into 2, rest";
+	    }
+	    else 
+		*comm = MPI_COMM_NULL;
+	    break;
+	    
 	default:
 	    *comm = MPI_COMM_NULL;
 	    interCommName = "MPI_COMM_NULL";
