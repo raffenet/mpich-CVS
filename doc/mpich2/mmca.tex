@@ -288,6 +288,11 @@ int MPID_Comm_get_VC([IN] MPID_Comm * comm, [IN] int rank, [OUT] MPID_VC * vc)
   process creation and connect/accept?
 \end{cmt}
 
+\begin{cmt}[ROB]
+  We decided that the VC refct can be bumped when the VC is first associated
+  with a new communicator.  Decremented when a communicator is destroyed.
+\end{cmt}
+
 %----------
 
 \paragraph{MPI Requests}
@@ -305,13 +310,16 @@ using \code{MPID_Request_get_ptr}.
   treated differently that other MPI types in the design document.
 \end{comment}
 
-The MPI request object contains a completion counter which the multi-method
+The MPI request object contains a completion counter that the multi-method
 device must use to signal completion.  When the request is initialized, the
 counter is set to the number of operations that must complete before the
-request is considered complete.  The value of this count is controlled entirely
-by the device.  The only meaning the MPICH assigns to this counter is that a
-non-zero value indicates the request is still pending while a value of zero
-shows the request is complete.
+request is considered complete.  The value of this count is controlled
+entirely by the device.  The only meaning the MPICH layer assigns to this
+counter is that a non-zero value indicates the request is still pending while
+a value of zero shows the request is complete.  The methods have a consistent
+means of using this value across implementations so that completion of
+requests that span methods can be correctly detected as completed at the MPICH
+layer.
 
 %----------
 
@@ -326,8 +334,23 @@ object has a type of \code{MPID_Datatype}.  A datatype handle may be converted
 to a datatype object using \code{MPID_Datatype_get_ptr}.  A buffer has no
 direct representation in MPICH; however MPICH does introduce the notion of a
 segment, which describes a portion of a buffer.  Segments are used in MPICH to
-process a buffer in reasonably sized pieces.  A segment is respresent by an
-object tha has a type of \code{MPID_Segment}.
+process a buffer in reasonably sized pieces and to maintain state on the
+progress of processing.  A segment is respresent by an object tha has a type
+of \code{MPID_Segment}.
+
+%----------
+
+\paragraph{MPI Status}
+
+In MPI a \term{status} object is used to return information about the
+completion of operations, including the source, tag, and count of received
+messages.  In MPICH a status handle has the type \code{MPI_Status} while a
+status object has the type \code{MPID_Status}.  A status handle may be
+converted to a status object using \code{MPID_Status_get_ptr} (?).
+
+\begin{comment}[ROB]
+What else do we want to say about MPI Status?
+\end{comment}
 
 %----------
 
