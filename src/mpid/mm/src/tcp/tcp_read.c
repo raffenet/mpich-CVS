@@ -138,7 +138,6 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	    }
 	}
 	
-	//if ((car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size) && (buf_ptr->vec.last == buf_ptr->vec.segment_last))
 	if (car_ptr->data.tcp.buf.vec_read.total_num_read == buf_ptr->vec.segment_last)
 	{
 	    tcp_car_dequeue(vc_ptr, car_ptr);

@@ -81,7 +81,8 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 
     /* add the vc to the active read list */
     TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
-    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+    if (!BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
+	BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
     vc_ptr->read_next_ptr = TCP_Process.read_list;
     TCP_Process.read_list = vc_ptr;
 

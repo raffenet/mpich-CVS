@@ -23,7 +23,8 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	if (vc_ptr->writeq_head == NULL)
 	{
 	    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
-	    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+	    if (!BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+		BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
 	    vc_ptr->write_next_ptr = TCP_Process.write_list;
 	    TCP_Process.write_list = vc_ptr;
 	}

@@ -45,9 +45,7 @@ int tcp_accept_connection()
     if (vc_ptr->method == MM_UNBOUND_METHOD)
     {
 	vc_ptr->method = MM_TCP_METHOD;
-	vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
-	vc_ptr->data.tcp.connected = FALSE;
-	vc_ptr->data.tcp.connecting = TRUE;
+	vc_ptr->data.tcp.bfd = bfd;
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
@@ -58,7 +56,8 @@ int tcp_accept_connection()
 	beasy_send(bfd, &ack, 1);
 	/* add the new connection to the read set */
 	TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
-	BFD_SET(bfd, &TCP_Process.readset);
+	if (!BFD_ISSET(bfd, &TCP_Process.readset))
+	    BFD_SET(bfd, &TCP_Process.readset);
 	vc_ptr->read_next_ptr = TCP_Process.read_list;
 	TCP_Process.read_list = vc_ptr;
 
@@ -66,12 +65,6 @@ int tcp_accept_connection()
 	vc_ptr->data.tcp.connected = TRUE;
 	vc_ptr->data.tcp.connecting = FALSE;
 	
-	/* add the vc to the active read list */
-	TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
-	BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
-	vc_ptr->read_next_ptr = TCP_Process.read_list;
-	TCP_Process.read_list = vc_ptr;
-
 	MPID_Thread_unlock(vc_ptr->lock);
 
 	/* post the first packet read on the newly connected vc */
@@ -115,7 +108,8 @@ int tcp_accept_connection()
 	    vc_ptr->data.tcp.bfd = bfd;
 	    /* add the new connection to the read set and possibly the write set */
 	    TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
-	    BFD_SET(bfd, &TCP_Process.readset);
+	    if (!BFD_ISSET(bfd, &TCP_Process.readset))
+		BFD_SET(bfd, &TCP_Process.readset);
 	    if (inwriteset)
 		BFD_SET(bfd, &TCP_Process.writeset);
 	}
