@@ -8,6 +8,40 @@
 #include "mpiimpl.h"
 #include "bsendutil.h"
 
+/*
+ * Description of the Bsend data structures.
+ *
+ * Bsend is buffered send; a buffer, provided by the user, is used to store
+ * both the user's message and information that my be needed to send that
+ * message.  In addition, space within that buffer must be allocated, so
+ * additional information is required to manage that space allocation.  
+ * In the following, the term "segment" denotes a fragment of the user buffer
+ * that has been allocated either to free (unused) space or to a particular
+ * user message.
+ *
+ * The following datastructures are used:
+ *
+ *  BsendMsg_t  - Describes a user message, including the values of tag
+ *                and datatype (*could* be used incase the data is already 
+ *                contiguous; see below)
+ *  BsendData_t - Describes a segment of the user buffer.  This data structure
+ *                contains a BsendMsg_t for segments that contain a user 
+ *                message.  Each BsendData_t segment belongs to one of 
+ *                three lists: avail (unused and free), active (currently
+ *                sending) and pending (contains a user message that has
+ *                not begun sending because of some resource limit, such
+ *                as no more MPID requests available).
+ *  BsendBuffer - This global structure contains pointers to the user buffer
+ *                and the three lists, along with the size of the user buffer.
+ *                Multithreaded versions contain a thread lock as well.
+ *
+ * Miscellaneous comments
+ * By storing total_size along with "size available for messages", we avoid
+ * any complexities associated with alignment, since we must ensure that each
+ * BsendData_t structure is properly aligned (i.e., we can't simply
+ * do (sizeof(BsendData_t) + size) to get total_size).
+ */
+
 /* Private structures for the bsend buffers */
 
 /* BsendMsg is used to hold all of the message particulars in case
@@ -24,6 +58,7 @@ typedef struct {
 /* BsendData describes a bsend request */
 typedef struct BsendData {
     int              size;             /* size that is available for data */
+    int              total_size;       /* total size of this segment */
     struct BsendData *next, *prev;
     MPID_Request     *request;
     BsendMsg_t       msg;
@@ -33,7 +68,7 @@ typedef struct BsendData {
 static struct {
     void               *buffer;        /* Pointer to the begining of the user-
 					  provided buffer */
-    int                size;           /* Size of the user-provided buffer */
+    int                buffer_size;    /* Size of the user-provided buffer */
     BsendData_t        *avail;         /* Pointer to the first available block
 					  of space */
     BsendData_t        *pending;       /* Pointer to the first message that
@@ -48,48 +83,93 @@ static struct {
 
 } BsendBuffer = { 0, 0, 0, 0, 0 };
 
+static int initialized = 0;   /* keep track of the first call to any
+				 bsend routine */
+
 /* Forward references */
 static int MPIR_Bsend_release( void *, int );
-    
-int MPIR_Bsend_attach( void *buffer, int size )
+static void MPIR_Bsend_check_active ( void );
+
+/*
+ * Attach a buffer.  This checks for the error conditions and then
+ * initialized the avail buffer.
+ */    
+int MPIR_Bsend_attach( void *buffer, int buffer_size )
 {
     BsendData_t *p;
-    if (BsendBuffer.buffer) {
-	return MPIR_Err_create_code( MPI_ERR_BUFFER, "**bufexists", 0 );
-    }
-    if (size < MPI_BSEND_OVERHEAD) {
-	return MPIR_Err_create_code( MPI_ERR_OTHER, 
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+
+	    if (BsendBuffer.buffer) {
+		return MPIR_Err_create_code( MPI_ERR_BUFFER, 
+					     "**bufexists", 0 );
+	    }
+	    if (buffer_size < MPI_BSEND_OVERHEAD) {
+		return MPIR_Err_create_code( MPI_ERR_OTHER, 
 			     "**bsendbufsmall", "**bsendbufsmall %d %d",
-			     size, MPI_BSEND_OVERHEAD );
+			     buffer_size, MPI_BSEND_OVERHEAD );
+	    }
+	}
+	MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    if (!initialized) {
+	initialized = 1;
+	/* FIXME : add callback to finalize handler */
     }
 
-    BsendBuffer.buffer  = buffer;
-    BsendBuffer.size    = size;
-    BsendBuffer.avail   = buffer;
-    BsendBuffer.pending = 0;
-    BsendBuffer.active  = 0;
+    BsendBuffer.buffer	    = buffer;
+    BsendBuffer.buffer_size = buffer_size;
+    BsendBuffer.avail	    = buffer;
+    BsendBuffer.pending	    = 0;
+    BsendBuffer.active	    = 0;
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+    MPID_Thread_initlock( BsendBuffer.bsend_lock );
+#endif
 
     /* Set the first block */
-    p       = (BsendData_t *)buffer;
-    p->size = size - sizeof(BsendData_t);
-    p->next = p->prev = 0;
+    p		  = (BsendData_t *)buffer;
+    p->size	  = buffer_size - sizeof(BsendData_t);
+    p->total_size = buffer_size;
+    p->next	  = p->prev = 0;
 
     return MPI_SUCCESS;
 }
 
-/* This routine must wait until any pending bsends are complete */
+/* 
+ * Detach a buffer.  This routine must wait until any pending bsends 
+ * are complete.
+ */
 int MPIR_Bsend_detach( void *p, int *size )
 {
     if (BsendBuffer.pending) {
 	return MPIR_Err_create_code( MPI_ERR_OTHER, "**notimpl", 0 );
     }
-    *size = BsendBuffer.size;
+    if (BsendBuffer.active) {
+	/* Loop through each active element and wait on it */
+	BsendData_t *p = BsendBuffer.active;
+	
+	while (p) {
+	    MPI_Request r = p->request->handle;
+	    NMPI_Wait( &r, MPI_STATUS_IGNORE );
+	    p = p->next;
+	}
+    }
+
+    *size = BsendBuffer.buffer_size;
     BsendBuffer.buffer = 0;
     BsendBuffer.avail  = 0;
 
     return MPI_SUCCESS;
 }
 
+/*
+ * Initiate an ibsend.  We'll used this for Bsend as well.
+ */
 int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype, 
 		      int dest, int tag, MPID_Comm *comm_ptr, 
 		      MPI_Request *request  )
@@ -100,8 +180,10 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     /* Find a free segment and copy the data into it.  If we could 
        have, we would already have used tBsend to send the message with
        no copying */
-    (void)PMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
+    (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
+
     MPID_Thread_lock( &BsendBuffer.bsend_lock );
+
     p = BsendBuffer.avail;
     while (p) {
 	if (p->size <= packsize) { 
@@ -112,7 +194,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
 	    /* Pack the data into the buffer */
 	    p->msg.count = 0;
-	    (void)PMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
+	    (void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
 			     &p->msg.count, comm_ptr->handle );
 	    /* Try to send the message */
 	    mpi_errno = MPID_Send(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
@@ -125,7 +207,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    p->msg.tag       = tag;
 	    p->msg.comm_ptr  = comm_ptr;
 	    p->msg.dest      = dest;
-	    
+	    /* Else if the message has been sent, don't remove this block
+	       from the free list */
 
 	    /* shorten the segment.  If there isn't enough space, 
 	       just remove it from the avail list */
@@ -165,36 +248,100 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     }
 }
 
-/* This routine is called to release a buffer slot.
-   It must try to merge with the next and the previous buffer 
-*/
-static int MPIR_Bsend_release( void *buf, int size )
+/*
+ * The following routines are used to manage the allocation of bsend segments
+ * in the user buffer.  These routines handle, for example, merging segments
+ * when an active segment that is adjacent to a free segment becomes free.
+ *
+ */
+
+/* Add block p to the free list. Merge into adjacent blocks */
+static void MPIR_Bsend_free_segment( BsendData_t *p )
 {
-    BsendData_t *p = BsendBuffer.avail;
-    char *bufaddr = (char *)buf;
+    BsendData_t *prev = p->prev, *avail = BsendBuffer.avail;
+    int         inserted = 0;
 
-    if (buf == BsendBuffer.buffer) {
-	/* Special case of buffer at the beginning */
-	/* ....; */
-	/* Include merge with the next one */
-	return 0;
+    /* Remove the segment from the free list */
+    if (prev) {
+	prev->next = p->next;
+    }
+    else {
+	BsendBuffer.active = p->next;
+    }
+    if (p->next) {
+	p->next->prev = prev;
     }
 
-    /* Otherwise, try to find the location within the buffer */
-    while (p) {
-	char *p_addr = (char *)p;
-	/* Is this at the END of this block */
-	if (p_addr + p->size + sizeof(BsendData_t) == bufaddr) {
-	    BsendData_t *pnext = p->next;
-	    char *pnext_addr = (char *)pnext;
-	    p->size += size;
-	    /* Is this new block at the beginning of the next one */
-	    if (p_addr + p->size == pnext_addr) {
-		p->next = pnext->next;
-		p->size += pnext->size + sizeof(BsendData_t);
-		pnext->prev = p;
-	    }
+    /* Merge into the avail list */
+    while (avail) {
+	if ((char *)avail + avail->total_size == (char *)p) {
+	    /* Add p to avail, set p to this block and continue through
+	       the loop to catch p+size == next avail */
+	    avail->total_size += p->total_size;
+	    p = avail;
+	    inserted = 1;
+	    /* No break */
 	}
+	else if ((char *)p + p->total_size == (char *)avail) {
+	    /* Exact fit to the next entry.  Replace that entry 
+	       with this one */
+	    p->total_size += avail->total_size;
+	    p->prev	   = avail->prev;
+	    p->next	   = avail->next;
+	    p->size        = p->total_size - sizeof(BsendData_t);
+	    if (!p->prev) {
+		BsendBuffer.avail = p;
+	    }
+	    break;
+	}
+	else if (p < avail) {
+	    BsendData_t *prev = avail->prev;
+	    if (inserted) break;   /* Exit if already inserted (top case) */
+	    /* Insert p before avail */
+	    p->next = avail;
+	    p->prev = prev;
+	    avail->prev = p;
+	    if (prev) 
+		prev->next = p;
+	    else
+		BsendBuffer.avail = p;
+	    break;
+	}
+	avail = avail->next;
     }
-    return 0;
+}
+
+/* 
+ * The following routine tests for completion of active sends and 
+ * frees the related storage
+ *
+ */
+static void MPIR_Bsend_check_active( void )
+{
+    BsendData_t *active = BsendBuffer.active, *next_active;
+
+    while (active) {
+	MPI_Request r = active->request->handle;
+	int         flag;
+	
+	next_active = active->next;
+	NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
+	if (flag) {
+	    /* We're done.  Remove this segment */
+	    MPIR_Bsend_free_segment( active );
+	}
+	active = next_active;
+    }
+}
+
+static void MPIR_Bsend_retry_pending( void )
+{
+    BsendData_t *pending = BsendBuffer.pending, *next_pending;
+
+    while (pending) {
+	next_pending = pending->next;
+	/* Retry sending this item */
+	/* FIXME */
+	pending = next_pending;
+    }
 }
