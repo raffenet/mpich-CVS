@@ -230,7 +230,7 @@ int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, int ranks[], int n )
 		ranks[i] >= group_ptr->size) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Group_check_valid_ranks", __LINE__, MPI_ERR_RANK,
 				  "**rankarray", "**rankarray %d %d %d",
-				  i, ranks[i], group_ptr->size );
+				  i, ranks[i], group_ptr->size-1 );
 		break;
 	    }
 	    if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
