@@ -89,6 +89,8 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     }
     /* *newcomm = MPID_Comm_ptr_to_MPI_Comm(newcomm_ptr); */
 
+    *newcomm = newcomm_ptr->handle;
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
     return MPI_SUCCESS;
 }
