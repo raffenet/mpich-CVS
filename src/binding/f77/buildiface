@@ -2647,6 +2647,13 @@ sub ReadAndProcessInterface {
 	# Remove any comments
 	s/\/\*.*\*\///g;
 	print $_ if $debug;
+	# In some packages (not MPI but in Parallel netCDF) not all prototypes
+	# have Fortran equivalents.  The following lets us skip over them
+	if (/\/\*\s*Begin Skip Prototypes/) {
+	    while (<FD>) {
+		if (/\/\*\s*End Skip Prototypes/) { last; }
+	    }
+	}
 	if (/\/\*\s*End Prototypes/) { last; }
 
 	# We should also skip #ifndef xxx, for some xxx.  
