@@ -235,13 +235,13 @@ int MPIU_error_printf( char *str, ... );
 int MPIU_Strncpy( char *dest, const char *src, size_t n );
 
 /* Known language bindings */
-typedef enum MPID_Lang_t { MPID_LANG_C, 
+typedef enum MPID_Lang_t { MPID_LANG_C 
 #ifdef HAVE_FORTRAN_BINDING
-			   MPID_LANG_FORTRAN, 
-			   MPID_LANG_FORTRAN90,
+			   , MPID_LANG_FORTRAN, 
+			   MPID_LANG_FORTRAN90
 #endif
 #ifdef HAVE_CXX_BINDING
-			   MPID_LANG_CXX
+			   , MPID_LANG_CXX
 #endif
 } MPID_Lang_t;
 
