@@ -290,7 +290,7 @@ quoted := quote\_ char array-of-escaped-characters quote\_ char
 
 chars := ascii characters
 
-escapted chars := ascii characters with escape\_ char quote\_ char and escape\_ char escape\_ char
+escapted chars := ascii characters with escaped quote\_ chars and escape\_ chars
 
 quote\_ char := "
 
@@ -302,4 +302,8 @@ separ\_ char := ' '
 
 frame\_ char := ??? smpd doesn''t use frames
 
+Example:
+
+	a=b "my name"="David Ashton" foo=;.<>!'@#$%^&*()_+ escaped="He said, \"Hi there.\""
+	
 \end{document}
