@@ -73,6 +73,8 @@ int MPI_Unpack(void *inbuf,
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(inbuf, "input buffer", mpi_errno);
+	    /* Note: outbuf could be MPI_BOTTOM; don't test for NULL */
 	    MPIR_ERRTEST_COUNT(insize, mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
             /* Validate comm_ptr */
