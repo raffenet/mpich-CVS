@@ -343,15 +343,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 
     if (strcmp((*argvp)[1], "-shutdown") == 0)
     {
-	if (smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
-	{
-	    smpd_process.do_console = 1;
-	}
+	smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	if (smpd_get_opt(argcp, argvp, "-shutdown"))
 	{
-	    smpd_process.do_console = 1;
 	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	}
+	smpd_process.do_console = 1;
 	smpd_process.shutdown_console = 1;
 	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	if (smpd_process.host_list == NULL)
