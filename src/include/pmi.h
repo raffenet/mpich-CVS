@@ -82,8 +82,9 @@ Return values:
 
 Notes:
 On successful output, initialized will either be 'PMI_TRUE' or 'PMI_FALSE'.
-PMI_TRUE - initialize has been called.
-PMI_FALSE - initialize has not been called or previously failed.
+
++ PMI_TRUE - initialize has been called.
+- PMI_FALSE - initialize has not been called or previously failed.
 
 @*/
 int PMI_Initialized( PMI_BOOL *initialized );
@@ -297,6 +298,11 @@ Return values:
 
 Notes:
 This function returns the string length required to store a keyval space name.
+
+A routine is used rather than setting a maximum value in 'pmi.h' to allow
+different implementations of PMI to be used with the same executable.  These
+different implementations may allow different maximum lengths; by using a 
+routine here, we can interface with a variety of implementations of PMI.
 
 @*/
 int PMI_KVS_Get_name_length_max( int *length );
@@ -533,12 +539,13 @@ Input Parameters:
 . cmds - array of command strings
 . argvs - array of argv arrays for each command string
 . maxprocs - array of maximum processes to spawn for each command string
-. info_keyval_sizes - array of sizes of each keyval vector
+. info_keyval_sizes - array giving the number of elements in each of the 
+  'info_keyval_vectors'
 . info_keyval_vectors - array of keyval vector arrays
-. preput_keyval_size - size of preput keyval vector
+. preput_keyval_size - Number of elements in 'preput_keyval_vector'
 - preput_keyval_vector - array of keyvals to be pre-put in the spawned keyval space
 
-Output Parameters:
+Output Parameter:
 . errors - array of errors for each command
 
 Return values:
@@ -547,18 +554,18 @@ Return values:
 - PMI_FAIL - spawn failed
 
 Notes:
-This function spawns a set of processes into a new process group.  The count
-field refers to the size of the array parameters - cmd, argvs, maxprocs,
-info_keyval_sizes and info_keyval_vectors.  The preput_keyval_size refers
-to the size of the preput_keyval_vector array.  The preput_keyval_vector
+This function spawns a set of processes into a new process group.  The 'count'
+field refers to the size of the array parameters - 'cmd', 'argvs', 'maxprocs',
+'info_keyval_sizes' and 'info_keyval_vectors'.  The 'preput_keyval_size' refers
+to the size of the 'preput_keyval_vector' array.  The 'preput_keyval_vector'
 contains keyval pairs that will be put in the keyval space of the newly
-created process group before the processes are started.  The maxprocs array
-specifies the desired number of processes to create for each cmd string.  
+created process group before the processes are started.  The 'maxprocs' array
+specifies the desired number of processes to create for each 'cmd' string.  
 The actual number of processes may be less than the numbers specified in
 maxprocs.  The acceptable number of processes spawned may be controlled by
 ``soft'' keyvals in the info arrays.  The ``soft'' option is specified by
 mpiexec in the MPI-2 standard.  Environment variables may be passed to the
-spawned processes through PMI implementation specific info_keyval parameters.
+spawned processes through PMI implementation specific 'info_keyval' parameters.
 @*/
 int PMI_Spawn_multiple(int count,
                        const char * cmds[],
@@ -578,7 +585,7 @@ Input Parameters:
 - argvp - pointer to argv
 
 Output Parameters:
-+ keyvalp - array of keyvals
++ keyvalp - pointer to an array of keyvals
 - size - size of the allocated array
 
 Return values:
@@ -595,7 +602,7 @@ not be used to free this array as there is no requirement that the array be
 allocated with 'malloc()'.
 
 @*/
-int PMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t **keyvalp, int *size);
+int PMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t (*keyvalp)[], int *size);
 
 /*@
 PMI_Free_keyvals - free the keyval structures created by PMI_Args_to_keyval
@@ -610,7 +617,7 @@ Return values:
 - PMI_FAIL - fail
 
 Notes:
- This function frees the data returned by PMI_Args_to_keyval.
+ This function frees the data returned by 'PMI_Args_to_keyval'.
  Using this routine instead of 'free' allows the PMI package to track 
  allocation of storage or 
 @*/
@@ -634,9 +641,9 @@ Return values:
 - PMI_FAIL - fail
 
 Notes:
- This function frees the data returned by PMI_Args_to_keyval.
+ This function frees the data returned by 'PMI_Args_to_keyval'.
  Using this routine instead of 'free' allows the PMI package to track 
- allocation of storage or 
+ allocation of storage or to use interal storage as it sees fit.
 @*/
 int PMI_Get_options(char *str, int *length);
 
