@@ -539,6 +539,15 @@ int MTestGetComm( MPI_Comm *comm, int min_size )
     return idx;
 }
 
+void MTestFreeComm( MPI_Comm *comm )
+{
+    if (*comm != MPI_COMM_WORLD &&
+	*comm != MPI_COMM_SELF &&
+	*comm != MPI_COMM_NULL) {
+	MPI_Comm_free( comm );
+    }
+}
+
 /* ------------------------------------------------------------------------ */
 void MTestPrintError( int errcode )
 {

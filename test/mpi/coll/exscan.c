@@ -43,11 +43,11 @@ int main( int argc, char *argv[] )
 	    
 	    MPI_Exscan( sendbuf, recvbuf, count, MPI_INT, MPI_SUM, comm );
 
-	    /* Check the results.  rank 0 has none */
+	    /* Check the results.  rank 0 has no data */
 	    if (rank > 0) {
 		int result;
 		for (i=0; i<count; i++) {
-		    result = rank * i * size + (rank * (rank-1)/2);
+		    result = rank * i * size + ((rank-1) * (rank-2)/2);
 		    if (recvbuf[i] != result) {
 			errs++;
 			if (errs < 10) {

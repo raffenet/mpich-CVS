@@ -41,6 +41,7 @@ int MTestGetIntercomm( MPI_Comm *, int *, int );
 int MTestGetComm( MPI_Comm *, int );
 const char *MTestGetIntracommName( void );
 const char *MTestGetIntercommName( void );
+void MTestFreeComm( MPI_Comm * );
 
 #ifdef HAVE_MPI_WIN_CREATE
 int MTestGetWin( MPI_Win *, int );

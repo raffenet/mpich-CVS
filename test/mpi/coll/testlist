@@ -1,6 +1,9 @@
 allred 4
 allredmany 4
+allred2 4
+allred3 10
 reduce 10
+red3 10
 alltoall1 8
 alltoallv 10
 alltoallw2 10
@@ -51,3 +54,5 @@ opbxor 5
 opprod 5
 opprod 6
 opsum 4
+opmin 4
+opmax 5

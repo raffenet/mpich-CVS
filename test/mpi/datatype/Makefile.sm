@@ -24,6 +24,11 @@ localpack_SOURCES = localpack.c
 lbub_SOURCES = lbub.c
 
 zeroparms_SOURCES = zeroparms.c
+gaddress_SOURCES = gaddress.c
+gaddress_LDADD = ../util/mtest.o
 
 getpartelm_SOURCES = getpartelm.c
 getpartelm_LDADD = ../util/mtest.o
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o )

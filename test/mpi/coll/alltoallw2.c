@@ -57,11 +57,12 @@ int main( int argc, char **argv )
 	fprintf( stderr, "Could not allocate arg items!\n" );
 	MPI_Abort( comm, 1 );
       }
+      /* Note that process 0 sends no data (sendcounts[0] = 0) */
       for (i=0; i<size; i++) {
 	sendcounts[i] = i;
 	recvcounts[i] = rank;
 	rdispls[i]    = i * rank * sizeof(int);
-	sdispls[i]    = ((i * (i+1))/2) * sizeof(int);
+	sdispls[i]    = (((i-1) * (i))/2) * sizeof(int);
       }
       MPI_Alltoallw( sbuf, sendcounts, sdispls, MPI_INT,
 		     rbuf, recvcounts, rdispls, MPI_INT, comm );

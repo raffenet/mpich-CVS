@@ -9,3 +9,4 @@ errcode_SOURCES = errcode.c errmsg.c
 errring_SOURCES = errring.c
 commcall_SOURCES = commcall.c
 winerr_SOURCES = winerr.c
+winerr2_SOURCES = winerr2.c
