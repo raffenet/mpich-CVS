@@ -398,7 +398,7 @@ def mpdman():
                 elif msg['cmd'] == 'collective_abort':
 		    if msg['src'] != myId:
                         if conSocket:
-                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : msg['rank'] }
                             mpd_send_one_msg(conSocket,msgToSend)
                             # conSocket.close()
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
@@ -553,11 +553,11 @@ def mpdman():
                     pmiSocket.close()
                     if pmiCollectiveJob:
                         if conSocket:
-                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : myRank }
                             mpd_send_one_msg(conSocket,msgToSend)
                             # conSocket.close()
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
-                            msgToSend = { 'cmd' : 'collective_abort', 'src' : myId }
+                            msgToSend = { 'cmd' : 'collective_abort', 'src' : myId, 'rank' : myRank}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                             # rhsSocket.close()
 			try:
