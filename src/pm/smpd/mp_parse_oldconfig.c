@@ -33,6 +33,8 @@ static HostNode *g_pHosts;
 static int g_nHosts;
 
 #ifdef HAVE_WINDOWS_H
+#undef FCNAME
+#define FCNAME "ExeToUnc"
 static void ExeToUnc(char *pszExe, int length)
 {
     DWORD dwResult;
@@ -43,7 +45,7 @@ static void ExeToUnc(char *pszExe, int length)
     SMPD_BOOL bQuoted = SMPD_FALSE;
     char *pszOriginal;
 
-    smpd_enter_fn("ExeToUnc");
+    smpd_enter_fn(FCNAME);
 
     pszOriginal = pszExe;
 
@@ -71,17 +73,19 @@ static void ExeToUnc(char *pszExe, int length)
 	    pszOriginal[length-1] = '\0';
 	}
     }
-    smpd_exit_fn("ExeToUnc");
+    smpd_exit_fn(FCNAME);
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "ParseLineIntoHostNode"
 static HostNode* ParseLineIntoHostNode(char * line)
 {
     char buffer[1024];
     char *pChar, *pChar2;
     HostNode *node = NULL;
 
-    smpd_enter_fn("ParseLineIntoHostNode");
+    smpd_enter_fn(FCNAME);
 
     strncpy(buffer, line, 1024);
     buffer[1023] = '\0';
@@ -92,7 +96,7 @@ static HostNode* ParseLineIntoHostNode(char * line)
 	pChar++;
     if (*pChar == '#' || *pChar == '\0')
     {
-	smpd_exit_fn("ParseLineIntoHostNode");
+	smpd_exit_fn(FCNAME);
 	return NULL;
     }
     
@@ -150,10 +154,12 @@ static HostNode* ParseLineIntoHostNode(char * line)
 	}
     }
 
-    smpd_exit_fn("ParseLineIntoHostNode");
+    smpd_exit_fn(FCNAME);
     return node;
 }
 
+#undef FCNAME
+#define FCNAME "print_configfile"
 static void print_configfile(FILE *fout)
 {
     HostNode *node;
@@ -163,12 +169,12 @@ static void print_configfile(FILE *fout)
     char *cur_env;
     int env_length, num;
 
-    smpd_enter_fn("print_configfile");
+    smpd_enter_fn(FCNAME);
 
     if (g_pHosts == NULL)
     {
 	printf("Error: unable to parse the specified configuration file.\n");
-	smpd_exit_fn("print_configfile");
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
@@ -247,14 +253,16 @@ static void print_configfile(FILE *fout)
 	}
 	node = node->next;
     }
-    smpd_exit_fn("print_configfile");
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "cleanup"
 static void cleanup()
 {
     MapDriveNode *map;
     HostNode *node;
-    smpd_enter_fn("cleanup");
+    smpd_enter_fn(FCNAME);
     while (g_pDriveMapList)
     {
 	map = g_pDriveMapList;
@@ -267,21 +275,23 @@ static void cleanup()
 	g_pHosts = g_pHosts->next;
 	free(node);
     }
-    smpd_exit_fn("cleanup");
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "mp_parse_mpich1_configfile"
 int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 {
     FILE *fin, *fout;
     char buffer[1024] = "";
     char temp_filename[256] = "tmpXXXXXX";
 
-    smpd_enter_fn("mp_parse_mpich1_configfile");
+    smpd_enter_fn(FCNAME);
 
     fin = fopen(filename, "r");
     if (fin == NULL)
     {
-	smpd_exit_fn("mp_parse_mpich1_configfile");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -415,7 +425,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 				fclose(fin);
 				if (mktemp(temp_filename) == NULL)
 				{
-				    smpd_exit_fn("mp_parse_mpich1_configfile");
+				    smpd_exit_fn(FCNAME);
 				    return SMPD_FAIL;
 				}
 				strncpy(configfilename, temp_filename, length);
@@ -424,7 +434,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 				print_configfile(fout);
 				fclose(fout);
 				cleanup();
-				smpd_exit_fn("mp_parse_mpich1_configfile");
+				smpd_exit_fn(FCNAME);
 				return SMPD_SUCCESS;
 			    }
 			}
@@ -436,7 +446,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
     fclose(fin);
     if (mktemp(temp_filename) == NULL)
     {
-	smpd_exit_fn("mp_parse_mpich1_configfile");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strncpy(configfilename, temp_filename, length);
@@ -445,6 +455,6 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
     print_configfile(fout);
     fclose(fout);
     cleanup();
-    smpd_exit_fn("mp_parse_mpich1_configfile");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

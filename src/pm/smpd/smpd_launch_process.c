@@ -23,6 +23,8 @@
 
 #ifdef HAVE_WINDOWS_H
 
+#undef FCNAME
+#define FCNAME "smpd_clear_process_registry"
 int smpd_clear_process_registry()
 {
 #if 0
@@ -38,7 +40,7 @@ int smpd_clear_process_registry()
     DWORD dwNumSubKeys, dwMaxSubKeyLen;
     char pid_str[256];
 
-    smpd_enter_fn("smpd_clear_process_registry");
+    smpd_enter_fn(FCNAME);
 
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process", 0, KEY_ALL_ACCESS, &tkey);
     if (result != ERROR_SUCCESS)
@@ -46,7 +48,7 @@ int smpd_clear_process_registry()
 	if (result != ERROR_PATH_NOT_FOUND)
 	{
 	    smpd_err_printf("Unable to open the " SMPD_REGISTRY_KEY "\\process registry key, error %d\n", result);
-	    smpd_exit_fn("smpd_clear_process_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	return SMPD_SUCCESS;
@@ -56,21 +58,21 @@ int smpd_clear_process_registry()
     if (result != ERROR_SUCCESS)
     {
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_clear_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (dwMaxSubKeyLen > 256)
     {
 	smpd_err_printf("Error: Invalid process subkeys, max length is too large: %d\n", dwMaxSubKeyLen);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_clear_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (dwNumSubKeys == 0)
     {
 	RegCloseKey(tkey);
 	RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
-	smpd_exit_fn("smpd_clear_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     /* count backwards so keys can be removed */
@@ -82,17 +84,19 @@ int smpd_clear_process_registry()
 	{
 	    smpd_err_printf("Error: Unable to enumerate the %d subkey in the " SMPD_REGISTRY_KEY "\\process registry key\n", i);
 	    RegCloseKey(tkey);
-	    smpd_exit_fn("smpd_clear_process_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	RegDeleteKey(tkey, pid_str);
     }
     RegCloseKey(tkey);
     RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
-    smpd_exit_fn("smpd_clear_process_registry");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_validate_process_registry"
 int smpd_validate_process_registry()
 {
     int error;
@@ -104,7 +108,7 @@ int smpd_validate_process_registry()
     int pid;
     HANDLE hTemp;
 
-    smpd_enter_fn("smpd_validate_process_registry");
+    smpd_enter_fn(FCNAME);
 
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process", 0, KEY_ALL_ACCESS, &tkey);
     if (result != ERROR_SUCCESS)
@@ -112,7 +116,7 @@ int smpd_validate_process_registry()
 	if (result != ERROR_PATH_NOT_FOUND)
 	{
 	    smpd_err_printf("Unable to open the smpd\\process registry key, error %d\n", result);
-	    smpd_exit_fn("smpd_validate_process_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	return SMPD_SUCCESS;
@@ -122,20 +126,20 @@ int smpd_validate_process_registry()
     if (result != ERROR_SUCCESS)
     {
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_validate_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (dwMaxSubKeyLen > 100)
     {
 	smpd_err_printf("Error: Invalid process subkeys, max length is too large: %d\n", dwMaxSubKeyLen);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_validate_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (dwNumSubKeys == 0)
     {
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_validate_process_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     /* count backwards so keys can be removed */
@@ -147,7 +151,7 @@ int smpd_validate_process_registry()
 	{
 	    smpd_err_printf("Error: Unable to enumerate the %d subkey in the smpd\\process registry key\n", i);
 	    RegCloseKey(tkey);
-	    smpd_exit_fn("smpd_validate_process_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	pid = atoi(pid_str);
@@ -173,17 +177,19 @@ int smpd_validate_process_registry()
 	}
     }
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_validate_process_registry");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_process_to_registry"
 int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
 {
     HKEY tkey;
     DWORD len, result;
     char name[1024];
 
-    smpd_enter_fn("smpd_process_to_registry");
+    smpd_enter_fn(FCNAME);
 
     if (process == NULL)
     {
@@ -203,7 +209,7 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
-	smpd_exit_fn("smpd_process_to_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -213,21 +219,23 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     {
 	smpd_err_printf("Unable to write the process registry value 'exe:%s', error %d\n", process->exe, result);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_process_to_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_process_to_registry");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_process_from_registry"
 int smpd_process_from_registry(smpd_process_t *process)
 {
     DWORD len, result;
     char name[1024];
 
-    smpd_enter_fn("smpd_process_from_registry");
+    smpd_enter_fn(FCNAME);
 
     if (process == NULL)
 	return SMPD_FAIL;
@@ -240,21 +248,23 @@ int smpd_process_from_registry(smpd_process_t *process)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to delete the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
-	smpd_exit_fn("smpd_process_from_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_process_from_registry");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_user_handle"
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr)
 {
     HANDLE hUser;
     int error;
     int num_tries = 3;
 
-    smpd_enter_fn("smpd_get_user_handle");
+    smpd_enter_fn(FCNAME);
 
     if (domain)
 	smpd_dbg_printf("LogonUser(%s\\%s)\n", domain, account);
@@ -278,7 +288,7 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	    else
 	    {
 		*handle_ptr = INVALID_HANDLE_VALUE;
-		smpd_exit_fn("smpd_get_user_handle");
+		smpd_exit_fn(FCNAME);
 		return error;
 	    }
 	    num_tries--;
@@ -286,13 +296,13 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	else
 	{
 	    *handle_ptr = INVALID_HANDLE_VALUE;
-	    smpd_exit_fn("smpd_get_user_handle");
+	    smpd_exit_fn(FCNAME);
 	    return error;
 	}
     }
 
     *handle_ptr = hUser;
-    smpd_exit_fn("smpd_get_user_handle");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -671,6 +681,8 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_launch_process"
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
     HANDLE hStdin = INVALID_HANDLE_VALUE, hStdout = INVALID_HANDLE_VALUE, hStderr = INVALID_HANDLE_VALUE;
@@ -701,7 +713,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     int listener_port = 0;
     char host_description[256];
 
-    smpd_enter_fn("smpd_launch_process");
+    smpd_enter_fn(FCNAME);
 
     /* Initialize the psInfo structure in case there is an error an we jump to CLEANUP before psInfo is set */
     psInfo.hProcess = INVALID_HANDLE_VALUE;
@@ -748,7 +760,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	nError = GetLastError(); /* This will only be correct if stderr failed */
 	ReleaseMutex(smpd_process.hLaunchProcessMutex);
 	smpd_err_printf("GetStdHandle failed, error %d\n", nError);
-	smpd_exit_fn("smpd_launch_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;;
     }
 
@@ -1222,7 +1234,7 @@ CLEANUP:
 	{
 	    smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
 		get_sock_error_string(result));
-	    smpd_exit_fn("smpd_launch_process");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	process->err->read_state = SMPD_READING_STDERR;
@@ -1231,7 +1243,7 @@ CLEANUP:
 	{
 	    smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
 		get_sock_error_string(result));
-	    smpd_exit_fn("smpd_launch_process");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (process->pmi != NULL && smpd_process.use_inherited_handles)
@@ -1240,7 +1252,7 @@ CLEANUP:
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to post a read of the first command on the pmi control channel.\n");
-		smpd_exit_fn("smpd_launch_process");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	}
@@ -1248,19 +1260,21 @@ CLEANUP:
 	process->wait.hThread = process->in->wait.hThread = process->out->wait.hThread = process->err->wait.hThread = psInfo.hThread;
 	smpd_process_to_registry(process, actual_exe);
 	ResumeThread(psInfo.hThread);
-	smpd_exit_fn("smpd_launch_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
-    smpd_exit_fn("smpd_launch_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_account_domain"
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain)
 {
     char *pCh, *pCh2;
 
-    smpd_enter_fn("smpd_parse_account_domain");
+    smpd_enter_fn(FCNAME);
 
     pCh = domain_account;
     pCh2 = domain;
@@ -1282,7 +1296,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 	domain[0] = '\0';
     }
 
-    smpd_exit_fn("smpd_parse_account_domain");
+    smpd_exit_fn(FCNAME);
 }
 
 #else
@@ -1352,6 +1366,8 @@ static void set_environment_variables(char *bEnv)
     }
 }
 
+#undef FCNAME
+#define FCNAME "smpd_launch_process"
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
     int result;
@@ -1371,7 +1387,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char temp_exe[SMPD_MAX_EXE_LENGTH];
     smpd_command_t *cmd_ptr;
 
-    smpd_enter_fn("smpd_launch_process");
+    smpd_enter_fn(FCNAME);
 
     /* resolve the executable name */
     if (process->path[0] != '\0')
@@ -1440,7 +1456,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     if (pid < 0)
     {
 	smpd_err_printf("fork failed - error %d.\n", errno);
-	smpd_exit_fn("smpd_launch_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -1646,7 +1662,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
 	    get_sock_error_string(result));
-	smpd_exit_fn("smpd_launch_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     process->err->read_state = SMPD_READING_STDERR;
@@ -1655,7 +1671,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
 	    get_sock_error_string(result));
-	smpd_exit_fn("smpd_launch_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (process->pmi != NULL)
@@ -1664,37 +1680,39 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a read of the first command on the pmi control context.\n");
-	    smpd_exit_fn("smpd_launch_process");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
     process->wait = process->in->wait = process->out->wait = process->err->wait = pid;
 
-    smpd_exit_fn("smpd_launch_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_wait_process"
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
     DWORD exit_code;
-    smpd_enter_fn("smpd_wait_process");
+    smpd_enter_fn(FCNAME);
 
     if (wait.hProcess == INVALID_HANDLE_VALUE || wait.hProcess == NULL)
     {
 	smpd_dbg_printf("No process to wait for.\n");
 	*exit_code_ptr = -1;
-	smpd_exit_fn("smpd_wait_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (WaitForSingleObject(wait.hProcess, INFINITE) != WAIT_OBJECT_0)
     {
 	smpd_err_printf("WaitForSingleObject failed, error %d\n", GetLastError());
 	*exit_code_ptr = -1;
-	smpd_exit_fn("smpd_wait_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = GetExitCodeProcess(wait.hProcess, &exit_code);
@@ -1702,7 +1720,7 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     {
 	smpd_err_printf("GetExitCodeProcess failed, error %d\n", GetLastError());
 	*exit_code_ptr = -1;
-	smpd_exit_fn("smpd_wait_process");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     CloseHandle(wait.hProcess);
@@ -1710,11 +1728,11 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 
     *exit_code_ptr = exit_code;
 
-    smpd_exit_fn("smpd_wait_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int status;
-    smpd_enter_fn("smpd_wait_process");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("waiting for process %d\n", wait);
     waitpid(wait, &status, WUNTRACED);
@@ -1728,16 +1746,18 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 	*exit_code_ptr = -1;
     }
 
-    smpd_exit_fn("smpd_wait_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_suspend_process"
 int smpd_suspend_process(smpd_process_t *process)
 {
 #ifdef HAVE_WINDOWS_H
     int result = SMPD_SUCCESS;
-    smpd_enter_fn("smpd_suspend_process");
+    smpd_enter_fn(FCNAME);
 
     if (SuspendThread(process->wait.hThread) == -1)
     {
@@ -1746,15 +1766,15 @@ int smpd_suspend_process(smpd_process_t *process)
 	    result, process->rank, process->kvs_name, process->exe);
     }
 
-    smpd_exit_fn("smpd_suspend_process");
+    smpd_exit_fn(FCNAME);
     return result;
 #else
-    smpd_enter_fn("smpd_suspend_process");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("stopping process %d\n", process->wait);
     kill(process->wait, SIGSTOP);
 
-    smpd_exit_fn("smpd_suspend_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #endif
 }
@@ -1824,10 +1844,12 @@ static BOOL SafeTerminateProcess(HANDLE hProcess, UINT uExitCode)
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_kill_process"
 int smpd_kill_process(smpd_process_t *process, int exit_code)
 {
 #ifdef HAVE_WINDOWS_H
-    smpd_enter_fn("smpd_suspend_process");
+    smpd_enter_fn(FCNAME);
 
     smpd_process_from_registry(process);
     if (!SafeTerminateProcess(process->wait.hProcess, exit_code))
@@ -1838,25 +1860,27 @@ int smpd_kill_process(smpd_process_t *process, int exit_code)
 	}
     }
 
-    smpd_exit_fn("smpd_suspend_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int status;
-    smpd_enter_fn("smpd_suspend_process");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("killing process %d\n", process->wait);
     kill(process->wait, /*SIGTERM*/SIGKILL);
 
-    smpd_exit_fn("smpd_suspend_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_kill_all_processes"
 int smpd_kill_all_processes(void)
 {
     smpd_process_t *iter;
 
-    smpd_enter_fn("smpd_kill_all_processes");
+    smpd_enter_fn(FCNAME);
 
     if (smpd_process.rsh_mpiexec)
     {
@@ -1930,13 +1954,15 @@ int smpd_kill_all_processes(void)
 	}
     }
 
-    smpd_exit_fn("smpd_kill_all_processes");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_exit"
 int smpd_exit(int exitcode)
 {
-    smpd_enter_fn("smpd_exit");
+    smpd_enter_fn(FCNAME);
     smpd_kill_all_processes();
     smpd_finalize_drive_maps();
     smpd_finalize_printf();
@@ -1953,7 +1979,7 @@ int smpd_exit(int exitcode)
     ExitProcess(exitcode);
 #else
     exit(exitcode);
-    smpd_exit_fn("smpd_exit");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 #endif
 }

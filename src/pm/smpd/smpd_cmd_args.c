@@ -15,8 +15,11 @@
 #include <sys/types.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_print_options"
 void smpd_print_options(void)
 {
+    smpd_enter_fn(FCNAME);
     printf("smpd options:\n");
     printf(" -port <port> or -p <port>\n");
     printf(" -phrase <passphrase>\n");
@@ -54,8 +57,11 @@ void smpd_print_options(void)
     printf("Not yet implemented:\n");
     printf("\"smpd -r\" will start the smpd in root daemon mode for unix.\n");
     fflush(stdout);
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_command_args"
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
     int result;
@@ -72,7 +78,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     char opt[SMPD_MAX_NAME_LENGTH];
     char opt_val[SMPD_MAX_VALUE_LENGTH];
 
-    smpd_enter_fn("smpd_parse_command_args");
+    smpd_enter_fn(FCNAME);
 
     /* check for help option */
     if (
@@ -384,13 +390,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (!smpd_get_opt_string(argcp, argvp, "-read", read_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a read pipe handle.\n");
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (!smpd_get_opt_string(argcp, argvp, "-write", write_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a write pipe handle.\n");
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	hRead = smpd_decode_handle(read_handle_str);
@@ -402,7 +408,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_create_set(listener) failed,\nsock error: %s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_process.set = set;
@@ -412,7 +418,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("smpd manager listening on port %d\n", port);
@@ -421,14 +427,14 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a context for the smpd listener.\n");
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	result = MPIDU_Sock_set_user_ptr(listener, smpd_process.listener_context);
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	smpd_process.listener_context->state = SMPD_MGR_LISTENING;
@@ -439,51 +445,51 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (!WriteFile(hWrite, str, 20, &num_written, NULL))
 	{
 	    smpd_err_printf("WriteFile failed, error %d\n", GetLastError());
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	CloseHandle(hWrite);
 	if (num_written != 20)
 	{
 	    smpd_err_printf("wrote only %d bytes of 20\n", num_written);
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("manager reading account and password from smpd.\n");
 	if (!ReadFile(hRead, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_read != SMPD_MAX_ACCOUNT_LENGTH)
 	{
 	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_MAX_ACCOUNT_LENGTH);
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (!ReadFile(hRead, smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_read != SMPD_MAX_PASSWORD_LENGTH)
 	{
 	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_MAX_PASSWORD_LENGTH);
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (!ReadFile(hRead, smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_read != SMPD_PASSPHRASE_MAX_LENGTH)
 	{
 	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_exit_fn("smpd_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_process.credentials_prompt = SMPD_FALSE;
@@ -502,7 +508,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	}
 	*/
 	smpd_exit(0);
-	smpd_exit_fn("smpd_parse_command_args (ExitProcess)");
+	smpd_exit_fn(FCNAME);
 	ExitProcess(0);
     }
 #endif
@@ -587,7 +593,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    if (s.st_mode & 00077)
 	    {
 		printf(".smpd file cannot be readable by anyone other than the current user.\n");
-		smpd_exit_fn("smpd_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	}
@@ -596,10 +602,10 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_process.do_console)
     {
 	result = smpd_do_console();
-	smpd_exit_fn("smpd_parse_command_args");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
-    smpd_exit_fn("smpd_parse_command_args");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

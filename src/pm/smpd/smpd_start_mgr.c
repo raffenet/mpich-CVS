@@ -24,6 +24,8 @@ HANDLE smpd_decode_handle(char *str)
     return p;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_start_win_mgr"
 int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handle)
 {
     int result;
@@ -41,7 +43,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     HANDLE hRead, hWrite, hReadRemote, hWriteRemote;
     DWORD num_read, num_written;
 
-    smpd_enter_fn("smpd_start_win_mgr");
+    smpd_enter_fn(FCNAME);
 
     /* initialize to null so in the sspi case garbage isn't sent to the manager */
     domainaccount[0] = '\0';
@@ -57,7 +59,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     if (!CreatePipe(&hRead, &hWriteRemote, &security, 0))
     {
 	smpd_err_printf("CreatePipe failed, error %d\n", GetLastError());
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* prevent the local read end of the pipe from being inherited */
@@ -66,7 +68,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_err_printf("Unable to duplicate the read end of the pipe, error %d\n", GetLastError());
 	CloseHandle(hRead);
 	CloseHandle(hWriteRemote);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* create a pipe to send the account information through */
@@ -75,7 +77,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_err_printf("CreatePipe failed, error %d\n", GetLastError());
 	CloseHandle(hRead);
 	CloseHandle(hWriteRemote);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* prevent the local write end of the pipe from being inherited */
@@ -86,7 +88,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	CloseHandle(hWrite);
 	CloseHandle(hReadRemote);
 	CloseHandle(hWriteRemote);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* encode the command line */
@@ -128,7 +130,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 		CloseHandle(hWrite);
 		CloseHandle(hReadRemote);
 		CloseHandle(hWriteRemote);
-		smpd_exit_fn("smpd_start_win_mgr");
+		smpd_exit_fn(FCNAME);
 		return SMPD_ERR_INVALID_USER;
 	    }
 	    user_handle = context->sspi_context->user_handle;
@@ -151,7 +153,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 		CloseHandle(hWrite);
 		CloseHandle(hReadRemote);
 		CloseHandle(hWriteRemote);
-		smpd_exit_fn("smpd_start_win_mgr");
+		smpd_exit_fn(FCNAME);
 		return SMPD_ERR_INVALID_USER;
 	    }
 	}
@@ -165,7 +167,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	    CloseHandle(hWrite);
 	    CloseHandle(hReadRemote);
 	    CloseHandle(hWriteRemote);
-	    smpd_exit_fn("smpd_start_win_mgr");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_ERR_INVALID_USER;
 	}
     }
@@ -234,7 +236,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	CloseHandle(hWrite);
 	CloseHandle(hReadRemote);
 	CloseHandle(hWriteRemote);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -250,7 +252,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_err_printf("ReadFile() failed, error %d\n", GetLastError());
 	CloseHandle(hRead);
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     CloseHandle(hRead);
@@ -258,7 +260,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	smpd_err_printf("parital port string read, %d bytes of 20\n", num_read);
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* send the account and password to the manager */
@@ -267,14 +269,14 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	smpd_err_printf("WriteFile('%s') failed to write the account, error %d\n", domainaccount, GetLastError());
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (num_written != SMPD_MAX_ACCOUNT_LENGTH)
     {
 	smpd_err_printf("parital account string written, %d bytes of %d\n", num_written, SMPD_MAX_ACCOUNT_LENGTH);
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("smpd sending the password to the manager\n");
@@ -282,14 +284,14 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	smpd_err_printf("WriteFile() failed to write the password, error %d\n", GetLastError());
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (num_written != SMPD_MAX_PASSWORD_LENGTH)
     {
 	smpd_err_printf("parital password string written, %d bytes of %d\n", num_written, SMPD_MAX_PASSWORD_LENGTH);
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("smpd sending the smpd passphrase to the manager\n");
@@ -297,14 +299,14 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	smpd_err_printf("WriteFile() failed to write the passphrase, error %d\n", GetLastError());
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (num_written != SMPD_PASSPHRASE_MAX_LENGTH)
     {
 	smpd_err_printf("parital passphrase string written, %d bytes of %d\n", num_written, SMPD_PASSPHRASE_MAX_LENGTH);
 	CloseHandle(hWrite);
-	smpd_exit_fn("smpd_start_win_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("closing the pipe to the manager\n");
@@ -315,6 +317,8 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 
 #else /* HAVE_WINDOWS_H */
 
+#undef FCNAME
+#define FCNAME "smpd_start_unx_mgr"
 int smpd_start_unx_mgr(smpd_context_t *context)
 {
     int result;
@@ -323,7 +327,7 @@ int smpd_start_unx_mgr(smpd_context_t *context)
     if (result == -1)
     {
 	smpd_err_printf("fork failed, errno %d\n", errno);
-	smpd_exit_fn("smpd_start_unx_mgr");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (result == 0)

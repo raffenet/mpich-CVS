@@ -6,6 +6,8 @@
 
 #include "smpd.h"
 
+#undef FCNAME
+#define FCNAME "smpd_handle_spawn_command"
 int smpd_handle_spawn_command(smpd_context_t *context)
 {
     int result;
@@ -23,7 +25,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     smpd_host_node_t *host_iter, *host_list;
     int nproc;
 
-    smpd_enter_fn("smpd_handle_spawn_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     smpd_process.exit_on_done = SMPD_TRUE;
@@ -38,7 +40,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a spawn command.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -46,28 +48,28 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a spawn command.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the spawn command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the ctx_key to the result command for spawn command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -79,7 +81,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the ncmds parameter from the spawn command '%s'.\n", cmd->cmd);
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
     }
@@ -89,7 +91,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the maxrpocs parameter from the spawn command '%s'.\n", cmd->cmd);
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
     }
@@ -98,7 +100,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the nkeyvals parameter from the spawn command '%s'.\n", cmd->cmd);
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
     }
@@ -124,7 +126,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_err_printf("unable to get the %dth string from the maxprocs parameter to the spawn command '%s'.\n", i, cmd->cmd);
 	    goto spawn_failed;
 	    /*
-	    smpd_exit_fn("smpd_handle_spawn_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	    */
 	}
@@ -136,7 +138,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_err_printf("unable to get the %dth string from the nkeyvals parameter to the spawn command '%s'.\n", i, cmd->cmd);
 	    goto spawn_failed;
 	    /*
-	    smpd_exit_fn("smpd_handle_spawn_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	    */
 	}
@@ -187,7 +189,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to allocate memory for the info keyvals (cmd %d, num_infos %d).\n", i, nkeyvals[i]);
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 		*/
 	    }
@@ -209,7 +211,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    smpd_err_printf("unable to get the %sth key from the keyval string '%s'.\n", key, keyvals_str);
 		    goto spawn_failed;
 		    /*
-		    smpd_exit_fn("smpd_handle_spawn_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		    */
 		}
@@ -223,7 +225,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
 		    goto spawn_failed;
 		    /*
-		    smpd_exit_fn("smpd_handle_spawn_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		    */
 		}
@@ -233,7 +235,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
 		    goto spawn_failed;
 		    /*
-		    smpd_exit_fn("smpd_handle_spawn_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		    */
 		}
@@ -243,7 +245,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
 		    goto spawn_failed;
 		    /*
-		    smpd_exit_fn("smpd_handle_spawn_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		    */
 		}
@@ -258,7 +260,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
 	    goto spawn_failed;
 	    /*
-	    smpd_exit_fn("smpd_handle_spawn_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	    */
 	}
@@ -279,7 +281,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /*
 	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
 	    goto spawn_failed;
-	    smpd_exit_fn("smpd_handle_spawn_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	    */
 	}
@@ -344,7 +346,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to allocate a launch node structure for the %dth command.\n", cur_iproc);
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 		*/
 	    }
@@ -399,7 +401,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to create a spawn context.\n");
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return result;
 	*/
     }
@@ -417,7 +419,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
     }
@@ -427,7 +429,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unablet to get the preput parameter from the spawn command '%s'.\n", cmd->cmd);
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
     }
@@ -479,7 +481,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to create a connect command.\n");
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 		*/
 	    }
@@ -489,7 +491,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 		*/
 	    }
@@ -499,7 +501,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 		*/
 	    }
@@ -513,13 +515,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_err_printf("unable to post a write of the connect command.\n");
 		goto spawn_failed;
 		/*
-		smpd_exit_fn("smpd_handle_spawn_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 		*/
 	    }
 
 	    context->spawn_context->result_cmd = temp_cmd;
-	    smpd_exit_fn("smpd_handle_spawn_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	host_iter = host_iter->next;
@@ -535,7 +537,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to create a start_dbs command.\n");
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_state_reading_cmd");
+	smpd_exit_fn(FCNAME);
 	return result;
 	*/
     }
@@ -544,7 +546,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -552,7 +554,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the preput keyvals to the start_dbs command for a spawn command.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -563,13 +565,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_err_printf("unable to post a write of the start_dbs command.\n");
 	goto spawn_failed;
 	/*
-	smpd_exit_fn("smpd_state_reading_cmd");
+	smpd_exit_fn(FCNAME);
 	return result;
 	*/
     }
 
     context->spawn_context->result_cmd = temp_cmd;
-    smpd_exit_fn("smpd_handle_spawn_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
     /* send the launch commands */
 
@@ -616,7 +618,7 @@ spawn_failed:
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a spawn command.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -626,10 +628,10 @@ spawn_failed:
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_spawn_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_spawn_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }

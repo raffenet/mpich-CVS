@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "smpd.h"
 
+#undef FCNAME
+#define FCNAME "smpd_do_console"
 int smpd_do_console()
 {
     int result;
@@ -16,7 +18,7 @@ int smpd_do_console()
     SMPD_BOOL no_smpd = SMPD_FALSE;
     int saved_state = 0;
 
-    smpd_enter_fn("smpd_do_console");
+    smpd_enter_fn(FCNAME);
 
     /* make sure we have a passphrase to authenticate connections to the smpds */
     if (smpd_process.passphrase[0] == '\0')
@@ -127,7 +129,7 @@ quit_job:
 	smpd_process.hCloseStdinThreadEvent = NULL;
     }
 #endif
-    smpd_exit_fn("smpd_do_console");
+    smpd_exit_fn(FCNAME);
     smpd_exit(0);
     return SMPD_SUCCESS;
 }

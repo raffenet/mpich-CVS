@@ -278,6 +278,8 @@ static int mpiexec_assert_hook( int reportType, char *message, int *returnValue 
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "mp_parse_command_args"
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     int cur_rank;
@@ -328,7 +330,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char smpd_setting_path[SMPD_MAX_PATH_LENGTH] = "";
     SMPD_BOOL smpd_setting_localonly = SMPD_INVALID_SETTING;
 
-    smpd_enter_fn("mp_parse_command_args");
+    smpd_enter_fn(FCNAME);
 
 #ifdef HAVE_WINDOWS_H
     /* prevent mpiexec from bringing up an error message window if it crashes */
@@ -603,13 +605,13 @@ configfile_loop:
 		if (use_configfile)
 		{
 		    printf("Error: -configfile option is not valid from within a configuration file.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -configfile option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -618,14 +620,14 @@ configfile_loop:
 		if (fin_config == NULL)
 		{
 		    printf("Error: unable to open config file '%s'\n", configfilename);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (!smpd_get_argcv_from_file(fin_config, argcp, argvp))
 		{
 		    fclose(fin_config);
 		    printf("Error: unable to parse config file '%s'\n", configfilename);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -634,7 +636,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -file option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		mp_parse_mpich1_configfile((*argvp)[2], configfilename, SMPD_MAX_FILENAME);
@@ -644,14 +646,14 @@ configfile_loop:
 		if (fin_config == NULL)
 		{
 		    printf("Error: unable to open config file '%s'\n", configfilename);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (!smpd_get_argcv_from_file(fin_config, argcp, argvp))
 		{
 		    fclose(fin_config);
 		    printf("Error: unable to parse config file '%s'\n", configfilename);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -681,20 +683,20 @@ configfile_loop:
 		{
 		    printf("Error: only one option is allowed to determine the number of processes.\n");
 		    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (argc < 3)
 		{
 		    printf("Error: no number specified after %s option.\n", (*argvp)[1]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		nproc = atoi((*argvp)[2]);
 		if (nproc < 1)
 		{
 		    printf("Error: must specify a number greater than 0 after the %s option\n", (*argvp)[1]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		num_args_to_strip = 2;
@@ -713,14 +715,14 @@ configfile_loop:
 			{
 			    printf("Error: only one option is allowed to determine the number of processes.\n");
 			    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
-			    smpd_exit_fn("mp_parse_command_args");
+			    smpd_exit_fn(FCNAME);
 			    return SMPD_FAIL;
 			}
 			nproc = atoi((*argvp)[2]);
 			if (nproc < 1)
 			{
 			    printf("Error: If you specify a number after -localonly option,\n        it must be greater than 0.\n");
-			    smpd_exit_fn("mp_parse_command_args");
+			    smpd_exit_fn(FCNAME);
 			    return SMPD_FAIL;
 			}
 			num_args_to_strip = 2;
@@ -746,7 +748,7 @@ configfile_loop:
 		if (host_list == NULL)
 		{
 		    printf("failed to allocate memory for a host node.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
@@ -760,13 +762,13 @@ configfile_loop:
 		if (smpd_process.s_host_list != NULL)
 		{
 		    printf("Error: -machinefile can only be specified once per section.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (argc < 3)
 		{
 		    printf("Error: no filename specified after -machinefile option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(machine_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -779,7 +781,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no drive specified after -map option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
@@ -788,7 +790,7 @@ configfile_loop:
 		    if (map_node == NULL)
 		    {
 			printf("Error: malloc failed to allocate map structure.\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    map_node->ref_count = 0;
@@ -804,7 +806,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no drive specified after -gmap option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
@@ -813,7 +815,7 @@ configfile_loop:
 		    if (map_node == NULL)
 		    {
 			printf("Error: malloc failed to allocate map structure.\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    map_node->ref_count = 0;
@@ -829,7 +831,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no directory after %s option\n", (*argvp)[1]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(wdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);
@@ -840,7 +842,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no directory after %s option\n", (*argvp)[1]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(gwdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);
@@ -852,14 +854,14 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no environment variables after -env option\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		equal_sign_pos = strstr((*argvp)[2], "=");
@@ -867,7 +869,7 @@ configfile_loop:
 		{
 		    printf("Error: improper environment variable option. '%s %s' is not in the format '-env var=value'\n",
 			(*argvp)[1], (*argvp)[2]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		*equal_sign_pos = '\0';
@@ -880,14 +882,14 @@ configfile_loop:
 		if (argc < 4)
 		{
 		    printf("Error: no environment variable after -env option\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
@@ -917,14 +919,14 @@ configfile_loop:
 		if (argc < 4)
 		{
 		    printf("Error: no environment variable after -genv option\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
@@ -963,14 +965,14 @@ configfile_loop:
 		if (argc < 4)
 		{
 		    printf("Error: no environment variables after -genvlist option\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		str = strdup((*argvp)[2]);
 		if (str == NULL)
 		{
 		    printf("Error: unable to allocate memory for a string - '%s'\n", (*argvp)[2]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		token = strtok(str, ",");
@@ -983,7 +985,7 @@ configfile_loop:
 			if (env_node == NULL)
 			{
 			    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-			    smpd_exit_fn("mp_parse_command_args");
+			    smpd_exit_fn(FCNAME);
 			    return SMPD_FAIL;
 			}
 			strncpy(env_node->name, token, SMPD_MAX_NAME_LENGTH);
@@ -1018,7 +1020,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no filename specified after -pwdfile option\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(pwd_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -1028,13 +1030,13 @@ configfile_loop:
 	    else if (strcmp(&(*argvp)[1][1], "configfile") == 0)
 	    {
 		printf("Error: The -configfile option must be the first and only option specified in a block.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 		/*
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -configfile option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -1045,13 +1047,13 @@ configfile_loop:
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
 	    {
 		printf("Error: The -file option must be the first and only option specified in a block.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 		/*
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -file option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -1064,13 +1066,13 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no host specified after -host option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (host_list != NULL)
 		{
 		    printf("Error: -host option can only be specified once and it cannot be combined with -hosts.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		/* create a host list of one and set nproc to -1 to be replaced by
@@ -1079,7 +1081,7 @@ configfile_loop:
 		if (host_list == NULL)
 		{
 		    printf("failed to allocate memory for a host node.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
@@ -1093,13 +1095,13 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no host specified after -ghost option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (ghost_list != NULL)
 		{
 		    printf("Error: -ghost option can only be specified once.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		/* create a host list of one and set nproc to -1 to be replaced by
@@ -1108,7 +1110,7 @@ configfile_loop:
 		if (ghost_list == NULL)
 		{
 		    printf("failed to allocate memory for a host node.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		ghost_list->next = NULL;
@@ -1123,13 +1125,13 @@ configfile_loop:
 		{
 		    printf("Error: only one option is allowed to determine the number of processes.\n");
 		    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (host_list != NULL)
 		{
 		    printf("Error: -hosts option can only be called once and it cannot be combined with -host.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (argc > 2)
@@ -1141,7 +1143,7 @@ configfile_loop:
 			if (nproc < 1)
 			{
 			    printf("Error: You must specify a number greater than 0 after -hosts.\n");
-			    smpd_exit_fn("mp_parse_command_args");
+			    smpd_exit_fn(FCNAME);
 			    return SMPD_FAIL;
 			}
 			num_args_to_strip = 2 + nproc;
@@ -1151,14 +1153,14 @@ configfile_loop:
 			    if (index >= argc)
 			    {
 				printf("Error: missing host name after -hosts option.\n");
-				smpd_exit_fn("mp_parse_command_args");
+				smpd_exit_fn(FCNAME);
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 			    if (host_node_ptr == NULL)
 			    {
 				printf("failed to allocate memory for a host node.\n");
-				smpd_exit_fn("mp_parse_command_args");
+				smpd_exit_fn(FCNAME);
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr->next = NULL;
@@ -1200,14 +1202,14 @@ configfile_loop:
 		    else
 		    {
 			printf("Error: You must specify the number of hosts after the -hosts option.\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		}
 		else
 		{
 		    printf("Error: not enough arguments specified for -hosts option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1252,7 +1254,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: you must specify a priority after the -priority option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		if (isnumber((*argvp)[2]))
@@ -1268,14 +1270,14 @@ configfile_loop:
 		    if (n_priority_class < 0 || n_priority_class > 4 || n_priority < 0 || n_priority > 5)
 		    {
 			printf("Error: priorities must be between 0-4:0-5\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		}
 		else
 		{
 		    printf("Error: you must specify a priority after the -priority option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("priorities = %d:%d\n", n_priority_class, n_priority);
@@ -1305,14 +1307,14 @@ configfile_loop:
 		    else
 		    {
 			printf("Error: you must specify the port smpd is listening on after the %s option.\n", (*argvp)[1]);
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		}
 		else
 		{
 		    printf("Error: you must specify the port smpd is listening on after the %s option.\n", (*argvp)[1]);
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		num_args_to_strip = 2;
@@ -1322,7 +1324,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no path specifed after -path option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
@@ -1333,7 +1335,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no path specifed after -gpath option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(gpath, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
@@ -1349,7 +1351,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no passphrase specified afterh -phrase option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(smpd_process.passphrase, (*argvp)[2], SMPD_PASSPHRASE_MAX_LENGTH);
@@ -1360,7 +1362,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no file name specified after -smpdfile option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(smpd_process.smpd_filename, (*argvp)[2], SMPD_MAX_FILENAME);
@@ -1372,7 +1374,7 @@ configfile_loop:
 			if (s.st_mode & 00077)
 			{
 			    printf("Error: .smpd file cannot be readable by anyone other than the current user.\n");
-			    smpd_exit_fn("mp_parse_command_args");
+			    smpd_exit_fn(FCNAME);
 			    return SMPD_FAIL;
 			}
 		    }
@@ -1384,7 +1386,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no timeout specified after -timeout option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		smpd_process.timeout = atoi((*argvp)[2]);
@@ -1436,7 +1438,7 @@ configfile_loop:
 		if (argc < 3)
 		{
 		    printf("Error: no name specified after -channel option.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(channel, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
@@ -1449,7 +1451,7 @@ configfile_loop:
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strncpy(env_node->name, "MPI_WRAP_DLL_NAME", SMPD_MAX_NAME_LENGTH);
@@ -1515,7 +1517,7 @@ configfile_loop:
 		    if (host_list == NULL)
 		    {
 			printf("failed to allocate memory for a host node.\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    host_list->next = NULL;
@@ -1550,7 +1552,7 @@ configfile_loop:
 	if (argc < 2)
 	{
 	    printf("Error: no executable specified\n");
-	    smpd_exit_fn("mp_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 
@@ -1579,7 +1581,7 @@ configfile_loop:
 		if (result != MPIU_STR_SUCCESS)
 		{
 		    printf("Error: insufficient buffer space for the command line.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1589,7 +1591,7 @@ configfile_loop:
 		if (result != MPIU_STR_SUCCESS)
 		{
 		    printf("Error: insufficient buffer space for the command line.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1601,7 +1603,7 @@ configfile_loop:
 	    char *pTemp = (char*)malloc(SMPD_MAX_EXE_LENGTH);
 	    if (pTemp == NULL)
 	    {
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    strncpy(pTemp, (*argvp)[1], SMPD_MAX_EXE_LENGTH);
@@ -1612,7 +1614,7 @@ configfile_loop:
 	    if (result != MPIU_STR_SUCCESS)
 	    {
 		printf("Error: insufficient buffer space for the command line.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 #else
@@ -1620,7 +1622,7 @@ configfile_loop:
 	    if (result != MPIU_STR_SUCCESS)
 	    {
 		printf("Error: insufficient buffer space for the command line.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 #endif
@@ -1636,7 +1638,7 @@ configfile_loop:
 	if (nproc == 0)
 	{
 	    smpd_err_printf("missing num_proc flag: -n, -np, -hosts, or -localonly.\n");
-	    smpd_exit_fn("mp_parse_command_args");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (ghost_list != NULL && host_list == NULL && use_machine_file != SMPD_TRUE)
@@ -1645,7 +1647,7 @@ configfile_loop:
 	    if (host_list == NULL)
 	    {
 		printf("failed to allocate memory for a host node.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    host_list->next = NULL;
@@ -1713,7 +1715,7 @@ configfile_loop:
 		    if (map_node->next == NULL)
 		    {
 			printf("Error: malloc failed to allocate map structure.\n");
-			smpd_exit_fn("mp_parse_command_args");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    map_node = map_node->next;
@@ -1731,7 +1733,7 @@ configfile_loop:
 		if (map_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate map structure.\n");
-		    smpd_exit_fn("mp_parse_command_args");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		map_node->ref_count = 0;
@@ -1750,7 +1752,7 @@ configfile_loop:
 	    if (launch_node == NULL)
 	    {
 		smpd_err_printf("unable to allocate a launch node structure.\n");
-		smpd_exit_fn("mp_parse_command_args");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    launch_node->clique[0] = '\0';
@@ -1955,6 +1957,6 @@ configfile_loop:
 	}
     }
 
-    smpd_exit_fn("mp_parse_command_args");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

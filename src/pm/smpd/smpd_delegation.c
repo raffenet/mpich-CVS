@@ -12,6 +12,8 @@
 #include <lm.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_register_spn"
 int smpd_register_spn(const char *dc, const char *dn, const char *dh)
 {
     DWORD len;
@@ -130,6 +132,8 @@ int smpd_register_spn(const char *dc, const char *dn, const char *dh)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_lookup_spn"
 int smpd_lookup_spn(char *target, int length, const char * host, int port)
 {
     int result;

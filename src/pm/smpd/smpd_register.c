@@ -9,19 +9,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#undef FCNAME
+#define FCNAME "smpd_delete_current_password_registry_entry"
 SMPD_BOOL smpd_delete_current_password_registry_entry()
 {
     int nError;
     HKEY hRegKey = NULL;
     DWORD dwNumValues;
 
-    smpd_enter_fn("smpd_delete_current_password_registry_entry");
+    smpd_enter_fn(FCNAME);
 
     nError = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey);
     if (nError != ERROR_SUCCESS && nError != ERROR_PATH_NOT_FOUND && nError != ERROR_FILE_NOT_FOUND)
     {
 	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegOpenKeyEx(...) failed, error: %d\n", nError);
-	smpd_exit_fn("smpd_delete_current_password_registry_entry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -30,7 +32,7 @@ SMPD_BOOL smpd_delete_current_password_registry_entry()
     {
 	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(password) failed, error: %d\n", nError);
 	RegCloseKey(hRegKey);
-	smpd_exit_fn("smpd_delete_current_password_registry_entry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -39,7 +41,7 @@ SMPD_BOOL smpd_delete_current_password_registry_entry()
     {
 	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(account) failed, error: %d\n", nError);
 	RegCloseKey(hRegKey);
-	smpd_exit_fn("smpd_delete_current_password_registry_entry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -55,10 +57,12 @@ SMPD_BOOL smpd_delete_current_password_registry_entry()
 	    RegDeleteKey(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY);
     }
 
-    smpd_exit_fn("smpd_delete_current_password_registry_entry");
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_save_password_to_registry"
 SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPassword, SMPD_BOOL persistent)
 {
     int nError;
@@ -66,7 +70,7 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
     HKEY hRegKey = NULL;
     DATA_BLOB password_blob, blob;
 
-    smpd_enter_fn("smpd_save_password_to_registry");
+    smpd_enter_fn(FCNAME);
 
     if (persistent)
     {
@@ -81,7 +85,7 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 	{
 	    nError = GetLastError();
 	    smpd_err_printf("SavePasswordToRegistry:RegCreateKeyEx(...) failed, error: %d\n", nError);
-	    smpd_exit_fn("smpd_save_password_to_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
     }
@@ -99,7 +103,7 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 	{
 	    nError = GetLastError();
 	    smpd_err_printf("SavePasswordToRegistry:RegDeleteKey(...) failed, error: %d\n", nError);
-	    smpd_exit_fn("smpd_save_password_to_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
     }
@@ -110,7 +114,7 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 	nError = GetLastError();
 	smpd_err_printf("SavePasswordToRegistry:RegSetValueEx(...) failed, error: %d\n", nError);
 	RegCloseKey(hRegKey);
-	smpd_exit_fn("smpd_save_password_to_registry");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -136,10 +140,12 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 
     RegCloseKey(hRegKey);
 
-    smpd_exit_fn("smpd_save_password_to_registry");
+    smpd_exit_fn(FCNAME);
     return bResult;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_read_password_from_registry"
 SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword) 
 {
     int nError;
@@ -148,7 +154,7 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
     DWORD dwType;
     DATA_BLOB password_blob, blob;
 
-    smpd_enter_fn("smpd_read_password_from_registry");
+    smpd_enter_fn(FCNAME);
 
     if (RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) 
     {
@@ -159,12 +165,12 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
 	    nError = GetLastError();
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    RegCloseKey(hRegKey);
-	    smpd_exit_fn("smpd_read_password_from_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 	if (strlen(szAccount) < 1)
 	{
-	    smpd_exit_fn("smpd_read_password_from_registry");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 
@@ -210,10 +216,12 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
 	bResult = SMPD_FALSE;
     }
 
-    smpd_exit_fn("smpd_read_password_from_registry");
+    smpd_exit_fn(FCNAME);
     return bResult;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_cache_password"
 int smpd_cache_password(const char *account, const char *password)
 {
     int nError;
@@ -222,11 +230,11 @@ int smpd_cache_password(const char *account, const char *password)
     int num_bytes;
     DWORD len;
 
-    smpd_enter_fn("smpd_cache_password");
+    smpd_enter_fn(FCNAME);
 
     if (smpd_option_on("nocache"))
     {
-	smpd_exit_fn("smpd_cache_password");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -242,7 +250,7 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	nError = GetLastError();
 	/*smpd_err_printf("CachePassword:RegDeleteKey(...) failed, error: %d\n", nError);*/
-	smpd_exit_fn("smpd_cache_password");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -253,7 +261,7 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	/*smpd_err_printf("CachePassword:RegSetValueEx(%s) failed, error: %d\n", g_pszAccount, nError);*/
 	RegCloseKey(hRegKey);
-	smpd_exit_fn("smpd_cache_password");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -268,15 +276,17 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	/*smpd_err_printf("CachePassword:RegSetValueEx(...) failed, error: %d\n", nError);*/
 	RegCloseKey(hRegKey);
-	smpd_exit_fn("smpd_cache_password");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     RegCloseKey(hRegKey);
-    smpd_exit_fn("smpd_cache_password");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_cached_password"
 SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 {
     int nError;
@@ -286,7 +296,7 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
     DWORD dwLength;
     int num_bytes;
 
-    smpd_enter_fn("smpd_get_cached_password");
+    smpd_enter_fn(FCNAME);
 
     if (RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) 
     {
@@ -301,12 +311,12 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 	{
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    RegCloseKey(hRegKey);
-	    smpd_exit_fn("smpd_get_cached_password");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 	if (strlen(szAccount) < 1)
 	{
-	    smpd_exit_fn("smpd_get_cached_password");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 
@@ -321,7 +331,7 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 	{
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    RegCloseKey(hRegKey);
-	    smpd_exit_fn("smpd_get_cached_password");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 
@@ -329,18 +339,20 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 
 	strcpy(account, szAccount);
 	smpd_decode_buffer(szPassword, password, SMPD_MAX_PASSWORD_LENGTH, &num_bytes);
-	smpd_exit_fn("smpd_get_cached_password");
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
 
-    smpd_exit_fn("smpd_get_cached_password");
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_delete_cached_password"
 int smpd_delete_cached_password()
 {
-    smpd_enter_fn("smpd_delete_cached_password");
+    smpd_enter_fn(FCNAME);
     RegDeleteKey(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY);
-    smpd_exit_fn("smpd_delete_cached_password");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

@@ -40,9 +40,11 @@ static void get_uuid(char *str)
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_init"
 int smpd_dbs_init()
 {
-    smpd_enter_fn("smpd_dbs_init");
+    smpd_enter_fn(FCNAME);
 #ifdef USE_WIN_MUTEX_PROTECT
     if (smpd_process.nInitDBSRefCount == 0)
     {
@@ -56,16 +58,18 @@ int smpd_dbs_init()
 	/* create a database for the domain to be used for global operations like name publishing */
 	smpd_dbs_create(smpd_process.domain_name);
     }
-    smpd_exit_fn("smpd_dbs_init");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_finalize"
 int smpd_dbs_finalize()
 {
     smpd_database_node_t *pNode, *pNext;
     smpd_database_element_t *pElement;
 
-    smpd_enter_fn("smpd_dbs_finalize");
+    smpd_enter_fn(FCNAME);
 
     smpd_process.nInitDBSRefCount--;
 
@@ -101,16 +105,18 @@ int smpd_dbs_finalize()
 #endif
     }
 
-    smpd_exit_fn("smpd_dbs_finalize");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_create"
 int smpd_dbs_create(char *name)
 {
     /*char guid_str[100];*/
     smpd_database_node_t *pNode, *pNodeTest;
 
-    smpd_enter_fn("smpd_dbs_create");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Lock */
@@ -146,7 +152,7 @@ int smpd_dbs_create(char *name)
 	    /* Unlock */
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_create");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_FAIL;
 	}
 	pNodeTest = smpd_process.pDatabase;
@@ -166,20 +172,22 @@ int smpd_dbs_create(char *name)
     smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
     */
 
-    smpd_exit_fn("smpd_dbs_create");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_create_name_in"
 int smpd_dbs_create_name_in(char *name)
 {
     /*char guid_str[100];*/
     smpd_database_node_t *pNode;
 
-    smpd_enter_fn("smpd_dbs_create_name_in");
+    smpd_enter_fn(FCNAME);
 
     if (strlen(name) < 1 || strlen(name) > SMPD_MAX_DBS_NAME_LEN)
     {
-	smpd_exit_fn("smpd_dbs_create_name_in");
+	smpd_exit_fn(FCNAME);
 	return SMPD_DBS_FAIL;
     }
 
@@ -200,7 +208,7 @@ int smpd_dbs_create_name_in(char *name)
 #endif
 	    /*return SMPD_DBS_FAIL;*/
 	    /* Empty database? */
-	    smpd_exit_fn("smpd_dbs_create_name_in");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_SUCCESS;
 	}
 	pNode = pNode->pNext;
@@ -235,16 +243,18 @@ int smpd_dbs_create_name_in(char *name)
     smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
     */
 
-    smpd_exit_fn("smpd_dbs_create_name_in");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_get"
 int smpd_dbs_get(const char *name, const char *key, char *value)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement;
 
-    smpd_enter_fn("smpd_dbs_get");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -264,7 +274,7 @@ int smpd_dbs_get(const char *name, const char *key, char *value)
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-		    smpd_exit_fn("smpd_dbs_get");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_DBS_SUCCESS;
 		}
 		pElement = pElement->pNext;
@@ -277,16 +287,18 @@ int smpd_dbs_get(const char *name, const char *key, char *value)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_get");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_put"
 int smpd_dbs_put(const char *name, const char *key, const char *value)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement;
 
-    smpd_enter_fn("smpd_dbs_put");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -306,7 +318,7 @@ int smpd_dbs_put(const char *name, const char *key, const char *value)
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-		    smpd_exit_fn("smpd_dbs_put");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_DBS_SUCCESS;
 		}
 		pElement = pElement->pNext;
@@ -319,7 +331,7 @@ int smpd_dbs_put(const char *name, const char *key, const char *value)
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_put");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_SUCCESS;
 	}
 	pNode = pNode->pNext;
@@ -329,16 +341,18 @@ int smpd_dbs_put(const char *name, const char *key, const char *value)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_put");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_delete"
 int smpd_dbs_delete(const char *name, const char *key)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement, *pElementTrailer;
 
-    smpd_enter_fn("smpd_dbs_delete");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -362,7 +376,7 @@ int smpd_dbs_delete(const char *name, const char *key)
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-		    smpd_exit_fn("smpd_dbs_delete");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_DBS_SUCCESS;
 		}
 		pElementTrailer = pElement;
@@ -371,7 +385,7 @@ int smpd_dbs_delete(const char *name, const char *key)
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_delete");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_FAIL;
 	}
 	pNode = pNode->pNext;
@@ -381,16 +395,18 @@ int smpd_dbs_delete(const char *name, const char *key)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_delete");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_destroy"
 int smpd_dbs_destroy(const char *name)
 {
     smpd_database_node_t *pNode, *pNodeTrailer;
     smpd_database_element_t *pElement;
 
-    smpd_enter_fn("smpd_dbs_destroy");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -415,7 +431,7 @@ int smpd_dbs_destroy(const char *name)
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_destroy");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_SUCCESS;
 	}
 	pNodeTrailer = pNode;
@@ -426,15 +442,17 @@ int smpd_dbs_destroy(const char *name)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_destroy");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_first"
 int smpd_dbs_first(const char *name, char *key, char *value)
 {
     smpd_database_node_t *pNode;
 
-    smpd_enter_fn("smpd_dbs_first");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -465,7 +483,7 @@ int smpd_dbs_first(const char *name, char *key, char *value)
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_first");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_SUCCESS;
 	}
 	pNode = pNode->pNext;
@@ -475,15 +493,17 @@ int smpd_dbs_first(const char *name, char *key, char *value)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_first");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_next"
 int smpd_dbs_next(const char *name, char *key, char *value)
 {
     smpd_database_node_t *pNode;
 
-    smpd_enter_fn("smpd_dbs_next");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -506,7 +526,7 @@ int smpd_dbs_next(const char *name, char *key, char *value)
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
-	    smpd_exit_fn("smpd_dbs_next");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_DBS_SUCCESS;
 	}
 	pNode = pNode->pNext;
@@ -516,13 +536,15 @@ int smpd_dbs_next(const char *name, char *key, char *value)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_next");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_firstdb"
 int smpd_dbs_firstdb(char *name)
 {
-    smpd_enter_fn("smpd_dbs_firstdb");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -541,13 +563,15 @@ int smpd_dbs_firstdb(char *name)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_firstdb");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_dbs_nextdb"
 int smpd_dbs_nextdb(char *name)
 {
-    smpd_enter_fn("smpd_dbs_nextdb");
+    smpd_enter_fn(FCNAME);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
@@ -568,6 +592,6 @@ int smpd_dbs_nextdb(char *name)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
-    smpd_exit_fn("smpd_dbs_nextdb");
+    smpd_exit_fn(FCNAME);
     return SMPD_DBS_SUCCESS;
 }

@@ -153,31 +153,35 @@ SMPD_BOOL smpd_is_affirmative(const char *str)
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_option_on"
 SMPD_BOOL smpd_option_on(const char *option)
 {
     char val[SMPD_MAX_VALUE_LENGTH];
 
-    smpd_enter_fn("smpd_option_on");
+    smpd_enter_fn(FCNAME);
 
     if (smpd_get_smpd_data(option, val, SMPD_MAX_VALUE_LENGTH) == SMPD_SUCCESS)
     {
 	if (strcmp(val, "yes") == 0 || strcmp(val, "1") == 0)
 	{
-	    smpd_exit_fn("smpd_option_on");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;
 	}
     }
-    smpd_exit_fn("smpd_option_on");
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_delete_user_data"
 int smpd_delete_user_data(const char *key)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD result;
 
-    smpd_enter_fn("smpd_delete_user_data");
+    smpd_enter_fn(FCNAME);
 
     if (key == NULL)
 	return SMPD_FAIL;
@@ -187,7 +191,7 @@ int smpd_delete_user_data(const char *key)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
-	smpd_exit_fn("smpd_delete_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -196,29 +200,31 @@ int smpd_delete_user_data(const char *key)
     {
 	smpd_err_printf("Unable to delete the user smpd registry value '%s', error %d\n", key, result);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_delete_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_delete_user_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
-    smpd_enter_fn("smpd_delete_user_data");
+    smpd_enter_fn(FCNAME);
     result = smpd_delete_smpd_data(key);
-    smpd_exit_fn("smpd_delete_user_data");
+    smpd_exit_fn(FCNAME);
     return result;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_delete_smpd_data"
 int smpd_delete_smpd_data(const char *key)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD result;
 
-    smpd_enter_fn("smpd_delete_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     if (key == NULL)
 	return SMPD_FAIL;
@@ -228,7 +234,7 @@ int smpd_delete_smpd_data(const char *key)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
-	smpd_exit_fn("smpd_delete_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -239,13 +245,13 @@ int smpd_delete_smpd_data(const char *key)
 	{
 	    smpd_err_printf("Unable to delete the smpd registry value '%s', error %d\n", key, result);
 	    RegCloseKey(tkey);
-	    smpd_exit_fn("smpd_delete_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_delete_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
@@ -253,7 +259,7 @@ int smpd_delete_smpd_data(const char *key)
     int num_bytes;
     int found = 0;
 
-    smpd_enter_fn("smpd_delete_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     list = smpd_parse_smpd_file();
 
@@ -300,7 +306,7 @@ int smpd_delete_smpd_data(const char *key)
 		free(node);
 	    }
 	    fclose(fout);
-	    smpd_exit_fn("smpd_get_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
     }
@@ -310,18 +316,20 @@ int smpd_delete_smpd_data(const char *key)
 	list = list->next;
 	free(node);
     }
-    smpd_exit_fn("smpd_delete_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_set_user_data"
 int smpd_set_user_data(const char *key, const char *value)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
 
-    smpd_enter_fn("smpd_set_user_data");
+    smpd_enter_fn(FCNAME);
 
     if (key == NULL || value == NULL)
 	return SMPD_FAIL;
@@ -331,7 +339,7 @@ int smpd_set_user_data(const char *key, const char *value)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
-	smpd_exit_fn("smpd_set_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -341,29 +349,31 @@ int smpd_set_user_data(const char *key, const char *value)
     {
 	smpd_err_printf("Unable to write the user smpd registry value '%s:%s', error %d\n", key, value, result);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_set_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_set_user_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
-    smpd_enter_fn("smpd_set_user_data");
+    smpd_enter_fn(FCNAME);
     result = smpd_set_smpd_data(key, value);
-    smpd_exit_fn("smpd_set_user_data");
+    smpd_exit_fn(FCNAME);
     return result;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_set_smpd_data"
 int smpd_set_smpd_data(const char *key, const char *value)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
 
-    smpd_enter_fn("smpd_set_user_data");
+    smpd_enter_fn(FCNAME);
 
     if (key == NULL || value == NULL)
 	return SMPD_FAIL;
@@ -373,7 +383,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
-	smpd_exit_fn("smpd_set_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -383,12 +393,12 @@ int smpd_set_smpd_data(const char *key, const char *value)
     {
 	smpd_err_printf("Unable to write the smpd registry value '%s:%s', error %d\n", key, value, result);
 	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_set_user_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_set_user_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
@@ -401,7 +411,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
     char name_str[SMPD_MAX_NAME_LENGTH];
     char value_str[SMPD_MAX_VALUE_LENGTH];
 
-    smpd_enter_fn("smpd_set_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("setting smpd data: %s=%s\n", key, value);
 
@@ -440,38 +450,42 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	    fprintf(fout, "%s\n", buffer);
 	}
 	fclose(fout);
-	smpd_exit_fn("smpd_set_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (fout != NULL)
     {
 	fclose(fout);
-	smpd_exit_fn("smpd_set_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
-    smpd_exit_fn("smpd_set_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_user_data_default"
 int smpd_get_user_data_default(const char *key, char *value, int value_len)
 {
-    smpd_enter_fn("smpd_get_user_data_default");
+    smpd_enter_fn(FCNAME);
     /* FIXME: function not implemented */
     key;
     value;
     value_len;
-    smpd_exit_fn("smpd_get_user_data_default");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_user_data"
 int smpd_get_user_data(const char *key, char *value, int value_len)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
 
-    smpd_enter_fn("smpd_get_user_data");
+    smpd_enter_fn(FCNAME);
 
     result = RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
 	0, 
@@ -481,7 +495,7 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
     {
 	smpd_dbg_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
 	result = smpd_get_user_data_default(key, value, value_len);
-	smpd_exit_fn("smpd_get_user_data");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
@@ -492,34 +506,36 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
 	smpd_dbg_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
 	RegCloseKey(tkey);
 	result = smpd_get_user_data_default(key, value, value_len);
-	smpd_exit_fn("smpd_get_user_data");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_get_user_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
-    smpd_enter_fn("smpd_get_user_data");
+    smpd_enter_fn(FCNAME);
     result = smpd_get_smpd_data(key, value, value_len);
     if (result != SMPD_SUCCESS)
 	result = smpd_get_user_data_default(key, value, value_len);
-    smpd_exit_fn("smpd_get_user_data");
+    smpd_exit_fn(FCNAME);
     return result;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_smpd_data_default"
 int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 {
-    smpd_enter_fn("smpd_get_smpd_data_default");
+    smpd_enter_fn(FCNAME);
 #ifdef HAVE_WINDOWS_H
     /* A default passphrase is only available for Windows */
     if (strcmp(key, "phrase") == 0)
     {
 	strncpy(value, SMPD_DEFAULT_PASSPHRASE, value_len);
 	value[value_len-1] = '\0';
-	smpd_exit_fn("smpd_get_smpd_data_default");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 #endif
@@ -548,27 +564,29 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
     {
 	if (smpd_get_hostname(value, value_len) != 0)
 	{
-	    smpd_exit_fn("smpd_get_smpd_data_default");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
     */
     else
     {
-	smpd_exit_fn("smpd_get_smpd_data_default");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_get_smpd_data_default");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_smpd_data"
 int smpd_get_smpd_data(const char *key, char *value, int value_len)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
 
-    smpd_enter_fn("smpd_get_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
 	0, 
@@ -579,10 +597,10 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
 	    smpd_dbg_printf("Unable to get the data for the key '%s'\n", key);
-	    smpd_exit_fn("smpd_get_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_get_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -594,22 +612,22 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
 	    smpd_dbg_printf("Unable to get the data for the key '%s'\n", key);
-	    smpd_exit_fn("smpd_get_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_get_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
     RegCloseKey(tkey);
-    smpd_exit_fn("smpd_get_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
     int result;
     smpd_data_t *list = NULL, *node;
     int num_bytes;
 
-    smpd_enter_fn("smpd_get_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("getting smpd data: %s\n", key);
 
@@ -632,7 +650,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	}
 	if (found)
 	{
-	    smpd_exit_fn("smpd_get_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
     }
@@ -643,11 +661,13 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     else
 	smpd_dbg_printf("smpd data: failed to get %s\n", key);
 
-    smpd_exit_fn("smpd_get_smpd_data");
+    smpd_exit_fn(FCNAME);
     return result;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_all_smpd_data"
 int smpd_get_all_smpd_data(smpd_data_t **data)
 {
 #ifdef HAVE_WINDOWS_H
@@ -658,11 +678,11 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
     DWORD name_length, value_length, index;
     smpd_data_t *list, *item;
 
-    smpd_enter_fn("smpd_get_all_smpd_data");
+    smpd_enter_fn(FCNAME);
 
     if (data == NULL)
     {
-	smpd_exit_fn("smpd_get_all_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -674,7 +694,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
     {
 	/* No key therefore no settings */
 	*data = NULL;
-	smpd_exit_fn("smpd_get_all_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -690,7 +710,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
 	{
 	    *data = NULL;
 	    RegCloseKey(tkey);
-	    smpd_exit_fn("smpd_get_all_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	memcpy(item->name, name, SMPD_MAX_NAME_LENGTH);
@@ -704,52 +724,56 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
     }
     RegCloseKey(tkey);
     *data = list;
-    smpd_exit_fn("smpd_get_all_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
-    smpd_enter_fn("smpd_get_all_smpd_data");
+    smpd_enter_fn(FCNAME);
     if (data == NULL)
     {
-	smpd_exit_fn("smpd_get_all_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     *data = NULL;
-    smpd_exit_fn("smpd_get_all_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_lock_smpd_data"
 int smpd_lock_smpd_data(void)
 {
-    smpd_enter_fn("smpd_lock_smpd_data");
+    smpd_enter_fn(FCNAME);
 #ifdef HAVE_WINDOWS_H
     if (smpd_process.hSMPDDataMutex == NULL)
     {
 	smpd_process.hSMPDDataMutex = CreateMutex(NULL, FALSE, SMPD_DATA_MUTEX_NAME);
 	if (smpd_process.hSMPDDataMutex == NULL)
 	{
-	    smpd_exit_fn("smpd_lock_smpd_data");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
     if (WaitForSingleObject(smpd_process.hSMPDDataMutex, SMPD_SHORT_TIMEOUT*1000) != WAIT_OBJECT_0)
     {
-	smpd_exit_fn("smpd_lock_smpd_data");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 #else
 #endif
-    smpd_exit_fn("smpd_lock_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_unlock_smpd_data"
 int smpd_unlock_smpd_data(void)
 {
-    smpd_enter_fn("smpd_unlock_smpd_data");
+    smpd_enter_fn(FCNAME);
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(smpd_process.hSMPDDataMutex);
 #else
 #endif
-    smpd_exit_fn("smpd_unlock_smpd_data");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

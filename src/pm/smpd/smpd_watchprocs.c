@@ -19,6 +19,8 @@ typedef struct smpd_registry_proc
 static HANDLE hQuit=NULL;
 static SMPD_BOOL bPrint = SMPD_TRUE;
 
+#undef FCNAME
+#define FCNAME "smpd_watch_processes_thread"
 int smpd_watch_processes_thread()
 {
     HKEY hKey, hProcKey;
@@ -32,7 +34,7 @@ int smpd_watch_processes_thread()
     DWORD result;
     smpd_registry_proc *node, *trailer, *temp_list, *list = NULL;
 
-    smpd_enter_fn("smpd_watch_processes");
+    smpd_enter_fn(FCNAME);
 
 restart:
 
@@ -238,7 +240,7 @@ restart:
 
     CloseHandle(hRegEvent);
 
-    smpd_exit_fn("smpd_watch_processes");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -293,12 +295,14 @@ fn_exit:
 
 #else /* HAVE_WINDOWS_H */
 
+#undef FCNAME
+#define FCNAME "smpd_watch_processes"
 int smpd_watch_processes()
 {
-    smpd_enter_fn("smpd_watch_processes");
+    smpd_enter_fn(FCNAME);
     printf("Process watching not implemented under unix systems, exiting...\n");
     fflush(stdout);
-    smpd_exit_fn("smpd_watch_processes");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 

@@ -328,6 +328,8 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_argcv_from_file"
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 {
     /* maximum of 8192 characters per line and 1023 args */
@@ -336,7 +338,7 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
     char *token;
     int index;
 
-    smpd_enter_fn("smpd_get_argcv_from_file");
+    smpd_enter_fn(FCNAME);
 
     argv[0] = "bogus.exe";
     while (fgets(line, 8192, fin))
@@ -364,7 +366,7 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 	}
     }
 
-    smpd_exit_fn("smpd_get_argcv_from_file");
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
@@ -390,17 +392,19 @@ static smpd_launch_node_t *prev_launch_node(smpd_launch_node_t *node, int id)
     return NULL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_create_cliques"
 int smpd_create_cliques(smpd_launch_node_t *list)
 {
     smpd_launch_node_t *iter, *cur_node;
     int cur_iproc, printed_iproc;
     char *cur_str;
 
-    smpd_enter_fn("smpd_create_cliques");
+    smpd_enter_fn(FCNAME);
 
     if (list == NULL)
     {
-	smpd_exit_fn("smpd_create_cliques");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -511,7 +515,7 @@ int smpd_create_cliques(smpd_launch_node_t *list)
 	iter = iter->next;
     }
     */
-    smpd_exit_fn("smpd_create_cliques");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 

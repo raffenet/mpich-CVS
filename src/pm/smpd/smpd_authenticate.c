@@ -15,13 +15,15 @@ int smpd_getpid()
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_gen_authentication_strings"
 int smpd_gen_authentication_strings(char *phrase, char *append, char *crypted)
 {
     int stamp;
     char hash[SMPD_PASSPHRASE_MAX_LENGTH];
     char phrase_internal[SMPD_PASSPHRASE_MAX_LENGTH+1];
 
-    smpd_enter_fn("smpd_gen_authentication_strings");
+    smpd_enter_fn(FCNAME);
 
     stamp = rand();
 
@@ -32,12 +34,12 @@ int smpd_gen_authentication_strings(char *phrase, char *append, char *crypted)
     if (strlen(hash) > SMPD_PASSPHRASE_MAX_LENGTH)
     {
 	smpd_err_printf("internal crypted string too long: %d > %d\n", strlen(hash), SMPD_PASSPHRASE_MAX_LENGTH);
-	smpd_exit_fn("smpd_gen_authentication_strings");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(crypted, hash);
 
-    smpd_exit_fn("smpd_gen_authentication_strings");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -75,13 +77,15 @@ static const char * crypt_error(int error)
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_encrypt_data_plaintext"
 static int smpd_encrypt_data_plaintext(char *input, int input_length, char *output, int output_length)
 {
-    smpd_enter_fn("smpd_encrypt_data_plaintext");
+    smpd_enter_fn(FCNAME);
     if (output_length < input_length + 2)
     {
 	smpd_err_printf("encryption output buffer too small.\n");
-	smpd_exit_fn("smpd_encrypt_data_plaintext");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     *output = SMPD_PLAINTEXT_PREFIX;
@@ -89,10 +93,12 @@ static int smpd_encrypt_data_plaintext(char *input, int input_length, char *outp
     output_length--;
     memcpy(output, input, input_length);
     output[input_length] = '\0';
-    smpd_exit_fn("smpd_encrypt_data_plaintext");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_encrypt_data"
 int smpd_encrypt_data(char *input, int input_length, char *output, int output_length)
 {
 #ifdef HAVE_WINDOWS_H
@@ -105,12 +111,12 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
     int length, result;
     int ret_val = SMPD_SUCCESS;
 
-    smpd_enter_fn("smpd_encrypt_data");
+    smpd_enter_fn(FCNAME);
 
     if (smpd_process.plaintext)
     {
 	ret_val = smpd_encrypt_data_plaintext(input, input_length, output, output_length);
-	smpd_exit_fn("smpd_encrypt_data");
+	smpd_exit_fn(FCNAME);
 	return ret_val;
     }
 
@@ -206,26 +212,28 @@ fn_cleanup:
 	CryptReleaseContext(hCryptProv, 0);
     }
 
-    smpd_exit_fn("smpd_encrypt_data");
+    smpd_exit_fn(FCNAME);
     return ret_val;
 
 #else
     int ret_val = SMPD_SUCCESS;
-    smpd_enter_fn("smpd_encrypt_data");
+    smpd_enter_fn(FCNAME);
     ret_val = smpd_encrypt_data_plaintext(input, input_length, output, output_length);
-    smpd_exit_fn("smpd_encrypt_data");
+    smpd_exit_fn(FCNAME);
     return ret_val;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_decrypt_data_plaintext"
 static int smpd_decrypt_data_plaintext(char *input, int input_length, char *output, int *output_length)
 {
-    smpd_enter_fn("smpd_decrypt_data_plaintext");
+    smpd_enter_fn(FCNAME);
     /* check the prefix character to make sure the data is plaintext */
     if (*input != SMPD_PLAINTEXT_PREFIX)
     {
 	smpd_err_printf("decryption module not available, please try again with -plaintext.\n");
-	smpd_exit_fn("smpd_decrypt_data_plaintext");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* skip over the prefix character */
@@ -234,15 +242,17 @@ static int smpd_decrypt_data_plaintext(char *input, int input_length, char *outp
     if (*output_length < input_length)
     {
 	smpd_err_printf("decryption output buffer too small.\n");
-	smpd_exit_fn("smpd_decrypt_data_plaintext");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     memcpy(output, input, input_length);
     *output_length = input_length;
-    smpd_exit_fn("smpd_decrypt_data_plaintext");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_decrypt_data"
 int smpd_decrypt_data(char *input, int input_length, char *output, int *output_length)
 {
 #ifdef HAVE_WINDOWS_H
@@ -255,12 +265,12 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
     int length, result;
     int ret_val = SMPD_SUCCESS;
 
-    smpd_enter_fn("smpd_decrypt_data");
+    smpd_enter_fn(FCNAME);
 
     if (*input == SMPD_PLAINTEXT_PREFIX)
     {
 	ret_val = smpd_decrypt_data_plaintext(input, input_length, output, output_length);
-	smpd_exit_fn("smpd_decrypt_data");
+	smpd_exit_fn(FCNAME);
 	return ret_val;
     }
 
@@ -367,13 +377,13 @@ fn_cleanup:
 	CryptReleaseContext(hCryptProv, 0);
     }
 
-    smpd_exit_fn("smpd_decrypt_data");
+    smpd_exit_fn(FCNAME);
     return ret_val;
 #else
     int ret_val = SMPD_SUCCESS;
-    smpd_enter_fn("smpd_decrypt_data");
+    smpd_enter_fn(FCNAME);
     ret_val = smpd_decrypt_data_plaintext(input, input_length, output, output_length);
-    smpd_exit_fn("smpd_decrypt_data");
+    smpd_exit_fn(FCNAME);
     return ret_val;
 #endif
 }

@@ -179,12 +179,14 @@ int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_read"
 int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 {
     int result;
     MPIU_Size_t num_read;
 
-    smpd_enter_fn("smpd_read");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("reading %d bytes from sock %d\n", len, MPIDU_Sock_get_sock_id(sock));
 
@@ -195,12 +197,12 @@ int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("Unable to read %d bytes,\nsock error: %s\n", len, get_sock_error_string(result));
-	    smpd_exit_fn("smpd_read");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_read == len)
 	{
-	    smpd_exit_fn("smpd_write");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 
@@ -219,16 +221,18 @@ int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 	}
     }
 
-    smpd_exit_fn("smpd_read");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_write"
 int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 {
     int result;
     MPIU_Size_t num_written;
 
-    smpd_enter_fn("smpd_write");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("writing %d bytes to sock %d\n", len, MPIDU_Sock_get_sock_id(sock));
 
@@ -240,12 +244,12 @@ int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 	{
 	    smpd_err_printf("Unable to write %d bytes,\nsock error: %s\n",
 			    len, get_sock_error_string(result));
-	    smpd_exit_fn("smpd_write");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_written == len)
 	{
-	    smpd_exit_fn("smpd_write");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 
@@ -266,16 +270,18 @@ int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 	}
     }
 
-    smpd_exit_fn("smpd_write");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_write_string"
 int smpd_write_string(MPIDU_Sock_t sock, char *str)
 {
     int result;
     MPIU_Size_t len, num_written;
 
-    smpd_enter_fn("smpd_write_string");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("writing string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str);
 
@@ -288,12 +294,12 @@ int smpd_write_string(MPIDU_Sock_t sock, char *str)
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("Unable to write string of length %d,\nsock error: %s\n", len, get_sock_error_string(result));
-	    smpd_exit_fn("smpd_write_string");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_written == len)
 	{
-	    smpd_exit_fn("smpd_write_string");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 
@@ -302,7 +308,7 @@ int smpd_write_string(MPIDU_Sock_t sock, char *str)
 	len -= num_written;
     }
 
-    smpd_exit_fn("smpd_write_string");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -347,19 +353,21 @@ static int chew_up_string(MPIDU_Sock_t sock)
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_read_string"
 int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 {
     int num_bytes;
     char *str_orig;
 
-    smpd_enter_fn("smpd_read_string");
+    smpd_enter_fn(FCNAME);
 
     str_orig = str;
 
     if (maxlen == 0)
     {
 	smpd_dbg_printf("zero length read string request on sock %d\n", MPIDU_Sock_get_sock_id(sock));
-	smpd_exit_fn("smpd_read_string");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -368,13 +376,13 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	num_bytes = read_string(sock, str, maxlen);
 	if (num_bytes == -1)
 	{
-	    smpd_exit_fn("smpd_read_string");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (num_bytes > 0 && str[num_bytes-1] == '\0')
 	{
 	    smpd_dbg_printf("received string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str_orig);
-	    smpd_exit_fn("smpd_read_string");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	if (num_bytes == maxlen)
@@ -383,14 +391,14 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	    str[num_bytes-1] = '\0';
 	    chew_up_string(sock);
 	    smpd_dbg_printf("received truncated string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str_orig);
-	    smpd_exit_fn("smpd_read_string");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	str += num_bytes;
 	maxlen -= num_bytes;
     }
     /*
-    smpd_exit_fn("smpd_read_string");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
     */
 }

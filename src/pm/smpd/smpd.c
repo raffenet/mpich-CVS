@@ -27,6 +27,8 @@
 #include <fcntl.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "main"
 int main(int argc, char* argv[])
 {
     int result;
@@ -42,14 +44,14 @@ int main(int argc, char* argv[])
     char *homedir;
 #endif
 
-    smpd_enter_fn("main");
+    smpd_enter_fn(FCNAME);
 
     /* initialization */
     result = PMPI_Init(&argc, &argv);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPI_Init failed,\n error: %d\n", result);
-	smpd_exit_fn("main");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
@@ -58,7 +60,7 @@ int main(int argc, char* argv[])
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("main");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
@@ -66,7 +68,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_init_process failed.\n");
-	smpd_exit_fn("main");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     */
@@ -76,7 +78,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to parse the command arguments.\n");
-	smpd_exit_fn("main");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
@@ -93,7 +95,7 @@ int main(int argc, char* argv[])
 	result = StartServiceCtrlDispatcher(dispatchTable);
 	if (result)
 	{
-	    smpd_exit_fn("main");
+	    smpd_exit_fn(FCNAME);
 	    smpd_exit(0);
 	}
 
@@ -101,11 +103,11 @@ int main(int argc, char* argv[])
 	if (result != ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
 	{
 	    smpd_add_error_to_message_log(TEXT("StartServiceCtrlDispatcher failed."));
-	    smpd_exit_fn("main");
+	    smpd_exit_fn(FCNAME);
 	    smpd_exit(0);
 	}
 	smpd_print_options();
-	smpd_exit_fn("main");
+	smpd_exit_fn(FCNAME);
 	smpd_exit(0);
     }
     /*
@@ -122,7 +124,7 @@ int main(int argc, char* argv[])
 	if (smpd_process.noprompt)
 	{
 	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
-	    smpd_exit_fn("main");
+	    smpd_exit_fn(FCNAME);
 	    return -1;
 	}
 	printf("Please specify an authentication passphrase for this smpd: ");
@@ -146,7 +148,7 @@ int main(int argc, char* argv[])
 	    if (fout == NULL)
 	    {
 		printf("Error: unable to open '%s', errno = %d\n", smpd_filename, errno);
-		smpd_exit_fn("main");
+		smpd_exit_fn(FCNAME);
 		return errno;
 	    }
 	    fprintf(fout, "phrase=%s\n", smpd_process.passphrase);
@@ -160,10 +162,12 @@ int main(int argc, char* argv[])
     smpd_finalize_printf();
 
     smpd_exit(result);
-    smpd_exit_fn("main");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_entry_point"
 int smpd_entry_point()
 {
     int result;
@@ -173,7 +177,7 @@ int smpd_entry_point()
 
     /* This function is called by main or by smpd_service_main in the case of a Windows service */
 
-    smpd_enter_fn("smpd_entry_point");
+    smpd_enter_fn(FCNAME);
 
 #ifdef HAVE_WINDOWS_H
     /* prevent the os from bringing up debug message boxes if this process crashes */
@@ -184,7 +188,7 @@ int smpd_entry_point()
 	{
 	    result = GetLastError();
 	    smpd_err_printf("Unable to report that the service has started, error: %d\n", result);
-	    smpd_exit_fn("smpd_entry_point");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	smpd_clear_process_registry();
@@ -204,7 +208,7 @@ int smpd_entry_point()
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     smpd_process.set = set;
@@ -216,7 +220,7 @@ int smpd_entry_point()
     {
 	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 	smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
@@ -230,14 +234,14 @@ int smpd_entry_point()
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a context for the smpd listener.\n");
-	smpd_exit_fn("smpd_entry_point");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     result = MPIDU_Sock_set_user_ptr(listener, smpd_process.listener_context);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
@@ -325,7 +329,7 @@ int smpd_entry_point()
     }
     */
 
-    smpd_exit_fn("smpd_entry_point");
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 

@@ -37,6 +37,8 @@ static int exists(char *filename)
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_get_full_path_name"
 SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, char **namepart)
 {
 #ifdef HAVE_WINDOWS_H
@@ -49,6 +51,8 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     char *filename;
     char temp_name[SMPD_MAX_EXE_LENGTH];
     char *temp_exe = NULL;
+
+    smpd_enter_fn(FCNAME);
 
     /* handle the common case of unix programmers specifying executable like this: ./foo */
     if (strlen(exe) > 2)
@@ -72,6 +76,7 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     if (len == 0 || len > maxlen)
     {
 	smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
     *(*namepart - 1) = '\0'; /* separate the path from the executable */
@@ -88,12 +93,14 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 		if ((len = SearchPath(NULL, *namepart, ".exe", SMPD_MAX_EXE_LENGTH, buffer, &filename)) == 0)
 		{
 		    smpd_dbg_printf("path not found. leaving as is in case the path exists on the remote machine.\n");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_TRUE;
 		}
 	    }
 	    if (len > SMPD_MAX_EXE_LENGTH || len > maxlen)
 	    {
 		smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FALSE;
 	    }
 	    *(filename - 1) = '\0'; /* separate the file name */
@@ -107,6 +114,7 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     if (len > maxlen)
     {
 	smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -125,6 +133,7 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 	{
 	    smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n",
 		maxlen, strlen(info->lpUniversalName) + strlen(temp_name) + 2);
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 	strcpy(exe_path, info->lpUniversalName);
@@ -132,10 +141,13 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 	strcpy(*namepart, temp_name);
     }
 
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 #else
     char *path = NULL;
     char temp_str[SMPD_MAX_EXE_LENGTH] = "./";
+
+    smpd_enter_fn(FCNAME);
 
     getcwd(temp_str, SMPD_MAX_EXE_LENGTH);
 
@@ -149,6 +161,7 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 	*namepart = strrchr(exe_path, '/');
 	**namepart = '\0'; /* separate the path from the executable */
 	*namepart = *namepart + 1;
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
     *namepart = strrchr(exe_path, '/');
@@ -163,12 +176,16 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 	*namepart = strrchr(exe_path, '/');
 	**namepart = '\0';
 	*namepart = *namepart + 1;
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 #endif
 }
 
+#undef FCNAME
+#define FCNAME "smpd_search_path"
 SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, char *str)
 {
 #ifdef HAVE_WINDOWS_H
@@ -176,6 +193,8 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
     char *path_spec, *smpd_path2 = NULL, exe_path[SMPD_MAX_EXE_LENGTH];
     size_t len_pre, len_spec, len_post;
     HMODULE hModule;
+
+    smpd_enter_fn(FCNAME);
 
     path_spec = strstr(smpd_path, SMPD_PATH_SPEC);
     if (path_spec != NULL)
@@ -203,7 +222,9 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
 	len_post = strlen(path_spec + strlen(SMPD_PATH_SPEC));
 	smpd_path2 = (char *)malloc((len_pre + len_spec + len_post + 1) * sizeof(char));
 	if (len_pre)
+	{
 	    memcpy(smpd_path2, smpd_path, len_pre);
+	}
 	memcpy(smpd_path2 + len_pre, exe_path, len_spec);
 	strcpy(smpd_path2 + len_pre + len_spec, path_spec + strlen(SMPD_PATH_SPEC));
 	smpd_dbg_printf("changed path(%s) to (%s)\n", smpd_path, smpd_path2);
@@ -223,14 +244,20 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
 		if (SearchPath(NULL, exe, ".exe", maxlen, str, &filepart) == 0)
 		{
 		    if (smpd_path2 != NULL)
+		    {
 			free(smpd_path2);
+		    }
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FALSE;
 		}
 	    }
 	}
     }
     if (smpd_path2 != NULL)
+    {
 	free(smpd_path2);
+    }
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 #else
     char test[SMPD_MAX_EXE_LENGTH];
@@ -238,8 +265,13 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
     char *token;
     int n;
 
+    smpd_enter_fn(FCNAME);
+
     if (smpd_path == NULL || exe == NULL || maxlen < 1 || str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
 
     strncpy(path, smpd_path, SMPD_MAX_PATH_LENGTH);
     path[SMPD_MAX_PATH_LENGTH - 1] = '\0';
@@ -257,13 +289,16 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
 	    if (n < maxlen)
 	    {
 		strcpy(str, test);
+		smpd_exit_fn(FCNAME);
 		return SMPD_TRUE;
 	    }
 	    smpd_err_printf("buffer provided is too small: %d provided, %d needed\n", maxlen, n);
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FALSE;
 	}
 	token = strtok(NULL, ";:");
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 #endif
 }
@@ -294,19 +329,21 @@ smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func )
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_create_process_struct"
 int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 {
     int result;
     smpd_process_t *p;
     static int cur_id = 0;
 
-    smpd_enter_fn("smpd_create_process_struct");
+    smpd_enter_fn(FCNAME);
 
     p = (smpd_process_t*)malloc(sizeof(smpd_process_t));
     if (p == NULL)
     {
 	*process_ptr = NULL;
-	smpd_exit_fn("smpd_create_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     p->id = cur_id++; /* MT - If smpd is to be thread safe, this will have to be changed */
@@ -327,7 +364,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stdin context.\n");
-	smpd_exit_fn("smpd_create_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_create_context(SMPD_CONTEXT_STDOUT, smpd_process.set, MPIDU_SOCK_INVALID_SOCK, -1, &p->out);
@@ -336,7 +373,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stdout context.\n");
-	smpd_exit_fn("smpd_create_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_create_context(SMPD_CONTEXT_STDERR, smpd_process.set, MPIDU_SOCK_INVALID_SOCK, -1, &p->err);
@@ -345,7 +382,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create stderr context.\n");
-	smpd_exit_fn("smpd_create_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_create_context(SMPD_CONTEXT_PMI, smpd_process.set, MPIDU_SOCK_INVALID_SOCK, -1, &p->pmi);
@@ -354,7 +391,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	free(p);
 	*process_ptr = NULL;
 	smpd_err_printf("unable to create pmi context.\n");
-	smpd_exit_fn("smpd_create_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     p->in->rank = rank;
@@ -375,76 +412,88 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 
     *process_ptr = p;
 
-    smpd_exit_fn("smpd_create_process_struct");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_process_to_string"
 SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process)
 {
     char indent_str[SMPD_MAX_TO_STRING_INDENT+1];
 
+    smpd_enter_fn(FCNAME);
+
     if (*len_ptr < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
 
     if (indent > SMPD_MAX_TO_STRING_INDENT)
+    {
 	indent = SMPD_MAX_TO_STRING_INDENT;
+    }
 
     memset(indent_str, ' ', indent);
     indent_str[indent] = '\0';
 
     smpd_snprintf_update(str_pptr, len_ptr, "%sid: %d\n", indent_str, process->id);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%srank: %d\n", indent_str, process->rank);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sexe: %s\n", indent_str, process->exe);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sdir: %s\n", indent_str, process->dir);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%senv: %s\n", indent_str, process->env);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%spath: %s\n", indent_str, process->path);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%spid: %d\n", indent_str, process->pid);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sexitcode: %d\n", indent_str, process->exitcode);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%scontext_refcount: %s\n", indent_str, process->context_refcount);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%serr_msg: %s\n", indent_str, process->err_msg);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%snum_valid_contexts: %d\n", indent_str, process->num_valid_contexts);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%s in: %p\n", indent_str, process->in);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%s out: %p\n", indent_str, process->out);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%s err: %p\n", indent_str, process->err);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%s pmi: %p\n", indent_str, process->pmi);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%skvs_name: %s\n", indent_str, process->kvs_name);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%snproc: %d\n", indent_str, process->nproc);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
 #ifdef HAVE_WINDOWS_H
     smpd_snprintf_update(str_pptr, len_ptr, "%swait: %p:%p\n", indent_str, process->wait.hProcess, process->wait.hThread);
 #else
     smpd_snprintf_update(str_pptr, len_ptr, "%swait: %d\n", indent_str, (int)process->wait);
 #endif
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%snext: %p\n", indent_str, process->next);
-    if (*len_ptr < 1) return SMPD_FALSE; /* this misses the case of an exact fit */
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; } /* this misses the case of an exact fit */
 
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_free_process_struct"
 int smpd_free_process_struct(smpd_process_t *process)
 {
-    smpd_enter_fn("smpd_free_process_struct");
+    smpd_enter_fn(FCNAME);
     if (process == NULL)
     {
 	smpd_dbg_printf("smpd_free_process_struct passed NULL process pointer.\n");
-	smpd_exit_fn("smpd_free_process_struct");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (process->in)
@@ -467,15 +516,17 @@ int smpd_free_process_struct(smpd_process_t *process)
     process->rank = -1;
     process->next = NULL;
     free(process);
-    smpd_exit_fn("smpd_free_process_struct");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_interpret_session_header"
 int smpd_interpret_session_header(char *str)
 {
     char temp_str[100];
 
-    smpd_enter_fn("smpd_interpret_session_header");
+    smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("interpreting session header: \"%s\"\n", str);
 
@@ -515,6 +566,6 @@ int smpd_interpret_session_header(char *str)
 	}
     }
 
-    smpd_exit_fn("smpd_interpret_session_header");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
