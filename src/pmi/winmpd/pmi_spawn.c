@@ -472,9 +472,37 @@ void SpawnWaitThread(Spawn_struct *pSpawn)
     FreeSpawn_struct(pSpawn);
 }
 
-int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
-		       const int *maxprocs, const void *info, int *errors, 
-		       int *same_domain, const void *preput_info)
+int info_keyval_get(const int size, const PMI_keyval_t *array, const char *key, const int len, char *val, int *flag)
+{
+    int i;
+    for (i=0; i<size; i++)
+    {
+	if (strcmp(array[i].key, key) == 0)
+	{
+	    if ((int)strlen(array[i].val) >= len)
+	    {
+		*flag = 0;
+		return -1;
+	    }
+	    strcpy(val, array[i].val);
+	    *flag = 1;
+	    return 0;
+	}
+    }
+    *flag = 0;
+    return 0;
+}
+
+int PMI_Spawn_multiple(int count,
+                       const char ** cmds,
+                       const char *** argvs,
+                       const int * maxprocs,
+                       const int * info_keyval_sizes,
+                       const PMI_keyval_t ** info_keyval_vectors,
+                       int preput_keyval_size,
+                       const PMI_keyval_t * preput_keyval_vector,
+                       int * errors,
+                       int * same_domain)
 {
     char pszStr[4096];
     int nNproc, nIproc;
@@ -488,23 +516,23 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
     char pszCmd[1024];
     char pszDb[100];
     char pszTemp[1024];
-    int nKeys;
-    char pszKey[MPICH_MAX_INFO_KEY], pszValue[MPICH_MAX_INFO_VAL];
     HostNode *n;
     DWORD dwThreadId;
 
     /* should the user and password be passed in by info?*/
     /* should this information be in each info allowing for multiple user credentials?*/
-    if (info != NULL)
+    if (count > 0 && info_keyval_sizes && info_keyval_vectors)
     {
-	if (MPICH_Info_get(((MPICH_Info*)info)[0], "user", 100, g_pszPMIAccount, &flag) != MPICH_SUCCESS)
+	if (info_keyval_get(info_keyval_sizes[0], info_keyval_vectors[0], "user", 100, g_pszPMIAccount, &flag))
+	/*if (MPICH_Info_get(((MPICH_Info*)info)[0], "user", 100, g_pszPMIAccount, &flag) != MPICH_SUCCESS)*/
 	{
-	    err_printf("Error: MPICH_Info_get('user') failed\n");
+	    err_printf("Error: info_keyval_get('user') failed\n");
 	    return PMI_FAIL;
 	}
-	if (MPICH_Info_get(((MPICH_Info*)info)[0], "password", 100, g_pszPMIPassword, &flag) != MPICH_SUCCESS)
+	if (info_keyval_get(info_keyval_sizes[0], info_keyval_vectors[0], "password", 100, g_pszPMIPassword, &flag))
+	/*if (MPICH_Info_get(((MPICH_Info*)info)[0], "password", 100, g_pszPMIPassword, &flag) != MPICH_SUCCESS)*/
 	{
-	    err_printf("Error: MPICH_Info_get('password') failed\n");
+	    err_printf("Error: info_keyval_get('password') failed\n");
 	    return PMI_FAIL;
 	}
     }
@@ -519,9 +547,10 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
 	}
 	nNproc += maxprocs[i];
 	flag = 0;
-	if (MPICH_Info_get(((MPICH_Info*)info)[i], "host", 100, pszHost, &flag) != MPICH_SUCCESS)
+	if (info_keyval_get(info_keyval_sizes[i], info_keyval_vectors[i], "host", 100, pszHost, &flag))
+	/*if (MPICH_Info_get(((MPICH_Info*)info)[i], "host", 100, pszHost, &flag) != MPICH_SUCCESS)*/
 	{
-	    err_printf("Error: MPICH_Info_get failed\n");
+	    err_printf("Error: info_keyval_get failed\n");
 	    FreeHosts(pHosts);
 	    return PMI_FAIL;
 	}
@@ -555,7 +584,8 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
 	else
 	{
 	    flag = 0;
-	    if (MPICH_Info_get(((MPICH_Info*)info)[i], "hostfile", MAX_PATH, pszHostFile, &flag) != MPICH_SUCCESS)
+	    if (info_keyval_get(info_keyval_sizes[i], info_keyval_vectors[i], "hostfile", MAX_PATH, pszHostFile, &flag))
+	    /*if (MPICH_Info_get(((MPICH_Info*)info)[i], "hostfile", MAX_PATH, pszHostFile, &flag) != MPICH_SUCCESS)*/
 	    {
 		err_printf("Error: MPICH_Info_get failed\n");
 		FreeHosts(pHosts);
@@ -689,15 +719,9 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
     }
 
     /* pre-put any data provided into the spawnee's database*/
-    MPICH_Info_get_nkeys((MPICH_Info)preput_info, &nKeys);
-    for (i=0; i<nKeys; i++)
+    for (i=0; i<preput_keyval_size; i++)
     {
-	MPICH_Info_get_nthkey((MPICH_Info)preput_info, i, pszKey);
-	MPICH_Info_get((MPICH_Info)preput_info, pszKey, MPICH_MAX_INFO_VAL, pszValue, &flag);
-	if (flag)
-	{
-	    PMI_KVS_Put(pszDb, pszKey, pszValue);
-	}
+	PMI_KVS_Put(pszDb, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
     }
 
     /* launch each process*/
