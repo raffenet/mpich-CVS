@@ -78,7 +78,8 @@ typedef int socklen_t;
 
 #define BFD_INVALID_SOCKET -1
 
-#ifdef NO_BSOCKETS
+/* This was ifdef NO_BSOCKETS but should have been USE_BSOCKETS */
+#ifndef USE_BSOCKETS
 
 #define bfd_set fd_set
 #define BFD_CLR(bfd, s)       FD_CLR((unsigned int)bfd,s)
@@ -104,7 +105,7 @@ typedef int socklen_t;
 #define bclose(bfd) bfd_close(bfd)
 #define bgetsockname(bfd, name, namelen) getsockname(bfd, name, namelen)
 
-#else /* #ifdef NO_BSOCKETS */
+#else /* #ifndef USE_BSOCKETS */
 
 typedef struct BFD_Buffer_struct BFD_Buffer;
 typedef struct bfd_set
@@ -150,7 +151,7 @@ int bclose_all( void );
 int bgetsockname(int bfd, struct sockaddr *name, int *namelen );
 int bselect( int maxfds, bfd_set *readbfds, bfd_set *writebfds, bfd_set *execbfds, struct timeval *tv );
 
-#endif /* #else #ifdef NO_BSOCKETS */
+#endif /* #else #ifndef USE_BSOCKETS */
 
 int bsocket_init( void );
 int bsocket_finalize( void );
