@@ -65,6 +65,8 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
     MPID_Delete_function delfn;
     MPID_Lang_t          language;
     int                  mpi_errno=0;
+
+    MPIR_Nest_incr();
     
     delfn    = attr_p->keyval->delfn;
     language = attr_p->keyval->language;
@@ -144,6 +146,8 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 	break;
 #endif
     }
+    
+    MPIR_Nest_decr();
     return mpi_errno;
 }
 
@@ -159,13 +163,17 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
     int                flag;
     int                mpi_errno = 0;
 
+    MPIR_Nest_incr();
+    
     p = old_attrs;
     while (p) {
 	/* Run the attribute delete function first */
 /* Why is this here?
 	mpi_errno = MPIR_Call_attr_delete( handle, p );
-	if (mpi_errno) 
-	    return mpi_errno;
+	if (mpi_errno)
+	{
+	    goto fn_exit;
+	}
 */
 
 	/* Now call the attribute copy function (if any) */
@@ -263,7 +271,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    if (!new_p) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Attr_dup_list", __LINE__,
 						  MPI_ERR_OTHER, "**nomem", 0 );
-		return mpi_errno;
+		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    if (!*new_attr) { 
@@ -280,11 +288,16 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    new_p->next	         = 0;
 	    next_new_attr_ptr    = &(new_p->next);
 	}
-	else if (mpi_errno) 
-	    return mpi_errno;
+	else if (mpi_errno)
+	{ 
+	    goto fn_exit;
+	}
 
 	p = p->next;
     }
+
+  fn_exit:
+    MPIR_Nest_decr();
     return mpi_errno;
 }
 
