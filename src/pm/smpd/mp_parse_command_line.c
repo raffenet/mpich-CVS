@@ -123,8 +123,10 @@ void mp_print_extra_options(void)
     */
     printf("-nopopup_debug\n");
     printf("  disable the system popup dialog if the process crashes\n");
+    /*
     printf("-dbg\n");
     printf("  catch unhandled exceptions\n");
+    */
     printf("-exitcodes\n");
     printf("  print the process exit codes when each process exits.\n");
     printf("-noprompt\n");
