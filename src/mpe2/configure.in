@@ -451,6 +451,27 @@ graphics_dirname="src/graphics"
 collchk_dirname="src/collchk"
 slog2_dirname="src/slog2sdk"
 
+dnl Cleanup the subpackages' Makefiles if they exist
+AC_MSG_CHECKING( [for leftover Makefiles in subpackages] )
+leftover_pkgs=""
+for pkg in misc logging wrappers graphics collchk slog2 ; do
+    dirname=${pkg}_dirname
+    eval dirvalue=\$"$dirname"
+    if test -s $rootbuild_dir/$dirvalue/Makefile ; then
+        leftover_pkgs="$leftover_pkgs \"$dirvalue\""
+        ( cd $rootbuild_dir/$dirvalue && $MAKE distclean > /dev/null 2>&1 )
+        dnl Just in case "make distclean" does not remove Makefile.
+        if test -f $rootbuild_dir/$dirvalue/Makefile ; then
+            $RM -f $rootbuild_dir/$dirvalue/Makefile
+        fi
+    fi
+done
+if test "X$leftover_pkgs" = "X" ; then
+    AC_MSG_RESULT( [none] )
+else
+    AC_MSG_RESULT( [$leftover_pkgs cleaned] )
+fi
+
 dnl trial_pkgs="graphics wrappers logging misc"
 trial_pkgs="misc logging wrappers graphics"
 

@@ -307,7 +307,7 @@ AC_SUBST(binbuild_dir)
 if test ! -d $docbuild_dir -a -d $srcdir/doc ; then
     echo "creating $docbuild_dir from source"
     $CPRP -pr $srcdir/doc $docbuild_dir
-    $RM -rf $docbuild_dir/old
+    $RM -r $docbuild_dir/old
 fi
 AC_SUBST(docbuild_dir)
 
@@ -373,6 +373,26 @@ sample_dirname="trace_sample"
 rlog_dirname="trace_rlog"
 
 trial_pkgs="source sample rlog"
+
+dnl Cleanup the subpackages' Makefiles if they exist
+AC_MSG_CHECKING( [for leftover Makefiles in subpackages] )
+leftover_pkgs=""
+for pkg in $trial_pkgs ; do
+    dirname=${pkg}_dirname
+    eval dirvalue=\$"$dirname"
+    if test -s $rootbuild_dir/$dirvalue/Makefile ; then
+        leftover_pkgs="$leftover_pkgs \"$dirvalue\""
+        ( cd $rootbuild_dir/$dirvalue && $MAKE distclean > /dev/null 2>&1 )
+        if test -f $rootbuild_dir/$dirvalue/Makefile ; then
+            $RM $rootbuild_dir/$dirvalue/Makefile
+        fi
+    fi
+done
+if test "X$leftover_pkgs" = "X" ; then
+    AC_MSG_RESULT( [none] )
+else
+    AC_MSG_RESULT( [$leftover_pkgs cleaned] )
+fi
 
 # Enable softerror for all subpackages,
 # i.e. use AC_MSG_WARN instead of AC_MSG_ERROR
