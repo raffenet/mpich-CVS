@@ -20,9 +20,7 @@ int MPIDI_CH3_Open_port(char *port_name)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_OPEN_PORT);
 
-    mpi_errno = MPIDI_CH3I_Get_business_card(port_name, MPI_MAX_PORT_NAME, NULL);
-    /* We pass NULL as the pg_ptr because the pg_ptr is not used in
-       setting up the connection between an MPI_Connect and MPI_Accept */
+    mpi_errno = MPIDI_CH3I_Get_business_card(port_name, MPI_MAX_PORT_NAME, MPIDI_CH3I_Process.pg->pg_id);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_OPEN_PORT);
     return mpi_errno;

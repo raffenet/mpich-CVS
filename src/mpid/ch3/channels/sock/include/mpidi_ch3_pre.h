@@ -15,8 +15,10 @@ typedef struct MPIDI_CH3I_Process_group_s
 {
     volatile int ref_count;
     char * kvs_name;
+    char * pg_id;
     int size;
     struct MPIDI_VC * vc_table;
+    struct MPIDI_CH3I_Process_group_s *next; /* we keep track of all pg's in a list */
 }
 MPIDI_CH3I_Process_group_t;
 
@@ -39,10 +41,7 @@ typedef struct															  \
     MPIDI_CH3_Pkt_type_t type;													  \
     /* FIXME - We need a little security here to avoid having a random port scan crash the process.  Perhaps a "secret" value for \
        each process could be published in the key-val space and subsequently sent in the open pkt. */				  \
-																  \
-    /* FIXME - We need some notion of a global process group ID so that we can tell the remote process which process is		  \
-       connecting to it */													  \
-    MPIDI_CH3I_Process_group_t * pg_ptr;											  \
+    int pg_id_len;											                          \
     int pg_rank;														  \
 }																  \
 MPIDI_CH3I_Pkt_sc_open_req_t;													  \

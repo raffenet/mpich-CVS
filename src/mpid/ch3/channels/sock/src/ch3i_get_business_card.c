@@ -83,6 +83,9 @@ static int GetLocalIPs(int32_t *pIP, int max)
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 /* FIXME: THIS CODE DOES NOT WORK FOR CYGWIN */
 /* Fill in the array pIP[max] with available IP addresses for this machine.
    Return the number of IP addresses found */
@@ -210,7 +213,7 @@ static int GetLocalIPs(int32_t pIP[], int max)
 
 #endif /* HAVE_WINDOWS_H */
 
-int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_group_t * pg_ptr)
+int MPIDI_CH3I_Get_business_card(char *value, int length, char *pg_id)
 {
     int32_t local_ip[MAX_NUM_NICS];
     unsigned int a, b, c, d;
@@ -230,8 +233,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_gro
 
     value_orig = value;
 
-    /* prepend the business card with the pg_ptr */
-    value += sprintf(value, "%p:", pg_ptr);
+    /* prepend the business card with the "pg_id:".  */
+    /* If the pg_id itself contains a ':', there is a problem because
+       we assume that ':' is used as a separator in the business card.  */
+    value += sprintf(value, "%s:", pg_id);
 
     num_nics = GetLocalIPs(local_ip, MAX_NUM_NICS);
     for (i=0; i<num_nics; i++)

@@ -46,6 +46,7 @@ PAC_PROG_MAKE
 AC_CHECK_HEADERS(				\
     assert.h					\
     limits.h					\
+    string.h					\
     sys/types.h					\
     sys/uio.h					\
     unistd.h)

@@ -454,9 +454,9 @@ with MPI_Alloc_mem.
 **ch3|sock|strdup:[ch3:sock] MPIU_Strdup failed
 **ch3|sock|connclose:[ch3:sock] active connection unexpectedly closed
 **ch3|sock|hostlookup:[ch3:sock] hostname lookup failed
-**ch3|sock|hostlookup %d %d %s:[ch3:sock] failed to obtain host information for process %d:%d (%s)
+**ch3|sock|hostlookup %s %d %s:[ch3:sock] failed to obtain host information for process %s:%d (%s)
 **ch3|sock|connrefused:[ch3:sock] connection refused
-**ch3|sock|connrefused %d %d %s:[ch3:sock] failed to connect to process %d:%d (%s)
+**ch3|sock|connrefused %s %d %s:[ch3:sock] failed to connect to process %s:%d (%s)
 **ch3|sock|connterm:[ch3:sock] active connection unexpectedly terminated
 **ch3|sock|connfailed:[ch3:sock] failed to connnect to remote process
 **ch3|sock|connfailed %d %d:[ch3:sock] failed to connnect to remote process %d:%d
@@ -806,6 +806,8 @@ with MPI_Alloc_mem.
 **pmi_finalize %d:PMI_Finalize returned %d
 **pmi_kvs_get_my_name:PMI_KVS_Get_my_name failed
 **pmi_kvs_get_my_name %d:PMI_KVS_Get_my_name returned %d
+**pmi_kvs_get_id:PMI_KVS_Get_id failed
+**pmi_kvs_get_id %d:PMI_KVS_Get_id returned %d
 **pmi_kvs_get_name_length_max:PMI_KVS_Get_name_length_max failed
 **pmi_kvs_get_name_length_max %d:PMI_KVS_Get_name_length_max returned %d
 **pmi_kvs_get_key_length_max:PMI_KVS_Get_key_length_max failed
