@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>4.2 Tuning of the Timeline Window</TITLE>
-<META NAME="description" CONTENT="4.2 Tuning of the Timeline Window">
+<TITLE>4.1 Search and Scan Facility</TITLE>
+<META NAME="description" CONTENT="4.1 Search and Scan Facility">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,125 +19,187 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
+<LINK REL="next" HREF="node27.html">
 <LINK REL="previous" HREF="node25.html">
-<LINK REL="up" HREF="node24.html">
+<LINK REL="up" HREF="node25.html">
 <LINK REL="next" HREF="node27.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html435"
+<A NAME="tex2html436"
   HREF="node27.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html431"
-  HREF="node24.html">
+<A NAME="tex2html432"
+  HREF="node25.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html427"
+<A NAME="tex2html426"
   HREF="node25.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html433"
-  HREF="node1.html">
+<A NAME="tex2html434"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html436"
-  HREF="node27.html">About this document ...</A>
-<B> Up:</B> <A NAME="tex2html432"
-  HREF="node24.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html428"
-  HREF="node25.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html434"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html437"
+  HREF="node27.html">4.2 Tuning of the</A>
+<B> Up:</B> <A NAME="tex2html433"
+  HREF="node25.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html427"
+  HREF="node25.html">4. Special Features</A>
+ &nbsp; <B>  <A NAME="tex2html435"
+  HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00520000000000000000">
-4.2 Tuning of the Timeline Window</A>
+<H1><A NAME="SECTION00510000000000000000">
+4.1 Search and Scan Facility</A>
 </H1>
 
 <P>
+The Level-of-detail support provided in SLOG-2 and Jumpshot-4 tends
+to help locate states which are either longer in time or occur very
+frequently. States that are short and occur rarely in a big logfile
+are very difficult to locate without any special tool. In Jumpshot-4,
+a search and scan facility is provided to facilitate this goal. There
+are 3 search criteria: search time, searchable timeline IDs and searchable
+categories. 
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="446"></A>
+<P>
+
+<OL>
+<LI><I>Search Time</I> is the time that search starts. It is marked by
+a yellow line calld search cursor. There are 2 differnt ways of setting
+the search cursor. When the timeline canvas is in Hand mode as described
+in Figure <A HREF="node11.html#fig:mouse_hand_mode">3.8</A> of section <A HREF="node11.html#sub:Zoomable-and-Scrollable">3.3.1</A>,
+left mouse clicking will set the search cursor. The other way can
+be done in either Hand or Zoom mode. First popup an information dialog
+box of any kind using right mouse clicking, then press the SearchInitialize
+button in the toolbar to replace the green line by the yellow search
+cursor. When there are more than one information dialog box, the information
+dialog box that is shown up last will have its green line used to
+initialize the search cursor. When Timeline window first starts up,
+the search cursor is set at the starttime of the logfile.
+</LI>
+<LI><I>Searchable Timeline IDs</I> are the timlines that search will operate
+on, i.e only states on the marked timelines will be returned by the
+search facility. These marked timelines can be selected by clicking
+on their timeline IDs on Yaxis label panel with rules described in
+Table <A HREF="#table:selection_rules">3.6</A>. When nothing is selected, all
+timelines are searchable.
+</LI>
+<LI><I>Searchable Categories</I> are categories that have their searchable
+checkboxes enabled as in Figure <A HREF="node9.html#fig:legend_checkbox_ops">3.5</A>. Only
+drawable with searchable category can be returned by the search facility.
+By default, all categories in Legend window are searchable. 
+</LI>
+</OL>
+
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview"></A><A NAME="447"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure:</STRONG>
-The initial Timeline window with
-finer preview resolution.</CAPTION>
-<TR><TD><IMG
-  WIDTH="608" HEIGHT="472" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_popup_more.png"
- ALT="Image timeline_popup_more">
-
-<P></TD></TR>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.1:</STRONG>
+Search of state <I>eos</I> in
+preview stage. The returned state is a preview state containing state
+<I>eos</I> as shown in Search Box and Drawable Info Box.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="545" HEIGHT="672" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_search_preview.png"
+ ALT="Image timeline_search_preview">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
 </TABLE>
 </DIV>
 
 <P>
-One of the major improvements in the new Jumpshot and SLOG-2 is the
-scalability in terms of visualization performance. As shown in Figure
-<A HREF="node9.html#fig:timeline_popup"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>, there are 7 bands of preview states covering
-the whole canvas in the initial Timeline window. By incrementing the
-parameter, INIT_SLOG2_LEVEL_READ, by 1 in Preference window as
-in Table <A HREF="#table:preference_data1"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>, the initial Timeline window
-can be redisplayed and is shown in Figure <A HREF="#fig:timeline_popup_finer"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>.
-The new Timeline window has 14 bands of preview states instead of
-7. The increase preview resolution does offer a more detailed description
-of logfile but at the expense of graphical performance. Because every
-increment of INIT_SLOG2_LEVEL_READ will roughly double the number
-of drawables to be iterated during every zooming or scrolling<A NAME="tex2html49"
-  HREF="#foot398"><SUP>4.2</SUP></A>. The biggest demand of graphical performance occurs when the zooming
-to the level of only pure real drawables from the lower zoom level.
-The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
-does not appear to be too slow during the zooming to the pure real
-drawable level. For a fast graphics system, INIT_SLOG2_LEVEL_READ
-should be set higher than the default value 3, like 4 or 5, so that
-more information is present during each view.
+After setting any needed search criteria, the search operation can
+be carried out by pressing either the SearchForeward or SearchBackward
+buttons shown in the Table <A HREF="#table:timeline_toolbar">3.8</A>. As shown
+in Figure <A HREF="#fig:timeline_search_preview">4.1</A>, the search facility
+returns a searched state which is bounded by a 3D raised bordered
+and transparent <A NAME="tex2html46"
+  HREF="#foot380"><SUP>4.1</SUP></A>box whose starttime is marked by a yellow search cursor and 2 3D arrowheads.
+The upper 3D arrow's color matches that of the returned state. In
+the figure, since the returned state is a preview state, so the upper
+3D arrow is grey in color as it is shown in Legend window. Accompanied
+with the 3D raised bordered box is a popup Search Box that shows the
+detailed of the preview state like the Drawable Info Box in Figure
+<A HREF="node17.html#fig:timeline_infobox_preview_state">3.13</A>. Since the search in the
+figure is looking for state <I>eos</I>, a Drawable Info Box is shown
+to indicate the returned 3D bordered box does contain category <I>eos</I>
+graphically. In order to locate the real state <I>eos</I>, a dragged
+zoom is performed around the 3D raised bordered box and the result
+is shown in Figure <A HREF="#fig:timeline_search_preview_zoomed">4.2</A>. In the
+figure, the real <I>eos</I> is located at the end of the original
+3D bordered box and it is marked by the Drawable Info Box.
 
 <P>
-Another parameter also signifcantly affects the graphical performance
-is ARROW_ANTIALIASING in Preference window. Setting the paramters
-to ON will force Jumpshot to draw all arrows including preview arrows
-with anti-aliasing lines. This proves to be an expensive graphical
-operation<A NAME="tex2html50"
-  HREF="#foot399"><SUP>4.3</SUP></A>. Except when high quality picture is needed like during screen capture
-for picture or when antialiasing lines are drawn with graphics hardware
-support, it is not recommended to turn on ARROW_ANTIALIASING. 
+
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview_zoomed"></A><A NAME="448"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.2:</STRONG>
+Dragged zoom the region
+around the 3D raised bordered box in Figure <A HREF="#fig:timeline_search_preview">4.1</A>
+shows the real state <I>eos.</I></CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="545" HEIGHT="459" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_search_preview_zoomed.png"
+ ALT="Image timeline_search_preview_zoomed">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+In general, when searching on big slog2 file, all preview categories
+should be set searchable, otherwise searching for real drawables may
+not return anything. Because at lower zoom level, there may not be
+any real drawable belong to the categories of interest, only preview
+drawable contains the categories of interest. Also, the search facility
+is carried out for the drawables that are in the physical memory.
+In some rare occasions, drawables in the memory may have been exhausted
+for searching but end of the logfile have not been reached, user may
+need to advance the search by scroll forward or backward to read in
+more drawables and to restart the search again. For a very big logfile,
+the search process of a real state may require repeated operations
+of search and dragged zoom before the real state can be found. This
+process will be automated in the later version of Jumpshot-4.
+
+<P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
-<DT><A NAME="foot398">... scrolling</A><A
- HREF="node26.html#tex2html49"><SUP>4.2</SUP></A></DT>
-<DD>it is true for a binary tree
-
-</DD>
-<DT><A NAME="foot399">...
-operation</A><A
- HREF="node26.html#tex2html50"><SUP>4.3</SUP></A></DT>
-<DD>A typical timeline canvas with arrows will draw roughly a factor 3
-slower with anti-aliasing on. 
+<DT><A NAME="foot380">...</A><A
+ HREF="node26.html#tex2html46"><SUP>4.1</SUP></A></DT>
+<DD>the transparency of the 3D raised box can be made opaque by selecting
+the SEARCHED_OBJECT_ON_TOP true.
 
 </DD>
 </DL><HR>
 <!--Navigation Panel-->
-<A NAME="tex2html435"
+<A NAME="tex2html436"
   HREF="node27.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html431"
-  HREF="node24.html">
+<A NAME="tex2html432"
+  HREF="node25.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html427"
+<A NAME="tex2html426"
   HREF="node25.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html433"
-  HREF="node1.html">
+<A NAME="tex2html434"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html436"
-  HREF="node27.html">About this document ...</A>
-<B> Up:</B> <A NAME="tex2html432"
-  HREF="node24.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html428"
-  HREF="node25.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html434"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html437"
+  HREF="node27.html">4.2 Tuning of the</A>
+<B> Up:</B> <A NAME="tex2html433"
+  HREF="node25.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html427"
+  HREF="node25.html">4. Special Features</A>
+ &nbsp; <B>  <A NAME="tex2html435"
+  HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 
 </BODY>

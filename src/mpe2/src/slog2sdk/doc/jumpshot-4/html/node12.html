@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.1.2 Instant Zoom</TITLE>
-<META NAME="description" CONTENT="3.3.1.2 Instant Zoom">
+<TITLE>3.3.1.1 Dragged Zoom</TITLE>
+<META NAME="description" CONTENT="3.3.1.1 Dragged Zoom">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -21,72 +21,104 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="next" HREF="node13.html">
 <LINK REL="previous" HREF="node11.html">
-<LINK REL="up" HREF="node10.html">
+<LINK REL="up" HREF="node11.html">
 <LINK REL="next" HREF="node13.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html270"
+<A NAME="tex2html269"
   HREF="node13.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html266"
-  HREF="node10.html">
+<A NAME="tex2html265"
+  HREF="node11.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html260"
+<A NAME="tex2html259"
   HREF="node11.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html268"
-  HREF="node1.html">
+<A NAME="tex2html267"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html271"
-  HREF="node13.html">3.3.1.3 Grasp and Scroll</A>
-<B> Up:</B> <A NAME="tex2html267"
-  HREF="node10.html">3.3.1 Zoomable and Scrollable</A>
-<B> Previous:</B> <A NAME="tex2html261"
-  HREF="node11.html">3.3.1.1 Dragged Zoom</A>
- &nbsp; <B>  <A NAME="tex2html269"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html270"
+  HREF="node13.html">3.3.1.2 Instant Zoom</A>
+<B> Up:</B> <A NAME="tex2html266"
+  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
+<B> Previous:</B> <A NAME="tex2html260"
+  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
+ &nbsp; <B>  <A NAME="tex2html268"
+  HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H3><A NAME="SECTION00431200000000000000">
-3.3.1.2 Instant Zoom</A>
+<H3><A NAME="SECTION00431100000000000000">
+3.3.1.1 Dragged Zoom</A>
 </H3>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:zoom_minus_cursor"></A><A NAME="424"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:zoom_plus_cursor"></A><A NAME="426"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure:</STRONG>
-Zoom-minus cursor that indicates the
-left mouse clicking is ready for zooming out.</CAPTION>
-<TR><TD><IMG
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.9:</STRONG>
+Zoom-plus cursor that indicates the
+left mouse clicking is ready for zooming in.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
   WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
- SRC="./ZoomMinusUpLeft25.gif"
- ALT="Image ZoomMinusUpLeft25">
-
-<P></TD></TR>
+ SRC="./ZoomPlusUpLeft25.png"
+ ALT="Image ZoomPlusUpLeft25">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
 </TABLE>
 </DIV>
 
 <P>
-While the canvas is still in zoom mode, <I>instant zoom</I> is enabled
-by default. Instant zoom allows zooming in at the point of left mouse
-clicking by a factor of 1/2, i.e. the region centered at the point
-of left clicking will be magnified by a factor or 2. Also, the <I>Zoom
-Focus Time</I> in the time display panel will be updated with the time
-where left clicking on the canvas is detected. In the process, the
-cursor remain<I>s</I> zoom-plus cursor. <I>Shift-click</I>, on the
-other hand, will do the opposite. While holding down Shift key, the
-cursor will be changed to a zoom-minus cursor as in Figure <A HREF="#fig:zoom_minus_cursor"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>
-to indicate zooming out is the action associated with left clicking.
-The zoom factor is 2 in this case.
+<I>Dragged zoom</I> is active only when the left mouse click is in
+zoom mode, i.e. when the the magnifying glass button is pressed in
+the toggled buttons as in Figure <A HREF="node11.html#fig:mouse_zoom_mode">3.7</A>. In zoom
+mode, the cursor within the canvas will appear like a magnifying glass
+with plus sign in the center as in Figure <A HREF="#fig:zoom_plus_cursor">3.9</A>.
+It is called zoom-plus cursor. The dragged zoom operation is initialized
+by pressing the left mouse button at the beginning of the zoom-in
+region, a white line will then appear. As soon as dragging is detected,
+another white line will appear to mark the current ending of the zoom-in
+region. The region that is marked by pair of white lines is lightly
+shaded as shown in Figure <A HREF="node6.html#fig:timeline_preview_detail_3">2.4</A>. The
+process can be cancelled anytime by hitting the ESC key during dragging.
+Once the left mouse button is released, zooming will be carried out
+and the Timeline window will then be updated as in Figure <A HREF="node6.html#fig:timeline_preview_detail_4">2.5</A>.
+The time display panel is updated with the latest time related information
+of the zoom-in region. Notice that the zooming as well as scrolling
+can be achieved by explicitly editing the text fields in the time
+display panel.
 
 <P>
-<BR><HR>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html269"
+  HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html265"
+  HREF="node11.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html259"
+  HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html267"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html270"
+  HREF="node13.html">3.3.1.2 Instant Zoom</A>
+<B> Up:</B> <A NAME="tex2html266"
+  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
+<B> Previous:</B> <A NAME="tex2html260"
+  HREF="node11.html">3.3.1 Zoomable and Scrollable</A>
+ &nbsp; <B>  <A NAME="tex2html268"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
 
 </BODY>
 </HTML>

@@ -1,71 +1,11 @@
 No implementation found for style `fontenc'
 No implementation found for style `geometry'
+No implementation found for style `fancyhdr'
 No implementation found for style `subfigure'
 No implementation found for style `graphicx'
 No implementation found for style `hyperref'
 
-The usersguide.aux file was not found, so sections will not be numbered 
-and cross-references will be shown as icons.
+Substitution of arg to newlabelxx delayed.
 
 ? brace missing for \setlength
-
-No number for "AtypicalLegendwindowwhenslog2fileisfirstloadedintoJumpshot-4."
 Unrecognized option  to \includegraphics
-
-No number for "Atypicalzoom-outviewofpreviewstatesandarrows."
-
-No number for "Thenextzoom-inviewofFigure."
-
-No number for "ThemaincontrolwindowofJumpshot-4."
-
-No number for "Functionsofthetoolbarbuttons"
-
-No number for "OperationsontheLegendwindow'scolumns."
-
-No number for "ColorChooserDialogforcolumnCategoryTopology"
-
-No number for "SortOrderoperationmenuforthecolumnCategoryNameintheLegendwindow."
-
-No number for "CheckboxOperationmenuforcolumnCategoryVisibilityandSearchability"
-
-No number for "StandardSelectionRules."
-
-No number for "TheinitialdisplayoftheTimelinewindowofa506MB16processesslog2filewithdefaultpreviewresolution."
-
-No number for "Canvas'sleftmouseclickisinzoommode."
-
-No number for "Canvas'sleftmouseclickisinhandmode."
-
-No number for "Zoom-pluscursorthatindicatestheleftmouseclickingisreadyforzoomingin."
-
-No number for "Zoom-minuscursorthatindicatestheleftmouseclickingisreadyforzoomingout."
-
-No number for "Openhandcursorindicatesthatleftmouseclickingisreadytograspandscroll."
-
-No number for "Closehandcursorindicatesthatleftmouseclickingisscrolling."
-
-No number for "DrawableInfoBoxforPreviewState"
-
-No number for "DrawableInfoBoxforrealstateandarrow.TheDrawableInfoBoxforthearrowshowsthemesssagesize,1600byte,andtagID,454."
-
-No number for "DurationInfoBoxshowstheduration,starttime,andendtimeofatimeregionmarkedbyapairofgreenlines."
-
-No number for "TimeInfoBoxdisplaysthetimeofwhereitpopsup."
-
-No number for "Tableoftoolbar'sfunctionalities."
-
-No number for "Asimple1levelYaxislabeltree.Thehighlightedlabelsarethosethathavebeenselected."
-
-No number for "RowAdjustmemtPaneldeterminestheTimelinewindow'sresizescheme.Whenoneofthemodeslidersortextfieldsisadjusted,theother3componentswillbeadjustedsimultaneously."
-
-No number for "ThePreferencewindowthatshowsPREVIEW_STATE_DISPLAY"
-
-No number for "ModifiableparametersinPreferencewindow."
-
-No number for "ModifiableparametersinPreferencewindow"
-
-No number for "Searchofstate<I>eos</I>inpreviewstage.Thereturnedstateisapreviewstatecontainingstate<I>eos</I>asshowninSearchBoxandDrawableInfoBox."
-
-No number for "Draggedzoomtheregionaroundthe3DraisedborderedboxinFigureshowstherealstate<I>eos.</I>"
-
-No number for "TheinitialTimelinewindowwithfinerpreviewresolution."

@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>About this document ...</TITLE>
-<META NAME="description" CONTENT="About this document ...">
+<TITLE>4.2 Tuning of the Timeline Window</TITLE>
+<META NAME="description" CONTENT="4.2 Tuning of the Timeline Window">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,53 +19,128 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
-<LINK REL="previous" HREF="node24.html">
-<LINK REL="up" HREF="usersguide.html">
+<LINK REL="previous" HREF="node26.html">
+<LINK REL="up" HREF="node25.html">
+<LINK REL="next" HREF="node28.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next_g.png"> 
-<A NAME="tex2html441"
-  HREF="usersguide.html">
+<A NAME="tex2html446"
+  HREF="node28.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html442"
+  HREF="node25.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html437"
+<A NAME="tex2html438"
   HREF="node26.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html443"
-  HREF="node1.html">
+<A NAME="tex2html444"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Up:</B> <A NAME="tex2html442"
-  HREF="usersguide.html">Jumpshot-4's User's Guide</A>
-<B> Previous:</B> <A NAME="tex2html438"
-  HREF="node26.html">4.2 Tuning of the</A>
- &nbsp; <B>  <A NAME="tex2html444"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html447"
+  HREF="node28.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html443"
+  HREF="node25.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html439"
+  HREF="node26.html">4.1 Search and Scan</A>
+ &nbsp; <B>  <A NAME="tex2html445"
+  HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00600000000000000000">
-About this document ...</A>
+<H1><A NAME="SECTION00520000000000000000">
+4.2 Tuning of the Timeline Window</A>
 </H1>
- <STRONG>Jumpshot-4's User's Guide</STRONG><P>
-This document was generated using the
-<A HREF="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2002-2-1 (1.70)
+
 <P>
-Copyright &#169; 1993, 1994, 1995, 1996,
-<A HREF="http://cbl.leeds.ac.uk/nikos/personal.html">Nikos Drakos</A>, 
-Computer Based Learning Unit, University of Leeds.
+
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="449"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.3:</STRONG>
+The initial Timeline window with
+finer preview resolution.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="810" HEIGHT="629" ALIGN="BOTTOM" BORDER="0"
+ SRC="./timeline_popup_more.png"
+ ALT="Image timeline_popup_more">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+One of the major improvements in the new Jumpshot and SLOG-2 is the
+scalability in terms of visualization performance. As shown in Figure
+<A HREF="node10.html#fig:timeline_popup">3.6</A>, there are 7 bands of preview states covering
+the whole canvas in the initial Timeline window. By incrementing the
+parameter, INIT_SLOG2_LEVEL_READ, by 1 in Preference window as
+in Table <A HREF="#table:preference_data1">3.10</A>, the initial Timeline window
+can be redisplayed and is shown in Figure <A HREF="#fig:timeline_popup_finer">4.3</A>.
+The new Timeline window has 14 bands of preview states instead of
+7. The increase preview resolution does offer a more detailed description
+of logfile but at the expense of graphical performance. Because every
+increment of INIT_SLOG2_LEVEL_READ will roughly double the number
+of drawables to be iterated during every zooming or scrolling<A NAME="tex2html49"
+  HREF="#foot401"><SUP>4.2</SUP></A>. The biggest demand of graphical performance occurs when the zooming
+to the level of only pure real drawables from the lower zoom level.
+The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
+does not appear to be too slow during the zooming to the pure real
+drawable level. For a fast graphics system, INIT_SLOG2_LEVEL_READ
+should be set higher than the default value 3, like 4 or 5, so that
+more information is present during each view.
+
+<P>
+Another parameter also signifcantly affects the graphical performance
+is ARROW_ANTIALIASING in Preference window. Setting the paramters
+to ON will force Jumpshot to draw all arrows including preview arrows
+with anti-aliasing lines. This proves to be an expensive graphical
+operation<A NAME="tex2html50"
+  HREF="#foot402"><SUP>4.3</SUP></A>. Except when high quality picture is needed like during screen capture
+for picture or when antialiasing lines are drawn with graphics hardware
+support, it is not recommended to turn on ARROW_ANTIALIASING. 
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot401">... scrolling</A><A
+ HREF="node27.html#tex2html49"><SUP>4.2</SUP></A></DT>
+<DD>it is true for a binary tree
+
+</DD>
+<DT><A NAME="foot402">...
+operation</A><A
+ HREF="node27.html#tex2html50"><SUP>4.3</SUP></A></DT>
+<DD>A typical timeline canvas with arrows will draw roughly a factor 3
+slower with anti-aliasing on. 
+
+</DD>
+</DL><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html446"
+  HREF="node28.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html442"
+  HREF="node25.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html438"
+  HREF="node26.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html444"
+  HREF="node2.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-Copyright &#169; 1997, 1998, 1999,
-<A HREF="http://www.maths.mq.edu.au/~ross/">Ross Moore</A>, 
-Mathematics Department, Macquarie University, Sydney.
-<P>
-The command line arguments were: <BR>
- <STRONG>latex2html</STRONG> <TT>-mkdir -dir ../html -noaddress -show_section_numbers -no_footnode -nonumbered_footnotes -local_icons usersguide.tex</TT>
-<P>
-The translation was initiated by Anthony Chan on 2003-04-07
-<BR><HR>
+<B> Next:</B> <A NAME="tex2html447"
+  HREF="node28.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html443"
+  HREF="node25.html">4. Special Features</A>
+<B> Previous:</B> <A NAME="tex2html439"
+  HREF="node26.html">4.1 Search and Scan</A>
+ &nbsp; <B>  <A NAME="tex2html445"
+  HREF="node2.html">Contents</A></B> 
+<!--End of Navigation Panel-->
 
 </BODY>
 </HTML>

@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3.3 Y-axis Label Panel</TITLE>
-<META NAME="description" CONTENT="3.3.3 Y-axis Label Panel">
+<TITLE>3.3.2 Toolbar</TITLE>
+<META NAME="description" CONTENT="3.3.2 Toolbar">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -20,99 +20,315 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
 <LINK REL="next" HREF="node22.html">
-<LINK REL="previous" HREF="node20.html">
-<LINK REL="up" HREF="node9.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="up" HREF="node10.html">
 <LINK REL="next" HREF="node22.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html379"
+<A NAME="tex2html378"
   HREF="node22.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html375"
-  HREF="node9.html">
+<A NAME="tex2html374"
+  HREF="node10.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html369"
+<A NAME="tex2html368"
   HREF="node20.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html377"
-  HREF="node1.html">
+<A NAME="tex2html376"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html380"
-  HREF="node22.html">3.3.4 Row Adjustment Panel</A>
-<B> Up:</B> <A NAME="tex2html376"
-  HREF="node9.html">3.3 Timeline Window</A>
-<B> Previous:</B> <A NAME="tex2html370"
-  HREF="node20.html">3.3.2 Toolbar</A>
- &nbsp; <B>  <A NAME="tex2html378"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html379"
+  HREF="node22.html">3.3.3 Y-axis Label Panel</A>
+<B> Up:</B> <A NAME="tex2html375"
+  HREF="node10.html">3.3 Timeline Window</A>
+<B> Previous:</B> <A NAME="tex2html369"
+  HREF="node20.html">3.3.1.4.3 Time Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html377"
+  HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H2><A NAME="SECTION00433000000000000000">
-3.3.3 Y-axis Label Panel</A>
+<H2><A NAME="SECTION00432000000000000000">
+3.3.2 Toolbar</A>
 </H2>
 
 <P>
-The concealable left panel in Timeline window is called Y-axis label
-panel which contains a tree-like representation for Y-axis label for
-the timelines. For a single viewmaps slog2 file from CLOG or RLOG,
-the typical Y axis label panel looks like that is shown in Figure
-<A HREF="#fig:yaxis_label_panel_simple"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>. Together with toolbar's label
-buttons, e.g. LabelMark and LabelMove, and standard selection methods
-by mouse click listed in Table <A HREF="#table:selection_rules"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>, labels
-can be rearranged easily to create a more easily understood timeline
-canvas. For multiple viewmaps slog2 from IBM's UTE trace enviroment,
-LabelExpand and LabelCollapse buttons will come in handy to expand
-and collapse the label tree by one whole level. In order to minimize
-unnecessary redraw of the timeline canvas, the sychronization between
-the label panel and the timeline canvas is carried out passively,
-i.e. user needs to press the CanvasReDraw button in the toolbar to
-update the Timeline window with the changes from the label panel.
+The buttons in the toolbar of Timeline window provides various basic
+services to the Timeline window. Table <A HREF="#table:timeline_toolbar">3.8</A>
+contains the list of functionalities of the buttons found in the toolbar.
 
 <P>
-
-<DIV ALIGN="CENTER"><A NAME="fig:yaxis_label_panel_simple"></A><A NAME="435"></A>
+<BR><P></P>
+<DIV ALIGN="CENTER"><A NAME="437"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure:</STRONG>
-A simple 1 level Yaxis label
-tree. The highlighted labels are those that have been selected.</CAPTION>
-<TR><TD><IMG
-  WIDTH="108" HEIGHT="603" ALIGN="BOTTOM" BORDER="0"
- SRC="./yaxis_label_panel_simple.png"
- ALT="Image yaxis_label_panel_simple">
-
-<P></TD></TR>
+<CAPTION><STRONG>Table 3.8:</STRONG>
+ Table of toolbar's functionalities.</CAPTION>
+<TR><TD><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="CENTER">Icon</TD>
+<TD ALIGN="CENTER">Description</TD>
+<TD ALIGN="CENTER">Shortcut</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Function
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Up24.png"
+ ALT="Image Up24"></TD>
+<TD ALIGN="CENTER">Up</TD>
+<TD ALIGN="CENTER">Alt-UP</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Scroll upward by half a screen
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Down24.png"
+ ALT="Image Down24"></TD>
+<TD ALIGN="CENTER">Down</TD>
+<TD ALIGN="CENTER">Alt-DOWN</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Scroll downward by half of a screen
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Edit24.png"
+ ALT="Image Edit24"></TD>
+<TD ALIGN="CENTER">LabelMark</TD>
+<TD ALIGN="CENTER">none</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Mark the timeline(s)
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Paste24.png"
+ ALT="Image Paste24"></TD>
+<TD ALIGN="CENTER">LabelMove</TD>
+<TD ALIGN="CENTER">none</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Move the marked timeline(s)
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Delete24.png"
+ ALT="Image Delete24"></TD>
+<TD ALIGN="CENTER">LabelDelete</TD>
+<TD ALIGN="CENTER">none</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Delete the marked timeline(s)
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./TreeExpand24.png"
+ ALT="Image TreeExpand24"></TD>
+<TD ALIGN="CENTER">LabelExpand</TD>
+<TD ALIGN="CENTER">Alt-E</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Expand the Y-axis tree label by 1 level
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./TreeCollapse24.png"
+ ALT="Image TreeCollapse24"></TD>
+<TD ALIGN="CENTER">LabelCollapse</TD>
+<TD ALIGN="CENTER">Alt-C</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Collapse the Y-axis tree label by 1 level
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Backward24.png"
+ ALT="Image Backward24"></TD>
+<TD ALIGN="CENTER">Backward</TD>
+<TD ALIGN="CENTER">Alt-LEFT</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Scroll Backward by half a screen
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Forward24.png"
+ ALT="Image Forward24"></TD>
+<TD ALIGN="CENTER">Forward</TD>
+<TD ALIGN="CENTER">Alt-RIGHT</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Scroll Forward by half a screen
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./WinUndo.png"
+ ALT="Image WinUndo"></TD>
+<TD ALIGN="CENTER">ZoomUndo</TD>
+<TD ALIGN="CENTER">Alt-U</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Undo the previous zoom operation
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./ZoomOut24.png"
+ ALT="Image ZoomOut24"></TD>
+<TD ALIGN="CENTER">ZoomOut</TD>
+<TD ALIGN="CENTER">Alt-O</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Zoom Out by 1 level in time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Home24.png"
+ ALT="Image Home24"></TD>
+<TD ALIGN="CENTER">ZoomHome</TD>
+<TD ALIGN="CENTER">Alt-H</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Reset zoom to the initial resolution in time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./ZoomIn24.png"
+ ALT="Image ZoomIn24"></TD>
+<TD ALIGN="CENTER">ZoomIn</TD>
+<TD ALIGN="CENTER">Alt-I</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Zoom In by 1 level in time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./WinRedo.png"
+ ALT="Image WinRedo"></TD>
+<TD ALIGN="CENTER">ZoomRedo</TD>
+<TD ALIGN="CENTER">Alt-R</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Redo the previous zoom operation
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./FindBack24.png"
+ ALT="Image FindBack24"></TD>
+<TD ALIGN="CENTER">SearchBackward</TD>
+<TD ALIGN="CENTER">Alt-B</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Search backward in time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Find24.png"
+ ALT="Image Find24"></TD>
+<TD ALIGN="CENTER">SeachInitialize</TD>
+<TD ALIGN="CENTER">Alt-S</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Search Initialization from last popup InfoBox's time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./FindFore24.png"
+ ALT="Image FindFore24"></TD>
+<TD ALIGN="CENTER">SearchForward</TD>
+<TD ALIGN="CENTER">Alt-F</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Search forward in time
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Refresh24.png"
+ ALT="Image Refresh24"></TD>
+<TD ALIGN="CENTER">CanvasReDraw</TD>
+<TD ALIGN="CENTER">Alt-D</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Redraw canvas to synchronize changes from Preference/Legend window
+or Yaxis label panel.
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Print24.png"
+ ALT="Image Print24"></TD>
+<TD ALIGN="CENTER">Print</TD>
+<TD ALIGN="CENTER">none</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Print the Timeline window
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="24" HEIGHT="24" ALIGN="BOTTOM" BORDER="0"
+ SRC="./Stop24.png"
+ ALT="Image Stop24"></TD>
+<TD ALIGN="CENTER">Exit</TD>
+<TD ALIGN="CENTER">none</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=252>
+<DIV ALIGN="CENTER">
+Exit the Timeline window
+</DIV></TD>
+</TR>
 </TABLE>
-</DIV>
+
+<P>
+</TD></TR>
+</TABLE>
+</DIV><P></P>
+<BR>
 
 <P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html379"
+<A NAME="tex2html378"
   HREF="node22.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html375"
-  HREF="node9.html">
+<A NAME="tex2html374"
+  HREF="node10.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html369"
+<A NAME="tex2html368"
   HREF="node20.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html377"
-  HREF="node1.html">
+<A NAME="tex2html376"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html380"
-  HREF="node22.html">3.3.4 Row Adjustment Panel</A>
-<B> Up:</B> <A NAME="tex2html376"
-  HREF="node9.html">3.3 Timeline Window</A>
-<B> Previous:</B> <A NAME="tex2html370"
-  HREF="node20.html">3.3.2 Toolbar</A>
- &nbsp; <B>  <A NAME="tex2html378"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html379"
+  HREF="node22.html">3.3.3 Y-axis Label Panel</A>
+<B> Up:</B> <A NAME="tex2html375"
+  HREF="node10.html">3.3 Timeline Window</A>
+<B> Previous:</B> <A NAME="tex2html369"
+  HREF="node20.html">3.3.1.4.3 Time Info Box</A>
+ &nbsp; <B>  <A NAME="tex2html377"
+  HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 
 </BODY>

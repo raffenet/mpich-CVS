@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>3.3 Timeline Window</TITLE>
-<META NAME="description" CONTENT="3.3 Timeline Window">
+<TITLE>3.2 Legend Window</TITLE>
+<META NAME="description" CONTENT="3.2 Legend Window">
 <META NAME="keywords" CONTENT="usersguide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -19,140 +19,326 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="usersguide.css">
 
-<LINK REL="next" HREF="node23.html">
+<LINK REL="next" HREF="node10.html">
 <LINK REL="previous" HREF="node8.html">
-<LINK REL="up" HREF="node6.html">
+<LINK REL="up" HREF="node7.html">
 <LINK REL="next" HREF="node10.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html212"
+<A NAME="tex2html211"
   HREF="node10.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html208"
-  HREF="node6.html">
+<A NAME="tex2html207"
+  HREF="node7.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html202"
+<A NAME="tex2html201"
   HREF="node8.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html210"
-  HREF="node1.html">
+<A NAME="tex2html209"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html213"
-  HREF="node10.html">3.3.1 Zoomable and Scrollable</A>
-<B> Up:</B> <A NAME="tex2html209"
-  HREF="node6.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html203"
-  HREF="node8.html">3.2 Legend Window</A>
- &nbsp; <B>  <A NAME="tex2html211"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html212"
+  HREF="node10.html">3.3 Timeline Window</A>
+<B> Up:</B> <A NAME="tex2html208"
+  HREF="node7.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html202"
+  HREF="node8.html">3.1 Main Window</A>
+ &nbsp; <B>  <A NAME="tex2html210"
+  HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
 <!--End of Navigation Panel-->
 
-<H1><A NAME="SECTION00430000000000000000">
-3.3 Timeline Window</A>
+<H1><A NAME="SECTION00420000000000000000">
+3.2 Legend Window</A>
 </H1>
 
 <P>
+As soon as a SLOG-2 file is selected in Main window, the Legend window
+like the one shown in Figure <A HREF="#fig:legend_popup">3.2</A> will be displayed. 
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup"></A><A NAME="419"></A>
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:legend_popup"></A><A NAME="414"></A>
 <TABLE>
-<CAPTION ALIGN="BOTTOM"><STRONG>Figure:</STRONG>
-The initial display of the Timeline window
-of a 506 MB 16 processes slog2 file with default preview resolution.</CAPTION>
-<TR><TD><IMG
-  WIDTH="603" HEIGHT="480" ALIGN="BOTTOM" BORDER="0"
- SRC="./timeline_popup.png"
- ALT="Image timeline_popup">
-
-<P></TD></TR>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.2:</STRONG>
+A typical Legend window when slog2 file
+is first loaded into Jumpshot-4.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="265" HEIGHT="883" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_popup.png"
+ ALT="Image legend_popup">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
 </TABLE>
 </DIV>
 
 <P>
-Figure <A HREF="#fig:timeline_popup"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A> is the initial display of the Timeline
-window of a big 16 timelines slog2 file. Several concealable and removable
-components are used to create the Timeline window. In the center of
-the window, there is the <I>timeline canvas</I>. Directly on top of
-the timeline canvas is the <I>time display panel</I>. On top of the
-display panel, there is the removable <I>toolbar</I>. To the left
-of the canvas is the concealable <I>Y-axis label panel</I>. To the
-right of the canvas is the concealable <I>row adjustment panel</I>.
-At the bottom of the canvas is the <I>time ruler canvas</I>. Both
-Y-axis label and the row adjustment panels can be put out of sight
-by clicking the tabs in the dividers or dragging the dividers. The
-top toolbar can be dragged out of the window or be repositioned in
-the other 3 sides of the window. After removal of the toolbar and
-hidding of the left and right panels, the bare minimal Timeline window
-looks like the one shown in Figure <A HREF="node5.html#fig:timeline_preview_detail_0"><IMG  ALIGN="BOTTOM" BORDER="1" ALT="[*]" SRC="crossref.png"></A>. 
+The Legend window contains mainly the 4 columns legend table. The
+4 columns are labeled as <I>Topo, Name, V</I> and <I>S</I> as in Table
+<A HREF="#table:legend_column_ops">3.4</A>.
 
 <P>
-<BR><HR>
-<!--Table of Child-Links-->
-<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+<BR><P></P>
+<DIV ALIGN="CENTER"><A NAME="416"></A>
+<TABLE>
+<CAPTION><STRONG>Table 3.4:</STRONG>
+ Operations on the Legend window's
+columns.</CAPTION>
+<TR><TD><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="CENTER" COLSPAN=1>Icon</TD>
+<TD ALIGN="CENTER">Description</TD>
+<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=144>
+<DIV ALIGN="CENTER">
+Left Mouse Click on Column Cell
+</DIV></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=144>
+<DIV ALIGN="CENTER">
+Right Mouse Click on Column Cell or Left Mouse Click on Column Title
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="40" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_topo.png"
+ ALT="Image legend_topo"></TD>
+<TD ALIGN="CENTER">Topology</TD>
+<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=144>
+<DIV ALIGN="CENTER">
+Pick new Color (Figure <A HREF="#fig:legend_color_chooser">3.3</A>)
+</DIV></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=144>
+<DIV ALIGN="CENTER">
+None
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="57" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_name.png"
+ ALT="Image legend_name"></TD>
+<TD ALIGN="CENTER">Name</TD>
+<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=144>
+<DIV ALIGN="CENTER">
+Edit Name
+</DIV></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=144>
+<DIV ALIGN="CENTER">
+Sort Order menu (Figure <A HREF="#fig:legend_sort_order">3.4</A>)
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="26" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_v.png"
+ ALT="Image legend_v"></TD>
+<TD ALIGN="CENTER">Visibility</TD>
+<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=144>
+<DIV ALIGN="CENTER">
+Check or Uncheck
+</DIV></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=144>
+<DIV ALIGN="CENTER">
+Checkbox Operations Menu (Figure <A HREF="#fig:legend_checkbox_ops">3.5</A>)
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER"><IMG
+  WIDTH="25" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_s.png"
+ ALT="Image legend_s"></TD>
+<TD ALIGN="CENTER">Searchability</TD>
+<TD ALIGN="LEFT" VALIGN="TOP" WIDTH=144>
+<DIV ALIGN="CENTER">
+Check or Uncheck
+</DIV></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=144>
+<DIV ALIGN="CENTER">
+Checkbox Operations Menu (Figure <A HREF="#fig:legend_checkbox_ops">3.5</A>)
+</DIV></TD>
+</TR>
+</TABLE>
 
-<UL>
-<LI><A NAME="tex2html214"
-  HREF="node10.html">3.3.1 Zoomable and Scrollable Canvas</A>
-<UL>
-<LI><A NAME="tex2html215"
-  HREF="node11.html">3.3.1.1 Dragged Zoom</A>
-<LI><A NAME="tex2html216"
-  HREF="node12.html">3.3.1.2 Instant Zoom</A>
-<LI><A NAME="tex2html217"
-  HREF="node13.html">3.3.1.3 Grasp and Scroll</A>
-<LI><A NAME="tex2html218"
-  HREF="node14.html">3.3.1.4 Information Dialog Box</A>
-<UL>
-<LI><A NAME="tex2html219"
-  HREF="node15.html">3.3.1.4.1 Drawable Info Box</A>
-<UL>
-<LI><A NAME="tex2html220"
-  HREF="node16.html">3.3.1.4.1.1 Drawable Info Box for Preview Drawable</A>
-<LI><A NAME="tex2html221"
-  HREF="node17.html">3.3.1.4.1.2 Drawable Info Box for Real Drawable</A>
-</UL>
-<LI><A NAME="tex2html222"
-  HREF="node18.html">3.3.1.4.2 Duration Info Box</A>
-<LI><A NAME="tex2html223"
-  HREF="node19.html">3.3.1.4.3 Time Info Box</A>
-</UL>
-</UL>
+<P>
+</TD></TR>
+</TABLE>
+</DIV><P></P>
 <BR>
-<LI><A NAME="tex2html224"
-  HREF="node20.html">3.3.2 Toolbar</A>
-<LI><A NAME="tex2html225"
-  HREF="node21.html">3.3.3 Y-axis Label Panel</A>
-<LI><A NAME="tex2html226"
-  HREF="node22.html">3.3.4 Row Adjustment Panel</A>
-</UL>
-<!--End of Table of Child-Links-->
+
+<P>
+Table <A HREF="#table:legend_column_ops">3.4</A> also lists out all defined mouse
+operations that are provided in each column. The operations are left
+mouse clicking on the column title icon and on the column cell as
+well as right mouse clicking in any column cell. 
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:legend_color_chooser"></A><A NAME="417"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.3:</STRONG>
+Color Chooser Dialog for column
+Category Topology</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="441" HEIGHT="403" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_color_chooser.png"
+ ALT="Image legend_color_chooser">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+Figure <A HREF="#fig:legend_color_chooser">3.3</A> is the Color Chooser dialog
+that will pop up when one of the icon buttons in column Topo is pressed.
+The color editor provides 3 different ways of choosing a new color.
+After selecting a new color from the dialog, the new color will be
+used to update the icon button. The update won't be carried out in
+the timeline canvas automatically, explicit screen redraw is needed.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:legend_sort_order"></A><A NAME="418"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.4:</STRONG>
+Sort Order operation menu for the
+column Category Name in the Legend window.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="290" HEIGHT="517" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_sort_menu.png"
+ ALT="Image legend_sort_menu">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+Figure <A HREF="#fig:legend_sort_order">3.4</A> shows the popup dialog box either
+when the title icon of column Name is pressed or when right mouse
+button is clicked somewhere in the column. There are altogether 6
+different sort orders. The first order in the list is called <I>Creation
+Order</I> which refers to the category order is stored in slog2 file
+when it is being created. The 4 alphabetical ordering has a hidden
+sort order that is not mentioned in their names. This hidden order
+is called <I>Preview Order</I> which puts the preview drawable category
+before all the real drawable categories of the same topology. The
+word <I>Topo Order</I> refers to topologyical order. Taking altogether,
+``Case Sensitive Topo Order'' means first topological order, preview
+order, then case sensitive alphabetical order. The various orderings
+serve to facilitate the continuous selection of the category rows
+in the legend table. 
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:legend_checkbox_ops"></A><A NAME="419"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.5:</STRONG>
+Checkbox Operation menu for column
+Category Visibility and Searchability </CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER"><IMG
+  WIDTH="264" HEIGHT="518" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_checkbox_menu.png"
+ ALT="Image legend_checkbox_menu">
+</DIV>
+<P>
+<DIV ALIGN="CENTER"></DIV></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+Figure <A HREF="#fig:legend_checkbox_ops">3.5</A> shows a popup dialog box when
+the title icon of column V (Visibililty) or S (Searchability) is pressed
+or when right mouse button is clicked somewhere in either columns.
+The rule of selection in the legend table follows the standard practice
+of other graphical user interfaces as in the Table <A HREF="#table:selection_rules">3.6</A>.
+Together with this standard selection rules, the operations provided
+in checkbox operation menu allow easy enabling and disabling of visibility
+as well as searchability checkboxes.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER"><A NAME="421"></A>
+<TABLE>
+<CAPTION><STRONG>Table 3.6:</STRONG>
+ Standard Selection Rules.</CAPTION>
+<TR><TD><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="CENTER">Left Mouse Operation</TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=288>
+<DIV ALIGN="CENTER">
+Action
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER">C<SMALL>LICK</SMALL></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=288>
+<DIV ALIGN="CENTER">
+<I>Click</I> on an object deselects any existing selection and selects
+the object.
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER">C<SMALL>ONTROL-</SMALL>C<SMALL>LICK</SMALL></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=288>
+<DIV ALIGN="CENTER">
+<I>Control-click</I> on an object toggles its selection without affecting
+the selection of any other objects
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER">S<SMALL>HIFT-</SMALL>C<SMALL>LICK</SMALL></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=288>
+<DIV ALIGN="CENTER">
+<I>Shift-click</I> on an object extends the selection from the most
+recently selected object to the current object.
+</DIV></TD>
+</TR>
+<TR><TD ALIGN="CENTER">D<SMALL>RAGGING </SMALL></TD>
+<TD ALIGN="LEFT" VALIGN="MIDDLE" WIDTH=288>
+<DIV ALIGN="CENTER">
+<I>Dragging</I> (that is, moving the mouse while holding down left
+mouse button) through a range of <SMALL>TEXT</SMALL> deselects any existing
+selection and selects the range of text.
+</DIV></TD>
+</TR>
+</TABLE>
+
+<P>
+</TD></TR>
+</TABLE>
+</DIV><P></P>
+<BR>
+
+<P>
+NOTE: Any changes done in the Legend window that alters the
+appearance of drawables won't be automatically updated in the timeline
+canvas until the CanvasReDraw button in the Timeline window is pressed.
+
+<P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html212"
+<A NAME="tex2html211"
   HREF="node10.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html208"
-  HREF="node6.html">
+<A NAME="tex2html207"
+  HREF="node7.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html202"
+<A NAME="tex2html201"
   HREF="node8.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html210"
-  HREF="node1.html">
+<A NAME="tex2html209"
+  HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html213"
-  HREF="node10.html">3.3.1 Zoomable and Scrollable</A>
-<B> Up:</B> <A NAME="tex2html209"
-  HREF="node6.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html203"
-  HREF="node8.html">3.2 Legend Window</A>
- &nbsp; <B>  <A NAME="tex2html211"
-  HREF="node1.html">Contents</A></B> 
+<B> Next:</B> <A NAME="tex2html212"
+  HREF="node10.html">3.3 Timeline Window</A>
+<B> Up:</B> <A NAME="tex2html208"
+  HREF="node7.html">3. Graphical User Interface</A>
+<B> Previous:</B> <A NAME="tex2html202"
+  HREF="node8.html">3.1 Main Window</A>
+ &nbsp; <B>  <A NAME="tex2html210"
+  HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 
 </BODY>
