@@ -82,7 +82,7 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 
     /* If this process is not in the resulting communicator, return a 
        null communicator and exit */
-    if (rank >= newsize) {
+    if (rank >= newsize || rank == MPI_UNDEFINED) {
 	*comm_cart = MPI_COMM_NULL;
 	return MPI_SUCCESS;
     }
