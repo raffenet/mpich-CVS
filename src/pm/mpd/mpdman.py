@@ -373,20 +373,10 @@ def mpdman():
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         jobEndingEarly = 1
-                        if rhsSocket:  # still alive ?
-                            mpd_send_one_msg(rhsSocket,msg)
-                            del socketsToSelect[rhsSocket]
-                            rhsSocket.close()
-                            rhsSocket = 0
-                        if conSocket:
-                            msgToSend = { 'cmd' : 'job_sigint_early',
-                                          'jobid' : jobid, 'id' : myId }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            del socketsToSelect[conSocket]
-                            conSocket.close()
-                            conSocket = 0
-                        kill(0,SIGKILL)  # pid 0 -> all in my process group
-                        _exit(0)
+                        if myRank != 0:
+                            if rhsSocket:  # still alive ?
+                                mpd_send_one_msg(rhsSocket,msg)
+                            kill(clientPid,SIGKILL)
                     elif msg['signo'] == 'SIGTSTP':
                         if msg['dest'] != myId:
                             mpd_send_one_msg(rhsSocket,msg)
@@ -407,17 +397,11 @@ def mpdman():
                     if msg['src'] != myId:
                         if rhsSocket:  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
-                            # del socketsToSelect[rhsSocket]
-                            # rhsSocket.close()
-                            # rhsSocket = 0
                     if conSocket:
                         msgToSend = { 'cmd' : 'job_aborted_early', 'jobid' : jobid,
                                       'rank' : msg['rank'], 
                                       'exit_status' : msg['exit_status'] }
                         mpd_send_one_msg(conSocket,msgToSend)
-                        # del socketsToSelect[conSocket]
-                        # conSocket.close()
-                        # conSocket = 0
                     try:
                         kill(clientPid,SIGKILL)
                     except:
@@ -788,11 +772,7 @@ def mpdman():
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
-                        del socketsToSelect[rhsSocket]
-                        rhsSocket.close()
-                        rhsSocket = 0
-                        kill(0,SIGKILL)  # pid 0 -> all in my process group
-                        _exit(0)
+                        kill(clientPid,SIGKILL)
                     elif msg['signo'] == 'SIGTSTP':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
