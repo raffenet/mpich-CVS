@@ -100,6 +100,8 @@ def mpdman():
     doingBNR = int(environ['MPDMAN_DOING_BNR'])
 
     # set up pmi stuff early in case I was spawned
+    pmiVersion = 1
+    pmiSubversion = 1
     KVSs = {}
     if singinitPID:
         kvsname_template = 'singinit_kvs_'
@@ -870,15 +872,14 @@ def mpdman():
                         mpd_send_one_msg_noprint(conSocket,msgToSend)
                 elif parsedMsg['cmd'] == 'init':
                     pmiCollectiveJob = 1
-                    myPmiVersion = "1.1"
-                    (myV1,myV2) = myPmiVersion.split('.')
-                    (pV1,pV2) = parsedMsg['pmi_version'].split('.')
-                    if int(myV1) == int(pV1)  and  int(myV2) >= int(pV2):
+                    version = int(parsedMsg['pmi_version'])
+                    subversion = int(parsedMsg['pmi_subversion'])
+                    if pmiVersion == version  and  pmiSubversion >= subversion:
                         rc = 0
                     else:
                         rc = -1
-                    pmiMsgToSend = 'cmd=response_to_init pmi_version=%s rc=%d\n' % \
-                                   (myPmiVersion,rc)
+                    pmiMsgToSend = 'cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n' % \
+                                   (pmiVersion,pmiSubversion,rc)
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'get_my_kvsname':
                     pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
