@@ -68,6 +68,9 @@ extern int g_nLockSpinCount;
 #elif defined(HAVE_WIN32_SLEEP)
 #define MPIDU_Yield() Sleep(0)
 #elif defined (HAVE_SCHED_YIELD)
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
 #define MPIDU_Yield() sched_yield()
 #elif defined (HAVE_SELECT)
 #define MPIDU_Yield() { struct timeval t; t.tv_sec = 0; t.tv_usec = 0; select(0,0,0,0,&t); }

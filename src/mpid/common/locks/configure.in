@@ -25,7 +25,7 @@ fi
 AC_CHECK_FUNCS( yield sched_yield usleep sleep select )
 AC_CHECK_FUNCS( mutex_init compare_and_swap )
 AC_CHECK_FUNCS( pthread_mutexattr_init pthread_mutexattr_setpshared )
-AC_CHECK_HEADERS( pthread.h )
+AC_CHECK_HEADERS( pthread.h sched.h )
 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
