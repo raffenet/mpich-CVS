@@ -140,6 +140,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H
+    pg->nShmWaitSpinCount = 1;
     g_nLockSpinCount = 1;
 #endif
 
