@@ -135,4 +135,6 @@ fi
 if [ -x maint/codingcheck ] ; then
     echo "Running coding check"
     maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
+    maint/codingcheck src/mpid/mm/src/*/*.c src/mpid/mm/include/*.h 
+    maint/codingcheck src/mpid/ch3/src/*.c
 fi
