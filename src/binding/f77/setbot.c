@@ -16,6 +16,7 @@
 /* leave name alone */
 #else
 #define mpirinitc_ mpirinitc
+#define mpirinitc2_ mpirinitc2
 #endif
 
 #ifndef F77_USE_BOOLEAN_LITERALS
