@@ -3794,8 +3794,8 @@ object generates an error message.
 \subsubsection{\mpifunc{MPI_WIN_CREATE}}
 Allocate a new window object.  Call \mpifunc{MPI_Comm_dup} to create a
 private \mpids{MPI_Win}{communicator} that can be used as necessary; this also stores
-the group of the window object.  Save the \mpids{MPI_Win}{buffer},
-\mpids{MPI_Win}{buffer_size}, and \mpids{MPI_Win}{displacement_unit}. 
+the group of the window object.  Save the \mpids{MPI_Win}{base},
+\mpids{MPI_Win}{size}, and \mpids{MPI_Win}{displ}. 
 Setup the default attributes (\mpiconst{MPI_WIN_BASE},
 \mpiconst{MPI_WIN_SIZE}, and \mpiconst{MPI_WIN_DISP_UNIT}).  Note that these
 attributes could return pointers to the corresponding fields in the window
@@ -3805,20 +3805,17 @@ struct (e.g., fields \mpids{MPID_Win}{user_base}, \mpids{MPID_Win}{user_size},
 and \mpids{MPID_Win}{user_disp}) or far way where a mistake by the user is
 less likely to cause trouble?
 
-Use the private communicator to perform an \mpifunc{MPI_Allgather} 
-collect all of the displacement units and all of the window base
-addresses from all of the processes using \mpifunc{MPI_Allgather},
-along with a flag that indicates if the local window is in shared memory.  
-If all of the displacement units are the same, set the
-\mpids{MPI_Win}{_flags} with \mpidconst{MPID_WIN_CONST_DISP} and save
-the displacement value in \mpids{MPI_Win}{gdisp}.  Otherwise, save the
-displacements in an array \mpids{MPI_Win}{displs}.  Save the base
-addresses in \mpids{MPI_Win}{bases}.  
-
-Question:  In support of the SPMD, collective allocation model, should
-there are also be a \code{gbase} when all processes have the same base
-address for the local windows?  If so, set
-\mpidconst{MPID_WIN_CONST_BASE} in \mpids{MPI_Win}{_flags}.
+Use the private communicator to perform an \mpifunc{MPI_Allgather}
+collect all of the window base addresses, sizes, and displacement
+units from all of the processes using \mpifunc{MPI_Allgather}, along
+with a flag that indicates if the local window is in shared memory.
+If all of the base addresses are the same, set \mpids{MPI_Win}{_flags}
+with \mpidconst{MPID_WIN_CONST_BASE}; otherwise save the base
+addresses in an array \mpids{MPI_Win}{bases}.  Likewise, either set
+\mpids{MPI_Win}{_flags} with \mpidconst{MPID_WIN_CONST_SIZE} or save
+the sizes in an array \mpids{MPI_Win}{sizes}, and either set
+\mpids{MPI_Win}{_flags} with \mpidconst{MPID_WIN_CONST_DISPL} or save
+the displacement units in an array \mpids{MPI_Win}{displs}.
 
 In the case of a device that supports \emph{only} \tcpname, it isn't
 necessary to collect the displacement units or the window bases,
@@ -3828,6 +3825,10 @@ necessary to
 have this information.  Further, knowing whether the target window is
 in shared (or registered for \vianame) memory is necessary when
 implementing the RMA operations.
+
+Comment [BRT]: \tcpname can benefit from collecting the sizes and
+displacement units, as it allows the origin to identify out-of-bounds
+errors prior to sending requests to the target.
 
 If the info key \mpiconst{nolocks}\index{MPI_Info!keys!nolocks} is \code{true},
 then no provision needs to be made for either passive target access or for
