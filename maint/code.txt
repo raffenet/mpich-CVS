@@ -96,4 +96,8 @@ Or things not checked for but desired
    example, to get the BSD features, the correct approach is to define
    _BSD_SOURCE .
 
-   
+3. Macros with comparisons.  Make sure that these are parenthesized.  E.g.,
+     #define foo(a) ((a) > 1)
+   not
+     #define foo(a) a > 1
+
