@@ -1470,7 +1470,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].MPID_IOV_LEN);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "copying %d bytes\n", num_bytes));
 	    /* copy the received data */
-	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
+	    memcpy(ibu->read.iov[ibu->read.index].MPID_IOV_BUF, ibu->unex_list->buf, num_bytes);
 	    ibu->read.total += num_bytes;
 	    ibu->unex_list->buf += num_bytes;
 	    ibu->unex_list->length -= num_bytes;
@@ -1556,7 +1556,7 @@ char * op2str(int wc_type)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 /*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)*/
-int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
+int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
 {
     int i;
     ib_api_status_t status;
@@ -1946,7 +1946,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *nu
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 /*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)*/
-int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr)
+int ibu_set_vc_ptr(ibu_t ibu, void *vc_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
 

@@ -38,10 +38,10 @@ int MPIDI_CH3I_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, &vc_ptr, &num_bytes, &wait_result);
+	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
 	if (mpi_errno != IBU_SUCCESS)
 	{
-	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
+	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
 	    goto fn_exit;
 	}
@@ -52,7 +52,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    /*sched_yield();*/
 	    break;
 	case IBU_OP_READ:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", out.num_bytes));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", num_bytes));
 	    mpi_errno = handle_read(vc_ptr, num_bytes);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -61,7 +61,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	    break;
 	case IBU_OP_WRITE:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", out.num_bytes));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", num_bytes));
 	    mpi_errno = handle_written(vc_ptr);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -72,7 +72,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	case IBU_OP_CLOSE:
 	    break;
 	default:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_op", "**ibu_op %d", out.op_type);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_op", "**ibu_op %d", wait_result);
 	    goto fn_exit;
 	}
 
