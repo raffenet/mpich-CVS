@@ -111,12 +111,16 @@ void mp_print_extra_options(void)
     printf("-pwdfile filename\n");
     printf("  read the account and password from the file specified\n");
     printf("  put the account on the first line and the password on the second\n");
+    /*
     printf("-nocolor\n");
     printf("  don't use process specific output coloring\n");
+    */
     printf("-nompi\n");
     printf("  launch processes without the mpi startup mechanism\n");
+    /*
     printf("-nomapping\n");
     printf("  don't try to map the current directory on the remote nodes\n");
+    */
     printf("-nopopup_debug\n");
     printf("  disable the system popup dialog if the process crashes\n");
     printf("-dbg\n");
@@ -145,8 +149,10 @@ void mp_print_extra_options(void)
     printf("  specify the passphrase to authenticate connections to smpd with.\n");
     printf("-smpdfile filename\n");
     printf("  specify the file where the smpd options are stored including the passphrase.\n");
+    /*
     printf("-soft Fortran90_triple\n");
     printf("  acceptable number of processes to launch up to maxprocs\n");
+    */
     printf("-path search_path\n");
     printf("  search path for executable, ; separated\n");
     /*
