@@ -16,3 +16,28 @@
   communicator C.  Despite being a legal request, MPI_INTERCOMM_CREATE will
   fail to create a new intercommunicator between A and C using a commom process
   in B.
+
+- C++ Binding:
+  The following functions do not yet have C++ bindings
+  Grequest::Create
+  Win::Create_keyval
+  Type::Create_keyval
+  Comm::Join  
+  
+  There is an unidentified problem with the intercommunicator collective
+  routines, except for Intercomm::Barrier.
+
+  The MPI datatypes corresponding to Fortran datatypes are not available
+  (e.g., no MPI::DOUBLE_PRECISION).
+
+  The Comm class is not an Abstract Base Class (ABC).  This does not 
+  affect correct MPI programs, but will allow some incorrect programs to 
+  compile.  In addition, no functions are virtual; the standard requires
+  most (but not all) to be declared virtual. Again, most correct programs
+  will not notice this limitation.
+
+  The C++ binding does not implement a separate profiling interface, 
+  as allowed by the MPI-2 Standard (Section 10.1.10 Profiling).  
+
+  With the exception of the profiling interface, future releases of MPICH2 
+  will address these limitations of the C++ binding.
