@@ -36,7 +36,6 @@ AC_CHECK_HEADERS(                               \
     stdlib.h                                    \
     sys/param.h                                 \
     sys/poll.h                                  \
-    sys/socket.h                                \
     sys/types.h                                 \
     sys/uio.h					\
     unistd.h)
@@ -62,6 +61,13 @@ AC_TRY_COMPILE([
 typedef double socklen_t;,[socklen_t a;],pac_cv_have_socklen_t=no,pac_cv_have_socklen_t=yes)])
 if test "$pac_cv_have_socklen_t" = no ; then
     AC_DEFINE(socklen_t,int,[Define if socklen_t is not defined])
+fi
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+],[int a;],ac_cv_header_sys_socket_h=yes,ac_cv_header_sys_socket_h=no)
+if test "$ac_cv_header_sys_socket_h" = yes ; then
+    AC_DEFINE(HAVE_SYS_SOCKET_H,1,[Define if you have the <sys/socket.h> header file.])
 fi
 AC_SUBST(TCP_LIBS)
 
