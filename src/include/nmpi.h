@@ -7,9 +7,10 @@
 #ifndef MPICH_NMPI_H_INCLUDED
 #define MPICH_NMPI_H_INCLUDED
 
-#define NMPI_Pack PMPI_Pack
-#define NMPI_Unpack PMPI_Unpack
-#define NMPI_Pack_size PMPI_Pack_size
 #define NMPI_Get_count PMPI_Get_count
+#define NMPI_Pack PMPI_Pack
+#define NMPI_Pack_size PMPI_Pack_size
+#define NMPI_Unpack PMPI_Unpack
+#define NMPI_Wait PMPI_Wait
 
 #endif /* MPICH_NMPI_H_INCLUDED */
