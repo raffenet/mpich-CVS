@@ -838,75 +838,75 @@ with MPI_Alloc_mem.
 # mpi functions
 #
 **mpi_send:MPI_Send failed
-**mpi_send %p %d %D %d %d %C:MPI_Send(%p, %d, %D, %d, %d, %C) failed
+**mpi_send %p %d %D %d %d %C:MPI_Send(buf=%p, count=%d, %D, dest=%d, tag=%d, %C) failed
 **mpi_recv:MPI_Recv failed
-**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(%p, %d, %D, %d, %C, %p) failed
+**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(buf=%p, count=%d, %D, src=%d, %C, status=%p) failed
 **mpi_get_count:MPI_Get_count failed
 **mpi_get_count %p %D %p:MPI_Get_count(%p, %D, %p) failed
 **mpi_bsend:MPI_Bsend failed
-**mpi_bsend %p %d %D %d %d %C:MPI_Bsend(%p, %d, %D, %d, %d, %C) failed
+**mpi_bsend %p %d %D %d %d %C:MPI_Bsend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C) failed
 **mpi_ssend:MPI_Ssend failed
-**mpi_ssend %p %d %D %d %d %C:MPI_Ssend(%p, %d, %D, %d, %d, %C) failed
+**mpi_ssend %p %d %D %d %d %C:MPI_Ssend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C) failed
 **mpi_rsend:MPI_Rsend failed
-**mpi_rsend %p %d %D %d %d %C:MPI_Rsend(%p, %d, %D, %d, %d, %C) failed
+**mpi_rsend %p %d %D %d %d %C:MPI_Rsend(buf=%p, count=%d, %D, src=%d, tag=%d, %C) failed
 **mpi_buffer_attach:MPI_Buffer_attach failed
-**mpi_buffer_attach %p %d:MPI_Buffer_attach(%p, %d) failed
+**mpi_buffer_attach %p %d:MPI_Buffer_attach(buf=%p, size=%d) failed
 **mpi_buffer_detach:MPI_Buffer_detach failed
-**mpi_buffer_detach %p %p:MPI_Buffer_detach(%p, %p) failed
+**mpi_buffer_detach %p %p:MPI_Buffer_detach(buf=%p, size=%p) failed
 **mpi_isend:MPI_Isend failed
-**mpi_isend %p %d %D %d %d %C %p:MPI_Isend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_isend %p %d %D %d %d %C %p:MPI_Isend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_ibsend:MPI_Ibsend failed
-**mpi_ibsend %p %d %D %d %d %C %p:MPI_Ibsend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_ibsend %p %d %D %d %d %C %p:MPI_Ibsend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_issend:MPI_Issend failed
-**mpi_issend %p %d %D %d %d %C %p:MPI_Issend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_issend %p %d %D %d %d %C %p:MPI_Issend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_irsend:MPI_Irsend failed
-**mpi_irsend %p %d %D %d %d %C %p:MPI_Irsend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_irsend %p %d %D %d %d %C %p:MPI_Irsend(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_irecv:MPI_Irecv failed
-**mpi_irecv %p %d %D %d %d %C %p:MPI_Irecv(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_irecv %p %d %D %d %d %C %p:MPI_Irecv(buf=%p, count=%d, %D, src=%d, tag=%d, %C, request=%p) failed
 **mpi_wait:MPI_Wait failed
-**mpi_wait %p %p:MPI_Wait(%p, %p) failed
+**mpi_wait %p %p:MPI_Wait(request=%p, status%p) failed
 **mpi_test:MPI_Test failed
-**mpi_test %p %p %p:MPI_Test(%p, %p, %p) failed
+**mpi_test %p %p %p:MPI_Test(request=%p, flag=%p, status=%p) failed
 **mpi_request_free:MPI_Request_free failed
-**mpi_request_free %p:MPI_Request_free(%p) failed
+**mpi_request_free %p:MPI_Request_free(request=%p) failed
 **mpi_waitany:MPI_Waitany failed
-**mpi_waitany %d %p %p %p:MPI_Waitany(%d, %p, %p, %p) failed
+**mpi_waitany %d %p %p %p:MPI_Waitany(count=%d, req_array=%p, index=%p, status=%p) failed
 **mpi_testany:MPI_Testany failed
-**mpi_testany %d %p %p %p %p:MPI_Testany(%d, %p, %p, %p, %p) failed
+**mpi_testany %d %p %p %p %p:MPI_Testany(count=%d, req_array=%p, index=%p, flag=%p, status=%p) failed
 **mpi_waitall:MPI_Waitall failed
-**mpi_waitall %d %p %p:MPI_Waitall(%d, %p, %p) failed
+**mpi_waitall %d %p %p:MPI_Waitall(count=%d, req_array=%p, status_array=%p) failed
 **mpi_testall:MPI_Testall failed
-**mpi_testall %d %p %p %p:MPI_Testall(%d, %p, %p, %p) failed
+**mpi_testall %d %p %p %p:MPI_Testall(count=%d, req_array=%p, flag=%p, status_array=%p) failed
 **mpi_waitsome:MPI_Waitsome failed
-**mpi_waitsome %d %p %p %p %p:MPI_Waitsome(%d, %p, %p, %p, %p) failed
+**mpi_waitsome %d %p %p %p %p:MPI_Waitsome(count=%d, req_array=%p, out_count=%p, indices=%p, status_array=%p) failed
 **mpi_testsome:MPI_Testsome failed
-**mpi_testsome %d %p %p %p %p:MPI_Testsome(%d, %p, %p, %p, %p) failed
+**mpi_testsome %d %p %p %p %p:MPI_Testsome(count=%d, req_array=%p, out_count=%p, indices=%p, status_array=%p) failed
 **mpi_iprobe:MPI_Iprobe failed
-**mpi_iprobe %d %d %C %p %p:MPI_Iprobe(%d, %d, %C, %p, %p) failed
+**mpi_iprobe %d %d %C %p %p:MPI_Iprobe(src=%d, tag=%d, %C, flag=%p, status=%p) failed
 **mpi_probe:MPI_Probe failed
-**mpi_probe %d %d %C %p:MPI_Probe(%d, %d, %C, %p) failed
+**mpi_probe %d %d %C %p:MPI_Probe(src=%d, tag=%d, %C, status=%p) failed
 **mpi_cancel:MPI_Cancel failed
-**mpi_cancel %p:MPI_Cancel(%p) failed
+**mpi_cancel %p:MPI_Cancel(request=%p) failed
 **mpi_test_cancelled:MPI_Test_cancelled failed
-**mpi_test_cancelled %p %p:MPI_Test_cancelled(%p, %p) failed
+**mpi_test_cancelled %p %p:MPI_Test_cancelled(status=%p, flag=%p) failed
 **mpi_send_init:MPI_Send_init failed
-**mpi_send_init %p %d %D %d %d %C %p:MPI_Send_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_send_init %p %d %D %d %d %C %p:MPI_Send_init(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_bsend_init:MPI_Bsend_init failed
-**mpi_bsend_init %p %d %D %d %d %C %p:MPI_Bsend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_bsend_init %p %d %D %d %d %C %p:MPI_Bsend_init(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_ssend_init:MPI_Ssend_init failed
-**mpi_ssend_init %p %d %D %d %d %C %p:MPI_Ssend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_ssend_init %p %d %D %d %d %C %p:MPI_Ssend_init(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_rsend_init:MPI_Rsend_init failed
-**mpi_rsend_init %p %d %D %d %d %C %p:MPI_Rsend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_rsend_init %p %d %D %d %d %C %p:MPI_Rsend_init(buf=%p, count=%d, %D, dest=%d, tag=%d, %C, request=%p) failed
 **mpi_recv_init:MPI_Recv_init failed
-**mpi_recv_init %p %d %D %d %d %C %p:MPI_Recv_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_recv_init %p %d %D %d %d %C %p:MPI_Recv_init(buf=%p, count=%d, %D, src=%d, tag=%d, %C, request=%p) failed
 **mpi_start:MPI_Start failed
-**mpi_start %p:MPI_Start(%p) failed
+**mpi_start %p:MPI_Start(request=%p) failed
 **mpi_startall:MPI_Start_all failed
-**mpi_startall %d %p:MPI_Startall(%d, %p) failed
+**mpi_startall %d %p:MPI_Startall(count=%d, req_array=%p) failed
 **mpi_sendrecv:MPI_Sendrecv failed
-**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p:MPI_Sendrecv(%p, %d, %D, %d, %d, %p, %d, %D, %d, %d, %C, %p) failed
+**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p:MPI_Sendrecv(sbuf=%p, scount=%d, %D, dest=%d, stag=%d, rbuf=%p, rcount=%d, %D, src=%d, rtag=%d, %C, status=%p) failed
 **mpi_sendrecv_replace:MPI_Sendrecv_replace failed
-**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p:MPI_Sendrecv_replace(%p, %d, %D, %d, %d, %d, %d, %C, %p) failed
+**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p:MPI_Sendrecv_replace(buf=%p, count=%d, %D, dest=%d, stag=%d, src=%d, rtag=%d, %C, status=%p) failed
 **mpi_type_contiguous:MPI_Type_continuous failed
 **mpi_type_contiguous %d %D %p:MPI_Type_contiguous(%d, %D, %p) failed
 **mpi_type_vector:MPI_Type_vector failed
@@ -920,7 +920,7 @@ with MPI_Alloc_mem.
 **mpi_type_struct:MPI_Type_struct failed
 **mpi_type_struct %d %p %p %p %p:MPI_Type_struct(%d, %p, %p, %p, %p) failed
 **mpi_address:MPI_Address failed
-**mpi_address %p %p:MPI_Address(%p, %p) failed
+**mpi_address %p %p:MPI_Address(location=%p, address=%p) failed
 **mpi_type_extent:MPI_Type_extent failed
 **mpi_type_extent %D %p:MPI_Type_extent(%D, %p) failed
 **mpi_type_size:MPI_Type_size failed
@@ -936,43 +936,43 @@ with MPI_Alloc_mem.
 **mpi_get_elements:MPI_Get_elements failed
 **mpi_get_elements %p %D %p:MPI_Get_elements(%p, %D, %p) failed
 **mpi_pack:MPI_Pack failed
-**mpi_pack %p %d %D %p %d %p %C:MPI_Pack(%p, %d, %D, %p, %d, %p, %C) failed
+**mpi_pack %p %d %D %p %d %p %C:MPI_Pack(inbuf=%p, incount=%d, %D, outbuf=%p, outcount=%d, position=%p, %C) failed
 **mpi_unpack:MPI_Unpack failed
-**mpi_unpack %p %d %p %p %d %D %C:MPI_Unpack(%p, %d, %p, %p, %d, %D, %C) failed
+**mpi_unpack %p %d %p %p %d %D %C:MPI_Unpack(inbuf=%p, insize=%d, position=%p, outbuf=%p, outcount=%d, %D, %C) failed
 **mpi_pack_size:MPI_Pack_size failed
-**mpi_pack_size %d %D %C %p:MPI_Pack_size(%d, %D, %C, %p) failed
+**mpi_pack_size %d %D %C %p:MPI_Pack_size(count=%d, %D, %C, size=%p) failed
 **mpi_barrier:MPI_Barrier failed
 **mpi_barrier %C:MPI_Barrier(%C) failed
 **mpi_bcast:MPI_Bcast failed
-**mpi_bcast %p %d %D %d %C:MPI_Bcast(%p, %d, %D, %d, %C) failed
+**mpi_bcast %p %d %D %d %C:MPI_Bcast(buf=%p, count=%d, %D, root=%d, %C) failed
 **mpi_gather:MPI_Gather failed
-**mpi_gather %p %d %D %p %d %D %d %C:MPI_Gather(%p, %d, %D, %p, %d, %D, %d, %C) failed
+**mpi_gather %p %d %D %p %d %D %d %C:MPI_Gather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
 **mpi_gatherv:MPI_Gatherv failed
-**mpi_gatherv %p %d %D %p %p %p %D %d %C:MPI_Gatherv failed(%p, %d, %D, %p, %p, %p, %D, %d, %C) failed
+**mpi_gatherv %p %d %D %p %p %p %D %d %C:MPI_Gatherv failed(sbuf=%p, scount=%d, %D, rbuf=%p, rcnts=%p, displs=%p, %D, root=%d, %C) failed
 **mpi_scatter:MPI_Scatter failed
-**mpi_scatter %p %d %D %p %d %D %d %C:MPI_Scatter(%p, %d, %D, %p, %d, %D, %d, %C) failed
+**mpi_scatter %p %d %D %p %d %D %d %C:MPI_Scatter(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
 **mpi_scatterv:MPI_Scatterv failed
-**mpi_scatterv %p %p %p %D %p %d %D %d %C:MPI_Scatterv(%p, %p, %p, %D, %p, %d, %D, %d, %C) failed
+**mpi_scatterv %p %p %p %D %p %d %D %d %C:MPI_Scatterv(sbuf=%p, scnts=%p, displs=%p, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
 **mpi_allgather:MPI_Allgather failed
-**mpi_allgather %p %d %D %p %d %D %C:MPI_Allgather(%p, %d, %D, %p, %d, %D, %C) failed
+**mpi_allgather %p %d %D %p %d %D %C:MPI_Allgather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, %C) failed
 **mpi_allgatherv:MPI_Allgatherv failed
-**mpi_allgatherv %p %d %D %p %p %p %D %C:MPI_Allgatherv(%p, %d, %D, %p, %p, %p, %D, %C) failed
+**mpi_allgatherv %p %d %D %p %p %p %D %C:MPI_Allgatherv(sbuf=%p, scount=%d, %D, rbuf=%p, rcounts=%p, displs=%p, %D, %C) failed
 **mpi_alltoall:MPI_Alltoall failed
-**mpi_alltoall %p %d %D %p %d %D %C:MPI_Alltoall(%p, %d, %D, %p, %d, %D, %C) failed
+**mpi_alltoall %p %d %D %p %d %D %C:MPI_Alltoall(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, %C) failed
 **mpi_alltoallv:MPI_Alltoallv failed
-**mpi_alltoallv %p %p %p %D %p %p %p %D %C:MPI_Alltoallv(%p, %p, %p, %D, %p, %p, %p, %D, %C) failed
+**mpi_alltoallv %p %p %p %D %p %p %p %D %C:MPI_Alltoallv(sbuf=%p, scnts=%p, sdispls=%p, %D, rbuf=%p, rcnts=%p, rdispls=%p, %D, %C) failed
 **mpi_reduce:MPI_Reduce failed
-**mpi_reduce %p %p %d %D %O %d %C:MPI_Reduce(%p, %p, %d, %D, %O, %d, %C) failed
+**mpi_reduce %p %p %d %D %O %d %C:MPI_Reduce(sbuf=%p, rbuf=%p, count=%d, %D, %O, root=%d, %C) failed
 **mpi_op_create:MPI_Op_create failed
-**mpi_op_create %p %d %p:MPI_Op_create(%p, %d, %p) failed
+**mpi_op_create %p %d %p:MPI_Op_create(fn=%p, commute=%d, op=%p) failed
 **mpi_op_free:MPI_Op_free failed
-**mpi_op_free %p:MPI_Op_free(%p) failed
+**mpi_op_free %p:MPI_Op_free(op=%p) failed
 **mpi_allreduce:MPI_Allreduce failed
-**mpi_allreduce %p %p %d %D %O %C:MPI_Allreduce(%p, %p, %d, %D, %O, %C) failed
+**mpi_allreduce %p %p %d %D %O %C:MPI_Allreduce(sbuf=%p, rbuf=%p, count=%d, %D, %O, %C) failed
 **mpi_reduce_scatter:MPI_Reduce_scatter failed
-**mpi_reduce_scatter %p %p %p %D %O %C:MPI_Reduce_scatter(%p, %p, %p, %D, %O, %C) failed
+**mpi_reduce_scatter %p %p %p %D %O %C:MPI_Reduce_scatter(sbuf=%p, rbuf=%p, rcnts=%p, %D, %O, %C) failed
 **mpi_scan:MPI_Scan failed
-**mpi_scan %p %p %d %D %O %C:MPI_Scan(%p, %p, %d, %D, %O, %C) failed
+**mpi_scan %p %p %d %D %O %C:MPI_Scan(sbuf=%p, rbuf=%p, count=%d, %D, %O, %C) failed
 **mpi_group_size:MPI_Group_size failed
 **mpi_group_size %G %p:MPI_Group_size(%G, %p) failed
 **mpi_group_rank:MPI_Group_rank failed
@@ -1091,29 +1091,29 @@ with MPI_Alloc_mem.
 **mpi_abort:MPI_Abort failed
 **mpi_abort %C %d:MPI_Abort(%C, %d) failed
 **mpi_close_port:MPI_Close_port failed
-**mpi_close_port %s:MPI_Close_port(%s) failed
+**mpi_close_port %s:MPI_Close_port(port=%s) failed
 **mpi_comm_accept:MPI_Comm_accept failed
-**mpi_comm_accept %s %I %d %C %p:MPI_Comm_accept(%s, %I, %d, %C, %p) failed
+**mpi_comm_accept %s %I %d %C %p:MPI_Comm_accept(port=%s, %I, root=%d, %C, newcomm=%p) failed
 **mpi_comm_connect:MPI_Comm_connect failed
-**mpi_comm_connect %s %I %d %C %p:MPI_Comm_connect(%s, %I, %d, %C, %p) failed
+**mpi_comm_connect %s %I %d %C %p:MPI_Comm_connect(port=%s, %I, root=%d, %C, newcomm=%p) failed
 **mpi_comm_disconnect:MPI_Comm_disconnect failed
-**mpi_comm_disconnect %p:MPI_Comm_disconnect(%p) failed
+**mpi_comm_disconnect %p:MPI_Comm_disconnect(comm=%p) failed
 **mpi_comm_get_parent:MPI_Comm_get_parent failed
-**mpi_comm_get_parent %p:MPI_Comm_get_parent(%p) failed
+**mpi_comm_get_parent %p:MPI_Comm_get_parent(comm=%p) failed
 **mpi_comm_join:MPI_Comm_join failed
-**mpi_comm_join %d %p:MPI_Comm_join(%d, %p) failed
+**mpi_comm_join %d %p:MPI_Comm_join(fd=%d, intercomm=%p) failed
 **mpi_comm_spawn:MPI_Comm_spawn failed
-**mpi_comm_spawn %s %p %d %I %d %C %p %p:MPI_Comm_spawn(%s, %p, %d, %I, %d, %C, %p, %p) failed
+**mpi_comm_spawn %s %p %d %I %d %C %p %p:MPI_Comm_spawn(cmd=%s, argv=%p, maxprocs=%d, %I, root=%d, %C, intercomm=%p, errors=%p) failed
 **mpi_comm_spawn_multiple:MPI_Comm_spawn_multiple failed
-**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p:MPI_Comm_spawn_multiple(%d, %p, %p, %p, %p, %d, %C, %p, %p) failed
+**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p:MPI_Comm_spawn_multiple(count=%d, cmds=%p, argvs=%p, maxprocs=%p, infos=%p, root=%d, %C, intercomm=%p, errors=%p) failed
 **mpi_lookup_name:MPI_Lookup_name failed
-**mpi_lookup_name %s %I %p:MPI_Lookup_name(%s, %I, %p) failed
+**mpi_lookup_name %s %I %p:MPI_Lookup_name(service=%s, %I, port=%p) failed
 **mpi_open_port:MPI_Open_port failed
-**mpi_open_port %I %s:MPI_Open_port(%I, %s) failed
+**mpi_open_port %I %s:MPI_Open_port(%I, port=%s) failed
 **mpi_publish_name:MPI_Publish_name failed
-**mpi_publish_name %s %I %s:MPI_Publish_name(%s, %I, %s) failed
+**mpi_publish_name %s %I %s:MPI_Publish_name(service=%s, %I, port=%s) failed
 **mpi_unpublish_name:MPI_Unpublish_name failed
-**mpi_unpublish_name %s %I %s:MPI_Unpublish_name(%s, %I, %s) failed
+**mpi_unpublish_name %s %I %s:MPI_Unpublish_name(service=%s, %I, port=%s) failed
 **mpi_accumulate:MPI_Accumulate failed
 **mpi_accumulate %p %d %D %d %d %d %D %O %W:MPI_Accumulate(%p, %d, %D, %d, %d, %d, %D, %O, %W) failed
 **mpi_get:MPI_Get failed
@@ -1143,9 +1143,9 @@ with MPI_Alloc_mem.
 **mpi_win_wait:MPI_Win_wait failed
 **mpi_win_wait %W:MPI_Win_wait(%W) failed
 **mpi_alltoallw:MPI_Alltoallw failed
-**mpi_alltoallw %p %p %p %p %p %p %p %p %C:MPI_Alltoallw(%p, %p, %p, %p, %p, %p, %p, %p, %C) failed
+**mpi_alltoallw %p %p %p %p %p %p %p %p %C:MPI_Alltoallw(sbuf=%p, scnts=%p, sdispls=%p, stypes=%p, rbuf=%p, rcnts=%p, rdispls=%p, rtypes=%p, %C) failed
 **mpi_exscan:MPI_Exscan failed
-**mpi_exscan %p %p %d %D %O %C:MPI_Exscan(%p, %p, %d, %D, %O, %C) failed
+**mpi_exscan %p %p %d %D %O %C:MPI_Exscan(sbuf=%p, rbuf=%p, count=%d, %D, %O, %C) failed
 **mpi_add_error_class:MPI_Add_error_class failed
 **mpi_add_error_class %p:MPI_Add_error_class(%p) failed
 **mpi_add_error_code:MPI_Add_error_code failed
@@ -1239,9 +1239,9 @@ with MPI_Alloc_mem.
 **mpi_finalized:MPI_Finalized failed
 **mpi_finalized %p:MPI_Finalized(%p) failed
 **mpi_free_mem:MPI_Free_mem failed
-**mpi_free_mem %p:MPI_Free_mem(%p) failed
+**mpi_free_mem %p:MPI_Free_mem(base=%p) failed
 **mpi_get_address:MPI_Get_address failed
-**mpi_get_address %p %p:MPI_Get_address(%p, %p) failed
+**mpi_get_address %p %p:MPI_Get_address(location=%p, address=%p) failed
 **mpi_info_create:MPI_Info_create failed
 **mpi_info_create %p:MPI_Info_create(%p) failed
 **mpi_info_delete:MPI_Info_delete failed
