@@ -53,8 +53,6 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	    /* no other thread should be waiting on sreq, so it is safe to reset ref_count and cc */
 	    sreq->cc = 0;
 	    MPIU_Object_set_ref(sreq, 1);
-	    /* MPID_Request_set_complete(sreq);
-	       MPID_Request_release(sreq); */
 	}
 	else
 	{
@@ -69,42 +67,44 @@ void MPID_Cancel_send(MPID_Request * sreq)
        release the device's reference to the request object.  QUESTION: what is the right interface for MPIDI_CH3_Send_cancel()?
        It needs to be able to cancel requests to send a RTS packet for this request.  Perhaps we can use the partner request
        field to track RTS requests. */
-#   if 0
     {
-	MPID_Request * sreq2c;
+	MPID_Request * sreq_cancel;
 	
-	sreq2c = sreq;
 	if (proto == MPIDI_REQUEST_RNDV_MSG)
 	{
-	    if (MPIDI_Request_get_rndv_state(sreq) == MPIDI_REQUEST_RNDV_SENDING_RTS)
-	    {
-		sreq2c = sreq->partner_request;
-	    }
-	    else
-	    {
-		/* Optimization: if request-to-send is know to have already been sent (aggressive write finished or clear-to-send
-		   has been received), then we already know that we cannot cancel the message. */
-		goto fn_exit;
-	    }
+	    /* OPTIMIZATION: if clear-to-send has been received, then we already know that we cannot cancel the message. */
+	    
+	    /* FIXME - MT: cancellation of the RTS request needs to be atomic through the destruction of the RTS request to avoid
+               conflict with release of the RTS request if the CTS is received (see handling of a rendezvous CTS packet in
+               MPIDI_CH3U_Handle_recv_pkt()) */
+	    sreq_cancel = sreq->partner_request;
+	}
+	else
+	{
+	    sreq_cancel = sreq;
 	}
 	
-	if (MPIDI_CH3_Cancel_send(vc, sreq2c))
+	if (sreq_cancel != NULL && MPIDI_CH3_Cancel_send(vc, sreq_cancel))
 	{
+	    /* if we cancelled a RTS request, the release that request */
+	    if (sreq_cancel != sreq)
+	    {
+		MPIU_Object_set_ref(sreq_cancel, 0);
+		MPIDI_CH3_Request_destroy(sreq_cancel);
+	    }
+	    
 	    sreq->status.cancelled = TRUE;
 	    /* no other thread should be waiting on sreq, so it is safe to reset ref_count and cc */
 	    sreq->cc = 0;
 	    MPIU_Object_set_ref(sreq, 1);
-	    /* MPID_Request_set_complete(sreq);
-	       MPID_Request_release(sreq); */
 	    goto fn_exit;
 	}
     }
-#   endif    
 
     /* Part or all of the message has already been sent, so we need to send a cancellation request to the receiver in an attempt
        to catch the message before it is matched. */
     {
-	int old_cc;
+	int cc_was_zero;
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_cancel_send_req_t * const csr_pkt = &upkt.cancel_send_req;
 	MPID_Request * csr_sreq;
@@ -113,11 +113,11 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	
 	/* The completion counter and reference count are incremented to keep the request around long enough to receive a
 	   response regardless of what the user does (free the request before waiting, etc.). */
-	old_cc = sreq->cc;
+	cc_was_zero = (sreq->cc == 0);
 	MPIDI_CH3U_Request_increment_cc(sreq);
 	/* FIXME - MT: the reference count should only be incremented if the completion was zero before the increment.  This
            requires an atomic test for zero and increment. */
-	if (old_cc == 0)
+	if (cc_was_zero)
 	{
 	    MPIDI_CH3_Request_add_ref(sreq);
 	}

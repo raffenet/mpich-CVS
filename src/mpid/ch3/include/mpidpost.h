@@ -20,6 +20,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC *, MPID_Request *, MPID_IOV *, int);
 void MPIDI_CH3_iSend(MPIDI_VC *, MPID_Request *, void *, MPIDI_msg_sz_t);
 void MPIDI_CH3_iWrite(MPIDI_VC *, MPID_Request *);
 void MPIDI_CH3_iRead(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3_Cancel_send(MPIDI_VC *, MPID_Request *);
 
 MPID_Request * MPIDI_CH3_Request_create(void);
 void MPIDI_CH3_Request_add_ref(MPID_Request *);

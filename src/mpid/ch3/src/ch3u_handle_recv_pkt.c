@@ -354,6 +354,14 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 
+	    /* release the RTS request if one exists */
+	    /* FIXME - MT: this needs to be atomic to prevent cancel send from cancelling the wrong request */
+	    if (sreq->partner_request)
+	    {
+		MPID_Request_release(sreq->partner_request);
+		sreq->partner_request = NULL;
+	    }
+	    
 	    rs_pkt->type = MPIDI_CH3_PKT_RNDV_SEND;
 	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
 	    iov[0].MPID_IOV_BUF = rs_pkt;
@@ -458,8 +466,10 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_RNDV_MSG ||
 		    MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_SSEND)
 		{
+		    int cc;
+		    
 		    /* decrement the CC one additional time for the CTS/sync ack that is never going to arrive */
-		    MPIDI_CH3U_Request_complete(sreq);
+		    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
 		}
 		
 		MPIDI_DBG_PRINTF((35, FCNAME, "message cancelled"));
