@@ -614,6 +614,7 @@ SMPD_BOOL smpd_remove_scp()
 	result = SMPD_FALSE;
 	goto fn_exit;
     }
+    result = SMPD_TRUE;
     mbstowcs(wspn, spn, SMPD_MAX_NAME_LENGTH);
 
     pwspn[0] = wspn;
