@@ -71,8 +71,10 @@
    the GCC attribute to improve error checking by the compiler, particularly 
    for printf/sprintf strings 
 */
-#ifndef HAVE_GCC_ATTRIBUTE
-#define __attribute__(a)
+#ifdef HAVE_GCC_ATTRIBUTE
+#define ATTRIBUTE(a) __attribute__(a)
+#else
+#define ATTRIBUTE(a)
 #endif
 
 /* 
@@ -166,8 +168,8 @@ typedef enum MPIU_dbg_state_t
     MPIU_DBG_STATE_MEMLOG = 4
 }
 MPIU_dbg_state_t;
-int MPIU_dbg_printf(char *str, ...) __attribute__((format(printf,1,2)));
-int MPIU_dbglog_printf(char *str, ...) __attribute__((format,(printf,1,2)));
+int MPIU_dbg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
+int MPIU_dbglog_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_vprintf(char *str, va_list ap);
 #if defined(MPICH_DBG_OUTPUT)
 extern MPIU_dbg_state_t MPIUI_dbg_state;
@@ -188,9 +190,9 @@ void MPIU_dump_dbg_memlog(FILE * fp);
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
 #define dbg_printf MPIU_dbg_printf
 /* The following are temporary definitions */
-int msg_printf(char *str, ...) __attribute__((format,(printf,1,2)));
+int msg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 #define msg_fprintf fprintf
-int err_printf(char *str, ...) __attribute__((format,(printf,1,2)));
+int err_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 #define err_fprintf fprintf
 
 /* For unconditional debug output, use the following */
@@ -271,10 +273,10 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
 
 /* Message printing */
-int MPIU_Usage_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
-int MPIU_Msg_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
-int MPIU_Error_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
-int MPIU_Internal_error_printf( char *str, ... ) __attribute__((format,(printf,1,2)));
+int MPIU_Usage_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Msg_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 
 /* Utilities */
 int MPIU_Strncpy( char *dest, const char *src, size_t n );
@@ -283,7 +285,7 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n );
 #define MPIU_Snprintf snprintf
 #else
 int MPIU_Snprintf( char *str, size_t size, const char *format, ... ) 
-     __attribute__((format,(printf,3,4)));
+     ATTRIBUTE((format(printf,3,4)));
 #endif
 
 /* Known language bindings */
@@ -1311,7 +1313,7 @@ void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
-int MPIR_Err_create_code( int, const char [], ... ) __attribute__((format,(printf,3,4)));
+int MPIR_Err_create_code( int, const char [], ... ) /* ATTRIBUTE((format(printf,3,4))) */;
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
 const char * MPIR_Err_get_string(int);

@@ -1257,7 +1257,7 @@ AC_CACHE_CHECK([whether __attribute__ allowed],
 pac_cv_gnu_attr,[
 AC_TRY_COMPILE([int foo(int) __attribute__ ((pure));],[int a;],
 pac_cv_gnu_attr=yes,pac_cv_gnu_attr=no)])
-if test "$pac_cv_gnu_attr" != "yes" ; then
+if test "$pac_cv_gnu_attr" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
 fi
 ])
