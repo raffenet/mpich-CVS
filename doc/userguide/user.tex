@@ -318,9 +318,6 @@ specifications for process sets on separate lines in the file.  This
 makes it unnecessary to have long command lines for \texttt{mpiexec}.  
 (See p. 353 of \cite{Snir:1998:MPI2Book}.)
 
-Currently the \texttt{-soft} argument (for giving hints instead of a
-precise number for the number of processes) is not supported.
-
 It is also possible to start a one process MPI job (with size of
 \texttt{MPI\_COMM\_WORLD} equal to 1), without using \texttt{mpiexec}.
 This process will become an MPI process when it calls
@@ -343,7 +340,7 @@ MPICH2 provides a number of process management systems.  The default is
 called MPD.  MPD provides a number of extensions to the standard form of
 \texttt{mpiexec}.
 
-\subsubsection{\texttt{mpiexec} arguments for MPD}
+\subsubsection{Basic \texttt{mpiexec} arguments for MPD}
 \label{sec:extensions-mpd}
 
 The default configuration of MPICH2 chooses the MPD process manager and
@@ -388,14 +385,14 @@ and
 \end{verbatim}
 
 
-\subsubsection{Passing Environment Variables to Processes}
+\subsubsection{Other Command-Line Arguments to \texttt{mpiexec}}
 \label{sec:environment}
 
 The MPI-2 standard specifies the syntax and semantics of the arguments
 \texttt{-n}, \texttt{-path},\texttt{-wdir}, \texttt{-host},
 \texttt{-file}, \texttt{-configfile}, and \texttt{-soft}.  All of these
-are currently implemented for MPD's \texttt{mpiexec} except
-\texttt{-soft}.  Each of these is what we call a ``local'' option, since
+are currently implemented for MPD's \texttt{mpiexec}.
+Each of these is what we call a ``local'' option, since
 its scope is the processes in the set of processes described between
 colons, or on separate lines of the file specified by
 \texttt{-configfile}.  We add some extensions that are local in this way
@@ -468,7 +465,7 @@ Some extension parameters have only global versions.  They are
 \item[\texttt{-machinefile}] can be used to specify information
 about each of a set of machines.  This information may include the
 number of processes to run on each host when executing user programs.
-For example, assume that a machinefile named mf contains:
+For example, assume that a machinefile named \texttt{mf} contains:
 \begin{verbatim}
     # comment line
     hosta
@@ -482,7 +479,7 @@ should use the \texttt{gige} interface on \texttt{hostc} and
 \texttt{hostd}
 respectively for MPI communications.  (\texttt{ifhn} stands for
 ``interface host name'' and should be set to an alternate host name for
-the machine that is used to designate an alternate communication interface.
+the machine that is used to designate an alternate communication interface.)
 This interface information causes the MPI implementation to choose the
 alternate host name when making connections.  When the alternate
 hostname specifies a particular interface, MPICH communication will then
