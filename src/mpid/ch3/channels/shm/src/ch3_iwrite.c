@@ -26,7 +26,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     req->shm.iov_offset = 0;
     vc->shm.send_active = req;
     error = (req->ch3.iov_count == 1) ?
-	MPIDI_CH3I_SHM_write(vc, req->ch3.iov, req->ch3.iov->MPID_IOV_LEN, &nb) :
+	MPIDI_CH3I_SHM_write(vc, req->ch3.iov->MPID_IOV_BUF, req->ch3.iov->MPID_IOV_LEN, &nb) :
 	MPIDI_CH3I_SHM_writev(vc, req->ch3.iov, req->ch3.iov_count, &nb);
     assert(error == MPI_SUCCESS);
 
