@@ -65,6 +65,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
     smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 
+    smpd_process.noprompt = smpd_get_opt(argcp, argvp, "-noprompt");
+
 #ifdef HAVE_WINDOWS_H
 
     /* check for service options */
@@ -284,6 +286,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
 
     smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+
     if (smpd_get_opt_string(argcp, argvp, "-pwdfile", pwdfile, SMPD_MAX_FILENAME) ||
 	smpd_get_opt_string(argcp, argvp, "-smpdpwdfile", pwdfile, SMPD_MAX_FILENAME))
     {
