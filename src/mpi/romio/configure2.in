@@ -122,6 +122,7 @@ DEBUG=no
 MIPS=0
 BITS=0
 FROM_MPICH=${FROM_MPICH:-0}
+FROM_MPICH2=${FROM_MPICH2:-0}
 CFLAGS=${CFLAGS:-""}
 LL="\%lld"
 AR_LOCAL=l
@@ -235,7 +236,7 @@ fi
 #### WE SHOULD REMOVE THIS SOON
 grep __"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
-   echo "Unknown architecture $arch... proceeding anyway"
+   AC_MSG_WARN([Unknown architecture $arch... proceeding anyway])
 fi
 #
 #
@@ -271,7 +272,7 @@ if test -n "$FILE_SYSTEM" ; then
 	  fi
       done
       if test "$found" = "no" ; then
-         echo "Unknown file system $x... proceeding anyway"
+         AC_MSG_WARN([Unknown file system $x... proceeding anyway])
       fi
    done
 fi
@@ -286,16 +287,15 @@ if test -n "$MPI" ; then
       fi
    done
    if test $found = no ; then
-      echo "Unknown MPI implementation $MPI... proceeding anyway"
+      AC_MSG_WARN([Unknown MPI implementation $MPI... proceeding anyway])
    fi
 fi
 #
 # check for valid MPI include directory if specified
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    if test -n "$MPI_INCLUDE_DIR"; then
       if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
-         echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
-         exit 1
+         AC_MSG_ERROR([Include file $MPI_INCLUDE_DIR/mpi.h not found])
       fi
    else
 #     assume that mpi.h is in the default path
@@ -306,11 +306,10 @@ if test $FROM_MPICH = 0 ; then
 fi
 #
 # check for valid MPI library if specified
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    if test -n "$MPI_LIB" ; then
       if test ! -f "$MPI_LIB" ; then
-         echo "Error: MPI library $MPI_LIB not found"
-         exit 1
+         AC_MSG_ERROR([MPI library $MPI_LIB not found])
       fi
    fi
 fi
@@ -356,7 +355,7 @@ if test -n "$arch_sun4" ; then
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="ufs nfs"
-        echo "configuring for file systems ufs and nfs"
+        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
 fi
 #
@@ -385,7 +384,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="ufs nfs"
-        echo "configuring for file systems ufs and nfs"
+        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
     AC_DEFINE(SOLARIS,,[Define for Solaris])
     if test $MPI = "mpich" ; then
@@ -451,9 +450,9 @@ int main( int argc, char **argv )
         if test "$CC" = "mpcc" || test "$CC" = "mpCC" ; then
             file_system_piofs=1
             FILE_SYSTEM="piofs"
-            echo "configuring for file systems piofs, ufs, and nfs"
+            AC_MSG_RESULT([configuring for file systems piofs, ufs, and nfs])
         else 
-            echo "configuring for file systems ufs and nfs"
+            AC_MSG_RESULT([configuring for file systems ufs and nfs])
         fi
         file_system_ufs=1
         file_system_nfs=1
@@ -489,7 +488,7 @@ if test -n "$arch_paragon"; then
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="pfs ufs nfs"
-        echo "configuring for file systems pfs, ufs, and nfs"
+        AC_MSG_RESULT([configuring for file systems pfs, ufs, and nfs])
     fi
     AC_DEFINE(PARAGON,,[Define for Intel Paragon])
     AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
@@ -522,7 +521,7 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     if test -z "$FILE_SYSTEM" ; then
         file_system_ufs=1
         FILE_SYSTEM="ufs"
-        echo "configuring for file system ufs"
+        AC_MSG_RESULT([configuring for file system ufs])
     fi
 fi
 #
@@ -586,7 +585,7 @@ has_pthread=yes],[has_pthread=no])
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="ufs nfs"
-        echo "configuring for file systems ufs and nfs"
+        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
 fi    
 #
@@ -611,7 +610,7 @@ if test -n "$arch_SX4" ; then
         file_system_sfs=1
         file_system_nfs=1
         FILE_SYSTEM="sfs nfs"
-        echo "configuring for file systems sfs and nfs"
+        AC_MSG_RESULT([configuring for file systems sfs and nfs])
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
@@ -671,12 +670,12 @@ struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
             file_system_hfs=1
             file_system_nfs=1
             FILE_SYSTEM="hfs nfs"
-            echo "configuring for file systems hfs and nfs"
+            AC_MSG_RESULT([configuring for file systems hfs and nfs])
         else
             file_system_ufs=1
             file_system_nfs=1
             FILE_SYSTEM="ufs nfs"
-            echo "no flock64; configuring for file systems ufs and nfs"
+            AC_MSG_RESULT([no flock64; configuring for file systems ufs and nfs])
         fi
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -707,7 +706,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="ufs nfs"
-        echo "configuring for file systems ufs and nfs"
+        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
     AC_DEFINE(DEC,,[Define for DEC/Compaq/HP Alpha])
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -746,7 +745,7 @@ if test -n "$arch_CRAY" ; then
         file_system_ufs=1
         file_system_nfs=1
         FILE_SYSTEM="ufs nfs"
-        echo "configuring for file systems ufs and nfs"
+        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
@@ -797,13 +796,11 @@ if test -n "$arch_IRIX"; then
    if test $osversion = 4 ; then
 	RANLIB="ar ts"
         if test -n "$mpi_sgi"; then
-            echo "Error: SGI's MPI doesn't work with IRIX 4.x"
-            exit 1
+            AC_MSG_ERROR(["SGI's MPI doesn't work with IRIX 4.x"])
         fi
    elif test $osversion = 5 ; then
         if test -n "$mpi_sgi"; then
-            echo "Error: SGI's MPI doesn't work with IRIX 5.x"
-            exit 1
+            AC_MSG_ERROR("SGI's MPI doesn't work with IRIX 5.x"])
         fi
    elif test $osversion = 6 ; then
 	if test -z "$MPI"; then
@@ -845,7 +842,7 @@ if test -n "$arch_IRIX"; then
           file_system_ufs=1
           FILE_SYSTEM="ufs $FILE_SYSTEM"
        fi
-       echo "configuring for file systems $FILE_SYSTEM"
+       AC_MSG_RESULT([configuring for file systems $FILE_SYSTEM])
    fi
    AC_DEFINE(IRIX,,[Define if IRIX])
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -862,7 +859,8 @@ if test $NOF77 = 0 ; then
         CFLAGS="$CFLAGS $WDEF"
     fi
     rm -f test/mpif.h
-    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
+    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 && \
+       test $FROM_MPICH2 = 0 ; then
         if test ! -d test ; then mkdir test ; fi
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
@@ -882,7 +880,7 @@ PAC_LONG_LONG_64()
 dnl PAC_LONG_64()
 #
 if test -n "$longlongsize"; then
-   if test $FROM_MPICH = 0 ; then
+   if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
        PAC_MPI_LONG_LONG_INT()
    else
        AC_DEFINE(HAVE_MPI_LONG_LONG_INT,,[Define if supports long long int])
@@ -903,7 +901,7 @@ else
 fi
 #
 # check if MPI_Info functions are defined in the MPI implementation
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    PAC_MPI_INFO()
 else
    AC_DEFINE(HAVE_MPI_INFO,,[Define if MPI Info is available])
@@ -924,7 +922,7 @@ if test -n "$mpi_sgi"; then
 fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    PAC_MPI_DARRAY_SUBARRAY()
 else
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if Darray is available])
@@ -1027,7 +1025,7 @@ if test -z "$FILE_SYSTEM" ; then
     file_system_ufs=1
     file_system_nfs=1
     FILE_SYSTEM="ufs nfs"
-    echo "configuring for file systems ufs and nfs"
+    AC_MSG_RESULT([configuring for file systems ufs and nfs])
 fi
 #
 if test -n "$file_system_nfs" ; then
@@ -1134,7 +1132,7 @@ else
    FORTRAN_TEST="fperf fcoll_test fmisc pfcoll_test" 
 fi
 #
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    PAC_TEST_MPI
    PAC_NEEDS_FINT
 else
@@ -1168,6 +1166,22 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
+   AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status_set_bytes available])
+fi
+# For now, separate the mpich2 from mpich cases
+if test $FROM_MPICH2 = 1 ; then
+   MPICH_HOME=`dirname $ROMIO_HOME`
+   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin ; fi
+   # No special compiler script.
+   # BUT we need the include paths
+   CC="$CC -I${use_top_srcdir}/src/include -I${top_build_dir}/src/include"
+   TEST_CC="$CC"
+   MPI_LIB=""
+   ROMIO_INCLUDE=""
+   USER_CFLAGS=""
+   USER_FFLAGS=""
+   TEST_LIBNAME=""
+   MPIRUN=$MPI_BIN_DIR/mpiexec
    AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status_set_bytes available])
 fi
 #
@@ -1277,7 +1291,8 @@ AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f )
 #
 rm -f *.o
-if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 ; then
+if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 -a \
+         $FROM_MPICH2 = 0 ; then
 cat <<EOF
 
 Please register your copy of ROMIO with us by sending email
@@ -1288,7 +1303,7 @@ as well as bug fixes.
 
 EOF
 fi
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    AC_MSG_RESULT([Configure done. Now type make])
 fi
 dnl PAC_SUBDIR_CACHE_CLEANUP

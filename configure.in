@@ -448,11 +448,16 @@ if test "$enable_romio" = "yes" ; then
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
    else
-       AC_MSG_WARN([ROMPI src directory is not available])
+       AC_MSG_WARN([ROMIO src directory is not available])
    fi
    # Set environment variables that the romio configure expects
-   FROM_MPICH=1
-   export FROM_MPICH
+   romio_dir=romio
+   AC_SUBST(romio_dir)
+   FROM_MPICH2=1
+   export FROM_MPICH2
+   export use_top_srcdir
+   top_build_dir=`pwd`
+   export top_build_dir
 fi
 dnl
 if test ! -d $use_top_srcdir/src/mpid/$device_name ; then

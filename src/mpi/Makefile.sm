@@ -1,1 +1,2 @@
-SUBDIRS = attr coll comm datatype errhan group init io misc pt2pt rma spawn timer topo .
+SUBDIRS_romio_dir = romio
+SUBDIRS = attr coll comm datatype errhan group init io misc pt2pt rma spawn timer topo @romio_dir@ .
