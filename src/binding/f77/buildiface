@@ -32,6 +32,9 @@ $header_file = "mpi_fortimpl.h";
 $debug = 0;
 @arg_addresses = ();
 
+%altweak = ();    # Alternate weak declarations
+%altweakrtype = ();
+
 #feature variables
 $do_logical = 1;
 $do_fint    = 1;
@@ -773,14 +776,31 @@ sub print_attr {
     }
 }
 
+#
+# We allow a routine to specify an alternate weak decl by name
+sub set_weak_decl {
+    my $name = $_[0];
+    my $decl = $_[1];
+    my $rtype = $_[2];
+    $name = lc($name);
+    $altweak{$name}      = $decl;
+    $altweakrtype{$name} = $rtype;
+}
 sub print_weak_decl {
     my $OUTFD = $_[0];
     my $name  = $_[1];
     my $args  = $_[2];
 
-    print $OUTFD "extern FORTRAN_API void FORT_CALL $name";
-    &print_args( $OUTFD, $args, 1 );
-    print $OUTFD ";\n";
+    my $basename = lc($name);
+    $basename =~ s/_*$//;
+    if (defined($altweak{$basename})) {
+	print $OUTFD "extern FORTRAN_API $altweakrtype{$basename} FORT_CALL $name($altweak{$basename});\n";
+    }
+    else {
+	print $OUTFD "extern FORTRAN_API void FORT_CALL $name";
+	&print_args( $OUTFD, $args, 1 );
+	print $OUTFD ";\n";
+    }
 }
 #
 # Special processing
@@ -1604,10 +1624,11 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     $OUTFD = "WTIMEFD";
     open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
     $files[$#files+1] = "wtimef.c";
+    &set_weak_decl( "MPI_Wtime", "void", "double" );
     &print_header( "MPI_Wtime", "wtime", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "double mpi_wtime_( void ) ";
+    print $OUTFD "FORTRAN_API double FORT_CALL mpi_wtime_( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; MPID_Time_t t;\n
@@ -1623,10 +1644,11 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     $OUTFD = "WTICKFD";
     open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
     $files[$#files+1] = "wtickf.c";
+    &set_weak_decl( "MPI_Wtick", "void", "double" );
     &print_header( "MPI_Wtick", "wtick", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "double mpi_wtick_( void ) ";
+    print $OUTFD "FORTRAN_API double FORT_CALL mpi_wtick_( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; 
