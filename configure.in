@@ -142,13 +142,26 @@ device_name=`echo $with_device | sed -e 's/:.*//g'`
 changequote(<<,>>)
 device_args=`echo $with_device | sed -e 's/[^:]*://g'`
 changequote([,])
-if test ! -d $top_srcdir/src/mpid/$device_name ; then
+dnl
+dnl This test is complicated by the fact that top_srcdir is not set until
+dnl the very end of configure.  Instead, we get it ourselves
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
 dnl     WAIT UNTIL WE INCLUDE A DEVICE
 dnl     AC_MSG_ERROR([Device $device_name is unknown)]
     AC_MSG_WARN([Device $device_name is unknown])
+elif test ! -x $use_top_srcdir/src/mpid/$device_name/configure ; then
+    AC_MSG_WARN([Device $device_name has no configure])
+    device_name=""
 else 
     # Add the device to the configure list
-    subsystems="$subsystems src/mpid/$devicename"
+    subsystems="$subsystems src/mpid/$device_name"
+    dnl Make device_name available to subdirs
+    AC_SUBST(device_name)
 fi
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -311,6 +324,27 @@ if test -n "$thread_type" ; then
 	;;
     esac
 fi
+dnl
+dnl Check for special compile characteristics
+AC_MSG_CHECKING([for gcc __asm__ and pentium cmpxchgl instruction])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+long int compval = 10;
+volatile long int *p = &compval;
+long int oldval = 10;
+long int newval = 20;
+char ret;
+long int readval;
+__asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
+	: "=q" (ret), "=m" (*p), "=a" (readval)
+	: "r" (newval), "m" (*p), "a" (oldval));
+return (compval == 20) ? 0 : -1;
+}
+], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
+Define if using gcc on a system with an Intel Pentium class chip), 
+AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
+dnl
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
 dnl
@@ -382,31 +416,6 @@ dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
-AC_SEARCH_LIBS(socket, socket)
-AC_CHECK_LIB(thread, mutex_init)
-AC_CHECK_HEADERS(pthread.h fcntl.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h)
-AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h)
-AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
-AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
-
-AC_MSG_CHECKING(for gcc __asm__ and pentium cmpxchgl instruction)
-AC_TRY_RUN([
-int main(int argc, char *argv[])
-{
-long int compval = 10;
-volatile long int *p = &compval;
-long int oldval = 10;
-long int newval = 20;
-char ret;
-long int readval;
-__asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
-	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval));
-return (compval == 20) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
-Define if using gcc on a system with an Intel Pentium class chip), 
-AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 
 AC_OUTPUT(Makefile src/Makefile \
           src/mpi/Makefile \
@@ -424,8 +433,6 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpi/spawn/Makefile \
           src/mpi/topo/Makefile \
           src/mpid/Makefile \
-          src/mpid/bsocket/Makefile \
-          src/mpid/mm/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/mem/Makefile \
@@ -437,4 +444,23 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpi/util/Makefile \
 	  test/mpi/datatype/Makefile \
 	  examples/Makefile )
+
+dnl The following files should be created by the appropriate configure within
+dnl the device.
+dnl          src/mpid/bsocket/Makefile \
+dnl          src/mpid/mm/Makefile \
+
+
 PAC_SUBDIR_CACHE_CLEANUP
+
+dnl
+dnl The following belong in a device-specific configure.  They should be moved 
+dnl there and invoked throught the AC_CONFIG_SUBDIR process.
+dnl
+dnl AC_SEARCH_LIBS(socket, socket)
+dnl AC_CHECK_LIB(thread, mutex_init)
+dnl AC_CHECK_HEADERS(pthread.h fcntl.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h)
+dnl AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h)
+dnl AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
+dnl AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
+

@@ -229,6 +229,7 @@ sub ReadMfile {
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/ /,$1);
+	    $subdirs_has_autoconf = 0;
         }
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
 	    $extra_programs{$1} = 1;
@@ -555,6 +556,7 @@ sub ClearVars {
     %pgmlinktypes = ();
     # Other directories
     @subdirs = ();
+    $subdirs_has_autoconf = 0;
     # Suffix definitions
     $ExplicitSuffixes = "";
     # Document sources and directories
@@ -602,6 +604,7 @@ sub ProcessFile {
 	#print "Checking $sdir\n";
 	if ($sdir =~ /@([^@]*)@/) {
 	    $subst_name = $1;
+	    $subdirs_has_autoconf = 1;
 	    #print "Found $subst_name\n";
 	    # Look up the special name
 	    $var_name = "SUBDIRS_$subst_name";
@@ -651,8 +654,19 @@ sub RecursiveOp {
         print FD "\tfor dir in";
         foreach $dir (@subdirs) {
 	    if ($dir ne ".") { print FD " $dir"; }
+	    if ($dir =~ /@[^@]*@/) {
+		$subdirs_has_autoconf = 1;
+	    }	    
         }
-        print FD " ; do \\\n\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
+	if ($subdirs_has_autoconf) {
+	    # Add a - incase there is a problem
+          print FD " - ; do \\\n";
+	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\\n";
+	  print FD "\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
+        }	
+	else {
+          print FD " ; do \\\n\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
+        }
     }
 }
 
@@ -722,6 +736,13 @@ sub TargetAll {
 		    $has_dot = 1;
 		    print FD "\t\${MAKE} all-local\n";
 		}
+	    }
+	    elsif ($dir =~ /@([^@]*)@/) {
+		# May be a replaced variable
+		print FD "\tfor dir in $dir - ; do\\\n";
+		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\\n";
+		print FD "\t\t(cd \$\$dir ; \${MAKE} all ) ;\\\n";
+		print FD "\tdone\n";
 	    }
 	    else {
 		print FD "\t(cd $dir ; \${MAKE} all )\n";

@@ -68,10 +68,22 @@ int MPI_Init( int *argc, char ***argv )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* 
+     * This routine and MPI_Init_thread should share the same code; there 
+     * should be no BNR calls in this file.  Most likely, all BNR calls
+     * should be within the device's implementation of MPID_Init, which 
+     * either this routine or a common routine called by both MPI_Init
+     * and MPI_Init_thread use.  The routine MPIR_Init_thread is
+     * the intended common routine.
+     */
+
+#ifdef FOO
     BNR_Init(&spawned);
+#endif
 
     MPIR_Init_thread( MPI_THREAD_SINGLE, (int *)0 );
 
+#ifdef FOO
     BNR_DB_Get_my_name(MPIR_Process.bnr_dbname);
     BNR_Barrier();
 
@@ -84,6 +96,8 @@ int MPI_Init( int *argc, char ***argv )
     {
 	MPIR_Process.comm_parent = MPI_COMM_NULL;
     }
+
+#endif
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPI_SUCCESS;

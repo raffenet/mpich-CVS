@@ -132,19 +132,20 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
 /* Known MPI object types.  These are used for both the error handlers 
-   and for the handles.  This is a 4 bit value */
+   and for the handles.  This is a 4 bit value.  0 is reserved for so 
+   that all-zero handles can be flagged as an error. */
 typedef enum { 
-  MPID_COMM       = 0x0, 
-  MPID_GROUP      = 0x1,
-  MPID_DATATYPE   = 0x2,
-  MPID_FILE       = 0x3,
-  MPID_ERRHANDLER = 0x4,
-  MPID_OP         = 0x5,
-  MPID_INFO       = 0x6,
-  MPID_WIN        = 0x7,
-  MPID_KEYVAL     = 0x8,
-  MPID_BSOCKET    = 0x9
+  MPID_COMM       = 0x1, 
+  MPID_GROUP      = 0x2,
+  MPID_DATATYPE   = 0x3,
+  MPID_FILE       = 0x4,
+  MPID_ERRHANDLER = 0x5,
+  MPID_OP         = 0x6,
+  MPID_INFO       = 0x7,
+  MPID_WIN        = 0x8,
+  MPID_KEYVAL     = 0x9,
   } MPID_Object_kind;
+/* The above objects should correspond to MPI objects only. */
 #define HANDLE_MPI_KIND_SHIFT 26
 #define HANDLE_GET_MPI_KIND(a) ( ((a)&0x3c000000) >> HANDLE_MPI_KIND_SHIFT )
 
