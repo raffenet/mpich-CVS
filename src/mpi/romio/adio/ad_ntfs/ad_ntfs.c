@@ -28,8 +28,8 @@ struct ADIOI_Fns_struct ADIO_NTFS_operations = {
     ADIOI_NTFS_WriteDone, /* WriteDone */
     ADIOI_NTFS_ReadComplete, /* ReadComplete */
     ADIOI_NTFS_WriteComplete, /* WriteComplete */
-    ADIOI_NTFS_IreadStrided, /* IreadStrided */
-    ADIOI_NTFS_IwriteStrided, /* IwriteStrided */
+    ADIOI_GEN_IreadStrided, /* IreadStrided */
+    ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_NTFS_Flush, /* Flush */
     ADIOI_NTFS_Resize, /* Resize */
     ADIOI_GEN_Delete, /* Delete */

@@ -66,34 +66,3 @@ void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int count,
 
     fd->async_count++;
 }
-
-void ADIOI_UFS_IreadStrided(ADIO_File fd, void *buf, int count, 
-		       MPI_Datatype datatype, int file_ptr_type,
-                       ADIO_Offset offset, ADIO_Request *request, int
-                       *error_code)
-{
-    ADIO_Status status;
-#ifdef HAVE_STATUS_SET_BYTES
-    int typesize;
-#endif
-
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_READ;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-    (*request)->queued = 0;
-    (*request)->handle = 0;
-
-/* call the blocking version. It is faster because it does data sieving. */
-    ADIO_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
-		     offset, &status, error_code);  
-
-    fd->async_count++;
-
-#ifdef HAVE_STATUS_SET_BYTES
-    if (*error_code == MPI_SUCCESS) {
-	MPI_Type_size(datatype, &typesize);
-	(*request)->nbytes = count * typesize;
-    }
-#endif
-}

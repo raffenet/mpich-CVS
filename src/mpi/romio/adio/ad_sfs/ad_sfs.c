@@ -29,8 +29,8 @@ struct ADIOI_Fns_struct ADIO_SFS_operations = {
     ADIOI_SFS_WriteDone, /* WriteDone */
     ADIOI_SFS_ReadComplete, /* ReadComplete */
     ADIOI_SFS_WriteComplete, /* WriteComplete */
-    ADIOI_SFS_IreadStrided, /* IreadStrided */
-    ADIOI_SFS_IwriteStrided, /* IwriteStrided */
+    ADIOI_GEN_IreadStrided, /* IreadStrided */
+    ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_SFS_Flush, /* Flush */
     ADIOI_GEN_Resize, /* Resize */
     ADIOI_GEN_Delete, /* Delete */

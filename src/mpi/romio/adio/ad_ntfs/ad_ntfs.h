@@ -54,14 +54,6 @@ void ADIOI_NTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
 			int *error_code); 
 void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
 		*error_code); 
-void ADIOI_NTFS_WriteStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Status *status, int
-		       *error_code);
-void ADIOI_NTFS_ReadStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Status *status, int
-		       *error_code);
 void ADIOI_NTFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
@@ -69,10 +61,6 @@ void ADIOI_NTFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
 void ADIOI_NTFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
-		       *error_code);
-void ADIOI_NTFS_IreadStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Request *request, int
 		       *error_code);
 void ADIOI_NTFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,

@@ -41,14 +41,6 @@ void ADIOI_SFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIOI_SFS_IreadStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Request *request, int
-		       *error_code);
-void ADIOI_SFS_IwriteStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Request *request, int
-		       *error_code);
 void ADIOI_SFS_Flush(ADIO_File fd, int *error_code);
 
 #endif

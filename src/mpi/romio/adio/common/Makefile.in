@@ -20,7 +20,8 @@ AD_OBJECTS = ad_close.o ad_init.o ad_end.o ad_open.o flatten.o \
       ad_fstype.o ad_get_sh_fp.o ad_set_sh_fp.o shfp_fname.o byte_offset.o \
       status_setb.o ad_aggregate.o cb_config_list.o \
       ad_read_str_naive.o gencheck.o ad_set_view.o ad_iopen.o \
-      ad_write_str_naive.o ad_resize.o ad_read.o ad_write.o
+      ad_write_str_naive.o ad_resize.o ad_read.o ad_write.o ad_iread.o \
+      ad_iwrite.o
 
 all: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \

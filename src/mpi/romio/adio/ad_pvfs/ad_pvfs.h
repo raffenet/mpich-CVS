@@ -70,14 +70,6 @@ void ADIOI_PVFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIOI_PVFS_IreadStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Request *request, int
-		       *error_code);
-void ADIOI_PVFS_IwriteStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Request *request, int
-		       *error_code);
 void ADIOI_PVFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_PVFS_Delete(char *filename, int *error_code);
 void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
