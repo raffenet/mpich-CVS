@@ -13,6 +13,8 @@ triangular-pack_SOURCES = triangular-pack.c
 
 simple-commit_SOURCES = simple-commit.c
 
+simple-size-extent_SOURCES = simple-size-extent.c
+
 slice-pack_SOURCES = slice-pack.c
 
 slice-pack-external_SOURCES = slice-pack-external.c
