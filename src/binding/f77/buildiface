@@ -1737,7 +1737,7 @@ sub print_routine_type_decl {
     else {
 	print $OUTFD "void ";
     }
-    print $OUTFD "mpi_${lcname}_ ";
+    print $OUTFD "${out_prefix}${lcname}_ ";
 }
 
 #
