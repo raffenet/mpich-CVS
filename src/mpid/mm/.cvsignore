@@ -8,3 +8,5 @@ Release
 configure
 config.log
 config.status
+config.cache
+config.system
