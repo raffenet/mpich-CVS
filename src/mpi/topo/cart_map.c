@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Cart_map */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,27 +29,36 @@
 #define FUNCNAME MPI_Cart_map
 
 /*@
-   MPI_Cart_map - cart_map
+MPI_Cart_map - Maps process to Cartesian topology information 
 
-   Arguments:
-+  MPI_Comm comm_old - communicator
-.  int ndims - ndims
-.  int *dims - dims
-.  int *periods - periods
--  int *newrank - new rank
+Input Parameters:
++ comm - input communicator (handle) 
+. ndims - number of dimensions of Cartesian structure (integer) 
+. dims - integer array of size 'ndims' specifying the number of processes in 
+  each coordinate direction 
+- periods - logical array of size 'ndims' specifying the periodicity 
+  specification in each coordinate direction 
 
-   Notes:
+Output Parameter:
+. newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if 
+  calling process does not belong to grid (integer) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_DIMS
+.N MPI_ERR_ARG
 @*/
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, int *newrank)
+int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
+		 int *newrank)
 {
     static const char FCNAME[] = "MPI_Cart_map";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    int i, nranks, rank, size;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_MAP);
     /* Get handles to MPI objects. */
@@ -57,13 +67,17 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, int *new
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(newrank,"newrank",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
+	    if (ndims < 1) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_DIMS,
+						  "**dims", "**dims %d", 
+						  ndims );
+		}
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -73,6 +87,41 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, int *new
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    /* Determine number of processes needed for topology */
+    nranks = dims[0];
+    for ( i=1; i<ndims; i++ )
+	nranks *= dims[i];
+    
+    size = comm_ptr->remote_size;
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    
+	    /* Test that the communicator is large enough */
+	    if (size < nranks) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+						  "**topotoolarge",
+						  "**topotoolarge %d %d",
+						  size, nranks );
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Am I in this range? */
+    rank = comm_ptr->rank;
+    if ( rank < nranks )
+	/* This relies on the ranks *not* being reordered by the current
+	   Cartesian routines */
+	*newrank = rank;
+    else
+	*newrank = MPI_UNDEFINED;
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
     return MPI_SUCCESS;
 }

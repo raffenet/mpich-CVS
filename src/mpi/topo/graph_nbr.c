@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Graph_neighbors */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,26 +29,36 @@
 #define FUNCNAME MPI_Graph_neighbors
 
 /*@
-   MPI_Graph_neighbors - graph_neighbors
+ MPI_Graph_neighbors - Returns the neighbors of a node associated 
+                       with a graph topology
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int rank - rank
-.  int maxneighbors - max neighbors
--  int *neighbors - neighbors
+Input Parameters:
++ comm - communicator with graph topology (handle) 
+. rank - rank of process in group of comm (integer) 
+- maxneighbors - size of array neighbors (integer) 
 
-   Notes:
+Output Parameters:
+. neighbors - ranks of processes that are neighbors to specified process
+ (array of integer) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+.N MPI_ERR_RANK
 @*/
-int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int *neighbors)
+int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, 
+			int *neighbors)
 {
     static const char FCNAME[] = "MPI_Graph_neighbors";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPIR_Topology *graph_ptr;
+    int i, is, ie;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_NEIGHBORS);
     /* Get handles to MPI objects. */
@@ -56,13 +67,11 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int *neighbor
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(neighbors,"neighbors",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -72,6 +81,41 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int *neighbor
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    graph_ptr = MPIR_Topology_get( comm_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    if (!graph_ptr || graph_ptr->kind != MPI_GRAPH) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+						  "**notgraphtopo", 0 );
+	    }
+	    if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+					  "**rank", "**rank %d %d",
+					  rank, graph_ptr->topo.graph.nnodes );
+	    }
+	    if (mpi_errno) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Get location in edges array of the neighbors of the specified rank */
+    if (rank == 0) is = 0;
+    else           is = graph_ptr->topo.graph.index[rank-1];
+    ie = graph_ptr->topo.graph.index[rank];
+
+    /* Get neighbors */
+    for (i=is; i<ie; i++) 
+	*neighbors++ = graph_ptr->topo.graph.edges[i];
+    
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS);
     return MPI_SUCCESS;
 }

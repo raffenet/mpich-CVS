@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Cart_rank */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,25 +29,39 @@
 #define FUNCNAME MPI_Cart_rank
 
 /*@
-   MPI_Cart_rank - cart_rank
+MPI_Cart_rank - Determines process rank in communicator given Cartesian
+                location
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int *coords - coords
--  int *rank - rank
+Input Parameters:
++ comm - communicator with cartesian structure (handle) 
+- coords - integer array (of size 'ndims', the number of dimensions of
+    the Cartesian topology associated with 'comm') specifying the cartesian 
+  coordinates of a process 
 
-   Notes:
+Output Parameter:
+. rank - rank of specified process (integer) 
 
-.N Fortran
+Notes:
+ Out-of-range coordinates are erroneous for non-periodic dimensions.  
+ Versions of MPICH before 1.2.2 returned 'MPI_PROC_NULL' for the rank in this 
+ case.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_RANK
+.N MPI_ERR_ARG
 @*/
 int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 {
     static const char FCNAME[] = "MPI_Cart_rank";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPIR_Topology *cart_ptr;
+    int i, ndims, coord, multiplier;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_RANK);
     /* Get handles to MPI objects. */
@@ -55,13 +70,12 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -71,6 +85,60 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    cart_ptr = MPIR_Topology_get( comm_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+						  "**notcarttopo", 0 );
+	    }
+	    /* Validate coordinates */
+	    if (!mpi_errno) {
+		ndims = cart_ptr->topo.cart.ndims;
+		for (i=0; i<ndims; i++) {
+		    if (!cart_ptr->topo.cart.periodic[i]) {
+			coord = coords[i];
+			if (coord < 0 || 
+			    coord >= cart_ptr->topo.cart.dims[i] ) {
+			    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+					  "**cartcoordinvalid",
+					  "**cartcoordinvalid %d %d %d",
+					  i, coords[i], 
+					  cart_ptr->topo.cart.dims[i] );
+			    break;
+			}
+		    }
+		}
+	    }
+	    if (mpi_errno) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    ndims = cart_ptr->topo.cart.ndims;
+    multiplier = 1;
+    for ( i=ndims-1; i >=0; i-- ) {
+	coord = coords[i];
+	if ( cart_ptr->topo.cart.periodic[i] ) {
+	    if (coord >= cart_ptr->topo.cart.dims[i])
+		coord = coord % cart_ptr->topo.cart.dims[i];
+	    else if (coord <  0) {
+		coord = coord % cart_ptr->topo.cart.dims[i];
+		if (coord) coord = cart_ptr->topo.cart.dims[i] + coord;
+	    }
+	}
+	*rank += multiplier * coord;
+	multiplier *= cart_ptr->topo.cart.dims[i];
+    }
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
     return MPI_SUCCESS;
 }

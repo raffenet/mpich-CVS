@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Topo_test */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +33,8 @@
 
    Arguments:
 +  MPI_Comm comm - communicator
--  int *status - status
+-  int *topo_type - topology type of communicator 'comm' (choice).
+
 
    Notes:
 
@@ -41,11 +43,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Topo_test(MPI_Comm comm, int *status)
+int MPI_Topo_test(MPI_Comm comm, int *topo_type)
 {
     static const char FCNAME[] = "MPI_Topo_test";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPIR_Topology *topo_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TOPO_TEST);
     /* Get handles to MPI objects. */
@@ -54,13 +58,10 @@ int MPI_Topo_test(MPI_Comm comm, int *status)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TOPO_TEST);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -70,6 +71,13 @@ int MPI_Topo_test(MPI_Comm comm, int *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    topo_ptr = MPIR_Topology_get( comm_ptr );
+    if (topo_ptr)
+	*topo_type = (int)(topo_ptr->kind);
+    else 
+	*topo_type = MPI_UNDEFINED;
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TOPO_TEST);
     return MPI_SUCCESS;
 }

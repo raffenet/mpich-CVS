@@ -49,6 +49,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, int *de
     static const char FCNAME[] = "MPI_Cart_shift";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_SHIFT);
     /* Get handles to MPI objects. */
@@ -73,6 +74,8 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, int *de
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
     return MPI_SUCCESS;
 }
