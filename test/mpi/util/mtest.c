@@ -198,6 +198,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	sendtype->stride = 3;
 	MPI_Type_vector( recvtype->count, 1, sendtype->stride, MPI_INT, 
 			 &sendtype->datatype );
+        MPI_Type_commit( &sendtype->datatype );
 	MPI_Type_set_name( sendtype->datatype, "int-vector" );
 	sendtype->count    = 1;
 	recvtype->datatype = MPI_INT;
