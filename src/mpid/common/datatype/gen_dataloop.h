@@ -321,8 +321,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 struct DLOOP_Segment *segp);
 
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
-					int first, 
-					int *lastp,
+					DLOOP_Offset first, 
+					DLOOP_Offset *lastp,
 					int (*piecefn)(DLOOP_Handle,
 						       int,
 						       int,

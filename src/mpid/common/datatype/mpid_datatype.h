@@ -6,7 +6,6 @@
 #ifndef MPID_DATATYPE_H
 #define MPID_DATATYPE_H
 
-#include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
 /* NOTE: 

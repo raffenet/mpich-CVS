@@ -132,25 +132,20 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 
     switch(dataloop->kind) {
 	case DLOOP_KIND_CONTIG:
+	case DLOOP_KIND_VECTOR:
 	    /*
 	     * All these really ugly assignments are really of the form:
 	     *
 	     * ((char *) dataloop->loop_params.c_t.loop) += ptrdiff;
 	     *
 	     * However, some compilers spit out warnings about casting on the
-	     * LHS, so we get this much nastier form instead: 
+	     * LHS, so we get this much nastier form instead (using common
+	     * struct for contig and vector): 
 	     */
-	    dataloop->loop_params.c_t.dataloop = (struct DLOOP_Dataloop *) 
-		((char *) dataloop->loop_params.c_t.dataloop + ptrdiff);
+	    dataloop->loop_params.cm_t.dataloop = (struct DLOOP_Dataloop *) 
+		((char *) dataloop->loop_params.cm_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.c_t.dataloop, ptrdiff);
-	    break;
-
-	case DLOOP_KIND_VECTOR:
-	    dataloop->loop_params.v_t.dataloop = (struct DLOOP_Dataloop *)
-		((char *) dataloop->loop_params.v_t.dataloop + ptrdiff);
-
-	    DLOOP_Dataloop_update(dataloop->loop_params.v_t.dataloop, ptrdiff);
+	    DLOOP_Dataloop_update(dataloop->loop_params.cm_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_BLOCKINDEXED:
