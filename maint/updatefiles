@@ -197,7 +197,8 @@ if [ "$has_unix_find" = "yes" ] ; then
 	if [ -s $dir/Makefile.in ] ; then 
             echo "Found $dir/configure.in"
             (cd $dir ; rm -f mf.tmp ; \
-	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' Makefile.in > mf.tmp ;\
+	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' \
+		-e "s%@srcdir@%.%g" Makefile.in > mf.tmp ;\
 	    make -f mf.tmp configure ; rm -f mf.tmp )
 	    #
             # Under cygwin, sometimes (?) configure ends up containing \^M
