@@ -212,9 +212,12 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     }
     frags     ++;
 
-    if (TRlevel & TR_MALLOC) 
-	MPIU_Error_printf( "[%d] Allocating %d bytes at %08p in %s:%d\n", 
+    if (TRlevel & TR_MALLOC) {
+	/* Note that %08p (what we'd like to use) isn't accepted by
+	   all compilers */
+	MPIU_Error_printf( "[%d] Allocating %d bytes at %8p in %s:%d\n", 
 		     world_rank, a, new, fname, lineno );
+    }
     return (void *)new;
 }
 
@@ -246,8 +249,10 @@ void MPIU_trfree( void *a_ptr, int line, const char file[] )
     head  = (TRSPACE *)a;
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
+	/* Note that %08p (what we'd like to use) isn't accepted by
+	   all compilers */
 	MPIU_Error_printf( 
-		     "[%d] Block at address %08p is corrupted; cannot free;\n\
+		     "[%d] Block at address %8p is corrupted; cannot free;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n\
 called in %s at line %d\n", world_rank, a, file, line );
 	return;
@@ -272,7 +277,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	    else {
 		MPIU_Error_printf( 
 		     "[%d] Block at address %lx was already freed\n", 
-		     world_rank, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
+		     world_rank, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
 	    }
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
@@ -294,7 +299,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	    else {
 		MPIU_Error_printf(
 		     "[%d] Block at address %lx is corrupted (probably write past end)\n", 
-		     world_rank, head->size, MPIU_PtrToLong(a) );
+		     world_rank, MPIU_PtrToLong(a) );
 	    }
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    MPIU_Error_printf(
@@ -392,7 +397,7 @@ int MPIU_trvalid( const char str[] )
 	    else {
 		MPIU_Error_printf( 
 "[%d] Block at address %lx is corrupted (probably write past end)\n", 
-			 world_rank, head->size, MPIU_PtrToLong(a) );
+			 world_rank, MPIU_PtrToLong(a) );
 	    }
 	    MPIU_Error_printf(
 			 "[%d] Block allocated in %s[%d]\n", 
@@ -430,7 +435,6 @@ void MPIU_trspace( int *space, int *fr )
 void MPIU_trdump( FILE *fp, int minid )
 {
     TRSPACE *head;
-    int     id;
 
     if (fp == 0) fp = stderr;
     head = TRhead;
