@@ -77,11 +77,14 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		    MPIU_Free(rreq->ch3.tmpbuf);
 		}
 		
-		*status = rreq->status;
+		mpi_errno = rreq->status.MPI_ERROR;
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    *status = rreq->status;
+		}
 		MPID_Request_release(rreq);
 		rreq = NULL;
 		
-		mpi_errno = status->MPI_ERROR;
 		goto fn_exit;
 	    }
 	    else
