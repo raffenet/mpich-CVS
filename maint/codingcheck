@@ -157,8 +157,9 @@ sub CheckForBadSubs {
 
 @GoodNames = ( 'HAVE_[A-Za-z0-9_]*', 'USE_[A-Za-z0-9_]*',
 	       'MPICH_SINGLE_THREADED', 'CHAR_PTR_IS_ADDRESS', 'FOO',
-	       'STDC_HEADERS', '__cplusplus',
+	       'STDC_HEADERS', '__cplusplus', 'IOV_MAX',
 	       'MPID_[A-Za-z0-9_]*',
+	       'MPIDI_[A-Za-z0-9_]*',   # Internal MPID names
 	       'MPICH_[A-Za-z0-9_]*', 
 	       'DBG_[A-Z0-9_]*',
 	       'WITH_[A-Z0-9_]*',
@@ -227,7 +228,7 @@ sub CheckForMismatchedStates {
         $funcname =~ s/\r//;
 	$funcname =~ tr/a-z/A-Z/;
     }
-    elsif ($curline =~ /\s#define/) { return; }
+    elsif ($curline =~ /\s*#define/) { return; }
     elsif ($curline =~ /MPID_MPI_FUNC_ENTER\(\s*(.*)\s*\)/) {
 	$statename = $1;
 	$funcstatename = "MPID_STATE_".$funcname;
@@ -237,7 +238,7 @@ sub CheckForMismatchedStates {
     }
     elsif ($curline =~ /MPID_MPI_FUNC_EXIT\(\s*(.*)\s*\)/) {
 	$endname = $1;
-	if ($statename ne $endname) {
+	if ($statename ne $endname && $endname ne "stateid") {
 	    print "Warning: State $statename ended with $endname in $filename\n";
 	}
     }
@@ -264,6 +265,8 @@ sub CheckForPreamble {
 sub ReportOnPreamble {
     my $filename = $_[0];
 
+    # Is this a derived file?
+    if (-s "$filename.in") { return 0; }
     if (! $saw_c_style) {
 	print "C style header (c-basic-offset:4) missing in $filename\n";
     }

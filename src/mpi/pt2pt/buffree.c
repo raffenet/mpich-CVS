@@ -104,7 +104,7 @@ int MPI_Buffer_detach(void *buffer, int *size)
 
     /* ... body of routine ...  */
     mpi_errno = MPIR_Bsend_detach( buffer, size );
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_DETACH);
     if (mpi_errno) {
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }	

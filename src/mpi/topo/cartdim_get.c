@@ -83,7 +83,7 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
 						  "**notcarttopo", 0 );
 	    }
 	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_GET);
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CARTDIM_GET);
 		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
 	}
