@@ -293,7 +293,7 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 		    }
 		    break;
 		case 'w':
-		    sprintf( digits, "%d", world );
+		    MPIU_Snprintf( digits, MAX_DIGITS, "%d", world );
 		    dlen = strlen(digits);
 		    if (dlen < lenleft) {
 			MPIU_Strnapp( pout, digits, maxlen );

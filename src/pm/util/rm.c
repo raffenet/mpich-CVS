@@ -173,7 +173,8 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 
 	/* Construct the final path name */
 	if (arch) {
-	    sprintf( machinesfile, "%s/machines.%s", dirname, arch );
+	    MPIU_Snprintf( machinesfile, PATH_MAX, 
+			   "%s/machines.%s", dirname, arch );
 	}
 	else {
 	    MPIU_Strncpy( machinesfile, dirname, PATH_MAX );
