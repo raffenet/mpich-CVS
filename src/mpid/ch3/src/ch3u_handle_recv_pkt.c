@@ -48,6 +48,7 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
     switch(pkt->type)
     {
@@ -139,6 +140,7 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	}
     }
     
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
 }
 #endif
@@ -152,8 +154,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
-
-    MPIU_DBG_PRINTF(("Entering MPIDI_CH3U_Handle_ordered_recv_pkt\n"));
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
     
@@ -512,8 +513,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	}
     }
 
-    MPIU_DBG_PRINTF(("Exiting MPIDI_CH3U_Handle_ordered_recv_pkt\n"));
-
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 }
 
@@ -530,7 +530,7 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t data_sz;
 
-    MPIU_DBG_PRINTF(("Entering post_data_receive\n"));
+    MPIDI_DBG_PRINTF((30, FCNAME, "entering"));
 
     if (rreq->ch3.recv_data_sz == 0)
     {
@@ -607,5 +607,5 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     MPIDI_CH3_iRead(vc, rreq);
     
 fn_exit:
-    MPIU_DBG_PRINTF(("Exiting post_data_receive\n"));
+    MPIDI_DBG_PRINTF((30, FCNAME, "exiting"));
 }
