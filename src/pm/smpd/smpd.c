@@ -49,6 +49,23 @@ int main(int argc, char* argv[])
     /* prevent the os from bringing up debug message boxes if this process crashes */
     if (smpd_process.bService)
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+#else
+    /* put myself in the background if flag is set */
+    if (smpd_process.bNoTTY)
+    {
+        if (fork() != 0)  /* parent exits; child in background */
+	    exit(0);
+	setsid();           /* become session leader; no controlling tty */
+	smpd_signal(SIGHUP, SIG_IGN); /* make sure no sighup when leader ends */
+	/* leader exits; svr4: make sure do not get another controlling tty */
+        if (fork() != 0)
+	    exit(0);
+	/* How do I make stdout and stderr go away?
+        freopen("/dev/null", "a", stdout);
+        freopen("/dev/null", "a", stderr);
+	*/
+	close(0);
+    }
 #endif
 
     /* This process is the root_smpd.  All sessions are child processes of this process. */
@@ -69,6 +86,7 @@ int main(int argc, char* argv[])
     result = sock_listen(set, NULL, &port, &listener); 
     if (result != SOCK_SUCCESS)
     {
+	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;

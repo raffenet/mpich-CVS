@@ -49,6 +49,7 @@ smpd_global_t smpd_process =
       "",               /* host                   */
       "",               /* pszExe                 */
       SMPD_FALSE,       /* bService               */
+      SMPD_TRUE,        /* bNoTTY                 */
       SMPD_FALSE,       /* bPasswordProtect       */
       "",               /* SMPDPassword           */
       "",               /* UserAccount            */

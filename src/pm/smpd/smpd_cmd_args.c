@@ -23,6 +23,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt(argcp, argvp, "-d"))
     {
 	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE;
+	smpd_process.bNoTTY = SMPD_FALSE;
     }
 
 #ifdef HAVE_WINDOWS_H
