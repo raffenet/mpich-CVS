@@ -85,11 +85,6 @@ AC_ARG_ENABLE( debugcheck,
 [--enable-debugcheck                - Turn on/off the debugging & diagnostic
                                      checking code in MPE code.
                                      The default is enable=no.] )
-DEBUG_LIBS=""
-if test "$enable_debugcheck" = "yes" ; then
-    AC_CHECK_LIB( efence, malloc, DEBUG_LIBS="-lefence" )
-fi
-AC_SUBST(DEBUG_LIBS)
 
 dnl Set the various build directories from their mpe_ prefixed env variables.
 dnl
@@ -125,7 +120,7 @@ AC_SUBST(includebuild_dir)
 AC_SUBST(libbuild_dir)
 AC_SUBST(binbuild_dir)
 
-PAC_PROG_CC
+AC_PROG_CC
 AC_OBJEXT
 AC_EXEEXT
 dnl Check for broken handling of common symbols
@@ -138,6 +133,14 @@ AC_PROG_CPP
 if test "$CPP" = "/lib/cpp" -a ! -x /lib/cpp ; then
    AC_MSG_ERROR( [configure could not find a working C preprocessor] )
 fi
+
+dnl  Invoking AC_CHECK_LIB before AC_PROG_CC makes AC_PROG_CC fail 
+dnl  in autoconf 2.59
+DEBUG_LIBS=""
+if test "$enable_debugcheck" = "yes" ; then
+    AC_CHECK_LIB( efence, malloc, DEBUG_LIBS="-lefence" )
+fi
+AC_SUBST(DEBUG_LIBS)
 
 AC_PATH_X
 

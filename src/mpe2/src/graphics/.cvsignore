@@ -6,3 +6,5 @@ autom4te.cache
 *conf.cache
 config.system
 config.h.in
+mpe_graphics_conf.h
+mpe_graphics_conf.h.in~
