@@ -77,6 +77,10 @@ int MPI_Start(MPI_Request *request)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
+            if (mpi_errno) {
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+            }
 	    MPIR_ERRTEST_PERSISTENT(request_ptr, mpi_errno);
 	    MPIR_ERRTEST_PERSISTENT_ACTIVE(request_ptr, mpi_errno);
             if (mpi_errno) {

@@ -126,6 +126,12 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 	    for (i = 0; i < count; i++)
 	    {
 		MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+	    }
+            if (mpi_errno) {
+		goto fn_exit;
+            }
+	    for (i = 0; i < count; i++)
+	    {
 		MPIR_ERRTEST_PERSISTENT(request_ptrs[i], mpi_errno);
 		MPIR_ERRTEST_PERSISTENT_ACTIVE(request_ptrs[i], mpi_errno);
 	    }
