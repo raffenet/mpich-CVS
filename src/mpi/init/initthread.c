@@ -88,12 +88,6 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     }
 #   endif
     
-#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
-    {
-	MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);
-    }
-#   endif
-    
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
 	MPID_Thread_lock_init(&MPIR_Process.common_lock);

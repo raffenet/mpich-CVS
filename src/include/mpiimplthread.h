@@ -54,9 +54,11 @@
 #define MPID_CS_INITIALIZE()					\
 {								\
     MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);	\
+    MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);
 }
 #define MPID_CS_FINALIZE()						\
 {									\
+    MPID_Thread_tls_destroy(&MPIR_Process.thread_storage, NULL);	\
     MPID_Thread_mutex_destroy(&MPIR_Process.global_mutex, NULL);	\
 }
 #define MPID_CS_ENTER()						\
