@@ -79,6 +79,9 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     {
 	vc->ch.write_shmq->packet[i].offset = 0;
 	vc->ch.write_shmq->packet[i].avail = MPIDI_CH3I_PKT_EMPTY;
+#ifdef MPICH_DBG_OUTPUT
+	memset(vc->ch.write_shmq->packet[i].data, 0, MPIDI_CH3I_PACKET_SIZE);
+#endif
     }
 
     /* send the queue connection information */
