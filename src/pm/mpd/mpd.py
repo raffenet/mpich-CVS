@@ -146,8 +146,6 @@ def _mpd():
                     break                # out of for loop, then out of while
             elif readySocket == g.rhsSocket:
                 _handle_rhs_input()    # ignoring rc=1 which means we re-entered ring
-            elif readySocket == g.conListenSocket:
-                _handle_console_connection()
             elif readySocket == g.conSocket:
                 _handle_console_input()
             elif g.activeSockets[readySocket].name == 'rhs_being_challenged':
@@ -156,6 +154,8 @@ def _mpd():
                 _handle_lhs_challenge_response(readySocket)
             elif g.activeSockets[readySocket].name == 'man_msgs':
                 _handle_man_msgs(readySocket)
+            elif readySocket == g.conListenSocket:
+                _handle_console_connection()
             else:
                 mpd_raise('unknown ready socket %s' %  \
                           (`g.activeSockets[readySocket].name`) )
@@ -168,11 +168,13 @@ def _handle_console_connection():
                            '_handle_console_input',            # handler
                            g.conSocket,0)                      # host,port
     else:
-        mpd_print(1, 'rejecting console; already have one' )
-        (tempSocket,newConnAddr) = g.conListenSocket.accept()
-        msgToSend = { 'cmd' : 'already_have_a_console' }
-        mpd_send_one_msg(tempSocket,msgToSend)
-        tempSocket.close()
+        return  ## postpone it; hope the other one frees up soon
+        ## we used to deny the second console; now just let it wait for us
+        # mpd_print(1, 'rejecting console; already have one' )
+        # (tempSocket,newConnAddr) = g.conListenSocket.accept()
+        # msgToSend = { 'cmd' : 'already_have_a_console' }
+        # mpd_send_one_msg(tempSocket,msgToSend)
+        # tempSocket.close()
 
 def _handle_console_input():
     msg = mpd_recv_one_msg(g.conSocket)
