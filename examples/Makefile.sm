@@ -6,7 +6,7 @@ DEPADD = ../lib/lib${MPILIBNAME}.a
 
 # pmandel requires a separate set of socket calls (its a long story)
 # and may not build on most platforms
-EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service
+EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv pmandel_fence
 
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
@@ -26,6 +26,10 @@ pmandel_spawn_SOURCES = pmandel_spawn.c
 pmandel_spawn_LDADD = -lm
 pmandel_service_SOURCES = pmandel_service.c
 pmandel_service_LDADD = -lm
+pmandel_spaserv_SOURCES = pmandel_spaserv.c
+pmandel_spaserv_LDADD = -lm
+pmandel_fence_SOURCES = pmandel_fence.c
+pmandel_fence_LDADD = -lm
 spawn_merge_parent_SOURCES = spawn_merge_parent.c
 spawn_merge_child1_SOURCES = spawn_merge_child1.c
 spawn_merge_child2_SOURCES = spawn_merge_child2.c
