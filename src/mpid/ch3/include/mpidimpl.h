@@ -29,9 +29,22 @@ MPIDI_Process_t;
 extern MPIDI_Process_t MPIDI_Process;
 
 /* Masks and flags for MPID state in an MPID_Request */
-#define MPID_REQUEST_STATE_MSG_MASK 1
-#define MPID_REQUEST_STATE_EAGER_MSG 0
-#define MPID_REQUEST_STATE_RNDV_MSG 0
+#define MPIDI_REQUEST_STATE_MSG_MASK 1
+#define MPIDI_REQUEST_STATE_MSG_SHIFT 0
+#define MPIDI_REQUEST_EAGER_MSG 0
+#define MPIDI_REQUEST_RNDV_MSG 1
+
+#define MPIDI_Request_get_msg_type(req)			\
+((req->ch3.state & MPIDI_REQUEST_STATE_MSG_MASK)	\
+ >> MPIDI_REQUEST_STATE_MSG_SHIFT)
+
+#define MPIDI_Request_set_msg_type(req, msgtype)			\
+{									\
+    req->ch3.state &= ~MPIDI_REQUEST_STATE_MSG_MASK;			\
+    req->ch3.state |= (msgtype << MPIDI_REQUEST_STATE_MSG_SHIFT)	\
+	& MPIDI_REQUEST_STATE_MSG_MASK;					\
+}
+
 
 /*
  * Debugging tools
