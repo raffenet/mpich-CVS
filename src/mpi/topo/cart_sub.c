@@ -47,7 +47,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 {
     static const char FCNAME[] = "MPI_Cart_sub";
     int mpi_errno = MPI_SUCCESS;
-    int ndims, key, color, ndims_in_subcomm, i, j;
+    int ndims, key, color, ndims_in_subcomm, nnodes_in_subcomm, i, j, rank;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPIR_Topology *topo_ptr, *toponew_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_SUB);
@@ -91,9 +91,11 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     /* Determine the number of remaining dimensions */
     ndims = topo_ptr->topo.cart.ndims;
     ndims_in_subcomm = 0;
+    nnodes_in_subcomm = 1;
     for (i=0; i<ndims; i++) {
 	if (remain_dims[i]) {
 	    ndims_in_subcomm ++;
+	    nnodes_in_subcomm *= topo_ptr->topo.cart.dims[i];
 	}
     }
 
@@ -125,8 +127,9 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 	
-    toponew_ptr->kind            = MPI_CART;
-    toponew_ptr->topo.cart.ndims = ndims_in_subcomm;
+    toponew_ptr->kind		  = MPI_CART;
+    toponew_ptr->topo.cart.ndims  = ndims_in_subcomm;
+    toponew_ptr->topo.cart.nnodes = nnodes_in_subcomm;
     if (ndims_in_subcomm) {
 	toponew_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims_in_subcomm * sizeof(int) );
 	toponew_ptr->topo.cart.periodic = (int *)MPIU_Malloc( ndims_in_subcomm * sizeof(int) );
@@ -144,17 +147,24 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 	toponew_ptr->topo.cart.position = 0;
     }
 
-    j =0;
+    j = 0;
     for (i=0; i<ndims; i++) {
 	if (remain_dims[i]) {
 	    toponew_ptr->topo.cart.dims[j] = topo_ptr->topo.cart.dims[i];
 	    toponew_ptr->topo.cart.periodic[j] = topo_ptr->topo.cart.periodic[i];
-	    toponew_ptr->topo.cart.position[j] = topo_ptr->topo.cart.position[i];
 	    j++;
 	}
     }
 
     MPID_Comm_get_ptr( *comm_new, newcomm_ptr );
+    /* Compute the position of this process in the new communicator */
+    rank = newcomm_ptr->rank;
+    for (i=0; i<ndims_in_subcomm; i++) {
+	nnodes_in_subcomm /= toponew_ptr->topo.cart.dims[i];
+	toponew_ptr->topo.cart.position[i] = rank / nnodes_in_subcomm;
+	rank = rank % nnodes_in_subcomm;
+    }
+
     mpi_errno = MPIR_Topology_put( newcomm_ptr, toponew_ptr );
     if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
