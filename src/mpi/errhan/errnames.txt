@@ -41,7 +41,7 @@ also the value at index %d
 **notopology:No topology associated with this communicator
 **dimsmany:Number of dimensions is too large 
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
-**dimspartition:Can not partition nodes as requested 
+**dimspartition:Cannot partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
 **cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
  is %d but must be between 0 and %d
@@ -164,7 +164,7 @@ be in the range 0 to %d
       (optional arguments: index, value (int))
 **dimstensor:Tensor product size does not 
       match nnodes (optional arguments: tensor product size and nnodes (int))
-**dimspartition:Can not partition nodes as requested 
+**dimspartition:Cannot partition nodes as requested 
 **arg:Invalid argument
 **arg %s:Invalid argument %s
 **argerrcode:Invalid error code
