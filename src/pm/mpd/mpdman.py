@@ -148,7 +148,7 @@ def mpdman():
                 exit(-1)
             msg = mpd_recv_one_msg(conSocket)
             if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
-                mpd_raise(1, 'spawned: bad msg from con; got: %s' % (msg) )
+                mpd_raise('spawned: bad msg from con; got: %s' % (msg) )
             universeSize = msg['ringsize']
             mpd_send_one_msg(rhsSocket,msg)  # forward it on
         else:
@@ -156,7 +156,7 @@ def mpdman():
             mpd_send_one_msg(conSocket,msgToSend)
             msg = mpd_recv_one_msg(conSocket)
             if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
-                mpd_raise(1, 'invalid msg from con; expecting ringsize got: %s' % (msg) )
+                mpd_raise('invalid msg from con; expecting ringsize got: %s' % (msg) )
             if environ.has_key('MPI_UNIVERSE_SIZE'):
                 universeSize = int(environ['MPI_UNIVERSE_SIZE'])
             else:
@@ -177,7 +177,7 @@ def mpdman():
 
     msg = mpd_recv_one_msg(lhsSocket)    # recv msg containing ringsize
     if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
-        mpd_raise(1, 'invalid msg from lhs; expecting ringsize got: %s' % (msg) )
+        mpd_raise('invalid msg from lhs; expecting ringsize got: %s' % (msg) )
     if myRank != 0:
         mpd_send_one_msg(rhsSocket,msg)
         if not environ.has_key('MPI_UNIVERSE_SIZE'):
