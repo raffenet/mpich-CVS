@@ -30,7 +30,8 @@ from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
                             mpd_raise, mpdError, mpd_version, mpd_print, \
-                            mpd_read_one_line, mpd_send_one_line, mpd_recv
+                            mpd_read_one_line, mpd_send_one_line, mpd_recv, \
+			    mpd_which
 import xml.dom.minidom
 
 class mpdrunInterrupted(Exception):
@@ -266,6 +267,11 @@ def mpdrun():
             outXmlEC.setAttribute('jobid',jobid.strip())
         # print 'mpdrun: job %s started' % (jobid)
         if totalview:
+	    if not mpd_which('totalview'):
+		print 'cannot find "totalview" in your $PATH:'
+                print '    ', environ['PATH']
+		myExitStatus = -1  # used in main
+		exit(myExitStatus) # really forces jump back into main
             import mtv
             tv_cmd = 'dattach python ' + `getpid()` + '; dgo; dassign MPIR_being_debugged 1'
             system('totalview -e "%s" &' % (tv_cmd) )

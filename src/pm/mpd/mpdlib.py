@@ -12,7 +12,8 @@ from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
 from syslog     import syslog, LOG_INFO, LOG_ERR
-from os         import getuid, read, strerror
+from os         import getuid, read, strerror, access, X_OK, environ
+from os.path    import isdir
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
 from errno      import EINTR
@@ -414,6 +415,16 @@ def mpd_same_ips(host1,host2):    # hosts may be names or IPs
             if ip1 == ip2:
                 return 1
     return 0
+
+def mpd_which(execName):
+    for d in environ['PATH'].split(':'):
+        fpn = d + '/' + execName
+        if isdir(fpn):  # follows symlinks; dirs can have execute permission
+            continue
+        if access(fpn,X_OK):    # NOTE access works based on real uid (not euid)
+            return fpn
+    return ''
+
 
 if __name__ == '__main__':
     print 'mpdlib for mpd version: %s' % str(mpd_version)
