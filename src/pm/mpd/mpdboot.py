@@ -11,7 +11,7 @@ from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError
 def mpdboot():
     rshCmd    = 'ssh'
     user      = mpd_get_my_username()
-    mpdCmd    = 'mpd.py'
+    mpdCmd    = 'mpd'
     hostsFile = 'mpd.hosts'
     totalNum  = 1
     debug     = 0
