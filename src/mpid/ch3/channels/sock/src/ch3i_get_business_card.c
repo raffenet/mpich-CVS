@@ -3,6 +3,12 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/* On IRIX, INET6 must be defined so that struct sockaddr_in6 gets defined by the IRIX header files. */
+#if !defined(INET6)
+#   define INET6
+#endif
+
 #include "mpidi_ch3_impl.h"
 
 #define MAX_NUM_NICS 16
