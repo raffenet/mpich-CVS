@@ -309,7 +309,7 @@ def mpd_socketpair():
     except Exception, data:
         mpd_print(1, 'mpd_socketpair: sock1 failed' % ( data.__class__, data) )
         return (None,'sock1 failed')
-    sock1.bind(('localhost',0))
+    sock1.bind(('',0))
     sock1.listen(1)
     port1 = sock1.getsockname()[1]
     try:
@@ -318,7 +318,7 @@ def mpd_socketpair():
         mpd_print(1, 'mpd_socketpair: sock2 failed' % ( data.__class__, data) )
         sock1.close()
         return (None,'sock2 failed')
-    rc = mpd_connect(sock2,'localhost',port1)
+    rc = mpd_connect(sock2,'',port1)
     if rc == 0:
         mpd_print(1, 'mpd_socketpair: conn failed')
         sock1.close()
