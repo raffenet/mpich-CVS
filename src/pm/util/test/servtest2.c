@@ -6,9 +6,18 @@
 
 #include <stdio.h>
 #include "process.h"
+#include "pmiserv.h"
 #include "ioloop.h"
 
-struct iofds { int readOut[2], readErr[2]; };
+/* This struct is used to setup the stdout/err handlers */
+typedef struct { int readOut[2], readErr[2]; } iofds;
+
+/* This combined struct is passed into forkprocess to setup both the
+   stdout/err handlers and the PMI server support */
+typedef struct {
+    iofds        stdio;
+    PMISetup     pmi;
+} iosetup;
 
 typedef struct { char label[32]; int lastNL; } IOLabel;
 
@@ -24,13 +33,17 @@ int labeler( int, int, void * );
 int main( int argc, char *argv[], char *envp[] )
 {
     int             rc;
-    struct iofds    newfds;
+    iosetup         rundata;
 
     MPIE_ProcessInit();
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     MPIE_PrintProcessUniverse( stdout, &pUniv );
-    MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &newfds, 
+    
+    PMIServInit( );
+    PMISetupNewGroup( &pUniv.worlds[0].nProcess );
+    MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &rundata,
 			myprefork, 0, mypostamble, 0 );
+
     MPIE_IOLoop( 10 );
     
     rc = MPIE_ProcessGetExitStatus( );
@@ -41,33 +54,40 @@ int main( int argc, char *argv[], char *envp[] )
 /* Redirect stdout and stderr to a handler */
 int mypreamble( void *data )
 {
-    struct iofds *newfds = (struct iofds *)data;
+    iosetup *rundata = (iosetup *)data;
     /* Each pipe call creates 2 fds, 0 for reading, 1 for writing */
-    if (pipe(newfds->readOut)) return -1;
-    if (pipe(newfds->readErr)) return -1;
+    if (pipe(rundata->stdio.readOut)) return -1;
+    if (pipe(rundata->stdio.readErr)) return -1;
+
+    /* Ask PMI to create the sockets that it wants */
+    PMISetupSockets( 0, &rundata->pmi );
 }
 /* Close one side of each pipe pair and replace stdout/err with the pipes */
 int myprefork( void *predata, void *data )
 {
-    struct iofds *newfds = (struct iofds *)predata;
+    iosetup *rundata = (iosetup *)predata;
 
-    close( newfds->readOut[0] );
+    close( rundata->stdio.readOut[0] );
     close(1);
-    dup2( newfds->readOut[1], 1 );
-    close( newfds->readErr[0] );
+    dup2( rundata->stdio.readOut[1], 1 );
+    close( rundata->stdio.readErr[0] );
     close(2);
-    dup2( newfds->readErr[1], 2 );
+    dup2( rundata->stdio.readErr[1], 2 );
+
+    /* Setup the sockets and communicate the information about the
+       fd to the client right before we exec */
+    PMISetupInClient( &rundata->pmi );
 }
 #include <fcntl.h>
 /* Close one side of the pipe pair and register a handler for the I/O */
 int mypostamble( void *predata, void *data )
 {
-    struct iofds *newfds = (struct iofds *)predata;
+    iosetup *rundata = (iosetup *)predata;
     IOLabel *leader, *leadererr;
     static int wRank = 0;  /* TEMP */
 
-    close( newfds->readOut[1] );
-    close( newfds->readErr[1] );
+    close( rundata->stdio.readOut[1] );
+    close( rundata->stdio.readErr[1] );
 
     /* We need dedicated storage for the private data */
     leader = (IOLabel *)malloc( sizeof(IOLabel) );
@@ -76,12 +96,14 @@ int mypostamble( void *predata, void *data )
     leadererr = (IOLabel *)malloc( sizeof(IOLabel) );
     snprintf( leadererr->label, sizeof(leadererr->label), "err%d>", wRank++ );
     leadererr->lastNL = 1;
-    MPIE_IORegister( newfds->readOut[0], IO_READ, labeler, leader );
-    MPIE_IORegister( newfds->readErr[0], IO_READ, labeler, leadererr );
+    MPIE_IORegister( rundata->stdio.readOut[0], IO_READ, labeler, leader );
+    MPIE_IORegister( rundata->stdio.readErr[0], IO_READ, labeler, leadererr );
 
     /* subsequent forks should not get these fds */
-    fcntl( newfds->readOut[0], F_SETFD, FD_CLOEXEC );
-    fcntl( newfds->readErr[0], F_SETFD, FD_CLOEXEC );
+    fcntl( rundata->stdio.readOut[0], F_SETFD, FD_CLOEXEC );
+    fcntl( rundata->stdio.readErr[0], F_SETFD, FD_CLOEXEC );
+
+    PMISetupFinishInServer( rundata->pmi, pState );
 }
 int labeler( int fd, int rdwr, void *data )
 {

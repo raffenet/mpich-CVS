@@ -11,13 +11,25 @@
  */
 
 #include "pmutilconf.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
 #include <errno.h>
 #include "ioloop.h"
 
+/* 
+ * To simplify mapping fds back to their handlers, we store the handles
+ * in an array such that the ith element of the array corresponds to the 
+ * fd with value i (e.g., for fd == 10, the [10] element of the array 
+ * has the information on the handler).  This isn't terrifically scalable,
+ * but it makes this code fairly simple and this code isn't
+ * performance sensitive.  "maxFD" is the maximum fd value seen; this
+ * allows us to allocate a large array but usually only look at a small 
+ * part of it.
+ */
 #define MAXFD 4096
 static IOHandle handlesByFD[MAXFD+1];
 static int maxFD = -1;
@@ -30,6 +42,8 @@ int  TimeoutGetTimeout( void );
 
   Input Parameters:
 
+  Notes:
+  Keeps track of the largest fd seen (in 'maxFD').
   @*/
 int MPIE_IORegister( int fd, int rdwr, 
 		     int (*handler)(int,int,void*), void *extra_data )
@@ -71,32 +85,39 @@ int MPIE_IOLoop( int timeoutSeconds )
     fd_set readfds, writefds;
     int (*handler)(int,int,void*);
     struct timeval tv;
+    int activefds = 0;
 
-    /* Determine the active FDs */
-    FD_ZERO( &readfds );
-    FD_ZERO( &writefds );
-    maxfd = -1;
-    for (i=0; i<=maxFD; i++) {
-	if (handlesByFD[i].handler) {
-	    fd = handlesByFD[i].fd;
-	    if (handlesByFD[i].rdwr & IO_READ) {
-		FD_SET( fd, &readfds );
-	    }
-	    if (handlesByFD[i].rdwr & IO_WRITE) {
-		FD_SET( fd, &writefds );
-	    }
-	    maxfd = i;
-	}
-    }
 
     /* Loop on the fds, with the timeout */
     TimeoutInit( timeoutSeconds );
     while (1) {
 	tv.tv_sec  = TimeoutGetRemaining();
 	tv.tv_usec = 0;
+	/* Determine the active FDs */
+	FD_ZERO( &readfds );
+	FD_ZERO( &writefds );
+	/* maxfd is the maximum active fd */
+	maxfd = -1;
+	for (i=0; i<=maxFD; i++) {
+	    if (handlesByFD[i].handler) {
+		fd = handlesByFD[i].fd;
+		if (handlesByFD[i].rdwr & IO_READ) {
+		    activefds++;
+		    FD_SET( fd, &readfds );
+		    maxfd = i;
+		}
+		if (handlesByFD[i].rdwr & IO_WRITE) {
+		    FD_SET( fd, &writefds );
+		    maxfd = i;
+		}
+	    }
+	}
+	printf( "Found %d activefds\n", activefds );
 	if (maxfd < 0) break;
+	printf( "Entering selected with readfds = %x\n", readfds );
 	nfds = select( maxfd + 1, &readfds, &writefds, 0, &tv );
 	if (nfds < 0 && errno == EINTR) {
+	    printf( "Continuing through EINTR\n" );
 	    continue;
 	}
 	if (nfds < 0) {
@@ -134,6 +155,7 @@ int MPIE_IOLoop( int timeoutSeconds )
 		    close(fd);
 		    handlesByFD[fd].rdwr = 0;
 		    FD_CLR(fd,&readfds);
+		    printf( "Clearing fd %d\n", fd );
 		}
 	    }
 	}

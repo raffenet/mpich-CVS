@@ -1,17 +1,9 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
-/* 
-   Still to do:
-   Register group membership so that it is separate from the
-   process manager's list of processes
-
-   FIXME: also get any new spawn commands and other changes.
- */
 /*
  * This is a simple PMI server implementation.  This file implements
  * the PMI calls, including the PMI key value spaces.  This implements the
@@ -29,9 +21,16 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+/* Use the memory defintions from mpich2/src/include */
+#include "mpimem.h"
+#include "process.h"
+#include "ioloop.h"
+#include "pmiserv.h"
 
-/* pmutil.h includes pmiserv.h */
-#include "pmutil.h"
+/* We need socket to create a socket pair */
+#include <sys/socket.h>
+
+/* ??? */
 #include "simple_pmiutil.h"
 #define DBG_PRINTF printf
 
@@ -39,6 +38,15 @@
 #define MPIU_Snprintf snprintf
 #endif
 
+/* These need to be imported from the pmiclient */
+#define MAXPMICMD   256         /* max length of a PMI command */
+
+/* These is only a single PMI master, so we allocate it here */
+static PMIMaster pmimaster = { 0, 0, 0 };
+
+static int pmidebug = 1;
+
+#if 0
 /*
  * The following structures and arrays are used to implement the PMI 
  * interface.  The global variables are declared static so that they'll
@@ -100,7 +108,7 @@ typedef struct {
 
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
 
-static int pmidebug = 1;
+#endif
 
 /* Functions that handle PMI requests */
 static int  fPMI_Allocate_kvs( int *, char [] );
@@ -119,6 +127,8 @@ static int fPMI_Handle_get_maxes( PMIProcess * );
 static int fPMI_Handle_getbyidx( PMIProcess * );
 static int fPMI_Handle_init_port( PMIProcess * );
 static int fPMI_Handle_spawn( PMIProcess * );
+static int fPMI_Handle_get_universe_size( PMIProcess * );
+static int fPMI_Handle_get_appnum( PMIProcess * );
 
 int PMIServHandleInput( int, int, void * );
 
@@ -151,9 +161,119 @@ static PMICmdMap pmiCommands[] = {
     { "getbyidx",       fPMI_Handle_getbyidx },
     { "initack",        fPMI_Handle_init_port },
     { "spawn",          fPMI_Handle_spawn },
+    { "get_universe_size", fPMI_Handle_get_universe_size },
+    { "get_appnum",     fPMI_Handle_get_appnum },
     { "\0",             0 },                     /* Sentinal for end of list */
 };
 
+/* ------------------------------------------------------------------------- */
+
+/*
+ * Create a socket fd and setup the handler on that fd.
+ * FIXME: need to close the fds in the child, parent (child closes 0, parent
+ * closes 1.  Child process sends fd # in PMI_FD to exec child through 
+ * environment.
+ * Need a PMISetup typedef
+ */
+int PMISetupSockets( int kind, PMISetup *pmiinfo )
+{
+    if (kind == 0) {
+	socketpair( AF_UNIX, SOCK_STREAM, 0, pmiinfo->fdpair );
+    }
+    else {
+	return 1;
+    }
+    return 0;
+}
+
+/* 
+ * This is the client side of the PMIserver setup.  It communicates to the
+ * client the information needed to connect to the server (currently the
+ * FD of a pre-existing socket).
+ */
+int PMISetupInClient( PMISetup *pmiinfo )
+{
+    char env_pmi_fd[100];
+
+    close( pmiinfo->fdpair[0] );
+    MPIU_Snprintf( env_pmi_fd, sizeof(env_pmi_fd), "PMI_FD=%d" , 
+	      pmiinfo->fdpair[1] );
+    if (putenv( env_pmi_fd )) {
+	MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
+	perror( "Reason: " );
+	return 1;
+    }
+    return 0;
+}
+
+/* Finish setting up the server end of the PMI interface */
+int PMISetupFinishInServer( PMISetup *pmiinfo, ProcessState *pState )
+{
+    PMIProcess *pmiprocess;
+
+    /* Close the other end of the socket pair */
+    close( pmiinfo->fdpair[1] );
+
+    /* We must initialize this process in the list of PMI processes. We
+       pass the PMIProcess information to the handler */
+    pmiprocess = PMISetupNewProcess( pmiinfo->fdpair[0], pState );
+    MPIE_IORegister( pmiinfo->fdpair[0], IO_READ, PMIServHandleInput, 
+		     pmiprocess );
+
+    return 0;
+}
+
+static PMIGroup *curPMIGroup = 0;
+static int       curNprocess = 0;
+
+PMIProcess *PMISetupNewProcess( int fd, ProcessState *pState )
+{
+    PMIProcess *pmiprocess;
+
+    pmiprocess = (PMIProcess *)MPIU_Malloc( sizeof(PMIProcess) );
+    pmiprocess->fd     = fd;
+    pmiprocess->group  = curPMIGroup;
+    pmiprocess->pState = pState;
+
+    /* Add this process to the curPMIGroup */
+    curPMIGroup->pmiProcess[curNprocess++] = pmiprocess;
+
+    return pmiprocess;
+}
+
+/* Initialize a new PMI group that will be the parent of all
+   PMIProcesses until the next group is created */
+int PMISetupNewGroup( int nProcess )
+{
+    PMIGroup *g;
+    curPMIGroup = (PMIGroup *)MPIU_Malloc( sizeof(PMIGroup) );
+
+    curPMIGroup->nProcess   = nProcess;
+    curPMIGroup->groupID    = pmimaster.nGroups++;
+    curPMIGroup->nInBarrier = 0;
+    curPMIGroup->pmiProcess = (PMIProcess **)MPIU_Malloc( 
+					 sizeof(PMIProcess*) * nProcess );
+    curPMIGroup->nextGroup  = 0;
+    curNprocess             = 0;
+
+    /* Add to PMIMaster */
+    g = pmimaster.groups;
+    if (!g) {
+	pmimaster.groups = curPMIGroup;
+    }
+    else {
+	while (g) {
+	    if (!g->nextGroup) {
+		g->nextGroup = curPMIGroup;
+		break;
+	    }
+	    g = g->nextGroup;
+	}
+    }
+}
+
+
+#if 0
 /*
  * Initialize the information needed to communicate the the PMI client 
  * process (usually an MPI job).
@@ -180,30 +300,21 @@ int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
 
     return 0;
 }
+#endif
+
 /* 
  * Process input from the socket connecting the mpiexec process to the
  * child process.
- * The return status indicates the state of the process that this
- * handler interacted with.
+ *
+ * The return status is interpreted by the IOLoop code in ioloop.c ;
+ * a zero is a normal exit.
  */
 int PMIServHandleInput( int fd, int rdwr, void *extra )
-{
-    PMIData *pmidata = (PMIData *)extra;
-    int     err;
-
-    err = PMIServHandleInputFd( fd, -1, &pmidata->pstate->pmientry );
-
-    if (err == PMI_DIED) return 0;
-    
-    return 1;
-}
-
-int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 {
     PMIProcess *pentry = (PMIProcess *)extra;
     int  rc;
     int  returnCode = 0;
-    char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
+    char inbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
     PMICmdMap *p;
 
     DBG_PRINTF( "Handling PMI input\n" ); fflush(stdout);
@@ -226,61 +337,16 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	if (!p->handler) {
 	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
 	}
-
-#if 0
-	if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_barrier( pentry );
-	}
-	else if ( strncmp( cmd, "finalize", MAXPMICMD ) == 0 ) {
-	    returnCode = PMI_FINALIZED;
-	}
-	else if ( strncmp( cmd, "abort", MAXPMICMD ) == 0 ) {
-	    /* No PMI abort command has yet been implemented! */
-	    returnCode = PMI_ALLEXIT;
-	}
-	else if ( strncmp( cmd, "get_my_kvsname", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_get_my_kvsname( pentry );
-	}
-	else if ( strncmp( cmd, "init", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_init( pentry );
-	}
-	else if ( strncmp( cmd, "get_maxes", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_get_maxes( pentry );
-	}
-	else if ( strncmp( cmd, "create_kvs", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_create_kvs( pentry );
-	}
-	else if ( strncmp( cmd, "destroy_kvs", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_destroy_kvs( pentry );
-	}
-	else if ( strncmp( cmd, "put", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_put( pentry );
-	}
-	else if ( strncmp( cmd, "get", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_get( pentry );
-	}
-	else if ( strncmp( cmd, "getbyidx", MAXPMICMD ) == 0 ) {
-	    fPMI_Handle_getbyidx( pentry );
-	}
-	else if ( strncmp( cmd, "initack", MAXPMICMD ) == 0) {
-	    fPMI_Handle_init_port( pentry );
-	}
-	else if (strncmp( cmd, "spawn", MAXPMICMD ) == 0) {
-	    fPMI_Handle_spawn( pentry );
-	}
-	else {
-	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
-	}
-#endif
     }
     else {                        /* lost contact with client */
 	/* close( pentry->fd );  */
 	pentry->fd = -1;          /* forget the fd now that it is not valid */
-	returnCode = PMI_DIED;
+	returnCode = 1;
     }
     return returnCode;
 }
 
+/* ------------------------------------------------------------------------- */
 /*
  * Perform any initialization.
  * Input
@@ -289,6 +355,12 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
  * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
  * Return value: groupid
  */
+int PMIServInit( void )
+{
+    /* Nothing to do? */
+    return 0;
+}
+#if 0
 int PMIServInit( int nprocs )
 {
     int i;
@@ -306,7 +378,6 @@ int PMIServInit( int nprocs )
 
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
-
 /* 
  * Initialize an entry as empty
  */
@@ -346,9 +417,12 @@ int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
 
     return 0;
 }
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* The rest of these routines are internal                                   */
 /* ------------------------------------------------------------------------ */
+#if 0
 /* kvsname and kvsid is output */
 static int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
 {
@@ -379,7 +453,9 @@ static int fPMI_Allocate_kvs_group( void )
 {
     return pmi.nextnewgroup++;
 }
+#endif
 
+/* ------------------------------------------------------------------------- */
 /* 
  * Handle an incoming "barrier" command
  *
@@ -387,46 +463,200 @@ static int fPMI_Allocate_kvs_group( void )
  */
 static int fPMI_Handle_finalize( PMIProcess *pentry )
 {
-    return PMI_FINALIZED;
+    char outbuf[PMIU_MAXLINE];
+    
+    pentry->pState->status = PROCESS_FINALIZED;
+
+    /* send back an acknowledgement to release the process */
+    snprintf(outbuf, PMIU_MAXLINE, "cmd=finalize_ack\n");
+    PMIU_writeline(pentry->fd, outbuf);
+    
+    return 0;
 }
 static int fPMI_Handle_abort( PMIProcess *pentry )
 {
-    return PMI_ALLEXIT;
+    return 1;
 }
 static int fPMI_Handle_barrier( PMIProcess *pentry )
 {
     int i;
-    int group = pentry->group;
+    PMIGroup *group = pentry->group;
 
     if (pmidebug) {
 	DBG_PRINTF( "Entering PMI_Handle_barrier for group %d\n", group );
     }
 
-    pmi.grouptable[group].num_in_barrier++;
-    if ( pmi.grouptable[group].num_in_barrier ==
-	 pmi.grouptable[group].groupsize ) {
-	for ( i = 0; i < pmi.grouptable[group].groupsize; i++ ) {
-	    PMIU_writeline(pmi.grouptable[group].fds[i], 
-			   "cmd=barrier_out\n" );
+    group->nInBarrier++;
+    if (group->nInBarrier == group->nProcess) {
+	for ( i=0; i<group->nProcess; i++) {
+	    PMIU_writeline(group->pmiProcess[i]->fd, "cmd=barrier_out\n" );
 	}
-	pmi.grouptable[group].num_in_barrier = 0;
+	group->nInBarrier = 0;
     }
     return 0;
 }
 
+/* Create a kvs and generate its name; return that name as the argument */
+static int fPMIKVSAllocate( char kvsname[], int maxlen )
+{
+    PMIKVSpace *kvs;
+    static int kvsnum = 0;    /* Used to generate names */
+
+    /* Create the space */
+    kvs = (PMIKVSpace *)MPIU_Malloc( sizeof(PMIKVSpace) );
+    if (!kvs) {
+	MPIU_Internal_error_printf( stderr, "too many kvs's\n" );
+	return -1;
+    }
+    MPIU_Snprintf( kvsname, maxlen, "kvs_%d", kvsnum++ );
+    /* Cast for the one and only assignment of this name */
+    MPIU_Strncpy( (char*)(kvs->kvsname), kvsname, MAXNAMELEN );
+    kvs->pairs     = 0;
+    kvs->lastByIdx = 0;
+    kvs->lastIdx   = -1;
+    return 0;
+}
+static int fPMIKVSFindKey( PMIKVSpace *kvs, 
+			   const char key[], char val[], int maxval )
+{
+    PMIKVPair *p;
+    int       rc;
+
+    p = kvs->pairs;
+    while (p) {
+	rc = strcmp( p->key, key );
+	if (rc == 0) {
+	    /* Found it.  Get the value and return success */
+	    MPIU_Strncpy( val, p->val, maxval );
+	    return 0;
+	}
+	if (rc > 0) {
+	    /* We're past the point in the sorted list where the
+	       key could be found */
+	    return 1;
+	}
+	p = p->nextPair;
+    }
+    return 1;
+}
+
+static int fPMIKVSAddPair( PMIKVSpace *kvs, 
+			   const char key[], const char val[] )
+{
+    PMIKVPair *pair, *p, **pprev;
+    int       rc;
+
+    /* Find the location in which to insert the pair (if the
+       same key already exists, that is an error) */
+    p = kvs->pairs;
+    pprev = &(kvs->pairs);
+    while (p) {
+	rc = strcmp( p->key, key );
+	if (rc == 0) {
+	    /* Duplicate.  Indicate an error */
+	    return 1;
+	}
+	if (rc > 0) {
+	    /* We've found the location (after pprev, before p) */
+	    break;
+	}
+	pprev = &(p->nextPair);
+	p = p->nextPair;
+    }
+    pair = (PMIKVPair *)MPIU_Malloc( sizeof(PMIKVPair) );
+    if (!pair) {
+	return -1;
+    }
+    MPIU_Strncpy( pair->key, key, sizeof(pair->key) );
+    MPIU_Strncpy( pair->val, val, sizeof(pair->val) );
+
+    /* Insert into the list */
+    pair->nextPair = p;
+    *pprev         = pair;
+
+    /* Since the list has been modified, clear the index helpers */
+    kvs->lastByIdx = 0;
+    kvs->lastIdx   = -1;
+
+    return 0;
+}
+
+static PMIKVSpace *fPMIKVSFindSpace( const char kvsname[] )
+{
+    PMIKVSpace *kvs = pmimaster.kvSpaces;
+    int rc;
+
+    /* We require the kvs spaces to be stored in a sorted order */
+    while (kvs) {
+	rc = strcmp( kvsname, kvs->kvsname );
+	if (rc == 0) {
+	    /* Found */
+	    return kvs;
+	}
+	if (rc > 0) {
+	    /* Did not find (kvsname is sorted after kvs->kvsname) */
+	    return 0;
+	}
+	kvs = kvs->nextKVS;
+    }
+    /* Did not find */
+    return 0;
+}
+static int PMIKVSFree( PMIKVSpace *kvs )
+{
+    PMIKVPair *p, *pNext;
+    PMIKVSpace **kPrev, *k;
+    int        rc;
+    
+    /* Recover the pairs */
+    p = kvs->pairs;
+    while (p) {
+	pNext = p->nextPair;
+	MPIU_Free( p );
+	p = pNext;
+    }
+
+    /* Recover the KVS space, and remove it from the master's list */
+    kPrev = &pmimaster.kvSpaces;
+    k     = pmimaster.kvSpaces;
+    rc    = 1;
+    while (k) {
+	rc = strcmp( k->kvsname, kvs->kvsname );
+	if (rc == 0) {
+	    *kPrev = k->nextKVS;
+	    MPIU_Free( k );
+	    break;
+	}
+	kPrev = &(k->nextKVS);
+	k = k->nextKVS;
+    }
+    
+    /* Note that if we did not find the kvs, we have an internal 
+       error, since all kv spaces are maintained within the pmimaster list */
+    if (rc != 0) {
+	MPIU_Internal_error_printf( "Could not find KV Space %s\n", 
+				    kvs->kvsname );
+	return 1;
+    }
+    return 0;
+}
 /* 
  * Handle an incoming "create_kvs" command
  */
 static int fPMI_Handle_create_kvs( PMIProcess *pentry )
 {
-    int  kvsidx;
     char kvsname[MAXKVSNAME], outbuf[PMIU_MAXLINE];
+    int rc;
 
-    fPMI_Allocate_kvs( &kvsidx, kvsname );
+    rc = fPMIKVSAllocate( kvsname, sizeof(kvsname) );
+    if (rc) {
+	/* PANIC - allocation failed */
+	return 1;
+    }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
     PMIU_writeline( pentry->fd, outbuf );
     if (pmidebug) {
-	DBG_PRINTF( "Handle_create_kvs new %d name %s\n", kvsidx, kvsname );
+	DBG_PRINTF( "Handle_create_kvs new name %s\n", kvsname );
     }
     return 0;
 }
@@ -437,29 +667,20 @@ static int fPMI_Handle_create_kvs( PMIProcess *pentry )
 static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 {
     int  i, rc=0;
+    PMIKVSpace *kvs;
     char kvsname[MAXKVSNAME];
     char message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
     
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
-    for ( i = 0; i < MAXKVSS; i++ ) {
-	if ( strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
-	    if ( pmi.kvstable[i].active ) {
-		pmi.kvstable[i].active = 0;
-		MPIU_Snprintf( message, PMIU_MAXLINE,
-			  "KVS_%s_successfully_destroyed", kvsname );
-		rc = 0;
-	    }
-	    else {
-		MPIU_Snprintf( message, PMIU_MAXLINE, "KVS_%s_previously_destroyed",
-			  kvsname );
-		rc = -1;
-	    }
-	    break;
-	}
+    kvs = fPMIKVSFindSpace( kvsname );
+    if (kvs) {
+	PMIKVSFree( kvs );
+	MPIU_Snprintf( message, PMIU_MAXLINE,
+		       "KVS_%s_successfully_destroyed", kvsname );
     }
-    if ( i == MAXKVSS ) {
-	rc = -1;
+    else {
 	MPIU_Snprintf( message, PMIU_MAXLINE, "KVS %s not found", kvsname );
+	rc = -1;
     }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=kvs_destroyed rc=%d msg=%s\n",
 	      rc, message );
@@ -473,45 +694,37 @@ static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 static int fPMI_Handle_put( PMIProcess *pentry )
 {
     int  i, j, rc=0;
+    PMIKVSpace *kvs;
     char kvsname[MAXKVSNAME];
     char message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
-    char key[MAXKEYLEN];
+    char key[MAXKEYLEN], val[MAXVALLEN];
 
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
     if (pmidebug) {
 	DBG_PRINTF( "Put: Finding kvs %s\n", kvsname );
     }
 
-    for ( i = 0; i < MAXKVSS; i++ ) {
-	if ( pmi.kvstable[i].active &&
-	     strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
-	    /* should check here for duplicate key and raise error */
-	    PMIU_getval( "key", key, MAXKEYLEN );
-	    for ( j = 0; j < MAXPAIRS; j++ ) {
-		if ( strncmp( pmi.kvstable[i].pairs[j].key, key, MAXKEYLEN ) == 0 ) {
-		    rc = -1;          /* no duplicate keys allowed */
-		    MPIU_Snprintf( message, PMIU_MAXLINE, "duplicate_key %s", key );
-		    break;
-		}
-		else if ( strncmp( pmi.kvstable[i].pairs[j].key, "", MAXKEYLEN ) == 0 ) {
-		    PMIU_getval( "key", pmi.kvstable[i].pairs[j].key,
-				 MAXKEYLEN );
-		    PMIU_getval( "value", pmi.kvstable[i].pairs[j].val,
-				 MAXVALLEN );
-		    rc = 0;
-		    MPIU_Strncpy( message, "success", PMIU_MAXLINE );
-		    break;
-		}
-	    }
-	    if ( j == MAXPAIRS ) {
-		rc = -1;
-		MPIU_Snprintf( message, PMIU_MAXLINE, "no_room_in_kvs_%s",
-			  kvsname );
-	    }
+    kvs = fPMIKVSFindSpace( kvsname );
+    if (kvs) {
+	/* should check here for duplicate key and raise error */
+	PMIU_getval( "key", key, MAXKEYLEN );
+	PMIU_getval( "value", val, MAXVALLEN );
+	rc = fPMIKVSAddPair( kvs, key, val );
+	if (rc == 1) {
+	    rc = -1;          /* no duplicate keys allowed */
+	    MPIU_Snprintf( message, PMIU_MAXLINE, "duplicate_key %s", key );
 	}
-	break;
+	else if (rc == -1) {
+	    rc = -1;
+	    MPIU_Snprintf( message, PMIU_MAXLINE, "no_room_in_kvs_%s",
+			   kvsname );
+	}
+	else {
+	    rc = 0;
+	    MPIU_Strncpy( message, "success", PMIU_MAXLINE );
+	}
     }
-    if ( i == MAXKVSS ) {
+    else {
 	rc = -1;
 	MPIU_Snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
     }
@@ -526,6 +739,7 @@ static int fPMI_Handle_put( PMIProcess *pentry )
  */
 static int fPMI_Handle_get( PMIProcess *pentry )
 {
+    PMIKVSpace *kvs;
     int  i, j, rc=0;
     char kvsname[MAXKVSNAME];
     char message[PMIU_MAXLINE], key[PMIU_MAXLINE], value[PMIU_MAXLINE];
@@ -535,34 +749,29 @@ static int fPMI_Handle_get( PMIProcess *pentry )
     if (pmidebug) {
 	DBG_PRINTF( "Get: Finding kvs %s\n", kvsname );
     }
-    for ( i = 0; i < MAXKVSS; i++ ) {
-	if ( pmi.kvstable[i].active &&
-	     strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
-	    PMIU_getval( "key", key, PMIU_MAXLINE );
-	    for ( j = 0; j < MAXPAIRS; j++ ) {
-		if ( strncmp( pmi.kvstable[i].pairs[j].key, key, MAXKEYLEN ) == 0 ) {
-		    rc = 0;
-		    MPIU_Strncpy( message, "success", PMIU_MAXLINE );
-		    MPIU_Strncpy( value, pmi.kvstable[i].pairs[j].val, 
-				  PMIU_MAXLINE );
-		    break;
-		}
-	    }
-	    if ( j == MAXPAIRS ) {
-		rc = -1;
-		MPIU_Strncpy( value, "unknown", PMIU_MAXLINE );
-		MPIU_Snprintf( message, PMIU_MAXLINE, "key_%s_not_found", kvsname );
-	    }
+    kvs = fPMIKVSFindSpace( kvsname );
+    if (kvs) {
+	PMIU_getval( "key", key, PMIU_MAXLINE );
+	rc = fPMIKVSFindKey( kvs, key, value, sizeof(value) );
+	if (rc == 0) {
+	    rc = 0;
+	    MPIU_Strncpy( message, "success", PMIU_MAXLINE );
 	}
-	break;
+	else if (rc) {
+	    rc = -1;
+	    MPIU_Strncpy( value, "unknown", PMIU_MAXLINE );
+	    MPIU_Snprintf( message, PMIU_MAXLINE, "key_%s_not_found", 
+			   kvsname );
+	}
     }
-    if ( i == MAXKVSS ) {
+    else { 
 	rc = -1;
 	MPIU_Strncpy( value, "unknown", PMIU_MAXLINE );
 	MPIU_Snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
     }
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=get_result rc=%d msg=%s value=%s\n",
-	      rc, message, value );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, 
+		   "cmd=get_result rc=%d msg=%s value=%s\n",
+		   rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
     DBG_PRINTF( "%s", outbuf );
     return rc;
@@ -573,7 +782,29 @@ static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
-	      pmi.kvstable[pentry->kvs].kvsname );
+	      pentry->group->kvs->kvsname );
+    PMIU_writeline( pentry->fd, outbuf );
+    return 0;
+}
+
+/* Handle an incoming get_universe_size command */
+static int fPMI_Handle_get_universe_size( PMIProcess *pentry )
+{
+    char outbuf[PMIU_MAXLINE];
+    /* Import the universe size from the process structures */
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%s\n",
+	      pUniv.size );
+    PMIU_writeline( pentry->fd, outbuf );
+    return 0;
+}
+
+/* Handle an incoming get_appnum command */
+static int fPMI_Handle_get_appnum( PMIProcess *pentry )
+{
+    ProcessApp *app = pentry->pState->app;
+    char outbuf[PMIU_MAXLINE];
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=appnum appnum=%d\n",
+		   app->myAppNum );		
     PMIU_writeline( pentry->fd, outbuf );
     return 0;
 }
@@ -581,7 +812,23 @@ static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 /* Handle an incoming "init" command */
 static int fPMI_Handle_init( PMIProcess *pentry )
 {
-    /* nothing to do at present */
+    char version[PMIU_MAXLINE];
+    char subversion[PMIU_MAXLINE];
+    char outbuf[PMIU_MAXLINE];
+    int rc;
+
+    /* check version compatibility with PMI client library */
+    PMIU_getval( "pmi_version", version, PMIU_MAXLINE );
+    PMIU_getval( "pmi_subversion", subversion, PMIU_MAXLINE );
+    if (PMI_VERSION == atoi(version) && PMI_SUBVERSION >= atoi(subversion))
+	rc = 0;
+    else
+	rc = -1;
+
+    snprintf( outbuf, PMIU_MAXLINE,
+	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
+	      PMI_VERSION, PMI_SUBVERSION, rc);
+    PMIU_writeline( pentry->fd, outbuf );
     return 0;
 }
 
@@ -601,39 +848,53 @@ static int fPMI_Handle_get_maxes( PMIProcess *pentry )
  */
 static int fPMI_Handle_getbyidx( PMIProcess *pentry )
 {
-    int i, j, rc=0;
+    int j, jNext, rc=0;
+    PMIKVSpace *kvs;
     char kvsname[MAXKVSNAME], j_char[8], outbuf[PMIU_MAXLINE];
+    PMIKVPair *p;
 
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
-    for ( i = 0; i < MAXKVSS; i++ ) {
-	if ( pmi.kvstable[i].active &&
-	     strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
-	    PMIU_getval( "idx", j_char, 8 );
-	    j = atoi( j_char );
-	    if ( ( j > MAXPAIRS ) ||
-		 strncmp( pmi.kvstable[i].pairs[j].key, "", MAXKEYLEN ) == 0 ) {
-		MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
-			  "reason=no_more_keyvals\n" );
-	    }
-	    else {
-		MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results "
-			  "rc=0 nextidx=%d key=%s val=%s\n",
-			  j + 1,
-			  pmi.kvstable[i].pairs[j].key,
-			  pmi.kvstable[i].pairs[j].val );
-	    }
+    kvs = fPMIKVSFindSpace( kvsname );
+    if (kvs) {
+	PMIU_getval( "idx", j_char, sizeof(j_char) );
+	j = atoi( j_char );
+	jNext = j+1;
+	if (kvs->lastIdx >= 0 && j >= kvs->lastIdx) {
+	    for (p = kvs->lastByIdx, j-= kvs->lastIdx; j-- > 0 && p; 
+		 p = p->nextPair );
 	}
-	break;
+	else {
+	    for (p = kvs->pairs; j-- > 0 && p; p = p->nextPair) ;
+	}
+	if (p) {
+	    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results "
+			   "rc=0 nextidx=%d key=%s val=%s\n",
+			   jNext, p->key, p->val );
+	    kvs->lastIdx   = jNext-1;
+	    kvs->lastByIdx = p;
+	}
+	else {
+	    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
+			   "reason=no_more_keyvals\n" );
+	    kvs->lastIdx   = -1;
+	    kvs->lastByIdx = 0;
+	}
     }
-    if ( i == MAXKVSS ) {
+    else {
 	rc = -1;
 	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
 		  "reason=kvs_%s_not_found\n", kvsname );
     }
+
     PMIU_writeline( pentry->fd, outbuf );
     return rc;
 }
 
+/*
+ * These routines are called when communication is established through 
+ * a port instead of an fd, and no information is communicated
+ * through environment variables.
+ */
 static int fPMI_Handle_init_port( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
@@ -642,9 +903,11 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
 	DBG_PRINTF( "Entering fPMI_Handle_init to start connection\n" );
     }
 
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", pentry->nProcesses );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
+		   pentry->group->nProcess );
     PMIU_writeline( pentry->fd, outbuf );
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", pentry->rank );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", 
+		   pentry->pState->wRank );
     PMIU_writeline( pentry->fd, outbuf );
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
@@ -662,6 +925,8 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     return 0;
 }
 
+/* ------------------------------------------------------------------------- */
+#if 0
 /*  
  * FIXME:
  * Question: What does this need to do?
@@ -686,6 +951,7 @@ void PMI_Init_remote_proc( int fd, PMIProcess *pentry,
     PMIU_writeline( fd, "cmd=initack\n" );
     fPMI_Handle_init_port( pentry );
 }
+#endif
 /* 
  * This is a special routine.  It accepts the first input from the
  * remote process, and returns the PMI_ID value.  -1 is returned on error 

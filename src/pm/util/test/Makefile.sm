@@ -7,3 +7,6 @@ forktest_LDADD = -L.. -lmpiexec -L../../../../lib -lmpich
 
 servtest_SOURCES = servtest.c
 servtest_LDADD = -L.. -lmpiexec -L../../../../lib -lmpich
+
+servtest2_SOURCES = servtest2.c
+servtest2_LDADD = -L.. -lmpiexec -L../../../../lib -lmpich

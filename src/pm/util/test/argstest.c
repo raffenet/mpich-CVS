@@ -13,8 +13,7 @@
 */
 int main( int argc, char *argv[] )
 {
-    ProcessUniverse pUniv;
-
+    MPIE_ProcessInit();
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     MPIE_PrintProcessUniverse( stdout, &pUniv );
     return 0;

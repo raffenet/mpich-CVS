@@ -112,10 +112,23 @@ typedef struct ProcessWorld {
 
 typedef struct ProcessUniverse {
     ProcessWorld *worlds;
+    int          size;               /* Universe size */
 } ProcessUniverse;
 
-    
+/* There is only one universe */
+extern ProcessUniverse pUniv;
+
+/* Function prototypes */    
 int MPIE_ForkProcesses( ProcessWorld *, char *[], 
 			int (*)(void*), void *,
 			int (*)(void*,void*), void *,
 			int (*)(void*,void*), void * );
+ProcessState *MPIE_FindProcessByPid( pid_t );
+void MPIE_ProcessInit( void );
+void MPIE_SetupSigChld( void );
+int MPIE_ProcessGetExitStatus( void );
+
+/* Temporary debug definitions */
+#define DBG_PRINTF(a) printf a
+#define DBG_FPRINTF(a) fprintf a
+#define DBG_FFLUSH(a) fflush(a)

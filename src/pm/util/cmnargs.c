@@ -8,16 +8,19 @@
 #include "pmutilconf.h"
 #include "process.h"
 /* #include "pmutil.h" */
+
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #include <ctype.h>
 
-/* Temporary debug definitions */
-#define DBG_PRINTF(a) printf a
-#define DBG_FPRINTF(a) fprintf a
-#define DBG_FFLUSH(a) fflush(a)
 
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"

@@ -4,12 +4,35 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "pmutilconf.h"
+
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
 #include "process.h"
 /* Use the memory defintions from mpich2/src/include */
-#define HAVE_SNPRINTF
 #include "mpimem.h"
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
+
 #include <sys/wait.h>
+#if defined(USE_SIGNAL) || defined(USE_SIGACTION)
+#include <signal.h>
+#else
+#error no signal choice
+#endif
+#ifdef NEEDS_STRSIGNAL_DECL
+extern char *strsignal(int);
+#endif
+
+/* There is only one universe */
+ProcessUniverse pUniv;
 
 /*
   Fork numprocs processes, with the current PMI groupid and kvsname 
@@ -116,6 +139,33 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
     return i;
 }
 
+/*@
+  MPIE_ProcessGetExitStatus - Return an integer exit status based on the
+  return status of all processes in the process universe.
+  @*/
+int MPIE_ProcessGetExitStatus( void )
+{
+    ProcessWorld *world;
+    ProcessApp   *app;
+    ProcessState *pState;
+    int          i, rc = 0;
+
+    world = pUniv.worlds;
+    while (world) {
+	app = world->apps;
+	while (app) {
+	    pState = app->pState;
+	    for (i=0; i<app->nProcess; i++) {
+		if (pState->exitStatus.exitStatus > rc) {
+		    rc = pState->exitStatus.exitStatus;
+		}
+	    }
+	    app = app->nextApp;
+	}
+	world = world->nextWorld;
+    }
+    return rc;
+}
 /*
  * exec the indicated program with the indicated environment
  */
@@ -217,14 +267,22 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     }
 }
 
-ProcessState *MPIE_FindProcessByPid( ProcessUniverse *pUniv, pid_t pid )
+/*@
+  MPIE_FindProcessByPid - Given a pid, return a pointer to the process state
+
+  Notes:
+  This searches through all processes in the process universe.  Returns
+  null if no corresponding process is found.
+
+  @*/
+ProcessState *MPIE_FindProcessByPid( pid_t pid )
 {
     ProcessWorld *world;
     ProcessApp   *app;
     ProcessState *pState;
     int           i;
 
-    world = pUniv->worlds;
+    world = pUniv.worlds;
     while (world) {
 	app = world->apps;
 	while (app) {
@@ -239,6 +297,204 @@ ProcessState *MPIE_FindProcessByPid( ProcessUniverse *pUniv, pid_t pid )
     return 0;
 }
 
+/*
+ * Given a pointer to a process state structure, and the process status
+ * returned by a 'wait' call, set the fields in the process state to
+ * indicate the reason for the process exit
+ */
+void MPIE_ProcessSetExitStatus( ProcessState *pState, int prog_stat )
+{
+    int rc = 0, sigval = 0;
+    if (WIFEXITED(prog_stat)) {
+	rc = WEXITSTATUS(prog_stat);
+	    }
+    if (WIFSIGNALED(prog_stat)) {
+	sigval = WTERMSIG(prog_stat);
+    }
+    pState->exitStatus.exitStatus = rc;
+    pState->exitStatus.exitSig    = sigval;
+    if (sigval) 
+	pState->exitStatus.exitReason = EXIT_SIGNALLED;
+    else {
+	if (pState->status >= PROCESS_ALIVE &&
+	    pState->status <= PROCESS_COMMUNICATING) 
+	    pState->exitStatus.exitReason = EXIT_NOFINALIZE;
+	else 
+	    pState->exitStatus.exitReason = EXIT_NORMAL;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* SIGNALS and CHILDRED                                                      */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * POSIX requires a SIGCHLD handler (SIG_IGN is invalid for SIGCHLD in
+ * POSIX).  Thus, we have to perform the waits within the signal handler.
+ * Because there may be a race condition with recording the pids in the 
+ * ProcessState structure, we provide an "unexpected child" structure to
+ * hold information about processes that are not yet registered.  A clean
+ * up handler records the state of those processes when we're ready to 
+ * exit.
+ *
+ * Because signals are not queued, this handler processes all completed
+ * processes.  
+ *
+ * We must perform the wait in the handler because if we do not, we loose 
+ * the exit status information (it is no longer available after the
+ * signal handler exits).
+ */
+/* inHandler and skipHandler are used to control the SIGCHLD handler and
+   to avoid (or at least narrow) race conditions */
+static volatile int inHandler = 0;
+/* skip handler is set if we are planning to wait for processes with the
+   "wait" system call in a separate routine.  */
+static volatile int skipHandler = 0;
+
+/* The "unexpected" structure is used to record any processes that
+   exit before we've recorded their pids.  This is unlikely, but may
+   happen if a process fails to exec (e.g., the fork succeeds but the 
+   exec immediately fails).  This ensures that we can handle SIGCHLD
+   events without loosing information about the child processes */
+#define MAXUNEXPECTEDPIDS 1024
+static struct {
+    pid_t  pid;
+    int    stat;
+} unexpectedExit[MAXUNEXPECTEDPIDS];
+static int nUnexpected = 0;
+	 
+static void handle_sigchild( int sig )
+{
+    int prog_stat, pid;
+    int foundChild = 0;
+    ProcessState *pState;
+
+    /* Set a flag to indicate that we're in the handler, and check 
+       to see if we should ignore the signal */
+    if (inHandler) return;
+    inHandler = 1;
+
+    if (skipHandler) {
+	/* Someone else wants to wait on the processes, so we
+	   return now. */
+	inHandler = 0;
+#ifndef SA_RESETHAND
+	/* If we can't clear the "reset handler bit", we must 
+	   re-install the handler here */
+	MPIE_SetupSigChld();
+#endif
+	return;
+    }
+
+    DBG_PRINTF( ("Entering sigchild handler\n") ); DBG_FFLUSH(stdout);
+#if 0
+    if (debug) {
+	DBG_FPRINTF( (stderr, "Waiting for any child on signal\n") );
+	DBG_FFLUSH( stderr );
+    }
+#endif
+
+    /* Since signals may be coallesced, we process all children that
+       have exited */
+    while (1) {
+	/* Find out about any children that have exited */
+	pid = waitpid( (pid_t)(-1), &prog_stat, WNOHANG );
+    
+	if (pid <= 0) {
+	    /* Note that it may not be an error if no child 
+	       found, depending on various race conditions.  
+	       Thus, we allow this case to happen without 
+	       generating an error message */
+	    /* Generate a debug message if we enter the handler but 
+	       do not find a child */
+#if 0
+	    if (debug && !foundChild) {
+		DBG_FPRINTF( (stderr, "Did not find child process!\n") );
+		DBG_FFLUSH( stderr );
+	    }
+#endif
+	    break;
+	}
+	foundChild = 1;
+	/* Receives a child failure or exit.  
+	   If *failure*, kill the others */
+#if 0
+	if (debug) {
+	    DBG_FPRINTF( (stderr, "Found process %d in sigchld handler\n", pid ) );
+	    DBG_FFLUSH( stderr );
+	}
+#endif
+	pState = MPIE_FindProcessByPid( pid );
+	if (pState) {
+	    MPIE_ProcessSetExitStatus( pState, prog_stat );
+	}
+	else {
+	    /* Remember this process id and exit status for later */
+	    unexpectedExit[nUnexpected].pid  = pid;
+	    unexpectedExit[nUnexpected].stat = prog_stat;
+	}
+    }
+#ifndef SA_RESETHAND
+    /* If we can't clear the "reset handler bit", we must 
+       re-install the handler here */
+    MPIE_SetupSigChld();
+#endif
+    inHandler = 0;
+}
+
+/*@
+  MPIE_ProcessInit - Initialize the support for process creation
+
+  Notes:
+  The major chore of this routine is to set the 'SIGCHLD' signal handler
+  @*/
+void MPIE_ProcessInit( void )
+{
+     MPIE_SetupSigChld();
+     pUniv.worlds = 0;
+}
+
+#ifdef USE_SIGACTION
+/*@
+  MPIE_ProcessInit - Initialize the support for process creation
+
+  Notes:
+  The major chore of this routine is to set the 'SIGCHLD' signal handler
+  @*/
+void MPIE_SetupSigChld( void )
+{
+    struct sigaction oldact;
+
+    /* Get the old signal action, reset the function and 
+       if possible turn off the reset-handler-to-default bit, then
+       set the new handler */
+    sigaction( SIGCHLD, (struct sigaction *)0, &oldact );
+    oldact.sa_handler = (void (*)(int))handle_sigchild;
+#ifdef SA_RESETHAND
+    /* Note that if this feature is not supported, there is a race
+       condition in the handling of signals, and the OS is fundementally
+       flawed */
+    oldact.sa_flags   = oldact.sa_flags & ~(SA_RESETHAND);
+#endif
+    sigaddset( &oldact.sa_mask, SIGCHLD );
+    sigaction( SIGCHLD, &oldact, (struct sigaction *)0 );
+}
+#elif defined(USE_SIGNAL)
+void MPIE_SetupSigChld( void )
+{
+    /* Set new handler; ignore old choice */
+    (void)signal( SIGCHLD, handle_sigchild );
+}
+#else
+void MPIE_SetupSigChld( void )
+{
+    /* No way to set up sigchld */
+#error "Unknown signal handling!  This routine must set a signal for SIGCHLD"
+}
+#endif
+
+
+#if 0
 int MPIE_WaitProcesses( ProcessUniverse *pUniv )
 {
     ProcessWorld *world;
@@ -291,3 +547,4 @@ int MPIE_WaitProcesses( ProcessUniverse *pUniv )
     }
 }
 
+#endif
