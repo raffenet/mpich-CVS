@@ -197,6 +197,7 @@ public class PreviewState
             Arrays.sort( twgts, CategoryWeight.WEIGHT_ORDER );
 
         // Fill the color of the sub-rectangles from the bottom, ie. jHead+jTail
+        int num_sub_rects_drawn = 0;
         jLevel = jHead + jHeight;  // jLevel = jTail + 1
         for ( idx = twgts_length-1; idx >= 0; idx-- ) {
             twgt     = twgts[ idx ];
@@ -205,11 +206,13 @@ public class PreviewState
                 jLevel  -= jDelta;
                 g.setColor( twgt.getCategory().getColor() );
                 g.fillRect( iHead, jLevel, iWidth, jDelta );
+                num_sub_rects_drawn++;
             }
         }
 
-        BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
-                                         iTail, jTail, isFinalVtxInImg );
+        if ( num_sub_rects_drawn > 0 )
+            BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
+                                             iTail, jTail, isFinalVtxInImg );
         return 1;
     }
 

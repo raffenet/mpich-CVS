@@ -84,14 +84,14 @@ public abstract class StateBorder
                Draw the shaded lower right first then upper left,
                so tight packed states are shown as white.
             */
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             // g.drawLine( iHead, jTail, iTail, jTail );
             g.fillRect( iHead, jTail, iwidth, 1 );
             if ( isFinalVtxIn )
                 // g.drawLine( iTail, jHead, iTail, jTail );
                 g.fillRect( iTail, jHead, 1, jheight );
 
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             // g.drawLine( iHead, jHead, iTail, jHead );
             g.fillRect( iHead, jHead, iwidth, 1 );
             if ( isStartVtxIn )
@@ -118,14 +118,14 @@ public abstract class StateBorder
                Draw the shaded lower right first then upper left,
                so tight packed states are shown as white.
             */
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             // g.drawLine( iHead, jTail, iTail, jTail );
             g.fillRect( iHead, jTail, iwidth, 1 );
             if ( isFinalVtxIn )
                 // g.drawLine( iTail, jHead, iTail, jTail );
                 g.fillRect( iTail, jHead, 1, jheight );
 
-            g.setColor( Color.GRAY );
+            g.setColor( Color.gray );
             // g.drawLine( iHead, jHead, iTail, jHead );
             g.fillRect( iHead, jHead, iwidth, 1 );
             if ( isStartVtxIn )
@@ -152,14 +152,14 @@ public abstract class StateBorder
                Draw the shaded lower right first then upper left,
                so tight packed states are shown as white.
             */
-            g.setColor( Color.GRAY );
+            g.setColor( Color.gray );
             // g.drawLine( iHead, jTail, iTail, jTail );
             g.fillRect( iHead, jTail, iwidth, 1 );
             if ( isFinalVtxIn )
                 // g.drawLine( iTail, jHead, iTail, jTail );
                 g.fillRect( iTail, jHead, 1, jheight );
 
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             // g.drawLine( iHead, jHead, iTail, jHead );
             g.fillRect( iHead, jHead, iwidth, 1 );
             if ( isStartVtxIn )
