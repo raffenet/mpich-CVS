@@ -163,7 +163,9 @@ int tcp_make_progress()
     readset = TCP_Process.readset;
     writeset = TCP_Process.writeset;
 
+    MM_ENTER_FUNC(BSELECT);
     nready = bselect(TCP_Process.max_bfd, &readset, &writeset, NULL, &tv);
+    MM_EXIT_FUNC(BSELECT);
 
     if (nready == 0)
     {

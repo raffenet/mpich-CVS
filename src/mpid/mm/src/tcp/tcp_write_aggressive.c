@@ -375,7 +375,9 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	/* write the data */
 	if (cur_pos == 1)
 	{
+	    MM_ENTER_FUNC(BWRITE);
 	    num_written = bwrite(vc_ptr->data.tcp.bfd, vec[0].MPID_VECTOR_BUF, vec[0].MPID_VECTOR_LEN);
+	    MM_EXIT_FUNC(BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -387,7 +389,9 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 	else
 	{
+	    MM_ENTER_FUNC(BWRITEV);
 	    num_written = bwritev(vc_ptr->data.tcp.bfd, vec, cur_pos);
+	    MM_EXIT_FUNC(BWRITEV);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();

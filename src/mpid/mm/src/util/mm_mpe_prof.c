@@ -959,6 +959,11 @@ static void init_state_strings()
     MM_PROF_FUNC(TCP_CAR_HEAD_ENQUEUE);
     MM_PROF_FUNC(TCP_SETUP_PACKET_CAR);
     MM_PROF_FUNC(TCP_UPDATE_CAR_NUM_WRITTEN);
+    MM_PROF_FUNC(BREAD);
+    MM_PROF_FUNC(BREADV);
+    MM_PROF_FUNC(BWRITE);
+    MM_PROF_FUNC(BWRITEV);
+    MM_PROF_FUNC(BSELECT);
 }
 
 int prof_init(int rank, int size)
@@ -994,7 +999,7 @@ int prof_finalize()
     
     if (g_prof_rank == 0) 
     {
-	printf( "Writing logfile %s.\n", g_prof_filename);fflush(stdout);
+	printf( "Writing logfile.\n");fflush(stdout);
 	for (i=0; i<MM_NUM_TIMER_STATES; i++) 
 	{
 	    MPE_Describe_state( 

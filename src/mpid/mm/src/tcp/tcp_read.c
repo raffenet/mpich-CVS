@@ -153,9 +153,11 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* read */
 	if (car_ptr->data.tcp.buf.vec_read.vec_size == 1) /* optimization for single buffer reads */
 	{
+	    MM_ENTER_FUNC(BREAD);
 	    num_read = bread(vc_ptr->data.tcp.bfd,
 		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_BUF,
 		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_LEN);
+	    MM_EXIT_FUNC(BREAD);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -167,9 +169,11 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	}
 	else
 	{
+	    MM_ENTER_FUNC(BREADV);
 	    num_read = breadv(vc_ptr->data.tcp.bfd,
 		&car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index],
 		car_ptr->data.tcp.buf.vec_read.vec_size);
+	    MM_EXIT_FUNC(BREADV);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -236,9 +240,11 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     }
 
     /* read as much as possible */
+    MM_ENTER_FUNC(BREAD);
     num_read = bread(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->tmp.buf) + buf_ptr->tmp.num_read, 
 	buf_ptr->tmp.len - buf_ptr->tmp.num_read);
+    MM_EXIT_FUNC(BREAD);
     if (num_read == SOCKET_ERROR)
     {
 	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
