@@ -122,6 +122,24 @@ There must be a configure option,
 \code{--disable-error-checking}\cfgindex{--disable-error-checking},  
 that prevents \code{HAVE_ERROR_CHECKING} from being defined.
 
+\subsubsection{Errors to test for}
+Most values should be tested to ensure that they are in-range.  For examples,
+tags must be nonnegative for sending (and nonnegative or
+\mpiconst{MPI_ANY_TAG} for receiving). 
+
+Question: Code the Rajeev wrote often included the following test on pointers:
+\begin{verbatim}
+if (ptr < (Ptr_type) 0) error
+\end{verbatim}
+This helps catch some common invalid pointers on many systems, but isn't
+correct for some other systems.  Should there be an optional
+pointer-validation test?  For example, the function
+\mpidfunc{MPID_Valid_pointer} would return true if the pointer was valid and
+false otherwise (possibly testing only for reading).  This could do anything
+from test against null to changing the \code{SIGSEGV} handler, attempting to
+read from the address, resetting the handler, and determining if the handler
+was invoked.  
+
 \subsubsection{Choosing Error Handlers and Classes}
 Error handlers should be chosen using the following decision tree:
 \begin{enumerate}
@@ -152,13 +170,19 @@ should call \mpidfunc{MPID_Abort} but specify \mpifunc{MPI_COMM_SELF} as the
 communicator.  
 
 \subsection{Memory Allocation}
-Avoid memory allocation wherever pratical.  Use \mpidfunc{MPID_Malloc}
+Avoid memory allocation wherever practical.  Use \mpidfunc{MPID_Malloc}
 etc. instead of \code{malloc}, as described in the ADI-3 manual
 \cite{adi3man}. 
 
 At normal exit from the MPI library in \mpifunc{MPI_Finalize}, the
 routine \mpidfunc{MPID_Trdump} must be called if the environment variable
 \code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
+
+Question: Should there be separate per-thread and per-process memory
+allocators? 
+
+Question: Should we use the same calling sequence as PETSc uses for the memory
+allocators?  This will make it easier to use the PETSc options database.
 
 \subsection{MPI Opaque Objects}
 
@@ -246,6 +270,11 @@ as
 Question:  How should deprecated routines be handled?  At the very
 least, their man pages should make clear that they are deprecated and
 what functions should be used instead.
+
+\subsection{Runtime Parameters}
+
+Question: Should we use the PETSc options database code or something similar
+to provide uniform access to runtime parameters?
 
 \subsection{Coding Practices}
 This section reviews some coding practices for the MPICH code.
@@ -526,13 +555,56 @@ This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
+\subsubsection{Info}
+There are two ways to handle \code{MPI_Info}.  One is to implement a general
+mechanism for handling key/value pairs, much like the code that is part of
+\file{mpich/src/misc2}.  The other is to implement only the defined keys that
+MPICH2 needs.  This is the approach used by IBM; in this model, the known keys
+are not stored; instead, the keys are mapped to a predefined set of values
+(e.g., to an enum).  This makes it easy to extract a value from a particular
+info object (the values can be preconverted into booleans or integers and
+stored in a small array); further, it provides a way (which is otherwise
+lacking) to 
+indicate which key values are known to the implementation.  
+The problem with restricting keys to those known to the implementation is it
+prevents using \code{MPI_Info} to pass information to another subsystem, such
+as to the process manager and allocator (through \code{MPI_COMM_SPAWN}). 
+Since \code{MPI_Info} is not used by any performance-critical functions
+(\code{MPI_Info} is only used in \code{MPI_Alloc_mem}, \code{MPI_Comm_accept},
+\code{MPI_Comm_connect}, 
+\code{MPI_Comm_spawn}, \code{MPI_Comm_spawn_multiple}, \code{MPI_File_delete},
+\code{MPI_File_open}, \code{MPI_File_set_view}, \code{MPI_Lookup_name},
+\code{MPI_Open_port}, \code{MPI_Publish_name}, 
+\code{MPI_Unpublish_name}, as well as the functions with \code{INFO} in their
+name), speed is not critical for the Info functions.
+
+Question: Since many of the predefined Info values encode either booleans or
+integers, do we want an internal routine such as \mpidfunc{MPID_Info_get_int}
+that returns an integer value if the key is found and has either an integer or
+boolean value?  Similarly, should there be an \mpidfunc{MPID_Info_set_int}?
+If we do this, do we want to cache the result in the Info item structure?
+
+Question: Do we want to make the key part of the structure, and set
+\mpiconst{MPI_MAX_KEY_VALUE} to a small value such as 32 (the minimum
+allowed)?  Doing so slightly simplifies the code to set and delete info
+values. 
+
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
+
 \subsubsection{\mpifunc{MPI_INFO_DELETE}}
+
 \subsubsection{\mpifunc{MPI_INFO_DUP}}
+Note that this routine must be thread-safe.  This requires info routines that
+modify the info structure or the list of key/value pairs to operate safely.
+Because none of the info routines are performance critical, and because none
+of these operations is very complex, using a single lock per \code{MPI_Info}
+or even a single lock for \emph{all} info objects is probably adequate.
+
 \subsubsection{\mpifunc{MPI_INFO_FREE}}
 \subsubsection{\mpifunc{MPI_INFO_GET}}
 \subsubsection{\mpifunc{MPI_INFO_GET_NKEYS}}
 \subsubsection{\mpifunc{MPI_INFO_GET_NTHKEY}}
+
 Question:  Do we want to have this return an error if the info list is 
 modified by another thread?  Is there any way to actually do this?
 
