@@ -22,7 +22,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     int p, j, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
     int i, bizcards_len, rank, kvs_namelen, recv_ints[2],
         send_ints[3];
-    int remote_comm_size=0, pgid_len, tmp_n_local_pgs;
+    int remote_comm_size=0, pgid_len, tmp_n_local_pgs, lpid;
     MPID_Comm *tmp_comm, *intercomm, *commself_ptr, *kvscomm_ptr;
     MPI_Comm kvscomm;
     char *key, *val, *bizcards=NULL, *bizcard_ptr;
@@ -640,7 +640,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         remote_pgs_array[i]->ref_count += remote_pgs_array[i]->size;
         for (p = 0; p < remote_pgs_array[i]->size; p++)
         {
-            MPIDI_CH3U_VC_init(&vc_table[p], p);
+            MPIDI_CH3U_Get_next_lpid(&lpid);
+            MPIDI_CH3U_VC_init(&vc_table[p], lpid);
             vc_table[p].ch.pg = remote_pgs_array[i];
             vc_table[p].ch.pg_rank = p;
             vc_table[p].ch.sendq_head = NULL;

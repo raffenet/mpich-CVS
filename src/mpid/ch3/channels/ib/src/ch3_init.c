@@ -136,6 +136,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     pg->vc_table = vc_table;
 
+    /* set MPIDI_Process->lpid_counter to pg_size */
+    MPIDI_Process.lpid_counter = pg_size;
+
     /* Initialize MPI_COMM_WORLD object */
     comm = MPIR_Process.comm_world;
     comm->rank = pg_rank;

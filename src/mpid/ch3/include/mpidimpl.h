@@ -21,6 +21,7 @@ typedef struct MPIDI_Process
     MPID_Request * recvq_posted_tail;
     MPID_Request * recvq_unexpected_head;
     MPID_Request * recvq_unexpected_tail;
+    int lpid_counter;
 #if !defined(MPICH_SINGLE_THREADED)
     MPID_Thread_lock_t recvq_mutex;
 #endif
@@ -59,6 +60,15 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIDI_CH3U_VC_init_seqnum_send(_vc);	\
     MPIDI_CH3U_VC_init_seqnum_recv(_vc);	\
 }
+
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_CH3U_Get_next_lpid(lpid_ptr_)           \
+{                                                     \
+    *(lpid_ptr_) = MPIDI_Process.lpid_counter++;      \
+}
+#else
+#error thread safe MPIDI_CH3U_Get_next_lpid() not implemented
+#endif
 
 
 /*
