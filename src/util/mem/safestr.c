@@ -33,7 +33,7 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
     register int i;
 
     i = (int)n;
-    while (i-- > 0 && *s_ptr) {
+    while (*s_ptr && i-- > 0) {
 	*d_ptr++ = *s_ptr++;
     }
     
