@@ -43,6 +43,7 @@
  * we see an executable.
  */
 static int getInt( int, int, char *[] );
+static int  GetIntValue( const char [], int );
 
 int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 		 int (*ProcessArg)( int, char *[], void *), void *extraData )
@@ -69,7 +70,7 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
     if (getenv( "MPIEXEC_DEBUG" )) debug = 1;
     /* Value is now in seconds */
     ptable->timeout_seconds = GetIntValue( "MPIEXEC_TIMEOUT", 60 );
-    if (debug) DBG_PRINTF( "timeout_seconds = %d\n", timeout_seconds );
+    if (debug) DBG_PRINTF( "timeout_seconds = %d\n", ptable->timeout_seconds );
 
     /* 
     if ( !getcwd( wdirname, MAXNAMELEN ) ) {
@@ -208,5 +209,30 @@ static int getInt( int argnum, int argc, char *argv[] )
 	mpiexec_usage( NULL );
 	/* Does not return */
     }
+    /* Keep compiler happy */
+    return 0;
 }
+
+/* 
+ * Try to get an integer value from the enviroment.  Return the default
+ * if the value is not available or invalid
+ */
+static int GetIntValue( const char name[], int default_val )
+{
+    const char *env_val;
+    int  val = default_val;
+
+    env_val = getenv( name );
+    if (env_val) {
+#ifdef HAVE_STRTOL
+	char *invalid_char; /* Used to detect invalid input */
+	val = (int) strtol( env_val, &invalid_char, 0 );
+	if (*invalid_char != '\0') val = default_val;
+#else
+	val = atoi( env_val );
+#endif
+    }
+    return val;
+}
+
 

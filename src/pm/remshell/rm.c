@@ -76,6 +76,17 @@ int mpiexecChooseHosts( ProcessTable_t *ptable )
 	if (!mt) {
 	    /* FIXME : needs an error message */
 	    /* By default, run on local host? */
+	    if (1) {
+		for (; i<ptable->nProcesses; i++) {
+		    if ((!arch || 
+			 (strcmp( ptable->table[i].arch, arch )== 0)) &&
+			!ptable->table[i].hostname) {
+			ptable->table[i].hostname = "localhost";
+			nNeeded--;
+		    }
+		}
+		continue;
+	    }
 	    return 1;
 	}
 	if (mt->nHosts == 0) {

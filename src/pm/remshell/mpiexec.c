@@ -84,9 +84,9 @@ int main( int argc, char *argv[] )
     int fdPMI=-1, portnum;             /* fd and port for PMI messages */
     char myname[MAX_HOST_NAME+1];
 
-    processTable.maxProcesses = MAXPROCESSES;
-    processTable.nProcesses   = 0;
-    processTable.nActive      = 0;
+    processTable.maxProcesses	 = MAXPROCESSES;
+    processTable.nProcesses	 = 0;
+    processTable.nActive	 = 0;
     processTable.timeout_seconds = -1;
 
     /* Process the command line arguments to build the table of 
@@ -95,7 +95,7 @@ int main( int argc, char *argv[] )
     if (rc) return rc;
 
     if (processTable.nProcesses == 0) {
-	MPIU_Error_printf( "No program specified" );
+	MPIU_Error_printf( "No program specified\n" );
 	return 1;
     }
 
@@ -106,7 +106,7 @@ int main( int argc, char *argv[] )
     /* Determine the hosts to run on */
     rc = mpiexecChooseHosts( &processTable );
     if (rc) {
-	MPIU_Error_printf( "Unable to choose hosts" );
+	MPIU_Error_printf( "Unable to choose hosts\n" );
 	return 1;
     }
 
@@ -695,7 +695,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 		   understand how to handle */
 		rc = mpiexecCloseProcess( handlearray[j].fd, 
 					  handlearray[j].processIdx,
-					  handlearray[j].extraData );
+					  ptable );
 		resetPollarray = 1;
 	    }
 	}
@@ -708,6 +708,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	   is not accepting input (don't read any more) */
 	
     }
+    return 0;
 }
 
 /* This routine sets up the pollarray, given the process table. */
@@ -715,6 +716,7 @@ int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[],
 			   fdHandle_t handlearray[] )
 {
     int j, i;
+    int nprocess = ptable->nProcesses;
 
     /* 
      * Fill in poll array.  Initialize all of the fds.
@@ -770,13 +772,13 @@ int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[],
 #if 0
 	/* Stdin TO the process (if enabled) */
 	if (ptable->table[i].fdStdin >= 0) {
-	    pollarray[j].fd		  = ptable->table[i].fdStdin;
-	    pollarray[j].events	  = POLLOUT;
-	    handlearray[j].fd	  = pollarray[j].fd;
+	    pollarray[j].fd	      = ptable->table[i].fdStdin;
+	    pollarray[j].events	      = POLLOUT;
+	    handlearray[j].fd	      = pollarray[j].fd;
 	    handlearray[j].processIdx = i;
-	    handlearray[j].handleIO	  = mpiexecHandleStdin;
+	    handlearray[j].handleIO   = mpiexecHandleStdin;
 	    handlearray[j].extraData  = &ptable->table[i].stdinBuf;
-	    handlearray[j].state	  = 0;
+	    handlearray[j].state      = 0;
 	    j++;
 	}
 #endif

@@ -51,13 +51,14 @@
 
 
 static ProcessTable_t *ptable = 0;
+static int killOnAbort = 0;
 
 /* Call this routine to initialize the sigchild and set the process table
    pointer */
 void initPtableForSigchild( ProcessTable_t *t )
 {
     ptable = t;
-    setup_sigchild( void );
+    setup_sigchild( );
 }
 
 /*
@@ -114,7 +115,7 @@ int handle_sigchild( int sig )
 		    break;
 		}
 	    }
-	    if (i == numprocs) {
+	    if (i == ptable->nProcesses) {
 		/* Did not find the matching pid */
 		;
 	    }
