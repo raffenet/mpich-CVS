@@ -2037,8 +2037,7 @@ int MPIR_Nest_value( void );
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
-void MPIR_Keyval_set_fortran( int );
-void MPIR_Keyval_set_fortran90( int );
+/* Fortran keyvals are set with functions in mpi_f77interface.h */
 #ifdef HAVE_CXX_BINDING
 extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 extern void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
@@ -2061,6 +2060,13 @@ int MPIR_Group_release(MPID_Group *group_ptr);
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);
 int MPIR_Request_get_error(MPID_Request *);
+
+/* ------------------------------------------------------------------------- */
+/* Prototypes for language-specific routines, such as routines to set
+   Fortran keyval attributes */
+#ifdef HAVE_FORTRAN_BINDING
+#include "mpi_f77interface.h"
+#endif
 
 /* ADI Bindings */
 /*@
