@@ -93,6 +93,8 @@ opprod_SOURCES = opprod.c
 opprod_LDADD = ../util/mtest.o
 exscan_SOURCES = exscan.c
 exscan_LDADD = ../util/mtest.o
+exscan2_SOURCES = exscan2.c
+exscan2_LDADD = ../util/mtest.o
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE))

@@ -27,6 +27,7 @@ redscat 4
 redscat 6
 scantst 4
 exscan 10
+exscan2 5
 scattern 4
 scatterv 4
 icbcast 4
