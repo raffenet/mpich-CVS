@@ -180,6 +180,9 @@ def collect_args(args):
         garg = args[argidx]
 	if garg == '-gnp':    # alias for '-gn'
 	    garg = '-gn'
+	if garg == '-gdba':
+	    print '-gdba must appear alone with jobid'
+            exit(-1)
         if validGlobalArgs[garg] > 0:
             if garg == '-genv':
                 globalArgs['-genv'][args[argidx+1]] = args[argidx+2]
