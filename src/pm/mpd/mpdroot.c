@@ -11,13 +11,8 @@ int main(int argc, char *argv[])
     int i, rc, sock;
     char env_unix_socket[NAME_LEN];
     struct sockaddr_un sa;
-    char console_name[NAME_LEN], short_pgmname[NAME_LEN], cmd[NAME_LEN], *s;
+    char console_name[NAME_LEN], cmd[NAME_LEN];
     struct passwd *pwent;
-
-    if ((s = strrchr(argv[0],'/')) != NULL)    /* DOES contain a  /  */
-        strncpy(short_pgmname,s+1,NAME_LEN);
-    else
-        strncpy(short_pgmname,argv[0],NAME_LEN);
 
     if ((pwent = getpwuid(getuid())) == NULL)    /* for real id */
     {
