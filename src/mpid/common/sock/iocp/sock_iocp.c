@@ -1510,7 +1510,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		{
 		    if (num_bytes == 0)
 		    {
-			if ((sock->state & SOCK_READING))// && sock-sock != INVALID_SOCKET)
+			if ((sock->state & SOCK_READING))/* && sock-sock != INVALID_SOCKET) */
 			{
 			    MPIU_DBG_PRINTF(("EOF with posted read on sock %d\n", sock->sock));
 			    out->op_type = SOCK_OP_READ;
@@ -1522,7 +1522,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 			    return SOCK_SUCCESS;
 			}
-			if ((sock->state & SOCK_WRITING))// && sock->sock != INVALID_SOCKET)
+			if ((sock->state & SOCK_WRITING))/* && sock->sock != INVALID_SOCKET) */
 			{
 			    MPIU_DBG_PRINTF(("EOF with posted write on sock %d\n", sock->sock));
 			    out->op_type = SOCK_OP_WRITE;
