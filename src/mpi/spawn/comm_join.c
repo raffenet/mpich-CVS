@@ -141,7 +141,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     MPIU_CHKLMEM_MALLOC(remote_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "remote port name");
     
     mpi_errno = NMPI_Open_port(MPI_INFO_NULL, local_port);
-    MPIU_ERR_CHKANDJMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**openportfailed");
+    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**openportfailed");
 
     err = fd_send(fd, local_port, MPI_MAX_PORT_NAME);
     MPIU_ERR_CHKANDJUMP1((err != 0), mpi_errno, MPI_ERR_INTERN, "**join_send", "**join_send %d", err);
