@@ -89,6 +89,13 @@ int main( int argc, char *argv[] )
 		errs++;
 		printf( "Nedges = %d, should be %d\n", nedges, 2*wsize );
 	    }
+	    outindex = (int*)malloc(wsize * sizeof(int) );
+	    outedges = (int*)malloc(wsize * 2 * sizeof(int) );
+	    if (!outindex || !outedges) {
+		printf( "Unable to allocate %d words for outindex or outedges\n", 
+			3 * wsize );
+		MPI_Abort( MPI_COMM_WORLD, 1 );
+	    }
 	    
 	    MPI_Graph_get( comm2, wsize, 2*wsize, outindex, outedges );
 	    for (i=0; i<wsize; i++) {
@@ -105,6 +112,8 @@ int main( int argc, char *argv[] )
 		    errs++;
 		}
 	    }
+	    free( outindex );
+	    free( outedges );
 	}
 	free( index );
 	free( edges );
