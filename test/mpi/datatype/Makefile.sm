@@ -37,6 +37,9 @@ getpartelm_LDADD = ../util/mtest.o
 tresized_SOURCES = tresized.c
 tresized_LDADD = ../util/mtest.o 
 
+tmatchsize_SOURCES = tmatchsize.c
+tmatchsize_LDADD = ../util/mtest.o 
+
 tresized2_SOURCES = tresized2.c
 tresized2_LDADD = ../util/mtest.o 
 		 

@@ -9,3 +9,6 @@ struct-pack 1
 typename 1
 zeroparms 1
 getpartelm 2
+tresized 2
+tresized2 2
+tmatchsize 1
