@@ -5,6 +5,175 @@
  */
 
 #include "smpd.h"
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
+
+static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_code)
+{
+    int result;
+    smpd_command_t *cmd_ptr;
+    smpd_process_group_t *pg;
+    int i;
+
+    smpd_enter_fn("smpd_do_abort_job");
+    pg = smpd_process.pg_list;
+    while (pg)
+    {
+	if (strcmp(pg->kvs, name) == 0)
+	{
+	    if (rank >= pg->num_procs)
+	    {
+		smpd_err_printf("invalid abort_job command - rank %d out of range, number of processes = %d", rank, pg->num_procs);
+		smpd_exit_fn("smpd_do_abort_job");
+		return SMPD_FAIL;
+	    }
+	    break;
+	}
+	pg = pg->next;
+    }
+    if (pg == NULL)
+    {
+	smpd_err_printf("no process group structure found to match the abort_job command: pg <%s>\n", name);
+	smpd_exit_fn("smpd_do_abort_job");
+	return SMPD_FAIL;
+    }
+    /* save the abort message */
+    pg->processes[rank].errmsg = MPIU_Strdup(error_str);
+    if (pg->aborted == SMPD_TRUE)
+    {
+	smpd_dbg_printf("job already aborted.\n");
+	smpd_exit_fn("smpd_do_abort_job");
+	return SMPD_SUCCESS;
+    }
+
+    smpd_process.use_abort_exit_code = SMPD_TRUE;
+    smpd_process.abort_exit_code = exit_code;
+
+    pg->aborted = SMPD_TRUE;
+    pg->num_pending_suspends = 0;
+    for (i=0; i<pg->num_procs; i++)
+    {
+	if (!pg->processes[i].exited)
+	{
+	    /* create the suspend command */
+	    result = smpd_create_command("suspend", 0, pg->processes[i].node_id, SMPD_TRUE, &cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a suspend command.\n");
+		goto do_abort_failure;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "name", name);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the kvs name to the suspend command: '%s'\n", name);
+		goto do_abort_failure;
+	    }
+	    result = smpd_add_command_int_arg(cmd_ptr, "rank", i);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the rank %d to the suspend command\n", i);
+		goto do_abort_failure;
+	    }
+	    result = smpd_add_command_int_arg(cmd_ptr, "exit_code", exit_code);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the exit_code %d to the suspend command\n", exit_code);
+		goto do_abort_failure;
+	    }
+	    if (pg->processes[i].ctx_key[0] != '\0')
+	    {
+		result = smpd_add_command_arg(cmd_ptr, "ctx_key", pg->processes[i].ctx_key);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the ctx_key to the suspend command: '%s'\n", pg->processes[i].ctx_key);
+		    goto do_abort_failure;
+		}
+
+		/* send the suspend command */
+		result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a write for the suspend command: rank %d\n", rank);
+		    goto do_abort_failure;
+		}
+	    }
+	    else
+	    {
+		pg->processes[i].suspend_cmd = cmd_ptr;
+	    }
+	    pg->num_pending_suspends++;
+	}
+    }
+
+    smpd_exit_fn("smpd_do_abort_job");
+    return SMPD_SUCCESS;
+do_abort_failure:
+    smpd_exit_fn("smpd_do_abort_job");
+    return SMPD_FAIL;
+}
+
+int smpd_abort_job(char *name, int rank, char *fmt, ...)
+{
+    int result;
+    char error_str[2048] = "";
+    smpd_command_t *cmd_ptr;
+    smpd_context_t *context;
+    va_list list;
+
+    smpd_enter_fn("smpd_abort_job");
+
+    va_start(list, fmt);
+    vsnprintf(error_str, 2048, fmt, list);
+    va_end(list);
+
+    smpd_command_destination(0, &context);
+    if (context == NULL)
+    {
+	result = smpd_do_abort_job(name, rank, error_str, 123);
+	smpd_exit_fn("smpd_abort_job");
+	return result;
+    }
+
+    result = smpd_create_command("abort_job", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create an abort_job command.\n");
+	smpd_exit_fn("smpd_abort_job");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(cmd_ptr, "name", name);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("Unable to add the job name to the abort_job command.\n");
+	smpd_exit_fn("smpd_abort_job");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(cmd_ptr, "rank", rank);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("Unable to add the rank to the abort_job command.\n");
+	smpd_exit_fn("smpd_abort_job");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(cmd_ptr, "error", error_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("Unable to add the error string to the abort_job command.\n");
+	smpd_exit_fn("smpd_abort_job");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("sending abort_job command to %s context: \"%s\"\n", smpd_get_context_str(context), cmd_ptr->cmd);
+    result = smpd_post_write_command(context, cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the abort_job command to the %s context.\n", smpd_get_context_str(context));
+	smpd_exit_fn("smpd_abort_job");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_abort_job");
+    return SMPD_SUCCESS;
+}
 
 int smpd_handle_stdin_command(smpd_context_t *context)
 {
@@ -196,14 +365,61 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 {
     int result;
     smpd_command_t *cmd_ptr;
-    smpd_launch_node_t *launch_node_ptr;
+    smpd_launch_node_t *launch_node_ptr, *launch_iter;
     smpd_map_drive_node_t *map_iter;
     char drive_map_str[SMPD_MAX_EXE_LENGTH];
+    smpd_process_group_t *pg;
+    int i;
 
     smpd_enter_fn("smpd_launch_processes");
+
+    launch_node_ptr = launch_list;
+    smpd_dbg_printf("creating a process group of size %d on node %d called %s\n", launch_node_ptr->nproc, smpd_process.id, kvs_name);
+    /* initialize a new process group structure */
+    pg = (smpd_process_group_t*)malloc(sizeof(smpd_process_group_t));
+    if (pg == NULL)
+    {
+	smpd_err_printf("unable to allocate memory for a process group structure.\n");
+	goto launch_failure;
+    }
+    pg->aborted = SMPD_FALSE;
+    pg->any_init_received = SMPD_FALSE;
+    pg->any_noinit_process_exited = SMPD_FALSE;
+    strncpy(pg->kvs, kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    pg->num_procs = launch_node_ptr->nproc;
+    pg->processes = (smpd_exit_process_t*)malloc(launch_node_ptr->nproc * sizeof(smpd_exit_process_t));
+    if (pg->processes == NULL)
+    {
+	smpd_err_printf("unable to allocate an array of %d process exit structures.\n", launch_node_ptr->nproc);
+	goto launch_failure;
+    }
+    launch_iter = launch_node_ptr;
+    for (i=0; i<launch_node_ptr->nproc; i++)
+    {
+	pg->processes[i].ctx_key[0] = '\0';
+	pg->processes[i].errmsg = NULL;
+	pg->processes[i].exitcode = -1;
+	pg->processes[i].exited = SMPD_FALSE;
+	pg->processes[i].finalize_called = SMPD_FALSE;
+	pg->processes[i].init_called = SMPD_FALSE;
+	if (launch_iter == NULL)
+	{
+	    smpd_err_printf("number of launch nodes does not match number of processes: %d < %d\n", i, launch_node_ptr->nproc);
+	    goto launch_failure;
+	}
+	pg->processes[i].node_id = launch_iter->host_id;
+	MPIU_Strncpy(pg->processes[i].host, launch_iter->hostname, SMPD_MAX_HOST_LENGTH);
+	pg->processes[i].suspended = SMPD_FALSE;
+	pg->processes[i].suspend_cmd = NULL;
+	launch_iter = launch_iter->next;
+    }
+    /* add the process group to the global list */
+    pg->next = smpd_process.pg_list;
+    smpd_process.pg_list = pg;
+
     /* launch the processes */
     smpd_dbg_printf("launching the processes.\n");
-    launch_node_ptr = /*smpd_process.*/launch_list;
+    launch_node_ptr = launch_list;
     while (launch_node_ptr)
     {
 	/* create the launch command */
@@ -276,16 +492,16 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	    smpd_err_printf("unable to add the nproc field to the launch command: %d\n", launch_node_ptr->nproc);
 	    goto launch_failure;
 	}
-	result = smpd_add_command_arg(cmd_ptr, "k", /*smpd_process.*/kvs_name);
+	result = smpd_add_command_arg(cmd_ptr, "k", kvs_name);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", /*smpd_process.*/kvs_name);
+	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", kvs_name);
 	    goto launch_failure;
 	}
-	result = smpd_add_command_arg(cmd_ptr, "kd", /*smpd_process.*/domain_name);
+	result = smpd_add_command_arg(cmd_ptr, "kd", domain_name);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to add the domain name('%s') to the launch command\n", /*smpd_process.*/domain_name);
+	    smpd_err_printf("unable to add the domain name('%s') to the launch command\n", domain_name);
 	    goto launch_failure;
 	}
 	map_iter = launch_node_ptr->map_list;
@@ -344,6 +560,10 @@ int smpd_handle_result(smpd_context_t *context)
     DWORD dwThreadID;
     SOCKET hWrite;
 #endif
+    char pg_id[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    char pg_ctx[100] = "";
+    int pg_rank = -1;
+    smpd_process_group_t *pg;
 
     smpd_enter_fn("handle_result");
 
@@ -420,6 +640,19 @@ int smpd_handle_result(smpd_context_t *context)
 		    smpd_process.nproc_launched++;
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "pg_id", pg_id, SMPD_MAX_DBS_NAME_LEN);
+			MPIU_Str_get_int_arg(context->read_cmd.cmd, "pg_rank", &pg_rank);
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "pg_ctx", pg_ctx, 100);
+			pg = smpd_process.pg_list;
+			while (pg)
+			{
+			    if (strcmp(pg->kvs, pg_id) == 0)
+			    {
+				MPIU_Strncpy(pg->processes[pg_rank].ctx_key, pg_ctx, 100);
+				break;
+			    }
+			    pg = pg->next;
+			}
 			if (context->spawn_context)
 			{
 			    smpd_dbg_printf("successfully spawned: '%s'\n", iter->cmd);
@@ -440,7 +673,7 @@ int smpd_handle_result(smpd_context_t *context)
 				result = smpd_post_write_command(context, context->spawn_context->result_cmd);
 				if (result != SMPD_SUCCESS)
 				{
-				    smpd_err_printf("unable to post a write of the connect command.\n");
+				    smpd_err_printf("unable to post a write of the spawn result command.\n");
 				    smpd_exit_fn("smpd_handle_result");
 				    return result;
 				}
@@ -520,6 +753,17 @@ int smpd_handle_result(smpd_context_t *context)
 				}
 			    }
 			}
+			if (pg && pg->processes[pg_rank].suspend_cmd != NULL)
+			{
+			    /* send the delayed suspend command */
+			    result = smpd_post_write_command(context, pg->processes[pg_rank].suspend_cmd);
+			    if (result != SMPD_SUCCESS)
+			    {
+				smpd_err_printf("unable to post a write of the suspend command.\n");
+				smpd_exit_fn("smpd_handle_result");
+				return result;
+			    }
+			}
 		    }
 		    else
 		    {
@@ -594,6 +838,11 @@ int smpd_handle_result(smpd_context_t *context)
 		    ret_val = SMPD_DBS_RETURN;
 		}
 		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
+		{
+		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
+		    ret_val = SMPD_DBS_RETURN;
+		}
+		else if ((strcmp(iter->cmd_str, "init") == 0) || (strcmp(iter->cmd_str, "finalize") == 0))
 		{
 		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
 		    ret_val = SMPD_DBS_RETURN;
@@ -724,6 +973,11 @@ int smpd_handle_result(smpd_context_t *context)
 			ret_val = SMPD_ABORT;
 		    }
 		    */
+		}
+		else if (strcmp(iter->cmd_str, "suspend") == 0)
+		{
+		    smpd_dbg_printf("suspend command result returned: %s\n", str);
+		    ret_val = smpd_handle_suspend_result(iter, str);
 		}
 		else
 		{
@@ -1257,6 +1511,27 @@ int smpd_handle_launch_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "pg_id", process->kvs_name);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the pg_id field to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "pg_rank", process->rank);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the pg_rank field to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "pg_ctx", process->id);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the pg_ctx field to the result command in response to launch command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
@@ -1918,7 +2193,12 @@ int smpd_handle_stat_command(smpd_context_t *context)
 		smpd_snprintf_update(&str, &len, " session            = %s\n", iter->session);
 		smpd_snprintf_update(&str, &len, " session_header     = '%s'\n", iter->session_header);
 		smpd_snprintf_update(&str, &len, " smpd_pwd           = %s\n", iter->smpd_pwd);
+#ifdef HAVE_WINDOWS_H
+		smpd_snprintf_update(&str, &len, " wait.hProcess      = %p\n", iter->wait.hProcess);
+		smpd_snprintf_update(&str, &len, " wait.hThread       = %p\n", iter->wait.hThread);
+#else
 		smpd_snprintf_update(&str, &len, " wait               = %d\n", (int)(iter->wait));
+#endif
 		smpd_snprintf_update(&str, &len, " wait_list          = %p\n", iter->wait_list);
 		smpd_snprintf_update(&str, &len, " process            = %p\n", iter->process);
 		if (iter->process)
@@ -1999,6 +2279,334 @@ int smpd_handle_abort_command(smpd_context_t *context)
 
     smpd_exit_fn("smpd_handle_abort_command");
     return SMPD_EXIT;
+}
+
+int smpd_handle_abort_job_command(smpd_context_t *context)
+{
+    char error_str[2048];
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    smpd_command_t *cmd;
+    int rank;
+    int result;
+    int exit_code;
+
+    smpd_enter_fn("smpd_handle_abort_job_command");
+
+    cmd = &context->read_cmd;
+    if (MPIU_Str_get_string_arg(cmd->cmd, "error", error_str, 2048) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("invalid abort_job command, no error field in the command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_abort_job_command");
+	return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("invalid abort_job command, no name field in the command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_abort_job_command");
+	return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("invalid abort_job command, no rank field in the command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_abort_job_command");
+	return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("invalid abort_job command, no exit_code field in the command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_abort_job_command");
+	return SMPD_FAIL;
+    }
+
+    result = smpd_do_abort_job(name, rank, error_str, exit_code);
+
+    smpd_exit_fn("smpd_handle_abort_job_command");
+    return result;
+}
+
+int smpd_handle_init_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
+    char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
+    char ctx_key[100];
+    char *result_str;
+    int rank, size, node_id;
+    smpd_process_group_t *pg;
+
+    smpd_enter_fn("smpd_handle_init_command");
+
+    cmd = &context->read_cmd;
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the init command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for the init command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+    /* copy the ctx_key for pmi control channel lookup */
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+
+    /* do init stuff */
+    if ((get_name_key_value(cmd->cmd, name, key, value) != SMPD_SUCCESS) || (MPIU_Str_get_int_arg(cmd->cmd, "node_id", &node_id) != MPIU_STR_SUCCESS))
+    {
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_init_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_init_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_SUCCESS;
+    }
+
+    rank = atoi(key);
+    size = atoi(value);
+    if (rank < 0 || size < 1)
+    {
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid init command.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_init_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_init_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_SUCCESS;
+    }
+    smpd_dbg_printf("init: %d:%d:%s\n", rank, size, name);
+    pg = smpd_process.pg_list;
+    while (pg)
+    {
+	if (strcmp(pg->kvs, name) == 0)
+	{
+	    if (rank >= pg->num_procs)
+	    {
+		sprintf(value, "%s - rank %d out of range, number of processes = %d", SMPD_FAIL_STR, rank, pg->num_procs);
+		result_str = value;
+		break;
+	    }
+	    pg->any_init_received = SMPD_TRUE;
+	    pg->processes[rank].init_called = SMPD_TRUE;
+	    pg->processes[rank].node_id = node_id;
+	    memcpy(pg->processes[rank].ctx_key, ctx_key, sizeof(pg->processes[rank].ctx_key));
+	    if (pg->any_noinit_process_exited == SMPD_TRUE)
+	    {
+		result_str = SMPD_FAIL_STR" - init called when another process has exited without calling init";
+	    }
+	    else
+	    {
+		result_str = SMPD_SUCCESS_STR;
+	    }
+	    break;
+	}
+	pg = pg->next;
+    }
+    if (pg == NULL)
+    {
+	smpd_err_printf("init command received but no process group structure found to match it: pg <%s>\n", name);
+	result_str = SMPD_FAIL_STR" - init command received but no process group structure fount to match it.";
+    }
+
+    /* send the reply */
+    smpd_dbg_printf("sending reply to init command '%s'.\n", cmd->cmd);
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for the init command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	smpd_exit_fn("smpd_handle_init_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_init_command");
+    return SMPD_SUCCESS;
+}
+
+int smpd_handle_finalize_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
+    char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
+    char ctx_key[100];
+    char *result_str;
+    int rank;
+    smpd_process_group_t *pg;
+
+    smpd_enter_fn("smpd_handle_finalize_command");
+
+    cmd = &context->read_cmd;
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the finalize command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for the finalize command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+    /* copy the ctx_key for pmi control channel lookup */
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+
+    /* do finalize stuff */
+    if (get_name_key_value(cmd->cmd, name, key, NULL) != SMPD_SUCCESS)
+    {
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid finalize command.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for finalize command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_finalize_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_finalize_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_SUCCESS;
+    }
+    rank = atoi(key);
+    if (rank < 0)
+    {
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid finalize command.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for finalize command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_finalize_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_finalize_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_SUCCESS;
+    }
+    smpd_dbg_printf("finalize: %d:%s\n", rank, name);
+    pg = smpd_process.pg_list;
+    while (pg)
+    {
+	if (strcmp(pg->kvs, name) == 0)
+	{
+	    if (rank >= pg->num_procs)
+	    {
+		sprintf(value, "%s - rank %d out of range, number of processes = %d", SMPD_FAIL_STR, rank, pg->num_procs);
+		result_str = value;
+		break;
+	    }
+	    pg->processes[rank].finalize_called = SMPD_TRUE;
+	    result_str = SMPD_SUCCESS_STR;
+	    break;
+	}
+	pg = pg->next;
+    }
+    if (pg == NULL)
+    {
+	smpd_err_printf("finalize command received but no process group structure found to match it: pg <%s>\n", name);
+	result_str = SMPD_FAIL_STR" - finalize command received but no process group structure fount to match it.";
+    }
+
+    /* send the reply */
+    smpd_dbg_printf("sending reply to finalize command '%s'.\n", cmd->cmd);
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for the finalize command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	smpd_exit_fn("smpd_handle_finalize_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_finalize_command");
+    return SMPD_SUCCESS;
 }
 
 int smpd_handle_validate_command(smpd_context_t *context)
@@ -2665,6 +3273,463 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_exit_command(smpd_context_t *context)
+{
+    smpd_command_t *cmd;
+    int exitcode, iproc;
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    smpd_process_group_t *pg;
+    int i, print;
+
+    cmd = &context->read_cmd;
+
+    if (MPIU_Str_get_int_arg(cmd->cmd, "code", &exitcode) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_exit_command");
+	return SMPD_FAIL;
+    }
+    if (exitcode != 0)
+    {
+	/* mpiexec will return the last non-zero exit code returned by a process. */
+	smpd_process.mpiexec_exit_code = exitcode;
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &iproc) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_exit_command");
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "kvs", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no kvs in exit command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_exit_command");
+	return SMPD_FAIL;
+    }
+    pg = smpd_process.pg_list;
+    while (pg)
+    {
+	if (strcmp(pg->kvs, name) == 0)
+	{
+	    if (iproc < 0 || iproc >= pg->num_procs)
+	    {
+		smpd_err_printf("received exit code for process out of range: process %d not in group of size %d.\n", iproc, pg->num_procs);
+		smpd_exit_fn("smpd_handle_exit_command");
+		return SMPD_FAIL;
+	    }
+	    if (pg->processes[iproc].exited)
+	    {
+		smpd_err_printf("received exit code for process %d more than once.\n", iproc);
+		smpd_exit_fn("smpd_handle_exit_command");
+		return SMPD_FAIL;
+	    }
+	    smpd_dbg_printf("saving exit code: rank %d, exitcode %d, pg <%s>\n", iproc, exitcode, name);
+	    pg->processes[iproc].exited = SMPD_TRUE;
+	    pg->processes[iproc].exitcode = exitcode;
+	    if (pg->processes[iproc].init_called && !pg->processes[iproc].finalize_called && !pg->processes[iproc].suspended)
+	    {
+		/* process exited after init but before finalize */
+		smpd_abort_job(pg->kvs, iproc, "process %d exited without calling finalize", iproc);
+	    }
+	    if (!pg->processes[iproc].init_called && !pg->processes[iproc].suspended)
+	    {
+		smpd_dbg_printf("process exited without calling init.\n");
+		/* this process never called init or finalize, check to make sure no other process has called init */
+		if (pg->any_init_received == SMPD_TRUE)
+		{
+		    smpd_abort_job(pg->kvs, iproc, "process %d exited without calling init while other processes have called init", iproc);
+		}
+		else
+		{
+		    pg->any_noinit_process_exited = SMPD_TRUE;
+		    smpd_dbg_printf("process exited before anyone has called init.\n");
+		}
+	    }
+	    break;
+	}
+	pg = pg->next;
+    }
+
+    if (pg && pg->aborted)
+    {
+	print = 1;
+	for (i=0; i<pg->num_procs; i++)
+	{
+	    if (pg->processes[i].exited == SMPD_FALSE)
+		print = 0;
+	}
+	if (print)
+	{
+	    if (smpd_process.verbose_abort_output)
+	    {
+		printf("\njob aborted:\n");
+		printf("rank: node: exit code[: error message]\n");
+		for (i=0; i<pg->num_procs; i++)
+		{
+		    printf("%d: %s: %d", i, pg->processes[i].host, pg->processes[i].exitcode);
+		    if (pg->processes[i].errmsg != NULL)
+		    {
+			printf(": %s", pg->processes[i].errmsg);
+		    }
+		    printf("\n");
+		}
+	    }
+	    else
+	    {
+		for (i=0; i<pg->num_procs; i++)
+		{
+		    if (pg->processes[i].errmsg != NULL)
+		    {
+			printf("%s\n", pg->processes[i].errmsg);
+		    }
+		}
+	    }
+	    fflush(stdout);
+	}
+    }
+    else if (smpd_process.output_exit_codes)
+    {
+	if (pg)
+	{
+	    print = 1;
+	    for (i=0; i<pg->num_procs; i++)
+	    {
+		if (pg->processes[i].exited == SMPD_FALSE)
+		    print = 0;
+	    }
+	    if (print)
+	    {
+		printf("rank: node: exit code\n");
+		for (i=0; i<pg->num_procs; i++)
+		{
+		    printf("%d: %s: %d\n", i, pg->processes[i].host, pg->processes[i].exitcode);
+		}
+		fflush(stdout);
+	    }
+	}
+	else
+	{
+	    printf("process %d exited with exit code %d\n", iproc, exitcode);
+	    fflush(stdout);
+	}
+    }
+
+    smpd_process.nproc_exited++;
+    if (smpd_process.nproc == smpd_process.nproc_exited)
+    {
+	smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
+	smpd_exit_fn("smpd_handle_exit_command");
+	return SMPD_EXIT;
+    }
+    smpd_exit_fn("smpd_handle_exit_command");
+    return SMPD_SUCCESS;
+}
+
+int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
+{
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    int rank, i, exit_code;
+    smpd_process_group_t *pg;
+    int result;
+    smpd_command_t *cmd_ptr;
+
+    smpd_enter_fn("smpd_handle_suspend_result");
+
+    /* get the rank and pg name out of the command */
+    if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no kvs in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_result");
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no rank in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_result");
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no exit code in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_result");
+	return SMPD_FAIL;
+    }
+    /* look up the pg */
+    pg = smpd_process.pg_list;
+    while (pg)
+    {
+	if (strcmp(pg->kvs, name) == 0)
+	{
+	    break;
+	}
+	pg = pg->next;
+    }
+    if (pg == NULL)
+    {
+	smpd_err_printf("received suspend result for process with no matching process group: rank %d, name <%s>\n", rank, name);
+	smpd_exit_fn("smpd_handle_suspend_result");
+	return SMPD_FAIL;
+    }
+
+    /* save whether the suspend was successful or not */
+    pg->processes[rank].suspended = (strcmp(result_str, SMPD_SUCCESS_STR) == 0) ? SMPD_TRUE : SMPD_FALSE;
+
+    /* decrement then num_outstanding_suspends */
+    pg->num_pending_suspends--;
+    if (rank < 0 || rank >= pg->num_procs)
+    {
+	smpd_err_printf("received suspend result for process out of range: process %d not in group of size %d.\n", rank, pg->num_procs);
+	smpd_exit_fn("smpd_handle_suspend_result");
+	return SMPD_FAIL;
+    }
+
+    /* if num_outstanding goes to zero, send kill commands */
+    if (pg->num_pending_suspends == 0)
+    {
+	for (i=0; i<pg->num_procs; i++)
+	{
+	    if (pg->processes[i].exited)
+	    {
+		smpd_dbg_printf("suspended rank %d already exited, no need to kill it.\n", i);
+	    }
+	    else
+	    {
+		/* create the kill command */
+		result = smpd_create_command("kill", smpd_process.id, pg->processes[i].node_id, SMPD_FALSE, &cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to create a kill command.\n");
+		    smpd_exit_fn("smpd_handle_suspend_result");
+		    return SMPD_FAIL;
+		}
+		result = smpd_add_command_int_arg(cmd_ptr, "exit_code", exit_code);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the exit code %d to the kill command\n", exit_code);
+		    smpd_exit_fn("smpd_handle_suspend_result");
+		    return SMPD_FAIL;
+		}
+		result = smpd_add_command_arg(cmd_ptr, "ctx_key", pg->processes[i].ctx_key);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the ctx_key to the kill command: '%s'\n", pg->processes[i].ctx_key);
+		    smpd_exit_fn("smpd_handle_suspend_result");
+		    return SMPD_FAIL;
+		}
+
+		/* send the kill command */
+		result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a write for the kill command: rank %d\n", i);
+		    smpd_exit_fn("smpd_handle_suspend_result");
+		    return SMPD_FAIL;
+		}
+	    }
+	}
+    }
+
+    smpd_exit_fn("smpd_handle_suspend_result");
+    return SMPD_SUCCESS;
+}
+
+int smpd_handle_suspend_command(smpd_context_t *context)
+{
+    smpd_command_t *cmd, *temp_cmd;
+    char ctx_key[100];
+    int process_id;
+    smpd_context_t *pmi_context;
+    smpd_process_t *piter;
+    int result;
+    char error_str[1024];
+
+    smpd_enter_fn("smpd_handle_suspend_command");
+
+    cmd = &context->read_cmd;
+    
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the init command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for the init command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_FAIL;
+    }
+
+    /* get the ctx_key of the process to be suspended */
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no ctx_key in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_FAIL;
+    }
+
+    process_id = atoi(ctx_key);
+    pmi_context = NULL;
+    piter = smpd_process.process_list;
+    while (piter)
+    {
+	if (piter->id == process_id)
+	{
+	    pmi_context = piter->pmi;
+	    break;
+	}
+	piter = piter->next;
+    }
+    if (pmi_context == NULL)
+    {
+	smpd_err_printf("received suspend command for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - no matching pmi context.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_SUCCESS;
+    }
+
+    if (pmi_context->process == NULL)
+    {
+	smpd_err_printf("received suspend command for a pmi context that does not have a process structure.\n");
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - no process in the pmi context.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_SUCCESS;
+    }
+    
+    result = smpd_suspend_process(pmi_context->process);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to suspend process.\n");
+	snprintf(error_str, 1024, SMPD_FAIL_STR" - unable to suspend process, error %d", result);
+	result = smpd_add_command_arg(temp_cmd, "result", error_str);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+    }
+    else
+    {
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("smpd_handle_suspend_command");
+	    return SMPD_FAIL;
+	}
+    }
+
+    /* return result */
+    smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	smpd_exit_fn("smpd_handle_suspend_command");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_handle_suspend_command");
+    return SMPD_SUCCESS;
+}
+
+int smpd_handle_kill_command(smpd_context_t *context)
+{
+    smpd_command_t *cmd;
+    char ctx_key[100];
+    int process_id;
+    smpd_context_t *pmi_context;
+    smpd_process_t *piter;
+    int result;
+    int exit_code;
+
+    smpd_enter_fn("smpd_handle_kill_command");
+
+    cmd = &context->read_cmd;
+    
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no ctx_key in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_kill_command");
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no exit code in suspend command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_kill_command");
+	return SMPD_FAIL;
+    }
+
+    process_id = atoi(ctx_key);
+    pmi_context = NULL;
+    piter = smpd_process.process_list;
+    while (piter)
+    {
+	if (piter->id == process_id)
+	{
+	    pmi_context = piter->pmi;
+	    break;
+	}
+	piter = piter->next;
+    }
+    if (pmi_context == NULL)
+    {
+	smpd_err_printf("received kill command for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
+	smpd_exit_fn("smpd_handle_kill_command");
+	return SMPD_SUCCESS;
+    }
+
+    if (pmi_context->process == NULL)
+    {
+	smpd_err_printf("received kill command for a pmi context that does not have a process structure.\n");
+	smpd_exit_fn("smpd_handle_kill_command");
+	return SMPD_SUCCESS;
+    }
+    
+    result = smpd_kill_process(pmi_context->process, exit_code);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to kill process.\n");
+	smpd_exit_fn("smpd_handle_kill_command");
+	return SMPD_SUCCESS;
+    }
+
+    smpd_exit_fn("smpd_handle_kill_command");
+    return SMPD_SUCCESS;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -2751,38 +3816,31 @@ int smpd_handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "exit") == 0)
     {
-	int exitcode, iproc;
-
-	if (MPIU_Str_get_int_arg(cmd->cmd, "code", &exitcode) != MPIU_STR_SUCCESS)
-	{
-	    smpd_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
-	}
-	if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &iproc) != MPIU_STR_SUCCESS)
-	{
-	    smpd_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
-	}
-	if (smpd_process.output_exit_codes)
-	{
-	    printf("process %d exited with exit code %d\n", iproc, exitcode);
-	    fflush(stdout);
-	}
-	smpd_process.nproc_exited++;
-	if (smpd_process.nproc == smpd_process.nproc_exited)
-	/*
-	smpd_process.nproc--;
-	if (smpd_process.nproc == 0)
-	*/
-	{
-	    smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
-	    smpd_exit_fn("smpd_handle_command");
-	    return SMPD_EXIT;
-	}
+	result = smpd_handle_exit_command(context);
 	smpd_exit_fn("smpd_handle_command");
-	return SMPD_SUCCESS;
+	return result;
     }
     else if (strcmp(cmd->cmd_str, "abort") == 0)
     {
 	result = smpd_handle_abort_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "abort_job") == 0)
+    {
+	result = smpd_handle_abort_job_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "init") == 0)
+    {
+	result = smpd_handle_init_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "finalize") == 0)
+    {
+	result = smpd_handle_finalize_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
@@ -2828,7 +3886,6 @@ int smpd_handle_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
-    /*else if (strncmp(cmd->cmd_str, "db", 2) == 0)*/
     else if ((cmd->cmd_str[0] == 'd') && (cmd->cmd_str[1] == 'b'))
     {
 	/* handle database command */
@@ -2902,6 +3959,18 @@ int smpd_handle_command(smpd_context_t *context)
     else if (strcmp(cmd->cmd_str, "spawn") == 0)
     {
 	result = smpd_handle_spawn_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "suspend") == 0)
+    {
+	result = smpd_handle_suspend_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "kill") == 0)
+    {
+	result = smpd_handle_kill_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }

@@ -296,6 +296,7 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
     return SMPD_SUCCESS;
 }
 
+/*
 static void SetEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH]="", value[MAX_PATH]="";
@@ -366,6 +367,55 @@ static void RemoveEnvironmentVariables(char *bEnv)
     *pChar = '\0';
     if (name[0] != '\0')
 	SetEnvironmentVariable(name, NULL);
+}
+*/
+
+static void SetEnvironmentVariables(char *bEnv)
+{
+    char name[MAX_PATH], equals[3], value[MAX_PATH];
+
+    while (1)
+    {
+	name[0] = '\0';
+	equals[0] = '\0';
+	value[0] = '\0';
+	if (MPIU_Str_get_string(&bEnv, name, MAX_PATH) != MPIU_STR_SUCCESS)
+	    break;
+	if (name[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, equals, 3) != MPIU_STR_SUCCESS)
+	    break;
+	if (equals[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, value, MAX_PATH) != MPIU_STR_SUCCESS)
+	    break;
+	smpd_dbg_printf("setting environment variable: <%s> = <%s>\n", name, value);
+	SetEnvironmentVariable(name, value);
+    }
+}
+
+static void RemoveEnvironmentVariables(char *bEnv)
+{
+    char name[MAX_PATH], equals[3], value[MAX_PATH];
+
+    while (1)
+    {
+	name[0] = '\0';
+	equals[0] = '\0';
+	value[0] = '\0';
+	if (MPIU_Str_get_string(&bEnv, name, MAX_PATH) != MPIU_STR_SUCCESS)
+	    break;
+	if (name[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, equals, 3) != MPIU_STR_SUCCESS)
+	    break;
+	if (equals[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, value, MAX_PATH) != MPIU_STR_SUCCESS)
+	    break;
+	/*smpd_dbg_printf("removing environment variable <%s>\n", name);*/
+	SetEnvironmentVariable(name, NULL);
+    }
 }
 
 int smpd_priority_class_to_win_class(int *priorityClass)
@@ -960,10 +1010,10 @@ CLEANUP:
 		return SMPD_FAIL;
 	    }
 	}
-	process->wait = process->in->wait = process->out->wait = process->err->wait = psInfo.hProcess;
+	process->wait.hProcess = process->in->wait.hProcess = process->out->wait.hProcess = process->err->wait.hProcess = psInfo.hProcess;
+	process->wait.hThread = process->in->wait.hThread = process->out->wait.hThread = process->err->wait.hThread = psInfo.hThread;
 	smpd_process_to_registry(process, actual_exe);
 	ResumeThread(psInfo.hThread);
-	CloseHandle(psInfo.hThread);
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_SUCCESS;
     }
@@ -1005,6 +1055,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 
 /* Unix code */
 
+/*
 static void set_environment_variables(char *bEnv)
 {
     char name[1024]="", value[8192]="";
@@ -1039,6 +1090,30 @@ static void set_environment_variables(char *bEnv)
     if (name[0] != '\0')
     {
 	smpd_dbg_printf("env: %s=%s\n", name, value);
+	setenv(name, value, 1);
+    }
+}
+*/
+
+static void set_environment_variables(char *bEnv)
+{
+    char name[1024], equals[3], value[8192];
+
+    while (1)
+    {
+	name[0] = '\0';
+	equals[0] = '\0';
+	value[0] = '\0';
+	if (MPIU_Str_get_string(&bEnv, name, 1024) != MPIU_STR_SUCCESS)
+	    break;
+	if (name[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, equals, 3) != MPIU_STR_SUCCESS)
+	    break;
+	if (equals[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, value, 8192) != MPIU_STR_SUCCESS)
+	    break;
 	setenv(name, value, 1);
     }
 }
@@ -1345,14 +1420,14 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     int result;
     smpd_enter_fn("smpd_wait_process");
 
-    if (WaitForSingleObject(wait, INFINITE) != WAIT_OBJECT_0)
+    if (WaitForSingleObject(wait.hProcess, INFINITE) != WAIT_OBJECT_0)
     {
 	smpd_err_printf("WaitForSingleObject failed, error %d\n", GetLastError());
 	*exit_code_ptr = -1;
 	smpd_exit_fn("smpd_wait_process");
 	return SMPD_FAIL;
     }
-    result = GetExitCodeProcess(wait, exit_code_ptr);
+    result = GetExitCodeProcess(wait.hProcess, exit_code_ptr);
     if (!result)
     {
 	smpd_err_printf("GetExitCodeProcess failed, error %d\n", GetLastError());
@@ -1360,7 +1435,8 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 	smpd_exit_fn("smpd_wait_process");
 	return SMPD_FAIL;
     }
-    CloseHandle(wait);
+    CloseHandle(wait.hProcess);
+    CloseHandle(wait.hThread);
 
     smpd_exit_fn("smpd_wait_process");
     return SMPD_SUCCESS;
@@ -1385,6 +1461,125 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 #endif
 }
 
+int smpd_suspend_process(smpd_process_t *process)
+{
+#ifdef HAVE_WINDOWS_H
+    int result = SMPD_SUCCESS;
+    smpd_enter_fn("smpd_suspend_process");
+
+    if (SuspendThread(process->wait.hThread) == -1)
+    {
+	result = GetLastError();
+	smpd_err_printf("SuspendThread failed with error %d for process %d:%s:'%s'\n",
+	    result, process->rank, process->kvs_name, process->exe);
+    }
+
+    smpd_exit_fn("smpd_suspend_process");
+    return result;
+#else
+    smpd_enter_fn("smpd_suspend_process");
+
+    smpd_dbg_printf("stopping process %d\n", process->wait);
+    kill(process->wait, SIGSTOP);
+
+    smpd_exit_fn("smpd_suspend_process");
+    return SMPD_SUCCESS;
+#endif
+}
+
+#ifdef HAVE_WINDOWS_H
+static BOOL SafeTerminateProcess(HANDLE hProcess, UINT uExitCode)
+{
+    DWORD dwTID, dwCode, dwErr = 0;
+    HANDLE hProcessDup = INVALID_HANDLE_VALUE;
+    HANDLE hRT = NULL;
+    HINSTANCE hKernel = GetModuleHandle("Kernel32");
+    BOOL bSuccess = FALSE;
+
+    BOOL bDup = DuplicateHandle(GetCurrentProcess(),
+	hProcess,
+	GetCurrentProcess(),
+	&hProcessDup,
+	PROCESS_ALL_ACCESS,
+	FALSE,
+	0);
+
+    if (GetExitCodeProcess((bDup) ? hProcessDup : hProcess, &dwCode) &&
+	(dwCode == STILL_ACTIVE))
+    {
+	FARPROC pfnExitProc;
+
+	pfnExitProc = GetProcAddress(hKernel, "ExitProcess");
+
+	if (pfnExitProc)
+	{
+	    hRT = CreateRemoteThread((bDup) ? hProcessDup : hProcess,
+		NULL,
+		0,
+		// This relies on the probability that Kernel32.dll is mapped to the same place on all processes
+		// If it gets relocated, this function will produce spurious results
+		(LPTHREAD_START_ROUTINE)pfnExitProc,
+		(LPVOID)uExitCode, 0, &dwTID);
+	}
+	
+	if (hRT == NULL)
+	    dwErr = GetLastError();
+    }
+    else
+    {
+	dwErr = ERROR_PROCESS_ABORTED;
+    }
+
+    if (hRT)
+    {
+	if (WaitForSingleObject((bDup) ? hProcessDup : hProcess, 30000) == WAIT_OBJECT_0)
+	    bSuccess = TRUE;
+	else
+	{
+	    dwErr = ERROR_TIMEOUT;
+	    bSuccess = FALSE;
+	}
+	CloseHandle(hRT);
+    }
+
+    if (bDup)
+	CloseHandle(hProcessDup);
+
+    if (!bSuccess)
+	SetLastError(dwErr);
+
+    return bSuccess;
+}
+#endif
+
+int smpd_kill_process(smpd_process_t *process, int exit_code)
+{
+#ifdef HAVE_WINDOWS_H
+    smpd_enter_fn("smpd_suspend_process");
+
+    smpd_process_from_registry(process);
+    if (!SafeTerminateProcess(process->wait.hProcess, exit_code))
+    {
+	if (GetLastError() != ERROR_PROCESS_ABORTED)
+	{
+	    TerminateProcess(process->wait.hProcess, exit_code);
+	}
+    }
+
+    smpd_exit_fn("smpd_suspend_process");
+    return SMPD_SUCCESS;
+#else
+    int status;
+    smpd_enter_fn("smpd_suspend_process");
+
+    smpd_dbg_printf("killing process %d\n", process->wait);
+    kill(process->wait, /*SIGTERM*/SIGKILL);
+
+    smpd_exit_fn("smpd_suspend_process");
+    return SMPD_SUCCESS;
+#endif
+}
+
 int smpd_kill_all_processes(void)
 {
     smpd_process_t *iter;
@@ -1396,9 +1591,15 @@ int smpd_kill_all_processes(void)
     {
 #ifdef HAVE_WINDOWS_H
 	smpd_process_from_registry(iter);
-	TerminateProcess(iter->wait, 8676);
+	if (!SafeTerminateProcess(iter->wait.hProcess, 123))
+	{
+	    if (GetLastError() != ERROR_PROCESS_ABORTED)
+	    {
+		TerminateProcess(iter->wait.hProcess, 255);
+	    }
+	}
 #else
-	kill(iter->wait, SIGKILL);
+	kill(iter->wait, /*SIGTERM*/SIGKILL);
 #endif
 	iter = iter->next;
     }
@@ -1413,6 +1614,9 @@ int smpd_exit(int exitcode)
     smpd_kill_all_processes();
     smpd_finalize_printf();
     PMPI_Finalize();
+    /* If we're exiting due to a user abort, use the exit code supplied by the abort call */
+    if (smpd_process.use_abort_exit_code)
+	exitcode = smpd_process.abort_exit_code;
 #ifdef HAVE_WINDOWS_H
     /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
     ExitProcess(exitcode);
@@ -1420,5 +1624,5 @@ int smpd_exit(int exitcode)
     exit(exitcode);
 #endif
     smpd_exit_fn("smpd_exit");
-    return SMPD_SUCCESS;
+    return SMPD_FAIL;
 }

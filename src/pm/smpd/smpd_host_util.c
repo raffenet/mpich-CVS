@@ -20,6 +20,19 @@
 #include <direct.h>
 #endif
 
+int smpd_get_hostname(char *host, int length)
+{
+#ifdef HAVE_WINDOWS_H
+    DWORD len = length;
+    if (!GetComputerName(host, &len))
+	return SMPD_FAIL;
+#else
+    if (gethostname(host, length))
+	return SMPD_FAIL;
+#endif
+    return SMPD_SUCCESS;
+}
+
 int smpd_get_pwd_from_file(char *file_name)
 {
     char line[1024];
@@ -94,7 +107,7 @@ int smpd_get_next_hostname(char *host)
 	}
 	else
 	{
-	    if (gethostname(host, SMPD_MAX_HOST_LENGTH) != 0)
+	    if (smpd_get_hostname(host, SMPD_MAX_HOST_LENGTH) != 0)
 		return SMPD_FAIL;
 	}
 	return SMPD_SUCCESS;
@@ -282,6 +295,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	    smpd_err_printf("unable to get a id for host %s\n", host);
 	    return SMPD_FAIL;
 	}
+	MPIU_Strncpy(launch_node->hostname, host, SMPD_MAX_HOST_LENGTH);
 	return SMPD_SUCCESS;
     }
 
@@ -303,6 +317,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	smpd_err_printf("unable to get a id for host %s\n", host_node_ptr->host);
 	return SMPD_FAIL;
     }
+    MPIU_Strncpy(launch_node->hostname, host_node_ptr->host, SMPD_MAX_HOST_LENGTH);
     host_node_ptr->nproc--;
     if (host_node_ptr->nproc == 0)
     {

@@ -19,3 +19,4 @@ smpdconf.h
 *ebug*
 *elease*
 .deps
+*.aps

@@ -34,12 +34,13 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpich2sockd.lib smpd_utild.lib dbgd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib"
 				OutputFile="..\..\..\bin\mpiexec.exe"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/mpiexec.pdb"
 				SubSystem="1"
-				TargetMachine="1"/>
+				TargetMachine="1"
+				FixedBaseAddress="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -187,12 +188,18 @@
 				RelativePath="mpiexec.h">
 			</File>
 			<File
+				RelativePath=".\resource1.h">
+			</File>
+			<File
 				RelativePath=".\smpd.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\mpiexec.rc">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -542,7 +542,7 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
     /*
     else if (strcmp(key, "hosts") == 0)
     {
-	if (gethostname(value, value_len) != 0)
+	if (smpd_get_hostname(value, value_len) != 0)
 	{
 	    smpd_exit_fn("smpd_get_smpd_data_default");
 	    return SMPD_FAIL;

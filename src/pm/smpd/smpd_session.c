@@ -48,9 +48,27 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     REMOTE_NAME_INFO *info = (REMOTE_NAME_INFO*)info_buffer;
     char *filename;
     char temp_name[SMPD_MAX_EXE_LENGTH];
+    char *temp_exe = NULL;
+
+    /* handle the common case of unix programmers specifying executable like this: ./foo */
+    if (strlen(exe) > 2)
+    {
+	if (exe[0] == '.' && exe[1] == '/')
+	{
+	    temp_exe = strdup(exe);
+	    temp_exe[1] = '\\';
+	    exe = temp_exe;
+	}
+	smpd_dbg_printf("fixing up exe name: '%s' -> '%s'\n", exe, temp_exe);
+    }
 
     /* make a full path out of the name provided */
     len = GetFullPathName(exe, maxlen, exe_path, namepart);
+    if (temp_exe != NULL)
+    {
+	free(temp_exe);
+	temp_exe = NULL;
+    }
     if (len == 0 || len > maxlen)
     {
 	smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
@@ -155,6 +173,42 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
 {
 #ifdef HAVE_WINDOWS_H
     char *filepart;
+    char *path_spec, *smpd_path2 = NULL, exe_path[SMPD_MAX_EXE_LENGTH];
+    size_t len_pre, len_spec, len_post;
+    HMODULE hModule;
+
+    path_spec = strstr(smpd_path, SMPD_PATH_SPEC);
+    if (path_spec != NULL)
+    {
+	if (smpd_process.pszExe[0] == '\0')
+	{
+	    hModule = GetModuleHandle(NULL);
+	    if (!GetModuleFileName(hModule, smpd_process.pszExe, SMPD_MAX_EXE_LENGTH)) 
+	    {
+		strcpy(smpd_process.pszExe, ".\\smpd.exe");
+	    }
+	}
+	smpd_path2 = strrchr(smpd_process.pszExe, '\\');
+	if (smpd_path2 == NULL)
+	{
+	    exe_path[0] = '\0';
+	}
+	else
+	{
+	    memcpy(exe_path, smpd_process.pszExe, smpd_path2 - smpd_process.pszExe);
+	    exe_path[smpd_path2 - smpd_process.pszExe] = '\0';
+	}
+	len_pre = path_spec - smpd_path;
+	len_spec = strlen(exe_path);
+	len_post = strlen(path_spec + strlen(SMPD_PATH_SPEC));
+	smpd_path2 = (char *)malloc((len_pre + len_spec + len_post + 1) * sizeof(char));
+	if (len_pre)
+	    memcpy(smpd_path2, smpd_path, len_pre);
+	memcpy(smpd_path2 + len_pre, exe_path, len_spec);
+	strcpy(smpd_path2 + len_pre + len_spec, path_spec + strlen(SMPD_PATH_SPEC));
+	smpd_dbg_printf("changed path(%s) to (%s)\n", smpd_path, smpd_path2);
+	smpd_path = smpd_path2;
+    }
 
     /* search for exactly what's specified */
     if (SearchPath(smpd_path, exe, NULL, maxlen, str, &filepart) == 0)
@@ -167,10 +221,16 @@ SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, c
 	    {
 		/* search the default path + .exe */
 		if (SearchPath(NULL, exe, ".exe", maxlen, str, &filepart) == 0)
+		{
+		    if (smpd_path2 != NULL)
+			free(smpd_path2);
 		    return SMPD_FALSE;
+		}
 	    }
 	}
     }
+    if (smpd_path2 != NULL)
+	free(smpd_path2);
     return SMPD_TRUE;
 #else
     char test[SMPD_MAX_EXE_LENGTH];
@@ -363,7 +423,11 @@ SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd
     if (*len_ptr < 1) return SMPD_FALSE;
     smpd_snprintf_update(str_pptr, len_ptr, "%snproc: %d\n", indent_str, process->nproc);
     if (*len_ptr < 1) return SMPD_FALSE;
+#ifdef HAVE_WINDOWS_H
+    smpd_snprintf_update(str_pptr, len_ptr, "%swait: %p:%p\n", indent_str, process->wait.hProcess, process->wait.hThread);
+#else
     smpd_snprintf_update(str_pptr, len_ptr, "%swait: %d\n", indent_str, (int)process->wait);
+#endif
     if (*len_ptr < 1) return SMPD_FALSE;
     smpd_snprintf_update(str_pptr, len_ptr, "%snext: %p\n", indent_str, process->next);
     if (*len_ptr < 1) return SMPD_FALSE; /* this misses the case of an exact fit */

@@ -102,7 +102,14 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	    smpd_encode_handle(read_handle_str, hReadRemote), 
 	    smpd_encode_handle(write_handle_str, hWriteRemote));
     }
-    smpd_dbg_printf("starting command: %s\n", cmd);
+    if (context->connect_to)
+    {
+	smpd_dbg_printf("starting command:%d: %s\n", context->connect_to->id, cmd);
+    }
+    else
+    {
+        smpd_dbg_printf("starting command: %s\n", cmd);
+    }
     GetStartupInfo(&sInfo);
     if (smpd_process.bService)
     {

@@ -221,32 +221,48 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
+#ifdef HAVE_WINDOWS_H
+	if (strlen(node.exe) > 2)
+	{
+	    /* the Windows version handles the common unix case where executables are specified like this: ./foo */
+	    /* Instead of failing, simply fix the / character */
+	    if (node.exe[0] == '.' && node.exe[1] == '/')
+		node.exe[1] = '\\';
+	}
+#endif
 	/*printf("%s = %s\n", key, node.exe);fflush(stdout);*/
 	sprintf(key, "argv%d", i);
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
 	{
+	    node.args[0] = '\0';
+	    /*
 	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
 	    goto spawn_failed;
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
+	    */
 	}
 	/*printf("%s = %s\n", key, node.args);fflush(stdout);*/
 
 	/* interpret the infos for this command */
-	/* host */
-	/* env */
-	/* path */
 	for (j=0; j<nkeyvals[i]; j++)
 	{
+	    /* path */
 	    if (strcmp(info[j].key, "path") == 0)
 	    {
 		strcpy(node.path, info[j].val);
 		smpd_dbg_printf("path = %s\n", info[j].val);
 	    }
+	    /* host */
+	    if (strcmp(info[j].key, "host") == 0)
+	    {
+		smpd_dbg_printf("host key sent with spawn command: <%s>\n", info[j].val);fflush(stdout);
+	    }
+	    /* env */
+	    /* wdir */
+	    /* map */
+	    /* etc */
 	}
-	/* wdir */
-	/* map */
-	/* etc */
 
 	/* create launch nodes for the current command */
 	for (j=0; j<maxprocs[i]; j++)
@@ -288,6 +304,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->env = launch_iter->env_data;
 	    launch_iter->exe[0] = '\0';
 	    launch_iter->host_id = -1;
+	    launch_iter->hostname[0] = '\0';
 	    launch_iter->map_list = NULL;
 	    launch_iter->path[0] = '\0';
 	    launch_iter->next = NULL;

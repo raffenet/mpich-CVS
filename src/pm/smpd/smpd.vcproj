@@ -201,10 +201,16 @@
 			<File
 				RelativePath=".\smpd_service.c">
 			</File>
+			<File
+				RelativePath=".\smpd_watchprocs.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
+			<File
+				RelativePath=".\resource.h">
+			</File>
 			<File
 				RelativePath="smpd.h">
 			</File>
@@ -212,6 +218,9 @@
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\smpd.rc">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[])
 {
-    int result;
+    int result = SMPD_SUCCESS;
     smpd_host_node_t *host_node_ptr;
     smpd_launch_node_t *launch_node_ptr;
     smpd_context_t *context;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
     result = mp_parse_command_args(&argc, &argv);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("Unable to parse the command arguments.\n");
+	smpd_err_printf("Unable to parse the mpiexec command arguments.\n");
 	goto quit_job;
     }
 
@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
 	if (smpd_process.noprompt)
 	{
 	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
+	    result = SMPD_FAIL;
 	    goto quit_job;
 	}
 	printf("Please specify an authentication passphrase for smpd: ");
@@ -151,6 +152,11 @@ int main(int argc, char* argv[])
 
 quit_job:
 
+    if ((result != SMPD_SUCCESS) && (smpd_process.mpiexec_exit_code == 0))
+    {
+	smpd_process.mpiexec_exit_code = -1;
+    }
+
     /* finalize */
     /*
     smpd_dbg_printf("calling MPIDU_Sock_finalize\n");
@@ -184,6 +190,6 @@ quit_job:
 	CloseHandle(smpd_process.hCloseStdinThreadEvent);
 #endif
     smpd_exit_fn("main");
-    return smpd_exit(0);
+    return smpd_exit(smpd_process.mpiexec_exit_code);
 }
 

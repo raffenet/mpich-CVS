@@ -108,6 +108,7 @@ typedef int SMPD_BOOL;
 #define SMPD_OUTPUT_MUTEX_NAME            "SMPD_OUTPUT_MUTEX"
 #define SMPD_DATA_MUTEX_NAME              "SMPD_DATA_MUTEX"
 #define SMPD_DYNAMIC_HOSTS_KEY            "dynamic_hosts"
+#define SMPD_PATH_SPEC                    "{SMPD_PATH}"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -116,6 +117,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DBG_STATE_PREPEND_RANK      0x08
 #define SMPD_DBG_STATE_TRACE             0x10
 #define SMPD_DBG_STATE_ALL               (SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_LOGFILE | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE)
+#define SMPD_DBG_FILE_SIZE               (4*1024*1024)
 
 #define SMPD_QUOTE_CHAR                   '\"'
 #define SMPD_DELIM_CHAR                   '='
@@ -251,7 +253,11 @@ typedef struct smpd_command_t
 } smpd_command_t;
 
 #ifdef HAVE_WINDOWS_H
-typedef HANDLE smpd_pwait_t;
+/*typedef HANDLE smpd_pwait_t;*/
+typedef struct smpd_pwait_t
+{
+    HANDLE hProcess, hThread;
+} smpd_pwait_t;
 #else
 typedef pid_t smpd_pwait_t;
 #endif
@@ -347,6 +353,7 @@ typedef struct smpd_launch_node_t
     char path[SMPD_MAX_PATH_LENGTH];
     smpd_map_drive_node_t *map_list;
     int host_id;
+    char hostname[SMPD_MAX_HOST_LENGTH];
     int iproc;
     int nproc;
     struct smpd_launch_node_t *next, *prev;
@@ -409,6 +416,25 @@ typedef struct smpd_data_t
     struct smpd_data_t *next;
 } smpd_data_t;
 
+typedef struct smpd_exit_process_t
+{
+    SMPD_BOOL init_called, finalize_called, suspended, exited;
+    int node_id, exitcode;
+    char host[SMPD_MAX_HOST_LENGTH];
+    char ctx_key[100];
+    char *errmsg;
+    smpd_command_t *suspend_cmd;
+} smpd_exit_process_t;
+
+typedef struct smpd_process_group_t
+{
+    SMPD_BOOL aborted, any_noinit_process_exited, any_init_received;
+    char kvs[SMPD_MAX_DBS_NAME_LEN];
+    int num_procs, num_pending_suspends;
+    smpd_exit_process_t *processes;
+    struct smpd_process_group_t *next;
+} smpd_process_group_t;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
@@ -435,6 +461,7 @@ typedef struct smpd_global_t
     int  cur_tag;
     int  dbg_state;
     char dbg_filename[SMPD_MAX_FILENAME];
+    long dbg_file_size;
     int  have_dbs;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
     char domain_name[SMPD_MAX_DBS_NAME_LEN];
@@ -492,6 +519,11 @@ typedef struct smpd_global_t
     smpd_host_node_t *s_host_list, *s_cur_host;
     int s_cur_count;
     SMPD_BOOL use_inherited_handles;
+    smpd_process_group_t *pg_list;
+    SMPD_BOOL use_abort_exit_code;
+    int abort_exit_code;
+    SMPD_BOOL verbose_abort_output;
+    int mpiexec_exit_code;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -635,5 +667,12 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp);
 int smpd_create_cliques(smpd_launch_node_t *list);
 int smpd_handle_spawn_command(smpd_context_t *context);
+int smpd_handle_abort_job_command(smpd_context_t *context);
+int smpd_abort_job(char *name, int rank, char *fmt, ...);
+int smpd_suspend_process(smpd_process_t *process);
+int smpd_kill_process(smpd_process_t *process, int exit_code);
+int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str);
+int smpd_watch_processes();
+int smpd_get_hostname(char *host, int length);
 
 #endif

@@ -20,7 +20,7 @@ How to use SMPD
 
 You can start one smpd on the current host by running
 
-   smpd
+   smpd -s
 
 This starts an smpd.  Execute it on all the machines you want to participate in
 your pool.  Other smpd's join the pool automatically if you have a common 
@@ -116,7 +116,7 @@ mpiexec [ -default defaultArgs : ] argset : more_arg_sets : ...
     where each argset contains some of:
         -n <n> -host <h> -wdir <w> -path <p> cmd args 
     note: cmd must be specfied for each argset; it can not be a default arg
-    -env KEY1=VALUE1 -env KEY2=VALUE2 ...
+    -env KEY1 VALUE1 -env KEY2 VALUE2 ...
     defaultArgs are passed to all processes unless overridden
 mpiexec -file filename  # where filename contains cmd-line arg-sets
 mpiexec [ -?   or  -help   or  -help2 ]

@@ -45,6 +45,7 @@ void smpd_print_options(void)
     printf(" users can launch processes with mpiexec.\n");
     printf("Not yet implemented:\n");
     printf("\"smpd -r\" will start the smpd in root daemon mode for unix.\n");
+    fflush(stdout);
 }
 
 int smpd_parse_command_args(int *argcp, char **argvp[])
@@ -70,6 +71,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_get_opt(argcp, argvp, "-help") || smpd_get_opt(argcp, argvp, "-?"))
     {
 	smpd_print_options();
+	smpd_exit(0);
+    }
+
+    /* check for the printprocs option */
+    if (smpd_get_opt(argcp, argvp, "-printprocs"))
+    {
+	smpd_watch_processes();
 	smpd_exit(0);
     }
 
@@ -310,7 +318,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     else if (smpd_get_opt(argcp, argvp, "-status"))
     {
-	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
 	smpd_process.do_status = 1;
     }
@@ -322,7 +330,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     else if (smpd_get_opt(argcp, argvp, "-console"))
     {
-	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
     }
     if (smpd_process.do_console)
@@ -341,7 +349,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     else if (smpd_get_opt(argcp, argvp, "-shutdown"))
     {
-	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
 	smpd_process.shutdown = 1;
     }
@@ -360,7 +368,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_start_service();
 	smpd_exit(0);
 #else
-	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
 	smpd_process.restart = 1;
 #endif

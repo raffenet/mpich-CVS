@@ -260,13 +260,13 @@ static BOOL smpd_setup_service_restart( SC_HANDLE schService )
     actionList[1].Delay = 0;
     actionList[2].Type = SC_ACTION_NONE;
     actionList[2].Delay = 0;
-    
+
     schActionOptions.dwResetPeriod = (DWORD) 300;  /* 5 minute reset */
     schActionOptions.lpRebootMsg = NULL;
     schActionOptions.lpCommand = NULL;
     schActionOptions.cActions = (DWORD) (sizeof actionList / sizeof actionList[0]);
     schActionOptions.lpsaActions = actionList;
-    
+
     return ChangeServiceConfig2_fn(schService, SERVICE_CONFIG_FAILURE_ACTIONS, &schActionOptions);
 }
 
@@ -671,7 +671,7 @@ void smpd_service_stop()
 
     /* stop the main thread */
     smpd_process.service_stop = SMPD_TRUE;
-    gethostname(host, SMPD_MAX_HOST_LENGTH);
+    smpd_get_hostname(host, SMPD_MAX_HOST_LENGTH);
     result = MPIDU_Sock_create_set(&set);
     if (result != MPI_SUCCESS)
     {

@@ -3445,7 +3445,14 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 		    smpd_exit_fn("smpd_handle_op_close");
 		    return SMPD_FAIL;
 		}
-		smpd_dbg_printf("creating an exit command for %d:%d, exit code %d.\n",
+		result = smpd_add_command_arg(cmd_ptr, "kvs", context->process->kvs_name);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the kvs name to the exit command for rank %d\n", context->process->rank);
+		    smpd_exit_fn("smpd_handle_op_close");
+		    return SMPD_FAIL;
+		}
+		smpd_dbg_printf("creating an exit command for rank %d, pid %d, exit code %d.\n",
 		    context->process->rank, context->process->pid, context->process->exitcode);
 
 		/* send the exit command */
@@ -3592,6 +3599,8 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
     int result;
     MPIDU_Sock_event_t event;
     smpd_context_t *context;
+    char error_msg[MPI_MAX_ERROR_STRING];
+    int len;
 
     smpd_enter_fn("smpd_enter_at_state");
 
@@ -3663,9 +3672,28 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		result = MPIDU_Sock_post_close(context->sock);
 		if (result != MPI_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
-		    smpd_exit_fn("smpd_enter_at_state");
-		    return SMPD_FAIL;
+		    len = MPI_MAX_ERROR_STRING;
+		    result = PMPI_Error_string(result, error_msg, &len);
+		    if (result == MPI_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context, error: %s\n", smpd_get_context_str(context), error_msg);
+		    }
+		    else
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+		    }
+		    if (smpd_process.root_smpd != SMPD_TRUE)
+		    {
+			/* don't let a broken connection cause the root smpd to exit */
+			/* only non-root (manager) nodes return failure */
+			smpd_err_printf("non-root smpd returning SMPD_FAIL do to failed close request after failed read operation.\n");
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    else
+		    {
+			smpd_dbg_printf("root smpd ignoring failed close request after failed read operation.\n");
+		    }
 		}
 	    }
 	    break;
@@ -3684,13 +3712,21 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    if (result != SMPD_SUCCESS || event.error != MPI_SUCCESS)
 	    {
 		smpd_dbg_printf("SOCK_OP_WRITE failed, closing %s context.\n", smpd_get_context_str(context));
-		context->state = SMPD_CLOSING;
-		result = MPIDU_Sock_post_close(context->sock);
-		if (result != MPI_SUCCESS)
+		if (context->state != SMPD_CLOSING)
 		{
-		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
-		    smpd_exit_fn("smpd_enter_at_state");
-		    return SMPD_FAIL;
+		    context->state = SMPD_CLOSING;
+		    result = MPIDU_Sock_post_close(context->sock);
+		    if (result != MPI_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+			if (smpd_process.root_smpd != SMPD_TRUE)
+			{
+			    /* don't let a broken connection cause the root smpd to exit */
+			    /* only non-root (manager) nodes return failure */
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+		    }
 		}
 	    }
 	    break;
@@ -3709,13 +3745,21 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    smpd_dbg_printf("SOCK_OP_ACCEPT failed, result = %d, closing %s context.\n", result, smpd_get_context_str(context));
 		else
 		    smpd_dbg_printf("SOCK_OP_ACCEPT failed, event.error = %d, closing %s context.\n", event.error, smpd_get_context_str(context));
-		context->state = SMPD_CLOSING;
-		result = MPIDU_Sock_post_close(context->sock);
-		if (result != MPI_SUCCESS)
+		if (context->state != SMPD_CLOSING)
 		{
-		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
-		    smpd_exit_fn("smpd_enter_at_state");
-		    return SMPD_FAIL;
+		    context->state = SMPD_CLOSING;
+		    result = MPIDU_Sock_post_close(context->sock);
+		    if (result != MPI_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+			if (smpd_process.root_smpd != SMPD_TRUE)
+			{
+			    /* don't let a broken connection cause the root smpd to exit */
+			    /* only non-root (manager) nodes return failure */
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+		    }
 		}
 	    }
 	    break;
@@ -3733,8 +3777,15 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    {
 		smpd_process.state_machine_ret_val = (result != SMPD_SUCCESS) ? result : event.error;
 		smpd_dbg_printf("SOCK_OP_CONNECT failed, closing %s context.\n", smpd_get_context_str(context));
-		context->state = SMPD_CLOSING;
-		result = MPIDU_Sock_post_close(context->sock);
+		if (context->state != SMPD_CLOSING)
+		{
+		    context->state = SMPD_CLOSING;
+		    result = MPIDU_Sock_post_close(context->sock);
+		}
+		else
+		{
+		    result = MPI_SUCCESS;
+		}
 		if (context->connect_to)
 		    smpd_post_abort_command("unable to connect to %s", context->connect_to->host);
 		else

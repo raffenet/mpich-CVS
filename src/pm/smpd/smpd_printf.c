@@ -59,6 +59,8 @@ char * get_sock_error_string(int error)
 	return "operation completed successfully";
 
     str[0] = '\0';
+    MPIR_Err_get_string(error, str, 1024, MPIDU_Sock_get_error_class_string);
+    /*
     MPIR_Err_get_string_ext(error, str, 1024, MPIDU_Sock_get_error_class_string);
     if (MPIR_Err_print_stack_flag)
     {
@@ -69,6 +71,7 @@ char * get_sock_error_string(int error)
 	str2 = str + len;
 	MPIR_Err_print_stack_string_ext(error, str2, 1024-len, MPIDU_Sock_get_error_class_string);
     }
+    */
 
     return str;
 }
@@ -114,6 +117,13 @@ char * smpd_get_context_str(smpd_context_t *context)
 int smpd_init_printf(void)
 {
     char * envstr;
+    static int initialized = 0;
+    char str[1024];
+    int len;
+
+    if (initialized)
+	return 0;
+    initialized = 1;
 
     smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT;
 
@@ -151,6 +161,19 @@ int smpd_init_printf(void)
 	    if (smpd_get_smpd_data("logfile", smpd_process.dbg_filename, SMPD_MAX_FILENAME) != SMPD_SUCCESS)
 	    {
 		smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
+	    }
+	}
+	if (smpd_get_smpd_data("max_logfile_size", str, 1024) == SMPD_SUCCESS)
+	{
+	    smpd_process.dbg_file_size = atoi(str);
+	}
+	envstr = getenv("SMPD_MAX_LOG_FILE_SIZE");
+	if (envstr)
+	{
+	    len = atoi(envstr);
+	    if (len > 0)
+	    {
+		smpd_process.dbg_file_size = atoi(envstr);
 	    }
 	}
     }
@@ -196,12 +219,301 @@ void smpd_clean_output(char *str)
     }
 }
 
+static int read_file(FILE *fin, void *buffer, int length)
+{
+    int num_read, total = 0;
+    char *buf = buffer;
+
+    while (length > 0)
+    {
+	num_read = (int)fread(buf, sizeof(char), (size_t)length, fin);
+	if (num_read < 1)
+	{
+	    return total;
+	}
+	length = length - num_read;
+	buf = buf + num_read;
+	total = total + num_read;
+    }
+    return total;
+}
+
+static int write_file(FILE *fout, void *buffer, int length)
+{
+    int num_written, total = 0;
+    char *buf = buffer;
+
+    while (length > 0)
+    {
+	num_written = (int)fwrite(buf, sizeof(char), (size_t)length, fout);
+	if (num_written < 1)
+	{
+	    return total;
+	}
+	length = length - num_written;
+	buf = buf + num_written;
+	total = total + num_written;
+    }
+    return total;
+}
+
+void smpd_trim_logfile()
+{
+    static int count = 0;
+    FILE *fout;
+    long size;
+    int num_read, num_written;
+    char *buffer, *buffer_orig;
+    char copy_cmd[4096];
+    int docopy = 0;
+    static copy_number = 0;
+    int a, b;
+
+    /* check every 1000 iterations */
+    if (count++ % 1000)
+	return;
+
+    fout = fopen(smpd_process.dbg_filename, "rb");
+    if (fout == NULL)
+    {
+	/*printf("unable to open the smpd log file\n");*/
+	return;
+    }
+    fseek(fout, 0, SEEK_END);
+    size = ftell(fout);
+    if (size > smpd_process.dbg_file_size)
+    {
+	if (copy_number == 0)
+	{
+	    srand(getpid());
+	    copy_number = rand();
+	}
+	sprintf(copy_cmd, "copy %s %s.%d.old", smpd_process.dbg_filename, smpd_process.dbg_filename, copy_number);
+	system(copy_cmd);
+	buffer = buffer_orig = malloc(size);
+	if (buffer != NULL)
+	{
+	    fseek(fout, 0, SEEK_SET);
+	    num_read = read_file(fout, buffer, size);
+	    if (num_read == size)
+	    {
+		fclose(fout);
+		fout = fopen(smpd_process.dbg_filename, "rb");
+		fseek(fout, -4, SEEK_END);
+		fread(&a, 1, 4, fout);
+		fclose(fout);
+		if (a != *(int*)&buffer[size-4])
+		{
+		    FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+		    fprintf(ferr, "last 4 bytes not equal, a: %x != %x", a, *(int*)&buffer[size-4]);
+		    fclose(ferr);
+		}
+		fout = fopen(smpd_process.dbg_filename, "wb");
+		if (fout != NULL)
+		{
+		    buffer = buffer + size - (smpd_process.dbg_file_size / 2);
+		    size = smpd_process.dbg_file_size / 2;
+		    num_written = write_file(fout, buffer, size);
+		    docopy = 1;
+		    if (num_written != size)
+		    {
+			FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+			fprintf(ferr, "wrote %d instead of %d bytes to the smpd log file.\n", num_written, size);
+			fclose(ferr);
+		    }
+		    /*
+		    else
+		    {
+			printf("wrote %d bytes to the smpd log file.\n", num_written);
+			fflush(stdout);
+		    }
+		    */
+		    fclose(fout);
+		    fout = fopen(smpd_process.dbg_filename, "rb");
+		    fseek(fout, -4, SEEK_END);
+		    fread(&b, 1, 4, fout);
+		    fclose(fout);
+		    if (b != *(int*)&buffer[size-4])
+		    {
+			FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+			fprintf(ferr, "last 4 bytes not equal, b: %x != %x", b, *(int*)&buffer[size-4]);
+			fclose(ferr);
+		    }
+		}
+		/*
+		else
+		{
+		    printf("unable to truncate the smpd log file.\n");
+		    fflush(stdout);
+		}
+		*/
+	    }
+	    /*
+	    else
+	    {
+		printf("read %d instead of %d bytes from the smpd log file.\n", num_read, size);
+		fflush(stdout);
+	    }
+	    */
+	    free(buffer_orig);
+	}
+	/*
+	else
+	{
+	    printf("malloc failed to allocate %d bytes.\n", smpd_process.dbg_file_size / 2);
+	    fflush(stdout);
+	}
+	*/
+    }
+    /*
+    else
+    {
+	printf("smpd file size: %d\n", size);
+	fflush(stdout);
+    }
+    */
+    fclose(fout);
+    if (docopy)
+    {
+	sprintf(copy_cmd, "copy %s %s.%d.new", smpd_process.dbg_filename, smpd_process.dbg_filename, copy_number);
+	system(copy_cmd);
+	copy_number++;
+    }
+}
+
+void smpd_trim_logfile_old()
+{
+    static int count = 0;
+    FILE *fout;
+    long size;
+    int num_read, num_written;
+    int new_size;
+    char *buffer;
+    char copy_cmd[4096];
+    int docopy = 0;
+    static copy_number = 0;
+    int a, b;
+
+    /* check every 1000 iterations */
+    if (count++ % 1000)
+	return;
+
+    fout = fopen(smpd_process.dbg_filename, "rb");
+    if (fout == NULL)
+    {
+	/*printf("unable to open the smpd log file\n");*/
+	return;
+    }
+    fseek(fout, 0, SEEK_END);
+    size = ftell(fout);
+    if (size > smpd_process.dbg_file_size)
+    {
+	if (copy_number == 0)
+	{
+	    srand(getpid());
+	    copy_number = rand();
+	}
+	sprintf(copy_cmd, "copy %s %s.%d.old", smpd_process.dbg_filename, smpd_process.dbg_filename, copy_number);
+	system(copy_cmd);
+	new_size = smpd_process.dbg_file_size / 2;
+	buffer = malloc(new_size);
+	if (buffer != NULL)
+	{
+	    fseek(fout, - (long)new_size, SEEK_END);
+	    num_read = read_file(fout, buffer, new_size);
+	    if (num_read == new_size)
+	    {
+		fclose(fout);
+		fout = fopen(smpd_process.dbg_filename, "rb");
+		fseek(fout, -4, SEEK_END);
+		fread(&a, 1, 4, fout);
+		fclose(fout);
+		if (a != *(int*)&buffer[new_size-4])
+		{
+		    FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+		    fprintf(ferr, "last 4 bytes not equal, a: %x != %x", a, *(int*)&buffer[new_size-4]);
+		    fclose(ferr);
+		}
+		fout = fopen(smpd_process.dbg_filename, "wb");
+		if (fout != NULL)
+		{
+		    num_written = write_file(fout, buffer, new_size);
+		    docopy = 1;
+		    if (num_written != new_size)
+		    {
+			FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+			fprintf(ferr, "wrote %d instead of %d bytes to the smpd log file.\n", num_written, new_size);
+			fclose(ferr);
+		    }
+		    /*
+		    else
+		    {
+			printf("wrote %d bytes to the smpd log file.\n", num_written);
+			fflush(stdout);
+		    }
+		    */
+		    fclose(fout);
+		    fout = fopen(smpd_process.dbg_filename, "rb");
+		    fseek(fout, -4, SEEK_END);
+		    fread(&b, 1, 4, fout);
+		    fclose(fout);
+		    if (b != *(int*)&buffer[new_size-4])
+		    {
+			FILE *ferr = fopen("c:\\temp\\smpd.err", "a+");
+			fprintf(ferr, "last 4 bytes not equal, b: %x != %x", b, *(int*)&buffer[new_size-4]);
+			fclose(ferr);
+		    }
+		}
+		/*
+		else
+		{
+		    printf("unable to truncate the smpd log file.\n");
+		    fflush(stdout);
+		}
+		*/
+	    }
+	    /*
+	    else
+	    {
+		printf("read %d instead of %d bytes from the smpd log file.\n", num_read, new_size);
+		fflush(stdout);
+	    }
+	    */
+	    free(buffer);
+	}
+	/*
+	else
+	{
+	    printf("malloc failed to allocate %d bytes.\n", smpd_process.dbg_file_size / 2);
+	    fflush(stdout);
+	}
+	*/
+    }
+    /*
+    else
+    {
+	printf("smpd file size: %d\n", size);
+	fflush(stdout);
+    }
+    */
+    fclose(fout);
+    if (docopy)
+    {
+	sprintf(copy_cmd, "copy %s %s.%d.new", smpd_process.dbg_filename, smpd_process.dbg_filename, copy_number);
+	system(copy_cmd);
+	copy_number++;
+    }
+}
+
 int smpd_err_printf(char *str, ...)
 {
     va_list list;
     char *indent_str;
     char *cur_str;
     int num_bytes;
+
+    if (smpd_process.id == -1)
+	smpd_init_printf();
 
     if (!(smpd_process.dbg_state & (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_LOGFILE)))
 	return 0;
@@ -251,6 +563,7 @@ int smpd_err_printf(char *str, ...)
     if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
     {
 	FILE *fout;
+	smpd_trim_logfile();
 	fout = fopen(smpd_process.dbg_filename, "a+");
 	if (fout == NULL)
 	{
@@ -276,6 +589,9 @@ int smpd_dbg_printf(char *str, ...)
     char *indent_str;
     char *cur_str;
     int num_bytes;
+
+    if (smpd_process.id == -1)
+	smpd_init_printf();
 
     if (!(smpd_process.dbg_state & (SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_LOGFILE)))
 	return 0;
@@ -323,6 +639,7 @@ int smpd_dbg_printf(char *str, ...)
     if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
     {
 	FILE *fout;
+	smpd_trim_logfile();
 	fout = fopen(smpd_process.dbg_filename, "a+");
 	if (fout == NULL)
 	{

@@ -52,7 +52,8 @@ int main(int argc, char* argv[])
 	smpd_exit_fn("main");
 	return result;
     }
-    /*
+
+    /* Initialization now done by MPI_Init above.
     result = MPIDU_Sock_init();
     if (result != MPI_SUCCESS)
     {
@@ -60,7 +61,6 @@ int main(int argc, char* argv[])
 	smpd_exit_fn("main");
 	return result;
     }
-    */
 
     result = smpd_init_process();
     if (result != SMPD_SUCCESS)
@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
 	smpd_exit_fn("main");
 	return result;
     }
+    */
 
     /* parse the command line */
     result = smpd_parse_command_args(&argc, &argv);
@@ -266,15 +267,14 @@ int smpd_entry_point()
 
 	/* the stdin file descriptor 0 needs to be occupied so it doesn't get used by socketpair */
 	/*close(0);*/
-	/* maybe 0 should be redirected to "/dev/null" just like 1 and 2?
-	fd = open("/dev/null", O_READ);
+	/* maybe 0 should be redirected to "/dev/null" just like 1 and 2? */
+	fd = open("/dev/null", O_RDONLY);
 	if (fd != -1)
 	{
 	    close(0);
 	    dup2(fd, 0);
 	    close(fd);
 	}
-	*/
 
 	/* get out of the current directory to get out of the way of possibly mounted directories */
 	chdir("/");

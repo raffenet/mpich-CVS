@@ -66,6 +66,7 @@ smpd_global_t smpd_process =
       SMPD_DBG_STATE_ERROUT, /* dbg_state         */
       /*NULL,*/             /* dbg_fout               */
       "",               /* dbg_filename           */
+      SMPD_DBG_FILE_SIZE,/*dbg_file_size          */
       SMPD_FALSE,       /* have_dbs               */
       "",               /* kvs_name               */
       "",               /* domain_name            */
@@ -138,7 +139,12 @@ smpd_global_t smpd_process =
       NULL,             /* s_host_list             */
       NULL,             /* s_cur_host              */
       0,                /* s_cur_count             */
-      SMPD_FALSE        /* use_inherited_handles   */
+      SMPD_FALSE,       /* use_inherited_handles   */
+      NULL,             /* pg_list                 */
+      SMPD_FALSE,       /* use_abort_exit_code     */
+      0,                /* abort_exit_code         */
+      SMPD_TRUE,        /* verbose_abort_output    */
+      0                 /* mpiexec_exit_code       */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -281,7 +287,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     len = sizeof(sockAddr);
     getsockname(sock, (struct sockaddr*)&sockAddr, &len);
     port = ntohs(sockAddr.sin_port);
-    gethostname(host, 100);
+    smpd_get_hostname(host, 100);
 
     /* Connect to myself */
 
@@ -375,7 +381,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     len = sizeof(sockAddr);
     getsockname(sock, (struct sockaddr*)&sockAddr, &len);
     port = ntohs(sockAddr.sin_port);
-    gethostname(host, 100);
+    smpd_get_hostname(host, 100);
 
     /* Connect to myself */
 
@@ -462,7 +468,7 @@ int smpd_init_process(void)
     strcpy(smpd_process.SMPDPassword, SMPD_DEFAULT_PASSWORD);
     smpd_process.bPasswordProtect = SMPD_FALSE;
     smpd_process.bService = SMPD_FALSE;
-    gethostname(smpd_process.host, SMPD_MAX_HOST_LENGTH);
+    smpd_get_hostname(smpd_process.host, SMPD_MAX_HOST_LENGTH);
     smpd_process.UserAccount[0] = '\0';
     smpd_process.UserPassword[0] = '\0';
     smpd_process.closing = SMPD_FALSE;
@@ -542,7 +548,12 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->session[0] = '\0';
     context->session_header[0] = '\0';
     context->smpd_pwd[0] = '\0';
-    context->wait = SMPD_FALSE;
+#ifdef HAVE_WINDOWS_H
+    context->wait.hProcess = NULL;
+    context->wait.hThread = NULL;
+#else
+    context->wait = 0;
+#endif
     context->process = NULL;
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
@@ -758,7 +769,7 @@ int smpd_get_default_hosts()
 	if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
 	{
 	    smpd_unlock_smpd_data();
-	    if (gethostname(hosts, 8192) == 0)
+	    if (smpd_get_hostname(hosts, 8192) == 0)
 	    {
 		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 		if (smpd_process.default_host_list == NULL)
@@ -795,7 +806,7 @@ int smpd_get_default_hosts()
 	    return SMPD_FAIL;
 	}
 	smpd_unlock_smpd_data();
-	if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+	if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
 	{
 	    dynamic = SMPD_FALSE;
 	    myhostname[0] = '\0';
@@ -899,7 +910,7 @@ int smpd_insert_into_dynamic_hosts(void)
     smpd_lock_smpd_data();
     if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
     {
-	if (gethostname(hosts, 8192) == 0)
+	if (smpd_get_hostname(hosts, 8192) == 0)
 	{
 	    /* add this host to the dynamic_hosts key */
 	    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
@@ -913,7 +924,7 @@ int smpd_insert_into_dynamic_hosts(void)
     }
     smpd_unlock_smpd_data();
 
-    if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+    if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
     {
 	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
 	return SMPD_FAIL;
@@ -969,9 +980,9 @@ int smpd_remove_from_dynamic_hosts(void)
 
     smpd_enter_fn("smpd_remove_from_dynamic_hosts");
 #ifndef HAVE_WINDOWS_H
-    if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+    if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
     {
-	smpd_err_printf("gethostname failed, errno = %d\n", errno);
+	smpd_err_printf("smpd_get_hostname failed, errno = %d\n", errno);
 	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
 	return SMPD_FAIL;
     }

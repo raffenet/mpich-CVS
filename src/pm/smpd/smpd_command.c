@@ -632,6 +632,12 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 
     smpd_enter_fn("smpd_post_write_command");
 
+    if (context == NULL)
+    {
+	smpd_dbg_printf("unable to post a write of command '%s' on a NULL context", cmd->cmd);
+	return SMPD_FAIL;
+    }
+
     smpd_package_command(cmd);
     /*smpd_dbg_printf("command after packaging: \"%s\"\n", cmd->cmd);*/
     cmd->next = NULL;

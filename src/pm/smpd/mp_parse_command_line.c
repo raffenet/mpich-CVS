@@ -52,8 +52,8 @@ void mp_print_options(void)
     printf("-arch <architecture> - sun, linux, rs6000, ...\n");
     printf("\n");
     printf("extensions:\n");
-    printf("-env <variable=value>\n");
-    printf("-env <variable=value;variable2=value2;...>\n");
+    printf("-env <variable value>\n");
+    /*printf("-env <variable=value;variable2=value2;...>\n");*/
     printf("-hosts <n host1 host2 ... hostn>\n");
     printf("-hosts <n host1 m1 host2 m2 ... hostn mn>\n");
     printf("-machinefile <filename> - one host per line, #commented\n");
@@ -92,9 +92,9 @@ void mp_print_extra_options(void)
     printf("-dir drive:\\my\\working\\directory\n");
     printf("-wdir /my/working/directory\n");
     printf("  launch processes in the specified directory\n");
-    printf("-env var=val\n");
-    printf("-env \"var1=val1;var2=val2;var3=val3...\"\n");
-    printf("  set environment variables before launching the processes\n");
+    printf("-env var val\n");
+    /*printf("-env \"var1=val1;var2=val2;var3=val3...\"\n");*/
+    printf("  set environment variable before launching the processes\n");
     printf("-logon\n");
     printf("  prompt for user account and password\n");
     printf("-pwdfile filename\n");
@@ -188,6 +188,7 @@ void timeout_thread(void *p)
 }
 #else
 static int g_timeout = -1;
+#ifdef SIGALRM
 void timeout_function(int signo)
 {
     if (signo == SIGALRM)
@@ -196,6 +197,17 @@ void timeout_function(int signo)
 	exit(-1);
     }
 }
+#else
+#ifdef HAVE_PTHREAD_H
+static pthread_t g_timeoutthread;
+void *timeout_function(void *p)
+{
+    sleep(g_timeout);
+    smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
+    exit(-1);
+}
+#endif
+#endif
 #endif
 
 #ifdef HAVE_WINDOWS_H
@@ -222,7 +234,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_map_drive_node_t *map_node, *drive_map_list;
     smpd_env_node_t *env_node, *env_list;
     char *env_str, env_data[SMPD_MAX_ENV_LENGTH];
-    char *equal_sign_pos;
+    /*char *equal_sign_pos;*/
     char wdir[SMPD_MAX_DIR_LENGTH];
     int use_debug_flag;
     char pwd_file_name[SMPD_MAX_FILENAME];
@@ -241,6 +253,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
     FILE *fin_config;
     int result;
+    int maxlen;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -303,8 +316,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		{
 		    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 		    {
-			DWORD len = SMPD_MAX_HOST_LENGTH;
-			GetComputerName(smpd_process.console_host, &len);
+			smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 		    }
 		    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 		    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
@@ -352,6 +364,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
      * -nompi - don't require processes to be MPI processes (don't have to call MPI_Init or PMI_Init)
      * -exitcodes - print the exit codes of processes as they exit
      * -verbose - same as setting environment variable to SMPD_DBG_OUTPUT=stdout
+     * -quiet_abort - minimize the output when a job is aborted
      * 
      * Windows extensions:
      * -map <drive:\\host\share>
@@ -581,6 +594,7 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
 	    {
+		/*
 		if (argc < 3)
 		{
 		    printf("Error: no environment variables after -env option\n");
@@ -608,6 +622,25 @@ configfile_loop:
 		env_node->next = env_list;
 		env_list = env_node;
 		num_args_to_strip = 2;
+		*/
+		if (argc < 4)
+		{
+		    printf("Error: no environment variables after -env option\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
+		if (env_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
+		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
+		env_node->next = env_list;
+		env_list = env_node;
+		num_args_to_strip = 3;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
 	    {
@@ -932,10 +965,17 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 #ifdef HAVE_WINDOWS_H
+		/* create a Windows thread to sleep until the timeout expires */
 		g_timeout = atoi((*argvp)[2]);
 		if (g_timeout > 0 && g_hTimeoutThread == NULL)
 		{
 		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+		    if (g_hTimeoutThread == NULL)
+		    {
+			printf("Error: unable to create a timeout thread, errno %d.\n", GetLastError());
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
 		}
 #else
 		if (g_timeout == -1)
@@ -943,14 +983,38 @@ configfile_loop:
 		    g_timeout = atoi((*argvp)[2]);
 		    if (g_timeout > 0)
 		    {
+#ifdef SIGALRM
+			/* create an alarm to signal mpiexec when the timeout expires */
 			smpd_signal(SIGALRM, timeout_function);
 			alarm(g_timeout);
+#else
+#ifdef HAVE_PTHREAD_H
+			/* create a pthread to sleep until the timeout expires */
+			result = pthread_create(&g_timeoutthread, NULL, timeout_thread, NULL);
+			if (result != 0)
+			{
+			    printf("Error: unable to create a timeout thread, errno %d.\n", result);
+			    smpd_exit_fn("mp_parse_command_args");
+			    return SMPD_FAIL;
+			}
+#endif
+#endif
 		    }
 		    else
 			g_timeout = -1;
 		}
 #endif
 		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "hide_console") == 0)
+	    {
+#ifdef HAVE_WINDOWS_H
+		FreeConsole();
+#endif
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "quiet_abort") == 0)
+	    {
+		smpd_process.verbose_abort_output = SMPD_FALSE;
 	    }
 	    else
 	    {
@@ -981,8 +1045,21 @@ configfile_loop:
 		g_timeout = atoi(p);
 		if (g_timeout > 0)
 		{
+#ifdef SIGALRM
 		    smpd_signal(SIGALRM, timeout_function);
 		    alarm(g_timeout);
+#else
+#ifdef HAVE_PTHREAD_H
+		    /* create a pthread to sleep until the timeout expires */
+		    result = pthread_create(&g_timeoutthread, NULL, timeout_thread, NULL);
+		    if (result != 0)
+		    {
+			printf("Error: unable to create a timeout thread, errno %d.\n", result);
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
+#endif
+#endif
 		}
 	    }
 	}
@@ -1062,10 +1139,13 @@ configfile_loop:
 	    host_list->nproc = nproc;
 	}
 
-	env_str = env_data;
 	env_data[0] = '\0';
+	env_str = env_data;
+	maxlen = SMPD_MAX_ENV_LENGTH;
 	while (env_list)
 	{
+	    MPIU_Str_add_string_arg(&env_str, &maxlen, env_list->name, env_list->value);
+	    /*
 	    env_str += snprintf(env_str,
 		SMPD_MAX_ENV_LENGTH - (env_str - env_data),
 		"%s=%s", env_list->name, env_list->value);
@@ -1073,9 +1153,16 @@ configfile_loop:
 	    {
 		env_str += snprintf(env_str, SMPD_MAX_ENV_LENGTH - (env_str - env_data), ";");
 	    }
+	    */
 	    env_node = env_list;
 	    env_list = env_list->next;
 	    free(env_node);
+	}
+	if (env_str > env_data)
+	{
+	    /* trim the trailing white space */
+	    env_str--;
+	    *env_str = '\0';
 	}
 
 	for (i=0; i<nproc; i++)
@@ -1107,7 +1194,7 @@ configfile_loop:
 	    launch_node->map_list = drive_map_list;
 	    if (drive_map_list)
 	    {
-		/* ref count the list so when freeing the launch_node it can be know when to free the list */
+		/* ref count the list so when freeing the launch_node it can be known when to free the list */
 		drive_map_list->ref_count++;
 	    }
 	    strcpy(launch_node->exe, exe);
