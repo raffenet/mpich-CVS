@@ -38,21 +38,14 @@ Note that RMA requests that the target receives (put, get, acc) are
 always satisfied, because they won't be sent in the first place unless
 the source has been authorized to send them.
 
-In the case of shared locks where none of the operations is a get, the
-target must send an acknowledgement to the source when the last RMA
-operation has completed. The source must block in win_unlock
-until it receives this acknowledgement. This is because the standard
-says that when win_unlock returns, the operations will be completed
-both at the source and at the target. Therefore, after returning from
-win_lock, the source program may send a message to another process,
-which can then (with a shared lock) try to access the data that the
-source had put at the target. If the source didn't wait for the
-acknowledgement at win_unlock, this other process may get stale
-data. This problem does not occur in the case of exclusive locks.
-If any one of the operations is a get, we reorder the operations and
-perform the get last. In this case, since the source must wait to
-receive the data, the acknowledgement is not needed (assuming
-that data transfer is ordered). 
+If none of the RMA operations is a get, the target must send an
+acknowledgement to the source when the last RMA operation has
+completed. If any one of the operations is a get, we reorder the
+operations and perform the get last. In this case, since the source
+must wait to receive the data, the acknowledgement is not needed
+assuming that data transfer is ordered. If data transfer is not
+ordered, an acknowledgement is needed even if the last operation is a
+get.
 
 The MPI_Win object needs the following lock info:
    int current_lock_type;  /* no_lock, shared, exclusive */
