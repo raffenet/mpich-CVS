@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -9,7 +8,7 @@
 #include <stdlib.h>
 #include "mpitest.h"
 
-static char MTEST_Descrip[] = "Test MPI_Allreduce with non-commutative user-define operations";
+static char MTEST_Descrip[] = "Test MPI_Allreduce with non-commutative user-defined operations";
 
 /* This implements a simple matrix-matrix multiply.  This is an associative
    but not commutative operation.  The matrix size is set in matSize;
