@@ -62,7 +62,7 @@ linktest_F77:
 
 ########  Cleaning
 clean_include:
-	@-if [ -n "$(includebuild_dir)" \
+	@-if [ -n "$(includebuild_dir)" -a "$(top_srcdir)" != "." \
 	       -a "$(includebuild_dir)" != "$(top_srcdir)/include" ] ; then \
 	      cd $(includebuild_dir) && \
 	      for file in $(MPE_HEADERS) ; do \
