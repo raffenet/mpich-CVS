@@ -7,6 +7,7 @@
       integer disp
       integer win
       integer baseadd
+      integer commsize
       errs = 0;
       
       call mpi_init( ierr )

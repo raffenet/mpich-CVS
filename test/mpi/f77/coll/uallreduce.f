@@ -12,11 +12,11 @@ C
       end
 
       program main
+      include 'mpif.h'
       external uop
       integer ierr, errs
       integer count, sumop, vin(65000), vout(65000), i, size
       integer comm
-      include 'mpif.h'
       
       errs = 0
 

@@ -1,10 +1,14 @@
-        subroutine MTest_Init( int ierr )
-        logical flag
+        subroutine MTest_Init( ierr )
+C       Place the include first so that we can automatically create a
+C       Fortran 90 version that uses the mpi module instead.  If
+C       the module is in a different place, the compiler can complain
+C       about out-of-order statements
+        include 'mpif.h'
         integer ierr
+        logical flag
         logical dbgflag
         integer wrank
         common /mtest/ dbgflag, wrank
-        include 'mpif.h'
 
         call MPI_Initialized( flag, ierr );
         if (.not. flag) then
@@ -16,9 +20,9 @@
         end
 
         subroutine MTest_Finalize( errs )
+        include 'mpif.h'
         integer errs
         integer rank, toterrs, ierr
-        include 'mpif.h'
         
         call MPI_Comm_rank( MPI_COMM_WORLD, rank, ierr )
 
@@ -35,9 +39,9 @@
         end
 
         subroutine MTestPrintError( errcode )
+        include 'mpif.h'
         integer errcode
         integer errclass, slen, ierr
-        include 'mpif.h'
         character*(MPI_MAX_ERROR_STRING) string
 
         call MPI_Error_class( errcode, errclass, ierr )
