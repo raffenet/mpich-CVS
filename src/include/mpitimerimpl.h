@@ -1,5 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
+/*
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -25,6 +25,9 @@
    logged from the beginning of the send to the end of the receive. */
 #undef MPID_LOG_RECV_FROM_BEGINNING
 /*#define MPID_LOG_RECV_FROM_BEGINNING*/
+
+/* This include file contains the static state definitions */
+#include "mpiallstates.h"
 
 /* Possible values for USE_LOGGING */
 #define MPID_LOGGING_NONE 0
