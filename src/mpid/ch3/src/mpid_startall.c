@@ -67,15 +67,17 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		sreq = MPIDI_CH3_Request_create();
 		if (sreq != NULL)
 		{
-		    MPIU_Object_set_ref(sreq, 1);
-		    sreq->kind = MPID_REQUEST_SEND;
-		    sreq->cc   = 0;
-		    sreq->comm = preq->comm;
-		    MPIR_Comm_add_ref(sreq->comm);
-		    
 		    rc = MPIR_Bsend_isend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
 					  preq->dev.match.tag, preq->comm, BSEND_INIT, &preq->partner_request);
 
+		    MPIU_Object_set_ref(sreq, 1);
+		    sreq->kind = MPID_REQUEST_SEND;
+		    sreq->cc   = 0;
+		    sreq->comm = NULL;
+#if 0		    
+		    sreq->comm = preq->comm;
+		    MPIR_Comm_add_ref(sreq->comm);
+#endif		    
 		    sreq->status.MPI_ERROR = rc;
 		    preq->partner_request = sreq;
 		    rc = MPI_SUCCESS;

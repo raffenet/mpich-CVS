@@ -28,6 +28,16 @@ int MPID_Cancel_send(MPID_Request * sreq)
     {
 	goto fn_exit;
     }
+
+    /*
+     * FIXME: user requests returned by MPI_Ibsend() have a NULL comm pointer and no pointer to the underlying communication
+     * request.  For now, we simply fail to cancel the request.  In the future, we should add a new request kind to indicate that
+     * the request is a BSEND.  Then we can properly cancel the request, much in the way we do persistent requests.
+     */
+    if (sreq->comm == NULL)
+    {
+	goto fn_exit;
+    }
     
     vc = sreq->comm->vcr[sreq->dev.match.rank];
 
