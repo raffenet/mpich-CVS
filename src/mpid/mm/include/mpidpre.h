@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #ifndef MPIDPRE_H
 #define MPIDPRE_H
 
@@ -90,36 +95,40 @@ typedef struct MM_Car
     struct MPIDI_VC *vc_ptr;
     int src, dest;
     MM_CAR_TYPE type;
-    union data {
+    union car_data {
 	MPID_Packet pkt;
-	struct packer
+	struct car_packer
 	{
 	    int first;
 	    int last;
 	} packer;
-	struct unpacker
+	struct car_unpacker
 	{
 	    int first;
 	    int last;
 	} unpacker;
 #ifdef WITH_METHOD_SHM
-	struct shm 
+	struct car_shm 
 	{
+	    void *shm_ptr;
 	} shm;
 #endif
 #ifdef WITH_METHOD_TCP
-	struct tcp
+	struct car_tcp
 	{
+	    int num_read;
 	} tcp;
 #endif
 #ifdef WITH_METHOD_VIA
-	struct via
+	struct car_via
 	{
+	    void *desc_ptr;
 	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-	struct viardma
+	struct car_viardma
 	{
+	    void *desc_ptr;
 	} viardma;
 #endif
 #ifdef HAVE_NEW_METHOD
@@ -153,14 +162,14 @@ typedef struct MM_Segment
     MM_BUFFER_TYPE buf_type;
     union MM_Segment_buffer
     {
-	struct tmp
+	struct mm_segment_tmp
 	{
 	    void *buf_ptr[2];
 	    int cur_buf;
 	    int num_read;
 	    int min_num_written;
 	} tmp;
-	struct vec
+	struct mm_segment_vec
 	{
 	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
 	    int size;
@@ -168,21 +177,21 @@ typedef struct MM_Segment
 	    int min_num_written;
 	} vec;
 #ifdef WITH_METHOD_SHM
-	struct shm
+	struct mm_segment_shm
 	{
 	    void *shm_ptr;
 	    int num_read;
 	} shm;
 #endif
 #ifdef WITH_METHOD_VIA
-	struct via
+	struct mm_segment_via
 	{
 	    void *descriptor_ptr;
 	    int num_descriptors;
 	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-	struct via_rdma
+	struct mm_segment_via_rdma
 	{
 	    void *descriptor_ptr;
 	    int num_descriptors;

@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "bsocketimpl.h"
 #ifdef HAVE_STDIO_H
 #include <stdio.h>

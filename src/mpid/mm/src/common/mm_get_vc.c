@@ -39,10 +39,9 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
     vc_ptr = comm_ptr->vcr[rank];
     if (vc_ptr == NULL)
     {
-	mpi_errno = mm_connector_vc_alloc(comm_ptr, rank);
-	if (mpi_errno != MPI_SUCCESS)
-	    return NULL;
-	vc_ptr = comm_ptr->vcr[rank];
+	comm_ptr->vcr[rank] = vc_ptr = mm_vc_alloc(MM_CONNECTOR_METHOD);
+	vc_ptr->rank = rank;
+	vc_ptr->pmi_kvsname = comm_ptr->mm.pmi_kvsname;
     }
 
     return vc_ptr;
@@ -55,7 +54,7 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 @*/
 MPIDI_VC *mm_get_packer_vc()
 {
-    return mm_packer_vc_alloc();
+    return mm_vc_alloc(MM_PACKER_METHOD);
 }
 
 /*@
@@ -65,5 +64,5 @@ MPIDI_VC *mm_get_packer_vc()
 @*/
 MPIDI_VC *mm_get_unpacker_vc()
 {
-    return mm_unpacker_vc_alloc();
+    return mm_vc_alloc(MM_UNPACKER_METHOD);
 }

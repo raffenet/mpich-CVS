@@ -3,9 +3,12 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef TCPIMPL_H
-#define TCPIMPL_H
+#ifndef MM_TCP_H
+#define MM_TCP_H
 
-#include "mm_tcp.h"
+#include "mpidimpl.h"
+
+int tcp_init();
+int tcp_get_business_card(char *value);
 
 #endif

@@ -29,7 +29,7 @@ int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     value_len = PMI_KVS_Get_value_length_max();
     value = (char*)malloc(value_len);
-    sprintf(key, "businesscard%d", rank);
+    snprintf(key, 100, "businesscard:%d", rank);
     PMI_KVS_Get(name, key, value);
 
     /* figure out stuff */
