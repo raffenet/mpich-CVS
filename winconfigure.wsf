@@ -968,6 +968,8 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_MSGGET */")
 				Case "HAVE_PROCESS_H"
 					fout.WriteLine("#define HAVE_PROCESS_H")
+				Case "HAVE_MULTIPLE_PRAGMA_WEAK"
+					fout.WriteLine("/* #undef HAVE_MULTIPLE_PRAGMA_WEAK */")
 				Case "MPICH_CPU_TICK_TYPE"
 					fout.WriteLine("#define MPICH_CPU_TICK_TYPE USE_WIN_X86_CYCLE_ASM")
 				Case "USE_BUSY_LOCKS"
