@@ -422,6 +422,8 @@ def mpdman():
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         jobEndingEarly = 1
+                        for s in spawnedChildSockets:
+                            mpd_send_one_msg(s,msg)
                         if myRank != 0:
                             if rhsSocket:  # still alive ?
                                 mpd_send_one_msg(rhsSocket,msg)
@@ -876,6 +878,8 @@ def mpdman():
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
+                        for s in spawnedChildSockets:
+                            mpd_send_one_msg(s,msg)
                         try:
                             pgrp = clientPid * (-1)   # neg Pid -> group
                             kill(pgrp,SIGKILL)   # may be reaped by sighandler
