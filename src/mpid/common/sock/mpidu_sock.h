@@ -54,6 +54,7 @@ D*/
 #define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 12
 #define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 13
 #define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 14
+#define MPIDU_SOCK_ERR_NOP_ACCEPT       MPICH_ERR_LAST_CLASS + 15
 
 
 /*E
@@ -298,6 +299,7 @@ Output Parameter:
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - new connection successfully established and associated with new sock objecta
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
+. MPIDU_SOCK_ERR_NOP_ACCEPT - accept called without previous OP_ACCEPT returned by sock_wait
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid listener sock or bad pointer to new sock object
 . MPIDU_SOCK_ERR_BAD_SET - invalid sock set
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
@@ -380,7 +382,7 @@ Input Parameters:
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - user pointer successfully updated
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
-. MPIDU_SOCK_ERR_BAD_SET - invalid sock object
+. MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 - MPIDU_SOCK_ERR_FAIL - other failure?
 
 Module:
