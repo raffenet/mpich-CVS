@@ -1,6 +1,6 @@
 %
-% This file contains a discussion of a possible TCP device
-% implementation of ADI3  
+% This file contains a discussion of a possible TCP device and a new
+% channel device implementation of ADI3  
 
 \documentclass{article}
 \usepackage{/home/gropp/data/share/refman}
@@ -27,16 +27,32 @@
 
 \begin{document}
 
-\title{A TCP Implementation of the ADI-3}
-\author{}
+\title{The CH3 Design for a Simple Implementation of ADI-3 for MPICH with a
+TCP-based Implementation}
+\author{William Gropp and Brian Toonen and who else?}
 \maketitle
 
 \begin{abstract}
-
+ADI-3 is a full featured, abstract device interface used in the MPICH
+implementation of MPI to provide a portability layer that allows
+access to many performance-oriented features of a wide range of
+communication systems.  ADI-3 is allows research into wide range of
+implementation issues in MPI. However, because it is full featured,
+it contains a large number of functions that must be implemented.  To
+both simplify the task of experimenting with MPI implementation
+issues, a simplified ``channel'' device is described.  This device
+requires the implementation of only a dozen functions but provides
+many of the performance advantages of the full ADI-3 interface.  This
+smaller interface, called CH3 (for third version of the channel
+interface) in turn implements the full ADI-3 interface, providing a
+simple way to port MPICH to a new platform.  To illustrate the
+implementation issues, an implementation of CH3 using TCP sockets is
+described. 
 \end{abstract}
 
 \section{Introduction}
-This document outlines an implementation of the ADI on TCP.  It defines a
+This document outlines the CH3 ``channel'' device implementation of
+the ADI and sketches an implementation of CH3 on TCP.  It defines a
 specific interface to the low level OS TCP operations, and outlines a way
 for at least the basic \code{MPID_} routines to be implemented in terms of
 these 
@@ -89,7 +105,8 @@ The MPID layer communicates by sending messages consisting of a message header
 followed by data.  The MPID layer defines (internal to itself, so this
 discussion only applies to the CH3/TCP implementation of MPID):
 \begin{description}
-\item[Packet Types.]An \code{enum} of types, this is roughly a dozen kinds of
+\item[Packet Types.]An \code{enum} of types, this describes roughly a
+dozen kinds of 
   message that are needed to implement MPI message-passing semantics.  The
   packet types and what they contain include:
   \begin{description}
@@ -101,7 +118,7 @@ discussion only applies to the CH3/TCP implementation of MPID):
     \item[rndv\_req\_to\_send.]MPI envelope and send request id.
     \item[rndv\_OK\_to\_send.]Send and receive request id
     \item[put.]Address and length, followed immediately by data
-    \item[rndv\_send.]send and receive request id, followed immediately by data
+    \item[rndv\_send.]Send and receive request id, followed immediately by data
     \item[cancel\_send.]Send request id to cancel
     \item[cancel\_send\_ack.]Send request id and true/false for was cancelled
     \item[flow\_cntl\_update.]Flow control for eager messages and rendezvous
@@ -130,7 +147,7 @@ CH3 routine brief summary:
 Details in Appendix~\ref{app:ch3}.
 
 \begin{description}
-\item[CH3\_new\_request.]Create a new request. This is used with
+\item[CH3\_request\_create.]Create a new request. This is used with
   \code{CH3_iSend}, and for cases where a completed request is required (see
   the discussion of \code{MPID_Isend}).
 \item[CH3\_iStartMsg.]Begin a message.  Return a request if the message has not
@@ -156,13 +173,18 @@ Details in Appendix~\ref{app:ch3}.
 
 The bindings for these routines are:
 \begin{verbatim}
-/* Routines that create and free requests */
-MPID_Request *CH3_new_request( void );
+/* Routines that create and destroy requests */
+MPID_Request *CH3_request_create( void );
 MPID_Request *CH3_iStartMsg( MPID_VC *, void *header, int header_count )
 MPID_Request *CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
-void CH3_free_request( MPID_Request * );
+void CH3_request_destroy( MPID_Request * );
 
-/* Routines that send or receive data and use an existing request */
+/* Routines that send or receive data and use an existing request.
+   These are used when incrementally processing communication, for
+   example, when packing and sending the next segment from a
+   non-contiguous datatype.  Each of these is nonblocking and
+   indicates completing by decrementing the completion count (cc)
+   field in the request. */
 void CH3_iSend( MPID_VC *, MPID_Request *, void *header, int header_count )
 void CH3_iSendv( MPID_VC *, MPID_Request *, struct iovec *, int count )
 void CH3_iWrite( MPID_VC *, MPID_Request * )
@@ -211,7 +233,7 @@ By chosing this limitation, some operationes may be inlined for
 greater efficiency.
 
 These routines must be prepared to create actual connections (e.g., establish
-a socket) if there is connection already present.  It is up to the
+a socket) if there is no connection already present.  It is up to the
 implementation of the CH3 routines to decide how this is accomplished.
 
 \paragraph{Consequences.}
@@ -228,7 +250,7 @@ guarantees only that all the data have arrived, not the particular
 order of arrival.
 \item Handshakes.  Some communication, particularly rendezvous transfers,
   requires handshakes or cooperation between sender and receiver
-\item Low latency for short messages.
+\item Performance.  Low latency for short messages.
 \end{enumerate}
 These requirements suggest that there be a single data structure that holds
 the progress of all communication. 
@@ -251,7 +273,7 @@ individual communication operation.
 
 The data structure that satisfies these requirements is the
 \code{MPID_Request}.  Further, once communication is started (e.g., with
-\code{CH3_Startmsg}, further data transfers are accomplished by either placing
+\code{CH3_Startmsg}), further data transfers are accomplished by either placing
 the request into the queue of pending data transfers or by updating a request
 that is already the active request (rather than creating a new request).
 
@@ -290,7 +312,7 @@ optional routine (at least while we target only MPI-1) and need not be
 implemented.  The packet handler descriptions given show how a put
 operation can be implemented, even in a TCP/sockets environment.
 
-Unresolved questions on CH3:
+\subsection{Thread Safety}
 
 % Who provides the queue manipulation routines (e.g., FOA)?  Is this part of the
 % base set of CH3 routines, or is it an MPID routine?  Or is it
@@ -315,14 +337,14 @@ essentially a subclassing approach, but implemented directly in C.
 The assignment of data structures to layers is as follows.
 \begin{description}
 \item[MPI application layer.](User programs) Owns and allocates
-  \code{MPI_Status} 
-\item[MPI implementation layer.](e.g., implementation of \code{MPI_Isend} in
-  terms of \code{MPID_Isend}) Owns and allocates communicators, datatypes,
-  attributes, groups, files, window objects, keyvals, error handlers.
-\item[MPID Channel implementation layer.](e.g., implementation of
-  \code{MPID_Isend} in terms of CH3) Owns and allocates packets.
+  \code{MPI_Status}. 
+\item[MPI implementation layer.](E.g., implementation of \code{MPI_Isend} in
+  terms of \code{MPID_Isend}.) Owns and allocates communicators, datatypes,
+  attributes, groups, files, window objects, keyvals, and error handlers.
+\item[MPID Channel implementation layer.](E.g., implementation of
+  \code{MPID_Isend} in terms of CH3.) Owns and allocates packets.
   Defines packet type handlers.  Owns and allocates segments.
-\item[CH3 layer.] Owns and allocates connections, requests.
+\item[CH3 layer.] Owns and allocates connections and requests.
 \end{description}
 
 % \begin{verbatim}
@@ -365,10 +387,63 @@ The assignment of data structures to layers is as follows.
 
 \subsection{Utility Routines}
 (not written yet)
-This section should describe the queue operation routines.
+This section should describe the queue operation routines, such as the
+find-or-post or find-or-allocate (FOA) operations.
+
+
+
+\begin{description}
+\item[CH3U\_Find\_or\_post.]Find a request in the unexpected message
+queue; if one is 
+not found, create a request and add it to the posted receive queue.
+\item[CH3U\_Find\_or\_post\_unexp.]Like \code{CH3U\_Find\_or\_post},
+but first checks the posted receive queue, and if not found, adds to
+the unexpected message queue.  This routine is called by a message
+handler while the previous routine is called by one of the MPI receive
+routines.  
+\item[CH3U\_DeQueue\_unexp.]Dequeue a request from the unexpected
+message queue.
+\item[CH3U\_DeQueue\_posted.]Dequeue a request from the posted message
+queue. 
+\item[CH3U\_Request\_change\_state.]Change the state of a request.
+This is used, for example, to change a request from ``allocated by not
+yet initialized'' to ``ready to match incoming message''.
+\item[CH3U\_AllocateStorageFromEagerBuffer.]Allocate buffer space for
+saving an unexpected eager message.  This routine coordinates with the
+flow control code.
+\end{description}
+
+Bindings:
+\begin{verbatim}
+    request = CH3U_Find_or_post( tag, context_id, source, &found )
+    request = CH3U_Find_or_post_unexp( msg_match, &found )
+    void CH3U_DeQueue_unexp( int req_id )
+    void CH3U_DeQueue_posted( int req_id )
+    void CH3U_Request_change_state( state )
+    void *CH3U_AllocateStorageFromEagerBuffer( int )
+\end{verbatim}
+
+\subsection{NonContiguous Datatypes}
+The CH3 interface supports the direct communication of either single
+contiguous blocks of data or data represented by a standard iovec
+structure.  However, some of the most common noncontiguous datatypes
+encountered in MPI programs are not efficiently represented by an
+iovec structure; these include both strided and block-indexed types.
+While the ADI-3 interface allows the device to directly handle all
+datatypes, the CH3 interface must pack and unpack datatypes that are
+noncontiguous.  To allow arbitrarily large messages to be sent with
+the CH3 device, packing and unpacking may be done incrementally.  The
+routines such as \code{CH3\_iWrite} and \code{CH3\_iRead} are used for
+transfering these incrementally packed buffers.
 
 \section{Pseudo-code for some of the \code{MPID\_} routines}
-This section outlines the pseudocode for some of the major MPID routines.
+This section outlines the pseudocode for some of the major MPID
+routines.
+Note that many of these operations only begin a communication.  The
+completion of the communication often takes place with the
+communication agent.  The routines that are implemented within the
+communication agent, which are called message handlers, are described
+in Section~\ref{sec:agent}.
 
 \subsection{Sending}
 The code for \code{MPID_Isend} and \code{MPID_Send} is shown below.  The code
@@ -389,7 +464,7 @@ MPID_Isend( )
     if (eager) {
         create packet on stack
         fill in as eager send packet
-        request = CH3_new_request()
+        request = CH3_request_create()
         if (data contiguous)
             CH3_iSendv( request, iov )
         else {
@@ -397,12 +472,14 @@ MPID_Isend( )
             pack into buffer
             CH3_iSendv( request, iov )
             if (complete)
-                 free pack buffer
+                free pack buffer
+            else
+                save location of pack buffer in request
             }
         }
     else (rendezvous) {
         create packet on stack
-        request = CH3_new_request();
+        request = CH3_request_create();
         fill in request
         fill in packet as rndv_req to send (include request id)
         CH3_iSend( request, packet )
@@ -418,7 +495,7 @@ allocated memory.  For the near term, however, we will not include this
 enhancement. 
 
 \code{MPID_Send} is slightly different because we want to avoid allocating a
-request if we can avoid it.  
+request if possible.  
 
 \begin{verbatim}
 MPID_Send( )
@@ -429,6 +506,7 @@ MPID_Send( )
         fill in as eager send packet
         if (data contiguous) {
             request = CH3_iStartmsgv( iov )
+            // note that the request will be null if the message was sent
             }
         else {
             create pack buffer
@@ -437,8 +515,8 @@ MPID_Send( )
             if (!request)
                 free pack buffer
             else
-                store pack buffer info in request
-         }
+                save location of pack buffer in request
+          }
     else (rendezvous) {
         .. exactly like MPID_Isend
     } 
@@ -478,7 +556,7 @@ MPID_Irecv( )
 
 Note that this code cannot avoid the allocation of a request, even in
 the case of \code{MPID_Recv} and where the data is already available in the
-socket.  To
+socket, since a request must be returned to the user.  To
 optimize for low latency in the case of a small, contiguous transfer,
 we may want to have a version of \code{MPID_Recv} that looks something
 like
@@ -517,8 +595,8 @@ queue is empty is sufficient.
 
 This example also serves to illustrate why the MPID interface includes
 blocking receive; there is a potentially important optimization that
-is oterwise not available.  Also note that this routine cannot be
-implemented strictly 
+is otherwise not available without a blocking receive.  Also note that
+this routine cannot be implemented strictly 
 in terms of the \code{CH3_xxx} routines, because the ``try to read next
 packet'' step requires access to the underlying message buffers.  
 Question: we could provide a routine to do this (see the progress engine
@@ -548,10 +626,10 @@ datastructures.
 
 \begin{verbatim}
 MPID_Send_init()
-    act_request = CH3_new_request();
-    request     = CH3_new_request();
+    act_request = CH3_request_create();
+    request     = CH3_request_create();
     request->act_request = act_request;
-    request->send_packet = MPIU_Malloc( packet ); /* ??? */
+    request->send_packet = MPIU_Malloc( packet );
     setup fields in request, act_request, send_packet, 
         including a free-handler for the request
     return request   
@@ -559,6 +637,12 @@ MPID_Send_init()
 Rather than use \code{MPIU_Malloc}, we may want a \code{CH3} routine that can
 return a packet that may not be allocated on the stack (e.g., a persistent
 packet).  
+
+The reason that a packet is allocated here rather than off the stack
+is that this allows us to fill in the packet once during the
+\code{MPID\_Send\_init} step, rather than during each
+\code{MPID\_Start} step.  Note that \code{MPID\_Request\_free} must
+free this packet and the \code{act\_request}.
 
 % \begin{verbatim}
 % MPID_Startall()
@@ -599,13 +683,16 @@ generalized requests in MPI-2) and point-to-point persistent
 communication requests.
 
 \section{Pseudo-code for Message Handlers}
+\label{sec:handlers}
+\label{sec:agent}
 These are the routines that are called by the progress engine on receiving a
 message packet.  All of these assume that the entire packet header has been 
 read but that any following data may not yet have been read.  
 
 Question: The Unix socket interface supports a ``low watermark''
 setting that guarantees that at least that many bytes are available
-when \code{select} or \code{poll} returns.  Should we this in the code?
+when \code{select} or \code{poll} returns.  Should we use this in the
+code?  What are the performance implications?
 
 \subsection{EagerSend}
 Action invoked by the receiver of an eagerly sent message.  The data for the
@@ -618,17 +705,25 @@ message is immediately behind the message header (eagersend packet).
     }
     else {
         /* Message is unexpected */
+#       ifdef HAVE_ERROR_CHECKING
         if (message is readysend) {
              signal error (and return a message to sender)
              arrange to read and discard data 
              (simply allow the read as below; set the state to discard
              when the transfer is complete)
         }
-        request->active_buf = AllocateStorageFromEagerBuffer( len )
+#       endif
+        request->active_buf = CH3U_AllocateStorageFromEagerBuffer( len )
+        request->active_buf_len = len
         CH3_iRead( request )
     }
 \end{verbatim}
-
+This routine uses \code{CH3\_iRead} to read the data that follows the
+message header into the location previously saved in the request (when
+the request was posted).  We don't pass the buffer location to
+\code{CH3\_iRead} because (a) the location is already present in the
+request and (b) passing it as an argument to the routine unnecessarily
+adds to function call overhead.
 \subsection{RndvReqToSend}
 Action invoked by the reciever of a rendezvous message.
 \begin{verbatim}
@@ -642,13 +737,17 @@ Action invoked by the reciever of a rendezvous message.
             create rndv-ok-to-send packet on stack
             CH3_iSend( request, packet )
     }
+#ifdef HAVE_ERROR_CHECKING
     else if (ready-send) {
         return an error message to sender (error msg packet)
         tmp_request = CH3_iStartMsg( packet );
         if (tmp_request) tmp_request->ref_count--;
         MPID_CH3U_DeQueue_unexp( request )
     }
+#endif
 \end{verbatim}
+Question: it may be possible to reuse the incoming packet as the
+outgoing packet, thus saving some stores to the packet structure.
 
 \subsection{RndvOkToSend}
 Action invoked by the sender of a rendezvous message on receipt of an
@@ -656,14 +755,20 @@ acknowledgement from the receiver.
 \begin{verbatim}
     Convert request id (in packet) to pointer to request structure
     create RndvData packet on stack
+    iov[0].ptr = address of packet
+    iov[0].len = sizeof(packet)
     if (data contig) {
-        CH3_iSendv( request, iov )
+        iov[1].ptr = data_address
+        iov[1].len = data_len
+        CH3_iSendv( request, iov, 2 )
     }
     else {
         Create pack buffer
         Pack first segment worth
+        iov[1].ptr = address of pack buffer
+        iov[1].len = lenght of packed data
         request->state = segment_sending
-        CH3_iSendv( request, iov )
+        CH3_iSendv( request, iov, 2 )
     }
 \end{verbatim}
 
@@ -689,6 +794,8 @@ provide the data for a rendezvous receive, there is already an available
 request.  Question: do we want a form of put that takes advantage of having an
 existing request?  In that case, instead of the remote flag address, the
 remote request id can be used.
+
+Note that if the read completes, the returned request is null.
 
 \subsection{RndvData}
 Action invoked by the receiver of data sent in response to an ok to send after
@@ -720,13 +827,21 @@ RndvReqToSend.
     }
     if (newrequest) newrequest->ref_count--;
 \end{verbatim}
+Note that the above code must access the message queues atomically in
+the multi-threaded case in order to preserve correctness.  Question:
+should the queue access part of this be an CH3U utility routine?
 
 \subsection{CancelSendAck}
+Action invoked by the receiver of a request that acknowleges a
+CancelSend request.
+
 \begin{verbatim}
     Convert request id (in packet) to pointer to request structure
     Set request to indicate whether cancel succeeded
     If succeeded, remove from pending send list
 \end{verbatim}
+As for the CancelSend message, this must act atomically on the message
+queue.
 
 \subsection{FlowControlUpdate}
 
@@ -748,8 +863,18 @@ separately, encoding the number of each consumed since the last
 communication within a single 32-bit integer field in each message
 packet.  
 
+(need to add more details on flow control.)  
+The biggest issue is the
+handling of eager buffer space.  The problem is fragmentation; you
+can't simply count the number of bytes.  One possibility is to
+allocate space in a buddy system and count the number allocated in
+each buddy pool (each pool contains identically sized blocks).  Note
+that because the maximum size of an eager message is limited, we don't
+really need to worry about a message being too large for a single
+fragment in the eager buffer bool.
+
 \section{Message Queues}
-This section describes the routines for handling the receive queues.  For
+This section describes the routines for handling the message queues.  For
 thread safety, the queues of posted receive requests and of unexpected
 messages are accessed atomically rather than through separate routines.
 
@@ -765,28 +890,31 @@ typedef struct {
 To exploit longer-word instructions where available, this is really a
 union:
 \begin{verbatim}
-union { 
+typedef union { 
     struct { 
     int32_t tag;
     int16_t source;
     int16_t context_id;
     } match;
     int32_t match32[2];
+#ifdef HAVE_INT64_T
     int64_t match64;
+#endif
+} MPID_Message_match;
 \end{verbatim}
 
 On systems with \code{int64_t}, the match test is a single line of C code; if
 the hardware has 64-bit integer operations, it is a single compare
 instruction.  Otherwise, the code shown here must be expanded to test
-two 32-bit fields.
+two 32-bit fields.  
 
 \begin{verbatim}
 MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
    /* Look in unexpected queue for a match */
-   MPID_Message_match m = {tag, source, context_id};
+   MPID_Message_match m.match = {tag, source, context_id};
    if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE) {
        for (r = unexpected_queue->head; r; r = r->next ) {
-           if (r->match == m) {
+           if (r->match.match64 == m.match64) {
                remove r from unexpected queue
                found = 1
                return r
@@ -795,11 +923,12 @@ MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
    }
    else {
        /* Must do any match */
-       MPID_Message_mask mask = {0xffffffff, 0xffff, 0xffff};
-       if (tag == MPI_ANY_TAG) { mask.tag = 0; m.tag = 0; }
-       if (source == MPI_ANY_SOURCE) { mask.source = 0; m.source = 0; }
+       MPID_Message_match mask.match = {0xffffffff, 0xffff, 0xffff};
+       if (tag == MPI_ANY_TAG) { mask.match.tag = 0; m.match.tag = 0; }
+       if (source == MPI_ANY_SOURCE) { 
+           mask.match.source = 0; m.match.source = 0; }
        for (r = unexpected_queue->head; r; r = r->next ) {
-           if ((r->match & mask) == m) {
+           if ((r->match.match64 & mask.match64) == m.match64) {
                remove r from unexpected queue
                found = 1
                return r
@@ -808,17 +937,16 @@ MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
    }
    found = 0;
    /* If we get here, the message was not found */
-   request = CH3_new_request()
-   request->match = { tag, source, context_id };
-   request->mask  = { like the above };
+   request = CH3_request_create()
+   request->match.match = { tag, source, context_id };
+   request->mask.match  = { like the above };
    /* Add to tail of posted recieves */
    posted_receive->tail->next = request;
    posted_receive->tail       = request;
    return request
 \end{verbatim}
 The above code shows an example of optimizing for code that does not
-use wildcards 
-for the tag or source.  
+use wildcards for the tag or source.  
 
 The next routine is always called in response to receiving a message packet,
 and hence simply passes the part of the packet that contains the tag, context,
@@ -838,7 +966,7 @@ MPID_CH3U_Find_or_post_unexp( MPID_Message_match *, int *found )
    }
    found = 0;
    /* If we get here, the message was not found */
-   request = CH3_new_request()
+   request = CH3_request_create()
    request->match = { tag, source, context_id };
    /* Add to tail of unexpected recieves */
    unexp_receive->tail->next = request;
@@ -852,24 +980,33 @@ This routine is required for cancelling sends.
 \begin{verbatim}
 MPID_CH3U_DeQueue_unexp( int req_id )
     for (r = unexpected->head; r; r = r->next) {
-        if (r->id == req_id) {
+        if (r->handle == req_id) {
              remove r from list and return it
         }
     return null
 \end{verbatim}
+(Recall that the integer id of the request is called the \code{handle}.)
 
 This routine is required for cancelling receives
 \begin{verbatim}
 MPID_CH3U_DeQueue_posted( int req_id )
     for (r = posted->head; r; r = r->next) {
-        if (r->id == req_id) {
+        if (r->handle == req_id) {
              remove r from list and return it
         }
     return null
 \end{verbatim}
 The above are appropriate for rare operations such as cancel that can 
 afford to search through potentially long lists and can even use locks
-to guarantee exclusive access to the data structures.
+to guarantee exclusive access to the data structures.  Note that the
+description of the cancel routines do not use these routines but they should.
+
+\subsection{Debugger Interface}
+(still to do; this section will describe how to support the message
+queue operations that are part of the debugger interface.  Note that
+the debugger interface provides for both a receive and send queue
+interface; the debugger can get a list of the pending send and receive
+operations, along with the unexpected messages.
 
 \section{Implementing \code{mpiexec}}
 \label{sec:mpiexec}
@@ -877,7 +1014,7 @@ to guarantee exclusive access to the data structures.
 (This is a temporary spot for these remarks, since they may apply to more than
 just the TCP device.)
 
-There are multiple possible implementations for \code{mpiexec}, and each has
+There are multiple possible implementations for \code{mpiexec} and each has
 its own advantages and disadvantages.  We might implement all of them, but we
 should implement the quickest-to-implement first.
 
@@ -917,7 +1054,7 @@ should implement the quickest-to-implement first.
 \end{description}
 
 The first and last options seem to present the shortest paths to getting
-something running that we can use to debug the coming avalanche of code with.
+something running that we can use to debug the coming avalanche of code.
 
 Any of these need to contain the argument-processing code for the defined
 standard arguments to \code{mpiexec}.  These are defined in Volume 1 of \emph{ MPI---The Complete Reference}, starting on page 353.  There are multiple
@@ -950,7 +1087,7 @@ implement an XML-style version of keyword/value pairs using a format such as
 \begin{verbatim}
 <MPICH keyword=value />
 \end{verbatim}
-and have both the first and second choices.
+and have both the first and second choices at the same time.
 
 % \section{Summary}
 % \label{sec:tcpadi-summary}
@@ -1005,7 +1142,7 @@ want the operations of insert and delete on this queue to be fast.
 Return a new request.  
 
 \begin{verbatim}
-CH3_new_request() 
+CH3_request_create() 
     request = request_avail;
     request_avail = request->next;
     return request
@@ -1013,6 +1150,27 @@ CH3_new_request()
 This routine should be thread safe in a multithreaded environment, preferably
 without using locks (e.g., use compare-and-swap to update
 \code{request_avail}).  
+
+Question: What should this routine do if it cannot allocate a new
+request?  Is that a fatal error?  What about the fault-tolerant case?
+Should the code look something like
+\begin{verbatim}
+CH3_request_create()
+    request = request_avail;
+    if (!request) {
+       int limit = 200;
+       do { 
+          CH3_Progress( 0 );
+          request = request_avail;
+       }
+       while (!request && limit--) {
+       if (!request) { 
+	   MPID_Abort( ) // Give up
+    }
+    request_avail = request->next;
+    return request
+}    
+\end{verbatim}
 
 \subsection{iStartMsg}
 \code{CH3_iStartMsg} is called to send a message.  It returns a
@@ -1070,10 +1228,10 @@ CH3_iSend( MPID_VC *, MPID_Request *, void *buf, void *count )
         try to send data.
         if (all sent) {
             switch (request->comm_state)
-                0: request->busy--; 
+                0: request->cc--; 
                    if (request->ref_count == 0) recover request
-               >0: (request->update)(request) /* effectively ``invoke 
-                    MPID_CH3_Request_update( request )'' */
+               >0: (request->update)(request) /* effectively "invoke 
+                    MPID_CH3_Request_update( request )" */
          }
     else {
         make active request
@@ -1084,21 +1242,27 @@ CH3_iSend( MPID_VC *, MPID_Request *, void *buf, void *count )
         add request to top of pending send queue
     }
 \end{verbatim}
+The member \code{cc} of the request is the ``completion counter''.
+
+Question: Can we combine the reference count and the completion count,
+so that only a single flag must be tested?
 
 \code{CH3_iSendv} is like \code{CH3_iSend}, except a \code{struct iovec} is
-used instead of a \code{buf,count} pair.  The special acction on a
+used instead of a \code{buf,count} pair.  The special action on a
 \code{comm_state} of zero is used to avoid the overhead of a function
 call in the common case (for relatively short, contiguous messages)
 that no further work needs to be done.
 
 \subsection{iRead}
+iRead is used to transfer data into an already created request.  
 
 \begin{verbatim}
 CH3_iRead( MPID_VC *, MPID_Request *request )
-    read upto request->count_left from fd to request->active_buf
+    read upto request->count_left from fd associated with this VC
+        to request->active_buf
     if (all read) {
         switch (request->state) 
-            0: decrement request->busy
+            0: decrement request->cc
                remove from active list
                if (request->ref_count == 0) place request on avail list
             >0: invoke MPID_CH3_request_update( request )
@@ -1117,7 +1281,7 @@ CH3_iWrite( MPID_VC *, MPID_Request * )
     record amount of data written in request.
     If all data written
         switch(request->state)
-            0: decrement request->busy and remove this request from
+            0: decrement request->cc and remove this request from
                the active list.  If ref_count is 0, return request to avail
             >0: invoke MPID_CH3_Request_update( request )
     return
@@ -1130,17 +1294,17 @@ to start sending data on this connection).
 
 \subsection{Progress}
 \label{sec:progress}
-The progress routine may be implemented on single threaded systems as
+The progress routine may be implemented on single-threaded systems as
 \begin{verbatim}
 CH3_Progress( int isblocking )
 {
     select/poll on all fd's (wait is blocking, test is not)
     For each fd, find associated MPID_VC. (perhaps using fd_to_vc[] array)
     if (write) {
-        # fd was set because data is waiting
+        // fd was set because data is waiting
         do {
             send data described by active request in MPID_VC.  
-            If (all date sent)
+            If (all data sent)
                 invoke request_state_method.
                 if no active send requests, clear need-to-write
             } while (can write and pending writes)
@@ -1159,7 +1323,7 @@ CH3_Progress( int isblocking )
                      if (complete)
                          invoke request_state_method
                 case establishing new connection:
-                     ...
+                     ... // this is the hard part, of course
             end switch
         } while (can read)
     }
@@ -1168,7 +1332,14 @@ CH3_Progress( int isblocking )
 To make this more efficient, maintain the data structures needed with the
 \code{poll} or \code{select} calls with the active fd's: the ones on which
 there are either pending writes or on which connections for reading have been
-established.  
+established.  Such a structure might include
+\begin{verbatim}
+    typedef struct { 
+       ... whatever poll needs ...
+       int writes_pending;
+       ...
+    } MPID_CH3_Progress_data_t;
+\end{verbatim}
 
 The above version of \code{CH3_Progress} is for single-threaded
 implementations.  Multi-threaded versions must keep track of whether any
@@ -1181,7 +1352,8 @@ such routines, they could also be used to implement \code{MPID_Recv}.
 
 The routines \code{CH3_Progress_start} and \code{CH3_Progress_end} can be
 no-ops in the single-threaded version.  The routine \code{CH3_Progress_poke}
-can be \code{CH3_Progress( 0 )} (i.e., nonblocking call to progress).
+can be \code{CH3_Progress( 0 )} (i.e., nonblocking call to progress),
+and can be defined as a macro to avoid the function call overhead.
 
 On multi-threaded systems, the implementation of the progress routines
 may use any of the usual techniques, including condition variables.
@@ -1194,8 +1366,8 @@ This routine must
 \begin{itemize}
 \item Make any calls to BNR
 \item Set the size, rank, and \code{MPID_VC} fields in
-  \mpids{MPIR\_Process}{comm\_world}, \mpids{MPIR\_Process}{comm\_self}, and
-  \mpids{MPIR\_Process}{comm\_parent}. 
+  \mpids{MPIR\_Process}{comm\_world} and \mpids{MPIR\_Process}{comm\_self}
+
 \item Set the return values appropriately.  \code{has_parent} should be set if
   there a parent communicator that must be initialized.
 \end{itemize}
@@ -1209,7 +1381,7 @@ This routine should free any memory and other resources.
 CH3_InitParent( MPID_Comm *parent )
 \end{verbatim}
 Initialize the \code{size}, \code{rank}, and \code{MPID_VC} fields in
-the communicator 
+the communicator \mpids{MPIR\_Process}{comm\_parent}. 
 \code{CH3_InitParent} is called only if \code{CH3_Init} returned true in
 \code{has_parent}.  This allows the implementation of \code{MPI_Init} to
 create the parent communicator only if it is needed, and then initialize it in
@@ -1222,5 +1394,19 @@ CH3_iPut( MPID_VC *, void *buf, int count, MPID_RAint offset,
 \end{verbatim}
 The remote addresses (\code{MPID_RAint}) cannot be of type \code{MPI_Aint}
 because \code{MPI_Aint} 
-is the size of an address on the calling system, not necessarily on the target system.
+is the size of an address on the calling system, not necessarily on
+the target system.  
+
+\section{Other Comments}
+One optimization that is mentioned in the MPICH-2 coding document
+\cite{mpich2} in the discussion of \code{MPI_Sendrecv} may be valuable
+to the TCP implementation.  This involves piggy-backing rendezvous
+acknowledgements onto data transfers where possible.  For the case
+when sendrecv is used to exchange data, this can reduce the number of
+separate communication steps.  The design given here provides no way
+to make this optimization.  Question: do we want to allow an
+extension?  What would it cost other cases?  Can we do it from within
+\code{MPI_Sendrecv} and/or \code{MPI_Waitall} in such a way that we
+don't penalize other communication patterns?  What is the potential
+benefit?  Should we just concentrate on RMA instead?
 \end{document}
