@@ -1396,7 +1396,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		}
 		if (recv_vc_ptr->ch.read.iovlen == 0)
 		{
-		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_TYPE)
+		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_KIND)
 		    {
 			recv_vc_ptr->ch.shm_state &= ~SHM_READING_BIT;
 			*num_bytes_ptr = recv_vc_ptr->ch.read.total;

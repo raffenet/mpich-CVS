@@ -846,7 +846,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		if (ibu->read.iovlen == 0)
 		{
-		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_TYPE)
+		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_KIND)
 		    {
 			ibu->state &= ~IBU_READING;
 			*num_bytes_ptr = ibu->read.total;
