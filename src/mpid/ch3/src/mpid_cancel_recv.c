@@ -10,7 +10,7 @@
 #define FUNCNAME MPID_Cancel_recv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPID_Cancel_recv(MPID_Request * rreq)
+int MPID_Cancel_recv(MPID_Request * rreq)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_RECV);
     
@@ -34,4 +34,5 @@ void MPID_Cancel_recv(MPID_Request * rreq)
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_RECV);
+    return MPI_SUCCESS;
 }

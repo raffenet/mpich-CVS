@@ -6,7 +6,7 @@
 
 #include "mpidimpl.h"
 
-static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found);
+static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found);
 
 #define set_request_info(_rreq, _pkt, _msg_type)		\
 {								\
@@ -25,8 +25,8 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found);
  * NOTE: Multiple threads may NOT simultaneously call this routine with the same VC.  This constraint eliminates the need to
  * lock the VC.  If simultaneous upcalls are a possible, the calling routine for serializing the calls.
  */
-void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
-void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
 #define MPIDI_CH3U_Handle_unordered_recv_pkt MPIDI_CH3U_Handle_recv_pkt
 #else
@@ -42,8 +42,9 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 #define FUNCNAME MPIDI_CH3U_Handle_unordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
@@ -68,13 +69,23 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    if (send_pkt->seqnum == vc->seqnum_recv)
 	    {
-		MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
+		mpi_errno = MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto fn_exit;
+		}
 		vc->seqnum_recv++;
 		pc_cur = vc->msg_reorder_queue;
 		while(pc_cur != NULL && vc->seqnum_recv == pc_cur->pkt.seqnum)
 		{
 		    pkt = (MPIDI_CH3_Pkt_t *) &pc_cur->pkt;
-		    MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
+		    mpi_errno = MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+							 "**ch3|ch3u_handle_recv_pkt|pktordered", 0);
+			goto fn_exit;
+		    }
 		    vc->seqnum_recv++;
 		    pc_last = pc_cur;
 		    pc_cur = pc_cur->next;
@@ -88,6 +99,12 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	
 		/* allocate container and copy packet */
 		pc_new = MPIDI_CH3U_Pkt_send_container_alloc();
+		if (pc_new == NULL)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						     "**ch3|ch3u_handle_recv_pkt|nopktcontainermem", 0);
+		    goto fn_exit;
+		}
 		pc_new->pkt = *send_pkt;
 
 		/* insert packet into reorder queue */
@@ -123,21 +140,22 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 	case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
 	{
-	    /* FIXME: processing send cancel requests requires that we be aware
-               of pkts in the reorder queue */
+	    /* FIXME: processing send cancel requests requires that we be aware of pkts in the reorder queue */
 	    abort();
 	    break;
 	}
 	
 	default:
 	{
-	    MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
+	    mpi_errno = MPIDI_CH3U_Handle_ordered_recv_pkt(vc, pkt);
 	    break;
 	}
     }
-    
+
+  fn_exit:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
+    return mpi_errno;
 }
 #endif
 
@@ -147,7 +165,7 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
@@ -170,14 +188,19 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eager_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
-		/* FIXME - need to handle memory allocation problems */
-		assert(rreq != NULL);
-		abort();
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomemreq", 0);
+		goto fn_exit;
 	    }
 	    
 	    set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
-	    post_data_receive(vc, rreq, found);
-
+	    mpi_errno = post_data_receive(vc, rreq, found);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|ch3u_handle_recv_pkt|postrecv", 0);
+		goto fn_exit;
+	    }
+	    
 	    break;
 	}
 	
@@ -193,15 +216,20 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&ready_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
-		/* FIXME - need to handle memory allocation problems */
-		assert(rreq != NULL);
-		abort();
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomemreq", 0);
+		goto fn_exit;
 	    }
 	    
 	    set_request_info(rreq, ready_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    if (found)
 	    {
-		post_data_receive(vc, rreq, TRUE);
+		mpi_errno = post_data_receive(vc, rreq, TRUE);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						     "**ch3|ch3u_handle_recv_pkt|postrecv", 0);
+		    goto fn_exit;
+		}
 	    }
 	    else
 	    {
@@ -210,28 +238,34 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                    completed. */
 
 		/* We need to consume any outstanding associated data and mark the request with an error. */
-		int rc;
 
 		MPID_Request_initialized_set(rreq);
-		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
+		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+							      "**rsendnomatch", "**rsendnomatch %d %d", ready_pkt->match.rank,
+							      ready_pkt->match.tag);
 		rreq->status.count = 0;
 		if (rreq->ch3.recv_data_sz > 0)
 		{
 		     /* force read of extra data */
 		    rreq->ch3.segment_first = 0;
 		    rreq->ch3.segment_size = 0;
-		    rc = MPIDI_CH3U_Request_load_recv_iov(rreq);
-		    if (rc != MPI_SUCCESS)
+		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			/* FIXME - need to handle buffer allocation problems */
-			assert(rc == MPI_SUCCESS);
-			abort();
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
+			goto fn_exit;
 		    }
-		    MPIDI_CH3_iRead(vc, rreq);
+		    mpi_errno = MPIDI_CH3_iRead(vc, rreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+							 "**ch3|recvdata", 0);
+			goto fn_exit;
+		    }
 		}
 		else
 		{
-		    /* mark data transfer as complete adn decrment CC */
+		    /* mark data transfer as complete and decrement CC */
 		    rreq->ch3.iov_count = 0;
 		    MPIDI_CH3U_Request_complete(rreq);
 		}
@@ -252,13 +286,18 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&es_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
-		/* FIXME - need to handle memory allocation problems */
-		assert(rreq != NULL);
-		abort();
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomemreq", 0);
+		goto fn_exit;
 	    }
 	    
 	    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
-	    post_data_receive(vc, rreq, found);
+	    mpi_errno = post_data_receive(vc, rreq, found);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|ch3u_handle_recv_pkt|postrecv", 0);
+		goto fn_exit;
+	    }
 	    
 	    if (found)
 	    {
@@ -273,6 +312,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		if (mpi_errno != MPI_SUCCESS)
 		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						     "**ch3|ch3u_handle_recv_pkt|syncack", 0);
+		    goto fn_exit;
 		}
 		if (esa_req != NULL)
 		{
@@ -310,7 +352,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id, rts_pkt->data_sz));
 	    
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
-	    assert(rreq != NULL);
+	    if (rreq == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomemreq", 0);
+		goto fn_exit;
+	    }
 
 	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 	    
@@ -332,6 +378,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
 		if (mpi_errno != MPI_SUCCESS)
 		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						     "**ch3|ch3u_handle_recv_pkt|ctsreq", 0);
+		    goto fn_exit;
 		}
 		if (cts_req != NULL)
 		{
@@ -401,13 +450,19 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    MPIDI_ERR_PRINTF((FCNAME, "MPIDI_CH3_PKT_RNDV_CLR_TO_SEND failed to load IOV"));
-		    abort();
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+		    goto fn_exit;
 		}
 		iov_n += 1;
 	    }
 	    
-	    MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|senddata", 0);
+		goto fn_exit;
+	    }
+	    
 	    break;
 	}
 	
@@ -418,7 +473,13 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		    
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv send (data) pkt"));
 	    MPID_Request_get_ptr(rs_pkt->receiver_req_id, rreq);
-	    post_data_receive(vc, rreq, TRUE);
+	    mpi_errno = post_data_receive(vc, rreq, TRUE);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|ch3u_handle_recv_pkt|postrecv", 0);
+		goto fn_exit;
+	    }
 		
 	    break;
 	}
@@ -456,6 +517,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|ch3u_handle_recv_pkt|cancelresp", 0);
+		goto fn_exit;
 	    }
 	    if (resp_sreq != NULL)
 	    {
@@ -503,7 +567,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	case MPIDI_CH3_PKT_PUT:
 	{
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received put pkt"));
-	    MPIDI_ERR_PRINTF((FCNAME, "MPIDI_CH3_PKT_PUT UMIMPLEMENTED"));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+					     "**ch3|ch3u_handle_recv_pkt|putpkt", 0);
 	    abort();
 	    break;
 	}
@@ -511,23 +576,25 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 	{
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received flow control update pkt"));
-	    MPIDI_ERR_PRINTF((FCNAME,
-			      "MPIDI_CH3_PKT_FLOW_CNTL_UPDATE UMIMPLEMENTED"));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+					     "**ch3|ch3u_handle_recv_pkt|flowcntlpkt", 0);
 	    abort();
 	    break;
 	}
 	
 	default:
 	{
-	    MPIDI_ERR_PRINTF((FCNAME, "packet type %d not implemented.\n",
-			      pkt->type));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER,
+					     "**ch3|ch3u_handle_recv_pkt|unknownpkt", "**ch3|ch3u_handle_recv_pkt|unknownpkt %d",
+					     pkt->type);
 	    abort();
 	}
     }
 
+  fn_exit:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 
@@ -536,13 +603,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 #define FUNCNAME post_data_receive
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
+static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 {
     int dt_contig;
     MPIDI_msg_sz_t userbuf_sz;
     MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t data_sz;
-
+    int mpi_errno = MPI_SUCCESS;
+    
     MPIDI_DBG_PRINTF((30, FCNAME, "entering"));
 
     if (rreq->ch3.recv_data_sz == 0)
@@ -569,7 +637,8 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	{
 	    MPIDI_DBG_PRINTF((35, FCNAME, "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
 			      MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
-	    rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TRUNCATE,
+							  "**truncate", 0);
 	    rreq->status.count = userbuf_sz;
 	    data_sz = userbuf_sz;
 	}
@@ -597,8 +666,8 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		MPIDI_ERR_PRINTF((FCNAME, "failed to load IOV"));
-		abort();
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
+		goto fn_exit;
 	    }
 	}
     }
@@ -619,8 +688,14 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     }
 
     MPIDI_DBG_PRINTF((35, FCNAME, "posting iRead"));
-    MPIDI_CH3_iRead(vc, rreq);
+    mpi_errno = MPIDI_CH3_iRead(vc, rreq);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|recvdata", 0);
+	goto fn_exit;
+    }
     
 fn_exit:
     MPIDI_DBG_PRINTF((30, FCNAME, "exiting"));
+    return mpi_errno;
 }

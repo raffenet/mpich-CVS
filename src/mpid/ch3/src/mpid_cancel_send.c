@@ -10,13 +10,12 @@
 #define FUNCNAME MPID_Cancel_send
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPID_Cancel_send(MPID_Request * sreq)
+int MPID_Cancel_send(MPID_Request * sreq)
 {
     MPIDI_VC * vc;
     int proto;
     int flag;
-    int cancelled;
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_SEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
@@ -70,6 +69,7 @@ void MPID_Cancel_send(MPID_Request * sreq)
        It needs to be able to cancel requests to send a RTS packet for this request.  Perhaps we can use the partner request
        field to track RTS requests. */
     {
+	int cancelled;
 	
 	if (proto == MPIDI_REQUEST_RNDV_MSG)
 	{
@@ -83,7 +83,11 @@ void MPID_Cancel_send(MPID_Request * sreq)
 		mpi_errno = MPIDI_CH3_Cancel_send(vc, rts_sreq, &cancelled);
 		if (mpi_errno != MPI_SUCCESS)
 		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+						     "**ch3|mpid_cancel_send|cancelrndv", 0);
+		    goto fn_exit;
 		}
+		
 		if (cancelled)
 		{
 		    sreq->status.cancelled = TRUE;
@@ -102,6 +106,9 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	    mpi_errno = MPIDI_CH3_Cancel_send(vc, sreq, &cancelled);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|mpid_cancel_send|canceleager", 0);
+		goto fn_exit;
 	    }
 	    if (cancelled)
 	    {
@@ -143,6 +150,9 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+					     "**ch3|mpid_cancel_send|cancelmsg", 0);
+	    goto fn_exit;
 	}
 	if (csr_sreq != NULL)
 	{
@@ -157,4 +167,5 @@ void MPID_Cancel_send(MPID_Request * sreq)
   fn_exit:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
+    return mpi_errno;
 }
