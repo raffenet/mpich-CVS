@@ -708,7 +708,7 @@ extern MPID_Info MPID_Info_direct[];
 /* ------------------------------------------------------------------------- */
 /* Error Handlers */
 /*E
-  MPID_Errhander_fn - MPID Structure to hold an error handler function
+  MPID_Errhandler_fn - MPID Structure to hold an error handler function
 
   Notes:
   The MPI-1 Standard declared only the C version of this, implicitly 
@@ -1011,7 +1011,7 @@ typedef enum MPID_Comm_kind_t {
   make up this communicator.  These are used often enough that this
   optimization is valuable.  
 
-  This definition provides only a 16-bit integer for context id's .
+  This definition provides only a 16-bit integer for context id''s .
   This should be sufficient for most applications.  However, extending
   this to a 32-bit (or longer) integer should be easy.
 
@@ -2158,7 +2158,7 @@ int MPIR_Request_get_error(MPID_Request *);
   @*/
 int MPID_Init( int *argc_p, char *(*argv_p)[], 
 	       int requested, int *provided,
-	       /*MPID_Comm **parent_comm,*/ int *has_args, int *has_env );
+	       /* MPID_Comm **parent_comm,*/ int *has_args, int *has_env );
 
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
