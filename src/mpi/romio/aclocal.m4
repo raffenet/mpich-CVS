@@ -177,7 +177,7 @@ if test -n "$pointersize" -a -n "$intsize" ; then
     if test $pointersize -le $intsize ; then
        AC_MSG_RESULT(yes)
     else
-       AC_DEFINE(INT_LT_POINTER)
+       AC_DEFINE(INT_LT_POINTER,,[Define if int smaller than pointer])
        AC_MSG_RESULT(no)
     fi
 else
@@ -459,7 +459,7 @@ if test -z "$longsize" ; then
 fi
 if test -n "$longsize" ; then
    if test $longsize = 8 ; then
-       AC_DEFINE(HAVE_LONG_64)
+       AC_DEFINE(HAVE_LONG_64,,[Define if long is 64 bits])
    fi
 else
    echo "assuming size of long is NOT 8 bytes; use '-longsize' to indicate otherwise"
@@ -484,7 +484,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_MPI_LONG_LONG_INT)
+      AC_DEFINE(HAVE_MPI_LONG_LONG_INT,,[Define if mpi has long long it])
   else
       AC_MSG_RESULT(no)
   fi
@@ -499,7 +499,7 @@ AC_MSG_CHECKING(that the compiler $CC accepts ANSI prototypes)
 AC_COMPILE_CHECK(,[int f(double a){return 0;}],,eval "ac_cv_ccworks=yes",eval "ac_cv_ccworks=no")
 AC_MSG_RESULT($ac_cv_ccworks)
 if test $ac_cv_ccworks = "yes" ; then
-   AC_DEFINE(HAVE_PROTOTYPES)
+   AC_DEFINE(HAVE_PROTOTYPES,,[Define if C compiler supports prototypes])
 fi
 ])dnl
 dnl
@@ -542,7 +542,7 @@ else
     rm -f conftestll
     if test "$Pac_CV_NAME" = 8 ; then
        AC_MSG_RESULT(yes)
-       AC_DEFINE(HAVE_LONG_LONG_64)
+       AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
        echo "defining MPI_Offset as long long in C and integer*8 in Fortran"
@@ -567,7 +567,7 @@ define(PAC_LONG_LONG_64,[
 if test -n "$longlongsize" ; then
     if test "$longlongsize" = 8 ; then
        echo "defining MPI_Offset as long long in C and integer*8 in Fortran" 
-       AC_DEFINE(HAVE_LONG_LONG_64)
+       AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
        LL="\%lld"
@@ -575,7 +575,7 @@ if test -n "$longlongsize" ; then
        echo "defining MPI_Offset as int in C and integer in Fortran"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
-       AC_DEFINE(MPI_OFFSET_IS_INT)
+       AC_DEFINE(MPI_OFFSET_IS_INT,,[Define if MPI_Offset is int])
        LL="\%d"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
@@ -617,7 +617,7 @@ EOF
          echo "assuming size of long long is 8bytes; use '-longlongsize' to indicate otherwise"
          rm -f conftest ltest.c
          echo "defining MPI_Offset as long long in C and integer*8 in Fortran" 
-         AC_DEFINE(HAVE_LONG_LONG_64)
+         AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
          DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
          FORTRAN_MPI_OFFSET="integer*8"
          LL="\%lld"
@@ -652,7 +652,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_MPI_INFO)
+      AC_DEFINE(HAVE_MPI_INFO,,[Define if MPI_Info available])
       HAVE_MPI_INFO="#define HAVE_MPI_INFO"
       MPI_FINFO1="!"
       MPI_FINFO2="!"
@@ -689,7 +689,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY)
+      AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if MPI Darray available])
       HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
       MPI_FARRAY1="!"
       MPI_FARRAY2="!"
@@ -779,7 +779,7 @@ EOF
   $CC $USER_CFLAGS -o conftest conftest.c > /dev/null 2>&1
   if test -x conftest ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_PREAD64)
+      AC_DEFINE(HAVE_PREAD64,,[Define if pread64 available])
   else
       AC_MSG_RESULT(no)
   fi
@@ -808,7 +808,7 @@ EOF
      AC_MSG_RESULT(yes)
   else
      AC_MSG_RESULT(no)
-     AC_DEFINE(NO_MPI_SGI_type_is_contig)
+     AC_DEFINE(NO_MPI_SGI_type_is_contig,,[Define if no MPI type is contig])
   fi
   rm -f conftest mpitest.c
 ])dnl
@@ -833,7 +833,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_MPI_COMBINERS)
+     AC_DEFINE(HAVE_MPI_COMBINERS,,[Define if MPI combiners available])
   else
      AC_MSG_RESULT(no)
   fi
@@ -1073,7 +1073,7 @@ EOF
   $CC $USER_CFLAGS -o conftest conftest.c > /dev/null 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_MOUNT_NFS)
+     AC_DEFINE(HAVE_MOUNT_NFS,,[Define if MOUNT_NFS defined])
   else
      AC_MSG_RESULT(no)
   fi
@@ -1133,7 +1133,7 @@ EOF
   $CC $USER_CFLAGS -o conftest conftest.c >> config.log 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_STRERROR)
+     AC_DEFINE(HAVE_STRERROR,,[Define if strerror available])
   else
      AC_MSG_RESULT(no)
      AC_MSG_CHECKING([for sys_errlist])
@@ -1152,7 +1152,7 @@ changequote([,])
      $CC $USER_CFLAGS -o conftest conftest.c > config.log 2>&1
      if test -x conftest ; then
         AC_MSG_RESULT(yes)
-        AC_DEFINE(HAVE_SYSERRLIST)
+        AC_DEFINE(HAVE_SYSERRLIST,,[Define if syserrlist available])
      else
         AC_MSG_RESULT(no)
      fi
@@ -1172,7 +1172,7 @@ pac_cv_c_inline="yes",pac_cv_c_inline="no")
 fi
 AC_MSG_RESULT($pac_cv_c_inline)
 if test "$pac_cv_c_inline" = "no" ; then
-    AC_DEFINE(inline,)
+    AC_DEFINE(inline,,[Define if inline is not supported])
 fi
 ])dnl
 define(AC_MSG_WARN,[AC_MSG_RESULT([Warning: $1])])
@@ -1242,7 +1242,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_STATUS_SET_BYTES)
+     AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status set bytes available])
   else
      AC_MSG_RESULT(no)
   fi
