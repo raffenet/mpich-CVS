@@ -47,8 +47,11 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     /* need a new kvs to store the business cards of the processes
        on the other side. The root creates the kvs (later below) and
        broadcasts the name to the other processes in comm_ptr. */
-    kvs_namelen = PMI_KVS_Get_name_length_max();
-    remote_kvsname = (char *) MPIU_Malloc(kvs_namelen); 
+    mpi_errno = PMI_KVS_Get_name_length_max(&kvs_namelen);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+    }
+    remote_kvsname = (char *) MPIU_Malloc(kvs_namelen);
     if (remote_kvsname == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
@@ -64,7 +67,10 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     }
     /* FIXME - Where does this new pg get freed? */
 
-    val_max_sz = PMI_KVS_Get_value_length_max();
+    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+    }
     val = (char *) MPIU_Malloc(val_max_sz);
     if (val == NULL)
     {
@@ -199,15 +205,18 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         /* Extract the business cards and store them in a new
            kvs. First create a new kvs for the purpose. */
 
-        mpi_errno = PMI_KVS_Create(remote_kvsname);
-        if (mpi_errno != 0)
+        mpi_errno = PMI_KVS_Create(remote_kvsname, kvs_namelen);
+        if (mpi_errno != PMI_SUCCESS)
         {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_create", "**pmi_kvs_create %d", mpi_errno);
             goto fn_exit;
         }
         /* FIXME - Where does this new kvs get freed? */
 
-        key_max_sz = PMI_KVS_Get_key_length_max();
+        mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+	if (mpi_errno != PMI_SUCCESS)
+	{
+	}
         key = (char *) MPIU_Malloc(key_max_sz);
         if (key == NULL)
         {
