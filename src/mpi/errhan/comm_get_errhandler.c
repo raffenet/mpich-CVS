@@ -61,7 +61,7 @@ int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
 	    MPIR_ERRTEST_ARGNULL(errhandler,"errhandler",mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_ERRHANDLER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
