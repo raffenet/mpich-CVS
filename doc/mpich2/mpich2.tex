@@ -4697,9 +4697,9 @@ block is aligned on a \code{double}.
 
 The fields in the bsend buffer element include
 \mpids{MPIR_Bsend_elm}{tag},
-\mpids{MPIR_Bsend_elm}{communicator},
+\mpids{MPIR_Bsend_elm}{comm},
 \mpids{MPIR_Bsend_elm}{rank},
-\mpids{MPIR_Bsend_elm}{datatype},
+\mpids{MPIR_Bsend_elm}{dtype},
 \mpids{MPIR_Bsend_elm}{count}, and 
 \mpids{MPIR_Bsend_elm}{request}, as well as \mpids{MPIR_Bsend_elm}{next}.
 
@@ -7959,6 +7959,25 @@ messages intended only the for the developers of MPICH2.
 
 Even for developer messages, using \code{printf} is not a good idea.
 It is better to call a routine that can handle recording the results.
+
+The following should be used instead of \code{printf} or \code{fprintf}:
+\begin{description}
+\item[\texttt{dbg_printf}]Print a debugging message.  This should be
+  used only for messages intended for the developers of MPICH.  This
+  has the same calling sequence as \code{printf}.
+\item[\texttt{MPIU\_usage\_printf}]Print a usage message (informational) for
+  the user.  This has the same calling sequence as \code{printf}.
+\item[\texttt{MPIU\_error\_printf}]Print an error message for the user.  This
+  has the same calling sequence as \code{printf}.  Note that this
+  routine should not be used by any routine called by the MPI
+  implementation; it is provided for the implementation of separate
+  exectuables such as the \code{mpiexec} command.
+\end{description}
+The routines for printing user messages will attempt to use
+\code{gettext} or some similar routine to handle output for other
+languages.  On systems without convenient \code{stdout} or
+\code{stderr}, these may also generate alternative output (e.g., popup
+a window).
 
 % See PETSc approach for printing.  
 
