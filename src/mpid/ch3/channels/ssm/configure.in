@@ -26,6 +26,8 @@ fi
 PAC_PROG_MAKE
 
 AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
+AC_DEFINE(USE_BUSY_LOCKS,,[Define to use busy locks])
+AC_DEFINE(USE_MQSHM,,[Define to use shared memory message queues])
 
 AC_CHECK_HEADERS(assert.h)
 
