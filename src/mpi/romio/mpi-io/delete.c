@@ -37,10 +37,11 @@ Input Parameters:
 int MPI_File_delete(char *filename, MPI_Info info)
 {
     int flag, error_code, file_system;
+    char *tmp;
+    ADIOI_Fns *fsops;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_DELETE";
 #endif
-    char *tmp;
 #ifdef MPI_hpux
     int fl_xmpi;
   
@@ -74,62 +75,29 @@ int MPI_File_delete(char *filename, MPI_Info info)
         ADIO_Init( (int *)0, (char ***)0, &error_code);
     }
 
-    /* discover file system type (code swiped from MPI_File_open()) */
-    file_system = -1;
-    tmp = strchr(filename, ':');
-    if (!tmp) {
-	/* no prefix; use system-dependent function call to determine type */
-	ADIO_FileSysType_fncall(filename, &file_system, &error_code);
-	if (error_code != MPI_SUCCESS) {
+
+    /* resolve file system type from file name; this is a collective call */
+    ADIO_ResolveFileType(MPI_COMM_SELF, filename, &file_system, &fsops, 
+			 &error_code);
+    if (error_code != MPI_SUCCESS) {
+	/* ADIO_ResolveFileType() will print as informative a message as it
+	 * possibly can or call MPIR_Err_setmsg.  We just need to propagate 
+	 * the error up.  In the PRINT_ERR_MSG case MPI_Abort has already
+	 * been called as well, so we probably didn't even make it this far.
+	 */
 #ifdef PRINT_ERR_MSG
-	    FPRINTF(stderr, "MPI_File_delete: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
+	MPI_Abort(MPI_COMM_WORLD, 1); /* this is mostly here for clarity */
 #else
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
-				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
-	}
-    }
-    else {
-	/* prefix specified; just match via prefix, assume everyone has same */
-	ADIO_FileSysType_prefix(filename, &file_system, &error_code);
-	if (error_code != MPI_SUCCESS) {
-#ifdef PRINT_ERR_MSG
-	    FPRINTF(stderr, "MPI_File_delete: Can't determine the file-system type from the specified prefix. Check the filename/path and prefix you provided and try again.\n");
-#else
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
-#endif
-	}
-	/* move filename to point past the prefix: */
-	filename = tmp + 1;
     }
 
-    /* note: really we should check here to see if we support the given 
-     * file system.  so this is a bit of a hack, but it's better than it 
-     * was before.  all file systems other than PVFS are ok with the generic
-     * delete call (so far).
-     */
-    switch (file_system) {
-    case ADIO_PVFS:
-#ifdef ROMIO_PVFS
-	ADIOI_PVFS_Delete(filename, &error_code);
-#else
-#ifdef PRINT_ERR_MSG
-	FPRINTF(stderr, "MPI_File_delete: ROMIO has not been configured to use the PVFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
-#endif	
-#endif
-	break;
-    default:
-	ADIOI_GEN_Delete(filename, &error_code);
-	break;
-    }
+    /* skip prefix on filename if there is one */
+    tmp = strchr(filename, ':');
+    if (tmp) filename = tmp + 1;
+
+    /* call the fs-specific delete function */
+    (fsops->ADIOI_xxx_Delete)(filename, &error_code);
 	
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, MPI_FILE_NULL, MPI_DATATYPE_NULL, -1);
