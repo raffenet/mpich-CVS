@@ -183,6 +183,8 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	    if ( (nnodes / dims_product ) * dims_product != nnodes ) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
 						  "**dimspartition", 0 );
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
         }
         MPID_END_ERROR_CHECKS;
@@ -232,7 +234,82 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	   If the number of distinct factors is 1 (e.g., a power of 2),
 	   then this code can be much simpler */
 	/* NOT DONE */
-	;
+	/* FIXME */
+	if (nfactors == 1) {
+	    /* Special case for k**n, such as powers of 2 */
+	    int factor = factors[0].val;
+	    int cnt    = factors[0].cnt;
+	    int cnteach = cnt / dims_needed;
+	    int factor_each;
+	    
+	    factor_each = factor;
+	    for (i=1; i<cnteach; i++) factor_each *= factor;
+
+	    for (i=0; i<ndims; i++) {
+		if (dims[i] == 0) {
+		    if (cnt > cnteach) {
+			dims[i] = factor_each;
+			cnt -= cnteach;
+		    }
+		    else if (cnt > 0) {
+			factor_each = factor;
+			for (j=1; j<cnt; j++) 
+			    factor_each *= factor;
+			dims[i] = factor_each;
+			cnt = 0;
+		    }
+		    else {
+			dims[i] = 1;
+		    }
+		}
+	    }
+	}	    
+	else {
+	    /* Here is the general case.  For now, we do the following
+	       simple approach:
+	       target_size = nnodes / ndims needed.
+	       Accumulate factors, starting from the bottom,
+	       until the target size is met or exceeded.
+	       Put all of the remaining factors into the last dimension
+	       (recompute target_size with each step, since we may
+	       miss the target by a wide margin.
+
+	       A much more sophisticated code would try to balance
+	       the number of nodes assigned to each dimension, possibly
+	       in concert with guidelines from the device about "good"
+	       sizes
+	    */
+	    int nodes_needed = nnodes;
+	    int target_size = nodes_needed / dims_needed;
+	    int factor;
+	    j = 0;
+	    for (i=0; i<ndims; i++) {
+		if (dims[i] == 0) {
+		    if (dims_needed == 1) {
+			/* Dump all of the remaining factors into this
+			   entry */
+			factor = 1;
+			while (j < nfactors) {
+			    factor *= factors[j].val;
+			    if (--factors[j].cnt == 0) j++;
+			}
+		    }
+		    else {
+			/* Get the current target size */
+			factor = 1;
+			while (j < nfactors && factor < target_size) {
+			    factor *= factors[j].val;
+			    if (--factors[j].cnt == 0) j++;
+			}
+		    }
+		dims[i] = factor;
+		nodes_needed /= factor;
+		dims_needed--;
+		if (dims_needed)
+		    target_size = nodes_needed / dims_needed;
+		}
+	    }
+	}
     }
 
     /* ... end of body of routine ... */
