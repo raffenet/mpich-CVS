@@ -310,8 +310,8 @@ int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)))
   reference counts must be accessed and updated atomically.  
   A reference count for
   `any` object can be incremented (atomically) 
-  with 'MPID_Object_add_ref(objptr)'
-  and decremented with 'MPID_Object_release_ref(objptr,newval_ptr)'.  
+  with 'MPIU_Object_add_ref(objptr)'
+  and decremented with 'MPIU_Object_release_ref(objptr,newval_ptr)'.  
   These have been designed so that then can be implemented as inlined 
   macros rather than function calls, even in the multithreaded case, and
   can use special processor instructions that guarantee atomicity to 
