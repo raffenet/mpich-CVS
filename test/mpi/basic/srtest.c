@@ -12,10 +12,9 @@ int main(int argc, char *argv[])
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-    /* MPI_Get_processor_name(processor_name,&namelen); */
+    MPI_Get_processor_name(processor_name,&namelen);
+    fprintf(stderr,"Process %d of %d is alive on %s\n", myid, numprocs, processor_name);
 
-    /* fprintf(stderr,"Process %d on %s\n", myid, processor_name); */
-    fprintf(stderr,"Process %d of %d is alive\n", myid, numprocs);
     strcpy(buffer,"hello there");
     if (myid == numprocs-1)
 	next = 0;
