@@ -285,7 +285,9 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    /* get rid of this value if it is set */
 	    MPI_Info_delete(info, "ind_wr_buffer_size");
 	}
-	fd->hints->ind_wr_buffer_size = -1;
+	/* note: leave ind_wr_buffer_size alone; used for other cases
+	 * as well. -- Rob Ross, 04/22/2003
+	 */
 	MPI_Info_set(info, "romio_ds_write", "disable");
 	fd->hints->ds_write = ADIOI_HINT_DISABLE;
     }
