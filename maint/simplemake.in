@@ -1156,7 +1156,12 @@ sub AddDependency {
 	$include = $include_list;
     }
     print "Trying gcc -MM $include $target\n" if $debug;
-    open( DEPFD, "gcc -MM $include $target 2>/dev/null |" ) || return;
+    $cmdline = "gcc -MM $include $target";
+    if ($debug) {
+	$cmdline .= " 2>/dev/null";
+    }
+    $cmdline .= " |";
+    open( DEPFD, $cmdline ) || return;
     while (<DEPFD>) {
 	print FD $_;
     }
