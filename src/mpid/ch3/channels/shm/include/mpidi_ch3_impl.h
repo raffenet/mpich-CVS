@@ -71,10 +71,14 @@ __attribute__ ((unused))
 }
 #endif
 
-#ifdef HAVE_GCC_AND_PETIUM_ASM
+#ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define MPID_WRITE_BARRIER()
+#define MPID_READ_BARRIER()
+#define MPID_READ_WRITE_BARRIER()
 #else
 #define MPID_WRITE_BARRIER()
+#define MPID_READ_BARRIER()
+#define MPID_READ_WRITE_BARRIER()
 #endif
 
 /* This value is defined in sys/param.h under Linux but in netdb.h 
