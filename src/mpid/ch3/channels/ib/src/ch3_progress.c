@@ -209,6 +209,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
     
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_dbg_printf("handle_read(%d)\n", nb);
     while (vc->ib.recv_active != NULL)
     {
 	MPID_Request * req = vc->ib.recv_active;
@@ -424,13 +425,13 @@ static inline void make_progress(int is_blocking)
 	case IBU_OP_TIMEOUT:
 	    break;
 	case IBU_OP_READ:
-	    MPIU_dbg_printf("make_progress: read finished %d bytes\n", out.num_bytes);
+	    MPIU_dbg_printf("make_progress: ibu_wait reported %d bytes read\n", out.num_bytes);
 	    handle_read(out.user_ptr, out.num_bytes);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);
 	    return;
 	    break;
 	case IBU_OP_WRITE:
-	    MPIU_dbg_printf("make_progress: write finished %d bytes\n", out.num_bytes);
+	    MPIU_dbg_printf("make_progress: ibu reported %d bytes written\n", out.num_bytes);
 	    //handle_written(out.user_ptr, out.num_bytes);
 	    handle_written(out.user_ptr);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);
