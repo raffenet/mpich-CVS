@@ -996,6 +996,30 @@ $files[$#files+1] = "mpicxx.h";
 
 print $OUTFD "namespace MPI {\n";
 
+
+print $OUTFD "
+// #define MPIX_TRACE_MEMORY
+#ifdef MPIX_TRACE_MEMORY
+// We need stdlib.h for size_t
+#include <stdlib.h>
+extern \"C\" void *MPIU_trmalloc( unsigned int, int, const char [] );
+extern \"C\" void MPIU_trfree( void *, int, const char [] );
+extern \"C\" void MPIU_trSummary( void *, int );
+void *operator new(size_t size) {
+    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
+    return p;}
+void operator delete(void *p) {
+    MPIU_trfree( p, __LINE__, __FILE__ );}
+void *operator new[]( size_t size) {
+    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
+    return p;}
+void operator delete[](void *p) {
+    MPIU_trfree( p, __LINE__, __FILE__ );}
+#define MPIX_TRSummary() MPIU_trSummary( 0, 0 );
+#else
+#define MPIX_TRSummary()
+#endif\n";
+
 print $OUTFD "#if \@HAVE_CXX_EXCEPTIONS\@
 #define MPIX_CALL( fnc ) \\
 {int err; err = fnc ; if (err) throw Exception(err);}
@@ -1492,7 +1516,7 @@ sub print_call_args {
 		    $class eq "file") {
 		    $cast = "(MPIO_Request *)";
 		}
-		print $OUTFD "$cast&(v$count->the_real_$lctype)";
+		print $OUTFD "$cast&(v$count.the_real_$lctype)";
 	    }
 	    else {
 		print $OUTFD "&v$count";
@@ -1829,6 +1853,7 @@ sub build_specials {
     &print_attr;
     print $OUTFD "{\n";
     &printCoverageFinalize( $OUTFD );
+    print $OUTFD "    MPIX_TRSummary();\n";
     print $OUTFD "    MPI_Finalize( );\n";
     print $OUTFD "}\n";
 
@@ -2178,7 +2203,7 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
     print $OUTFD "\
     Cartcomm Intracomm::Create_cart( int v2, const int * v3, const bool v4[], bool v5 ) const
     {
-        Cartcomm *v6 = new Cartcomm;
+        Cartcomm v6;
         int *l4 = new int[v2];
         int l5;
         { 
@@ -2190,39 +2215,39 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
          l5 = (v5 == true) ? 1 : 0;\n";
      &printCoverageStart( $OUTFD, "Cart_create", 5 );
      print $OUTFD "\
-        MPIX_CALL( MPI_Cart_create( (MPI_Comm) the_real_comm, v2, (int *)v3, l4, l5, &(v6->the_real_comm) ));\n";
+        MPIX_CALL( MPI_Cart_create( (MPI_Comm) the_real_comm, v2, (int *)v3, l4, l5, &(v6.the_real_comm) ));\n";
      &printCoverageEnd( $OUTFD, "Cart_create", 5 );
      print $OUTFD "\
             delete[] l4;
-        return *v6;
+        return v6;
     }\n";
 
     print $OUTFD "\
     Graphcomm Intracomm::Create_graph( int v2, const int * v3, const int * v4, bool v5 ) const
     {
-        Graphcomm *v6 = new Graphcomm;
+        Graphcomm v6;
         int l5;
          l5 = (v5 == true) ? 1 : 0;\n";
     &printCoverageStart( $OUTFD, "Graph_create", 6 );
     print $OUTFD "\
-        MPIX_CALL( MPI_Graph_create( (MPI_Comm) the_real_comm, v2, (int *)v3, (int *)v4, l5, &(v6->the_real_comm) ));\n";
+        MPIX_CALL( MPI_Graph_create( (MPI_Comm) the_real_comm, v2, (int *)v3, (int *)v4, l5, &(v6.the_real_comm) ));\n";
     &printCoverageEnd( $OUTFD, "Graph_create", 6 );
     print $OUTFD "\
-        return *v6;
+        return v6;
     }\n";
 
     print $OUTFD "\
     Intracomm Intercomm::Merge( bool v2 ) const
     {
-        Intracomm *v3 = new Intracomm;
+        Intracomm v3;
         int l2;
          l2 = (v2 == true) ? 1 : 0;\n";
     &printCoverageStart( $OUTFD, "Intercomm_merge", 3 );
     print $OUTFD "\
-        MPIX_CALL( MPI_Intercomm_merge( (MPI_Comm) the_real_comm, l2, &(v3->the_real_comm) ));\n";
+        MPIX_CALL( MPI_Intercomm_merge( (MPI_Comm) the_real_comm, l2, &(v3.the_real_comm) ));\n";
     &printCoverageEnd( $OUTFD, "Intercomm_merge", 3 );
     print $OUTFD "\
-        return *v3;
+        return v3;
     }\n";
 
     # MPI-2 base routines
@@ -2686,21 +2711,21 @@ sub Intracomm_methods {
 
     print $OUTFD "\
 Intercomm Spawn(const char* command, const char* argv[], int maxprocs, const MPI::Info& info, int root) const {
-    Intercomm *ic = new Intercomm;
+    Intercomm ic;
     MPIX_CALL( MPI_Comm_spawn( (char *)command, (char **)argv, 
                 maxprocs, info.the_real_info, root, the_real_comm, 
-                &(ic->the_real_comm), MPI_ERRCODES_IGNORE ) );
-    return *ic;
+                &(ic.the_real_comm), MPI_ERRCODES_IGNORE ) );
+    return ic;
 }
 Intercomm Spawn(const char* command, const char* argv[], int maxprocs, const MPI::Info& info, int root, int array_of_errcodes[]) const {
-    Intercomm *ic = new Intercomm;
+    Intercomm ic;
     MPIX_CALL( MPI_Comm_spawn( (char *)command, (char **)argv, 
                 maxprocs, info.the_real_info, root, the_real_comm, 
-                &(ic->the_real_comm), array_of_errcodes ) );
-    return *ic;
+                &(ic.the_real_comm), array_of_errcodes ) );
+    return ic;
 }
 Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char** array_of_argv[], const int array_of_maxprocs[], const MPI::Info array_of_info[], int root) {
-    Intercomm *ic = new Intercomm;
+    Intercomm ic;
     MPI_Info  *li = new MPI_Info [count];
     int i;
     for (i=0; i<count; i++) {
@@ -2708,13 +2733,13 @@ Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char*
     }
     MPIX_CALL( MPI_Comm_spawn_multiple( count, (char **)array_of_commands, 
           (char ***)array_of_argv, (int *)array_of_maxprocs, 
-                li, root, the_real_comm, &(ic->the_real_comm), 
+                li, root, the_real_comm, &(ic.the_real_comm), 
                 MPI_ERRCODES_IGNORE ) );
     delete [] li;
-    return *ic;
+    return ic;
 }
 Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char** array_of_argv[], const int array_of_maxprocs[], const MPI::Info array_of_info[], int root, int array_of_errcodes[]) {
-    Intercomm *ic = new Intercomm;
+    Intercomm ic;
     MPI_Info  *li = new MPI_Info [count];
     int i;
     for (i=0; i<count; i++) {
@@ -2722,10 +2747,10 @@ Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char*
     }
     MPIX_CALL( MPI_Comm_spawn_multiple( count, (char **)array_of_commands, 
           (char ***)array_of_argv, (int *)array_of_maxprocs, 
-                li, root, the_real_comm, &(ic->the_real_comm), 
+                li, root, the_real_comm, &(ic.the_real_comm), 
                 array_of_errcodes ) );
     delete [] li;
-    return *ic;
+    return ic;
 }
 
 ";    
@@ -3087,8 +3112,8 @@ sub ReturnTypeDecl {
     if ($return_parm_pos > 0) {
 	if ($return_type =~ /MPI_/ && !($return_type =~ /MPI_Offset/) 
 	    && !($return_type =~ /MPI_Aint/)) {
-	    print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
-	    $finalcast = "*";
+	    print $OUTFD "$indent    $real_return_type v$return_parm_pos;\n";
+	    $finalcast = "";
 	}
 	else {
 	    print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
@@ -3993,6 +4018,26 @@ sub debugPrint {
 
     if ($gDebugRoutine ne "NONE" && $routine eq $gDebugRoutine) {
 	print $str . "\n";
+    }
+}
+# ----------------------------------------------------------------------------
+# These will be used to add memory tracing around all uses of new and delete
+sub printNew {
+    my ($FD, $name, $type, $isArray, $count) = @_;
+    if ($isArray) {
+	print $FD "$type *$name = new $type;\n";
+    }
+    else {
+	print $FD "$type *$name = new $type[$count];\n";
+    }
+}
+sub printDelete {
+    my ($FD, $name, $isArray) = @_;
+    if ($isArray) {
+	print $FD "delete[] $name;\n";
+    }
+    else {
+	print $FD "delete $name;\n";
     }
 }
 # ----------------------------------------------------------------------------
