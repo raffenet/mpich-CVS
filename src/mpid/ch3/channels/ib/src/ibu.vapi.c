@@ -401,8 +401,32 @@ static void * ibuBlockAllocIB(ibuQueue_t *p)
 
     if (p->pNextFree == NULL)
     {
-	MPIU_DBG_PRINTF(("ibuBlockAllocIB returning NULL\n"));
-	return NULL;
+	ibuQueue_t *q;
+	int i;
+	ibuBlock_t b[2];
+	VAPI_mr_hndl_t handle;
+	VAPI_lkey_t lkey;
+	VAPI_rkey_t rkey;
+
+	q = (ibuQueue_t*)ib_malloc_register(sizeof(ibuQueue_t), &handle, &lkey, &rkey);
+	if (q == NULL)
+	{
+	    MPIU_DBG_PRINTF(("ibuBlockAllocIB returning NULL\n"));
+	    return NULL;
+	}
+	q->next_q = NULL;
+	for (i=0; i<IBU_PACKET_COUNT; i++)
+	{
+	    q->block[i].next = &q->block[i+1];
+	    q->block[i].handle = handle;
+	    q->block[i].lkey = lkey;
+	}
+	q->block[IBU_PACKET_COUNT-1].next = NULL;
+	q->pNextFree = &q->block[0];
+	g_offset = (char*)&b[1].data - (char*)&b[1];
+
+	p->next_q = q;
+	p->pNextFree = q->pNextFree;
     } 
     pVoid = p->pNextFree->data;
     p->pNextFree = p->pNextFree->next;
