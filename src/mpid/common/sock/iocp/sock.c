@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpiimpl.h"
 #include "mpidu_sock.h"
 
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
@@ -398,11 +399,14 @@ int MPIDU_Sock_init()
 
     if (g_init_called)
     {
+	g_init_called++;
+	/*
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_INIT);
 	return mpi_errno;
+	*/
+	return MPI_SUCCESS;
     }
-    g_init_called = 1;
 
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
@@ -433,6 +437,8 @@ int MPIDU_Sock_init()
 
     g_StateAllocator = BlockAllocInit(sizeof(sock_state_t), 1000, 500, malloc, free);
 
+    g_init_called = 1;
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_INIT);
     return MPI_SUCCESS;
 }
@@ -443,11 +449,22 @@ int MPIDU_Sock_init()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDU_Sock_finalize()
 {
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_FINALIZE);
-    WSACleanup();
-    BlockAllocFinalize(&g_StateAllocator);
+    if (!g_init_called)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
+	return mpi_errno;
+    }
+    g_init_called--;
+    if (g_init_called == 0)
+    {
+	WSACleanup();
+	BlockAllocFinalize(&g_StateAllocator);
+    }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
     return MPI_SUCCESS;
 }
@@ -616,7 +633,7 @@ int MPIDU_Sock_create_set(MPIDU_Sock_set_t * set)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_CREATE_SET);
 	return MPI_SUCCESS;
     }
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_iocp", "**sock_iocp %d", GetLastError());
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**iocp", "**iocp %d", GetLastError());
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_CREATE_SET);
     return mpi_errno;
 }
@@ -2159,7 +2176,7 @@ int MPIDU_Sock_getid(MPIDU_Sock_t sock)
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GETID);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GETID);
-    if (sock == SOCKI_INVALID_SOCK)
+    if (sock == MPIDU_SOCK_INVALID_SOCK)
 	ret_val = -1;
     else
 	ret_val = (int)sock->sock;
