@@ -252,4 +252,8 @@ AC_OUTPUT(Makefile \
 	  src/spawn/Makefile \
           src/util/Makefile \
           src/xfer/Makefile \
+          src/tcp/Makefile \
+          src/via/Makefile \
+          src/shm/Makefile \
+          src/viardma/Makefile \
 )
