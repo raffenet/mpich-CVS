@@ -45,6 +45,8 @@
  *
  * Assumptions:
  * - the type passed to this function must be a basic
+ * - the count is not zero (otherwise we can't tell between a "no more
+ *   complete types" case and a "zero count" case)
  *
  * As per section 4.9.3 of the MPI 1.1 specification, the two-part reduction
  * types are to be treated as structs of the constituent types.  So we have to
@@ -233,6 +235,8 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 		{
 		    /* recurse on each type; bytes are reduced in calls */
 		    for (i=0; i < (*ints); i++) {
+			/* skip zero-count elements of the struct */
+			if (ints[i+1] == 0) continue;
 
 			last_nr_elements = MPIR_Type_get_elements(bytes_p,
 								  ints[i+1],
