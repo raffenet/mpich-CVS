@@ -15,4 +15,4 @@ srcdir = @srcdir@
 .dvi.pdf:
 	dvipdfm $*
 
-all-redirect: logging.pdf
+all-redirect: smpd_pmi.pdf
