@@ -125,7 +125,8 @@ int MPIR_Bcast (
       tmp_buf = MPIU_Malloc(tmp_buf_size);
       /* --BEGIN ERROR HANDLING-- */
       if (!tmp_buf) {
-          mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+          mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+					    "**nomem %d", tmp_buf_size );
           return mpi_errno;
       }
       /* --END ERROR HANDLING-- */
@@ -240,7 +241,8 @@ int MPIR_Bcast (
           tmp_buf = MPIU_Malloc(nbytes);
 	  /* --BEGIN ERROR HANDLING-- */
           if (!tmp_buf) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+						"**nomem %d", nbytes );
               return mpi_errno;
           }
 	  /* --END ERROR HANDLING-- */
@@ -468,14 +470,16 @@ int MPIR_Bcast (
           recvcnts = MPIU_Malloc(comm_size*sizeof(int));
 	  /* --BEGIN ERROR HANDLING-- */
           if (!recvcnts) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+						"**nomem %d", comm_size * sizeof(int));
               return mpi_errno;
           }
 	  /* --END ERROR HANDLING-- */
           displs = MPIU_Malloc(comm_size*sizeof(int));
 	  /* --BEGIN ERROR HANDLING-- */
           if (!displs) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+						"**nomem %d", comm_size * sizeof(int));
               return mpi_errno;
           }
 	  /* --END ERROR HANDLING-- */
