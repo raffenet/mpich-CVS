@@ -35,17 +35,30 @@ dnl are processed *after* AC_CACHE_LOAD (!).  To address this, we avoid
 dnl changing the value of enable_cache, and use real_enable_cache, duplicating
 dnl the "notgiven" value.
 dnl
+dnl The environment variable CONFIGURE_DEBUG_CACHE, if set to yes,
+dnl will cause additional data to be written out during the configure process.
+dnl This can be helpful in debugging the cache file process.dnl
+dnl
 dnl See Also:
 dnl PAC_ARG_CACHING
 dnl D*/
 define([AC_CACHE_LOAD],
-[if test "X$cache_system" = "X" ; then
+[if test "$CONFIGURE_DEBUG_CACHE" = yes ; then 
+    oldopts="$-"
+    clearMinusX=no
+    set -x 
+    if test "$oldopts" != "$-" ; then 
+        clearMinusX=yes
+    fi
+fi 
+if test "X$cache_system" = "X" ; then
     # A default file name, just in case
     cache_system="config.system"
     if test "$cache_file" != "/dev/null" ; then
         # Get the directory for the cache file, if any
 	changequote(,)
-        cache_system=`echo $cache_file | sed -e 's%^\(.*/\)[^/]*%\1/config.system%'`
+        dnl Be careful to ensure that there is no doubled slash
+        cache_system=`echo $cache_file | sed -e 's%^\(.*/\)[^/]*%\1config.system%'`
 	changequote([,])
         test "x$cache_system" = "x$cache_file" && cache_system="config.system"
 #    else
@@ -95,15 +108,18 @@ if test "X$real_enable_cache" = "Xyes" ; then
     fi
     . $cache_file
   else
-    echo "creating cache $cache_file"
+    echo "Configure in `pwd` creating cache $cache_file"
     > $cache_file
     rm -f $cache_system
-    cleanargs=`echo "$CC $F77 $CXX" | tr '"' ' '`
+    cleanargs=`echo "$CC $F77 $CXX $F90" | tr '"' ' '`
     testval="`uname -srm` $cleanargs"
     echo "$testval" > $cache_system
   fi
 else
   cache_file="/dev/null"
+fi
+if test "$clearMinusX" = yes ; then
+    set +x
 fi
 ])
 dnl
