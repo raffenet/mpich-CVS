@@ -103,7 +103,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
     mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr, 0,
 			  &request_ptr);
-    if (!mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
 	if (request_ptr == NULL)
 	{
@@ -119,7 +119,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    mpi_errno = request_ptr->status.MPI_ERROR;
 	    MPID_Request_free(request_ptr);
 		
-	    if (!mpi_errno)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
 		return MPI_SUCCESS;

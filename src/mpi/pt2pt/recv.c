@@ -104,7 +104,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
     mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr, 0,
 			  status, &request_ptr);
-    if (!mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
 	if (request_ptr == NULL)
 	{
@@ -125,7 +125,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    mpi_errno = request_ptr->status.MPI_ERROR;
 	    MPID_Request_free(request_ptr);
 
-	    if (!mpi_errno)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
 		return MPI_SUCCESS;
