@@ -11,6 +11,12 @@
 /* Routine tracing (see --enable-timing for control of this) */
 #ifdef HAVE_TIMING
 
+/* define LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
+   to the beginning of the corresponding receive operations.  Otherwise, arrows are
+   logged from the beginning of the send to the end of the receive. */
+#undef LOG_RECV_FROM_BEGINNING
+/*#define LOG_RECV_FROM_BEGINNING*/
+
 /* Possible values for timing */
 #define MPID_TIMING_KIND_NONE 0
 #define MPID_TIMING_KIND_TIME 1
@@ -57,12 +63,22 @@
 #define LOG_ARROWS
 #ifdef LOG_ARROWS
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER_FRONT(a)
+#ifdef LOG_RECV_FROM_BEGINNING
 #define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER_BACK(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#else
+#define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT_BACK(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT_BOTH(a)
+#endif
 #define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)     MPIDU_PT2PT_FUNC_ENTER_BOTH(a)
 #else
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER(a)
 #define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER(a)
 #define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)     MPIDU_PT2PT_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #endif
 
 /* device layer definitions */
@@ -86,12 +102,22 @@
 #define LOG_MPID_ARROWS
 #ifdef LOG_MPID_ARROWS
 #define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER_FRONT(a)
+#ifdef LOG_RECV_FROM_BEGINNING
 #define MPIDI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER_BACK(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#else
+#define MPIDI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT_BACK(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT_BOTH(a)
+#endif
 #define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)     MPIDU_PT2PT_FUNC_ENTER_BOTH(a)
 #else
 #define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER(a)
 #define MPIDI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER(a)
 #define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)     MPIDU_PT2PT_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #endif
 
 /* prototype the initialization/finalization functions */
@@ -127,6 +153,8 @@ int MPIDU_Segment_describe_timer_states(void);
 #define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)
 #define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)
 #define MPID_MPI_PT2PT_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)
 #define MPID_MPI_COLL_FUNC_ENTER(a)
 #define MPID_MPI_COLL_FUNC_EXIT(a)
 #define MPID_MPI_RMA_FUNC_ENTER(a)
@@ -144,6 +172,8 @@ int MPIDU_Segment_describe_timer_states(void);
 #define MPIDI_PT2PT_FUNC_ENTER_BACK(a)
 #define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)
 #define MPIDI_PT2PT_FUNC_EXIT(a)
+#define MPIDI_MPI_PT2PT_FUNC_EXIT_BACK(a)
+#define MPIDI_MPI_PT2PT_FUNC_EXIT_BOTH(a)
 #define MPIDI_COLL_FUNC_ENTER(a)
 #define MPIDI_COLL_FUNC_EXIT(a)
 #define MPIDI_RMA_FUNC_ENTER(a)
