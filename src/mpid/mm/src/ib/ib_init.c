@@ -36,6 +36,7 @@ int ib_setup_connections()
     mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
     if (mpi_errno != MPI_SUCCESS)
     {
+	MPIU_dbg_printf("MPID_VCRT_Create failed, error %d\n", mpi_errno);
 	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 	return -1;
     }
@@ -43,20 +44,30 @@ int ib_setup_connections()
     mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
     if (mpi_errno != MPI_SUCCESS)
     {
+	MPIU_dbg_printf("MPID_VCRT_Get_ptr failed, error %d\n", mpi_errno);
 	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 	return -1;
     }
 
+    MPIU_dbg_printf("remote_size: %d\n", comm_ptr->remote_size);
     for (i=0; i<comm_ptr->remote_size; i++)
     {
 	if ( i == comm_ptr->rank)
-	    continue;
+	    {
+		MPIU_dbg_printf("skipping my own rank %d\n", i);
+		continue;
+	    }
+	else
+	    {
+		MPIU_dbg_printf("setting up rank %d\n", i);
+	    }
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
 	    /* allocate and connect a virtual connection */
 	    comm_ptr->vcr[i] = vc_ptr = mm_vc_alloc(MM_IB_METHOD);
-	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    /* copy the kvs name and rank into the vc. 
+	       this may not be necessary */
 	    vc_ptr->pmi_kvsname = comm_ptr->mm.pmi_kvsname;
 	    vc_ptr->rank = i;
 	}
@@ -64,6 +75,8 @@ int ib_setup_connections()
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
 	MPIU_dbg_printf("key: %s, value: %s\n", key, value);
     }
+
+    PMI_Barrier();
 
     return MPI_SUCCESS;
 }
