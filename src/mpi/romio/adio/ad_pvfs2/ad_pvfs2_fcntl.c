@@ -74,8 +74,9 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 						MPIR_ERR_RECOVERABLE,
 						myname, __LINE__,
-						MPI_ERR_IO, "**io",
+						MPI_ERR_IO, 
 						"Error in ADIO_ReadContig", 0);
+		/* --END ERROR HANDLING-- */
                 return;  
 	    }
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
