@@ -1005,6 +1005,7 @@ sub SaveSrcNames {
 	if (defined($ext)) {
 	    if (defined($extrules{"$ext:o"})) {
 		$regular_sources .= " $file";
+		$sources{$file} = 1;
 	    }
 	    elsif ($ext eq "h") {
 		$regular_headers .= " $file";
@@ -1038,6 +1039,7 @@ sub ClearVars {
     $regular_sources = "";
     $header_sources = "";
     $regular_headers = "";
+    %sources = ();
     # Targets
     @alltargets = ();   # implicit targets 
     %usertargets = ();  # explicit, user-defined targets
@@ -1112,6 +1114,8 @@ sub ProcessFile {
 	$output_name =~ s/\.sm$/.in/;
     }
     &WriteMfile( $output_name );
+    
+    #&checkForTargets();
 
     my @dirs = @subdirs;
     # First, check for names that are replaced by autoconf (e.g., @name@)
@@ -2230,3 +2234,20 @@ sub TargetGcov {
 # each source file (e.g., *.c, *.cxx, *.f, *.f90) that has no corresponding
 # entry in the Makefile.sm 
 #
+# Here is a start on that.
+# What is still needed is a way to check for defined sources when the source 
+# files are named in a variable (e.g., xxx_SOURCE = ${foobar}, then we
+# need to expand foobar.  This is not done systematically yet, in part
+# because we want to preserve the use of variables in the Makefile.
+sub checkForTargets {
+    opendir DIR, ".";
+    while ($filename = readdir DIR) {
+	if ($filename =~ /.*\.[cf]$/) {
+	    # Found a source file.  Did we see this file in the source lists?
+	    if (! defined($sources{$filename})) {
+		print STDERR "File $filename did not appear in Makefile.sm\n";
+	    }
+	}
+    }
+    closedir DIR;
+}
