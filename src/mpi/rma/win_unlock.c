@@ -71,6 +71,8 @@ int MPI_Win_unlock(int rank, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_Win_unlock(rank, win_ptr);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
     return MPI_SUCCESS;
 }

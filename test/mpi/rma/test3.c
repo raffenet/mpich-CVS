@@ -2,9 +2,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-/* tests the example in Fig 6.8, pg 142, MPI-2 standard. This program
-   will hang in the absence of multithreaded support and it currently
-   does. */
+/* tests the example in Fig 6.8, pg 142, MPI-2 standard. This test DOES NOT RUN
+   currently because of lack of thread-safety in the progress engine. */
 
 #define SIZE 1048576
 

@@ -10,11 +10,17 @@ void *MPIDI_Win_wait_thread(void *arg);
 
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_POST);
+
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
+
     win_ptr->post_group_ptr = group_ptr;
     MPIU_Object_add_ref( group_ptr );
 
     pthread_create(&(win_ptr->wait_thread_id), NULL,
                    MPIDI_Win_wait_thread, (void *) win_ptr);  
+
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
     return MPI_SUCCESS;
 }
 
@@ -49,10 +55,6 @@ void *MPIDI_Win_wait_thread(void *arg)
     *mpi_errno = MPI_SUCCESS;
 
     win_ptr = (MPID_Win *) arg;
-
-    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_WAIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
     MPIR_Nest_incr();
     
@@ -220,8 +222,6 @@ void *MPIDI_Win_wait_thread(void *arg)
     }
 
     win_ptr->post_group_ptr = NULL; 
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
 
     return mpi_errno;
 }

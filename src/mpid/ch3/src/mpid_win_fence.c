@@ -30,7 +30,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
     if (win_ptr->fence_cnt == 0) {
         /* This is the first call to fence. Do nothing except
@@ -52,11 +52,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
         if (!nops_to_proc) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
         nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
         if (!nops_from_proc) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
 
@@ -81,6 +83,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
         if (!rma_op_infos) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
 
@@ -88,12 +91,14 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             MPIU_Malloc(total_op_count*2*sizeof(MPI_Request)); 
         if (!reqs) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
 
         tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
         if (!tags) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
 
@@ -114,7 +119,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                    sizeof(MPIU_RMA_op_info), MPI_BYTE, 
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                return mpi_errno;
+            }
             req_cnt++;
             tags[dest]++;
             if ((curr_ptr->type == MPID_REQUEST_PUT) ||
@@ -130,7 +138,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                        curr_ptr->origin_datatype,
                                        dest, tags[dest], comm,
                                        &reqs[req_cnt]); 
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                return mpi_errno;
+            }
             req_cnt++;
             tags[dest]++;
 
@@ -157,7 +168,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                       sizeof(MPIU_RMA_op_info), MPI_BYTE, 
                                       src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (mpi_errno) return mpi_errno;
+                if (mpi_errno) {
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
                 tags[src]++;
 
                 switch (rma_op_infos[total_op_count].type) {
@@ -170,7 +184,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                           rma_op_infos[total_op_count].datatype,
                                           src, tags[src], comm,
                                           MPI_STATUS_IGNORE);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) {
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
                     break;
                 case MPID_REQUEST_GET:
                     /* send the get */
@@ -180,7 +197,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                           rma_op_infos[total_op_count].count,
                                           rma_op_infos[total_op_count].datatype,
                                           src, tags[src], comm);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) {
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
                     break;
                 case MPID_REQUEST_ACCUMULATE:
                     /* recv the data into a temp buffer and perform
@@ -192,6 +212,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     if (!tmp_buf) {
                         mpi_errno = MPIR_Err_create_code(
                             MPI_ERR_OTHER, "**nomem", 0 ); 
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
                     mpi_errno = NMPI_Recv(tmp_buf,
@@ -199,7 +220,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                                           rma_op_infos[total_op_count].datatype,
                                           src, tags[src], comm,
                                           MPI_STATUS_IGNORE);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) {
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
 
                     op = rma_op_infos[total_op_count].op;
                     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
@@ -209,6 +233,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     else {
                         mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                           "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
                     (*uop)(tmp_buf, (char *) win_ptr->base +
@@ -221,6 +246,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 default:
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                       "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }
 
@@ -230,7 +256,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
         mpi_errno = NMPI_Waitall(req_cnt, reqs, MPI_STATUSES_IGNORE);
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno) {
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+            return mpi_errno;
+        }
 
 	MPIR_Nest_decr();
 
@@ -254,7 +283,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 
     return mpi_errno;
 }

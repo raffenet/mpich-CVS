@@ -81,9 +81,8 @@ int MPI_Win_free(MPI_Win *win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    NMPI_Comm_free(&(win_ptr->comm));
-    /* check if refcount needs to be decremented here as in group_free */
-    MPIU_Handle_obj_free( &MPID_Win_mem, win_ptr );
+    MPID_Win_free(&win_ptr);
+
     *win = MPI_WIN_NULL;
     
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);

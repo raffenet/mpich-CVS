@@ -115,20 +115,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
-    if (!win_ptr) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
-        return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
-
-    win_ptr->fence_cnt = 0;
-    win_ptr->base = base;
-    win_ptr->size = size;
-    win_ptr->disp_unit = disp_unit;
-    win_ptr->start_group_ptr = NULL; 
-    win_ptr->post_group_ptr = NULL; 
-    mpi_errno = NMPI_Comm_dup(comm, &(win_ptr->comm));
+    MPID_Win_create(base, size, disp_unit, info, comm_ptr, &win_ptr);
 
     /* return the handle of the window object to the user */
     *win = win_ptr->handle;

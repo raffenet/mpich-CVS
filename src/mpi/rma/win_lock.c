@@ -73,6 +73,8 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_Win_lock(lock_type, rank, assert, win_ptr);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
     return MPI_SUCCESS;
 }

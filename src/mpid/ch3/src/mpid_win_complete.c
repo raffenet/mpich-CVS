@@ -26,7 +26,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
 
     MPIR_Nest_incr();
 
@@ -39,6 +39,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_to_proc) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
     
@@ -60,11 +61,13 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     ranks_in_start_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
     if (!ranks_in_start_grp) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
 
@@ -79,12 +82,14 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPIU_Malloc((start_grp_size+2*total_op_count)*sizeof(MPI_Request));
     if (!reqs) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
 
@@ -92,7 +97,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         dest = ranks_in_win_grp[i];
         mpi_errno = NMPI_Isend(&nops_to_proc[dest], 1, MPI_INT, dest,
                                tags[dest], comm, &reqs[i]);
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno) {
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+            return mpi_errno;
+        }
         tags[dest]++;
     }
 
@@ -107,6 +115,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPIU_Malloc(total_op_count * sizeof(MPIU_RMA_op_info));
     if (!rma_op_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
 
@@ -127,7 +136,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                                sizeof(MPIU_RMA_op_info), MPI_BYTE, 
                                dest, tags[dest], comm,
                                &reqs[req_cnt]); 
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno) {
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+            return mpi_errno;
+        }
         req_cnt++;
         tags[dest]++;
         if ((curr_ptr->type == MPID_REQUEST_PUT) ||
@@ -143,7 +155,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                                    curr_ptr->origin_datatype,
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno) {
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+            return mpi_errno;
+        }
         req_cnt++;
         tags[dest]++;
         
@@ -152,7 +167,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }        
 
     mpi_errno = NMPI_Waitall(req_cnt, reqs, MPI_STATUSES_IGNORE);
-    if (mpi_errno) return mpi_errno;
+    if (mpi_errno) {
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
 
     MPIR_Nest_decr();
 
@@ -180,7 +198,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     win_ptr->start_group_ptr = NULL; 
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
 
     return mpi_errno;
 }

@@ -716,11 +716,13 @@ typedef struct MPIU_RMA_ops {
     int target_count;
     MPI_Datatype target_datatype;
     MPI_Op op;  /* for accumulate */
+    int lock_type;  /* for win_lock */
 } MPIU_RMA_ops;
 
 #define MPID_REQUEST_PUT 23
 #define MPID_REQUEST_GET 24
 #define MPID_REQUEST_ACCUMULATE 25
+#define MPID_REQUEST_LOCK 26
 
 extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
 
@@ -741,6 +743,7 @@ typedef struct MPID_Win {
     MPI_Comm    comm;         /* communicator of window (dup) */
 #ifdef HAVE_PTHREAD_H
     pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
+    pthread_t passive_target_thread_id; /* thread for passive target RMA */
 #endif
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
@@ -752,6 +755,9 @@ extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
 extern MPID_Win MPID_Win_direct[];
 
+extern volatile int MPIDI_Passive_target_thread_exit_flag;
+#define MPIDI_PASSIVE_TARGET_DONE_TAG  348297
+#define MPIDI_PASSIVE_TARGET_RMA_TAG 563924
 
 /* Reduction and accumulate operations */
 /*E
@@ -1330,7 +1336,7 @@ int MPID_Iprobe(int, int, MPID_Comm *, int, int *, MPI_Status *);
 void MPID_Cancel_send(MPID_Request *);
 void MPID_Cancel_recv(MPID_Request *);
 
-int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
+int MPID_Win_create(void *, MPI_Aint, int, MPI_Info, MPID_Comm *,
                     MPID_Win **);
 int MPID_Win_fence(int, MPID_Win *);
 int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
@@ -1343,6 +1349,8 @@ int MPID_Win_free(MPID_Win **);
 int MPID_Win_wait(MPID_Win *win_ptr);
 int MPID_Win_complete(MPID_Win *win_ptr);
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
+int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr);
+int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
 
 void MPID_Progress_start(void);
 void MPID_Progress_end(void);

@@ -4,7 +4,7 @@ mpi_sources = accumulate.c alloc_mem.c free_mem.c get.c put.c \
  win_wait.c winutil.c win_test.c
 lib${MPILIBNAME}_a_SOURCES = get.c put.c win_create.c win_fence.c win_free.c \
  accumulate.c alloc_mem.c free_mem.c win_get_group.c win_post.c win_start.c \
- win_wait.c win_complete.c
+ win_wait.c win_complete.c win_lock.c win_unlock.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 #

@@ -168,6 +168,8 @@ typedef enum { MPI_GRAPH=1, MPI_CART=2 } MPIR_Topo_type;
 #define MPI_ROOT        (-3)
 #define MPI_ANY_TAG     (-1)
 
+#define MPI_LOCK_EXCLUSIVE  234
+#define MPI_LOCK_SHARED     235
 
 /* C functions */
 typedef void (MPI_Handler_function) ( MPI_Comm *, int *, ... );
