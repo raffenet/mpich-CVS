@@ -96,6 +96,10 @@ devenv.com mpich2.sln /build ch3sockRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /project mpich2s /build ch3sockRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sockPRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /project mpich2s /build ch3sockPRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build Debug
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build Release
@@ -111,6 +115,30 @@ if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build sfortDebug
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build sfortRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3shmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3shmRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3shmPRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sshmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sshmRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sshmPRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ssmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ssmRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ssmPRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ibDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ibRelease
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ibPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 cd maint
 call makegcclibs.bat
