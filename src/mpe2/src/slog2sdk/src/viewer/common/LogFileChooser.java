@@ -34,12 +34,14 @@ public class LogFileChooser extends JFileChooser
         else {
             filter = new LogPermitDirFilter( new String[]{ "slog2" } );
             super.addChoosableFileFilter( filter );
+            filter = new LogPermitDirFilter( new String[]{ "clog2" } );
+            super.addChoosableFileFilter( filter );
             filter = new LogPermitDirFilter( new String[]{ "clog" } );
             super.addChoosableFileFilter( filter );
             filter = new LogPermitDirFilter( new String[]{ "rlog" } );
             super.addChoosableFileFilter( filter );
             filter = new LogPermitDirFilter(
-                         new String[]{ "slog2", "clog", "rlog" } );
+                         new String[]{ "slog2", "clog2", "clog", "rlog" } );
             super.addChoosableFileFilter( filter );
         }
     }
