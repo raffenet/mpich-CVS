@@ -125,21 +125,21 @@ MPI_Pack_size,
 Collective Communication
 
 MPI_Barrier,,,,,Bill,,done
-MPI_Bcast,,,,,Rajeev,,done,,intracomm only
-MPI_Gather,,,,,Rajeev,,done
-MPI_Gatherv,,,,,Rajeev,,done
-MPI_Scatter,,,,,Rajeev,,done
-MPI_Scatterv,,,,,Rajeev,,done
-MPI_Allgather,,,,,Rajeev,,done
-MPI_Allgatherv,,,,,Rajeev,,done
-MPI_Alltoall,,,,,Rajeev,,done
-MPI_Alltoallv,,,,,Rajeev,,done
-MPI_Reduce,,,,,Rajeev,,done
+MPI_Bcast,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Gather,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Gatherv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Scatter,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Scatterv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Allgather,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Allgatherv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Alltoall,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Alltoallv,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Reduce,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
 MPI_Op_create,1,3,2,3,Bill,,.1,5/21/02
 MPI_Op_free,1,3,2,3,Bill,,.1,5/21/02
-MPI_Allreduce,,,,,Rajeev,,done
-MPI_Reduce_scatter,,,,,Rajeev,,done
-MPI_Scan,,,,,Rajeev,,done
+MPI_Allreduce,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Reduce_scatter,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Scan,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
 
 Groups; Contexts; Communicators
 
@@ -315,8 +315,8 @@ MPI_Win_unlock,1,3,2,3,Rajeev,MPID_Win_unlock
 
 Extended Collective
 
-MPI_Alltoallw,,,,,Rajeev,,done
-MPI_Exscan,,,,,Rajeev,,done
+MPI_Alltoallw,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
+MPI_Exscan,,,,,Rajeev,,done,,intracomm, basic datatypes, and homogeneous only
 
 Extended Interfaces
 
