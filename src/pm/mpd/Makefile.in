@@ -44,7 +44,16 @@ example_OBJECTS	= ${example_SOURCES:.c=.o}
 
 
 all: Makefile ${PROGRAMS}
-	@/bin/chmod a+rx ${srcdir}/install.sh
+	@if [ ! -x ${srcdir}/install.sh ] ; then \
+	    echo "chmod a+x ${srcdir}/install.sh" ;\
+	    if [ ! `chmod a+x ${srcdir}/install.sh` ] ; then \
+	        echo "  chmod ok" ;\
+	    else \
+	        echo "Unable to set ${srcdir}/install.sh file to be executable." ;\
+		echo "Please fix and rerun make" ;\
+	        exit 1 ;\
+	    fi ;\
+	fi
 
 
 .SUFFIXES:
