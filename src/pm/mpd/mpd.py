@@ -834,8 +834,11 @@ def sigchld_handler(signum,frame):
         for jobid in g.activeJobs.keys():
             if g.activeJobs[jobid].has_key(donePid):
                 del g.activeJobs[jobid][donePid]
-                if len(g.activeJobs[jobid]) == 0:
-                    del g.activeJobs[jobid]
+                try:    # avoid a race (may get deleted by another donePid)
+                    if len(g.activeJobs[jobid]) == 0:
+                        del g.activeJobs[jobid]
+                except:
+                    pass
                 break
         try:
             (donePid,status) = waitpid(-1,WNOHANG)
