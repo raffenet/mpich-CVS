@@ -333,6 +333,11 @@ $distcleanfiles = "";
 
 @subdirs = ();
 @doc_subdirs = ();
+
+%notSimplemakeDirs = (); # This hash is used to note directories that
+                         # are part of the subdirs but are not 
+                         # simplemake dirs
+
 @keepargs = ();    # Used to recreate simplemake invocation for make target
 foreach $_ (@ARGV) {
     $keepargs[$#keepargs+1] = $_;    # Add all args by default
@@ -602,6 +607,11 @@ sub ReadMfile {
         }
 	elsif (/^INSTALL_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    @install_subdirs = split(/\s+/,$1);
+	}
+	elsif (/^NOTSIMPLEMAKE_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
+	    foreach my $dir (split(/\s+/,$1)) {
+		$notSimplemakeDirs{$dir} = 1;
+	    }
 	}
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
 	    foreach $program (split(/\s+/,$1)) {
@@ -1316,6 +1326,7 @@ sub ClearVars {
     %pgmlinktypes = ();
     # Other directories
     @subdirs = ();
+    %notSimplemakeDirs = ();
     %subdir_autoconf_vars = ();
     $subdir_optionals = "";
     @doc_subdirs = ();
@@ -1400,6 +1411,8 @@ sub ProcessFile {
     #&checkForTargets();
 
     my @dirs = (@subdirs,@other_dirs,@doc_subdirs);
+    # Get a local copy of the "notsimplemake" hash
+    my %notSimplemake = %notSimplemakeDirs;
     # First, check for names that are replaced by autoconf (e.g., @name@)
     my @actdirs = ();
     foreach my $dir (@dirs) {
@@ -1434,11 +1447,17 @@ sub ProcessFile {
 	}
 	if (! -d $dir) { 
 	    my $ldir = `pwd`;
-	    &ShowFileName;
-	    print "Directory $curdir$dir does not exist\n"; 
-	    print "(Current location is $ldir)\n";
+	    if (!defined($notSimplemake{$dir})) {
+		&ShowFileName;
+		print "Directory $curdir$dir does not exist\n"; 
+		print "(Current location is $ldir)\n";
+	    }
 	    next M; }
-	if (! -s "$dir/$file") { print "File $curdir$dir/$file does not exist\n"; next M; }
+	if (! -s "$dir/$file") { 
+	    if (!defined($notSimplemake{$dir})) {
+		print "File $curdir$dir/$file does not exist\n"; 
+	    }
+	    next M; }
 	chdir $dir;
 	$curdir .= "$dir/";
 	$curdir = &CleanCurDir( $curdir );
