@@ -610,7 +610,8 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr_class(Request,ptr,MPI_ERR_REQUEST,err)
 #define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr_class(Keyval,ptr,MPI_ERR_KEYVAL,err)
 
-/* Generic pointer test.  This is applied to any address, not just one from
+/* FIXME: 
+   Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
    Currently unimplemented (returns success except for null pointers.
    With a little work, could check that the pointer is properly aligned,
@@ -621,6 +622,15 @@ int MPIU_Handle_free( void *((*)[]), int );
    all of these masks are zero, and this part of test can be eliminated.
  */
 #define MPID_Pointer_is_invalid(p,alignment) ((p) == 0)
+/* Fixme: The following MPID_ALIGNED_xxx values are temporary.  They 
+   need to be computed by configure and included in the mpichconf.h file.
+   Note that they cannot be set conservatively (i.e., as sizeof(object)),
+   since the runtime system may generate objects with lesser alignment
+   rules if the processor allows them.
+ */
+#define MPID_ALIGNED_PTR_INT   1
+#define MPID_ALIGNED_PTR_LONG  1
+#define MPID_ALIGNED_PTR_VOIDP 1
 /* ------------------------------------------------------------------------- */
 /* end of code that should the following be moved into mpihandlemem.h ?*/
 /* ------------------------------------------------------------------------- */
