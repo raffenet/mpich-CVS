@@ -131,7 +131,7 @@ static inline void SOCKI_Lock( SOCKI_Lock_t *lock )
     }
 }
 
-static inline void MPIDU_Unlock( SOCKI_Lock_t *lock )
+static inline void SOCKI_Unlock( SOCKI_Lock_t *lock )
 {
     *(lock) = 0;
 }
