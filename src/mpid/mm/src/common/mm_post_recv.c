@@ -83,10 +83,10 @@ int mm_post_recv(MM_Car *car_ptr)
 int mm_post_read_pkt(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
-    MPID_Request *request_ptr;
+    MM_Segment_buffer *buf_ptr;
 
-    request_ptr = mm_request_alloc();
-    car_ptr = request_ptr->mm.rcar;
+    car_ptr = &vc_ptr->pkt.pkt_car;
+    buf_ptr = &vc_ptr->pkt.buf;
     
     car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
     car_ptr->src = vc_ptr->rank;
@@ -95,17 +95,14 @@ int mm_post_read_pkt(MPIDI_VC *vc_ptr)
     car_ptr->next_ptr = NULL;
     car_ptr->opnext_ptr = NULL;
     car_ptr->qnext_ptr = NULL;
-    car_ptr->request_ptr = request_ptr;
-    car_ptr->buf_ptr = &request_ptr->mm.pkt_buf;
-    request_ptr->comm = NULL;
-    request_ptr->ref_count = 1;
-    request_ptr->mm.pkt_buf.type = MM_VEC_BUFFER;
-    request_ptr->mm.pkt_buf.vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->data.pkt;
-    request_ptr->mm.pkt_buf.vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
-    request_ptr->mm.pkt_buf.vec.size = 1;
-    request_ptr->mm.pkt_buf.vec.num_read = 0;
-    request_ptr->mm.pkt_buf.vec.min_num_written = 0;
-    request_ptr->mm.get_buffers = mm_get_buffers_vec;
+    car_ptr->request_ptr = NULL;
+    car_ptr->buf_ptr = buf_ptr;
+    buf_ptr->type = MM_VEC_BUFFER;
+    buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->data.pkt;
+    buf_ptr->vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+    buf_ptr->vec.size = 1;
+    buf_ptr->vec.num_read = 0;
+    buf_ptr->vec.min_num_written = 0;
 
     vc_ptr->post_read(vc_ptr, car_ptr);
 
