@@ -132,6 +132,7 @@ public class CategoryIcon implements Icon
         g.drawLine( x1, y2, x2, y2 );     // bottom
         */
         Parameters.STATE_BORDER.paintStateBorder( (Graphics2D) g,
+                                                  color_shown,
                                                   x1, y1, true,
                                                   x2, y2, true );
     }
