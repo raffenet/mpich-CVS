@@ -26,7 +26,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 
 	    if (event_ptr->error != MPIDU_SOCK_SUCCESS)
 	    {
-		if (!shutting_down /*|| event_ptr->error != SOCK_EOF*/)  /* FIXME: this should be handled by the close protocol */
+		if (!shutting_down || MPIR_ERR_GET_CLASS(event_ptr->error) != MPIDU_SOCK_ERR_CONN_CLOSED /*event_ptr->error != SOCK_EOF*/)  /* FIXME: this should be handled by the close protocol */
 		{
 		    connection_recv_fail(conn, event_ptr->error);
 		}
@@ -280,7 +280,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 			return mpi_errno;
 		    }
 #endif
-		    conn->sock = SOCKI_INVALID_SOCK;
+		    conn->sock = MPIDU_SOCK_INVALID_SOCK;
 		    conn->state = CONN_STATE_CLOSED;
 		    connection_free(conn);
 		}
