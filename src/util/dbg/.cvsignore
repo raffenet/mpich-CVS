@@ -5,3 +5,5 @@ Makefile.in
 *Debug*
 *Release*
 .deps
+*.bb
+*.bbg

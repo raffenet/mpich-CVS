@@ -1,2 +1,5 @@
 Makefile
 .deps
+*.o
+*.bb
+*.bbg

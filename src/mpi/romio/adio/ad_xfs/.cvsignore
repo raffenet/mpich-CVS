@@ -1,4 +1,5 @@
 Makefile
 *.safe
-
 .deps
+*.bb
+*.bbg
