@@ -42,6 +42,9 @@ int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
     ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_GROUP";
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -53,5 +56,10 @@ int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
      * with deferred open this might not be the group of processes that
      * actually opened the file from the file system's perspective
      */
-    return MPI_Comm_group(fh->comm, group);
+    error_code = MPI_Comm_group(fh->comm, group);
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
+    return error_code;
 }

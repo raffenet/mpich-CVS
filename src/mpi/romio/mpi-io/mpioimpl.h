@@ -15,6 +15,8 @@
 
 #include "adio.h"
 #include "mpio.h"
+#include "mpiimpl.h"
+#include "mpiimplthread.h"
 
 /* info is a linked list of these structures */
 struct MPIR_Info {

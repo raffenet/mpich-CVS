@@ -49,6 +49,9 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
     ADIO_Offset shared_fp;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -84,7 +87,8 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 					  myname, __LINE__, MPI_ERR_INTERN, 
 					  "**iosharedfailed", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -92,6 +96,9 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
 
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
                           shared_fp, status, &error_code);
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     /* FIXME: Check for error code from WriteStridedColl? */
     return error_code;

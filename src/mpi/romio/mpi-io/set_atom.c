@@ -40,6 +40,9 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
     ADIO_Fcntl_t *fcntl_struct;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -59,11 +62,16 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG, 
 					  "**notsame", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
-    if (fh->atomicity == flag) return MPI_SUCCESS;
+    if (fh->atomicity == flag){
+	    error_code = MPI_SUCCESS;
+	    goto fn_exit;
+    }
+
 
     fcntl_struct = (ADIO_Fcntl_t *) ADIOI_Malloc(sizeof(ADIO_Fcntl_t));
     fcntl_struct->atomicity = flag;
@@ -72,5 +80,8 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
 
     ADIOI_Free(fcntl_struct);
 
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }

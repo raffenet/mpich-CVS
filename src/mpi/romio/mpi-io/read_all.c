@@ -56,6 +56,7 @@ int MPI_File_read_all(MPI_File mpi_fh, void *buf, int count,
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, datatype, count);
 #endif /* MPI_hpux */
+
     return error_code;
 }
 
@@ -74,6 +75,9 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
     int error_code, datatype_size;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -86,7 +90,8 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -100,6 +105,10 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
 
     ADIO_ReadStridedColl(fh, buf, count, datatype, file_ptr_type,
 			 offset, status, &error_code);
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT()
+
     return error_code;
 }
 #endif

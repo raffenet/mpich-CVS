@@ -53,6 +53,10 @@ int MPI_File_get_view(MPI_File mpi_fh,
     int i, j, k, combiner;
     MPI_Datatype copy_etype, copy_filetype;
 
+
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -63,7 +67,8 @@ int MPI_File_get_view(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG, 
 					  "**iodatarepnomem", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -73,17 +78,27 @@ int MPI_File_get_view(MPI_File mpi_fh,
     MPI_Type_get_envelope(fh->etype, &i, &j, &k, &combiner);
     if (combiner == MPI_COMBINER_NAMED) *etype = fh->etype;
     else {
+        MPIR_Nest_incr();
         MPI_Type_contiguous(1, fh->etype, &copy_etype);
+        MPIR_Nest_decr();
+
+        MPIR_Nest_incr();
         MPI_Type_commit(&copy_etype);
+        MPIR_Nest_decr();
         *etype = copy_etype;
     }
     MPI_Type_get_envelope(fh->filetype, &i, &j, &k, &combiner);
     if (combiner == MPI_COMBINER_NAMED) *filetype = fh->filetype;
     else {
         MPI_Type_contiguous(1, fh->filetype, &copy_filetype);
+
         MPI_Type_commit(&copy_filetype);
         *filetype = copy_filetype;
     }
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return MPI_SUCCESS;
 }

@@ -60,6 +60,8 @@ int MPI_Register_datarep(char *name,
     ADIOI_Datarep *datarep;
     static char myname[] = "MPI_REGISTER_DATAREP";
 
+    MPID_CS_ENTER();
+
     /* --BEGIN ERROR HANDLING-- */
     /* check datarep name (use strlen instead of strnlen because
        strnlen is not portable) */
@@ -72,7 +74,8 @@ int MPI_Register_datarep(char *name,
 					  myname, __LINE__,
 					  MPI_ERR_ARG,
 					  "**datarepname", 0);
-	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	goto fn_exit;
     }
 
     /* check datarep isn't already registered */
@@ -85,7 +88,8 @@ int MPI_Register_datarep(char *name,
 					      "**datarepused",
 					      "**datarepused %s",
 					      name);
-	    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    goto fn_exit;
 	}
     }
 
@@ -97,7 +101,8 @@ int MPI_Register_datarep(char *name,
 					  myname, __LINE__,
 					  MPI_ERR_ARG,
 					  "**datarepextent", 0);
-	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -112,5 +117,10 @@ int MPI_Register_datarep(char *name,
 
     ADIOI_Datarep_head = datarep;
 
-    return MPI_SUCCESS;
+    error_code = MPI_SUCCESS;
+
+fn_exit:
+    MPID_CS_EXIT();
+
+    return error_code;
 }

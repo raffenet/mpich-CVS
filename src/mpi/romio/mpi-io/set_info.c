@@ -39,6 +39,9 @@ int MPI_File_set_info(MPI_File mpi_fh, MPI_Info info)
     static char myname[] = "MPI_FILE_SET_INFO";
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -48,6 +51,10 @@ int MPI_File_set_info(MPI_File mpi_fh, MPI_Info info)
     /* set new info */
     ADIO_SetInfo(fh, info, &error_code);
     /* TODO: what to do with error code? */
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

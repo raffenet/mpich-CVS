@@ -33,16 +33,25 @@ int MPIO_Waitall( int count, MPIO_Request requests[], MPI_Status statuses[] )
 {
     int notdone, i, flag, err; 
 
-    if (count == 1) 
-	return MPIO_Wait( requests, statuses );
+    MPID_CS_ENTER();
+
+    if (count == 1)  {
+    	    MPIR_Nest_incr();
+	    err = MPIO_Wait(requests, statuses);
+    	    MPIR_Nest_decr();
+	    goto fn_exit;
+    }
+    
     
     do {
 	notdone = 0;
 	for (i=0; i<count; i++) {
 	    if (requests[i] != MPIO_REQUEST_NULL) {
+    		MPIR_Nest_incr();
 		err = MPIO_Test( &requests[i], &flag, &statuses[i] );
+    		MPIR_Nest_decr();
 		if (!flag) notdone = 1;
-		if (err) return err;
+		if (err) goto fn_exit;
 	    }
 	    else {
 #ifdef MPICH2
@@ -60,6 +69,10 @@ int MPIO_Waitall( int count, MPIO_Request requests[], MPI_Status statuses[] )
 	}
     } while (notdone);
 
-    return MPI_SUCCESS;
+    err = MPI_SUCCESS;
+fn_exit:
+
+    MPID_CS_EXIT();
+    return err;
 }
 

@@ -47,6 +47,9 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 		  fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -56,7 +59,8 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadsize", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
 
     tmp_sz = size;
@@ -66,7 +70,8 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**notsame", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -86,6 +91,11 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     /* TODO: bcast result? */
     if (!mynod) return error_code;

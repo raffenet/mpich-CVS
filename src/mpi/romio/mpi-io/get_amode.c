@@ -40,6 +40,8 @@ int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
     int error_code;
     static char myname[] = "MPI_FILE_GET_AMODE";
     ADIO_File fh;
+    
+    MPID_CS_ENTER();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -48,5 +50,6 @@ int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
     /* --END ERROR HANDLING-- */
 
     *amode = fh->access_mode;
+    MPID_CS_EXIT();
     return MPI_SUCCESS;
 }

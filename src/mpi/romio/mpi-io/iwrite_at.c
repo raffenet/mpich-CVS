@@ -49,6 +49,9 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 	int error_code;
 	MPI_Status *status;
 
+        MPID_CS_ENTER();
+        MPIR_Nest_incr();
+
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
@@ -61,8 +64,12 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
 			   MPIU_Greq_cancel_fn, status, request);
+
 	/* but we did all the work already */
 	MPI_Grequest_complete(*request);
+
+        MPIR_Nest_decr();
+        MPID_CS_EXIT();
 
 	/* passed the buck to the blocking version...*/
 	return MPI_SUCCESS;
@@ -83,6 +90,7 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		  mpi_fh, datatype, count);
 #endif /* MPI_hpux */
 
+
     fh = MPIO_File_resolve(mpi_fh);
 
     error_code = MPIOI_File_iwrite(fh, offset, ADIO_EXPLICIT_OFFSET, buf,
@@ -91,6 +99,7 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count)
 #endif /* MPI_hpux */
+
     return error_code;
 }
 #endif

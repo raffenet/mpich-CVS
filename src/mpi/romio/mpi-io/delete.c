@@ -48,6 +48,9 @@ int MPI_File_delete(char *filename, MPI_Info info)
                 MPI_FILE_NULL, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     /* first check if ADIO has been initialized. If not, initialize it */
     if (ADIO_Init_keyval == MPI_KEYVAL_INVALID) {
         MPI_Initialized(&flag);
@@ -57,7 +60,8 @@ int MPI_File_delete(char *filename, MPI_Info info)
 	    error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					      myname, __LINE__, MPI_ERR_OTHER, 
 					      "**initialized", 0);
-	    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -88,7 +92,8 @@ int MPI_File_delete(char *filename, MPI_Info info)
 	 * the error up.  In the PRINT_ERR_MSG case MPI_Abort has already
 	 * been called as well, so we probably didn't even make it this far.
 	 */
-	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -106,5 +111,9 @@ int MPI_File_delete(char *filename, MPI_Info info)
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, MPI_FILE_NULL, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();   
     return error_code;
 }

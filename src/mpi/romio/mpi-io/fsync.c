@@ -44,6 +44,8 @@ int MPI_File_sync(MPI_File mpi_fh)
     HPMP_IO_START(fl_xmpi, BLKMPIFILESYNC, TRDTBLOCK, fh,
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
     /* --BEGIN ERROR HANDLING-- */
@@ -52,7 +54,8 @@ int MPI_File_sync(MPI_File mpi_fh)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadfh", 0);
-	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -63,6 +66,9 @@ int MPI_File_sync(MPI_File mpi_fh)
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
-
+ 
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }

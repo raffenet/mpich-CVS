@@ -51,6 +51,7 @@ int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		  count);
 #endif /* MPI_hpux */
 
+
     /* ADIOI_File_read() defined in mpi-io/read.c */
     error_code = MPIOI_File_read(mpi_fh, offset, ADIO_EXPLICIT_OFFSET, buf,
 				 count, datatype, myname, status);
@@ -58,5 +59,6 @@ int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
+
     return error_code;
 }

@@ -47,19 +47,27 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
 	int error_code;
 	MPI_Status *status;
 
+        MPID_CS_ENTER();
+        MPIR_Nest_incr();
+
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	error_code = MPI_File_write_shared(mpi_fh, buf, count, datatype, status); 
+	error_code = MPI_File_write_shared(mpi_fh, buf, count, 
+			datatype, status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
 	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
 			MPIU_Greq_cancel_fn, status, request);
+
 	/* but we did all the work already */
 	MPI_Grequest_complete(*request);
+
+        MPIR_Nest_decr();
+        MPID_CS_EXIT();
 
 	/* passed the buck to the blocking version...*/
 	return MPI_SUCCESS;
@@ -74,6 +82,9 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
     static char myname[] = "MPI_FILE_IWRITE_SHARED";
+
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -138,6 +149,10 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
     else
 	ADIO_IwriteStrided(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
 			   shared_fp, request, &error_code); 
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

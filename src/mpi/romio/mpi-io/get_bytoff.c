@@ -46,6 +46,9 @@ int MPI_File_get_byte_offset(MPI_File mpi_fh,
     ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_BYTE_OFFSET";
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -56,12 +59,18 @@ int MPI_File_get_byte_offset(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
 
     MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_Get_byte_offset(fh, offset, disp);
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
+
     return MPI_SUCCESS;
 }

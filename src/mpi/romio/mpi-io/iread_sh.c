@@ -48,6 +48,9 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
 	ADIO_File fh;
 	MPI_Status *status;
 
+        MPID_CS_ENTER();
+        MPIR_Nest_incr();
+
 	fh = MPIO_File_resolve(mpi_fh);
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
@@ -62,10 +65,14 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
 			MPIU_Greq_cancel_fn, status, request);
+
 	/* but we did all the work already */
 	MPI_Grequest_complete(*request);
 
+        MPID_CS_EXIT();
+
 	/* passed the buck to the blocking version...*/
+        MPIR_Nest_decr();
 	return MPI_SUCCESS;
 }
 #else
@@ -78,6 +85,9 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
     int datatype_size, incr;
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
+
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -156,6 +166,9 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
 			   shared_fp, request, &error_code);
     }
 
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }
 #endif

@@ -41,6 +41,9 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
     MPI_Offset curr_offset, eof_offset, tmp_offset;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -57,7 +60,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**notsame", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -69,7 +73,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadwhence", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -90,7 +95,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 						  myname, __LINE__,
 						  MPI_ERR_ARG,
 						  "**iobadoffset", 0);
-		return MPIO_Err_return_file(fh, error_code);
+		error_code = MPIO_Err_return_file(fh, error_code);
+		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    break;
@@ -105,7 +111,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 						  myname, __LINE__,
 						  MPI_ERR_INTERN, 
 						  "**iosharedfailed", 0);
-		return MPIO_Err_return_file(fh, error_code);
+		error_code = MPIO_Err_return_file(fh, error_code);
+		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    offset += curr_offset;
@@ -117,7 +124,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 						  myname, __LINE__,
 						  MPI_ERR_ARG,
 						  "**ionegoffset", 0);
-		return MPIO_Err_return_file(fh, error_code);
+		error_code = MPIO_Err_return_file(fh, error_code);
+		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    break;
@@ -133,7 +141,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 						  myname, __LINE__,
 						  MPI_ERR_ARG,
 						  "**ionegoffset", 0);
-		return MPIO_Err_return_file(fh, error_code);
+		error_code = MPIO_Err_return_file(fh, error_code);
+		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    break;
@@ -143,7 +152,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 					      MPIR_ERR_RECOVERABLE,
 					      myname, __LINE__, MPI_ERR_ARG,
 					      "**iobadwhence", 0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	    /* --END ERROR HANDLING-- */
 	}
 
@@ -155,13 +165,20 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 					      myname, __LINE__,
 					      MPI_ERR_INTERN, 
 					      "**iosharedfailed", 0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	}
 
     }
 
     /* FIXME: explain why the barrier is necessary */
     MPI_Barrier(fh->comm);
+
+    error_code = MPI_SUCCESS;
+
+fn_exit:
+    MPID_CS_EXIT();
+    MPIR_Nest_decr();
 
     return error_code;
 }

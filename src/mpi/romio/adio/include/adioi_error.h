@@ -18,7 +18,8 @@ if ((fh <= (ADIO_File) 0) ||					\
 				      myname, __LINE__,		\
 				      MPI_ERR_ARG,		\
 				      "**iobadfh", 0);		\
-    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);	\
+    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);\
+    goto fn_exit;                                               \
 }
 
 #define MPIO_CHECK_COUNT(fh, count, myname, error_code)         \
@@ -28,7 +29,8 @@ if (count < 0) {						\
 				      myname, __LINE__,		\
 				      MPI_ERR_ARG, 		\
 				      "**iobadcount", 0);	\
-    return MPIO_Err_return_file(fh, error_code);		\
+    error_code = MPIO_Err_return_file(fh, error_code);		\
+    goto fn_exit;                                               \
 }
 
 #define MPIO_CHECK_DATATYPE(fh, datatype, myname, error_code)   \
@@ -38,7 +40,8 @@ if (datatype == MPI_DATATYPE_NULL) {				\
 				      myname, __LINE__,		\
 				      MPI_ERR_TYPE, 		\
 				      "**dtypenull", 0);	\
-    return MPIO_Err_return_file(fh, error_code);		\
+    error_code = MPIO_Err_return_file(fh, error_code);		\
+    goto fn_exit;                                               \
 }
 
 #define MPIO_CHECK_READABLE(fh, myname, error_code)		\
@@ -48,7 +51,8 @@ if (fh->access_mode & MPI_MODE_WRONLY) {			\
 				      myname, __LINE__,		\
 				      MPI_ERR_ACCESS, 		\
 				      "**iowronly", 0);		\
-    return MPIO_Err_return_file(fh, error_code);                \
+    error_code = MPIO_Err_return_file(fh, error_code);          \
+    goto fn_exit;                                               \
 }
 
 #define MPIO_CHECK_WRITABLE(fh, myname, error_code)		\
@@ -59,7 +63,8 @@ if (fh->access_mode & MPI_MODE_RDONLY) {			\
 				      MPI_ERR_READ_ONLY,	\
 				      "**iordonly",		\
 				      0);			\
-    return MPIO_Err_return_file(fh, error_code);		\
+    error_code = MPIO_Err_return_file(fh, error_code);		\
+    goto fn_exit;                                               \
 }
 
 #define MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code)		\
@@ -69,7 +74,8 @@ if (fh->access_mode & MPI_MODE_SEQUENTIAL) {				\
 				      myname, __LINE__,			\
 				      MPI_ERR_UNSUPPORTED_OPERATION,	\
 				      "**ioamodeseq", 0);		\
-    return MPIO_Err_return_file(fh, error_code);                        \
+    error_code = MPIO_Err_return_file(fh, error_code);                  \
+    goto fn_exit;                                                       \
 }
 
 #define MPIO_CHECK_INTEGRAL_ETYPE(fh, count, dtype_size, myname, error_code) \
@@ -77,7 +83,8 @@ if ((count*dtype_size) % fh->etype_size != 0) {				     \
     error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,     \
 				      myname, __LINE__, MPI_ERR_IO, 	     \
 				      "**ioetype", 0);			     \
-    return MPIO_Err_return_file(fh, error_code);			     \
+    error_code = MPIO_Err_return_file(fh, error_code);			     \
+    goto fn_exit;                                                            \
 }
 
 #define MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code)		\
@@ -90,7 +97,8 @@ if ((fh->file_system == ADIO_PIOFS) ||					\
 				      myname, __LINE__,			\
 				      MPI_ERR_UNSUPPORTED_OPERATION,	\
 				      "**iosharedunsupported", 0);	\
-    return MPIO_Err_return_file(fh, error_code);			\
+    error_code = MPIO_Err_return_file(fh, error_code);			\
+    goto fn_exit;                                                       \
 }
 
 /* MPIO_ERR_CREATE_CODE_XXX macros are used to clean up creation of

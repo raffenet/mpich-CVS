@@ -56,7 +56,12 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
     }
 #endif /* MPI_hpux */
 
-    if (*request == MPIO_REQUEST_NULL) return MPI_SUCCESS;
+    MPID_CS_ENTER();
+
+    if (*request == MPIO_REQUEST_NULL) {
+	    error_code = MPI_SUCCESS;
+	    goto fn_exit;
+    }
 
     /* --BEGIN ERROR HANDLING-- */
     if ((*request < (MPIO_Request) 0) || 
@@ -65,7 +70,8 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_REQUEST,
 					  "**request", 0);
-	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -81,6 +87,9 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 #ifdef MPI_hpux
     HPMP_IO_WEND(fl_xmpi);
 #endif /* MPI_hpux */
+
+fn_exit:
+    MPID_CS_EXIT();
     return error_code;
 }
 #endif

@@ -47,6 +47,9 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
     HPMP_IO_START(fl_xmpi, BLKMPIFILESEEK, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -62,7 +65,8 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 					      MPIR_ERR_RECOVERABLE, myname,
 					      __LINE__, MPI_ERR_ARG,
 					      "**iobadoffset", 0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 	break;
@@ -77,7 +81,8 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 					      MPIR_ERR_RECOVERABLE, myname,
 					      __LINE__, MPI_ERR_ARG,
 					      "**ionegoffset", 0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -97,7 +102,8 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 					      MPIR_ERR_RECOVERABLE, myname,
 					      __LINE__, MPI_ERR_ARG,
 					      "**ionegoffset", 0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -107,7 +113,8 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadwhence", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
 	/* --END ERROR HANDLING-- */
     }
 
@@ -117,5 +124,11 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+    error_code = MPI_SUCCESS;
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }

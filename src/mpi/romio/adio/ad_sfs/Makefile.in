@@ -3,8 +3,8 @@ AR          = @AR@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include
-CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I${srcdir}/../../../../include -I../../../../include
+CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 

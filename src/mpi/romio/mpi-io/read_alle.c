@@ -57,6 +57,9 @@ int MPIOI_File_read_all_end(MPI_File mpi_fh,
     int error_code;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -66,7 +69,8 @@ int MPIOI_File_read_all_end(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_IO, 
 					  "**iosplitcollnone", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -75,6 +79,10 @@ int MPIOI_File_read_all_end(MPI_File mpi_fh,
        *status = fh->split_status;
 #endif
     fh->split_coll_count = 0;
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return MPI_SUCCESS;
 }

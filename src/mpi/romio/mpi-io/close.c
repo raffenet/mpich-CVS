@@ -43,6 +43,9 @@ int MPI_File_close(MPI_File *mpi_fh)
     HPMP_IO_WSTART(fl_xmpi, BLKMPIFILECLOSE, TRDTBLOCK, *fh);
 #endif /* MPI_hpux */
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(*mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -68,5 +71,9 @@ int MPI_File_close(MPI_File *mpi_fh)
 #ifdef MPI_hpux
     HPMP_IO_WEND(fl_xmpi);
 #endif /* MPI_hpux */
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }

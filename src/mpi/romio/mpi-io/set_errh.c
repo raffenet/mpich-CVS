@@ -40,6 +40,8 @@ int MPI_File_set_errhandler(MPI_File mpi_fh, MPI_Errhandler errhandler)
     static char myname[] = "MPI_FILE_SET_ERRHANDLER";
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+
     if (mpi_fh == MPI_FILE_NULL) {
 	ADIOI_DFLT_ERR_HANDLER = errhandler;
     }
@@ -59,11 +61,14 @@ int MPI_File_set_errhandler(MPI_File mpi_fh, MPI_Errhandler errhandler)
 					      MPI_ERR_UNSUPPORTED_OPERATION,
 					      "**fileopunsupported",
 					      0);
-	    return MPIO_Err_return_file(fh, error_code);
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	    goto fn_exit;
 	}
 
 	fh->err_handler = errhandler;
     }
 
+fn_exit:
+    MPID_CS_EXIT();
     return error_code;
 }

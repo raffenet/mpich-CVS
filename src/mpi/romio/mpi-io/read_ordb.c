@@ -46,6 +46,9 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     ADIO_File fh;
     static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -58,11 +61,13 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_IO, 
 					  "**iosplitcoll", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
     fh->split_coll_count = 1;
+
 
     MPI_Type_size(datatype, &datatype_size);
     /* --BEGIN ERROR HANDLING-- */
@@ -87,7 +92,8 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS)
     {
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -95,6 +101,10 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
 
     ADIO_ReadStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
 			 shared_fp, &fh->split_status, &error_code);
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

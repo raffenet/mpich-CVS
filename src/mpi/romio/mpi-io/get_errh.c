@@ -42,6 +42,7 @@ int MPI_File_get_errhandler(MPI_File mpi_fh, MPI_Errhandler *errhandler)
     ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_ERRHANDLER";
 
+    MPID_CS_ENTER();
 
     if (mpi_fh == MPI_FILE_NULL) {
 	*errhandler = ADIOI_DFLT_ERR_HANDLER;
@@ -54,12 +55,15 @@ int MPI_File_get_errhandler(MPI_File mpi_fh, MPI_Errhandler *errhandler)
 	    error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					      myname, __LINE__, MPI_ERR_ARG,
 					      "**iobadfh", 0);
-	    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
 	*errhandler = fh->err_handler;
     }
 
+fn_exit:
+    MPID_CS_EXIT();
     return MPI_SUCCESS;
 }

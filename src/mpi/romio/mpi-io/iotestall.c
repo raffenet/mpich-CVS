@@ -34,8 +34,14 @@ int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
 {
     int done, i, err; 
 
-    if (count == 1) 
-	return MPIO_Test( requests, flag, statuses );
+
+    MPID_CS_ENTER();
+    if (count == 1)  {
+            MPIR_Nest_decr();
+	    err = MPIO_Test( requests, flag, statuses );
+            MPIR_Nest_decr();
+	    goto fn_exit;
+    }
 
     /* This is actually very difficult to do.  We can't use MPIO_Test, 
        since we must change the requests only if *ALL* requests are complete
@@ -45,9 +51,11 @@ int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
     done = 1;
     for (i=0; i<count; i++) {
       if (requests[i] != MPIO_REQUEST_NULL) {
+        MPIR_Nest_incr();
 	err = MPIO_Test( &requests[i], flag, &statuses[i] );
+        MPIR_Nest_decr();
 	if (!*flag) done = 0;
-	if (err) return err;
+	if (err) goto fn_exit;
       }
       else {
 #ifdef MPICH2
@@ -65,6 +73,10 @@ int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
     }
     
     *flag = done;
-    return MPI_SUCCESS;
+
+    err = MPI_SUCCESS;
+fn_exit:
+    MPID_CS_EXIT();
+    return err;
 }
 

@@ -60,5 +60,6 @@ int MPI_File_read_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
+
     return error_code;
 }

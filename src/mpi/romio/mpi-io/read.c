@@ -49,13 +49,13 @@ int MPI_File_read(MPI_File mpi_fh, void *buf, int count,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEREAD, TRDTBLOCK, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
 
-
     error_code = MPIOI_File_read(mpi_fh, (MPI_Offset) 0, ADIO_INDIVIDUAL, buf,
 				 count, datatype, myname, status);
 
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
+
     return error_code;
 }
 
@@ -75,6 +75,9 @@ int MPIOI_File_read(MPI_File mpi_fh,
     ADIO_File fh;
     ADIO_Offset off;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -87,7 +90,8 @@ int MPIOI_File_read(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -97,7 +101,8 @@ int MPIOI_File_read(MPI_File mpi_fh,
 #ifdef HAVE_STATUS_SET_BYTES
        MPIR_Status_set_bytes(status, datatype, 0);
 #endif
-	return MPI_SUCCESS;
+	error_code = MPI_SUCCESS;
+	goto fn_exit;
     }
 
     /* --BEGIN ERROR HANDLING-- */
@@ -147,6 +152,10 @@ int MPIOI_File_read(MPI_File mpi_fh,
 			  offset, status, &error_code);
 	/* For strided and atomic mode, locking is done in ADIO_ReadStrided */
     }
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

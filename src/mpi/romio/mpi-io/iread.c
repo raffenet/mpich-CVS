@@ -46,6 +46,9 @@ int MPI_File_iread(MPI_File mpi_fh, void *buf, int count,
 	int error_code;
 	MPI_Status *status;
 
+        MPID_CS_ENTER();
+        MPIR_Nest_incr();
+
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
@@ -61,6 +64,9 @@ int MPI_File_iread(MPI_File mpi_fh, void *buf, int count,
 	MPI_Grequest_complete(*request);
 
 	/* passed the buck to the blocking version...*/
+
+        MPIR_Nest_decr();
+        MPID_CS_EXIT();
 	return MPI_SUCCESS;
 }
 #else
@@ -76,12 +82,14 @@ int MPI_File_iread(MPI_File mpi_fh, void *buf, int count,
 		  count);
 #endif /* MPI_hpux */
 
+
     error_code = MPIOI_File_iread(mpi_fh, (MPI_Offset) 0, ADIO_INDIVIDUAL,
 				  buf, count, datatype, myname, request);
     
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
+
 
     return error_code;
 }
@@ -105,6 +113,8 @@ int MPIOI_File_iread(MPI_File mpi_fh,
     ADIO_File fh;
     ADIO_Offset off;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -116,7 +126,8 @@ int MPIOI_File_iread(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -182,6 +193,9 @@ int MPIOI_File_iread(MPI_File mpi_fh,
     }
     else ADIO_IreadStrided(fh, buf, count, datatype, file_ptr_type,
 			   offset, request, &error_code); 
+fn_exit:
+    MPID_CS_EXIT();
+    MPIR_Nest_decr();
 
     return error_code;
 }

@@ -62,6 +62,9 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
     int error_code, datatype_size;
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -75,7 +78,8 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
 
     if (fh->split_coll_count)
@@ -83,7 +87,8 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_IO, 
 					  "**iosplitcoll", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -97,6 +102,10 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
     fh->split_datatype = datatype;
     ADIO_WriteStridedColl(fh, buf, count, datatype, file_ptr_type,
 			  offset, &fh->split_status, &error_code);
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
+
     return error_code;
 }
 #endif

@@ -35,8 +35,12 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
     int i, err; 
     int flag;
 
+    MPID_CS_ENTER();
+
     if (count == 1) {
+    	MPIR_Nest_incr();
 	err = MPIO_Test( requests, &flag, statuses );
+    	MPIR_Nest_decr();
 	if (!err) {
 	    if (flag) {
 		indices[0] = 0;
@@ -46,7 +50,7 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
 		*outcount = 0;
 	    }
 	}
-	return err;
+	goto fn_exit;
     }
 
     /* Check for no active requests */
@@ -57,14 +61,17 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
     }
     if (i == count) {
 	*outcount = MPI_UNDEFINED;
-	return MPI_SUCCESS;
+	err = MPI_SUCCESS;
+	goto fn_exit;
     }
 
     err = MPI_SUCCESS;
     *outcount = 0;
     for (i=0; i<count; i++) {
       if (requests[i] != MPIO_REQUEST_NULL) {
+    	MPIR_Nest_incr();
 	err = MPIO_Test( &requests[i], &flag, statuses );
+    	MPIR_Nest_decr();
 	if (flag) {
 	  if (!err) {
 	      indices[0] = i;
@@ -76,5 +83,8 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
       }
     }
 
+fn_exit:
+
+    MPID_CS_EXIT();
     return err;
 }

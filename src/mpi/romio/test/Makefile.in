@@ -4,8 +4,8 @@ INCLUDE_DIR = @ROMIO_INCLUDE@
 # because := is not universally avalible, we have to play games to use the
 # user-specificed LDFLAGS and OUR_LIBS env. variables (if set)
 OUR_LIBS = @TEST_LIBNAME@ @MPI_LIB@ @ROMIO_LIBLIST@ ${LDFLAGS} ${LIBS}
-USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
-USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
+USER_CFLAGS = @CPPFLAGS@ @USER_CFLAGS@ $(INCLUDE_DIR)
+USER_FFLAGS = @CPPFLAGS@ @USER_FFLAGS@ $(INCLUDE_DIR)
 CTESTS = simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
      large_file psimple error status noncontig_coll2

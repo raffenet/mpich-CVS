@@ -386,15 +386,8 @@ int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code);
 #include "mpio_error.h"
 #include "mpipr.h"
 
-/* Copied from mpiimpl.h because mpiimpl.h cannot be included from romio. */
-/* Remove these prototypes when mpiimpl.h is broken up and a specific error */
-/* handling header file can be included. */
+/* these two defines don't appear to be in any other header file */
 #define MPIR_ERR_FATAL 1
 #define MPIR_ERR_RECOVERABLE 0
-
-typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int length);
-void MPIR_Err_get_string(int, char *, int, MPIR_Err_get_class_string_func_t );
-void MPIR_Err_print_stack(FILE *, int);
-extern int MPIR_Err_print_stack_flag;
 
 #endif

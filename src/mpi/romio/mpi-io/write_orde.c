@@ -42,6 +42,8 @@ int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
     static char myname[] = "MPI_FILE_WRITE_ORDERED_END";
     ADIO_File fh;
 
+    MPID_CS_ENTER();
+
     fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
@@ -52,7 +54,8 @@ int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_IO, 
 					  "**iosplitcollnone", 0);
-	return MPIO_Err_return_file(fh, error_code);
+	error_code = MPIO_Err_return_file(fh, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -62,5 +65,8 @@ int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 #endif
     fh->split_coll_count = 0;
 
+
+fn_exit:
+    MPID_CS_EXIT();
     return MPI_SUCCESS;
 }

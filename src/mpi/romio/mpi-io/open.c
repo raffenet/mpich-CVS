@@ -55,13 +55,17 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     HPMP_IO_OPEN_START(fl_xmpi, comm);
 #endif /* MPI_hpux */
 
+    MPID_CS_ENTER();
+    MPIR_Nest_incr();
+
     /* --BEGIN ERROR HANDLING-- */
     if (comm == MPI_COMM_NULL)
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_COMM,
 					  "**comm", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -72,7 +76,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_COMM, 
 					  "**commnotintra", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
 
     if ( ((amode&MPI_MODE_RDONLY)?1:0) + ((amode&MPI_MODE_RDWR)?1:0) +
@@ -81,7 +86,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
 					  "**fileamodeone", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
 
     if ((amode & MPI_MODE_RDONLY) && 
@@ -90,7 +96,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
 					  "**fileamoderead", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
 
     if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL))
@@ -98,7 +105,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
 					  "**fileamodeseq", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -125,7 +133,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 					      MPIR_ERR_RECOVERABLE,
 					      myname, __LINE__, MPI_ERR_OTHER,
 					      "**initialized", 0);
-	    return MPIO_Err_return_comm(comm, error_code);
+	    error_code = MPIO_Err_return_comm(comm, error_code);
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -156,7 +165,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	 * possibly can or call MPIO_Err_setmsg.  We just need to propagate 
 	 * the error up.
 	 */
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
 
     /* Test for invalid flags in amode.
@@ -174,7 +184,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 					  myname, __LINE__,
 					  MPI_ERR_UNSUPPORTED_OPERATION, 
 					  "**iosequnsupported", 0);
-	return MPIO_Err_return_comm(comm, error_code);
+	error_code = MPIO_Err_return_comm(comm, error_code);
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -220,5 +231,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 #ifdef MPI_hpux
     HPMP_IO_OPEN_END(fl_xmpi, *fh, comm);
 #endif /* MPI_hpux */
+
+fn_exit:
+    MPIR_Nest_decr();
+    MPID_CS_EXIT();
     return error_code;
 }

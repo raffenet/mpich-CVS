@@ -58,5 +58,6 @@ int MPI_File_write_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, datatype, count);
 #endif /* MPI_hpux */
+
     return error_code;
 }
