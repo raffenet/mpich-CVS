@@ -284,8 +284,12 @@ Fortran integer (value is %ld)
 **filenamedir:Invalid or missing directory
 **filenamedir %s:Invalid or missing directory %s
 **conversion:An error occurred in a user-defined data conversion function
-**datarep:The requested datarep name has already been specified to \
+**datarepname:Invalid datarep name
+**datarepused:The requested datarep name has already been specified to \
  MPI_REGISTER_DATAREP
+**datarepused %s:The requested datarep name %s has already been specified to \
+ MPI_REGISTER_DATAREP
+**datarepextent: Invalid extent callback
 **fileinuse:File in use by some process
 **fileinuse %s:File %s is in use by some process
 **file:Invalid MPI_File
@@ -327,6 +331,7 @@ Fortran integer (value is %ld)
 **ioamodeseq %s:Cannot use function %s when the file is opened with amode \
     MPI_MODE_SEQUENTIAL
 **iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
+**iordonly:Cannot write to a file opened with amode MPI_MODE_RDONLY
 **iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system
 **iosequnsupported %s:MPI_MODE_SEQUENTIAL not supported on file system %s
 **iodispifseq:disp must be set to MPI_DISPLACEMENT_CURRENT since file \
