@@ -54,7 +54,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTR) 
     {
 	av.sl                         = 0;
-	MPIU_dbg_printf("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid);
+	/*MPIU_dbg_printf("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid);*/
 	av.dest_lid                   = ib->m_dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
@@ -219,7 +219,7 @@ int ib_setup_connections()
     {
 	if ( i == comm_ptr->rank)
 	    continue; /* don't make a connection to myself */
-	MPIU_dbg_printf("setting up VC connection to rank %d\n", i);
+	/*MPIU_dbg_printf("setting up VC connection to rank %d\n", i);*/
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
@@ -231,11 +231,11 @@ int ib_setup_connections()
 	}
 	sprintf(key, "ib_lid_%d", i);
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
-	MPIU_dbg_printf("PMI_KVS_Get %s:<%s, %s>\n", 
-			vc_ptr->pmi_kvsname, key, value);
+	/*MPIU_dbg_printf("PMI_KVS_Get %s:<%s, %s>\n", 
+			vc_ptr->pmi_kvsname, key, value);*/
 	ib = &vc_ptr->data.ib.info;
 	ib->m_dlid = atoi(value);
-	MPIU_dbg_printf("pinning %d bytes of memory\n", IB_PINNED_MEMORY_SIZE);
+	/*MPIU_dbg_printf("pinning %d bytes of memory\n", IB_PINNED_MEMORY_SIZE);*/
 	ib->m_virtual_address = malloc(IB_PINNED_MEMORY_SIZE);
 	if (ib->m_virtual_address == NULL)
 	{
@@ -275,7 +275,7 @@ int ib_setup_connections()
 	ib->m_snd_work_id = 0;
 	ib->m_snd_posted = 0;
 	/* ***************************************** */
-	MPIU_dbg_printf("creating the send/recv completion queues\n");
+	/*MPIU_dbg_printf("creating the send/recv completion queues\n");*/
 	max_cq_entries = IB_MAX_CQ_ENTRIES + 1;
 	status = ib_cq_create_us(IB_Process.hca_handle, 
 				 IB_Process.cqd_handle,
@@ -311,7 +311,7 @@ int ib_setup_connections()
 	  will only be one posted send or recv?
 	********************************************/
 
-	MPIU_dbg_printf("allocating the descriptor segments\n");
+	/*MPIU_dbg_printf("allocating the descriptor segments\n");*/
 
 	/* allocate and setup the receive segments */
 	ib->m_recv_sglist.data_seg_p = calloc(ib->m_message_segments,
@@ -351,7 +351,7 @@ int ib_setup_connections()
 	    ib->m_send_sglist.data_seg_p[i].l_key = lkey;
 	}
 
-	MPIU_dbg_printf("creating the queue pair\n");
+	/*MPIU_dbg_printf("creating the queue pair\n");*/
 	/* Create the queue pair */
 	status = createQP(ib);
 	if (status != IB_SUCCESS)
@@ -363,7 +363,7 @@ int ib_setup_connections()
 	    return -1;
 	}
 
-	MPIU_dbg_printf("modifyQP(INIT)\n");
+	/*MPIU_dbg_printf("modifyQP(INIT)\n");*/
 	status = modifyQP(ib, IB_QP_STATE_INIT);
 	if (status != IB_SUCCESS)
 	{
@@ -373,7 +373,7 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
-	MPIU_dbg_printf("modifyQP(RTR)\n");
+	/*MPIU_dbg_printf("modifyQP(RTR)\n");*/
 	status = modifyQP(ib, IB_QP_STATE_RTR);
 	if (status != IB_SUCCESS)
 	{
@@ -383,7 +383,7 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
-	MPIU_dbg_printf("modifyQP(RTS)\n");
+	/*MPIU_dbg_printf("modifyQP(RTS)\n");*/
 	status = modifyQP(ib, IB_QP_STATE_RTS);
 	if (status != IB_SUCCESS)
 	{
@@ -395,9 +395,9 @@ int ib_setup_connections()
 	}
     }
 
-    MPIU_dbg_printf("calling PMI_Barrier\n");
+    /*MPIU_dbg_printf("calling PMI_Barrier\n");*/
     PMI_Barrier();
-    MPIU_dbg_printf("PMI_Barrier returned\n");
+    /*MPIU_dbg_printf("PMI_Barrier returned\n");*/
 
     free(key);
     free(value);
@@ -470,7 +470,7 @@ int ib_init()
 
     sprintf(key, "ib_lid_%d", MPIR_Process.comm_world->rank);
     sprintf(value, "%d", IB_Process.lid);
-    MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);
+    /*MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     PMI_Barrier();
 
