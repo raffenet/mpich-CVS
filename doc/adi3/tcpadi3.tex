@@ -95,7 +95,7 @@ perform relatively simple data communication operations.  These are designed
 so that they can easily be implemented with, for example, TCP, but are not
 restricted to TCP.  For those familar with the ``channel device'' in ADI-2,
 these routines represent the ADI-3 version of the channel device interface.
-These routines are prefixed with \code{CH3_} (really \code{MPID_CH3_}) to
+These routines are prefixed with \code{CH3_} (really \code{MPIDI_CH3_}) to
 indicate that they belong to 
 this interface; a complete description of the CH3 routines is presented in
 Appendix~\ref{app:ch3}. 
@@ -534,7 +534,7 @@ Both \code{MPID_Irecv} and \code{MPID_Recv} use similar code.
 MPID_Irecv( )
 {
     CH3_Progress_poke
-    request = MPID_CH3U_Request_FPOAU( source, tag, context_id, &found )
+    request = MPIDI_CH3U_Request_FPOAU( source, tag, context_id, &found )
     if (found)  {
         /* Message was found in unexpected list.  Eager data is stored
            in the request */
@@ -701,7 +701,7 @@ code?  What are the performance implications?
 Action invoked by the receiver of an eagerly sent message.  The data for the
 message is immediately behind the message header (eagersend packet).
 \begin{verbatim}
-    request = MPID_CH3U_Request_FPOAU( &packet->msg_match, &found )
+    request = MPIDI_CH3U_Request_FPOAU( &packet->msg_match, &found )
     if (found) {
         /* Message was already posted */
         CH3_iRead( request )
@@ -730,7 +730,7 @@ adds to function call overhead.
 \subsection{RndvReqToSend}
 Action invoked by the reciever of a rendezvous message.
 \begin{verbatim}
-    request = MPID_CH3U_Request_FPOAU( &packet->msg_match, &found )
+    request = MPIDI_CH3U_Request_FPOAU( &packet->msg_match, &found )
     if (found) {
         if (dest buffer is contiguous)
             create rndv-ok-to-put packet on stack
@@ -745,7 +745,7 @@ Action invoked by the reciever of a rendezvous message.
         return an error message to sender (error msg packet)
         tmp_request = CH3_iStartMsg( packet );
         if (tmp_request) tmp_request->ref_count--;
-        MPID_CH3U_DeQueue_unexp( request )
+        MPIDI_CH3U_DeQueue_unexp( request )
     }
 #endif
 \end{verbatim}
@@ -912,7 +912,7 @@ instruction.  Otherwise, the code shown here must be expanded to test
 two 32-bit fields.  
 
 \begin{verbatim}
-MPID_CH3U_Request_FPOAU( int source, int tag, int context_id, int *found )
+MPIDI_CH3U_Request_FPOAU( int source, int tag, int context_id, int *found )
    /* Look in unexpected queue for a match */
    MPID_Message_match m.match = {tag, source, context_id};
    if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE) {
@@ -954,11 +954,11 @@ use wildcards for the tag or source.
 The next routine is always called in response to receiving a message packet,
 and hence simply passes the part of the packet that contains the tag, context,
 and source values directly to the routine.  It is essentially the same as 
-\code{MPID_CH3U_Request_FPOAU}, except that it checks first in the posted
+\code{MPIDI_CH3U_Request_FPOAU}, except that it checks first in the posted
 receive queue and, if the data is not found, adds to the unexpected receive
 queue.  The wildcard match testing is slightly different as well.
 \begin{verbatim}
-MPID_CH3U_Request_FUOAP( MPID_Message_match *, int *found )
+MPIDI_CH3U_Request_FUOAP( MPID_Message_match *, int *found )
    /* Look in posted queue for a match */
    for (r = posted_queue->head; r; r = r->next ) {
        if (r->match == (m & r->mask)) {
@@ -981,7 +981,7 @@ Cancel operations require that requests be removed for the queues.
 
 This routine is required for cancelling sends.
 \begin{verbatim}
-MPID_CH3U_DeQueue_unexp( int handle )
+MPIDI_CH3U_DeQueue_unexp( int handle )
     for (r = unexpected->head; r; r = r->next) {
         if (r->handle == handle) {
              remove r from list and return it
@@ -992,7 +992,7 @@ MPID_CH3U_DeQueue_unexp( int handle )
 
 This routine is required for cancelling receives
 \begin{verbatim}
-MPID_CH3U_DeQueue_posted( int handle )
+MPIDI_CH3U_DeQueue_posted( int handle )
     for (r = posted->head; r; r = r->next) {
         if (r->handle == handle) {
              remove r from list and return it
@@ -1255,7 +1255,7 @@ CH3_iSend( MPID_VC *, MPID_Request *, void *buf, void *count )
                 0: request->cc--; 
                    if (request->ref_count == 0) recover request
                >0: (request->update)(request) /* effectively "invoke 
-                    MPID_CH3_Request_update( request )" */
+                    MPIDI_CH3_Request_update( request )" */
          }
     else {
         make active request
@@ -1289,7 +1289,7 @@ CH3_iRead( MPID_VC *, MPID_Request *request )
             0: decrement request->cc
                remove from active list
                if (request->ref_count == 0) place request on avail list
-            >0: invoke MPID_CH3_request_update( request )
+            >0: invoke MPIDI_CH3_request_update( request )
     }
 \end{verbatim}
 
@@ -1307,7 +1307,7 @@ CH3_iWrite( MPID_VC *, MPID_Request * )
         switch(request->state)
             0: decrement request->cc and remove this request from
                the active list.  If ref_count is 0, return request to avail
-            >0: invoke MPID_CH3_Request_update( request )
+            >0: invoke MPIDI_CH3_Request_update( request )
     return
 \end{verbatim}
 The request update routine handles incremental packing; typically, it
@@ -1346,7 +1346,7 @@ CH3_Progress( int isblocking )
                         call fcn associated with pkt type
                         (These are MPID functions, not TCP functions, 
                          since pkts are in MPID layer.  Call them
-                         MPID_CH3U_xxx) 
+                         MPIDI_CH3U_xxx) 
                     end switch
                 case reading data to known address:
                      read more data.
@@ -1368,7 +1368,7 @@ established.  Such a structure might include
        ... whatever poll needs ...
        int writes_pending;
        ...
-    } MPID_CH3_Progress_data_t;
+    } MPIDI_CH3_Progress_data_t;
 \end{verbatim}
 
 The above version of \code{CH3_Progress} is for single-threaded
