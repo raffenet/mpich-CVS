@@ -386,7 +386,7 @@ int MPIDU_Sock_post_readv(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, M
     MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
     MPIDU_SOCKI_VERIFY_SOCK_READABLE(pollfd, pollinfo, mpi_errno);
 
-    if (iov_n < 1 || iov_n >= MPID_IOV_LIMIT)
+    if (iov_n < 1 || iov_n > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
 					 "**sock|badiovn", "**sock|badiovn %d %d %d",
@@ -475,7 +475,7 @@ int MPIDU_Sock_post_writev(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, 
     MPIDU_SOCKI_VALIDATE_FD(pollfd, pollinfo, mpi_errno);
     MPIDU_SOCKI_VERIFY_SOCK_WRITABLE(pollfd, pollinfo, mpi_errno);
 
-    if (iov_n < 1 || iov_n >= MPID_IOV_LIMIT)
+    if (iov_n < 1 || iov_n > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
 					 "**sock|badiovn", "**sock|badiovn %d %d %d",
