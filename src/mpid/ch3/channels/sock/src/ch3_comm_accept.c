@@ -905,6 +905,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
             goto fn_exit;
         }
+	/* --END ERROR HANDLING-- */
 
         /* All communication with remote root done. Release the
            communicator. */
