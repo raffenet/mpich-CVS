@@ -22,19 +22,7 @@ fi
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(				\
-    assert.h					\
-    errno.h					\
-    fcntl.h					\
-    netdb.h					\
-    netinet/in.h				\
-    netinet/tcp.h				\
-    stdlib.h					\
-    sys/param.h					\
-    sys/poll.h					\
-    sys/socket.h				\
-    sys/types.h					\
-    unistd.h)
+AC_CHECK_HEADERS(assert.h)
 
 AC_SUBST(DEVICE)
 AC_SUBST(CHANNEL)
@@ -49,9 +37,4 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
 
-PAC_SUBDIR_CACHE
-AC_CONFIG_SUBDIRS(../../../common/sock)
-
 AC_OUTPUT(Makefile src/Makefile localdefs)
-
-PAC_SUBDIR_CACHE_CLEANUP
