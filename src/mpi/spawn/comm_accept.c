@@ -68,8 +68,6 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
-	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_ACCEPT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -72,13 +72,6 @@ int MPI_Open_port(MPI_Info info, char *port_name)
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
-            /* Validate info_ptr */
-	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-		return -1;
-            }
         }
         MPID_END_ERROR_CHECKS;
     }
