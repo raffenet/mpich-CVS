@@ -31,3 +31,5 @@ mpich2pdf*
 bsend.eps
 *.pdf
 .deps
+parm.ps
+topo.ps
