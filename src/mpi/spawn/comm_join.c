@@ -27,7 +27,6 @@
 #endif
 
 #ifdef HAVE_WINDOWS_H
-#include <io.h>
 #define SOCKET_EINTR	    WSAEINTR
 #else
 #ifdef HAVE_SYS_SOCKET_H
