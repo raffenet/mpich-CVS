@@ -215,11 +215,6 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
 
     *flag = (n_completed == count) ? TRUE : FALSE;
 
-    if (request_ptrs != request_ptr_array && request_ptrs != NULL)
-    {
-	MPIU_Free(request_ptrs);
-    }
-
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
