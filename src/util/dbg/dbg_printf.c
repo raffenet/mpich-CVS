@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
 int dbg_printf(char *str, ...)
 {
@@ -38,6 +39,8 @@ int err_printf(char *str, ...)
     fflush(stdout);
 
     log_error(str);
+
+    exit(-1);
 
     return n;
 }
