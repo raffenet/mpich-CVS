@@ -31,7 +31,8 @@
    MPI_Get - Get data from a remote process
 
  Input Parameters:
-+ origin_count - number of entries in origin buffer (nonnegative integer) 
++ origin_addr - Address of the buffer in which to receive the data
+. origin_count - number of entries in origin buffer (nonnegative integer) 
 . origin_datatype - datatype of each entry in origin buffer (handle) 
 . target_rank - rank of target (nonnegative integer) 
 . target_disp - displacement from window start to the beginning of the 
