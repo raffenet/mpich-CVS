@@ -56,7 +56,7 @@ int MPIR_Bsend_attach( void *buffer, int size )
     BsendBuffer.buffer = buffer;
     BsendBuffer.size = size;
     BsendBuffer.avail = buffer;
-    BsendBuffer.next = 0;
+    BsendBuffer.pending = 0;
     
     p = (BsendData_t *)buffer;
     p->size = size - sizeof(BsendData_t);
@@ -68,7 +68,7 @@ int MPIR_Bsend_attach( void *buffer, int size )
 /* This routine must wait until any pending bsends are complete */
 int MPIR_Bsend_detach( void *p, int *size )
 {
-    if (BsendBuffer.next) {
+    if (BsendBuffer.pending) {
 	return MPIR_Err_create_code( MPI_ERR_OTHER, "**notimpl", 0 );
     }
     *size = BsendBuffer.size;
