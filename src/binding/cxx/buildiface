@@ -974,7 +974,8 @@ print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
 INCLUDES = -I../../include -I\${top_srcdir}/src/include\
 maintainerclean-local:\
 \trm -f \${mpi_sources}\
-install_INCLUDE = \${top_srcdir}/mpicxx.h\n";
+install_INCLUDE = \${top_srcdir}/mpicxx.h\
+install_BIN     = mpicxx\n";
 
 close( MAKEFD );
 

@@ -45,4 +45,25 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
 fi
 dnl     checks for library functions
 dnl     checks for system services
-AC_OUTPUT(Makefile) 
+
+AC_SUBST(MPI_CXXFLAGS)
+AC_SUBST(MPI_LDFLAGS)
+
+if test -z "$top_build_dir" ; then
+    top_build_dir=`cd ../../.. ; pwd`
+fi
+if test -z "$includebuild_dir" ; then
+    includebuild_dir=$top_build_dir/src/include
+fi
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=$top_build_dir/lib
+fi
+AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
+   if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
+   sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+       -e 's%libdir=.*%libdir='$libbuild_dir% mpicxx > ../../../bin/mpicxx ;
+   chmod a+x ../../../bin/mpicxx ],
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir
+)
+AC_OUTPUT(Makefile mpicxx) 
