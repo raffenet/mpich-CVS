@@ -13,7 +13,7 @@ int mm_send(int conn, char *buffer, int length)
     if (beasy_send(conn, buffer, length) != SOCKET_ERROR)
 	return length;
     error = beasy_getlasterror();
-    printf("beasy_send failed, error %d\n", error);
+    err_printf("beasy_send failed, error %d\n", error);
     return SOCKET_ERROR;
 }
 

@@ -13,7 +13,7 @@ int mm_recv(int conn, char *buffer, int length)
     if (beasy_receive(conn, buffer, length) != SOCKET_ERROR)
 	return length;
     error = beasy_getlasterror();
-    printf("beasy_receive failed, error %d\n", error);
+    err_printf("beasy_receive failed, error %d\n", error);
     return SOCKET_ERROR;
 }
 

@@ -22,7 +22,7 @@ int mm_accept(MPID_Info *info_ptr, char *port_name)
 	    if (bfd == BFD_INVALID_SOCKET)
 	    {
 		error = beasy_getlasterror();
-		printf("beasy_accept failed, error %d\n", error);
+		err_printf("beasy_accept failed, error %d\n", error);
 		return BFD_INVALID_SOCKET;
 	    }
 	    return bfd;
