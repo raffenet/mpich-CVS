@@ -53,6 +53,12 @@
 /* mpi.h includes the definitions of MPI_Fint */
 #include "mpi.h"
 
+/* If there is no MPI I/O support, and we are still using MPIO_Request,
+   make sure that one is defined */
+#ifndef MPIO_REQUEST_DEFINED
+#define MPIO_Request MPI_Request
+#endif
+
 /* Utility functions */
 
 /* Define the internal values needed for Fortran support */
