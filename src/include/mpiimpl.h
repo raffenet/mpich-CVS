@@ -943,6 +943,10 @@ void MPID_Progress_poke(void);
 void MPID_Request_free(MPID_Request *);
 #endif
 
+#if !defined(MPID_Errhandler_free)
+void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
+#endif
+
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
 int MPID_VCRT_Release(MPID_VCRT vcrt);
