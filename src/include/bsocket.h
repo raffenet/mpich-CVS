@@ -83,10 +83,7 @@ typedef int socklen_t;
 #define BFD_SET(bfd, s)       FD_SET((unsigned int)bfd,s)
 #define BFD_ISSET(bfd, s)     FD_ISSET((unsigned int)bfd,s)
 
-#ifndef MAX
-#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-#define BFD_MAX(a,b) MAX(a,b)
+#define BFD_MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 #define bget_fd(bfd) bfd
 #define bclr(bfd, s) FD_CLR( (unsigned int)bfd, s )
