@@ -85,10 +85,10 @@ MPI_Waitall,,,,,,MPI_Grequest_start,
 MPI_Testall,,,,,,MPI_Grequest_start,
 MPI_Waitsome,,,,,,MPI_Grequest_start,
 MPI_Testsome,,,,,,MPI_Grequest_start,
-MPI_Iprobe,
-MPI_Probe,
-MPI_Cancel,
-MPI_Test_cancelled,
+MPI_Iprobe,,,,,Brian,,.1,04/23/2002
+MPI_Probe,,,,,Brian,,.1,04/23/2002
+MPI_Cancel,.25,.5,1,,Brian,,
+MPI_Test_cancelled,.1,.15,.2,,Brian,,.1,04/26/02
 MPI_Send_init,
 MPI_Bsend_init,
 MPI_Ssend_init,
@@ -96,7 +96,7 @@ MPI_Rsend_init,
 MPI_Recv_init,
 MPI_Start,
 MPI_Startall,
-MPI_Sendrecv,
+MPI_Sendrecv,,,,,Brian,,.1,5/1/02
 MPI_Sendrecv_replace,
 
 Datatypes
@@ -334,7 +334,7 @@ MPI_Grequest_start,1,1,1,2,Bill,,.05,4/26/02
 MPI_Init_thread,
 MPI_Is_thread_main,.2,.2,.2,2,Bill,,.2
 MPI_Query_thread,.2,.2,.2,2,Bill,,.2,1/7/02
-MPI_Status_set_cancelled,
+MPI_Status_set_cancelled,,,,,Brian,,.1,4/26/02
 MPI_Status_set_elements,
 MPI_Type_create_keyval,
 MPI_Type_delete_attr,
@@ -523,18 +523,18 @@ CH3 functions for single-threaded TCP channel without error checking
 Requests
 
 MPIDI_CH3_Request_create,,,,,Brian,,done
-MPIDI_CH3_iStartMsg,,,,,Brian
-MPIDI_CH3_iStartmsgv,,,,,Brian
+MPIDI_CH3_iStartMsg,,,,,Brian,done
+MPIDI_CH3_iStartmsgv,,,,,Brian,done
 MPIDI_CH3_Request_add_ref,,,,,Brian,,done
 MPIDI_CH3_Request_release_ref,,,,,Brian,,done
 MPIDI_CH3_Request_destroy,,,,,Brian,,done
 
 Send/Recv
 
-MPIDI_CH3_iSend,,,,,Brian
-MPIDI_CH3_iSendv,,,,,Brian
-MPIDI_CH3_iWrite,,,,,Brian
-MPIDI_CH3_iRead,,,,,Brian
+MPIDI_CH3_iSend,,,,,Brian,,done
+MPIDI_CH3_iSendv,,,,,Brian,,done
+MPIDI_CH3_iWrite,,,,,Brian,
+MPIDI_CH3_iRead,,,,,Brian,
 
 Progress
 
@@ -542,7 +542,7 @@ MPIDI_CH3I_Progress_init,,,,,Brian,,done
 MPIDI_CH3I_Progress_finalize,,,,,Brian
 MPIDI_CH3_Progress_start,,,,,Brian,,done
 MPIDI_CH3_Progress_end,,,,,Brian,,done
-MPIDI_CH3_Progress,,,,,Brian
+MPIDI_CH3_Progress,,,,,Brian,,
 MPIDI_CH3_Progress_poke,,,,,Brian,,done
 
 Startup/shutdown
