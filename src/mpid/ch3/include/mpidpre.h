@@ -16,13 +16,13 @@
 #endif
 
 #include "mpid_dataloop.h"
+struct MPID_Datatype;
 
 typedef int MPIDI_msg_sz_t;
 #define MPIDI_MSG_SZ_FMT "%d"
 
 /* Include definitions from the channel which must exist before items in this file (mpidimpl.h) or the file it includes
-   (mpiimple.h) can be defined.  NOTE: This include requires the channel to copy mpidi_ch3_pre.h to the src/include directory in
-   the build tree. */
+   (mpiimpl.h) can be defined. */
 #include "mpidi_ch3_pre.h"
 
 #if defined (MPIDI_CH3_MSGS_UNORDERED)

@@ -189,6 +189,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    /* printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] ); */
 	}
 
+	MPIU_Free(mapping);
+
 	/* Notify the device of this new communicator */
 	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );

@@ -39,6 +39,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 #	    if !defined(NDEBUG)
 	    {
 		rreq->comm = comm;
+		MPIR_Comm_add_ref(comm);
 		rreq->ch3.match.rank = rank;
 		rreq->ch3.match.tag = tag;
 		rreq->ch3.match.context_id = comm->context_id + context_offset;
@@ -64,6 +65,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 
     /* MT - thread safety? message could arrive while populating req */
     rreq->comm = comm;
+    MPIR_Comm_add_ref(comm);
     rreq->ch3.user_buf = buf;
     rreq->ch3.user_count = count;
     rreq->ch3.datatype = datatype;

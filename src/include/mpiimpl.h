@@ -111,8 +111,7 @@ typedef int int32_t;
 #define MPID_IOV_LIMIT   16
 
 /* Include definitions from the device which must exist before items in this
-   file (mpiimpl.h) can be defined.  NOTE: This include requires the device to
-   copy mpidpre.h to the src/include directory in the build tree. */
+   file (mpiimpl.h) can be defined. */
 #include "mpidpre.h"
 
 
@@ -642,6 +641,9 @@ typedef struct MPID_Comm {
 #endif
 } MPID_Comm;
 extern MPIU_Object_alloc_t MPID_Comm_mem;
+void MPIR_Comm_add_ref(MPID_Comm *);
+int MPIR_Comm_release(MPID_Comm *);
+#define MPIR_Comm_add_ref(_comm) MPIU_Object_add_ref((_comm))
 /* Preallocated comm objects */
 #define MPID_COMM_N_BUILTIN 2
 extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
@@ -1334,9 +1336,7 @@ int MPID_Get_processor_name(char *, int *);
 void MPIR_WaitForDebugger( void );
 #endif
 
-/* Include definitions from the device which require items defined by this file
-   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
-   the src/include directory in the build tree. */
+/* Include definitions from the device which require items defined by this file (mpiimpl.h). */
 #include "mpidpost.h"
 
 /* thresholds to switch between long and short vector algorithms for

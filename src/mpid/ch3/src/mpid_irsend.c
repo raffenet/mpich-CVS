@@ -79,8 +79,6 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
-    /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
-
     iov[0].MPID_IOV_BUF = (void*)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 

@@ -72,12 +72,11 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    sreq->comm = comm;
+	    MPIR_Comm_add_ref(comm);
 	}
 
 	goto fn_exit;
     }
-    
-    /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
     
     iov[0].MPID_IOV_BUF = (char *)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
@@ -99,6 +98,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    sreq->comm = comm;
+	    MPIR_Comm_add_ref(comm);
 	}
     }
     else

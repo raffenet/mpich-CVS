@@ -60,9 +60,10 @@ void MPIDI_CH3U_Buffer_copy(const void * const, int, MPI_Datatype, int *,
 			    int *);
 
 /* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes
-   (mpiimpl.h).  NOTE: This include requires the device to copy mpidi_ch3_post.h to the src/include directory in the build
-   tree. */
+   (mpiimpl.h). */
 #include "mpidi_ch3_post.h"
+
+#include "mpid_datatype.h"
 
 /*
  * Request utility macros (public - can be used in MPID macros)

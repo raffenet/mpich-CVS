@@ -80,6 +80,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 	    sreq->comm = comm;
+	    MPIR_Comm_add_ref(comm);
 	}
 	
 	goto fn_exit;
@@ -119,6 +120,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 		MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 		sreq->comm = comm;
+		MPIR_Comm_add_ref(comm);
 	    }
 	}
 	else

@@ -100,7 +100,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {								\
     if ((_req)->comm != NULL)					\
     {								\
-	/* FIXME: release communicator */			\
+	MPIR_Comm_release((_req)->comm);			\
     }								\
     								\
     if ((_req)->ch3.datatype_ptr != NULL)			\
@@ -139,6 +139,7 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIU_Object_set_ref((_sreq), 2);						\
     (_sreq)->kind = MPID_REQUEST_SEND;						\
     (_sreq)->comm = comm;							\
+    MPIR_Comm_add_ref(comm);							\
     (_sreq)->ch3.match.rank = rank;						\
     (_sreq)->ch3.match.tag = tag;						\
     (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\
@@ -160,6 +161,7 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIU_Object_set_ref((_sreq), 1);						\
     (_sreq)->kind = MPID_PREQUEST_SEND;						\
     (_sreq)->comm = comm;							\
+    MPIR_Comm_add_ref(comm);							\
     (_sreq)->ch3.match.rank = rank;						\
     (_sreq)->ch3.match.tag = tag;						\
     (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\

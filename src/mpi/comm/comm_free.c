@@ -64,7 +64,6 @@ int MPI_Comm_free(MPI_Comm *comm)
 {
     static const char FCNAME[] = "MPI_Comm_free";
     int mpi_errno = MPI_SUCCESS;
-    int inuse;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_FREE);
 
@@ -110,19 +109,32 @@ int MPI_Comm_free(MPI_Comm *comm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    if (*comm == MPI_COMM_WORLD || *comm == MPI_COMM_SELF) {
-	return 0;
+    mpi_errno = MPIR_Comm_release(comm_ptr);
+    /* ... end of body of routine ... */
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	*comm = MPI_COMM_NULL;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
+	return MPI_SUCCESS;
     }
+
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+}
+
+int MPIR_Comm_release(MPID_Comm * comm_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int inuse;
+    
     MPIU_Object_release_ref( comm_ptr, &inuse);
     if (!inuse) {
-	/* Remove the attributes, executing the attribute delete routine.
-	   Do this only if the attribute functions are defined. */
+	/* Remove the attributes, executing the attribute delete routine.  Do this only if the attribute functions are defined. */
 	if (MPIR_Process.comm_attr_free && comm_ptr->attributes) {
-	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, 
-						     comm_ptr->attributes );
+	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, comm_ptr->attributes );
 	}
 
-	if (!mpi_errno) {
+	if (mpi_errno == MPI_SUCCESS) {
 	    /* Free the VCRT */
 	    MPID_VCRT_Release(comm_ptr->vcrt);
 	
@@ -135,24 +147,14 @@ int MPI_Comm_free(MPI_Comm *comm)
 	    comm_ptr->local_group = 0;
 	    comm_ptr->remote_group = 0;
 
-	    /* FIXME - when we recover comm objects, many tests (such
-	       as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
+	    /* FIXME - when we recover comm objects, many tests (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
   	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
 	}
 	else {
+	    /* If the user attribute free function returns an error, then do not free the communicator */
 	    MPIU_Object_add_ref( comm_ptr );
 	}
     }
-    /* ... end of body of routine ... */
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	*comm = MPI_COMM_NULL;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
-	return MPI_SUCCESS;
-    }
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    return mpi_errno;
 }
-

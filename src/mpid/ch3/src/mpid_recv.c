@@ -40,6 +40,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 
     /* MT - thread safety? message could arrive while populating req */
     rreq->comm = comm;
+    MPIR_Comm_add_ref(comm);
     rreq->ch3.user_buf = buf;
     rreq->ch3.user_count = count;
     rreq->ch3.datatype = datatype;
