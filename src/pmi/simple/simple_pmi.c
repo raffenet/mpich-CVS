@@ -428,18 +428,19 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
     int  rc;
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     char *remote_kvsname = (char *) info;
+    int remote_kvsname_len = (int) preput_info;
 
     /* PMIU_printf( 1, "PMI_Spawn_multiple not implemented yet\n" ); */
-    /* printf("CMD0=:%s:\n",cmds[0]); */
-    /* printf("ARG00=:%s:\n",argvs[0][0]); */
+    /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
+       /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
     /* snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
     snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
-	      count, cmds[0], argvs[0][0] );
+	      maxprocs[0], cmds[0], argvs[0][0] );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf ); 
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
-    PMIU_getval( "remote_kvsname", remote_kvsname, PMIU_MAXLINE );
+    PMIU_getval( "remote_kvsname", remote_kvsname, remote_kvsname_len );
     if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
 	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
 	return( -1 );
