@@ -1,9 +1,9 @@
 lib${MPILIBNAME}_a_SOURCES = \
-    mpid_init.c mpid_finalize.c mpid_abort.c mpid_vcrt.c \
-    mpid_send.c mpid_isend.c mpid_recv.c mpid_irecv.c \
-    mpid_probe.c mpid_iprobe.c \
-    ch3u_request.c ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c \
-    ch3u_handle_send_req.c
+    ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c ch3u_handle_send_req.c \
+    ch3u_request.c mpid_abort.c mpid_cancel_recv.c mpid_cancel_send.c \
+    mpid_finalize.c mpid_init.c mpid_iprobe.c mpid_irecv.c mpid_isend.c \
+    mpid_probe.c mpid_recv.c mpid_send.c mpid_vcrt.c \
+
 
 INCLUDES = -I../include -I${top_srcdir}/include \
            -I../../../include -I${master_top_srcdir}/src/include
