@@ -56,8 +56,8 @@ adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
 	-rm -f adi3man/*.tex adi3man/tmp.*
 	for file in $(ADI3IMPLFILES) ; do \
 	( cd adi3man ; \
-	${DOCTEXT} -latex -nolocation -quotefmt ../$$file ; \
-	perl ../manextract ../$$file ) ; done
+	${DOCTEXT} -latex -nolocation -quotefmt $(srcdir)/$$file ; \
+	perl $(srcdir)/manextract $(srcdir)/$$file ) ; done
 
 refman.sty: $(DOCTEXTSTYLE)/refman.sty
 	cp $(DOCTEXTSTYLE)/refman.sty .
@@ -69,7 +69,7 @@ adi3man.dvi: adi3man/MPID_Init.c $(ADI3FILES) refman.sty
 	-(cd adi3man ;
 	latex adi3man < /dev/null 2>&1 >/dev/null ;\
 	bibtex adi3man ;\
-	make -f ../Makefile adi3man.ind ; \
+	make -f $(srcdir)/Makefile adi3man.ind ; \
 	latex adi3man < /dev/null )
 	mv adi3man/adi3man.dvi .
 
@@ -86,7 +86,15 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 
 ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile adi3man/MPID_Init.tex refman.sty
+# We simply copy the eps files in the VPATH case
 adi3new.ps: $(ADI3NEWFILES)
+	if [ "`(pwd)`" != "`(cd $(srcdir) && pwd)`" ] ; then \
+	    for file in $(srcdir)/*.eps ; do \
+		cp $$file . ;\
+	    done ;\
+	    cp $(srcdir)/design.tex . ;\
+	    cp $(srcdir)/adiimplrules.tex . ;\
+	fi
 	touch adi3new.ind
 	-latex $(srcdir)/adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new

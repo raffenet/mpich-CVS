@@ -97,11 +97,21 @@ ANL-#3 \\
 \thispagestyle{empty}
 \null
 \ZBox{\hskip-.5in\vbox{\vskip .25in %
-\epsfxsize=6in\epsfbox{anlpre.eps}}}
+% Switch between two possible graphics packages (we want to move away
+% from epsf)
+\ifx\epsfbox\undefined
+\resizebox{6in}{!}{\includegraphics{anlpre.eps}}}%
+\else
+\epsfxsize=6in\epsfbox{anlpre.eps}}}%
+\fi
 \ZBox{\vbox{\vskip 8in\vbox to 1.5in{\begin{center}\Large\bf
 Mathematics and Computer Science Division\\Argonne National Laboratory
 \end{center}}}}
-\ZBox{\hskip 6in\vbox{\vskip 8.8in\epsfxsize=.8in\epsfbox{argonne.eps}}}
+\ifx\epsfbox\undefined
+\ZBox{\hskip 6in\vbox{\vskip 8.8in\resizebox{.8in}{!}{\includegraphics{argonne.eps}}}%
+\else
+\ZBox{\hskip 6in\vbox{\vskip 8.8in\epsfxsize=.8in\epsfbox{argonne.eps}}}%
+\fi
 \hfill{\Large\bf PREPRINT #3}
 
 %\vspace{.4in}
@@ -181,7 +191,11 @@ by
 \vss
 }
 \vfill
-\ZBox{\epsfxsize=1.0in\epsfbox{argonne.eps}}
+\ifx\epsfbox\undefined
+\ZBox{\resizebox{1.0in}{!}{\includegraphics{argonne.eps}}}%
+\else
+\ZBox{\epsfxsize=1.0in\epsfbox{argonne.eps}}%
+\fi
 \begin{flushright}
 \Large
 MATHEMATICS AND\\
