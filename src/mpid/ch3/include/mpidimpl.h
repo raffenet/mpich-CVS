@@ -36,7 +36,7 @@
 
 
 #if !defined(MPIDI_IOV_DENSITY_MIN)
-#   define MPIDI_IOV_DENSITY_MIN 128
+#   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
 #endif
 
 
@@ -507,7 +507,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
   BEGIN SEND/RECEIVE BUFFER SECTION
   ---------------------------------*/
 #if !defined(MPIDI_CH3U_SRBuf_size)
-#    define MPIDI_CH3U_SRBuf_size (16384)
+#    define MPIDI_CH3U_SRBuf_size (256 * 1024)
 #endif
 
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
