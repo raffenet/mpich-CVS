@@ -34,7 +34,7 @@ num_skipped = 0
 
 ' check if we are running cscript or wscript
 bEcho = false
-If InStr(1, WScript.FullName, "cscript") > 0 Then
+If InStr(1, LCase(WScript.FullName), "cscript") > 0 Then
 	bEcho = true
 End If
 
