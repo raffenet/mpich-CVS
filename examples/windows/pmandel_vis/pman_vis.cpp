@@ -91,7 +91,7 @@ BOOL Cpman_visApp::InitInstance()
 	m_pMainWnd->UpdateWindow();
 	// call DragAcceptFiles only if there's a suffix
 	//  In an SDI app, this should occur after ProcessShellCommand
-	MPI_Init(NULL, NULL);
+	//MPI_Init(NULL, NULL);
 	return TRUE;
 }
 
@@ -102,7 +102,7 @@ BOOL Cpman_visApp::InitInstance()
 
 int Cpman_visApp::ExitInstance()
 {
-    MPI_Finalize();
+    //MPI_Finalize();
     return CWinApp::ExitInstance();
 }
 

@@ -171,11 +171,6 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION |
 CAPTION "Connect to pmandel provider"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    GROUPBOX        "Connection method",IDC_CONNECT_GROUP,7,7,158,105,
-                    WS_GROUP | WS_TABSTOP
-    CONTROL         "MPI_Connect",IDC_MPI_RADIO,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,16,19,59,10
-    LTEXT           "Port:",IDC_STATIC,40,38,17,8
     EDITTEXT        IDC_MPIPORT,67,36,87,14,ES_AUTOHSCROLL
     CONTROL         "TCP Socket connect",IDC_TCP_RADIO,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,16,57,79,10
@@ -185,6 +180,11 @@ BEGIN
     EDITTEXT        IDC_PORT,68,90,40,14,ES_AUTOHSCROLL
     DEFPUSHBUTTON   "OK",IDOK,170,7,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,170,24,50,14
+    GROUPBOX        "Connection method",IDC_CONNECT_GROUP,7,7,158,105,
+                    WS_GROUP | WS_TABSTOP
+    CONTROL         "MPI_Connect",IDC_MPI_RADIO,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,16,19,59,10
+    LTEXT           "Port:",IDC_STATIC,40,38,17,8
 END
 
 

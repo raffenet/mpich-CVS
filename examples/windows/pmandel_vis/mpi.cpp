@@ -252,3 +252,18 @@ int mpi_get_pmandel_data()
     }
     return 1;
 }
+
+void mpi_init()
+{
+    MPI_Init(NULL, NULL);
+}
+
+void mpi_disconnect()
+{
+    MPI_Comm_disconnect(&comm);
+}
+
+void mpi_finalize()
+{
+    MPI_Finalize();
+}

@@ -19,15 +19,27 @@ int get_pmandel_data();
 int mpi_connect_to_pmandel(const char *port, int &width, int &height);
 int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax);
 int mpi_get_pmandel_data();
+void mpi_thread_fn(void *p);
+void mpi_barrier_client();
+void mpi_barrier_thread();
+void mpi_init();
+void mpi_disconnect();
+void mpi_finalize();
 
 int g_width, g_height;
-HDC g_hDC;
-HANDLE g_hMutex;
+HDC g_hDC = NULL;
+HANDLE g_hMutex = NULL;
 HWND g_hWnd;
 bool g_bDrawing;
 double g_xmin, g_xmax, g_ymin, g_ymax;
 
 bool g_bUseMPI = true;
+HANDLE g_hEventA = NULL;
+HANDLE g_hEventB = NULL;
+HANDLE g_hEventC = NULL;
+HANDLE g_hEventD = NULL;
+HANDLE g_hMPIThread = NULL;
+char g_mpi_port[256];
 
 // Cpman_visView
 
@@ -57,19 +69,28 @@ Cpman_visView::Cpman_visView()
     g_xmax = 1;
     g_ymin = -1;
     g_ymax = 1;
+    g_hEventA = CreateEvent(NULL, TRUE, FALSE, NULL);
+    g_hEventB = CreateEvent(NULL, TRUE, FALSE, NULL);
+    g_hEventC = CreateEvent(NULL, TRUE, FALSE, NULL);
+    g_hEventD = CreateEvent(NULL, TRUE, FALSE, NULL);
+    g_hMPIThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_thread_fn, NULL, 0, NULL);
+    mpi_barrier_client();
 }
 
 Cpman_visView::~Cpman_visView()
 {
     CloseHandle(g_hMutex);
+    if (g_hMPIThread != NULL)
+    {
+	g_xmin = g_xmax = g_ymin = g_ymax = 0.0;
+	mpi_barrier_client();
+	WaitForSingleObject(g_hMPIThread, INFINITE);
+    }
     if (m_hThread != NULL)
     {
 	WaitForSingleObject(m_hThread, INFINITE);
 	CloseHandle(m_hThread);
-	if (g_bUseMPI)
-	    mpi_send_xyminmax(0, 0, 0, 0);
-	else
-	    send_xyminmax(0, 0, 0, 0);
+	send_xyminmax(0, 0, 0, 0);
     }
 }
 
@@ -173,6 +194,47 @@ int mpi_work_thread(void *p)
     return 0;
 }
 
+void mpi_barrier_client()
+{
+    SetEvent(g_hEventA);
+    WaitForSingleObject(g_hEventB, INFINITE);
+    ResetEvent(g_hEventB);
+    SetEvent(g_hEventD);
+    WaitForSingleObject(g_hEventC, INFINITE);
+    ResetEvent(g_hEventC);
+}
+
+void mpi_barrier_thread()
+{
+    SetEvent(g_hEventB);
+    WaitForSingleObject(g_hEventA, INFINITE);
+    ResetEvent(g_hEventA);
+    SetEvent(g_hEventC);
+    WaitForSingleObject(g_hEventD, INFINITE);
+    ResetEvent(g_hEventD);
+}
+
+void mpi_thread_fn(void *p)
+{
+    mpi_barrier_thread();
+    mpi_init();
+    mpi_barrier_thread();
+    if ((g_xmin != g_xmax) && (g_ymin != g_ymax))
+    {
+	/*mpi_connect_to_pmandel(g_mpi_port, g_width, g_height);*/
+	mpi_barrier_thread();
+	while ((g_xmin != g_xmax) && (g_ymin != g_ymax))
+	{
+	    mpi_work_thread(NULL);
+	    mpi_barrier_thread();
+	}
+	mpi_send_xyminmax(0, 0, 0, 0);
+	mpi_disconnect();
+    }
+    mpi_finalize();
+    return;
+}
+
 void Cpman_visView::OnFileConnect()
 {
     CConnectDialog dlg;
@@ -195,10 +257,19 @@ void Cpman_visView::OnFileConnect()
     {
 	if (dlg.m_type == CConnectDialog::MPI_CONNECT)
 	{
+	    strcpy(g_mpi_port, dlg.m_pszMPIPort);
+
+	    /* If I connect in the thread, the gui goes bananas
+	    mpi_barrier_client();
+	    */
+
+	    /* If I connect here in the main thread, everything is ok */
 	    if (mpi_connect_to_pmandel(dlg.m_pszMPIPort, g_width, g_height) != 0)
 	    {
 		return;
 	    }
+	    mpi_barrier_client();
+	    
 	    g_bUseMPI = true;
 	}
 	else
@@ -221,7 +292,10 @@ void Cpman_visView::OnFileConnect()
 	SelectObject(g_hDC, *canvas);
 	g_bDrawing = true;
 	if (g_bUseMPI)
-	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	{
+	    //m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	    mpi_barrier_client();
+	}
 	else
 	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
 	bConnected = true;
@@ -284,9 +358,10 @@ void Cpman_visView::OnLButtonUp(UINT nFlags, CPoint point)
 	pDC->DrawDragRect(&m_rLast, size, NULL, size);
     }
 
-    if (!g_bDrawing && m_hThread)
+    if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
     {
-	CloseHandle(m_hThread);
+	if (m_hThread)
+	    CloseHandle(m_hThread);
 	if (point.x > g_width)
 	    point.x = g_width;
 	if (point.y > g_height)
@@ -310,12 +385,11 @@ void Cpman_visView::OnLButtonUp(UINT nFlags, CPoint point)
 	g_ymin = y1;
 	g_ymax = y2;
 	g_bDrawing = true;
-	/*
-	GetClientRect(&r);
-	pDC->FillSolidRect(&r, 0);
-	*/
 	if (g_bUseMPI)
-	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	{
+	    //m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	    mpi_barrier_client();
+	}
 	else
 	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
     }
@@ -330,16 +404,20 @@ BOOL Cpman_visView::OnEraseBkgnd(CDC* pDC)
 
 void Cpman_visView::OnRButtonUp(UINT nFlags, CPoint point)
 {
-    if (!g_bDrawing && m_hThread)
+    if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
     {
-	CloseHandle(m_hThread);
+	if (m_hThread)
+	    CloseHandle(m_hThread);
 	g_xmin = -1;
 	g_xmax = 1;
 	g_ymin = -1;
 	g_ymax = 1;
 	g_bDrawing = true;
 	if (g_bUseMPI)
-	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	{
+	    //m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+	    mpi_barrier_client();
+	}
 	else
 	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
     }
