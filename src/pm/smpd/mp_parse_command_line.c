@@ -930,6 +930,17 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		smpd_process.noprompt = SMPD_TRUE;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "phrase") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no passphrase specified afterh -phrase option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(smpd_process.passphrase, (*argvp)[2], SMPD_PASSPHRASE_MAX_LENGTH);
+		num_args_to_strip = 2;
+	    }
 	    else if (strcmp(&(*argvp)[1][1], "smpdpwdfile") == 0)
 	    {
 		if (argc < 3)
