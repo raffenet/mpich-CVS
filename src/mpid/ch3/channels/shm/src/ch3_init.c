@@ -85,7 +85,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #else
 #error *** No shared memory mapping variables specified ***
 #endif
-    pg->nShmWaitSpinCount = 100;
+    pg->nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
+    pg->nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
 
     /* Allocate and initialize the VC table associated with this process
        group (and thus COMM_WORLD) */
@@ -204,7 +205,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	else
 	{
 	    vc_table[i].shm.shm += pg_rank;
-	    // post a read of the first packet header
+	    /* post a read of the first packet header */
 	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc_table[i].shm.req->shm.pkt;
 	    vc_table[i].shm.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 	    vc_table[i].shm.req->ch3.iov_count = 1;
@@ -217,7 +218,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
 #ifdef HAVE_WINDOWS_H
     {
-	// if you know the number of processors, calculate the spin count relative to that number
+	/* if you know the number of processors, calculate the spin count relative to that number */
         SYSTEM_INFO info;
         GetSystemInfo(&info);
         if (info.dwNumberOfProcessors == 1)
@@ -225,6 +226,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         else if (info.dwNumberOfProcessors < (DWORD) pg_size)
             pg->nShmWaitSpinCount = ( 100 * info.dwNumberOfProcessors ) / pg_size;
     }
+#else
+    /* figure out how many processors are available and set the spin count accordingly */
 #endif
     
     rc = PMI_KVS_Commit(pg->kvs_name);

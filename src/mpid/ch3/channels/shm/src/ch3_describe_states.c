@@ -240,6 +240,10 @@ int CH3U_Describe_timer_states()
         MPID_STATE_MPIDU_YIELD,
 	"MPIDU_Yield",
 	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_MPIDU_SLEEP_YIELD,
+	"MPIDU_Sleep_yield",
+	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_HANDLE_READ,
 		       "handle_read",

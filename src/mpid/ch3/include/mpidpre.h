@@ -129,7 +129,6 @@ typedef struct MPIDI_CH3_Pkt_cancel_send_resp
 }
 MPIDI_CH3_Pkt_cancel_send_resp_t;
 
-
 #if defined(MPIDI_CH3_PKT_DEFS)
 MPIDI_CH3_PKT_DEFS
 #endif

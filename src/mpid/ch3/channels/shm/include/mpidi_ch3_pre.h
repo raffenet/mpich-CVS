@@ -37,12 +37,18 @@ typedef struct MPIDI_Process_group_s
 #error *** No shared memory mapping variables specified ***
 #endif
     int nShmWaitSpinCount;
+    int nShmWaitYieldCount;
 }
 MPIDI_CH3I_Process_group_t;
 
+typedef struct MPIDI_CH3_Pkt_max_size_aligned
+{
+    char pad[32];
+} MPIDI_CH3_Pkt_max_size_aligned_t;
+
 #define MPIDI_CH3_PKT_ENUM
 #define MPIDI_CH3_PKT_DEFS
-#define MPIDI_CH3_PKT_DECL
+#define MPIDI_CH3_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
 
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -172,6 +178,7 @@ MPID_STATE_SHMI_BUFFER_UNEX_READ, \
 MPID_STATE_MPIDI_CH3I_SHM_WAIT, \
 MPID_STATE_SHMI_READ_UNEX, \
 MPID_STATE_SHMI_READV_UNEX, \
-MPID_STATE_MPIDU_YIELD, 
+MPID_STATE_MPIDU_YIELD, \
+MPID_STATE_MPIDU_SLEEP_YIELD,
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

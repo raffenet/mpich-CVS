@@ -79,10 +79,12 @@ __attribute__ ((unused))
 #define MAXHOSTNAMELEN 256
 #endif
 
-#define MPIDI_CH3I_NUM_PACKETS    16
-#define MPIDI_CH3I_PACKET_SIZE   (16*1024)
-#define MPIDI_CH3I_PKT_AVAILABLE  0
-#define MPIDI_CH3I_PKT_USED       1
+#define MPIDI_CH3I_NUM_PACKETS          16
+#define MPIDI_CH3I_PACKET_SIZE         (16*1024)
+#define MPIDI_CH3I_PKT_AVAILABLE        0
+#define MPIDI_CH3I_PKT_USED             1
+#define MPIDI_CH3I_SPIN_COUNT_DEFAULT   100
+#define MPIDI_CH3I_YIELD_COUNT_DEFAULT  100
 
 /* This structure uses the avail field to signal that the data is available for reading.
    The code fills the data and then sets the avail field.
