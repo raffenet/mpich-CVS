@@ -714,7 +714,8 @@ sub RunIntelTestSuite {
 	return;
     }
 
-    $config[$nargs++] = "$projects_dir/MPITEST/configure";
+    # Switch to using the checked-in version of the Intel test
+    $config[$nargs++] = "$projects_dir/IntelMPITEST/configure";
     $config[$nargs++] = "--with-mpich2=$instdir";
     if (!defined($chosenEnable{"f77"})) {
 	# Only run the C tests if we did not build fortran
