@@ -34,7 +34,8 @@ later, in the section "Alternative configurations".
       PyXML and an XML parser like expat (in order to use mpiexec)
 
     configure will check for these prerequisites and try to work around
-    deficiencies if possible.
+    deficiencies if possible.  (If you don't have Fortran, you will
+    still be able to use MPICH2, just not with Fortran applications.
 
 2.  Unpack the tar file and go to the top level directory:
 
@@ -50,6 +51,10 @@ later, in the section "Alternative configurations".
 3.  Choose an installation directory (the default is /usr/local/bin):
 
       mkdir /home/you/mpich2-install
+
+    It will be most convenient if this directory is shared by all of the
+    machines where you intend to run processes.  If not, you will have
+    to duplicate it on the other machines after installation.
 
 4.  Configure MPICH2, specifying the installation directory:
 
@@ -92,13 +97,17 @@ later, in the section "Alternative configurations".
       which mpirun
 
     All should refer to the commands in the bin subdirectory of your
-    install directory.
+    install directory.  It is at this point that you will need to
+    duplicate this directory on your other machines if it is not
+    in a shared file system such as NFS.
 
 8.  MPICH2, unlike MPICH, uses an external process manager for
     scalable startup of large MPI jobs.  The default process manager is
     called MPD, which is a ring of daemons on the machines where you
     will run your MPI programs.  In the next few steps, you will get his
-    ring up and tested.  
+    ring up and tested.  More details on interacting with MPD can be
+    found in the README file in mpich2/src/pm/mpd, but the instructions
+    given here should be enough to get you started.
 
     Begin by placing in your home directory a file named mpd.config,
     containing the line 
@@ -126,8 +135,7 @@ later, in the section "Alternative configurations".
     file mpd.hosts.  These hostnames will be used as targets for ssh or
     rsh, so include full domain names if necessary.  Check that you can
     reach these machines with ssh or rsh without entering a password.
-    If not, you will need to configure ssh or rsh so that this can be
-    done.  You can test by doing
+    You can test by doing
 
       ssh othermachine date
 
@@ -135,10 +143,112 @@ later, in the section "Alternative configurations".
 
       rsh othermachine date
 
-11. Start the daemons on (some of ) the hosts in the file:
+    If you cannot get this to work without entering a password, you will
+    need to configure ssh or rsh so that this can be done, or else use
+    the workaround for mpdboot in the next step.
+
+11. Start the daemons on (some of) the hosts in the file mpd.hosts
 
       mpdboot -n <number to start>  
 
+    The number to start can be less than 1 + number of hosts in the
+    file, but cannot be greater than 1 + the number of hosts in the
+    file.  One mpd is always started on the machine where mpdboot is
+    run, and is counted in the number to start, whether or not it occurs
+    in the file.
+
+    If you cannot get mpdboot to work because of difficulties with ssh
+    or rsh setup, you can start the daemons "by hand" as follows:
+
+       mpd &                # starts the local daemon
+       mpdtrace -l          # makes the local daemon print its port
+       hostname             # remind yourself of this host's name
+
+    Then log into each of the other machines, put the install/bin
+    directory in your path, and do:
+
+       mpd -h <hostname> -p <port> &
+
+    where the hostname and port belong to the original mpd that you
+    started.  From each machine, after starting the mpd, you can do 
+
+       mpdtrace
+
+    to see which machines are in the ring so far.  More details on
+    options for starting the mpd's are in mpich2/src/pm/mpd/README.
 
 
+12. Test the ring you have just created:
 
+      mpdtrace
+
+    The output should consist of the hosts where MPD daemons are now
+    running.  You can see how long it takes a message to circle this
+    ring with 
+
+      mpdringtest
+
+    That was quick.  You can see how long it takes a message to go
+    around many times by giving mpdringtest an argument:
+
+      mpdringtest 100
+      mpdringtest 1000
+
+13. Test that the ring can run a multiprocess job:
+
+      mpdrun -n <number> hostname
+
+    The number of processes need not match the number of hosts in the
+    ring;  if there are more, they will wrap around.  You can see the
+    effect of this by getting rank labels on the stdout:
+
+      mpdrun -l -n 30 hostname
+
+    You probably didn't have to give the full pathname of the hostname
+    command because it is in your path.  If not, use the full pathname:
+
+      mpdrun -l -n 30 /bin/hostname
+
+14. Now we will run an MPI job, using the mpiexec command as specified
+    in the MPI-2 standard.  There are some examples in the install
+    directory, which you have already put in your path, as well as in
+    the directory mpich2/examples.  One of them is the classic cpi
+    example, which computes the value of pi by numerical integration in
+    parallel.   
+
+      mpiexec -n 5 cpi
+
+    As with mpdrun (which is used internally by mpiexec), the number of
+    processes need not match the number of hosts.  The cpi example will
+    tell you which hosts it is running on.
+
+    There are many options for mpiexec, by which multiple executables
+    can be run, separate command-line arguments and environment
+    variables can be passed to different processes, and working
+    directories and search paths for executables can be specified.  Do
+
+      mpiexec --help
+
+    for details. A typical example is:
+
+      mpiexec -n 1 master : -n 19 slave
+
+    The mpirun command from the original MPICH is still available,
+    although it does not support as many options as mpiexec.  You might
+    want to use it in the case where you do not have the XML parser
+    required for the use of mpiexec.
+
+If you have completed all of the above steps, you have successfully
+installed MPICH2 and run an MPI example.  
+
+Alternatives
+------------
+
+The above steps utilized the MPICH2 defaults, which included choosing
+TCP for communication (the "sock" channel) and the MPD process manager.
+Other alternatives are available.  You can find out about configuration
+alternatives with
+
+   ./configure --help
+
+in the mpich2 directory.
