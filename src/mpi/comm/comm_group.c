@@ -49,6 +49,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     MPID_Comm *comm_ptr = NULL;
     int i, lpid, n;
     MPID_Group *group_ptr;
+    MPID_VCR   *local_vcr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GROUP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GROUP);
@@ -81,10 +82,16 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
+
+	/* Make sure that we get the correct group */
+	if (comm_ptr->comm_kind == MPID_INTERCOMM)
+	    local_vcr = comm_ptr->local_vcr;
+	else
+	    local_vcr = comm_ptr->vcr;
 	
 	for (i=0; i<n; i++) {
 	    group_ptr->lrank_to_lpid[i].lrank = i;
-	    (void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
+	    (void) MPID_VCR_Get_lpid( local_vcr[i], &lpid );
 	    group_ptr->lrank_to_lpid[i].lpid  = lpid;
 	}
 	group_ptr->size		 = n;
