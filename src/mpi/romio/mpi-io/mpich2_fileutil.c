@@ -1,4 +1,3 @@
-#include "mpiimpl.h"
 #include "adio.h"
 
 #ifdef MPICH2

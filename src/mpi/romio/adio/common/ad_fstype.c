@@ -38,9 +38,6 @@
 #ifdef tflops
 #include <sys/mount.h>
 #endif
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 #ifdef HAVE_UNISTD_H
 /* Needed for readlink */
