@@ -818,6 +818,9 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     {
 	MPIU_Strncpy(str, begin, maxlen);
     }
+    /* Free the dup'ed format string */
+    MPIU_Free( fmt );
+
     return 0;
 }
 
