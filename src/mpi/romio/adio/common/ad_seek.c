@@ -72,14 +72,15 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
                 abs_off_in_filetype;
     }
 
-    fd->fp_ind = off;
 /*
- * we used to do a seek here, but the fs-specifc ReadContig and
- * WriteContig will seek to the correct place in the file before
- * reading/writing.  
+ * we used to call lseek here and update both fp_ind and fp_sys_posn, but now
+ * we don't seek and only update fp_ind (ROMIO's idea of where we are in the
+ * file).  We leave the system file descriptor and fp_sys_posn alone. 
+ * The fs-specifc ReadContig and WriteContig will seek to the correct place in
+ * the file before reading/writing if the 'offset' parameter doesn't match
+ * fp_sys_posn
  */
-    fd->fp_ind = off;
-    fd->fp_sys_posn = off;
+    fd->fp_ind = offset;
 
     *error_code = MPI_SUCCESS;
 
