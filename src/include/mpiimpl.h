@@ -1278,6 +1278,9 @@ extern int MPID_THREAD_LEVEL;
     }						\
 }
 
+#ifdef MPICH_MACROS_ARE_FUNCTIONS
+void MPIR_Wait(MPID_Request *);
+#else
 #define MPIR_Wait(request_ptr)			\
 {						\
     while((*request_ptr->cc_ptr) != 0)		\
@@ -1295,6 +1298,7 @@ extern int MPID_THREAD_LEVEL;
         }					\
     }						\
 }
+#endif
 
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
