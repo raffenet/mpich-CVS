@@ -40,7 +40,7 @@ mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
 example_OBJECTS	= ${example_SOURCES:.c=.o}
 
 
-all: Makefile ${PROGRAMS} fix_python_shebangs
+all: Makefile ${PROGRAMS}
 
 
 .SUFFIXES:
@@ -48,11 +48,6 @@ all: Makefile ${PROGRAMS} fix_python_shebangs
 
 etags:  ${HEADERS} ${SOURCES}
 	etags ${HEADERS} ${SOURCES}
-
-fix_python_shebangs:
-	-@for pypgm in *.py ; do \
-	    sed -i -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' $$pypgm ; \
-	done
 
 mpdroot: ${mpdroot_OBJECTS}
 	$(C_LINK) -o mpdroot ${mpdroot_OBJECTS} $(LIBS)
@@ -100,13 +95,23 @@ install: all
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
-	    install ${srcdir}/$$cmd.py ${bindir}/$$cmd.py ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
+	    install /tmp/$$cmd.py ${bindir}/$$cmd.py ; \
+	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	    ( rm -f ${bindir}/$$cmd >/dev/null 2>&1 || exit 0 ) ; \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    install -m 755 ${srcdir}/$$cmd.py ${bindir}/$$cmd ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
+	    install -m 755 /tmp/$$cmd.py ${bindir}/$$cmd ; \
+	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
+	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
+	    install -m 755 /tmp/$$cmd.py ${bindir}/$$cmd.py; \
+	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	done
+	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
 	-@install -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
