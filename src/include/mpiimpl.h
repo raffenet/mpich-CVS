@@ -684,8 +684,9 @@ extern MPID_Comm MPID_Comm_direct[];
 /* Requests */
 /* This currently defines a single structure type for all requests.  
    Eventually, we may want a union type, as used in MPICH-1 */
-typedef enum MPID_Request_kind_t { MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND, 
-               MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
+typedef enum MPID_Request_kind_t {
+    MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND,
+    MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
@@ -1225,6 +1226,15 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
               MPI_Status *, MPID_Request **);
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
+int MPID_Send_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
+		   int, MPID_Request **);
+int MPID_Rsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
+		    int, MPID_Request **);
+int MPID_Ssend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
+		    int, MPID_Request **);
+int MPID_Recv_init(void *, int, MPI_Datatype, int, int, MPID_Comm *,
+		   int, MPID_Request **);
+int MPID_Startall(int, MPID_Request * []);
 
 int MPID_Probe(int, int, MPID_Comm *, int, MPI_Status *);
 int MPID_Iprobe(int, int, MPID_Comm *, int, int *, MPI_Status *);
