@@ -98,7 +98,7 @@ public class InfoDialogForDuration extends InfoDialog
         if ( scrollable instanceof SummarizableView ) {
             SummarizableView  summarizable;
             JPanel           ops4d_panel;
-            summarizable = (SummarizableView) scrollable;  // CanvasTime
+            summarizable = (SummarizableView) scrollable;  // CanvasXXXXline
             ops4d_panel  = new OperationDurationPanel( timebox, summarizable );
             ops4d_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
             root_panel.add( ops4d_panel );

@@ -9,7 +9,6 @@
 
 package viewer.zoomable;
 
-import java.awt.Component;
 import java.awt.Rectangle;
 
 import base.drawable.Drawable;
@@ -24,15 +23,15 @@ public interface SearchableView
     public Rectangle localRectangleForDrawable( final Drawable dobj );
 
     // NEW search starting from the specified time
-    public Component searchPreviousComponent( double searching_time );
+    public SearchPanel searchPreviousComponent( double searching_time );
 
     // CONTINUING search
-    public Component searchPreviousComponent();
+    public SearchPanel searchPreviousComponent();
 
     // NEW search starting from the specified time
-    public Component searchNextComponent( double searching_time );
+    public SearchPanel searchNextComponent( double searching_time );
 
     // CONTINUING search
-    public Component searchNextComponent();
+    public SearchPanel searchNextComponent();
 
 }

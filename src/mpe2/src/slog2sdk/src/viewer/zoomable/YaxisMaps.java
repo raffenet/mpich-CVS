@@ -25,10 +25,10 @@ import logformat.slog2.LineIDMap;
 import viewer.common.Parameters;
 
 /*
- *   This class provides various Mapping needed to draw the CanvasTime
+ *   This class provides various Mapping needed to draw the CanvasXXXXline
  *   The forward mapping is LineID to RowID, i.e. Map( LineID -> RowID ),
  *   where LineID is the Yaxis LineID in drawable.Coord of Drawable.
- *   and   RowID  is the Row Number of the CanvasTime corresponding to JTree
+ *   and   RowID  is the Row Number of the CanvasXXXXline corresponding to JTree
  *
  *   The SLOG2 file provides LineIDMap, i.e. Map( LineID -> UserObj[] ),
  *   where UserObj[] contains actual hierarchical user objects, like

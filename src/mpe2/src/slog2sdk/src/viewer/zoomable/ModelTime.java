@@ -276,7 +276,7 @@ public class ModelTime extends DefaultBoundedRangeModel
     /*
        time2pixel() and pixel2time() are local to this object.
        They have nothing to do the ones in ScrollableObject
-       (i.e. RulerTime/CanvasTime).  In general, no one but
+       (i.e. RulerTime/CanvasXXXXline).  In general, no one but
        this object and possibly ScrollbarTime needs to access
        the following time2pixel() and pixel2time() because the
        ratio to flip between pixel and time is related to scrollbar.

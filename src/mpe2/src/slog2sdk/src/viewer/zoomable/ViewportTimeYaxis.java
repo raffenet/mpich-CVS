@@ -102,7 +102,7 @@ public class ViewportTimeYaxis extends ViewportTime
         Point      local_click; 
         /*
            SwingUtilities.convertPoint() has to be called after the
-           CanvasTime has been scrolled, i.e. time_model.scroll().
+           CanvasXXXXline has been scrolled, i.e. time_model.scroll().
         */
         dobj_rect = searchable.localRectangleForDrawable( dobj );
         // Update dobj's location to be in ViewportTimeYaxis's coordinate system
@@ -246,7 +246,7 @@ public class ViewportTimeYaxis extends ViewportTime
     */
     public boolean searchBackward()
     {
-        InfoPanelForDrawable  dobj_panel = null;
+        SearchPanel  dobj_panel = null;
 
         // searchBackward can only be called from TimelineFrame, JFrame.
         if ( search_dialog == null ) {
@@ -260,13 +260,11 @@ public class ViewportTimeYaxis extends ViewportTime
         }
         
         if ( searching_time != searched_time )
-            dobj_panel  = (InfoPanelForDrawable)
-                          searchable.searchPreviousComponent( searching_time );
+            dobj_panel  = searchable.searchPreviousComponent( searching_time );
         else
-            dobj_panel  = (InfoPanelForDrawable)
-                          searchable.searchPreviousComponent();
+            dobj_panel  = searchable.searchPreviousComponent();
         if ( dobj_panel != null ) {
-            searched_dobj = dobj_panel.getDrawable();
+            searched_dobj = dobj_panel.getSearchedDrawable();
             searched_time = searched_dobj.getEarliestTime();
             // Scroll the Time axis and set Time Focus at the drawable found.
             time_model.scroll( searched_time - searching_time );
@@ -308,7 +306,7 @@ public class ViewportTimeYaxis extends ViewportTime
     */
     public boolean searchForward()
     {
-        InfoPanelForDrawable  dobj_panel = null;
+        SearchPanel  dobj_panel = null;
 
         // searchForward can only be called from TimelineFrame, JFrame.
         if ( search_dialog == null ) {
@@ -322,14 +320,12 @@ public class ViewportTimeYaxis extends ViewportTime
         }
 
         if ( searching_time != searched_time )
-            dobj_panel  = (InfoPanelForDrawable)
-                          searchable.searchNextComponent( searching_time );
+            dobj_panel  = searchable.searchNextComponent( searching_time );
         else
-            dobj_panel  = (InfoPanelForDrawable)
-                          searchable.searchNextComponent();
+            dobj_panel  = searchable.searchNextComponent();
 
         if ( dobj_panel != null ) {
-            searched_dobj = dobj_panel.getDrawable();
+            searched_dobj = dobj_panel.getSearchedDrawable();
             searched_time = searched_dobj.getEarliestTime();
             // Scroll the screen and set Time Focus at the drawable found.
             time_model.scroll( searched_time - searching_time );

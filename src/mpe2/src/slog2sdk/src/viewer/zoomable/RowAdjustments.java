@@ -65,6 +65,8 @@ public class RowAdjustments
         combo_ROW_RESIZE.setEditable( false );
         combo_ROW_RESIZE.addItem( ROW_COUNT_RESIZE );
         combo_ROW_RESIZE.addItem( ROW_HEIGHT_RESIZE );
+        combo_ROW_RESIZE.setToolTipText(
+                         "Display mode for row adjustment control" );
         combo_ROW_RESIZE.addActionListener( new ResizeModeActionListener() );
 
         // For constant row height during timeline canvas resizing

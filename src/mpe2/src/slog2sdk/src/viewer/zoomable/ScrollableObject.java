@@ -14,6 +14,7 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import base.drawable.TimeBoundingBox;
+import viewer.common.CustomCursor;
 
 public abstract class ScrollableObject extends JComponent
                                        implements ScrollableView
@@ -621,6 +622,17 @@ public abstract class ScrollableObject extends JComponent
         if ( Debug.isActive() )
             Debug.println( "ScrollableObject: size = " + component_size );
         return component_size;
+    }
+
+    // Override the Component.setCursor()
+    public void setCursor( Cursor new_cursor )
+    {
+        /*
+            Make sure that the Cursor of this Component is not set,
+            so the Cursor of its parent, ViewportTime, determines
+            the cursor of the component.
+        */
+        // super.setCursor( null );
     }
 
     public abstract InfoDialog

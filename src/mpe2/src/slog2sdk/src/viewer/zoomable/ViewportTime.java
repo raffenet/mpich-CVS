@@ -21,6 +21,7 @@ import javax.swing.event.*;
 
 import base.drawable.TimeBoundingBox;
 import viewer.common.Const;
+import viewer.common.CustomCursor;
 import viewer.common.Routines;
 import viewer.common.Parameters;
 
@@ -533,6 +534,25 @@ public class ViewportTime extends JViewport
         return btn_panel;
     }
 
+
+        // Override the Component.setCursor()
+        public void setCursor( Cursor new_cursor )
+        {
+            /*
+               Replace the DEFAULT_CURSOR by ZoomPlus or HandOpen cursor.
+               i.e. the default cursor for this class is either 
+               ZoomPlus or HandOpen cursor depending on isLeftMouseClick4Zoom.
+            */
+            if ( new_cursor == CustomCursor.Normal ) {
+                if ( isLeftMouseClick4Zoom )
+                    super.setCursor( CustomCursor.ZoomPlus );
+                else
+                    super.setCursor( CustomCursor.HandOpen );
+            }
+            else
+                super.setCursor( new_cursor );
+        }
+
         /*
             Interface to fulfill MouseInputListener()
         */
@@ -543,14 +563,18 @@ public class ViewportTime extends JViewport
         {
             super.requestFocus();
             if ( isLeftMouseClick4Zoom )
-                Routines.setAllCursorsToZoomPlus( this );
+                super.setCursor( CustomCursor.ZoomPlus );
             else
-                Routines.setAllCursorsToHandOpen( this );
+                super.setCursor( CustomCursor.HandOpen );
         }
 
         public void mouseExited( MouseEvent mouse_evt )
         {
-            Routines.setAllCursorsToNormal( this );
+            /*
+               useless to reset cursor here because of similarity of the
+               overriden this.setCursor() above and mouseEntered().
+            */
+            // super.setCursor( CustomCursor.Normal );
         }
 
         public void mouseClicked( MouseEvent mouse_evt )
@@ -568,11 +592,11 @@ public class ViewportTime extends JViewport
                         // Left clinking to Zoom In.
                         if ( mouse_evt.isShiftDown() ) {
                             time_model.zoomOut();
-                            Routines.setAllCursorsToZoomMinus( this );
+                            super.setCursor( CustomCursor.ZoomMinus );
                         }
                         else {
                             time_model.zoomIn();
-                            Routines.setAllCursorsToZoomPlus( this );
+                            super.setCursor( CustomCursor.ZoomPlus );
                         }
                         super.requestFocus();
                         if ( toolbar != null )
@@ -616,10 +640,10 @@ public class ViewportTime extends JViewport
                     zoom_timebox = new TimeBoundingBox();
                     zoom_timebox.setZeroDuration( click_time );
                     this.repaint();
-                    Routines.setAllCursorsToZoomPlus( this );
+                    super.setCursor( CustomCursor.ZoomPlus );
                 }
                 else  // Hand Mode
-                    Routines.setAllCursorsToHandClose( this );
+                    super.setCursor( CustomCursor.HandClose );
             }
             else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
                 info_timebox = new TimeBoundingBox();
@@ -644,8 +668,8 @@ public class ViewportTime extends JViewport
             }
 
             if ( mouse_evt.isShiftDown() )
-                if ( Routines.isCursorSetToZoomMinus( this ) )
-                    Routines.setAllCursorsToZoomPlus( this );
+                if ( super.getCursor() == CustomCursor.ZoomMinus )
+                    super.setCursor( CustomCursor.ZoomPlus );
 
             vport_click = mouse_evt.getPoint();
             click_time  = coord_xform.convertPixelToTime( vport_click.x );
@@ -658,14 +682,14 @@ public class ViewportTime extends JViewport
                         else
                             zoom_timebox.setEarliestTime( click_time );
                         this.repaint();
-                        // Routines.setAllCursorsToZoomPlus( this );
+                        // super.setCursor( CustomCursor.ZoomPlus );
                     }
                 }
                 else {  // Hand Mode
                     if ( vport_click.x != mouse_last_Xloc ) {
                         time_model.scroll( mouse_last_Xloc - vport_click.x );
                         mouse_last_Xloc = vport_click.x;
-                        Routines.setAllCursorsToHandClose( this );
+                        super.setCursor( CustomCursor.HandClose );
                     }
                 }
             }
@@ -716,7 +740,7 @@ public class ViewportTime extends JViewport
                         }
                         zoom_timebox = null;
                         this.repaint();
-                        Routines.setAllCursorsToZoomPlus( this );
+                        super.setCursor( CustomCursor.ZoomPlus );
                         if ( toolbar != null )
                             toolbar.resetZoomButtons();
                     }
@@ -726,7 +750,7 @@ public class ViewportTime extends JViewport
                         time_model.scroll( mouse_last_Xloc - vport_click.x );
                         mouse_last_Xloc = vport_click.x;
                     }
-                    Routines.setAllCursorsToHandOpen( this );
+                    super.setCursor( CustomCursor.HandOpen );
                 }
             }
             else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
@@ -779,16 +803,16 @@ public class ViewportTime extends JViewport
         public void keyReleased( KeyEvent evt )
         {
             if ( evt.getKeyCode() == KeyEvent.VK_SHIFT ) {
-                if ( Routines.isCursorSetToZoomMinus( this ) )
-                    Routines.setAllCursorsToZoomPlus( this );
+                if ( super.getCursor() == CustomCursor.ZoomMinus )
+                    super.setCursor( CustomCursor.ZoomPlus );
             }
         }
 
         public void keyPressed( KeyEvent evt )
         {
             if ( evt.getKeyCode() == KeyEvent.VK_SHIFT ) {
-                if ( Routines.isCursorSetToZoomPlus( this ) )
-                    Routines.setAllCursorsToZoomMinus( this );
+                if ( super.getCursor() == CustomCursor.ZoomPlus )
+                    super.setCursor( CustomCursor.ZoomMinus );
             }
             else if ( evt.getKeyCode() == KeyEvent.VK_ESCAPE ) {
                 if ( zoom_timebox != null ) {
