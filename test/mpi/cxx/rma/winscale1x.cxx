@@ -10,7 +10,7 @@
 // Not all C++ compilers have iostream instead of iostream.h
 #include <iostream>
 #ifdef HAVE_NAMESPACE_STD
-// Those that do need the std namespace; otherwise, a bare "cout"
+// Those that do often need the std namespace; otherwise, a bare "cout"
 // is likely to fail to compile
 using namespace std;
 #endif
@@ -36,7 +36,9 @@ int main( int argc, char *argv[] )
     int            left, right, ans, size, rank;
     int            buf[MAX_NROWS * (MAX_NCOLS + 2)];
     MPI::Aint      aint;
-    
+    MPI::Group     group, group2;
+    int            nneighbors, nbrs[2];
+         
     MTest_Init( );
 
     while( MTestGetIntracommGeneral( comm, 2, false ) ) {
@@ -46,10 +48,22 @@ int main( int argc, char *argv[] )
 	size = comm.Get_size();
 	rank = comm.Get_rank();
 
+	// Create the group for the neighbors
+	nneighbors = 0;
 	left = rank - 1;
 	if (left < 0)      left = MPI::PROC_NULL;
+	else {
+            nbrs[nneighbors++] = left;
+	}
 	right = rank + 1;
 	if (right >= size) right = MPI::PROC_NULL;
+	else {
+            nbrs[nneighbors++] = right;
+	}
+
+	group = comm.Get_group();
+	group2 = group.Incl( nneighbors, nbrs );
+	group.Free();
 
 	// Initialize the buffer 
 	for (i=0; i<nrows; i++) {
@@ -62,13 +76,17 @@ int main( int argc, char *argv[] )
 		    rank * (ncols * nrows) + i + j * nrows;
 	    }
 	}
-	win.Fence( MPI::MODE_NOPRECEDE );
+
+	// The actual exchange
+	win.Start( group2, 0 );
+	win.Post( group2, 0 );
 
 	win.Put( &buf[0+nrows], nrows, MPI::INT, left, ncols+1, 
 		 nrows, MPI::INT );
 	win.Put( &buf[0+ncols*nrows], nrows, MPI::INT, right, 0, 
 		 nrows, MPI::INT );
-	win.Fence( MPI::MODE_NOSTORE + MPI::MODE_NOPUT + MPI::MODE_NOSUCCEED );
+	win.Complete( );
+	win.Wait( );
 
 	// Check the results
 	if (left != MPI::PROC_NULL) {
@@ -96,6 +114,9 @@ int main( int argc, char *argv[] )
 		}
 	    }
 	}
+
+	
+	group2.Free();
 	win.Free();
 	MTestFreeComm( comm );
     }
@@ -104,4 +125,3 @@ int main( int argc, char *argv[] )
     MPI::Finalize();
     return 0;
 }
-
