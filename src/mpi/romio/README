@@ -1,9 +1,19 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version 1.2.3, January 2002
+                      Version 1.2.4, May 2002
 
-Major Changes in This Version:
+Major Changes in this Version:
 ------------------------------
+* Added section describing ROMIO MPI_FILE_SYNC and MPI_FILE_CLOSE behavior to 
+  User's Guide
+
+* Bug removed from PVFS ADIO implementation regarding resize operations
+
+* Added support for PVFS listio operations, including hints to control use
+
+
+Major Changes in Version 1.2.3:
+-------------------------------
 * Enhanced aggregation control via cb_config_list, romio_cb_read,
   and romio_cb_write hints
 
