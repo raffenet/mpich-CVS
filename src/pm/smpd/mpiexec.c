@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
-	mp_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	mp_err_printf("sock_init failed, sock error:\n%s\n",
+		      get_sock_error_string(result));
 	mp_exit_fn("main");
 	return result;
     }
@@ -87,7 +88,9 @@ int main(int argc, char* argv[])
 	host_node_ptr = mp_process.host_list;
 	while (host_node_ptr)
 	{
-	    mp_dbg_printf(" host: %s, parent: %d, id: %d\n", host_node_ptr->host, host_node_ptr->parent, host_node_ptr->id);
+	    mp_dbg_printf(" host: %s, parent: %d, id: %d\n",
+			  host_node_ptr->host,
+			  host_node_ptr->parent, host_node_ptr->id);
 	    host_node_ptr = host_node_ptr->next;
 	}
 	mp_dbg_printf("launch nodes:\n");
@@ -95,7 +98,8 @@ int main(int argc, char* argv[])
 	while (launch_node_ptr)
 	{
 	    mp_dbg_printf(" iproc: %d, id: %d, exe: %s\n",
-		launch_node_ptr->iproc, launch_node_ptr->host_id, launch_node_ptr->exe);
+		launch_node_ptr->iproc, launch_node_ptr->host_id,
+		launch_node_ptr->exe);
 	    launch_node_ptr = launch_node_ptr->next;
 	}
 
@@ -119,7 +123,9 @@ int main(int argc, char* argv[])
 	while (launch_node_ptr)
 	{
 	    /* create the launch command */
-	    result = smpd_create_command("launch", 0, launch_node_ptr->host_id, SMPD_TRUE, &cmd_ptr);
+	    result = smpd_create_command("launch", 0, 
+					 launch_node_ptr->host_id,
+					 SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
 		mp_err_printf("unable to create a launch command.\n");
