@@ -82,14 +82,14 @@ struct sock
 
 
 
-static void socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static void socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static void socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static void socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
+static void inline socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
+static void inline socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
+static void inline socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
+static void inline socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
 static int socki_sock_alloc(struct sock_set * sock_set, struct sock ** sockp);
 static void socki_sock_free(struct sock * sock);
 static void socki_event_enqueue(struct sock_set * sock_set, sock_op_t op, sock_size_t num_bytes, void * user_ptr, int error);
-static int socki_event_dequeue(struct sock_set * sock_set, sock_event_t * eventp);
+static int inline socki_event_dequeue(struct sock_set * sock_set, sock_event_t * eventp);
 static int socki_adjust_iov(MPIDI_msg_sz_t nb, SOCK_IOV * const iov, const int count, int * const offsetp);
 static int socki_errno_to_sock_errno(int error);
 
@@ -539,9 +539,9 @@ int sock_wait(sock_set_t sock_set, int millisecond_timeout, sock_event_t * event
     int found_active_elem = FALSE;
     int sock_errno = SOCK_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_POLL);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WAIT);
-    
 
     for (;;)
     { 
@@ -552,7 +552,9 @@ int sock_wait(sock_set_t sock_set, int millisecond_timeout, sock_event_t * event
 
 	do
 	{
+	    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
 	    nfds = poll(sock_set->pollfds, sock_set->poll_n_elem, millisecond_timeout);
+	    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 	}
 	while (nfds < 0 && errno == EINTR);
 
@@ -718,6 +720,7 @@ int sock_read(sock_t sock, void * buf, int len, int * num_read)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_READ);
     MPIDI_STATE_DECL(MPID_STATE_SOCK_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_READ);
@@ -726,7 +729,9 @@ int sock_read(sock_t sock, void * buf, int len, int * num_read)
     
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_READ);
 	nb = read(sock->fd, buf, len);
+	MPIDI_FUNC_EXIT(MPID_STATE_READ);
     }
     while (nb == -1 && errno == EINTR);
 
@@ -763,6 +768,7 @@ int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_READV);
     MPIDI_STATE_DECL(MPID_STATE_SOCK_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_READV);
@@ -771,7 +777,9 @@ int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read)
     
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_READV);
 	nb = readv(sock->fd, iov, n);
+	MPIDI_FUNC_EXIT(MPID_STATE_READV);
     }
     while (nb == -1 && errno == EINTR);
 
@@ -808,7 +816,7 @@ int sock_write(sock_t sock, void * buf, int len, int * num_written)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
-    
+    MPIDI_STATE_DECL(MPID_STATE_WRITE);
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITE);
@@ -817,7 +825,9 @@ int sock_write(sock_t sock, void * buf, int len, int * num_written)
     
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
 	nb = write(sock->fd, buf, len);
+	MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
     }
     while (nb == -1 && errno == EINTR);
 
@@ -849,6 +859,7 @@ int sock_writev(sock_t sock, SOCK_IOV * iov, int n, int * num_written)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_WRITEV);
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITEV);
@@ -857,7 +868,9 @@ int sock_writev(sock_t sock, SOCK_IOV * iov, int n, int * num_written)
     
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
 	nb = writev(sock->fd, iov, n);
+	MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
     }
     while (nb == -1 && errno == EINTR);
 
@@ -894,7 +907,7 @@ int sock_getid(sock_t sock)
 #define FUNCNAME socki_handle_accept
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-static void socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
+static inline void socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_HANDLE_ACCEPT);
 
@@ -909,7 +922,7 @@ static void socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * 
 #define FUNCNAME socki_handle_connect
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-static void socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
+static inline void socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     struct sockaddr_in addr;
     socklen_t addr_len;
@@ -942,9 +955,10 @@ static void socki_handle_connect(struct pollfd * const pollfd, struct pollinfo *
 #define FUNCNAME socki_handle_read
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-static void socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
+static inline void socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     int nb;
+    MPIDI_STATE_DECL(MPID_STATE_READV);
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_HANDLE_READ);
@@ -953,8 +967,10 @@ static void socki_handle_read(struct pollfd * const pollfd, struct pollinfo * co
     
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_READV);
 	nb = readv(pollfd->fd, pollinfo->read_iov + pollinfo->read_iov_offset,
 		   pollinfo->read_iov_count - pollinfo->read_iov_offset);
+	MPIDI_FUNC_EXIT(MPID_STATE_READV);
     }
     while (nb < 0 && errno == EINTR);
 
@@ -992,17 +1008,20 @@ static void socki_handle_read(struct pollfd * const pollfd, struct pollinfo * co
 #define FUNCNAME socki_handle_write
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-static void socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
+static inline void socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     int nb;
+    MPIDI_STATE_DECL(MPID_STATE_WRITEV);
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_HANDLE_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_HANDLE_WRITE);
 
     do
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
 	nb = writev(pollfd->fd, pollinfo->write_iov + pollinfo->write_iov_offset,
 		    pollinfo->write_iov_count - pollinfo->write_iov_offset);
+	MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
     }
     while (nb < 0 && errno == EINTR);
 
@@ -1215,7 +1234,7 @@ static void socki_event_enqueue(struct sock_set * sock_set, sock_op_t op, sock_s
 #define FUNCNAME socki_event_dequeue
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-static int socki_event_dequeue(struct sock_set * sock_set, sock_event_t * eventp)
+static inline int socki_event_dequeue(struct sock_set * sock_set, sock_event_t * eventp)
 {
     struct sock_eventq_elem * eventq_elem;
     int sock_errno = SOCK_SUCCESS;

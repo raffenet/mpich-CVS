@@ -167,6 +167,26 @@ int Socki_describe_timer_states()
 		       MPID_STATE_SOCKI_ADJUST_IOV,
 		       "socki_adjust_iov",
 		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_READ,
+		       "read",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_READV,
+		       "readv",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_WRITE,
+		       "write",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_WRITEV,
+		       "writev",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_POLL,
+		       "poll",
+		       get_random_color_str());
     return 0;
 }
 
