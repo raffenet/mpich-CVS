@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include "smpd.h"
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
@@ -125,24 +131,24 @@ int smpd_register_spn(const char *dc, const char *dn, const char *dh)
 }
 
 #if 0
-// ScpCreate
-//
-// Create a new service connection point as a child object of the 
-// local server computer object.
-//
+/* ScpCreate
+
+ Create a new service connection point as a child object of the 
+ local server computer object.
+*/
 DWORD
 ScpCreate(
-       USHORT usPort, // Service's default port to store in SCP.
-       LPTSTR szClass, // Service class string to store in SCP.
-       LPTSTR szAccount, // Logon account that must access SCP.
-       UINT ccDN, // Length of the pszDN buffer in characters
-       TCHAR *pszDN) // Returns distinguished name of SCP.
+       USHORT usPort, /* Service's default port to store in SCP. */
+       LPTSTR szClass, /* Service class string to store in SCP. */
+       LPTSTR szAccount, /* Logon account that must access SCP. */
+       UINT ccDN, /* Length of the pszDN buffer in characters */
+       TCHAR *pszDN) /* Returns distinguished name of SCP. */
 {
     DWORD dwStat, dwAttr, dwLen;
     HRESULT hr;
-    IDispatch *pDisp;          // Returned dispinterface of new object.
-    IDirectoryObject *pComp;   // Computer object; parent of SCP.
-    IADs *pIADsSCP;            // IADs interface on new object.
+    IDispatch *pDisp;          /* Returned dispinterface of new object. */
+    IDirectoryObject *pComp;   /* Computer object; parent of SCP. */
+    IADs *pIADsSCP;            /* IADs interface on new object. */
 
     if(!szClass || !szAccount || !pszDN || !(ccDN > 0))
     {
@@ -151,12 +157,12 @@ ScpCreate(
 	return hr;
     }
 
-    // Values for SCPs keywords attribute.
+    /* Values for SCPs keywords attribute. */
     TCHAR* KwVal[]={
-	SMPD_SERVICE_GUID, // Vendor GUID.
-	SMPD_SERVICE_GUID, // Product GUID.
-	SMPD_PRODUCT_VENDOR, // Vendor Name.
-	SMPD_PRODUCT, // Product Name.
+	SMPD_SERVICE_GUID, /* Vendor GUID. */
+	SMPD_SERVICE_GUID, /* Product GUID. */
+	SMPD_PRODUCT_VENDOR, /* Vendor Name. */
+	SMPD_PRODUCT, /* Product Name. */
     };
 
     TCHAR       szServer[MAX_PATH];
@@ -169,7 +175,7 @@ ScpCreate(
 
     ADSVALUE cn,objclass,keywords[4],binding,classname,dnsname,nametype;
 
-    // SCP attributes to set during creation of SCP.
+    /* SCP attributes to set during creation of SCP. */
     ADS_ATTR_INFO   ScpAttribs[] = 
     {
 	{
@@ -227,13 +233,13 @@ ScpCreate(
     TCHAR pwszBindByGuidStr[1024]; 
     VARIANT var;
 
-    // Get the DNS name of the local computer.
+    /* Get the DNS name of the local computer. */
     dwLen = sizeof(szServer);
     if (!GetComputerNameEx(ComputerNameDnsFullyQualified,szServer,&dwLen))
 	return GetLastError();
     _tprintf(TEXT("GetComputerNameEx: %s\n"), szServer);
 
-    // Enter the attribute values to be stored in the SCP.
+    /* Enter the attribute values to be stored in the SCP. */
     keywords[0].dwType = ADSTYPE_CASE_IGNORE_STRING;
     keywords[1].dwType = ADSTYPE_CASE_IGNORE_STRING;
     keywords[2].dwType = ADSTYPE_CASE_IGNORE_STRING;
@@ -281,14 +287,14 @@ ScpCreate(
 	return hr;
     }
 
-    //*******************************************************************
-    // Publish the SCP as a child of the computer object
-    //*******************************************************************
+    /********************************************************************
+     * Publish the SCP as a child of the computer object
+     *********************************************************************/
 
-    // Calculate attribute count.
+    /* Calculate attribute count. */
     dwAttr = sizeof(ScpAttribs)/sizeof(ADS_ATTR_INFO);  
 
-    // Complete the action.
+    /* Complete the action. */
     hr = pComp->CreateDSObject(TEXT("cn=SockAuthAD"),
 	ScpAttribs, dwAttr, &pDisp);
     if (FAILED(hr)) {
@@ -299,7 +305,7 @@ ScpCreate(
 
     pComp -> Release();
 
-    // Query for an IADs pointer on the SCP object.
+    /* Query for an IADs pointer on the SCP object. */
     hr = pDisp->QueryInterface(IID_IADs,(void **)&pIADsSCP);
     if (FAILED(hr)) {
 	ReportError(TEXT("Failed to QueryInterface for IADs:"),hr);
@@ -308,16 +314,16 @@ ScpCreate(
     }
     pDisp->Release();
 
-    // Set ACEs on the SCP so a service can modify it.
+    /* Set ACEs on the SCP so a service can modify it. */
     hr = AllowAccessToScpProperties(
-	szAccount,     // Service account to allow access.
-	pIADsSCP);     // IADs pointer to the SCP object.
+	szAccount,     /* Service account to allow access. */
+	pIADsSCP);     /* IADs pointer to the SCP object. */
     if (FAILED(hr)) {
 	ReportError(TEXT("Failed to set ACEs on SCP DACL:"), hr);
 	return hr;
     }
 
-    // Get the distinguished name of the SCP.
+    /* Get the distinguished name of the SCP. */
     VariantInit(&var); 
     hr = pIADsSCP->Get(CComBSTR("distinguishedName"), &var); 
     if (FAILED(hr)) {
@@ -327,13 +333,13 @@ ScpCreate(
     }
     _tprintf(TEXT("distinguishedName via IADs: %s\n"), var.bstrVal);
 
-    // Return the DN of the SCP, which is used to compose the SPN.
-    // The best practice is to either accept and return the buffer
-    // size or do this in a _try / _except block, both omitted here
-    // for clarity.
+    /* Return the DN of the SCP, which is used to compose the SPN.
+     The best practice is to either accept and return the buffer
+     size or do this in a _try / _except block, both omitted here
+     for clarity. */
     _tcsncpy(pszDN, var.bstrVal, ccDN);
 
-    // Retrieve the SCP objectGUID in format suitable for binding. 
+    /* Retrieve the SCP objectGUID in format suitable for binding. */
     hr = pIADsSCP->get_GUID(&bstrGuid); 
     if (FAILED(hr)) {
 	ReportError(TEXT("Failed to get GUID:"), hr);
@@ -341,7 +347,7 @@ ScpCreate(
 	return hr;
     }
 
-    // Build a string for binding to the object by GUID.
+    /* Build a string for binding to the object by GUID. */
     _tcsncpy(pwszBindByGuidStr, 
 	TEXT("LDAP://<GUID="),
 	1024);
@@ -356,8 +362,9 @@ ScpCreate(
 
     pIADsSCP->Release();
 
-    // Create a registry key under 
-    // HKEY_LOCAL_MACHINE\SOFTWARE\Vendor\Product.
+    /* Create a registry key under 
+     HKEY_LOCAL_MACHINE\SOFTWARE\Vendor\Product.
+     */
     dwStat = RegCreateKeyEx(HKEY_LOCAL_MACHINE,
 	TEXT("Software\\Fabrikam\\Auth-O-Matic"),
 	0,
@@ -372,7 +379,7 @@ ScpCreate(
 	return dwStat;
     }
 
-    // Cache the GUID binding string under the registry key.
+    /* Cache the GUID binding string under the registry key. */
     dwStat = RegSetValueEx(hReg, TEXT("GUIDBindingString"), 0, REG_SZ,
 	(const BYTE *)pwszBindByGuidStr, 
 	2*(_tcslen(pwszBindByGuidStr)));
@@ -383,29 +390,29 @@ ScpCreate(
 
     RegCloseKey(hReg);
 
-    // Cleanup should delete the SCP and registry key if an error occurs.
+    /* Cleanup should delete the SCP and registry key if an error occurs. */
 
     return dwStat;
 }
 
 DWORD SpnCompose(
-    TCHAR ***pspn,          // Output: an array of SPNs
-    unsigned long *pulSpn,  // Output: the number of SPNs returned
-    TCHAR *pszDNofSCP,      // Input: DN of the service's SCP
-    TCHAR* pszServiceClass) // Input: the name of the service class
+    TCHAR ***pspn,          /* Output: an array of SPNs */
+    unsigned long *pulSpn,  /* Output: the number of SPNs returned */
+    TCHAR *pszDNofSCP,      /* Input: DN of the service's SCP */
+    TCHAR* pszServiceClass) /* Input: the name of the service class */
 {
     DWORD   dwStatus;
 
     dwStatus = DsGetSpn(
-	DS_SPN_SERVICE, // Type of SPN to create (enumerated type)
-	pszServiceClass, // Service class - a name in this case
-	pszDNofSCP, // Service name - DN of the service SCP
-	0, // Default: omit port component of SPN
-	0, // Number of entries in hostnames and ports arrays
-	NULL, // Array of hostnames. Default is local computer
-	NULL, // Array of ports. Default omits port component
-	pulSpn, // Receives number of SPNs returned in array
-	pspn // Receives array of SPN(s)
+	DS_SPN_SERVICE, /* Type of SPN to create (enumerated type) */
+	pszServiceClass, /* Service class - a name in this case */
+	pszDNofSCP, /* Service name - DN of the service SCP */
+	0, /* Default: omit port component of SPN */
+	0, /* Number of entries in hostnames and ports arrays */
+	NULL, /* Array of hostnames. Default is local computer */
+	NULL, /* Array of ports. Default omits port component */
+	pulSpn, /* Receives number of SPNs returned in array */
+	pspn /* Receives array of SPN(s) */
 	);
 
     return dwStatus;
@@ -445,8 +452,8 @@ DWORD SpnRegister(TCHAR *pszServiceAcctDN,
     DWORD dwSize = sizeof(szSamName);
     PDOMAIN_CONTROLLER_INFO pDcInfo;
 
-    // Bind to a domain controller. 
-    // Get the domain for the current user.
+    /* Bind to a domain controller. */
+    /* Get the domain for the current user. */
     GetComputerNameEx(samcompatible, buf, size);
     if(GetUserNameEx(NameSamCompatible, szSamName, &dwSize))
     {
@@ -461,7 +468,7 @@ DWORD SpnRegister(TCHAR *pszServiceAcctDN,
         return GetLastError();
     }
      
-    // Get the name of a domain controller in that domain.
+    /* Get the name of a domain controller in that domain. */
     dwStatus = DsGetDcName(NULL,
         szSamName,
         NULL,
@@ -475,25 +482,25 @@ DWORD SpnRegister(TCHAR *pszServiceAcctDN,
         return dwStatus;
     }
      
-    // Bind to the domain controller.
+    /* Bind to the domain controller. */
     dwStatus = DsBind(pDcInfo->DomainControllerName, NULL, &hDs);
      
-    // Free the DOMAIN_CONTROLLER_INFO buffer.
+    /* Free the DOMAIN_CONTROLLER_INFO buffer. */
     NetApiBufferFree(pDcInfo);
     if(dwStatus != 0) 
     {
         return dwStatus;
     }
      
-    // Write the SPNs to the service account or computer account.
+    /* Write the SPNs to the service account or computer account. */
     dwStatus = DsWriteAccountSpn(
-            hDs,                    // Handle to the directory.
-            Operation,              // Add or remove SPN from account's existing SPNs.
-            pszServiceAcctDN,       // DN of service account or computer account.
-            ulSpn,                  // Number of SPNs to add.
-            (const TCHAR **)pspn);  // Array of SPNs.
+            hDs,                    /* Handle to the directory. */
+            Operation,              /* Add or remove SPN from account's existing SPNs. */
+            pszServiceAcctDN,       /* DN of service account or computer account. */
+            ulSpn,                  /* Number of SPNs to add. */
+            (const TCHAR **)pspn);  /* Array of SPNs. */
 
-    // Unbind the DS in any case.
+    /* Unbind the DS in any case. */
     DsUnBind(&hDs);
      
     return dwStatus;
@@ -507,8 +514,8 @@ SMPD_BOOL SetupScp()
     dwStatus = ScpCreate(
 	SMPD_LISTENER_PORT,
         SMPD_SERVICE_NAME,
-        szServiceAccountSAM,  // SAM name of logon account for ACE
-        szDNofSCP             // Buffer returns the DN of the SCP
+        szServiceAccountSAM,  /* SAM name of logon account for ACE */
+        szDNofSCP             /* Buffer returns the DN of the SCP */
         );
     if (dwStatus != 0)
     {
@@ -525,18 +532,18 @@ SMPD_BOOL SetupScp()
     }
 
     dwStatus = SpnCompose(
-	&pspn,            // Receives pointer to the SPN array.
-        &ulSpn,           // Receives number of SPNs returned.
-        szDNofSCP,        // Input: DN of the SCP.
-        szServiceClass);  // Input: the service's class string.
+	&pspn,            /* Receives pointer to the SPN array. */
+        &ulSpn,           /* Receives number of SPNs returned. */
+        szDNofSCP,        /* Input: DN of the SCP. */
+        szServiceClass);  /* Input: the service's class string. */
 
     if (dwStatus == NO_ERROR)
     {
 	dwStatus = SpnRegister(
-        szServiceAccountDN,  // Account on which SPNs are registered.
-        pspn,                // Array of SPNs to register.
-        ulSpn,               // Number of SPNs in array.
-        DS_SPN_ADD_SPN_OP);  // Operation code: Add SPNs.
+        szServiceAccountDN,  /* Account on which SPNs are registered. */
+        pspn,                /* Array of SPNs to register. */
+        ulSpn,               /* Number of SPNs in array. */
+        DS_SPN_ADD_SPN_OP);  /* Operation code: Add SPNs. */
     }
 
     if (dwStatus != NO_ERROR)
@@ -576,7 +583,7 @@ DWORD ScpUpdate(USHORT usPort)
 	{TEXT("serviceBindingInformation"),ADS_ATTR_UPDATE,ADSTYPE_CASE_IGNORE_STRING,&binding,1},
     };
 
-    // Open the service registry key.
+    /* Open the service registry key. */
     dwStat = RegOpenKeyEx(
 	HKEY_LOCAL_MACHINE,
 	TEXT("Software\\Microsoft\\Windows 2000 Auth-O-Matic"),
@@ -589,7 +596,7 @@ DWORD ScpUpdate(USHORT usPort)
 	return dwStat;
     }
 
-    // Get the GUID binding string used to bind to the service SCP.
+    /* Get the GUID binding string used to bind to the service SCP. */
     dwLen = sizeof(szAdsPath);
     dwStat = RegQueryValueEx(hReg, TEXT("GUIDBindingString"), 0, &dwType, 
 	(LPBYTE)szAdsPath, &dwLen);
@@ -600,7 +607,7 @@ DWORD ScpUpdate(USHORT usPort)
 
     RegCloseKey(hReg);
 
-    // Bind to the SCP.
+    /* Bind to the SCP. */
     hr = ADsGetObject(szAdsPath, IID_IDirectoryObject, (void **)&pObj);
     if (FAILED(hr)) 
     {
@@ -616,7 +623,7 @@ DWORD ScpUpdate(USHORT usPort)
 	return dwStat;
     }
 
-    // Retrieve attributes from the SCP.
+    /* Retrieve attributes from the SCP. */
     hr = pObj->GetObjectAttributes(pszAttrs, 2, &pAttribs, &dwAttrs);
     if (FAILED(hr)) {
 	ReportServiceError("GetObjectAttributes failed", hr);
@@ -624,7 +631,7 @@ DWORD ScpUpdate(USHORT usPort)
 	return hr;
     }
 
-    // Get the current port and DNS name of the host server.
+    /* Get the current port and DNS name of the host server. */
     _stprintf(szPort,TEXT("%d"),usPort);
     dwLen = sizeof(szServer);
     if (!GetComputerNameEx(ComputerNameDnsFullyQualified,szServer,&dwLen)) 
@@ -633,8 +640,8 @@ DWORD ScpUpdate(USHORT usPort)
 	return GetLastError();
     }
 
-    // Compare the current DNS name and port to the values retrieved from
-    // the SCP. Update the SCP only if nothing has changed.
+    /* Compare the current DNS name and port to the values retrieved from
+      the SCP. Update the SCP only if nothing has changed. */
     for (i=0; i<(LONG)dwAttrs; i++) 
     {
 	if ((_tcscmp(TEXT("serviceDNSName"),pAttribs[i].pszAttrName)==0) &&
@@ -665,8 +672,8 @@ DWORD ScpUpdate(USHORT usPort)
 
     FreeADsMem(pAttribs);
 
-    // The binding data or server name have changed, 
-    // so update the SCP values.
+    /* The binding data or server name have changed, 
+      so update the SCP values. */
     if (bUpdate)
     {
 	dnsname.dwType              = ADSTYPE_CASE_IGNORE_STRING;
@@ -687,21 +694,21 @@ DWORD ScpUpdate(USHORT usPort)
     return dwStat;
 }
 
-//***************************************************************************
-//
-//  ScpLocate()
-//
-//  All strings returned by ScpLocate must be freed by the caller using 
-//  FreeADsStr after it is finished using them.
-//
-//***************************************************************************
+/****************************************************************************
+ 
+   ScpLocate()
+ 
+   All strings returned by ScpLocate must be freed by the caller using 
+   FreeADsStr after it is finished using them.
+ 
+ *****************************************************************************/
 
 DWORD ScpLocate (
-		 LPWSTR *ppszDN,                  // Returns distinguished name of SCP.
-		 LPWSTR *ppszServiceDNSName,      // Returns service DNS name.
-		 LPWSTR *ppszServiceDNSNameType,  // Returns type of DNS name.
-		 LPWSTR *ppszClass,               // Returns name of service class.
-		 USHORT *pusPort)                 // Returns service port.
+		 LPWSTR *ppszDN,                  /* Returns distinguished name of SCP. */
+		 LPWSTR *ppszServiceDNSName,      /* Returns service DNS name. */
+		 LPWSTR *ppszServiceDNSNameType,  /* Returns type of DNS name. */
+		 LPWSTR *ppszClass,               /* Returns name of service class. */
+		 USHORT *pusPort)                 /* Returns service port. */
 {
     HRESULT hr;
     IDirectoryObject *pSCP = NULL;
@@ -709,7 +716,7 @@ DWORD ScpLocate (
     IDirectorySearch *pSearch = NULL;
     ADS_SEARCH_HANDLE hSearch = NULL;
 
-    // Get an IDirectorySearch pointer for the Global Catalog. 
+    /* Get an IDirectorySearch pointer for the Global Catalog.  */
     hr = GetGCSearch(&pSearch);
     if (FAILED(hr)) 
     {
@@ -717,9 +724,9 @@ DWORD ScpLocate (
 	goto Cleanup;
     }
 
-    // Set up a deep search.
-    // Thousands of objects are not expected in this example, therefore
-    // query for 1000 rows per page.
+    /* Set up a deep search.
+      Thousands of objects are not expected in this example, therefore
+      query for 1000 rows per page.*/
     ADS_SEARCHPREF_INFO SearchPref[2];
     DWORD dwPref = sizeof(SearchPref)/sizeof(ADS_SEARCHPREF_INFO);
     SearchPref[0].dwSearchPref =    ADS_SEARCHPREF_SEARCH_SCOPE;
@@ -738,12 +745,12 @@ DWORD ScpLocate (
 	goto Cleanup;
     } 
 
-    // Execute the search. From the GC get the distinguished name 
-    // of the SCP. Use the DN to bind to the SCP and get the other 
-    // properties.
+    /* Execute the search. From the GC get the distinguished name 
+      of the SCP. Use the DN to bind to the SCP and get the other 
+      properties. */
     LPWSTR rgszDN[] = {L"distinguishedName"};
 
-    // Search for a match of the product GUID.
+    /* Search for a match of the product GUID. */
     hr = pSearch->ExecuteSearch(    L"keywords=A762885A-AA44-11d2-81F1-00C04FB9624E",
 	rgszDN,
 	1,
@@ -757,9 +764,9 @@ DWORD ScpLocate (
 	goto Cleanup;
     } 
 
-    // Loop through the results. Each row should be an instance of the 
-    // service identified by the product GUID.
-    // Add logic to select from multiple service instances.
+    /* Loop through the results. Each row should be an instance of the 
+      service identified by the product GUID.
+      Add logic to select from multiple service instances. */
     hr = pSearch->GetNextRow(hSearch);
     if (SUCCEEDED(hr) && hr !=S_ADS_NOMORE_ROWS) 
     {
@@ -771,7 +778,7 @@ DWORD ScpLocate (
 	hr = pSearch->GetNextRow(hSearch);
     }
 
-    // Bind to the DN to get the other properties.
+    /* Bind to the DN to get the other properties. */
     LPWSTR lpszLDAPPrefix = L"LDAP://";
     DWORD dwSCPPathLength = wcslen(lpszLDAPPrefix) + wcslen(*ppszDN) + 1;
     LPWSTR pwszSCPPath = new WCHAR[dwSCPPathLength];
@@ -790,12 +797,12 @@ DWORD ScpLocate (
 	IID_IDirectoryObject,
 	(void**)&pSCP);
 
-    // Free the string buffer
+    /* Free the string buffer */
     delete pwszSCPPath;
 
     if (SUCCEEDED(hr)) 
     {
-	// Properties to retrieve from the SCP object.
+	/* Properties to retrieve from the SCP object. */
 	LPWSTR rgszAttribs[]=
 	{
 	    {L"serviceClassName"},
@@ -816,8 +823,8 @@ DWORD ScpLocate (
 	    goto Cleanup;
 	}
 
-	// Loop through the entries returned by GetObjectAttributes 
-	// and save the values in the appropriate buffers. 
+	/* Loop through the entries returned by GetObjectAttributes 
+	  and save the values in the appropriate buffers.  */
 	for (int i = 0; i < (LONG)dwAttrs; i++) 
 	{
 	    if ((wcscmp(L"serviceDNSName", pPropEntries[i].pszAttrName)==0) &&
@@ -874,13 +881,13 @@ Cleanup:
     return hr;
 }
 
-//***************************************************************************
-//
-//  GetGCSearch()
-//
-//  Retrieves an IDirectorySearch pointer for a Global Catalog (GC)
-//
-//***************************************************************************
+/****************************************************************************
+ 
+   GetGCSearch()
+ 
+   Retrieves an IDirectorySearch pointer for a Global Catalog (GC)
+ 
+ *****************************************************************************/
 
 HRESULT GetGCSearch(IDirectorySearch **ppDS)
 {
@@ -893,13 +900,13 @@ HRESULT GetGCSearch(IDirectorySearch **ppDS)
 
     *ppDS = NULL;
 
-    // Bind to the GC: namespace container object. The true GC DN 
-    // is a single immediate child of the GC: namespace, which must 
-    // be obtained using enumeration.
+    /* Bind to the GC: namespace container object. The true GC DN 
+      is a single immediate child of the GC: namespace, which must 
+      be obtained using enumeration. */
     hr = ADsOpenObject( L"GC:",
 	NULL,
 	NULL,
-	ADS_SECURE_AUTHENTICATION, // Use Secure Authentication.
+	ADS_SECURE_AUTHENTICATION, /* Use Secure Authentication. */
 	IID_IADsContainer,
 	(void**)&pCont);
     if (FAILED(hr)) 
@@ -908,7 +915,7 @@ HRESULT GetGCSearch(IDirectorySearch **ppDS)
 	goto cleanup;
     } 
 
-    // Get an enumeration interface for the GC container. 
+    /* Get an enumeration interface for the GC container.  */
     hr = ADsBuildEnumerator(pCont, &pEnum);
     if (FAILED(hr)) 
     {
@@ -916,7 +923,7 @@ HRESULT GetGCSearch(IDirectorySearch **ppDS)
 	goto cleanup;
     } 
 
-    // Now enumerate. There is only one child of the GC: object.
+    /* Now enumerate. There is only one child of the GC: object. */
     hr = ADsEnumerateNext(pEnum, 1, &var, &lFetch);
     if (FAILED(hr)) 
     {
@@ -954,15 +961,15 @@ cleanup:
 
 #include <atlbase.h>
 
-//******************************
-//
-//  AllowAccessToScpProperties()
-//
-//******************************
+/*******************************
+ 
+   AllowAccessToScpProperties()
+ 
+ ********************************/
 
 HRESULT AllowAccessToScpProperties(
-				   LPWSTR wszAccountSAM,   // Service account to allow access.
-				   IADs *pSCPObject)       // IADs pointer to the SCP object.
+				   LPWSTR wszAccountSAM,   /* Service account to allow access. */
+				   IADs *pSCPObject)       /* IADs pointer to the SCP object. */
 {
     HRESULT hr = E_FAIL;
     IADsAccessControlList *pACL = NULL;
@@ -997,7 +1004,7 @@ HRESULT AllowAccessToScpProperties(
 	LPWSTR pwszComputerName;
 	DWORD dwLen;
 
-	// Get the size required for the SAM account name.
+	/* Get the size required for the SAM account name. */
 	dwLen = 0;
 	GetComputerObjectNameW(NameSamCompatible, 
 	    NULL, &dwLen);
@@ -1027,7 +1034,7 @@ HRESULT AllowAccessToScpProperties(
 	delete pwszComputerName;
     } 
 
-    // Get the nTSecurityDescriptor.
+    /* Get the nTSecurityDescriptor. */
     hr = pSCPObject->Get(sbstrSecurityDescriptor, &varSD);
     if (FAILED(hr) || (varSD.vt != VT_DISPATCH)) 
     {
@@ -1068,14 +1075,14 @@ HRESULT AllowAccessToScpProperties(
 	goto cleanup;
     } 
 
-    // Create the COM object for the first ACE.
+    /* Create the COM object for the first ACE. */
     hr = CoCreateInstance(CLSID_AccessControlEntry,
 	NULL,
 	CLSCTX_INPROC_SERVER,
 	IID_IADsAccessControlEntry,
 	(void **)&pACE1);
 
-    // Create the COM object for the second ACE.
+    /* Create the COM object for the second ACE. */
     if (SUCCEEDED(hr))
     {
 	hr = CoCreateInstance(CLSID_AccessControlEntry,
@@ -1090,36 +1097,36 @@ HRESULT AllowAccessToScpProperties(
 	goto cleanup;
     } 
 
-    // Set the properties of the two ACEs.
+    /* Set the properties of the two ACEs. */
 
-    // Allow read and write access to the property.
+    /* Allow read and write access to the property. */
     hr = pACE1->put_AccessMask(
 	ADS_RIGHT_DS_READ_PROP | ADS_RIGHT_DS_WRITE_PROP);
     hr = pACE2->put_AccessMask( 
 	ADS_RIGHT_DS_READ_PROP | ADS_RIGHT_DS_WRITE_PROP);
 
-    // Set the trustee, which is either the service account or the 
-    // host computer account.
+    /* Set the trustee, which is either the service account or the 
+      host computer account. */
     hr = pACE1->put_Trustee( sbstrTrustee );
     hr = pACE2->put_Trustee( sbstrTrustee );
 
-    // Set the ACE type.
+    /* Set the ACE type. */
     hr = pACE1->put_AceType( ADS_ACETYPE_ACCESS_ALLOWED_OBJECT );
     hr = pACE2->put_AceType( ADS_ACETYPE_ACCESS_ALLOWED_OBJECT );
 
-    // Set AceFlags to zero because ACE is not inheritable.
+    /* Set AceFlags to zero because ACE is not inheritable. */
     hr = pACE1->put_AceFlags( 0 );
     hr = pACE2->put_AceFlags( 0 );
 
-    // Set Flags to indicate an ACE that protects a specified object.
+    /* Set Flags to indicate an ACE that protects a specified object. */
     hr = pACE1->put_Flags( ADS_FLAG_OBJECT_TYPE_PRESENT );
     hr = pACE2->put_Flags( ADS_FLAG_OBJECT_TYPE_PRESENT );
 
-    // Set ObjectType to the schemaIDGUID of the attribute.
-    // serviceDNSName
+    /* Set ObjectType to the schemaIDGUID of the attribute.
+      serviceDNSName */
     hr = pACE1->put_ObjectType( 
 	L"{28630eb8-41d5-11d1-a9c1-0000f80367c1}"); 
-    // serviceBindingInformation
+    /* serviceBindingInformation */
     hr = pACE2->put_ObjectType( 
 	L"{b7b1311c-b82e-11d0-afee-0000f80367c1}"); 
 
@@ -1145,7 +1152,7 @@ HRESULT AllowAccessToScpProperties(
 	pDispACE = NULL;
     }
 
-    // Repeat for the second ACE.
+    /* Repeat for the second ACE. */
     hr = pACE2->QueryInterface(IID_IDispatch, (void**)&pDispACE);
     if (SUCCEEDED(hr))
     {
@@ -1157,7 +1164,7 @@ HRESULT AllowAccessToScpProperties(
 	goto cleanup;
     }
 
-    // Write the modified DACL back to the security descriptor.
+    /* Write the modified DACL back to the security descriptor. */
     hr = pSD->put_DiscretionaryAcl(pDisp);
     if (SUCCEEDED(hr))
     {
@@ -1168,7 +1175,7 @@ HRESULT AllowAccessToScpProperties(
 	hr = pSCPObject->Put(sbstrSecurityDescriptor, varSD);
 	if (SUCCEEDED(hr))
 	{
-	    // SetInfo updates the SCP object in the directory.
+	    /* SetInfo updates the SCP object in the directory. */
 	    hr = pSCPObject->SetInfo();
 	}
     }
