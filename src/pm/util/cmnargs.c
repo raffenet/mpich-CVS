@@ -11,6 +11,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#include <ctype.h>
 
 /* ----------------------------------------------------------------------- */
 /* Process options                                                         */
@@ -399,14 +400,14 @@ static int LineToArgv( char *linebuf, char *(argv[]), int maxargv )
 
     p = linebuf;
     while (*p) {
-	while (iswhite(*p)) p++;
+	while (isspace(*p)) p++;
 	if (argc >= maxargv) {
 	    MPIU_Error_printf( "Too many arguments in configfile line\n" );
 	    return -1;
 	}
 	argv[argc] = p;
 	/* Skip over the arg and insert a null at end */
-	while (*p && !iswhite(*p)) p++;
+	while (*p && !isspace(*p)) p++;
 
 	/* Convert the entry into a copy */
 	argv[argc] = MPIU_Strdup( argv[argc] );

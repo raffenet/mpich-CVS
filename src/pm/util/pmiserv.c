@@ -34,6 +34,11 @@
 #include "pmutil.h"
 #include "simple_pmiutil.h"
 #define DBG_PRINTF printf
+
+#ifdef HAVE_SNPRINTF
+#define MPIU_Snprintf snprintf
+#endif
+
 /*
  * The following structures and arrays are used to implement the PMI 
  * interface.  The global variables are declared static so that they'll
