@@ -66,6 +66,7 @@ struct ADIOI_Hints_struct {
     int no_indep_rw;
     int ind_rd_buffer_size;
     int ind_wr_buffer_size;
+    int deferred_open;
     char *cb_config_list;
     int *ranklist;
     union {

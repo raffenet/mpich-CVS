@@ -59,6 +59,8 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	/* hint indicating that no indep. I/O will be performed on this file */
 	MPI_Info_set(info, "romio_no_indep_rw", "false");
 	fd->hints->no_indep_rw = 0;
+	 /* deferred_open derrived from no_indep_rw and cb_{read,write} */
+	fd->hints->deferred_open = 0;
 
 	/* buffer size for data sieving in independent reads */
 	MPI_Info_set(info, "ind_rd_buffer_size", ADIOI_IND_RD_BUFFER_SIZE_DFLT);
@@ -274,6 +276,15 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    /* NEED TO HANDLE ENOMEM */
 	}
 	strcpy(fd->hints->cb_config_list, ADIOI_CB_CONFIG_LIST_DFLT);
+    }
+    /* deferred_open won't be set by callers, but if the user hints collecitve
+     * buffering (two-phase) i/o w/o independent i/o is going on, we'll set
+     * this internal hint as a convenience */
+    if ( (fd->hints->cb_read && fd->hints->cb_write) 
+		    && fd->hints->no_indep_rw) {
+	    fd->hints->deferred_open = 1;
+    } else {
+	    fd->hints->deferred_open = 0;
     }
 
     if ((fd->file_system == ADIO_PIOFS) || (fd->file_system == ADIO_PVFS)) {
