@@ -53,6 +53,22 @@ static FILE * smpd_open_smpd_file(SMPD_BOOL create)
     return fin;
 }
 
+void str_replace(char *str, char *find_chars, char replace_char)
+{
+    char *cur_str;
+    int i;
+
+    for (i=0; i<strlen(find_chars); i++)
+    {
+	cur_str = strchr(str, find_chars[i]);
+	while (cur_str)
+	{
+	    *cur_str = replace_char;
+	    cur_str = strchr(cur_str, find_chars);
+	}
+    }
+}
+
 static smpd_data_t * smpd_parse_smpd_file()
 {
     FILE *fin;
@@ -79,6 +95,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 	    if ((len = (int)fread(buffer, 1, len, fin)) > 0)
 	    {
 		buffer[len] = '\0';
+		str_replace(buffer, "\r\n", SMPD_SEPAR_CHAR);
 		while (iter)
 		{
 		    result = MPIU_Str_get_string(&iter, name, SMPD_MAX_NAME_LENGTH);
@@ -88,7 +105,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 		    }
 		    equal_str[0] = '\0';
 		    result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
-		    while (iter && equal_str[0] != '=')
+		    while (iter && equal_str[0] != MPIU_STR_DELIM_CHAR)
 		    {
 			strcpy(name, equal_str);
 			result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
