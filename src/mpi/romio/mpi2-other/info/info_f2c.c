@@ -15,7 +15,7 @@ Input Parameters:
 . info - Fortran info handle (integer)
 
 Return Value:
-. C info handle (handle)
+  C info handle (handle)
 @*/
 MPI_Info MPI_Info_f2c(MPI_Fint info)
 {

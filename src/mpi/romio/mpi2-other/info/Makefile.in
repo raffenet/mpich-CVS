@@ -38,4 +38,3 @@ $(LIBNAME): $(MPIO_OBJECTS)
 
 clean:
 	@rm -f *.o
-

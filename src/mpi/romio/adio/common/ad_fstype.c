@@ -119,7 +119,9 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
         *error_code = MPI_SUCCESS;
      }
 #else
+    /* on other systems, make NFS the default */
     free(dir);
-    *error_code = MPI_ERR_UNKNOWN;
+    *fstype = ADIO_NFS;   
+    *error_code = MPI_SUCCESS;
 #endif
 }
