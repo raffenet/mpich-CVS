@@ -54,12 +54,12 @@
 #endif
 #endif
 
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
 #endif
 
 /* This allows us to keep names local to a single file when we can use
@@ -88,6 +88,9 @@
  */
 /* ... to do ... */
 
+/* ------------------------------------------------------------------------- */
+/* mpitypedefs.h */
+/* ------------------------------------------------------------------------- */
 /* Basic typedefs */
 #ifdef HAVE_SYS_BITYPES_H
 #include <sys/bitypes.h>
@@ -97,7 +100,7 @@
 #ifdef MPIU_INT16_T
 typedef MPIU_INT16_T int16_t;
 #else
-typedef short int16_t;
+#error 'Configure did not find a 16-bit integer type'
 #endif
 #endif
 
@@ -105,7 +108,7 @@ typedef short int16_t;
 #ifdef MPIU_INT32_T
 typedef MPIU_INT32_T int32_t;
 #else
-typedef int int32_t;
+#error 'Configure did not find a 32-bit integer type'
 #endif
 #endif
 
@@ -116,7 +119,8 @@ typedef __int64 int64_t;
 #ifdef MPIU_INT64_T
 typedef MPIU_INT64_T int64_t;
 #else
-typedef long long int64_t;
+/* Don't define a 64 bit integer type if we didn't find one, but 
+   allow the code to compile as long as we don't need that type */
 #endif
 #endif
 #endif
@@ -137,6 +141,7 @@ typedef long long int64_t;
 #endif
 
 /* IOVs */
+/* The basic channel interface uses IOVs */
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #define MPID_IOV         WSABUF
@@ -150,8 +155,10 @@ typedef long long int64_t;
 #define MPID_IOV_LEN     iov_len
 #define MPID_IOV_BUF     iov_base
 #endif
+/* FIXME: How is IOV_LIMIT chosen? */
 #define MPID_IOV_LIMIT   16
 
+/* FIXME: These need a definition.  What are they for? */
 #ifdef HAVE_WINDOWS_H
 #define POINTER_TO_AINT(a)   ( ( MPI_Aint )( 0xffffffff & (__int64) ( a ) ) )
 #define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( (__int64) ( a ) ) )
@@ -159,18 +166,26 @@ typedef long long int64_t;
 #define POINTER_TO_AINT(a)   ( ( MPI_Aint )( a ) )
 #define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( a ) )
 #endif
+/* ------------------------------------------------------------------------- */
+/* end of mpitypedefs.h */
+/* ------------------------------------------------------------------------- */
 
 /* Include definitions from the device which must exist before items in this
    file (mpiimpl.h) can be defined. */
 #include "mpidpre.h"
 
 
+/* ------------------------------------------------------------------------- */
+/* mpidebug.h */
+/* ------------------------------------------------------------------------- */
 /* Debugging and printf control */
 /* Use these *only* for debugging output intended for the implementors
    and maintainers of MPICH.  Do *not* use these for any output that
    general users may normally see.  Use either the error code creation
    routines for error messages or msg_printf etc. for general messages 
    (msg_printf will go through gettext).  
+
+   FIXME: Document all of these macros
 */
 typedef enum MPIU_dbg_state_t
 {
@@ -208,20 +223,21 @@ void MPIU_dump_dbg_memlog(FILE * fp);
 /* The follow is temporarily provided for backward compatibility.  Any code
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
 #define dbg_printf MPIU_dbg_printf
-/* The following are temporary definitions */
-int msg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
-#define msg_fprintf fprintf
-int err_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
-#define err_fprintf fprintf
 
 /* For unconditional debug output, use the following */
 #define DBG_PRINTF printf
 #define DBG_FPRINTF fprintf
 
 #define MPIU_Assert assert
+/* ------------------------------------------------------------------------- */
+/* end of mpidebug.h */
+/* ------------------------------------------------------------------------- */
 
 #include "mpiimplthread.h"
 
+/* ------------------------------------------------------------------------- */
+/* mpimem.h */
+/* ------------------------------------------------------------------------- */
 /* Memory allocation */
 /* style: allow:malloc:2 sig:0 */
 /* style: allow:free:2 sig:0 */
@@ -251,19 +267,9 @@ char *MPIU_Strdup( const char * );
 #undef strdup
 #endif
 #define strdup(a)         'Error use MPIU_Strdup'
-#else
-#define MPIU_Malloc(a)    malloc((unsigned)(a))
-#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
-#define MPIU_Free(a)      free((void *)(a))
-#ifdef HAVE_STRDUP
-#ifdef NEEDS_STRDUP_DECL
-extern char *strdup( const char * );
-#endif
-#define MPIU_Strdup(a)    strdup(a)
-#else
-/* Don't define MPIU_Strdup, provide it in safestr.c */
-#endif
-#endif
+
+/* FIXME: Note that some of these prototypes are for old functions in the 
+   src/util/mem/trmem.c package, and are no longer used */
 void MPIU_trinit ( int );
 void *MPIU_trmalloc ( unsigned int, int, const char * );
 void MPIU_trfree ( void *, int, const char * );
@@ -282,8 +288,27 @@ void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
 void MPIU_trdumpGrouped ( FILE * );
 
+#else
+/* No memory tracing; just use native functions */
+#define MPIU_Malloc(a)    malloc((unsigned)(a))
+#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPIU_Free(a)      free((void *)(a))
+#ifdef HAVE_STRDUP
+#ifdef NEEDS_STRDUP_DECL
+extern char *strdup( const char * );
+#endif
+#define MPIU_Strdup(a)    strdup(a)
+#else
+/* Don't define MPIU_Strdup, provide it in safestr.c */
+#endif /* HAVE_STRDUP */
+#endif /* USE_MEMORY_TRACING */
 
-/* Memory allocation stack */
+
+/* Memory allocation stack.
+   These are used to allocate multiple chunks of memory (with MPIU_Malloc)
+   and ensuring that they are all freed.  This simplifies error handling
+   for routines that may need to allocate multiple temporaries, and works
+   on systems without alloca (allocate off of the routine's stack) */
 #define MAX_MEM_STACK 16
 typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 #define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
@@ -294,13 +319,7 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
 #define MALLOC_STK_INIT memstack.n_alloc = 0
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
 
-/* Message printing */
-int MPIU_Usage_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Msg_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-
-/* Utilities */
+/* Utilities: Safe string copy and sprintf */
 int MPIU_Strncpy( char *dest, const char *src, size_t n );
 /* Provide a fallback snprintf for systems that do not have one */
 #ifdef HAVE_SNPRINTF
@@ -310,53 +329,78 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
      ATTRIBUTE((format(printf,3,4)));
 #endif
 
+/* ------------------------------------------------------------------------- */
+/* end of mpimem.h */
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+/* mpimsg.h */
+/* ------------------------------------------------------------------------- */
+/* Message printing */
+int MPIU_Usage_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Msg_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+
+/* ------------------------------------------------------------------------- */
+/* end of mpimsg.h */
+/* ------------------------------------------------------------------------- */
+
 /* Known language bindings */
 typedef enum MPID_Lang_t { MPID_LANG_C 
 #ifdef HAVE_FORTRAN_BINDING
-			   , MPID_LANG_FORTRAN, 
-			   MPID_LANG_FORTRAN90
+			   , MPID_LANG_FORTRAN
+			   , MPID_LANG_FORTRAN90
 #endif
 #ifdef HAVE_CXX_BINDING
 			   , MPID_LANG_CXX
 #endif
 } MPID_Lang_t;
 
+/* Macros for the MPI handles (e.g., the object that encodes an
+   MPI_Datatype) */
 #include "mpihandlemem.h"
 
+/* ------------------------------------------------------------------------- */
+/* mpiobjref.h */
+/* ------------------------------------------------------------------------- */
 /* This isn't quite right, since we need to distinguish between multiple 
    user threads and multiple implementation threads.
  */
 #define MPICH_DEBUG_MAX_REFCOUNT 64
+
 #ifdef MPICH_SINGLE_THREADED
 #ifdef MPICH_DEBUG_HANDLES
-#define MPIU_Object_set_ref(objptr,val)							\
-{											\
-    if (1) {										\
-        MPIU_DBG_PRINTF(("set %x (0x%08x) refcount to %d in %s:%d\n",			\
+#define MPIU_Object_set_ref(objptr,val)				             \
+{									     \
+    if (1) {								     \
+        MPIU_DBG_PRINTF(("set %x (0x%08x) refcount to %d in %s:%d\n",	     \
                  (unsigned) (objptr), (objptr)->handle, val, __FILE__, __LINE__));}	\
-    ((MPIU_Handle_head*)(objptr))->ref_count = val;					\
+    ((MPIU_Handle_head*)(objptr))->ref_count = val;			     \
 }
-#define MPIU_Object_add_ref(objptr)								\
-{												\
-    ((MPIU_Handle_head*)(objptr))->ref_count++;							\
-    if (1) {											\
-       MPIU_DBG_PRINTF(("incr %x (0x%08x) refcount in %s:%d, count=%d\n",			\
+
+#define MPIU_Object_add_ref(objptr)					     \
+{									     \
+    ((MPIU_Handle_head*)(objptr))->ref_count++;				     \
+    if (1) {								     \
+       MPIU_DBG_PRINTF(("incr %x (0x%08x) refcount in %s:%d, count=%d\n",    \
                 (unsigned) objptr, (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));	\
-    }												\
-    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){			\
-        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) incr at %s:%d\n",			\
-                 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}			\
+    }									     \
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
+        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) incr at %s:%d\n",  \
+                 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}\
 }
-#define MPIU_Object_release_ref(objptr,inuse_ptr)							\
-{													\
-    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;						\
-    if (1) {												\
-       MPIU_DBG_PRINTF(("decr %x (0x%08x) refcount in %s:%d, count=%d\n",				\
+
+#define MPIU_Object_release_ref(objptr,inuse_ptr)			     \
+{									     \
+    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;		     \
+    if (1) {								     \
+       MPIU_DBG_PRINTF(("decr %x (0x%08x) refcount in %s:%d, count=%d\n",    \
 		(unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));	\
-    }													\
-    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){				\
-        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) decr at %s:%d\n",				\
-		 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}				\
+    }									     \
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
+        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) decr at %s:%d\n",  \
+		 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}\
 }
 #else
 #define MPIU_Object_set_ref(objptr,val) \
@@ -375,6 +419,9 @@ typedef enum MPID_Lang_t { MPID_LANG_C
    we must deallocate the object.  This fetch and decrement must be 
    atomic so that multiple threads don't decide that they were 
    responsible for setting the value to zero.
+
+   FIXME: Who sets "USE_ATOMIC_UPDATES"?  How should we select alternate
+   versions (e.g., other IA32 compilers, IA64, PowerPC, MIPS, etc.)
  */
 #if USE_ATOMIC_UPDATES
 #ifdef HAVE_PENTIUM_GCC_ASM
@@ -404,6 +451,15 @@ typedef enum MPID_Lang_t { MPID_LANG_C
     MPID_Thread_unlock(&(objptr)->mutex);}
 #endif
 #endif
+
+/* ------------------------------------------------------------------------- */
+/* mpiobjref.h */
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+/* Should the following be moved into mpihandlemem.h ?*/
+/* ------------------------------------------------------------------------- */
+
 /* Routines to initialize handle allocations */
 /* These are now internal to the handlemem package
 void *MPIU_Handle_direct_init( void *, int, int, int );
@@ -455,6 +511,8 @@ int MPIU_Handle_free( void *((*)[]), int );
      }									\
 }
 
+/* FIXME: the masks should be defined with the handle definitions instead
+   of inserted here as literals */
 #define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
 #define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,0x03ffffff,ptr)
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
@@ -521,6 +579,13 @@ int MPIU_Handle_free( void *((*)[]), int );
    all of these masks are zero, and this part of test can be eliminated.
  */
 #define MPID_Pointer_is_invalid(p,alignment) ((p) == 0)
+/* ------------------------------------------------------------------------- */
+/* end of code that should the following be moved into mpihandlemem.h ?*/
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+/* mpiparam.h*/
+/* ------------------------------------------------------------------------- */
 
 /* Parameter handling.  These functions have not been implemented yet.
    See src/util/param.[ch] */
@@ -535,7 +600,11 @@ int MPIU_Param_register( const char [], const char [], const char [] );
 int MPIU_Param_get_int( const char [], int, int * );
 int MPIU_Param_get_string( const char [], const char *, char ** );
 void MPIU_Param_finalize( void );
+/* ------------------------------------------------------------------------- */
+/* end of mpiparam.h*/
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 /* Info */
 typedef struct MPID_Info {
     int                handle;
@@ -546,7 +615,9 @@ typedef struct MPID_Info {
 extern MPIU_Object_alloc_t MPID_Info_mem;
 /* Preallocated info objects */
 extern MPID_Info MPID_Info_direct[];
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 /* Error Handlers */
 typedef union MPID_Errhandler_fn {
    void (*C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
@@ -570,7 +641,9 @@ extern MPIU_Object_alloc_t MPID_Errhandler_mem;
 /* Preallocated errhandler objects */
 extern MPID_Errhandler MPID_Errhandler_builtin[];
 extern MPID_Errhandler MPID_Errhandler_direct[];
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 /* Keyvals and attributes */
 /* Because Comm, Datatype, and File handles are all ints, and because
    attributes are otherwise identical between the three types, we
@@ -624,6 +697,7 @@ typedef struct MPID_Attribute {
     MPID_DEV_ATTR_DECL
 #endif
 } MPID_Attribute;
+/* ------------------------------------------------------------------------- */
 
 /*---------------------------------------------------------------------------
  * Groups are *not* a major data structure in MPICH-2.  They are provided
@@ -663,6 +737,7 @@ extern MPIU_Object_alloc_t MPID_Group_mem;
 #define MPID_GROUP_N_BUILTIN 1
 extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
+/* ------------------------------------------------------------------------- */
 
 typedef struct MPIDI_VCRT * MPID_VCRT;
 typedef struct MPIDI_VC   * MPID_VCR;
@@ -717,6 +792,7 @@ typedef struct MPID_Comm {
 extern MPIU_Object_alloc_t MPID_Comm_mem;
 void MPIR_Comm_add_ref(MPID_Comm *);
 int MPIR_Comm_release(MPID_Comm *);
+
 #define MPIR_Comm_add_ref(_comm) MPIU_Object_add_ref((_comm))
 /* Preallocated comm objects */
 #define MPID_COMM_N_BUILTIN 2
@@ -731,6 +807,7 @@ extern MPID_Comm MPID_Comm_direct[];
 #define MPID_CONTEXT_INTER_COLLA 1
 #define MPID_CONTEXT_INTER_COLLB 2
 #define MPID_CONTEXT_INTER_COLL  3
+/* ------------------------------------------------------------------------- */
 
 /* Requests */
 /* This currently defines a single structure type for all requests.  
@@ -776,7 +853,11 @@ typedef struct MPID_Request {
 extern MPIU_Object_alloc_t MPID_Request_mem;
 /* Preallocated request objects */
 extern MPID_Request MPID_Request_direct[];
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
+/* mpirma.h (in src/mpi/rma?) */
+/* ------------------------------------------------------------------------- */
 typedef struct MPIU_RMA_ops { 
 /* for keeping track of puts and gets, which will be executed at fence */
     struct MPIU_RMA_ops *next;  /* pointer to next element in list */
@@ -802,6 +883,9 @@ typedef struct MPIU_RMA_ops {
 
 extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
 
+/* ------------------------------------------------------------------------- */
+/* end of mpirma.h (in src/mpi/rma?) */
+/* ------------------------------------------------------------------------- */
 
 /* Windows */
 typedef struct MPID_Win {
@@ -834,10 +918,17 @@ extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
 extern MPID_Win MPID_Win_direct[];
 
+/* ------------------------------------------------------------------------- */
+/* also in mpirma.h ?*/
+/* ------------------------------------------------------------------------- */
 extern volatile int MPIDI_Passive_target_thread_exit_flag;
 #define MPIDI_PASSIVE_TARGET_DONE_TAG  348297
 #define MPIDI_PASSIVE_TARGET_RMA_TAG 563924
+/* ------------------------------------------------------------------------- */
+/* end of also in mpirma.h ? */
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 /* Reduction and accumulate operations */
 /*E
   MPID_Op_kind - Enumerates types of MPI_Op types
@@ -902,6 +993,8 @@ typedef union MPID_User_function {
     void (*f77_function) ( const void *, void *,
 			  const MPI_Fint *, const MPI_Fint * );
 } MPID_User_function;
+/* FIXME: Should there be "restrict" in the definitions above, e.g., 
+   (*c_function)( const void restrict * , void restrict *, ... )? */
 
 /*S
   MPID_Op - MPI_Op structure
@@ -929,6 +1022,11 @@ typedef struct MPID_Op {
 extern MPID_Op MPID_Op_builtin[MPID_OP_N_BUILTIN];
 extern MPID_Op MPID_Op_direct[];
 extern MPIU_Object_alloc_t MPID_Op_mem;
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+/* mpicoll.h (in src/mpi/coll? */
+/* ------------------------------------------------------------------------- */
 
 /* Collective operations */
 typedef struct MPID_Collops {
@@ -966,8 +1064,13 @@ typedef struct MPID_Collops {
 } MPID_Collops;
 
 #define MPIR_BARRIER_TAG 1
+/* ------------------------------------------------------------------------- */
+/* end of mpicoll.h (in src/mpi/coll? */
+/* ------------------------------------------------------------------------- */
 
+/* ------------------------------------------------------------------------- */
 /* Files */
+/* FIXME: Make this compatible with ROMIO */
 typedef struct MPID_File {
     int           handle;             /* value of MPI_File for this structure */
     volatile int  ref_count;
@@ -980,6 +1083,7 @@ typedef struct MPID_File {
 extern MPIU_Object_alloc_t MPID_File_mem;
 /* Preallocated file objects */
 extern MPID_File MPID_File_direct[];
+/* ------------------------------------------------------------------------- */
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
@@ -992,6 +1096,7 @@ typedef struct MPID_Stateinfo_t {
 } MPID_Stateinfo_t;
 #define MPICH_MAX_STATES 512
 
+/* ------------------------------------------------------------------------- */
 /* Thread types */
 /* Temporary; this will include "mpichthread.h" eventually */
 
@@ -1104,6 +1209,7 @@ typedef struct MPICH_PerProcess_t {
 extern MPICH_PerProcess_t MPIR_Process;
 
 /* Record the level of thread support */
+/* FIXME: Where is this used, and why isn't in the PerProcess structure? */
 extern int MPID_THREAD_LEVEL;
 
 #ifdef MPICH_SINGLE_THREADED
@@ -1123,10 +1229,14 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_Allocation_lock() MPID_Thread_lock( &MPIR_Process.allocation_lock )
 #define MPID_Allocation_unlock() MPID_Thread_unlock( &MPIR_Procss.allocation_lock )
 #endif
+/* ------------------------------------------------------------------------- */
 
 /* set up the timing macros */
 #include "mpitimerimpl.h"
 
+/* ------------------------------------------------------------------------- */
+/* mpierrs.h */
+/* ------------------------------------------------------------------------- */
 /* Error checking (see --enable-error-checking for control of this) */
 #ifdef HAVE_ERROR_CHECKING
 
@@ -1277,6 +1387,14 @@ extern int MPID_THREAD_LEVEL;
 /* Special MPI error "class/code" for out of memory */
 /* FIXME: not yet done */
 #define MPIR_ERR_MEMALLOCFAILED MPI_ERR_INTERN
+
+/* ------------------------------------------------------------------------- */
+/* end of mpierrs.h */
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+/* FIXME: Merge these with the object refcount update routines (perhaps as
+   part of a general "atomic update" file */
 /*
  * Standardized general-purpose atomic update routines.  Some comments:
  * Setmax atomically implements *a_ptr = max(b,*a_ptr) .  This can
@@ -1317,11 +1435,19 @@ extern int MPID_THREAD_LEVEL;
     *value_ptr = *count_ptr; *count_ptr += 1; \
     MPID_Thread_unlock(&MPIR_Process.common_lock);}
 #endif
+/* ------------------------------------------------------------------------- */
 
+/* FIXME: Move these to the communicator block; make sure that all 
+   objects have such hooks */
 #ifndef HAVE_DEV_COMM_HOOK
 #define MPID_Dev_comm_create_hook( a )
 #define MPID_Dev_comm_destroy_hook( a )
 #endif
+
+/* ------------------------------------------------------------------------- */
+/* FIXME: What is the scope of these functions?  Can they be moved into
+   src/mpi/pt2pt? */
+/* ------------------------------------------------------------------------- */
 
 #ifdef MPICH_MACROS_ARE_FUNCTIONS
 void MPIR_Wait(MPID_Request *);
@@ -1382,7 +1508,15 @@ void MPIR_Wait(MPID_Request *);
 	(status_)->MPI_ERROR = error__;											\
     }															\
 }
+/* ------------------------------------------------------------------------- */
 
+/* FIXME: The bindings should be divided into three groups:
+   1. ADI3 routines.  These should have structure comment documentation, e.g., 
+   the text from doc/adi3/adi3.c
+   2. General utility routines.  These should have a short description
+   3. Local utility routines, e.g., routines used within a single subdirectory.
+   These should be moved into an include file in that subdirectory 
+*/
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
@@ -1529,8 +1663,14 @@ void MPIR_WaitForDebugger( void );
 /* Include definitions from the device which require items defined by this file (mpiimpl.h). */
 #include "mpidpost.h"
 
+/* ------------------------------------------------------------------------- */
+/* FIXME: Also for mpicoll.h, in src/mpi/coll?  */
+/* ------------------------------------------------------------------------- */
 /* thresholds to switch between long and short vector algorithms for
    collective operations */ 
+/* FIXME: Should there be a way to (a) update/compute these at configure time
+   and (b) provide runtime control?  Should these be MPIR_xxx_DEFAULT 
+   instead? */
 #define MPIR_BCAST_SHORT_MSG          12288
 #define MPIR_BCAST_MIN_PROCS          8
 #define MPIR_ALLTOALL_SHORT_MSG       128
