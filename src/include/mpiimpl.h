@@ -215,10 +215,10 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
    user threads and multiple implementation threads.
  */
 #ifdef MPICH_SINGLE_THREADED
-#define MPID_Object_add_ref(objptr) \
+#define MPIU_Object_add_ref(objptr) \
     ((MPIU_Handle_head*)(objptr))->ref_count++
-#define MPID_Object_release_ref(objptr,newval_ptr) \
-    *(newval)=--((MPIU_Handle_head*)(objptr))->ref_count
+#define MPIU_Object_release_ref(objptr,newval_ptr) \
+    *(newval_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
 #else
 /* These can be implemented using special assembly language operations
    on most processors.  If no such operation is available, then each
@@ -229,10 +229,10 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
    atomic so that multiple threads don't decide that they were 
    responsible for setting the value to zero.
  */
-#define MPID_Object_add_ref(objptr) \
+#define MPIU_Object_add_ref(objptr) \
     {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
     MPID_Thread_unlock(&(objptr)->mutex);}
-#define MPID_Object_release_ref(objptr,newval_ptr) \
+#define MPIU_Object_release_ref(objptr,newval_ptr) \
     {MPID_Thread_lock(&(objptr)->mutex);*(newval_ptr)=--(objptr)->ref_count;\
     MPID_Thread_unlock(&(objptr)->mutex);}
 #endif
