@@ -36,7 +36,10 @@ Input Parameters:
 @*/
 int MPI_File_delete(char *filename, MPI_Info info)
 {
-    int flag, error_code;
+    int flag, error_code, file_system;
+#ifndef PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_DELETE";
+#endif
     char *tmp;
 #ifdef MPI_hpux
     int fl_xmpi;
@@ -71,10 +74,52 @@ int MPI_File_delete(char *filename, MPI_Info info)
         ADIO_Init( (int *)0, (char ***)0, &error_code);
     }
 
+    /* discover file system type (code swiped from MPI_File_open()) */
+    file_system = -1;
     tmp = strchr(filename, ':');
-    if (tmp) filename = tmp + 1;
+    if (!tmp) {
+	/* no prefix; use system-dependent function call to determine type */
+	ADIO_FileSysType_fncall(filename, &file_system, &error_code);
+	if (error_code != MPI_SUCCESS) {
+#ifdef PRINT_ERR_MSG
+	    FPRINTF(stderr, "MPI_File_delete: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
+	}
+    }
+    else {
+	/* prefix specified; just match via prefix, assume everyone has same */
+	ADIO_FileSysType_prefix(filename, &file_system, &error_code);
+	if (error_code != MPI_SUCCESS) {
+#ifdef PRINT_ERR_MSG
+	    FPRINTF(stderr, "MPI_File_delete: Can't determine the file-system type from the specified prefix. Check the filename/path and prefix you provided and try again.\n");
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
+	}
+	/* move filename to point past the prefix: */
+	filename = tmp + 1;
+    }
 
-    ADIO_Delete(filename, &error_code);
+    /* note: really we should check here to see if we support the given 
+     * file system.  so this is a bit of a hack, but it's better than it 
+     * was before.  all file systems other than PVFS are ok with the generic
+     * delete call (so far).
+     */
+    switch (file_system) {
+    case ADIO_PVFS:
+	ADIOI_PVFS_Delete(filename, &error_code);
+	break;
+    default:
+	ADIOI_GEN_Delete(filename, &error_code);
+	break;
+    }
+	
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, MPI_FILE_NULL, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
