@@ -4,6 +4,7 @@ from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path
 from popen2 import Popen3
 from pwd    import getpwuid
+from urllib import quote
 
 global totalProcs, nextRange, argvCopy, configFile
 
@@ -128,7 +129,7 @@ def handle_argset(argset):
     xmlForArgset += "        <args range='%d-%d'>\n" % \
             (thisRange[0],thisRange[1])
     for arg in cmdAndArgs[1:]:
-        xmlForArgset += "            <arg value='%s'/>\n" % (arg)
+        xmlForArgset += "            <arg value='%s'/>\n" % (quote(arg))
     xmlForArgset += "        </args>\n"
     # print xmlForArgset
     return xmlForArgset

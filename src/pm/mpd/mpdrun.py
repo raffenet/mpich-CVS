@@ -10,6 +10,7 @@ from signal          import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SI
 from exceptions      import Exception
 from xml.dom.minidom import parseString
 from re              import findall
+from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
                             mpd_raise, mpdError, mpd_version
@@ -127,6 +128,7 @@ def mpdrun():
             argList = elem.getElementsByTagName('arg')
             for argElem in argList:
                 arg = argElem.getAttribute('value')
+                arg = unquote(arg)
                 argVals.append(arg)
             args[ranks] = argVals
         i = 0
