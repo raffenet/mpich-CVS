@@ -22,8 +22,8 @@ void MPIU_TrSetMaxMem( int );
 
 /* Make sure that FILE is defined */
 #include <stdio.h>
-void MPIU_trdump( FILE * );
-void MPIU_trSummary( FILE * );
-void MPIU_trdumpGrouped( FILE * );
+void MPIU_trdump( FILE *, int );
+void MPIU_trSummary( FILE *, int );
+void MPIU_trdumpGrouped( FILE *, int );
 
 #endif

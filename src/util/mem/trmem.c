@@ -423,9 +423,11 @@ void MPIU_trspace( int *space, int *fr )
   MPIU_trdump - Dump the allocated memory blocks to a file
 
   Input Parameter:
-.  fp  - file pointer.  If fp is NULL, stderr is assumed.
++  fp  - file pointer.  If fp is NULL, stderr is assumed.
+-  minid - Only print allocated memory blocks whose id is at least 'minid'
+
  +*/
-void MPIU_trdump( FILE *fp )
+void MPIU_trdump( FILE *fp, int minid )
 {
     TRSPACE *head;
     int     id;
@@ -433,17 +435,19 @@ void MPIU_trdump( FILE *fp )
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
-	FPRINTF( fp, "[%d] %lu at [%lx], ", 
+	if (head->id >= minid) {
+	    FPRINTF( fp, "[%d] %lu at [%lx], ", 
 		 world_rank, head->size, MPIU_PtrToLong(head) + sizeof(TrSPACE) );
-	head->fname[TR_FNAME_LEN-1] = 0; /* Be extra careful */
-	if (TRidSet) {
-	    /* For head->id >= 0, we can add code to map the id to
-	       the name of a package, rather than using a raw number */
-	    FPRINTF( fp, "id = %d %s[%d]\n", 
-		     head->id, head->fname, head->lineno );
-	}
-	else {
-	    FPRINTF( fp, "%s[%d]\n", head->fname, head->lineno );
+	    head->fname[TR_FNAME_LEN-1] = 0; /* Be extra careful */
+	    if (TRidSet) {
+		/* For head->id >= 0, we can add code to map the id to
+		   the name of a package, rather than using a raw number */
+		FPRINTF( fp, "id = %d %s[%d]\n", 
+			 head->id, head->fname, head->lineno );
+	    }
+	    else {
+		FPRINTF( fp, "%s[%d]\n", head->fname, head->lineno );
+	    }
 	}
 	head = head->next;
     }
@@ -483,37 +487,41 @@ static void PrintSum( TRINFO **a, VISIT order, int level )
   MPIU_trSummary - Summarize the allocate memory blocks by id
 
   Input Parameter:
-.  fp  - file pointer
++  fp  - file pointer.  If fp is NULL, stderr is assumed.
+-  minid - Only print allocated memory blocks whose id is at least 'minid'
 
   Note:
   This routine is the same as MPIU_trDump on those systems that do not include
   /usr/include/search.h .
  +*/
-void MPIU_trSummary( FILE *fp )
+void MPIU_trSummary( FILE *fp, int minid )
 {
     TRSPACE *head;
     TRINFO  *root, *key, **fnd;
     TRINFO  nspace[1000];
 
+    if (fp == 0) fp = stderr;
     root = 0;
     head = TRhead;
     key  = nspace;
     while (head) {
-	key->id     = head->id;
-	key->size   = 0;
-	key->lineno = head->lineno;
-	key->fname  = head->fname;
+	if (head->id >= minid) {
+	    key->id     = head->id;
+	    key->size   = 0;
+	    key->lineno = head->lineno;
+	    key->fname  = head->fname;
 #if defined(USE_TSEARCH_WITH_CHARP)
-	fnd    = (TRINFO **)tsearch( (char *) key, (char **) &root, IntCompare );
+	    fnd    = (TRINFO **)tsearch( (char *) key, (char **) &root, IntCompare );
 #else
-	fnd    = (TRINFO **)tsearch( (void *) key, (void **) &root, 
-				 (int (*)())IntCompare );
+	    fnd    = (TRINFO **)tsearch( (void *) key, (void **) &root, 
+					 (int (*)())IntCompare );
 #endif
-	if (*fnd == key) {
-	    key->size = 0;
-	    key++;
+	    if (*fnd == key) {
+		key->size = 0;
+		key++;
+	    }
+	    (*fnd)->size += head->size;
 	}
-	(*fnd)->size += head->size;
 	head = head->next;
     }
     
@@ -526,8 +534,9 @@ void MPIU_trSummary( FILE *fp )
     */
 }
 #else
-void MPIU_trSummary( FILE *fp )
+void MPIU_trSummary( FILE *fp, int minid )
 {
+    if (fp == 0) fp = stderr;
     FPRINTF( fp, 
 		 "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
 		 world_rank, TRMaxMem, TRMaxMemId );
@@ -749,7 +758,7 @@ static void MPIU_trSortBlocks( void )
 }
 
 /* Takes sorted input and dumps as an aggregate */
-void MPIU_trdumpGrouped( FILE *fp )
+void MPIU_trdumpGrouped( FILE *fp, int minid )
 {
     TRSPACE *head, *cur;
     int     nblocks, nbytes;
@@ -761,18 +770,21 @@ void MPIU_trdumpGrouped( FILE *fp )
     cur  = 0;
     while (head) {
 	cur     = head->next;
-	nblocks = 1;
-	nbytes  = (int)head->size;
-	while (cur && strncmp(cur->fname,head->fname,TR_FNAME_LEN-1) == 0 && 
-	       cur->lineno == head->lineno ) {
-	    nblocks++;
-	    nbytes += (int)cur->size;
-	    cur    = cur->next;
-	}
-	FPRINTF( fp, 
-"[%d] File %13s line %5d: %d bytes in %d allocation%c\n", 
+	if (head->id >= minid) {
+	    nblocks = 1;
+	    nbytes  = (int)head->size;
+	    while (cur && 
+		   strncmp(cur->fname,head->fname,TR_FNAME_LEN-1) == 0 && 
+		   cur->lineno == head->lineno ) {
+		nblocks++;
+		nbytes += (int)cur->size;
+		cur    = cur->next;
+	    }
+	    FPRINTF( fp, 
+		     "[%d] File %13s line %5d: %d bytes in %d allocation%c\n", 
 		     world_rank, head->fname, head->lineno, nbytes, nblocks, 
 		     (nblocks > 1) ? 's' : ' ' );
+	}
 	head = cur;
     }
     fflush( fp );
