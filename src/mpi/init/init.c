@@ -69,18 +69,11 @@ int MPI_Init( int *argc, char ***argv )
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPIR_Init_thread( argc, argv, MPI_THREAD_SINGLE, (int *)0 );
-#   ifdef HAVE_ERROR_CHECKING
+    if (mpi_errno)
     {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            if (mpi_errno) {
-                MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
-        }
-        MPID_END_ERROR_CHECKS;
+	MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
-#   endif /* HAVE_ERROR_CHECKING */
 
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPI_SUCCESS;
