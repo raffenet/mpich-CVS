@@ -104,10 +104,6 @@ PMPI_LOCAL int MPIR_Bcast (
       is_homogeneous = 0;
 #endif
 
-  /* Lock for collective operation */
-  MPID_Comm_thread_lock( comm_ptr );
-  MPIR_Nest_incr();
-
   if (is_contig && is_homogeneous) {
       /* contiguous and homogeneous */
       MPID_Datatype_get_size_macro(datatype, type_size);
@@ -120,6 +116,9 @@ PMPI_LOCAL int MPIR_Bcast (
   }
 
   relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
+
+  /* Lock for collective operation */
+  MPID_Comm_thread_lock( comm_ptr );
 
   if ((nbytes < MPIR_BCAST_SHORT_MSG) && (comm_size <= MPIR_BCAST_MIN_PROCS)) {
 
@@ -410,7 +409,6 @@ PMPI_LOCAL int MPIR_Bcast (
       }
   }
 
-  MPIR_Nest_decr();
   /* Unlock for collective operation */
   MPID_Comm_thread_unlock( comm_ptr );
 

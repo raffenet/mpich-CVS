@@ -911,11 +911,11 @@ typedef struct MPID_Collops_struct {
                      int *, MPI_Datatype, MPID_Comm *);
     int (*Alltoallw) (void*, int *, int *, MPI_Datatype, void*, int *, 
                      int *, MPI_Datatype, MPID_Comm *);
-    int (*Reduce) (void*, void*, int, MPI_Datatype, MPID_Op *, int, 
+    int (*Reduce) (void*, void*, int, MPI_Datatype, MPI_Op, int, 
                    MPID_Comm *);
-    int (*Allreduce) (void*, void*, int, MPI_Datatype, MPID_Op *, 
+    int (*Allreduce) (void*, void*, int, MPI_Datatype, MPI_Op, 
                       MPID_Comm *);
-    int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPID_Op *, 
+    int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPI_Op, 
                            MPID_Comm *);
     int (*Scan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
     int (*Exscan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
@@ -1262,7 +1262,7 @@ int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
 
 /* thresholds to switch between long and short vector algorithms for
    collective operations */ 
-#define MPIR_BCAST_SHORT_MSG 2048
+#define MPIR_BCAST_SHORT_MSG 16384
 #define MPIR_BCAST_MIN_PROCS 8
 #define MPIR_ALLTOALL_SHORT_MSG 1024
 #define MPIR_REDUCE_SCATTER_SHORT_MSG 1024
@@ -1290,6 +1290,7 @@ int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
 #define MPIR_SCAN_TAG                 20
 #define MPIR_USER_SCAN_TAG            21
 #define MPIR_USER_SCANA_TAG           22
+#define MPIR_LOCALCOPY_TAG            23
 
 /* These functions are used in the implementation of collective
    operations. They are wrappers around MPID send/recv functions. They do
@@ -1303,5 +1304,30 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   int dest, int sendtag, void *recvbuf, int recvcount,
                   MPI_Datatype recvtype, int source, int recvtag,
                   MPI_Comm comm, MPI_Status *status);
+int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype);
+
+void MPIR_MAXF  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_MINF  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_SUM  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_PROD  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_LAND  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_BAND  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_LOR  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_BOR  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_LXOR  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_BXOR  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_MAXLOC  ( void *, void *, int *, MPI_Datatype * ) ;
+void MPIR_MINLOC  ( void *, void *, int *, MPI_Datatype * ) ;
+
+#define MPIR_PREDEF_OP_COUNT 12
+extern MPI_User_function *MPIR_Op_table[];
+
+#ifndef MPIR_MIN
+#define MPIR_MIN(a,b) (((a)>(b))?(b):(a))
+#endif
+#ifndef MPIR_MAX
+#define MPIR_MAX(a,b) (((b)>(a))?(b):(a))
+#endif
 
 #endif /* MPIIMPL_INCLUDED */

@@ -80,3 +80,63 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
     return mpi_errno;
 }
+
+
+int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype)
+{
+    int sendtype_iscontig, recvtype_iscontig, sendsize;
+    int rank, mpi_errno = MPI_SUCCESS;
+    MPI_Status status;
+
+    if (HANDLE_GET_KIND(sendtype) == HANDLE_KIND_BUILTIN)
+        sendtype_iscontig = 1;
+    else {
+        sendtype_iscontig = 0;
+        /* CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
+    }
+    if (HANDLE_GET_KIND(recvtype) == HANDLE_KIND_BUILTIN)
+        recvtype_iscontig = 1;
+    else {
+        recvtype_iscontig = 0;
+        /* CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
+    }
+
+    if (sendtype_iscontig && recvtype_iscontig)
+    {
+        MPID_Datatype_get_size_macro(sendtype, sendsize);
+        memcpy(recvbuf, sendbuf, sendcount*sendsize);
+    }
+    else {
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        mpi_errno = MPIC_Sendrecv ( sendbuf, sendcount, sendtype,
+                                    rank, MPIR_LOCALCOPY_TAG, 
+                                    recvbuf, recvcount, recvtype,
+                                    rank, MPIR_LOCALCOPY_TAG,
+                                    MPI_COMM_WORLD, &status );
+    }
+    return mpi_errno;
+}
+
+
+/*
+int MPIR_Init_op_table()
+{
+
+    MPIR_Op_table = (MPI_User_function **)
+        MPIU_Malloc(MPIR_PREDEF_OP_COUNT * sizeof(MPI_User_function *));
+
+    MPIR_Op_table[(int)MPI_MAX] = MPIR_MAX;
+    MPIR_Op_table[(int)MPI_MIN] = MPIR_MIN;
+    MPIR_Op_table[(int)MPI_SUM] = MPIR_SUM;
+    MPIR_Op_table[(int)MPI_PROD] = MPIR_PROD;
+    MPIR_Op_table[(int)MPI_LAND] = MPIR_LAND;
+    MPIR_Op_table[(int)MPI_BAND] = MPIR_BAND;
+    MPIR_Op_table[(int)MPI_LOR] = MPIR_LOR;
+    MPIR_Op_table[(int)MPI_BOR] = MPIR_BOR;
+    MPIR_Op_table[(int)MPI_LXOR] = MPIR_LXOR;
+    MPIR_Op_table[(int)MPI_BXOR] = MPIR_BXOR;
+    MPIR_Op_table[(int)MPI_MINLOC] = MPIR_MINLOC;
+    MPIR_Op_table[(int)MPI_MAXLOC] = MPIR_MAXLOC;
+}
+*/
