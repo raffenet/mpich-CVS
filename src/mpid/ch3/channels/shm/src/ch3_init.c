@@ -164,6 +164,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    strcpy(key, "SHMEMKEY");
 	    PMI_Barrier();
 	    PMI_KVS_Get(pg->kvs_name, key, val);
+	    strcpy(shmemkey, val);
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
