@@ -13,7 +13,7 @@
    Arguments:
 +  void *buf - buffer
 .  int count - count
-.  MPID_Datatype *datatype_ptr - datatype
+.  MPI_Datatype datatype - datatype
 .  int source - source
 .  int tag - tag
 .  MPID_Comm *comm_ptr - communicator
