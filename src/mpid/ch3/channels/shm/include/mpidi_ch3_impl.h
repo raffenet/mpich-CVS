@@ -84,7 +84,7 @@ __attribute__ ((unused))
 #define MPIDI_CH3I_PKT_AVAILABLE        0
 #define MPIDI_CH3I_PKT_USED             1
 #define MPIDI_CH3I_SPIN_COUNT_DEFAULT   100
-#define MPIDI_CH3I_YIELD_COUNT_DEFAULT  200
+#define MPIDI_CH3I_YIELD_COUNT_DEFAULT  5000
 
 /* This structure uses the avail field to signal that the data is available for reading.
    The code fills the data and then sets the avail field.

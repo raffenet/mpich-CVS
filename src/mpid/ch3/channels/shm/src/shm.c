@@ -8,11 +8,9 @@
 #include <stdio.h>
 
 #undef USE_SHM_WRITE_FOR_SHM_WRITEV
-#undef USE_IOV_LEN_2_SHORTCUT
-/*
-#define USE_SHM_WRITE_FOR_SHM_WRITEV
+/*#define USE_SHM_WRITE_FOR_SHM_WRITEV*/
+/*#undef USE_IOV_LEN_2_SHORTCUT*/
 #define USE_IOV_LEN_2_SHORTCUT
-*/
 
 typedef int SHM_STATE;
 #define SHM_READING    0x0008
