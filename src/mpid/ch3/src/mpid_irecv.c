@@ -111,7 +111,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 		    MPIU_Free(rreq->ch3.tmpbuf);
 		}
 
-		
 		mpi_errno = rreq->status.MPI_ERROR;
 		goto fn_exit;
 	    }
