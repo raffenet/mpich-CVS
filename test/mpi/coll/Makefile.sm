@@ -24,5 +24,7 @@ longuser_SOURCES = longuser.c
 coll10_SOURCES = coll10.c
 coll11_SOURCES = coll11.c
 coll12_SOURCES = coll12.c
+scatterv_SOURCES = scatterv.c
+scattern_SOURCES = scattern.c
 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
