@@ -33,7 +33,7 @@ void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code)
     }
     MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     if (ret < 0)
-	ADIOI_PVFS2_pvfs2_error_convert(ret, error_code);
+	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
 }
 
 /* 
