@@ -75,7 +75,7 @@ if test -z "$PYTHON" ; then
     AC_MSG_ERROR([Python required (version 2.2 or greater, with necessary modules)]) 
 fi
 
-echo "RMB PYTHON=" $PYTHON
+# echo "RMB PYTHON=" $PYTHON
 AC_SUBST(PYTHON)
 
 # In case clinker is not defined
