@@ -53,6 +53,15 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
+    result = smpd_create_context(SMPD_CONTEXT_PMI, smpd_process.set, SOCK_INVALID_SOCK, -1, &p->pmi);
+    if (result != SMPD_SUCCESS)
+    {
+	free(p);
+	*process_ptr = NULL;
+	smpd_err_printf("unable to create pmi context.\n");
+	smpd_exit_fn("smpd_create_process_struct");
+	return SMPD_FAIL;
+    }
     p->in->rank = rank;
     p->out->rank = rank;
     p->err->rank = rank;
@@ -88,6 +97,9 @@ int smpd_free_process_struct(smpd_process_t *process)
     if (process->err)
 	smpd_free_context(process->err);
     process->err = NULL;
+    if (process->pmi)
+	smpd_free_context(process->pmi);
+    process->pmi = NULL;
     process->dir[0] = '\0';
     process->env[0] = '\0';
     process->exe[0] = '\0';
