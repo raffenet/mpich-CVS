@@ -19,7 +19,7 @@ int main( int argc, char **argv )
     double *vecout;
     MPI_Comm comm;
     int    count, minsize = 2;
-    int    root, i, n, errs = 0;
+    int    i, n, errs = 0;
     int    rank, size;
     int    *displs, *recvcounts;
 
@@ -34,32 +34,30 @@ int main( int argc, char **argv )
 	displs     = (int *)malloc( size * sizeof(int) );
 	recvcounts = (int *)malloc( size * sizeof(int) );
 	
-	for (root=0; root<size; root++) {
-	    for (count = 1; count < 65000; count = count * 2) {
-		n = 12;
-		vecout = (double *)malloc( size * n * sizeof(double) );
-		
-		for (i=0; i<n; i++) {
-		    vecout[rank*n+i] = rank*n+i;
-		}
-		for (i=0; i<size; i++) {
-		    recvcounts[i] = n;
-		    displs[i]    = i * n;
-		}
-		MPI_Allgatherv( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, 
-			       vecout, recvcounts, displs, MPI_DOUBLE, comm );
-		for (i=0; i<n*size; i++) {
-		    if (vecout[i] != i) {
-			errs++;
-			if (errs < 10) {
-			    fprintf( stderr, "vecout[%d]=%d\n",
-				     i, (int)vecout[i] );
-			}
-		    }
-		}
-		free( vecout );
-	    }
-	}
+        for (count = 1; count < 65000; count = count * 2) {
+            n = 12;
+            vecout = (double *)malloc( size * n * sizeof(double) );
+            
+            for (i=0; i<n; i++) {
+                vecout[rank*n+i] = rank*n+i;
+            }
+            for (i=0; i<size; i++) {
+                recvcounts[i] = n;
+                displs[i]    = i * n;
+            }
+            MPI_Allgatherv( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, 
+                            vecout, recvcounts, displs, MPI_DOUBLE, comm );
+            for (i=0; i<n*size; i++) {
+                if (vecout[i] != i) {
+                    errs++;
+                    if (errs < 10) {
+                        fprintf( stderr, "vecout[%d]=%d\n",
+                                 i, (int)vecout[i] );
+                    }
+                }
+            }
+            free( vecout );
+        }
 	free( displs );
 	free( recvcounts );
 	MTestFreeComm( &comm );
