@@ -1416,6 +1416,30 @@ dnl    AC_DEFINE(HAVE_PENTIUM_ASM, 1,[Define if using asm() on a system with an 
 dnl AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 dnl
 dnl
+dnl check for IA64
+dnl 
+if test "$ac_cv_prog_gcc" = "yes" ; then
+AC_MSG_CHECKING([for gcc __asm__ and IA64 xchg4 instruction])
+AC_TRY_RUN([
+unsigned long _InterlockedExchange(volatile void *ptr, unsigned long x)
+{
+   unsigned long result;
+   __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result)
+       : "r" (ptr), "r" (x) : "memory");
+   return result;
+}
+int main(int argc, char *argv[])
+{
+long val = 1;
+volatile long *p = &val;
+long oldval = _InterlockedExchange(p, (unsigned long)2);
+return (oldval == 1 && val == 2) ? 0 : -1;
+}
+], AC_MSG_RESULT(yes)
+   AC_DEFINE(HAVE_GCC_AND_IA64_ASM, 1,[Define if using gcc on a system with an IA64 class chip]), 
+AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
+fi
+dnl
 dnl Check for support of enable-coverage.  Put this near the end of the tests
 dnl because the coverage options may affect the other tests.
 if test "$enable_coverage" = "yes" ; then
