@@ -124,6 +124,9 @@
 				RelativePath=".\src\ch3_cancel_send.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_comm_spawn.c">
+			</File>
+			<File
 				RelativePath=".\src\ch3_describe_states.c">
 			</File>
 			<File
@@ -173,9 +176,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_request.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\util\dbg\dbg_printf.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_abort.c">

@@ -231,7 +231,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\shm\include,..\..\mpid\common\datatype"
+				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\shm\include,..\..\mpid\common\datatype,..\..\mpid\common\locks"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -449,7 +449,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\shm\include,..\..\mpid\common\datatype"
+				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\shm\include,..\..\mpid\common\datatype,..\..\mpid\common\locks"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
