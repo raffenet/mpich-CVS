@@ -95,6 +95,10 @@ dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
 dnlD*/
 AC_DEFUN(PAC_ARG_MPI_TYPES,[
+AC_SUBST(CC)
+AC_SUBST(CXX)
+AC_SUBST(F77)
+AC_SUBST(F90)
 AC_ARG_WITH(mpich,
 [--with-mpich=path  - Assume that we are building with MPICH],[
 save_PATH="$PATH"
@@ -110,6 +114,12 @@ CC="$MPICC"
 AC_PATH_PROG(MPIF77,mpif77)
 TESTF77=${F77-f77}
 F77="$MPIF77"
+AC_PATH_PROG(MPIF90,mpif90)
+TESTF90=${F90-f90}
+F90="$MPIF90"
+AC_PATH_PROG(MPICXX,mpiCC)
+TESTCXX=${CXX-CC}
+CXX="$MPICXX"
 PATH="$save_PATH"
 ])
 AC_ARG_WITH(ibmmpi,
@@ -117,7 +127,8 @@ AC_ARG_WITH(ibmmpi,
 TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf)
 AC_ARG_WITH(sgimpi,
 [--with-sgimpi    - Use the SGI implementation of MPI],
-TESTCC=${CC:=cc}; TESTF77=${F77:=f77})
+TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
+AC_CHECK_LIB(mpi,MPI_Init))
 ])
 dnl
 dnl/*D
