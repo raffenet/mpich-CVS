@@ -24,12 +24,10 @@ int ib_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int ib_make_progress(void);
 int ib_enqueue_read_at_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int ib_enqueue_write_at_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-/*
 int ib_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int ib_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int ib_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int ib_car_dequeue_write(MPIDI_VC *vc_ptr);
-*/
  int ib_reset_car(MM_Car *car_ptr);
  int ib_post_read_pkt(MPIDI_VC *vc_ptr);
  int ib_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr);

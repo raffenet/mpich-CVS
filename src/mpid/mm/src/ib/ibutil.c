@@ -36,3 +36,13 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
 
     return MPI_SUCCESS;
 }
+
+int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*))
+{
+    return MPI_SUCCESS;
+}
+
+int ibu_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*))
+{
+    return MPI_SUCCESS;
+}

@@ -43,7 +43,7 @@ int ib_handle_read_context_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
     return MPI_SUCCESS;
 }
 
-int ib_handle_read(MPIDI_VC *vc_ptr, int num_bytes)
+int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_READ);
     MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ);

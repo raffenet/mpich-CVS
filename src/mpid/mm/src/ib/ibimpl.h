@@ -36,18 +36,18 @@ typedef struct IB_PerProcess {
 
 extern IB_PerProcess IB_Process;
 
-int ib_handle_read(MPIDI_VC *vc_ptr, int num_bytes);
+int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes);
 int ib_handle_read_data(MPIDI_VC *vc_ptr, int num_read);
 int ib_handle_read_ack(MPIDI_VC *vc_ptr, int num_read);
 int ib_handle_read_context_pkt(MPIDI_VC *vc_ptr, int num_read);
-int ib_handle_written(MPIDI_VC *vc_ptr, int num_bytes);
+int ib_handle_written(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes);
 int ib_handle_written_ack(MPIDI_VC *vc_ptr, int num_written);
 int ib_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written);
 int ib_setup_connections();
-/*
 int ib_read_data(MPIDI_VC *vc_ptr);
 int ib_write_aggressive(MPIDI_VC *vc_ptr);
-*/
 int ibu_post_receive(MPIDI_VC *vc_ptr);
+int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*));
+int ibu_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*));
 
 #endif
