@@ -1109,6 +1109,49 @@ int MPID_Flags_waitall( int count, int *(flags[]) )
 }
 
 /*@
+  MPID_Put_sametype - Implement a put operation where the source and 
+  destination datatypes are (roughly) the same
+
++ buf - Pointer to local memory to be copied
+. n   - Count of datatype to move
+. dtype - Datatype describing both the source and destination datatype. 
+  See notes.
+. target_offset - Location of destination 
+. target_rank - Rank of the destination process in the communicator
+. comm - Communicator
+. local_flag - Address of a flag to be set when this call is locally complete.
+- target_flag - This is an id of a flag at the target process.  This value
+  must have been specified by the target process in a previous communication
+  (either with 'MPID_Put' or 'MPID_Rhc').  A value of '0' indicates no
+  target completion flag.
+  Notes:
+  This routine allows the efficient implementation of strided copies, where
+  both the origin and the target have the same strides.  
+
+  Question:
+  We may want to generalize this to two related types, where there are 
+  only a few differences between the datatypes.  For example, both are
+  strided types, but with different strides.  Or both are indexed types, but
+  with different offset arrays.  This does not support the general case,
+  but it does support an important special case, such as the halo exchange 
+  operation, without requiring an intermediate contiguous buffer.  
+
+  We may also want to restrict this to strided types, instead of sametype.
+  My reason for picking sametype is that this allows slighly more complex 
+  datatypes, such as a 2-d face of a 3-d cube.
+
+  Do we want 'Put_contig_to_general' and 'Put_general_to_contig' so we can 
+  implement the general case?
+
+  Module:
+  Communication
+  @*/
+int MPID_Putsametype( const void *origin_buf, int n, MPID_Datatype *dtype,
+		      MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
+		      volatile int *local_flag, MPI_Aint target_flag )
+{}
+
+/*@
   MPID_Flags_testall - .
 
   Module:
@@ -1222,6 +1265,36 @@ int MPID_Get_contig( void * origin_buf, int n,
 	      volatile void *local_flag, MPI_Aint target_flag )
 {
 }
+
+/*@
+  MPID_Get_sametype - Implement a get operation where the source and 
+  destination datatypes are (roughly) the same
+
++ buf - Pointer to local memory to be to hold fetched data
+. n   - Count of datatype to move
+. dtype - Datatype describing both the source and destination datatype. 
+  See notes.
+. target_offset - Location of destination 
+. target_rank - Rank of the destination process in the communicator
+. comm - Communicator
+. local_flag - Address of a flag to be set when this call is locally complete.
+- target_flag - This is an id of a flag at the target process.  This value
+  must have been specified by the target process in a previous communication
+  (either with 'MPID_Put' or 'MPID_Rhc').  A value of '0' indicates no
+  target completion flag.
+  Notes:
+  This routine allows the efficient implementation of strided copies, where
+  both the origin and the target have the same strides.  
+
+  See the discussion under 'MPID_Put_sametype'.
+
+  Module:
+  Communication
+  @*/
+int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
+		      MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
+		      volatile int *local_flag, MPI_Aint target_flag )
+{}
 
 /*@
    MPID_Rhcv - A vector version of 'MPID_Rhc'
@@ -2935,7 +3008,7 @@ int MPID_Err_create_code( int class, const char *generic_msg,
   This routine is needed to implement 'MPI_Add_error_string'
  
   Module:
- Error
+  Error
 @*/
 int MPID_Err_set_msg( int code, const char *msg_string )
 {}
@@ -3124,6 +3197,66 @@ int MPID_Err_get_string( int code, char *msg, int msg_len )
   Module:
   Error
   D*/
+
+/*@
+  MPID_Err_link - Indicate an error on a communication link
+
+  Input Parameters:
++ comm - Communicator on which failure was discovered.  If none, use
+  'MPI_COMM_NULL'
+. rank - Rank in 'comm' of failed link.  Ignored if 'comm' is 'MPI_COMM_NULL'.
+. lpid - Local process id of failed link.  Required.
+- is_fatal - True if the error is not recoverable, false otherwise.  See notes.
+
+  Notes:
+  This routine should be called by the ADI when it discovers that a 
+  communication link to another process has failed in a non-recoverable way.
+  This routine is used to provide a consistent hook for supporting 
+  fault-tolerance in an MPI implementation.  
+
+  The value 'is_fatal' is used to indicate whether the ADI is able to recover 
+  from this error.  If 'is_fatal' is true, 'MPID_Err_link' should not return 
+  but should invoke 'MPID_Abort'.
+
+  Question:
+  If 'is_fatal' is true, how do we pass error messages back to the 
+  environment?  Should we pass an error code to this routine?  Should it 
+  return instead, allowing the routine that called it to call abort?
+  Is the rationale for calling it that it may want to help take down 
+  other processes (or at least notify them of failure)?
+
+  Module:
+  Error-handling
+  @*/
+int MPID_Err_link( MPID_Comm *comm, int rank, MPID_Lpid lpid, 
+		   int is_fatal )
+{}
+
+/*@
+  MPID_Err_partner - Indicate an error has been detected on a member of 
+  a communicator.
+
+  Input Parameters:
++ comm - Communicator on which failure was discovered.
+. rank - Rank in 'comm' of a process with a failed link. 
+- is_fatal - True if the error is not recoverable, false otherwise.  See notes.
+
+  Notes:
+  This routine is called when the ADI discovers that a communicator has become
+  invalid because some process in the communicator has lost contact with 
+  another process in the communicator.  Typically, the process will receive
+  this information through a remote handler invocation ('MPID_Rhcv') from
+  another process.
+
+  Module:
+  Error-handling
+
+  See also:
+  MPID_Err_link
+
+  @*/
+int MPID_Err_partner( MPID_Comm *comm, int rank, int is_fatal )
+{}
 
 /*@
   MPICH_Quiet - Call a user-specified function when a communicator is

@@ -90,6 +90,9 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   The appropriate element of this union is selected by using the language
   field of the 'keyval'.
 
+  Question:
+  Do we want to create typedefs for the various functions?
+
   Module:
   Attribute
 
@@ -511,6 +514,10 @@ typedef struct {
   the value needs only be unique relative to the processes that can share in 
   communication.  In other words, only the tuple (source/destination, 
   context_id) must identify a unique communicator at each MPI process.
+
+  For fault tolerance, do we want to have a standard field for communicator 
+  health?  For example, ok, failure detected, all (live) members of failed 
+  communicator have acked.
   S*/
 typedef struct { 
     volatile int ref_count;
@@ -556,10 +563,12 @@ typedef struct {
      */
 } MPID_Win;
 
-/* The max datatype depth is the maximum depth of the stack used to 
+/* 
+   The max datatype depth is the maximum depth of the stack used to 
    evaluate datatypes.  It represents the length of the chain of 
    datatype dependencies.  Defining this and testing when a datatype
-   is created removes a test for the datatype evaluation loop. */
+   is created removes a test for the datatype evaluation loop. 
+ */
 #define MPID_MAX_DATATYPE_DEPTH 8
 
 typedef struct {
@@ -613,11 +622,12 @@ typedef struct {
      }
   }
 .ve 
-  This may look a little bit messy (and not all of the code is here), but it 
-  shows how 'valid_sp' is used to 
-  avoid recopying the information on a datatype in the non-struct case.
-  For example, a vector of vector has the datatype description read
-  only once, not once for each count of the outer vector.
+
+  This may look a little bit messy (and not all of the code is here),
+  but it shows how 'valid_sp' is used to avoid recopying the
+  information on a datatype in the non-struct case.  For example, a
+  vector of vector has the datatype description read only once, not
+  once for each count of the outer vector.
 
   Module:
   Segment
@@ -730,6 +740,85 @@ typedef struct {
    /* other, device-specific information */
    } MPID_Hid_Cancel_t;
 
+/*
+ * Other Datastructures
+ */
+/*E
+  MPID_Op_kind - Enumerates types of MPI_OP types
+
+  Notes:
+  These are needed for implementing 'MPI_Accumulate', since only predefined
+  operations are allowed for that operation.  
+
+  A gap in the enum values was made allow additional predefine operations
+  to be inserted.  This might include future aditions to MPI or experimental
+  extensions (such as a Read-Modify-Write operation).
+
+  Module:
+  Win  
+  E*/
+typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4, 
+	       MPID_LAND_OP=5, MPID_BAND_OP=6, MPID_LOR_OP=7, MPID_BOR_OP=8,
+	       MPID_LXOR_OP=9, MPID_BXOR_OP=10, MPID_MAXLOC_OP=11, 
+               MPID_MINLOC_OP=12, MPID_REPLACE_OP=13, 
+               MPID_USER_COMMUTE_OP=20, MPID_USER_OP=21 }
+  MPID_Op_kind;
+
+/*S
+  MPID_User_function - Definition of a user function for MPI_OP types.
+
+  Notes:
+  This includes a 'const' to make clear which is the 'in' argument and 
+  which the 'inout' argument, and to indicate that the 'count' and 'datatype'
+  arguments are unchanged (they are addresses in an attempt to allow 
+  interoperation with Fortran).  It includes 'restrict' to emphasize that 
+  no overlapping operations are allowed.
+
+  We need to include a Fortran version, since those arguments will
+  have type 'MPI_Fint *' instead.  We also need to add a test to the
+  test suite for this case; in fact, we need tests for each of the handle
+  types to ensure that the transfered handle works correctly.
+
+  This is part of the collective module because user-defined operations
+  are valid only for the collective computation routines and not for 
+  RMA accumulate.
+
+  Yes, the 'restrict' is in the correct location.  C compilers that 
+  support 'restrict' should be able to generate code that is as good as a
+  Fortran compiler would for these functions.
+
+  Question:
+  Should each of these function types have an associated typedef?
+
+  Module:
+  Collective
+  S*/
+typedef union {
+    void (*c_function) ( const void restrict *, void restrict *, 
+			 const int *, const MPI_Datatype * ); 
+    void (f77_function) ( const void restrict *, void restrict *,
+			  const MPI_Fint *, const MPI_Fint * );
+} MPID_User_function;
+
+/*S
+  MPID_Op - MPI_Op structure
+
+  Notes:
+  All of the predefined functions are cummutative.  Only user functions may 
+  be noncummutative, so that property is included in the 'MPID_Op_kind'.
+
+  Operations do not require reference counts because there are no nonblocking
+  operations that accept user-defined operations.  Thus, there is no way that
+  a valid program can free an 'MPI_Op' while it is in use.
+
+  Module:
+  Win
+  S*/
+typedef struct {
+     MPID_Op_kind       kind;
+     MPID_Lang_t        language;
+     MPID_User_function function;
+  } MPID_Op;
 
 /*
  * Section x: Enviroment and Global Values
@@ -740,6 +829,9 @@ typedef struct {
 
   The thread levels are 'define'd rather than enumerated so that they 
   can be used in preprocessor tests.
+
+  Question: 
+  Do we want enumerated values as well?
 
   Module:
   Environment

@@ -714,6 +714,10 @@ This section has not been written yet.  It will cover
 \input StmOverview.tex
 \input Stream-list.tex
 
+\section{Collective}
+%\input CollOverview.tex
+\input Collective-list.tex
+
 \section{Window Objects}
 \input Win-list.tex
 
@@ -784,6 +788,38 @@ return \code{char *} always, and allow the user to interpret the
 message as either \code{char} or \code{wchar_t}.
 
 \input Error-list.tex
+
+\subsection{Error Handling}
+\label{sec:error-handling}
+
+When an error occurs, it may be necessary to take error recovery
+actions.  In many MPI-1 implementations, error actions are often
+limited to (a) return an error code or (b) abort MPI program.
+Case (a) is taken for simple errors such as invalid parameters to a
+routine while case (b) is taken for cases such as communication
+failure.  
+
+While these are acceptable responses to errors in an MPI
+implementation, we would like to support a more flexible error
+handling approach, without adding complexity to all of the code.
+\begin{enumerate}
+\item Local, non-fatal errors.  Return an error code using the error
+code routines.
+\item Local, fatal errors (such as SEGV).  Call \code{MPID_Abort}.
+\item Nonlocal, non-fatal errors.  There are two cases:
+   \begin{enumerate}
+   \item Communication failure to a process.  Call
+       \code{MPID_Err_link}.
+   \item Notification received that communication to a process in a 
+       communicator shared with this process has failed.  Call 
+       \code{MPID_Err_partner}.
+   \end{enumerate}
+\end{enumerate}
+By default, \code{MPID_Err_link} and \code{MPID_Err_partner} simply
+call \code{MPID_Abort}.  However, a ADI implementation that is
+tolerant of communication failure can use these to 
+
+%\input Error-handling-list.tex
 
 \section{Extensions}
 \input Extension-list.tex
