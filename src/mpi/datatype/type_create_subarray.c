@@ -184,7 +184,6 @@ int MPI_Type_create_subarray(int ndims,
 					     oldtype,
 					     &tmp1);
 
-	    MPIDI_Datatype_dot_printf(tmp1, 0, 1);
 	}
 	else {
 	    mpi_errno = MPID_Type_vector(array_of_subsizes[ndims-2],
@@ -194,7 +193,6 @@ int MPI_Type_create_subarray(int ndims,
 					 oldtype,
 					 &tmp1);
 	    
-	    MPIDI_Datatype_dot_printf(tmp1, 0, 1);
 
 	    size = array_of_sizes[ndims-1]*extent;
 	    for (i=ndims-3; i>=0; i--) {
@@ -208,8 +206,6 @@ int MPI_Type_create_subarray(int ndims,
 
 		NMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
-
-		MPIDI_Datatype_dot_printf(tmp1, 0, 1);
 	    }
 	}
 	
