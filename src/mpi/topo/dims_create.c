@@ -126,7 +126,8 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 
  In/Out Parameter:   
 . dims - integer array of size  'ndims' specifying the number of nodes in each 
-dimension  
+ dimension.  A value of 0 indicates that 'MPI_Dims_create' should fill in a
+ suitable value.
 
    Notes:
 
