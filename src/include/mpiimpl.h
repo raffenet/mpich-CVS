@@ -322,6 +322,92 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
 #define MPID_Keyval_get_ptr(a,ptr)     MPID_Get_ptr(Keyval,a,ptr)
 
+
+/* Note: Probably there is some clever way to build all of these from a macro.
+ */
+#define MPID_Datatype_get_size_macro(a,__size)                          \
+do {                                                                    \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            __size = ((MPID_Datatype *) ptr)->size;                     \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            __size = ((MPID_Datatype *) ptr)->size;                     \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        case HANDLE_KIND_BUILTIN:                                       \
+        default:                                                        \
+            __size = MPID_Datatype_get_size(a);                         \
+            break;                                                      \
+    }                                                                   \
+} while (0)
+
+#define MPID_Datatype_get_loopdepth_macro(a,__depth)                    \
+do {                                                                    \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        case HANDLE_KIND_BUILTIN:                                       \
+        default:                                                        \
+            __depth = 0;                                                \
+            break;                                                      \
+    }                                                                   \
+} while (0)
+#define MPID_Datatype_get_loopptr_macro(a,__lptr)                       \
+do {                                                                    \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            __lptr = ((MPID_Datatype *) ptr)->opt_loopinfo;             \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            __lptr = ((MPID_Datatype *) ptr)->opt_loopinfo;             \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        case HANDLE_KIND_BUILTIN:                                       \
+        default:                                                        \
+            __lptr = 0;                                                 \
+            break;                                                      \
+    }                                                                   \
+} while (0)
+        
+#define MPID_Datatype_get_extent_macro(a,__extent)                      \
+do {                                                                    \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            __extent = ((MPID_Datatype *) ptr)->extent;                 \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            __extent = ((MPID_Datatype *) ptr)->extent;                 \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        case HANDLE_KIND_BUILTIN:                                       \
+        default:                                                        \
+            __extent = MPID_Datatype_get_size(a);  /* same as size */   \
+            break;                                                      \
+    }                                                                   \
+} while (0)
+
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
