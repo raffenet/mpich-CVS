@@ -44,8 +44,14 @@ dist:
 	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D 'now' mpich2all ) ;\
 	fi	
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
-	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles )
-	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib )
+	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles --without-codecheck )
+	(cp -r tmpdir/${PACKAGE}-${VERSION} tmpdir2)
+	(cd tmpdir2 && ./configure && make mandoc && make htmldoc && make latexdoc )
+	cp -r tmpdir2/man tmpdir/${PACKAGE}-${VERSION}/man
+	cp -r tmpdir2/www tmpdir/${PACKAGE}-${VERSION}/www
+	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-${VERSION}/doc
+	-rf -rf tmpdir2
+	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib --without-codecheck )
 	(cd tmpdir/${PACKAGE}-${VERSION}/doc && /bin/rm -rf notes )
 	(cd tmpdir/${PACKAGE}-${VERSION}/doc/adi3 && make )
 	(cd tmpdir/${PACKAGE}-${VERSION}/doc/mpich2 && make )
