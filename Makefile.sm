@@ -84,7 +84,7 @@ dist-with-version:
 	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2all >cvsexp.log 2>&1 ) ;\
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
-	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles --with-codecheck=-distcheck )
+	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
 	cp -r tmpdir/${PACKAGE}-${version} tmpdir2
 	rm -f manlog.txt
 	( cd tmpdir2 && ./configure && ${MAKE} mandoc && ${MAKE} htmldoc && ${MAKE} latexdoc ) >manlog.txt 2>&1
