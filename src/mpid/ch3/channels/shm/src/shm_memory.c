@@ -302,7 +302,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     /*if (nRank == 0) pLastAddr = malloc(1024000); */
     if (g_bGetMemSyncCalled)
     {
-        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**GetMemTwice", "**GetMemTwice"); /*"Error: Global shared memory initializer called more than once.\n");*/
+        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**GetMemTwice", 0); /*"Error: Global shared memory initializer called more than once.\n");*/
     }
     g_bGetMemSyncCalled = TRUE;
     if (nTotalSize < 1)
