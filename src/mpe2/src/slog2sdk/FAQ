@@ -34,3 +34,14 @@ Frequent Asked Question and Anwser:
    or up, then launch Jumpshot-4 in native Windows environment by clicking
    on the lib/jumpshot_launcher.jar.  The Java Virtual Machine's launch 
    parameters can be modified in $HOME/.jumpshot_launcher.conf.
+
+4, When I view my logfile in Jumpshot-4, I see there are legend entries named
+   as UnknownType-INDEX.  What do these legends stand for ?
+
+   Legends that are named as UnknownType-INDEX are Category of drawables
+   that are undefined in the logfile.  If it is a clog converted slog2 file,
+   the unknown categories could correspond to MPI states if MPI_Finalize()
+   did not exit/finish correctly during profiling.  If you do see all the
+   MPI categories defined in the Legend window, then the unknown categories
+   would most likely refer to the user-defined states whose definitions
+   are supplied in the user code.

@@ -47,3 +47,12 @@ of TRACE-API in trace_sample/
         in mind.  The launcher will launch jumpshot with some better option
         than JVM's standard options.  User can modify those options in 
         $HOME/.jumpshot_launcher.conf
+
+10/19/03 force jumpshot launcher to use javaw.exe instead of java.exe to launch
+         jumpshot.
+
+11/1/03  added more forgiving features in logfile convertors.  The new features
+         will allow logfile to be viewable by jumpshot even when the
+         corresponding category is undefined.  In that case, the category is
+         assumed to be a State category with name UnknownType-INDEX where INDEX
+         is the category index that defines the drawable.
