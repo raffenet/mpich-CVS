@@ -44,7 +44,8 @@
 */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Scatter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Scatter ( 
 	void *sendbuf, 
 	int sendcnt, 
 	MPI_Datatype sendtype, 
@@ -430,7 +431,8 @@ PMPI_LOCAL int MPIR_Scatter (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Scatter_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Scatter_inter ( 
 	void *sendbuf, 
 	int sendcnt, 
 	MPI_Datatype sendtype, 

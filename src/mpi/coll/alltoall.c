@@ -64,7 +64,8 @@
 */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Alltoall( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoall( 
     void *sendbuf, 
     int sendcount, 
     MPI_Datatype sendtype, 
@@ -590,7 +591,8 @@ PMPI_LOCAL int MPIR_Alltoall(
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Alltoall_inter( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoall_inter( 
     void *sendbuf, 
     int sendcount, 
     MPI_Datatype sendtype, 

@@ -41,7 +41,8 @@
    End Algorithm: MPI_Alltoallw
 */
 /* begin:nested */
-PMPI_LOCAL int MPIR_Alltoallw ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoallw ( 
 	void *sendbuf, 
 	int *sendcnts, 
 	int *sdispls, 
@@ -155,7 +156,8 @@ PMPI_LOCAL int MPIR_Alltoallw (
 }
 /* end:nested */
 
-PMPI_LOCAL int MPIR_Alltoallw_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoallw_inter ( 
 	void *sendbuf, 
 	int *sendcnts, 
 	int *sdispls, 

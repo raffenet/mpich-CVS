@@ -72,7 +72,8 @@
 */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Reduce_scatter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Reduce_scatter ( 
     void *sendbuf, 
     void *recvbuf, 
     int *recvcnts, 
@@ -893,7 +894,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Reduce_scatter_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Reduce_scatter_inter ( 
     void *sendbuf, 
     void *recvbuf, 
     int *recvcnts, 

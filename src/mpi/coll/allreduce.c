@@ -87,7 +87,8 @@ MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
 */
 
 
-PMPI_LOCAL int MPIR_Allreduce ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Allreduce ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -560,7 +561,7 @@ PMPI_LOCAL int MPIR_Allreduce (
 
 
 #ifdef USE_OLD
-PMPI_LOCAL int MPIR_Allreduce ( 
+int MPIR_Allreduce ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -827,7 +828,8 @@ PMPI_LOCAL int MPIR_Allreduce (
 }
 #endif
 
-PMPI_LOCAL int MPIR_Allreduce_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Allreduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 

@@ -106,7 +106,7 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 
    This is an intracommunicator barrier only!
 */
-PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
+int MPIR_Barrier( MPID_Comm *comm_ptr )
 {
     int size, rank;
     int twon_within, n2, remaining, gap, partner;
@@ -201,7 +201,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 #endif
 
 
-PMPI_LOCAL int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 {
     int rank, mpi_errno, i, root;
     MPID_Comm *newcomm_ptr = NULL;

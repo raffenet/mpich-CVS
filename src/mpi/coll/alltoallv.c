@@ -42,7 +42,8 @@
 */
  
 /* begin:nested */
-PMPI_LOCAL int MPIR_Alltoallv ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoallv ( 
 	void *sendbuf, 
 	int *sendcnts, 
 	int *sdispls, 
@@ -135,7 +136,8 @@ PMPI_LOCAL int MPIR_Alltoallv (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Alltoallv_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Alltoallv_inter ( 
     void *sendbuf, 
     int *sendcnts, 
     int *sdispls, 

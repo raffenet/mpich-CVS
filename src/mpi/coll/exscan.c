@@ -67,7 +67,8 @@
 */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Exscan ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Exscan ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 

@@ -404,7 +404,8 @@ int MPIR_Gather (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Gather_inter ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Gather_inter ( 
 	void *sendbuf, 
 	int sendcnt, 
 	MPI_Datatype sendtype, 

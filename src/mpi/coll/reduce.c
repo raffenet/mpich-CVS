@@ -72,7 +72,8 @@
 */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Reduce ( 
+/* not declared static because a machine-specific function may call this one in some cases */
+int MPIR_Reduce ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -651,7 +652,7 @@ PMPI_LOCAL int MPIR_Reduce (
 
 /* begin:nested */
 /* Needed in intercommunicator allreduce */
-/* PMPI_LOCAL */int MPIR_Reduce_inter ( 
+int MPIR_Reduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
