@@ -1044,6 +1044,10 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     pWorld->nApps     = 0;
     pWorld->worldNum  = pUniv.nWorlds++;
 
+
+    /* FIXME: each mcmd=spawn should create an app.  When all apps
+       are present, then then can be linked to a world */
+
     /* Create an initial app */
     app = (ProcessApp *)MPIU_Malloc( sizeof(ProcessApp) );
     app->myAppNum  = 0;
@@ -1160,11 +1164,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    /* FIXME: Unrecognized subcommand */
 	}
     }	
-    
-    /* Now that we've read the commands, invoke the user's spawn command */
-    pWorld->nApps ++;
-    /* FIXME: Add to end */
-    pWorld->apps  = app;
+
     if (app->nArgs > 0) {
 	app->args  = (const char **)MPIU_Malloc( app->nArgs * sizeof(char *) );
 	for (i=0; i<app->nArgs; i++) {
@@ -1173,6 +1173,13 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    args[i]      = 0;
 	}
     }
+
+    /* FIXME: end of read mcmd=spawn for an app */
+
+    /* Now that we've read the commands, invoke the user's spawn command */
+    pWorld->nApps ++;
+    /* FIXME: Add to end */
+    pWorld->apps  = app;
 
     if (totspawns == spawnnum) {
 	PMISetupNewGroup( pWorld->nProcess, kvs );
