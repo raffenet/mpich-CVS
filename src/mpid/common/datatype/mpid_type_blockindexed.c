@@ -380,6 +380,12 @@ int MPID_Dataloop_create_blockindexed(int count,
      * is not zero, store it as a blockindexed (blklen == 1) of a vector.
      */
 
+    /* TODO: optimization:
+     *
+     * if a blockindexed of a contig, absorb the contig into the blocklen
+     * parameter and keep the same overall depth
+     */
+
     /* otherwise storing as a blockindexed dataloop */
 
     /* Q: HOW CAN WE TELL IF IT IS WORTH IT TO STORE AS AN

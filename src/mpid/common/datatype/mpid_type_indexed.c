@@ -403,6 +403,12 @@ int MPID_Dataloop_create_indexed(int count,
 
     /* note: blockindexed looks for the vector optimization */
 
+    /* TODO: optimization:
+     *
+     * if an indexed of a contig, absorb the contig into the blocklen array
+     * and keep the same overall depth
+     */
+
     /* otherwise storing as an indexed dataloop */
 
     new_loop_sz = sizeof(struct MPID_Dataloop) + 
