@@ -851,11 +851,11 @@ int ibu_destroy_set(ibu_set_t set)
     return status;
 }
 
-int ibui_buffer_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
+int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
 
-    MPIU_dbg_printf("ibui_buffer_read\n");
+    MPIU_dbg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
 
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
@@ -1122,12 +1122,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
-	    MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);
+	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
-		ibui_buffer_read(ibu, mem_ptr, num_bytes);
+		ibui_buffer_unex_read(ibu, mem_ptr, num_bytes);
 		break;
 	    }
+	    MPIU_dbg_printf("ibu_wait: read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes);
 	    ibu->read.total += num_bytes;
 	    if (ibu->read.use_iov)
 	    {
