@@ -1,6 +1,8 @@
 #ifndef __MPIDEXT32SEGMENT_H
 #define __MPIDEXT32SEGMENT_H
 
+#include "mpichconf.h"
+
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
