@@ -83,16 +83,18 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		{
 		    int num_moved = 0;
 		    int num_left = 0;
+		    int cur_pos;
 
-		    // reset colors
+		    // blacken the recursion colors
 		    for (i=0; i<pArg->pDoc->m_pInput->nNumRanks; i++)
 		    {
 			for (j=0; j<pArg->pDoc->m_pInput->pNumEventRecursions[i]; j++)
 			    pArg->ppUniRecursionColor[i][j] = RGB(0,0,0);
 		    }
 
-		    // draw to the left
-		    int cur_pos = (big_rect.left + big_rect.right) / 2;
+		    // move to the left
+		    dLeft = 0.0;
+		    cur_pos = (big_rect.left + big_rect.right) / 2;
 		    while (cur_pos > big_rect.left)
 		    {
 			if (RLOG_GetPreviousGlobalEvent(pArg->pDoc->m_pInput, &event) != 0)
@@ -103,6 +105,19 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 			    break;
 		    }
 		    dLeft = event.start_time;
+
+		    // prime the color pump
+		    for (i=0; i<50; i++)
+		    {
+			if (RLOG_GetPreviousGlobalEvent(pArg->pDoc->m_pInput, &event) != 0)
+			    break;
+		    }
+		    for (; i>0; i--)
+		    {
+			if (RLOG_GetNextGlobalEvent(pArg->pDoc->m_pInput, &event) != 0)
+			    break;
+			pArg->ppUniRecursionColor[event.rank][event.recursion] = pArg->pDoc->GetEventColor(event.event);
+		    }
 
 		    // draw to the right
 		    while (cur_pos < big_rect.right)
