@@ -4,6 +4,7 @@ EXTERNAL_LIBS = m
 LDADD = -L ../../../lib
 DEPADD = ../../../lib/libmpich.a
 #
-cpi_SOURCES = cpi.c test1.c
+cpi_SOURCES = cpi.c
+test1_SOURCES = test1.c
 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
