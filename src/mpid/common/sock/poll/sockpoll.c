@@ -227,7 +227,7 @@ int sock_listen(sock_set_t sock_set, void * user_ptr, int * port, sock_t * sockp
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons(0);
+    addr.sin_port = htons((short) *port);
     rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
     if (rc == -1)
     {
