@@ -130,6 +130,9 @@ if test "X$ac_mpi_type" = "X" ; then
         ac_mpi_type=unknown
     fi
 fi
+if test -z "$ac_mpi_type" -a "$pac_lib_mpi_is_building" = "yes" ; then
+    ac_mpi_type="mpich"
+fi
 case $ac_mpi_type in
 	mpich)
         dnl 
