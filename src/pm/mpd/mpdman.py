@@ -676,6 +676,7 @@ def mpdman():
                             mpd_send_one_msg(conSocket,msgToSend)
                             msg = mpd_recv_one_msg(conSocket)
                             exec('%s = %s' % (msg['kvsname'],msg['kvs']))  # get parentkvs
+                            default_kvs['parent_kvsname'] = msg['kvsname']
                             exchanged_kvss = 1
                     elif parsedMsg['cmd'] == 'get':
                         kvsname = parsedMsg['kvsname']
