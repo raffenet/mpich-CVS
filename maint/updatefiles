@@ -101,6 +101,7 @@ fi
 #
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
 # previous versions of autoconf (!!), even 2.52 (!!!).  
+acIncDirFlag=-l
 if test ! -d .tmp ; then
     mkdir .tmp 2>&1 >/dev/null
 fi
@@ -110,16 +111,22 @@ AC_PREREQ(2.57)
 EOF
 if (cd .tmp && autoconf >/dev/null 2>&1 ) ; then 
     cat <<EOF
+
 You either do not have autoconf in your path or you may have autoconf
 version 2.57 or later.  Autoconf 2.57 is not compatible with previous
 versions of autoconf, including autoconf 2.52 .  You can use
      autoconf --version
 to see the version of autoconf (unfortunately, there is no standard 
 format for the version output and it changes between autoconf versions).
+
+This version of updatefiles attempts to workaround the incompatibilities
+in autoconf 2.57, but problems remain.
+
 EOF
     error_summary="$error_summary\
 Your do not have a usable version of autoconf (either no version found\
 or version 2.57 or later"
+    acIncDirFlag=-B
 fi
 rm -rf .tmp
 
@@ -140,7 +147,7 @@ if [ $do_bindings = "yes" ] ; then
 
     if [ $build_f77 = "yes" ] ; then
 	echo "Building Fortran 77 interface"
-	(cd src/binding/f77 ; ./buildiface )
+	(cd src/binding/f77 && ./buildiface )
     fi
     if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
 	build_cxx=yes
@@ -153,9 +160,9 @@ if [ $do_bindings = "yes" ] ; then
 	echo "Building C++ interface"
     #    File code still needs work
     #    if [ ! -d src/mpi/romio ] ; then
-	    otherarg="-noromio"
+#	    otherarg="-noromio"
     #    fi
-	(cd src/binding/cxx ; ./buildiface -nosep $otherarg )
+	(cd src/binding/cxx && ./buildiface -nosep $otherarg )
     fi
 fi
 #
@@ -316,7 +323,7 @@ fi
 #    sed -e 's/.*(0-9\.[0-9]*).*/\1/'`
 if maint/simplemake -common=maint/makedefs \
     -docnamedefs='${master_top_srcdir}/maint/docnotes' \
-    -autoconf="-l ROOTDIR/confdb" \
+    -autoconf="$acIncDirFlag ROOTDIR/confdb" \
     -libdir='${MPILIBNAME}'=ROOTDIR/lib $otherargs \
     Makefile.sm ; then
     :
@@ -392,17 +399,18 @@ in maint/ac2.13.diff for a possible patch"
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    echo $dir
-		    (cd $dir ; \
-		     autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
-		     autoconf -l ../../../confdb configure2.in > configure )
+		    (cd $dir && \
+		     autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
+		     autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
 		fi
 	        continue
 	    fi
 	    # The make -q checks whether the target is upto date first;
 	    # if it isn't, we remake it.
-            (cd $dir ; rm -f mf.tmp ; \
+            (cd $dir && rm -f mf.tmp ; \
 	    sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
 		-e "s%@srcdir@%.%g" \
+		-e '/include .deps/d' \
 		-e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
 		if make -q -f mf.tmp configure 2>&1 >/dev/null ; then \
             : ; else \
@@ -411,7 +419,7 @@ in maint/ac2.13.diff for a possible patch"
 	    )
 	    #
             # Under cygwin, sometimes (?) configure ends up containing \^M
-	    # (that <ctrl>-M).  We may need to add this sed step
+	    # (that's <ctrl>-M).  We may need to add this sed step
 	    # sed -e '/"\"/d' -e 's/\//g'
 	    # (the first removes case statements on \^M, the second
 	    # removes the \^M from the ac_config_files statement
@@ -420,6 +428,11 @@ in maint/ac2.13.diff for a possible patch"
 		echo "In directory $dir"
 		exit 1
 	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
+		rm -f c.tmp 
+		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		rm -f $dir/configure
+		mv c.tmp $dir/configure
+	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
 		rm -f c.tmp 
 		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		rm -f $dir/configure

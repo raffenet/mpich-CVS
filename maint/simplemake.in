@@ -13,7 +13,8 @@ $commonmake = "";    # Common entries for each generated Makefile
 $maint_targets = 1;  # set to 0 for distribution versions
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
-$do_dependencies = 1;# set to 1 to attempt to generate dependency information
+$do_dependencies = dynamic; # set to no, static, or dynamic to attempt
+                            # to generate dependency information 
 
 # Set the names for the autoconf and autoheader program, along with 
 # the optional args and the argument used to specify the include dir for
@@ -357,11 +358,14 @@ foreach $_ (@ARGV) {
 	if ($val eq "no") { $vpath_config = 0; } 
 	else { $vpath_config = 1; }
     }
+    elsif (/-depend=static/) {
+	$do_dependencies = "static";
+    }
     elsif (/-depend/) {
-	$do_dependencies = 1;
+	$do_dependencies = "dynamic";
     }
     elsif (/-nodepend/) {
-	$do_dependencies = 0;
+	$do_dependencies = "no";
     }
     elsif (/-rootdir=(.*)$/) {
         $rootdirpath = $1;
@@ -392,14 +396,14 @@ foreach $_ (@ARGV) {
 
 
 # Check that gcc is available if we need it
-if ($do_dependencies) {
+if ($do_dependencies eq "static") {
     if ($make_depend eq "gcc -MM") { 
 	# This was | 2>&1 but the redirect should go before the pipe.
 	if (open (TFD, "gcc --version 2>&1 |" )) {
 	    close TFD;
 	}
 	else {
-	    $do_dependencies = 0;
+	    $do_dependencies = "no";
 	}
     }
     # insert check here.  Perhaps we should try #include <stdio.h>?
@@ -725,8 +729,13 @@ sub WriteMfile {
     # a more general sense of "at the top" for all areas.
     $doc_attop = 0;
 
-    if ($do_dependencies) {
-	&TargetDependencies;
+    if ($do_dependencies ne "no") {
+	if ($do_dependencies eq "static") {
+	    &TargetDependenciesStatic;
+	}
+	else {
+	    &TargetDependenciesDynamic;
+	}
     }
 
     # Tags
@@ -1002,6 +1011,9 @@ sub DefaultRules {
 	&FindWorkingAutoconf ;
 	# Use autoheader only if AC_CONFIG_HEADER is in the configure file
 	# 
+	# With Autoconf 2.57, there is a "cache" that like all automake
+	# caches, isn't reliable and must be removed 
+	&print_make_longline( FD, "\tif [ -d autom4te.cache ] ; then rm -rf autom4te.cache ; fi$newline" );
 	if ($configure_has_config_headers ne "no") {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoheader_prog $aargs && \\$newline\t$autoconf $aargs )" );
 	}
@@ -1570,11 +1582,15 @@ sub TargetClean {
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
 	print FD "\t-rm -f $rmfile$newline";
+	# Remove the configure cache that autoconf 2.57 adds
+	print FD "\t-rm -rf autom4te.cache$newline";
     }
     if ($configure_has_config_headers ne "no") {
 	# Add the AC_CONFIG_HEADER file, if any.
 	print FD "\t-rm -f $configure_has_config_headers$newline";
     }
+    &DistCleanDependencies;
+
     if ($distcleanfiles ne "") {
 	print FD "\t-rm -f $distcleanfiles$newline";
     }
@@ -1588,7 +1604,7 @@ sub TargetClean {
 	}
 	print FD "$newline";
 	&RecursiveOp( "maintainerclean" );
-	# Remove The file that simplemake creates
+	# Remove the file that simplemake creates
 	print FD "\t-rm -f $output_name$newline";
 	# eventually, this should also invoke distclean, but it must
 	# do that only once (not recursively) and only after all other
@@ -1608,6 +1624,7 @@ sub TargetClean {
 	    }
 	    print FD "$newline";
 	}
+	# We also need to remove configure and autom4ate/ if present
     }
 }
 
@@ -1716,6 +1733,11 @@ sub TargetProfileLibraries {
 	    print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
 	    print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
 	    print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file \$\${bname}.o ; done;)$newline";
+	    # We should try to use a single invocation of ar instead of
+	    # a separate one for each file, since ar is usually O(length) 
+	    # for a single file, so this approach is O(length*nfiles).
+	    # The only reason not to do this is that a particularly long
+	    # command line may exceed commandline length limits.
 	    print FD "\tfor file in .tmp/*.o ; do \\$newline";
 	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
 	    if ($ranliblib) { 
@@ -2285,8 +2307,11 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     -distrib         - Turn off all maintenance targets (make a distribution\
                        version)\
     -vpath=[yes|no]  - Create VPATH targets\
-    -depend          - Generate dependency information\
+\
+    -depend          - Generate dependency information as a make target\
+    -depend=static   - Generate dependency information when simplemake runs\
     -nodepend        - Do not generate dependency information\
+\
     -rootdir=PATH    - Set the root directory for all Makefiles\
     -debug           - Turn on debugging output\
     -dos             - Use DOS-style newlines on output files\
@@ -2357,12 +2382,11 @@ sub AddDependency {
 
 #
 # 
-sub TargetDependencies {
+sub TargetDependenciesStatic {
     print FD "# Dependencies$newline";
     # Libraries first
     foreach $lib (keys(%libraries)) {
         foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
-            $obj = $sourcefile;
             # Get extension
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
@@ -2375,7 +2399,6 @@ sub TargetDependencies {
     # Programs
     foreach $pgm (keys(%programs)) {
 	foreach $sourcefile (split(/\s+/,$programs{$pgm})) {
-            $obj = $sourcefile;
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
 	    # We only know about C for now.
@@ -2384,6 +2407,77 @@ sub TargetDependencies {
 	    }
 	}
     }
+}
+
+#
+# Design:
+# Each source file has an associated file containing dependencies, stored in 
+# a subdirectory .deps
+#    Each source file foo has .deps/foo.Po
+#    The Makefile includes .deps/alldeps
+#
+# Because we want to support VPATH builds, we can't create these in the
+# real source directory, so these directories and files must be created
+# at configure time.
+#
+sub TargetDependenciesDynamic {
+    my $has_sources = 0;
+
+    # First, are there any sources?
+    # a hash in a scalar context is 0 if empty and nonzero otherwise
+    if (scalar(%libraries)) {
+	$has_sources = 1;
+    }
+
+    print FD "# Dependencies$newline";
+    # This definition follows the cone for COMPILE_C
+    if ($has_sources) {
+	print FD "MAKE_DEPEND_C = \@MAKE_DEPEND_C\@ \$(INCLUDES) \$(CPPFLAGS)$newline";
+	print FD "dependencies: .deps/timestamp$newline";
+    }
+    else {
+	print FD "dependencies:$newline";
+    }
+    &RecursiveOp( "dependencies" );
+
+    if ($has_sources) {
+	print FD ".deps/timestamp: ";
+	foreach $lib (keys(%libraries)) {
+	    $sourcefiles = $libraries{$lib};
+	    PrintMakeLongline( FD, "$sourcefiles ", "append" );
+	}
+	# Add Makefile as a dependency, since changes in the Makefile
+	# can change the dependencies (particularly different configure 
+	# choices)
+	PrintMakeLongline( FD, "Makefile", "last" );
+
+	# We always use a "newalldeps" incase there is a failure 
+	# creating the new list of dependency files.
+	print FD "\t-rm -f .deps/newalldeps$newline";
+	foreach $lib (keys(%libraries)) {
+	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		$ext = $sourcefile;
+		$ext =~ s/^.*\.//g;
+		$sourcebasename = $sourcefile;
+		$sourcebasename =~ s/\.\w*$//;
+		if ($ext eq "c") {
+		    print FD "\t\$(MAKE_DEPEND_C) \$(srcdir)/$sourcefile >.deps/$sourcebasename.Po$newline";
+		    print FD "\techo \"include .deps/$sourcebasename.Po\" >>.deps/newalldeps$newline";
+		}
+	    }
+	}
+	print FD "\tif [ -s .deps/newalldeps ] ; then mv -f .deps/newalldeps .deps/alldeps ; fi$newline";
+	print FD "\tdate >.deps/timestamp$newline";
+
+	print FD "include .deps/alldeps$newline";
+    }
+    print FD "# End of Dependencies$newline";
+}
+
+sub DistCleanDependencies {
+    # Eventually, this should output only in Makefiles that have the 
+    # dependencies directory
+    print FD "\trm -rf .deps$newline";
 }
 
 
@@ -2516,6 +2610,19 @@ sub print_make_longline {
     my $FD = $_[0];
     my $line = $_[1];
     my $len = length( $line );
+    &PrintMakeLongline( $FD, $line, "last" );
+}
+
+# New print routines
+# PrintMakeLongline( FD, line, flag ) - line may have spaces, will break
+# as spaces in line.  Flag may be "append" or "last".  line may be empty
+# (to use flag = "last" to terminate.
+sub PrintMakeLongline {
+    my $FD = $_[0];
+    my $line = $_[1];
+    my $flag = $_[2];
+
+    my $len = length( $line );
     if ($linelen + $len + 2 < $maxline) {
 	print $FD $line;
     }
@@ -2525,7 +2632,9 @@ sub print_make_longline {
 	    &print_make_line( $FD, "$token " )
 	}
     }
-    &print_make_endline( $FD );
+    if ($flag eq "last") {
+	&print_make_endline( $FD );
+    }
 }
 
 # Eventually we will use this to generate the profiling targets.
@@ -2655,7 +2764,8 @@ sub TargetGcov {
     print FD "coverage:$newline";
     foreach $lib (keys(%libraries)) {
 	$sourcefiles = $libraries{$lib};
-	print FD "\t-${quietmake}for file in $sourcefiles ; do \\$newline";
+	PrintMakeLongline( FD, 
+	   "\t-${quietmake}for file in $sourcefiles ; do \\", "last" );
 	print FD "\t\tgcov -b -f \$\$file ; done$newline";
     }
     &RecursiveOp( "coverage" );

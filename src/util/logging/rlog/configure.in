@@ -116,6 +116,9 @@ if test -z "$ENABLE_SHLIB" ; then
 fi
 AC_SUBST(CC_SHL)
 AC_SUBST(ENABLE_SHLIB)
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 
 dnl AC_SEARCH_LIBS(socket, socket)
 dnl AC_CHECK_LIB(thread, mutex_init)
