@@ -25,7 +25,7 @@
 #define MAX(x, y)	(((x) > (y))?(x):(y))
 #endif
 
-#define DEFAULT_PORT 7470   /* default por to listen on */
+#define DEFAULT_PORT 7470   /* default port to listen on */
 #define NOVALUE 99999       /* indicates a parameter is as of yet unspecified */
 #define MAX_ITERATIONS 10000 /* maximum 'depth' to look for mandelbrot value */
 #define INFINITE_LIMIT 4.0  /* evalue when fractal is considered diverging */
