@@ -167,6 +167,12 @@ typedef union {
   Module:
   Attribute
 
+  Question:
+  Because this structure contains pointers to user-functions, there is always
+  the danger that a user-error that overwrites the memory locations storing 
+  the function pointers.  Should there be sentinals around either the entire
+  keyval entry or around each function pointer that would be tested before 
+  invoking the function?  
   S*/
 typedef struct {
     int                  id;
