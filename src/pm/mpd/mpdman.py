@@ -766,9 +766,16 @@ def mpdman():
             elif readySocket == conSocket:
                 msg = mpd_recv_one_msg(conSocket)
                 if not msg:
-                    del socketsToSelect[conSocket]
-                    conSocket.close()
-                    conSocket = 0
+                    if conSocket:
+                        del socketsToSelect[conSocket]
+                        conSocket.close()
+                        conSocket = 0
+                    if parentStdoutSocket:
+                        parentStdoutSocket.close()
+                        parentStdoutSocket = 0
+                    if parentStderrSocket:
+                        parentStderrSocket.close()
+                        parentStderrSocket = 0
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
