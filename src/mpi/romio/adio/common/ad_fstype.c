@@ -586,7 +586,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #ifndef ROMIO_NTFS
 # ifdef MPICH2
 	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return *error_code;
+	return;
 # elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NTFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
