@@ -592,6 +592,12 @@ def mpdrun():
 					continue
                             msgToSend = { 'cmd' : 'stdin_goes_to_who',
                                           'stdin_procs' : line.rstrip()[2:] }
+                            print '(gdb) ',
+                        elif gdb and line.startswith('q'):
+                            msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
+                            if manSocket:
+                                mpd_send_one_msg(manSocket,msgToSend)
+                            msgToSend = { 'cmd' : 'stdin_from_user','line' : 'q\n' }
                         if manSocket:
                             mpd_send_one_msg(manSocket,msgToSend)
                     else:

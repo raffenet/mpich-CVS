@@ -92,6 +92,7 @@ def mpdman():
     pmiCollectiveJob = 0
     spawnedCnt = 0
     doingBNR = 0  ## BNR
+    pmiSocket = 0   # obtained in later
 
     if nprocs == 1:  # one-man ring
         lhsSocket = mpd_get_inet_socket_and_connect(host0,port0)  # to myself
@@ -176,7 +177,7 @@ def mpdman():
     (pipe_read_cli_stdout,pipe_write_cli_stdout) = pipe()
     (pipe_read_cli_stderr,pipe_write_cli_stderr) = pipe()
     (pipe_cli_end,pipe_man_end) = pipe()
-    (pmiSocket,pmiSocketClientEnd) = mpd_socketpair()
+    (pmiListenSocket,pmiPort) = mpd_get_inet_listen_socket(myHost,0)
     clientPid = fork()
     if clientPid == 0:
         mpd_set_my_id(gethostname() + '_man_before_exec_client_' + `getpid()`)
@@ -185,7 +186,7 @@ def mpdman():
         listenSocket.close()
         if conSocket:
             conSocket.close()
-        pmiSocket.close()
+        pmiListenSocket.close()
         setpgrp()
 
         close(pipe_write_cli_stdin)
@@ -207,7 +208,7 @@ def mpdman():
 
         clientPgmArgs = [clientPgm] + clientPgmArgs
         cli_environ['PATH'] = environ['MPDMAN_CLI_PATH']
-        cli_environ['PMI_FD'] = str(pmiSocketClientEnd.fileno())
+        cli_environ['PMI_PORT'] = '%s:%s' % (myHost,pmiPort)
         cli_environ['PMI_SIZE'] = str(nprocs)
         cli_environ['PMI_RANK'] = str(myRank)
         cli_environ['PMI_DEBUG'] = str(0)
@@ -219,13 +220,14 @@ def mpdman():
         cli_environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
         cli_environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
         cli_environ['MPD_JRANK'] = str(myRank)                                 ## BNR
-        cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
+        ##### cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
         cli_environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
         errmsg = set_limits(clientPgmLimits)
         if errmsg:
+            pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
 	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
-	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
+	    mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
@@ -233,9 +235,10 @@ def mpdman():
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
+            pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
 	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
-	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
+	    mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         exit(0)
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
@@ -251,11 +254,10 @@ def mpdman():
     # clientStderrFile = fdopen(clientStderrFD,'r')
     socketsToSelect[clientStderrFD] = 1
     clientListenSocket.close()
-    pmiSocketClientEnd.close()
     numWithIO = 2    # stdout and stderr so far
     waitPids = [clientPid]
 
-    socketsToSelect[pmiSocket] = 1
+    socketsToSelect[pmiListenSocket] = 1
 
     # begin setup of stdio tree
     (parent,lchild,rchild) = mpd_get_ranks_in_binary_tree(myRank,nprocs)
@@ -867,6 +869,14 @@ def mpdman():
                         KVSs[spawnedKVSname][preput_key] = preput_val
                 elif parsedMsg['cmd'] == 'finalize':
                     pmiCollectiveJob = 0
+                    # the following lines are present to support a process that runs
+                    # 2 MPI pgms in tandem (e.g. mpish at ANL)
+                    KVSs = {}
+                    KVSs[default_kvsname] = {}
+                    kvs_next_id = 1
+                    jobEndingEarly = 0
+                    pmiCollectiveJob = 0
+                    spawnedCnt = 0
                 elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
                     pmiBarrierInRecvd = 1
                     if myRank == 0  or  holdingPMIBarrierLoop1:
@@ -993,8 +1003,17 @@ def mpdman():
                         mpd_print(1, 'invalid signal from mpd %d' % (signum) )
                 else:
                     mpd_print(1, 'invalid msg recvd on mpdSocket :%s:' % msg )
+            elif readySocket == pmiListenSocket:
+                (pmiSocket,tempConnAddr) = pmiListenSocket.accept()
+                # the following lines are commented out so that we can support a process
+                # that runs 2 MPI pgms in tandem  (e.g. mpish at ANL)
+                ##### del socketsToSelect[pmiListenSocket]
+                ##### pmiListenSocket.close()
+                socketsToSelect[pmiSocket] = 1
             else:
-                mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
+                msg = mpd_recv_one_msg(readySocket)
+                mpd_print(1, 'recvd msg :%s: on unknown socket :%s:' % (msg,readySocket) )
+                del socketsToSelect[readySocket]
     mpd_print(0000, "out of loop")
     # may want to wait for waitPids here
 
