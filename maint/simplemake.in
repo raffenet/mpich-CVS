@@ -1469,7 +1469,11 @@ sub TargetProfileLibraries {
             # Convert to object file
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
-	    if (defined($extrules{"$ext:o"})) {
+	    if ($ext eq "f") { 
+		# Ignore Fortran source files (setbotf.f in mpich2)
+		next;
+	    }
+	    elsif (defined($extrules{"$ext:o"})) {
 		$obj =~ s/\.$ext/\.pf/g;
 	    }
 	    else {

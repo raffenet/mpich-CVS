@@ -48,6 +48,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
     static const char FCNAME[] = "MPI_Win_lock";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_LOCK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK);
     /* Get handles to MPI objects. */

@@ -77,8 +77,13 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-	    
+
+#ifdef LOG_ARROWS
+    /* This isn't the right test, but it is close enough for now */
+    { int sendcount = count, recvcount = count;
     MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
+    }
+#endif
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr(comm, comm_ptr);

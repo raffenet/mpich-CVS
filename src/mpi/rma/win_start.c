@@ -47,6 +47,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     static const char FCNAME[] = "MPI_Win_start";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_START);
 
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_START);
 

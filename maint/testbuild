@@ -1,0 +1,32 @@
+#! /bin/sh
+set -x
+#
+# This is a simple script that makes sure that checkbuilds can be 
+# created and then runs it
+# The cb suffix is for "check build"
+srcdir=/home/gropp/projects/mpich2
+rundir=/sandbox/gropp/cb/mpich2
+mpichtestdir=/sandbox/gropp/cb/mpitest
+
+if [ ! -d $rundir ] ; then 
+    # Assume that we have mkdir -p
+    mkdir -p $rundir
+fi
+if [ ! -d "$rundir/maint" ] ; then
+    mkdir "$rundir/maint"
+fi
+if [ ! -d $mpichtestdir ] ; then
+    mkdir $mpichtestdir
+fi
+(cd $rundir/maint && $srcdir/maint/configure )
+if [ ! -x $rundir/maint/checkbuilds ] ; then
+    echo "Could not build checkbuilds"
+    exit 1
+fi
+#
+#
+$rundir/maint/checkbuilds -rundir=$rundir \
+			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
+			  -tests=mpich \
+			  -xml -maxcount=1
+

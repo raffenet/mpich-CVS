@@ -46,6 +46,7 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
     static const char FCNAME[] = "MPI_Win_set_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_NAME);
     /* Get handles to MPI objects. */

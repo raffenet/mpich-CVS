@@ -55,6 +55,7 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
     static const char FCNAME[] = "MPI_Put";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_PUT);
 
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_PUT);
 

@@ -5,8 +5,12 @@
 #
 # Set default values
 $srcdir  = "/home/gropp/projects/mpich2";
-$instdir = "/sandbox/gropp/mpi2-inst";
+$instdir = "/sandbox/gropp/cb/mpi2-inst";
+# rundir is the directory in which to run the tests.
 $rundir = "";
+$mpich_test_dir = "/sandbox/gropp/cb/mpitest";
+$intel_test_dir = "/sandbox/gropp/cb/MPITEST";
+$mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
 #
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
@@ -19,7 +23,7 @@ $rundir = "";
 		  'internat',
 		  'fast',
 		  'f77',
-		  'cxx',
+#		  'cxx',
 		  'romio',
 		  'coverage',
 		  'strict',
@@ -29,7 +33,7 @@ $rundir = "";
 );
 @with_array = (
 	       'logging;none;rlog;dlog',
-	       'pmi;uni',
+#	       'pmi;uni',
 	       'pm;forker;mpd',
 );
 @env_array = (
@@ -153,14 +157,14 @@ sub RunTest {
     $with_args = "";
     # Chosen *without* replacement.  If an option is chosen twice, 
     # then there will be fewer options
-    $enable_args = &RandArgs( $n_enable, "enable_array", "enable" );
-    $with_args   = &RandArgs ( $n_with, "with_array", "with" );
+    $enable_args = &RandArgs( $n_enable, "enable_array", "enable", "disable" );
+    $with_args   = &RandArgs ( $n_with, "with_array", "with", "without" );
 
     # To set the environment, use the same code to set things up,
     # then process the env array to set the environment
     $env_args    = &RandArgs( $n_env, "env_array", "env" );
     $envset = "";
-    @saveENV = @ENV;
+    %saveENV = %ENV;
     foreach $_ (split(/ /,$env_args)) {
 	if (/--env-(.*)=(.*)/) {
 	    $name  = $1;
@@ -189,13 +193,14 @@ sub RunTest {
 	}
     }
     else {
+#	$enable_args .= " --enable-echo";
 	print $OUTFD $TestStart;
 	unlink "Makefile";
 	print $OUTFD $ConfigStart;
 	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
-	print "Configure: " . join(" ", @config) . "\n";
+	print $OUTFD "Configure: " . join(" ", @config) . "\n";
 	if ($envset ne "") {
-	    print "Environment = $envset\n";
+	    print $OUTFD "Environment = $envset\n";
 	}
 	$rc = system @config;
 	$config_status = $rc;
@@ -215,13 +220,15 @@ sub RunTest {
 		$install_status = system split( /\s+/,"make install");
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
+		    # Get mpd status from the with args ...
+		    $built_for_mpd = 1;
 		    $test_status = &RunTestSuites;
 		}
 	    }
 	}
 	print $OUTFD $TestEnd;
     }
-    @ENV = @saveENV;
+    %ENV = %saveENV;
 
     print $OUTFD $SumStart;
     print $OUTFD $SumConfigStart;
@@ -243,7 +250,7 @@ sub RunTest {
 # Chosen *without* replacement.  If an option is chosen twice, 
 # then there will be fewer options
 sub RandArgs { 
-    my ($n_choice, $array_name, $optname ) = @_;
+    my ($n_choice, $array_name, $optname, $negoptname ) = @_;
     my @chosen = ( );
     my $args = "";
     my $array_len = $#$array_name;
@@ -258,13 +265,33 @@ sub RandArgs {
 	@args = split( /;/, $$array_name[$idx] );
 	print "Trying $$array_name[$idx]\n" if $debug;
 	$name = $args[0];
-	$idx = 1 + int( rand $#args );
-	$value = $args[$idx];
-	if ($value ne "") {
-	    $args .=  " --$optname-$name=$value";
+	if ($#args == 0) {
+	    # Only the name is provided.  Choose one of three
+	    # choices:
+	    #    No option (skip this one)
+	    #    just --$optname-$name
+	    #    just --$negoptname-$name (if non-null)
+	    $idx = int ( rand ( 3 ) );
+	    if ($idx == 0) {
+		$args .= " --$optname-$name";
+	    }
+	    elsif ($idx == 1 && $negoptname ne "") {
+		$args .= " --$negoptname-$name";
+	    }
+	    else {
+		# skip
+		;
+	    }
 	}
 	else {
-	    $args .= " --$optname-$name";
+	    $idx = 1 + int( rand $#args );
+	    $value = $args[$idx];
+	    if ($value ne "") {
+		$args .=  " --$optname-$name=$value";
+	    }
+	    else {
+		$args .= " --$optname-$name";
+	    }
 	}
     }
     return $args;
@@ -285,8 +312,6 @@ sub time_left {
 
 # ---------------------------------------------------------------------------
 # cb for check build
-$mpich_test_dir = "/sandbox/gropp/cb/mpitest";
-$intel_test_dir = "/sandbox/gropp/cb/MPITEST";
 #
 # Eventually, we'll need
 #   bootstep
@@ -296,30 +321,64 @@ $intel_test_dir = "/sandbox/gropp/cb/MPITEST";
 #
 sub RunTestSuites {
     foreach my $testname (split(';',$tests)) {
-	print "Running test $testname...\n";
+	if ($testname eq "") { next; }
+	print $OUTFD "Running test $testname...\n";
 	if ($testname eq "mpich") {
 	    $cwd = `pwd`;
 	    my @config;
 	    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
 	    $config[0] = "$mpich1_dir/examples/test/configure";
-	    $config[1] = "--prefix=$inst_dir";
+	    $config[1] = "--prefix=$instdir";
 	    $config[2] = "-mpilibname=mpich";
-	    $config[3] = "-cc=\"gcc -I$inst_dir/include -L$inst_dir/lib\"";
-	    $config[4] = "-fc=\"f77 -I$inst_dir/include -L$inst_dir/lib\"";
-	    @saveENV = @ENV;
-	    $ENV{MPIRUN} = "$inst_dir/bin/mpiexec";
+	    # Note that there are no quotes in the following because
+	    # they are not needed (no shell evaluation here)
+	    $config[3] = "-cc=gcc -I$instdir/include -L$instdir/lib";
+	    $config[4] = "-fc=f77 -I$instdir/include -L$instdir/lib";
+	    #$config[5] = "--enable-echo";
+	    %saveENV = %ENV;
+	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
+	    $ENV{MPIEXEC_TIMEOUT} = "1";
 	    $rc = system @config;
 	    if ($rc == 0) {
+		# HACK for mpd for now.
+		if ($built_for_mpd) {
+		    # We need to background the mpd.
+		    $pid = fork();
+		    if ($pid == 0) {
+			# Child runs this
+			exec "$instdir/bin/mpd";
+			die "Failed to run mpd";
+		    }
+		    else {
+			# Wait a little for the mpd to start.
+			sleep 1;
+		    }
+		}
 		$rc = system "make testing";
+		if ($built_for_mpd) {
+		    `$instdir/bin/mpdallexit`;
+		    kill 2, $pid;
+		    kill 3, $pid;
+		    kill 9, $pid;
+		    waitpid $pid,0;
+		}
 	    }
-	    @ENV = @saveENV;
+	    else {
+		print $OUTFD "Configure step for test failed\n";
+		print $OUTFD "Could not execute " . join(" ", @config) . "\n";
+		print $OUTFD "Enviroment was ";
+		foreach $key (keys(%ENV)) {
+		    print $OUTFD "$key = $ENV{$key}\n";
+		}
+	    }
+	    %ENV = %saveENV;
 	    chdir $cwd;
 	}
-	else if ($testname eq "intel") {
+	elsif ($testname eq "intel") {
 	    ;
 	}
 	else {
-	    print "Unrecognized test $testname\n";
+	    print $OUTFD "Unrecognized test $testname\n";
 	}
     }
 }
@@ -374,6 +433,6 @@ else {
 for ($test_count = 0; 
      ($max_count < 0 || $test_count < $max_count) && &time_left;
      $test_count++) {
-    print "\nRunning test $test_count\n\n";
+    print $OUTFD "\nRunning test $test_count\n\n";
     &RunTest;
 }

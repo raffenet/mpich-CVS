@@ -47,6 +47,7 @@ int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint 
     static const char FCNAME[] = "MPI_Type_get_true_extent";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_GET_TRUE_EXTENT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_TRUE_EXTENT);
     /* Get handles to MPI objects. */
@@ -55,13 +56,9 @@ int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint 
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_TRUE_EXTENT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

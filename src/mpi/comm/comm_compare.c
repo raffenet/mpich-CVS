@@ -64,6 +64,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr1 = NULL;
     MPID_Comm *comm_ptr2 = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_COMPARE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
     /* Get handles to MPI objects. */
