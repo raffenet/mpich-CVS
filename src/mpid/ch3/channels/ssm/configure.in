@@ -1,0 +1,63 @@
+AC_INIT(configure.in)
+
+dnl
+dnl Set the directory that contains support scripts such as install-sh and
+dnl config.guess
+dnl
+AC_CONFIG_AUX_DIR(../../../../../confdb)
+
+dnl
+dnl Definitions will be placed in this file rather than in the DEFS variable
+dnl
+AC_CONFIG_HEADER(include/mpidi_ch3i_ssm_conf.h)
+
+echo "RUNNING CONFIGURE FOR THE SOCK-SHARED_MEMORY CHANNEL"
+
+dnl
+dnl First check that we have a clean build if we are doing a VPATH build
+if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
+    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first.])
+fi
+
+PAC_PROG_MAKE
+
+AC_CHECK_HEADERS(assert.h)
+
+dnl AC_CHECK_HEADERS(sys/types.h sys/socket.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
+
+AC_SEARCH_LIBS(socket, socket)
+AC_CHECK_LIB(thread, mutex_init)
+AC_CHECK_HEADERS(pthread.h fcntl.h string.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h arpa/inet.h sys/sockio.h net/if.h)
+AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h)
+AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
+AC_CHECK_FUNCS(sysconf pthread_mutexattr_setpshared pthread_mutexattr_init)
+
+cpu_gcc_x86_cycle=no
+AC_TRY_COMPILE(,[
+    long long var, *var_ptr=&var;
+    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" 
+                            : "=m" (*((char *) (var_ptr))), 
+                              "=m" (*(((char *) (var_ptr))+4)) 
+                            :: "eax", "ebx", "ecx", "edx" ); 
+],cpu_gcc_x86_cycle=yes,cpu_gcc_x86_cycle=no)
+if test "$cpu_gcc_x86_cycle" = "yes" ; then
+  AC_DEFINE_UNQUOTED(MPICH_CPU_TICK_TYPE, USE_GCC_X86_CYCLE_ASM, [Define if using gcc on an Intel CPU with the rdtsc instruction])
+else
+  AC_MSG_ERROR([gcc x86 cycle counter is not available on this system])
+fi
+
+AC_SUBST(DEVICE)
+AC_SUBST(CHANNEL)
+
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
+AC_SUBST(MPILIBNAME)
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(CC_SHL)
+AC_SUBST(C_LINK_SHL)
+AC_SUBST(master_top_srcdir)
+
+AC_OUTPUT(Makefile src/Makefile localdefs)

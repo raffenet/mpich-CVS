@@ -1,5 +1,5 @@
 # SUBDIRS_channel_name contains the list of all possible channel
 # implementations
-SUBDIRS_channel_name = ib shm sock mm rdma
+SUBDIRS_channel_name = ib shm sock ssm rdma
 SUBDIRS = @channel_name@ .
 

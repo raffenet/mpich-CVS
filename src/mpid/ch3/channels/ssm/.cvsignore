@@ -1,0 +1,11 @@
+configure
+Makefile
+Makefile.in
+*.o
+*.lo
+*.bb
+*.bbg
+*.da
+*.gcov
+*Debug*
+*Release*
