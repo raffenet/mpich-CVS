@@ -468,6 +468,7 @@ def process_cmdline_args():
 		    usage()
                 elif argv[argidx] == '-a':
                     jobAlias = argv[argidx+1]
+                    argidx += 2
                 elif argv[argidx] == '-hf':
                     hostsFilename = argv[argidx+1]
                     argidx += 2
