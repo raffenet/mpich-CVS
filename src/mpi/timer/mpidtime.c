@@ -74,7 +74,7 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
 }
-#elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCEFREQUENCY
+#elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
 void MPID_Wtime_init()
 {
     LARGE_INTEGER n;

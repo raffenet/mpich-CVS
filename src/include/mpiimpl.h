@@ -398,7 +398,7 @@ typedef struct {
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
-#ifdef HAVE_QUERYPERFORMANCEFREQUENCY
+#ifdef HAVE_QUERYPERFORMANCECOUNTER
     double            timer_frequency;  /* High performance counter frequency */
 #endif
     char              bnr_dbname[100];
