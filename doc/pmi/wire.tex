@@ -1,0 +1,68 @@
+\documentclass{article}
+\title{A SPMI Wire Protocol}
+\begin{document}
+%
+% A description of the wire protocol for the simple PMI interface
+%
+% This initial proposal is (mostly) backward compatible
+%
+This document describes a human-readable wire protocol for PMI
+commands.  All data is transmitted as valid printable ASCII
+characters.
+
+This protocol is backward compatible with the current simple PMI code
+for all commands except \texttt{cmd=spawn}.   This proposal addresses
+deficiencies in the current simple PMI implementation of the
+\texttt{spawn} command.  It also adds a version number in the
+handshake at initialization time to allow evolution of the format.
+
+% BNF for the wire protocol.
+The following BNF describes the simple PMI wire protocol.  Literals are 
+described using Perl-style regular expressions, using expressions within single
+quotes.
+\begin{verbatim}
+    SESSION     -> PREAMBLE [ STATEMENTS ]* POSTAMBLE
+    STATEMENTS  -> COMMAND
+                |  MULTILINE_COMMAND
+    PREAMBLE    -> 'cmd=open\s+version=' VERSION_NUM '\n'
+                | empty
+    POSTAMBLE   -> 'cmd=close\n'
+                | empty
+    COMMAND     -> 'cmd=' NAME [ '\s+'  RESTRICTED_KEYVAL ]* '\n'
+    RESTRICTED_KEYVAL -> NAME '=' NAME
+    NAME        -> '[^=\s\n]+'
+    
+    MULTILINE_COMMAND => 'mcmd=' NAME [ '\s+' [ KEYVAL '\n' ]* ] 'endcmd\n'
+    KEYVAL      -> '\s*' NAME '=' VALUE '\n'
+    VALUE       -> '.*'
+    VERSION_NUM -> '[0-9]+\.[0-9]+'
+\end{verbatim}
+The following is a short summary of the Perl-style regular expression
+terms used above:
+\begin{description}
+\item[\texttt{[...]}]a character class.  E.g, the digits zero through
+ nine are \texttt{[0-9]}.
+\item[\texttt{[\char`\^...]}]the complement of a character class.
+\item[\texttt{*}]zero or more instances of the previous expression
+\item[\texttt{+}]one or more instances of the previous expression
+\item[\texttt{.}]any character other than newline or null.
+\item[\texttt{\char`\\s}]a space character (blank, tab, etc.)
+\item[\texttt{\char`\\n}]a newline
+\end{description}
+Following common BNF practice, square brackets outside of a string
+denote an optional item.  To shorten the BNF, an asterisk (\texttt{*})
+is used to indicate zero or more instances of an item, and when
+combined with square brackets, indicates an optional sequence of
+items.  For example, 
+\begin{verbatim}
+    [ KEYVAL '\n' ]*
+\end{verbatim}
+indicates any number of optional KEYVAL items, each followed by a
+newline character.
+
+The term \texttt{empty} is a special case; this is the empty item.  In
+the above, it lets us consider backward compatibility to PMI
+implementations that do not support the preamble command.
+
+\end{document}
+
