@@ -42,7 +42,7 @@ SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd
     if (indent > SMPD_MAX_TO_STRING_INDENT)
 	indent = SMPD_MAX_TO_STRING_INDENT;
 
-    memset(indent_str, ' ', indent);
+    memset(indent_str, MPIU_STR_SEPAR_CHAR, indent);
     indent_str[indent] = '\0';
 
     smpd_snprintf_update(str_pptr, len_ptr, "%sstate: %s\n", indent_str, smpd_get_cmd_state_string(cmd_ptr->state));
@@ -519,14 +519,14 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
     /* make sure there is a space after the last parameter in the command */
     if (cmd_length > 0)
     {
-	if (cmd_ptr->cmd[cmd_length-1] != ' ')
+	if (cmd_ptr->cmd[cmd_length-1] != MPIU_STR_SEPAR_CHAR)
 	{
 	    if (len < 2)
 	    {
 		smpd_err_printf("unable to add the command parameter: %s=%s\n", param, value);
 		return SMPD_FAIL;
 	    }
-	    cmd_ptr->cmd[cmd_length] = ' ';
+	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
 	    len--;
 	    str++;
 	}
@@ -561,14 +561,14 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     /* make sure there is a space after the last parameter in the command */
     if (cmd_length > 0)
     {
-	if (cmd_ptr->cmd[cmd_length-1] != ' ')
+	if (cmd_ptr->cmd[cmd_length-1] != MPIU_STR_SEPAR_CHAR)
 	{
 	    if (len < 2)
 	    {
 		smpd_err_printf("unable to add the command parameter: %s=%d\n", param, value);
 		return SMPD_FAIL;
 	    }
-	    cmd_ptr->cmd[cmd_length] = ' ';
+	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
 	    len--;
 	    str++;
 	}
