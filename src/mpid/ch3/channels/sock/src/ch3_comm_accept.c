@@ -194,9 +194,12 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         mpi_errno = MPIC_Send(send_ints, 3, MPI_INT, 0, 101, tmp_comm->handle);
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
 
-        /* receive the remote_root_pg->pg_id */
-        mpi_errno = MPIC_Recv(remote_root_pg->pg_id, id_sz, MPI_CHAR,
-                              0, 102, tmp_comm->handle, MPI_STATUS_IGNORE); 
+        /* exchange pg_ids with remote root */
+        mpi_errno = MPIC_Sendrecv(MPIDI_CH3I_Process.pg->pg_id, id_sz,
+                                  MPI_CHAR, 0, 102,
+                                  remote_root_pg->pg_id, id_sz, 
+                                  MPI_CHAR, 0, 102, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);  
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
 
         /* broadcast the remote_root_pgid to other processes in
@@ -285,10 +288,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         }
 
         /* Now we need to send the business cards of the processes on
-           this side to the root on the other side. First create a new
-           business card containing the pg_id of the pg 
-           for the remote group. Receive the business cards thus
-           created by all other processes on this side and then
+           this side to the root on the other side. Receive the
+           business cards of all other processes on this side and then
            forward them to the root on the remote side. If we knew the
            sizes of all the business cards, we could have used
            MPI_Gather instead of a loop of MPI_Recvs. */
@@ -310,7 +311,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         bizcard_ptr = bizcards;
         for (i=0; i<comm_size; i++) {
             if (i == root) {
-                mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz, remote_root_pg->pg_id);
+                mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
@@ -393,13 +394,12 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                root, comm_ptr);
         if (mpi_errno) goto fn_exit;
 
-        /* Create a new business card containing the address of the pg
-           for the remote group. Send the business card to the local
+        /* Send the business card of this process to the local
            root who will then forward all the business cards to the
            remote root. If we knew the sizes of all the business
            cards, we could have used MPI_Gather instead of MPI_Send. */
 
-        mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz, remote_root_pg->pg_id);
+        mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
         if (mpi_errno != MPI_SUCCESS)
         {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);

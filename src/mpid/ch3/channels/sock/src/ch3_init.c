@@ -218,7 +218,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
-    mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz, pg->pg_id);
+    mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);

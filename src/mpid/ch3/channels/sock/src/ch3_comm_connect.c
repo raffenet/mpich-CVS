@@ -19,9 +19,9 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     int p, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
     int i, bizcards_len, rank, kvs_namelen, recv_ints[3],
         send_ints[2], comm_size, context_id;
-    int remote_comm_size=0, id_sz, len;
+    int remote_comm_size=0, id_sz;
     MPID_Comm *tmp_comm, *intercomm, *commself_ptr;
-    char *local_root_pgid, *key, *val, *bizcards, *bizcard_ptr, *temp;
+    char *local_root_pgid, *key, *val, *bizcards, *bizcard_ptr;
     MPIDI_CH3I_Process_group_t *remote_root_pg, *pg;
     MPIDI_VC *vc_table, *vc;
     int *local_pg_ranks, *remote_pg_ranks;
@@ -78,44 +78,6 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     remote_root_pg->next = NULL;
 
     rank = comm_ptr->rank;
-
-    if (rank == root) {
-        /* extract pg_id from port_name */
-        temp = strchr(port_name, ':');
-        len = temp - port_name;
-        MPIU_Strncpy(remote_root_pg->pg_id, port_name, len);
-        remote_root_pg->pg_id[len] = '\0';
-
-        /* broadcast the remote_root_pgid to other processes in
-           comm_ptr */
-        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
-                               root, comm_ptr);
-    }
-    else { /* nonroot nodes */
-        /* recv the remote_root_pgid from the root */
-        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
-                               root, comm_ptr);
-    }
-    if (mpi_errno) goto fn_exit;
-
-    /* Link this pg in to the list of pgs. The pg represented by
-       remote_root_pgid should not already exist. If it does, flag an
-       error. */
-
-    pg = MPIDI_CH3I_Process.pg;
-    while (pg != NULL) {
-        if (strcmp(pg->pg_id, remote_root_pg->pg_id) == 0) {
-            /* Abort for now. Need to return error code here. */
-            /* printf("CONNECT ERROR: attempting to do a comm_connect to a process in MPI_COMM_WORLD\n");
-               fflush(stdout); */
-            MPID_Abort(NULL, mpi_errno, 13);
-        }
-        if (pg->next == NULL) {
-            pg->next = remote_root_pg;
-            break;
-        }
-        pg = pg->next;
-    }
 
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
@@ -206,18 +168,22 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         remote_root_pg->size = recv_ints[1];
         context_id = recv_ints[2];
 
-        /* send local pgid to the remote root */
+        /* exchange pg_ids with the remote root */
         local_root_pgid = comm_ptr->vcr[rank]->ch.pg->pg_id;
-        mpi_errno = MPIC_Send(local_root_pgid, (int)strlen(local_root_pgid)+1, 
-                              MPI_CHAR, 0, 102, tmp_comm->handle);
+        mpi_errno = MPIC_Sendrecv(local_root_pgid,
+                                  (int)strlen(local_root_pgid)+1,
+                                  MPI_CHAR, 0, 102, 
+                                  remote_root_pg->pg_id, id_sz,
+                                  MPI_CHAR, 0, 102, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE); 
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
 
         /* Send the business cards of the processes on this side to
-           the remote root. Each process creates its own bizcard
-           prefixed with the pg_id of the "remote group" and sends it to
-           the root, which forwards them to the root on the other
-           side. If we knew the sizes of all the business cards, we
-           could have used MPI_Gather instead of a loop of MPI_Recvs. */
+           the remote root. Each process creates its own bizcard and
+           sends it to the root, which forwards them to the root on
+           the other side. If we knew the sizes of all the business
+           cards, we could have used MPI_Gather instead of a loop of
+           MPI_Recvs. */
 
         bizcards = (char *) MPIU_Malloc(comm_size * val_max_sz);
         if (bizcards == NULL)
@@ -232,7 +198,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         bizcard_ptr = bizcards;
         for (i=0; i<comm_size; i++) {
             if (i == root) {
-                mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz, remote_root_pg->pg_id);
+                mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
@@ -374,6 +340,12 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         MPIU_Free(bizcards);
         MPIU_Free(key);
 
+        /* broadcast the remote_root_pgid to other processes in
+           comm_ptr */
+        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
+                               root, comm_ptr);
+        if (mpi_errno) goto fn_exit;
+
         /* broadcast the remote_root_pg->kvs_name, remote_comm_size,
            remote_pg_size, context_id of the intercommunicator, and
            remote_pg_ranks to other processes. */
@@ -396,13 +368,12 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     else {
         /* non-root nodes */
 
-        /* Create a new business card prefixed with the
-           remote_root_pgid. Send the business card to the local
+        /* Send the business card of this process to the local
            root who will then forward all the business cards to the
            remote root. If we knew the sizes of all the business
            cards, we could have used MPI_Gather instead of MPI_Send. */
 
-        mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz, remote_root_pg->pg_id);
+        mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
         if (mpi_errno != MPI_SUCCESS)
         {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
@@ -411,6 +382,11 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
         mpi_errno = MPIC_Send(val, (int)strlen(val)+1, MPI_CHAR, root, 52,
                               comm_ptr->handle); 
+        if (mpi_errno) goto fn_exit;
+
+        /* recv the remote_root_pgid from the root */
+        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
+                               root, comm_ptr);
         if (mpi_errno) goto fn_exit;
 
         /* recv the remote_kvsname, remote_comm_size, and intercomm
@@ -443,6 +419,24 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
     MPIU_Free(val);
 
+    /* Link the new pg in to the list of pgs. The pg represented by
+       remote_root_pgid should not already exist. If it does, flag an
+       error. */
+
+    pg = MPIDI_CH3I_Process.pg;
+    while (pg != NULL) {
+        if (strcmp(pg->pg_id, remote_root_pg->pg_id) == 0) {
+            /* Abort for now. Need to return error code here. */
+            /* printf("CONNECT ERROR: attempting to do a comm_connect to a process in MPI_COMM_WORLD\n");
+               fflush(stdout); */
+            MPID_Abort(NULL, mpi_errno, 13);
+        }
+        if (pg->next == NULL) {
+            pg->next = remote_root_pg;
+            break;
+        }
+        pg = pg->next;
+    }
 
     /* create and fill in the new intercommunicator */
     mpi_errno = MPIR_Comm_create(comm_ptr, newcomm);

@@ -429,7 +429,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
                     conn->state = CONN_STATE_OPEN_CSEND;
                     conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_REQ;
                     conn->pkt.sc_open_req.pg_id_len =
-                        strlen(conn->pg_id) + 1;
+                        strlen(MPIDI_CH3I_Process.pg->pg_id) + 1;
                     conn->pkt.sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
 
                     connection_post_send_pkt_and_pgid(conn);
@@ -767,49 +767,6 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     return MPI_SUCCESS;
 }
 
-#ifdef OLD
-/* retrieves the pg_ptr from the front of the business card and
-   increments the business card ptr to point to the real business
-   card. */
-static int GetPGptr(char **business_card, MPIDI_CH3I_Process_group_t **remote_pg_ptr)
-{
-    sscanf(*business_card, "%p", remote_pg_ptr);
-    *business_card = strchr(*business_card, ':') + 1;
-
-/*    printf("pg_ptr = %p, biz_card = %s\n", *remote_pg_ptr, *business_card);
-    fflush(stdout);
-*/
-    return MPI_SUCCESS;
-}
-#endif
-
-/* retrieves the pg_id from the front of the business card and
-   increments the business card ptr to point to the real business
-   card. Adds a null character at the end of the pg_id string. */
-static int GetPGid(char **business_card, char **pg_id)
-{
-    char *temp;
-    int len;
-
-    /* We assume that ':' is used as a separator in the business
-       card. If the pg_id itself contains a ':', there is a problem. */
-
-    /* The function strsep() should do the job, but it seg
-       faults. Therefore, do it manually */
-    /*    *pg_id = strsep(business_card, ':'); */
-
-    temp = strchr(*business_card, ':');
-    len = temp - *business_card;
-    MPIU_Strncpy(*pg_id, *business_card, len);
-    (*pg_id)[len] = '\0';
-    *business_card = temp + 1;
-
-    /* printf("pg_id = %s, biz_card = %s\n", *pg_id, *business_card);
-       fflush(stdout); */
-
-    return MPI_SUCCESS;
-}
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_VC_post_connect
 #undef FCNAME
@@ -877,16 +834,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    conn = connection_alloc();
-
     val_p = val;
-    rc = GetPGid(&val_p, &conn->pg_id);
-    if (rc != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
 
     rc = GetHostAndPort(host, &port, val_p);
     if (rc != MPI_SUCCESS)
@@ -898,6 +846,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     }
     /*printf("GetHostAndPort returned: host %s, port %u\n", host, (unsigned int)port);fflush(stdout);*/
 
+    conn = connection_alloc();
     rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
     if (rc == MPI_SUCCESS)
     {
@@ -1016,18 +965,6 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
 
     port_name_p = port_name;
     
-    conn = connection_alloc();
-
-    /* Remove the pg_id from the business card. This pg_id is not
-       used to form the connection between the roots. */
-    rc = GetPGid(&port_name_p, &conn->pg_id);
-    if (rc != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
-	return mpi_errno;
-    }
-
     mpi_errno = GetHostAndPort(host, &port, port_name_p);
     if (mpi_errno != MPI_SUCCESS) goto fn_exit;
     
@@ -1049,6 +986,9 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
     vc->ch.sock = MPIDU_SOCK_INVALID_SOCK;
     vc->ch.conn = NULL;
     
+    conn = connection_alloc();
+    /* conn->pg_id is not used for this conection */
+
     rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
     if (rc == MPI_SUCCESS)
     {
@@ -1228,8 +1168,8 @@ static inline void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * c
     conn->iov[0].MPID_IOV_BUF = (void*) &conn->pkt;
     conn->iov[0].MPID_IOV_LEN = sizeof(conn->pkt);
 
-    conn->iov[1].MPID_IOV_BUF = (void*) conn->pg_id;
-    conn->iov[1].MPID_IOV_LEN = strlen(conn->pg_id) + 1;
+    conn->iov[1].MPID_IOV_BUF = (void*) MPIDI_CH3I_Process.pg->pg_id;
+    conn->iov[1].MPID_IOV_LEN = strlen(MPIDI_CH3I_Process.pg->pg_id) + 1;
 
     rc = MPIDU_Sock_post_writev(conn->sock, conn->iov, 2, NULL);
     if (rc != MPI_SUCCESS)

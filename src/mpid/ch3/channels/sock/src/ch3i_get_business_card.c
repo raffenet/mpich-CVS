@@ -213,7 +213,7 @@ static int GetLocalIPs(int32_t pIP[], int max)
 
 #endif /* HAVE_WINDOWS_H */
 
-int MPIDI_CH3I_Get_business_card(char *value, int length, char *pg_id)
+int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int32_t local_ip[MAX_NUM_NICS];
     unsigned int a, b, c, d;
@@ -232,11 +232,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, char *pg_id)
     /*snprintf(value, length, "%s:%d", host, port);*/
 
     value_orig = value;
-
-    /* prepend the business card with the "pg_id:".  */
-    /* If the pg_id itself contains a ':', there is a problem because
-       we assume that ':' is used as a separator in the business card.  */
-    value += sprintf(value, "%s:", pg_id);
 
     num_nics = GetLocalIPs(local_ip, MAX_NUM_NICS);
     for (i=0; i<num_nics; i++)
