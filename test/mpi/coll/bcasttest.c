@@ -13,7 +13,7 @@ int main( int argc, char **argv)
     int i, rank, reps, n;
     int bVerify = 1;
     int sizes[NUM_SIZES] = { 100, 64*1024, 128*1024 };
-    int num_errors;
+    int num_errors=0, tot_errors;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -24,8 +24,8 @@ int main( int argc, char **argv)
 	    bVerify = 0;
     }
 
-    buf = (int *) malloc(sizes[2]*sizeof(int));
-    memset(buf, 0, sizes[2]*sizeof(int));
+    buf = (int *) malloc(sizes[NUM_SIZES-1]*sizeof(int));
+    memset(buf, 0, sizes[NUM_SIZES-1]*sizeof(int));
 
     for (n=0; n<NUM_SIZES; n++)
     {
@@ -80,7 +80,7 @@ int main( int argc, char **argv)
 			}
 		    }
 		}
-		if (num_errors > 10)
+		if (num_errors >= 10)
 		{
 		    printf("Error: Rank=%d, num_errors = %d\n", rank, num_errors);
 		    fflush(stdout);
@@ -90,7 +90,8 @@ int main( int argc, char **argv)
     }
     
     /* printf("Node %d done\n", rank); */
-    if (rank == 0) 
+    MPI_Reduce( &num_errors, &tot_errors, 1, MPI_INT, 0, MPI_SUM, MPI_COMM_WORLD );
+    if (rank == 0 && tot_errors == 0) 
 	printf(" No Errors\n");
 
     fflush(stdout);
