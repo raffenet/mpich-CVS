@@ -55,26 +55,23 @@ void mp_print_options(void)
     printf("\n");
     printf("extensions:\n");
     printf("-env <variable value>\n");
-    /*printf("-env <variable=value;variable2=value2;...>\n");*/
     printf("-hosts <n host1 host2 ... hostn>\n");
     printf("-hosts <n host1 m1 host2 m2 ... hostn mn>\n");
     printf("-machinefile <filename> - one host per line, #commented\n");
     printf("-localonly <numprocs>\n");
-    /*printf("-nompi - processes never call any MPI functions\n");*/
     printf("-exitcodes - print the exit codes of processes as they exit\n");
     /*
     printf("-genvall - pass all env vars in current environment\n");
     printf("-genvnone - pass no env vars\n");
     */
     printf("-genvlist <list of env var names a,b,c,...> - pass current values of these vars\n");
-    /*printf("-genv <name> <value> - pass this value of this env var\n");*/
     printf("-g<local arg name> - global version of local options\n");
     printf("  genv, gwdir, ghost, gpath, gmap\n");
     printf("-file <filename> - old mpich1 job configuration file\n");
     printf("\n");
     printf("examples:\n");
     printf("mpiexec -n 4 cpi\n");
-    printf("mpiexec -n 1 -host foo master : -n 8 slave\n");
+    printf("mpiexec -n 1 -host foo master : -n 8 worker\n");
     printf("\n");
     printf("For a list of all mpiexec options, execute 'mpiexec -help2'\n");
 }
@@ -104,7 +101,6 @@ void mp_print_extra_options(void)
     printf("-wdir /my/working/directory\n");
     printf("  launch processes in the specified directory\n");
     printf("-env var val\n");
-    /*printf("-env \"var1=val1;var2=val2;var3=val3...\"\n");*/
     printf("  set environment variable before launching the processes\n");
     printf("-logon\n");
     printf("  prompt for user account and password\n");
@@ -136,14 +132,9 @@ void mp_print_extra_options(void)
     printf("  class = 0,1,2,3,4   = idle, below, normal, above, high\n");
     printf("  level = 0,1,2,3,4,5 = idle, lowest, below, normal, above, highest\n");
     printf("  the default is -priority 1:3\n");
-    /*
     printf("-localroot\n");
-    printf("  launch the root process without smpd if the host is local.\n");
+    printf("  launch the root process directly from mpiexec if the host is local.\n");
     printf("  (This allows the root process to create windows and be debugged.)\n");
-    printf("-iproot\n");
-    printf("-noiproot\n");
-    printf("  use or not the ip address of the root host instead of the host name.\n");
-    */
     printf("-port port\n");
     printf("-p port\n");
     printf("  specify the port that smpd is listening on.\n");
