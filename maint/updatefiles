@@ -565,7 +565,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
                 (cd $dir && rm -f mf.tmp ; \
 	        sed -e 's%@SHELL@%/bin/sh%' \
 		    -e "s%@srcdir@%.%g" \
-		    -e '/include .deps/d' \
+		    -e '/include .*alldeps/d' \
 		    -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
 		    if make -q -f mf.tmp configure >mf.out 2>&1 ; then \
                 : ; else \
