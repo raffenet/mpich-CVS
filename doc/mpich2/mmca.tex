@@ -1,6 +1,8 @@
 \includeversion{comment}
 
 \def\mpiobj#1{\code{#1}\index{#1}}
+\def\term#1{\emph{\textbf{#1}}}
+\def\todo#1{\emph{\textbf{TODO:} #1}}
 
 
 \newenvironment{cmt}[1][]%
@@ -24,7 +26,7 @@
 In this section, we present a multi-method communication architecture
 for MPICH2.
 
-A \emph{communication method} is a means for passing messages between two
+A \term{communication method} is a means for passing messages between two
 processes.  Because different methods have different connectivity and
 performance characteristics, it is desirable for an MPI implementation to
 support multiple methods simultaneously.  For example, in a cluster of SMPs one
@@ -111,11 +113,11 @@ Section~\ref{sssec:walkthrough}.
 
 An asynchronous send (\mpifunc{MPI_ISEND}) first results in the allocation and
 initialization of a \mpiobj{MPI_Request} object (described previously in XXX).
-A \emph{completion counter} is included in this structure, and it is
+A \term{completion counter} is included in this structure, and it is
 initialized at this point to 1 (corresponding to the number of method sends
 which must complete).
 
-Next the \emph{virtual connection} (VC) is determined from the communicator
+Next the \term{virtual connection} (VC) is determined from the communicator
 passed into the send call.  A reference to the appropriate method for moving
 data on this VC is found within the VC object.
 
@@ -166,19 +168,19 @@ Section XXXX).
   ``operations'' around somewhere.
 \end{cmt}
 
-In our multi-method P2P communication system a \emph{progress engine} component
+In our multi-method P2P communication system a \term{progress engine} component
 is responsible for orchestrating progress on all posted requests.  This is
 necessary in order for the system as a whole to balance service across methods.
 The progress engine invokes a method function, giving the method an opportunity
 to make progress on pending requests (operations in progress?).  This method
-function must utilize \emph{buffer} information (user buffer location,
+function must utilize \term{buffer} information (user buffer location,
 datatype, count) provide when the request was posted in order to determine the
 appropriate data regions to send or receive.
 
 Matching of requests occurs within the context of progress as well.  In our
 example scenario, our receive was posted before any data from the sender
 arrived.  The posted received is associated with the VC on which data will be
-passed.  At some point that data does arrive, and the \emph{envelope} from
+passed.  At some point that data does arrive, and the \term{envelope} from
 the incoming message must be matched to the envelope from the posted receive.
 
 \begin{cmt}
@@ -190,7 +192,7 @@ the incoming message must be matched to the envelope from the posted receive.
 This matching process might seem trivial, but in fact the MPI semantics for
 wildcard operations and message ordering combined with the possibility of
 multiple methods make matching somewhat complicated.
-For this reason we will implement a separate \emph{request arbiter}
+For this reason we will implement a separate \term{request arbiter}
 component for performing request matching for the
 system as a whole (both intra- and inter-method).
 
@@ -229,7 +231,14 @@ necessary for our implementation of collective operations.
 The components that we introduced here are described in greater detail in the
 following section.
 
-\subsubsection{Components}
+\subsubsection{Interfaces, Objects and Components}
+
+In this section we introduce a series of interfaces, objects and components
+that are relevant to the multi-method architecture.  We begin by briefly
+describing important objects defined by the MPI standard and how their
+internals are affected by the multi-method device.  Then we define the
+interface for a method, a key component to our architecture.  Finally, we talk
+about the components that bind methods into the MPICH implementation.
 
 % components needs to perform point-to-point communication:
 % \begin{itemize}
@@ -246,6 +255,72 @@ following section.
 %
 % talk about specific functions as they come up
 
+
+\paragraph{MPI Communicators}
+
+In MPI, a \term{communicator} is an object that represents a
+\term{communication context} (or domain) and a group of processes that can
+communicate within that context.  A handle to a communicator object is returned
+by the MPI routines that create communicators.  In MPICH, a communicator handle
+has a type of \code{MPI_Comm} while a communicator object has a type of
+\code{MPID_Comm}.  A communicator handle may be converted to a communicator
+object using \code{MPID_Comm_get_ptr}.
+
+A communicator combined with a rank identifies a remote process.  Furthermore,
+it must identify how to communicate with that process.  Within the multi-method
+device, a communicator and rank map to a virtual connection, an object used to
+track communication with a particular remote process.  The function
+\code{MPID_Comm_get_VC} performs the mapping.  Virtual connections will be
+discussed in detail shortly.
+
+\begin{cmt}[BRT]
+  This seems like a weak introduction to communicators, but I couldn't think of
+  anything else to say.
+\end{cmt}
+
+\begin{verbatim}
+int MPID_Comm_get_VC([IN] MPID_Comm * comm, [IN] int rank, [OUT] MPID_VC * vc)
+\end{verbatim}
+
+\begin{cmt}[BRT]
+  Does returning a VC automatically bump its reference count?  It seems
+  unnecessary for a correctly written MPI program, but I'm not certain of this.
+  Do we even need a reference count on the VC before we introduce dynamic
+  process creation and connect/accept?
+\end{cmt}
+
+
+\paragraph{MPI Requests}
+
+A MPI \term{request} is an object that identifies a communication operation
+posted using one of the MPI non-blocking communication functions such as
+\code{MPI_Isend} and \code{MPI_Irecv}.  These functions return a handle to a
+request object describing the pending operation.  In MPICH, a request handle
+has a type of \code{MPI_Request} while a request object has a type of
+\code{MPID_Request}.  A request handle may be converted to a request object
+using \code{MPID_Request_get_ptr}.
+
+The MPI request object contains a completion counter which the multi-method
+device must use to signal completion.  When the request is initialized, the
+counter is set to the number of operations that must complete before the
+request is considered complete.  The value of this count is controlled entirely
+by the device.  The only meaning the MPICH assigns to this counter is that a
+non-zero value indicates the request is still pending while a value of zero
+shows the request is complete.
+
+\paragraph{MPI Datatypes}
+
+In MPI, a \term{datatype} expresses the layout of a data structure.  A datatype
+combined with a count and a memory location defines a \term{buffer} from which
+data can be sent or into which data can be received.
+
+In MPICH, a datatype handle has a type of \code{MPI_Datatype} while a datatype
+object has a type of \code{MPID_Datatype}.  A datatype handle may be converted
+to a datatype object using \code{MPID_Datatype_get_ptr}.  A buffer has no
+direct representation in MPICH; however MPICH does introduce the notion of a
+segment, which describes a portion of a buffer.  Segments are used in MPICH to
+process a buffer in reasonably sized pieces.  A segment is respresent by an
+object tha has a type of \code{MPID_Segment}.
 
 \paragraph{Method}
 
@@ -273,14 +348,14 @@ following section.
 %     - returns # of completions
 
 To simplify multi-method communication in MPICH, we introduce a
-\emph{multi-method interface} to abstract away the details of any particular
+\term{multi-method interface} to abstract away the details of any particular
 network device or API.  In priciple, the method interface serves a similar
 purpose to that of the MPICH device interface.  However, the method interface
 further reduces the number of MPI structures crossing the interface boundary.
 This simplifies the understanding of MPI required by the method implementor and
 decreases the replication of code across the various methods.
 
-The \emph{communication method} (or more simply the ``method'') is a layer of
+The \term{communication method} (or more simply the ``method'') is a layer of
 software that implements this multi-method interface for a particular
 networking model, device or interface such as TCP, VIA or shared memory.
 
@@ -297,7 +372,7 @@ int method::post_recv([IN] MPID_Segment * segment,
                       [IN] int source, [IN] int tag, [IN] MPID_Comm * comm,
                       [INOUT] int * completion_cntr)
 
-int method::poll([IN] int quanta, [OUT] int completions)
+int method::poll([IN] int quanta)
 \end{verbatim}
 
 \begin{cmt}[BRT]
@@ -339,7 +414,7 @@ information from the description string and stores it for later use.
 
 \begin{cmt}[BRT]
   Where does the contact information get stored?  In the VC?  What if multiple
-  method match?  Does only the last method get to store its contact
+  methods match?  Does only the last method get to store its contact
   information?
 \end{cmt}
 
@@ -349,7 +424,7 @@ information from the description string and stores it for later use.
   issue.  maybe :).  dynamic loading of methods would make this more difficult.
 \end{cmt}
 
-\emph{TODO: describe communication functions...}
+\todo{describe communication functions...}
 
 Once requests have been posted, we need a mechanism to make progress on them.
 One option is to have one or more threads responsible for sending and receiving
@@ -395,14 +470,19 @@ the progress engine.
   verify that the \code{quanta} argument is really useful.
 \end{cmt}
 
-The second argument to the \code{poll} function, \code{completions}, returns
-the number of MPI requests that were completed during the call to \code{poll}.
-More specifically, it is the number of request completion counters that when
-decremented reached zero.  The purpose of returning this count is to allow the
-progress engine to provide feedback to calling routines such as \code{MPI_TEST}
-and \code{MPI_WAIT}.  This feedback about the number of requests serviced
-should allow the MPI functions to limit the amount of work involved in
-determining which requests have been satisfied and need to be deallocated.
+% [BRT] I removed the argument conveying the number of completion from poll()
+% because the count becomes useless in the face of multiple application threads
+% and asynchronous completion of requests.  
+%
+% The second argument to the \code{poll} function, \code{completions}, returns
+% the number of MPI requests that were completed during the call to
+% \code{poll}.  More specifically, it is the number of request completion
+% counters that when decremented reached zero.  The purpose of returning this
+% count is to allow the progress engine to provide feedback to calling routines
+% such as \code{MPI_TEST} and \code{MPI_WAIT}.  This feedback about the number
+% of requests serviced should allow the MPI functions to limit the amount of
+% work involved in determining which requests have been satisfied and need to
+% be deallocated.
 
 \paragraph{Virtual Connections}
 
@@ -432,7 +512,7 @@ set of network resources and performing the communication using those
 resources.  To minimize startup time and avoid unnecessary resource
 consumption, it is desirable for the multi-method implementation to defer
 binding to specific network resoures until those resources are needed.  To
-faciliate late binding, we introduce the \emph{virtual connection} object.
+faciliate late binding, we introduce the \term{virtual connection} object.
 
 The virtual connection object, or VC, represents an abstract connection between
 two processes.  To communicate, the VC must be bound to a communication method
@@ -444,7 +524,7 @@ state.  Once a VC is bound to a method, that binding persists for the remainder
 of the programs exectution.
 
 The virtual connection object is also used to house any per connection data
-structures needed by the method, or what we refer to as \emph{method specific
+structures needed by the method, or what we refer to as \term{method specific
   data}.  These data structures will likely include those necessary to track
 posted send and receive operations, and the state of the underlying connection.
 
@@ -475,6 +555,10 @@ equivalent function in that method's function table.
   of the method specific data.
 \end{cmt}
 
+\paragraph{Multi-method requests}
+
+\todo{come up with a better name for these (we could stil use CARs) and
+  describe them}
 
 \paragraph{Request Arbiter}
 
@@ -496,6 +580,13 @@ equivalent function in that method's function table.
 % - requirement that certain structures be publically visible (e.g. receive 
 %   lists)
 
+\begin{cmt}[BRT]
+  We need to define multi-method requests before we can describe request
+  arbitration since the requests store in the receive lists are multi-method
+  requests.
+\end{cmt}
+
+
 \paragraph{Progress Engine}
 
 % progress engine
@@ -508,14 +599,61 @@ equivalent function in that method's function table.
 
 As discussed earlier, each of the methods must be routinely given the
 opportunity to make progress.  This is accomplished by calling the method's
-\code{poll} function.  In theory, this could be accomplishws by looping over
+\code{poll} function.  In theory, this could be accomplished by looping over
 all of the methods, calling each of their \code{poll} functions anytime an
 opportunity existed to make progress.  In practice, however, this would prove
 to be inefficient and result in poor communication performance.  Rather, we
-introduce a \emph{progress engine} component which is responsible for
-presenting the methods with an opportunity to make progress on a schedule that
-accounts for communication performance and method workload.
+introduce a \term{progress engine} component which is responsible for
+presenting the methods with an opportunity to make progress on a schedule
+that accounts for communication performance and method workload.  By having a
+separate component and a well defined interface, optimizations can more
+easily evolve over time.
 
+\begin{verbatim}
+int MPID_PE_register_method(...)
+
+int MPID_PE_poll_blocking_init()
+
+int MPID_PE_poll_blocking_start()
+
+int MPID_PE_poll_nonblocking()
+\end{verbatim}
+
+Progress is be made by calling one of two sets of functions: blocking and
+nonblocking.  The nonblocking set consists of a single function
+\code{MPID_poll_nonblocking}.  In the blocking case, we need to worry more
+about atomicity since we don't want the progress engine blocking if the
+request we are waiting was satisfied between the time we check for completion
+and the point at which we call the
+blocking polling function.  
+
+\todo [BRT] rewrite the above paragraph and elaborate on the need for a pair
+of blocking functions
+
+\todo talk about information needed from method.  should this be in the
+method section?
+
+\todo talk about method registration
+
+% For the time being, the progress engine has a single function,
+% \code{MPID_Make_progress}, which is called by the MPICH anytime an
+% opportunity exists to make progress on communication.  This function is
+% responsible for implementing the polling schedule discussed in the previous
+% paragraph.  The \code{blocking} argument supplied to
+% \code{MPID_Make_progress} indicates if the function is allowed to block (not
+% return) until a completion counter associated with one or more of hte
+% outstanding requests reaches zero.  The \code{completions} argument is used
+% to return the number of operation
+% 
+% \begin{cmt}
+%   For a single threaded implementation that does not make use of signals or
+%   interrupts for processing communication, \code{MPID_Make_progress} is
+%   sufficient.  However, if it is possible for operations to complete and for
+%   that completion to be reflected in the completion counter outside of calls
+%   to \code{MPID_Make_progress}, then we need to worry about the checking for
+%   completions and calling of \code{MPID_Make_progress} being atomic with
+%   respect to any completion counter updates.
+% \end{cmt}
 
 
 \subsubsection{Walkthrough}
@@ -618,7 +756,7 @@ the (publically accessible) receive list located in the VC.
   later (or now for that matter).
 \end{cmt}
 
-\emph{TODO: need to talk about \code{method::post_recv}}
+\todo{need to talk about \code{method::post_recv}}
 
 % - progress
 %   - where/when make_progress() is called
@@ -629,7 +767,7 @@ the (publically accessible) receive list located in the VC.
 %   - send and receive state machines
 %     - simplify -- cut out the flow control, buffer mgmt., optimizations
 
-\emph{TODO: talk about progress}
+\todo{talk about progress}
 
 % - completion
 %   - completion reported from method
@@ -637,7 +775,7 @@ the (publically accessible) receive list located in the VC.
 %   - when requests are finally freed
 %     - interface!  -- should be an MPID thing...
 
-\emph{TODO: talk about completion}
+\todo{talk about completion}
 
 \subsubsection{Summary}
 
