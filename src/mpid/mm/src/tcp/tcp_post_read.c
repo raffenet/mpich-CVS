@@ -5,6 +5,8 @@
  */
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 int tcp_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_TCP_POST_READ);
@@ -31,3 +33,5 @@ int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_READ_PKT);
     return MPI_SUCCESS;
 }
+
+#endif

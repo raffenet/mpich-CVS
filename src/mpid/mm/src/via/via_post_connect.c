@@ -5,6 +5,8 @@
  */
 #include "viaimpl.h"
 
+#ifdef WITH_METHOD_VIA
+
 int via_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 {
     MPIDI_STATE_DECL(MPID_STATE_VIA_POST_CONNECT);
@@ -12,3 +14,5 @@ int via_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_POST_CONNECT);
     return MPI_SUCCESS;
 }
+
+#endif

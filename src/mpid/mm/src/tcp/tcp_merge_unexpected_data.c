@@ -5,6 +5,8 @@
  */
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -316,3 +318,5 @@ int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

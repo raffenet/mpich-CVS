@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 /************ Init/Close **********************/
 ib_int32_t ib_init_us(void)
 {
@@ -422,3 +424,5 @@ ib_int32_t ib_set_un_async_error_eh_us ( ib_hca_handle_t hca_handle,
     return IB_SUCCESS;
 }
 
+
+#endif

@@ -6,6 +6,8 @@
 #include "ibimpl.h"
 #include "pmi.h"
 
+#ifdef WITH_METHOD_IB
+
 IB_PerProcess IB_Process;
 MPIDI_VC_functions g_ib_vc_functions = 
 {
@@ -496,3 +498,5 @@ int ib_finalize()
     MPIDI_FUNC_EXIT(MPID_STATE_IB_FINALIZE);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 #ifdef WITH_METHOD_SHM
 int socket_handle_written_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 #endif
@@ -394,3 +396,5 @@ int socket_handle_written_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_b
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

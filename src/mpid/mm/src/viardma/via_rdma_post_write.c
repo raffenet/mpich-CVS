@@ -5,6 +5,8 @@
  */
 #include "via_rdmaimpl.h"
 
+#ifdef WITH_METHOD_VIA_RDMA
+
 int via_rdma_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_VIA_RDMA_POST_WRITE);
@@ -12,3 +14,5 @@ int via_rdma_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_RDMA_POST_WRITE);
     return MPI_SUCCESS;
 }
+
+#endif

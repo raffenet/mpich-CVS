@@ -5,6 +5,8 @@
  */
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 int socket_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_POST_READ);
@@ -228,3 +230,5 @@ int socket_handle_read(MPIDI_VC *vc_ptr, int num_bytes)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
     return -1;
 }
+
+#endif

@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+
+#ifdef WITH_METHOD_SOCKET
+
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -231,3 +234,5 @@ int socket_get_business_card(char *value, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }
+
+#endif

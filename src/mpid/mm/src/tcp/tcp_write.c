@@ -5,6 +5,8 @@
  */
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 #ifdef WITH_METHOD_SHM
 int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 #endif
@@ -390,3 +392,5 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -6,6 +6,8 @@
 
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 /*@
    socket_reset_car - reset car
 
@@ -214,4 +216,6 @@ int socket_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_de
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_SETUP_PACKET_CAR);
     return MPI_SUCCESS;
 }
+#endif
+
 #endif

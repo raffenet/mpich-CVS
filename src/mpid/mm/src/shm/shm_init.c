@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "shmimpl.h"
+
+#ifdef WITH_METHOD_SHM
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* gethostname */
 #endif
@@ -62,3 +65,5 @@ int shm_finalize( void )
     MPIDI_FUNC_EXIT(MPID_STATE_SHM_FINALIZE);
     return MPI_SUCCESS;
 }
+
+#endif

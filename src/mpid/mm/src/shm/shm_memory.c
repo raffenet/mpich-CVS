@@ -5,6 +5,8 @@
  */
 #include "shmimpl.h"
 
+#ifdef WITH_METHOD_SHM
+
 /* prototypes */
 void *shm_alloc(unsigned int);
 void shm_free(void *);
@@ -73,3 +75,5 @@ void shm_release_mem(void)
     MPIDI_FUNC_ENTER(MPID_STATE_SHM_RELEASE_MEM);
     MPIDI_FUNC_EXIT(MPID_STATE_SHM_RELEASE_MEM);
 }
+
+#endif

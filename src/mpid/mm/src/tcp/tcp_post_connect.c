@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "tcpimpl.h"
+
+#ifdef WITH_METHOD_TCP
+
 #ifdef HAVE_STRING_H
 #include <string.h> /* strdup */
 #endif
@@ -231,3 +234,5 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_CONNECT);
     return MPI_SUCCESS;
 }
+
+#endif

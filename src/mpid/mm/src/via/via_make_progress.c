@@ -5,6 +5,8 @@
  */
 #include "viaimpl.h"
 
+#ifdef WITH_METHOD_VIA
+
 int via_make_progress()
 {
     MPIDI_STATE_DECL(MPID_STATE_VIA_MAKE_PROGRESS);
@@ -12,3 +14,5 @@ int via_make_progress()
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }
+
+#endif

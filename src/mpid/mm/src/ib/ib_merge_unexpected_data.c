@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -232,3 +234,5 @@ int ib_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MERGE_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

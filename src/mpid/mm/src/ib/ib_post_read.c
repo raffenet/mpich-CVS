@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_POST_READ);
@@ -49,3 +51,5 @@ int ib_handle_read(MPIDI_VC *vc_ptr, int num_bytes)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_READ);
     return -1;
 }
+
+#endif

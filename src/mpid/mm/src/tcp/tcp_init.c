@@ -5,6 +5,8 @@
  */
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 TCP_PerProcess TCP_Process;
 MPIDI_VC_functions g_tcp_vc_functions = 
 {
@@ -85,3 +87,5 @@ int tcp_finalize(void)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_FINALIZE);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -6,6 +6,8 @@
 
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 /*@
    socket_car_head_enqueue - enqueue a car in a vc at the head
 
@@ -443,3 +445,5 @@ int socket_car_dequeue_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_CAR_DEQUEUE_READ);
     return MPI_SUCCESS;
 }
+
+#endif

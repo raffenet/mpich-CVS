@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_MERGE_WITH_POSTED);
@@ -50,3 +52,5 @@ int ib_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MERGE_WITH_POSTED);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_can_connect(char *business_card)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_CAN_CONNECT);
@@ -12,3 +14,5 @@ int ib_can_connect(char *business_card)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_CAN_CONNECT);
     return FALSE;
 }
+
+#endif

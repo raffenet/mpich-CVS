@@ -6,6 +6,8 @@
 
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 /*@
    ib_enqueue_read_at_head - enqueue a car in a vc at the head
 
@@ -175,3 +177,5 @@ int ib_car_dequeue_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_DEQUEUE);
     return MPI_SUCCESS;
 }
+
+#endif

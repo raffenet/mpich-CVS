@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "tcpimpl.h"
+
+#ifdef WITH_METHOD_TCP
+
 #ifndef HAVE_WINSOCK2_H
 #include <errno.h>
 #endif
@@ -478,3 +481,5 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_CONNECTING);
     return MPI_SUCCESS;
 }
+
+#endif

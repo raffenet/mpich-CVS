@@ -5,6 +5,8 @@
  */
 #include "viaimpl.h"
 
+#ifdef WITH_METHOD_VIA
+
 VIA_PerProcess VIA_Process;
 MPIDI_VC_functions g_via_vc_functions = 
 {
@@ -45,3 +47,5 @@ int via_finalize( void )
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_FINALIZE);
     return MPI_SUCCESS;
 }
+
+#endif

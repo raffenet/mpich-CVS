@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+
+#ifdef WITH_METHOD_SOCKET
+
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -114,3 +117,5 @@ int socket_make_progress(void)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }
+
+#endif

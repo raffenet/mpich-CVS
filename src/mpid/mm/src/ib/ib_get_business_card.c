@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_get_business_card(char *value, int length)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_GET_BUSINESS_CARD);
@@ -12,3 +14,5 @@ int ib_get_business_card(char *value, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }
+
+#endif

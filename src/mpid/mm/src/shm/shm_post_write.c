@@ -5,6 +5,8 @@
  */
 #include "shmimpl.h"
 
+#ifdef WITH_METHOD_SHM
+
 int shm_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_SHM_POST_WRITE);
@@ -12,3 +14,5 @@ int shm_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_SHM_POST_WRITE);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "via_rdmaimpl.h"
 
+#ifdef WITH_METHOD_VIA_RDMA
+
 MPIDI_VC_functions g_via_rdma_vc_functions = 
 {
     NULL,/*via_rdma_post_read,*/
@@ -44,3 +46,5 @@ int via_rdma_finalize( void )
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_RDMA_FINALIZE);
     return MPI_SUCCESS;
 }
+
+#endif

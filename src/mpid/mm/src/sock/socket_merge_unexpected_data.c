@@ -5,6 +5,8 @@
  */
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -318,3 +320,5 @@ int socket_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *bu
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_MERGE_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

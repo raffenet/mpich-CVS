@@ -6,6 +6,8 @@
 
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 /* prototypes */
 #ifdef WITH_METHOD_SHM
 int socket_stuff_vector_shm(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
@@ -645,3 +647,5 @@ int socket_handle_written(MPIDI_VC *vc_ptr, int num_written)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+
+#ifdef WITH_METHOD_SOCKET
+
 #ifdef HAVE_STRING_H
 #include <string.h> /* strdup */
 #endif
@@ -318,3 +321,5 @@ int socket_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN_CONTEXT_PKT);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -6,6 +6,8 @@
 
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 /* prototypes */
 #ifdef WITH_METHOD_SHM
 int tcp_stuff_vector_shm(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
@@ -582,3 +584,5 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_AGGRESSIVE);
     return MPI_SUCCESS;
 }
+
+#endif

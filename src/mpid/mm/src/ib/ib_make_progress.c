@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "ibimpl.h"
+
+#ifdef WITH_METHOD_IB
+
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -32,3 +35,5 @@ int ib_make_progress()
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "shmimpl.h"
 
+#ifdef WITH_METHOD_SHM
+
 int shm_can_connect(char *business_card)
 {
     MPIDI_STATE_DECL(MPID_STATE_SHM_CAN_CONNECT);
@@ -21,3 +23,5 @@ int shm_can_connect(char *business_card)
     MPIDI_FUNC_EXIT(MPID_STATE_SHM_CAN_CONNECT);
     return FALSE;
 }
+
+#endif

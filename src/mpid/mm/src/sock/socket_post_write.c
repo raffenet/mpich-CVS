@@ -5,6 +5,8 @@
  */
 #include "socketimpl.h"
 
+#ifdef WITH_METHOD_SOCKET
+
 int socket_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *rndv_car_ptr;
@@ -62,3 +64,5 @@ int socket_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_WRITE);
     return MPI_SUCCESS;
 }
+
+#endif

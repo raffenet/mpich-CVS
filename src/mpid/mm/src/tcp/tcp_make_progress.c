@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "tcpimpl.h"
+
+#ifdef WITH_METHOD_TCP
+
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -297,3 +300,5 @@ int tcp_make_progress(void)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }
+
+#endif

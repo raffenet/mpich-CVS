@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 {
     int num_left, num_updated;
@@ -45,3 +47,5 @@ int ib_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MERGE_WITH_UNEXPECTED);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -6,6 +6,8 @@
 
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 /*@
    tcp_car_head_enqueue - enqueue a car in a vc at the head
 
@@ -303,3 +305,5 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_CAR_DEQUEUE);
     return MPI_SUCCESS;
 }
+
+#endif

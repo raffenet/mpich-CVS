@@ -5,6 +5,8 @@
  */
 #include "ibimpl.h"
 
+#ifdef WITH_METHOD_IB
+
 int ib_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_POST_CONNECT);
@@ -58,3 +60,5 @@ int ib_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_WRITTEN_CONTEXT_PKT);
     return MPI_SUCCESS;
 }
+
+#endif

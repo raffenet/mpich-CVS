@@ -5,6 +5,8 @@
  */
 #include "via_rdmaimpl.h"
 
+#ifdef WITH_METHOD_VIA_RDMA
+
 int via_rdma_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 {
     MPIDI_STATE_DECL(MPID_STATE_VIA_RDMA_POST_CONNECT);
@@ -12,3 +14,5 @@ int via_rdma_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_RDMA_POST_CONNECT);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "viaimpl.h"
 
+#ifdef WITH_METHOD_VIA
+
 int via_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_VIA_POST_READ);
@@ -20,3 +22,5 @@ int via_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_VIA_MERGE_WITH_UNEXPECTED);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+
+#ifdef WITH_METHOD_SOCKET
+
 #ifndef HAVE_WINSOCK2_H
 #include <errno.h>
 #endif
@@ -569,3 +572,5 @@ int socket_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buff
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_SIMPLE);
     return MPI_SUCCESS;
 }
+
+#endif

@@ -5,6 +5,8 @@
  */
 #include "tcpimpl.h"
 
+#ifdef WITH_METHOD_TCP
+
 #define MAX_NUM_NICS 10
 
 #ifdef HAVE_WINDOWS_H
@@ -227,3 +229,5 @@ int tcp_get_business_card(char *value, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }
+
+#endif

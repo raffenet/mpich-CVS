@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+
+#ifdef WITH_METHOD_SOCKET
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* gethostname */
 #endif
@@ -115,3 +118,5 @@ void socket_print_sock_error(int error, char *msg)
     socket_format_sock_error(error);
     err_printf("%s\nError %d: %s\n", msg, SOCKET_Process.error, SOCKET_Process.err_msg);
 }
+
+#endif
