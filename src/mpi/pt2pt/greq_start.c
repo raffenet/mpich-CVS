@@ -86,7 +86,11 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr = MPID_Request_create();
     if (!lrequest_ptr) {
         MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
-	return MPIR_ERR_MEMALLOCFAILED;
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+					  FCNAME, __LINE__, MPI_ERR_OTHER, 
+					  "**nomem", 
+					  "**nomem %s", "generalized request" );
+	return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     }
     lrequest_ptr->kind                 = MPID_UREQUEST;
     MPIU_Object_set_ref( lrequest_ptr, 2 );
