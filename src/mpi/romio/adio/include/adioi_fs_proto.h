@@ -509,4 +509,10 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif
 
+#ifdef ROMIO_TESTFS
+extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
+
+/* prototypes are in adio/ad_testfs/ad_testfs.h */
+#endif
+
 #endif

@@ -86,6 +86,15 @@ void ADIOI_SetFunctions(ADIO_File fd)
 #endif
 	break;
 
+    case ADIO_TESTFS:
+#ifdef ROMIO_TESTFS
+	*(fd->fns) = ADIO_TESTFS_operations;
+#else
+	FPRINTF(stderr, "ADIOI_SetFunctions: ROMIO has not been configured to use the TESTFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+	break;
+
     default:
 	FPRINTF(stderr, "ADIOI_SetFunctions: Unsupported file system type\n");
         MPI_Abort(MPI_COMM_WORLD, 1);

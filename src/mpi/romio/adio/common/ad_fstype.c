@@ -219,6 +219,11 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     else if (!strncmp(filename, "pvfs:", 5) || !strncmp(filename, "PVFS:", 5)) {
 	*fstype = ADIO_PVFS;
     }
+    else if (!strncmp(filename, "testfs:", 7) 
+	     || !strncmp(filename, "TESTFS:", 7))
+    {
+	*fstype = ADIO_TESTFS;
+    }
     else {
 	*fstype = 0;
 	*error_code = MPI_ERR_UNKNOWN;

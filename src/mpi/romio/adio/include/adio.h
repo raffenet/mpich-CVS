@@ -213,6 +213,7 @@ typedef struct {
 #define ADIO_HFS                 155   /* HP/Convex */
 #define ADIO_SFS                 156   /* NEC */
 #define ADIO_PVFS                157   /* PVFS for Linux Clusters from Clemson Univ. */
+#define ADIO_TESTFS              158   /* fake file system for testing */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR
