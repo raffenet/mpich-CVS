@@ -12,7 +12,7 @@ from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
 from syslog     import syslog, LOG_INFO, LOG_ERR
-from os         import getuid, read
+from os         import getuid, read, strerror
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
 from errno      import EINTR
