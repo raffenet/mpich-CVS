@@ -47,7 +47,7 @@
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 #define MAX_ERROR_RING 32
 
-typedef struct {
+typedef struct ErrorMsg {
     int  seq;              /* Sequence number; used to check for validity
 			      of instance-specific messages */
     int  severity;         /* Severity of the error */
