@@ -33,7 +33,7 @@
 
    Arguments:
 + comm - communicator to which attribute is attached (handle) 
-- keyval - The key value of the deleted attribute (integer) 
+- comm_keyval - The key value of the deleted attribute (integer) 
 
 .N Fortran
 

@@ -32,8 +32,8 @@
    MPI_Type_delete_attr - delete type attribute
 
    Arguments:
-+  MPI_Datatype type - type
--  int type_keyval - value
++  comm - MPI datatype to which attribute is attached (handle)
+-  type_keyval - The key value of the deleted attribute (integer) 
 
    Notes:
 
@@ -99,7 +99,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	    break;
 	}
 	old_p = &p->next;
-	p = p->next;
+	p     = p->next;
     }
 
     /* We can't unlock yet, because we must not free the attribute until
@@ -112,8 +112,14 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	mpi_errno = MPIR_Call_attr_delete( type, p );
 
 	if (!mpi_errno) {
+	    int in_use;
 	    /* We found the attribute.  Remove it from the list */
 	    *old_p = p->next;
+	    /* Decrement the use of the keyval */
+	    MPIU_Object_release_ref( p->keyval, &in_use);
+	    if (!in_use) {
+		MPIU_Handle_obj_free( &MPID_Keyval_mem, p->keyval );
+	    }
 	    MPID_Attr_free(p);
 	}
     }
