@@ -1,12 +1,13 @@
 #! @PERL@
 #
-# f77tof90 indir outdir [ Makefile-template ]
+# f77tof90 indir outdir [ Makefile-template [Make-Append] ]
 # For each file in indir/*.[fF], create a corresponding file in outdir
 # with .f90/.F90, and with any include "mpif.h" replaced with use mpi
 #
 $indir = $ARGV[0];
 $outdir = $ARGV[1];
 $makeTemplate = $ARGV[2];
+$makeAppend   = $ARGV[3];
 $convertToFreeForm = 1;
 # Including a newline variable allows us to handle Unix and DOS source files
 $newline = "\n";
@@ -45,6 +46,11 @@ closedir( DIR );
 if ($makeTemplate ne "" &&
     -s "$indir/$makeTemplate") {
     &ConvertMakefile( $indir, $outdir, $makeTemplate );
+    if (-s "$outdir/$makeAppend") {
+	# If there is a makeAppend in the output directory, then 
+	# append that to the generated makefile
+	&AppendFile( "$outdir/$makeAppend", "$outdir/$makeTemplate" );
+    }
 }
 
 exit 0;
@@ -101,7 +107,7 @@ sub CreateMakefile {
 # Others as necessary
 # ConvertMakefile( indir, outdir, filename )
 # By providing the filename, we can accept Makefile, Makefile.in, Makefile.am,
-# Makefile.sm, or even nonstandard names such as buildscript
+# Makefile.sm, or even nonstandard names such as buildscript.
 sub ConvertMakefile {
     my ($indir, $outdir, $filename) = @_;
     open( INF, "<$indir/$filename" ) || die "Cannot open $indir/$filename\n";
@@ -118,4 +124,19 @@ sub ConvertMakefile {
 
     close( INF );
     close( OUTF );
+}
+
+# Append infile to the end of inout file
+sub AppendFile( infile, inoutfile )
+{
+    my $infile = $_[0];
+    my $outfile = $_[1];
+    
+    open( INA, "<$infile" ) || die "Cannot open $infile\n";
+    open( OUTA, ">>$outfile" ) || die "Cannot open $outfile\n";
+    while (<INA>) {
+        print OUTA $_;
+    }
+    close(INA);
+    close(OUTA);
 }
