@@ -132,6 +132,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPID_Wtime_init();
     /* MPIU_Timer_pre_init(); */
     mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, "MPIR_Init_thread", MPI_ERR_OTHER, "**init", "**init %d", __LINE__);
+	return mpi_errno;
+    }
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);
 
