@@ -3,7 +3,10 @@
 ===============================================================================
 - MPI_Type_create_darray() and MPI_Type_create_subarray() implemented including
   the right contents and envelope data.
+
 - ROMIO flattening code now supports subarray and darray combiners.
+
+- Improve scalability and performance of some ROMIO PVFS and PVFS2 routines 
 
 - Removed MPIDI_CH3_{iRead,iWrite} from the CH3 interface.
   MPIDI_CH3U_Handle_recv_pkt() now returns a receive request with a populated
