@@ -77,6 +77,9 @@ typedef int BOOL;
 typedef int MPID_Thread_key_t;
 typedef int MPID_Thread_id_t;
 typedef int MPID_Thread_lock_t;
+#define MPID_Thread_lock( a )
+#define MPID_Thread_unlock( a )
+#define MPID_Thread_lock_init( a )
 #define MPID_GetPerThread(p) p = &MPIR_Thread
 #else /* Assumes pthreads for simplicity */
 /* Eventually replace this with an include of a header file with the 

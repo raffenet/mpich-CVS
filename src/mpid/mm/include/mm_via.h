@@ -16,5 +16,7 @@ int via_get_business_card(char *value);
 int via_cq_test();
 int via_can_connect(char *business_card);
 int via_post_connect(MPIDI_VC *vc_ptr, char *business_card);
+int via_merge_post_read(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+int via_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 
 #endif

@@ -5,7 +5,7 @@
  */
 #include "tcpimpl.h"
 
-int tcp_post_read()
+int tcp_merge_post_read(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
     return MPI_SUCCESS;
 }

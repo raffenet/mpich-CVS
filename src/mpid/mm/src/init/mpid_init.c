@@ -32,9 +32,24 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     char sCapabilities[256] = "";
     char key[100];
 
+    /* Initialize per process structure */
+    memset(&MPID_Process, 0, sizeof(MPID_PerProcess));
+    /*
+    MPID_Process.posted_q_head = NULL;
+    MPID_Process.posted_q_tail = NULL;
+    MPID_Process.unex_q_head = NULL;
+    MPID_Process.unex_q_tail = NULL;
+    MPID_Process.comm_parent = NULL;
+    MPID_Process.port_list = NULL;
+    MPID_Process.cq_head = NULL;
+    MPID_Process.cq_tail = NULL;
+    MPID_Process.pkr_read_list = NULL;
+    MPID_Process.pkr_write_list = NULL;
+    MPID_Process.unpkr_write_list = NULL;
     MPID_Process.pmi_kvsname[0] = '\0';
-    MPID_Process.comm_parent = (MPID_Comm *)0;
-    MPID_Process.port_list = (OpenPortNode *)0;
+    */
+    MPID_Thread_lock_init(MPID_Process.qlock);
+    MPID_Thread_lock_init(MPID_Process.lock);
 
     PMI_Init(&spawned);
     PMI_Get_rank(&MPIR_Process.comm_world->rank);

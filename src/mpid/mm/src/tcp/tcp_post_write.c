@@ -5,7 +5,7 @@
  */
 #include "tcpimpl.h"
 
-int tcp_post_write()
+int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     return MPI_SUCCESS;
 }

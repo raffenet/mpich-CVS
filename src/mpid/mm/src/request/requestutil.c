@@ -25,6 +25,10 @@ MPID_Request * mm_request_alloc()
     memset(p, 0, sizeof(MPID_Request));
     p->cc_ptr = &p->cc;
 #endif
+    p->mm.rcar[0].freeme = FALSE;
+    p->mm.rcar[1].freeme = FALSE;
+    p->mm.wcar[0].freeme = FALSE;
+    p->mm.wcar[1].freeme = FALSE;
     return p;
 }
 

@@ -23,10 +23,12 @@ MM_Car* mm_car_alloc()
 {
     MM_Car *pCar;
     pCar = BlockAlloc(MM_Car_allocator);
+    pCar->freeme = TRUE;
     return pCar;
 }
 
 void mm_car_free(MM_Car *car_ptr)
 {
-    BlockFree(MM_Car_allocator, car_ptr);
+    if (car_ptr->freeme)
+	BlockFree(MM_Car_allocator, car_ptr);
 }

@@ -145,22 +145,32 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
+	vc_ptr->merge_post_read = shm_merge_post_read;
+	vc_ptr->post_write = shm_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_TCP
     case MM_TCP_METHOD:
+	vc_ptr->merge_post_read = tcp_merge_post_read;
+	vc_ptr->post_write = tcp_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_METHOD:
+	vc_ptr->merge_post_read = via_merge_post_read;
+	vc_ptr->post_write = via_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_METHOD:
+	vc_ptr->merge_post_read = via_rdma_merge_post_read;
+	vc_ptr->post_write = via_rdma_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD:
+	vc_ptr->merge_post_read = new_merge_post_read;
+	vc_ptr->post_write = new_post_write;
 	break;
 #endif
     default:
@@ -196,6 +206,31 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
     PMI_KVS_Get(kvs_name, key, methods);
     
     /* choose method */
+    
+    /* match tcp first so I can test the tcp method */
+    /* begin test code ****************/
+    if (strstr(methods, "tcp"))
+    {
+	/* get the tcp method business card */
+	snprintf(key, 100, "business_card_tcp:%d", rank);
+	PMI_KVS_Get(kvs_name, key, value);
+	
+	/* check to see if we can connect with this business card */
+	if (tcp_can_connect(value))
+	{
+	    /* allocate a vc for this method */
+	    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->rank = rank;
+	    /* post a connection request to the method */
+	    tcp_post_connect(vc_ptr, value);
+	    
+	    free(value);
+	    return vc_ptr;
+	}
+    }
+    /* end test code ******************/
     
 #ifdef WITH_METHOD_SHM
     if (strstr(methods, "shm"))

@@ -25,12 +25,15 @@ typedef struct OpenPortNode {
 
 typedef struct MPID_PerProcess {
       MPID_Thread_lock_t lock;
-         struct MM_Car * posted_q;   /* unmatched posted read operations */
-         struct MM_Car * unex_q;     /* active un-matched read operations */
-         struct MM_Car * cq_head;    /* completion queue head */
-	 struct MM_Car * cq_tail;    /* completion queue tail */
-         struct MM_Car * pkr_read_list;  /* active pack read operations */
-	 struct MM_Car * pkr_write_list; /* active pack write operations */
+      MPID_Thread_lock_t qlock;
+         struct MM_Car * posted_q_head;    /* unmatched posted read operations */
+	 struct MM_Car * posted_q_tail;
+         struct MM_Car * unex_q_head;      /* active un-matched read operations */
+	 struct MM_Car * unex_q_tail;
+         struct MM_Car * cq_head;          /* completion queue head */
+	 struct MM_Car * cq_tail;          /* completion queue tail */
+         struct MM_Car * pkr_read_list;    /* active pack read operations */
+	 struct MM_Car * pkr_write_list;   /* active pack write operations */
          struct MM_Car * unpkr_write_list; /* active unpack write operations */
                     char pmi_kvsname[100];
              MPID_Comm * comm_parent;
@@ -72,6 +75,8 @@ typedef struct MPIDI_VC
   struct MM_Car * readq_tail;
            char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
               int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
+            int (*merge_post_read)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+	    int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 struct MPIDI_VC * read_next_ptr;
 struct MPIDI_VC * write_next_ptr;
 } MPIDI_VC;

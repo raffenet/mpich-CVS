@@ -82,6 +82,7 @@ typedef struct MPID_Packet
 /* Communication agent request */
 typedef struct MM_Car
 {
+    int freeme;
     struct MPID_Request *request_ptr;
     struct MPIDI_VC *vc_ptr;
     int src, dest;
