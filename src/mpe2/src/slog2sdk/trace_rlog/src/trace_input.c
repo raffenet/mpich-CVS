@@ -32,43 +32,43 @@ typedef struct _trace_file
     RLOG_IOStruct *pInput;
     RLOG_STATE state;
     RLOG_ARROW arrow;
-    BOOL bArrowAvail;
+    RLOG_BOOL bArrowAvail;
     RLOG_EVENT **ppEvent;
-    BOOL **ppEventAvail;
+    RLOG_BOOL **ppEventAvail;
 } _trace_file;
 
-BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max)
+RLOG_BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max)
 {
     /* Am I supposed to include the terminating NULL character? */
     /* This function does not. */
     if (*pos + (int)strlen(str) > max)
-	return FALSE;
+	return RLOG_FALSE;
     *length = strlen(str);
     memcpy(&base[*pos], str, *length);
     *pos += *length;
-    return TRUE;
+    return RLOG_TRUE;
 }
 
-BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const int max)
+RLOG_BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const int max)
 {
     if (*pos + 2 > max)
-	return FALSE;
+	return RLOG_FALSE;
     *length = 2;
     base[*pos] = n1;
     base[*pos+1] = n2;
     *pos += 2;
-    return TRUE;
+    return RLOG_TRUE;
 }
 
-BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, const int max)
+RLOG_BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, const int max)
 {
     if (*pos + 2 > max)
-	return FALSE;
+	return RLOG_FALSE;
     *length = 2;
     base[*pos] = d1;
     base[*pos+1] = d2;
     *pos += 2;
-    return TRUE;
+    return RLOG_TRUE;
 }
 
 TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp )
@@ -281,7 +281,7 @@ TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
 {
     int i, j, rank = -1, level = -1;
     double dmin;
-    BOOL done = FALSE;
+    RLOG_BOOL done = RLOG_FALSE;
 
     *n_tcoords = 2;
     *n_ycoords = 2;
@@ -296,7 +296,7 @@ TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
 		level = i;
 		rank  = j;
 		dmin = fp->ppEvent[j][i].end_time;
-		done = TRUE;
+		done = RLOG_TRUE;
 	    }
 	}
     }
@@ -349,7 +349,7 @@ TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp,
 {
     int i, j, rank = 1, level = -1;
     double dmin;
-    BOOL done = FALSE;
+    RLOG_BOOL done = RLOG_FALSE;
 
     *n_bytes = 0;
 
