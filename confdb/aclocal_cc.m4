@@ -708,8 +708,13 @@ dnl Defines one of the following if a weak symbol pragma is found:
 dnl.vb
 dnl    HAVE_PRAGMA_WEAK - #pragma weak
 dnl    HAVE_PRAGMA_HP_SEC_DEF - #pragma _HP_SECONDARY_DEF
-dnl    HAVE_PRAGMA_CRI_DUP) - #pragma _CRI duplicate x as y
+dnl    HAVE_PRAGMA_CRI_DUP  - #pragma _CRI duplicate x as y
 dnl.ve
+dnl May also define
+dnl.vb
+dnl    HAVE_WEAK_ATTRIBUTE
+dnl.ve
+dnl if functions can be declared as 'int foo(...) __attribute__ ((weak));'
 dnl 
 dnlD*/
 AC_DEFUN(PAC_PROG_C_WEAK_SYMBOLS,[
@@ -777,7 +782,6 @@ dnl
 if test -z "$pac_cv_prog_c_weak_symbols" ; then
     pac_cv_prog_c_weak_symbols="no"
 fi
-])
 dnl
 dnl If there is an extra explanatory message, echo it now so that it
 dnl doesn't interfere with the cache result value
@@ -799,6 +803,12 @@ else
     ifelse([$1],,:,[$1])
 fi
 ])
+AC_CACHE_CHECK([whether __attribute__ ((weak)) allowed],
+pac_cv_attr_weak,[
+AC_TRY_COMPILE([int foo(int) __attribute__ ((weak));],[int a;],
+pac_cv_attr_weak=yes,pac_cv_attr_weak=no)])
+])
+
 #
 # This is a replacement that checks that FAILURES are signaled as well
 # (later configure macros look for the .o file, not just success from the
