@@ -17,11 +17,13 @@ call mpi_file_close( fh, ierr )
 <checkErr/>
 </closefile>
 <deletefile>
+call mpi_barrier( comm, ierr )
 call mpi_comm_rank( comm, r, ierr )
 if (r .eq. 0) then
     call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
+    <checkErr/>
 endif
-<checkErr/>
+call mpi_barrier( comm, ierr )
 </deletefile>
 
 # Common code to initialize the buffer for contiguous writes

@@ -23,7 +23,7 @@ C
       integer value, ierr
       include '../attr/attraints.h'
 C
-      value = extrastate - 1
+      extrastate = extrastate - 1
 C   The value returned by the free function is the error code
 C   returned by the wait/test function 
       ierr = MPI_SUCCESS
@@ -54,7 +54,6 @@ C
        implicit none
        include 'mpif.h'
        integer errs, ierr
-       integer counter
        logical flag
        integer status(MPI_STATUS_SIZE)
        integer request
@@ -68,8 +67,7 @@ C
        extrastate = 0
        call mpi_grequest_start( query_fn, free_fn, cancel_fn, 
      &            extrastate, request, ierr )
-    
-       call mpi_test( request, flag, status, ierr  )
+       call mpi_test( request, flag, status, ierr )
        if (flag) then
           errs = errs + 1
           print *, 'Generalized request marked as complete'
@@ -82,13 +80,14 @@ C
        extrastate = 1
        call mpi_grequest_start( query_fn, free_fn, cancel_fn, 
      &                          extrastate, request, ierr )
-       call MPI_Grequest_complete( request, ierr )
-       call MPI_Wait( request, MPI_STATUS_IGNORE, ierr )
+       call mpi_grequest_complete( request, ierr )
+       call mpi_wait( request, MPI_STATUS_IGNORE, ierr )
 C       
-       if (counter .ne. 0) then
+       if (extrastate .ne. 0) then
           errs = errs + 1
           print *, 'Free routine not called' //
      &         ', or not called with extra_data'
+          print *, 'extrastate = ', extrastate
        endif
 C
        call MTest_Finalize( errs )

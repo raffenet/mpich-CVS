@@ -63,8 +63,10 @@ C        keys are number from 0 to n-1, even in Fortran (Section 4.10)
                      do ln=MPI_MAX_INFO_VAL,1,-1
                         if (myvalue(ln:ln) .ne. ' ') then
                            if (vlen .ne. ln) then
+                              errs = errs + 1
                               print *, 'length is ', ln, 
-     &                          ' but valuelen gave ',  vlen
+     &                          ' but valuelen gave ',  vlen, 
+     &                          ' for key ', mykey
                            endif
                            goto 100
                         endif
