@@ -78,7 +78,7 @@ static LPCTSTR GetErrorMessage( HRESULT hr )
     {
         return _T("Success");
     }
-    if ( hr & 0x00005000) // standard ADSI Errors 
+    if ( hr & 0x00005000) /* standard ADSI Errors  */
     {
         _tcscpy(s, GetADSIError(hr));
     }
@@ -101,7 +101,7 @@ static LPCTSTR GetErrorMessage( HRESULT hr )
             LocalFree( lpBuffer );
         }
     }
-    else // Non Win32 Error
+    else /* Non Win32 Error */
     {
         _stprintf(s, _T("%X"), hr );
         return s;
@@ -200,7 +200,7 @@ static DWORD ScpCreate(
 	_tprintf(TEXT("GetComputerNameEx failed: Error %d\n"), GetLastError());
 	return GetLastError();
     }
-    _tprintf(TEXT("GetComputerNameEx: %s\n"), szServer);
+    /*_tprintf(TEXT("GetComputerNameEx: %s\n"), szServer);*/
 
     /* Enter the attribute values to be stored in the SCP. */
     keywords[0].dwType = ADSTYPE_CASE_IGNORE_STRING;
@@ -234,7 +234,7 @@ static DWORD ScpCreate(
 	_tprintf(TEXT("GetComputerObjectName failed: Error %d\n"), GetLastError());
 	return GetLastError();
     }
-    _tprintf(TEXT("GetComputerObjectName: %s\n"), szDn);
+    /*_tprintf(TEXT("GetComputerObjectName: %s\n"), szDn);*/
 
     /* Compose the ADSpath and bind to the computer object for the local computer. */
     _tcsncpy(szAdsPath,TEXT("LDAP://"),MAX_PATH);
@@ -246,7 +246,7 @@ static DWORD ScpCreate(
 	ReportError(TEXT("Failed to bind Computer Object."),hr);
 	return hr;
     }
-    _tprintf(TEXT("Bound to: %s\n"), szDn);
+    _tprintf(TEXT("Bound to Active directory object:\n%s\n"), szDn);
 
     /********************************************************************
      * Publish the SCP as a child of the computer object
@@ -257,6 +257,9 @@ static DWORD ScpCreate(
 
     /* Complete the action. */
     _stprintf(szRelativeDistinguishedName, TEXT("cn=%s"), TEXT(SMPD_SERVICE_NAME));
+    /* Delete the previous object if it exists */
+    pComp->DeleteDSObject(szRelativeDistinguishedName);
+    /* Create a new object */
     hr = pComp->CreateDSObject(szRelativeDistinguishedName, ScpAttribs, dwAttr, &pDisp);
     if (FAILED(hr))
     {
@@ -295,7 +298,7 @@ static DWORD ScpCreate(
 	pIADsSCP->Release();
 	return hr;
     }
-    _tprintf(TEXT("distinguishedName via IADs: %s\n"), var.bstrVal);
+    /*_tprintf(TEXT("distinguishedName via IADs: %s\n"), var.bstrVal);*/
 
     _tcsncpy(pszDN, var.bstrVal, ccDN);
 
@@ -312,7 +315,7 @@ static DWORD ScpCreate(
     _tcsncpy(pwszBindByGuidStr, TEXT("LDAP://<GUID="), 1024);
     _tcsncat(pwszBindByGuidStr, bstrGuid, 1024 -_tcslen(pwszBindByGuidStr));
     _tcsncat(pwszBindByGuidStr, TEXT(">"), 1024 -_tcslen(pwszBindByGuidStr));
-    _tprintf(TEXT("GUID binding string: %s\n"), pwszBindByGuidStr);
+    /*_tprintf(TEXT("GUID binding string: %s\n"), pwszBindByGuidStr);*/
 
     pIADsSCP->Release();
 
@@ -335,7 +338,7 @@ static DWORD ScpCreate(
     /* Cache the GUID binding string under the registry key. */
     dwStat = RegSetValueEx(hReg, TEXT("GUIDBindingString"), 0, REG_SZ,
 	(const BYTE *)pwszBindByGuidStr, 
-	2*(_tcslen(pwszBindByGuidStr)));
+	(DWORD)(2*(_tcslen(pwszBindByGuidStr))));
     if (dwStat != NO_ERROR)
     {
 	ReportError(TEXT("RegSetValueEx failed:"), dwStat);
@@ -420,7 +423,7 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
     {
         return GetLastError();
     }
-    _tprintf(TEXT("szSamName: %s\n"), szSamName);
+    /*_tprintf(TEXT("szSamName: %s\n"), szSamName);*/
      
     /* Get the name of a domain controller in that domain. */
     dwStatus = DsGetDcName(NULL,
@@ -447,7 +450,7 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
 
     for (unsigned long i=0; i<ulSpn; i++)
     {
-	_tprintf(TEXT("spn[%d] = %s\n"), i, pspn[i]);
+	_tprintf(TEXT("Service Principal Name =\n%s\n"), pspn[i]);
     }
     /* Write the SPNs to the service account or computer account. */
     dwStatus = DsWriteAccountSpn(
@@ -472,6 +475,9 @@ SMPD_BOOL smpd_setup_scp()
     unsigned long ulSpn;
     LPWSTR pwszComputerName;
     DWORD dwLen;
+    SMPD_BOOL result = SMPD_TRUE;
+
+    CoInitialize(NULL);
 
     /* Create the service's Service Connection Point (SCP). */
     dwStatus = ScpCreate(
@@ -484,27 +490,30 @@ SMPD_BOOL smpd_setup_scp()
     if (dwStatus != 0)
     {
 	_tprintf(TEXT("ScpCreate failed: %d\n"), dwStatus);
-	return SMPD_FALSE;
+	result = SMPD_FALSE;
+	goto fn_exit;
     }
-    _tprintf(TEXT("szDNofSCP: %s\n"), szDNofSCP);
+    /*_tprintf(TEXT("szDNofSCP: %s\n"), szDNofSCP);*/
 
-    /* Get the size required for the SAM account name. */
+    /* Get the size required for the DN account name. */
     dwLen = 0;
-    GetComputerObjectNameW(NameSamCompatible, NULL, &dwLen);
+    GetComputerObjectNameW(NameFullyQualifiedDN, NULL, &dwLen);
 
     pwszComputerName = new WCHAR[dwLen + 1];
     if(NULL == pwszComputerName)
     {
-	return SMPD_FALSE;
+	result = SMPD_FALSE;
+	goto fn_exit;
     }
 
-    /* Get the SAM account name of the computer object for the server. */
-    if(!GetComputerObjectNameW(NameSamCompatible, pwszComputerName, &dwLen))
+    /* Get the DN account name of the computer object for the server. */
+    if(!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
     {
 	delete pwszComputerName;
-	return SMPD_FALSE;
+	result = SMPD_FALSE;
+	goto fn_exit;
     }
-    wprintf(L"GetComputerObjectName: %s\n", pwszComputerName);
+    /*wprintf(L"GetComputerObjectName: %s\n", pwszComputerName);*/
 
     dwStatus = SpnCompose(
 	&pspn,            /* Receives pointer to the SPN array. */
@@ -514,12 +523,12 @@ SMPD_BOOL smpd_setup_scp()
     if (dwStatus != NO_ERROR)
     {
 	ReportError(TEXT("Failed to compose SPN"), dwStatus);
-	return SMPD_FALSE;
+	result = SMPD_FALSE;
+	goto fn_exit;
     }
 
     if (dwStatus == NO_ERROR)
     {
-	/*_tprintf(TEXT("spn: %s\n"), pspn[0]);*/
 	dwStatus = SpnRegister(
 	    pwszComputerName,    /* Account on which SPNs are registered. */
 	    pspn,                /* Array of SPNs to register. */
@@ -528,10 +537,14 @@ SMPD_BOOL smpd_setup_scp()
 	if (dwStatus != NO_ERROR)
 	{
 	    ReportError(TEXT("SpnRegister failed"), dwStatus);
+	    result = SMPD_FALSE;
+	    goto fn_exit;
 	}
     }
 
-    return SMPD_TRUE;
+fn_exit:
+    CoUninitialize();
+    return result;
 }
 
 DWORD smpd_scp_update(USHORT usPort)
@@ -736,7 +749,7 @@ static HRESULT AllowAccessToScpProperties(
 	}
 
 	sbstrTrustee = pwszComputerName;
-	wprintf(L"GetComputerObjectName: %s\n", pwszComputerName);
+	/*wprintf(L"GetComputerObjectName: %s\n", pwszComputerName);*/
     } 
 
     /* Get the nTSecurityDescriptor. */

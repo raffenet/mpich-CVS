@@ -25,6 +25,7 @@ static int smpd_build_spn_list();
 typedef struct smpd_host_spn_node_t
 {
     char host[SMPD_MAX_NAME_LENGTH];
+    char dnshost[SMPD_MAX_NAME_LENGTH];
     char spn[SMPD_MAX_NAME_LENGTH];
     struct smpd_host_spn_node_t *next;
 } smpd_host_spn_node_t;
@@ -161,6 +162,7 @@ static int smpd_build_spn_list()
     USHORT usPort;                 /* service port. */
     WCHAR pszSearchString[SMPD_MAX_NAME_LENGTH];
     char temp_str[SMPD_MAX_NAME_LENGTH];
+    char temp_str2[SMPD_MAX_NAME_LENGTH];
     smpd_host_spn_node_t *iter;
     static initialized = 0;
 
@@ -242,7 +244,7 @@ static int smpd_build_spn_list()
 
 	/* Bind to the DN to get the other properties. */
 	LPWSTR lpszLDAPPrefix = L"LDAP://";
-	DWORD dwSCPPathLength = wcslen(lpszLDAPPrefix) + wcslen(pszDN) + 1;
+	DWORD dwSCPPathLength = (DWORD)(wcslen(lpszLDAPPrefix) + wcslen(pszDN) + 1);
 	LPWSTR pwszSCPPath = (LPWSTR)malloc(sizeof(WCHAR) * dwSCPPathLength);
 	if (pwszSCPPath)
 	{
@@ -255,7 +257,7 @@ static int smpd_build_spn_list()
 	    goto Cleanup;
 	}               
 	/*wprintf(L"pszDN = %s\n", pszDN);*/
-	FreeADsStr(pszDN);
+	/*FreeADsStr(pszDN);*/
 
 	hr = ADsGetObject(pwszSCPPath, IID_IDirectoryObject, (void**)&pSCP);
 	free(pwszSCPPath);
@@ -291,6 +293,7 @@ static int smpd_build_spn_list()
 	    iter->next = NULL;
 	    iter->host[0] = '\0';
 	    iter->spn[0] = '\0';
+	    iter->dnshost[0] = '\0';
 
 	    /* Loop through the entries returned by GetObjectAttributes 
 	    and save the values in the appropriate buffers.  */
@@ -327,9 +330,12 @@ static int smpd_build_spn_list()
 		}
 	    }
 
-	    wcstombs(iter->host, pszServiceDNSName, SMPD_MAX_NAME_LENGTH);
+	    wcstombs(iter->dnshost, pszServiceDNSName, SMPD_MAX_NAME_LENGTH);
 	    wcstombs(temp_str, pszClass, SMPD_MAX_NAME_LENGTH);
-	    MPIU_Snprintf(iter->spn, SMPD_MAX_NAME_LENGTH, "%s/%s:%d", temp_str, iter->host, usPort);
+	    /*MPIU_Snprintf(iter->spn, SMPD_MAX_NAME_LENGTH, "%s/%s:%d", temp_str, iter->dnshost, usPort);*/
+	    wcstombs(temp_str2, pszDN, SMPD_MAX_NAME_LENGTH);
+	    MPIU_Snprintf(iter->spn, SMPD_MAX_NAME_LENGTH, "%s/%s/%s", temp_str, iter->dnshost, temp_str2);
+	    MPIU_Strncpy(iter->host, iter->dnshost, SMPD_MAX_NAME_LENGTH);
 	    strtok(iter->host, ".");
 	    iter->next = spn_list;
 	    spn_list = iter;
@@ -342,6 +348,7 @@ static int smpd_build_spn_list()
 		FreeADsStr(pszClass);
 	    }
 	}
+	FreeADsStr(pszDN);
     }
 
 Cleanup:
@@ -349,12 +356,13 @@ Cleanup:
     iter = spn_list;
     while (iter != NULL)
     {
-	printf("host: %s\n", iter->host);
-	printf("spn : %s\n", iter->spn);
+	printf("host   : %s\n", iter->host);
+	printf("dnshost: %s\n", iter->dnshost);
+	printf("spn    : %s\n", iter->spn);
 	iter = iter->next;
     }
-    */
     fflush(stdout);
+    */
     if (pSCP)
     {
 	pSCP->Release();
@@ -378,6 +386,7 @@ Cleanup:
 	pSearch->Release();
 	pSearch = NULL;
     }
+    CoUninitialize();
 
     return SMPD_SUCCESS;
 }
@@ -476,6 +485,12 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
 	    MPIU_Strncpy(target, iter->spn, SMPD_MAX_NAME_LENGTH);
 	    return SMPD_SUCCESS;
 	}
+	if (stricmp(iter->dnshost, host) == 0)
+	{
+	    MPIU_Strncpy(target, iter->spn, SMPD_MAX_NAME_LENGTH);
+	    return SMPD_SUCCESS;
+	}
+	iter = iter->next;
     }
 
     result = DsMakeSpn(SMPD_SERVICE_NAME, NULL, host, (USHORT)port, NULL, &len, target);
