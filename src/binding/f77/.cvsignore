@@ -315,3 +315,5 @@ fileseterrf.c
 statusc2f.c
 statusf2c.c
 .deps
+*Debug*
+*Release*
