@@ -83,6 +83,7 @@ MPIO_EXTRA_REAL_POBJECTS="_get_errh.o _set_errh.o"
 #
 # Completion routines for MPIO_Requests.  MPI Implementations with
 # generalized requests do not need these
+# ioreq_c2f and ioreq_f2c are not MPIO_Requests; rather, they 
 MPIO_REQOBJECTS="iotest.o iotestall.o iotestany.o iotestsome.o iowait.o iowaitall.o iowaitany.o iowaitsome.o ioreq_c2f.o ioreq_f2c.o"
 MPIO_REQ_TMP_POBJECTS="iotest.p iowait.p iowaitall.p iowaitany.p iotestall.p iotestany.p iowaitsome.p iotestsome.p"
 MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall.o _iotestany.o _iowaitsome.o _iotestsome.o"
@@ -292,6 +293,15 @@ fi
 C_DEBUG_FLAG="-g"
 F77_DEBUG_FLAG="-g"
 C_OPT_FLAG=${CFLAGS:-"-O"}
+# MPICH1 uses OPTFLAGS and OPTFLAGSC to specify separate optimization
+# flags for the C compiler (this is better that adding it to the
+# undifferentiated CFLAGS, at least on input).
+if test -n "$OPTFLAGS" ; then
+    C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGS"
+fi
+if test -n "$OPTFLAGSC" ; then
+    C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGSC"
+fi
 case $ARCH in 
      sun4)
      CC=${CC:-gcc}
@@ -1017,9 +1027,9 @@ else
 fi   
 #
 if test -n "$mpi_sgi"; then
-   if test -z "$HAVE_MPI_INFO" ; then
-      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
-   fi
+#   if test -z "$HAVE_MPI_INFO" ; then
+#      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
+#   fi
    PAC_TEST_MPI_SGI_type_is_contig
    PAC_TEST_MPI_COMBINERS
    PAC_TEST_MPI_HAVE_OFFSET_KIND

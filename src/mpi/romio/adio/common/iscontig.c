@@ -7,9 +7,9 @@
  */
 
 #include "adio.h"
-#ifdef MPISGI
+/* #ifdef MPISGI
 #include "mpisgi2.h"
-#endif
+#endif */
 
 #if (defined(MPICH) || defined(MPICH2))
 /* MPICH2 also provides this routine */

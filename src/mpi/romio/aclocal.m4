@@ -23,18 +23,21 @@ EOF
 program failed to produce an object file])
 	NOF77=1
    elif test -z "$FORTRANNAMES" ; then
-    if test $arch_CRAY ; then
+     # MAC OS X (and probably FreeBSD need strings - (not strings -a)
      # Cray doesn't accept -a ...
-     nameform1=`strings confftest.o | grep mpir_init_fop_  | head -1`
-     nameform2=`strings confftest.o | grep MPIR_INIT_FOP   | head -1`
-     nameform3=`strings confftest.o | grep mpir_init_fop   | head -1`
-     nameform4=`strings confftest.o | grep mpir_init_fop__ | head -1`
-    else
-     nameform1=`strings -a confftest.o | grep mpir_init_fop_  | head -1`
-     nameform2=`strings -a confftest.o | grep MPIR_INIT_FOP   | head -1`
-     nameform3=`strings -a confftest.o | grep mpir_init_fop   | head -1`
-     nameform4=`strings -a confftest.o | grep mpir_init_fop__ | head -1`
-    fi
+     allstrings="-a"
+     if test $arch_CRAY ; then 
+	allstrings="" 
+     elif strings - confftest.o < /dev/null >/dev/null 2>&1 ; then
+         allstrings="-"
+     elif strings -a confftest.o < /dev/null >/dev/null 2>&1 ; then
+         allstrings="-a"
+     fi
+    
+     nameform1=`strings $allstrings confftest.o | grep mpir_init_fop_  | head -1`
+     nameform2=`strings $allstrings confftest.o | grep MPIR_INIT_FOP   | head -1`
+     nameform3=`strings $allstrings confftest.o | grep mpir_init_fop   | head -1`
+     nameform4=`strings $allstrings confftest.o | grep mpir_init_fop__ | head -1`
     rm -f confftest.f confftest.o
     if test -n "$nameform4" ; then
 	echo "Fortran externals are lower case and have two trailing underscores"
@@ -52,7 +55,7 @@ program failed to produce an object file])
     else
 	AC_MSG_WARN([Unable to determine the form of Fortran external names.
 Make sure that the compiler $F77 can be run on this system.
-Turning off Fortran (-nof77 being assumed])
+Turning off Fortran (-nof77 being assumed)])
 	NOF77=1
     fi
     fi
