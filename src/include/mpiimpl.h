@@ -1297,6 +1297,7 @@ int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
+const char * MPIR_Err_get_string(int);
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
