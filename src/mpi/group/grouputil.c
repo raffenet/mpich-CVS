@@ -7,12 +7,13 @@
 #include "mpiimpl.h"
 
 #ifndef MPID_GROUP_PREALLOC 
-#define MPID_GROUP_PREALLOC 8
+#define MPID_GROUP_PREALLOC (8 + MPID_GROUP_RESERVED)
 #endif
 
 /* Preallocated group objects */
 MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC];
 MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP, 
 				      sizeof(MPID_Group), MPID_Group_direct,
-                                      MPID_GROUP_PREALLOC, };
+                                      MPID_GROUP_PREALLOC,
+				      MPID_GROUP_RESERVED};
 

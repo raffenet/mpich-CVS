@@ -10,14 +10,14 @@
 /* This is the utility file for datatypes that contains the basic datatype items
    and storage management */
 #ifndef MPID_DATATYPE_PREALLOC 
-#define MPID_DATATYPE_PREALLOC 8
+#define MPID_DATATYPE_PREALLOC (8 + MPID_DATATYPE_RESERVED)
 #endif
 
 /* Preallocated datatype objects */
 MPID_Datatype MPID_Datatype_direct[MPID_DATATYPE_PREALLOC];
 MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE, 
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
-                              MPID_DATATYPE_PREALLOC };
+                              MPID_DATATYPE_PREALLOC, MPID_DATATYPE_RESERVED };
 
 /* 
  * This routine computes the extent of a datatype.  

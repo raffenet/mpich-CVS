@@ -42,6 +42,14 @@ typedef short int16_t;
 typedef int int32_t;
 #endif
 
+/* Define reserved space for MPID objects */
+#define MPID_COMM_RESERVED 2 /* 3 ??? 1 for MPI_COMM_NULL? */
+#define MPID_DATATYPE_RESERVED 33
+#define MPID_GROUP_RESERVED 0 /* 1 or 2 ???) */
+#define MPID_FILE_RESERVED 0 /* 1 for FILE_NULL ???) */
+#define MPID_WIN_RESERVED 0 /* 1 for WIN_NULL ???) */
+
+
 /* Thread basics */
 #ifdef MPICH_SINGLE_THREADED
 typedef int MPID_Thread_key_t;
@@ -204,6 +212,8 @@ typedef struct {
     void               *direct;         /* Pointer to direct block, used 
 					   for allocation */
     int                direct_size;     /* Size of direct block */
+    int                n_reserved;      /* Number of reserved objects in
+					   the direct block */
 } MPIU_Object_alloc_t;
 extern void *MPIU_Handle_obj_new( MPIU_Object_alloc_t * );
 extern void MPIU_Handle_obj_free( MPIU_Object_alloc_t *, void * );
@@ -609,6 +619,8 @@ typedef struct {
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
+    MPID_Comm         *comm_self;       /* Easy access to comm_self */
+    MPID_Comm         *comm_parent;     /* Easy access to comm_parent */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;

@@ -7,11 +7,11 @@
 #include "mpiimpl.h"
 
 #ifndef MPID_FILE_PREALLOC 
-#define MPID_FILE_PREALLOC 8
+#define MPID_FILE_PREALLOC (8 + MPID_FILE_RESERVED)
 #endif
 
 /* Preallocated file objects */
 MPID_File MPID_File_direct[MPID_FILE_PREALLOC];
 MPIU_Object_alloc_t MPID_File_mem = { 0, 0, 0, 0, MPID_FILE, 
 				      sizeof(MPID_File), MPID_File_direct,
-                                      MPID_FILE_PREALLOC, };
+                                      MPID_FILE_PREALLOC, MPID_FILE_RESERVED};

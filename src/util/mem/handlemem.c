@@ -29,7 +29,7 @@
 
    The following routines are provided:
    void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
-                                  int handle_type )
+                                  int handle_type, int n_reserved )
         Initialize the preallocated array (MPID_<obj>_direct) with
         direct_size elements each of obj_size.  Returns the first available
         element (which should usually be assigned to "avail").
@@ -109,13 +109,15 @@ static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
 
 static void *MPIU_Handle_direct_init( void *direct, int direct_size, 
 				      int obj_size, 
-				      int handle_type )
+				      int handle_type,
+				      int n_reserved)
 {
     int                i;
     MPIU_Handle_common *hptr=0;
-    char               *ptr = (char *)direct;
+    char               *head_ptr = (char *)direct + obj_size * n_reserved;
+    char               *ptr = head_ptr;
     
-    for (i=0; i<direct_size; i++) {
+    for (i=n_reserved; i<direct_size; i++) {
 	hptr = (MPIU_Handle_common *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
@@ -123,7 +125,7 @@ static void *MPIU_Handle_direct_init( void *direct, int direct_size,
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
 	}
     hptr->next = 0;
-    return direct;
+    return head_ptr;
 }
 
 /* indirect is really a pointer to a pointer to an array of pointers */
@@ -240,7 +242,7 @@ void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
 
 	objmem->initialized = 1;
 	ptr   = MPIU_Handle_direct_init( objmem->direct, objmem->direct_size,
-					 objsize, objkind );
+					 objsize, objkind, objmem->n_reserved);
 	if (ptr)
 	    objmem->avail = ptr->next;
 	/* unlock */
