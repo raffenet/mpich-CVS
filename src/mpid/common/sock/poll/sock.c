@@ -15,9 +15,48 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
+
+/*
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+#ifdef HAVE_SYS_POLL_H
+#include <sys/poll.h>
+#endif
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+*/
+
+#ifdef USE_SELECT_FOR_POLL
+#include "mpidu_sock_poll.h"
+#endif
 
 #if !defined(MPIDU_SOCK_SET_DEFAULT_SIZE)
 #define MPIDU_SOCK_SET_DEFAULT_SIZE 1
