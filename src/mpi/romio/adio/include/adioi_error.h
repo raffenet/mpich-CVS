@@ -11,7 +11,7 @@
  * handling in many of the romio/mpi-io/ source files.
  */
 #define MPIO_CHECK_FILE_HANDLE(fh, myname, error_code)          \
-if ((fh <= (MPI_File) 0) ||					\
+if ((fh <= (ADIO_File) 0) ||					\
     ((fh)->cookie != ADIOI_FILE_COOKIE)) {			\
     error_code = MPIO_Err_create_code(MPI_SUCCESS,		\
 				      MPIR_ERR_RECOVERABLE,	\
