@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_struct(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype old_types[], MPI_Datatype *newtype)
+int MPI_Type_struct(int count,
+		    int blocklens[],
+		    MPI_Aint indices[],
+		    MPI_Datatype old_types[],
+		    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_struct";
     int mpi_errno = MPI_SUCCESS;
@@ -67,6 +71,19 @@ int MPI_Type_struct(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_struct(count,
+				 blocklens,
+				 indices,
+				 old_types,
+				 newtype);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
+
+
+
+
+
+
