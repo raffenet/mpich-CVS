@@ -76,7 +76,7 @@ namespace wmpiexec
 		delegate void WriteInputDelegate(TextWriter stream);
 		delegate void AppendTextDelegate(string str);
 		delegate void SetProcessDelegate(Process p);
-		delegate void ResetButtonsDelegate();
+		delegate void ResetExecuteButtonsDelegate();
 
 		private string mpiexec_command, mpiexec_command_args;
 		private int expanded_dialog_difference;
@@ -627,7 +627,7 @@ namespace wmpiexec
 			process = p;
 		}
 
-		private void ResetButtons()
+		private void ResetExecuteButtons()
 		{
 			execute_button.Enabled = true;
 			break_button.Enabled = false;
@@ -808,6 +808,13 @@ namespace wmpiexec
 			}
 		}
 
+		#region Process thread functions
+		/// <summary>
+		/// These functions read and write input and output of the spawned mpiexec process.
+		/// They are run in separate threads since they can execute for a long period of time
+		/// and therefore shouldn't come from the thread pool (delegates).
+		/// Is this a correct design decision?
+		/// </summary>
 		private void ReadOutput(TextReader stream)
 		{
 			thread_output_stream = stream;
@@ -927,7 +934,14 @@ namespace wmpiexec
 				p.StartInfo.RedirectStandardInput = false;
 				p.StartInfo.RedirectStandardOutput = false;
 				p.StartInfo.FileName = "cmd.exe";
-				p.StartInfo.Arguments = "/C " + command + " && pause";
+				if (command.IndexOf('"') != -1)
+				{
+					p.StartInfo.Arguments = "/C \"" + command + "\" && pause";
+				}
+				else
+				{
+					p.StartInfo.Arguments = "/C " + command + " && pause";
+				}
 				p.Start();
 				p.WaitForExit();
 			}
@@ -977,9 +991,10 @@ namespace wmpiexec
 				char_available.Set();
 				//w.EndInvoke(ar3);
 			}
-			ResetButtonsDelegate d = new ResetButtonsDelegate(ResetButtons);
+			ResetExecuteButtonsDelegate d = new ResetExecuteButtonsDelegate(ResetExecuteButtons);
 			Invoke(d);
 		}
+		#endregion
 
 		private void execute_button_Click(object sender, System.EventArgs e)
 		{
@@ -1076,6 +1091,7 @@ namespace wmpiexec
 			}
 		}
 
+		#region Get known files: mpiexec, jumpshot, and clog2 files
 		private string get_jumpshot()
 		{
 			string jumpshot = "";
@@ -1092,11 +1108,11 @@ namespace wmpiexec
 						jumpshot = obj.ToString();
 						if (jumpshot.EndsWith(@"\"))
 						{
-							jumpshot = jumpshot + @"bin\jumpshot_launcher.jar";
+							jumpshot = jumpshot + @"bin\jumpshot.jar";
 						}
 						else
 						{
-							jumpshot = jumpshot + @"\bin\jumpshot_launcher.jar";
+							jumpshot = jumpshot + @"\bin\jumpshot.jar";
 						}
 						if (!File.Exists(jumpshot))
 						{
@@ -1113,7 +1129,7 @@ namespace wmpiexec
 						key.Close();
 						if (obj != null)
 						{
-							jumpshot = obj.ToString().Replace("smpd.exe", "jumpshot_launcher.jar");
+							jumpshot = obj.ToString().Replace("smpd.exe", "jumpshot.jar");
 							if (!File.Exists(jumpshot))
 							{
 								jumpshot = "";
@@ -1123,7 +1139,7 @@ namespace wmpiexec
 				}
 				if (jumpshot == "")
 				{
-					jumpshot = "jumpshot_launcher.jar";
+					jumpshot = "jumpshot.jar";
 				}
 				jumpshot = jumpshot.Trim();
 				if (jumpshot.IndexOf(' ') != -1)
@@ -1133,9 +1149,8 @@ namespace wmpiexec
 			}
 			catch (Exception)
 			{
-				jumpshot = "jumpshot_launcher.jar";
+				jumpshot = "jumpshot.jar";
 			}
-			//jumpshot.Replace("jumpshot_launcher", "jumpshot");
 			return jumpshot;
 		}
 
@@ -1229,6 +1244,7 @@ namespace wmpiexec
 			}
 			return mpiexec;
 		}
+		#endregion
 
 		private string get_command_line()
 		{
@@ -1325,7 +1341,7 @@ namespace wmpiexec
 				}
 				application_comboBox.Text = application_comboBox.Text.Trim();
 				// Don't add quotes because they would enclose any arguments to the application
-				// The user must provide the quotes as necessary.
+				// The user must provide the quotes as necessary in the combo box.
 				/*
 				if (application_comboBox.Text.IndexOf(' ') != -1)
 				{
@@ -1386,6 +1402,10 @@ namespace wmpiexec
 			}
 		}
 
+		#region Radio buttons enabling and disabling functions
+		/// <summary>
+		/// Enable and disable controls based on which radio button is selected
+		/// </summary>
 		private void DisableApplicationControls()
 		{
 			application_label.Enabled = false;
@@ -1462,6 +1482,41 @@ namespace wmpiexec
 			mpich1_browse_button.Enabled = true;
 		}
 
+		private void application_radioButton_CheckedChanged(object sender, System.EventArgs e)
+		{
+			if (application_radioButton.Checked)
+			{
+				EnableApplicationControls();
+				DisableConfigfileControls();
+				DisableMPICH1Controls();
+			}
+		}
+
+		private void configfile_radioButton_CheckedChanged(object sender, System.EventArgs e)
+		{
+			if (configfile_radioButton.Checked)
+			{
+				DisableApplicationControls();
+				EnableConfigfileControls();
+				DisableMPICH1Controls();
+			}
+		}
+
+		private void mpich1_radioButton_CheckedChanged(object sender, System.EventArgs e)
+		{
+			if (mpich1_radioButton.Checked)
+			{
+				DisableApplicationControls();
+				DisableConfigfileControls();
+				EnableMPICH1Controls();
+			}
+		}
+		#endregion
+
+		#region Dialog expansion and contraction
+		/// <summary>
+		/// Manage expansion and contraction of the extra dialog controls
+		/// </summary>
 		private void DisableAnchors()
 		{
 			show_bottom_checkBox.Anchor = AnchorStyles.Top;
@@ -1598,36 +1653,7 @@ namespace wmpiexec
 		{
 			UpdateExtraControls(show_bottom_checkBox.Checked);
 		}
-
-		private void application_radioButton_CheckedChanged(object sender, System.EventArgs e)
-		{
-			if (application_radioButton.Checked)
-			{
-				EnableApplicationControls();
-				DisableConfigfileControls();
-				DisableMPICH1Controls();
-			}
-		}
-
-		private void configfile_radioButton_CheckedChanged(object sender, System.EventArgs e)
-		{
-			if (configfile_radioButton.Checked)
-			{
-				DisableApplicationControls();
-				EnableConfigfileControls();
-				DisableMPICH1Controls();
-			}
-		}
-
-		private void mpich1_radioButton_CheckedChanged(object sender, System.EventArgs e)
-		{
-			if (mpich1_radioButton.Checked)
-			{
-				DisableApplicationControls();
-				DisableConfigfileControls();
-				EnableMPICH1Controls();
-			}
-		}
+		#endregion
 
 		private void wmpiexec_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
@@ -1645,7 +1671,7 @@ namespace wmpiexec
 		private void jumpshot_button_Click(object sender, System.EventArgs e)
 		{
 			Process p;
-			string args = "-jar " + get_jumpshot() + " " + get_clog2();
+			string args = "-Xms32m -Xmx256m -jar " + get_jumpshot() + " " + get_clog2();
 			//MessageBox.Show("javaw.exe " + args);
 			try
 			{
