@@ -463,7 +463,7 @@ AC_TRY_COMPILE(,[      real*8 a],has_real_8=8,has_real_8=0)
 AC_TRY_COMPILE(,[      real*16 a],has_real_16=16,has_real_16=0)
 
 # Create the default datatype names for the standard MPI Fortran types
-MPI_CHARACTER=0x4c000120
+MPI_CHARACTER=0x4c000118
 AC_SUBST(MPI_CHARACTER)
 
 len_integer=$pac_cv_f77_sizeof_integer
@@ -486,9 +486,9 @@ else
     AC_MSG_ERROR([Integer type sizes greater than 15 are not supported])
 fi
 
-MPI_INTEGER=0x4c00${len_integer}21
-MPI_REAL=0x4c00${len_integer}22
-MPI_LOGICAL=0x4c00${len_integer}23
+MPI_INTEGER=0x4c00${len_integer}19
+MPI_REAL=0x4c00${len_integer}1a
+MPI_LOGICAL=0x4c00${len_integer}1b
 AC_SUBST(MPI_INTEGER)
 AC_SUBST(MPI_REAL)
 AC_SUBST(MPI_LOGICAL)
@@ -516,10 +516,10 @@ else
     AC_MSG_ERROR([Double Precision type sizes greater than 31 are not supported])
 fi
 
-MPI_COMPLEX=0x4c00${len_double}24
-MPI_DOUBLE_PRECISION=0x4c00${len_double}25
-MPI_2INTEGER=0x4c00${len_double}26
-MPI_2REAL=0x4c00${len_double}27
+MPI_COMPLEX=0x4c00${len_double}1c
+MPI_DOUBLE_PRECISION=0x4c00${len_double}1d
+MPI_2INTEGER=0x4c00${len_double}1e
+MPI_2REAL=0x4c00${len_double}1f
 AC_SUBST(MPI_COMPLEX)
 AC_SUBST(MPI_DOUBLE_PRECISION)
 AC_SUBST(MPI_2INTEGER)
@@ -552,9 +552,9 @@ else
     AC_MSG_ERROR([Double Complex type sizes greater than 31 are not supported])
 fi
 
-MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}28
-MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}29
-MPI_2COMPLEX=0x4c00${len_doublecplx}2a
+MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}20
+MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}21
+MPI_2COMPLEX=0x4c00${len_doublecplx}22
 AC_SUBST(MPI_DOUBLE_COMPLEX)
 AC_SUBST(MPI_2DOUBLE_PRECISION)
 AC_SUBST(MPI_2COMPLEX)
@@ -570,7 +570,7 @@ if test "$len_doublecplx" = "10" ; then
     F77_COMPLEX16=$MPI_DOUBLE_COMPLEX
 fi
 if test "$len_long_double" = "10" ; then
-    F77_COMPLEX32="0x4c00202b"
+    F77_COMPLEX32="0x4c002023"
 fi
 
 len_2dc=`expr $pac_cv_f77_sizeof_double_precision \* 4`
@@ -591,13 +591,13 @@ case $len_2dc in
 esac
 len_2dc="$firstdigit$seconddigit"
 #echo "2double complex = $len_2dc"
-MPI_2DOUBLE_COMPLEX=0x4c00${len_2dc}2b
+MPI_2DOUBLE_COMPLEX=0x4c00${len_2dc}23
 AC_SUBST(MPI_2DOUBLE_COMPLEX)
 #
 # Predefined values for LB, UB, and PACKED
-MPI_PACKED="0x4c000114"
-MPI_LB="0x4c000015"
-MPI_UB="0x4c000016"
+MPI_PACKED="0x4c00010f"
+MPI_LB="0x4c000010"
+MPI_UB="0x4c000011"
 AC_SUBST(MPI_PACKED)
 AC_SUBST(MPI_LB)
 AC_SUBST(MPI_UB)

@@ -208,8 +208,8 @@ typedef struct MPID_Datatype {
 extern MPIU_Object_alloc_t MPID_Datatype_mem;
 
 /* Preallocated datatype objects */
-#define MPID_DATATYPE_N_BUILTIN 36
-extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
+#define MPID_DATATYPE_N_BUILTIN 35
+extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN + 1];
 extern MPID_Datatype MPID_Datatype_direct[];
 
 #define MPID_DTYPE_BEGINNING  0

@@ -890,24 +890,24 @@ MPI_UNSIGNED_INT="0x4c00${len_int}06"
 MPI_LONG="0x4c00${len_long}07"
 MPI_UNSIGNED_LONG="0x4c00${len_long}08"
 MPI_LONG_LONG="0x4c00${len_long_long}09"
-MPI_FLOAT="0x4c00${len_float}0b"
-MPI_DOUBLE="0x4c00${len_double}0d"
-MPI_LONG_DOUBLE="0x4c00${len_long_double}0f"
-MPI_BYTE="0x4c000111"
-MPI_WCHAR_T="0x4c00${len_wchar_t}13"
-MPI_PACKED="0x4c000114"
-MPI_LB="0x4c000015"
-MPI_UB="0x4c000016"
+MPI_FLOAT="0x4c00${len_float}0a"
+MPI_DOUBLE="0x4c00${len_double}0b"
+MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
+MPI_BYTE="0x4c00010d"
+MPI_WCHAR_T="0x4c00${len_wchar_t}0e"
+MPI_PACKED="0x4c00010f"
+MPI_LB="0x4c000010"
+MPI_UB="0x4c000011"
 #
 # These should define the mixed types *only* for contiguous data.
 # For example, MPI_SHORT_INT may have a gap; it will need to be defined
 # as a derived type instead.  For IA32, this only affects short_int.
-MPI_FLOAT_INT="0x4c00${len_float_int}17"
-MPI_DOUBLE_INT="0x4c00${len_double_int}18"
-MPI_LONG_INT="0x4c00${len_long_int}19"
-MPI_SHORT_INT="0x4c00${len_short_int}1a"
-MPI_2INT="0x4c00${len_2_int}1b"
-MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}1c"
+MPI_FLOAT_INT="0x4c00${len_float_int}12"
+MPI_DOUBLE_INT="0x4c00${len_double_int}13"
+MPI_LONG_INT="0x4c00${len_long_int}14"
+MPI_SHORT_INT="0x4c00${len_short_int}15"
+MPI_2INT="0x4c00${len_2_int}16"
+MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}17"
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
 AC_SUBST(MPI_SHORT)

@@ -16,7 +16,7 @@
 #endif
 
 /* Preallocated datatype objects */
-MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
+MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN + 1];
 MPID_Datatype MPID_Datatype_direct[MPID_DATATYPE_PREALLOC];
 MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE, 
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
@@ -44,7 +44,6 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_FLOAT,
     MPI_DOUBLE,
     MPI_LONG_DOUBLE,
-    MPI_LONG_LONG_INT,
     MPI_LONG_LONG,
     MPI_PACKED,
     MPI_LB,
