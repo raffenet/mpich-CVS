@@ -18,9 +18,6 @@ struct ibuBlockAllocator_struct
     struct ibuBlockAllocator_struct *pNextAllocation;
     unsigned int nBlockSize;
     int nCount, nIncrementSize;
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Lock_t lock;
-#endif
 };
 
 typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
@@ -137,116 +134,11 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 static int ibui_post_ack_write(ibu_t ibu);
 
 /* utility allocator functions */
-//#if 0
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
-
-static int g_nLockSpinCount = 100;
-
-#ifdef WITH_ALLOCATOR_LOCKING
-
-typedef volatile long MPIDU_Lock_t;
-
-#include <errno.h>
-#ifdef HAVE_WINDOWS_H
-#include <winsock2.h>
-#include <windows.h>
-#endif
-
-static inline void MPIDU_Init_lock( MPIDU_Lock_t *lock )
-{
-    *(lock) = 0;
-}
-
-static inline void MPIDU_Lock( MPIDU_Lock_t *lock )
-{
-    int i;
-    for (;;)
-    {
-        for (i=0; i<g_nLockSpinCount; i++)
-        {
-            if (*lock == 0)
-            {
-#ifdef HAVE_INTERLOCKEDEXCHANGE
-                if (InterlockedExchange((LPLONG)lock, 1) == 0)
-                {
-                    /*printf("lock %x\n", lock);fflush(stdout);*/
-                    MPID_PROFILE_OUT(MPIDU_BUSY_LOCK);
-                    return;
-                }
-#elif defined(HAVE_COMPARE_AND_SWAP)
-                if (compare_and_swap(lock, 0, 1) == 1)
-                {
-                    MPID_PROFILE_OUT(MPIDU_BUSY_LOCK);
-                    return;
-                }
-#else
-#error Atomic memory operation needed to implement busy locks
-#endif
-            }
-        }
-        MPIDU_Yield();
-    }
-}
-
-static inline void MPIDU_Unlock( MPIDU_Lock_t *lock )
-{
-    *(lock) = 0;
-}
-
-static inline void MPIDU_Busy_wait( MPIDU_Lock_t *lock )
-{
-    int i;
-    for (;;)
-    {
-        for (i=0; i<g_nLockSpinCount; i++)
-            if (!*lock)
-            {
-                return;
-            }
-        MPIDU_Yield();
-    }
-}
-
-static inline void MPIDU_Free_lock( MPIDU_Lock_t *lock )
-{
-}
-
-/*@
-   MPIDU_Compare_swap - 
-
-   Parameters:
-+  void **dest
-.  void *new_val
-.  void *compare_val
-.  MPIDU_Lock_t *lock
--  void **original_val
-
-   Notes:
-@*/
-static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_val,            
-                        MPIDU_Lock_t *lock, void **original_val )
-{
-    /* dest = pointer to value to be checked (address size)
-       new_val = value to set dest to if *dest == compare_val
-       original_val = value of dest prior to this operation */
-
-#ifdef HAVE_NT_LOCKS
-    /* *original_val = (void*)InterlockedCompareExchange(dest, new_val, compare_val); */
-    *original_val = InterlockedCompareExchangePointer(dest, new_val, compare_val);
-#elif defined(HAVE_COMPARE_AND_SWAP)
-    if (compare_and_swap((volatile long *)dest, (long)compare_val, (long)new_val))
-        *original_val = new_val;
-#else
-#error Locking functions not defined
-#endif
-
-    return 0;
-}
-#endif /* WITH_ALLOCATOR_LOCKING */
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
 {
@@ -263,9 +155,6 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     p->nCount = count;
     p->nBlockSize = blocksize;
     p->pNextFree = (void**)(p + 1);
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Init_lock(&p->lock);
-#endif
 
     ppVoid = (void**)(p + 1);
     for (i=0; i<count-1; i++)
@@ -293,62 +182,26 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
 {
     void *pVoid;
     
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Lock(&p->lock);
-#endif
-
-    /*** don't allocate more memory ***/
     if (p->pNextFree == NULL)
     {
 	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
 	return NULL;
     }
-    /******/
 
     pVoid = p->pNextFree + 1;
-
-    /*
-    if (*(p->pNextFree) == NULL)
-    {
-	ibuBlockAllocator pIter = p;
-	while (pIter->pNextAllocation != NULL)
-	    pIter = pIter->pNextAllocation;
-	pIter->pNextAllocation = ibuBlockAllocInit(p->nBlockSize, p->nIncrementSize, p->nIncrementSize, p->alloc_fn, p->free_fn);
-	p->pNextFree = pIter->pNextFree;
-    }
-    else
-	p->pNextFree = *(p->pNextFree);
-    */
     p->pNextFree = *(p->pNextFree);
-
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Unlock(&p->lock);
-#endif
 
     return pVoid;
 }
 
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
 {
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Lock(&p->lock);
-#endif
-
     ((void**)pBlock)--;
     *((void**)pBlock) = p->pNextFree;
     p->pNextFree = pBlock;
 
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Unlock(&p->lock);
-#endif
-
     return 0;
 }
-
-
-//#endif
-
-
 
 /* utility ibu functions */
 
@@ -600,6 +453,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     }
 
     p->dlid = dlid;
+    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
     p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
     p->mtu_size = 3; /* 3 = 2048 */
@@ -812,6 +666,8 @@ static int ibui_post_ack_write(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
+/* ibu functions */
+
 #undef FUNCNAME
 #define FUNCNAME ibui_post_write
 #undef FCNAME
@@ -900,251 +756,6 @@ int ibu_write(ibu_t ibu, void *buf, int len)
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
     return total;
 }
-
-#if 0
-#undef FUNCNAME
-#define FUNCNAME ibui_post_writev
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
-{
-    ib_uint32_t status;
-    ib_scatter_gather_list_t sg_list;
-    ib_data_segment_t data[IBU_MAX_DATA_SEGMENTS];
-    ib_work_req_send_t work_req;
-    void *mem_ptr;
-    int length, len;
-    int index = 0, iov_index = 0;
-    int total = 0;
-    int cur_pos;
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
-
-    while (n && index < IBU_MAX_DATA_SEGMENTS)
-    {
-	len = iov[iov_index].IBU_IOV_LEN;
-	if (len <= IBU_PACKET_SIZE)
-	{
-	    mem_ptr = ibuBlockAlloc(ibu->allocator);
-	    if (mem_ptr == NULL)
-	    {
-		MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
-		break;
-	    }
-	    total += len;
-	    memcpy(mem_ptr, iov[iov_index].IBU_IOV_BUF, len);
-
-	    data[index].length = len;
-	    data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
-	    data[index].l_key = ibu->lkey;
-
-	    MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, len));
-	    g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
-	    g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	    g_cur_write_stack_index++;
-
-	    index++;
-	}
-	else
-	{
-	    cur_pos = 0;
-	    while (len)
-	    {
-		length = min(len, IBU_PACKET_SIZE);
-		len -= length;
-		
-		mem_ptr = ibuBlockAlloc(ibu->allocator);
-		if (mem_ptr == NULL)
-		{
-		    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
-		    break;
-		}
-		total += length;
-		memcpy(mem_ptr, ((char *)(iov[iov_index].IBU_IOV_BUF)) + cur_pos, length);
-		
-		data[index].length = length;
-		data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
-		data[index].l_key = ibu->lkey;
-
-		MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, length));
-		g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
-		g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-		g_cur_write_stack_index++;
-
-		cur_pos += length;
-		index++;
-	    }
-	    if (mem_ptr == NULL)
-	    {
-		// This is needed to break out of both while loops
-		break;
-	    }
-	}
-	iov_index++;
-	n--;
-    }
-
-    // tell the stack how many elements were pushed on it
-    MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, -index));
-    g_num_bytes_written_stack[g_cur_write_stack_index].length = -index;
-    g_cur_write_stack_index++;
-    MPIDI_DBG_PRINTF((60, FCNAME, "posting send with %d ib buffers\n", index));
-
-    sg_list.data_seg_p = data;
-    sg_list.data_seg_num = index;
-
-    work_req.dest_address      = 0;
-    work_req.dest_q_key        = 0;
-    work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
-    work_req.eecn              = 0;
-    work_req.ethertype         = 0;
-    work_req.fence_f           = 0;
-    work_req.immediate_data    = 0;
-    work_req.immediate_data_f  = 0;
-    work_req.op_type           = OP_SEND;
-    work_req.remote_addr.va    = 0;
-    work_req.remote_addr.key   = 0;
-    work_req.se_f              = 0;
-    work_req.sg_list           = sg_list;
-    work_req.signaled_f        = 0;
-	
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)NULL;
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send_req_us(%d bytes)", total));
-    status = ib_post_send_req_us( IBU_Process.hca_handle,
-	ibu->qp_handle, 
-	&work_req);
-    if (status != IBU_SUCCESS)
-    {
-	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
-	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-	return status;
-    }
-
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-    return total;
-}
-#endif
-
-#if 0
-#undef FUNCNAME
-#define FUNCNAME ibui_post_writev
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov_orig, int n, int (*write_progress_update)(int, void*))
-{
-    ib_uint32_t status;
-    ib_scatter_gather_list_t sg_list;
-    ib_data_segment_t data;
-    ib_work_req_send_t work_req;
-    void *mem_ptr;
-    unsigned int len, msg_size;
-    int total = 0;
-    unsigned int num_avail;
-    unsigned char *buf;
-    IBU_IOV iov_[IBU_IOV_MAXLEN], *iov = iov_;
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
-
-    memcpy(iov, iov_orig, sizeof(IBU_IOV) * n);
-    do
-    {
-	if (ibu->nAvailRemote < 1)
-	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-	    return total;
-	}
-	mem_ptr = ibuBlockAlloc(ibu->allocator);
-	if (mem_ptr == NULL)
-	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-	    return total;
-	}
-	buf = mem_ptr;
-	num_avail = IBU_PACKET_SIZE;
-	/*printf("iov length: %d\n", n);*/
-	for (; n && num_avail; )
-	{
-	    len = min (num_avail, iov->IBU_IOV_LEN);
-	    num_avail -= len;
-	    total += len;
-	    /*printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);*/
-	    memcpy(buf, iov->IBU_IOV_BUF, len);
-	    buf += len;
-	    
-	    if (iov->IBU_IOV_LEN == len)
-	    {
-		iov++;
-		n--;
-	    }
-	    else
-	    {
-		/**/
-		iov->IBU_IOV_LEN -= len;
-		iov->IBU_IOV_BUF = (unsigned char *)(iov->IBU_IOV_BUF) + len;
-		/**/
-	    }
-	}
-	msg_size = IBU_PACKET_SIZE - num_avail;
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, msg_size));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
-	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	g_cur_write_stack_index++;
-	
-	data.length = msg_size;
-	data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
-	data.l_key = ibu->lkey;
-	
-	sg_list.data_seg_p = &data;
-	sg_list.data_seg_num = 1;
-	
-	work_req.dest_address      = 0;
-	work_req.dest_q_key        = 0;
-	work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
-	work_req.eecn              = 0;
-	work_req.ethertype         = 0;
-	work_req.fence_f           = 0;
-	work_req.immediate_data    = 0;
-	work_req.immediate_data_f  = 0;
-	work_req.op_type           = OP_SEND;
-	work_req.remote_addr.va    = 0;
-	work_req.remote_addr.key   = 0;
-	work_req.se_f              = 0;
-	work_req.sg_list           = sg_list;
-	work_req.signaled_f        = 0;
-	
-	/* store the ibu ptr and the mem ptr in the work id */
-	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
-	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send_req_us(%d bytes)", msg_size));
-	status = ib_post_send_req_us( IBU_Process.hca_handle,
-	    ibu->qp_handle, 
-	    &work_req);
-	if (status != IBU_SUCCESS)
-	{
-	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
-	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-	    return -1;
-	}
-	ibu->nAvailRemote--;
-	
-    } while (n);
-    //} while (0); // lets force the progress engine to reload after each packet.
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-    return total;
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME ibui_post_writev
@@ -1262,8 +873,6 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     return total;
 }
 
-/* ibu functions */
-
 static ibuBlockAllocator g_StateAllocator;
 
 #undef FUNCNAME
@@ -1279,7 +888,7 @@ int ibu_init()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
 
-    /*ib_init_us();*/ /* for some reason Paceline stopped supporting the init function */
+    /*ib_init_us();*/ /* for some reason Paceline does not support the init function */
 
     /* Initialize globals */
     /* get a handle to the host channel adapter */
@@ -1346,7 +955,7 @@ int ibu_finalize()
     MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
-    /*ib_release_us();*/ /* for some reason Paceline stopped supporting the release function */
+    /*ib_release_us();*/ /* for some reason Paceline does not support the release function */
     ibuBlockAllocFinalize(&g_StateAllocator);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
@@ -1638,9 +1247,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	case OP_SEND:
 	    if (completion_data.immediate_data_f || (int)mem_ptr == -1)
 	    {
+		/* flow control ack completed, no user data so break out here */
 		break;
 	    }
-	    //num_bytes = ibui_next_num_written(ibu);
 	    g_cur_write_stack_index--;
 	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "send num_bytes = %d\n", num_bytes));
@@ -1667,88 +1276,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
 
-/**************************************/
 	    out->num_bytes = num_bytes;
 	    out->op_type = IBU_OP_WRITE;
 	    out->user_ptr = ibu->user_ptr;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
-/**************************************/
-#if 0
-	    MPIDI_DBG_PRINTF((60, FCNAME, "num_bytes sent = %d\n", num_bytes));
-	    MPIDI_DBG_PRINTF((60, FCNAME, "write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes));
-	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(send finished %d bytes)", num_bytes));*/
-	    ibu->write.total += num_bytes;
-	    if (ibu->write.use_iov)
-	    {
-		while (num_bytes)
-		{
-		    if ((int)ibu->write.iov[ibu->write.index].IBU_IOV_LEN <= num_bytes)
-		    {
-			/*printf("ibu_wait: write.index %d, len %d\n", ibu->write.index, 
-			ibu->write.iov[ibu->write.index].IBU_IOV_LEN);*/
-			num_bytes -= ibu->write.iov[ibu->write.index].IBU_IOV_LEN;
-			ibu->write.index++;
-			ibu->write.iovlen--;
-		    }
-		    else
-		    {
-			/*printf("ibu_wait: partial data written [%d].len = %d, num_bytes = %d\n", ibu->write.index,
-			ibu->write.iov[ibu->write.index].IBU_IOV_LEN, num_bytes);*/
-			ibu->write.iov[ibu->write.index].IBU_IOV_LEN -= num_bytes;
-			ibu->write.iov[ibu->write.index].IBU_IOV_BUF =
-			    (char*)(ibu->write.iov[ibu->write.index].IBU_IOV_BUF) + num_bytes;
-			num_bytes = 0;
-		    }
-		}
-		if (ibu->write.iovlen == 0)
-		{
-		    out->num_bytes = ibu->write.total;
-		    out->op_type = IBU_OP_WRITE;
-		    out->user_ptr = ibu->user_ptr;
-		    ibu->pending_operations--;
-		    if (ibu->closing && ibu->pending_operations == 0)
-		    {
-			MPIDI_DBG_PRINTF((60, FCNAME, "closing ibu after iov write completed."));
-			ibu = IBU_INVALID_QP;
-		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
-		}
-		/* make the user upcall */
-		if (ibu->write.progress_update != NULL)
-		    ibu->write.progress_update(num_bytes, ibu->user_ptr);
-		/* post a write of the remaining data */
-		/*
-		printf("ibu_wait: posting write of the remaining data, vec size %d\n", ibu->write.iovlen);
-		WSASend(ibu->ibu, ibu->write.iov, ibu->write.iovlen, &ibu->write.num_bytes, 0, &ibu->write.ovl, NULL);
-		*/
-	    }
-	    else
-	    {
-		ibu->write.buffer = (char*)(ibu->write.buffer) + num_bytes;
-		ibu->write.bufflen -= num_bytes;
-		if (ibu->write.bufflen == 0)
-		{
-		    out->num_bytes = ibu->write.total;
-		    out->op_type = IBU_OP_WRITE;
-		    out->user_ptr = ibu->user_ptr;
-		    ibu->pending_operations--;
-		    if (ibu->closing && ibu->pending_operations == 0)
-		    {
-			MPIDI_DBG_PRINTF((60, FCNAME, "closing ibu after simple write completed."));
-			ibu = IBU_INVALID_QP;
-		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
-		}
-		/* make the user upcall */
-		if (ibu->write.progress_update != NULL)
-		    ibu->write.progress_update(num_bytes, ibu->user_ptr);
-		/* post a write of the remaining data */
-		/*WriteFile((HANDLE)(ibu->ibu), ibu->write.buffer, ibu->write.bufflen, &ibu->write.num_bytes, &ibu->write.ovl);*/
-	    }
-#endif
 	    break;
 	case OP_RECEIVE:
 	    if (completion_data.immediate_data_f)
@@ -1769,7 +1301,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		break;
 	    }
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes));
-	    //ibu->read.total += num_bytes;
 	    if (ibu->read.use_iov)
 	    {
 		iter_ptr = mem_ptr;
