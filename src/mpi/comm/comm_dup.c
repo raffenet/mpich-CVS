@@ -46,6 +46,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     static const char FCNAME[] = "MPI_Comm_dup";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_DUP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_DUP);
     /* Get handles to MPI objects. */
