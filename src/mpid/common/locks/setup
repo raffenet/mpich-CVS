@@ -1,0 +1,40 @@
+echo "RUNNING SETUP FOR THE PROCESS LOCKS MODULE"
+
+cat >lconftest.il << EOF
+void lock_acquire(int * lock);
+.inline lock_acquire, 4
+ 1:
+    ldstub [%o0], %o1
+    cmp %o1, %g0
+    bne 1b
+    nop
+.end
+void lock_release(int * lock);
+.inline lock_release, 4
+    stbar
+    clrb [%o0]
+.end
+EOF
+cat >lconftest.c << EOF
+int main(int argc, char ** argv)
+{
+    int lock = 0;
+    lock_acquire(&lock);
+    lock_release(&lock);
+    return 0;
+}
+EOF
+lac_compile="$CC $CFLAGS $CPPFLAGS lconftest.il lconftest.c -o lconftest"
+if (eval $lac_compile) 2>lconftest.err ; then
+	cat lconftest.err
+    echo "SPARC V8 busy locks supported...yes"
+    echo "SPARC V8 busy locks supported...yes" >>config.log
+    CFLAGS="$CFLAGS ${master_top_srcdir}/src/mpid/common/locks/mpidu_process_locks_sparc_v8.il"
+    HAVE_SPARC_INLINE_PROCESS_LOCKS=yes
+    export HAVE_SPARC_INLINE_PROCESS_LOCKS
+else
+    echo "SPARC V8 busy locks supported...no"
+    echo "SPARC V8 busy locks supported...no" >>config.log
+    cat lconftest.err >>config.log
+fi
+rm -f lconftest*

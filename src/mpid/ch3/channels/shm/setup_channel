@@ -27,6 +27,7 @@ fi
 
 pathlist=""
 pathlist="$pathlist src/mpid/${device_name}/channels/${channel_name}/include"
+pathlist="$pathlist src/mpid/common/locks"
 for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I`pwd`/${path}"
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
@@ -41,4 +42,15 @@ if test "$rdma_name" = proc ; then
 fi
 if test "$rdma_mode" = get ; then
     CPPFLAGS="$CPPFLAGS -DUSE_SHM_RDMA_GET"
+fi
+
+dir=${master_top_srcdir}/src/mpid/common/locks
+if test ! -d $dir ; then
+    echo "ERROR: ${dir} does not exist"
+    exit 1
+fi
+file=${dir}/setup
+if test -f $file ; then
+    echo sourcing $file
+    . $file
 fi

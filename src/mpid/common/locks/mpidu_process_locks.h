@@ -122,6 +122,11 @@ static inline void MPIDU_Sleep_yield()
 #endif
 */
 
+#if defined(HAVE_SPARC_INLINE_PROCESS_LOCKS)
+typedef int MPIDU_Process_lock_t;
+
+#else
+
 #ifdef HAVE_MUTEX_INIT
 /*   Only known system is Solaris */
 #include <sys/systeminfo.h>
@@ -308,6 +313,8 @@ void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock );
 
 #endif /* #ifdef USE_BUSY_LOCKS */
 #endif /* #ifdef HAVE_MUTEX_INIT */
+#endif /* defined(HAVE_SPARC_INLINE_PROCESS_LOCKS) */
+
 
 /*@
    MPIDU_Compare_swap - 
@@ -337,7 +344,7 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
 #elif defined(HAVE_COMPARE_AND_SWAP)
     if (compare_and_swap((volatile long *)dest, (long)compare_val, (long)new_val))
         *original_val = new_val;
-#elif defined(HAVE_PTHREAD_H) || defined(HAVE_MUTEX_INIT)
+#elif defined(HAVE_SPARC_INLINE_PROCESS_LOCKS) || defined(HAVE_PTHREAD_H) || defined(HAVE_MUTEX_INIT)
     MPIDU_Process_lock( lock );
 
     *original_val = *dest;
