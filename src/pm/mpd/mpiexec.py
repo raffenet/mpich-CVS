@@ -294,9 +294,9 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         xmlPROCSPEC.appendChild(xmlENVVAR)
         xmlENVVAR.setAttribute('name',  '%s' % (envvar))
         xmlENVVAR.setAttribute('value', '%s' % (lEnv[envvar]))
-    xmlENVVAR = xmlDOC.createElement('env')
-    xmlPROCSPEC.appendChild(xmlENVVAR)
     if usize:
+        xmlENVVAR = xmlDOC.createElement('env')
+        xmlPROCSPEC.appendChild(xmlENVVAR)
         xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
         xmlENVVAR.setAttribute('value', '%s' % (usize))
     xmlENVVAR = xmlDOC.createElement('env')
