@@ -6,7 +6,7 @@
   available.  This process manager, "gforker", should be used in place of the
   previous "forker" process manager.
 
-- (see the CHANGES file for a more extensive list of new features)
+- (see the CHANGES file for a more extensive list of changes and new features)
 
 -------------------------------------------------------------------------------
                               Known Deficiencies
@@ -27,6 +27,13 @@
 
   The implementation of MPI-IO has a few outstanding issues with 64-bit
   pointers, so test failures in these areas are expected on 64-bit platforms.
+
+- Support for the "external32" data representation is incomplete.  This affects
+  the MPI_PACK_EXTERNAL and MPI_UNPACK_EXTERNAL routines, as well the external
+  data representation capabilities of ROMIO.
+
+- MPI_THREAD_MULTIPLE and MPI_THREAD_SERIALIZE are not supported at present;
+  however, we expect MPICH2 to be thread-safe in time for the next release.
 
 - Previous releases of MPICH2 supported the "forker" process manager.  This
   process manager is still available but is unsupported and untested.  It
