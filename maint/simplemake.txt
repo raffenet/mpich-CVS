@@ -190,3 +190,22 @@ the path to the directory to be computed relative to the Makefile.sm location.
 6. Directories in SUBDIRS don't have to have Makefile.sm files.  This allows
 you to include a package that has a separate build structure.
 
+Suggestions and Plans for Future Versions
+-----------------------------------------
+1. For the derived targets, allow -preamble and -postamble.  For example,
+   if the Makefile.sm contains
+   all-postable:
+       @echo "Make completed"
+   then the all target (actually, all-redirect) would become
+   all-redirect: ...
+       ...
+       ${MAKE} all-postamble
+
+   This should work for all targets, not just "all".  A preamble is added
+   as a dependency; e.g., 
+   all-redirect: all-preamble ...
+
+   Currently, only the all target is supported.
+
+
+   

@@ -1,6 +1,10 @@
 SUBDIRS = . src examples test
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; fi
+all-preamble:
+	@echo "Beginning make"
+all-postamble:
+	@echo "Make completed"
 distclean-local:
 	-@rm -f lib/libmpich.a
 	-@rm -f src/include/mpichconf.h

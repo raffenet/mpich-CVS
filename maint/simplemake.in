@@ -66,6 +66,10 @@ $quiet = 0;
 # Assembler *output* definitions
 	      'c:s' => '$(C_COMPILE) -S $<',
 	      'f:s' => '$(F77_COMPILE) -S $<',
+# Program from source rules
+	      'c:' => '$(C_COMPILE) -o $* $< $(LIBS)',
+	      'f:' => '$(F77_COMPILE) -o $* $< $(LIBS)',
+	      'f90:' => '$(F90_COMPILE) -o $* $< $(LIBS)',
 # LaTeX definitions
 	      'tex:dvi' => 'latex $<',
 	      'dvi:ps' => 'dvips $<',
@@ -639,6 +643,12 @@ sub DefaultRules {
     print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
 #    }
+    # To make it easier to build programs, conditionally add a 
+    # default "build program" rule from the seen sourcecode extensions
+    foreach $ext (keys(%ext_seen)) {
+	$extkey = "$ext:";
+	print FD "$extdef{$extkey}$newline";
+    }
 
     if ($vpath_config) {
         print FD '@VPATH@'; print FD "$newline";
@@ -1021,6 +1031,7 @@ sub LookForSuffixes {
 sub TargetAll {
     print_make_line( FD,  "all-redirect:" );
     if ($#subdirs > -1) {
+	&TargetPreamble( "all" );
 	print_make_endline( FD );
 	$has_dot = 0;
 	foreach $dir (@subdirs) {
@@ -1052,17 +1063,34 @@ sub TargetAll {
 	    print_make_line( FD, "all-local:" );
 	    &ListTargets;
 	}
+	&TargetPostamble( "all" );
     }
     else {
+	&TargetPreamble( "all" );
 	if (defined($usertargets{"all-local"})) {
 	    # Add all-local as a target
 	    print_make_line( FD, " all-local " );
 	}
 	&ListTargets;
+	&TargetPostamble( "all" );
     }
     print_make_endline( FD );
 }
 
+sub TargetPreamble {
+    my $name = $_[0];
+    $name .= "-preamble";
+    if (defined($usertargets{$name})) { 
+	print FD " $name";
+    }
+}
+sub TargetPostamble { 
+    my $name = $_[0];
+    $name .= "-postamble";
+    if (defined($usertargets{$name})) { 
+	print FD "\t\${MAKE} $name$newline";
+    }
+}
 #
 # ===========================================================================
 # The "clean" target
