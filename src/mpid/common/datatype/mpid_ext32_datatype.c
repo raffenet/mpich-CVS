@@ -14,7 +14,7 @@
 #include <mpid_dataloop.h>
 
 
-typedef struct
+typedef struct external32_basic_size
 {
     MPI_Datatype el_type;
     MPI_Aint el_size;
