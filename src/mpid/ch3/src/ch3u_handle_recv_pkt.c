@@ -656,7 +656,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             if (put_pkt->count == 0)
 	    {
                 /* it's a 0-byte message sent just to decrement the
-                   completion counter. Happens only in
+                   completion counter. This happens only in
                    post/start/complete/wait sync model; therefore, no need
                    to check lock queue. */
                 /* FIXME: MT: this has to be done atomically */
@@ -951,76 +951,25 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	case MPIDI_CH3_PKT_LOCK:
 	{
 	    MPIDI_CH3_Pkt_lock_t * lock_pkt = &pkt->lock;
-            MPID_Request *req;
-            int requested_lock, existing_lock, grant_lock;
 
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock pkt"));
 
-            /* Check if lock can be granted. If not, queue it. If yes,
-             * send back a lock-granted packet. */
-
-            existing_lock = lock_pkt->win_ptr->current_lock_type;
-            requested_lock = lock_pkt->lock_type;
-
-            /* Locking Rules:
-
-               Requested          Existing             Action
-               --------           --------             ------
-               Shared             Exclusive            Queue it
-               Shared             NoLock/Shared        Grant and incr. counter
-               Exclusive          NoLock               Grant and incr. counter 
-               Exclusive          Exclusive/Shared     Queue it
-            */
-
-            if ( ( (requested_lock == MPI_LOCK_SHARED) && 
-                        ((existing_lock == MPID_LOCK_NONE) ||
-                         (existing_lock == MPI_LOCK_SHARED) ) )
-                 || 
-                    ( (requested_lock == MPI_LOCK_EXCLUSIVE) &&
-                      (existing_lock == MPID_LOCK_NONE) ) ) {
-
-                grant_lock = 1;
-            }
-            else {
-                grant_lock = 0;
-            }
-
-            if (grant_lock == 1)
+            if (MPIDI_CH3I_Try_acquire_win_lock(lock_pkt->win_ptr, 
+                                                lock_pkt->lock_type) == 1)
 	    {
-                MPIDI_CH3_Pkt_t upkt;
-                MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &upkt.lock_granted;
+                /* send lock granted packet. */
+                mpi_errno = MPIDI_CH3I_Send_lock_granted_pkt(vc,
+                                              lock_pkt->lock_granted_flag_ptr);
 
-                /* increment window counter */
-                /* FIXME: MT: this has to be done atomically */
-                lock_pkt->win_ptr->my_counter++;
-
-                /* set new lock type on window */
-                lock_pkt->win_ptr->current_lock_type = requested_lock;
-
-                /* send lock granted packet */
-                lock_granted_pkt->type = MPIDI_CH3_PKT_LOCK_GRANTED;
-                lock_granted_pkt->lock_granted_flag_ptr = lock_pkt->lock_granted_flag_ptr;
-                
-                mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_granted_pkt,
-                                              sizeof(*lock_granted_pkt), &req);
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS) {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|rmamsg", 0);
-                    return mpi_errno;
-                }
-		/* --END ERROR HANDLING-- */
-		if (req != NULL)
-		{
-		    MPID_Request_release(req);
-		}
             }
 
             else {
                 /* queue the lock information */
                 MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
 
-                curr_ptr = lock_pkt->win_ptr->lock_queue;
+                /* FIXME: MT: This may need to be done atomically. Check. */
+
+                curr_ptr = (MPIDI_Win_lock_queue *) lock_pkt->win_ptr->lock_queue;
                 prev_ptr = curr_ptr;
                 while (curr_ptr != NULL)
                 {
@@ -1042,7 +991,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                     lock_pkt->win_ptr->lock_queue = new_ptr;
         
                 new_ptr->next = NULL;  
-                new_ptr->lock_type = requested_lock;
+                new_ptr->lock_type = lock_pkt->lock_type;
                 new_ptr->lock_granted_flag_ptr = lock_pkt->lock_granted_flag_ptr;
                 new_ptr->vc = vc;
             }
@@ -1190,5 +1139,80 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp
 
 fn_exit:
     MPIDI_DBG_PRINTF((30, FCNAME, "exiting"));
+    return mpi_errno;
+}
+
+
+/* Check if requested lock can be granted. If it can, set 
+   win_ptr->current_lock_type to the new lock type and return 1. Else return 0.
+
+   FIXME: MT: This function must be atomic because two threads could be trying 
+   to do the same thing, e.g., the main thread in MPI_Win_lock(source=target) 
+   and another thread in the progress engine.
+ */
+int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
+{
+    int existing_lock;
+
+    existing_lock = win_ptr->current_lock_type;
+
+    /* Locking Rules:
+       
+    Requested          Existing             Action
+    --------           --------             ------
+    Shared             Exclusive            Queue it
+    Shared             NoLock/Shared        Grant and incr. counter
+    Exclusive          NoLock               Grant and incr. counter 
+    Exclusive          Exclusive/Shared     Queue it
+    */
+
+    if ( ( (requested_lock == MPI_LOCK_SHARED) && 
+           ((existing_lock == MPID_LOCK_NONE) ||
+            (existing_lock == MPI_LOCK_SHARED) ) )
+         || 
+         ( (requested_lock == MPI_LOCK_EXCLUSIVE) &&
+           (existing_lock == MPID_LOCK_NONE) ) ) {
+
+        /* grant lock.  set new lock type on window */
+        win_ptr->current_lock_type = requested_lock;
+
+        /* if shared lock, incr. ref. count */
+        if (requested_lock == MPI_LOCK_SHARED)
+            win_ptr->shared_lock_ref_cnt++;
+
+        return 1;
+    }
+    else {
+        /* do not grant lock */
+        return 0;
+    }
+}
+
+
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int *lock_granted_flag_ptr)
+{
+    MPIDI_CH3_Pkt_t upkt;
+    MPIDI_CH3_Pkt_lock_granted_t *lock_granted_pkt = &upkt.lock_granted;
+    MPID_Request *req;
+    int mpi_errno;
+
+    /* send lock granted packet */
+    lock_granted_pkt->type = MPIDI_CH3_PKT_LOCK_GRANTED;
+    lock_granted_pkt->lock_granted_flag_ptr = lock_granted_flag_ptr;
+        
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_granted_pkt,
+                                    sizeof(*lock_granted_pkt), &req);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                         "**ch3|rmamsg", 0);
+        return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
+    if (req != NULL)
+    {
+        MPID_Request_release(req);
+    }
+
     return mpi_errno;
 }

@@ -60,6 +60,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->attributes = NULL;
     (*win_ptr)->rma_ops_list = NULL;
     (*win_ptr)->current_lock_type = MPID_LOCK_NONE;
+    (*win_ptr)->shared_lock_ref_cnt = 0;
     (*win_ptr)->lock_queue = NULL;
     (*win_ptr)->my_counter = 0;
     

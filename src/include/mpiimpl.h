@@ -1344,9 +1344,10 @@ typedef struct MPID_Win {
     volatile int lock_granted;  /* flag to indicate whether lock has 
                                    been granted to this process (as source) for
                                    passive target rma */
-    int current_lock_type;   /* current lock type on this window (as target)
+    volatile int current_lock_type;   /* current lock type on this window (as target)
                               * (none, shared, exclusive) */
-    struct MPIDI_Win_lock_queue *lock_queue;  /* list of unsatisfied locks */
+    volatile int shared_lock_ref_cnt;
+    struct MPIDI_Win_lock_queue volatile *lock_queue;  /* list of unsatisfied locks */
 
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to

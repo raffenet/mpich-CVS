@@ -482,7 +482,11 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
                             *dtype_info, void **dataloop, MPID_Request
                             **request); 
 
-int MPIDI_CH3I_Grant_next_lock(MPID_Win *win_ptr);
+int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr);
+
+int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock);
+
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int *lock_granted_flag_ptr);
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 

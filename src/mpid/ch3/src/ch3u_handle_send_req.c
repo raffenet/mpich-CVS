@@ -27,16 +27,19 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 	{
             if (MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_GET_RESP)
 	    { 
-                /* atomically decrement RMA completion counter */
-                /* FIXME: MT: this has to be done atomically */
                 if (sreq->dev.win_ptr != NULL) {
-                    sreq->dev.win_ptr->my_counter -= 1;
+                    /* Last RMA operation from source. If active target RMA,
+                       decrement window counter. If passive target RMA, 
+                       release lock on window and grant next lock in the 
+                       lock queue if there is any. */
 
-                    /* grant next lock in lock queue if there is any */
-                    if (sreq->dev.win_ptr->lock_queue != NULL)
-                        mpi_errno = MPIDI_CH3I_Grant_next_lock(sreq->dev.win_ptr);
-                    else
-                        sreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                    if (sreq->dev.win_ptr->current_lock_type == MPID_LOCK_NONE) {
+                        /* FIXME: MT: this has to be done atomically */
+                        sreq->dev.win_ptr->my_counter -= 1;
+                    }
+                    else {
+                        mpi_errno = MPIDI_CH3I_Release_lock(sreq->dev.win_ptr);
+                    }
                 }
             }
 

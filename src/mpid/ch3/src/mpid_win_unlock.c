@@ -25,6 +25,15 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
 
+    MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
+
+    if (dest == comm_ptr->rank) {
+        /* local lock. release the lock on the window, grant the next one
+         * in the queue, and return. */
+        mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
+        goto fn_exit;
+    }
+
     rma_op = win_ptr->rma_ops_list;
     if ( (rma_op == NULL) || (rma_op->type != MPIDI_RMA_LOCK) ) { 
         /* win_lock not called. return error. */
@@ -36,17 +45,16 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         goto fn_exit;
     }
 
-    /* Send a lock packet over to the target. */ 
-
-    MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
-
+    /* Send a lock packet over to the target. wait for the lock_granted
+     * reply. then do all the RMA ops. */ 
+    
     lock_pkt->type = MPIDI_CH3_PKT_LOCK;
     lock_pkt->win_ptr = win_ptr->all_win_ptrs[dest];
     lock_pkt->lock_type = rma_op->lock_type;
     lock_pkt->lock_granted_flag_ptr = (int *) &(win_ptr->lock_granted);
-
+    
     vc = comm_ptr->vcr[dest];
-
+    
     /* Set the lock granted flag to 0 */
     win_ptr->lock_granted = 0;
     
@@ -57,40 +65,40 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
-
+    
     /* release the request returned by iStartMsg */
     if (req != NULL)
     {
         MPID_Request_release(req);
     }
-
+    
     /* After the target grants the lock, it sends a lock_granted
      * packet. This packet is received in ch3u_handle_receive_pkt.c.
      * The handler for the packet sets the win_ptr->lock_granted flag to 1. */
-
+    
     /* poke the progress engine until lock_granted flag is set to 1 */
     while (win_ptr->lock_granted == 0)
     {
-	MPID_Progress_start();
-	
-	if (win_ptr->lock_granted == 0)
-	{
-	    mpi_errno = MPID_Progress_wait();
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
+        MPID_Progress_start();
+        
+        if (win_ptr->lock_granted == 0)
+        {
+            mpi_errno = MPID_Progress_wait();
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
                 mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-	}
-	else
-	{
-	    MPID_Progress_end();
-	    break;
-	}
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+        else
+        {
+            MPID_Progress_end();
+            break;
+        }
     }
-
+    
     /* Now do all the RMA operations */
     mpi_errno = MPIDI_CH3I_Do_passive_target_rma(win_ptr);
 
@@ -169,10 +177,9 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
     curr_ptr = win_ptr->rma_ops_list->next;
     while (curr_ptr != NULL)
     {
-        /* The completion counter at the target is decremented
-           only on the last operation on the target. For that
-           purpose, we pass the dest_win_ptr only on the last
-           operation. Otherwise, we pass NULL */
+        /* To unlock the window at the target after the last RMA operation,
+           we pass the dest_win_ptr only on the last operation. Otherwise, 
+           we pass NULL */
         if (i == nops - 1)
             dest_win_ptr = win_ptr->all_win_ptrs[curr_ptr->target_rank];
         else 
@@ -290,6 +297,7 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_DO_PASSIVE_TARGET_RMA);
     return mpi_errno;
 }
+
 
 
 

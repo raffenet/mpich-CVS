@@ -39,15 +39,18 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
 	    {
                 if (rreq->dev.win_ptr != NULL) {
-                    /* atomically decrement RMA completion counter */
-                    /* FIXME: MT: this has to be done atomically */
-                    rreq->dev.win_ptr->my_counter -= 1;
+                    /* Last RMA operation from source. If active target RMA,
+                       decrement window counter. If passive target RMA, 
+                       release lock on window and grant next lock in the 
+                       lock queue if there is any. */
 
-                    /* grant next lock in lock queue if there is any */
-                    if (rreq->dev.win_ptr->lock_queue != NULL)
-                        mpi_errno = MPIDI_CH3I_Grant_next_lock(rreq->dev.win_ptr);
-                    else
-                        rreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                    if (rreq->dev.win_ptr->current_lock_type == MPID_LOCK_NONE) {
+                        /* FIXME: MT: this has to be done atomically */
+                        rreq->dev.win_ptr->my_counter -= 1;
+                    }
+                    else {
+                        mpi_errno = MPIDI_CH3I_Release_lock(rreq->dev.win_ptr);
+                    }
                 }
 		
                 /* mark data transfer as complete and decrement CC */
@@ -67,15 +70,18 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		/* --END ERROR HANDLING-- */
 
                 if (rreq->dev.win_ptr != NULL) {
-                    /* atomically decrement RMA completion counter */
-                    /* FIXME: MT: this has to be done atomically */
-                    rreq->dev.win_ptr->my_counter -= 1;
+                    /* Last RMA operation from source. If active target RMA,
+                       decrement window counter. If passive target RMA, 
+                       release lock on window and grant next lock in the 
+                       lock queue if there is any. */
 
-                    /* grant next lock in lock queue if there is any */
-                    if (rreq->dev.win_ptr->lock_queue != NULL)
-                        mpi_errno = MPIDI_CH3I_Grant_next_lock(rreq->dev.win_ptr);
-                    else
-                        rreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                    if (rreq->dev.win_ptr->current_lock_type == MPID_LOCK_NONE) {
+                        /* FIXME: MT: this has to be done atomically */
+                        rreq->dev.win_ptr->my_counter -= 1;
+                    }
+                    else {
+                        mpi_errno = MPIDI_CH3I_Release_lock(rreq->dev.win_ptr);
+                    }
                 }
 
                 /* mark data transfer as complete and decrement CC */
@@ -295,15 +301,18 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
             if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
 	    {
                 if (rreq->dev.win_ptr != NULL) {
-                    /* atomically decrement RMA completion counter */
-                    /* FIXME: MT: this has to be done atomically */
-                    rreq->dev.win_ptr->my_counter -= 1;
+                    /* Last RMA operation from source. If active target RMA,
+                       decrement window counter. If passive target RMA, 
+                       release lock on window and grant next lock in the 
+                       lock queue if there is any. */
 
-                    /* grant next lock in lock queue if there is any */
-                    if (rreq->dev.win_ptr->lock_queue != NULL)
-                        mpi_errno = MPIDI_CH3I_Grant_next_lock(rreq->dev.win_ptr);
-                    else
-                        rreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                    if (rreq->dev.win_ptr->current_lock_type == MPID_LOCK_NONE) {
+                        /* FIXME: MT: this has to be done atomically */
+                        rreq->dev.win_ptr->my_counter -= 1;
+                    }
+                    else {
+                        mpi_errno = MPIDI_CH3I_Release_lock(rreq->dev.win_ptr);
+                    }
                 }
             }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP)
@@ -319,15 +328,18 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		/* --END ERROR HANDLING-- */
 
                 if (rreq->dev.win_ptr != NULL) {
-                    /* atomically decrement RMA completion counter */
-                    /* FIXME: MT: this has to be done atomically */
-                    rreq->dev.win_ptr->my_counter -= 1;
+                    /* Last RMA operation from source. If active target RMA,
+                       decrement window counter. If passive target RMA, 
+                       release lock on window and grant next lock in the 
+                       lock queue if there is any. */
 
-                    /* grant next lock in lock queue if there is any */
-                    if (rreq->dev.win_ptr->lock_queue != NULL)
-                        mpi_errno = MPIDI_CH3I_Grant_next_lock(rreq->dev.win_ptr);
-                    else
-                        rreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                    if (rreq->dev.win_ptr->current_lock_type == MPID_LOCK_NONE) {
+                        /* FIXME: MT: this has to be done atomically */
+                        rreq->dev.win_ptr->my_counter -= 1;
+                    }
+                    else {
+                        mpi_errno = MPIDI_CH3I_Release_lock(rreq->dev.win_ptr);
+                    }
                 }
             }
 
@@ -558,43 +570,54 @@ static int do_accumulate_op(MPID_Request *rreq)
 }
 
 
-int MPIDI_CH3I_Grant_next_lock(MPID_Win *win_ptr)
+
+/* Release the current lock on the window and grant the next lock in the
+   queue if any */
+int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 {
-    MPIDI_CH3_Pkt_t upkt;
-    MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &upkt.lock_granted;
-    MPID_Request *req;
-    MPIDI_Win_lock_queue *curr_ptr;
-    int mpi_errno = MPI_SUCCESS;
+    MPIDI_Win_lock_queue *lock_queue, **lock_queue_ptr;
+    int requested_lock, mpi_errno = MPI_SUCCESS;
 
-    curr_ptr = win_ptr->lock_queue;
+    if (win_ptr->current_lock_type == MPI_LOCK_SHARED) {
+        /* decr ref cnt */
+        /* FIXME: MT: Must be done atomically */
+        win_ptr->shared_lock_ref_cnt--;
+    }
 
-    /* increment window counter */
-    /* FIXME: MT: this has to be done atomically */
-    win_ptr->my_counter++;
+    /* If shared lock ref count is 0 (which is also true if the lock is an
+       exclusive lock), release the lock. */
+    if (win_ptr->shared_lock_ref_cnt == 0) {
+        /* FIXME: MT: The setting of the lock type must be done atomically */
+        win_ptr->current_lock_type = MPID_LOCK_NONE;
 
-    /* set new lock type on window */
-    win_ptr->current_lock_type = curr_ptr->lock_type;
-
-    /* send lock granted packet */
-    lock_granted_pkt->type = MPIDI_CH3_PKT_LOCK_GRANTED;
-    lock_granted_pkt->lock_granted_flag_ptr = curr_ptr->lock_granted_flag_ptr;
+        /* If there is a lock queue, try to satisfy as many lock requests as 
+           possible. If the first one is a shared lock, grant it and grant all 
+           other shared locks. If the first one is an exclusive lock, grant 
+           only that one. */
+        
+        /* FIXME: MT: All queue accesses need to be made atomic */
+        lock_queue = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+        lock_queue_ptr = (MPIDI_Win_lock_queue **) &(win_ptr->lock_queue);
+        while (lock_queue) {
+            requested_lock = lock_queue->lock_type;
+            if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, requested_lock) == 1) {
+                /* lock granted. send lock granted packet. */
+                mpi_errno = MPIDI_CH3I_Send_lock_granted_pkt(lock_queue->vc,
+                                                             lock_queue->lock_granted_flag_ptr);
                 
-    mpi_errno = MPIDI_CH3_iStartMsg(curr_ptr->vc, lock_granted_pkt,
-                                    sizeof(*lock_granted_pkt), &req);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS) {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-                                         "**ch3|rmamsg", 0);
-        return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-    if (req != NULL)
-    {
-        MPID_Request_release(req);
-    }
+                /* dequeue entry from lock queue */
+                *lock_queue_ptr = lock_queue->next;
+                MPIU_Free(lock_queue);
+                lock_queue = *lock_queue_ptr;
 
-    win_ptr->lock_queue = curr_ptr->next;
-    MPIU_Free(curr_ptr);
+                /* if the granted lock is exclusive, no need to continue */
+                if (requested_lock == MPI_LOCK_EXCLUSIVE)
+                    break;
+            }
+            else 
+                lock_queue = lock_queue->next;
+        }
+    }
 
     return mpi_errno;
 }
