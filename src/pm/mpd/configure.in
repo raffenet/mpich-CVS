@@ -28,15 +28,20 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
 
+dnl Find Python
+AC_CHECK_PROGS(PYTHON, python2 python)
+if test -z "$PYTHON" ; then
+    AC_MSG_ERROR([No version of python found.  Python is required for mpd])
+fi
 dnl check python version
 AC_CACHE_CHECK([python version],
 pac_cv_python_version,[
 changequote(,)dnl
-pac_cv_python_version=`python -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[0])"`
-pac_cv_python_subversion=`python -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[1])"`
+pac_cv_python_version=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[0])"`
+pac_cv_python_subversion=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[1])"`
 changequote([,])dnl
 ])
-if test "$ac_cv_python_version" -lt "2" -o "$ac_cv_python_version" -eq "2" -a "$ac_cv_python_subversion" -lt "2" ; then
+if test "$pac_cv_python_version" -lt "2" -o "$pac_cv_python_version" -eq "2" -a "$pac_cv_python_subversion" -lt "2" ; then
     AC_MSG_ERROR([Python version 2.2 or greater required; version ${pac_cv_python_version}.${pac_cv_python_subversion} found]) 
 fi	       
 
