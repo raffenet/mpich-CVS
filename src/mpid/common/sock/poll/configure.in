@@ -48,6 +48,7 @@ dnl    AC_MSG_ERROR([This device requires the poll function])
   dnl library found off in la la land (/sw).
   AC_CHECK_HEADER(/sw/include/sys/poll.h,lac_cv_have_header_poll=yes,lac_cv_have_header_poll=no)
   if test "$lac_cv_have_header_poll" = yes ; then
+    AC_DEFINE(HAVE__SW_INCLUDE_SYS_POLL_H,,[define if /sw/include/sys/poll/.h is available])
     TCP_LIBS="$TCP_LIBS -L/sw/lib -lpoll"
   else
     AC_DEFINE(USE_SELECT_FOR_POLL, 1, [Define to use select implementation of poll])
