@@ -246,7 +246,10 @@ AC_OUTPUT(Makefile \
           src/bsocket/Makefile \
 	  src/init/Makefile \
           src/mm/Makefile \
-	  src/spawn/Makefile \
+          src/progress/Makefile \
           src/pt2pt/Makefile \
           src/request/Makefile \
+	  src/spawn/Makefile \
+          src/util/Makefile \
+          src/xfer/Makefile \
 )
