@@ -250,6 +250,20 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	smpd_exit_fn("smpd_start_win_mgr");
 	return SMPD_FAIL;
     }
+    if (!WriteFile(hWrite, smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH, &num_written, NULL))
+    {
+	smpd_err_printf("WriteFile() failed to write the passphrase, error %d\n", GetLastError());
+	CloseHandle(hWrite);
+	smpd_exit_fn("smpd_start_win_mgr");
+	return SMPD_FAIL;
+    }
+    if (num_written != SMPD_PASSPHRASE_MAX_LENGTH)
+    {
+	smpd_err_printf("parital passphrase string written, %d bytes of %d\n", num_written, SMPD_PASSPHRASE_MAX_LENGTH);
+	CloseHandle(hWrite);
+	smpd_exit_fn("smpd_start_win_mgr");
+	return SMPD_FAIL;
+    }
     CloseHandle(hWrite);
 
     return SMPD_SUCCESS;
@@ -272,6 +286,9 @@ int smpd_start_unx_mgr(smpd_context_t *context)
     {
 	/* the child is not the root so clear the flag */
 	smpd_process.root_smpd = SMPD_FALSE;
+	/* the child cannot interact with the user so set these flags accordingly */
+	smpd_process.noprompt = SMPD_TRUE;
+	smpd_process.credentials_prompt = SMPD_FALSE;
     }
     return SMPD_SUCCESS;
 }

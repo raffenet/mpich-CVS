@@ -191,30 +191,43 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("manager reading account and password from smpd.\n");
-	if (!ReadFile(hRead, smpd_process.UserAccount, 100, &num_read, NULL))
+	if (!ReadFile(hRead, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	if (num_read != 100)
+	if (num_read != SMPD_MAX_ACCOUNT_LENGTH)
 	{
-	    smpd_err_printf("read only %d bytes of 100\n", num_read);
+	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_MAX_ACCOUNT_LENGTH);
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	if (!ReadFile(hRead, smpd_process.UserPassword, 100, &num_read, NULL))
+	if (!ReadFile(hRead, smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	if (num_read != 100)
+	if (num_read != SMPD_MAX_PASSWORD_LENGTH)
 	{
-	    smpd_err_printf("read only %d bytes of 100\n", num_read);
+	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_MAX_PASSWORD_LENGTH);
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
+	if (!ReadFile(hRead, smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH, &num_read, NULL))
+	{
+	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
+	    smpd_exit_fn("smpd_parse_command_args");
+	    return SMPD_FAIL;
+	}
+	if (num_read != SMPD_PASSPHRASE_MAX_LENGTH)
+	{
+	    smpd_err_printf("read only %d bytes of %d\n", num_read, SMPD_PASSPHRASE_MAX_LENGTH);
+	    smpd_exit_fn("smpd_parse_command_args");
+	    return SMPD_FAIL;
+	}
+	smpd_process.credentials_prompt = SMPD_FALSE;
 
 	result = smpd_enter_at_state(set, SMPD_MGR_LISTENING);
 	if (result != SMPD_SUCCESS)
