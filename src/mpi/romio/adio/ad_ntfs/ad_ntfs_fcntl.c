@@ -17,10 +17,6 @@
 void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
     DWORD dwTemp;
-    int i, ntimes;
-    ADIO_Offset curr_fsize, alloc_size, size, len, done;
-    ADIO_Status status;
-    char *buf;
     static char myname[] = "ADIOI_NTFS_FCNTL";
 
     switch(flag) {
