@@ -59,7 +59,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
 
-    
+    /* Call dbg_init as soon as the rank is available */
+    MPIU_dbg_init(pg_rank);
+    /*MPIU_Timer_init(pg_rank, pg_size);*/
+
     /*
      * Get the process group id
      */
@@ -151,9 +154,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
-
-    /*MPIU_Timer_init(pg_rank, pg_size);*/
-    MPIU_dbg_init(pg_rank);
 
     MPIDI_CH3I_Process.pg = pg;
     
