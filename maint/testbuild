@@ -14,7 +14,7 @@ outdir=/home/gropp/projects/mpich2-tests
 date=`date "+%Y-%m-%d"`
 # default outfile
 outfile=testbuild.xml
-tests="mpich;mpicxx;intel"
+tests="mpich;mpicxx;intel;mpich2"
 #
 # Option options to checkbuild
 other_opts=""
@@ -58,6 +58,8 @@ fi
 if [ ! -d $inteltestdir ] ; then
     mkdir $inteltestdir
 fi
+# We don't need to build the mpich2testdir because it is part of the mpich2
+# distribution
 # Build the current version of checkbuilds
 (cd $rundir/maint && $srcdir/maint/configure 2>&1 >/dev/null)
 if [ ! -x $rundir/maint/checkbuilds ] ; then
