@@ -12,10 +12,6 @@ mpiexec [global args] [local args] executable [args]
    where global args may be
       -l                           # line labels by MPI rank
       -bnr                         # MPICH1 compatibility mode
-      -genvall                     # pass all env vars in current environment
-      -genvnone                    # pass no env vars
-      -genvlist <list of env var names> # pass current values of these vars
-      -genv <name> <value>         # pass this value of this env var
       -g<local arg name>           # global version of local arg (below)
     and local args may be
       -n <n> or -np <n>            # number of processes to start
@@ -24,6 +20,10 @@ mpiexec [global args] [local args] executable [args]
       -host <hostname>             # host to start on
       -soft <spec>                 # modifier of -n value
       -arch <arch>                 # arch type to start on (not implemented)
+      -envall                      # pass all env vars in current environment
+      -envnone                     # pass no env vars
+      -envlist <list of env var names> # pass current values of these vars
+      -env <name> <value>          # pass this value of this env var
 mpiexec [global args] [local args] executable args : [local args] executable...
 mpiexec -configfile filename       # filename contains cmd line segs as lines
   (See User Guide for more details)
@@ -57,10 +57,12 @@ def mpiexec():
 
     validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
-                        '-gexec' : 1, '-genv' : 2, '-genvnone' : 0, '-genvlist' : 1 }
+			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1,
+			'-genvall' : 0, '-genv' : 2, '-genvnone' : 0,
+			'-genvlist' : 1 }
     validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1,
-                        '-soft' : 1, '-arch' : 1, '-env' : 2, '-envnone' : 0,
-                        '-envlist' : 1 }
+                        '-soft' : 1, '-arch' : 1,
+			'-envall' : 0, '-env' : 2, '-envnone' : 0, '-envlist' : 1 }
 
     globalArgs   = {}
     localArgSets = {}
@@ -148,6 +150,8 @@ def collect_args(args):
     globalArgs['-ghost']    = '_any_'
     globalArgs['-gpath']    = environ['PATH']
     globalArgs['-gwdir']    = path.abspath(getcwd())
+    globalArgs['-gsoft']    = 0
+    globalArgs['-garch']    = ''
     globalArgs['-gexec']    = ''
     globalArgs['-genv']     = {}
     globalArgs['-genvlist'] = []
@@ -162,6 +166,8 @@ def collect_args(args):
                 globalArgs['-genv'][args[argidx+1]] = args[argidx+2]
                 argidx += 3
             else:
+		if garg == '-garch':
+                    print '** -garch is accepted but not used'
 		if garg == '-usize'  or  garg == '-gn':
                     if args[argidx+1].isdigit():
                         globalArgs[garg] = int(args[argidx+1])
@@ -193,6 +199,7 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
     nProcs = globalArgs['-gn']
     usize  = globalArgs['-usize']
     gexec  = globalArgs['-gexec']
+    softness =  globalArgs['-gsoft']
     if globalArgs['-genvnone']:
         envall = 0
     else:
@@ -201,7 +208,6 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         globalArgs['-genvlist'] = globalArgs['-genvlist'].split(',')
     localEnvlist = []
     localEnv  = {}
-    softness = ''
     
     argidx = 0
     while argidx < len(argset):
