@@ -11,188 +11,6 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
-			ConfigurationType="2"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
-				MinimalRebuild="TRUE"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2d.lib"
-				OutputFile="../../../lib/mpich2fd.dll"
-				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2f.def"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
-			ConfigurationType="2"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
-				RuntimeLibrary="4"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2.lib"
-				OutputFile="../../../lib/mpich2f.dll"
-				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2f.def"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="gccRelease|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE"
-				RuntimeLibrary="4"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2.lib"
-				OutputFile="../../../lib/mpich2fg.dll"
-				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2fg.def"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="gccDebug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE"
-				MinimalRebuild="TRUE"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2d.lib"
-				OutputFile="../../../lib/mpich2fgd.dll"
-				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2fg.def"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
 			Name="sfortDebug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
@@ -215,13 +33,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpich2d.lib"
-				OutputFile="../../../lib/mpich2fsd.dll"
+				OutputFile="../../../lib/fmpich2sd.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fs.def"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2sd.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2sd.dll %SystemRoot%\system32\fmpich2sd.dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -259,13 +79,205 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpich2.lib"
-				OutputFile="../../../lib/mpich2fs.dll"
+				OutputFile="../../../lib/fmpich2s.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fs.def"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2s.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2s.dll %SystemRoot%\system32\fmpich2s.dll"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="fortRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2.lib"
+				OutputFile="../../../lib/fmpich2.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2.dll %SystemRoot%\system32\fmpich2.dll"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="fortDebug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2d.lib"
+				OutputFile="../../../lib/fmpich2d.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2d.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2d.dll %SystemRoot%\system32\fmpich2d.dll"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="gfortDebug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2d.lib"
+				OutputFile="../../../lib/fmpich2gd.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fg.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2gd.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2gd.dll %SystemRoot%\system32\fmpich2gd.dll"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="gfortRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2.lib"
+				OutputFile="../../../lib/fmpich2g.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fg.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2g.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2g.dll %SystemRoot%\system32\fmpich2g.dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -653,81 +665,9 @@
 			</File>
 			<File
 				RelativePath=".\filecallerrf.c">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\filecreerrf.c">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\filegeterrf.c">
@@ -758,6 +698,9 @@
 			</File>
 			<File
 				RelativePath=".\get_versionf.c">
+			</File>
+			<File
+				RelativePath=".\getaddressf.c">
 			</File>
 			<File
 				RelativePath=".\getf.c">
@@ -868,6 +811,9 @@
 				RelativePath=".\initializedf.c">
 			</File>
 			<File
+				RelativePath=".\initthreadf.c">
+			</File>
+			<File
 				RelativePath=".\iprobef.c">
 			</File>
 			<File
@@ -897,13 +843,13 @@
 			<File
 				RelativePath=".\mpich2f.def">
 				<FileConfiguration
-					Name="gccRelease|Win32"
+					Name="gfortDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCustomBuildTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="gccDebug|Win32"
+					Name="gfortRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCustomBuildTool"/>
@@ -912,18 +858,6 @@
 			<File
 				RelativePath=".\mpich2fg.def">
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="sfortDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
@@ -931,6 +865,18 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="sfortRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCustomBuildTool"/>
@@ -1048,84 +994,6 @@
 				RelativePath=".\statsetelf.c">
 			</File>
 			<File
-				RelativePath=".\statusc2f.c">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\statusf2c.c">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\testallf.c">
 			</File>
 			<File
@@ -1169,6 +1037,9 @@
 			</File>
 			<File
 				RelativePath=".\type_lbf.c">
+			</File>
+			<File
+				RelativePath=".\type_match_sizef.c">
 			</File>
 			<File
 				RelativePath=".\type_sizef.c">
@@ -1326,79 +1197,79 @@
 			<File
 				RelativePath=".\wtickf.c">
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="sfortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="sfortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="fortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="fortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="gfortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="gfortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\wtimef.c">
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="sfortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="sfortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="gccRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="fortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="gccDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="fortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="sfortDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="gfortDebug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="sfortRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="gfortRelease|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
