@@ -93,9 +93,9 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 	    }
 	    else if (cart_ptr->topo.cart.ndims > maxdims) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-					  "**argrange", "**argrange %s %d %d",
-					  "maxdims", maxdims, 
-					  cart_ptr->topo.cart.ndims );
+					  "**dimsmany", "**dimsmany %d %d",
+						  cart_ptr->topo.cart.ndims,
+						  maxdims );
 	    }
 	    if (mpi_errno) {
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);

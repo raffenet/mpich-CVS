@@ -165,15 +165,15 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	stride = ranges[i][2];
 	if (first < 0 || first >= size) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-					      "**stride", 
-					      "**strideinvalid %d %d %d", 
+					      "**rangeinvalid", 
+					      "**rangestartinvalid %d %d %d", 
 					      i, first, size );
 	    break;
 	}
 	if (last < 0 || last >= size) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-					      "**stride", 
-					      "**strideinvalid %d %d %d", 
+					      "**rangeinvalid", 
+					      "**rangeendinvalid %d %d %d", 
 					      i, last, size );
 	    break;
 	}
@@ -196,7 +196,7 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	    for (j=first; j<=last; j+=stride) {
 		if (group_ptr->lrank_to_lpid[j].flag) {
 		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-						      "**stridedup", 0 );
+						      "**rangedup", 0 );
 		    break;
 		}
 		else
@@ -207,7 +207,7 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	    for (j=first; j>=last; j+=stride) {
 		if (group_ptr->lrank_to_lpid[j].flag) {
 		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-						      "**stridedup", 0 );
+						      "**rangedup", 0 );
 		    break;
 		}
 		else

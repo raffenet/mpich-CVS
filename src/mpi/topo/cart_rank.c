@@ -108,7 +108,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 					  "**cartcoordinvalid",
 					  "**cartcoordinvalid %d %d %d",
 					  i, coords[i], 
-					  cart_ptr->topo.cart.dims[i] );
+					  cart_ptr->topo.cart.dims[i]-1 );
 			    break;
 			}
 		    }
