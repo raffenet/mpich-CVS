@@ -383,8 +383,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPI_Group win_grp, start_grp;
     int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
     MPID_Datatype *dtp;
-
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
 
@@ -560,7 +560,9 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
                 return mpi_errno;
             }
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
             memcpy(dataloops[i], dtp->dataloop, dtp->dataloop_size);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],

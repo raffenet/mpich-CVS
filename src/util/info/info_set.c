@@ -83,10 +83,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	    }
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -114,10 +111,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 					      "**nomem", "**nomem %s", "MPI_Info" );
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_info_set", "**mpi_info_set %I %s %s", info, key, value);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	/*printf( "Inserting new elm %x at %x\n", curr_ptr->id, prev_ptr->id );*/
 	prev_ptr->next   = curr_ptr;
@@ -129,4 +123,11 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_info_set", "**mpi_info_set %I %s %s", info, key, value);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

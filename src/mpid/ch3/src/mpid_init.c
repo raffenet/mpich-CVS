@@ -80,7 +80,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	/* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
 	MPIDI_Process.processor_name = MPIU_Malloc(128);
 #ifdef HAVE_WINDOWS_H
-	if (GetComputerName(MPIDI_Process.processor_name, &size) == 0)
+	if (!GetComputerName(MPIDI_Process.processor_name, &size))
 	{
 	    MPIU_Free(MPIDI_Process.processor_name);
 	    MPIDI_Process.processor_name = NULL;

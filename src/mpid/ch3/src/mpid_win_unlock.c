@@ -768,8 +768,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     void **dataloops;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPID_Datatype *dtp;
-
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
 
@@ -947,7 +947,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
                 return mpi_errno;
             }
 	    /* --END ERROR HANDLING-- */
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
             memcpy(dataloops[i], dtp->dataloop, dtp->dataloop_size);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
             
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],

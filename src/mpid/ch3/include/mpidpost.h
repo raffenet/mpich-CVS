@@ -374,6 +374,21 @@ int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq, MPI_Request sreq_id,
 		      MPID_IOV * iov, int n_iov);
 
 
+
+/*E
+  MPIDI_CH3_Abort - Abort this process.
+
+  Input Parameters:
++ exit_code - exit code to be returned by the process
+- error_msg - error message to print
+
+  Return value:
+  This function should not return.
+E*/
+
+int MPIDI_CH3_Abort(int exit_code, char *error_msg);
+
+
 /*
  * Channel upcall prototypes
  */

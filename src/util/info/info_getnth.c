@@ -64,10 +64,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -95,13 +92,17 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 					  "**infonkey", "**infonkey %d %d", 
 					  n, nkeys );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_info_get_nthkey", "**mpi_info_get_nthkey %I %d %p", info, n, key);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_info_get_nthkey", "**mpi_info_get_nthkey %I %d %p", info, n, key);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

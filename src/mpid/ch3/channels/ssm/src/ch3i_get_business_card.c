@@ -14,12 +14,22 @@ static int GetLocalIPs(int32_t *pIP, int max)
     char hostname[100], **hlist;
     struct hostent *h = NULL;
     int n = 0;
-    
+
+#ifdef HAVE_WINDOWS_H
+    {
+	DWORD len = 100;
+	if (!GetComputerName(hostname, &len))
+	{
+	    return 0;
+	}
+    }
+#else
     if (gethostname(hostname, 100) == SOCKET_ERROR)
     {
 	return 0;
     }
-    
+#endif
+
     h = gethostbyname(hostname);
     if (h == NULL)
     {
@@ -259,7 +269,14 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 
     port = MPIDI_CH3I_Listener_get_port();
 
+#ifdef HAVE_WINDOWS_H
+    {
+	DWORD len = 100;
+	GetComputerName(host, &len);
+    }
+#else
     gethostname(host, 100);
+#endif
 
     mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_KEY, host);
     if (mpi_errno != MPIU_STR_SUCCESS)

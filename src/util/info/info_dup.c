@@ -64,10 +64,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -93,9 +90,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 	if (!curr_new->next)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info" );
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_info_dup", "**mpi_info_dup %I %p", info, newinfo);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	curr_new	 = curr_new->next;
 	curr_new->key	 = MPIU_Strdup(curr_old->key);
@@ -108,4 +103,11 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_info_dup", "**mpi_info_dup %I %p", info, newinfo);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

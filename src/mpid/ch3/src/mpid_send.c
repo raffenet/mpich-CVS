@@ -208,7 +208,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
     {
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt = &upkt.rndv_req_to_send;
+#ifndef MPIDI_CH3_CHANNEL_RNDV
 	MPID_Request * rts_sreq;
+#endif
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
@@ -243,7 +245,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
-	    sreq->dev.iov[0].MPID_IOV_BUF = sreq->dev.user_buf + dt_true_lb;
+	    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char*)sreq->dev.user_buf + dt_true_lb);
 	    sreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    sreq->dev.iov_count = 1;
 	}

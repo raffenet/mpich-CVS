@@ -21,7 +21,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code)
     {
 	char msg[MPI_MAX_ERROR_STRING];
 	
-	MPIR_Err_get_string(mpi_errno, msg);
+	MPIR_Err_get_string(mpi_errno, msg, MPI_MAX_ERROR_STRING, NULL);
 	MPIU_Error_printf("ABORT - process %d: %s\n", MPIR_Process.comm_world->rank, msg);
 	fflush(stderr);
     }

@@ -41,7 +41,7 @@ int MPID_Parse_option(int num_args, char *args[], int *num_parsed, MPI_Info *inf
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
 	return mpi_errno;
     }
-    mpi_errno = PMPI_Info_create(info);
+    mpi_errno = NMPI_Info_create(info);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -50,7 +50,7 @@ int MPID_Parse_option(int num_args, char *args[], int *num_parsed, MPI_Info *inf
     }
     for (i=0; i<size; i++)
     {
-	mpi_errno = PMPI_Info_set(*info, keyvals[i].key, keyvals[i].val);
+	mpi_errno = NMPI_Info_set(*info, keyvals[i].key, keyvals[i].val);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);

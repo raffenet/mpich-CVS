@@ -381,6 +381,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_Comm *comm_ptr;
     MPID_Datatype *target_dtp=NULL, *origin_dtp=NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
 
@@ -470,7 +471,9 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
         memcpy(*dataloop, target_dtp->dataloop, target_dtp->dataloop_size);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
         if (rma_op->type == MPIDI_RMA_PUT)
 	{
@@ -611,6 +614,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_Datatype *dtp;
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
 
@@ -689,7 +693,9 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
         memcpy(*dataloop, dtp->dataloop, dtp->dataloop_size);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
         get_pkt->dataloop_size = dtp->dataloop_size;
 
@@ -780,8 +786,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     MPI_Aint extent, ptrdiff, true_lb, true_extent;
     MPID_Datatype *dtp, *new_dtp=NULL;
     void *win_buf_addr;
-
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
@@ -938,7 +944,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }
+		MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
                 memcpy(dataloops[i], dtp->dataloop, dtp->dataloop_size);
+		MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
                 /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
                 mpi_errno = NMPI_Isend(&rma_op_infos[i],

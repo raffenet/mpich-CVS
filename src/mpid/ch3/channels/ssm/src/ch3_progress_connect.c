@@ -547,11 +547,11 @@ void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int mpi_errno)
 
     if (conn->send_active)
     { 
-	MPID_Abort(conn->send_active->comm, mpi_errno, 13);
+	MPID_Abort(conn->send_active->comm, mpi_errno, 13, NULL);
     }
     else
     {
-	MPID_Abort(NULL, mpi_errno, 13);
+	MPID_Abort(NULL, mpi_errno, 13, NULL);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_SEND_FAIL);
@@ -568,7 +568,7 @@ void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int mpi_errno)
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_RECV_FAIL);
 
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-    MPID_Abort(NULL, mpi_errno, 13);
+    MPID_Abort(NULL, mpi_errno, 13, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_RECV_FAIL);
 }

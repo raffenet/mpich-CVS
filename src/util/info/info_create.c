@@ -53,10 +53,7 @@ int MPI_Info_create( MPI_Info *info )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -67,10 +64,7 @@ int MPI_Info_create( MPI_Info *info )
     if (!info_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info" );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_info_create", "**mpi_info_create %p", info);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     *info	    = info_ptr->handle;
     /* (info_ptr)->cookie = MPIR_INFO_COOKIE; */
@@ -83,4 +77,11 @@ int MPI_Info_create( MPI_Info *info )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_info_create", "**mpi_info_create %p", info);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

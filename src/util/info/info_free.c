@@ -57,10 +57,7 @@ int MPI_Info_free( MPI_Info *info )
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -73,4 +70,11 @@ int MPI_Info_free( MPI_Info *info )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_info_free", "**mpi_info_free %p", info);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

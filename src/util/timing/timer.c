@@ -229,10 +229,8 @@ int MPIU_Timer_init(int rank, int size)
 	/*sprintf(g_timer_state[i].color_str, "%d %d %d", (int)r, (int)g, (int)b);*/
 	random_X_color_string(g_timer_state[i].color_str);
     }
-    MPIR_Describe_mpi_timer_states();
-    MPIDU_Describe_timer_states();
-    /* Insert Package_Describe_timer_states() here */
-    MPIDU_Segment_describe_timer_states();
+    
+    MPIR_Describe_timer_states();
 
     DLOG_EnableLogging(g_pDLOG);
     DLOG_SaveFirstTimestamp(g_pDLOG);

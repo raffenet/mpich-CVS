@@ -338,6 +338,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     MPIDI_msg_sz_t unpack_sz;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
@@ -365,7 +366,9 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	{
 	    /* TODO - check that amount of data is consistent with datatype.  In other words, if we were to use Segment_unpack()
 	       would last = unpack?  If not we should return an error (unless configured with --enable-fast) */
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf, unpack_sz);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	}
 	else
 	{
