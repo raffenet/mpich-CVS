@@ -10,6 +10,9 @@
 #ifdef MPISGI
 #include "mpisgi2.h"
 #endif
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 void ADIO_Close(ADIO_File fd, int *error_code)
 {
@@ -20,9 +23,9 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 
     if (fd->async_count) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			MPIR_Err_return_file(fd, myname, *error_code);
+	*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+	    "**io %s", strerror(errno));
+	MPIR_Err_return_file(fd, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "ADIO_Close: Error! There are outstanding nonblocking I/O operations on this file.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

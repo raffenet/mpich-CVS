@@ -38,6 +38,9 @@
 #ifdef tflops
 #include <sys/mount.h>
 #endif
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_UNISTD_H
 /* Needed for readlink */
@@ -381,9 +384,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**iofstype",
-							0);
-			MPIR_Err_return_file(NULL, myname, *error_code);
+	    *error_code = MPIR_Err_create_code(MPI_ERR_IO, "**iofstype",
+		0);
+	    MPIR_Err_return_file(NULL, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "ADIO_ResolveFileType: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);

@@ -12,6 +12,9 @@
 #ifdef MPISGI
 #include "mpisgi2.h"
 #endif
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 ADIO_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm comm, char *filename, int file_system,
@@ -113,9 +116,9 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     ADIOI_cb_bcast_rank_map(fd);
     if (fd->hints->cb_nodes <= 0) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**ioagnomatch",
-							0);
-			MPIR_Err_return_file(fd, myname, *error_code);
+	*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**ioagnomatch",
+	    0);
+	MPIR_Err_return_file(fd, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 	*error_code = MPI_ERR_UNKNOWN;
 #else
