@@ -231,8 +231,8 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 new_dtp->has_sticky_ub = dtype_info.has_sticky_ub;
                 new_dtp->has_sticky_lb = dtype_info.has_sticky_lb;
                 /* update pointers in dataloop */
-                ptrdiff = (char *) (new_dtp->loopinfo) - (char *)
-                    (dtype_info.loopinfo); 
+                ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
+                    (dtype_info.loopinfo));
 
                 MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
             }
@@ -338,8 +338,8 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                     type_size = MPID_Datatype_get_basic_size(type);
                     for (i=0; i<vec_len; i++) {
                         count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                        (*uop)((char *)tmp_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
-                            (char *)win_buf_addr + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                        (*uop)((char *)tmp_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                            (char *)win_buf_addr + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                &count, &type);
                     }
                     

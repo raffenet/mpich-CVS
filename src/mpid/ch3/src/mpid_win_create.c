@@ -129,13 +129,12 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
    ACTIVE-TARGET RMA WILL NOT WORK BECAUSE OF THREAD-SAFETY
    ISSUES. UNCOMMENT THE LINE BELOW FOR PASSIVE TARGET TO WORK */
 
-/*        mpi_errno = NMPI_Iprobe(MPI_ANY_SOURCE,
+#if 0
+        mpi_errno = NMPI_Iprobe(MPI_ANY_SOURCE,
                                  MPIDI_PASSIVE_TARGET_RMA_TAG, comm,
                                  &flag, &status);
         if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
-*/
-
-#ifdef FOO
+#elif 0
        if (rank==0) {
            int k=0;
             mpi_errno = NMPI_Iprobe(MPI_ANY_SOURCE,
@@ -146,6 +145,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
             if (k==40) MPIDI_Passive_target_thread_exit_flag=1;
        }
        else MPIDI_Passive_target_thread_exit_flag=1;
+#else
+	memset(&status, 0, sizeof(status));
 #endif
 
         if (flag) {
@@ -228,8 +229,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                     new_dtp->has_sticky_ub = dtype_info.has_sticky_ub;
                     new_dtp->has_sticky_lb = dtype_info.has_sticky_lb;
                     /* update pointers in dataloop */
-                    ptrdiff = (char *) (new_dtp->loopinfo) - (char *)
-                        (dtype_info.loopinfo); 
+                    ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
+                        (dtype_info.loopinfo));
                     
                     MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
                 }
@@ -346,8 +347,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                         type_size = MPID_Datatype_get_basic_size(type);
                         for (i=0; i<vec_len; i++) {
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                            (*uop)((char *)tmp_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
-                                   (char *)win_buf_addr + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                            (*uop)((char *)tmp_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                                   (char *)win_buf_addr + POINTER_TO_AINT ( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                    &count, &type);
                         }
 
