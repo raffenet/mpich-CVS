@@ -85,10 +85,10 @@ typedef struct BlockAllocator_struct * BlockAllocator;
 typedef volatile long SOCKI_Lock_t;
 #endif
 
-BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
-int BlockAllocFinalize(BlockAllocator *p);
-void * BlockAlloc(BlockAllocator p);
-int BlockFree(BlockAllocator p, void *pBlock);
+static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
+static int BlockAllocFinalize(BlockAllocator *p);
+static void * BlockAlloc(BlockAllocator p);
+static int BlockFree(BlockAllocator p, void *pBlock);
 
 struct BlockAllocator_struct
 {
