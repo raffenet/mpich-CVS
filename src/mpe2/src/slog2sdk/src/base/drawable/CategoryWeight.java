@@ -83,7 +83,7 @@ public class CategoryWeight
         this.weight += a_type_wgt.weight * ftr;
     }
 
-    //  For SLOG-2 input API
+    //  For SLOG-2 Input API, used by Shadow.resolveCategory() 
     public boolean resolveCategory( final Map categorymap )
     {
         if ( type == null ) {

@@ -85,15 +85,23 @@ public class InfoBox extends TimeBoundingBox
             this.initCategoryToNull();
     }
 
-    //  For SLOG-2 input API
+    //  For SLOG-2 Input and Output APIs
     public boolean resolveCategory( final Map categorymap )
     {
         if ( type == null ) {
+            // For Output: TraceTOslog2. For Input: BufForDrawables.readObject
             if ( type_idx != INVALID_INDEX ) {
                 type = (Category) categorymap.get( new Integer( type_idx ) );
-                if ( type != null )
+                if ( type != null ) {
+                    type.setUsed( true );  // set Category.hasBeenUsed to TRUE
                     return true;
+                }
             }
+        }
+        else {
+            // For Output: ClogToSlog2
+            type.setUsed( true );
+            return true;
         }
         return false;
     }

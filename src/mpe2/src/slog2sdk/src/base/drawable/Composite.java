@@ -95,7 +95,7 @@ public class Composite extends Drawable
         primes = in_primes;
     }
 
-    //  For SLOG-2 input API
+    //  For SLOG-2 Input/Output APIs: BufForDrawables.readObject()/TraceToSlog2
     public boolean resolveCategory( final Map categorymap )
     {
         Primitive prime;

@@ -29,6 +29,8 @@ public class Category
     private InfoType[]   infotypes;    // % token to represent infoval type
     private Method[]     methods;
 
+    private boolean      hasBeenUsed;  // For SLOG-2 Output API, remove unused.
+
     private boolean      isVisible;    // For SLOG-2 Input API, or Jumpshot
     private boolean      isSearchable; // For SLOG-2 Input API, or Jumpshot
 
@@ -37,6 +39,7 @@ public class Category
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
     }
@@ -52,6 +55,7 @@ public class Category
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
     }
@@ -65,6 +69,7 @@ public class Category
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
     }
@@ -72,6 +77,16 @@ public class Category
     public int getIndex()
     {
         return index;
+    }
+
+    public void setUsed( boolean new_value )
+    {
+        hasBeenUsed  = new_value;
+    }
+
+    public boolean isUsed()
+    {
+        return hasBeenUsed;
     }
 
     public void setVisible( boolean new_value )

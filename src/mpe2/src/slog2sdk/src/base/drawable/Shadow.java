@@ -73,7 +73,7 @@ public class Shadow extends Primitive
             map_type2twgt.put( shade_twgt.getCategory(),
                                new CategoryWeight( shade_twgt ) );
         }
-        selected_subtype = null;
+        selected_subtype = null;   // meaningless for SLOG-2 Output
     }
 
     // For SLOG-2 Output
@@ -90,6 +90,7 @@ public class Shadow extends Primitive
         dobj_list       = new ArrayList();
         dobj_list.add( prime );
         map_type2dobjs.put( prime.getCategory(), dobj_list );
+        selected_subtype = null;   // meaningless for SLOG-2 Output
     }
 
     public void mergeWithPrimitive( final Primitive prime )
@@ -247,7 +248,7 @@ public class Shadow extends Primitive
                  + CategoryWeight.BYTESIZE * map_type2twgt.size();
     }
 
-    // For SLOG-2 Input API
+    // For SLOG-2 Input API, used by BufForShadows.readObject()
     public boolean resolveCategory( Map categorymap )
     {
         boolean  allOK = super.resolveCategory( categorymap );
