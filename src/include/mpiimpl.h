@@ -959,7 +959,11 @@ extern MPID_File MPID_File_direct[];
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
    src/mpi/timer/mpichtimer.h.in */
+#ifdef USE_WINCONF_H
+#include "winmpichtimer.h"
+#else
 #include "mpichtimer.h"
+#endif
 typedef struct MPID_Stateinfo_t {
     MPID_Time_t stamp;
     int count;

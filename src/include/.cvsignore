@@ -2,7 +2,6 @@ mpi.h
 mpichtimer.h
 mpid*.h
 mpid*.h.in
-winmpichtimer.h
 mpid_datatype.h
 mpid_dataloop.h
 gen_dataloop.h
