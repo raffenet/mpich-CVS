@@ -21,6 +21,10 @@
 @*/
 int MPID_Finalize( void )
 {
+#ifdef USE_MPE_PROFILING
+    prof_finalize();
+#endif
+
     mm_car_finalize();
     mm_vc_finalize();
 

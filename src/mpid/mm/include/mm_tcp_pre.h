@@ -12,9 +12,6 @@ typedef struct MM_Car_data_tcp
     {
 	struct car_tcp_tmp
 	{
-	    int num_read_local;
-	    int num_read_copy;
-	    int num_read;
 	    int num_written;
 	} tmp;
 	struct car_tcp_vec_read

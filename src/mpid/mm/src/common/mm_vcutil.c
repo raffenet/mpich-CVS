@@ -14,8 +14,10 @@
 @*/
 void mm_vc_init()
 {
+    MM_ENTER_FUNC(MM_VC_INIT);
     MPID_Process.VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
     MPID_Process.VC_allocator = BlockAllocInit(sizeof(MPIDI_VC), 100, 100, malloc, free);
+    MM_EXIT_FUNC(MM_VC_INIT);
 }
 
 /*@
@@ -25,8 +27,10 @@ void mm_vc_init()
 @*/
 void mm_vc_finalize()
 {
+    MM_ENTER_FUNC(MM_VC_FINALIZE);
     BlockAllocFinalize(&MPID_Process.VCTable_allocator);
     BlockAllocFinalize(&MPID_Process.VC_allocator);
+    MM_EXIT_FUNC(MM_VC_FINALIZE);
 }
 
 /*@
@@ -126,6 +130,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 {
     MPIDI_VC *vc_ptr;
 
+    MM_ENTER_FUNC(MM_VC_ALLOC);
     dbg_printf("mm_vc_alloc\n");
 
     vc_ptr = (MPIDI_VC*)BlockAlloc(MPID_Process.VC_allocator);
@@ -201,6 +206,8 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     default:
 	break;
     }
+
+    MM_EXIT_FUNC(MM_VC_ALLOC);
     return vc_ptr;
 }
 
@@ -225,6 +232,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     char *temp;
 #endif
 
+    MM_ENTER_FUNC(MM_VC_CONNECT_ALLOC);
     dbg_printf("mm_vc_connect_alloc(rank:%d)\n", rank);
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
@@ -267,6 +275,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
+	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -292,6 +301,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
+	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -317,6 +327,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
+	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -346,6 +357,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
+	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -371,6 +383,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
+	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -378,6 +391,8 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 
     MPIU_Free(value);
     MPIU_Free(value);
+
+    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
     return NULL;
 }
 
@@ -391,10 +406,17 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 @*/
 int mm_vc_free(MPIDI_VC *ptr)
 {
+    MM_ENTER_FUNC(MM_VC_FREE);
+
     if (ptr->method == MM_PACKER_METHOD || ptr->method == MM_UNPACKER_METHOD)
+    {
+	MM_EXIT_FUNC(MM_VC_FREE);
 	return MPI_SUCCESS;
+    }
 
     BlockFree(MPID_Process.VC_allocator, ptr);
+
+    MM_EXIT_FUNC(MM_VC_FREE);
     return MPI_SUCCESS;
 }
 

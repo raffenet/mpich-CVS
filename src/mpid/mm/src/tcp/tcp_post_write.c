@@ -7,6 +7,8 @@
 
 int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(TCP_POST_WRITE);
     tcp_car_enqueue(vc_ptr, car_ptr);
+    MM_EXIT_FUNC(TCP_POST_WRITE);
     return MPI_SUCCESS;
 }

@@ -10,7 +10,12 @@
 #include "bsocket.h"
 #include "blockallocator.h"
 
-#include "mm_events.h"
+#ifdef USE_MPE_PROFILING
+#include "mm_mpe_prof.h"
+#else
+#define MM_ENTER_FUNC(a)
+#define MM_EXIT_FUNC(a)
+#endif
 
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
 #define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
@@ -185,6 +190,7 @@ MPID_Request * mm_request_alloc();
            int mm_choose_buffer(MPID_Request *request_ptr);
            int mm_reset_cars(MPID_Request *request_ptr);
            int mm_get_buffers_tmp(MPID_Request *request_ptr);
+	   int mm_release_buffers_tmp(MPID_Request *request_ptr);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
 	   int vec_buffer_init(MPID_Request *request_ptr);
 	   int tmp_buffer_init(MPID_Request *request_ptr);

@@ -14,6 +14,8 @@ int tcp_accept_connection()
     char ack;
     BOOL inwriteset;
 
+    MM_ENTER_FUNC(TCP_ACCEPT_CONNECTION);
+
     /* accept new connection */
     bfd = beasy_accept(TCP_Process.listener);
     if (bfd == BFD_INVALID_SOCKET)
@@ -21,6 +23,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_accpet failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	return -1;
     }
     if (beasy_receive(bfd, (void*)&remote_rank, sizeof(int)) == SOCKET_ERROR)
@@ -28,6 +31,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	return -1;
     }
     if (beasy_receive(bfd, (void*)&context, sizeof(int)) == SOCKET_ERROR)
@@ -35,6 +39,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_receive(context) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	return -1;
     }
 
@@ -78,12 +83,14 @@ int tcp_accept_connection()
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected with method %d\n", vc_ptr->method);
 	    MPID_Thread_unlock(vc_ptr->lock);
+	    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	    return -1;
 	}
 	if (!vc_ptr->data.tcp.connecting || vc_ptr->data.tcp.connected)
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected.\n");
 	    MPID_Thread_unlock(vc_ptr->lock);
+	    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	    return -1;
 	}
 	if (remote_rank > MPIR_Process.comm_world->rank)
@@ -132,6 +139,7 @@ int tcp_accept_connection()
 	MPID_Thread_unlock(vc_ptr->lock);
     }
 
+    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
     return MPI_SUCCESS;
 }
 
@@ -147,7 +155,9 @@ int tcp_make_progress()
     struct timeval tv;
     MPIDI_VC *vc_iter;
     bfd_set readset, writeset;
-    
+
+    MM_ENTER_FUNC(TCP_MAKE_PROGRESS);
+
     tv.tv_sec = 0;
     //tv.tv_usec = tcp_last_microsecond;
     tv.tv_usec = 1;
@@ -160,7 +170,10 @@ int tcp_make_progress()
     tcp_last_microsecond = nready ? 1 : tcp_last_microsecond+1;
 
     if (nready == 0)
+    {
+	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
+    }
 
     vc_iter = TCP_Process.read_list;
     while (vc_iter)
@@ -172,7 +185,10 @@ int tcp_make_progress()
 	    nready--;
 	}
 	if (nready == 0)
+	{
+	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	    return MPI_SUCCESS;
+	}
 	vc_iter = vc_iter->read_next_ptr;
     }
 
@@ -186,26 +202,37 @@ int tcp_make_progress()
 	    nready--;
 	}
 	if (nready == 0)
+	{
+	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	    return MPI_SUCCESS;
+	}
 	vc_iter = vc_iter->write_next_ptr;
     }
 
     if (nready == 0)
+    {
+	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
+    }
 
     if (BFD_ISSET(TCP_Process.listener, &readset))
     {
 	nready--;
 	if (tcp_accept_connection() != MPI_SUCCESS)
+	{
+	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	    return -1;
+	}
     }
 
     if (nready)
     {
 	err_printf("Error: %d sockets still signalled after traversing read_list, write_list and listener.");
 	/* return some error */
+	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return -1;
     }
 
+    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

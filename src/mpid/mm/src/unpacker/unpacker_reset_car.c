@@ -19,12 +19,8 @@ int unpacker_reset_car(MM_Car *car_ptr)
     case MM_NULL_BUFFER:
 	break;
     case MM_TMP_BUFFER:
-	//car_ptr->data.unpacker.first = 0;
-	//car_ptr->data.unpacker.last = 0;
-	car_ptr->data.unpacker.buf.tmp.num_read = 0;
-	car_ptr->data.unpacker.buf.tmp.num_read_copy = 0;
-	car_ptr->data.unpacker.buf.tmp.num_read_local = 0;
-	car_ptr->data.unpacker.buf.tmp.num_written = 0;
+	car_ptr->data.unpacker.buf.tmp.first = 0;
+	car_ptr->data.unpacker.buf.tmp.last = 0;
 	break;
     case MM_VEC_BUFFER:
 	//car_ptr->data.unpacker.buf.vec_write.cur_index = 0;

@@ -22,5 +22,7 @@
 @*/
 int xfer_recv_mop_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src)
 {
+    MM_ENTER_FUNC(XFER_RECV_MOP_OP);
+    MM_EXIT_FUNC(XFER_RECV_MOP_OP);
     return MPI_SUCCESS;
 }

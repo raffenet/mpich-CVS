@@ -6,6 +6,9 @@
  */
 
 #include "mpiimpl.h"
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 
 /* -- Begin Profiling Symbol Block for routine MPI_Abort */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -69,6 +72,9 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    err_printf("user abort: rank %d\n", comm_ptr ? comm_ptr->rank : MPIR_Process.comm_world->rank);
+    abort();
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);
     return MPI_SUCCESS;

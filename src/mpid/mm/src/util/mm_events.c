@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "mm_events.h"
 
 MM_Event mm_create_event()
 {

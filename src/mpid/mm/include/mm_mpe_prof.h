@@ -1,0 +1,24 @@
+#ifndef MM_MPE_PROF_H
+#define MM_MPE_PROF_H
+
+#include "mpe_log.h"
+#include "mm_timer_states.h"
+
+typedef struct MM_Timer_state
+{
+    int in_id, out_id;
+    int num_calls;
+    unsigned long color;
+    char color_str[12];
+    char *name;
+} MM_Timer_state;
+
+extern MM_Timer_state g_timer_state[MM_NUM_TIMER_STATES];
+
+#define MM_ENTER_FUNC(a) MPE_Log_event( g_timer_state[ a##_INDEX ].in_id, g_timer_state[ a##_INDEX ].num_calls, (char *)0 )
+#define MM_EXIT_FUNC(a) MPE_Log_event( g_timer_state[ a##_INDEX ].out_id, g_timer_state[ a##_INDEX ].num_calls, (char *)0 )
+
+int prof_init(int rank, int size);
+int prof_finalize();
+
+#endif

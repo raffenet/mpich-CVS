@@ -10,18 +10,20 @@ int tcp_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
 
+    MM_ENTER_FUNC(TCP_RESET_CAR);
+
     buf_ptr = car_ptr->buf_ptr;
     if (buf_ptr == NULL)
+    {
+	MM_EXIT_FUNC(TCP_RESET_CAR);
 	return -1;
+    }
 
     switch (buf_ptr->type)
     {
     case MM_NULL_BUFFER:
 	break;
     case MM_TMP_BUFFER:
-	car_ptr->data.tcp.buf.tmp.num_read = 0;
-	car_ptr->data.tcp.buf.tmp.num_read_copy = 0;
-	car_ptr->data.tcp.buf.tmp.num_read_local = 0;
 	car_ptr->data.tcp.buf.tmp.num_written = 0;
 	break;
     case MM_VEC_BUFFER:
@@ -63,5 +65,6 @@ int tcp_reset_car(MM_Car *car_ptr)
 	break;
     }
 
+    MM_EXIT_FUNC(TCP_RESET_CAR);
     return MPI_SUCCESS;
 }

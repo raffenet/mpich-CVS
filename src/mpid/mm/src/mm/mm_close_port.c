@@ -11,9 +11,14 @@ int mm_close_port(char *port_name)
 {
     OpenPortNode *p, *pTrailer;
 
+    MM_ENTER_FUNC(MM_CLOSE_PORT);
+
     pTrailer = p = MPID_Process.port_list;
     if (p == NULL)
+    {
+	MM_EXIT_FUNC(MM_CLOSE_PORT);
 	return -1;
+    }
 
     while (p)
     {
@@ -25,6 +30,7 @@ int mm_close_port(char *port_name)
 	    else
 		pTrailer->next = p->next;
 	    MPIU_Free(p);
+	    MM_EXIT_FUNC(MM_CLOSE_PORT);
 	    return 0;
 	}
 	if (pTrailer != p)
@@ -32,6 +38,7 @@ int mm_close_port(char *port_name)
 	p = p->next;
     }
 
+    MM_EXIT_FUNC(MM_CLOSE_PORT);
     return -1;
 }
 

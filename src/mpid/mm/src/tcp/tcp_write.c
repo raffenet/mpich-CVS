@@ -21,12 +21,21 @@ int tcp_write(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+    int ret_val;
+
+    MM_ENTER_FUNC(TCP_WRITE);
 
     if (!vc_ptr->data.tcp.connected)
+    {
+	MM_EXIT_FUNC(TCP_WRITE);
 	return MPI_SUCCESS;
+    }
 
     if (vc_ptr->writeq_head == NULL)
+    {
+	MM_EXIT_FUNC(TCP_WRITE);
 	return MPI_SUCCESS;
+    }
 
     car_ptr = vc_ptr->writeq_head;
     buf_ptr = car_ptr->buf_ptr;
@@ -35,44 +44,59 @@ int tcp_write(MPIDI_VC *vc_ptr)
     {
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
-	return tcp_write_shm(vc_ptr, car_ptr, buf_ptr);
+	ret_val = tcp_write_shm(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_BUFFER:
-	return tcp_write_via(vc_ptr, car_ptr, buf_ptr);
+	ret_val = tcp_write_via(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_BUFFER:
-	return tcp_write_via_rdma(vc_ptr, car_ptr, buf_ptr);
+	ret_val = tcp_write_via_rdma(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
 #endif
     case MM_VEC_BUFFER:
-	return (buf_ptr->vec.num_cars_outstanding > 0) ? tcp_write_vec(vc_ptr, car_ptr, buf_ptr) : MPI_SUCCESS;
+	ret_val = (buf_ptr->vec.num_cars_outstanding > 0) ? tcp_write_vec(vc_ptr, car_ptr, buf_ptr) : MPI_SUCCESS;
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
     case MM_TMP_BUFFER:
-	return tcp_write_tmp(vc_ptr, car_ptr, buf_ptr);
+	ret_val = tcp_write_tmp(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
-	return tcp_write_new(vc_ptr, car_ptr, buf_ptr);
+	ret_val = tcp_write_new(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
 	break;
 #endif
     case MM_NULL_BUFFER:
 	err_printf("Error: tcp_write called on a null buffer\n");
 	break;
     default:
-	err_printf("Error: tcp_write: unknown or unsupported buffer type: %d\n", car_ptr->buf_ptr->type);
+	err_printf("Error: tcp_write: unknown or unsupported buffer type: %d\n", buf_ptr->type);
 	break;
     }
 
+    MM_EXIT_FUNC(TCP_WRITE);
     return -1;
 }
 
 #ifdef WITH_METHOD_SHM
 int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(TCP_WRITE_SHM);
+    MM_EXIT_FUNC(TCP_WRITE_SHM);
     return MPI_SUCCESS;
 }
 #endif
@@ -80,6 +104,8 @@ int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA
 int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(TCP_WRITE_VIA);
+    MM_EXIT_FUNC(TCP_WRITE_VIA);
     return MPI_SUCCESS;
 }
 #endif
@@ -87,6 +113,8 @@ int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(TCP_WRITE_VIA_RDMA);
+    MM_EXIT_FUNC(TCP_WRITE_VIA_RDMA);
     return MPI_SUCCESS;
 }
 #endif
@@ -98,6 +126,8 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPID_VECTOR *car_vec, *buf_vec;
     int num_left, i;
     
+    MM_ENTER_FUNC(TCP_WRITE_VEC);
+
     /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
 
     if (car_ptr->data.tcp.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
@@ -152,6 +182,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		MM_EXIT_FUNC(TCP_WRITE_VEC);
 		return -1;
 	    }
 	}
@@ -166,6 +197,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		MM_EXIT_FUNC(TCP_WRITE_VEC);
 		return -1;
 	    }
 	}
@@ -212,10 +244,41 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	mm_cq_enqueue(car_ptr);
     }
 
+    MM_EXIT_FUNC(TCP_WRITE_VEC);
     return MPI_SUCCESS;
 }
 
 int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    int num_written;
+
+    MM_ENTER_FUNC(TCP_WRITE_TMP);
+
+    if (buf_ptr->tmp.num_read == 0)
+    {
+	return MPI_SUCCESS;
+    }
+
+    /* read as much as possible */
+    num_written = bwrite(vc_ptr->data.tcp.bfd, 
+	(char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written,
+	buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written);
+    if (num_written == SOCKET_ERROR)
+    {
+	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
+    }
+    /* update the amount written */
+    car_ptr->data.tcp.buf.tmp.num_written += num_written;
+
+    /* check to see if finished */
+    if (car_ptr->data.tcp.buf.tmp.num_written == buf_ptr->tmp.len)
+    {
+	dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.tmp.num_written);
+	/* remove from write queue and insert in completion queue */
+	tcp_car_dequeue(vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+    }
+
+    MM_EXIT_FUNC(TCP_WRITE_TMP);
     return MPI_SUCCESS;
 }

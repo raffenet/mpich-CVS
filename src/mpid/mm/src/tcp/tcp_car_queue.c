@@ -17,6 +17,8 @@
 @*/
 int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(TCP_CAR_ENQUEUE);
+
     if (car_ptr->type & MM_WRITE_CAR)
     {
 	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
@@ -47,6 +49,7 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     car_ptr->vcqnext_ptr = NULL;
 
+    MM_EXIT_FUNC(TCP_CAR_ENQUEUE);
     return MPI_SUCCESS;
 }
 
@@ -85,11 +88,16 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
 
+    MM_ENTER_FUNC(TCP_CAR_DEQUEUE);
+
     if (car_ptr->type & MM_WRITE_CAR)
     {
 	/* dequeue the car from the vc_ptr write queue */
 	if (vc_ptr->writeq_head == NULL)
+	{
+	    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
 	    return MPI_SUCCESS;
+	}
 	if (vc_ptr->writeq_head == car_ptr)
 	{
 	    vc_ptr->writeq_head = vc_ptr->writeq_head->vcqnext_ptr;
@@ -119,7 +127,10 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	/* dequeue the car from the vc_ptr read queue */
 	if (vc_ptr->readq_head == NULL)
+	{
+	    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
 	    return MPI_SUCCESS;
+	}
 	if (vc_ptr->readq_head == car_ptr)
 	{
 	    vc_ptr->readq_head = vc_ptr->readq_head->vcqnext_ptr;
@@ -145,5 +156,6 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     car_ptr->vcqnext_ptr = NULL;
 
+    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
     return MPI_SUCCESS;
 }

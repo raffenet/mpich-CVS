@@ -17,5 +17,7 @@
 @*/
 int xfer_replicate_op(MPID_Request *request_ptr, int dest)
 {
+    MM_ENTER_FUNC(XFER_REPLICATE_OP);
+    MM_EXIT_FUNC(XFER_REPLICATE_OP);
     return MPI_SUCCESS;
 }

@@ -15,6 +15,9 @@ TCP_PerProcess TCP_Process;
 int tcp_init()
 {
     int error;
+
+    MM_ENTER_FUNC(TCP_INIT);
+
     error = bsocket_init();
     if (error)
     {
@@ -44,6 +47,7 @@ int tcp_init()
     BFD_SET(TCP_Process.listener, &TCP_Process.readset);
     TCP_Process.max_bfd = TCP_Process.listener;
 
+    MM_EXIT_FUNC(TCP_INIT);
     return MPI_SUCCESS;
 }
 
@@ -54,10 +58,13 @@ int tcp_init()
 @*/
 int tcp_finalize()
 {
+    MM_ENTER_FUNC(TCP_FINALIZE);
+
     beasy_closesocket(TCP_Process.listener);
     TCP_Process.listener = BFD_INVALID_SOCKET;
 
     bsocket_finalize();
 
+    MM_EXIT_FUNC(TCP_FINALIZE);
     return MPI_SUCCESS;
 }

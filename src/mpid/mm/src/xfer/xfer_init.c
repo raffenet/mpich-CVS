@@ -20,6 +20,8 @@ int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 {
     MPID_Request *pRequest;
 
+    MM_ENTER_FUNC(XFER_INIT);
+
     pRequest = mm_request_alloc();
 
     pRequest->comm = comm_ptr;
@@ -30,5 +32,6 @@ int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 
     *request_pptr = pRequest;
 
+    MM_EXIT_FUNC(XFER_INIT);
     return MPI_SUCCESS;
 }

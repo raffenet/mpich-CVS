@@ -6,14 +6,57 @@
 
 #include "mpidimpl.h"
 
+int mm_release_buffers_tmp(MPID_Request *request_ptr)
+{
+    MM_Segment_buffer *buf_ptr;
+
+    MM_ENTER_FUNC(MM_RELEASE_BUFFERS_TMP);
+
+    buf_ptr = &request_ptr->mm.buf;
+
+#ifdef MPICH_DEV_BUILD
+    if (buf_ptr->tmp.buf == NULL)
+    {
+	err_printf("mm_release_buffers_tmp called on an empty buffer.\n");
+	return -1;
+    }
+    buf_ptr->tmp.len = 0;
+#endif
+    MPIU_Free(buf_ptr->tmp.buf);
+    buf_ptr->tmp.buf = NULL;
+
+    MM_EXIT_FUNC(MM_RELEASE_BUFFERS_TMP);
+    return MPI_SUCCESS;
+}
+
 int mm_get_buffers_tmp(MPID_Request *request_ptr)
 {
+    MM_Segment_buffer *buf_ptr;
+
+    MM_ENTER_FUNC(MM_GET_BUFFERS_TMP);
+
+    buf_ptr = &request_ptr->mm.buf;
+
+#ifdef MPICH_DEV_BUILD
+    if (buf_ptr->tmp.buf != NULL)
+    {
+	err_printf("mm_get_buffers_tmp called on a buffer that has already been allocated.\n");
+	return -1;
+    }
+#endif
+    buf_ptr->tmp.buf = MPIU_Malloc(request_ptr->mm.size);
+    buf_ptr->tmp.len = request_ptr->mm.size;
+
+    MM_EXIT_FUNC(MM_GET_BUFFERS_TMP);
     return MPI_SUCCESS;
 }
 
 int tmp_buffer_init(MPID_Request *request_ptr)
 {
+    MM_ENTER_FUNC(TMP_BUFFER_INIT);
+    
     request_ptr->mm.buf.type = MM_TMP_BUFFER;
+    /*
     request_ptr->mm.buf.tmp.buf[0] = NULL;
     request_ptr->mm.buf.tmp.buf[1] = NULL;
     request_ptr->mm.buf.tmp.len[0] = 0;
@@ -21,11 +64,19 @@ int tmp_buffer_init(MPID_Request *request_ptr)
     request_ptr->mm.buf.tmp.cur_buf = 0;
     request_ptr->mm.buf.tmp.min_num_written = 0;
     request_ptr->mm.buf.tmp.num_read = 0;
+    */
+    request_ptr->mm.buf.tmp.buf = NULL;
+    request_ptr->mm.buf.tmp.len = 0;
+    request_ptr->mm.buf.tmp.num_read = 0;
+    
+    MM_EXIT_FUNC(TMP_BUFFER_INIT);
     return MPI_SUCCESS;
 }
 
 int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
+    MM_ENTER_FUNC(MM_GET_BUFFERS_VEC);
+
     request_ptr->mm.buf.vec.first = request_ptr->mm.buf.vec.last;
     request_ptr->mm.buf.vec.last = request_ptr->mm.last;
 
@@ -38,11 +89,14 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
 
     request_ptr->mm.buf.vec.buf_size = request_ptr->mm.buf.vec.last - request_ptr->mm.buf.vec.first;
 
+    MM_EXIT_FUNC(MM_GET_BUFFERS_VEC);
     return MPI_SUCCESS;
 }
 
 int vec_buffer_init(MPID_Request *request_ptr)
 {
+    MM_ENTER_FUNC(VEC_BUFFER_INIT);
+
     request_ptr->mm.buf.type = MM_VEC_BUFFER;
     request_ptr->mm.buf.vec.vec_size = MPID_VECTOR_LIMIT;
     request_ptr->mm.buf.vec.num_read = 0;
@@ -52,5 +106,7 @@ int vec_buffer_init(MPID_Request *request_ptr)
     request_ptr->mm.buf.vec.buf_size = 0;
     request_ptr->mm.buf.vec.num_cars_outstanding = 0;
     request_ptr->mm.buf.vec.num_cars = 0;
+
+    MM_EXIT_FUNC(VEC_BUFFER_INIT);
     return MPI_SUCCESS;
 }

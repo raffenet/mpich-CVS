@@ -41,21 +41,43 @@ int packer_make_progress()
 		err_printf("error, cannot pack from a null buffer\n");
 		break;
 	    case MM_TMP_BUFFER:
+		if (buf_ptr->tmp.buf == NULL)
+		{
+		    /* the buffer is empty so get a tmp buffer */
+		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
+		    /* set the first variable to zero */
+		    car_ptr->data.packer.first = 0;
+		}
+		/* set the last variable to the end of the segment */
+		car_ptr->data.packer.last = buf_ptr->tmp.len;
+		/* pack the buffer */
 		MPID_Segment_pack(
-		    &car_ptr->request_ptr->mm.segment,       /* pack the segment in the request */
-		    car_ptr->data.packer.first,            /* first and last are kept in the car */
+		    &car_ptr->request_ptr->mm.segment,
+		    car_ptr->data.packer.first,
 		    &car_ptr->data.packer.last,
-		    car_ptr->request_ptr->mm.buf.tmp.buf[car_ptr->request_ptr->mm.buf.tmp.cur_buf] /* pack into the current buffer */
+		    car_ptr->request_ptr->mm.buf.tmp.buf
 		    );
+		/* update the number of bytes read */
+		buf_ptr->tmp.num_read += (car_ptr->data.packer.last - car_ptr->data.packer.first);
+
+		/* if the entire buffer is packed then break */
+		if (car_ptr->data.packer.last == car_ptr->request_ptr->mm.last)
+		{
+		    finished = TRUE;
+		    break;
+		}
+		/* otherwise there is more packing needed so update the first variable */
+		/* The last variable will be updated the next time through this function */
+		car_ptr->data.packer.first = car_ptr->data.packer.last;
 		break;
 	    case MM_VEC_BUFFER:
-		if (car_ptr->buf_ptr->vec.num_cars_outstanding == 0)
+		if (buf_ptr->vec.num_cars_outstanding == 0)
 		{
 		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
-		    car_ptr->buf_ptr->vec.num_read = car_ptr->buf_ptr->vec.last - car_ptr->buf_ptr->vec.first;
-		    car_ptr->buf_ptr->vec.num_cars_outstanding = car_ptr->buf_ptr->vec.num_cars;
+		    buf_ptr->vec.num_read = buf_ptr->vec.last - buf_ptr->vec.first;
+		    buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
 		}
-		if (car_ptr->buf_ptr->vec.last == car_ptr->request_ptr->mm.last)
+		if (buf_ptr->vec.last == car_ptr->request_ptr->mm.last)
 		    finished = TRUE;
 		break;
 #ifdef WITH_METHOD_SHM

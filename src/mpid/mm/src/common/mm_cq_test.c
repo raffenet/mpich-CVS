@@ -115,12 +115,10 @@ int cq_handle_read_car(MM_Car *car_ptr)
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
     /* for now, all writes are eager - no rndv */
-    /*
     if (car_ptr->next_ptr)
     {
 	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    */
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -129,12 +127,10 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
 int cq_handle_write_data_car(MM_Car *car_ptr)
 {
     /* for now, all writes are eager - no rndv */
-    /*
     if (car_ptr->next_ptr)
     {
 	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    */
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -153,6 +149,8 @@ int cq_handle_write_car(MM_Car *car_ptr)
 int mm_cq_test()
 {
     MM_Car *car_ptr, *next_car_ptr;
+
+    MM_ENTER_FUNC(MM_CQ_TEST);
 
     dbg_printf(".");
 
@@ -183,7 +181,10 @@ int mm_cq_test()
     }
 
     if (MPID_Process.cq_head == NULL)
+    {
+	MM_EXIT_FUNC(MM_CQ_TEST);
 	return MPI_SUCCESS;
+    }
 
     MPID_Thread_lock(MPID_Process.cqlock);
     car_ptr = MPID_Process.cq_head;
@@ -208,6 +209,7 @@ int mm_cq_test()
 	car_ptr = next_car_ptr;
     }
 
+    MM_EXIT_FUNC(MM_CQ_TEST);
     return MPI_SUCCESS;
 }
 
@@ -215,6 +217,7 @@ int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
 {
     MM_Car *car_ptr;
 
+    MM_ENTER_FUNC(MM_POST_UNEX_RNDV);
     dbg_printf("mm_post_unex_rndv\n");
 
     car_ptr = mm_car_alloc();
@@ -229,6 +232,7 @@ int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
 	MPID_Process.unex_q_tail->qnext_ptr = car_ptr;
     MPID_Process.unex_q_tail = car_ptr;
 
+    MM_EXIT_FUNC(MM_POST_UNEX_RNDV);
     return MPI_SUCCESS;
 }
 
@@ -238,11 +242,16 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
 
+    MM_ENTER_FUNC(MM_CREATE_POST_UNEX);
+
     err_printf("mm_creat_post_unex not implemented yet\n");
 
     request_ptr = mm_request_alloc();
     if (request_ptr == NULL)
+    {
+	MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
 	return -1;
+    }
 
     /* save the packet header */
     car_ptr = &request_ptr->mm.rcar[0];
@@ -275,12 +284,8 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 
     buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
     buf_ptr->type = MM_TMP_BUFFER;
-    buf_ptr->tmp.buf[0] = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.u.hdr.size);
-    buf_ptr->tmp.len[0] = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
-    buf_ptr->tmp.buf[1] = NULL;
-    buf_ptr->tmp.len[1] = 0;
-    buf_ptr->tmp.cur_buf = 0;
-    buf_ptr->tmp.min_num_written = 0;
+    buf_ptr->tmp.buf = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.u.hdr.size);
+    buf_ptr->tmp.len = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
     buf_ptr->tmp.num_read = 0;
     
     /* enqueue the head car in the unexpected queue */
@@ -297,5 +302,6 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     /* post a read of the unexpected data */
     car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr);
 
+    MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
     return MPI_SUCCESS;
 }

@@ -21,6 +21,8 @@ int mm_choose_buffer(MPID_Request *request_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
 
+    MM_ENTER_FUNC(MM_CHOOSE_BUFFER);
+
     dbg_printf("mm_choose_buffer\n");
 
     /* look at the read car and all of the write cars */
@@ -29,9 +31,23 @@ int mm_choose_buffer(MPID_Request *request_ptr)
        connect them together with copier methods */
     /* pat your head and rub your tummy */
 
-    /* but for now always choose the vector buffer type */
     if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
+	/* choose the tmp buffer type */
+	tmp_buffer_init(request_ptr);
+	/* count the cars that read/write data */
+	/*
+	car_ptr = request_ptr->mm.wcar;
+	while (car_ptr)
+	{
+	    if (!(car_ptr->type & MM_HEAD_CAR) || (car_ptr->type & MM_PACKER_CAR) || (car_ptr->type & MM_UNPACKER_CAR))
+		request_ptr->mm.buf.tmp.num_cars++;
+	    car_ptr = car_ptr->opnext_ptr;
+	}
+	*/
+
+#ifdef FOO
+	/* choose the vector buffer type */
 	vec_buffer_init(request_ptr);
 	/* count the cars that read/write data */
 	car_ptr = request_ptr->mm.wcar;
@@ -41,6 +57,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 		request_ptr->mm.buf.vec.num_cars++;
 	    car_ptr = car_ptr->opnext_ptr;
 	}
+#endif
 
 	/* choose the buffers for the head write cars */
 	car_ptr = request_ptr->mm.wcar;
@@ -64,7 +81,12 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	    car_ptr = car_ptr->opnext_ptr;
 	}
 
+#ifdef FOO
 	request_ptr->mm.get_buffers = mm_get_buffers_vec;
+	request_ptr->mm.release_buffers = NULL;
+#endif
+	request_ptr->mm.get_buffers = mm_get_buffers_tmp;
+	request_ptr->mm.release_buffers = mm_release_buffers_tmp;
     }
     else
     {
@@ -72,5 +94,6 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	request_ptr->mm.get_buffers = NULL;
     }
 
+    MM_EXIT_FUNC(MM_CHOOSE_BUFFER);
     return MPI_SUCCESS;
 }

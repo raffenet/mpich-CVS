@@ -23,5 +23,7 @@
 @*/
 int xfer_recv_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest)
 {
+    MM_ENTER_FUNC(XFER_RECV_FORWARD_OP);
+    MM_EXIT_FUNC(XFER_RECV_FORWARD_OP);
     return MPI_SUCCESS;
 }

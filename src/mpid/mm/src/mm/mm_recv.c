@@ -10,10 +10,17 @@
 int mm_recv(int conn, char *buffer, int length)
 {
     int error;
+    MM_ENTER_FUNC(MM_RECV);
+
     if (beasy_receive(conn, buffer, length) != SOCKET_ERROR)
+    {
+	MM_EXIT_FUNC(MM_RECV);
 	return length;
+    }
     error = beasy_getlasterror();
     err_printf("beasy_receive failed, error %d\n", error);
+
+    MM_EXIT_FUNC(MM_RECV);
     return SOCKET_ERROR;
 }
 

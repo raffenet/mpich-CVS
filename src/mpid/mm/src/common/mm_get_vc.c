@@ -21,21 +21,31 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
     int mpi_errno;
     MPIDI_VC *vc_ptr;
 
+    MM_ENTER_FUNC(MM_VC_FROM_COMMUNICATOR);
     dbg_printf("mm_vc_from_communicator\n");
 
 #ifdef MPICH_DEV_BUILD
     if ((comm_ptr == NULL) || (rank < 0) || (rank >= comm_ptr->remote_size))
+    {
+	MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
 	return NULL;
+    }
 #endif
 
     if (comm_ptr->vcrt == NULL)
     {
 	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
 	    return NULL;
+	}
 	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
 	    return NULL;
+	}
     }
 
     vc_ptr = comm_ptr->vcr[rank];
@@ -47,6 +57,7 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
 	vc_ptr->post_read_pkt(vc_ptr);
     }
 
+    MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
     return vc_ptr;
 }
 
@@ -65,6 +76,7 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     MPIDI_VC *vc_ptr;
     MPID_Comm *comm_ptr;
 
+    MM_ENTER_FUNC(MM_VC_FROM_CONTEXT);
     dbg_printf("mm_vc_from_context\n");
 
     /*comm_ptr = MPID_Get_comm_from_context(comm_context); */
@@ -74,10 +86,16 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     {
 	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MM_EXIT_FUNC(MM_VC_FROM_CONTEXT);
 	    return NULL;
+	}
 	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MM_EXIT_FUNC(MM_VC_FROM_CONTEXT);
 	    return NULL;
+	}
     }
 
     vc_ptr = comm_ptr->vcr[rank];
@@ -86,5 +104,6 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
 	comm_ptr->vcr[rank] = vc_ptr = mm_vc_alloc(MM_UNBOUND_METHOD);
     }
 
+    MM_EXIT_FUNC(MM_VC_FROM_CONTEXT);
     return vc_ptr;
 }

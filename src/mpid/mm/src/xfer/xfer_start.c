@@ -20,6 +20,7 @@ int xfer_start(MPID_Request *request_ptr)
     MPID_Request *pRequest;
     MM_Car *pCar, *pCarIter;
 
+    MM_ENTER_FUNC(XFER_START);
     dbg_printf("xfer_start\n");
 
     /* choose the buffers scheme to satisfy each segment */
@@ -30,6 +31,7 @@ int xfer_start(MPID_Request *request_ptr)
 	mpi_errno = mm_choose_buffer(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    MM_EXIT_FUNC(XFER_START);
 	    return mpi_errno;
 	}
 	/* get the initial buffers */
@@ -45,6 +47,7 @@ int xfer_start(MPID_Request *request_ptr)
 	mpi_errno = mm_reset_cars(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    MM_EXIT_FUNC(XFER_START);
 	    return mpi_errno;
 	}
 	pRequest = pRequest->mm.next_ptr;
@@ -99,5 +102,6 @@ int xfer_start(MPID_Request *request_ptr)
 	pRequest = pRequest->mm.next_ptr;
     }
 
+    MM_EXIT_FUNC(XFER_START);
     return MPI_SUCCESS;
 }

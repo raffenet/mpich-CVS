@@ -185,6 +185,7 @@ typedef struct MPID_Packet
 typedef union MM_Segment_buffer
 {
     MM_BUFFER_TYPE type;
+    /*
     struct mm_segment_tmp
     {
 	MM_BUFFER_TYPE type;
@@ -193,6 +194,14 @@ typedef union MM_Segment_buffer
 	int cur_buf;
 	int num_read;
 	int min_num_written;
+    } tmp;
+    */
+    struct mm_segment_tmp
+    {
+	MM_BUFFER_TYPE type;
+	void *buf;
+	int len;
+	int num_read;
     } tmp;
     struct mm_segment_vec
     {
@@ -248,20 +257,12 @@ typedef struct MM_Car_data_unpacker
     {
 	struct car_unpacker_tmp
 	{
-	    int num_read_local;
-	    int num_read_copy;
-	    int num_read;
-	    int num_written;
+	    int first;
+	    int last;
 	} tmp;
 	/* unpacker method never reads
 	struct car_unpacker_vec_read
 	{
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
-	    int vec_size;
-	    int total_num_read;
-	    int cur_num_read;
-	    int cur_index;
-	    int num_read_at_cur_index;
 	} vec_read;
 	*/
 	struct car_unpacker_vec_write
@@ -353,6 +354,7 @@ typedef struct MM_Segment
     MM_Car rcar[2];
     int op_valid;
     int (*get_buffers)(struct MPID_Request *request_ptr);
+    int (*release_buffers)(struct MPID_Request *request_ptr);
     MM_Segment_buffer buf;
     struct MPID_Request *next_ptr;
 } MM_Segment;

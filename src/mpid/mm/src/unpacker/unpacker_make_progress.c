@@ -140,5 +140,33 @@ int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 
 int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    if ((car_ptr->data.unpacker.buf.tmp.last == buf_ptr->tmp.num_read) || (buf_ptr->tmp.buf == NULL))
+    {
+	/* no new data available or
+	 * no buffer provided by the reader */
+	return MPI_SUCCESS;
+    }
+    /* set the last variable to the number of bytes read */
+    car_ptr->data.unpacker.buf.tmp.last = buf_ptr->tmp.num_read;
+    /* unpack the buffer */
+    MPID_Segment_unpack(
+	&car_ptr->request_ptr->mm.segment,
+	car_ptr->data.unpacker.buf.tmp.first,
+	&car_ptr->data.unpacker.buf.tmp.last,
+	buf_ptr->tmp.buf
+	);
+    
+    if (car_ptr->data.packer.last == car_ptr->request_ptr->mm.last)
+    {
+	/* the entire buffer is unpacked */
+	unpacker_car_dequeue(car_ptr->vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+	return MPI_SUCCESS;
+    }
+
+    /* There is more unpacking needed so update the first variable */
+    /* The last variable will be updated the next time through this function */
+    car_ptr->data.unpacker.buf.tmp.first = car_ptr->data.unpacker.buf.tmp.last;
+
     return MPI_SUCCESS;
 }

@@ -18,9 +18,15 @@ MPIU_Object_alloc_t MPID_Request_mem = { 0, 0, 0, 0, 0,
 MPID_Request * mm_request_alloc()
 {
     MPID_Request *p;
+
+    MM_ENTER_FUNC(MM_REQUEST_ALLOC);
+
     p = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (p == NULL)
+    {
+	MM_EXIT_FUNC(MM_REQUEST_ALLOC);
 	return p;
+    }
     p->cc = 0;
     p->cc_ptr = &p->cc;
     p->mm.rcar[0].freeme = FALSE;
@@ -28,15 +34,29 @@ MPID_Request * mm_request_alloc()
     p->mm.wcar[0].freeme = FALSE;
     p->mm.wcar[1].freeme = FALSE;
     p->mm.next_ptr = NULL;
+
+    MM_EXIT_FUNC(MM_REQUEST_ALLOC);
     return p;
 }
 
 void mm_request_free(MPID_Request *request_ptr)
 {
+    MM_ENTER_FUNC(MM_REQUEST_FREE);
+
+    /* free the buffer attached to this request */
+    if (request_ptr->mm.release_buffers)
+	request_ptr->mm.release_buffers(request_ptr);
+
+    /* free the request */
     MPIU_Handle_obj_free(&MPID_Request_mem, request_ptr);
+
+    MM_EXIT_FUNC(MM_REQUEST_FREE);
 }
 
 void MPID_Request_free(MPID_Request *request_ptr)
 {
+    if (request_ptr == NULL)
+	return;
+    MPID_Request_free(request_ptr->mm.next_ptr);
     mm_request_free(request_ptr);
 }

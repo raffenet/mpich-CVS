@@ -11,20 +11,26 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     int port;
     char *token;
 
+    MM_ENTER_FUNC(TCP_POST_CONNECT);
     dbg_printf("tcp_post_connect\n");
 
     if (vc_ptr->data.tcp.connected)
+    {
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return MPI_SUCCESS;
+    }
     MPID_Thread_lock(vc_ptr->lock);
     if (vc_ptr->data.tcp.connected)
     {
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return MPI_SUCCESS;
     }
     if ((business_card == NULL) || (strlen(business_card) > 100))
     {
 	err_printf("tcp_post_connect: invalid business card\n");
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
 
@@ -34,6 +40,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     {
 	err_printf("tcp_post_connect: invalid business card\n");
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
     token = strtok(NULL, ":");
@@ -41,6 +48,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     {
 	err_printf("tcp_post_connect: invalid business card\n");
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
     port = atoi(token);
@@ -51,6 +59,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_post_connect: beasy_create failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
 
@@ -60,6 +69,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_post_connect: beasy_connect failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
 
@@ -70,6 +80,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_post_connect: beasy_send(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
     if (beasy_send(vc_ptr->data.tcp.bfd, (void*)&MPIR_Process.comm_world->context_id, sizeof(int)) == SOCKET_ERROR)
@@ -78,6 +89,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_post_connect: beasy_send(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MPID_Thread_unlock(vc_ptr->lock);
+	MM_EXIT_FUNC(TCP_POST_CONNECT);
 	return -1;
     }
 
@@ -93,6 +105,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     MPID_Thread_unlock(vc_ptr->lock);
 
     dbg_printf("tcp_post_connect returning MPI_SUCCESS\n");
-	
+
+    MM_EXIT_FUNC(TCP_POST_CONNECT);
     return MPI_SUCCESS;
 }
