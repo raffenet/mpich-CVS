@@ -1,24 +1,45 @@
 #! @PERL@
+# -*- Mode: perl; -*- 
 #
 # Look for /* FIXME ... */ and print out the file, line, and comment.
+# If the global $byOwner is true, append FIXMEs to the hash Fixmes by owner name
+# (owner is unknown for FIXMEs with no owner).
+# 
+$byOwner = 1;
+# Global hash Fixmes
+%Fixmes = ();
 #
 sub ReadFile {
     my $filename = $_[0];
     
     my $linecount = 0;
+    my $fileOwner = "unknown";
 
     open( INFD, "<$filename" ) || die "Could not open $filename\n";
 
     while (<INFD>) {
 	$linecount++;
 
+	if (/\/\*\s*OWNER=(\w*)\s+\*\//) {
+	    $fileOwner = $1;
+	}
 	if (/\/\*\s*FIXME/) {
+	    # Find any optional owner:
+	    my $owner = $fileOwner;;
+	    if (/FIXME\s*(\(\w*\))/) {
+	        $owner = $1;
+            }
 	    # find the end of the comment 
 	    while (! /\*\//) {
 		$_ .= <INFD>;
 		$linecount++;
 	    }
-	    print "$filename:$linecount:$_";
+	    if ($byOwner) {
+		$Fixmes{$owner} .= "$filename:$filecount:$_";
+	    }
+	    else {
+		print "$filename:$linecount:$_";
+	    }
 	}
     }
     close( INFD );
@@ -88,6 +109,7 @@ foreach $arg (@ARGV) {
     elsif ($arg =~ /-outfile=(.*)/) {
 	$outfile = $1;
     }
+    elsif ($arg =~ /-noowner/) { $byOwner = 0; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -106,4 +128,11 @@ foreach $file (@files) {
 	&ReadFile( $file );
     }
 }
-
+if ($byOwner) {
+    # Print out by owner, using Fixme hash
+    print $Fixmes{"unknown"};
+    foreach $key (keys(%Fixmes)) {
+	if ($key eq "unknown") { next; }
+	print $Fixmes{$key};
+    }
+}
