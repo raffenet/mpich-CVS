@@ -220,7 +220,8 @@ time, this will be ``objects error handler''.  However, during a
 layered call, this would be changed to ``errors return.''  
 
 The only difficulty with this is that threads are not registered with
-the MPI implementation; thus, there is no easy way for the implementation
+the MPI implementation; thus, depending on the details of the thread package,
+there may bes no easy way for the implementation
 to know a priori whether thread-private data has been created to store
 the current error handler.  Instead, when an error handler must be
 invoked or changed, a global table of known threads must be consulted
@@ -232,6 +233,16 @@ package.  For example, if a system supports both pthreads and OpenMP
 needs to know which thread package is being used.  This suggests that
 the function that provides the thread id by well isolated and perhaps
 dynamically loaded.
+
+Under pthreads, the situation is somewhat easier.  We can use
+\code{pthread_key_create} to create a key that can be used to access
+thread-private data with \code{pthread_getspecific} in any thread.
+The key needs to be a (at least file-scoped) variable such as
+\mpidconst{MPID_THREAD_KEY_ERRHANDLER}. 
+Since the pthread keys are common to all pthreads, this can be allocated in
+\mpidfunc{MPID_Init}.  Question: is this handled as part of
+\mpidfunc{MPID_Err_init}, and is there a corresponding
+\mpidfunc{MPI_Err_finalize} that calls \code{pthread_key_delete}?
 
 To implement the layered calls, the following functions may be 
 used\index{MPIi_Err_set_return}\index{MPIi_Err_restore}\index{MPIi_Err_get_handler} 
@@ -1081,26 +1092,35 @@ This requires some care.  This should return the number of basic datatypes in
 a message.  So, to start with, each datatype should keep track of the number
 of basic datatypes.  Then a quick version of this is:
 \begin{algorithm}
-If sizeof datatype (\mpids{MPI_datatype}{size}) is zero, then
-    If size of message is zero, return zero
+\code{sizeof_datatype} = \mpids{MPI_datatype}{size}) field of \mpiconst{MPI_Datatype}
+\code{n_bytes}         = \mpids{MPI_Status}{count} field of \mpiconst{MPI_Status}
+If \code{sizeof_datatype} is zero, then
+    If \code{n_bytes} is zero, return zero
     else return \mpiconst{MPI_UNDEFINED}
-Compute sizeof message / sizeof datatype.  
-If remainder is zero, then 
-    the number of elements is this quotient times the number of element in 
-    the datatype
+\code{m_count} = \code{n_bytes} / \code{sizeof_datatype}.  
+\code{m_rem}   = \code{n_bytes} % \code{sizeof_datatype}.
+If \code{m_rem} is zero, then 
+    the number of elements is this \code{m_count *}
+    \mpids{MPI_Datatype}{elements_per_datatype}. 
 Else if all elements in the datatype are the same size then
     (e.g., an indexed case)
-    the number of elements is sizeof(message) / sizeof(one element)
+    the number of elements is \code{n_bytes} /
+    \mpids{MPI_Datatype}{sizeof_each_element}
     Use \mpids{MPI_Datatype}{_flags} with
     \mpids{MPI_Datatype}{MPID_ELEMENTS_SAME_SIZE} for this test, along
     with \mpids{MPI_Datatype}{element_size}.
 Else 
     /* This is the difficult case */
-    Take the remainder from sizeof message / sizeof datatype.
-    Execute the dataloop algorithm, but with no data movement, keeping track
-    of the basic elements.  Note that this requires a version of the 
-    dataloop that preserves the original element sizes.  
-    Add this count to elements-per-datatype times the quotient.
+    \code{element_count} = \code{m_count * elements_per_datatype}
+    Process \code{m_rem} recursively as follows:
+    Two cases:
+    If the datatype has a single old type (e.g., everything except 
+    a structure type), recursively apply the algorithm with \code{m_rem} 
+    instead of \code{n_bytes} to the old type.
+    Else 
+       (the struct case).
+       Apply the above algorithm to each datatype component of the
+       struct
 \end{algorithm}
 
 \subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
@@ -1125,45 +1145,45 @@ We may want a configure test that the integer value of a \code{char *} pointer
 is the address in bytes.
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Contig}.  
 
 \subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Indexed}.
 
 \subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Vector}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_DARRAY}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
 dataloops (the number depends on the dimension of the darray) 
 with type \mpidconst{MPID_Vector}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Indexed}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HVECTOR}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Vector}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_INDEXED_BLOCK}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_BlockIndexed}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_STRUCT}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the dataloop
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
 with type \mpidconst{MPID_Struct}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_SUBARRAY}}
-Create a new object (with \code{MPID_Object_create}?) and fill in the
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
 dataloops (the number depends on the dimension of the subarray) 
 with type \mpidconst{MPID_Vector}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_RESIZED}}
-Create a new object (with \code{MPID_Object_create}?) and copy in the
+Create a new datatype with \mpidfunc{MPID_Type_create} and copy in the
 dataloop from the old type.  Then change the
 \mpids{MPI_Datatype}{extent} of the type as specified by the
 \code{extent} argument and the lowerbound by the \code{lb} argument. 
@@ -1243,7 +1263,7 @@ This function returns the MPI Datatype corresponding to a specified type class
 by using the datatype sizes determined by configure, and then mapped into 
 the actual types.  For example
 \begin{verbatim}
-switch (typeclass} {
+switch (typeclass) {
     case MPI_TYPECLASS_REAL:
         switch (size) {
         case 4:  *rtype = MPI_REAL;
@@ -1262,7 +1282,9 @@ versions must be careful to
 blank-pad the value rather than null-terminating it.
 
 Question: We should have a common routine to handle the Fortran version of all
-of the get/set name routines.  What is it?
+of the get/set name routines.  I propose \mpidfunc{MPIi_F77_get_name} and
+\mpidfunc{MPIi_F77_set_name}; these can be used for any character string and
+are not limited to the datatype, communicator, or window name.
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
 Sets the \mpids{MPI_Datatype}{name} field.  Returns error if supplied
@@ -1415,9 +1437,10 @@ Question: What data structure should be used to represent groups?
 MPICH-1 used a simple array that mapped rank in a group to rank in the
 group of \code{MPI_COMM_WORLD}.  In MPI-2, we can't use
 \code{MPI_COMM_WORLD}.  ADI-3 defines ``local process ids'', which
-refers simply to the processes known to the current process.
+refers simply to the processes known to the current process.  The code below
+suggests the use of an array of ranks to the ADI-3 local process ids.
 
-Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
+%Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
 
 Actually, groups are simple as long as we don't require a scalable
 representation of group membership.  An interesting question is what
@@ -1687,7 +1710,8 @@ In turn, this implies that these routines must ensure atomic access,
 since the ``global'' numbers change when another group of processes
 connects or is spawned (particularly connects, since both previously
 disjoint process sets may have picked the same global numbers).
-This could have the following interface:
+This could have the following
+interface:\index{MPIi_Gprocmap_lock}\index{MPIi_Gprocmap_update}\index{MPIi_Gprocman_gtol}\index{MPIi_Gprocmap_update} 
 \begin{verbatim}
 int MPIi_Gprocmap_lock( int flag ) /* lock/unlock */
 void MPIi_Gprocmap_ltog( int n, const int lpid_array[], int gpid_array[] )
@@ -1695,6 +1719,8 @@ void MPIi_Gprocmap_gtol( int n, const int gpid_array[], int lpid_array[] )
 void MPIi_Gprocmap_update( int n, const int gpid_array[] )
 \end{verbatim}
 
+The intercommunicator routines should have robust error checking because they
+require care and understanding in use and errors are hard to diagnose.  
 
 \subsubsection{\mpifunc{MPI_INTERCOMM_MERGE}}
 Create a new group from the union of the local and remote groups.  Rank 0 in
@@ -1815,6 +1841,9 @@ In the case of a single user thread, you might want to try
 \end{verbatim}
 This is ok as long as the communication agent can't remove items from the
 queue.  Unfortunately, cancel does just that.  
+
+In fact, we may want to consider a higher-level abstraction, such as monitors,
+which would be implemented using locks and condition variables.
 \end{mmadi}
 \end{adi3}
 
