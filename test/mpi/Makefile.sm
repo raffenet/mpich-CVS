@@ -1,2 +1,1 @@
-SUBDIRS = basic util datatype errhan .
-#SUBDIRS = basic util errhan .
+SUBDIRS = basic util datatype errhan group .

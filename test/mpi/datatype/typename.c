@@ -12,10 +12,11 @@ int main( int argc, char **argv )
     
     /* Sample some datatypes */
     MPI_Type_get_name( MPI_DOUBLE, name, &namelen );
-    if (!strncmp( name, "double", MPI_MAX_OBJECT_NAME )) {
+    if (strncmp( name, "double", MPI_MAX_OBJECT_NAME )) {
 	errs++;
-	fprintf( stderr, "Expected double but got %s\n", name );
+	fprintf( stderr, "Expected double but got :%s:\n", name );
     }
+
     if (errs) {
 	fprintf( stderr, "Found %d errors\n", errs );
     }
