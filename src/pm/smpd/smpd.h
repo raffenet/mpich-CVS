@@ -152,8 +152,10 @@ typedef enum smpd_state_t
     SMPD_CLOSING,
     SMPD_SMPD_LISTENING,
     SMPD_MGR_LISTENING,
+    SMPD_PMI_LISTENING,
     SMPD_MPIEXEC_CONNECTING_TREE,
     SMPD_MPIEXEC_CONNECTING_SMPD,
+    SMPD_CONNECTING_RPMI,
     SMPD_CONNECTING_PMI,
     SMPD_CONNECTING,
     SMPD_RECONNECTING,
@@ -215,6 +217,7 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_RIGHT_CHILD,
     SMPD_CONTEXT_CHILD,
     SMPD_CONTEXT_LISTENER,
+    SMPD_CONTEXT_PMI_LISTENER,
     SMPD_CONTEXT_SMPD,
     SMPD_CONTEXT_PMI,
     SMPD_CONTEXT_UNDETERMINED,
@@ -488,6 +491,7 @@ typedef struct smpd_global_t
     int tree_id;
     smpd_host_node_t *s_host_list, *s_cur_host;
     int s_cur_count;
+    SMPD_BOOL use_inherited_handles;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

@@ -108,6 +108,8 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_SMPD_LISTENING";
     case SMPD_MGR_LISTENING:
 	return "SMPD_MGR_LISTENING";
+    case SMPD_PMI_LISTENING:
+	return "SMPD_PMI_LISTENING";
     case SMPD_READING_SESSION_REQUEST:
 	return "SMPD_READING_SESSION_REQUEST";
     case SMPD_WRITING_SMPD_SESSION_REQUEST:
@@ -321,7 +323,7 @@ int smpd_state_reading_connect_result(smpd_context_t *context, MPIDU_Sock_event_
 		context->write_state = SMPD_WRITING_SMPD_SESSION_REQUEST;
 	    }
 	    break;
-	case SMPD_CONNECTING_PMI:
+	case SMPD_CONNECTING_RPMI:
 	    context->write_state = SMPD_WRITING_PMI_SESSION_REQUEST;
 	    strcpy(context->session, SMPD_PMI_SESSION_STR);
 	    break;
@@ -1270,6 +1272,52 @@ int smpd_state_smpd_listening(smpd_context_t *context, MPIDU_Sock_event_t *event
     }
     smpd_exit_fn("smpd_state_smpd_listening");
     return SMPD_SUCCESS;
+}
+
+int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr, MPIDU_Sock_set_t set)
+{
+    int result;
+    MPIDU_Sock_t new_sock;
+    smpd_process_t *iter;
+
+    smpd_enter_fn("smpd_state_pmi_listening");
+    result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("error accepting socket: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_state_pmi_listening");
+	return SMPD_FAIL;
+    }
+    iter = smpd_process.process_list;
+    while (iter)
+    {
+	if (iter->pmi->sock == context->sock)
+	{
+	    /* process structure found for this listener */
+	    iter->pmi->sock = new_sock;
+	    result = MPIDU_Sock_set_user_ptr(new_sock, iter->pmi);
+	    if (result != MPI_SUCCESS)
+	    {
+		smpd_err_printf("unable to set the user pointer on the newly accepted sock, error:\n%s\n",
+		    get_sock_error_string(result));
+		smpd_exit_fn("smpd_state_pmi_listening");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_read_command(iter->pmi);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a read of a command after accepting a pmi connection.\n");
+		smpd_exit_fn("smpd_state_pmi_listening");
+		return SMPD_FAIL;
+	    }
+	    smpd_exit_fn("smpd_state_pmi_listening");
+	    return SMPD_SUCCESS;
+	}
+	iter = iter->next;
+    }
+    smpd_err_printf("accepted a socket on a listener not associated with a process struct.\n");
+    smpd_exit_fn("smpd_state_pmi_listening");
+    return SMPD_FAIL;
 }
 
 int smpd_state_mgr_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr, MPIDU_Sock_set_t set)
@@ -3194,6 +3242,9 @@ int smpd_handle_op_accept(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr
     case SMPD_MGR_LISTENING:
 	result = smpd_state_mgr_listening(context, event_ptr, set);
 	break;
+    case SMPD_PMI_LISTENING:
+	result = smpd_state_pmi_listening(context, event_ptr, set);
+	break;
     default:
 	smpd_err_printf("sock_op_accept returned while context is in state: %s\n",
 	    smpd_get_state_string(context->state));
@@ -3248,7 +3299,7 @@ int smpd_handle_op_connect(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 	}
 	/* no break here, not-reconnecting contexts fall through */
     case SMPD_MPIEXEC_CONNECTING_SMPD:
-    case SMPD_CONNECTING_PMI:
+    case SMPD_CONNECTING_RPMI:
 	if (event_ptr->error != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to connect to the smpd, %s.\n", get_sock_error_string(event_ptr->error));
@@ -3266,6 +3317,28 @@ int smpd_handle_op_connect(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 	    return SMPD_FAIL;
 	}
 	result = SMPD_SUCCESS;
+	break;
+    case SMPD_CONNECTING_PMI:
+	if (event_ptr->error != MPI_SUCCESS)
+	{
+	    smpd_err_printf("unable to connect to the smpd, %s.\n", get_sock_error_string(event_ptr->error));
+	    result = SMPD_FAIL;
+	    break;
+	}
+	/*
+	smpd_dbg_printf("connect succeeded, posting read of the next pmi command\n");
+	context->read_state = SMPD_READING_CMD_HEADER;
+	result = MPIDU_Sock_post_read(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, SMPD_AUTHENTICATION_STR_LEN, NULL);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a read of the challenge string,\nsock error: %s\n",
+		get_sock_error_string(result));
+	    smpd_exit_fn("smpd_handle_op_connect");
+	    return SMPD_FAIL;
+	}
+	*/
+	context->write_state = SMPD_IDLE;
+	result = SMPD_DBS_RETURN;
 	break;
     default:
 	if (event_ptr->error != MPI_SUCCESS)
@@ -3640,6 +3713,11 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    if (event.error != MPI_SUCCESS)
 		smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
 	    result = smpd_handle_op_connect(context, &event);
+	    if (result == SMPD_DBS_RETURN)
+	    {
+		smpd_exit_fn("smpd_enter_at_state");
+		return SMPD_SUCCESS;
+	    }
 	    if (result != SMPD_SUCCESS || event.error != MPI_SUCCESS)
 	    {
 		smpd_process.state_machine_ret_val = (result != SMPD_SUCCESS) ? result : event.error;

@@ -137,7 +137,8 @@ smpd_global_t smpd_process =
       1,                /* tree_id                 */
       NULL,             /* s_host_list             */
       NULL,             /* s_cur_host              */
-      0                 /* s_cur_count             */
+      0,                /* s_cur_count             */
+      SMPD_FALSE        /* use_inherited_handles   */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
