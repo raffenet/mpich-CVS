@@ -513,6 +513,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
     }
     else if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
     {
+	unsigned char *buf;
 	MPIU_Size_t total, num_written;
 	smpd_dbg_printf("read from %s\n", smpd_get_context_str(context));
 
@@ -528,9 +529,10 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 
 	/* write stdin to root rsh process */
 	total = num_read+1;
+	buf = (unsigned char *)context->read_cmd.cmd;
 	while (total > 0)
 	{
-	    result = MPIDU_Sock_write(context->process->in->sock, context->read_cmd.cmd, total, &num_written);
+	    result = MPIDU_Sock_write(context->process->in->sock, buf, total, &num_written);
 	    if (result != MPI_SUCCESS)
 	    {
 		num_read = 0;
@@ -541,6 +543,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	    else
 	    {
 		total = total - num_written;
+		buf = buf + num_written;
 		if (num_written == 0)
 		{
 		    /* FIXME: what does 0 bytes written mean? */
