@@ -51,11 +51,10 @@ int main(int argc, char **argv)
  */
 int blockindexed_contig_test(void)
 {
-    int bufsz;
-    char *buf;
+    int buf[4] = {7, -1, -2, -3};
     int err, errs = 0;
 
-    int count = 1;
+    int i, count = 1;
     MPI_Aint disp = 0;
     MPI_Datatype newtype;
 
@@ -113,10 +112,7 @@ int blockindexed_contig_test(void)
 
     MPI_Type_commit(&newtype);
 
-    MPI_Pack_size(1, newtype, MPI_COMM_SELF, &bufsz);
-    buf = (char *) malloc(bufsz);
-
-    err = pack_and_unpack(buf, 1, newtype, bufsz);
+    err = pack_and_unpack((char *) buf, 1, newtype, 4 * sizeof(int));
     if (err != 0) {
 	if (verbose) {
 	    fprintf(stderr,
@@ -125,7 +121,23 @@ int blockindexed_contig_test(void)
 	errs += err;
     }
 
-    free(buf);
+    for (i=0; i < 4; i++) {
+	int goodval;
+
+	switch(i) {
+	    case 0:
+		goodval = 7;
+		break;
+	    default:
+		goodval = 0; /* pack_and_unpack() zeros before unpack */
+		break;
+	}
+	if (buf[i] != goodval) {
+	    errs++;
+	    if (verbose) fprintf(stderr, "buf[%d] = %d; should be %d\n",
+				 i, buf[i], goodval);
+	}
+    }
 
     return errs;
 }
