@@ -481,8 +481,8 @@ typedef struct smpd_global_t
     char SMPDPassword[100];
     char passphrase[SMPD_PASSPHRASE_MAX_LENGTH];
     SMPD_BOOL logon;
-    char UserAccount[100];
-    char UserPassword[100];
+    char UserAccount[SMPD_MAX_ACCOUNT_LENGTH];
+    char UserPassword[SMPD_MAX_PASSWORD_LENGTH];
     int  cur_tag;
     int  dbg_state;
     char dbg_filename[SMPD_MAX_FILENAME];
