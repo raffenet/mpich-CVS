@@ -517,6 +517,8 @@ static inline void make_progress(int is_blocking)
     do 
     {
 	rc = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
+	if (rc == IBU_FAIL)
+	    err_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
 	assert(rc != IBU_FAIL);
 	switch (out.op_type)
 	{
