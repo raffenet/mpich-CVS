@@ -1486,14 +1486,14 @@ double TestLatency(ArgStruct *p)
     {
 	if (g_proc_loc == LEFT_PROCESS)
 	{
-	    sprintf(str, "%d -> %d     ", p->iproc, p->nbor);
+	    sprintf(str, "%d <-> %d      ", p->iproc, p->nbor);
 	}
 	else
 	{
-	    sprintf(str, "     %d -> %d", p->iproc, p->nbor);
+	    sprintf(str, "      %d <-> %d", p->iproc, p->nbor);
 	}
 	/*printf("To determine %s latency, using %d reps\n", p->iproc == 0 ? "0 -> 1     " : "     1 -> 2", p->latency_reps);*/
-	printf("To determine %s latency, using %d reps\n", str, p->latency_reps);
+	printf("To determine %s latency, using %d reps.\n", str, p->latency_reps);
 	fflush(stdout);
     }
 
@@ -1533,7 +1533,7 @@ double TestLatency012(ArgStruct *p)
     g_latency012_reps = DetermineLatencyReps012(p);
     if (g_proc_loc == MIDDLE_PROCESS)
     {
-	printf("To determine %d -> %d -> %d latency, using %d reps\n", p->nbor, p->iproc, p->nbor2, g_latency012_reps);
+	printf("To determine %d <-- %d --> %d latency, using %d reps\n", p->nbor, p->iproc, p->nbor2, g_latency012_reps);
 	fflush(stdout);
     }
 
