@@ -13,9 +13,12 @@ $commonmake = "";    # Common entries for each generated Makefile
 $maint_targets = 1;  # set to 0 for distribution versions
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
-$do_dependencies = dynamic; # set to no, static, or dynamic to attempt
-                            # to generate dependency information 
-
+$do_dependencies = "dynamic"; # set to no, static, or dynamic to attempt
+                              # to generate dependency information 
+			      # use "ignore" to produce a target (for
+			      # recursive ops) but no actions
+$makeInclude = "include";     # set to the include command to use.
+                              # This is more robust if it ignores missing files
 # Set the names for the autoconf and autoheader program, along with 
 # the optional args and the argument used to specify the include dir for
 # autoconf/autoheader (autoconf 2.57 changed the command-line interface
@@ -732,6 +735,10 @@ sub WriteMfile {
     if ($do_dependencies ne "no") {
 	if ($do_dependencies eq "static") {
 	    &TargetDependenciesStatic;
+	}
+	elsif ($do_dependencies eq "ignore") {
+	    # Add a null target so that recursive targets work
+	    print FD "dependencies:$newline";
 	}
 	else {
 	    &TargetDependenciesDynamic;
@@ -2428,6 +2435,10 @@ sub TargetDependenciesDynamic {
     if (scalar(%libraries)) {
 	$has_sources = 1;
     }
+    
+    # Some makes will accept sinclude instead of -include
+    # -include is gnumake for "include if file exists, ignore otherwise"
+    if ($makeInclude eq "") { $makeInclude = "-include"; }
 
     print FD "# Dependencies$newline";
     # This definition follows the cone for COMPILE_C
@@ -2462,14 +2473,14 @@ sub TargetDependenciesDynamic {
 		$sourcebasename =~ s/\.\w*$//;
 		if ($ext eq "c") {
 		    print FD "\t\$(MAKE_DEPEND_C) \$(srcdir)/$sourcefile >.deps/$sourcebasename.Po$newline";
-		    print FD "\techo \"include .deps/$sourcebasename.Po\" >>.deps/newalldeps$newline";
+		    print FD "\techo \"$makeInclude .deps/$sourcebasename.Po\" >>.deps/newalldeps$newline";
 		}
 	    }
 	}
 	print FD "\tif [ -s .deps/newalldeps ] ; then mv -f .deps/newalldeps .deps/alldeps ; fi$newline";
 	print FD "\tdate >.deps/timestamp$newline";
 
-	print FD "include .deps/alldeps$newline";
+	print FD "$makeInclude .deps/alldeps$newline";
     }
     print FD "# End of Dependencies$newline";
 }

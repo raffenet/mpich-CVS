@@ -15,6 +15,8 @@ if [ -d maint -a -s maint/simplemake.in ] ; then
 fi
 #
 # Default choices
+# depend choices are dynamic, static, no
+do_depend=dynamic
 do_codingcheck=yes
 codecheck_args=""
 do_geterrmsgs=yes
@@ -71,6 +73,7 @@ for arg in "$@" ; do
     ;;
 
     -distrib)
+    do_depend=no
     do_build_configure=no
     temp_args="$temp_args $arg"
     ;;
@@ -127,6 +130,7 @@ fi
 # previous versions of autoconf (!!), even 2.52 (!!!).  
 acIncDirFlag=-l
 acVersion=ok
+if test -d .tmp ; then rm -rf .tmp ; fi
 if test -s .tmp ; then rm -f .tmp ; fi
 if test ! -d .tmp ; then
     mkdir .tmp 2>&1 >/dev/null
@@ -342,13 +346,22 @@ fi
 otherargs="$@"
 # If there is no mpi.h file (and other files, but testing on mpi.h should
 # be enough), don't generate the dependency information in the Makefiles
+# with the static dependency target.  The new default in simplemake is
+# dynamic dependency data
 # Currently, the dependency generation relies on using gcc, so we may 
 # want to test on that as well.
-if [ ! -s src/include/mpi.h ] ; then 
+# 
+# 
+if [ $do_depend = static -a ! -s src/include/mpi.h ] ; then
+    # Static dependencies require a mpi.h file
+    echo "Turning off static generation of dependencies because there is no mpi.h file"
+    do_depend=no
+fi
+if [ $do_depend = no ] ; then 
     otherargs="$otherargs -nodepend"
-else
-    # The next two files may be needed to build the dependency lists
-    touch src/include/mpidpre.h src/include/mpidpost.h
+#else
+#    # The next two files may be needed to build the dependency lists
+#    touch src/include/mpidpre.h src/include/mpidpost.h
 fi
 # 
 # autoconf 2.57 drastically changed the command line arguments.

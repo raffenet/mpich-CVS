@@ -152,3 +152,6 @@ romio_tfflags:
 
 # distclean the standard form for cleanall
 distclean: cleanall
+
+# Allow dependencies target
+dependencies:

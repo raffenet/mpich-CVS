@@ -381,7 +381,7 @@ close MPIFD;
 open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
-print MAKEFD "smvar_do_dependencies = 0\n";
+print MAKEFD "smvar_do_dependencies = ignore\n";
 print MAKEFD "MOD = \@F90MODEXT\@\n";
 
 print MAKEFD "all-preamble: mpi.\$(MOD)\n";

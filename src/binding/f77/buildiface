@@ -494,7 +494,7 @@ if ("$buildMakefile") {
 }
     
     #print MAKEFD "smvar_debug = 1\n";
-    print MAKEFD "smvar_do_dependencies = no\n";
+    print MAKEFD "smvar_do_dependencies = ignore\n";
     &print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
     for ($i=0; $i<=$#files; $i++) {
 	$name = $files[$i];
