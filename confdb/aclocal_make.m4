@@ -32,16 +32,21 @@ dnl Output Effect:
 dnl  If make echos directory changes, append '--no-print-directory' to the 
 dnl  symbol 'MAKE'.  If 'MAKE' is not set, chooses 'make' for 'MAKE'.
 dnl
+dnl  You can override this test (if, for example, you want make to be
+dnl  more noisy) by setting the environment variable MAKE_MAY_PRINT_DIR to 
+dnl  yes
+dnl
 dnl See also:
 dnl PAC_PROG_MAKE
 dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_ECHOS_DIR,[
-AC_CACHE_CHECK([whether make echos directory changes],
+if test "$MAKE_MAY_PRINT_DIR" != "yes" ; then
+    AC_CACHE_CHECK([whether make echos directory changes],
 pac_cv_prog_make_echos_dir,
 [
 AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
 ALL:
@@ -66,8 +71,9 @@ fi
 /bin/rm -f conftest
 str=""
 ])
-if test "$pac_cv_prog_make_echos_dir" = "yes using --no-print-directory" ; then
-    MAKE="$MAKE --no-print-directory"
+    if test "$pac_cv_prog_make_echos_dir" = "yes using --no-print-directory" ; then
+        MAKE="$MAKE --no-print-directory"
+    fi
 fi
 ])dnl
 dnl
