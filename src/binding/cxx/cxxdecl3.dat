@@ -66,7 +66,7 @@ comm-Allgatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in
 comm-Allreduce void (in:const , , ,in:constref:Datatype ,in:constref:Op, )
 comm-Alltoall void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype, )
 comm-Alltoallv void (in:const ,in:const ,in:const ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype, )
-comm-Alltoallw void (in:const ,in:const ,in:const ,in:const , ,in:const ,in:const ,in:const, )
+comm-Alltoallw void (in:const ,in:const ,in:const ,in:dtypearray:SIZE , ,in:const ,in:const ,in:dtypearray:SIZE, )
 comm-Barrier void ()
 comm-Bcast void (, ,in:constref:Datatype , , )
 comm-Gather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , )

@@ -1105,7 +1105,7 @@ typedef int MPI_File;\
         # These aren't really a class, so they don't use Begin/EndClass
         $arginfo = $class_mpi2base{$routine};
         print $OUTFD "extern ";
-	print "$routine - $arginfo\n";
+	#print "$routine - $arginfo\n";
         &PrintRoutineDef( $OUTFD, "base", $routine, $arginfo, 1 );
     }
 
@@ -3311,7 +3311,7 @@ sub preqarray_inout_ctocxx {
 sub dtypearray_in_methoddecl {
     my $count = $_[0];
     if (!$first) { print $OUTFD ", "; }
-    print $OUTFD "Datatype *v$count";
+    print $OUTFD " const Datatype v$count\[\]";
 }
 # We have to explicitly remove the cast
 sub dtypearray_in_call {
@@ -3322,11 +3322,17 @@ sub dtypearray_in_decl {
     my $count = $_[0];
     my $n     = "v$otherarg";
     if ($n =~ /-(\d*)/) { $n = $1; }
+    if ($otherarg eq "SIZE") {
+	$n = "Get_size()";
+    }
     print $OUTFD "$indent    MPI_Datatype *l$count = new MPI_Datatype[$n];\n";
 }
 sub dtypearray_in_cxxtoc {
     my $count      = $_[0];
     my $n          = "v$otherarg";
+    if ($otherarg eq "SIZE") {
+	$n = "Get_size()";
+    }
 
     my $cinvar     = "l" . $count;
     my $cxxoutvar  = "v" . $count;
