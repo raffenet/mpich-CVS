@@ -31,7 +31,7 @@ HEADERS   = mpdconf.h mpdroot.h
 MPD      = mpd
 MPDBOOT  = mpdboot
 CMDS     = mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob \
-           mpdexit mpdallexit mpdcleanup mpdhelp mpdcheck
+           mpdexit mpdallexit mpdcleanup mpdhelp mpdcheck testconfig
 HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver
 
 PYTHON_SOURCE =  ${MPD} ${MPDBOOT} ${CMDS} ${HELPERS}
