@@ -120,7 +120,7 @@ void ADIOI_PVFS_ReadStridedListIO(ADIO_File fd, void *buf, int count,
     int start_k, start_j, new_file_read, new_buffer_read;
     int start_mem_offset;
 
-#define MAX_ARRAY_SIZE 11
+#define MAX_ARRAY_SIZE 1024
 
 #ifndef PRINT_ERR_MESG
   static char myname[] = "ADIOI_PVFS_ReadStrided";
