@@ -451,6 +451,16 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 #		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
 #		     fi
 #		fi
+	        if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+                fi
+	        # Add other tests here (sigh) as necessary
+	        if [ $fixBackWhackCtrlMBug = yes ] ; then
+		    rm -f c.tmp 
+		    sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		    rm -f $dir/configure
+		    mv c.tmp $dir/configure
+	        fi
 	        continue
 	    fi
 	    # The make -q checks whether the target is upto date first;
