@@ -20,7 +20,7 @@
 % Modify the way titles are handled for no breaks between pages
 \def\mantitle#1#2#3{\pagerule\nobreak
 \ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
-\findex{#1}}
+\index{#1}}
 
 \makeindex
 
@@ -58,6 +58,13 @@ Argonne National Laboratory}{00}{\today}
 This document contains detailed documentation on the routines that are part of
 the Abstract Device Interface, version 3, used to implement the MPICH2000
 model MPI implementation. 
+
+This is a draft document.  No part of it should be considered as final.  All
+parts are currently under discusssion, and comments are welcome.  In
+particular, no decision has been made even on the choice of functions, much
+less their particular argument lists or semantics.  This document should be
+viewed as a starting point for discussions that presents one possible ADI-3
+design. 
 
 % As an alternate to this manual, the reader should consider using the
 % script \code{mpiman}; this is a script that uses \code{xman} to provide
@@ -930,7 +937,7 @@ this for I/O in the form of
 %\openin\testfile{adi3man.ind}
 %\ifeof\testfile\else
 \let\SaveIndex=\theindex
-\def\theindex{\SaveIndex\addcontentsline{toc}{section}{Index}}
+\long\def\theindex#1{\SaveIndex{#1}\addcontentsline{toc}{section}{Index}}
 \input adi3man.ind
 %\fi
 %\closein\testfile

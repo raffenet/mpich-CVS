@@ -35,6 +35,8 @@
 \def\mpidfunc#1{\code{#1}\index{#1}}
 % ditto for constants
 \def\mpiconst#1{\code{#1}\index{#1}}
+% Environment variables
+\def\eindex#1{\index{#1}}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -55,16 +57,16 @@ Argonne National Laboratory}{00}{\today}
 
 \section{Introduction}
 This document discusses how the MPICH2 implementation is written using
-the ADI-3 \cite{adi3ref} for the supporting functions.  This document
+the ADI-3 \cite{adi3man} for the supporting functions.  This document
 contains guidelines for the MPICH2 implementation.  One important
 purpose of this document is to provide common guidelines for writing
 the MPICH code.
 
-See also the Coding Standards docment \cite{coding}.
+See also the Coding Standards docment \cite{coding-standards}.
 
 To date, this document contains primarily comments on the rules for
 writing the code.  Few comments on the use of ADI-3 routines have been
-added yet.
+added yet.  No part of this document is final.
 
 % Outline:
 \section{General}
@@ -75,7 +77,8 @@ writing the code.
 
 MPI routines should check all possible error conditions early, before
 calling any ADI routines.  The ADI routines perform little error
-checking.  To allow error handling to be enabled both at compile time
+checking.  To allow error handling to be enabled or disabled both at compile
+time 
 and at runtime, the tests should be placed within the following block:
 \begin{verbatim}
 #ifdef HAVE_ERROR_CHECKING
@@ -111,7 +114,7 @@ etc. instead of \code{malloc}, as described in the ADI-3 manual
 
 At normal exit from the MPI library in \mpifunc{MPI_Finalize}, the
 routine \mpidfunc{MPID_Trdump} must be called if the environment variable
-\code{MPICH_TRDUMP} is set.  
+\code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
 
 \subsection{MPI Opaque Objects}
 
@@ -242,10 +245,17 @@ suite, and other options.  These should \emph{not} be part of the base
 MPICH2 project (as far as CVS is concerned).  This will encourage
 better separation of the projects.
 
+Question: What about Fortran and C++?  These are required for full MPI support
+(unlike MPE or the performance tests), but have many unique requirements
+during configurations.  I believe that these should continue to have a
+separate configure, though it is not necessary to make them standalone (e.g.,
+work with other implementations of MPI).
+
 \section{Include Files}
 The include file \file{mpi.h} should not require any \code{-Dxxx}
 definitions by the compiler.  This will require generating the
-\file{mpi.h} from another file.  It should not include any other
+\file{mpi.h} from another file (and probably not using \code{configure} and an
+\file{mpi.h.in}).  It should not include any other
 files, with the (possible) exception of \file{mpi++.h} for C++ support.
 
 The \file{mpif.h} (of \file{mpif.h.in}) should be created from
@@ -264,7 +274,10 @@ the MPI Standard.
 \subsection{Attributes and Info}
 
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
+\subsubsection{\mpifunc{MPI_ATTR_GET}}
+\subsubsection{\mpifunc{MPI_ATTR_PUT}}
 \subsubsection{\mpifunc{MPI_KEYVAL_CREATE}}
+\subsubsection{\mpifunc{MPI_KEYVAL_FREE}}
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_COMM_FREE_KEYVAL}}
@@ -374,6 +387,7 @@ Uses the \code{name} field.
 Sets the \code{name} field.
 
 \subsubsection{\mpifunc{MPI_PACK}}
+\subsubsection{\mpifunc{MPI_PACK_SIZE}}
 
 \subsubsection{\mpifunc{MPI_UNPACK}}
 
@@ -493,9 +507,15 @@ Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
 
 \subsubsection{\mpifunc{MPI_GROUP_COMPARE}}
 \subsubsection{\mpifunc{MPI_GROUP_DIFFERENCE}}
+\subsubsection{\mpifunc{MPI_GROUP_EXCL}}
 \subsubsection{\mpifunc{MPI_GROUP_FREE}}
 \subsubsection{\mpifunc{MPI_GROUP_INCL}}
+\subsubsection{\mpifunc{MPI_GROUP_INTERSECTION}}
+\subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
+\subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
 \subsubsection{\mpifunc{MPI_GROUP_RANK}}
+\subsubsection{\mpifunc{MPI_GROUP_SIZE}}
+\subsubsection{\mpifunc{MPI_GROUP_TRANSLATE_RANKS}}
 \subsubsection{\mpifunc{MPI_GROUP_UNION}}
 
 \subsection{Communicators}
@@ -517,14 +537,17 @@ the collective routine, not the routine called, may be used.
 
 \subsubsection{\mpifunc{MPI_COMM_COMPARE}}
 \subsubsection{\mpifunc{MPI_COMM_CREATE}}
+\subsubsection{\mpifunc{MPI_COMM_DUP}}
 \subsubsection{\mpifunc{MPI_COMM_FREE}}
 \subsubsection{\mpifunc{MPI_COMM_GROUP}}
 \subsubsection{\mpifunc{MPI_COMM_RANK}}
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_GROUP}}
+\subsubsection{\mpifunc{MPI_COMM_REMOTE_SIZE}}
 \subsubsection{\mpifunc{MPI_COMM_SIZE}}
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
 \subsubsection{\mpifunc{MPI_INTERCOMM_CREATE}}
+\subsubsection{\mpifunc{MPI_INTERCOMM_MERGE}}
 
 \subsubsection{\mpifunc{MPI_COMM_C2F}}
 \subsubsection{\mpifunc{MPI_COMM_F2C}}
@@ -551,10 +574,14 @@ requests?
 \subsubsection{\mpifunc{MPI_BSEND}}
 \subsubsection{\mpifunc{MPI_BSEND_INIT}}
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
+\subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
 \subsubsection{\mpifunc{MPI_CANCEL}}
 \subsubsection{\mpifunc{MPI_IBSEND}}
 \subsubsection{\mpifunc{MPI_IPROBE}}
-\subsubsection{\mpifunc{MPI_IRECV }}
+\subsubsection{\mpifunc{MPI_IRECV}}
+\subsubsection{\mpifunc{MPI_IRSEND}}
+\subsubsection{\mpifunc{MPI_ISEND}}
+\subsubsection{\mpifunc{MPI_ISSEND}}
 \subsubsection{\mpifunc{MPI_RECV}}
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
 \subsubsection{\mpifunc{MPI_REQUEST_FREE}}
@@ -562,14 +589,21 @@ requests?
 \subsubsection{\mpifunc{MPI_RSEND_INIT}}
 \subsubsection{\mpifunc{MPI_SEND}}
 \subsubsection{\mpifunc{MPI_SENDRECV}}
+\subsubsection{\mpifunc{MPI_SENDRECV_REPLACE}}
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
 \subsubsection{\mpifunc{MPI_SSEND}}
 \subsubsection{\mpifunc{MPI_SSEND_INIT}}
+\subsubsection{\mpifunc{MPI_START}}
+\subsubsection{\mpifunc{MPI_STARTALL}}
 \subsubsection{\mpifunc{MPI_TEST}}
 \subsubsection{\mpifunc{MPI_TESTALL}}
+\subsubsection{\mpifunc{MPI_TESTANY}}
+\subsubsection{\mpifunc{MPI_TESTSOME}}
 \subsubsection{\mpifunc{MPI_TEST_CANCELLED}}
 \subsubsection{\mpifunc{MPI_WAIT}}
 \subsubsection{\mpifunc{MPI_WAITALL}}
+\subsubsection{\mpifunc{MPI_WAITANY}}
+\subsubsection{\mpifunc{MPI_WAITSOME}}
 
 \subsection{Collective Communication and Computation}
 One of the major changes in MPICH2000 is in the implementation of the
@@ -740,6 +774,7 @@ for the topology information)?
 \subsubsection{\mpifunc{MPI_GRAPH_GET}}
 \subsubsection{\mpifunc{MPI_GRAPH_MAP}}
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS}}
+\subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS_COUNT}}
 \subsubsection{\mpifunc{MPI_TOPO_TEST}}
 
 \subsection{RMA}
@@ -1067,11 +1102,12 @@ check for conformance to these rules.
 
 Tools already available:
 \begin{description}
-\item[?]Check for global symbol names
-\item[?tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
+\item[checkforglobs]Check for global symbol names
+\item[tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
 \code{alloca})
 \item[gcc -Wall etc.]Missing prototypes, return values, etc.
-\item[?tool-to-be-created]Check for OS name or system type in a preprocessor statement
+\item[tool-to-be-created]Check for OS name or system type in a preprocessor
+  statement 
 \end{description}
 
 We also need tools for the following:
@@ -1096,7 +1132,8 @@ that can be implemented to output to a file, stdout, or a graphical display?
 
 \subsection{NT Friendly}
 
-Declare all user-visible routines \code{EXPORT_MPI_API}.  This is a
+Declare all user-visible routines \code{EXPORT_MPI_API}\index{EXPORT_MPI_API}.
+This is a 
 macro that is defined as empty for UNIX and as the appropriate
 Microsoft-specific extension for Windows.
 
@@ -1324,19 +1361,22 @@ cache these items.
 \code{MPI_ABORT}\\
 \code{MPI_ADDRESS}\\
 \code{MPI_ERRHANDLER_CREATE}\\
+\code{MPI_ERRHANDLER_FREE}\\
+\code{MPI_ERRHANDLER_GET}\\
+\code{MPI_ERRHANDLER_SET}\\
 \code{MPI_ERROR_CLASS}\\
 \code{MPI_ERROR_STRING}\\
 \code{MPI_FINALIZE}\\
 \code{MPI_GET_COUNT}\\
 \code{MPI_GET_ELEMENTS}\\
-
 \code{MPI_GET_PROCESSOR_NAME}\\
 \code{MPI_INIT}\\
-
+\code{MPI_INITIALIZED}\\
 \code{MPI_OP_CREATE}\\
-
+\code{MPI_OP_FREE}\\
 \code{MPI_PCONTROL}\\
 \code{MPI_WTICK}\\
+\code{MPI_WTIME}\\
 
 \subsection{MPI-2 Functions}
 This also includes MPI-1 functions with significant new functionality,
@@ -1354,35 +1394,33 @@ MPI-2, from intracommunicators to intercommunicators.
 \code{MPI_INFO_F2C}\\
 \code{MPI_INFO_FREE}\\
 \code{MPI_INIT_THREAD}\\
-
-
+\\
 \code{MPI_OP_C2F}\\
 \code{MPI_PACK_EXTERNAL}\\
-
+\\
 \code{MPI_PUBLISH_NAME}\\
 \code{MPI_UNPUBLISH_NAME}\\
-
-
+\\
 \code{MPI_QUERY_THREAD}\\
-
+\\
 \code{MPI_REDUCE}\\
-
+\\
 \code{MPI_REGISTER_DATAREP}\\
-
+\\
 \code{MPI_REQUEST_C2F}\\
 \code{MPI_REQUEST_GET_STATUS}\\
-
+\\
 \code{MPI_SIZEOF}\\
-
+\\
 \code{MPI_STATUS_C2F}\\
 \code{MPI_STATUS_SET_CANCELLED}\\
-
+\\
 \code{MPI_TYPE_DUP}\\
 \code{MPI_TYPE_DUP_FN}\\
 \code{MPI_TYPE_C2F}\\
 \code{MPI_TYPE_F2C}\\
 \code{MPI_TYPE_MATCH_SIZE}\\
-
+\\
 \code{MPI_UNPACK_EXTERNAL}\\
 
 
@@ -1401,7 +1439,7 @@ MPI-2, from intracommunicators to intercommunicators.
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
-\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,mpich2}
 \bibliographystyle{plain}
 
 % Index

@@ -19,7 +19,7 @@ paper.dvi: paper.tex
 
 adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-	-rm -f adi3man/*.tex
+	-rm -f adi3man/*.tex adi3man/tmp.*
 	(cd adi3man ; \
 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
@@ -27,14 +27,14 @@ adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	-cp adi3man.tex adi3man/adi3man.tex
 	(cd adi3man ; \
 	../manextract ../adi3.[ch] > /dev/null ;\
-	latex adi3man ;\
+	latex adi3man < /dev/null ;\
 	bibtex adi3man ;\
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' adi3man.idx > tmp.idx ; \
 	makeindex tmp ;\
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
-	latex adi3man ;\
+	latex adi3man < /dev/null ;\
 	dvips adi3man )
 	rm -f adi3man.ps
 	mv adi3man/adi3man.ps .
