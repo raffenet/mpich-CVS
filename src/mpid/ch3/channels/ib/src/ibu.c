@@ -770,21 +770,6 @@ int ibu_init()
     }
 #endif
 
-#if 0
-    /* create the completion queue */
-    status = ib_cq_create_us(IBU_Process.hca_handle, 
-	IBU_Process.cqd_handle,
-	&max_cq_entries,
-	&IBU_Process.cq_handle,
-	NULL);
-    if (status != IBU_SUCCESS)
-    {
-	printf("ibu_init: ib_cq_create_us failed, error %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return -1;
-    }
-#endif
-
     /* get the lid */
     attr_size = 0;
     status = ib_hca_query_us(IBU_Process.hca_handle, NULL, 
@@ -851,60 +836,13 @@ int ibu_destroy_set(ibu_set_t set)
     return status;
 }
 
-/*
-int ibu_listen(ibu_set_t set, void * user_ptr, int *port, ibu_t *listener)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_LISTEN);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_LISTEN);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_LISTEN);
-    return IBU_SUCCESS;
-}
-
-int ibu_post_connect(ibu_set_t set, void * user_ptr, char *host, int port, ibu_t *connected)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_CONNECT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_CONNECT);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_CONNECT);
-    return IBU_SUCCESS;
-}
-
-int ibu_accept(ibu_set_t set, void * user_ptr, ibu_t listener, ibu_t *accepted)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_ACCEPT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_ACCEPT);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_ACCEPT);
-    return IBU_SUCCESS;
-}
-
-int ibu_post_close(ibu_t ibu)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_CLOSE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_CLOSE);
-
-    ibu->closing = TRUE;
-    if (ibu->pending_operations == 0)
-    {
-    }
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_CLOSE);
-    return IBU_SUCCESS;
-}
-*/
-
 int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 {
     ib_uint32_t status;
     ib_work_completion_t completion_data;
     void *mem_ptr;
     ibu_t ibu;
-    /*
-    int error;
-    DWORD num_bytes;
-    ibu_state_t *ibu;
-    */
+    unsigned int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
@@ -919,6 +857,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	{
 	    /* ibu_wait polls until there is something in the queue */
 	    /* or the timeout has expired */
+	    if (millisecond_timeout == 0)
+	    {
+		out->num_bytes = 0;
+		out->error = 0;
+		out->user_ptr = NULL;
+		out->op_type = IBU_OP_TIMEOUT;
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_SUCCESS;
+	    }
 	    continue;
 	}
 	if (status != IBA_OK)
@@ -933,8 +880,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    return IBU_FAIL;
 	}
 
-	//if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&ibu, &ovl, millisecond_timeout))
-
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.work_req_id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.work_req_id)->data.mem);
 
@@ -942,8 +887,79 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	{
 	case OP_SEND:
 	    /*ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());*/
-	    /* put the send packet back in the pool */
-	    /*BlockFree(allocator, mem_ptr);*/
+	    /*printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);*/
+	    /* put the receive packet back in the pool */
+	    BlockFree(ibu->allocator, mem_ptr);
+	    ibu->write.total += num_bytes;
+	    if (ibu->write.use_iov)
+	    {
+		while (num_bytes)
+		{
+		    if (ibu->write.iov[ibu->write.index].IBU_IOV_LEN <= num_bytes)
+		    {
+			/*printf("ibu_wait: write.index %d, len %d\n", ibu->write.index, 
+			ibu->write.iov[ibu->write.index].IBU_IOV_LEN);*/
+			num_bytes -= ibu->write.iov[ibu->write.index].IBU_IOV_LEN;
+			ibu->write.index++;
+			ibu->write.iovlen--;
+		    }
+		    else
+		    {
+			/*printf("ibu_wait: partial data written [%d].len = %d, num_bytes = %d\n", ibu->write.index,
+			ibu->write.iov[ibu->write.index].IBU_IOV_LEN, num_bytes);*/
+			ibu->write.iov[ibu->write.index].IBU_IOV_LEN -= num_bytes;
+			ibu->write.iov[ibu->write.index].IBU_IOV_BUF =
+			    (char*)(ibu->write.iov[ibu->write.index].IBU_IOV_BUF) + num_bytes;
+			num_bytes = 0;
+		    }
+		}
+		if (ibu->write.iovlen == 0)
+		{
+		    out->num_bytes = ibu->write.total;
+		    out->op_type = IBU_OP_WRITE;
+		    out->user_ptr = ibu->user_ptr;
+		    ibu->pending_operations--;
+		    if (ibu->closing && ibu->pending_operations == 0)
+		    {
+			printf("ibu_wait: closing ibuet after iov write completed.\n");
+			ibu = IBU_INVALID_QP;
+		    }
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    return IBU_SUCCESS;
+		}
+		/* make the user upcall */
+		if (ibu->write.progress_update != NULL)
+		    ibu->write.progress_update(num_bytes, ibu->user_ptr);
+		/* post a write of the remaining data */
+		/*
+		printf("ibu_wait: posting write of the remaining data, vec size %d\n", ibu->write.iovlen);
+		WSASend(ibu->ibu, ibu->write.iov, ibu->write.iovlen, &ibu->write.num_bytes, 0, &ibu->write.ovl, NULL);
+		*/
+	    }
+	    else
+	    {
+		ibu->write.buffer = (char*)(ibu->write.buffer) + num_bytes;
+		ibu->write.bufflen -= num_bytes;
+		if (ibu->write.bufflen == 0)
+		{
+		    out->num_bytes = ibu->write.total;
+		    out->op_type = IBU_OP_WRITE;
+		    out->user_ptr = ibu->user_ptr;
+		    ibu->pending_operations--;
+		    if (ibu->closing && ibu->pending_operations == 0)
+		    {
+			printf("ibu_wait: closing ibuet after simple write completed.\n");
+			ibu = IBU_INVALID_QP;
+		    }
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    return IBU_SUCCESS;
+		}
+		/* make the user upcall */
+		if (ibu->write.progress_update != NULL)
+		    ibu->write.progress_update(num_bytes, ibu->user_ptr);
+		/* post a write of the remaining data */
+		/*WriteFile((HANDLE)(ibu->ibu), ibu->write.buffer, ibu->write.bufflen, &ibu->write.num_bytes, &ibu->write.ovl);*/
+	    }
 	    break;
 	case OP_RECEIVE:
 	    /*ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);*/
@@ -951,198 +967,94 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    /*BlockFree(m_allocator, mem_ptr);*/
 	    /* post another receive to replace the consumed one */
 	    /*ibu_post_receive(vc_ptr);*/
+	    num_bytes = completion_data.bytes_num;
+	    ibu->read.total += num_bytes;
+	    if (ibu->read.use_iov)
+	    {
+		while (num_bytes)
+		{
+		    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
+		    {
+			num_bytes -= ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
+			ibu->read.index++;
+			ibu->read.iovlen--;
+		    }
+		    else
+		    {
+			ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
+			ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
+			    (char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
+			num_bytes = 0;
+		    }
+		}
+		/* put the receive packet back in the pool */
+		BlockFree(ibu->allocator, mem_ptr);
+		if (ibu->read.iovlen == 0)
+		{
+		    out->num_bytes = ibu->read.total;
+		    out->op_type = IBU_OP_READ;
+		    out->user_ptr = ibu->user_ptr;
+		    ibu->pending_operations--;
+		    if (ibu->closing && ibu->pending_operations == 0)
+		    {
+			printf("ibu_wait: closing ibuet after iov read completed.\n");
+			ibu = IBU_INVALID_QP;
+		    }
+		    else
+		    {
+			/* post another receive to replace the consumed one */
+			ibui_post_receive(ibu);
+		    }
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    return IBU_SUCCESS;
+		}
+		/* make the user upcall */
+		if (ibu->read.progress_update != NULL)
+		    ibu->read.progress_update(num_bytes, ibu->user_ptr);
+		/* post a read of the remaining data */
+		/*WSARecv(ibu->ibu, ibu->read.iov, ibu->read.iovlen, &ibu->read.num_bytes, &dwFlags, &ibu->read.ovl, NULL);*/
+		/* replace the consumed read descriptor */
+		ibui_post_receive(ibu);
+	    }
+	    else
+	    {
+		/* advance the user pointer */
+		ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
+		ibu->read.bufflen -= num_bytes;
+		/* put the receive packet back in the pool */
+		BlockFree(ibu->allocator, mem_ptr);
+		if (ibu->read.bufflen == 0)
+		{
+		    out->num_bytes = ibu->read.total;
+		    out->op_type = IBU_OP_READ;
+		    out->user_ptr = ibu->user_ptr;
+		    ibu->pending_operations--;
+		    if (ibu->closing && ibu->pending_operations == 0)
+		    {
+			printf("ibu_wait: closing ibuet after simple read completed.\n");
+			ibu = IBU_INVALID_QP;
+		    }
+		    else
+		    {
+			/* post another receive to replace the consumed one */
+			ibui_post_receive(ibu);
+		    }
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    return IBU_SUCCESS;
+		}
+		/* make the user upcall */
+		if (ibu->read.progress_update != NULL)
+		    ibu->read.progress_update(num_bytes, ibu->user_ptr);
+		/* post a read of the remaining data */
+		/*ReadFile((HANDLE)(ibu->ibu), ibu->read.buffer, ibu->read.bufflen, &ibu->read.num_bytes, &ibu->read.ovl);*/
+		/* post another receive to replace the consumed one */
+		ibui_post_receive(ibu);
+	    }
 	    break;
 	default:
 	    printf("unknown ib op_type: %d\n", completion_data.op_type);
 	    break;
 	}
-
-
-#if 0
-	    if (ibu->closing && ibu->pending_operations == 0)
-	    {
-		out->num_bytes = 0;
-		out->error = 0;
-		out->op_type = IBU_OP_CLOSE;
-		out->user_ptr = ibu->user_ptr;
-		/*BlockFree(g_ibu_allocator, ibu);*/
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_SUCCESS;
-	    }
-	    if (ovl == &ibu->read.ovl)
-	    {
-		ibu->read.total += num_bytes;
-		if (ibu->read.use_iov)
-		{
-		    while (num_bytes)
-		    {
-			if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
-			{
-			    num_bytes -= ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
-			    ibu->read.index++;
-			    ibu->read.iovlen--;
-			}
-			else
-			{
-			    ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
-			    ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
-				(char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
-			    num_bytes = 0;
-			}
-		    }
-		    if (ibu->read.iovlen == 0)
-		    {
-			out->num_bytes = ibu->read.total;
-			out->op_type = IBU_OP_READ;
-			out->user_ptr = ibu->user_ptr;
-			ibu->pending_operations--;
-			if (ibu->closing && ibu->pending_operations == 0)
-			{
-			    printf("ibu_wait: closing ibuet(%d) after iov read completed.\n", ibu_getid(ibu));
-			    shutdown(ibu->ibu, SD_BOTH);
-			    closeibuet(ibu->ibu);
-			    ibu->ibu = IBU_INVALID_QP;
-			}
-			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
-		    }
-		    /* make the user upcall */
-		    if (ibu->read.progress_update != NULL)
-			ibu->read.progress_update(num_bytes, ibu->user_ptr);
-		    /* post a read of the remaining data */
-		    WSARecv(ibu->ibu, ibu->read.iov, ibu->read.iovlen, &ibu->read.num_bytes, &dwFlags, &ibu->read.ovl, NULL);
-		}
-		else
-		{
-		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
-		    ibu->read.bufflen -= num_bytes;
-		    if (ibu->read.bufflen == 0)
-		    {
-			out->num_bytes = ibu->read.total;
-			out->op_type = IBU_OP_READ;
-			out->user_ptr = ibu->user_ptr;
-			ibu->pending_operations--;
-			if (ibu->closing && ibu->pending_operations == 0)
-			{
-			    printf("ibu_wait: closing ibuet(%d) after simple read completed.\n", ibu_getid(ibu));
-			    shutdown(ibu->ibu, SD_BOTH);
-			    closesocket(ibu->ibu);
-			    ibu->ibu = IBU_INVALID_QP;
-			}
-			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
-		    }
-		    /* make the user upcall */
-		    if (ibu->read.progress_update != NULL)
-			ibu->read.progress_update(num_bytes, ibu->user_ptr);
-		    /* post a read of the remaining data */
-		    ReadFile((HANDLE)(ibu->ibu), ibu->read.buffer, ibu->read.bufflen, &ibu->read.num_bytes, &ibu->read.ovl);
-		}
-	    }
-	    else if (ovl == &ibu->write.ovl)
-	    {
-		if (ibu->state & IBU_CONNECTING)
-		{
-		    /* insert code here to determine that the connect succeeded */
-		    /* ... */
-		    ibu->state ^= IBU_CONNECTING; /* remove the IBU_CONNECTING bit */
-		    
-		    out->op_type = IBU_OP_CONNECT;
-		    out->user_ptr = ibu->user_ptr;
-		    ibu->pending_operations--;
-		    if (ibu->closing && ibu->pending_operations == 0)
-		    {
-			printf("ibu_wait: closing ibuet(%d) after connect completed.\n", ibu_getid(ibu));
-			shutdown(ibu->ibu, SD_BOTH);
-			closesocket(ibu->ibu);
-			ibu->ibu = IBU_INVALID_QP;
-		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
-		}
-		else
-		{
-		    /*printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);*/
-		    ibu->write.total += num_bytes;
-		    if (ibu->write.use_iov)
-		    {
-			while (num_bytes)
-			{
-			    if (ibu->write.iov[ibu->write.index].IBU_IOV_LEN <= num_bytes)
-			    {
-			    /*printf("ibu_wait: write.index %d, len %d\n", ibu->write.index, 
-				ibu->write.iov[ibu->write.index].IBU_IOV_LEN);*/
-				num_bytes -= ibu->write.iov[ibu->write.index].IBU_IOV_LEN;
-				ibu->write.index++;
-				ibu->write.iovlen--;
-			    }
-			    else
-			    {
-			    /*printf("ibu_wait: partial data written [%d].len = %d, num_bytes = %d\n", ibu->write.index,
-				ibu->write.iov[ibu->write.index].IBU_IOV_LEN, num_bytes);*/
-				ibu->write.iov[ibu->write.index].IBU_IOV_LEN -= num_bytes;
-				ibu->write.iov[ibu->write.index].IBU_IOV_BUF =
-				    (char*)(ibu->write.iov[ibu->write.index].IBU_IOV_BUF) + num_bytes;
-				num_bytes = 0;
-			    }
-			}
-			if (ibu->write.iovlen == 0)
-			{
-			    out->num_bytes = ibu->write.total;
-			    out->op_type = IBU_OP_WRITE;
-			    out->user_ptr = ibu->user_ptr;
-			    ibu->pending_operations--;
-			    if (ibu->closing && ibu->pending_operations == 0)
-			    {
-				printf("ibu_wait: closing ibuet(%d) after iov write completed.\n", ibu_getid(ibu));
-				shutdown(ibu->ibu, SD_BOTH);
-				closeibuet(ibu->ibu);
-				ibu->ibu = IBU_INVALID_QP;
-			    }
-			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			    return IBU_SUCCESS;
-			}
-			/* make the user upcall */
-			if (ibu->write.progress_update != NULL)
-			    ibu->write.progress_update(num_bytes, ibu->user_ptr);
-			/* post a write of the remaining data */
-			printf("ibu_wait: posting write of the remaining data, vec size %d\n", ibu->write.iovlen);
-			WSASend(ibu->ibu, ibu->write.iov, ibu->write.iovlen, &ibu->write.num_bytes, 0, &ibu->write.ovl, NULL);
-		    }
-		    else
-		    {
-			ibu->write.buffer = (char*)(ibu->write.buffer) + num_bytes;
-			ibu->write.bufflen -= num_bytes;
-			if (ibu->write.bufflen == 0)
-			{
-			    out->num_bytes = ibu->write.total;
-			    out->op_type = IBU_OP_WRITE;
-			    out->user_ptr = ibu->user_ptr;
-			    ibu->pending_operations--;
-			    if (ibu->closing && ibu->pending_operations == 0)
-			    {
-				printf("ibu_wait: closing ibuet(%d) after simple write completed.\n", ibu_getid(ibu));
-				shutdown(ibu->ibu, SD_BOTH);
-				closeibuet(ibu->ibu);
-				ibu->ibu = IBU_INVALID_QP;
-			    }
-			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			    return IBU_SUCCESS;
-			}
-			/* make the user upcall */
-			if (ibu->write.progress_update != NULL)
-			    ibu->write.progress_update(num_bytes, ibu->user_ptr);
-			/* post a write of the remaining data */
-			WriteFile((HANDLE)(ibu->ibu), ibu->write.buffer, ibu->write.bufflen, &ibu->write.num_bytes, &ibu->write.ovl);
-		    }
-		}
-	    }
-	    else
-	    {
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
-	    }
-#endif
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
@@ -1163,51 +1075,6 @@ int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)
     return IBU_SUCCESS;
 }
 
-/* immediate functions */
-/* infiniband has no immediate functions */
-/*
-int ibu_read(ibu_t ibu, void *buf, int len, int *num_read)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_READ);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_READ);
-    *num_read = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_READ);
-    return IBU_SUCCESS;
-}
-
-int ibu_readv(ibu_t ibu, IBU_IOV *iov, int n, int *num_read)
-{
-    DWORD nFlags = 0;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_READV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_READV);
-    *num_read = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_READV);
-    return IBU_SUCCESS;
-}
-
-int ibu_write(ibu_t ibu, void *buf, int len, int *num_written)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
-    *num_written = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-    return IBU_SUCCESS;
-}
-
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_written)
-{
-    MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
-    *num_written = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-    return IBU_SUCCESS;
-}
-*/
-
 /* non-blocking functions */
 
 int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
@@ -1223,6 +1090,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     ibu->state |= IBU_READING;
     ibu->pending_operations++;
     /*ReadFile((HANDLE)(ibu->ibu), buf, len, &ibu->read.num_bytes, &ibu->read.ovl);*/
+    /* copy any pre-received data into the buffer */
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_READ);
     return IBU_SUCCESS;
 }
@@ -1242,6 +1110,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     ibu->state |= IBU_READING;
     ibu->pending_operations++;
     /*WSARecv(ibu->ibu, ibu->read.iov, n, &ibu->read.num_bytes, &flags, &ibu->read.ovl, NULL);*/
+    /* copy any pre-received data into the iov */
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_READV);
     return IBU_SUCCESS;
 }
@@ -1258,7 +1127,6 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     ibu->write.progress_update = wfn;
     ibu->state |= IBU_WRITING;
     ibu->pending_operations++;
-    /*WriteFile((HANDLE)(ibu->ibu), buf, len, &ibu->write.num_bytes, &ibu->write.ovl);*/
     ibui_post_write(ibu, buf, len, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
     return IBU_SUCCESS;
@@ -1289,7 +1157,6 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 	printf("%s", str);
     }
     */
-    /*WSASend(ibu->ibu, ibu->write.iov, n, &ibu->write.num_bytes, 0, &ibu->write.ovl, NULL);*/
     ibui_post_writev(ibu, ibu->write.iov, n, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
     return IBU_SUCCESS;
@@ -1303,11 +1170,6 @@ int ibu_get_lid()
 }
 
 #if 0
-int ibu_getid(ibu_t ibu)
-{
-    return 0;
-}
-
 int ibu_easy_receive(ibu_t ibu, void *buf, int len, int *num_read)
 {
     int error;

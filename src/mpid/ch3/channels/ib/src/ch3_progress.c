@@ -178,7 +178,6 @@ static inline void post_queued_send(MPIDI_VC * vc)
     if (vc->ib.send_active != NULL)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queued message, send active"));
-	/* do ibu_post_write here */
 	assert(vc->ib.send_active->ib.iov_offset < vc->ib.send_active->ch3.iov_count);
 	ibu_post_writev(vc->ib.ibu, vc->ib.send_active->ch3.iov + vc->ib.send_active->ib.iov_offset, vc->ib.send_active->ch3.iov_count - vc->ib.send_active->ib.iov_offset, NULL);
     }
