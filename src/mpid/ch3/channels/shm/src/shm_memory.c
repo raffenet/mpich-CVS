@@ -6,9 +6,6 @@
 
 #include "mpidi_ch3_impl.h"
 
-#define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
-#define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
-
 #define ZERO_RANK 0x10101010
 
 #undef SYNCHRONIZE_SHMAPPING
