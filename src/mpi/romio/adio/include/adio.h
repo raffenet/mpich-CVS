@@ -373,4 +373,12 @@ void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype,
 #include "adioi_fs_proto.h"
 #include "mpio_error.h"
 #include "mpipr.h"
+
+#ifdef MPICH2
+int MPIR_Err_return_file( MPI_File, const char [], int );
+int MPIR_Err_create_code( int, const char [], ... );
+const char * MPIR_Err_get_string(int);
+int MPIR_Err_set_msg( int code, const char *msg_string );
+#endif
+
 #endif
