@@ -82,6 +82,7 @@ public class BufForShadows extends BufForObjects
         return total_bytesize;
     }
 
+    // SLOG-2 Output API
     public void add( final Primitive prime )
     {
         List      key;
@@ -107,6 +108,7 @@ public class BufForShadows extends BufForObjects
         }
     }
 
+    // SLOG-2 Output API
     public void empty()
     {
         if ( haveObjectsBeenSaved ) {
@@ -118,6 +120,7 @@ public class BufForShadows extends BufForObjects
         }
     }
 
+    // SLOG-2 Output API : the argument "buf" is childnode's BufForShadows
     public void mergeWith( final BufForShadows buf )
     {
         Map.Entry  key_sobj;
@@ -133,7 +136,7 @@ public class BufForShadows extends BufForObjects
                 // buf.buf4shadows[] could be modified by
                 // this.buf4shadows[] __later__ in the program
                 sobj = new Shadow( (Shadow) key_sobj.getValue() );
-                buf4shadows.put( key, sobj );
+                this.buf4shadows.put( key, sobj );
                 total_bytesize += sobj.getByteSize();
             }
             else {
@@ -144,14 +147,24 @@ public class BufForShadows extends BufForObjects
         }
     }
 
-    public void setMapOfCategoryWeights()
+    // SLOG-2 Output API
+    public void initializeMapOfCategoryWeights()
     {
         Iterator  sobjs_itr;
-        Shadow    sobj;
 
         sobjs_itr = buf4shadows.values().iterator();
         while ( sobjs_itr.hasNext() )
-            ( (Shadow) sobjs_itr.next() ).setMapOfCategoryWeights();
+            ( (Shadow) sobjs_itr.next() ).initializeMapOfCategoryWeights();
+    }
+
+    // SLOG-2 Output API
+    public void finalizeMapOfCategoryWeights()
+    {
+        Iterator  sobjs_itr;
+
+        sobjs_itr = buf4shadows.values().iterator();
+        while ( sobjs_itr.hasNext() )
+            ( (Shadow) sobjs_itr.next() ).finalizeMapOfCategoryWeights();
     }
 
     public int getNumOfPrimitives()
