@@ -5610,43 +5610,42 @@ invalidating the other's choice of context value.
 Here is an algorithm that will work in the multithreaded case.  It
 uses a bit mask of context ids (each bit set indicates a context id
 available; 32 32-bit integers covers 1024 context ids).  This mask,
-along with a queue containing the context ids of communicators that
+along with a variable containint the smallest context ids of the 
+communicators that
 are requesting a new context id and a variable that indicates that
 some thread has acquired the rights to the mask, are stored in
-thread-shared memory (in \code{MPIR_Process}).\index{thread
+thread-shared memory (in this case, process-local variables).\index{thread
 safety!context allocation}
 In this code, note that \code{mask_in_use} is initialized to zero.
 
 \begin{algorithm}
-volatile int mask_in_use;
-while (no context id found) {
-    local_mask = 0
+static volatile int mask_in_use = 0;
+static volatile int lowestContextId = MAXINT;
+int context_id = 0;
+while (context_id == 0) {
     lock 
-    if (mask_in_use) local_mask = 0
-    else if (first_time) 
-        add to this context id to queue of pending
-        requests in order of context id value
-    if at the head of queue (lowest numbered context), 
-        mask_in_use = 1
+    if (mask_in_use || mycontextid > lowestContextId) 
+        local_mask = 0
+    else 
         local_mask = mask
+	mask_in_use = 1
+    if (mycontextid < lowestContextId) 
+        lowestContextId = mycontextid
     unlock
+
     MPI_Allreduce( local_mask, MPI_BAND )
     If a set bit is found in mask,
+
         lock
         unset corresponding bit in mask
         mask_in_use = 0
-        remove this context_id from queue
-        if queue non-empty, release condition variable
+	if (mycontextid != lowestContextId)
+	    lowestContextId = MAXINT;
         unlock
-        return the new context_id.
-    else if had low context value (i.e., this thread set mask_in_use)
-        lock
-        mask_in_use = 0
-        release condition variable
-        unlock
-    else
-        wait on condition variable
+
+        break loop
     } /* end while */
+return the new context_id.
 \end{algorithm}
 The use of the flag \code{mask_in_use} ensures that only one thread per process
 is accessing the mask of available context ids at any time; thus a
@@ -5672,6 +5671,18 @@ disjoint masks; if the masks were cleverly picked, most threads would
 find an acceptable value even when multiple threads where concurrently
 executing the algorithm.
 
+Another refinement of this algorithm would use a queue of pending
+threads, ordered by increasing contextid value (of the input
+communicator).  Threads that are high in this queue could wait on a
+condition variable or other thread-synchronization mechanism that is
+activated whenever there is a change in the thread with the lowest
+context id, either because a thread has found a context id value and
+is removed from the queue or because a new thread with a lower context
+id value than any of the threads currently attempting to acquire a
+context id enters the function.  Since most applications will are
+unlikely to have large numbers of threads attempting to create context
+ids at the same time, the simple algorithm is probably sufficient.
+
 Question: do we want to fix the number of context ids?  Note that
 these are not globally unique; they are only unique among a collection
 of processes.  1024 might be enough.  Is this a compile time or
@@ -5694,7 +5705,7 @@ Question: Do we want to support context id caching?  If so, how many?
 If provided, the \code{configure} flag is
 \cfgoption{--enable-comm=id-cache=n}? 
 
-If a cache is supported, one of the issues is ensuring the in a
+If a cache is supported, one of the issues is ensuring that in a
 multithreaded environment, \mpifunc{MPI_Comm_free} can correctly
 recover any cached ids.  In addition, allocating context ids to a
 communicator cache that are never used (because the recipient
