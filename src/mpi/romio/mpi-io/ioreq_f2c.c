@@ -35,6 +35,9 @@ Input Parameters:
 Return Value:
   C I/O-request handle (handle)
 @*/
+#ifdef HAVE_GREQUEST
+MPIO_Request MPIO_Request_f2c(MPI_Fint request) {return((MPIO_Requst)request)}
+#else
 MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 {
 
@@ -49,3 +52,4 @@ MPIO_Request MPIO_Request_f2c(MPI_Fint request)
     return ADIOI_Reqtable[request];
 #endif
 }
+#endif

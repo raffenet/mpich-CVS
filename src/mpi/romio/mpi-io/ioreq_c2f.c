@@ -35,6 +35,10 @@ Input Parameters:
 Return Value:
   Fortran I/O-request handle (integer)
 @*/
+#ifdef HAVE_GREQUEST
+MPI_Fint MPIO_Request_c2f(MPIO_Request request) { return ((MPI_Fint)request); }
+#else
+
 MPI_Fint MPIO_Request_c2f(MPIO_Request request)
 {
 #ifndef INT_LT_POINTER
@@ -64,3 +68,4 @@ MPI_Fint MPIO_Request_c2f(MPIO_Request request)
     return (MPI_Fint) ADIOI_Reqtable_ptr;
 #endif
 }
+#endif
