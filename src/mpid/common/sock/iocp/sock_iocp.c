@@ -12,7 +12,10 @@
 #include <mswsock.h>
 #include <stdio.h>
 
-typedef enum { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET } SOCK_TYPE;
+#define SOCKI_TCP_BUFFER_SIZE       32*1024
+#define SOCKI_STREAM_PACKET_LENGTH  8*1024
+
+typedef enum SOCK_TYPE { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET } SOCK_TYPE;
 
 typedef int SOCK_STATE;
 #define SOCK_ACCEPTING  0x0001
@@ -440,13 +443,13 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = 64*1024;
+	optval = SOCKI_TCP_BUFFER_SIZE;
 	setsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = 64*1024;
+	optval = SOCKI_TCP_BUFFER_SIZE;
 	setsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -685,7 +688,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
 	else
 	{
 	    ret_val = GetLastSockError();
-	    err_printf("gethostbyname failed, error %d\n", WSAGetLastError());
+	    MPIU_Error_printf("sock_post_connect", "gethostbyname failed, error %d\n", WSAGetLastError());
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	    return ret_val;
 	}
@@ -697,7 +700,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (easy_create(&connect_state->sock, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
 	ret_val = GetLastSockError();
-	err_printf("easy_create failed, error %d\n", WSAGetLastError());
+	MPIU_Error_printf("sock_post_connect", "easy_create failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -706,7 +709,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (connect(connect_state->sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
 	ret_val = GetLastSockError();
-	err_printf("connect failed, error %d\n", WSAGetLastError());
+	MPIU_Error_printf("sock_post_conect", "connect failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -720,7 +723,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (CreateIoCompletionPort((HANDLE)connect_state->sock, set, (ULONG_PTR)connect_state, g_num_cp_threads) == NULL)
     {
 	ret_val = GetLastSockError();
-	err_printf("CreateIOCompletionPort failed, error %d\n", GetLastError());
+	MPIU_Error_printf("sock_post_connect", "CreateIOCompletionPort failed, error %d\n", GetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -781,13 +784,13 @@ int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t * accep
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = 64*1024;
+	optval = SOCKI_TCP_BUFFER_SIZE;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = 64*1024;
+	optval = SOCKI_TCP_BUFFER_SIZE;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -1062,7 +1065,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		}
 		else
 		{
-		    err_printf("returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);fflush(stdout);
+		    MPIU_Error_printf("sock_wait", "returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		    return SOCK_FAIL;
 		}
@@ -1079,7 +1082,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    }
 	    else
 	    {
-		err_printf("sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);fflush(stdout);
+		MPIU_Error_printf("sock_wait", "sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		return SOCK_FAIL;
 	    }
@@ -1092,11 +1095,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (error == WAIT_TIMEOUT)
 	    {
-		out->op_type = SOCK_OP_TIMEOUT;
-		/*out->error = SOCK_ERR_TIMEOUT;*/
-		out->error = SOCK_SUCCESS;
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
-		return SOCK_SUCCESS;
+		return SOCK_ERR_TIMEOUT;
 	    }
 	    if (sock != NULL)
 	    {
@@ -1140,7 +1140,7 @@ int sock_set_user_ptr(sock_t sock, void *user_ptr)
 
 /* immediate functions */
 
-int sock_read(sock_t sock, void *buf, int len, int *num_read)
+int sock_read(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_read)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCK_READ);
 
@@ -1150,7 +1150,7 @@ int sock_read(sock_t sock, void *buf, int len, int *num_read)
     return SOCK_SUCCESS;
 }
 
-int sock_readv(sock_t sock, SOCK_IOV *iov, int n, int *num_read)
+int sock_readv(sock_t sock, SOCK_IOV *iov, int n, sock_size_t *num_read)
 {
     DWORD nFlags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_READV);
@@ -1171,7 +1171,109 @@ int sock_readv(sock_t sock, SOCK_IOV *iov, int n, int *num_read)
     return SOCK_SUCCESS;
 }
 
-int sock_write(sock_t sock, void *buf, int len, int *num_written)
+int sock_write(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_written)
+{
+    int length, num_sent, total = 0;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITE);
+    if (len < SOCKI_STREAM_PACKET_LENGTH)
+    {
+	total = send(sock->sock, buf, len, 0);
+	if (total == SOCKET_ERROR)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
+	    return GetLastSockError();
+	}
+	*num_written = total;
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
+	return SOCK_SUCCESS;
+    }
+    *num_written = 0;
+    while (len)
+    {
+	length = min(len, SOCKI_STREAM_PACKET_LENGTH);
+	num_sent = send(sock->sock, buf, length, 0);
+	if (total == SOCKET_ERROR)
+	{
+	    if (WSAGetLastError() == WSAEWOULDBLOCK)
+		total = 0;
+	    else
+	    {
+		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
+		return GetLastSockError();
+	    }
+	}
+	total += num_sent;
+	len -= num_sent;
+	buf = (char*)buf + num_sent;
+	if (num_sent < length)
+	{
+	    *num_written = total;
+	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
+	    return SOCK_SUCCESS;
+	}
+    }
+    *num_written = total;
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
+    return SOCK_SUCCESS;
+}
+
+int sock_writev(sock_t sock, SOCK_IOV *iov, int n, sock_size_t *num_written)
+{
+    int error;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITEV);
+    assert(n > 0);
+    /*
+    if (n == 0)
+    {
+	MPIU_DBG_PRINTF(("empty vector passed into sock_writev\n"));
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
+	return 0;
+    }
+    */
+    if (n>1 && iov[1].MPID_IOV_LEN > SOCKI_STREAM_PACKET_LENGTH)
+    {
+	int total = 0;
+	int i;
+	int num_sent;
+	for (i=0; i<n; i++)
+	{
+	    error = sock_write(sock, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, &num_sent);
+	    if (error != SOCK_SUCCESS)
+	    {
+		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
+		return error;
+	    }
+	    total += num_sent;
+	    if (num_sent != iov[i].MPID_IOV_LEN)
+	    {
+		*num_written = total;
+		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
+		return SOCK_SUCCESS;
+	    }
+	}
+	*num_written = total;
+    }
+    else
+    {
+	if (WSASend(sock->sock, iov, n, num_written, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
+	{
+	    if (WSAGetLastError() != WSAEWOULDBLOCK)
+	    {
+		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
+		return SOCKET_ERROR;
+	    }
+	}
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
+    return SOCK_SUCCESS;
+}
+
+#if 0
+int sock_write(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_written)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITE);
 
@@ -1181,7 +1283,7 @@ int sock_write(sock_t sock, void *buf, int len, int *num_written)
     return SOCK_SUCCESS;
 }
 
-int sock_writev(sock_t sock, SOCK_IOV *iov, int n, int *num_written)
+int sock_writev(sock_t sock, SOCK_IOV *iov, int n, sock_size_t *num_written)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WRITEV);
 
@@ -1203,11 +1305,11 @@ int sock_writev(sock_t sock, SOCK_IOV *iov, int n, int *num_written)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
     return SOCK_SUCCESS;
 }
-
+#endif
 
 /* non-blocking functions */
 
-int sock_post_read(sock_t sock, void *buf, int len, int (*rfn)(int, void*))
+int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size_t, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READ);
 
@@ -1225,7 +1327,7 @@ int sock_post_read(sock_t sock, void *buf, int len, int (*rfn)(int, void*))
     return SOCK_SUCCESS;
 }
 
-int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(int, void*))
+int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, void*))
 {
     /*int i;*/
     DWORD flags = 0;
@@ -1251,7 +1353,7 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(int, void*))
     return SOCK_SUCCESS;
 }
 
-int sock_post_write(sock_t sock, void *buf, int len, int (*wfn)(int, void*))
+int sock_post_write(sock_t sock, void *buf, sock_size_t len, int (*wfn)(sock_size_t, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_WRITE);
 
@@ -1274,7 +1376,7 @@ int sock_post_write(sock_t sock, void *buf, int len, int (*wfn)(int, void*))
     return SOCK_SUCCESS;
 }
 
-int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(int, void*))
+int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, void*))
 {
     /*int i;*/
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_WRITEV);
@@ -1322,7 +1424,7 @@ int sock_getid(sock_t sock)
     return (int)sock->sock;
 }
 
-int sock_easy_receive(sock_t sock, void *buf, int len, int *num_read)
+int sock_easy_receive(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_read)
 {
     int error;
     int n;
@@ -1349,7 +1451,7 @@ int sock_easy_receive(sock_t sock, void *buf, int len, int *num_read)
     return SOCK_SUCCESS;
 }
 
-int sock_easy_send(sock_t sock, void *buf, int len, int *num_written)
+int sock_easy_send(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_written)
 {
     int error;
     int n;

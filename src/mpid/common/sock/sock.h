@@ -35,7 +35,6 @@ CPLUSPLUS_BEGIN
  */
 typedef enum sock_op
 {
-    SOCK_OP_TIMEOUT,
     SOCK_OP_READ,
     SOCK_OP_WRITE,
     SOCK_OP_ACCEPT,
