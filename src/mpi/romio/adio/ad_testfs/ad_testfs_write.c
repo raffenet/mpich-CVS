@@ -36,4 +36,9 @@ void ADIOI_TESTFS_WriteStrided(ADIO_File fd, void *buf, int count,
     MPI_Comm_rank(fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_WriteStrided called on %s\n", 
 	    myrank, nprocs, fd->filename);
+    FPRINTF(stdout, "[%d/%d] calling ADIOI_GEN_WriteStrided\n", 
+	    myrank, nprocs);
+
+    ADIOI_GEN_WriteStrided(fd, buf, count, datatype, file_ptr_type, offset, 
+			   status, error_code);
 }

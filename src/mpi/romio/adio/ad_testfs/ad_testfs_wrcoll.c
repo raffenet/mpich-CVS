@@ -21,4 +21,9 @@ void ADIOI_TESTFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
     MPI_Comm_rank(fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_WriteStridedColl called on %s\n", 
 	    myrank, nprocs, fd->filename);
+    FPRINTF(stdout, "[%d/%d] calling ADIOI_GEN_WriteStridedColl\n", 
+	    myrank, nprocs);
+
+    ADIOI_GEN_WriteStridedColl(fd, buf, count, datatype, file_ptr_type,
+			       offset, status, error_code);
 }
