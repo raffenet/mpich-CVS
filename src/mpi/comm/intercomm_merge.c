@@ -234,13 +234,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
         
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!newcomm_ptr) {
-	MPIR_Nest_decr();
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_ERR_CHKANDJUMP(!newcomm_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
 
     new_size = comm_ptr->local_size + comm_ptr->remote_size;
     MPIU_Object_set_ref( newcomm_ptr, 1 );
@@ -284,14 +278,10 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
        have a valid (almost - see comm_create_hook) communicator.
     */
     /* printf( "About to get context id \n" ); fflush( stdout ); */
-    new_context_id = MPIR_Get_contextid( newcomm_ptr->handle );
-    /* --BEGIN ERROR HANDLING-- */
-    if (new_context_id == 0) {
-	MPIR_Nest_decr();
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    new_context_id = MPIR_Get_contextid( newcomm_ptr );
+    MPIU_ERR_CHKANDJUMP(new_context_id == 0,mpi_errno,MPI_ERR_OTHER,
+			"**toomanycomm" );
+
     /* printf( "Resetting contextid\n" ); fflush( stdout ); */
     newcomm_ptr->context_id = new_context_id;
 
@@ -308,7 +298,8 @@ fn_fail:
 #ifdef HAVE_ERROR_HANDLING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", intercomm, high, newintracomm);
+	"**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", 
+				     intercomm, high, newintracomm);
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -312,7 +312,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
      */
     DEBUG(printf( "About to get contextid (commsize=%d) on %d\n",
 		  comm_ptr->local_size, comm_ptr->rank ));
-    context_id = MPIR_Get_contextid( local_comm );
+    context_id = MPIR_Get_contextid( comm_ptr );
     /* --BEGIN ERROR HANDLING-- */
     if (context_id == 0)
     {

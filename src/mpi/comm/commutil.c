@@ -71,7 +71,7 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
        use the appropriate algorithm to get a new context id */
     newptr->context_id = new_context_id = 
-	MPIR_Get_contextid( oldcomm_ptr->handle );
+	MPIR_Get_contextid( oldcomm_ptr );
     newptr->attributes = 0;
     /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
@@ -145,15 +145,16 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     return 0;
 }
 /*
- * Here is the routine to find a new context id.  The algorithm is discussed 
+ * Here are the routines to find a new context id.  The algorithm is discussed 
  * in detail in the mpich2 coding document.  There are versions for
- * single threaded and multithreaded MPI (only single threaded implemented
- * so far).
+ * single threaded and multithreaded MPI.
  * 
  * These assume that int is 32 bits; they should use uint_32 instead, 
- * and an MPI_UINT32 type.
+ * and an MPI_UINT32 type (should be able to use MPI_INTEGER4)
  */
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
+
+/* Both the threaded and non-threaded routines use the same mask of available
+   context id values. */
 #define MAX_CONTEXT_MASK 32
 static unsigned int context_mask[MAX_CONTEXT_MASK];
 static int initialize_context_mask = 1;
@@ -174,54 +175,88 @@ static void MPIR_PrintContextMask( FILE *fp )
     DBG_FPRINTF( fp, "\n" );
 }
 #endif
-int MPIR_Get_contextid( MPI_Comm comm )
+
+static void MPIR_Init_contextid (void) {
+    int i;
+    for (i=1; i<MAX_CONTEXT_MASK; i++) {
+	context_mask[i] = 0xFFFFFFFF;
+    }
+    /* the first two values are already used */
+    context_mask[0] = 0xFFFFFFFC; 
+    initialize_context_mask = 0;
+}
+/* Return the context id corresponding to the first set bit in the mask.
+   Return 0 if no bit found */
+static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
+    int i, j, context_id = 0;
+    for (i=0; i<MAX_CONTEXT_MASK; i++) {
+	if (local_mask[i]) {
+	    /* There is a bit set in this word. */
+	    register unsigned int val, nval;
+	    /* The following code finds the highest set bit by recursively
+	       checking the top half of a subword for a bit, and incrementing
+	       the bit location by the number of bit of the lower sub word if 
+	       the high subword contains a set bit.  The assumption is that
+	       full-word bitwise operations and compares against zero are 
+	       fast */
+	    val = local_mask[i];
+	    j   = 0;
+	    nval = val & 0xFFFF0000;
+	    if (nval) {
+		j += 16;
+		val = nval;
+	    }
+	    nval = val & 0xFF00FF00;
+	    if (nval) {
+		j += 8;
+		val = nval;
+	    }
+	    nval = val & 0xF0F0F0F0;
+	    if (nval) {
+		j += 4;
+		val = nval;
+	    }
+	    nval = val & 0xCCCCCCCC;
+	    if (nval) {
+		j += 2;
+		val = nval;
+	    }
+	    if (val & 0xAAAAAAAA) { 
+		j += 1;
+	    }
+	    context_mask[i] &= ~(1<<j);
+	    context_id = 4 * (32 * i + j);
+#ifdef MPICH_DEBUG_INTERNAL
+	    if (MPIR_IDebug("context")) {
+		DBG_FPRINTF( stderr, "allocating contextid = %d\n", context_id ); 
+		DBG_FPRINTF( stderr, "(mask[%d], bit %d\n", i, j );
+	    }
+#endif
+	    return context_id;
+	}
+    }
+    return 0;
+}
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
+/* Unthreaded (only one MPI call active at any time) */
+
+int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
     int i, j, context_id = 0;
-    unsigned int mask;
     unsigned int local_mask[MAX_CONTEXT_MASK];
 
     if (initialize_context_mask) {
-	for (i=1; i<MAX_CONTEXT_MASK; i++) {
-	    context_mask[i] = 0xFFFFFFFF;
-	}
-	/* the first two values are already used */
-	context_mask[0] = 0xFFFFFFFC; 
-	initialize_context_mask = 0;
+	MPIR_Init_contextid();
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
     MPIR_Nest_incr();
     /* Comm must be an intracommunicator */
     NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
-		    MPI_BAND, comm );
+		    MPI_BAND, comm_ptr->handle );
     MPIR_Nest_decr();
-    
-    for (i=0; i<MAX_CONTEXT_MASK; i++) {
-	if (local_mask[i]) {
-	    /* There is a bit set in this word */
-	    mask = 0x00000001;
-	    /* This is a simple sequential search. */
-	    /* FIXME: We can make this faster on many systems
-	       by using either operations on chars first (to look for 
-	       the first byte with bits set) or by using explicit masks
-	       like 0x00FF0000 to find the byte with the first bit set
-	       (or even nibble (four bits) */
-	    for (j=0; j<32; j++) {
-		if (mask & local_mask[i]) {
-		    /* Found the leading set bit */
-		    context_mask[i] &= ~mask;
-		    context_id = 4 * (32 * i + j);
-#ifdef MPICH_DEBUG_INTERNAL
-		    if (MPIR_IDebug("context")) {
-			DBG_FPRINTF( stderr, "allocating contextid = %d\n", context_id ); 
-			DBG_FPRINTF( stderr, "(mask[%d], bit %d\n", i, j );
-		    }
-#endif
-		    return context_id;
-		}
-		mask <<= 1;
-	    }
-	}
-    }
+
+    context_id = MPIR_Find_context_bit( local_mask );
+
     /* return 0 if no context id found.  The calling routine should 
        check for this and generate the appropriate error code */
 #ifdef MPICH_DEBUG_INTERNAL
@@ -246,7 +281,14 @@ void MPIR_Free_contextid( int context_id )
 		    "In MPIR_Free_contextid, idx is out of range" );
     }
     /* --END ERROR HANDLING-- */
+    /* This update must be done atomically in the multithreaded case */
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
     context_mask[idx] |= (0x1 << bitpos);
+#else
+    MPID_Common_thread_lock();
+    context_mask[idx] |= (0x1 << bitpos);
+    MPID_Common_thread_unlock();
+#endif
 
 #ifdef MPICH_DEBUG_INTERNAL
     if (MPIR_IDebug("context")) {
@@ -255,6 +297,72 @@ void MPIR_Free_contextid( int context_id )
     }
 #endif
 }
+#else
+/* Additional values needed to maintain thread safety */
+static volatile int mask_in_use = 0;
+/* lowestContextId is used to break ties when multiple threads
+   are contending for the mask */
+#define MPIR_MAXID (1 < 30)
+static volatile int lowestContextId = MPIR_MAXID;
+
+int MPIR_Get_contextid( MPID_Comm *comm_ptr )
+{
+    int          i, j, context_id = 0;
+    unsigned int local_mask[MAX_CONTEXT_MASK];
+    int          own_mask = 0;
+
+    /* We lock only around access to the mask.  If another thread is
+       using the mask, we take a mask of zero */
+    while (context_id == 0) {
+	MPID_Common_thread_lock();
+	if (initialize_context_mask) {
+	    MPIR_Init_contextid();
+	}
+	if (mask_in_use || comm_ptr->context_id > lowestContextId) {
+	    memset( local_mask, 0, MAX_CONTEXT_MASK * sizeof(int) );
+	    if (comm_ptr->context_id < lowestContextId) {
+		lowestContextId = comm_ptr->context_id;
+	    }
+	}
+	else {
+	    memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
+	    mask_in_use     = 1;
+	    own_mask        = 1;
+	    lowestContextId = comm_ptr->context_id;
+	}
+	MPID_Common_thread_unlock();
+	
+	/* Now, try to get a context id */
+	MPIR_Nest_incr();
+	/* Comm must be an intracommunicator */
+	NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
+			MPI_BAND, commptr->handle );
+	MPIR_Nest_decr();
+
+	if (own_mask) {
+	    /* There is a chance that we've found a context id */
+	    MPID_Common_thread_lock();
+	    /* Find_context_bit updates the context array if it finds a match */
+	    context_id = MPIR_Find_context_bit( local_mask );
+	    if (context_id > 0) {
+		/* If we were the lowest context id, reset the value to
+		   allow the other threads to compete for the mask */
+		if (lowestContextId == comm_ptr->context_id) {
+		    lowestContextId = MPIR_MAXID;
+		    /* Else leave it alone; there is another thread waiting */
+		}
+	    }
+	    /* else we did not find a context id. Give up the mask in case
+	       there is another thread (with a lower context id) waiting for
+	       it */
+	    mask_in_use = 0;
+	    MPID_Common_thread_unlock();
+	}
+    }
+
+    return context_id;
+}
+#endif
 
 /* Get a context for a new intercomm.  There are two approaches 
    here (for MPI-1 codes only)
@@ -273,7 +381,10 @@ void MPIR_Free_contextid( int context_id )
    each group of processes can manage their context ids separately.
 */
 /* FIXME : This approach for intercomm context will not work for MPI-2
-*/
+ *
+ * This uses the thread-safe (if necessary) routine to get a context id
+ * and does not need its own thread-safe version.
+ */
 int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 {
     int context_id, remote_context_id, final_context_id;
@@ -290,7 +401,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 
     /*printf( "local comm size is %d and intercomm local size is %d\n",
       comm_ptr->local_comm->local_size, comm_ptr->local_size );*/
-    context_id = MPIR_Get_contextid( comm_ptr->local_comm->handle );
+    context_id = MPIR_Get_contextid( comm_ptr->local_comm );
     if (context_id == 0) return 0;
 
     /* MPIC routine uses an internal context id.  The local leads (process 0)
@@ -326,14 +437,6 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
     /* printf( "intercomm context = %d\n", final_context_id ); */
     return final_context_id;
 }
-#else
-int MPIR_Get_contextid( MPI_Comm comm )
-{
-    /* FIXME : Not yet implemented.  See the MPICH 2 document for the 
-       thread-safe algorithm. */
-    return 0;
-}
-#endif
 
 /*
  * Copy a communicator, including creating a new context and copying the
@@ -359,7 +462,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 	new_context_id = MPIR_Get_intercomm_contextid( comm_ptr );
     }
     else {
-	new_context_id = MPIR_Get_contextid( comm_ptr->handle );
+	new_context_id = MPIR_Get_contextid( comm_ptr );
     }
     /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {

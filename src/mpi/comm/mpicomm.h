@@ -6,7 +6,7 @@
  */
 
 /* Function prototypes for communicator helper functions */
-int MPIR_Get_contextid( MPI_Comm );
+int MPIR_Get_contextid( MPID_Comm * );
 int MPIR_Get_intercomm_contextid( MPID_Comm * );
 void MPIR_Free_contextid( int );
 
