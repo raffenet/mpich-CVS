@@ -30,8 +30,7 @@
 
   MPID objects are not opaque.
 
-  Question:
-  Should they be?  More precisely, should some of them be?  
+  Question: Should they be?  More precisely, should some of them be?  
   For example, should 'MPID_List *' really be 'MPID_List_t', 
   with something like\:
 .vb
@@ -183,7 +182,7 @@ typedef struct {
     MPID_Copy_function   copyfn;
     MPID_Delete_function delfn;
   /* other, device-specific information */
-}MPID_Keyval;
+} MPID_Keyval;
 
 /*S
   MPID_Attribute - Structure of an MPID attribute
@@ -199,10 +198,13 @@ typedef struct {
   but even then, there would be no reference count on the individual
   attributes.)
  
+  A pointer to the keyval, rather than the (integer) keyval itself is
+  used since there is no need within the attribute structure to make
+  it any harder to find the keyval structure.
+ 
   Module:
   Attribute
 
-  Question: Do we want the keyval or a pointer to the keyval data?
  S*/
 typedef struct {
     void *      value;              /* Stored value */

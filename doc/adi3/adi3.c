@@ -607,6 +607,12 @@ void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val,
 /*@
   MPID_Attr_predefined - Return the value of a predefined attribute
 
+  Notes: 
+  This is the wrong interface.  Each subsystem should provide the values
+  separately.  Question: is it better just to include these values as
+  part of the PerProcess block?  Then there is no need for this routine,
+  and each system would just access the PerProcess block directly.
+
   Input Parameter:
 . keyval - A predefined keyval (the C version).  Note that these are part of 
   'mpi.h', and thus are known to the device.
@@ -2350,7 +2356,8 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
 + argc_p - Pointer to the argument count
 . argv_p - Pointer to the argument list
 - requested - Requested level of thread support.  Values are the same as
-  for the 'required' argument to 'MPI_Init_thread'.
+  for the 'required' argument to 'MPI_Init_thread', except that we define
+  an enum for these values.
 
   Output Parameter:
 + provided - Provided level of thread support.  May be less than the 
@@ -2410,8 +2417,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   Module:
   MPID_CORE
 
-   Questions:
-  Should the thread support value be an enum type instead of an int?
+  Questions:
 
   Do we require that the startup environment (e.g., whatever 'mpiexec' is 
   using to start processes) is responsible for delivering
@@ -2469,7 +2475,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   MPI implementation should abort only the affected process, not all processes.
   @*/
 int MPID_Init( int *argc_p, char *(*argv_p)[], 
-	       int requested, int *provided,
+	       MPID_Thread_level_t requested, MPID_Thread_level_t *provided,
 	       MPID_Group **parent_group, int *has_args, int *has_env )
 {
 }
@@ -3181,7 +3187,7 @@ MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *prev )
 }
 
 /*@
-  MPID_Info_delete - Remote a kev/value pair from a info list
+  MPID_Info_delete - Remote a key/value pair from a info list
 
   Input Parameters:
 + info - Info list to search
