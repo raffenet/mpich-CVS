@@ -3,3 +3,4 @@ Makefile
 *.o
 cpi
 test1
+test2

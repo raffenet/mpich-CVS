@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 #else
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
@@ -47,6 +48,9 @@
 #endif
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
 #endif
 #endif
 
@@ -733,6 +737,7 @@ typedef struct MPID_Win {
     MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
     MPID_Group *post_group_ptr; /* group passed in MPI_Win_post */
     MPI_Comm    comm;         /* communicator of window (dup) */
+    pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
 #ifdef MPID_DEV_WIN_DECL
@@ -1319,6 +1324,7 @@ int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int,
 int MPID_Win_free(MPID_Win **); 
 int MPID_Win_wait(MPID_Win *win_ptr);
 int MPID_Win_complete(MPID_Win *win_ptr);
+int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
 
 void MPID_Progress_start(void);
 void MPID_Progress_end(void);

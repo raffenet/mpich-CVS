@@ -92,8 +92,7 @@ int MPI_Win_post(MPI_Group group, int assert, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    win_ptr->post_group_ptr = group_ptr;
-    MPIU_Object_add_ref( group_ptr );
+    MPID_Win_post(group_ptr, assert, win_ptr);
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_POST);
     return MPI_SUCCESS;

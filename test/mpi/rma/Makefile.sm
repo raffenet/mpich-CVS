@@ -9,4 +9,4 @@ cpi_SOURCES = cpi.c
 cpi_LDADD = -lm
 test1_SOURCES = test1.c
 test2_SOURCES = test2.c
-
+test2_LDADD = -lpthread
