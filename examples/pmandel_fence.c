@@ -68,7 +68,7 @@ void read_mand_args(int argc, char *argv[], int *o_max_iterations,
 		    double *o_julia_real_x, double *o_julia_imaginary_y,
 		    double *o_divergent_limit, int *o_alternate,
 		    char *filename, int *num_colors, int *use_stdin,
-		    int *save_image);
+		    int *save_image, int *use_datatypes);
 void check_mand_params(int *m_max_iterations,
 		       int *m_pixels_across, int *m_pixels_down,
 		       double *m_x_min, double *m_x_max,
@@ -166,6 +166,7 @@ int main(int argc, char *argv[])
     MPI_Win win;
     int error;
     int done;
+    int use_datatypes = 1;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
 	read_mand_args(argc, argv, &imax_iterations, &ipixels_across, &ipixels_down,
 	    &x_min, &x_max, &y_min, &y_max, &julia, &julia_constant.real,
 	    &julia_constant.imaginary, &divergent_limit,
-	    &alternate_equation, filename, &num_colors, &use_stdin, &save_image);
+	    &alternate_equation, filename, &num_colors, &use_stdin, &save_image, &use_datatypes);
 	check_mand_params(&imax_iterations, &ipixels_across, &ipixels_down,
 	    &x_min, &x_max, &y_min, &y_max, &divergent_limit);
 
@@ -207,6 +208,7 @@ int main(int argc, char *argv[])
 	MPI_Bcast(&julia_constant.real, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&julia_constant.imaginary, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&alternate_equation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&use_datatypes, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
     else
     {
@@ -219,6 +221,7 @@ int main(int argc, char *argv[])
 	MPI_Bcast(&julia_constant.real, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&julia_constant.imaginary, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&alternate_equation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&use_datatypes, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
 
     if (myid == 0)
@@ -499,7 +502,7 @@ int main(int argc, char *argv[])
 		printf("fence failed, error %d\n", error);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
-	    /* hand done work */
+	    /* hand out "done" work */
 	    for (i=1; i<numprocs; i++)
 	    {
 		work[(i*5)+0] = 0;
@@ -535,6 +538,8 @@ int main(int argc, char *argv[])
     }
     else
     {
+	MPI_Datatype dtype;
+
 	error = MPI_Win_create(work, 5*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 	if (error != MPI_SUCCESS)
 	{
@@ -578,6 +583,17 @@ int main(int argc, char *argv[])
 		jmin = work[3];
 		jmax = work[4];
 
+		if (use_datatypes)
+		{
+		    MPI_Type_vector(jmax - jmin + 1, /* rows */
+			imax - imin + 1, /* column width */
+			ipixels_across, /* stride, distance between rows */
+			MPI_INT,
+			&dtype);
+		    MPI_Type_commit(&dtype);
+		    k = 0;
+		}
+
 		for (j=jmin; j<=jmax; ++j)
 		{
 		    coord_point.imaginary = y_max - j*y_resolution; /* go top to bottom */
@@ -609,14 +625,25 @@ int main(int argc, char *argv[])
 			    /* mandelbrot eq: z = z^2 + c, z_0 = c, c = grid coordinate */
 			    icount = single_mandelbrot_point(coord_point, coord_point, imax_iterations, divergent_limit);
 			}
-			grid_array[(j*ipixels_across) + i] = icount;
-			error = MPI_Put(&grid_array[(j*ipixels_across) + i], 1, MPI_INT, 0, (j * ipixels_across) + i, 1, MPI_INT, win);
-			if (error != MPI_SUCCESS)
+			if (use_datatypes)
 			{
-			    printf("put failed, error %d\n", error);
-			    MPI_Abort(MPI_COMM_WORLD, -1);
+			    grid_array[k++] = icount;
+			}
+			else
+			{
+			    grid_array[(j*ipixels_across) + i] = icount;
+			    error = MPI_Put(&grid_array[(j*ipixels_across) + i], 1, MPI_INT, 0, (j * ipixels_across) + i, 1, MPI_INT, win);
+			    if (error != MPI_SUCCESS)
+			    {
+				printf("put failed, error %d\n", error);
+				MPI_Abort(MPI_COMM_WORLD, -1);
+			    }
 			}
 		    }
+		}
+		if (use_datatypes)
+		{
+		    MPI_Put(grid_array, k, MPI_INT, 0, (jmin * ipixels_across) + imin, 1, dtype, win);
 		}
 		/* synch with the root */
 		error = MPI_Win_fence(0, win);
@@ -624,6 +651,10 @@ int main(int argc, char *argv[])
 		{
 		    printf("fence failed, error %d\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
+		if (use_datatypes)
+		{
+		    MPI_Type_free(&dtype);
 		}
 		/* fence while the root writes to the visualizer. */
 		error = MPI_Win_fence(0, win);
@@ -685,7 +716,7 @@ int main(int argc, char *argv[])
 void PrintUsage()
 {
     printf("usage: mpiexec -n x pmandel [options]\n");
-    printf("options:\n -xmin # -xmax #\n -ymin # -ymax #\n -depth #\n -xscale # -yscale #\n -out filename\n -i\n");
+    printf("options:\n -xmin # -xmax #\n -ymin # -ymax #\n -depth #\n -xscale # -yscale #\n -out filename\n -i\n -nodtypes or -many_puts\n");
     printf("All options are optional.\n");
     printf("-i will allow you to input the min/max parameters from stdin and output the resulting image to a ppm file.");
     printf("  Otherwise the root process will listen for a separate visualizer program to connect to it.\n");
@@ -899,7 +930,7 @@ void read_mand_args(int argc, char *argv[], int *o_max_iterations,
 		    double *o_julia_real_x, double *o_julia_imaginary_y,
 		    double *o_divergent_limit, int *o_alternate,
 		    char *filename, int *o_num_colors, int *use_stdin,
-		    int *save_image)
+		    int *save_image, int *use_datatypes)
 {	
     int i;
 
@@ -919,6 +950,7 @@ void read_mand_args(int argc, char *argv[], int *o_max_iterations,
     *o_num_colors = IDEAL_ITERATIONS;
     *use_stdin = 0; /* default is to listen for a controller */
     *save_image = NOVALUE;
+    *use_datatypes = 1;
 
     *o_julia = 0; /* default is "generate Mandelbrot" */
     *o_alternate = 0; /* default is still "generate Mandelbrot" */
@@ -962,6 +994,10 @@ void read_mand_args(int argc, char *argv[], int *o_max_iterations,
 	    sscanf(argv[i+1], "%d", &*o_num_colors);
 	else if (strcmp(argv[i], "-i\0") == 0)
 	    *use_stdin = 1;
+	else if (strcmp(argv[i], "-nodtypes\0") == 0)
+	    *use_datatypes = 0;
+	else if (strcmp(argv[i], "-many_puts\0") == 0)
+	    *use_datatypes = 0;
 	else if (strcmp(argv[i], "-save\0") == 0)
 	    *save_image = 1;
 	else if (strcmp(argv[i], "-nosave\0") == 0)
