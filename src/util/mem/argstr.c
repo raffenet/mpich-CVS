@@ -513,7 +513,7 @@ int MPIU_Str_add_string(char *str, int maxlen, const char *val)
 {
     int num_chars;
 
-    if (strstr(val, " ") || val[0] == MPIU_STR_QUOTE_CHAR)
+    if (strchr(val, ' ') || strchr(val, MPIU_STR_QUOTE_CHAR) || strchr(val, MPIU_STR_DELIM_CHAR))
     {
 	num_chars = quoted_printf(str, maxlen, val);
 	if (num_chars == maxlen)
