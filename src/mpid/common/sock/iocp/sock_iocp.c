@@ -551,6 +551,52 @@ static inline int post_next_accept(sock_state_t * listen_state)
 
 static BlockAllocator g_StateAllocator;
 
+SOCKET socki_get_handle(sock_t sock)
+{
+    if (sock != NULL)
+	return sock->sock;
+    return INVALID_SOCKET;
+}
+
+int socki_sock_from_socket(sock_set_t set, SOCKET sock_fd, void *user_ptr, sock_t *sock_ptr)
+{
+    int ret_val;
+    sock_state_t *sock_state;
+    u_long optval;
+    MPIDI_STATE_DECL(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+
+    /* setup the structures */
+    sock_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
+    init_state_struct(sock_state);
+    sock_state->sock = sock_fd;
+
+    /* set the socket to non-blocking */
+    optval = TRUE;
+    ioctlsocket(sock_state->sock, FIONBIO, &optval);
+
+    sock_state->user_ptr = user_ptr;
+    sock_state->type = SOCK_SOCKET;
+    sock_state->state = 0;
+    sock_state->set = set;
+
+    /* associate the socket with the completion port */
+    printf("CreateIOCompletionPort(%d, %p, %p, %d)\n", sock_state->sock, set, sock_state, g_num_cp_threads);fflush(stdout);
+    if (CreateIoCompletionPort((HANDLE)sock_state->sock, set, (ULONG_PTR)sock_state, g_num_cp_threads) == NULL)
+    {
+	ret_val = WinToSockError(GetLastError());
+	MPIU_Error_printf("CreateIOCompletionPort failed, error %d\n", GetLastError());
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+	return ret_val;
+    }
+
+    *sock_ptr = sock_state;
+
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
+    return SOCK_SUCCESS;
+}
+
 int sock_init()
 {
     char *szNum;
@@ -617,13 +663,8 @@ int sock_destroy_set(sock_set_t set)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_DESTROY_SET);
     b = CloseHandle(set);
-    if (b == TRUE)
-    {
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_DESTROY_SET);
-	return SOCK_SUCCESS;
-    }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_DESTROY_SET);
-    return SOCK_FAIL;
+    return (b == TRUE) ? SOCK_SUCCESS : SOCK_FAIL;
 }
 
 static int listening = 0;

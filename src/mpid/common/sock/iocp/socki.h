@@ -21,6 +21,8 @@ typedef int sock_size_t;
 
 int Sock_describe_timer_states();
 int Socki_describe_timer_states();
+SOCKET socki_get_handle(sock_t sock);
+int socki_sock_from_socket(sock_set_t set, SOCKET sock_fd, void *user_ptr, sock_t *sock_ptr);
 
 #define SOCKI_STATE_LIST \
 MPID_STATE_SOCK_EASY_RECEIVE, \
