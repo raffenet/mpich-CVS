@@ -55,7 +55,6 @@ dnl found.  The braces around the second test are essential.
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 # clock_gettime is the POSIX gettimeofday
 # gethrtime is the Solaris high-resolution timer
-AC_CHECK_FUNCS(clock_gettime clock_getres gethrtime gettimeofday)
 dnl
 dnl Specific checks that a function works correctly
 dnl
@@ -82,6 +81,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     ],timer_type=$enable_timer_type)
 dnl
 if test -z "$timer_type" ; then 
+    AC_CHECK_FUNCS(clock_gettime clock_getres gethrtime gettimeofday)
     if test "$ac_cv_func_gethrtime" = "yes" ; then
         timer_type=gethrtime
     elif test "$ac_cv_func_clock_gettime" = "yes" ; then
@@ -98,13 +98,33 @@ dnl Check for valid timer and select datatypes for the time stamp
 case "$timer_type" in
     gethrtime)
     MPID_TIMER_TYPE=hrtime_t
+    AC_CHECK_FUNC(gethrtime,,[
+         AC_MSG_ERROR([Requested timer gethrtime is not available])
+])
     ;;
     gettime)
+    AC_CHECK_FUNCS(clock_gettime clock_getres)
     MPID_TIMER_TYPE="struct timespec"
+    # FreeBSD 4.3 incorrectly puts the header into sys/time.h; 
+    # time.h is required (see pages 45 and 46 in the POSIX standard).
+    # See if we can compile
+    AC_CACHE_CHECK([for CLOCK_REALTIME defined in time.h],pac_cv_posix_clock_realtime,[
+    AC_TRY_COMPILE([
+#include <time.h>],[
+    clockid_t cid = CLOCK_REALTIME;],pac_cv_posix_clock_realtime=yes,
+pac_cv_posix_clock_realtime=no)])
+    if test "$pac_cv_posix_clock_realtime" = "no" ; then
+         AC_MSG_ERROR([POSIX timer requires definitions in time.h])
+    fi
     ;;
+
     gettimeofday)
     MPID_TIMER_TYPE="struct timeval"
+    AC_CHECK_FUNC(gettimeofday,,[
+         AC_MSG_ERROR([Requested timer gettimeofday is not available])
+])
     ;;
+
     linux86_cycle)
     MPID_TIMER_TYPE="long long"
     ;;
