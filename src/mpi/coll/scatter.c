@@ -63,6 +63,8 @@ PMPI_LOCAL int MPIR_Scatter (
     MPI_Comm comm, newcomm;
     MPI_Group group;
     
+    if (recvcnt == 0) return MPI_SUCCESS;
+
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;

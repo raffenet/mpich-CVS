@@ -62,6 +62,8 @@ PMPI_LOCAL int MPIR_Allgather (
         offset, tmp_mask, tree_root, position, nbytes;
     void *tmp_buf;
     MPI_Comm comm;
+
+    if (sendcount == 0) return MPI_SUCCESS;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;

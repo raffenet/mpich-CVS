@@ -75,6 +75,8 @@ PMPI_LOCAL int MPIR_Allgatherv (
     total_count = 0;
     for (i=0; i<comm_size; i++)
         total_count += recvcounts[i];
+
+    if (total_count == 0) return MPI_SUCCESS;
     
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );

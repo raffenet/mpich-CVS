@@ -60,6 +60,8 @@ int MPIR_Gather (
     MPI_Aint   extent;            /* Datatype extent */
     MPI_Comm comm;
     
+    if (sendcnt == 0) return MPI_SUCCESS;
+
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
