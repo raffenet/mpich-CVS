@@ -20,15 +20,15 @@ RM           = @RM@
 
 TARGET  = $(libbuild_dir)/drawable.jar
 PACKAGE = base.drawable
-SRC     = ColorAlpha.java Coord.java CoordPixelXform.java \
-          Topology.java Method.java \
-          TimeBoundingBox.java InfoType.java InfoValue.java \
+SRC     = ColorAlpha.java Topology.java Method.java \
+          TimeBoundingBox.java Coord.java CoordPixelXform.java \
+          InfoType.java InfoValue.java \
           Category.java CategoryWeight.java \
           DrawnBox.java DrawnBoxSet.java \
-          InfoBox.java NestingStacks.java Drawable.java \
+          InfoBox.java Drawable.java NestingStacks.java \
           Primitive.java Primitive_TwoVtx.java \
           Shadow.java Composite.java \
-          Kind.java YCoordMap.java InputAPI.java \
+          Kind.java YCoordMap.java InputAPI.java
 
 OBJ     = $(SRC:.java=.class)
 

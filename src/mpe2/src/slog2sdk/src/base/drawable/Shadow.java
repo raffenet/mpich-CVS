@@ -113,7 +113,7 @@ public class Shadow extends Primitive
         map_type2dobjs.put( prime.getCategory(), dobj_list );
 
         if ( shadow_type.getTopology().isState() ) {
-            set_nestables     = new TreeSet( Drawable.DRAWING_ORDER );
+            set_nestables     = new TreeSet( Drawable.INCRE_STARTTIME_ORDER );
             set_nestables.add( prime );
             list_childshades  = new ArrayList();
         }

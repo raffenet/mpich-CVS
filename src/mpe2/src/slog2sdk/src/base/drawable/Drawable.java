@@ -20,11 +20,19 @@ public abstract class Drawable extends InfoBox
     public  static final float      NON_NESTABLE      = 1.0f; 
     public  static final int        INVALID_ROW       = Integer.MIN_VALUE; 
 
-    public  static final Comparator DRAWING_ORDER
-                         = new IncreasingStarttimeComparator();
+    // INCRE_STARTTIME_ORDER == DRAWING_ORDER
+    public  static final Order      INCRE_STARTTIME_ORDER
+            = new Order( TimeBoundingBox.INCRE_STARTTIME_ORDER );
 
-    public  static final Comparator TRACING_ORDER
-                         = new IncreasingFinaltimeComparator();
+    // INCRE_FINALTIME_ORDER == TRACING_ORDER
+    public  static final Order      INCRE_FINALTIME_ORDER
+            = new Order( TimeBoundingBox.INCRE_FINALTIME_ORDER );
+
+    public  static final Order      DECRE_STARTTIME_ORDER
+            = new Order( TimeBoundingBox.DECRE_STARTTIME_ORDER );
+
+    public  static final Order      DECRE_FINALTIME_ORDER
+            = new Order( TimeBoundingBox.DECRE_FINALTIME_ORDER );
 
     private              double     exclusion;     // For SLOG-2 Output API
 
@@ -260,70 +268,22 @@ public abstract class Drawable extends InfoBox
         return null;
     }
 
+
+
+
+
     /*
-        This comparator to Collections.sort() will arrange Drawables
-        in increasing starttime order.  If starttimes are equals, Drawables
+        Define the Drawable.Order be an extended alias of java.util.Comparator.
+        The extension is the extra method, getTimeBoundingBoxOrder().
+
+        If the Comparator of TimeBoundingBox is INCRE_STARTTIME_ORDER,
+        this comparator to Collections.sort() will arrange drawables
+        in increasing starttime order.  If starttimes are equals, drawables
         will then be arranged in decreasing finaltime order.
 
-        Since the comparator is used in the TreeMap of class
-        logformat/slog2/input/TreeFloorList.ForeItrOfDrawables
-        where the likelihood of equal starttime is high.  In order to avoid
-        over-written of iterators due to false equivalent drawables,
-        i.e. using starttime and endtime may not be enough.  We implement
-        a very strict form of comparator for drawable for drawing order.
-    */
-    private static class IncreasingStarttimeComparator implements Comparator
-    {
-        public int compare( Object o1, Object o2 )
-        {
-            Drawable  dobj1, dobj2;
-            dobj1 = (Drawable) o1;
-            dobj2 = (Drawable) o2;
-            int dobj_time_order;
-            dobj_time_order = TimeBoundingBox.INCRE_STARTTIME_ORDER.compare(
-                                              (TimeBoundingBox) dobj1,
-                                              (TimeBoundingBox) dobj2 );
-            if ( dobj_time_order != 0 )
-                return dobj_time_order;
-            else {
-                if ( dobj1 == dobj2 )
-                    return 0;
-                else {
-                    int dobj1_typeidx, dobj2_typeidx;
-                    dobj1_typeidx = dobj1.getCategoryIndex();
-                    dobj2_typeidx = dobj2.getCategoryIndex();
-                    if ( dobj1_typeidx != dobj2_typeidx )
-                        // arbitary order
-                        return dobj1_typeidx - dobj2_typeidx;
-                    else {
-                        int        dobj1_lineID, dobj2_lineID;
-                        dobj1_lineID = dobj1.getStartVertex().lineID;
-                        dobj2_lineID = dobj2.getStartVertex().lineID;
-                        if ( dobj1_lineID != dobj2_lineID )
-                            // arbitary order
-                            return dobj1_lineID - dobj2_lineID;
-                        else {
-                            dobj1_lineID = dobj1.getFinalVertex().lineID;
-                            dobj2_lineID = dobj2.getFinalVertex().lineID;
-                            if ( dobj1_lineID != dobj2_lineID )
-                                // arbitary order
-                                return dobj1_lineID - dobj2_lineID;
-                            else {
-                                System.err.println( "IncreStarttimeComparator: "
-                                          + "WARNING! Equal Drawables?\n"
-                                          + dobj1 + "\n" + dobj2 );
-                                return 0;
-                            }   // FinalVertex's lineID
-                        }   // StartVertex's lineID
-                    }   // CategoryIndex
-                }   // direct dobjX comparison
-            }
-        }
-    }
-
-    /*
-        This comparator to Collections.sort() will arrange Drawables
-        in increasing finaltime order.  If starttimes are equals, Drawables
+        If the Comparator of TimeBoundingBox is INCRE_FINALTIME_ORDER,
+        this comparator to Collections.sort() will arrange drawables
+        in increasing finaltime order.  If starttimes are equals, drawables
         will then be arranged in decreasing starttime order.
 
         Since the comparator is used in the TreeMap of class
@@ -333,17 +293,43 @@ public abstract class Drawable extends InfoBox
         i.e. using starttime and endtime may not be enough.  We implement
         a very strict form of comparator for drawable for drawing order.
     */
-    private static class IncreasingFinaltimeComparator implements Comparator
+    public static class Order implements TimeBoundingBox.Order
     {
+        private TimeBoundingBox.Order  timebox_order;
+
+        public Order( TimeBoundingBox.Order tbox_order )
+        {
+            timebox_order = tbox_order;
+        }
+
+        public TimeBoundingBox.Order getTimeBoundingBoxOrder()
+        {
+            return timebox_order;
+        }
+
+        public boolean isIncreasingTimeOrdered()
+        {
+            return timebox_order.isIncreasingTimeOrdered();
+        }
+
+        public boolean isStartTimeOrdered()
+        {
+            return timebox_order.isStartTimeOrdered();
+        }
+
+        public String toString()
+        {
+            return "Drawable." + timebox_order.toString();
+        }
+
         public int compare( Object o1, Object o2 )
         {
             Drawable  dobj1, dobj2;
             dobj1 = (Drawable) o1;
             dobj2 = (Drawable) o2;
             int dobj_time_order;
-            dobj_time_order = TimeBoundingBox.INCRE_FINALTIME_ORDER.compare(
-                                              (TimeBoundingBox) dobj1,
-                                              (TimeBoundingBox) dobj2 );
+            dobj_time_order = timebox_order.compare( (TimeBoundingBox) dobj1,
+                                                     (TimeBoundingBox) dobj2 );
             if ( dobj_time_order != 0 )
                 return dobj_time_order;
             else {
@@ -370,7 +356,8 @@ public abstract class Drawable extends InfoBox
                                 // arbitary order
                                 return dobj1_lineID - dobj2_lineID;
                             else {
-                                System.err.println( "IncreFinaltimeComparator: "                                          + "WARNING! Equal Drawables?\n"
+                                System.err.println( "Drawable.Order: "
+                                          + "WARNING! Equal Drawables?\n"
                                           + dobj1 + "\n" + dobj2 );
                                 return 0;
                             }   // FinalVertex's lineID

@@ -161,8 +161,8 @@ public class Composite extends Drawable
     {
         int primes_length, idx;
 
-        // Save the Lists in Increasing Starttime order
-        Arrays.sort( primes, Drawable.DRAWING_ORDER );
+        // Save the Lists in Increasing Starttime order, ie drawing order.
+        Arrays.sort( primes, Drawable.INCRE_STARTTIME_ORDER );
 
         super.writeObject( outs );
 
