@@ -17,6 +17,123 @@
     MPIDI_Request_set_msg_type((_rreq), (_msg_type));		\
 }
 
+int MPIDI_CH3U_Handle_recv_pkt_rtsA(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int *found);
+int MPIDI_CH3U_Handle_recv_pkt_rtsB(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request * rreq, int found);
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Handle_recv_pkt_rtsA
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_Handle_recv_pkt_rtsA(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int *found)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
+    MPID_Request * rreq;
+
+    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
+		      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id,
+		      rts_pkt->data_sz));
+
+    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, found);
+    /* --BEGIN ERROR HANDLING-- */
+    if (rreq == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+    
+    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
+    *rreqp = rreq;
+ fn_exit:
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Handle_recv_pkt_rtsB
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_Handle_recv_pkt_rtsB(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request * rreq, int found)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
+
+    if (found)
+    {
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+	/* The channel will be performing the rendezvous */
+
+	mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, &rreq);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+					      FCNAME, __LINE__,
+					      MPI_ERR_OTHER,
+					      "**ch3|postrecv",
+					      "**ch3|postrecv %s",
+					      "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+	mpi_errno = MPIDI_CH3_do_cts(vc, rreq);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+					      FCNAME, __LINE__,
+					      MPI_ERR_OTHER,
+					      "**ch3|ctspkt", 0);
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+	
+#else
+	MPID_Request * cts_req;
+	MPIDI_CH3_Pkt_t upkt;
+	MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
+	
+	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
+
+	/* FIXME: What if the receive user buffer is not big enough to hold the data about to be cleared for sending? */
+		
+	MPIDI_DBG_PRINTF((30, FCNAME, "sending rndv CTS packet"));
+	cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
+	cts_pkt->sender_req_id = rts_pkt->sender_req_id;
+	cts_pkt->receiver_req_id = rreq->handle;
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**ch3|ctspkt", 0);
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+	if (cts_req != NULL)
+	{
+	    MPID_Request_release(cts_req);
+	}
+#endif
+    }
+    else
+    {
+	MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
+	MPID_Request_initialized_set(rreq);
+
+	/*
+	 * A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
+	 *
+	 * FIXME: This will cause MPID_Progress_wait() to return to the MPI layer each time an unexpected RTS packet is
+	 * received.  MPID_Probe() should atomically increment a counter and MPIDI_CH3_Progress_signal_completion()
+	 * should only be called if that counter is greater than zero.
+	 */
+	MPIDI_CH3_Progress_signal_completion();
+    }
+ fn_exit:
+    return mpi_errno;
+}
+
 /*
  * MPIDI_CH3U_Handle_recv_pkt()
  *
@@ -40,7 +157,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 #define FUNCNAME MPIDI_CH3U_Handle_unordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count)
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
@@ -173,7 +290,7 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, M
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count)
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
 {
     int type_size;
     static int in_routine = FALSE;
@@ -369,108 +486,21 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	
 	case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
 	{
-	    MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
 	    MPID_Request * rreq;
 	    int found;
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-	    int i;
-#endif
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
-			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id,
-			      rts_pkt->data_sz));
-	    
-	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rreq == NULL)
+	    mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsA(vc, pkt, &rreq, &found);
+	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		goto fn_exit;
 	    }
-	    /* --END ERROR HANDLING-- */
 
-	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-	    for (i=0; i<rdma_iov_count; i++)
+	    mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsB(vc, pkt, rreq, found);
+	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		rreq->dev.rdma_iov[i].MPID_IOV_BUF = rdma_iov[i].MPID_IOV_BUF;
-		rreq->dev.rdma_iov[i].MPID_IOV_LEN = rdma_iov[i].MPID_IOV_LEN;
-	    }
-	    rreq->dev.rdma_iov_count = rdma_iov_count;
-#endif
-
-	    if (found)
-	    {
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-		/* The channel will be performing the rendezvous */
-
-		mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, &rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-						      FCNAME, __LINE__,
-						      MPI_ERR_OTHER,
-						      "**ch3|postrecv",
-						      "**ch3|postrecv %s",
-						      "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-		mpi_errno = MPIDI_CH3_do_cts(vc, rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-						      FCNAME, __LINE__,
-						      MPI_ERR_OTHER,
-						      "**ch3|ctspkt", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-
-#else
-		MPID_Request * cts_req;
-		MPIDI_CH3_Pkt_t upkt;
-		MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt =
-		    &upkt.rndv_clr_to_send;
-		
-		MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
-
-		/* FIXME: What if the receive user buffer is not big enough to hold the data about to be cleared for sending? */
-		
-		MPIDI_DBG_PRINTF((30, FCNAME, "sending rndv CTS packet"));
-		cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
-		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
-		cts_pkt->receiver_req_id = rreq->handle;
-		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|ctspkt", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-		if (cts_req != NULL)
-		{
-		    MPID_Request_release(cts_req);
-		}
-#endif
-	    }
-	    else
-	    {
-		MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
-		MPID_Request_initialized_set(rreq);
-		
-		/*
-		 * A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
-		 *
-		 * FIXME: This will cause MPID_Progress_wait() to return to the MPI layer each time an unexpected RTS packet is
-		 * received.  MPID_Probe() should atomically increment a counter and MPIDI_CH3_Progress_signal_completion()
-		 * should only be called if that counter is greater than zero.
-		 */
-                MPIDI_CH3_Progress_signal_completion();
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		goto fn_exit;
 	    }
 
 	    *rreqp = NULL;

@@ -117,7 +117,7 @@ struct MPIDI_CH3I_Request						\
 									\
     struct MPID_Request *req;						\
 									\
-    int riov_offset;							\
+    int riov_offset, siov_offset;      					\
     int reload_state;							\
     ibu_mem_t local_iov_mem[MPID_IOV_LIMIT];                            \
     ibu_mem_t remote_iov_mem[MPID_IOV_LIMIT];                           \

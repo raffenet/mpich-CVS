@@ -15,8 +15,15 @@
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <errno.h>
+#ifdef USE__LLSEEK
 #include <linux/unistd.h>
 static inline _syscall5(int, _llseek, uint, fd, ulong, hi, ulong, lo, loff_t *, res, uint, wh);
+#define OFF_T loff_t
+#define OFF_T_CAST(a) ((loff_t)(unsigned)(a))
+#else
+#define OFF_T off_t
+#define OFF_T_CAST(a) ((off_t)(a))
+#endif
 #endif
 
 #undef USE_SHM_WRITE_FOR_SHM_WRITEV
@@ -458,7 +465,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
     MPID_Request * reload_sreq;
 #ifndef HAVE_WINDOWS_H
     int n, status;
-    loff_t uOffset;
+    OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 
@@ -531,8 +538,13 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 		/* write is not implemented in the /proc device. It is considered a security hole.  You can recompile a Linux
 		 * kernel with this function enabled and then define HAVE_PROC_RDMA_WRITE and this code will work.
 		 */
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, (loff_t)(unsigned)rbuf, &uOffset, SEEK_SET);
-		if (n != 0 || uOffset != (loff_t)(unsigned)(rbuf))
+#ifdef USE__LLSEEK
+		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(rbuf), &uOffset, SEEK_SET);
+#else
+		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(rbuf), SEEK_SET);
+		n = 0;
+#endif
+		if (n != 0 || uOffset != OFF_T_CAST(rbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
 		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
@@ -738,7 +750,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
     MPID_Request * reload_rreq;
 #ifndef HAVE_WINDOWS_H
     int n, status;
-    loff_t uOffset;
+    OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 
@@ -809,8 +821,13 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 		    return mpi_errno;
 		}
 #else
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, (loff_t)(unsigned)sbuf, &uOffset, SEEK_SET);
-		if (n != 0 || uOffset != (loff_t)(unsigned)(sbuf))
+#ifdef USE_LLSEEK
+		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(sbuf), &uOffset, SEEK_SET);
+#else
+		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(sbuf), SEEK_SET);
+		n = 0;
+#endif
+		if (n != 0 || uOffset != OFF_T_CAST(sbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
 		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
@@ -1251,7 +1268,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		}
 		else
 		{
-		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active, NULL, 0);
+		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming packet");
@@ -1368,18 +1385,12 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    }
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_RTS_IOV_READ_REQUEST)
 		    {
+			int found;
 			/*printf("received rts iov_read.\n");fflush(stdout);*/
-			rreq = recv_vc_ptr->ch.recv_active;
 
-			/* rreq->rdma_request needs to be transferred to the request just like rdma_iov and rdma_iov_count 
-			 * But instead of adding a third parameter to MPIDI_CH3U_Handle_recv_pkt, the dev.sender_req_id field
-			 * from the rts packet is used.
-			 */
-			mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr,
-			    &recv_vc_ptr->ch.recv_active->ch.pkt,
-			    &recv_vc_ptr->ch.recv_active,
-			    recv_vc_ptr->ch.recv_active->dev.rdma_iov,
-			    recv_vc_ptr->ch.recv_active->dev.rdma_iov_count);
+			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsA(recv_vc_ptr,
+								    &recv_vc_ptr->ch.recv_active->ch.pkt,
+								    &rreq, &found);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
@@ -1388,21 +1399,33 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			    return mpi_errno;
 			}
 			/* --END ERROR HANDLING-- */
-			if (recv_vc_ptr->ch.recv_active == NULL)
+
+			for (i=0; i<recv_vc_ptr->ch.recv_active->dev.rdma_iov_count; i++)
 			{
-			    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
+			    rreq->dev.rdma_iov[i].MPID_IOV_BUF = recv_vc_ptr->ch.recv_active->dev.rdma_iov[i].MPID_IOV_BUF;
+			    rreq->dev.rdma_iov[i].MPID_IOV_LEN = recv_vc_ptr->ch.recv_active->dev.rdma_iov[i].MPID_IOV_LEN;
 			}
-			else
+			rreq->dev.rdma_iov_count = recv_vc_ptr->ch.recv_active->dev.rdma_iov_count;
+
+			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsB(recv_vc_ptr,
+								    &recv_vc_ptr->ch.recv_active->ch.pkt,
+								    rreq, found);
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
 			{
-			    mpi_errno = MPIDI_CH3I_SHM_post_readv(recv_vc_ptr, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count, NULL);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming rts(get) packet");
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+			    return mpi_errno;
 			}
-			/*
-			recv_vc_ptr->ch.recv_active = NULL;
-			recv_vc_ptr->ch.shm_reading_pkt = TRUE;
-			*/
+			/* --END ERROR HANDLING-- */
+
+			rreq = recv_vc_ptr->ch.recv_active;
 			/* free the request used to receive the rts packet and iov data */
 			MPIU_Object_set_ref(rreq, 0);
 			MPIDI_CH3_Request_destroy(rreq);
+
+			recv_vc_ptr->ch.recv_active = NULL;
+			recv_vc_ptr->ch.shm_reading_pkt = TRUE;
 		    }
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_IOV_READ_REQUEST)
 		    {

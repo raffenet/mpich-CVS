@@ -243,6 +243,10 @@ void ib_free_deregister(void *p)
 }
 
 /*
+ * Test code to track registering/deregistering memory
+ *
+ */
+#ifdef TRACK_MEMORY_REGISTRATION
 typedef struct regmem_t
 {
     void *ptr;
@@ -302,7 +306,7 @@ void remove_mem(void *p)
     }
     printf("removing pointer that was not registered: %p\n", p);fflush(stdout);
 }
-*/
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME ibu_register_memory
@@ -319,7 +323,9 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 
     MPIU_DBG_PRINTF(("entering ibu_register_memory\n"));
 
-    /*add_mem(buf);*/
+#ifdef TRACK_MEMORY_REGISTRATION
+    add_mem(buf);
+#endif
     memset(&mem, 0, sizeof(VAPI_mrw_t));
     memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
@@ -359,7 +365,9 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_DEREGISTER_MEMORY);
 
-    /*remove_mem(buf);*/
+#ifdef TRACK_MEMORY_REGISTRATION
+    remove_mem(buf);
+#endif
     status = VAPI_deregister_mr(IBU_Process.hca_handle, state->handle);
     if (status != IBU_SUCCESS)
     {
@@ -1404,7 +1412,7 @@ int post_pkt_recv(MPIDI_VC *recv_vc_ptr)
 	return mpi_errno;
     }
 
-    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active, NULL, 0);
+    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");

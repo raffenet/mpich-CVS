@@ -414,8 +414,9 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg);
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count);
-
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
+int MPIDI_CH3U_Handle_recv_pkt_rtsA(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int * found);
+int MPIDI_CH3U_Handle_recv_pkt_rtsB(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request * rreq, int found);
 
 /*E
   MPIDI_CH3U_Handle_recv_req - Process a receive request for which all of the data has been received (and copied) into the

@@ -29,11 +29,20 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
     /*
     for (i=0; i<rreq->dev.iov_count; i++)
     {
-	printf("do_cts: recv buf[%d] = %p, len = %d\n", i, rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN);
-	printf("do_cts: send buf[%d] = %p, len = %d\n", i, rreq->dev.rdma_iov[i].MPID_IOV_BUF, rreq->dev.rdma_iov[i].MPID_IOV_LEN);
+	printf("do_cts: recv buf[%d] = %p, len = %d\n",
+	       i, rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN);
+	printf("do_cts: send buf[%d] = %p, len = %d\n",
+	       i, rreq->dev.rdma_iov[i].MPID_IOV_BUF, rreq->dev.rdma_iov[i].MPID_IOV_LEN);
     }
     fflush(stdout);
     */
+    /*printf("registering the receiver's iov.\n");fflush(stdout);*/
+    for (i=0; i<rreq->dev.iov_count; i++)
+    {
+	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,
+			    rreq->dev.iov[i].MPID_IOV_LEN,
+			    &rreq->ch.local_iov_mem[i]);
+    }
     mpi_errno = MPIDI_CH3I_rdma_readv(vc, rreq);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -61,14 +70,17 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
     /*
     for (i=0; i<rreq->dev.iov_count; i++)
     {
-	printf("do_cts: recv buf[%d] = %p, len = %d\n", i, rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN);
+	printf("do_cts: recv buf[%d] = %p, len = %d\n",
+	       i, rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN);
     }
     fflush(stdout);
     */
     /*printf("registering the receiver's iov.\n");fflush(stdout);*/
     for (i=0; i<rreq->dev.iov_count; i++)
     {
-	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN, &rreq->ch.local_iov_mem[i]);
+	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,
+			    rreq->dev.iov[i].MPID_IOV_LEN,
+			    &rreq->ch.local_iov_mem[i]);
     }
     mpi_errno = MPIDI_CH3_iStartMsgv(vc, rreq->dev.rdma_iov, 3, &request_ptr);
     /* --BEGIN ERROR HANDLING-- */
@@ -83,7 +95,8 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
     /* --END ERROR HANDLING-- */
     if (request_ptr != NULL)
     {
-	/* The sender doesn't need to know when the message has been sent.  So release the request immediately */
+	/* The sender doesn't need to know when the message has been sent.
+	   So release the request immediately */
 	MPID_Request_release(request_ptr);
     }
 

@@ -14,11 +14,9 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * rts_sreq;
-#ifdef USE_SHM_RDMA_GET
-    /*int i;*/
-    MPIDI_CH3_Pkt_t pkt;
-#else
     int i;
+#ifdef USE_SHM_RDMA_GET
+    MPIDI_CH3_Pkt_t pkt;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_DO_RTS);
 
@@ -34,13 +32,23 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
     sreq->dev.rdma_iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     sreq->dev.rdma_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.iov;
     sreq->dev.rdma_iov[1].MPID_IOV_LEN = sreq->dev.iov_count * sizeof(MPID_IOV);
-    sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rts_pkt;
-    sreq->dev.rdma_iov[2].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->ch.local_iov_mem[0];
+    sreq->dev.rdma_iov[2].MPID_IOV_LEN = sreq->dev.iov_count * sizeof(ibu_mem_t);
+    sreq->dev.rdma_iov[3].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rts_pkt;
+    sreq->dev.rdma_iov[3].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 
+    /*printf("registering the sender's iov.\n");fflush(stdout);*/
+    for (i=0; i<sreq->dev.iov_count; i++)
+    {
+	ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF,
+			    sreq->dev.iov[i].MPID_IOV_LEN,
+			    &sreq->ch.local_iov_mem[i]);
+    }
     /*
     for (i=0; i<sreq->dev.iov_count; i++)
     {
-	printf("do_rts: send buf[%d] = %p, len = %d\n", i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN);
+	printf("do_rts: send buf[%d] = %p, len = %d\n",
+	       i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN);
     }
     fflush(stdout);
     */
@@ -57,7 +65,8 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
     /* --END ERROR HANDLING-- */
     if (rts_sreq != NULL)
     {
-	/* The sender doesn't need to know when the message has been sent.  So release the request immediately */
+	/* The sender doesn't need to know when the message has been sent.
+	   So release the request immediately */
 	MPID_Request_release(rts_sreq);
     }
 
@@ -66,7 +75,8 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
     /*
     for (i=0; i<sreq->dev.iov_count; i++)
     {
-	printf("do_rts: send buf[%d] = %p, len = %d\n", i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN);
+	printf("do_rts: send buf[%d] = %p, len = %d\n",
+	       i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN);
     }
     fflush(stdout);
     */
@@ -84,13 +94,16 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
     /* --END ERROR HANDLING-- */
     if (rts_sreq != NULL)
     {
-	/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+	/* The sender doesn't need to know when the packet has been sent.
+	   So release the request immediately */
 	MPID_Request_release(rts_sreq);
     }
     /*printf("registering the sender's iov.\n");fflush(stdout);*/
     for (i=0; i<sreq->dev.iov_count; i++)
     {
-	ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN, &sreq->ch.local_iov_mem[i]);
+	ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF,
+			    sreq->dev.iov[i].MPID_IOV_LEN,
+			    &sreq->ch.local_iov_mem[i]);
     }
 
 #endif

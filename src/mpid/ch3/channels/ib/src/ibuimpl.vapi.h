@@ -84,6 +84,7 @@ typedef int IBU_STATE;
 #define IBU_READING      0x0001
 #define IBU_WRITING      0x0002
 #define IBU_RDMA_WRITING 0x0004
+#define IBU_RDMA_READING 0x0008
 
 typedef struct ibu_buffer_t
 {
