@@ -14,4 +14,4 @@ bib:
 
 clean:
 	-rm -f users-guide.toc users-guide.log users-guide.dvi \
-	       users-guide.aux
+	       users-guide.aux users-guide.bbl

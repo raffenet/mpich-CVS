@@ -258,10 +258,11 @@ Using ROMIO on NFS
 
 To use ROMIO on NFS, file locking with fcntl must work correctly on
 the NFS installation. On some installations, fcntl locks don't work.
-To get them to work, you need to use Version 3 of NFS and
-have the system administrator mount the NFS file system with the 
-"noac" option (no attribute caching). Turning off attribute caching 
-may reduce performance, but it is necessary for correct behavior.
+To get them to work, you need to use Version 3 of NFS, ensure that the
+lockd daemon is running on all the machines, and have the system
+administrator mount the NFS file system with the "noac" option (no
+attribute caching). Turning off attribute caching may reduce
+performance, but it is necessary for correct behavior.
 
 The following are some instructions we received from Ian Wells of HP
 for setting the noac option on NFS. We have not tried them

@@ -36,7 +36,7 @@ Technical Memorandum No.\ 234
 
 
 \vspace{1.4in}
-Revised May 2002
+Revised May 2004
 
 \end{center}
 
@@ -405,14 +405,13 @@ will be ignored. The values of hints being used by ROMIO for a file
 can be obtained at any time via {\tt MPI\_File\_get\_info}.
 
 \subsection{Using ROMIO on NFS}
-To use ROMIO on NFS, file locking with {\tt fcntl} must work correctly on
-the NFS installation. On some installations, fcntl locks don't work.
-To get them to work, you need to use Version~3 of NFS and 
-have the system administrator mount the NFS file system with the 
-``{\tt noac}'' option (no attribute caching). Turning off attribute caching 
-may reduce performance, but it is necessary for correct behavior.  
-Some NFS server implementations also need the lockd and rpc.statd servers
-running. 
+To use ROMIO on NFS, file locking with {\tt fcntl} must work correctly
+on the NFS installation. On some installations, fcntl locks don't
+work.  To get them to work, you need to use Version~3 of NFS, ensure
+that the lockd daemon is running on all the machines, and have the system
+administrator mount the NFS file system with the ``{\tt noac}'' option
+(no attribute caching). Turning off attribute caching may reduce
+performance, but it is necessary for correct behavior.
 
 The following are some instructions we received from Ian Wells of HP
 for setting the {\tt noac} option on NFS. We have not tried them

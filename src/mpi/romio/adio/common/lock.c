@@ -83,7 +83,7 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     if (err && (errno != EBADF)) {
 	/* FIXME: This should use the error message system, 
 	   especially for MPICH2 */
-	FPRINTF(stderr, "File locking failed in ADIOI_Set_lock. If the file system is NFS, you need to use NFS version 3 and mount the directory with the 'noac' option (no attribute caching).\n");
+	FPRINTF(stderr, "File locking failed in ADIOI_Set_lock. If the file system is NFS, you need to use NFS version 3, ensure that the lockd daemon is running on all the machines, and mount the directory with the 'noac' option (no attribute caching).\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
