@@ -28,7 +28,7 @@ ADIO_Offset ADIOI_NTFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
    routine. */
 /* offset is in units of etype relative to the filetype */
 
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_GEN_SEEKINDIVIDUAL";
 #endif
     ADIO_Offset off, err;

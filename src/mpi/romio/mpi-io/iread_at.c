@@ -71,7 +71,7 @@ int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf,
                       MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_IREAD_AT";
 #endif
     int datatype_size;

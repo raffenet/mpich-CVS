@@ -45,7 +45,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
                   MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_READ";
 #endif
     int datatype_size;

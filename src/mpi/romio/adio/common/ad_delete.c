@@ -15,7 +15,7 @@
 void ADIOI_GEN_Delete(char *filename, int *error_code)
 {
     int err;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_GEN_DELETE";
 #endif
     err = unlink(filename);

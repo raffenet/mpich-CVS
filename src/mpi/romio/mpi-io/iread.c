@@ -69,7 +69,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
                    MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_IREAD";
 #endif
     int datatype_size;

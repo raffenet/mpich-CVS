@@ -40,7 +40,7 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
                          int count, MPI_Datatype datatype)
 {
     int error_code, datatype_size;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_WRITE_AT_ALL_BEGIN";
 #endif
     MPI_Status status;

@@ -12,7 +12,7 @@ void ADIOI_NTFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
 	DWORD dwTemp;
     int err;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_RESIZE";
 #endif
 

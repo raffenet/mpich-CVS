@@ -37,7 +37,7 @@ Input Parameters:
 int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 {
     int error_code=MPI_SUCCESS, tmp_whence, myrank;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SEEK_SHARED";
 #endif
     MPI_Offset curr_offset, eof_offset, tmp_offset;

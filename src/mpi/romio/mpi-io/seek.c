@@ -37,7 +37,7 @@ Input Parameters:
 int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 {
     int error_code;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SEEK";
 #endif
     MPI_Offset curr_offset, eof_offset;

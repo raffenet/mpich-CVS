@@ -10,7 +10,7 @@
 
 void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_READCOMPLETE";
 #endif
 	DWORD ret_val;

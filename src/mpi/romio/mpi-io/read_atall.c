@@ -46,7 +46,7 @@ int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf,
                          MPI_Status *status)
 {
     int error_code, datatype_size;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_IREAD_AT";
 #endif
 #ifdef MPI_hpux

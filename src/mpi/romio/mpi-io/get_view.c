@@ -44,7 +44,7 @@ Output Parameters:
 int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
 		 MPI_Datatype *filetype, char *datarep)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_GET_VIEW";
 #endif

@@ -38,7 +38,7 @@ Output Parameters:
 @*/
 int MPI_File_read_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_READ_AT_ALL_END";
 #endif

@@ -47,7 +47,7 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
                       MPI_Status *status)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_WRITE_AT";
 #endif
     int datatype_size;

@@ -42,7 +42,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 {
     ADIO_Fcntl_t *fcntl_struct;
     int filetype_size, etype_size, error_code;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_VIEW";
 #endif
     ADIO_Offset shared_fp, byte_off;

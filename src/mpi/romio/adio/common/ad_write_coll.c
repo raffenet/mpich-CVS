@@ -517,7 +517,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     MPI_Status *statuses, status;
     int *srt_len, sum;
     ADIO_Offset *srt_off;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_W_EXCHANGE_DATA";
 #endif
 

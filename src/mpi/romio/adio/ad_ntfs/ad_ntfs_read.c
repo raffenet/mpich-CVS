@@ -21,7 +21,7 @@ void ADIOI_NTFS_ReadContig(ADIO_File fd, void *buf, int count,
 	DWORD dwTemp;
 	DWORD dwNumRead = 0;
     int err=-1, datatype_size, len;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_READCONTIG";
 #endif
 

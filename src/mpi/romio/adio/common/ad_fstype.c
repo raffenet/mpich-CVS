@@ -368,7 +368,7 @@ tables in a reasonable way. -- Rob, 06/06/2001
 void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype, 
 			  ADIOI_Fns **ops, int *error_code)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_RESOLVEFILETYPE";
 #endif
     int myerrcode, file_system, min_code;

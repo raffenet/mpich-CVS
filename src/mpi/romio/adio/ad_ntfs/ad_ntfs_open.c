@@ -16,7 +16,7 @@
 void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 {
     int cmode, amode, smode;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_OPEN";
 #endif
 
@@ -78,7 +78,7 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 {
     int cmode, amode;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_OPEN";
 #endif
 

@@ -14,7 +14,7 @@
 void ADIO_Close(ADIO_File fd, int *error_code)
 {
     int i, j, k, combiner, myrank, err, is_contig;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_CLOSE";
 #endif
 

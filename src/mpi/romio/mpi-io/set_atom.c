@@ -36,7 +36,7 @@ Input Parameters:
 int MPI_File_set_atomicity(MPI_File fh, int flag)
 {
     int error_code, tmp_flag;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_ATOMICITY";
 #endif
     ADIO_Fcntl_t *fcntl_struct;

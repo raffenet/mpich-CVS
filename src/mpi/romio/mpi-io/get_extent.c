@@ -39,7 +39,7 @@ Output Parameters:
 int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, 
                              MPI_Aint *extent)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_GET_TYPE_EXTENT";
 #endif

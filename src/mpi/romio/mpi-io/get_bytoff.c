@@ -40,7 +40,7 @@ Output Parameters:
 @*/
 int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_GET_BYTE_OFFSET";
 #endif

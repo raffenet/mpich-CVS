@@ -47,7 +47,7 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 {
     int error_code;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPIO_TEST";
 #endif
 #ifdef MPI_hpux

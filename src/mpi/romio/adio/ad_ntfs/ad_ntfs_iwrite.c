@@ -19,7 +19,7 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
 {
     int len, typesize;
     int err=FALSE;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_IWRITECONTIG";
 #endif
 

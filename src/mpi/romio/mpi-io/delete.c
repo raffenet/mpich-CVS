@@ -40,7 +40,7 @@ int MPI_File_delete(char *filename, MPI_Info info)
     int flag, error_code, file_system;
     char *tmp;
     ADIOI_Fns *fsops;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_DELETE";
 #endif
 #ifdef MPI_hpux

@@ -37,7 +37,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 {
     ADIO_Fcntl_t *fcntl_struct;
     int error_code, mynod;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_PREALLOCATE";
 #endif
     MPI_Offset tmp_sz;

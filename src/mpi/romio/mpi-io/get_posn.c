@@ -39,7 +39,7 @@ Output Parameters:
 @*/
 int MPI_File_get_position(MPI_File fh, MPI_Offset *offset)
 {
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_GET_POSITION";
 #endif
