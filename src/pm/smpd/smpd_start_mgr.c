@@ -233,7 +233,10 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    else
 	    {
 		result = CreateProcess(
-		    NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &sInfo, &pInfo);
+		    NULL, cmd, NULL, NULL, TRUE,
+		    0,
+		    /*CREATE_NEW_CONSOLE,*/
+		    NULL, NULL, &sInfo, &pInfo);
 	    }
 
 	    if (result)
