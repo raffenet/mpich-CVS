@@ -25,11 +25,11 @@ There are really three modes of operation for this program:
 
     mpdcheck
         prints info about 'this' host
-        
+
     mpdcheck some_remote_hostname
         prints info about 'this' host and locatability info about the
         remote one as well
-        
+
     mpdcheck -s
         runs this program as a server on one host
     mpdcheck -c server_host server_port
@@ -79,8 +79,12 @@ print "gethostname gives ", uqhn1
 print "getfqdn gives ", fqhn1
 if uqhn1.startswith('localhost'):
     print "*** your uq hostname seems to be localhost"
+elif uqhn1 == '':
+    print "*** your uq hostname is blank"
 if fqhn1.startswith('localhost'):
     print "*** your fq hostname seems to be localhost"
+elif fqhn1 == '':
+    print "*** your fq hostname is blank"
 
 try:
     ghbnu = gethostbyname_ex(uqhn1)
