@@ -47,7 +47,7 @@ errcodes.dvi: errcodes.tex
 	latex template
 	mv template.dvi errcodes.dvi
 
-pt2ptdesc.dvi: pt2ptdesc.tex
+pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	sed -e s/@dummy@/pt2ptdesc.tex/ \
 	    -e s/@paragraph@/paragraph/g \
 	    -e s/@newparagraph@/subsection/g \
@@ -58,6 +58,8 @@ pt2ptdesc.dvi: pt2ptdesc.tex
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/relax/g \
 	    template.orig > template.tex
+	latex template
+	-bibtex template
 	latex template
 	mv template.dvi pt2ptdesc.dvi
 

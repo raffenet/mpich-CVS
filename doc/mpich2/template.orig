@@ -5,6 +5,7 @@
 \documentclass{article}
 \usepackage{psfig}
 \usepackage{/home/gropp/data/share/refman}
+\usepackage{/home/gropp/bin/share/tex/fileinclude}
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
 \usepackage{epsf}
 \usepackage{mpidoc}
@@ -23,5 +24,11 @@
 \let\@subsection@=\@newsubsection@
 \let\@section@=\@newsection@
 \input{@dummy@}
+
+\let\SaveBibliography=\thebibliography
+\def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,mpich2}
+\bibliographystyle{plain}
+
 
 \end{document}
