@@ -166,27 +166,27 @@ void MPID_Dataloop_free(struct MPID_Dataloop *dataloop);
 
 typedef struct MPID_Segment * MPID_Segment_foo; /* HACK */
 
-void MPID_Segment_pack(struct MPID_Segment *segp,
-		       int first,
-		       int *lastp,
+void MPID_Segment_pack(struct DLOOP_Segment *segp,
+		       DLOOP_Offset first,
+		       DLOOP_Offset *lastp,
 		       void *pack_buffer);
 
-void MPID_Segment_unpack(struct MPID_Segment *segp,
-			 int first,
-			 int *lastp,
+void MPID_Segment_unpack(struct DLOOP_Segment *segp,
+			 DLOOP_Offset first,
+			 DLOOP_Offset *lastp,
 			 const void * unpack_buffer);
 
-void MPID_Segment_pack_vector(struct MPID_Segment *segp,
-			      int first,
-			      int *lastp,
-			      MPID_IOV *vector,
-			      int *lengthp);
+void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
+			      DLOOP_Offset first,
+			      DLOOP_Offset *lastp,
+			      DLOOP_VECTOR *vector,
+			      DLOOP_Offset *lengthp);
 
-void MPID_Segment_unpack_vector(struct MPID_Segment *segp,
-				int first,
-				int *lastp,
-				MPID_IOV *vector,
-				int *lengthp);
+void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
+				DLOOP_Offset first,
+				DLOOP_Offset *lastp,
+				DLOOP_VECTOR *vector,
+				DLOOP_Offset *lengthp);
 
 /* misc */
 
