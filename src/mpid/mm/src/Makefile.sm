@@ -1,1 +1,1 @@
-SUBDIRS = tcp via shm viardma progress xfer bsocket mm init spawn pt2pt request util .
+SUBDIRS = common tcp via shm viardma progress xfer bsocket mm init spawn pt2pt request util .
