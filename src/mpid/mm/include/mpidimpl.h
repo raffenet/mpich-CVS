@@ -12,18 +12,21 @@
 #define MPICH_EXEC_IS_PARENT_KEY  "MPIEXECSpawned"
 
 typedef struct OpenPortNode {
-    char port_name[MPI_MAX_PORT_NAME];
-    int bfd;
+                   char  port_name[MPI_MAX_PORT_NAME];
+                    int  bfd;
     struct OpenPortNode *next;
-} OpenPortNode_t;
+} OpenPortNode;
 
-typedef struct {
-    MPID_Thread_lock_t lock;
-    char              pmi_kvsname[100];
-    MPID_Comm         *comm_parent;
-    OpenPortNode_t    *port_list;
-} MPID_PerProcess_t;
-extern MPID_PerProcess_t MPID_Process;
+typedef struct MPID_PerProcess {
+    MPID_Thread_lock_t  lock;
+       struct MPIDI_VC *active_read_vc_list;
+       struct MPIDI_VC *active_write_vc_list;
+                  char  pmi_kvsname[100];
+             MPID_Comm *comm_parent;
+          OpenPortNode *port_list;
+} MPID_PerProcess;
+
+extern MPID_PerProcess MPID_Process;
 
 typedef enum MPIDI_VC_TYPE
 {
@@ -74,16 +77,18 @@ typedef enum MM_METHOD {
 
 typedef struct MPIDI_VC
 {
-    MM_METHOD method;
-    volatile int ref_count;
-    struct MM_Car * writeq_head;
-    struct MM_Car * writeq_tail;
-    struct MM_Car * readq_head;
-    struct MM_Car * readq_tail;
-    char *pmi_kvsname; /* name of the key_value database where the remote process put its business card */
-    int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
-    int (*write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-    int (*read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+        MM_METHOD  method;
+     volatile int  ref_count;
+    struct MM_Car *writeq_head;
+    struct MM_Car *writeq_tail;
+    struct MM_Car *readq_head;
+    struct MM_Car *readq_tail;
+             char *pmi_kvsname; /* name of the key_value database where the remote process put its business card */
+              int  rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
+              int (*write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+              int (*read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+  struct MPIDI_VC *read_next_ptr;
+  struct MPIDI_VC *write_next_ptr;
 } MPIDI_VC;
 
 typedef struct MPIDI_VCRT

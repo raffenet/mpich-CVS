@@ -8,7 +8,7 @@
 #include "mpidimpl.h"
 #include "pmi.h"
 
-MPID_PerProcess_t MPID_Process;
+MPID_PerProcess MPID_Process;
 
 /*@
    MPID_Init - Initialize the mm device
@@ -30,7 +30,7 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     MPID_Process.pmi_kvsname[0] = '\0';
     MPID_Process.comm_parent = (MPID_Comm *)0;
-    MPID_Process.port_list = (OpenPortNode_t *)0;
+    MPID_Process.port_list = (OpenPortNode *)0;
 
     PMI_Init(&spawned);
     PMI_Get_rank(&MPIR_Process.comm_world->rank);

@@ -11,7 +11,7 @@ int mm_accept(MPID_Info *info_ptr, char *port_name)
 {
     int error;
     int bfd;
-    OpenPortNode_t *p;
+    OpenPortNode *p;
 
     p = MPID_Process.port_list;
     while (p)

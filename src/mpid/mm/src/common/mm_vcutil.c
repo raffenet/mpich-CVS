@@ -87,13 +87,15 @@ int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank)
     vc_ptr->read = mm_connector_read;
     vc_ptr->method = MM_CONNECTOR_METHOD;
     vc_ptr->ref_count = 1;
-#ifdef MPICH_DEV_BUILD
+    comm_ptr->vcr[rank] = vc_ptr;
     vc_ptr->readq_head = NULL;
     vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
+#ifdef MPICH_DEV_BUILD
+    vc_ptr->read_next_ptr = NULL;
+    vc_ptr->write_next_ptr = NULL;
 #endif
-    comm_ptr->vcr[rank] = vc_ptr;
     return MPI_SUCCESS;
 }
 
@@ -111,13 +113,15 @@ MPIDI_VC *mm_packer_vc_alloc()
     vc_ptr->read = mm_packer_read;
     vc_ptr->method = MM_PACKER_METHOD;
     vc_ptr->ref_count = 1;
-#ifdef MPICH_DEV_BUILD
-    vc_ptr->pmi_kvsname[0] = '\0';
-    vc_ptr->rank = -1;
     vc_ptr->readq_head = NULL;
     vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
+#ifdef MPICH_DEV_BUILD
+    vc_ptr->pmi_kvsname[0] = '\0';
+    vc_ptr->rank = -1;
+    vc_ptr->read_next_ptr = NULL;
+    vc_ptr->write_next_ptr = NULL;
 #endif
     return vc_ptr;
 }
@@ -136,13 +140,15 @@ MPIDI_VC *mm_unpacker_vc_alloc()
     vc_ptr->read = mm_packer_read;
     vc_ptr->method = MM_UNPACKER_METHOD;
     vc_ptr->ref_count = 1;
-#ifdef MPICH_DEV_BUILD
-    vc_ptr->pmi_kvsname[0] = '\0';
-    vc_ptr->rank = -1;
     vc_ptr->readq_head = NULL;
     vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
+#ifdef MPICH_DEV_BUILD
+    vc_ptr->pmi_kvsname[0] = '\0';
+    vc_ptr->rank = -1;
+    vc_ptr->read_next_ptr = NULL;
+    vc_ptr->write_next_ptr = NULL;
 #endif
     return vc_ptr;
 }
