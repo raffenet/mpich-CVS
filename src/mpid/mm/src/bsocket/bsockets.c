@@ -318,6 +318,26 @@ unsigned int bget_fd(int bfd)
 }
 
 /*@
+   bcopyset - copy set
+
+   Parameters:
++  bfd_set *dest - destination
+-  bfd_set *src - source
+
+   Notes:
+@*/
+void bcopyset(bfd_set *dest, bfd_set *src)
+{
+    MPIDI_STATE_DECL(MPID_STATE_BCOPYSET);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BCOPYSET);
+    dest->set = src->set;
+    dest->n = src->n;
+    memcpy(dest->p, src->p, src->n * sizeof(void*));
+    MPIDI_FUNC_EXIT(MPID_STATE_BCOPYSET);
+}
+
+/*@
    bset - bset
 
    Parameters:

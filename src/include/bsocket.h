@@ -85,6 +85,7 @@ typedef int socklen_t;
 
 #define BFD_MAX(a,b) (((a) > (b)) ? (a) : (b))
 
+#define bcopyset(dest, src) *(dest) = *(src)
 #define bget_fd(bfd) bfd
 #define bclr(bfd, s) FD_CLR( (unsigned int)bfd, s )
 #define bset(bfd, s) FD_SET( (unsigned int)bfd, s )
@@ -125,6 +126,7 @@ typedef struct
 #define BFD_MAX(a,b) (((bget_fd(a)) > (bget_fd(b))) ? (a) : (b))
 
 /* bsockets.c */
+void bcopyset(bfd_set *dest, bfd_set *src);
 unsigned int bget_fd(int bfd);
 void bset(int bfd, bfd_set *s);
 void bclr(int bfd, bfd_set *s);

@@ -205,10 +205,10 @@ int tcp_make_progress()
     /* This function needs a way to know if it should block or not */
     tv.tv_sec = 0;
     tv.tv_usec = 1;
-    
-    readset = TCP_Process.readset;
+
+    bcopyset(&readset, &TCP_Process.readset);
     if (TCP_Process.num_writers)
-	writeset = TCP_Process.writeset;
+	bcopyset(&writeset, &TCP_Process.writeset);
 
     /* select */
     /*MPIDI_FUNC_ENTER(MPID_STATE_BSELECT);*/

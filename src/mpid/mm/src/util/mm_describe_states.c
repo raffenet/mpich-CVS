@@ -343,6 +343,7 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BCLOSE, "bclose", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BCLR, "bclr", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BCONNECT, "bconnect", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BCOPYSET, "bcopyset", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_ACCEPT, "beasy_accept", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_CLOSESOCKET, "beasy_closesocket", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_CONNECT, "beasy_connect", get_random_color_str());
@@ -538,6 +539,8 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_VIA_RDMA_POST_READ, "via_rdma_post_read", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_VIA_RDMA_MERGE_WITH_UNEXPECTED, "via_rdma_merge_with_unexpected", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_VIA_RDMA_POST_WRITE, "via_rdma_post_write", get_random_color_str());
+
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_COPYSET, "copyset", get_random_color_str());
 
     return 0;
 }
