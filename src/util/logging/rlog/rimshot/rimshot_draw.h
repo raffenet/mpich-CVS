@@ -30,6 +30,10 @@ struct RimshotDrawStruct
     int nUniNumRanks;
     COLORREF **ppUniRecursionColor;
     CursorRank *pCursorRanks;
+    bool bSliding;
+    int nSlidingRank;
+    CBitmap *pSlidingBitmap;
+    double dSlideStart, dSlideFinish;
     CDC *pCanvas;
     CBitmap *pBitmap, *pOriginalBmp;
     CDC *pCopyCanvas;

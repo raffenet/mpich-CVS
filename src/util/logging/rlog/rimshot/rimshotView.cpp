@@ -8,6 +8,7 @@
 #include "rimshotView.h"
 #include "rimshot_draw.h"
 #include "zoomdlg.h"
+#include "OffsetDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -35,6 +36,7 @@ BEGIN_MESSAGE_MAP(CRimshotView, CView)
 	ON_WM_LBUTTONDOWN()
 	ON_COMMAND(ID_VIEW_UNIFORM, OnViewUniform)
 	ON_COMMAND(ID_VIEW_ZOOM, OnViewZoom)
+	ON_COMMAND(ID_VIEW_SLIDERANKOFFSET, OnSlideRankOffset)
 	//}}AFX_MSG_MAP
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
@@ -60,6 +62,8 @@ CRimshotView::CRimshotView()
     m_Draw.nUniformWidth = 15;
     m_Draw.pCursorRanks = NULL;
     m_Draw.ppUniRecursionColor = NULL;
+    m_Draw.bSliding = false;
+    m_Draw.pSlidingBitmap = NULL;
 }
 
 CRimshotView::~CRimshotView()
@@ -469,8 +473,8 @@ void CRimshotView::OnZoomTo()
 	RLOG_GetCurrentGlobalEvent(pDoc->m_pInput, &event);
 	GetClientRect(&rect);
 	width = event.end_time - event.start_time;
-	pDoc->m_dLeft = event.start_time - (5.0 * width);
-	pDoc->m_dRight = event.start_time + (5.0 * width);
+	pDoc->m_dLeft = event.start_time - (10.0 * width);
+	pDoc->m_dRight = event.start_time + (10.0 * width);
 	StartDrawing();
     }
 }
@@ -787,6 +791,32 @@ void CRimshotView::OnViewZoom()
 		    pDoc->m_dRight = middle + (dlg.m_dWidth / 2.0);
 		    StopDrawing();
 		    StartDrawing();
+		}
+	    }
+	}
+    }
+}
+
+void CRimshotView::OnSlideRankOffset() 
+{
+    CRimshotDoc* pDoc = GetDocument();
+    if (pDoc->m_pInput)
+    {
+	COffsetDlg dlg;
+
+	if (dlg.DoModal() == IDOK)
+	{
+	    if (dlg.m_row < pDoc->m_pInput->nNumRanks)
+	    {
+		if (dlg.m_bUseGUI)
+		{
+		    m_Draw.bSliding = true;
+		    m_Draw.nSlidingRank = dlg.m_row;
+		    // setup bitmap and stuff
+		}
+		else
+		{
+		    // do file offset stuff
 		}
 	    }
 	}

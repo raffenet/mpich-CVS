@@ -71,6 +71,7 @@ protected:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnViewUniform();
 	afx_msg void OnViewZoom();
+	afx_msg void OnSlideRankOffset();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -101,6 +101,10 @@ SOURCE=.\MainFrm.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\OffsetDlg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\rimshot.cpp
 # End Source File
 # Begin Source File
@@ -135,6 +139,10 @@ SOURCE=.\ZoomDlg.cpp
 # Begin Source File
 
 SOURCE=.\MainFrm.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\OffsetDlg.h
 # End Source File
 # Begin Source File
 
