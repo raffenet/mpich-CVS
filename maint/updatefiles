@@ -19,6 +19,7 @@ codecheck_args=""
 do_geterrmsgs=yes
 do_bindings=yes
 do_f77=yes
+use_patched_autoonf=yes
 #
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
@@ -38,21 +39,35 @@ for arg in "$@" ; do
     -without-codecheck|--without-codecheck)
     do_codingcheck=no
     ;;
+
+    -with-errmsgs|--with-errmsgs)
+    do_geterrmsgs=yes
+    ;;
     -without-errmsgs|--without-errmsgs)
     do_geterrmsgs=no
     ;;
+
     -with-bindings|--with-bindings)
     do_bindings=yes
     ;;
     -without-bindings|--without-bindings)
     do_bindings=no
     ;;
+
     -with-f77|--with-f77)
     do_f77=yes
     ;;
     -without-f77|--without-f77)
     do_f77=no
     ;;
+
+    -with-patched-autoconf|--with-patched-autoconf)
+    use_patched_autoonf=yes
+    ;;
+    -without-patched-autoconf|--without-patched-autoconf)
+    use_patched_autoonf=no
+    ;;
+
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-codecheck | --without-codecheck ] 
@@ -72,7 +87,8 @@ done
 # blanks.  I hope that we don't need those.
 set -- $temp_args
 #
-# Get the Autoconf macro files
+# Get the Autoconf macro files.  Note that this step is executed only if
+# the confdb directory is not found
 if [ $at_top = "yes" -a ! -d confdb ] ; then
     # setup to allow CVSROOT instead of an absolute directory path
     if [ -n "$CVSROOT" -a -d "$CVSROOT/fpmpi" ] ; then
@@ -355,8 +371,10 @@ if [ "$has_unix_find" = "yes" ] ; then
             #echo "Found $dir/configure.in"
 	    #
 	    # Check for known problems
-	    if [ $dir = "./src/binding/f77" -a \
-		! -x "/home/gropp/bin/linux/autoconf" ] ; then
+	    fixEndEOFBug=no
+	    if [ $dir = "./src/binding/f77" -a \( \
+		! -x "/home/gropp/bin/linux/autoconf" \
+		-o $use_patched_autoonf = no \) ] ; then
 		# We need a *patched*, version 2.13 form of autoconf
 		# Version 2.62 breaks the Fortran 90 extensions
 		# to TRY_COMPILE, and stock 2.13 generates bogus 
@@ -382,14 +400,16 @@ EOF
 		    echo "token used to implement AC_TRY_COMPILE for Fortran."
 		    echo "A patch for this version is available in "
 		    echo "maint/ac2.13.diff ."
+		    echo "A workaround will be attempted, but fixing "
+		    echo "autoconf is a better solution."
    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 		    echo " "
 		    error_summary="$error_summary\
 Your version of autoconf cannot properly handle Fortran.  See the diff \
-in maint/ac2.13.diff for a possible patch"
+in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 		    cd ..
 		    rm -rf .ctmp
-		    continue
+		    fixEndEOFBug=yes
 		else
 		    rm -rf .ctmp
 		    cd ..
@@ -413,37 +433,44 @@ in maint/ac2.13.diff for a possible patch"
 		-e "s%@srcdir@%.%g" \
 		-e '/include .deps/d' \
 		-e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-		if make -q -f mf.tmp configure 2>&1 >/dev/null ; then \
+		if make -q -f mf.tmp configure >/dev/null 2>&1 ; then \
             : ; else \
 	    echo "Found $dir/configure.in" ; \
 	    make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	    )
+	    if [ $fixEndEOFBug = yes ] ; then
+		if grep endEOF configure >/dev/null 2>&1 ; then
+ 		    sed 's/endEOF/end\
+EOF/g' configure > c.tmp
+		    mv -f c.tmp configure
+		    chmod a+x configure
+		fi
+	    fi
 	    #
             # Under cygwin, sometimes (?) configure ends up containing \^M
 	    # (that's <ctrl>-M).  We may need to add this sed step
 	    # sed -e '/"\"/d' -e 's/\//g'
 	    # (the first removes case statements on \^M, the second
 	    # removes the \^M from the ac_config_files statement
+	    fixBackWhackCtrlMBug=no
 	    if [ ! -s $dir/configure ] ; then 
 		echo "PANIC: Could not make configure from configure.in"
 		echo "In directory $dir"
 		exit 1
 	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
-		rm -f c.tmp 
-		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
-		rm -f $dir/configure
-		mv c.tmp $dir/configure
+		fixBackWhackCtrlMBug=yes
 	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
-		rm -f c.tmp 
-		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
-		rm -f $dir/configure
-		mv c.tmp $dir/configure
+		fixBackWhackCtrlMBug=yes
 	    elif grep 'attr/Makefile \\ util' $dir/configure 2>&1 >/dev/null ; then 
+		fixBackWhackCtrlMBug=yes
+            fi
+	    # Add other tests here (sigh) as necessary
+	    if [ $fixBackWhackCtrlMBug = yes ] ; then
 		rm -f c.tmp 
 		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		rm -f $dir/configure
 		mv c.tmp $dir/configure
-            fi
+	    fi
         fi
     done
 else
