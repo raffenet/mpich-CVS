@@ -606,11 +606,6 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_REDUCE_SCATTER);
 
-    if ((op == MPI_MAXLOC) || (op == MPI_MINLOC)) {
-        printf("ERROR: MAXLOC and MINLOC not yet implemented\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {

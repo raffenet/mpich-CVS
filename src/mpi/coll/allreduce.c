@@ -26,7 +26,7 @@ MPI_User_function *MPIR_Op_table[] = { MPIR_MAXF, MPIR_MINF, MPIR_SUM,
                                        MPIR_PROD, MPIR_LAND,
                                        MPIR_BAND, MPIR_LOR, MPIR_BOR,
                                        MPIR_LXOR, MPIR_BXOR,
-                                       /* MPIR_MINLOC, MPIR_MAXLOC */ };
+                                       MPIR_MINLOC, MPIR_MAXLOC, };
 
 /* This is the default implementation of allreduce. The algorithm is:
    
@@ -399,10 +399,6 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-	    if ((op == MPI_MAXLOC) || (op == MPI_MINLOC)) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 
-				    "**notimpl %s", "MAXLOC and MINLOC" );
-	    }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);

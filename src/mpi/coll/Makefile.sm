@@ -2,12 +2,12 @@ mpi_sources = allgather.c allgatherv.c allreduce.c alltoall.c \
  alltoallv.c barrier.c bcast.c gather.c gatherv.c red_scat.c reduce.c scan.c \
  scatter.c scatterv.c op_create.c op_free.c alltoallw.c exscan.c helper_fns.c \
  opsum.c opmax.c opmin.c opband.c opbor.c opbxor.c opland.c oplor.c oplxor.c \
- opprod.c
+ opprod.c opminloc.c opmaxloc.c
 lib${MPILIBNAME}_a_SOURCES = allreduce.c barrier.c op_create.c op_free.c \
  bcast.c helper_fns.c opsum.c opmax.c opmin.c opband.c opbor.c opbxor.c \
  opland.c oplor.c oplxor.c opprod.c alltoall.c alltoallv.c reduce.c scatter.c \
  gather.c scatterv.c gatherv.c scan.c exscan.c allgather.c allgatherv.c \
- red_scat.c alltoallw.c
+ red_scat.c alltoallw.c opminloc.c opmaxloc.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 doc_HTML_SOURCES = ${mpi_sources}
