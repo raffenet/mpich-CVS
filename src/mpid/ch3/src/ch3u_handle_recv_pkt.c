@@ -19,10 +19,8 @@
 #define FUNCNAME MPIDI_CH3U_Handle_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
+void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 {
-    int completion = FALSE;
-
     assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
     
     switch(pkt->type)
@@ -52,19 +50,11 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 	    if (rreq->ch3.recv_data_sz == 0)
 	    {
-		int cc;
-		
 		MPIDI_dbg_printf(30, FCNAME, "null message, %s, decrementing "
 				 "completion counter",
 				 (found ? "found in posted queue" :
 				  "allocated in unexpected queue"));
-		
-		MPIDI_CH3U_Request_decrement_cc(rreq, &cc);
-		if (cc == 0)
-		{
-		    completion = TRUE;
-		    MPID_Request_release(rreq);
-		}
+		MPIDI_CH3U_Request_complete(rreq);
 	    }
 	    else if (found)
 	    {
@@ -75,7 +65,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 		if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
 		{
-		    dt_sz = MPID_Datatype_get_size(rreq->ch3.datatype);
+		    MPID_Datatype_get_size_macro(rreq->ch3.datatype, dt_sz);
 		    dt_contig = TRUE;
 		}
 		else
@@ -90,8 +80,8 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		{
 		    if (rreq->ch3.recv_data_sz <= dt_sz * rreq->ch3.user_count)
 		    {
-			rreq->ch3.iov[0].iov_base = rreq->ch3.user_buf;
-			rreq->ch3.iov[0].iov_len = rreq->ch3.recv_data_sz;
+			rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.user_buf;
+			rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
 			rreq->ch3.iov_count = 1;
 			rreq->ch3.iov_offset = 0;
 			rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
@@ -123,8 +113,8 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		rreq->ch3.tmp_buf = MPIU_Malloc(rreq->ch3.recv_data_sz);
 		rreq->ch3.tmp_sz = rreq->ch3.recv_data_sz;
 		    
-		rreq->ch3.iov[0].iov_base = rreq->ch3.tmp_buf;
-		rreq->ch3.iov[0].iov_len = rreq->ch3.recv_data_sz;
+		rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmp_buf;
+		rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
 		rreq->ch3.iov_count = 1;
 		rreq->ch3.iov_offset = 0;
 		rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
@@ -208,7 +198,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 	    if (HANDLE_GET_KIND(sreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
 	    {
-		dt_sz = MPID_Datatype_get_size(sreq->ch3.datatype);
+		MPID_Datatype_get_size_macro(sreq->ch3.datatype, dt_sz);
 		dt_contig = TRUE;
 	    }
 	    else
@@ -220,13 +210,13 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		    
 	    if (dt_contig) 
 	    {
-		struct iovec iov[2];
+		MPID_IOV iov[2];
 
 		MPIDI_dbg_printf(30, FCNAME, "sending rndv pkt + data");
-		iov[0].iov_base = rs_pkt;
-		iov[0].iov_len = sizeof(*rs_pkt);
-		iov[1].iov_base = sreq->ch3.user_buf;
-		iov[1].iov_len = sreq->ch3.user_count * dt_sz;
+		iov[0].MPID_IOV_BUF = rs_pkt;
+		iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
+		iov[1].MPID_IOV_BUF = sreq->ch3.user_buf;
+		iov[1].MPID_IOV_LEN = sreq->ch3.user_count * dt_sz;
 		sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 		MPIDI_CH3_iSendv(vc, sreq, iov, 2);
 	    }
@@ -253,7 +243,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 	    if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
 	    {
-		dt_sz = MPID_Datatype_get_size(rreq->ch3.datatype);
+		MPID_Datatype_get_size_macro(rreq->ch3.datatype, dt_sz);
 		dt_contig = TRUE;
 	    }
 	    else
@@ -267,8 +257,8 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    {
 		if (rreq->ch3.recv_data_sz <= dt_sz * rreq->ch3.user_count)
 		{
-		    rreq->ch3.iov[0].iov_base = rreq->ch3.user_buf;
-		    rreq->ch3.iov[0].iov_len = rreq->ch3.recv_data_sz;
+		    rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.user_buf;
+		    rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
 		    rreq->ch3.iov_count = 1;
 		    rreq->ch3.iov_offset = 0;
 		    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
@@ -360,7 +350,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	case MPIDI_CH3_PKT_PUT:
 	{
 	    MPIDI_dbg_printf(30, FCNAME, "received put packet");
-	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    MPIDI_err_printf(FCNAME, "MPIDI_CH3_PKT_PUT UMIMPLEMENTED");
 	    abort();
 	    break;
 	}
@@ -369,18 +359,17 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	{
 	    MPIDI_dbg_printf(30, FCNAME,
 			     "received flow control update packet");
-	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    MPIDI_err_printf(FCNAME,
+			     "MPIDI_CH3_PKT_FLOW_CNTL_UPDATE UMIMPLEMENTED");
 	    abort();
 	    break;
 	}
 	
 	default:
 	{
-	    MPIDI_err_printf(FCNAME, "MPIDI_CH3U_Handle_pkt(): packet type "
-			     "%d not implemented.\n", pkt->type);
+	    MPIDI_err_printf(FCNAME, "packet type %d not implemented.\n",
+			     pkt->type);
 	    abort();
 	}
     }
-
-    return completion;
 }

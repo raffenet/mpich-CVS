@@ -184,15 +184,19 @@ struct MPIDI_Request							\
 {									\
     MPIDI_Message_match match;						\
 									\
-    /* TODO - user_buf, user_count, and datatype define a segment	\
-       and should be replaced by an MPID_Segment once one is defined	\
-       (is this true???) */						\
+    /* TODO - user_buf, user_count, and datatype needed to process	\
+       rendezvous messages. */						\
     void * user_buf;							\
     int user_count;							\
     MPI_Datatype datatype;						\
+									\
+    /* segment, segment_first, and segment_size are used when		\
+       processing non-contiguous datatypes */				\
+    /* XXX - should segment_first and segment_size be long or some	\
+       abstract type */							\
     MPID_Segment segment;						\
     int segment_first;							\
-    int segment_last;							\
+    int segment_size;							\
 									\
     MPIDI_VC * vc;							\
 									\
@@ -227,40 +231,5 @@ MPIDI_CH3_REQUEST_DECL
 #define MPID_DEV_REQUEST_DECL			\
 MPID_REQUEST_DECL
 #endif
-
-/*
- * Macros defining device level request management routines
- */
-#define MPID_Request_create() (MPIDI_CH3_Request_create())
-
-/* XXX - MPID_Request_set_complete() needs to wake up progress engine */
-#define MPID_Request_set_complete(req) {*req->cc_ptr = 0;}
-
-#define MPID_Request_release(req)				\
-{								\
-    int ref_count;						\
-    								\
-    MPIDI_CH3_Request_release_ref(req, &ref_count);		\
-    if (ref_count == 0)						\
-    {								\
-	MPIDI_CH3_Request_destroy(req);				\
-    }								\
-}
-
-/* Other request utilities */				\
-#define MPIDI_CH3U_Request_decrement_cc(req, cc)	\
-{							\
-    *cc = --(*req->cc_ptr);				\
-}
-
-
-/*
- * Macros defining device level progress engine routines
- */
-#define MPID_Progress_start()
-#define MPID_Progress_end()
-#define MPID_Progress_test() (MPIDI_CH3_Progress(FALSE))
-#define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
-#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

@@ -19,10 +19,8 @@
 #define FUNCNAME MPIDI_CH3U_Handle_send_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
+void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 {
-    int completion = FALSE;
-    
     assert(sreq->ch3.ca < MPIDI_CH3_CA_END_CH3);
     
     switch(sreq->ch3.ca)
@@ -35,21 +33,61 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
-	    MPIDI_err_printf(FCNAME, "MPIDI_CH3_CA_RELOAD_IOV UMIMPLEMENTED");
-	    abort();
+	    int size;
+	    int last;
+	    
+	    /* two choices here: fill iovec or pack message into a buffer.  in
+	       either case, if we have more data to send, we need to use a
+	       completion operation that takes care of the rest of the
+	       data. */
+	
+	    sreq->ch3.iov_count = MPID_IOV_LIMIT;
+	    last = sreq->ch3.segment_size;
+	    MPID_Segment_pack_vector(
+		&sreq->ch3.segment, sreq->ch3.segment_first, &last,
+		sreq->ch3.iov, &sreq->ch3.iov_count);
+	    assert(last > sreq->ch3.segment_first);
+	    assert(sreq->ch3.iov_count > 0);
+	    
+	    if (last / sreq->ch3.iov_count < MPIDI_IOV_DENSITY_MIN &&
+		last != sreq->ch3.segment_size)
+	    {
+		size = sreq->ch3.segment_size - sreq->ch3.segment_first;
+		
+		/* allocate temporary buffer and pack */
+		if (!MPIDI_Request_get_tmpbuf_flag(sreq))
+		{
+		    MPIDI_CH3U_SRBuf_alloc(&sreq->ch3.tmp_buf, size,
+					   &sreq->ch3.tmp_sz);
+		    assert (sreq->ch3.tmp_sz > 0);
+		    MPIDI_Request_set_tmpbuf_flag(sreq, TRUE);
+		}
+
+		last = (size <= sreq->ch3.tmp_sz) ? sreq->ch3.segment_size
+		    : sreq->ch3.segment_first + sreq->ch3.tmp_sz;
+		MPID_Segment_pack(
+		    &sreq->ch3.segment, sreq->ch3.segment_first, &last,
+		    sreq->ch3.tmp_buf);
+	    }
+	    
+	    if (last == sreq->ch3.segment_size)
+	    {
+		sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	    }
+	    else 
+	    {
+		sreq->ch3.segment_first = last;
+		sreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
+	    }
+	    
+	    MPIDI_CH3_iWrite(sreq->ch3.vc, sreq);
+	    
 	    break;
 	}
 	
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    int cc;
-		
-	    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
-	    if (cc == 0)
-	    {
-		MPID_Request_release(sreq);
-		completion = TRUE;
-	    }
+	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
 	}
 	
@@ -59,7 +97,5 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	    abort();
 	}
     }
-
-    return completion;
 }
 

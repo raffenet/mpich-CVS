@@ -14,9 +14,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	      int rank, int tag, MPID_Comm * comm, int context_offset,
 	      MPI_Status * status, MPID_Request ** request)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_Request * rreq;
     int found;
-    int mpi_errno = MPI_SUCCESS;
 
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,

@@ -405,15 +405,15 @@ int MPIDI_CH3U_Request_adjust_iov(MPID_Request * req, int nb)
     
     while (offset < count)
     {
-	if (req->ch3.iov[offset].iov_len <= nb)
+	if (req->ch3.iov[offset].MPID_IOV_LEN <= nb)
 	{
-	    nb -= req->ch3.iov[offset].iov_len;
+	    nb -= req->ch3.iov[offset].MPID_IOV_LEN;
 	    offset++;
 	}
 	else
 	{
-	    req->ch3.iov[offset].iov_base += nb;
-	    req->ch3.iov[offset].iov_len -= nb;
+	    req->ch3.iov[offset].MPID_IOV_BUF += nb;
+	    req->ch3.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ch3.iov_offset = offset;
 	    return FALSE;
 	}
@@ -441,7 +441,7 @@ void MPIDI_CH3U_Request_copy_tmp_data(MPID_Request * rreq)
 	    
     if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
     {
-	dt_sz = MPID_Datatype_get_size(rreq->ch3.datatype);
+	MPID_Datatype_get_size_macro(rreq->ch3.datatype, dt_sz);
 	dt_contig = TRUE;
     }
     else

@@ -23,8 +23,50 @@ MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
 
+/*
+ * Request utility macros (internal - do not use in MPID macros)
+ */
+#define MPIDI_CH3U_Request_create(req)				\
+{								\
+    req->ref_count = 1;						\
+    req->cc = 1;						\
+    req->cc_ptr = &req->cc;					\
+    req->status.MPI_SOURCE = MPI_UNDEFINED;			\
+    req->status.MPI_TAG = MPI_UNDEFINED;			\
+    req->status.MPI_ERROR = MPI_SUCCESS;			\
+    req->status.cancelled = FALSE;				\
+    MPIDI_Request_state_init(req);				\
+    req->comm = NULL;						\
+								\
+    /* XXX - initialized only for debugging purposes? */	\
+    req->ch3.vc = NULL;						\
+    req->ch3.user_buf = NULL;					\
+    req->ch3.datatype = MPI_DATATYPE_NULL;			\
+    req->ch3.tmp_buf = NULL;					\
+}
+
+#define MPIDI_CH3U_Request_destroy(req)			\
+{							\
+    if (MPIDI_Request_get_tmpbuf_flag(req))		\
+    {							\
+	MPIDI_CH3U_SRBuf_free(req->ch3.tmp_buf);	\
+    }							\
+}
+
+#define MPIDI_CH3U_Request_complete(req)	\
+{						\
+    int cc;					\
+						\
+    MPIDI_CH3U_Request_decrement_cc(req, &cc);	\
+    if (cc == 0)				\
+    {						\
+	MPID_Request_release(req);		\
+	MPIDI_CH3_Progress_signal_completion();	\
+    }						\
+}
+
 /* Masks and flags for channel device state in an MPID_Request */
-#define MPIDI_Request_state_reset(req)		\
+#define MPIDI_Request_state_init(req)		\
 {						\
     req->ch3.state = 0;				\
 }
@@ -57,6 +99,25 @@ extern MPIDI_Process_t MPIDI_Process;
     req->ch3.state |= (flag << MPIDI_REQUEST_TMPBUF_SHIFT)	\
 	& MPIDI_REQUEST_TMPBUF_MASK;				\
 }
+
+/*
+ * Send/Receive buffer macros
+ */
+#if !defined(MPIDI_CH3U_SRBuf_size)
+#define MPIDI_CH3U_SRBuf_size (16384)
+#endif
+
+#if !defined(MPIDI_CH3U_SRBuf_alloc)
+#define MPIDI_CH3U_SRBuf_alloc(bufpp, isize, osizep)		\
+{								\
+    *bufpp = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);		\
+    *osizep = (*bufpp != NULL) ? MPIDI_CH3U_SRBuf_size : 0;	\
+}
+#endif
+
+#if !defined(MPIDI_CH3U_SRBuf_free)
+#define MPIDI_CH3U_SRBuf_free(buf) {MPIU_Free(buf);}
+#endif
 
 
 /*

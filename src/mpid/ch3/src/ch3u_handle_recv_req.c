@@ -19,10 +19,8 @@
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
+void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 {
-    int completion = FALSE;
-    
     assert(rreq->ch3.ca < MPIDI_CH3_CA_END_CH3);
     
     switch(rreq->ch3.ca)
@@ -48,14 +46,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    int cc;
-		
-	    MPIDI_CH3U_Request_decrement_cc(rreq, &cc);
-	    if (cc == 0)
-	    {
-		MPID_Request_release(rreq);
-		completion = TRUE;
-	    }
+	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}
 	
@@ -65,7 +56,5 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    abort();
 	}
     }
-
-    return completion;
 }
 

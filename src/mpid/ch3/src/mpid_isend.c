@@ -17,6 +17,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	       int tag, MPID_Comm * comm, int context_offset,
                MPID_Request ** request)
 {
+    int mpi_errno = MPI_SUCCESS;
     long dt_sz;
     int dt_contig;
     MPID_Request * sreq;
@@ -62,7 +63,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
     {
-	dt_sz = MPID_Datatype_get_size(datatype);
+	MPID_Datatype_get_size_macro(datatype, dt_sz);
 	dt_contig = TRUE;
     }
     else
@@ -84,7 +85,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	{
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
-	    struct iovec iov[2];
+	    MPID_IOV iov[2];
 
 	    eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
 	    eager_pkt->match.rank = comm->rank;
@@ -95,10 +96,10 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending eager contiguous message, "
 			      "data_sz=%ld", eager_pkt->data_sz));
-	    iov[0].iov_base = eager_pkt;
-	    iov[0].iov_len = sizeof(*eager_pkt);
-	    iov[1].iov_base = (void *) buf;
-	    iov[1].iov_len = count * dt_sz;
+	    iov[0].MPID_IOV_BUF = eager_pkt;
+	    iov[0].MPID_IOV_LEN = sizeof(*eager_pkt);
+	    iov[1].MPID_IOV_BUF = (void *) buf;
+	    iov[1].MPID_IOV_LEN = count * dt_sz;
 	    MPIDI_CH3_iSendv(comm->vcr[rank], sreq, iov, 2);
 	}
 	else
@@ -132,6 +133,6 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
 		      sreq->handle));
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
