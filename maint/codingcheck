@@ -219,14 +219,13 @@ sub ProcessFile {
 		 "utime", "vfork", "vprintf", "wait3" );
 # Removed strcmp because it is ok if one string is guaranteed to 
 # have a terminating null.  This is still touchy, but it isn't the risk
-# posed by the copy or cat routines.
+# posed by the copy or cat routines, since it doesn't write to any memory
+# location.
 %bettersubs = ( "strcpy" => "MPIU_Strncpy",
 	        "strncpy" => "MPIU_Strncpy",
 #		"strcmp" => "strncmp",
 		"strcat" => "MPIU_Strnapp",
-# We can't recommend snprintf because it isn't standard.  We need an 
-# MPIU_Snprintf instead.  We can since we have one now
-		"sprintf" => "snprintf", 
+		"sprintf" => "MPIU_Snprintf", 
 		);
 
 sub CheckForBadSubs {
