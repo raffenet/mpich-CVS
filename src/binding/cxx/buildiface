@@ -385,7 +385,7 @@ foreach $class (@classes) {
     }
     foreach $routine (keys(%$class_hash)) {
 	$info = $$class_hash{$routine};
-	print STDERR "processing $routine\n";
+	print STDERR "processing $routine\n" if $debug;
 
 	# Find the corresponding args.  Some C++ routines don't use the
 	# natural names, so we check for that here
@@ -463,7 +463,7 @@ if (!$build_sep_files) {
 	$mpiclass = $defer_definition{$routine};
 	$class = "$short_from_long_class{$mpiclass}";
 	$mpiclass = "mpi1$class";
-	print STDERR "$mpiclass\n";
+	print STDERR "$mpiclass\n" if $debug;
 	$class_hash = "class_$mpiclass";
 	$Class = $fullclassname{$class};
 	$info = $$class_hash{$routine};
@@ -500,6 +500,8 @@ if (!$build_sep_files) {
 
 #
 # This block can be used to create the Makefile
+#
+# This isn't quite right.  mpicxx.h isn't a regular kind of source file.
 open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 # This line is unfortunately necessary to ensure that a working
@@ -519,7 +521,7 @@ print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${top_srcdir}/src/include\
 maint-clean:\
-\trm -f \${mpi_sources} fproto.h\n";
+\trm -f \${mpi_sources}\n";
 
 close( MAKEFD );
 

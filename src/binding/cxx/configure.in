@@ -1,0 +1,27 @@
+AC_INIT(mpicxx.h)
+AC_CONFIG_HEADER(mpicxxconf.h)
+dnl We need install.sh, config.guess, etc. for the code that
+dnl finds the Fortran libraries
+AC_CONFIG_AUX_DIR(../../../confdb)
+
+if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
+AC_SUBST(MPILIBNAME)
+AC_PROG_CXX
+AC_PATH_PROG(AR,ar)
+AC_PATH_PROG(RANLIB,ranlib)
+AC_PROG_INSTALL
+AC_LANG_CPLUSPLUS
+dnl     checks for libraries
+dnl     checks for header files
+dnl     checks for typedefs
+dnl     checks for structures
+dnl     checks for compiler characteristics
+AC_CXX_EXCEPTIONS
+AC_CXX_BOOL
+AC_CXX_NAMESPACES
+if test "$ac_cv_cxx_namespaces" != "yes" ; then
+    AC_MSG_ERROR([Namespaces are required for the MPI C++ interface])
+fi
+dnl     checks for library functions
+dnl     checks for system services
+AC_OUTPUT(Makefile) dnl test/Makefile)

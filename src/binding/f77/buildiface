@@ -309,6 +309,7 @@ while (<FD>) {
 		else {
 		    $filename = $lcname . "f.c";
 		}
+		$OUTFD = OUTPUTFILED;   # Needed for pre 5.6 versions of perl
 		open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
 		# Add the name to the list of files"
 		@files[$#files+1] = $filename;
