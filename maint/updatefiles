@@ -240,12 +240,6 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
     echo "Extracting the error messages..."
     rm -rf .tmp
     rm -f .err
-#    maint/extracterrmsgs `find src/mpi -name '*.c' -print` `find src/nameserv -name '*.c' -print` \
-#        `find src/util -name '*.c' -print` `find src/binding -name '*.c' -print` src/include/*.h \
-#	`find src/mpid -name '*.[ch]' -print` > .tmp 2>.err
-#    maint/extracterrmsgs src/mpi src/nameserv src/util src/binding \
-#        src/include/*.h src/mpid \
-#	`find src/mpid -name '*.[hi]' -print` > .tmp 2>.err
     maint/extracterrmsgs src/mpi src/nameserv src/util src/binding \
         src/include src/mpid > .tmp 2>.err
     # (error here is ok)
