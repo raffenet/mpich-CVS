@@ -30,7 +30,7 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
 		{
 		    MPIDI_Process.recv_unexpected_head = req->ch3.next;
 		}
-		if (req->ch3.next == 0)
+		if (req->ch3.next == NULL)
 		{
 		    MPIDI_Process.recv_unexpected_tail = prev_req;
 		}
@@ -86,7 +86,7 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
 		{
 		    MPIDI_Process.recv_unexpected_head = req->ch3.next;
 		}
-		if (req->ch3.next == 0)
+		if (req->ch3.next == NULL)
 		{
 		    MPIDI_Process.recv_unexpected_tail = prev_req;
 		}
@@ -104,12 +104,13 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
     req = MPIDI_CH3_Request_create();
     if (req != NULL)
     {
+	req->ref_count = 2;
+	req->cc = 1;
+	req->cc_ptr = &(req->cc);
 	req->ch3.match.tag = tag;
 	req->ch3.match.rank = source;
 	req->ch3.match.context_id = context_id;
-	req->cc = 1;
-	req->cc_ptr = &(req->cc);
-	req->ch3.next = 0;
+	req->ch3.next = NULL;
 	
 	if (MPIDI_Process.recv_posted_tail != NULL)
 	{
@@ -152,7 +153,7 @@ MPID_Request * MPIDI_CH3U_Request_FPOAU(
 		    {
 			MPIDI_Process.recv_posted_head = req->ch3.next;
 		    }
-		    if (req->ch3.next == 0)
+		    if (req->ch3.next == NULL)
 		    {
 			MPIDI_Process.recv_posted_tail = prev_req;
 		    }
@@ -171,10 +172,11 @@ MPID_Request * MPIDI_CH3U_Request_FPOAU(
     req = MPIDI_CH3_Request_create();
     if (req != NULL)
     {
-	req->ch3.match = *match;
+	req->ref_count = 2;
 	req->cc = 1;
 	req->cc_ptr = &(req->cc);
-	req->ch3.next = 0;
+	req->ch3.match = *match;
+	req->ch3.next = NULL;
 	
 	if (MPIDI_Process.recv_unexpected_tail != NULL)
 	{
