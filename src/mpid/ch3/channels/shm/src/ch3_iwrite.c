@@ -71,7 +71,10 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     else if (nb == 0)
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	MPIDI_CH3I_SendQ_enqueue(vc, req);
+	if (MPIDI_CH3I_SendQ_head(vc) != req)
+	{
+	    MPIDI_CH3I_SendQ_enqueue(vc, req);
+	}
     }
     else
     {

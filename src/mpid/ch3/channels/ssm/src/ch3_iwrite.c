@@ -84,8 +84,6 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
-		MPIDI_CA_t ca = req->dev.ca;
-
 		vc->ch.send_active = NULL;
 
 		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
@@ -115,7 +113,10 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	else if (nb == 0)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    MPIDI_CH3I_SendQ_enqueue(vc, req);
+	    if (MPIDI_CH3I_SendQ_head(vc) != req)
+	    {
+		MPIDI_CH3I_SendQ_enqueue(vc, req);
+	    }
 	}
 	else
 	{

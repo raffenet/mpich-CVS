@@ -159,8 +159,6 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
-		MPIDI_CA_t ca = req->dev.ca;
-			
 		vc->ch.send_active = NULL;
 		
 		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
