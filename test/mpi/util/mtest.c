@@ -54,7 +54,7 @@ static int datatype_index = 0;
  */
 static void *MTestTypeContigInit( MTest_Datatype *mtype, int n )
 {
-    int size;
+    MPI_Aint size;
     if (n > 0) {
 	signed char *p;
 	int  i, totsize;
@@ -87,9 +87,12 @@ static int MTestTypeContigCheckbuf( MTest_Datatype *mtype )
 {
     signed char *p;
     int  i, totsize, err = 0;
+    MPI_Aint size;
 
     p = mtype->buf;
     if (p) {
+	MPI_Type_extent( mtype->datatype, &size );
+	totsize = size * mtype->count;
 	for (i=0; i<totsize; i++) {
 	    if (p[i] != (0xff ^ (i & 0xff)))
 		err++;
