@@ -1184,6 +1184,11 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
    the src/include directory in the build tree. */
 #include "mpidpost.h"
 
+#ifndef HAVE_DEV_COMM_HOOK
+#define MPID_Dev_comm_create_hook( a )
+#define MPID_Dev_comm_destroy_hook( a )
+#endif
+
 /*** ONLY FUNCTION DECLARATIONS BEYOND THIS POINT ***/
 
 /* Bindings for internal routines */

@@ -8,3 +8,10 @@ mpid_dataloop.h
 gen_dataloop.h
 mpichconf.h
 mpichconf.h.in
+mm_tcp_pre.h
+mm_shm_pre.h
+mm_via_pre.h
+mm_via_rdma_pre.h
+mpid_ch3_conf.h.in
+mpid_ch3_tcp_conf.h.in
+dlogconf.h

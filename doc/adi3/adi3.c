@@ -732,6 +732,11 @@ void MPID_Dev_comm_attr_set_hook( MPID_Comm *comm, int keyval, void *attr_val,
     The exact parameter list may depend on the object.  These parameter lists
     have not yet been defined.
 
+    If a device defines either the create or destroy hooks, it must define
+    both.  In addition, the C preprocessor symbol 'HAVE_DEV_xxx_HOOK' must
+    be defined.  If this is not defined, then 'MPID_Dev_xxx_create_hook'
+    and 'MPID_Dev_xxx_destroy_hook' will be defined as empty macros.
+
     See also 'MPID_Dev_xxx_destroy_hook'
   @*/
 void MPID_Dev_xxx_create_hook( MPID_xxx *obj )

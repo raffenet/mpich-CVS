@@ -46,6 +46,9 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     static const char FCNAME[] = "MPI_Comm_group";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    int i, lpid, n;
+    MPID_Group *group_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GROUP);
     /* Get handles to MPI objects. */
@@ -54,13 +57,10 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -69,6 +69,27 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* Create a group and populate it with the local process ids */
+    n = comm_ptr->local_size;
+    mpi_errno = MPIR_Group_create( n, &group_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    
+    for (i=0; i<n; i++) {
+	group_ptr->lrank_to_lpid[i].lrank = i;
+	(void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
+	group_ptr->lrank_to_lpid[i].lpid  = lpid;
+    }
+    group_ptr->size		 = n;
+    group_ptr->rank		 = comm_ptr->rank;
+    group_ptr->idx_of_first_lpid = -1;
+
+    *group = group_ptr->handle;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
     return MPI_SUCCESS;
