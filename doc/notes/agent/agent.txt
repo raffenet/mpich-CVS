@@ -425,6 +425,7 @@ MPID_xferi_scatter_recv_mop_forward_op(req, buf, count, dtype, first, last, mop_
 
     	recv_car->type = RECV_DATA | UNPACK | PACKED_BUF_DEPENDENCY
 	    | SUPPLY_PROGRESS;
+        recv_car->buf_dep = send_car;
 	recv_car->op_func = mop_func;
         recv_car->pack_buf = NULL;
     	recv_car->segment = segment(buf, count, dtype, first, last);
@@ -769,6 +770,7 @@ MPID_xfer_gather_forward_op(req, size, dest)
     	send_car->pack_size = size;
 
     	recv_car->type = RECV_DATA | PACKED_BUF_DEPENDENCY | SUPPLY_PROGRESS;
+        recv_car->buf_dep = send_car;
         recv_car->pack_buf = NULL;
     	recv_car->pack_size = size;
     	recv_car->progress_dep = send_car;
@@ -923,3 +925,134 @@ progress engine receives more data, it will notice that the unexpected CAR
 contains a pointer to a real recv CAR, update its cached CAR pointer, and
 release the unexpected CAR (continuing to process the incoming data using the
 state in the recv CAR).
+
+Dependencies:
+
+- completion dependencies are simply handled by use of separate cars in these
+  ordered lists.  these are for multiple cars which make up the same envelope.
+
+- we've lost our priority dependencies.  oops!  at present we use an
+  associative array (thank you perl), but that data structure does not maintain
+  the order of operations.  to simplify this situation, we constrain
+  prioritization to the message level rather than prioritizing each and every
+  operation/CAR.  this allows us to continue using an associative array type
+  data structure as long as that array maintains the order in which we inserted
+  new keys into the array.
+
+- this approach loses the priority information between methods.  is that ok?
+  no.  so we need to have something that keeps this information across methods
+  as well.
+
+- david seems to think that this priority stuff isn't going to work.
+
+- we might get back more than one buffer to use for receiving one car's worth
+  of data, so we can't just have a single pointer to a buffer in the car, if we
+  use a pointer in the car at all.  alternatively we could keep the pointers to
+  buffers in some structure associated with the vc (as method-specific data).
+
+  so we use iovec-like things to keep up with the multiple buffers.
+
+describing buffers:
+  the sender can then hand over groups of buffers.  this includes a list of
+  pointers and sizes and a total length.
+
+grabbing or providing buffers (which?):
+options:
+- single function call used by receiver to ask for a buffer, and if the sender
+  isn't ready, then we get a temp. buffer.
+
+- single function call used by sender used to provide buffers immediately when
+  available.
+
+- handshake: recv notifies sender he is ready, sender provides buffer space
+  when it is available.  he does not reserve buffer space before the receiver
+  notifies him.
+
+  the code matching handshakes on the sending side may supply buffers for more
+  than one send CAR which has been marked by the receiver as ready, but it MUST
+  do so in the order given by the completion dependencies
+
+  sender provides buffers when it is at the head of the queue OR if all CARs
+  ahead of the sending CAR have satisfied all their buffer dependencies (and
+  the recv is ready).  the sender has the option of providing only part of the
+  required buffer space.  in this case, there must be some minimum amount
+  agreed upon between the two methods (to ensure that the receiver can make
+  progress with the amount of buffer space provided).
+
+  CARs are considered "ahead" if they are part of the same envelope/message
+  (CAR list) and are ahead of the send CAR in the ordered list (vertical,
+  completion dependence) OR if they are on the same VC with the sender but in a
+  different envelope and were enqueued (hi david!) previously.  We can
+  optionally consider whether or not these different envelopes are in the same
+  context when making dependency assessments (gets back to the reordering
+  possibility).
+
+- this "all previous CARs are satisfied" stuff refers to the space for the
+  envelopes, not the data (unless it was sent eagerly).  we can do this due to
+  the semantics of MPI contexts
+
+- a receive only notifies when the incoming envelope has been matched.
+  likewise, the sender (if using rendezvous) must match envelopes with the
+  remote receiver before he will hand buffers back to the receiver.
+
+- there are opportunities for reordering the send queue based on the MPI
+  semantics between isends/sends/collectives.  if the contexts aren't the same,
+  you can reorder (maintaining intra-context ordering).  recall that
+  collectives are in a different context from p2p
+
+- senders in the rendezvous protocol with progress dependencies may eagerly
+  send their RTS...didn't end this thought.
+
+- we need to keep a small number of buffers in reserve on some methods
+  (e.g. VIA) in order to guarantee that we can make progress.  the example is a
+  system that would otherwise use up all his buffers for RTS/CTS packets.
+
+  we don't think that this is quite sufficient.
+
+  so in the via case we need to have at least two buffers lying around (at a
+  very low level) for our window protocol, one for receiving window messages
+  and one for sending them, but we don't use that up at the level we're looking
+  at.  the send buffer can be small, but the receive buffer may have to be
+  bigger (?).
+
+  actually we can just have two buffers around at the messaging level, which
+  are enough to make slow progress.  then we piggyback our window info inside
+  the 32 bits in the header of each send.
+
+  additionally the envelope/header can't be bigger than the minimum via packet
+  size (16K)
+
+  we can implement a window scheme per VI/VC.  we can keep a pool of buffers
+  around that VI/VCs can use (and free if they aren't needed, except for the
+  two mentioned above).
+
+* we could also use DMA writes to do the data transfer and get rid of this
+  problem altogether.  this gives you a packet per message used out of the
+  receive queue.  IMPLEMENT THIS ONE.
+
+- DMA writes for both the data transfer and the control messages is david's
+  favorite screaming fast idea.  by utilizing this two-dma approach to ensure
+  that the entire header is there, we can get around implementation details.
+
+- we came up with a wacky scheme for writing window values directly into the
+  remote memory.  to do this you want to assign a sequence number to each
+  packet.  then the format of the data you write is:
+
+  <counter><window><sequence_nr><counter>
+
+  The counter values are identical for a given write and are used as sentinel
+  values (is this the right nomenclature?)/cookies to allow the local side to
+  know that the data in the region is valid.  if the local process reads the
+  region and doesn't get the same counter value on each end, it tries again.
+
+  This is cool because it's a memory operation, it's likely to work the second
+  time if it fails, and it doesn't consume any buffers off the VI queues.
+
+  We might even be able to get all this into a 32-bit value and make this
+  simpler.
+
+- we want to utilize our pool of buffers to primarily service forwarding
+  operations -- we want to wait for the send operation to reach the head of its
+  VC queue before we really start giving lots of buffers to that operation.
+
+
