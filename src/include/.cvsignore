@@ -3,3 +3,5 @@ mpi.h
 *conf.h.in
 mpichtimer.h
 pmi.h
+mpidpre.h
+mpidpost.h
