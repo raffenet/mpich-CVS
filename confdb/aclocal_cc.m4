@@ -727,9 +727,13 @@ int Foo(a) { return a; }
 #
 # Some systems (Linux ia64 and ecc, for example), support weak symbols
 # only within a single object file!  This tests that case.
+# Note that there is an extern int PFoo declaration before the
+# pragma.  Some compilers require this in order to make the weak symbol
+# extenally visible.  
 if test "$has_pragma_weak" = yes ; then
     rm -f conftest*
     cat >>conftest1.c <<EOF
+extern int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(int);
 int Foo(a) { return a; }
