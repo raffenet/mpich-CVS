@@ -27,9 +27,9 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno, context_id;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr=NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_SEND);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_SEND);
 
-    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_SEND);
+    MPIDI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_SEND);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -41,7 +41,7 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
+	MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
 	return mpi_errno;
     }
     if (request_ptr) {
@@ -52,7 +52,7 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         MPID_Request_release(request_ptr);
     }
     /* --END ERROR HANDLING-- */
-    MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
+    MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
     return mpi_errno;
 }
 
@@ -66,9 +66,9 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     int mpi_errno, context_id;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_RECV);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_RECV);
 
-    MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_RECV);
+    MPIDI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_RECV);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -80,7 +80,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
+	MPIDI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -102,7 +102,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	/* -- END ERROR HANDLING-- */
         MPID_Request_release(request_ptr);
     }
-    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
+    MPIDI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
     return mpi_errno;
 }
 
@@ -118,9 +118,9 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Request *recv_req_ptr=NULL, *send_req_ptr=NULL;
     int mpi_errno, context_id;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_SENDRECV);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_SENDRECV);
 
-    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPIC_SENDRECV);
+    MPIDI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPIC_SENDRECV);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -132,7 +132,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
+	MPIDI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -142,7 +142,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
+	MPIDI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -171,7 +171,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   fn_exit:
     MPID_Request_release(send_req_ptr);
     MPID_Request_release(recv_req_ptr);
-    MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
+    MPIDI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
     return mpi_errno;
 }
 
@@ -221,9 +221,9 @@ int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno, context_id;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr=NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_ISEND);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_ISEND);
 
-    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_ISEND);
+    MPIDI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_ISEND);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -235,14 +235,14 @@ int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
+	MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
 
     *request = request_ptr->handle;
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
+    MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
     return mpi_errno;
 }
 
@@ -257,9 +257,9 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
     int mpi_errno, context_id;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_IRECV);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_IRECV);
 
-    MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_IRECV);
+    MPIDI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_IRECV);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -271,14 +271,14 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
+	MPIDI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
 
     *request = request_ptr->handle;
 
-    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
+    MPIDI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
     return mpi_errno;
 }
 
@@ -288,9 +288,9 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
 #define FCNAME "MPIC_Wait"
 int MPIC_Wait(MPID_Request * request_ptr)
 {
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIC_WAIT);
 
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPIC_WAIT);
+    MPIDI_PT2PT_FUNC_ENTER(MPID_STATE_MPIC_WAIT);
     while((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_start();
@@ -304,7 +304,7 @@ int MPIC_Wait(MPID_Request * request_ptr)
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
+		MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -316,6 +316,6 @@ int MPIC_Wait(MPID_Request * request_ptr)
 	}
     }
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
+    MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
     return MPI_SUCCESS;
 }
