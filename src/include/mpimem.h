@@ -294,7 +294,7 @@ extern char *strdup( const char * );
 if (!(pointer_)) { \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
-}
+}}
 #else
 #define MPIU_CHKLMEM_DECL(n_) \
  void *(mpiu_chklmem_stk_[n_]);\
