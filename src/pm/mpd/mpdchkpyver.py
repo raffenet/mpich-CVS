@@ -9,6 +9,14 @@ This program is not to be executed from the command line.  It is
 exec'd by mpdroot to verify the version of python before executing
 a 'regular' mpd pgm, e.g. mpdallexit.
 """
+
+from sys import version, exit
+if version[0] == '1' and version[1] == '.':
+    print "mpdchkpyver: your python version must be >= 2.2 ;"
+    print "  current version is:", version
+    exit(-1)
+
+##  These must be after 1.x version check
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
 __date__ = ctime()
