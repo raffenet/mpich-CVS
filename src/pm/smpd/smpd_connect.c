@@ -943,6 +943,7 @@ int smpd_remove_from_dynamic_hosts(void)
 #ifndef HAVE_WINDOWS_H
     if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
     {
+	smpd_err_printf("gethostname failed, errno = %d\n", errno);
 	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
 	return SMPD_FAIL;
     }
@@ -953,6 +954,7 @@ int smpd_remove_from_dynamic_hosts(void)
     if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
     {
 	smpd_unlock_smpd_data();
+	smpd_dbg_printf("not removing host because "SMPD_DYNAMIC_HOSTS_KEY" does not exist\n");
 	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
 	return SMPD_FAIL;
     }
@@ -972,9 +974,15 @@ int smpd_remove_from_dynamic_hosts(void)
     }
 
     if (hosts_less_me[0] == '\0')
+    {
+	smpd_dbg_printf("removing "SMPD_DYNAMIC_HOSTS_KEY"\n");
 	smpd_delete_smpd_data(SMPD_DYNAMIC_HOSTS_KEY);
+    }
     else
+    {
+	smpd_dbg_printf("setting new "SMPD_DYNAMIC_HOSTS_KEY": %s\n", hosts_less_me);
 	smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts_less_me);
+    }
     smpd_unlock_smpd_data();
 #endif
     smpd_exit_fn("smpd_remove_from_dynamic_hosts");

@@ -373,6 +373,8 @@ int smpd_set_smpd_data(const char *key, const char *value)
 
     smpd_enter_fn("smpd_set_smpd_data");
 
+    smpd_dbg_printf("setting smpd data: %s=%s\n", key, value);
+
     list = smpd_parse_smpd_file();
     fout = smpd_open_smpd_file(SMPD_TRUE);
     while (list)
@@ -574,6 +576,8 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     int num_bytes;
 
     smpd_enter_fn("smpd_get_smpd_data");
+
+    smpd_dbg_printf("getting smpd data: %s\n", key);
 
     list = smpd_parse_smpd_file();
 
