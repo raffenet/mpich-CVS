@@ -433,6 +433,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
         }
     } 
+    /* increment 'offset' to indicate we have written 'mem_lengths' more bytes
+     * to the file */
+    offset +=mem_lengths; 
     else {
         /* noncontiguous in memory as well as in file */
 
@@ -793,6 +796,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_offsets);
     ADIOI_Free(file_lengths);
 
+    /* at this point, offset indicates offset (in bytes) into the file after
+     * all the writes are done, not the offset into the file when the function
+     * was called */
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = offset;
 
 error_state:
