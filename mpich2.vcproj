@@ -1844,6 +1844,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpid\common\datatype\mpid_segment.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_type_blockindexed.c">
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_type_commit.c">
 			</File>
 			<File
