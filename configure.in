@@ -136,8 +136,8 @@ dnl
 dnl
 dnl with-device
 if test "$with_device" = "default" ; then
-    # Pick the device.  For now, always choose multi-method
-    with_device=mm
+    # Pick the device.  For now, always choose tcp
+    with_device=ch3:tcp
 fi
 dnl Extract the device name from any options
 device_name=`echo $with_device | sed -e 's/:.*//g'`
