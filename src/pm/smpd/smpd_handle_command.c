@@ -151,6 +151,7 @@ int smpd_handle_result(smpd_context_t *context)
     char ctx_key[100];
     int process_id;
     smpd_context_t *pmi_context;
+    smpd_process_t *piter;
 
     smpd_enter_fn("handle_result");
 
@@ -161,14 +162,18 @@ int smpd_handle_result(smpd_context_t *context)
 	fflush(stdout);
 	*/
 
-	smpd_dbg_printf("forwarding the dbs result command to the pmi context.\n");
 	process_id = atoi(ctx_key);
-	pmi_context = smpd_process.context_list;
-	while (pmi_context)
+	smpd_dbg_printf("forwarding the dbs result command to the pmi context %d.\n", process_id);
+	pmi_context = NULL;
+	piter = smpd_process.process_list;
+	while (piter)
 	{
-	    if (pmi_context->id == process_id)
+	    if (piter->id == process_id)
+	    {
+		pmi_context = piter->pmi;
 		break;
-	    pmi_context = pmi_context->next;
+	    }
+	    piter = piter->next;
 	}
 	if (pmi_context == NULL)
 	{
