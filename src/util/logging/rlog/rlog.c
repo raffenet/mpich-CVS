@@ -86,7 +86,7 @@ int RLOG_FinishLog(RLOG_Struct* pRLOG, const char *filename)
 {
     RLOG_HEADER header;
 
-    //FixUpBuffer();
+    /* FixUpBuffer(); */
     MarkDiskStart(pRLOG);
     WriteFileData(pRLOG->pOutput->buffer, pRLOG->pOutput->pCurHeader - pRLOG->pOutput->buffer, pRLOG->pOutput->f);
     WriteDiskEvent(pRLOG);

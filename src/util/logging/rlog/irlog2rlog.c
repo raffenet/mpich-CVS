@@ -275,7 +275,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	}
     }
 
-    //fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow);
+    /* fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow); */
 }
 
 #ifdef FOO
@@ -378,7 +378,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
     }
 
-    //fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow);
+    /* fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow); */
 }
 #endif
 
@@ -425,7 +425,7 @@ void SaveState(RLOG_STATE *pState)
     {
 	if (pIter->state.event == pState->event)
 	{
-	    // replace old with new
+	    /* replace old with new */
 	    memcpy(&pIter->state, pState, sizeof(RLOG_STATE));
 	    return;
 	}
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
 		    nMinRank = (pInput->record.comm.rank < nMinRank) ? pInput->record.comm.rank : nMinRank;
 		    break;
 		case RLOG_IARROW_TYPE:
-		    //SaveArrow(&pInput->record.iarrow);
+		    /* SaveArrow(&pInput->record.iarrow); */
 		    break;
 		case RLOG_EVENT_TYPE:
 		    SaveEvent(&pInput->record.event);
