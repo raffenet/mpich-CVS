@@ -82,7 +82,7 @@ typedef int int32_t;
    routines for error messages or msg_printf etc. for general messages 
    (msg_printf will go through gettext).  
 */
-typedef enum
+typedef enum MPIU_dbg_state_t
 {
     MPIU_DBG_STATE_NONE = 0,
     MPIU_DBG_STATE_UNINIT = 1,
@@ -171,7 +171,7 @@ void MPIU_trdumpGrouped ( FILE * );
 
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
-typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
+typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 #define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
                if (memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
                memstack.ptrs[memstack.n_alloc++] = a;}
@@ -185,13 +185,13 @@ int MPIU_usage_printf( char *str, ... );
 int MPIU_error_printf( char *str, ... );
 
 /* Known language bindings */
-typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
+typedef enum MPID_Lang_t { MPID_LANG_C, MPID_LANG_FORTRAN, 
                MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
 /* Known MPI object types.  These are used for both the error handlers 
    and for the handles.  This is a 4 bit value.  0 is reserved for so 
    that all-zero handles can be flagged as an error. */
-typedef enum { 
+typedef enum MPID_Object_kind { 
   MPID_COMM       = 0x1, 
   MPID_GROUP      = 0x2,
   MPID_DATATYPE   = 0x3,
@@ -237,7 +237,7 @@ typedef enum {
 /* ALL objects have the handle as the first value. */
 /* Inactive (unused and stored on the appropriate avail list) objects 
    have MPIU_Handle_common as the head */
-typedef struct {
+typedef struct MPIU_Handle_common {
     int  handle;
     void *next;   /* Free handles use this field to point to the next
                      free object */
@@ -246,14 +246,14 @@ typedef struct {
 /* All *active* (in use) objects have the handle as the first value; objects
    with referene counts have the reference count as the second value.
    See MPIU_Object_add_ref and MPIU_Object_release_ref. */
-typedef struct {
+typedef struct MPIU_Handle_head {
     int handle;
     volatile int ref_count;
 } MPIU_Handle_head;
 
 /* This type contains all of the data, except for the direct array,
    used by the object allocators. */
-typedef struct {
+typedef struct MPIU_Object_alloc_t {
     MPIU_Handle_common *avail;          /* Next available object */
     int                initialized;     /* */
     void              *(*indirect)[];   /* Pointer to indirect object blocks */
@@ -495,7 +495,7 @@ do {                                                                    \
 
 /* Parameter handling.  These functions have not been implemented yet.
    See src/util/param.[ch] */
-typedef enum { MPIU_PARAM_FOUND = 0, 
+typedef enum MPIU_Param_result_t { MPIU_PARAM_FOUND = 0, 
                MPIU_PARAM_OK = 1, 
                MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
 int MPIU_Param_init( int *, char *[], const char [] );
@@ -506,7 +506,7 @@ int MPIU_Param_get_string( const char [], const char *, char ** );
 void MPIU_Param_finalize( void );
 
 /* Info */
-typedef struct MPID_Info_s {
+typedef struct MPID_Info {
     int                handle;
     struct MPID_Info_s *next;
     char               *key;
@@ -517,14 +517,14 @@ extern MPIU_Object_alloc_t MPID_Info_mem;
 extern MPID_Info MPID_Info_direct[];
 
 /* Error Handlers */
-typedef union {
+typedef union MPID_Errhandler_fn {
    void (*C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
    void (*F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
    void (*C_Win_Handler_function) ( MPI_Win *, int *, ... );
    void (*C_File_Handler_function) ( MPI_File *, int *, ... );
 } MPID_Errhandler_fn;
 
-typedef struct {
+typedef struct MPID_Errhandler {
   int                handle;
   volatile int       ref_count;
   MPID_Lang_t        language;
@@ -540,7 +540,7 @@ extern MPIU_Object_alloc_t MPID_Errhandler_mem;
 extern MPID_Errhandler MPID_Errhandler_direct[];
 
 /* Keyvals and attributes */
-typedef union {
+typedef union MPID_Copy_function {
   int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
                               MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -552,7 +552,7 @@ typedef union {
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
-typedef union {
+typedef union MPID_Delete_function {
   int  (*C_CommDeleteFunction)  ( MPI_Comm, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
                               MPI_Fint * );
@@ -563,7 +563,7 @@ typedef union {
   
 } MPID_Delete_function;
 
-typedef struct {
+typedef struct MPID_Keyval {
     int                  handle;
     volatile int         ref_count;
     MPID_Lang_t          language;
@@ -580,7 +580,7 @@ typedef struct {
 /* Attributes need no ref count or handle, but since we want to use the
    common block allocator for them, we must provide those elements 
 */
-typedef struct MPID_Attr_s {
+typedef struct MPID_Attribute {
     int                  handle;
     volatile int         ref_count;
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
@@ -602,14 +602,14 @@ typedef struct MPID_Attr_s {
  *---------------------------------------------------------------------------*/
 /* This structure is used to implement the group operations such as 
    MPI_Group_translate_ranks */
-typedef struct {
+typedef struct MPID_Group_pmap_t {
     int          lrank;     /* Local rank in group (between 0 and size-1) */
     int          lpid;      /* local process id, from VCONN */
     int          next_lpid; /* Index of next lpid (in lpid order) */
     int          flag;      /* marker, used to implement group operations */
 } MPID_Group_pmap_t;
 
-typedef struct {
+typedef struct MPID_Group {
     int          handle;
     volatile int ref_count;
     int          size;           /* Size of a group */
@@ -634,7 +634,7 @@ extern MPID_Group MPID_Group_direct[];
 typedef struct MPIDI_VCRT * MPID_VCRT;
 typedef struct MPIDI_VC   * MPID_VCR;
 
-typedef enum { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
+typedef enum MPID_Comm_kind_t { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
 /* Communicators */
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
@@ -684,7 +684,7 @@ extern MPID_Comm MPID_Comm_direct[];
 /* Requests */
 /* This currently defines a single structure type for all requests.  
    Eventually, we may want a union type, as used in MPICH-1 */
-typedef enum { MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND, 
+typedef enum MPID_Request_kind_t { MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND, 
                MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
 typedef struct MPID_Request {
     int          handle;
@@ -718,7 +718,7 @@ extern MPIU_Object_alloc_t MPID_Request_mem;
 extern MPID_Request MPID_Request_direct[];
 
 /* Windows */
-typedef struct {
+typedef struct MPID_Win {
     int           handle;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
@@ -738,7 +738,7 @@ extern MPID_Win MPID_Win_direct[];
 
 /* Datatypes */
 
-typedef struct MPID_Datatype_st { 
+typedef struct MPID_Datatype { 
     int           handle;            /* value of MPI_Datatype for structure */
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
@@ -813,7 +813,7 @@ extern MPID_Datatype MPID_Datatype_direct[];
   Module:
   Collective-DS
   E*/
-typedef enum { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4, 
+typedef enum MPID_Op_kind { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4, 
 	       MPID_OP_LAND=5, MPID_OP_BAND=6, MPID_OP_LOR=7, MPID_OP_BOR=8,
 	       MPID_OP_LXOR=9, MPID_OP_BXOR=10, MPID_OP_MAXLOC=11, 
                MPID_OP_MINLOC=12, MPID_OP_REPLACE=13, 
@@ -855,7 +855,7 @@ typedef enum { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4,
   Module:
   Collective-DS
   S*/
-typedef union {
+typedef union MPID_User_function {
     void (*c_function) ( const void *, void *, 
 			 const int *, const MPI_Datatype * ); 
     void (*f77_function) ( const void *, void *,
@@ -877,7 +877,7 @@ typedef union {
   Module:
   Collective-DS
   S*/
-typedef struct {
+typedef struct MPID_Op {
      int                handle;      /* value of MPI_Op for this structure */
      volatile int       ref_count;
      MPID_Op_kind       kind;
@@ -890,7 +890,7 @@ extern MPID_Op MPID_Op_direct[];
 extern MPIU_Object_alloc_t MPID_Op_mem;
 
 /* Collective operations */
-typedef struct MPID_Collops_struct {
+typedef struct MPID_Collops {
     int ref_count;   /* Supports lazy copies */
     /* Contains pointers to the functions for the MPI collectives */
     int (*Barrier) (MPID_Comm *);
@@ -927,7 +927,7 @@ typedef struct MPID_Collops_struct {
 #define MPIR_BARRIER_TAG 1
 
 /* Files */
-typedef struct {
+typedef struct MPID_File {
     int           handle;             /* value of MPI_File for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
@@ -944,7 +944,7 @@ extern MPID_File MPID_File_direct[];
 /* Get the timer definitions.  The source file for this include is
    src/mpi/timer/mpichtimer.h.in */
 #include "mpichtimer.h"
-typedef struct {
+typedef struct MPID_Stateinfo_t {
     MPID_Time_t stamp;
     int count;
 } MPID_Stateinfo_t;
@@ -953,7 +953,7 @@ typedef struct {
 /* Thread types */
 /* Temporary; this will include "mpichthread.h" eventually */
 
-typedef struct {
+typedef struct MPICH_PerThread_t {
     int              nest_count;   /* For layered MPI implementation */
     int              op_errno;     /* For errors in predefined MPI_Ops */
 #ifdef HAVE_TIMING
@@ -975,10 +975,10 @@ extern MPICH_PerThread_t MPIR_Thread;
 #endif
 
 /* Per process data */
-typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
+typedef enum MPIR_MPI_State_t { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
                MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
 
-typedef struct {
+typedef struct PreDefined_attrs {
     int appnum;          /* Application number provided by mpiexec (MPI-2) */
     int host;            /* host */
     int io;              /* standard io allowed */
@@ -988,7 +988,7 @@ typedef struct {
     int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
 } PreDefined_attrs;
 
-typedef struct {
+typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     int               thread_provided;  /* Provided level of thread support */
     MPID_Thread_key_t thread_key;       /* Id for perthread data */
