@@ -141,4 +141,5 @@ AC_OUTPUT(Makefile \
  src/viardma/Makefile \
  src/packer/Makefile \
  src/unpacker/Makefile \
+ src/rma/Makefile \
 )
