@@ -26,3 +26,6 @@ pmandel_spawn_sources = pmandel_spawn.c
 pmandel_spawn_LDADD = -lm
 pmandel_service_sources = pmandel_service.c
 pmandel_service_LDADD = -lm
+spawn_merge_parent_SOURCES = spawn_merge_parent.c
+spawn_merge_child1_SOURCES = spawn_merge_child1.c
+spawn_merge_child2_SOURCES = spawn_merge_child2.c
