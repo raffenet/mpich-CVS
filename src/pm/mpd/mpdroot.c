@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     newargv = (char **) malloc(sizeof(char*) * (argc + 2));  /* pad a bit */
     if ((NAME_LEN - (strlen("mpdchkpyver.py")+1)) > 0)
     {
-	strncpy(cmd,argv[0],NAME_LEN);
+	strncpy(cmd,argv[0],NAME_LEN-strlen("mpdchkpyver.py"));
     }
     else
     {
