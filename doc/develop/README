@@ -1,0 +1,10 @@
+This directory is intended to contain information for developers
+Currently empty because the group has not agreed on any method for
+maintaining this information.  It is better for now that outside 
+developers read the code.
+
+There are some files in the CVS attic that may be restored if there is 
+any interest in following a documented development process.  Those files are
+develop.tex - overview
+collop.tex - access to collective operations
+namepub.tex - name publisher interface
