@@ -20,8 +20,6 @@
  * This structure is used to pass function-specific parameters into our 
  * segment processing function.  This allows us to get additional parameters
  * to the functions it calls without changing the prototype.
- *
- * TODO: MOVE THIS OUT AND MAKE IT USE-DEPENDENT
  */
 struct MPID_Segment_piece_params {
     union {
@@ -402,8 +400,9 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
 					   void *bufp,
 					   void *v_paramp)
 {
-    int el_size;
+    int el_size, last_idx;
     DLOOP_Offset size;
+    char *last_end = NULL;
     struct MPID_Segment_piece_params *paramp = v_paramp;
     MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
 
@@ -421,23 +420,32 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
 		    (int) *blocks_p);
 #endif
     
-    if (paramp->u.pack_vector.index > 0 && ((char *) bufp + rel_off) ==
-	(((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
-	 paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
+    last_idx = paramp->u.pack_vector.index - 1;
+    if (last_idx >= 0) {
+	last_end = ((char *) paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_BUF) +
+	    paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_LEN;
+    }
+
+    if ((last_idx == paramp->u.pack_vector.length-1) &&
+	(last_end != ((char *) bufp + rel_off)))
+    {
+	/* we have used up all our entries, and this region doesn't fit on
+	 * the end of the last one.  setting blocks to 0 tells manipulation
+	 * function that we are done.
+	 */
+	*blocks_p = 0;
+	MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
+	return 1;
+    }
+    else if (last_idx >= 0 && (last_end == ((char *) bufp + rel_off)))
     {
 	/* add this size to the last vector rather than using up another one */
-	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
+	paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_LEN += size;
     }
     else {
-	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
-	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
+	paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
+	paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_LEN = size;
 	paramp->u.pack_vector.index++;
-	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
-	if (paramp->u.pack_vector.index == paramp->u.pack_vector.length)
-	{
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
-	    return 1;
-	}
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
     return 0;
@@ -487,6 +495,9 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 #endif
 
     for (i=0; i < count && blocks_left > 0; i++) {
+	int last_idx;
+	char *last_end = NULL;
+
 	if (blocks_left > blksz) {
 	    size = blksz * basic_size;
 	    blocks_left -= blksz;
@@ -497,24 +508,30 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 	    blocks_left = 0;
 	}
 
-	if (paramp->u.pack_vector.index > 0 && ((char *) bufp + rel_off) ==
-	    (((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
-	     paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
+	last_idx = paramp->u.pack_vector.index - 1;
+	if (last_idx >= 0) {
+	    last_end = ((char *) paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_BUF) +
+		paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_LEN;
+	}
+
+	if ((last_idx == paramp->u.pack_vector.length-1) &&
+	    (last_end != ((char *) bufp + rel_off)))
+	{
+	    /* we have used up all our entries, and this one doesn't fit on
+	     * the end of the last one.
+	     */
+	    *blocks_p -= blocks_left;
+	    return 1;
+	}
+	else if (last_idx >= 0 && (last_end == ((char *) bufp + rel_off)))
 	{
 	    /* add this size to the last vector rather than using up another one */
-	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
+	    paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_LEN += size;
 	}
 	else {
-	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
-	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
+	    paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
+	    paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_LEN = size;
 	    paramp->u.pack_vector.index++;
-	    /* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
-	    if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) {
-		/* TODO: FIX SO THAT WE CONTINUE TO DO AGGREGATION ON LAST VECTOR */
-		*blocks_p -= blocks_left;
-		MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
-		return 1;
-	    }
 	}
 
 	rel_off += stride;
@@ -1042,12 +1059,3 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
     }
     return 0;
 }
-
-
-
-
-
-
-
-
-
