@@ -363,12 +363,4 @@ do {                                          \
 #error "Cannot detect a float type that is 8 bytes long"
 #endif
 
-#ifdef HAVE_LONG_DOUBLE
-#if (SIZEOF_LONG_DOUBLE == 12)
-#define TWELVE_BYTE_FLOAT_TYPE long double
-#else
-#error "Cannot detect a float type that is 12 bytes long"
-#endif
-#endif /* HAVE_LONG_DOUBLE */
-
 #endif /* __MPIDEXT32SEGMENT_H */

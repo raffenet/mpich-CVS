@@ -76,47 +76,40 @@ static int external32_basic_convert(char *dest_buf,
 
     assert(dest_buf && src_buf);
 
-    if ((src_el_size == dest_el_size) && (src_el_size == 2))
+    if (src_el_size == dest_el_size)
     {
-        while(src_ptr != src_end)
+        if (src_el_size == 2)
         {
-            BASIC_convert16((*(TWO_BYTE_BASIC_TYPE *)src_ptr),
-                            (*(TWO_BYTE_BASIC_TYPE *)dest_ptr));
+            while(src_ptr != src_end)
+            {
+                BASIC_convert16((*(TWO_BYTE_BASIC_TYPE *)src_ptr),
+                                (*(TWO_BYTE_BASIC_TYPE *)dest_ptr));
 
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
+                src_ptr += src_el_size;
+                dest_ptr += dest_el_size;
+            }
         }
-    }
-    else if ((src_el_size == dest_el_size) && (src_el_size == 4))
-    {
-        while(src_ptr != src_end)
+        else if (src_el_size == 4)
         {
-            BASIC_convert32((*(FOUR_BYTE_BASIC_TYPE *)src_ptr),
-                            (*(FOUR_BYTE_BASIC_TYPE *)dest_ptr));
+            while(src_ptr != src_end)
+            {
+                BASIC_convert32((*(FOUR_BYTE_BASIC_TYPE *)src_ptr),
+                                (*(FOUR_BYTE_BASIC_TYPE *)dest_ptr));
 
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
+                src_ptr += src_el_size;
+                dest_ptr += dest_el_size;
+            }
         }
-    }
-    else if ((src_el_size == dest_el_size) && (src_el_size == 8))
-    {
-        while(src_ptr != src_end)
+        else if (src_el_size == 8)
         {
-            BASIC_convert64((EIGHT_BYTE_BASIC_TYPE *)src_ptr,
-                            (EIGHT_BYTE_BASIC_TYPE *)dest_ptr);
+            while(src_ptr != src_end)
+            {
+                BASIC_convert64((EIGHT_BYTE_BASIC_TYPE *)src_ptr,
+                                (EIGHT_BYTE_BASIC_TYPE *)dest_ptr);
 
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
-        }
-    }
-    else if ((src_el_size == dest_el_size) && (src_el_size == 12))
-    {
-        while(src_ptr != src_end)
-        {
-            BASIC_convert96(src_ptr, dest_ptr);
-
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
+                src_ptr += src_el_size;
+                dest_ptr += dest_el_size;
+            }
         }
     }
     else
@@ -137,42 +130,30 @@ static int external32_float_convert(char *dest_buf,
 
     assert(dest_buf && src_buf);
 
-    if ((src_el_size == dest_el_size) && (src_el_size == 4))
+    if (src_el_size == dest_el_size)
     {
-        while(src_ptr != src_end)
+        if (src_el_size == 4)
         {
-            FLOAT_convert((*(FOUR_BYTE_FLOAT_TYPE *)src_ptr),
-                          (*(FOUR_BYTE_FLOAT_TYPE *)dest_ptr));
+            while(src_ptr != src_end)
+            {
+                FLOAT_convert((*(FOUR_BYTE_FLOAT_TYPE *)src_ptr),
+                              (*(FOUR_BYTE_FLOAT_TYPE *)dest_ptr));
 
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
+                src_ptr += src_el_size;
+                dest_ptr += dest_el_size;
+            }
         }
-    }
-    else if ((src_el_size == dest_el_size) && (src_el_size == 8))
-    {
-        while(src_ptr != src_end)
+        else if (src_el_size == 8)
         {
-            FLOAT_convert((*(EIGHT_BYTE_FLOAT_TYPE *)src_ptr),
-                          (*(EIGHT_BYTE_FLOAT_TYPE *)dest_ptr));
+            while(src_ptr != src_end)
+            {
+                FLOAT_convert((*(EIGHT_BYTE_FLOAT_TYPE *)src_ptr),
+                              (*(EIGHT_BYTE_FLOAT_TYPE *)dest_ptr));
 
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
+                src_ptr += src_el_size;
+                dest_ptr += dest_el_size;
+            }
         }
-    }
-    else if ((src_el_size == dest_el_size) && (src_el_size == 12))
-    {
-#ifdef TWELVE_BYTE_FLOAT_TYPE
-        while(src_ptr != src_end)
-        {
-            FLOAT_convert((*(TWELVE_BYTE_FLOAT_TYPE *)src_ptr),
-                          (*(TWELVE_BYTE_FLOAT_TYPE *)dest_ptr));
-
-            src_ptr += src_el_size;
-            dest_ptr += dest_el_size;
-        }
-#else
-	/* produce some kind of truncation error */
-#endif
     }
     else
     {
