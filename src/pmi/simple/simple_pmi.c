@@ -25,6 +25,10 @@
 #endif
 #endif
 
+/* Temporary debug definitions */
+#define DBG_PRINTF printf
+#define DBG_FPRINTF fprintf
+
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
@@ -79,7 +83,7 @@ int PMI_Init( int *spawned )
 	pn = strchr( p, ':' );
 
 	if (PMI_debug) {
-	    printf( "Connecting to %s\n", p );
+	    DBG_PRINTF( "Connecting to %s\n", p );
 	}
 	if (pn) {
 	    MPIU_Strncpy( hostname, p, (pn - p) );
@@ -716,8 +720,8 @@ int PMI_Set_from_port( int fd, int id )
     PMI_debug = atoi(cmd);
 
     if (PMI_debug) {
-	printf( "end of handshake, rank = %d, size = %d\n", 
-		PMI_rank, PMI_size ); fflush(stdout);
+	DBG_PRINTF( "end of handshake, rank = %d, size = %d\n", 
+		    PMI_rank, PMI_size ); fflush(stdout);
     }
 
     return 0;
