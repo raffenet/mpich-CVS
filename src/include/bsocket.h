@@ -19,6 +19,9 @@ extern "C" {
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h> 
+#endif
 
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR -1
