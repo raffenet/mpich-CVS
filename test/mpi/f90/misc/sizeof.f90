@@ -1,3 +1,7 @@
+!  
+!  (C) 2004 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
         program main
           use mpi
           integer ierr, errs
