@@ -17,7 +17,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
     MPI_Info info;
     char *value;
-    int init, flag, intval, tmp_val, nprocs;
+    int flag, intval, tmp_val, nprocs;
 
     if (!(fd->info)) MPI_Info_create(&(fd->info));
     info = fd->info;
