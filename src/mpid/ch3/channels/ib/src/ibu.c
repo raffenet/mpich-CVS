@@ -71,7 +71,7 @@ typedef struct ibu_state_t
     ibu_buffer read;
     ibu_unex_read_t *unex_list;
     ibu_buffer write;
-    ibu_num_written_node_t *write_list_head, *write_list_tail;
+    //ibu_num_written_node_t *write_list_head, *write_list_tail;
     /* user pointer */
     void *user_ptr;
     /* unexpected queue pointer */
@@ -658,7 +658,7 @@ static int ibui_post_receive(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-/*
+/*****************************/
 static ibu_num_written_node_t *g_write_list_head = NULL;
 static ibu_num_written_node_t *g_write_list_tail = NULL;
 
@@ -679,8 +679,9 @@ static int ibui_next_num_written()
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
     return num_bytes;
 }
-*/
+/*****************************/
 
+/*
 static int ibui_next_num_written(ibu_t ibu)
 {
     ibu_num_written_node_t *p;
@@ -698,6 +699,7 @@ static int ibui_next_num_written(ibu_t ibu)
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
     return num_bytes;
 }
+*/
 
 static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*))
 {
@@ -720,6 +722,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	p = malloc(sizeof(ibu_num_written_node_t));
 	p->next = NULL;
 	p->num_bytes = length;
+	/*
 	if (ibu->write_list_tail)
 	{
 	    ibu->write_list_tail = p;
@@ -729,7 +732,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    ibu->write_list_head = p;
 	}
 	ibu->write_list_tail = p;
-	/*
+	*/
 	if (g_write_list_tail)
 	{
 	    g_write_list_tail->next = p;
@@ -739,7 +742,6 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    g_write_list_head = p;
 	}
 	g_write_list_tail = p;
-	*/
 	
 	mem_ptr = BlockAlloc(ibu->allocator);
 	memcpy(mem_ptr, buf, length);
@@ -825,8 +827,8 @@ static inline void init_state_struct(ibu_state_t *p)
     /*p->write.iov = NULL;*/
     p->write.iovlen = 0;
     p->write.progress_update = NULL;
-    p->write_list_head = NULL;
-    p->write_list_tail = NULL;
+    //p->write_list_head = NULL;
+    //p->write_list_tail = NULL;
     p->unex_finished_queue = NULL;
 }
 
