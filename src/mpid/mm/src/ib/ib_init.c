@@ -54,7 +54,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTR) 
     {
 	av.sl                         = 0;
-	av.dest_lid                   = (ib_uint16_t)ib->m_dlid;
+	av.dest_lid                   = ib->m_dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
 	av.max_static_rate            = 1;
@@ -154,9 +154,13 @@ ib_uint32_t createQP(IB_Info *ib)
     attrList.attr_num = sizeof(attr_rec)/sizeof(attr_rec[0]);
     attrList.attr_rec_p = &attr_rec[0];
 
-    status = ib_qp_create_us(IB_Process.hca_handle,
-			     IB_Process.pd_handle,
-			     &attrList, &ib->m_qp_handle, &qp_num, NULL);
+    status = ib_qp_create_us(
+	IB_Process.hca_handle,
+	IB_Process.pd_handle,
+	&attrList, 
+	&ib->m_qp_handle, 
+	&qp_num, 
+	NULL);
     if (status != IBA_OK)
 	return status;
     ib->m_dest_qp_num = qp_num;
@@ -228,13 +232,13 @@ int ib_setup_connections()
 	ib->m_dlid = atoi(value);
 	ib->m_virtual_address = malloc(IB_PINNED_MEMORY_SIZE);
 	if (ib->m_virtual_address == NULL)
-	    {
-		MPIU_dbg_printf("malloc(%d) failed.\n", IB_PINNED_MEMORY_SIZE);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("malloc(%d) failed.\n", IB_PINNED_MEMORY_SIZE);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	status = ib_mr_register_us(IB_Process.hca_handle,
 				   (ib_uint8_t*)ib->m_virtual_address,
 				   IB_PINNED_MEMORY_SIZE,
@@ -243,16 +247,17 @@ int ib_setup_connections()
 				   &ib->m_mr_handle,
 				   &lkey, &rkey);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("ib_mr_register_us failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("ib_mr_register_us failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	ib->m_polling = TRUE;
 	ib->m_message_size = IB_PINNED_MEMORY_SIZE;
 	ib->m_message_segments = 1;
+	ib->m_max_wqes = 50;
 	/* ***************************************** */
 	/* These fields were used by the Paceline code.
 	   I suspect I won't need to use them */
@@ -269,13 +274,13 @@ int ib_setup_connections()
 				 &ib->m_send_cq_handle,
 				 NULL);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("ib_cq_create_us(send cq) failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("ib_cq_create_us(send cq) failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	max_cq_entries = IB_MAX_CQ_ENTRIES + 1;
 	status = ib_cq_create_us(IB_Process.hca_handle, 
 				 IB_Process.cqd_handle,
@@ -283,13 +288,13 @@ int ib_setup_connections()
 				 &ib->m_recv_cq_handle,
 				 NULL);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("ib_cq_create_us(recv cq) failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("ib_cq_create_us(recv cq) failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 
 	/*******************************************
 	  Is this section on setting up receive and 
@@ -301,78 +306,78 @@ int ib_setup_connections()
 	ib->m_recv_sglist.data_seg_p = calloc(ib->m_message_segments,
 					      sizeof(ib_data_segment_t));
 	if (ib->m_recv_sglist.data_seg_p == NULL)
-	    {
-		MPIU_dbg_printf("calloc failed\n");
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("calloc failed\n");
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	ib->m_recv_sglist.data_seg_num = ib->m_message_segments;
-	for (i=0; i<(int)ib->m_message_segments; i++)
-	    {
-		ib->m_recv_sglist.data_seg_p[i].length = ib->m_message_size;
-		ib->m_recv_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
-		ib->m_recv_sglist.data_seg_p[i].l_key = lkey;
-	    }
+	for (i=0; i<ib->m_message_segments; i++)
+	{
+	    ib->m_recv_sglist.data_seg_p[i].length = ib->m_message_size;
+	    ib->m_recv_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
+	    ib->m_recv_sglist.data_seg_p[i].l_key = lkey;
+	}
 
 	/* allocate and setup the send segments */
 	ib->m_send_sglist.data_seg_p = calloc(ib->m_message_segments,
 					      sizeof(ib_data_segment_t));
 	if (ib->m_send_sglist.data_seg_p == NULL)
-	    {
-		MPIU_dbg_printf("calloc failed\n");
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("calloc failed\n");
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	ib->m_send_sglist.data_seg_num = ib->m_message_segments;
-	for (i=0; i<(int)ib->m_message_segments; i++)
-	    {
-		ib->m_send_sglist.data_seg_p[i].length = ib->m_message_size;
-		ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
-		ib->m_send_sglist.data_seg_p[i].l_key = lkey;
-	    }
+	for (i=0; i<ib->m_message_segments; i++)
+	{
+	    ib->m_send_sglist.data_seg_p[i].length = ib->m_message_size;
+	    ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
+	    ib->m_send_sglist.data_seg_p[i].l_key = lkey;
+	}
 
 	/* Create the queue pair */
 	status = createQP(ib);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("createQP failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("createQP failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 
 	status = modifyQP(ib, IB_QP_STATE_INIT);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	status = modifyQP(ib, IB_QP_STATE_RTR);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
 	status = modifyQP(ib, IB_QP_STATE_RTS);
 	if (status != IB_SUCCESS)
-	    {
-		MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
-		free(key);
-		free(value);
-		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
-		return -1;
-	    }
+	{
+	    MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
+	    free(key);
+	    free(value);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+	    return -1;
+	}
     }
 
     MPIU_dbg_printf("calling PMI_Barrier\n");
