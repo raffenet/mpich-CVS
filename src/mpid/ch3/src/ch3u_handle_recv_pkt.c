@@ -6,6 +6,14 @@
 
 #include "mpidimpl.h"
 
+/*
+ * MPIDI_CH3U_Handle_recv_pkt()
+ *
+ * NOTE: This routine must be reentrant safe.  Routines like MPIDI_CH3_iRead()
+ * are allowed to perform up-calls if they complete the requested work
+ * immediately. *** Care must be take to avoid deep recursion which with some
+ * thread packages can result in overwriting the stack of another thread. ***
+ */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_recv_pkt
 #undef FCNAME
@@ -44,7 +52,46 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * upkt)
 		}
 		else
 		{
-		    assert(pkt->data_sz == 0);
+		    long dt_sz;
+		    int dt_contig;
+		    void * const buf = req->ch3.user_buf;
+		    const int count = req->ch3.user_count;
+		    const MPI_Datatype datatype = req->ch3.datatype;
+		    
+		    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+		    {
+			dt_sz = MPID_Datatype_get_size(datatype);
+			dt_contig = TRUE;
+		    }
+		    else
+		    {
+			assert(HANDLE_GET_KIND(datatype) ==
+			       HANDLE_KIND_BUILTIN);
+			abort();
+		    }
+		    
+		    if (dt_contig) 
+		    {
+			if (pkt->data_sz <= dt_sz * count)
+			{
+			    req->ch3.iov[0].iov_base = buf;
+			    req->ch3.iov[0].iov_len = pkt->data_sz;
+			    req->ch3.iov_count = 1;
+			    req->ch3.iov_offset = 0;
+			    req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+			    MPIDI_CH3_iRead(vc, req);
+			}
+			else
+			{
+			    assert(pkt->data_sz < dt_sz * count);
+			    /* TODO: handle buffer overflow */
+			}
+		    }
+		    else
+		    {
+			assert(dt_contig);
+			abort();
+		    }
 		}
 	    }
 	    else
