@@ -222,7 +222,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
     if (qp_state == IB_QP_STATE_INIT)
     {
 	if ((attr_rec = (attr_rec_t *)
-	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
+	     MPIU_Malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
 	    err_printf("%s: Malloc failed %d\n", FCNAME, __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
@@ -246,7 +246,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTR) 
     {
 	av.sl                         = 0;
-	/*printf("setting dest_lid to ibu->dlid: %d\n", ibu->dlid);*/
+	/*MPIU_DBG_PRINTF(("setting dest_lid to ibu->dlid: %d\n", ibu->dlid));*/
 	av.dest_lid                   = (ib_uint16_t)ibu->dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
@@ -257,7 +257,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	av.global.traffic_class       = 1;
 	    
 	if ((attr_rec = (attr_rec_t *)
-	     malloc(sizeof (attr_rec_t) * 6)) == NULL )
+	     MPIU_Malloc(sizeof (attr_rec_t) * 6)) == NULL )
 	{
 	    err_printf("%s: Malloc failed %d\n", FCNAME, __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
@@ -283,7 +283,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTS)
     {
 	if ((attr_rec = (attr_rec_t *)
-	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
+	     MPIU_Malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
 	    err_printf("%s: Malloc failed %d\n", FCNAME, __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
@@ -320,7 +320,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 			     qp_state, 
 			     &attrList );
     if (attr_rec)    
-	free(attr_rec);
+	MPIU_Free(attr_rec);
     if( status != IBU_SUCCESS )
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
@@ -392,10 +392,10 @@ static void *ib_malloc_register(size_t size)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_MALLOC_REGISTER);
 
-    ptr = malloc(size);
+    ptr = MPIU_Malloc(size);
     if (ptr == NULL)
     {
-	err_printf("ib_malloc_register: malloc(%d) failed.\n", size);
+	err_printf("ib_malloc_register: MPIU_Malloc(%d) failed.\n", size);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
@@ -428,7 +428,7 @@ static void ib_free_deregister(void *p)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_FREE_DEREGISTER);
     /*ib_mr_deregister_us(IBU_Process.hca_handle, s_mr_handle);*/
-    free(p);
+    MPIU_Free(p);
     MPIDI_FUNC_EXIT(MPID_STATE_IB_FREE_DEREGISTER);
 }
 
@@ -445,7 +445,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_QP);
 
-    p = (ibu_t)malloc(sizeof(ibu_state_t));
+    p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
@@ -554,7 +554,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -604,7 +604,7 @@ static int ibui_post_receive(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -632,7 +632,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 
     work_req.dest_address      = 0;
     work_req.dest_q_key        = 0;
-    work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+    work_req.dest_qpn          = 0;
     work_req.eecn              = 0;
     work_req.ethertype         = 0;
     work_req.fence_f           = 0;
@@ -655,7 +655,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
@@ -720,7 +720,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	
 	work_req.dest_address      = 0;
 	work_req.dest_q_key        = 0;
-	work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+	work_req.dest_qpn          = 0;
 	work_req.eecn              = 0;
 	work_req.ethertype         = 0;
 	work_req.fence_f           = 0;
@@ -743,7 +743,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
@@ -799,13 +799,13 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	}
 	buf = mem_ptr;
 	num_avail = IBU_PACKET_SIZE;
-	/*printf("iov length: %d\n", n);*/
+	/*MPIU_DBG_PRINTF(("iov length: %d\n", n));*/
 	for (; cur_index < n && num_avail; )
 	{
 	    len = min (num_avail, cur_len);
 	    num_avail -= len;
 	    total += len;
-	    /*printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);*/
+	    /*MPIU_DBG_PRINTF(("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail));*/
 	    memcpy(buf, cur_buf, len);
 	    buf += len;
 	    
@@ -837,7 +837,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	
 	work_req.dest_address      = 0;
 	work_req.dest_q_key        = 0;
-	work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+	work_req.dest_qpn          = 0;
 	work_req.eecn              = 0;
 	work_req.ethertype         = 0;
 	work_req.fence_f           = 0;
@@ -860,7 +860,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return -1;
@@ -872,8 +872,6 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
     return total;
 }
-
-static ibuBlockAllocator g_StateAllocator;
 
 #undef FUNCNAME
 #define FUNCNAME ibu_init
@@ -922,7 +920,7 @@ int ibu_init()
     attr_size = 0;
     status = ib_hca_query_us(IBU_Process.hca_handle, NULL, 
         HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
-    IBU_Process.attr_p = calloc(attr_size, sizeof(ib_uint8_t));
+    IBU_Process.attr_p = MPIU_Calloc(attr_size, sizeof(ib_uint8_t));
     status = ib_hca_query_us(IBU_Process.hca_handle, IBU_Process.attr_p, 
 	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IBU_SUCCESS)
@@ -933,13 +931,12 @@ int ibu_init()
     }
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
     /*
-    printf("infiniband:\n mtu: %d\n msg_size: %d\n",
+    MPIU_DBG_PRINTF(("infiniband:\n mtu: %d\n msg_size: %d\n",
 	IBU_Process.attr_p->port_static_info_p->mtu,
-	IBU_Process.attr_p->port_static_info_p->msg_size);fflush(stdout);
+	IBU_Process.attr_p->port_static_info_p->msg_size));
     */
 
     /* non infiniband initialization */
-    g_StateAllocator = ibuBlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
     IBU_Process.unex_finished_list = NULL;
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
@@ -956,7 +953,6 @@ int ibu_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     /*ib_release_us();*/ /* for some reason Paceline does not support the release function */
-    ibuBlockAllocFinalize(&g_StateAllocator);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
@@ -1015,7 +1011,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
 
     MPIDI_DBG_PRINTF((60, FCNAME, "%d bytes\n", num_bytes));
 
-    p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
+    p = (ibu_unex_read_t *)MPIU_Malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
     p->buf = (unsigned char *)mem_ptr + offset;
     p->length = num_bytes;
@@ -1064,10 +1060,10 @@ static int ibui_read_unex(ibu_t ibu)
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
-	    /* free the unexpected data node */
+	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
-	    free(temp);
+	    MPIU_Free(temp);
 	    /* post another receive to replace the consumed one */
 	    ibui_post_receive(ibu);
 	}
@@ -1139,10 +1135,10 @@ int ibui_readv_unex(ibu_t ibu)
 	    assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFree(mem_ptr)"));
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
-	    /* free the unexpected data node */
+	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
-	    free(temp);
+	    MPIU_Free(temp);
 	    /* replace the consumed read descriptor */
 	    ibui_post_receive(ibu);
 	}
@@ -1525,7 +1521,6 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
 
     num_bytes = ibui_post_write(ibu, buf, len, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
-    //return IBU_SUCCESS;
     MPIDI_DBG_PRINTF((60, FCNAME, "returning %d\n", num_bytes));
     return num_bytes;
 }
@@ -1543,7 +1538,6 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-    //ibu->write.total = 0;
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->write.iov = iov;*/
     /*
@@ -1554,7 +1548,6 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     ibu->write.progress_update = wfn;
     */
     ibu->state |= IBU_WRITING;
-    //ibu->pending_operations++;
     /*
     {
 	char str[1024], *s = str;
@@ -1563,16 +1556,12 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 	for (i=0; i<n; i++)
 	    s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
 	sprintf(s, ")\n");
-	printf("%s", str);
+	MPIU_DBG_PRINTF(("%s", str));
     }
     */
-    //num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
     num_bytes = ibui_post_writev(ibu, iov, n, wfn);
-    //ibu->write.bufflen = num_bytes;
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
-    //return IBU_SUCCESS;
-    MPIDI_DBG_PRINTF((60, FCNAME, "returning %d\n", num_bytes));
-    return num_bytes;
+    return IBU_SUCCESS;
 }
 #endif
 
