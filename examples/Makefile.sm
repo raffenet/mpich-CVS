@@ -1,3 +1,9 @@
+#OTHER_DIRS = f77 f90 cxx
+
+INCLUDES = -I../src/include -I${top_srcdir}/src/include
+LDADD = -L../lib
+DEPADD = ../lib/lib${MPILIBNAME}.a
+
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
 hellow_SOURCES = hellow.c
@@ -13,6 +19,3 @@ cpi_SOURCES = cpi.c
 cpi_LDADD = -lm
 icpi_SOURCES = icpi.c
 icpi_LDADD = -lm
-INCLUDES = -I../src/include -I${top_srcdir}/src/include
-LDADD = -L../lib
-DEPADD = ../lib/lib${MPILIBNAME}.a
