@@ -12,9 +12,6 @@
 #include "smpd_service.h"
 #include <ntsecapi.h>
 
-static DWORD dwErr = 0;
-static TCHAR szErr[256];
-
 VOID WINAPI smpd_service_ctrl(DWORD dwCtrlCode);
 static LPTSTR GetLastErrorText( LPTSTR lpszBuf, DWORD dwSize );
 
@@ -59,7 +56,7 @@ void smpd_service_main(int argc, char *argv[])
     /* try to report the stopped status to the service control manager. */
     if (smpd_process.sshStatusHandle)
     {
-	ReportStatusToSCMgr(SERVICE_STOPPED, dwErr, 0);
+	ReportStatusToSCMgr(SERVICE_STOPPED, 0, 0);
     }
 }
 
@@ -192,6 +189,7 @@ void smpd_add_error_to_message_log(char *msg)
     TCHAR   szMsg[256];
     HANDLE  hEventSource;
     LPTSTR  lpszStrings[2];
+    DWORD dwErr;
 
     dwErr = GetLastError();
 
@@ -325,7 +323,7 @@ void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart)
 {
     SC_HANDLE   schService;
     SC_HANDLE   schSCManager;
-    
+    TCHAR szErr[256];
     TCHAR szPath[1024];
     
     if ( GetModuleFileName( NULL, szPath, 1024 ) == 0 )
@@ -402,10 +400,11 @@ void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart)
 */
 SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled)
 {
-    SMPD_BOOL        bRetVal = SMPD_FALSE;
+    SMPD_BOOL   bRetVal = SMPD_FALSE;
     SC_HANDLE   schService;
     SC_HANDLE   schSCManager;
-    
+    TCHAR       szErr[256];
+
     schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS );
     if ( schSCManager )
     {
@@ -503,6 +502,7 @@ void smpd_stop_service()
 {
     SC_HANDLE   schService;
     SC_HANDLE   schSCManager;
+    TCHAR szErr[256];
     
     schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if ( schSCManager )
@@ -577,7 +577,8 @@ void smpd_start_service()
 {
     SC_HANDLE   schService;
     SC_HANDLE   schSCManager;
-    
+    TCHAR szErr[256];
+
     schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if ( schSCManager )
     {
