@@ -93,11 +93,13 @@ core.dvi: core.tex adi3.c adi3.h
 
 # This uses the full-featured date program in Linux
 WEBDIR = /mcs/www-unix/mpi/mpich/adi3
-install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm
+install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm tcpadi3.ps tcpadi3.pdf
 	-rm -f ${WEBDIR}/adi3.[ch]
 	cp adi3.[ch] ${WEBDIR}
 	cp adi3new.ps ${WEBDIR}/adi3man.ps
 	cp adi3new.pdf ${WEBDIR}/adi3man.pdf
+	cp tcpadi3.ps ${WEBDIR}/tcpadi3.ps
+	cp tcpadi3.pdf ${WEBDIR}/tcpadi3.pdf
 	rm -rf ${WEBDIR}/adi3man
 	cp -r adi3new ${WEBDIR}/adi3man
 	mv ${WEBDIR}/adi3man/adi3new.htm ${WEBDIR}/adi3man/adi3man.htm

@@ -42,26 +42,35 @@ for at least the basic \code{MPID_} routines to be implemented in terms of
 these 
 abstract operations.  This document is preliminary.
 
-Some goals:
-
-``straight through'', common cases involve as little overhead as possible.
+The major goals of this implementation include:
+\begin{enumerate}
+\item Illustrate efficiency by minimizing the overhead on common cases.
 For example, a send/receive of a single word should generate as few ``extra''
-allocations of internal objects as possible.  For example, on a send, this
+allocations of internal objects as possible.  In particular, this
 design allows the data to be sent directly without creating a
 \code{MPID_Request}. We haven't quite managed that on the receive side.
 
-Provide a relatively small interface that can be used to port MPICH to new
+\item Provide a relatively small interface that can be used to port
+MPICH to new 
 platforms.  This replaces the ADI-2 ``channel'' interface.
 
-Provide an example that can use remote write (put) operations for data
+\item Provide an example that can use remote write (put) operations for data
 transfers.  
+\end{enumerate}
 
 It is \emph{not} a goal to provide an optimally fast implementation. This is
 intended to be a relatively simple but reasonably efficient implementation.
 
 \section{Outline of the Implementation Structure}
+\label{sec:impl-outline}
 
-Layers: 
+The MPID implementation makes use of a number of layers.  These layers
+can be implemented logically (without separate function calls) in
+order to avoid the overhead of function calls.  In the case of the TCP
+implementation, the cost of function calls is dominated by TCP network
+overheads.  
+
+%Layers: 
 
 The MPID routines are implemented in terms of a smaller set of routines that
 perform relatively simple data communication operations.  These are designed
@@ -80,33 +89,33 @@ The MPID layer communicates by sending messages consisting of a message header
 followed by data.  The MPID layer defines (internal to itself, so this
 discussion only applies to the CH3/TCP implementation of MPID):
 \begin{description}
-\item[Packet Types]An \code{enum} of types, this is roughly a dozen kinds of
+\item[Packet Types.]An \code{enum} of types, this is roughly a dozen kinds of
   message that are needed to implement MPI message-passing semantics.  The
   packet types and what they contain include:
   \begin{description}
-    \item[eager\_send] MPI envelope; data immediately follows the packet (with
+    \item[eager\_send.] MPI envelope; data immediately follows the packet (with
       no separate header).  An MPI envelope contains the data used to match
       MPI messages: tag, sender's rank, and context id, along with any MPI 
       flow control (for eager messages) and error-checking features such as
       datatype signatures.
-    \item[rndv\_req\_to\_send]MPI envelope and send request id.
-    \item[rndv\_OK\_to\_send]Send and receive request id
-    \item[put]Address and length, followed immediately by data
-    \item[rndv\_send]send and receive request id, followed immediately by data
-    \item[cancel\_send]Send request id to cancel
-    \item[cancel\_send\_ack]Send request id and true/false for was cancelled
-    \item[flow\_cntl\_update]Flow control for eager messages and rendezvous
+    \item[rndv\_req\_to\_send.]MPI envelope and send request id.
+    \item[rndv\_OK\_to\_send.]Send and receive request id
+    \item[put.]Address and length, followed immediately by data
+    \item[rndv\_send.]send and receive request id, followed immediately by data
+    \item[cancel\_send.]Send request id to cancel
+    \item[cancel\_send\_ack.]Send request id and true/false for was cancelled
+    \item[flow\_cntl\_update.]Flow control for eager messages and rendezvous
       requests.  This is separate from any low-level flow control, though it
       may be coordinated with it.  For example, we may include knowledge about
       the size of the socket buffer in this level of flow control.
     \end{description}
     Additional packet types will be defined to support MPI-2 operations such
     as RMA.
-\item[Packet Format]The actual layout of a packet; for each packet type, there
+\item[Packet Format.]The actual layout of a packet; for each packet type, there
   is a corresponding packet format defined by a structure.  For version zero,
   all packet layouts will have the same size in bytes; this simplifies
   the implementation.
-\item[Packet Handlers]The code to be invoked when a packet arives at its
+\item[Packet Handlers.]The code to be invoked when a packet arives at its
   destination. 
 \end{description}
 
@@ -121,36 +130,37 @@ CH3 routine brief summary:
 Details in Appendix~\ref{app:ch3}.
 
 \begin{description}
-\item[CH3\_new\_request]Create a new request. This is used with
+\item[CH3\_new\_request.]Create a new request. This is used with
   \code{CH3_iSend}, and for cases where a completed request is required (see
   the discussion of \code{MPID_Isend}).
-\item[CH3\_iStartMsg]Begin a message.  Return a request if the message has not
+\item[CH3\_iStartMsg.]Begin a message.  Return a request if the message has not
   been completely sent.
-\item[CH3\_iStartMsgv]Like \code{CH3_iStartmsg}, but with an \code{struct
+\item[CH3\_iStartMsgv.]Like \code{CH3_iStartmsg}, but with an \code{struct
     iovec}.
-\item[CH3\_iStartRead]Begin reading data.  Return a request if the message has
+\item[CH3\_iStartRead.]Begin reading data.  Return a request if the message has
   not been completely received.
-\item[CH3\_iSend]Send data using an existing request.
-\item[CH3\_iSendv]Like \code{CH3_iSend}, but with an \code{struct iovec}.
-\item[CH3\_iWrite]Like \code{CH3_iSend}, but the data sent is within the
+\item[CH3\_iSend.]Send data using an existing request.
+\item[CH3\_iSendv.]Like \code{CH3_iSend}, but with an \code{struct iovec}.
+\item[CH3\_iWrite.]Like \code{CH3_iSend}, but the data sent is within the
   request (the \mpids{MPID_Request}{active\_buf} member).
-\item[CH3\_iRead]Read data to a location specified by a request.
-\item[CH3\_Progress\_xxx]Progress functions.  \code{CH3_Progress} is
+\item[CH3\_iRead.]Read data to a location specified by a request.
+\item[CH3\_Progress\_xxx.]Progress functions.  \code{CH3_Progress} is
   responsible for dispatching incoming messages.
-\item[CH3\_Init]Initialize the device and setup the initial communicators.
-\item[CH3\_Finalize]Finalize the device.
-\item[CH3\_InitParent]Initialize the parent communicator (if one exists).
-\item[CH3\_iPut]Nonblocking, contiguous put into remote memory (optional,
+\item[CH3\_Init.]Initialize the device and setup the initial communicators.
+\item[CH3\_Finalize.]Finalize the device.
+\item[CH3\_InitParent.]Initialize the parent communicator (if one exists).
+\item[CH3\_iPut.]Nonblocking, contiguous put into remote memory (optional,
   provided as a hook for non-TCP methods and as a placeholder for the
   routines necessary for implementing MPI-2 RMA).
 \end{description}
 
 The bindings for these routines are:
 \begin{verbatim}
-/* Routines that create new requests */
+/* Routines that create and free requests */
 MPID_Request *CH3_new_request( void );
 MPID_Request *CH3_iStartMsg( MPID_VC *, void *header, int header_count )
 MPID_Request *CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
+void CH3_free_request( MPID_Request * );
 
 /* Routines that send or receive data and use an existing request */
 void CH3_iSend( MPID_VC *, MPID_Request *, void *header, int header_count )
@@ -181,7 +191,8 @@ the routine returns and the transfer may continue afterwards (this is what is
 different between, for example, \code{CH3_iWrite} and a \code{write} to a
 nonblocking socket).
 
-CH3 routines do not handle datatypes; only handle (buf,count) or struct iovec
+CH3 routines do not handle datatypes; they only handle contiguous date 
+(buf,count) or struct iovec 
 (viewed 
 as bytes).  Communication routines are nonblocking, so they must have (a) a
 connection to which they are attached (so that data is correctly ordered and
@@ -196,6 +207,8 @@ counter and dequeue'' (the common case; it applies to all contiguous data
 transfers) or ``call MPIDi\_Advance\_communication'' with the connection and
 request as arguments (an alternative is to store the function in the request,
 and use the null function as the decrement-busy-and-dequeue case).
+By chosing this limitation, some operationes may be inlined for
+greater efficiency.
 
 These routines must be prepared to create actual connections (e.g., establish
 a socket) if there is connection already present.  It is up to the
@@ -209,7 +222,10 @@ We can summarize the requirements for the CH3 interface as:
 \item Contiguous (or simple iovec) data.  For simplicity, only contiguous byte
   ranges (or Unix-style iovec) data moves are handled at the lowest level
 \item Correctness.  MPI requires that the message envelopes are ordered; data
-  transfers must also arrive in expected order.
+  transfers must also arrive in expected order.  However, individual
+data transfers are \emph{not} ordered.  Completion of a data transfer
+guarantees only that all the data have arrived, not the particular
+order of arrival.
 \item Handshakes.  Some communication, particularly rendezvous transfers,
   requires handshakes or cooperation between sender and receiver
 \item Low latency for short messages.
@@ -217,7 +233,8 @@ We can summarize the requirements for the CH3 interface as:
 These requirements suggest that there be a single data structure that holds
 the progress of all communication. 
 In particular, to correctly support the first (nonblocking) requirement, there
-must be a queue (a queue because of the third (ordering) requirement) of
+must be a queue (a queue, not a list or a heap, because of the third
+(ordering) requirement) of 
 pending data transfer operations.  
 Because of the second (contiguous) requirement, combined with the need to
 handle general (possibly noncontiguous) MPI datatypes, we must be able to
@@ -241,14 +258,14 @@ that is already the active request (rather than creating a new request).
 To handle the communication of data, the CH3 layer needs the following fields
 in the \code{MPID_Request}:
 \begin{description}
-\item[comm\_state]State of the communication.  This indicates what operation
+\item[comm\_state.]State of the communication.  This indicates what operation
   should be performed when a data transfer is complete.
-\item[active\_buf]Pointer to the data to transfer.  It uses \code{char} so
+\item[active\_buf.]Pointer to the data to transfer.  It uses \code{char} so
   that byte address offsets can be applied to the buffer address.
-\item[count\_left]Number of bytes that remain to be transfered.
-\item[connection]A pointer to the structure holding the communication
+\item[count\_left.]Number of bytes that remain to be transfered.
+\item[connection.]A pointer to the structure holding the communication
   information (e.g., things like the fd).
-\item[top\_seg]Segment used to process noncontiguous data
+\item[top\_seg.]Segment used to process noncontiguous data
 \end{description}
 
 Thus, a \code{MPID_Request} contains
@@ -263,14 +280,14 @@ typedef struct {
     ... } MPID_Request;
 \end{verbatim}
 
-
-\code{CH3_Put}:
-
+\subsection{Remote Memory Operations in the CH3 Design}
+This interface includes a remote put operation \code{CH3_Put}.
 By having a CH3 routine that can perform a contiguous put to remote memory, we
-make it easy to experiment with RMA-capable networking (such as VIA) without
+make it easy to experiment with RMA-capable networking (such as VIA or
+Infiniband) without 
 requiring a completely new device implementation.  However, this is an
 optional routine (at least while we target only MPI-1) and need not be
-implemented.  However, the packet handler descriptions given show how a put
+implemented.  The packet handler descriptions given show how a put
 operation can be implemented, even in a TCP/sockets environment.
 
 Unresolved questions on CH3:
@@ -287,16 +304,25 @@ written to memory (e.g., using a write barrier) before another thread might
 access the request.
 
 \subsection{Data Structures}
+To allow the greatest efficiency, most of the data structures are
+visible to all layers (below the user-layer).  However, parts of the
+data structures may be defined by and used exclusively by a particular
+layer.  For example, the \code{MPID_Request} contains both fields used
+by the MPI implementation layer (e.g., the \code{busy} flag) and
+fields used only by the channel implementation layer.  This is
+essentially a subclassing approach, but implemented directly in C.
+
+The assignment of data structures to layers is as follows.
 \begin{description}
-\item[MPI application layer](User programs) Owns and allocates
+\item[MPI application layer.](User programs) Owns and allocates
   \code{MPI_Status} 
-\item[MPI implementation layer](e.g., implementation of \code{MPI_Isend} in
+\item[MPI implementation layer.](e.g., implementation of \code{MPI_Isend} in
   terms of \code{MPID_Isend}) Owns and allocates communicators, datatypes,
   attributes, groups, files, window objects, keyvals, error handlers.
-\item[MPID Channel implementation layer](e.g., implementation of
+\item[MPID Channel implementation layer.](e.g., implementation of
   \code{MPID_Isend} in terms of CH3) Owns and allocates packets.
   Defines packet type handlers.  Owns and allocates segments.
-\item[CH3 layer] Owns and allocates connections, requests.
+\item[CH3 layer.] Owns and allocates connections, requests.
 \end{description}
 
 % \begin{verbatim}
@@ -337,8 +363,12 @@ access the request.
 
 % \end{verbatim}
 
+\subsection{Utility Routines}
+(not written yet)
+This section should describe the queue operation routines.
+
 \section{Pseudo-code for some of the \code{MPID\_} routines}
-This section outlines the code for some of the major MPID routines.
+This section outlines the pseudocode for some of the major MPID routines.
 
 \subsection{Sending}
 The code for \code{MPID_Isend} and \code{MPID_Send} is shown below.  The code
@@ -350,11 +380,12 @@ MPID send routines is similar, with the appropriate choice of eager
 % the message is complete.  
 The envelopes for ready-send messages should include
 a flag that indicates that they are ready-send so that the user-error of an
-unmatched ready-send can be detected.
+unmatched ready-send can be detected and reported.
 
 \begin{verbatim}
 MPID_Isend( )
 {
+    decide if eager based on message size and flow control
     if (eager) {
         create packet on stack
         fill in as eager send packet
@@ -392,6 +423,7 @@ request if we can avoid it.
 \begin{verbatim}
 MPID_Send( )
 {
+    decide if eager based on message size and flow control
     if (eager) {
         create packet on stack
         fill in as eager send packet
@@ -423,7 +455,8 @@ MPID_Irecv( )
     CH3_Progress_poke
     request = MPID_CH3U_Find_or_post( tag, context_id, source, &found )
     if (found)  {
-        /* Message was found in unexpected list */
+        /* Message was found in unexpected list.  Eager data is stored
+           in the request */
         if (eager) {
             copy data
             free eager buffer used for data
@@ -475,7 +508,7 @@ like
 An advantage of this is that it avoids both the need for allocating a
 request and it avoids calling the Progress routine (note that we must
 still ensure that the progress routine is called sufficiently often).
-The complicated tests are necessary to ensure that correct message
+The somewhat complicated tests are necessary to ensure that correct message
 ordering is preserved. Note that the test ``receive queue for this tag
 etc.'' need not be perfect in that false negatives (queue may be
 nonempty) are allowed, since this only drops the code into the
@@ -483,7 +516,9 @@ nonempty) are allowed, since this only drops the code into the
 queue is empty is sufficient.
 
 This example also serves to illustrate why the MPID interface includes
-blocking receive.  Also note that this routine cannot be implemented strictly
+blocking receive; there is a potentially important optimization that
+is oterwise not available.  Also note that this routine cannot be
+implemented strictly 
 in terms of the \code{CH3_xxx} routines, because the ``try to read next
 packet'' step requires access to the underlying message buffers.  
 Question: we could provide a routine to do this (see the progress engine
@@ -495,7 +530,7 @@ to the MPI completion routines (e.g., \code{MPI_Test}).  Instead,
 there are routines to make progress on communication.  To test whether
 a request is complete, the \mpids{MPID_Request}{busy} flag is checked.
 The implementation of the \code{CH3_Progress} routine is shown with the other
-\code{CH3} routines.
+\code{CH3} routines in Section~\ref{sec:progress}.
 
 % \begin{verbatim}
 
@@ -508,7 +543,8 @@ The implementation of the \code{CH3_Progress} routine is shown with the other
 \subsection{Persistent Requests}
 MPI persistent requests allow the MPI implementation to setup the data
 structures necessary for communication in advance of initiating the
-communication.  This section briefly sketches 
+communication.  This section briefly sketches these routines and their
+datastructures. 
 
 \begin{verbatim}
 MPID_Send_init()
@@ -524,41 +560,52 @@ Rather than use \code{MPIU_Malloc}, we may want a \code{CH3} routine that can
 return a packet that may not be allocated on the stack (e.g., a persistent
 packet).  
 
-\begin{verbatim}
-MPID_Startall()
-    for each request {
-       if (send) {
-           Execute logic from MPID_Isend, MPID_Irsend, etc., using
-           request attached to persistent request and the preallocated 
-           and initialized packet. Note that in the Send case, the 
-           eager/rendezvous case cannot be precomputed, because eager
-           depends both on the message size and on the MPI flow control.
-       }
-       else if (recv) {
-           Execute logic from MPID_Irecv
-       }
-       else if (user) {
-           Ignore for now.  
-       }
-       else {
-           error
-       }
-    }
-\end{verbatim}
-One possible implementation for \code{MPID_Startall} is to invoke a
-\code{start} routine stored in the persistent request, rather than using a 
-switch on the persistent request type.  If we did that, we could consider 
-eliminating \code{MPID_Startall} from the MPID interface and make the
-\code{MPI_Startall} code invoke the \code{start} routines directly.  This has
-the advantage of taking the user-requests out of the device code.  The only
-disadvantages are eliminating an opportunity for the device to schedule the
-order in which requests are started and the costs (on some systems) of calling
-a function through a function pointer.
+% \begin{verbatim}
+% MPID_Startall()
+%     for each request {
+%        if (send) {
+%            Execute logic from MPID_Isend, MPID_Irsend, etc., using
+%            request attached to persistent request and the preallocated 
+%            and initialized packet. Note that in the Send case, the 
+%            eager/rendezvous case cannot be precomputed, because eager
+%            depends both on the message size and on the MPI flow control.
+%        }
+%        else if (recv) {
+%            Execute logic from MPID_Irecv
+%        }
+%        else if (user) {
+%            Ignore for now.  
+%        }
+%        else {
+%            error
+%        }
+%     }
+% \end{verbatim}
+% One possible implementation for \code{MPID_Startall} is to invoke a
+% \code{start} routine stored in the persistent request, rather than using a 
+% switch on the persistent request type.  If we did that, we could consider 
+% eliminating \code{MPID_Startall} from the MPID interface and make the
+% \code{MPI_Startall} code invoke the \code{start} routines directly.  This has
+% the advantage of taking the user-requests out of the device code.  The only
+% disadvantages are eliminating an opportunity for the device to schedule the
+% order in which requests are started and the costs (on some systems) of calling
+% a function through a function pointer.
+
+Persistent requests are initiated by invoking the start function in
+the request.  The implementation of \code{MPI_Start} and
+\code{MPI_Startall} calls the \code{start_fn} in each request.  This
+provides a common approach for both user-defined requests (called
+generalized requests in MPI-2) and point-to-point persistent
+communication requests.
 
 \section{Pseudo-code for Message Handlers}
 These are the routines that are called by the progress engine on receiving a
 message packet.  All of these assume that the entire packet header has been 
-read but that any following data may not yet have been read.
+read but that any following data may not yet have been read.  
+
+Question: The Unix socket interface supports a ``low watermark''
+setting that guarantees that at least that many bytes are available
+when \code{select} or \code{poll} returns.  Should we this in the code?
 
 \subsection{EagerSend}
 Action invoked by the receiver of an eagerly sent message.  The data for the
@@ -572,7 +619,7 @@ message is immediately behind the message header (eagersend packet).
     else {
         /* Message is unexpected */
         if (message is readysend) {
-             signal error 
+             signal error (and return a message to sender)
              arrange to read and discard data 
              (simply allow the read as below; set the state to discard
              when the transfer is complete)
@@ -634,7 +681,8 @@ Action invoked by reciever of a put packet.
         decrement flag (address provided by packet)
     }
 \end{verbatim}
-Note: We do need a request to handle incomplete data transfers; by setting the
+Note: We do need a request for the put operation to handle incomplete
+data transfers; by setting the 
 request's reference count, we can ensure that the request is recovered once
 the data transfer completes.  However, in the case where a put is used to
 provide the data for a rendezvous receive, there is already an available
@@ -681,9 +729,7 @@ RndvReqToSend.
 \end{verbatim}
 
 \subsection{FlowControlUpdate}
-\begin{verbatim}
-   (Not yet defined)
-\end{verbatim}
+
 Flow control is used at the MPI level to control the use of eager buffers and
 requests for unexpected messages.  Possible choices for flow control include
 IMPI-style control
@@ -696,6 +742,11 @@ implementation can ignore this.
 One possibility is to include flow control updates on all packets; this
 ensures that in typical ``balanced'' communication, a separate flow control
 packet is never needed.  
+
+The original MPICH-1 flow control counted envelopes and data
+separately, encoding the number of each consumed since the last
+communication within a single 32-bit integer field in each message
+packet.  
 
 \section{Message Queues}
 This section describes the routines for handling the receive queues.  For
@@ -711,10 +762,24 @@ typedef struct {
     int16_t context_id;
 } MPID_Message_match;
 \end{verbatim}
+To exploit longer-word instructions where available, this is really a
+union:
+\begin{verbatim}
+union { 
+    struct { 
+    int32_t tag;
+    int16_t source;
+    int16_t context_id;
+    } match;
+    int32_t match32[2];
+    int64_t match64;
+\end{verbatim}
 
 On systems with \code{int64_t}, the match test is a single line of C code; if
 the hardware has 64-bit integer operations, it is a single compare
-instruction.  
+instruction.  Otherwise, the code shown here must be expanded to test
+two 32-bit fields.
+
 \begin{verbatim}
 MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
    /* Look in unexpected queue for a match */
@@ -751,7 +816,8 @@ MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
    posted_receive->tail       = request;
    return request
 \end{verbatim}
-This code shows an example of optimizing for code that does not use wildcards
+The above code shows an example of optimizing for code that does not
+use wildcards 
 for the tag or source.  
 
 The next routine is always called in response to receiving a message packet,
@@ -794,13 +860,16 @@ MPID_CH3U_DeQueue_unexp( int req_id )
 
 This routine is required for cancelling receives
 \begin{verbatim}
-MPID_CH3U_DeQueue_postedp( int req_id )
+MPID_CH3U_DeQueue_posted( int req_id )
     for (r = posted->head; r; r = r->next) {
         if (r->id == req_id) {
              remove r from list and return it
         }
     return null
 \end{verbatim}
+The above are appropriate for rare operations such as cancel that can 
+afford to search through potentially long lists and can even use locks
+to guarantee exclusive access to the data structures.
 
 \section{Implementing \code{mpiexec}}
 \label{sec:mpiexec}
@@ -813,7 +882,7 @@ its own advantages and disadvantages.  We might implement all of them, but we
 should implement the quickest-to-implement first.
 
 \begin{description}
-\item[As MPD console program] This is ready-to-go as a minor change to
+\item[As MPD console program.] This is ready-to-go as a minor change to
   \file{mpdcon.c}, except that the BNR interface might need to be updated to
   match 
   the current specification.  A version of \code{MPI_Info} is needed for the
@@ -822,26 +891,26 @@ should implement the quickest-to-implement first.
   I.e, 
   the database part of BNR is already running.  All handling of \code{stdio}
   is done.
-\item[As a BNR program] This requires the above plus implementation of
+\item[As a BNR program.] This requires the above plus implementation of
   \code{BNR_Spawn}, at least for use by console.  It could also be built to
   interact 
   with a scheduler.  This (using \code{BNR_Spawn} to start the initial
   processes as 
   well as for the implementation of \code{MPI_Spawn}) was the ``original''
   plan.
-\item[As an MPI program] This is the idea in the current MPICH2 document.  It
+\item[As an MPI program.] This is the idea in the current MPICH2 document.  It
   relies on \code{MPI_Connect}, etc.  It requires the above plus the MM
   component 
   of the BNR interface, to set up the connections.  This approach as the
   advantage of providinga ``universal'' \code{mpiexec}. 
-\item[As an ``immediate scheduler''] This makes \code{mpiexec} into a stand-in
+\item[As an ``immediate scheduler''.] This makes \code{mpiexec} into a stand-in
   for the scheduler component of the Scalable System Software Project.  It is
   much like the ``MPD console'' option, but instead of using the existing
   console code to contact a local MPD, it sends the standard XML defined by
   the SSS project to the MPD, which is standing in for an arbitrary process
   startup component.  It requires hooking in an XML parser like \code{xpat}
   into the MPD and having \code{mpiexec} emit XML code.
-\item[As a ``one-host-only'' process starter] The \code{mpiexec} process could
+\item[As a ``one-host-only'' process starter.] The \code{mpiexec} process could
   simply fork the application processes.  This requires a new but simple
   implementation of the put/get/fence part of the BNR interface.  The original
   \code{mpiexec} process could become the database server part after forking.
@@ -854,8 +923,8 @@ Any of these need to contain the argument-processing code for the defined
 standard arguments to \code{mpiexec}.  These are defined in Volume 1 of \emph{ MPI---The Complete Reference}, starting on page 353.  There are multiple
 approaches to dealing with arguments.
 \begin{description}
-\item[Plain] Use straightforward code as in \file{p4_args.c}.
-\item[Fancy] Use an ``options database'' approach, as in PETSc.
+\item[Plain.] Use straightforward code as in \file{p4_args.c}.
+\item[Fancy.] Use an ``options database'' approach, as in PETSc.
 \end{description}
 
 We will want to do both, but the first option can be implemented
@@ -864,12 +933,12 @@ lists and require that those be used with a file.  We have to define the
 format of the file for use with the \code{-file} option.  There are three
 possibilities.
 \begin{description}
-\item[Keyword=value pairs] This is easy to read, and we can use the
+\item[Keyword=value pairs.] This is easy to read, and we can use the
   parsing routines from MPD, so we are practically already done.
-\item[XML] We could match the process-startup file to the format of a
+\item[XML.] We could match the process-startup file to the format of a
   process-startup request as being defined by the Scalable Systems Software
   Project.  This would be sort of cool.  Validating XML parsers in C exist.
-\item[Custom Format] We could define our own formats, so that we could express
+\item[Custom Format.] We could define our own formats, so that we could express
   anything whatsoever.  We could use multiple formats to match other software
   that we might find it useful to be compatible with, such as schedulers and
   other process managers.
@@ -881,7 +950,7 @@ implement an XML-style version of keyword/value pairs using a format such as
 \begin{verbatim}
 <MPICH keyword=value />
 \end{verbatim}
-
+and have both the first and second choices.
 
 % \section{Summary}
 % \label{sec:tcpadi-summary}
@@ -946,7 +1015,8 @@ without using locks (e.g., use compare-and-swap to update
 \code{request_avail}).  
 
 \subsection{iStartMsg}
-iStartMsg is called to send a message.  It returns a request if the message is
+\code{CH3_iStartMsg} is called to send a message.  It returns a
+request if the message is 
 not completely sent.
 
 \begin{verbatim}
@@ -965,7 +1035,7 @@ MPID_Request *CH3_iStartMsg( MPID_VC *, void *header, int header_count )
       add to the pending send queue
       return request
 \end{verbatim}
-One possible variation is to eliminate the ``else'' branch labeled ``set note
+One possible variation is to eliminate the ``else'' branch labeled ``see note
 below'' and let the code fall through into else branch that creates and
 inserts the request into the pending send queue.
 
@@ -976,7 +1046,9 @@ Like CH3_iStartMsg, but for all of the data in the iov
 
 \subsection{iStartRead}
 This is used only in the handler for a put packet type.  It reads data and
-generates a new request only if not all of the requested data was read.
+generates a new request only if not all of the requested data was
+read.
+It must be implemented \emph{only} if \code{CH3_Put} is implemented.
 
 \begin{verbatim}
 CH3_iStartRead( MPID_VC *, void *buf, int count )
@@ -994,13 +1066,14 @@ iSend it called to send data using an existing request.  However, the data to
 send is passed in separately (it is not part of the request).
 \begin{verbatim}
 CH3_iSend( MPID_VC *, MPID_Request *, void *buf, void *count )
-    if (no active send requests)
+    if (!vc->sending_head) { /* no active send requests */
         try to send data.
         if (all sent) {
             switch (request->comm_state)
                 0: request->busy--; 
                    if (request->ref_count == 0) recover request
-               >0: invoke MPID_CH3_Request_update( request )
+               >0: (request->update)(request) /* effectively ``invoke 
+                    MPID_CH3_Request_update( request )'' */
          }
     else {
         make active request
@@ -1013,7 +1086,10 @@ CH3_iSend( MPID_VC *, MPID_Request *, void *buf, void *count )
 \end{verbatim}
 
 \code{CH3_iSendv} is like \code{CH3_iSend}, except a \code{struct iovec} is
-used instead of a \code{buf,count} pair.
+used instead of a \code{buf,count} pair.  The special acction on a
+\code{comm_state} of zero is used to avoid the overhead of a function
+call in the common case (for relatively short, contiguous messages)
+that no further work needs to be done.
 
 \subsection{iRead}
 
@@ -1053,7 +1129,8 @@ the request is left on the active list in case some other thread want
 to start sending data on this connection).
 
 \subsection{Progress}
-The progress routine may be implemented as
+\label{sec:progress}
+The progress routine may be implemented on single threaded systems as
 \begin{verbatim}
 CH3_Progress( int isblocking )
 {
@@ -1106,6 +1183,9 @@ The routines \code{CH3_Progress_start} and \code{CH3_Progress_end} can be
 no-ops in the single-threaded version.  The routine \code{CH3_Progress_poke}
 can be \code{CH3_Progress( 0 )} (i.e., nonblocking call to progress).
 
+On multi-threaded systems, the implementation of the progress routines
+may use any of the usual techniques, including condition variables.
+
 \subsection{Startup and Rundown}
 \begin{verbatim}
 CH3_Init( int *has_args, int *has_env, int *has_parent )
@@ -1121,15 +1201,16 @@ This routine must
 \end{itemize}
 
 \begin{verbatim}
-CH3_Finalize( )
+CH3_Finalize(void)
 \end{verbatim}
 This routine should free any memory and other resources.  
 
 \begin{verbatim}
 CH3_InitParent( MPID_Comm *parent )
-    Initialize the size, rank, and \code{MPID_VC} fields in the communicator
 \end{verbatim}
-\code{CH3_InitParent} is only called if \code{CH3_Init} returned true in
+Initialize the \code{size}, \code{rank}, and \code{MPID_VC} fields in
+the communicator 
+\code{CH3_InitParent} is called only if \code{CH3_Init} returned true in
 \code{has_parent}.  This allows the implementation of \code{MPI_Init} to
 create the parent communicator only if it is needed, and then initialize it in
 a separate step.

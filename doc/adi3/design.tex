@@ -13,6 +13,13 @@ memory access such as Infiniband, large symmetric multiprocessors
 (SMPs), and experimental systems (particularly in support of research
 into MPI implementations).  
 
+\subsection{Other Work}
+\label{sec:other-work}
+This section will briefly review other MPI implementation designs.
+
+An example of the use of both lock-free shared-memory operations and threads
+as MPI ``processes'' is presented in \cite{tang00:mpi-impl}.  
+
 \subsection{MPI Overview}
 In order to better understand the design of the ADI, we first review
 MPI communication.  MPI-1 defined both point-to-point and collective
@@ -31,7 +38,7 @@ approach uses either one more more separate threads or an interrupt to
 cause communication to happen outside of MPI calls made by the
 user\footnote{MPICH-1 supported both modes but most implementations chose the
   polling mode.  All ADI-2 implementation distributed with MPICH-1 used
-  polling mode; some built by outside groups did \emph{not} use polling mode.}.
+  polling mode; however, some built by outside groups, such as the version for the Intel TFLOPS system, did \emph{not} use polling mode.}.
 
 MPI-2 introduced additional operations including remote memory access (RMA),
 dynamic process management, and parallel I/O.  Remote memory
@@ -172,7 +179,7 @@ protocol.  These are really \emph{virtual connections}, with meaning only for
 the ADI and MPI layers.
 
 \begin{figure}
-\centerline{\psfig{file=adi-ov.eps,width=4in}}
+\centerline{\psfig{file=adi-ov.eps,width=5in}}
 \caption{Simplified block diagram of the communication paths on a connection
   between two processes.  The dashed lines separate the four communication
   types described below.} 
@@ -890,12 +897,9 @@ MPID_Rsend
 MPID_Isend
 MPID_Issend
 MPID_Irsend
-MPID_tBsend
 MPID_Recv
 MPID_Irecv
 MPID_Request_free
-MPID_Cancel_send
-MPID_Cancel_recv
 MPID_Iprobe
 MPID_Probe
 \end{verbatim}
@@ -905,6 +909,14 @@ Send-receive operations are described in terms of separate send and receive
 operations; buffered send may use the optional \code{MPID_tBsend} or may
 simply use \code{MPID_Isend} with the sample implementation described in the
 MPI-1 standard.
+
+Several MPI routines are represented by slightly different routines.
+These include 
+\begin{verbatim}
+MPID_tBsend        - Used to optimize buffered sends (MPI_Bsend etc.)
+MPID_Cancel_send   - Separate routines for cancelling sends and receives
+MPID_Cancel_recv
+\end{verbatim}
 
 In addition, the persistent communication routines have MPID equivalents:
 \begin{verbatim}
@@ -937,6 +949,8 @@ MPID_Progress_end
 MPID_Progress_test
 MPID_Progress_wait
 \end{verbatim}
+This set of routines is required in order to provide an
+interface to the \code{busy} flag that is thread-safe.
 In addition, there is a routine that indicate \emph{polling points};
 places in the MPI code where a polling implementation should check for
 incoming messages.  This routine is nonblocking and is 
