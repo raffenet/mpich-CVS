@@ -25,6 +25,7 @@ int errs = 0;
 #define MAXCOL 256
 static int matSize = 0;  /* Must be < MAXCOL */
 static int max_offset = 0;
+void uop( void *, void *, int *, MPI_Datatype * );
 void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
 {
     const int *cin = (const int *)cinPtr;
@@ -32,7 +33,7 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
     int i, j, k, nmat;
     int tempcol[MAXCOL];
     int offset1, offset2;
-    int matsize2 = matSize*maxSize;
+    int matsize2 = matSize*matSize;
 
     for (nmat = 0; nmat < *count; nmat++) {
 	for (j=0; j<matSize; j++) {
@@ -112,7 +113,7 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 		    errs++;
 		    if (errs < 10) {
 			printf( "[%d] mat[%d,%d] = %d, expected 1 for comm %s\n", 
-				rank, i,j, MTestGetIntracommName() )
+				rank, i,j, mat[offset], MTestGetIntracommName() );
 		    }
 		}
 	    }
@@ -123,7 +124,7 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 		    errs++;
 		    if (errs < 10) {
 			printf( "[%d] mat[%d,%d] = %d, expected 0 for comm %s\n", 
-				rank, i,j, MTestGetIntracommName() )
+				rank, i,j, mat[offset], MTestGetIntracommName() );
 		    }
 		}
 	    }
