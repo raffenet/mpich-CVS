@@ -91,6 +91,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiexec", "src\pm\smpd\wmp
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiregister", "src\pm\smpd\wmpiregister\wmpiregister.csproj", "{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3ibDebug = ch3ibDebug
@@ -496,7 +500,7 @@ Global
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3shmDebug.ActiveCfg = Debug|Win32
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3shmPRelease.ActiveCfg = Release|Win32
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3shmRelease.ActiveCfg = Release|Win32
-		{EFAF72A2-7154-410B-9235-460444894A38}.ch3sockDebug.ActiveCfg = Release|Win32
+		{EFAF72A2-7154-410B-9235-460444894A38}.ch3sockDebug.ActiveCfg = Debug|Win32
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3sockPliteRelease.ActiveCfg = Release|Win32
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3sockPRelease.ActiveCfg = Release|Win32
 		{EFAF72A2-7154-410B-9235-460444894A38}.ch3sockRelease.ActiveCfg = Release|Win32
@@ -527,7 +531,7 @@ Global
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3shmDebug.ActiveCfg = Debug|Win32
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3shmPRelease.ActiveCfg = Release|Win32
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3shmRelease.ActiveCfg = Release|Win32
-		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3sockDebug.ActiveCfg = Release|Win32
+		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3sockDebug.ActiveCfg = Debug|Win32
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3sockPliteRelease.ActiveCfg = Release|Win32
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3sockPRelease.ActiveCfg = Release|Win32
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.ch3sockRelease.ActiveCfg = Release|Win32
@@ -961,6 +965,37 @@ Global
 		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Release.Build.0 = Release|.NET
 		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.sfortDebug.ActiveCfg = Debug|.NET
 		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.sfortRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ibDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ibPRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ibRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3shmDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3shmPRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3shmRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sockDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sockPliteRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sockPRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sockRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sshmDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sshmPDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sshmPRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3sshmRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ssmDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ssmPDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ssmPRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.ch3ssmRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Debug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Debug.Build.0 = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.DebugStatic.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.DebugStatic.Build.0 = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.fortDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.fortRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.gfortDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.gfortRelease.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Installer.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Release.ActiveCfg = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Release.Build.0 = Release|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.sfortDebug.ActiveCfg = Debug|.NET
+		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.sfortRelease.ActiveCfg = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
