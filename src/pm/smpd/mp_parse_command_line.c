@@ -944,7 +944,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
 		    struct stat s;
 
-		    if (stat(smpdpwdfile, &s) == 0)
+		    if (stat(smpdpwdfilename, &s) == 0)
 		    {
 			if (s.st_mode & 0x00077)
 			{
@@ -952,7 +952,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			    smpd_exit_fn("mp_parse_command_args");
 			    return SMPD_FAIL;
 			}
-			fin = fopen(smpdpwdfile, "r");
+			fin = fopen(smpdpwdfilename, "r");
 			if (fin != NULL)
 			{
 			    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);

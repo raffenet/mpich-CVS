@@ -293,7 +293,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
 	if (stat(pwdfile, &s) == 0)
 	{
-	    if (s.st_mode & 0x00077)
+	    if (s.st_mode & 00077)
 	    {
 		printf("pwdfile cannot be readable by anyone other than the current user.\n");
 		smpd_exit_fn("smpd_parse_command_args");
