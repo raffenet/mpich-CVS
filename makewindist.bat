@@ -140,6 +140,8 @@ devenv.com mpich2.sln /build ch3ibRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3ibPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com src\util\logging\rlog\rlogtools.sln /build Release
+if %errorlevel% NEQ 0 goto BUILDERROR
 cd maint
 call makegcclibs.bat
 cd ..
