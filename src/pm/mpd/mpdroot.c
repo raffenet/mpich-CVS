@@ -81,6 +81,10 @@ int main(int argc, char *argv[])
     {
         cmd = BINDIR "/mpdrun.py";
     }
+    else if (strncmp(pgmname,"mpirun",6) == 0)
+    {
+        cmd = BINDIR "/mpdrun.py";
+    }
     else if (strncmp(pgmname,"mpdtrace",8) == 0)
     {
         cmd = BINDIR "/mpdtrace.py";
