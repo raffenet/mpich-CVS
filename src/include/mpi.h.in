@@ -488,7 +488,7 @@ int MPI_Type_extent(MPI_Datatype, MPI_Aint *);
    error; however, it is the standard */
 /* int MPI_Type_size(MPI_Datatype, MPI_Aint *size); */
 int MPI_Type_size(MPI_Datatype, int *);
-int MPI_Type_count(MPI_Datatype, int *);
+/* MPI_Type_count was withdrawn in MPI 1.1 */
 int MPI_Type_lb(MPI_Datatype, MPI_Aint *);
 int MPI_Type_ub(MPI_Datatype, MPI_Aint *);
 int MPI_Type_commit(MPI_Datatype *);
