@@ -27,7 +27,7 @@ $instdir = "/sandbox/gropp/mpi2-inst";
 @with_array = (
 	       'logging;rlog;dlog',
 	       'pmi;uni',
-	       'pm:forker;mpd',
+	       'pm;forker;mpd',
 );
 @env_array = (
 #	      'CC;gcc;cc;pgcc;ecc;xlc',
@@ -184,7 +184,7 @@ sub RunTest {
     else {
 	print $OUTFD $TestStart;
 	print $OUTFD $ConfigStart;
-	@config = split( / /, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
+	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
 	print "Configure: " . join(" ", @config) . "\n";
 	if ($envset ne "") {
 	    print "Environment = $envset\n";
@@ -238,7 +238,7 @@ sub set_time_left {
     $final_time = time + $delta_time;
 }
 sub time_left {
-    if ($final_time == -1) {     return 1; }
+    if ($final_time eq "" || $final_time == -1) {     return 1; }
     if (time > $final_time) { return 0; }
     else                    { return 1; }
 }
