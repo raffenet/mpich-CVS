@@ -1,4 +1,14 @@
 ===============================================================================
+				Changes in 0.971
+===============================================================================
+
+- The dist-with-version and snap rules in the top-level Makefile.sm now
+  properly produce mpich2-<ver>/maint/Version instead of mpich2-<ver>/Version.
+  In addition, they now properly update the VERSION variable in Makfile.sm
+  without clobbering the sed line that performs the update.
+
+
+===============================================================================
 				Changes in 0.97
 ===============================================================================
 - MPI-2 one-sided communication has been implemented in the CH3 device.
