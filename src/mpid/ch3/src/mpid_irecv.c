@@ -186,8 +186,11 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	}
 	else
 	{
-	    MPIDI_ERR_PRINTF((FCNAME, "request contains unexpected message type %d", MPIDI_Request_get_msg_type(rreq)));
-	    abort();
+	    MPID_Request_release(rreq);
+	    rreq = NULL;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_INTERN, "**ch3|badmsgtype",
+					     "**ch3|badmsgtype %d", MPIDI_Request_get_msg_type(rreq));
+	    goto fn_exit;
 	}
     }
     else

@@ -41,8 +41,9 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    if (sreq != NULL && sreq->cc != 0)
 	    {
-		MPIDI_ERR_PRINTF((FCNAME, "DEADLOCK - MPI_Ssend() to self, no matching received posted."));
-		abort();
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+						 "**ch3|selfsenddeadlock", 0);
+		goto fn_exit;
 	    }
 	}
 #	endif

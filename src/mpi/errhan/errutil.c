@@ -122,7 +122,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 	    fprintf( stderr, "Fatal error (code 0x%08x) in %s(): %s\n", errcode, fcname, msg);
 	}
 	
-	abort(); /* Change this to MPID_Abort */
+	MPID_Abort(comm_ptr, MPI_SUCCESS);
     }
 
     if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN)
@@ -181,10 +181,22 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 #endif
 	}
     }
-    else {
+    else
+    {
+	MPID_Comm * comm_ptr;
+
+	if (win_ptr != NULL)
+	{
+	    MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
+	}
+	else
+	{
+	    comm_ptr = NULL;
+	}
+	
 	/* No window, so errors are fatal */
 	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
-	abort(); /* Change this to MPID_Abort */
+	MPID_Abort(comm_ptr, MPI_SUCCESS);
     }
     return errcode;
 }
@@ -217,7 +229,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 	    {
 		fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
 	    }
-	    abort(); /* Change this to MPID_Abort */
+	    MPID_Abort(comm_ptr, MPI_SUCCESS);
 	}
         else if (file_ptr->errhandler->handle == MPI_ERRORS_RETURN) {
 	    return errcode;
