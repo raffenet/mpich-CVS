@@ -97,8 +97,8 @@ void MPIR_Datatype_init_names( void )
 		    continue;
 		}
 		fprintf( stdout, "mpi_names[%d].name = %x\n", i, (int)mpi_names[i].name ); fflush( stdout );
-		strncpy( datatype_ptr->name, mpi_names[i].name, 
-			 MPI_MAX_OBJECT_NAME );
+		MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
+			      MPI_MAX_OBJECT_NAME );
 	    }
 	    setup = 1;
 	}
@@ -163,7 +163,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     }
 
     /* Include the null in MPI_MAX_OBJECT_NAME */
-    strncpy( type_name, datatype_ptr->name, MPI_MAX_OBJECT_NAME );
+    MPIU_Strncpy( type_name, datatype_ptr->name, MPI_MAX_OBJECT_NAME );
     *resultlen = strlen( type_name );
     /* ... end of body of routine ... */
 

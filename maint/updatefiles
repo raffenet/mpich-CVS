@@ -263,5 +263,11 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     # codingcheck now understands directories.
     # skip *only* files provided by an outside source
     maint/codingcheck -skipfile=./src/pmi/impls/winmpd/crypt.c \
-		      -skipfile=./src/pmi/impls/winmpd/des.c src
+		      -skipfile=./src/pmi/impls/winmpd/des.c \
+		      -skipfile=./src/pmi/impls/winmpd/des.h \
+		      -skipfile=./src/pmi/impls/mpd/proxy.c \
+		      -skipfile=./src/pmi/impls/mpd/sigcatcher.c \
+		      -skipfile=./src/pmi/impls/mpd/sleeploop.c \
+		      -skipfile=./src/pmi/impls/mpd/infloop.c \
+			src 
 fi

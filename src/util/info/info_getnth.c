@@ -85,7 +85,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 
     if (curr_ptr) {
 	/* Success */
-	strncpy( key, curr_ptr->key, MPI_MAX_INFO_KEY+1 );
+	MPIU_Strncpy( key, curr_ptr->key, MPI_MAX_INFO_KEY+1 );
 	/* Eventually, we could remember the location of this key in 
 	   the head using the key/value locations (and a union datatype?) */
     }	

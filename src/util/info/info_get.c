@@ -104,7 +104,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 
     while (curr_ptr) {
 	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
-	    strncpy(value, curr_ptr->value, valuelen);
+	    MPIU_Strncpy(value, curr_ptr->value, valuelen);
 	    value[valuelen] = '\0';
 	    *flag = 1;
 	    break;

@@ -86,7 +86,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     }
 
     /* Include the null in MPI_MAX_OBJECT_NAME */
-    strncpy( datatype_ptr->name, type_name, MPI_MAX_OBJECT_NAME );
+    MPIU_Strncpy( datatype_ptr->name, type_name, MPI_MAX_OBJECT_NAME );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_NAME);

@@ -95,8 +95,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_world->comm_kind = MPID_INTRACOMM;
     /* This initialization of the comm name could be done only when 
        comm_get_name is called */
-    strncpy(MPIR_Process.comm_world->name, "MPI_COMM_WORLD",
-	    MPI_MAX_OBJECT_NAME);
+    MPIU_Strncpy(MPIR_Process.comm_world->name, "MPI_COMM_WORLD",
+		 MPI_MAX_OBJECT_NAME);
     MPIR_Process.comm_world->errhandler = NULL; /* XXX */
     MPIR_Process.comm_world->coll_fns = NULL; /* XXX */
     
@@ -108,8 +108,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_self->local_group = NULL;
     MPIR_Process.comm_self->remote_group = NULL;
     MPIR_Process.comm_self->comm_kind = MPID_INTRACOMM;
-    strncpy(MPIR_Process.comm_self->name, "MPI_COMM_SELF",
-	    MPI_MAX_OBJECT_NAME);
+    MPIU_Strncpy(MPIR_Process.comm_self->name, "MPI_COMM_SELF",
+		 MPI_MAX_OBJECT_NAME);
     MPIR_Process.comm_self->errhandler = NULL; /* XXX */
     MPIR_Process.comm_self->coll_fns = NULL; /* XXX */
 

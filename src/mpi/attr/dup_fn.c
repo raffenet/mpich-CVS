@@ -1,7 +1,7 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  $Id$
  *
- *  (C) 1993 by Argonne National Laboratory and Mississipi State University.
+ *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -20,10 +20,10 @@ int MPIR_dup_fn (
 	void *attr_out, 
 	int *flag )
 {
-  /* No error checking at present */
+    /* No error checking at present */
 
-  /* Set attr_out, the flag and return success */
-  (*(void **)attr_out) = attr_in;
-  (*flag) = 1;
-  return (MPI_SUCCESS);
+    /* Set attr_out, the flag and return success */
+    (*(void **)attr_out) = attr_in;
+    (*flag) = 1;
+    return (MPI_SUCCESS);
 }

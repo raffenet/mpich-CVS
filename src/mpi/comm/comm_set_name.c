@@ -71,7 +71,7 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    strncpy( comm_ptr->name, comm_name, MPI_MAX_NAME_STRING );
+    MPIU_Strncpy( comm_ptr->name, comm_name, MPI_MAX_NAME_STRING );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_NAME);

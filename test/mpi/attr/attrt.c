@@ -9,7 +9,7 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-/* #define DEBUG */
+#define DEBUG
 int test_communicators ( void );
 int copy_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int delete_fn ( MPI_Comm, int, void *, void * );
@@ -98,9 +98,14 @@ int test_communicators( void )
     ranges[0][1] = (world_size - n) - 1;
     ranges[0][2] = 1;
 
+    printf( "world rank = %d before range incl\n", world_rank );
     MPI_Group_range_incl(world_group, 1, ranges, &lo_group );
+    printf( "world rank = %d after range incl\n", world_rank );
     MPI_Comm_create(world_comm, lo_group, &lo_comm );
+    printf( "world rank = %d before group free\n", world_rank );
     MPI_Group_free( &lo_group );
+
+    printf( "world rank = %d after group free\n", world_rank );
 
     if (world_rank < (world_size - n)) {
 	MPI_Comm_rank(lo_comm, &rank );
@@ -110,7 +115,9 @@ int test_communicators( void )
 	    MPI_Abort(MPI_COMM_WORLD, 3002 );
 	}
 	else {
+	    printf( "lo in\n" );
 	    MPI_Barrier(lo_comm );
+	    printf( "lo out\n" );
 	}
     }
     else {
@@ -120,8 +127,11 @@ int test_communicators( void )
 	    MPI_Abort(MPI_COMM_WORLD, 3003 );
 	}
     }
-    
+
+    printf( "worldrank = %d\n", world_rank );
     MPI_Barrier(world_comm);
+
+    printf( "bar!\n" );
     /*
       Check Comm_dup by adding attributes to lo_comm & duplicating
     */
