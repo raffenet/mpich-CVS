@@ -20,6 +20,11 @@ int main(int argc, char* argv[])
 
     smpd_enter_fn("main");
 
+#ifdef HAVE_WINDOWS_H
+    /* prevent the os from bringing up debug message boxes if this process crashes */
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+#endif
+
     /* initialization */
     result = sock_init();
     if (result != SOCK_SUCCESS)

@@ -11,8 +11,13 @@ int handle_launch_command(smpd_context_t *context)
     int result;
     char exe[SMPD_MAX_EXE_LENGTH];
     char env[SMPD_MAX_ENV_LENGTH];
+    char dir[SMPD_MAX_EXE_LENGTH];
+    char path[SMPD_MAX_EXE_LENGTH];
     int iproc;
     smpd_command_t *cmd, *temp_cmd;
+    sock_t sock_in, sock_out, sock_err;
+    int pid;
+    smpd_context_t *cin, *cout, *cerr;
 
     smpd_enter_fn("handle_launch_command");
 
@@ -29,9 +34,130 @@ int handle_launch_command(smpd_context_t *context)
 	iproc = 0;
     if (smpd_get_string_arg(cmd->cmd, "e", env, SMPD_MAX_ENV_LENGTH) == SMPD_FALSE)
 	env[0] = '\0';
+    if (smpd_get_string_arg(cmd->cmd, "d", dir, SMPD_MAX_EXE_LENGTH) == SMPD_FALSE)
+	dir[0] = '\0';
+    if (smpd_get_string_arg(cmd->cmd, "p", path, SMPD_MAX_EXE_LENGTH) == SMPD_FALSE)
+	path[0] = '\0';
 
     /* launch the process */
     smpd_dbg_printf("launching: '%s'\n", exe);
+    result = smpd_launch_process(exe, path, env, dir, 2, 3, SMPD_FALSE, smpd_process.set, &sock_in, &sock_out, &sock_err, &pid);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("launch_process failed.\n");
+
+	/* create the result command */
+	result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a result command in response to launch command: '%s'\n", cmd->cmd);
+	    smpd_exit_fn("handle_launch_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
+	    smpd_exit_fn("handle_launch_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
+	    smpd_exit_fn("handle_launch_command");
+	    return SMPD_FAIL;
+	}
+
+	/* send the result back */
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command in response to launch command: '%s'\n", cmd->cmd);
+	    smpd_exit_fn("handle_launch_command");
+	    return SMPD_FAIL;
+	}
+
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_SUCCESS;
+    }
+
+    /* create contexts for each of the three conduits to the launched process */
+    cin = (smpd_context_t*)malloc(sizeof(smpd_context_t));
+    cout = (smpd_context_t*)malloc(sizeof(smpd_context_t));
+    cerr = (smpd_context_t*)malloc(sizeof(smpd_context_t));
+    if (cin == NULL || cout == NULL || cerr == NULL)
+    {
+	smpd_err_printf("unable to allocate contexts for the pipes to the launched process.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_init_context(cin, SMPD_CONTEXT_STDIN, smpd_process.set, sock_in, pid);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to initialize context.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_init_context(cout, SMPD_CONTEXT_STDOUT, smpd_process.set, sock_out, pid);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to initialize context.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_init_context(cerr, SMPD_CONTEXT_STDERR, smpd_process.set, sock_err, pid);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to initialize context.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = sock_set_user_ptr(sock_in, cin);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to set the sock user ptr.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = sock_set_user_ptr(sock_out, cout);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to set the sock user ptr.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = sock_set_user_ptr(sock_err, cerr);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to set the sock user ptr.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    cin->rank = iproc;
+    cout->rank = iproc;
+    cerr->rank = iproc;
+    /* post reads for data from the stdout and stderr contexts */
+    result = sock_post_read(sock_out, cout->read_cmd.cmd, 1, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read for data from the processes stdout.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = sock_post_read(sock_err, cout->read_cmd.cmd, 1, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read for data from the processes stdout.\n");
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    /* save the contexts */
+    cin->next = cout;
+    cout->next = cerr;
+    cerr->next = smpd_process.context_list;
+    smpd_process.context_list = cin;
 
     /* create the result command */
     result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
@@ -65,6 +191,7 @@ int handle_launch_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
+#if 0
     /* create some bogus stdout */
     result = smpd_create_command("stdout", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
@@ -128,6 +255,7 @@ int handle_launch_command(smpd_context_t *context)
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
+#endif
 
     smpd_exit_fn("handle_launch_command");
     return SMPD_SUCCESS;
@@ -710,10 +838,77 @@ int smpd_interpret_session_header(char *str)
 
 int smpd_handle_read(smpd_context_t *context)
 {
+    int result;
     int ret_val = SMPD_SUCCESS;
 
     smpd_enter_fn("smpd_handle_read");
 
+    /* handle the two special contexts */
+    if (context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR)
+    {
+	sock_size_t num_read;
+	smpd_command_t *temp_cmd;
+	char buffer[SMPD_MAX_CMD_LENGTH];
+	int num_encoded;
+
+	/* one byte read, attempt to read up to the buffer size */
+	result = sock_read(context->sock, &context->read_cmd.cmd[1], SMPD_MAX_CMD_LENGTH-1, &num_read);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_read failed, error '%s'\n", get_sock_error_string(ret_val));
+	    smpd_exit_fn("smpd_handle_read");
+	    return SMPD_FAIL;
+	}
+	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
+	smpd_dbg_printf("encoded output buffer: '%s'\n", buffer);
+
+	/* create an output command */
+	result = smpd_create_command(
+	    context->type == SMPD_CONTEXT_STDOUT ? "stdout" : "stderr",
+	    smpd_process.id, 0 /* output always goes to node 0? */, SMPD_FALSE, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create an output command.\n");
+	    smpd_exit_fn("smpd_handle_read");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_int_arg(temp_cmd, "rank", context->rank);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the rank to the stdout command.\n");
+	    smpd_exit_fn("smpd_handle_read");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "data", buffer);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the data to the stdout command.\n");
+	    smpd_exit_fn("smpd_handle_read");
+	    return SMPD_FAIL;
+	}
+
+	/* send the stdout command */
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the stdout command.\n");
+	    smpd_exit_fn("smpd_handle_read");
+	    return SMPD_FAIL;
+	}
+
+	smpd_exit_fn("smpd_handle_read");
+	return SMPD_SUCCESS;
+    }
+
+    /* check for an invalid context */
+    if (context->type == SMPD_CONTEXT_STDIN)
+    {
+	smpd_err_printf("illegal read signalled on stdin context.\n");
+	smpd_exit_fn("smpd_handle_read");
+	return SMPD_FAIL;
+    }
+
+    /* handle a traditional context */
     switch (context->read_cmd.state)
     {
     case SMPD_CMD_INVALID:
@@ -780,6 +975,7 @@ int smpd_handle_read(smpd_context_t *context)
 	ret_val = SMPD_FAIL;
 	break;
     }
+
     smpd_exit_fn("smpd_handle_read");
     return ret_val;
 }

@@ -88,6 +88,8 @@ typedef enum smpd_context_type_t
 {
     SMPD_CONTEXT_INVALID,
     SMPD_CONTEXT_STDIN,
+    SMPD_CONTEXT_STDOUT,
+    SMPD_CONTEXT_STDERR,
     SMPD_CONTEXT_PARENT,
     SMPD_CONTEXT_LEFT_CHILD,
     SMPD_CONTEXT_RIGHT_CHILD,
@@ -121,7 +123,7 @@ typedef struct smpd_context_t
 {
     smpd_context_type_t type;
     char host[SMPD_MAX_HOST_LENGTH];
-    int id;
+    int id, rank;
     sock_set_t set;
     sock_t sock;
     smpd_command_t read_cmd;
@@ -136,7 +138,7 @@ typedef struct smpd_process_t
 {
     int id, parent_id;
     int level;
-    smpd_context_t *left_context, *right_context, *parent_context;
+    smpd_context_t *left_context, *right_context, *parent_context, *context_list;
     int closing;
     int root_smpd;
     sock_set_t set;
@@ -210,6 +212,7 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 #ifdef HAVE_WINDOWS_H
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);
+int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite);
 #endif
 int smpd_generate_session_header(char *str, int session_id);
 int smpd_interpret_session_header(char *str);
@@ -219,5 +222,8 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
 int smpd_get_int_arg(char *str, char *flag, int *val_ptr);
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
+int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr);
+int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded);
+int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded);
 
 #endif

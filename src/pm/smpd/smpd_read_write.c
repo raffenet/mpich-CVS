@@ -6,6 +6,44 @@
 
 #include "smpd.h"
 
+int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded)
+{
+    int num_used;
+    int n = 0;
+    while (src_length && dest_length)
+    {
+	num_used = snprintf(dest, dest_length, "%X", (int)*src);
+	if (num_used < 0)
+	{
+	    *num_encoded = n;
+	    return SMPD_SUCCESS;
+	}
+	dest += num_used;
+	dest_length -= num_used;
+	src++;
+	n++;
+	src_length--;
+    }
+    *num_encoded = n;
+    return SMPD_SUCCESS;
+}
+
+int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded)
+{
+    char hex[3];
+    int value;
+
+    hex[2] = '\0';
+    while (*str != '\0')
+    {
+	hex[0] = *str++;
+	hex[1] = *str++;
+	sscanf(hex, "%X", &value);
+	*dest++ = (char)value;
+    }
+    return SMPD_SUCCESS;
+}
+
 int smpd_read(sock_t sock, void *buf, sock_size_t len)
 {
     int result;

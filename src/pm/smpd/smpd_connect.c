@@ -31,7 +31,7 @@
 
 smpd_process_t smpd_process = 
     { -1, -1, -1, 
-      NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL,
       SMPD_FALSE, SMPD_FALSE,
       SOCK_INVALID_SET,
       "", "",
@@ -41,11 +41,103 @@ smpd_process_t smpd_process =
       SMPD_DBG_STATE_ERROUT, NULL };
 
 #ifdef HAVE_SIGACTION
-void child_handler(int code)
+void smpd_child_handler(int code)
 {
     int status;
     if (code == SIGCHLD)
 	waitpid(-1, &status, WNOHANG);
+}
+#endif
+
+#ifdef HAVE_WINDOWS_H
+int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
+{
+    SOCKET sock;
+    char host[100];
+    int port;
+    int len;
+    LINGER linger;
+    BOOL b;
+    SOCKADDR_IN sockAddr;
+    int error;
+
+    /* Create a listener */
+
+    /* create the socket */
+    sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (sock == INVALID_SOCKET)
+    {
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return WSAGetLastError();
+    }
+
+    memset(&sockAddr,0,sizeof(sockAddr));
+    
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_addr.s_addr = INADDR_ANY;
+    sockAddr.sin_port = htons((unsigned short)ADDR_ANY);
+    
+    if (bind(sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+    {
+	error = WSAGetLastError();
+	mp_err_printf("bind failed: error %d\n", error);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+    
+    /* listen */
+    listen(sock, 2);
+
+    /* get the host and port where we're listening */
+    len = sizeof(sockAddr);
+    getsockname(sock, (struct sockaddr*)&sockAddr, &len);
+    port = ntohs(sockAddr.sin_port);
+    gethostname(host, 100);
+
+    /* Connect to myself */
+
+    /* create the socket */
+    *pWrite = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (*pWrite == INVALID_SOCKET)
+    {
+	error = WSAGetLastError();
+	mp_err_printf("WSASocket failed, error %d\n", error);
+	closesocket(sock);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+
+    /* set the nodelay option */
+    b = TRUE;
+    setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
+
+    /* Set the linger on close option */
+    linger.l_onoff = 1 ;
+    linger.l_linger = 60;
+    setsockopt(*pWrite, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+
+    sockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    /* connect to myself */
+    if (connect(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+    {
+	error = WSAGetLastError();
+	closesocket(*pWrite);
+	closesocket(sock);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+
+    /* Accept the connection from myself */
+    len = sizeof(sockAddr);
+    *pRead = accept(sock, (SOCKADDR*)&sockAddr, &len);
+
+    closesocket(sock);
+    return 0;
 }
 #endif
 
@@ -92,7 +184,7 @@ int smpd_init_process(void)
     srand(smpd_getpid());
 
 #ifdef HAVE_SIGACTION
-    act.sa_handler = child_handler;
+    act.sa_handler = smpd_child_handler;
     act.sa_flags = SA_NOCLDSTOP | SA_NOMASK;
     sigaction(SIGCHLD, &act, NULL);
 #endif
@@ -107,6 +199,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_se
     context->type = type;
     context->host[0] = '\0';
     context->id = id;
+    context->rank = 0;
     context->write_list = NULL;
     context->wait_list = NULL;
     smpd_init_command(&context->read_cmd);
