@@ -14,7 +14,27 @@ $maint_targets = 1;  # set to 0 for distribution versions
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
+
+# Set the names for the autoconf and autoheader program, along with 
+# the optional args and the argument used to specify the include dir for
+# autoconf/autoheader (autoconf 2.57 changed the command-line interface
+# without maintaining backward compatibility)
+if (defined($ENV{"AUTOCONF"})) { 
+    $autoconf_prog = $ENV{"AUTOCONF"};
+}
+else {
+    $autoconf_prog = "autoconf";
+}
+if (defined($ENV{"AUTOHEADER"})) { 
+    $autoheader_prog = $ENV{"AUTOHEADER"};
+}
+else {
+    $autoheader_prog = "autoheader";
+}
+
 $autoconf_args = ""; # Extra arguments for autoconf
+$acincdir_arg = "-l";
+
 $do_sharedlibs  = 1; # set to 1 the generate targets for shared libraries
 $found_sharedlib = 0;# set to 1 if a specific shared library target is found
 
@@ -957,8 +977,10 @@ sub DefaultRules {
 	$autoconf_deps="";
 	print "macro loc arg is $aargs\n" if $debug_confdir;
 	# If there is a -l dir in the autoconf_args, then add that to the
-	# dependencies
-	if ($aargs =~ /-l\s*([\.\/\w]*)/) {
+	# dependencies (We use $acincdir_arg incase autoconf 2.57 is used,
+	# in which case the argument is -I or -B, or in case autoconf 2.58
+	# or later is used, in which case the argument may be changed again.
+	if ($aargs =~ /$acincdir_arg\s*([\.\/\w]*)/) {
 	    $macroloc = $1;
 	    # HACK.  If we've messed up the location, don't include it
 	    if (-s "$macroloc/aclocal.m4") {
@@ -981,7 +1003,7 @@ sub DefaultRules {
 	# Use autoheader only if AC_CONFIG_HEADER is in the configure file
 	# 
 	if ($configure_has_config_headers ne "no") {
-	    &print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs && \\$newline\t$autoconf $aargs )" );
+	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoheader_prog $aargs && \\$newline\t$autoconf $aargs )" );
 	}
 	else {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoconf $aargs )" );
@@ -1158,7 +1180,7 @@ sub ClearVars {
     %docdir = ();
     %docsrc = ();
     # These may be overriden on a file by file basis
-    $autoconf = "autoconf"; # Name of autoconf program to use
+    $autoconf = $autoconf_prog; # Name of autoconf program to use
     $autoconf_version = ""; # Any version is allowed
     # We cannot clear config_headers here because we may still
     # need to know that the configure in the current directory

@@ -201,6 +201,9 @@ Commandline Options to Simplemake
  -nodepend
     Do not attempt to generate dependencies.
 
+Environment Variables
+---------------------
+
 Special Directory Names
 -----------------------
 topsrc_dir - directory containing the configure responsible for this Makefile
