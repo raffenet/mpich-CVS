@@ -295,8 +295,16 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    /* connection failed, abort? */
 		    /* when does a forming context get assinged it's global place?  At creation?  At connection? */
 		    if (smpd_process.left_context == smpd_process.left_context)
-			smpd_process.left_context = NULL;		    
-		    result = smpd_post_abort_command("unable to connect to %s", context->host);
+			smpd_process.left_context = NULL;
+		    if (context->connect_to)
+			result = smpd_post_abort_command("unable to connect to %s", context->connect_to->host);
+		    else
+		    {
+			if (context->host[0] != '\0')
+			    result = smpd_post_abort_command("unable to connect to %s", context->host);
+			else
+			    result = smpd_post_abort_command("connection to smpd rejected");
+		    }
 		    if (result != SMPD_SUCCESS)
 		    {
 			smpd_err_printf("unable to create the close command to tear down the job tree.\n");
