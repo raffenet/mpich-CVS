@@ -1,7 +1,6 @@
 
 
 			       README for MPD-2
-			(a.k.a. Python version of MPD)
 
 			 Ralph Butler and Rusty Lusk
 
@@ -9,19 +8,43 @@
 General
 -------
 
+MPD is a process management system for starting parallel jobs,
+especially MPICH jobs.  Before running a job (with mpiexec), the
+mpd daemons must be running on each host and connected into a ring.
+This README explains how to do that and also test and manage the daemons 
+after they have been started.
+
+You need to have Python version 2.2 or later installed to run the mpd.
+You can type
+
+    which python
+
+to make sure you have it installed, and 
+
+    python
+
+to find out what your version is.  The current version can be obtained
+from  www.python.org.
+
 Type 
 
-    mpdhelp.py 
+    mpdhelp
 
-for a list of commands.
+for a list of mpd-related commands.  Each command can be run with the
+--help argument for usage information.
 
-To be added:  configure (to find and test version of Python, set install dir)
-              make (with targets for changing first line of scripts, removing
-                  .py, and moving to install directory, clean)
 
-How to use the Python mpd
+How to use MPD
 -------------------------
 
+You can start one mpd on the current host by running
+
+   mpd &
+
+This starts a ring of one mpd.  Other mpd's join the ring by being run
+with host and port arguments for the first mpd.  You can automate this
+process by using mpdboot.
+ 
 Make a file with machine names in it.  It will be handy to use the default,
 which is ./mpd.hosts .
 
@@ -31,41 +54,43 @@ shakey.mcs.anl.gov
 terra.mcs.anl.gov
 donner% 
 
-The mpich2 mpd commands are currently in mpich2/src/pm/mpd.  Put this
-in your PATH in your .cshrc or .bashrc, so that it will be picked up by the mpd's that
+After mpich is built, the mpd commands are in mpich2/bin, or the bin
+subdirectory of the install directory if you have done an install.
+You should put this (bin) directory in your PATH 
+in your .cshrc or .bashrc, so that it will be picked up by the mpd's that
 are started remotely:
 
-Put in .cshrc:  setenv PATH /home/you/mpich2/src/pm/mpd:$PATH
+Put in .cshrc:  setenv PATH /home/you/mpich2/bin:$PATH
 
-Put in .bashrc: export PATH=/home/you/mpich2/src/pm/mpd:$PATH
+Put in .bashrc: export PATH=/home/you/mpich2/bin:$PATH
 
-To start some mpds, use mpdboot.py.  It uses the mpd.hosts file:
+To start some mpds, use mpdboot.  It uses the mpd.hosts file:
 
-donner% mpdboot.py -n 3 -m /home/lusk/mpich2/src/pm/mpd/mpd.py
+donner% mpdboot.py -n 4 
 donner%
 
-This command starts a total of 3 daemons, one on the local machine and the
+This command starts a total of 4 daemons, one on the local machine and the
 rest on machines in the mpd.hosts file.  You can specify another file (-f) or
 another mpd command (-m).
 
-You can use mpdtrace.py to see where your mpd's are running:
+You can use mpdtrace to see where your mpd's are running:
 
-donner% mpdtrace.py
+donner% mpdtrace
 donner
 foo
 shakey
 donner% 
 
-You can run something with mpdrun.py:
+You can run something with mpdrun
 
-donner% mpdrun.py -np 2 hostname 
+donner% mpdrun -np 2 hostname 
 donner.mcs.anl.gov
 foo.mcs.anl.gov
 donner%
 
 You can run an mpich2 job:
 
-donner% mpdrun.py -np 10 /home/lusk/hellow
+donner% mpiexec -np 10 /home/lusk/hellow
 Hello world from process 0 of 10
 Hello world from process 1 of 10
 Hello world from process 2 of 10
@@ -80,13 +105,138 @@ donner%
 
 You can take down the daemons:
 
-donner% mpdallexit.py
+donner% mpdallexit
 donner%
 
 If things go bad and daemons seem to be in a bad state, you can remove the
 Unix sockets on all the machines in mpd.hosts by doing a cleanup:
 
-donner% mpdcleanup.py
-donner%
+donner% mpdcleanup
+
+Here is the usage information for all of the mpd commands:
+
+********************************************************************** mpdhelp
+ 
+
+The following mpd commands are available.  For usage of any specific one,
+invoke it with the single argument --help .
+
+mpd           start an mpd daemon
+mpdtrace      show all mpd's in ring
+mpdboot       start a ring of daemons all at once
+mpdringtest   test how long it takes for a message to circle the ring 
+mpdallexit    take down all daemons in ring
+mpdcleanup    repair local Unix socket if ring crashed badly
+mpdrun        start a parallel job
+mpdlistjobs   list processes of jobs (-a or --all: all jobs for all users)
+mpdkilljob    kill all processes of a single job
+mpdsigjob     deliver a specific signal to the application processes of a job
+
+Each command can be invoked with the --help argument, which prints usage
+information for the command without running it.
+
+ 
+ 
+********************************************************************** mpd
+ 
+mpd version (0, 1, 3, 'supercomputing prerelease')
+usage: /home/lusk/mpich2-nov16/bin/mpd -h -p -t -n -e -d -b -i
+   or: /home/lusk/mpich2-nov16/bin/mpd --host --port --trace --noconsole --echo --daemon --bulletproof --idmyhost
+host and port must be specified together and tell where to enter a ring;
+  if they are not coded, the mpd forms a stand-alone ring that other mpds
+  may enter later
+trace yields lots of traces thru mpd routines; not generally useful
+noconsole is useful for running 2 mpds on the same machine; only one of
+  them can have a unix socket which a console program can connect to
+echo says to echo the listener port for the mpd; useful in scripts
+daemon causes mpd to run backgrounded, with no controlling tty
+bulletproof says to turn bulletproofing on (experimental)
+idmyhost specifies an alternate hostname for the host this mpd is running on
+.mpd.conf file must be present in home directory with read and write access
+  only for user, and must contain at least a line with password=<password>
+ 
+ 
+********************************************************************** mpdboot
+ 
+
+mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] 
+Long options:
+  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons
+
+mpdboot starts one mpd locally and (n_to_start - 1) others as computed from
+the -n (--totalnum) option; at least the one local mpd will be started by default;
+the machines to use are specified by the --file option (default is mpd.hosts).
+You may find it useful to specify the full pathname of mpd on remote hosts (-r) if
+they are not in your path.
+The --loccons and --remcons options indicate that you do NOT want a console available
+on local and remote mpds, respectively.
+
+ 
+ 
+********************************************************************** mpdtrace
+ 
+usage: mpdtrace [-l]
+Lists the (short) hostname of each of the mpds in the ring
+The -l (ell) option shows full hostnames and listening ports
+ 
+ 
+********************************************************************** mpdallexit
+ 
+usage: mpdallexit (no args)
+causes all mpds in the ring to exit
+ 
+ 
+********************************************************************** mpdcleanup
+ 
+usage: mpdcleanup [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] or
+   or: mpdcleanup [--file=<hostsfile>] [--rsh=<rshcmd>] [-user=<user>] [-clean=<cleancmd>]
+Removes the Unix socket on local (the default) and remote machines
+This is useful in case the mpd crashed badly and did not remove it, which it normally does
+ 
+ 
+********************************************************************** mpdkilljob
+ 
+usage: mpdkilljob  jobnum  [mpdid]  # as obtained from mpdlistjobs
+   or: mpdkilljob  -a jobalias      # as obtained from mpdlistjobs
+    mpdid is mpd contacted by mpdrun to start the job (defaults to here)
+ 
+ 
+********************************************************************** mpdlistjobs
+ 
+usage: mpdlistjobs [-u | --user username] [-a | --alias jobalias]  [-j | --jobid jobid]
+  (only use one of jobalias or jobid)
+lists jobs being run by an mpd ring, all by default, or filtered
+by user, mpd job id, or alias assigned when the job was submitted
+ 
+ 
+********************************************************************** mpdringtest
+ 
+usage: mpdringtest [number of loops]
+Times a single message going around the ring of mpds [num] times (default once)
+ 
+ 
+********************************************************************** mpdrun
+ 
+mpdrun for mpd version: (0, 1, 3, 'supercomputing prerelease')
+usage: mpdrun [args] pgm_to_execute [pgm_args]
+   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1
+       (-l means attach line labels identifying which client prints each line)
+       (-1 means do NOT start the first process locally)
+       (-a means assign this alias to the job)
+or:    mpdrun -f filename
+   where filename contains all the arguments in xml format
+ 
+ 
+********************************************************************** mpiexec
+ 
+mpdrun for mpd version: (0, 1, 3, 'supercomputing prerelease')
+usage: mpdrun [args] pgm_to_execute [pgm_args]
+   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1
+       (-l means attach line labels identifying which client prints each line)
+       (-1 means do NOT start the first process locally)
+       (-a means assign this alias to the job)
+or:    mpdrun -f filename
+   where filename contains all the arguments in xml format
+ 
 
 
