@@ -222,7 +222,7 @@ int tcp_get_business_card(char *value, int length)
 				 TCP_Process.port);
 	}
     }
-    msg_printf("tcp business card:\n<%s>\n", value_orig);
+    /*msg_printf("tcp business card:\n<%s>\n", value_orig);*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
