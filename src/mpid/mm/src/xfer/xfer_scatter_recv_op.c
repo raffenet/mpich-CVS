@@ -21,50 +21,37 @@
 @*/
 int xfer_scatter_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last)
 {
-    MM_Car *pCar;
     MPID_Request *pRequest;
 
-    if (!request_ptr->op_valid)
+    /* Get a pointer to the current request.
+       Either the first request, allocated by scatter_init,
+       will be unused or we will allocate a new request at
+       the end of the list */
+    if (!request_ptr->mm.op_valid)
     {
 	pRequest = request_ptr;
     }
     else
     {
 	pRequest = request_ptr;
-	while (pRequest->next_ptr)
-	    pRequest = pRequest->next_ptr;
-	pRequest->next_ptr = mm_request_alloc();
-	pRequest = pRequest->next_ptr;
+	while (pRequest->mm.next_ptr)
+	    pRequest = pRequest->mm.next_ptr;
+	pRequest->mm.next_ptr = mm_request_alloc();
+	pRequest = pRequest->mm.next_ptr;
     }
 
-    pRequest->op_valid = 1;
-    pRequest->next_ptr = NULL;
+    pRequest->mm.op_valid = 1;
+    pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi buffer */
-    pRequest->rbuf = buf;
-    pRequest->count = count;
-    pRequest->dtype = dtype;
-    pRequest->first = first;
-    pRequest->last = last;
+    pRequest->mm.rbuf = buf;
+    pRequest->mm.count = count;
+    pRequest->mm.dtype = dtype;
+    pRequest->mm.first = first;
+    pRequest->mm.last = last;
 
-    /* allocate a read car */
-    if (request_ptr->read_list == NULL)
-    {
-	request_ptr->read_list = &request_ptr->rcar;
-	pCar = &request_ptr->rcar;
-    }
-    else
-    {
-	pCar = request_ptr->read_list;
-	while (pCar->next_ptr)
-	    pCar = pCar->next_ptr;
-	pCar->next_ptr = mm_car_alloc();
-	pCar = pCar->next_ptr;
-    }
-    
-    pCar->request_ptr = request_ptr;
-    pCar->src = request_ptr->src;
-    pCar->next_ptr = NULL;
+    pRequest->mm.rcar.request_ptr = request_ptr;
+    pRequest->mm.rcar.next_ptr = NULL;
 
     return MPI_SUCCESS;
 }

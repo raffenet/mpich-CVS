@@ -16,5 +16,14 @@
 @*/
 int xfer_scatter_start(MPID_Request *request_ptr)
 {
+    MPID_Request *pRequest;
+
+    pRequest = request_ptr;
+    while (pRequest)
+    {
+	/*mm_choose_buffers(pRequest);*/
+	pRequest = pRequest->mm.next_ptr;
+    }
+
     return MPI_SUCCESS;
 }

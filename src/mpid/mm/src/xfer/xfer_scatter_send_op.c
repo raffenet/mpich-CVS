@@ -25,38 +25,42 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
     MM_Car *pCar;
     MPID_Request *pRequest;
 
-    if (!request_ptr->op_valid)
+    /* Get a pointer to the current request.
+       Either the first request, allocated by scatter_init,
+       will be unused or we will allocate a new request at
+       the end of the list */
+    if (!request_ptr->mm.op_valid)
     {
 	pRequest = request_ptr;
     }
     else
     {
 	pRequest = request_ptr;
-	while (pRequest->next_ptr)
-	    pRequest = pRequest->next_ptr;
-	pRequest->next_ptr = mm_request_alloc();
-	pRequest = pRequest->next_ptr;
+	while (pRequest->mm.next_ptr)
+	    pRequest = pRequest->mm.next_ptr;
+	pRequest->mm.next_ptr = mm_request_alloc();
+	pRequest = pRequest->mm.next_ptr;
     }
 
-    pRequest->op_valid = 1;
-    pRequest->next_ptr = NULL;
+    pRequest->mm.op_valid = 1;
+    pRequest->mm.next_ptr = NULL;
 
-    /* Save the mpi buffer */
-    pRequest->sbuf = buf;
-    pRequest->count = count;
-    pRequest->dtype = dtype;
-    pRequest->first = first;
-    pRequest->last = last;
+    /* Save the mpi segment */
+    pRequest->mm.sbuf = buf;
+    pRequest->mm.count = count;
+    pRequest->mm.dtype = dtype;
+    pRequest->mm.first = first;
+    pRequest->mm.last = last;
 
     /* allocate a write car */
-    if (request_ptr->write_list == NULL)
+    if (request_ptr->mm.write_list == NULL)
     {
-	request_ptr->write_list = &request_ptr->wcar;
-	pCar = &request_ptr->wcar;
+	request_ptr->mm.write_list = &request_ptr->mm.wcar;
+	pCar = &request_ptr->mm.wcar;
     }
     else
     {
-	pCar = request_ptr->write_list;
+	pCar = request_ptr->mm.write_list;
 	while (pCar->next_ptr)
 	    pCar = pCar->next_ptr;
 	pCar->next_ptr = mm_car_alloc();

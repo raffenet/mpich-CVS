@@ -21,10 +21,9 @@ MPID_Request * mm_request_alloc()
     p = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (p == NULL)
 	return p;
-    p->op_valid = 0;
+    p->mm.op_valid = 0;
     p->busy = 0;
-    p->write_list = NULL;
-    p->read_list = NULL;
+    p->mm.write_list = NULL;
     return p;
 }
 
