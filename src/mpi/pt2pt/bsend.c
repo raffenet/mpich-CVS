@@ -105,7 +105,11 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		MPIR_ERRTEST_SEND_TAG(tag,mpi_errno);
 		MPIR_ERRTEST_SEND_RANK(comm_ptr,dest,mpi_errno)
 	    }
+	    /* Validate datatype */
+	    MPIR_ERRTEST_DATATYPE(count,datatype,mpi_errno);
 
+	    /* Validate buffer */
+	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

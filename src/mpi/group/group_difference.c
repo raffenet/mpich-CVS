@@ -111,22 +111,33 @@ int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup
 	    }
 	}
 	/* Create the group */
-	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
-	if (mpi_errno) {
+	if (nnew == 0) {
+	    /* See 5.3.2, Group Constructors.  For many group routines,
+	       the standard explicitly says to return MPI_GROUP_EMPTY; 
+	       for others it is implied */
+	    *newgroup = MPI_GROUP_EMPTY;
 	    MPID_Common_thread_unlock();
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_DIFFERENCE);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    return MPI_SUCCESS;
 	}
-	new_group_ptr->rank = MPI_UNDEFINED;
-	k = 0;
-	for (i=0; i<size1; i++) {
-	    if (!group_ptr1->lrank_to_lpid[i].flag) {
-		new_group_ptr->lrank_to_lpid[k].lrank = k;
-		new_group_ptr->lrank_to_lpid[k].lpid = 
-		    group_ptr1->lrank_to_lpid[i].lpid;
-		if (i == group_ptr1->rank) 
-		    new_group_ptr->rank = k;
-		k++;
+	else {
+	    mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+	    if (mpi_errno) {
+		MPID_Common_thread_unlock();
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_DIFFERENCE);
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    }
+	    new_group_ptr->rank = MPI_UNDEFINED;
+	    k = 0;
+	    for (i=0; i<size1; i++) {
+		if (!group_ptr1->lrank_to_lpid[i].flag) {
+		    new_group_ptr->lrank_to_lpid[k].lrank = k;
+		    new_group_ptr->lrank_to_lpid[k].lpid = 
+			group_ptr1->lrank_to_lpid[i].lpid;
+		    if (i == group_ptr1->rank) 
+			new_group_ptr->rank = k;
+		    k++;
+		}
 	    }
 	}
     }

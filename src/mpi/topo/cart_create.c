@@ -71,6 +71,11 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    MPIR_ERRTEST_ARGNULL( dims, "dims", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( periods, "periods", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( comm_cart, "comm_cart", mpi_errno );
+	    if (ndims <= 0) {
+		/* Must have a positive number of dimensions */
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_DIMS, "**dims",
+						  "**dims %d", 0 );
+	    }
 	    MPIR_ERRTEST_ARGNEG( ndims, "ndims", mpi_errno );
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA( comm_ptr, mpi_errno );
@@ -98,6 +103,10 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
 					  "**cartdim", "**cartdim %d %d", 
 					  comm_ptr->remote_size, newsize );
+	    }
+	    if (mpi_errno) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
         }
         MPID_END_ERROR_CHECKS;

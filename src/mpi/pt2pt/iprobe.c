@@ -83,6 +83,10 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
         {
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    MPIR_ERRTEST_RECV_TAG(tag,mpi_errno);
+	    if (comm_ptr) {
+		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
+	    }
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

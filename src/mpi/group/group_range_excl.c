@@ -59,18 +59,14 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
 
 	    /* Check the exclusion array.  Ensure that all ranges are
 	       valid and that the specified exclusions are unique */
 	    if (group_ptr) {
-		size = group_ptr->size;
 		mpi_errno = MPIR_Group_check_valid_ranges( group_ptr, 
 							   ranges, n );
 	    }
@@ -94,6 +90,12 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 	nnew += 1 + (last - first) / stride;
     }
     nnew = size - nnew;
+
+    if (nnew == 0) {
+	*newgroup = MPI_GROUP_EMPTY;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_EXCL);
+	return MPI_SUCCESS;
+    }
 
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );

@@ -78,6 +78,7 @@ int MPI_Buffer_attach(void *buffer, int size)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(size,"size",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

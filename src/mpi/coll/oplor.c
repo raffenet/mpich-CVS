@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+/* 
+ * In MPI-1, this operation is valid only for  C integer, Fortran logical
+ * data items (4.9.2 Predefined reduce operations)
+ */
 #ifndef MPIR_LLOR
 #define MPIR_LLOR(a,b) ((a)||(b))
 #endif
@@ -100,6 +104,7 @@ void MPIR_LOR (
     }
     case MPI_DOUBLE: 
 #ifdef HAVE_FORTRAN_BINDING
+	/* FIXME - This assumes Fortran double precision == C double */
     case MPI_DOUBLE_PRECISION: 
 #endif
     {

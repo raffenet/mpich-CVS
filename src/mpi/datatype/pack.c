@@ -67,25 +67,35 @@ int MPI_Pack(void *inbuf,
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_Segment *segp;
-
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK);
     /* Get handles to MPI objects. */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
     MPID_Comm_get_ptr( comm, comm_ptr );
     MPID_Datatype_get_ptr( datatype, datatype_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
             /* Validate comm_ptr */
-/*             MPID_Comm_valid_ptr( comm_ptr, mpi_errno ); */
+	    /* If comm_ptr is not valid, it will be reset to null */
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
+	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

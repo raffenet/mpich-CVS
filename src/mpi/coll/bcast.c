@@ -557,6 +557,8 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    /* FIXME - For intercomms, the root may be MPI_PROCNULL or 
+	       MPI_ROOT */
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 	    
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {

@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+/* 
+ * In MPI-1, this operation is valid only for  C integer, Fortran integer,
+ * and floating point data items (4.9.2 Predefined reduce operations)
+ */
 void MPIR_MINF ( 
 	void *invec, 
 	void *inoutvec, 

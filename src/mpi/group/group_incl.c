@@ -77,6 +77,11 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    if (n == 0) {
+	*newgroup = MPI_GROUP_EMPTY;
+	return MPI_SUCCESS;
+    }
+
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( n, &new_group_ptr );
     if (mpi_errno) {

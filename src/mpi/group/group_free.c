@@ -75,6 +75,7 @@ int MPI_Group_free(MPI_Group *group)
 	MPIU_Free( group_ptr->lrank_to_lpid );
 	MPIU_Handle_obj_free( &MPID_Group_mem, group_ptr );
     }
+    *group = MPI_GROUP_NULL;
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
     return MPI_SUCCESS;

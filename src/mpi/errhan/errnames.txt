@@ -64,8 +64,10 @@ also the value at index %d
 **stride %d %d %d:Range (start = %d, end = %d, stride = %d) does not terminate
 **stridezero:Zero stride is invalid
 **rangeinvalid:Invalid range
+**rangestartinvalid:Some element of a range array is either negative or too large
 **rangestartinvalid %d %d %d:The %dth element of a range array starts at %d \
  but must be nonnegative and less than %d
+**rangeendinvalid:Some element of a range array is either negative or too large
 **rangeendinvalid %d %d %d:The %dth element of a range array ends at %d \
  but must be nonnegative and less than %d
 **argrange:Argument is not within valid range
@@ -85,6 +87,8 @@ was not started with MPI_GREQUEST_START
 **attrsentinal:Internal fields in an attribute have been overwritten; \
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
+**commperm:Cannot free permanent communicator
+**commperm %s:Cannot free permanent communicator %s
 **group:Invalid group
 **commnotintra:An intracommunicator is required but an intercommunicator \
  was provided.

@@ -1185,8 +1185,10 @@ extern int MPID_THREAD_LEVEL;
 #define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
    if ((arg) < 0) {\
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); } 
+/* An intracommunicator must have a root between 0 and local_size-1. */
+/* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
-  if ((root) <= MPI_PROC_NULL || (root) >= (comm_ptr)->local_size) {\
+  if ((root) <= 0 || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}
 #define MPIR_ERRTEST_PERSISTENT(reqp,err) \
   if ((reqp)->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
@@ -1239,11 +1241,11 @@ extern int MPID_THREAD_LEVEL;
 	(HANDLE_GET_KIND(comm) == HANDLE_KIND_INVALID &&		   \
 	 comm != MPI_COMM_NULL))					   \
     {									   \
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**comm", 0 );	   \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, "**comm", 0 );	   \
     }									   \
     if (comm == MPI_COMM_NULL)						   \
     {									   \
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**commnull", 0 ); \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, "**commnull", 0 ); \
     }									   \
 }
 #define MPIR_ERRTEST_REQUEST(request,err)

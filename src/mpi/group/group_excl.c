@@ -64,6 +64,7 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not valid, it will be reset to null */
 	    if (group_ptr) {
+		/* This also checks for negative n */
 		mpi_errno = MPIR_Group_check_valid_ranks( group_ptr, 
 							  ranks, n );
 	    }
@@ -79,6 +80,10 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     /* ... body of routine ...  */
     /* Allocate a new group and lrank_to_lpid array */
     size = group_ptr->size;
+    if (size == n) {
+	*newgroup = MPI_GROUP_EMPTY;
+	return MPI_SUCCESS;
+    }
     mpi_errno = MPIR_Group_create( size - n, &new_group_ptr );
     if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_EXCL);

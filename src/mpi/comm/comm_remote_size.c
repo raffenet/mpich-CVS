@@ -55,13 +55,14 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    if (comm_ptr && comm_ptr->comm_kind != MPID_INTERCOMM) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+						  "**commnotinter", 0 );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_SIZE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -106,9 +106,23 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
             MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
 	    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,recvtype,mpi_errno);
+	    
+	    /* Validate count */
+	    MPIR_ERRTEST_COUNT(sendcount,mpi_errno);
+	    MPIR_ERRTEST_COUNT(recvcount,mpi_errno);
 
 	    /* Validate status (status_ignore is not the same as null) */
 	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
+
+	    /* Validate tags */
+	    MPIR_ERRTEST_SEND_TAG(sendtag,mpi_errno );
+	    MPIR_ERRTEST_RECV_TAG(recvtag,mpi_errno );
+
+	    /* Validate source and destination */
+	    if (comm_ptr) {
+		MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno );
+		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno );
+	    }
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

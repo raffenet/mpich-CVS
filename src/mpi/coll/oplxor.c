@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+/* 
+ * In MPI-1, this operation is valid only for  C integer, Fortran logical
+ * data items (4.9.2 Predefined reduce operations)
+ */
 #ifndef MPIR_LLXOR
 #define MPIR_LLXOR(a,b) (((a)&&(!b))||((!a)&&(b)))
 #endif

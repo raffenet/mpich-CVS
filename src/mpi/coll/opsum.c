@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+/* 
+ * In MPI-1, this operation is valid only for  C integer, Fortran integer,
+ * floating point, and complex data items (4.9.2 Predefined reduce operations)
+ */
 #define MPIR_LSUM(a,b) ((a)+(b))
 
 void MPIR_SUM ( 

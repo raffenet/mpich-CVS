@@ -192,6 +192,12 @@ int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, int ranks[], int n )
 
     /* Thread lock in case any other thread wants to use the group
        data structure.  Needed only for MPI_THREAD_MULTIPLE */
+    if (n < 0) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
+					  "**argneg %s %d", "n", n );
+	return mpi_errno;
+    }
+
     MPID_Common_thread_lock();
     {
 	for (i=0; i<group_ptr->size; i++) {
@@ -203,12 +209,14 @@ int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, int ranks[], int n )
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
 				  "**rankarray", "**rankarray %d %d %d",
 				  i, ranks[i], group_ptr->size );
+		break;
 	    }
 	    if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
 				"**rankdup", "**rankdup %d %d %d",
 				  i, ranks[i], 
 				  group_ptr->lrank_to_lpid[ranks[i]].flag-1);
+		break;
 	    }
 	    group_ptr->lrank_to_lpid[ranks[i]].flag = i+1;
 	}

@@ -86,6 +86,12 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 	nnew += 1 + (last - first) / stride;
     }
 
+    if (nnew == 0) {
+	*newgroup = MPI_GROUP_EMPTY;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
+	return MPI_SUCCESS;
+    }
+	
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
     if (mpi_errno) {

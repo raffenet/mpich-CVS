@@ -110,7 +110,14 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
 		nnew ++;
 	    }
 	}
-	/* Create the group */
+	/* Create the group.  Handle the trivial case first */
+	if (nnew == 0) {
+	    *newgroup = MPI_GROUP_EMPTY;
+	    MPID_Common_thread_unlock();
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
+	    return MPI_SUCCESS;
+	}
+	
 	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
 	if (mpi_errno) {
 	    MPID_Common_thread_unlock();

@@ -29,22 +29,42 @@
 #define FUNCNAME MPI_Comm_free
 
 /*@
-   MPI_Comm_free - free a communicator
+MPI_Comm_free - Marks the communicator object for deallocation
 
-   Arguments:
-.  MPI_Comm *comm - communicator
+Input Parameter:
+. comm - communicator to be destroyed (handle) 
 
-   Notes:
+Notes:
+This routine `frees` a communicator.  Because the communicator may still
+be in use by other MPI routines, the actual communicator storage will not
+be freed until all references to this communicator are removed.  For most
+users, the effect of this routine is the same as if it was in fact freed
+at this time of this call.  
 
-.N Fortran
+Null Handles:
+The MPI 1.1 specification, in the section on opaque objects, explicitly
+disallows freeing a null communicator.  The text from the standard is:
+.vb
+ A null handle argument is an erroneous IN argument in MPI calls, unless an
+ exception is explicitly stated in the text that defines the function. Such
+ exception is allowed for handles to request objects in Wait and Test calls
+ (sections Communication Completion and Multiple Completions ). Otherwise, a
+ null handle can only be passed to a function that allocates a new object and
+ returns a reference to it in the handle.
+.ve
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_free(MPI_Comm *comm)
 {
     static const char FCNAME[] = "MPI_Comm_free";
     int mpi_errno = MPI_SUCCESS;
+    int inuse;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_FREE);
 
@@ -72,7 +92,14 @@ int MPI_Comm_free(MPI_Comm *comm)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    
+	    /* Cannot free the predefined communicators */
+	    if (HANDLE_GET_KIND(*comm) == HANDLE_KIND_BUILTIN) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM,
+					  "**commperm", "**commperm %s", 
+						  comm_ptr->name );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -83,19 +110,21 @@ int MPI_Comm_free(MPI_Comm *comm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Remove the attributes, executing the attribute delete routine.
-       Do this only if the attribute functions are defined. */
-    if (MPIR_Process.comm_attr_free) {
-	mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, 
-						 comm_ptr->attributes );
+    MPIU_Object_release_ref( comm_ptr, &inuse);
+    if (!inuse) {
+	/* Remove the attributes, executing the attribute delete routine.
+	   Do this only if the attribute functions are defined. */
+	if (MPIR_Process.comm_attr_free && comm_ptr->attributes) {
+	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, 
+						     comm_ptr->attributes );
+	}
+	
+	/* Free the VCRT */
+	MPID_VCRT_Release(comm_ptr->vcrt);
+	
+	/* Free the context value */
+	MPIR_Free_contextid( comm_ptr->context_id );
     }
-
-    /* Free the VCRT */
-    MPID_VCRT_Release(comm_ptr->vcrt);
-
-    /* Free the context value */
-    MPIR_Free_contextid( comm_ptr->context_id );
-    
     /* ... end of body of routine ... */
 
     if (mpi_errno == MPI_SUCCESS)

@@ -70,14 +70,13 @@ int MPI_Unpack(void *inbuf,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    MPIR_ERRTEST_COUNT(insize,mpi_errno);
+	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -88,12 +87,12 @@ int MPI_Unpack(void *inbuf,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* TODO: CHECK RETURN VALUES?? */
-    /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
+    /* TODO: SHOULD THIS ALL BE IN A MPID_UNPACK??? */
     segp = MPID_Segment_alloc();
     MPID_Segment_init(outbuf, outcount, datatype, segp);
 
-    /* NOTE: the use of buffer values and positions in MPI_Pack and in
-     * MPID_Segment_pack are quite different.  See code or docs or something.
+    /* NOTE: the use of buffer values and positions in MPI_Unpack and in
+     * MPID_Segment_unpack are quite different.  See code or docs or something.
      */
     first = 0;
     last  = insize;

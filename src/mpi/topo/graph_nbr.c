@@ -92,7 +92,7 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
-	    if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
+	    else if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
 					  "**rank", "**rank %d %d",
 					  rank, graph_ptr->topo.graph.nnodes );
