@@ -74,7 +74,8 @@ static MPID_Thread_lock_t error_ring_mutex;
 #endif
 #endif
 
-int MPIR_Err_print_stack_flag = FALSE;
+/* turn this flag on until we debug and release mpich2 */
+int MPIR_Err_print_stack_flag = TRUE;
 static int MPIR_Err_abort_on_error = FALSE;
 
 void MPIR_Err_init( void )
