@@ -9,7 +9,7 @@ mpi_sources = bsend.c bsend_init.c bufattach.c buffree.c \
 lib${MPILIBNAME}_a_SOURCES = bsend.c bsendutil.c bufattach.c buffree.c \
  cancel.c commreq_free.c greq_start.c greq_complete.c irecv.c isend.c \
  iprobe.c mpir_wait.c mpir_test.c probe.c recv.c send.c sendrecv.c \
- status_set_cancelled.c test_cancelled.c test.c testany.c wait.c 
+ status_set_cancelled.c test_cancelled.c test.c testany.c wait.c waitall.c
 
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include

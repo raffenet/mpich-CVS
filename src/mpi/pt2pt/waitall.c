@@ -42,20 +42,36 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
+int MPI_Waitall(int count, MPI_Request array_of_requests[],
+		MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Waitall";
+    int i;
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITALL);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITALL);
+    
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* XXX - need to test count, etc. */
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -65,6 +81,22 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    for (i = 0; i < count; i++)
+    {
+	int rc;
+	
+	rc = MPI_Wait(&array_of_requests[i], &array_of_statuses[i]);
+	if (rc != MPI_SUCCESS)
+	{
+	    if (rc != MPI_ERR_IN_STATUS)
+	    {
+		array_of_statuses[i].MPI_ERROR = rc;
+		/* XXX - set other fields??? */
+	    }
+	    mpi_errno = MPI_ERR_IN_STATUS;
+	}
+    }
+    
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
     return MPI_SUCCESS;
 }
