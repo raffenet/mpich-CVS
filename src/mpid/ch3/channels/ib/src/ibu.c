@@ -993,7 +993,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     buf = mem_ptr;
     printf("iov length: %d\n", n);
-    for (iov_index = 0; iov_index<n, num_avail; iov_index++)
+    for (iov_index = 0; iov_index<n && num_avail; iov_index++)
     {
 	len = min (num_avail, iov[iov_index].IBU_IOV_LEN);
 	num_avail -= len;
