@@ -20,6 +20,7 @@ int tcp_merge_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #endif
 int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
 int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
+int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
 
 int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length)
 {
@@ -45,6 +46,11 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
     {
     case MM_VEC_BUFFER:
 	ret_val = tcp_merge_vec(vc_ptr, car_ptr, buf_ptr, buffer, length);
+	MM_EXIT_FUNC(TCP_MERGE_UNEXPECTED_DATA);
+	return ret_val;
+	break;
+    case MM_SIMPLE_BUFFER:
+	ret_val = tcp_merge_simple(vc_ptr, car_ptr, buf_ptr, buffer, length);
 	MM_EXIT_FUNC(TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
@@ -217,6 +223,9 @@ int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 
     /* read as much as possible */
     num_read = min(length, buf_ptr->tmp.len);
+
+    /* Aren't we supposed to do a memcpy here? */
+
     /* update the amount read */
     buf_ptr->tmp.num_read += num_read;
 
@@ -230,5 +239,40 @@ int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
     }
 
     MM_EXIT_FUNC(TCP_MERGE_TMP);
+    return MPI_SUCCESS;
+}
+
+int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
+{
+    int num_read;
+
+    MM_ENTER_FUNC(TCP_MERGE_SIMPLE);
+
+    if (buf_ptr->simple.buf == NULL)
+    {
+	/* get the simple buffer */
+	/*car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);*/
+	err_printf("Error: tcp_merge_simple called with NULL simple pointer\n");
+	return -1;
+    }
+
+    /* read as much as possible */
+    num_read = min(length, buf_ptr->simple.len);
+
+    /* Aren't we supposed to do a memcpy here? */
+
+    /* update the amount read */
+    buf_ptr->simple.num_read += num_read;
+
+    /* check to see if finished */
+    if (buf_ptr->simple.num_read == buf_ptr->simple.len)
+    {
+	dbg_printf("num_read: %d\n", buf_ptr->simple.num_read);
+	/* remove from read queue and insert in completion queue */
+	tcp_car_dequeue(vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+    }
+
+    MM_EXIT_FUNC(TCP_MERGE_SIMPLE);
     return MPI_SUCCESS;
 }

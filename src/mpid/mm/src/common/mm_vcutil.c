@@ -190,6 +190,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	/* mm required functions */
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
+	vc_ptr->merge_with_posted = tcp_merge_with_posted;
 	vc_ptr->merge_unexpected_data = tcp_merge_unexpected_data;
 	vc_ptr->post_write = tcp_post_write;
 	vc_ptr->reset_car = tcp_reset_car;
@@ -201,6 +202,14 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.tcp.read = tcp_read_connecting;
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	vc_ptr->pkt_car.vc_ptr = vc_ptr;
+	vc_ptr->pkt_car.next_ptr = NULL;
+	vc_ptr->pkt_car.vcqnext_ptr = NULL;
+	vc_ptr->pkt_car.freeme = FALSE;
+	vc_ptr->pkt_car.request_ptr = NULL;
+	vc_ptr->pkt_car.buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
+	vc_ptr->pkt_car.msg_header.buf.type = MM_SIMPLE_BUFFER;
+	vc_ptr->pkt_car.msg_header.buf.simple.buf = &vc_ptr->pkt_car.msg_header.pkt;
+	vc_ptr->pkt_car.msg_header.buf.simple.len = sizeof(MPID_Packet);
 	break;
 #endif
 #ifdef WITH_METHOD_VIA

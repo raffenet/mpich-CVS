@@ -168,6 +168,40 @@ int tcp_stuff_vector_tmp(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segmen
     return FALSE;
 }
 
+int tcp_stuff_vector_simple(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MM_ENTER_FUNC(TCP_STUFF_VECTOR_SIMPLE);
+
+    /* check to see that there is data available and space in the vector to put it */
+    if ((*cur_pos == MPID_IOV_LIMIT) ||
+        (car_ptr->data.tcp.buf.simple.num_written == buf_ptr->simple.num_read) ||
+	(buf_ptr->simple.num_read == 0))
+    {
+	/* cur_pos has run off the end of the vector OR
+	   If num_written is equal to num_read then there is no data available to write. OR
+	   No data has been read */
+	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
+	return FALSE;
+    }
+
+    /*msg_printf("tcp_stuff_vector_simple: added %d byte buffer\n", buf_ptr->simple.num_read - car_ptr->data.tcp.buf.simple.num_written);*/
+
+    /* add the simple buffer to the vector */
+    vec[*cur_pos].MPID_IOV_BUF = (char*)(buf_ptr->simple.buf) + car_ptr->data.tcp.buf.simple.num_written;
+    vec[*cur_pos].MPID_IOV_LEN = buf_ptr->simple.num_read - car_ptr->data.tcp.buf.simple.num_written;
+    (*cur_pos)++;
+
+    /* if the entire segment is in the vector then return true else false */
+    if (buf_ptr->simple.num_read == buf_ptr->simple.len)
+    {
+	MM_EXIT_FUNC(TCP_STUFF_VECTOR_SIMPLE);
+	return TRUE;
+    }
+
+    MM_EXIT_FUNC(TCP_STUFF_VECTOR_SIMPLE);
+    return FALSE;
+}
+
 #ifdef WITH_METHOD_NEW
 int tcp_stuff_vector_new(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
@@ -308,6 +342,35 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    mm_car_free(car_ptr);
 	}
 	break;
+    case MM_SIMPLE_BUFFER:
+	num_written = min(
+	    /* the amout of buffer space available to have been written */
+	    buf_ptr->simple.len - car_ptr->data.tcp.buf.simple.num_written,
+	    /* the actual amount written */
+	    num_written);
+	
+	/*msg_printf("num_written simple: %d\n", num_written);*/
+
+	/* update the amount written */
+	car_ptr->data.tcp.buf.simple.num_written += num_written;
+	
+	/* check to see if finished */
+	if (car_ptr->data.tcp.buf.simple.num_written == buf_ptr->simple.len)
+	{
+	    dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.simple.num_written);
+	    /* remove from write queue and insert in completion queue */
+#ifdef MPICH_DEV_BUILD
+	    if (car_ptr != car_ptr->vc_ptr->writeq_head)
+	    {
+		err_printf("Error: tcp_update_car_num_written not dequeueing the head write car.\n");
+	    }
+#endif
+	    tcp_car_dequeue_write(car_ptr->vc_ptr);
+	    /*printf("dec cc: written simple buffer: %d\n", num_written);fflush(stdout);*/
+	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_car_free(car_ptr);
+	}
+	break;
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	break;
@@ -396,6 +459,9 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	    break;
 	case MM_TMP_BUFFER:
 	    stop = !tcp_stuff_vector_tmp(vec, &cur_pos, car_ptr, buf_ptr);
+	    break;
+	case MM_SIMPLE_BUFFER:
+	    stop = !tcp_stuff_vector_simple(vec, &cur_pos, car_ptr, buf_ptr);
 	    break;
 #ifdef WITH_METHOD_NEW
 	case MM_NEW_METHOD_BUFFER:

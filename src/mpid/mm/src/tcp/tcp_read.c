@@ -16,6 +16,7 @@ int tcp_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_
 #endif
 int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_connecting(MPIDI_VC *vc_ptr);
 
 int tcp_read_header(MPIDI_VC *vc_ptr)
@@ -94,6 +95,11 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     {
     case MM_VEC_BUFFER:
 	ret_val = tcp_read_vec(vc_ptr, car_ptr, buf_ptr);
+	MM_EXIT_FUNC(TCP_READ_DATA);
+	return ret_val;
+	break;
+    case MM_SIMPLE_BUFFER:
+	ret_val = tcp_read_simple(vc_ptr, car_ptr, buf_ptr);
 	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
@@ -311,6 +317,49 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     if (buf_ptr->tmp.num_read == buf_ptr->tmp.len)
     {
 	dbg_printf("num_read: %d\n", buf_ptr->tmp.num_read);
+	/* remove from read queue and insert in completion queue */
+	tcp_car_dequeue(vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+    }
+
+    MM_EXIT_FUNC(TCP_READ_TMP);
+    return MPI_SUCCESS;
+}
+
+int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    int num_read;
+
+    MM_ENTER_FUNC(TCP_READ_SIMPLE);
+
+    if (buf_ptr->simple.buf == NULL)
+    {
+	/* get the simple buffer */
+	/*car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);*/
+	err_printf("Error: tcp_read_simple called with NULL simple buffer.\n");
+	return -1;
+    }
+
+    /* read as much as possible */
+    MM_ENTER_FUNC(BREAD);
+    num_read = bread(vc_ptr->data.tcp.bfd, 
+	(char*)(buf_ptr->simple.buf) + buf_ptr->simple.num_read, 
+	buf_ptr->simple.len - buf_ptr->simple.num_read);
+    MM_EXIT_FUNC(BREAD);
+    if (num_read == SOCKET_ERROR)
+    {
+	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
+    }
+
+    /*msg_printf("num_read simple: %d\n", num_read);*/
+
+    /* update the amount read */
+    buf_ptr->simple.num_read += num_read;
+
+    /* check to see if finished */
+    if (buf_ptr->simple.num_read == buf_ptr->simple.len)
+    {
+	dbg_printf("num_read: %d\n", buf_ptr->simple.num_read);
 	/* remove from read queue and insert in completion queue */
 	tcp_car_dequeue(vc_ptr, car_ptr);
 	mm_cq_enqueue(car_ptr);

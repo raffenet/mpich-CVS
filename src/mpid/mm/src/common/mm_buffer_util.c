@@ -64,6 +64,19 @@ int tmp_buffer_init(MPID_Request *request_ptr)
     return MPI_SUCCESS;
 }
 
+int simple_buffer_init(MPID_Request *request_ptr)
+{
+    MM_ENTER_FUNC(SIMPLE_BUFFER_INIT);
+
+    request_ptr->mm.buf.type = MM_SIMPLE_BUFFER;
+    request_ptr->mm.buf.simple.buf = NULL;
+    request_ptr->mm.buf.simple.len = 0;
+    request_ptr->mm.buf.simple.num_read = 0;
+
+    MM_EXIT_FUNC(SIMPLE_BUFFER_INIT);
+    return MPI_SUCCESS;
+}
+
 int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
     MM_ENTER_FUNC(MM_GET_BUFFERS_VEC);

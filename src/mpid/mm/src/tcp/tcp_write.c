@@ -16,6 +16,7 @@ int tcp_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #endif
 int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 
 int tcp_write(MPIDI_VC *vc_ptr)
 {
@@ -66,6 +67,11 @@ int tcp_write(MPIDI_VC *vc_ptr)
 #endif
     case MM_VEC_BUFFER:
 	ret_val = (buf_ptr->vec.num_cars_outstanding > 0) ? tcp_write_vec(vc_ptr, car_ptr, buf_ptr) : MPI_SUCCESS;
+	MM_EXIT_FUNC(TCP_WRITE);
+	return ret_val;
+	break;
+    case MM_SIMPLE_BUFFER:
+	ret_val = tcp_write_simple(vc_ptr, car_ptr, buf_ptr);
 	MM_EXIT_FUNC(TCP_WRITE);
 	return ret_val;
 	break;
@@ -324,5 +330,49 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     }
 
     MM_EXIT_FUNC(TCP_WRITE_TMP);
+    return MPI_SUCCESS;
+}
+
+int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    int num_written;
+
+    MM_ENTER_FUNC(TCP_WRITE_SIMPLE);
+
+    if ((car_ptr->data.tcp.buf.simple.num_written == buf_ptr->simple.num_read) || (buf_ptr->simple.num_read == 0))
+    {
+	return MPI_SUCCESS;
+    }
+
+    /* write as much as possible */
+    MM_ENTER_FUNC(BWRITE);
+    num_written = bwrite(vc_ptr->data.tcp.bfd, 
+	(char*)(buf_ptr->simple.buf) + car_ptr->data.tcp.buf.simple.num_written,
+	buf_ptr->simple.num_read - car_ptr->data.tcp.buf.simple.num_written);
+    MM_EXIT_FUNC(BWRITE);
+    if (num_written == SOCKET_ERROR)
+    {
+	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
+    }
+    /* update the amount written */
+    car_ptr->data.tcp.buf.simple.num_written += num_written;
+
+    /* check to see if finished */
+    if (car_ptr->data.tcp.buf.simple.num_written == buf_ptr->simple.len)
+    {
+	dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.simple.num_written);
+	/* remove from write queue and insert in completion queue */
+#ifdef MPICH_DEV_BUILD
+	if (car_ptr != vc_ptr->writeq_head)
+	{
+	    err_printf("Error: tcp_write_tmp not dequeueing the head write car.\n");
+	}
+#endif
+	tcp_car_dequeue_write(vc_ptr);
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
+	mm_cq_enqueue(car_ptr);
+    }
+
+    MM_EXIT_FUNC(TCP_WRITE_SIMPLE);
     return MPI_SUCCESS;
 }

@@ -66,6 +66,11 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	    if (car_ptr->type & MM_HEAD_CAR)
 	    {
 		buf_ptr = &car_ptr->msg_header.buf;
+		buf_ptr->type = MM_SIMPLE_BUFFER;
+		buf_ptr->simple.buf = (void*)&car_ptr->msg_header.pkt;
+		buf_ptr->simple.len = sizeof(MPID_Packet);
+		buf_ptr->simple.num_read = sizeof(MPID_Packet);
+		/*
 		buf_ptr->type = MM_VEC_BUFFER;
 		buf_ptr->vec.vec[0].MPID_IOV_BUF = (void*)&car_ptr->msg_header.pkt;
 		buf_ptr->vec.vec[0].MPID_IOV_LEN = sizeof(MPID_Packet);
@@ -77,6 +82,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 		buf_ptr->vec.buf_size = sizeof(MPID_Packet);
 		buf_ptr->vec.num_cars = 1;
 		buf_ptr->vec.num_cars_outstanding = 1;
+		*/
 	    }
 	    car_ptr = car_ptr->opnext_ptr;
 	}

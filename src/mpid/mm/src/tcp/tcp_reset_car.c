@@ -31,6 +31,9 @@ int tcp_reset_car(MM_Car *car_ptr)
     {
     case MM_NULL_BUFFER:
 	break;
+    case MM_SIMPLE_BUFFER:
+	car_ptr->data.tcp.buf.simple.num_written = 0;
+	break;
     case MM_TMP_BUFFER:
 	car_ptr->data.tcp.buf.tmp.num_written = 0;
 	break;
@@ -109,6 +112,56 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
     case MM_READ_CAR:
 	car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
 	car_ptr->src = src_dest;
+#ifdef MPICH_DEV_BUILD
+	car_ptr->data.tcp.buf.simple.num_written = -1;
+#endif
+	/* readers have no data yet */
+	buf_ptr->simple.num_read = 0;
+	break;
+    case MM_WRITE_CAR:
+	car_ptr->type = MM_HEAD_CAR | MM_WRITE_CAR;
+	car_ptr->dest = src_dest;
+	car_ptr->data.tcp.buf.simple.num_written = 0;
+	
+	/* writers have the data ready */
+	buf_ptr->simple.num_read = sizeof(MPID_Packet);
+	break;
+    default:
+	err_printf("Error: tcp_setup_packet_car: invalid car type, %d\n", read_write);
+	break;
+    }
+    
+    /* set up the buffer */
+    buf_ptr->type = MM_SIMPLE_BUFFER;
+    buf_ptr->simple.buf = (void*)&car_ptr->msg_header.pkt;
+    buf_ptr->simple.len = sizeof(MPID_Packet);
+    
+    return MPI_SUCCESS;
+}
+
+#ifdef USE_VECTOR_BUFFER_FOR_PACKETS
+int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr)
+{
+    MM_Segment_buffer *buf_ptr;
+
+    MM_ENTER_FUNC(TCP_SETUP_PACKET_CAR);
+
+    buf_ptr = &car_ptr->msg_header.buf;
+    
+    /* set up the car */    
+    car_ptr->vc_ptr = vc_ptr;
+    car_ptr->next_ptr = NULL;
+    car_ptr->opnext_ptr = NULL;
+    car_ptr->qnext_ptr = NULL;
+    car_ptr->request_ptr = NULL;
+    car_ptr->buf_ptr = buf_ptr;
+
+    /* set up the vector for reading or writing */
+    switch (read_write)
+    {
+    case MM_READ_CAR:
+	car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
+	car_ptr->src = src_dest;
 	car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
 	car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
@@ -152,3 +205,4 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
     
     return MPI_SUCCESS;
 }
+#endif
