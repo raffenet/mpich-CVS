@@ -77,7 +77,7 @@ MPICH implementation.  level may be
 enable_threads=single)
 dnl
 dnl NOT YET COMPLETE: make use of this value to turn MPI_Wtime into
-dnl a macro in mpi.h
+dnl a macro in mpi.h.  
 AC_ARG_ENABLE(mpi-macros,
 [--enable-mpi-macros - Implement MPI_Wtime and MPI_Wtick as C macros
 The default is no.],
@@ -109,6 +109,8 @@ AC_ARG_ENABLE(f77,
 [--enable-f77 - Enable Fortran 77 bindings],,enable_f77=yes)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Enable C++ bindings],,enable_cxx=yes)
+AC_ARG_ENABLE(csharp,
+[--enable-cxx - Enable C# bindings],,enable_csharp=no)
 AC_ARG_ENABLE(f90,
 [--enable-f90 - Enable Fortran 90 bindings],,enable_f90=no)
 dnl
@@ -119,6 +121,11 @@ dnl
 AC_ARG_ENABLE(debugger,
 [--enable-debugger - Enable support for debuggers],
 ,enable_debugger=no)
+dnl
+AC_ARG_ENABLE(nmpi-as-mpi,
+[--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
+ such as the collectives, that may be implemented in terms of other MPI 
+ routines],,enable_nmpi_as_mpi=no)
 dnl
 dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
@@ -442,6 +449,14 @@ if test "$with_cross" != "no" ; then
     fi
 fi
 
+if test "$enable_nmpi_as_mpi" = yes ; then
+   AC_DEFINE(USE_MPI_FOR_NMPI,1,[Define if the NMPI names should use MPI instead of PMPI])
+fi
+
+if test "$enable_mpi_macros" = yes ; then
+    AC_DEFINE(USE_MACROS_FOR_WTIME,1,[Define if macros may be used for MPI_Wtime and MPI_Wtick])
+fi
+
 #
 # Set the defaults for directories that are not included in configure's
 # repetoire
@@ -489,6 +504,12 @@ if test -z "$master_top_srcdir" ; then
     esac
     master_top_srcdir=$use_top_srcdir
 fi
+# Get the directory that we're running in...
+if test -z "$master_top_builddir" ; then
+   master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
 master_top_builddir="`pwd`"
@@ -675,6 +696,14 @@ if test "$enable_cxx" = "yes" ; then
    bindings_dirs="$bindings_dirs src/binding/cxx"
    AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
 fi
+
+if test "$enable_csharp" = "yes" ; then
+   bindingsubsystems="$bindingsubsystems src/binding/csharp"
+   bindings="$bindings csharp"
+   bindings_dirs="$bindings_dirs src/binding/csharp"
+   AC_DEFINE(HAVE_CSHARP_BINDING,1,[Define if C# is supported])
+fi
+
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
 AC_SUBST(bindings_dirs)
@@ -854,6 +883,7 @@ dnl Ensure that all subdir configures get this
 export CC_SHL
 export C_LINK_SHL
 export ENABLE_SHLIB
+export LIBTOOL
 dnl
 dnl Find SSH.  If SSH is defined, use that instead
 dnl AC_PATH_PROG(SSH,ssh)
@@ -1090,30 +1120,33 @@ system; this program outputs an appropriate file for the --with-cross option])
 	   fi
        fi
     fi
-
-    if test $len -le 0 ; then
-         eval len_$type="00"
-    elif test $len -le 9 ; then 
-         eval len_$type="0$len" 
-    elif test $len -le 15 ; then
-         case $len in 
+    #
+    # Take len and turn it into two hex digits (there are 8 bits available
+    # in the built-in datatype handle for the length; see
+    # src/mpid/common/datatype/mpid_datatype.h)
+    if test "$len" -gt 255 ; then
+         AC_MSG_ERROR([Type sizes greater than 255 bytes not supported (type $type is $len bytes)]) 
+    fi
+    tmplen=$len
+    hexlen=""
+    while test $tmplen -gt 0 ; do
+        lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
+	case $lowdigit in 
          10) char=a ;;
 	 11) char=b ;;
 	 12) char=c ;;
 	 13) char=d ;;
 	 14) char=e ;;
 	 15) char=f ;;
-         esac
-         eval len_$type="0$char"
-    elif test $len -le 31 ; then
-         len=`expr $len - 16`
-         eval len_$type="1$len"
-    elif test $len -le 63 ; then
-         len=`expr $len - 32`
-         eval len_$type="2$len"
-    else
-         AC_MSG_ERROR([Type sizes greater than 63 bytes not supported (type $type is $len bytes)]) 
+	  *) char=$lowdigit ;;
+	esac
+	hexlen="$char$hexlen"
+	tmplen=`expr $tmplen / 16`
+    done
+    if test $len -lt 16 ; then
+        hexlen="0$hexlen"
     fi
+    eval len_$type=$hexlen
 done
 # By definition, sizeof char is 1
 MPI_CHAR="0x4c000101"
