@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="sendrecv"
+	ProjectGUID="{04B357E3-D9BB-436D-9125-800F2C9CB61A}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>

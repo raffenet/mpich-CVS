@@ -302,7 +302,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2sockd.lib"
-				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -348,7 +348,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2sock.lib"
-				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib"/>
+				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -2078,6 +2078,9 @@
 				RelativePath="src\mpi\misc\pcontrol.c">
 			</File>
 			<File
+				RelativePath=".\src\nameserv\file\pmi_nameserv.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\mpi-io\prealloc.c">
 			</File>
 			<File
@@ -2235,6 +2238,12 @@
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\common\status_setb.c">
+			</File>
+			<File
+				RelativePath=".\src\binding\f77\statusc2f.c">
+			</File>
+			<File
+				RelativePath=".\src\binding\f77\statusf2c.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi2-other\array\subarray.c">
