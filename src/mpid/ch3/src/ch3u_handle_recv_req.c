@@ -60,12 +60,14 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
 	    MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    MPIDI_CH3_iRead(vc, rreq);
 	    break;
 	}
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
 	    MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    MPIDI_CH3_iRead(vc, rreq);
 	    break;
 	}
 	

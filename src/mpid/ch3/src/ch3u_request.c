@@ -850,6 +850,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 			  userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = userbuf_sz;
+	rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
 	mpi_errno = MPI_ERR_TRUNCATE;
     }
 	
@@ -875,6 +876,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	    /* received data was not entirely consumed by unpack() because
 	       too few bytes remained to fill the next basic datatype */
 	    rreq->status.count = last;
+	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 	    mpi_errno = MPI_ERR_UNKNOWN;
 	}
     }
@@ -882,5 +884,3 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }
-
-

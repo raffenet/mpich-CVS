@@ -460,6 +460,7 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 			      ", userbuf_sz=" MPIDI_MSG_SZ_FMT,
 			      rreq->ch3.recv_data_sz, userbuf_sz));
 	    rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
+	    rreq->status.count = userbuf_sz;
 	    data_sz = userbuf_sz;
 	}
 
