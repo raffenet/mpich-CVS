@@ -179,10 +179,18 @@ public class TimeBoundingBox
                && ( this.latest_time == endtimes.latest_time );
     }
 
-    public double getLength()
+    /* For SLOG-2 Input API & viewer */
+    public double getDuration()
     {
         return latest_time - earliest_time;
     }
+
+    public void setZeroDuration( double time )
+    {
+        earliest_time = time;
+        latest_time   = time;
+    }
+
 
     public static void writeObject( final TimeBoundingBox  timebox,
                                           DataOutput       outs )
