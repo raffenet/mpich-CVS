@@ -188,6 +188,20 @@ EOF
     fi
     rm -f conftest*
 fi
+if test "$enable_cxx" = yes ; then
+    AC_CACHE_CHECK([whether <iostream> available],pac_cv_cxx_has_iostream,[
+    AC_LANG_SAVE
+    AC_LANG_CPLUSPLUS
+    AC_TRY_COMPILE([
+#include <iostream>
+],[using namespace std;],pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)
+    AC_LANG_RESTORE])
+    if test "$pac_cv_cxx_has_iostream" = yes ; then
+        AC_DEFINE(HAVE_IOSTREAM,1,[Define if iostream is available])
+    fi
+
+    AC_CXX_NAMESPACE_STD
+fi
 # Find perl; used to create some of the tests from template and 
 # defintion files
 AC_PATH_PROG(PERL,perl)
@@ -244,6 +258,8 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/util/Makefile \
 	  cxx/comm/Makefile \
 	  cxx/coll/Makefile \
+          cxx/info/Makefile \
+	  cxx/datatype/Makefile \
 	  cxx/io/Makefile \
 	  cxx/init/Makefile \
 	  cxx/rma/Makefile \
