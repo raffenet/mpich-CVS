@@ -60,13 +60,13 @@ static SMPD_BOOL CompareHosts(char *pszHost1, char *pszHost2)
     if (pH == NULL)
 	return SMPD_FALSE;
 
-    ip1 = (unsigned long)(pH->h_addr_list[0]);
+    ip1 = *(unsigned long*)(pH->h_addr_list[0]);
 
     pH = gethostbyname(pszHost2);
     if (pH == NULL)
 	return SMPD_FALSE;
 
-    ip2 = (unsigned long)(pH->h_addr_list[0]);
+    ip2 = *(unsigned long*)(pH->h_addr_list[0]);
 
     return (ip1 == ip2);
 }
@@ -129,8 +129,8 @@ static BOOL EnumerateDisksFunc(LPNETRESOURCE lpnr, DWORD dwScope, DWORD dwType, 
 				    {
 					char pszHost1[50], pszHost2[50];
 					int nLength1, nLength2;
-					nLength1 = pPath1 - &lpnrLocal[i].lpRemoteName[2] - 1;
-					nLength2 = pPath2 - &pszShare[2] - 1;
+					nLength1 = (int)(pPath1 - &lpnrLocal[i].lpRemoteName[2] - 1);
+					nLength2 = (int)(pPath2 - &pszShare[2] - 1);
 					strncpy(pszHost1, &lpnrLocal[i].lpRemoteName[2], nLength1);
 					strncpy(pszHost2, &pszShare[2], nLength2);
 					pszHost1[nLength1] = '\0';
