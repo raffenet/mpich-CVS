@@ -23,7 +23,7 @@ void MPIDI_CH3_iRead(MPIDI_VC *, MPID_Request *);
 
 MPID_Request * MPIDI_CH3_Request_create(void);
 void MPIDI_CH3_Request_add_ref(MPID_Request *);
-int MPIDI_CH3_Request_release_ref(MPID_Request *, int *);
+void MPIDI_CH3_Request_release_ref(MPID_Request *, int *);
 void MPIDI_CH3_Request_destroy(MPID_Request *);
 
 void MPIDI_CH3_Progress_start(void);
