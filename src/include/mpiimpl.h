@@ -84,6 +84,14 @@ typedef short int16_t;
 /* FIXME (int may not be correct) */
 typedef int int32_t;
 #endif
+#ifndef HAVE_INT64_T
+#ifdef HAVE_WINDOWS_H
+typedef __int64 int64_t;
+#else
+/* FIXME (long long may not be correct) */
+typedef long long int64_t;
+#endif
+#endif
 
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
