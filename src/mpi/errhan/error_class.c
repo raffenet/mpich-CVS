@@ -52,6 +52,16 @@ int MPI_Error_class(int errorcode, int *errorclass)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_CLASS);
     MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_ARGNULL(errorclass,"errorclass",mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     /* We include the dynamic bit because this is needed to fully
@@ -61,6 +71,7 @@ int MPI_Error_class(int errorcode, int *errorclass)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_CLASS);
     return MPI_SUCCESS;
+
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
 #ifdef HAVE_ERROR_CHECKING
