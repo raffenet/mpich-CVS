@@ -33,33 +33,17 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank,
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
     
-    if (rank == MPI_PROC_NULL)
-    {
-	sreq = MPIDI_CH3_Request_create();
-	if (sreq != NULL)
-	{
-	    sreq->ref_count = 1;
-	    sreq->cc = 0;
-	    sreq->kind = MPID_REQUEST_SEND;
-	    MPIR_Status_set_empty(&sreq->status);
-	    sreq->status.MPI_SOURCE = MPI_PROC_NULL;
-	    /* DEBUG: the following are provided for debugging purposes only */
-	    sreq->comm = comm;
-	    sreq->ch3.match.rank = rank;
-	    sreq->ch3.match.tag = tag;
-	    sreq->ch3.match.context_id = comm->context_id + context_offset;
-	    sreq->ch3.user_buf = (void *) buf;
-	    sreq->ch3.user_count = count;
-	    sreq->ch3.datatype = datatype;
-	}
-	else
-	{
-	    mpi_errno = MPI_ERR_NOMEM;
-	}
-	goto fn_exit;
-    }
     
     MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    
+    if (rank == MPI_PROC_NULL)
+    {
+	sreq->ref_count = 1;
+	sreq->cc = 0;
+	goto fn_exit;
+    }
+
+    sreq->ch3.vc = comm->vcr[rank];
     
     if (rank == comm->rank)
     {
