@@ -574,45 +574,51 @@ fn_exit:
 
 void MPIR_Err_print_stack(FILE * fp, int errcode)
 {
-    int generic_idx;
-    int ring_idx;
-    int ring_seq;
-	
-    generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-    ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-    ring_seq    = (errcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
-		    
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	if (generic_idx >= 0)
+	MPID_Thread_lock(error_ring_mutex);
 	{
-	    MPID_Thread_lock(error_ring_mutex);
+	    while (errcode != MPI_SUCCESS)
 	    {
-		while (errcode != MPI_SUCCESS)
+		int ring_idx;
+		int ring_seq;
+		int generic_idx;
+	
+		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+		ring_seq    = (errcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+		if (generic_idx < 0)
 		{
-		    if (ErrorRing[ring_idx].seq == ring_seq)
-		    {
-			fprintf(fp, "%s(): %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
-			errcode = ErrorRing[ring_idx].prev_error;
-		    }
-		    else
-		    {
-			break;
-		    }
+		    break;
+		}
+		    
+		if (ErrorRing[ring_idx].seq == ring_seq)
+		{
+		    fprintf(fp, "%s(): %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+		    errcode = ErrorRing[ring_idx].prev_error;
+		}
+		else
+		{
+		    break;
 		}
 	    }
-	    MPID_Thread_unlock(error_ring_mutex);
+	}
+	MPID_Thread_unlock(error_ring_mutex);
 
-	    if (errcode == MPI_SUCCESS)
-	    {
-		goto fn_exit;
-	    }
+	if (errcode == MPI_SUCCESS)
+	{
+	    goto fn_exit;
 	}
     }
 #   endif
 
 #   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
     {
+	int generic_idx;
+		    
+	generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+	
 	if (generic_idx >= 0)
 	{
 	    fprintf(fp, "(unknown)(): %s\n", generic_err_msgs[generic_idx].long_name);
