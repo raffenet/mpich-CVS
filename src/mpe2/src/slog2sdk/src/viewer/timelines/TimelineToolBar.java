@@ -47,10 +47,10 @@ public class TimelineToolBar extends JToolBar
 
     public  JButton                 zoomUndo_btn;
     public  JButton                 zoomOut_btn;
-    public  JButton                 zoomSet_btn;
     public  JButton                 zoomHome_btn;
     public  JButton                 zoomIn_btn;
     public  JButton                 zoomRedo_btn;
+    // public  JButton                 zoomSet_btn;
 
     public  JButton                 searchBack_btn;
     public  JButton                 searchInit_btn;
@@ -305,6 +305,7 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
+        /*
         icon_URL = getURL( img_path + "ZoomSet24.gif" );
         if ( icon_URL != null )
             zoomSet_btn = new JButton( new ImageIcon( icon_URL ) );
@@ -315,6 +316,7 @@ public class TimelineToolBar extends JToolBar
         // zoomSet_btn.addActionListener(
         //         new ActionZoomSet( this, time_model ) );
         super.add( zoomSet_btn );
+        */
 
         super.addSeparator();
         super.addSeparator();

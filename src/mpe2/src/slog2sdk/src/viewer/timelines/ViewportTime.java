@@ -567,6 +567,20 @@ public class ViewportTime extends JViewport
             }
         }
 
+
+
+    public void markTimeZoomFocus()
+    {
+        zoom_timebox.setZeroDuration( time_model.getTimeZoomFocus() );
+        this.repaint();
+    }
+
+    public void resetToolBarZoomButtons()
+    {
+        if ( toolbar != null )
+            toolbar.resetZoomButtons();
+    }
+
     protected InfoDialog getLastInfoDialog()
     {
         int info_dialogs_size = info_dialogs.size();

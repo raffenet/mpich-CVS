@@ -139,31 +139,31 @@ public class ViewportTimeYaxis extends ViewportTime
             // Fill upper arrowhead with 2 shades of color
             x1 = dobj_rect.x;
             y1 = dobj_rect.y - frame_thickness;
-            g.setColor( dobj_color ); // g.setColor( Color.YELLOW );
+            g.setColor( dobj_color ); // g.setColor( Color.yellow );
             g.fillArc( x1-radius, y1-radius, diameter, diameter,
                        90, -SEARCH_ARROW_HALF_ANGLE );
-            g.setColor( dobj_darker_color ); // g.setColor( Color.GRAY );
+            g.setColor( dobj_darker_color ); // g.setColor( Color.gray );
             g.fillArc( x1-radius, y1-radius, diameter, diameter,
                        90-SEARCH_ARROW_HALF_ANGLE, -SEARCH_ARROW_HALF_ANGLE );
             // Draw upper arrowhead with border
-            g.setColor( dobj_brighter_color ); // g.setColor( Color.GRAY );
+            g.setColor( dobj_brighter_color ); // g.setColor( Color.gray );
             g.drawLine( x1, y1, x1, y1-radius );
-            g.setColor( dobj_brighter_color ); // g.setColor( Color.WHITE );
+            g.setColor( dobj_brighter_color ); // g.setColor( Color.white );
             g.drawLine( x1, y1, x1+arrow_Xoff, y1-arrow_Yoff );
 
             // Fill lower arrowhead with 2 shades of color
             x2 = x1;
             y2 = dobj_rect.y + dobj_rect.height + frame_thickness;
-            g.setColor( Color.YELLOW );
+            g.setColor( Color.yellow );
             g.fillArc( x2-radius, y2-radius, diameter, diameter,
                        270, SEARCH_ARROW_HALF_ANGLE );
-            g.setColor( Color.DARK_GRAY );
+            g.setColor( Color.darkGray );
             g.fillArc( x2-radius, y2-radius, diameter, diameter,
                        270+SEARCH_ARROW_HALF_ANGLE, SEARCH_ARROW_HALF_ANGLE );
             // Draw lower arrowhead with border
-            g.setColor( Color.GRAY );
+            g.setColor( Color.gray );
             g.drawLine( x2, y2, x2, y2+radius );
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             g.drawLine( x2, y2, x2+arrow_Xoff, y2+arrow_Yoff );
         }
 
@@ -182,23 +182,23 @@ public class ViewportTimeYaxis extends ViewportTime
             x2  = x1 + dobj_rect.width;
             y2  = y1 + dobj_rect.height;
             // Draw the innermost left & top with a dark color
-            g.setColor( Color.BLACK );
+            g.setColor( Color.black );
                 ii = 0;
                 g.drawLine( x1-ii, y1-ii, x1-ii, y2+ii );  // left
                 g.drawLine( x1-ii, y1-ii, x2+ii, y1-ii );  // top
             // Draw left & top with a bright color
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
             for ( ii = 1; ii <= frame_thickness; ii++ ) {
                 g.drawLine( x1-ii, y1-ii, x1-ii, y2+ii );  // left
                 g.drawLine( x1-ii, y1-ii, x2+ii, y1-ii );  // top
             }
             // Draw the innermost right & bottom with a bright color
-            g.setColor( Color.WHITE );
+            g.setColor( Color.white );
                 ii = 0;
                 g.drawLine( x2+ii, y1-ii, x2+ii, y2+ii );  // right
                 g.drawLine( x1-ii, y2+ii, x2+ii, y2+ii );  // bottom
             // Draw right & bottom with a dark color
-            g.setColor( Color.DARK_GRAY );
+            g.setColor( Color.darkGray );
             for ( ii = 1; ii <= frame_thickness; ii++ ) {
                 g.drawLine( x2+ii, y1-ii, x2+ii, y2+ii );  // right
                 g.drawLine( x1-ii, y2+ii, x2+ii, y2+ii );  // bottom

@@ -188,6 +188,11 @@ public class ModelTime extends DefaultBoundedRangeModel
         return iViewPerTime;
     }
 
+    public double computeTimeViewExtent( double time_per_pixel )
+    {
+        return iView_width * time_per_pixel;
+    }
+
     /*
        +1 : moving to the future, i.e. right
        -1 : moving to the past  , i.e. left

@@ -96,8 +96,8 @@ public class CanvasTime extends ScrollableObject
         change_listener = null;
 
         if ( BackgroundPaint == null )
-            BackgroundPaint = new GradientPaint( 0, 0, Color.BLACK,
-                                                 5, 5, Color.GRAY, true );
+            BackgroundPaint = new GradientPaint( 0, 0, Color.black,
+                                                 5, 5, Color.gray, true );
     }
 
     public void addChangeListener( ChangeListener listener )

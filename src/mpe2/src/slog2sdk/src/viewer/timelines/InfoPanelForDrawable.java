@@ -70,7 +70,7 @@ public class InfoPanelForDrawable extends JPanel
             Shadow_Border = BorderFactory.createTitledBorder(
                                           Normal_Border, " Preview State ",
                                           TitledBorder.LEFT, TitledBorder.TOP,
-                                          Const.FONT, Color.BLUE );
+                                          Const.FONT, Color.magenta );
         }
 
         Primitive  prime  = (Primitive) dobj;

@@ -103,10 +103,6 @@ public class TimelinePanel extends JPanel
             right_panel.setLayout( new BoxLayout( right_panel,
                                                   BoxLayout.Y_AXIS ) );
 
-                /* The View's Time Display Panel */
-                time_display_panel = new ModelTimePanel( time_model );
-                time_model.setParamDisplay( time_display_panel );
-
                 /* The Time Ruler */
                 time_ruler        = new RulerTime( time_model );
                 time_ruler_vport  = new ViewportTime( time_model );
@@ -155,6 +151,12 @@ public class TimelinePanel extends JPanel
                                                   null, Color.blue );
                 /* Inform "time_canvas_vport" time has been changed */
                 time_model.addTimeListener( time_canvas_vport );
+
+                /* The View's Time Display Panel */
+                time_display_panel = new ModelTimePanel( time_model );
+                time_model.setParamDisplay( time_display_panel );
+                time_display_panel.addViewportTime( time_ruler_vport );
+                time_display_panel.addViewportTime( time_canvas_vport );
 
                 /* The Horizontal "Time" ScrollBar */
                 time_scrollbar = new ScrollbarTime( time_model );
