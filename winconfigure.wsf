@@ -1,9 +1,50 @@
 <package>
 <job id="winconfigure">
+    <runtime>
+        <description>This script generates header files for MPICH</description>
+        <unnamed
+            name = "--force"
+            helpstring = "Force the creation of new files, overwriting the old"
+            required = "false"
+        />
+        <unnamed
+            name = "--force=no"
+            helpstring = "Only create files that do not already exist"
+            required = "false"
+        />
+        <unnamed
+            name = "--win64"
+            helpstring = "Generate sizes for 64 bit Windows"
+            required = "false"
+        />
+        <unnamed
+            name = "--win32"
+            helpstring = "Generate sizes for 32 bit Windows"
+            required = "false"
+        />
+        <unnamed
+            name = "--enable-timer-type=x86cycle"
+            helpstring = "Use the Pentium rdtsc instruction for timing"
+            required = "false"
+        />
+        <unnamed
+            name = "--enable-timer-type=queryperformancecounter"
+            helpstring = "Use QueryPerformanceCounter for timing"
+            required = "false"
+        />
+        <unnamed
+			name = "--with-mcxx"
+			helpstring = "Generate the managed C++ interface"
+			required = "false"
+		/>
+        <example>Example: winconfigure.wsf --force</example>
+    </runtime>
 <script language="VBScript">
 
 bWin64 = False
 bUseCycleCounter = True
+bForce = True
+bMcxx = False
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -23,9 +64,17 @@ For arg = 0 To argCount - 1
     bUseCycleCounter = True
   ElseIf argValue = "--enable-hptiming=no" Then
     bUseCycleCounter = False
-'  ElseIf argValue = "--help" Then
-'    Print help stuff
-'    Exit
+  ElseIf argValue = "--force" Then
+    bForce = True
+  ElseIf argValue = "--force=yes" Then
+    bForce = True
+  ElseIf argValue = "--force=no" Then
+    bForce = False
+  ElseIf argValue = "--with-mcxx" Then
+	bMcxx = True
+  ElseIf argValue = "--help" Then
+    WScript.Arguments.ShowUsage
+    WScript.Quit
   End If
 Next
 
@@ -336,12 +385,13 @@ fout.WriteLine("#endif")
 fout.Close()
 
 '
-' Generate mpcxx.h
+' Generate mpicxx.h
 '
 
-If Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+Dim WshShell
 
-  Dim WshShell
+If bForce Or Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+
   Set WshShell = CreateObject("WScript.Shell")
   WshShell.CurrentDirectory = "src\binding\cxx"
   WshShell.Run "perl buildiface -nosep -noromio", 0, true
@@ -367,10 +417,44 @@ End IF
 
 
 '
+' Generate mpimcxx.h
+'
+
+If bMcxx Then
+
+	If bForce Or Not f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+
+		Set WshShell = CreateObject("WScript.Shell")
+		WshShell.CurrentDirectory = "src\binding\mcxx"
+		WshShell.Run "perl buildiface -nosep -noromio", 0, true
+		WhShell.CurrentDirectory = "..\..\.."
+
+	End If
+
+	If f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+
+		set fin = f.OpenTextFile("src\binding\mcxx\mpimcxx.h.in")
+		set fout = f.CreateTextFile("src\include\mpimcxx.h")
+		contents = fin.ReadAll()
+		contents = Replace(contents, "@HAVE_CXX_EXCEPTIONS@", "1")
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()
+
+	Else
+
+		WScript.Echo("Run ""perl buildiface -nosep -noromio"" from the src\binding\mcxx directory before running winconfigure")
+  
+	End If
+	
+End If
+
+
+'
 ' Generate mpif.h
 '
 
-If Not f.FileExists("src\binding\f77\mpif.h.in") Then
+If bForce Or Not f.FileExists("src\binding\f77\mpif.h.in") Then
 
   Set WshShell = CreateObject("WScript.Shell")
   WshShell.CurrentDirectory = "src\binding\f77"
@@ -423,10 +507,10 @@ If f.FileExists("src\binding\f77\mpif.h.in") Then
 Else
 
   WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
-  
+
 End IF
 
-If Not f.FileExists("src\binding\f77\mpi_fortconf.h") Then
+If bForce Or Not f.FileExists("src\binding\f77\mpi_fortconf.h") Then
 
 set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
 fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
@@ -526,7 +610,7 @@ End IF
 ' Generate F90 module files
 '
 
-If Not f.FileExists("src\binding\f90\mpi.f90") Then
+If bForce Or Not f.FileExists("src\binding\f90\mpi.f90") Then
 
   Set WshShell = CreateObject("WScript.Shell")
   WshShell.CurrentDirectory = "src\binding\f90"
@@ -540,6 +624,651 @@ If Not f.FileExists("src\binding\f90\mpi.f90") Then
   WScript.Echo("Run ""perl buildiface"" from the src\binding\f90 directory to generate the F90 modules")
   
 End IF
+
+'
+' Validate .in files
+'
+
+Function RegExpFind(pattern, str)
+   Dim regEx, Match, Matches           ' Create variable.
+   Set regEx = New RegExp              ' Create a regular expression.
+   regEx.Pattern = pattern             ' Set pattern.
+   regEx.IgnoreCase = True             ' Set case insensitivity.
+   regEx.Global = True                 ' Set global applicability.
+   Set Matches = regEx.Execute(str)    ' Execute search.
+   For Each Match in Matches           ' Return the first match
+      RegExpFind = Match.Value
+      Exit For
+   Next
+End Function
+
+Sub AddDefinitions( fout, filename )
+	If f.FileExists( filename ) Then
+		Set f2 = f.OpenTextFile( filename )
+		Dim regEx, Match, Matches
+		Set regEx = New RegExp
+		contents = f2.ReadAll()
+		regEx.Pattern = "/\*.*\*/\n#undef.*\n"
+		regEx.IgnoreCase = True
+		regEx.Global = True
+		Set Matches = regEx.Execute(contents)
+		For Each Match in Matches
+			comment = RegExpFind("/\*.*\*/", Match.Value)
+			define = RegExpFind("#undef.*", Match.Value)
+			define = Mid(define, 8)
+			fout.WriteLine(comment)
+			Select Case define
+				Case "HAVE_INT16_T"
+					fout.WriteLine("/* #undef HAVE_INT16_T */")
+				Case "HAVE_INT32_T"
+					fout.WriteLine("/* #undef HAVE_INT32_T */")
+				Case "HAVE_INT64_T"
+					fout.WriteLine("/* #undef HAVE_INT64_T */")
+				Case "const"
+					fout.WriteLine("/* #undef const */")
+				Case "inline"
+					fout.WriteLine("#define inline __inline")
+				Case "STDC_HEADERS"
+					fout.WriteLine("#define STDC_HEADERS 1")
+				Case "SIZEOF_DOUBLE"
+					fout.WriteLine("#define SIZEOF_DOUBLE 8")
+				Case "SIZEOF_FLOAT"
+					fout.WriteLine("#define SIZEOF_FLOAT 4")
+				Case "SIZEOF_INT"
+					fout.WriteLine("#define SIZEOF_INT 4")
+				Case "SIZEOF_LONG"
+					fout.WriteLine("#define SIZEOF_LONG 4")
+				Case "SIZEOF_LONG_DOUBLE"
+					fout.WriteLine("#define SIZEOF_LONG_DOUBLE 12")
+				Case "SIZEOF_LONG_LONG"
+					fout.WriteLine("/*#define SIZEOF_LONG_LONG 8*/")
+				Case "SIZEOF_SHORT"
+					fout.WriteLine("#define SIZEOF_SHORT 2")
+				Case "SIZEOF_VOID_P"
+					fout.WriteLine("#define SIZEOF_VOID_P 4")
+				Case "SIZEOF_WCHAR_T"
+					fout.WriteLine("#define SIZEOF_WCHAR_T 2")
+				Case "HAVE_GETCWD"
+					fout.WriteLine("#define HAVE_GETCWD 1")
+				Case "HAVE_GETHOSTNAME"
+					fout.WriteLine("#define HAVE_GETHOSTNAME 1")
+				Case "HAVE_PUTENV"
+					fout.WriteLine("#define HAVE_PUTENV 1")
+				Case "HAVE_SELECT"
+					fout.WriteLine("#define HAVE_SELECT 1")
+				Case "HAVE_SLEEP"
+					fout.WriteLine("#define HAVE_SLEEP 1")
+				Case "HAVE_SOCKET"
+					fout.WriteLine("#define HAVE_SOCKET 1")
+				Case "HAVE_STRDUP"
+					fout.WriteLine("#define HAVE_STRDUP 1")
+				Case "HAVE_ERRNO_H"
+					fout.WriteLine("#define HAVE_ERRNO_H 1")
+				Case "HAVE_FCNTL_H"
+					fout.WriteLine("#define HAVE_FCNTL_H 1")
+				Case "HAVE_STDLIB_H"
+					fout.WriteLine("#define HAVE_STDLIB_H 1")
+				Case "HAVE_STDIO_H"
+					fout.WriteLine("#define HAVE_STDIO_H")
+				Case "HAVE_ERROR_CHECKING"
+					fout.WriteLine("#define HAVE_ERROR_CHECKING MPID_ERROR_LEVEL_ALL")
+					fout.WriteLine("/*#undef HAVE_ERROR_CHECKING*/")
+				Case "HAVE_TIMING MPID_TIMING_KIND_LOG"
+					fout.WriteLine("/*#define HAVE_TIMING MPID_TIMING_KIND_LOG*/")
+				Case "HAVE_TIMING MPID_TIMING_KIND_ALL"
+					fout.WriteLine("/*#define HAVE_TIMING MPID_TIMING_KIND_ALL*/")
+				Case "USE_LOGGING MPID_LOGGING_RLOG"
+					fout.WriteLine("/*#define USE_LOGGING MPID_LOGGING_RLOG*/")
+				Case "USE_LOGGING MPID_LOGGING_DLOG"
+					fout.WriteLine("/*#define USE_LOGGING MPID_LOGGING_DLOG*/")
+				Case "MPICH_SINGLE_THREADED"
+					fout.WriteLine("#define MPICH_SINGLE_THREADED ")
+				Case "USE_MEMORY_TRACING"
+					fout.WriteLine("/* #undef USE_MEMORY_TRACING */")
+				Case "restrict"
+					fout.WriteLine("#define restrict")
+				Case "CHAR_PTR_IS_BYTE"
+					fout.WriteLine("/* #undef CHAR_PTR_IS_BYTE */")
+				Case "HAVE_GCC_AND_PENTIUM_ASM"
+					fout.WriteLine("/* #undef HAVE_GCC_AND_PENTIUM_ASM */")
+				Case "HAVE_INTTYPES_H"
+					fout.WriteLine("/* #undef HAVE_INTTYPES_H */")
+				Case "HAVE_MEMORY_H"
+					fout.WriteLine("/* #undef HAVE_MEMORY_H */")
+				Case "HAVE_PRAGMA_CRI_DUP"
+					fout.WriteLine("/* #undef HAVE_PRAGMA_CRI_DUP */")
+				Case "HAVE_PRAGMA_HP_SEC_DEF"
+					fout.WriteLine("/* #undef HAVE_PRAGMA_HP_SEC_DEF */")
+				Case "HAVE_PRAGMA_WEAK"
+					fout.WriteLine("/* #undef HAVE_PRAGMA_WEAK */")
+				Case "HAVE_PTHREAD_CREATE"
+					fout.WriteLine("/* #undef HAVE_PTHREAD_CREATE */")
+				Case "HAVE_STDINT_H"
+					fout.WriteLine("/* #undef HAVE_STDINT_H */")
+				Case "HAVE_STRINGS_H"
+					fout.WriteLine("/* #undef HAVE_STRINGS_H */")
+				Case "HAVE_STRING_H"
+					fout.WriteLine("#define HAVE_STRING_H")
+				Case "HAVE_SYS_STAT_H"
+					fout.WriteLine("/* #undef HAVE_SYS_STAT_H */")
+				Case "HAVE_SYS_TYPES_H"
+					fout.WriteLine("/* #undef HAVE_SYS_TYPES_H */")
+				Case "HAVE_THR_CREATE"
+					fout.WriteLine("/* #undef HAVE_THR_CREATE */")
+				Case "HAVE_TIMING"
+					fout.WriteLine("/* #undef HAVE_TIMING */")
+				Case "HAVE_UNISTD_H"
+					fout.WriteLine("/* #undef HAVE_UNISTD_H */")
+				Case "SIZEOF_INT_IS_AINT"
+					fout.WriteLine("/* #undef SIZEOF_INT_IS_AINT */")
+				Case "volatile"
+					fout.WriteLine("/* #undef volatile */")
+				Case "HAVE_GETTIMEOFDAY"
+					fout.WriteLine("/*#define HAVE_GETTIMEOFDAY 1*/")
+				Case "HAVE_MUTEX_INIT"
+					fout.WriteLine("/* #undef HAVE_MUTEX_INIT */")
+				Case "HAVE_PTHREAD_MUTEXATTR_INIT"
+					fout.WriteLine("/*#define HAVE_PTHREAD_MUTEXATTR_INIT 1*/")
+				Case "HAVE_PTHREAD_MUTEXATTR_SETPSHARED"
+					fout.WriteLine("/*#define HAVE_PTHREAD_MUTEXATTR_SETPSHARED 1*/")
+				Case "HAVE_SCHED_YIELD"
+					fout.WriteLine("/*#define HAVE_SCHED_YIELD 1*/")
+				Case "HAVE_SHMAT"
+					fout.WriteLine("/* #undef HAVE_SHMAT */")
+				Case "HAVE_SHMCTL"
+					fout.WriteLine("/* #undef HAVE_SHMCTL */")
+				Case "HAVE_SHMDT"
+					fout.WriteLine("/* #undef HAVE_SHMDT */")
+				Case "HAVE_SHMGET"
+					fout.WriteLine("/* #undef HAVE_SHMGET */")
+				Case "HAVE_USLEEP"
+					fout.WriteLine("/*#define HAVE_USLEEP 1*/")
+				Case "HAVE_YIELD"
+					fout.WriteLine("/* #undef HAVE_YIELD */")
+				Case "HAVE_LINUX_UNISTD_H"
+					fout.WriteLine("/* #undef HAVE_LINUX_UNISTD_H */")
+				Case "HAVE_NETDB_H"
+					fout.WriteLine("/*#define HAVE_NETDB_H 1*/")
+				Case "HAVE_NETINET_IN_H"
+					fout.WriteLine("/*#define HAVE_NETINET_IN_H 1*/")
+				Case "HAVE_NETINET_TCP_H"
+					fout.WriteLine("/*#define HAVE_NETINET_TCP_H 1*/")
+				Case "HAVE_PTHREAD_H"
+					fout.WriteLine("/*#define HAVE_PTHREAD_H 1*/")
+				Case "HAVE_SCHED_H"
+					fout.WriteLine("/*#define HAVE_SCHED_H 1*/")
+				Case "HAVE_SYS_FILIO_H"
+					fout.WriteLine("/* #undef HAVE_SYS_FILIO_H */")
+				Case "HAVE_SYS_IOCTL_H"
+					fout.WriteLine("/*#define HAVE_SYS_IOCTL_H 1*/")
+				Case "HAVE_SYS_IPC_H"
+					fout.WriteLine("/* #undef HAVE_SYS_IPC_H */")
+				Case "HAVE_SYS_PARAM_H"
+					fout.WriteLine("/*#define HAVE_SYS_PARAM_H 1*/")
+				Case "HAVE_SYS_PTRACE_H"
+					fout.WriteLine("/* #undef HAVE_SYS_PTRACE_H */")
+				Case "HAVE_SYS_SELECT_H"
+					fout.WriteLine("/*#define HAVE_SYS_SELECT_H 1*/")
+				Case "HAVE_SYS_SEM_H"
+					fout.WriteLine("/* #undef HAVE_SYS_SEM_H */")
+				Case "HAVE_SYS_SHM_H"
+					fout.WriteLine("/* #undef HAVE_SYS_SHM_H */")
+				Case "HAVE_SYS_SOCKET_H"
+					fout.WriteLine("/*#define HAVE_SYS_SOCKET_H 1*/")
+				Case "HAVE_SYS_TIME_H"
+					fout.WriteLine("/*#define HAVE_SYS_TIME_H 1*/")
+				Case "HAVE_SYS_UIO_H"
+					fout.WriteLine("/*#define HAVE_SYS_UIO_H 1*/")
+				Case "HAVE_SYS_WAIT_H"
+					fout.WriteLine("/*#define HAVE_SYS_WAIT_H 1*/")
+				Case "HAVE_VALUES_H"
+					fout.WriteLine("/* #undef HAVE_VALUES_H */")
+				Case "HAVE_LIBTHREAD"
+					fout.WriteLine("/* #undef HAVE_LIBTHREAD */")
+				Case "HAVE_ASSERT_H"
+					fout.WriteLine("#define HAVE_ASSERT_H 1")
+				Case "HAVE_LIMITS_H"
+					fout.WriteLine("#define HAVE_LIMITS_H")
+				Case "COLLECT_STATS"
+					fout.WriteLine("/* #undef COLLECT_STATS */")
+				Case "F77_NAME_LOWER"
+					fout.WriteLine("/* #undef F77_NAME_LOWER */")
+				Case "F77_NAME_LOWER_USCORE"
+					fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
+				Case "F77_NAME_UPPER"
+					fout.WriteLine("/* #undef F77_NAME_UPPER */")
+				Case "FILE_NAMEPUB_BASEDIR"
+					fout.WriteLine("/* #undef FILE_NAMEPUB_BASEDIR */")
+				Case "HAVE_CXX_BINDING"
+					fout.WriteLine("#define HAVE_CXX_BINDING")
+				Case "HAVE_DEBUGGER_SUPPORT"
+					fout.WriteLine("/* #undef HAVE_DEBUGGER_SUPPORT */")
+				Case "HAVE_DGETTEXT"
+					fout.WriteLine("/* #undef HAVE_DGETTEXT */")
+				Case "HAVE_FORTRAN_BINDING"
+					fout.WriteLine("/* #undef HAVE_FORTRAN_BINDING */")
+				Case "HAVE_GCC_ATTRIBUTE"
+					fout.WriteLine("/* #undef HAVE_GCC_ATTRIBUTE */")
+				Case "HAVE_GETTEXT"
+					fout.WriteLine("/* #undef HAVE_GETTEXT */")
+				Case "HAVE_LARGEST_STRUCT_ALIGNMENT"
+					fout.WriteLine("/* #undef HAVE_LARGEST_STRUCT_ALIGNMENT */")
+				Case "HAVE_LIBINTL_H"
+					fout.WriteLine("/* #undef HAVE_LIBINTL_H */")
+				Case "HAVE_LONG_DOUBLE"
+					fout.WriteLine("/* #undef HAVE_LONG_DOUBLE */")
+				Case "HAVE_LONG_LONG_INT"
+					fout.WriteLine("/* #undef HAVE_LONG_LONG_INT */")
+				Case "HAVE_MAX_STRUCT_ALIGNMENT"
+					fout.WriteLine("/* #undef HAVE_MAX_STRUCT_ALIGNMENT */")
+				Case "HAVE_NAMEPUB_SERVICE"
+					fout.WriteLine("/* #undef HAVE_NAMEPUB_SERVICE */")
+				Case "HAVE_NO_FORTRAN_MPI_TYPES_IN_C"
+					fout.WriteLine("/* #undef HAVE_NO_FORTRAN_MPI_TYPES_IN_C */")
+				Case "HAVE_ROMIO"
+					fout.WriteLine("/* #undef HAVE_ROMIO */")
+				Case "HAVE_SEARCH"
+					fout.WriteLine("/* #undef HAVE_SEARCH */")
+				Case "HAVE_SNPRINTF"
+					fout.WriteLine("#define HAVE_SNPRINTF")
+				Case "HAVE_STDARG_H"
+					fout.WriteLine("#define HAVE_STDARG_H")
+				Case "HAVE_SYS_BITYPES_H"
+					fout.WriteLine("/* #undef HAVE_SYS_BITYPES_H */")
+				Case "HAVE_THREAD_H"
+					fout.WriteLine("/* #undef HAVE_THREAD_H */")
+				Case "HAVE_THR_YIELD"
+					fout.WriteLine("/* #undef HAVE_THR_YIELD */")
+				Case "HAVE_TSEARCH"
+					fout.WriteLine("/* #undef HAVE_TSEARCH */")
+				Case "HAVE_VA_COPY"
+					fout.WriteLine("/* #undef HAVE_VA_COPY */")
+				Case "HAVE_VSNPRINTF"
+					fout.WriteLine("#define HAVE_VSNPRINTF")
+				Case "HAVE_VSPRINTF"
+					fout.WriteLine("#define HAVE_VSPRINTF")
+				Case "MPICH_DEBUG_HANDLES"
+					fout.WriteLine("/* #undef HAVE_MPICH_DEBUG_HANDLES */")
+				Case "MPICH_DEBUG_INTERNAL"
+					fout.WriteLine("/* #undef MPICH_DEBUG_INTERNAL */")
+				Case "MPICH_DEBUG_NESTING"
+					fout.WriteLine("/* #undef MPICH_DEBUG_NESTING */")
+				Case "MPICH_ERROR_MSG_LEVEL"
+					fout.WriteLine("#define MPICH_ERROR_MSG_LEVEL MPICH_ERROR_MSG_ALL")
+				Case "MPICH_INFODLL_LOC"
+					fout.WriteLine("/* #undef MPICH_INFODLL_LOC */")
+				Case "MPIU_INT16_T"
+					fout.WriteLine("#define MPIU_INT16_T __int16")
+				Case "MPIU_INT32_T"
+					fout.WriteLine("#define MPIU_INT32_T __int32")
+				Case "MPIU_INT64_T"
+					fout.WriteLine("#define MPIU_INT64_T __int64")
+				Case "MPIU_SIZE_T"
+					fout.WriteLine("#define MPIU_SIZE_T unsigned int")
+				Case "NDEBUG"
+					fout.WriteLine("/* #undef NDEBUG */")
+				Case "NEEDS_POINTER_ALIGNMENT_ADJUST"
+					fout.WriteLine("/* #undef NEEDS_POINTER_ALIGNMENT_ADJUST */")
+				Case "NEEDS_SNPRINTF_DECL"
+					fout.WriteLine("/* #undef NEEDS_SNPRINTF_DECL */")
+				Case "NEEDS_STRDUP_DECL"
+					fout.WriteLine("/* #undef NEEDS_STRDUP_DECL */")
+				Case "PACKAGE_BUGREPORT"
+					fout.WriteLine("/* #undef PACKAGE_BUGREPORT */")
+				Case "PACKAGE_NAME"
+					fout.WriteLine("/* #undef PACKAGE_NAME */")
+				Case "PACKAGE_STRING"
+					fout.WriteLine("/* #undef PACKAGE_STRING */")
+				Case "PACKAGE_TARNAME"
+					fout.WriteLine("/* #undef PACKAGE_TARNAME */")
+				Case "PACKAGE_VERSION"
+					fout.WriteLine("/* #undef PACKAGE_VERSION */")
+				Case "USE_COVERAGE"
+					fout.WriteLine("/* #undef USE_COVERAGE */")
+				Case "USE_FILE_FOR_NAMEPUB"
+					fout.WriteLine("/* #undef USE_FILE_FOR_NAMEPUB */")
+				Case "USE_GETTEXT"
+					fout.WriteLine("/* #undef USE_GETTEXT */")
+				Case "USE_LDAP_FOR_NAMEPUB"
+					fout.WriteLine("/* #undef USE_LDAP_FOR_NAMEPUB */")
+				Case "USE_LOGGING"
+					fout.WriteLine("/* #undef USE_LOGGING */")
+				Case "USE_TSEARCH_WITH_CHARP"
+					fout.WriteLine("/* #undef USE_TSEARCH_WITH_CHARP */")
+				Case "USE_WEAK_SYMBOLS"
+					fout.WriteLine("/* #undef USE_WEAK_SYMBOLS */")
+				Case "HAVE_CPP_VARARGS"
+					fout.WriteLine("/* #undef HAVE_CPP_VARARGS */")
+				Case "HAVE_CLOCK_GETRES"
+					fout.WriteLine("/* #undef HAVE_CLOCK_GETRES */")
+				Case "HAVE_CLOCK_GETTIME"
+					fout.WriteLine("/* #undef HAVE_CLOCK_GETTIME */")
+				Case "HAVE_GETHRTIME"
+					fout.WriteLine("/* #undef HAVE_GETHRTIME */")
+				Case "HAVE_COMPARE_AND_SWAP"
+					fout.WriteLine("/* #undef HAVE_COMPARE_AND_SWAP */")
+				Case "HAVE_DLFCN_H"
+					fout.WriteLine("/* #undef HAVE_DLFCN_H */")
+				Case "HAVE_UUID_UUID_H"
+					fout.WriteLine("/* #undef HAVE_UUID_UUID_H */")
+				Case "HAVE_GCC_ASM_AND_X86_LFENCE"
+					fout.WriteLine("/* #undef HAVE_GCC_ASM_AND_X86_LFENCE */")
+				Case "HAVE_GCC_ASM_AND_X86_MFENCE"
+					fout.WriteLine("/* #undef HAVE_GCC_ASM_AND_X86_MFENCE */")
+				Case "HAVE_GCC_ASM_AND_X86_SFENCE"
+					fout.WriteLine("/* #undef HAVE_GCC_ASM_AND_X86_SFENCE */")
+				Case "HAVE_MMAP"
+					fout.WriteLine("/* #undef HAVE_MMAP */")
+				Case "HAVE_MPP_SHMEM_H"
+					fout.WriteLine("/* #undef HAVE_MPP_SHMEM_H */")
+				Case "HAVE_SHM_OPEN"
+					fout.WriteLine("/* #undef HAVE_SHM_OPEN */")
+				Case "HAVE_SHM_UNLINK"
+					fout.WriteLine("/* #undef HAVE_SHM_UNLINK */")
+				Case "HAVE_SYS_MMAN_H"
+					fout.WriteLine("/* #undef HAVE_SYS_MMAN_H */")
+				Case "HAVE_SYSCONF"
+					fout.WriteLine("/* #undef HAVE_SYSCONF */")
+				Case "HAVE_NET_IF_H"
+					fout.WriteLine("/* #undef HAVE_NET_IF_H */")
+				Case "HAVE_SYS_SOCKIO_H"
+					fout.WriteLine("/* #undef HAVE_SYS_SOCKIO_H */")
+				Case "HAVE_ARPA_INET_H"
+					fout.WriteLIne("/* #undef HAVE_ARPA_INET_H */")
+				Case "HAVE_CTYPE_H"
+					fout.WriteLine("#define HAVE_CTYPE_H")
+				Case "HAVE_GETPAGESIZE"
+					fout.WriteLine("/* #undef HAVE_GETPAGESIZE */")
+				Case "HAVE_MQUEUE_H"
+					fout.WriteLine("/* #undef HAVE_MQUEUE_H */")
+				Case "HAVE_MQ_OPEN"
+					fout.WriteLine("/* #undef HAVE_MQ_OPEN */")
+				Case "HAVE_MSGGET"
+					fout.WriteLine("/* #undef HAVE_MSGGET */")
+				Case "HAVE_PROCESS_H"
+					fout.WriteLine("#define HAVE_PROCESS_H")
+				Case "MPICH_CPU_TICK_TYPE"
+					fout.WriteLine("#define MPICH_CPU_TICK_TYPE USE_WIN_X86_CYCLE_ASM")
+				Case "USE_BUSY_LOCKS"
+					fout.WriteLine("/* #undef USE_BUSY_LOCKS */")
+				Case "USE_MQSHM"
+					fout.WriteLine("/* #undef USE_MQSHM */")
+				Case Else
+					MsgBox("Unhandled definition <" & define & ">")
+			End Select
+			fout.WriteLine("")
+		Next
+	End If
+End Sub
+
+'
+' Generate the conf.h files
+'
+
+header = "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */"
+
+Sub WriteHeader( fout, str )
+	fout.WriteLine( header )
+	fout.WriteLine("")
+	fout.WriteLine("#ifndef " & UCase(str) & "CONF_H")
+	fout.WriteLine("#define " & UCase(str) & "CONF_H")
+	fout.WriteLine("")
+	fout.WriteLine("/* " & str & "conf.h.  Generated automatically by winconfigure.  */")
+	fout.WriteLine("")
+End Sub
+
+Sub WriteFooter( fout )
+	fout.WriteLine("")
+	fout.WriteLine("#endif")
+End Sub
+
+'
+' mpichconf.h
+'
+Set fout = f.CreateTextFile("src\include\mpichconf.h")
+Call WriteHeader(fout, "mpich")
+Call AddDefinitions(fout, "src\include\mpichconf.h.in")
+fout.WriteLine("#define HAVE_PROCESS_H")
+fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+fout.WriteLine("#define HAVE_WINDOWS_H")
+fout.WriteLine("#endif")
+fout.WriteLine("#define HAVE_WINDOWS_SOCKET")
+fout.WriteLine("#define HAVE_WINSOCK2_H")
+fout.WriteLine("#define HAVE_WIN32_SLEEP")
+fout.WriteLine("#define HAVE_NT_LOCKS")
+fout.WriteLine("#define HAVE_MAPVIEWOFFILE")
+fout.WriteLine("#define HAVE_CREATEFILEMAPPING")
+fout.WriteLine("#define HAVE_INTERLOCKEDEXCHANGE")
+fout.WriteLine("#define HAVE_BOOL")
+fout.WriteLine("")
+fout.WriteLine("#define snprintf _snprintf")
+fout.WriteLine("#define vsnprintf _vsnprintf")
+fout.WriteLine("#define inline __inline")
+fout.WriteLine("")
+fout.WriteLine("#define WITH_SOCK_TYPE SOCK_IOCP")
+fout.WriteLine("")
+fout.WriteLine("/* Define if building mpich in development mode */")
+fout.WriteLine("#define MPICH_DEV_BUILD")
+fout.WriteLine("")
+fout.WriteLine("/*#define MPICH_MPI_FROM_PMPI*/")
+fout.WriteLine("#define USE_PROCESS_LOCKS 1")
+fout.WriteLine("")
+fout.WriteLine("/*#define MPICH_DBG_OUTPUT*/")
+fout.WriteLine("#define HAVE_CXX_BINDING")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidi_ch3_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\include\mpidi_ch3_conf.h")
+Call WriteHeader(fout, "mpidi_ch3_")
+Call AddDefinitions(fout, "src\mpid\ch3\include\mpidi_ch3_conf.h.in")
+fout.WriteLine("#define EWOULDBLOCK EAGAIN")
+fout.WriteLine("#define HAVE_WINTHREADS")
+fout.WriteLine("#define MPICH_CPU_TICK_TYPE USE_WIN_X86_CYCLE_ASM")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' timerconf.h
+'
+Set fout = f.CreateTextFile("src\mpi\timer\timerconf.h")
+Call WriteHeader(fout, "timer")
+Call AddDefinitions(fout, "src\mpi\timer\timerconf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpid_locksconf.h
+'
+Set fout = f.CreateTextFile("src\mpid\common\locks\mpid_locksconf.h")
+Call WriteHeader(fout, "mpid_locks")
+Call AddDefinitions(fout, "src\mpid\common\locks\mpid_locksconf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidu_sock_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\common\sock\mpidu_sock_conf.h")
+Call WriteHeader(fout, "mpidu_sock_")
+Call AddDefinitions(fout, "src\mpid\common\sock\mpidu_sock_conf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' pmiconf.h
+'
+Set fout = f.CreateTextFile("src\pmi\smpd\pmiconf.h")
+Call WriteHeader(fout, "pmi")
+Call AddDefinitions(fout, "src\pmi\smpd\pmiconf.h.in")
+fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+fout.WriteLine("#define HAVE_WINDOWS_H")
+fout.WriteLine("#endif")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidi_ch3i_rdma_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h")
+Call WriteHeader(fout, "mpidi_ch3i_rdma_")
+Call AddDefinitions(fout, "src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h.in")
+fout.WriteLine("#define USE_BUSY_LOCKS")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidi_ch3i_shm_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h")
+Call WriteHeader(fout, "mpidi_ch3i_shm_")
+Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in")
+fout.WriteLine("#define USE_BUSY_LOCKS")
+fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidi_ch3i_sock_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h")
+Call WriteHeader(fout, "mpidi_ch3i_sock_")
+Call AddDefinitions(fout, "src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' mpidi_ch3i_ssm_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h")
+Call WriteHeader(fout, "mpidi_ch3i_ssm_")
+Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' trace_impl.h
+'
+Set fout = f.CreateTextFile("src\util\logging\rlog\trace_impl.h")
+Call WriteHeader(fout, "trace_impl")
+'Call AddDefinitions(fout, "src\util\logging\rlog\trace_impl.h.in")
+fout.WriteLine("#define HAVE_CTYPE_H")
+fout.WriteLine("#define HAVE_STDLIB_H")
+fout.WriteLine("#define HAVE_STRING_H")
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' fooconf.h
+'
+'Set fout = f.CreateTextFile("src\include\fooconf.h")
+'Call WriteHeader(fout, "foo")
+'Call AddDefinitions(fout, "src\include\fooconf.h.in")
+'fout.WriteLine("")
+'Call WriteFooter(fout)
+'fout.Close()
+
+'
+' Generate mpicc
+'
+vbLessThan = "<"
+vbGreaterThan = ">"
+path_to_mpich = f.GetAbsolutePathName("winconfigure.wsf")
+path_to_mpich = Left(path_to_mpich, Len(path_to_mpich) - 16)
+Set fout = f.CreateTextFile("bin\mpicc.wsf")
+fout.WriteLine(vbLessThan & "package" & vbGreaterThan)
+fout.WriteLine(vbLessThan & "job id=""mpicc""" & vbGreaterThan)
+fout.WriteLine("    " & vbLessThan & "runtime" & vbGreaterThan)
+fout.WriteLine("        " & vbLessThan & "description" & vbGreaterThan & "This script compiles C console MPICH2 applications" & vbLessThan & "/description" & vbGreaterThan)
+fout.WriteLine("        " & vbLessThan & "unnamed")
+fout.WriteLine("            name = ""file""")
+fout.WriteLine("            helpstring = ""List the source files to compile""")
+fout.WriteLine("            many = ""true""")
+fout.WriteLine("            required = ""1""")
+fout.WriteLine("        /" & vbGreaterThan)
+fout.WriteLine("        " & vbLessThan & "named")
+fout.WriteLine("            name = ""out""")
+fout.WriteLine("            helpstring = ""Name of the output executable, default=myapp.exe""")
+fout.WriteLine("            type = ""string""")
+fout.WriteLine("            required = ""false""")
+fout.WriteLine("        /" & vbGreaterThan)
+fout.WriteLine("        " & vbLessThan & "example" & vbGreaterThan & "Example: mpicc main.c /out:foobar.exe" & vbLessThan & "/example" & vbGreaterThan)
+fout.WriteLine("    " & vbLessThan & "/runtime" & vbGreaterThan)
+fout.WriteLine(vbLessThan & "script language=""VBScript""" & vbGreaterThan)
+fout.WriteLine("")
+fout.WriteLine("' Set defaults")
+fout.WriteLine("outputExe = ""myapp.exe""")
+fout.WriteLine("")
+fout.WriteLine("If WScript.Arguments.Unnamed.Count = 0 Then")
+fout.WriteLine("    WScript.Arguments.ShowUsage")
+fout.WriteLine("    WScript.Quit")
+fout.WriteLine("End If")
+fout.WriteLine("")
+fout.WriteLine("Set f = WScript.CreateObject(""Scripting.FileSystemObject"")")
+fout.WriteLine("")
+fout.WriteLine("' Process named arguments")
+fout.WriteLine("If WScript.Arguments.Named.Exists(""out"") Then")
+fout.WriteLine("	outputExe = WScript.Arguments.Named.Item(""out"")")
+fout.WriteLine("End If")
+fout.WriteLine("")
+fout.WriteLine("' Create a new instance of Visual Studio .NET.")
+fout.WriteLine("Set DTE = WScript.CreateObject(""VisualStudio.DTE.7.1"")")
+fout.WriteLine("Set solution = DTE.Solution")
+fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.sln"")")
+fout.WriteLine("Set project = solution.Projects.Item(1)")
+fout.WriteLine("")
+fout.WriteLine("' Add the C files to the project")
+fout.WriteLine("Set Cfiles = WScript.Arguments.Unnamed")
+fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
+fout.WriteLine("	Cfile = Cfiles(arg)")
+fout.WriteLine("	Cfile = f.GetAbsolutePathName(Cfile)")
+fout.WriteLine("	project.ProjectItems.AddFromFile(Cfile)")
+fout.WriteLine("Next")
+fout.WriteLine("")
+fout.WriteLine("' Build the solution")
+fout.WriteLine("solution.SolutionBuild.Build()")
+fout.WriteLine("")
+fout.WriteLine("While solution.SolutionBuild.BuildState " & vbLessThan & vbGreaterThan & " 3")
+fout.WriteLine("	WScript.Sleep 1000")
+fout.WriteLine("Wend")
+fout.WriteLine("")
+fout.WriteLine("' Save the output on error")
+fout.WriteLine("If solution.SolutionBuild.LastBuildInfo " & vbLessThan & vbGreaterThan & " 0 Then")
+fout.WriteLine("	WScript.Echo ""Build failed""")
+fout.WriteLine("	Set shell = WScript.CreateObject(""WScript.shell"")")
+fout.WriteLine("	shell.run """ & path_to_mpich & "examples\windows\skeleton\Debug\BuildLog.htm""")
+fout.WriteLine("End If")
+fout.WriteLine("")
+fout.WriteLine("' Remove the C files from the project")
+fout.WriteLine("For i = 1 To project.ProjectItems.Count")
+fout.WriteLine("	If project.ProjectItems.Item(i).Name = ""Source Files"" Then")
+fout.WriteLine("		index = i")
+fout.WriteLine("	End If")
+fout.WriteLine("Next")
+fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
+fout.WriteLine("	Cfile = Cfiles(arg)")
+fout.WriteLine("	Cfile = f.GetFileName(Cfile)")
+fout.WriteLine("	For i = project.ProjectItems.Item(index).ProjectItems.Count To 1 Step -1")
+fout.WriteLine("		If project.ProjectItems.Item(index).ProjectItems.Item(i).Name = Cfile Then")
+fout.WriteLine("			project.ProjectItems.Item(index).ProjectItems.Item(i).Remove()")
+fout.WriteLine("		End If")
+fout.WriteLine("	Next")
+fout.WriteLine("Next")
+fout.WriteLine("")
+fout.WriteLine("' Copy the executable")
+fout.WriteLine("If f.FileExists(""" & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"") Then")
+fout.WriteLine("	f.CopyFile """ & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"", outputExe, True")
+fout.WriteLine("End If")
+fout.WriteLine("")
+fout.WriteLine("' Clean up")
+fout.WriteLine("solution.SolutionBuild.Clean()")
+fout.WriteLine("")
+fout.WriteLine(vbLessThan & "/script" & vbGreaterThan)
+fout.WriteLine(vbLessThan & "/job" & vbGreaterThan)
+fout.WriteLine(vbLessThan & "/package" & vbGreaterThan)
+fout.Close()
 
 </script>
 </job>
