@@ -1169,8 +1169,8 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	}
 	ibu->nAvailRemote--;
 	
-    //} while (n);
-    } while (0); // lets force the progress engine to reload after each packet.
+    } while (n);
+    //} while (0); // lets force the progress engine to reload after each packet.
     
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
     //return IBU_SUCCESS;
