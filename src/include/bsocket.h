@@ -77,7 +77,7 @@ typedef int socklen_t;
 
 #ifdef NO_BSOCKETS
 
-typedef struct fd_set bfd_set;
+#define bfd_set fd_set
 #define BFD_CLR(bfd, s)       FD_CLR((unsigned int)bfd,s)
 #define BFD_ZERO(s)           FD_ZERO(s)
 #define BFD_SET(bfd, s)       FD_SET((unsigned int)bfd,s)
