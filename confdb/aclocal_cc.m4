@@ -22,7 +22,7 @@ dnl
 dnlD*/
 AC_DEFUN(PAC_PROG_CC,[
 AC_PROVIDE([AC_PROG_CC])
-AC_CHECK_PROGS(CC, cc gcc xlC xlc pgcc )
+AC_CHECK_PROGS(CC, cc xlC xlc pgcc gcc )
 test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
 AC_PROG_CC_WORKS
 AC_PROG_CC_GNU

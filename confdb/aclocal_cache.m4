@@ -70,7 +70,9 @@ if test "X$enable_cache" = "Xyes" ; then
     echo "creating cache $cache_file"
     > $cache_file
     rm -f $cache_system
-    uname -srm > $cache_system
+    cleanargs=`echo "$CC $F77 $CXX" | tr '"' ' '`
+    testval="`uname -srm` $cleanargs"
+    echo "$testval" > $cache_system
   fi
 else
   cache_file="/dev/null"
