@@ -14,10 +14,10 @@ int MPIDI_CH3_Init(int *, int *, int *);
 int MPIDI_CH3_Finalize(void);
 void MPIDI_CH3_InitParent(MPID_Comm *);
 
-MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC *, void *, int);
+MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC *, void *, MPIDI_msg_sz_t);
 MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC *, MPID_IOV *, int);
 void MPIDI_CH3_iSendv(MPIDI_VC *, MPID_Request *, MPID_IOV *, int);
-void MPIDI_CH3_iSend(MPIDI_VC *, MPID_Request *, void *, int);
+void MPIDI_CH3_iSend(MPIDI_VC *, MPID_Request *, void *, MPIDI_msg_sz_t);
 void MPIDI_CH3_iWrite(MPIDI_VC *, MPID_Request *);
 void MPIDI_CH3_iRead(MPIDI_VC *, MPID_Request *);
 
@@ -43,9 +43,11 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
 int MPIDI_CH3U_Request_FDP(MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
-int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
-int MPIDI_CH3U_Request_unpack_tmp_buf(MPID_Request *);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request *, int *);
+int MPIDI_CH3U_Request_load_send_iov(MPID_Request *, MPID_IOV *, int *);
+int MPIDI_CH3U_Request_load_recv_iov(MPID_Request *);
+int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request *);
+int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request *);
 
 /* Include definitions from the channel which require items defined by this
    file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include

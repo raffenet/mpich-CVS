@@ -30,19 +30,38 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    /* as the action name says, do nothing... */
 	    break;
 	}
-	
-	case MPIDI_CH3_CA_RELOAD_IOV:
+
+	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV:
 	{
-	    MPIDI_err_printf(FCNAME, "MPIDI_CH3_CA_RELOAD_IOV UMIMPLEMENTED");
-	    abort();
+	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
+	    MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    break;
 	}
 	
-	case MPIDI_CH3_CA_COPY_COMPLETE:
+	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
-	    MPIDI_CH3U_Request_unpack_tmp_buf(rreq);
-	    MPIU_Free(rreq->ch3.tmp_buf);
-	    /* fall through into the next case */
+	    MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    break;
+	}
+	
+	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE:
+	{
+	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
+	    if (rreq->ch3.segment_first != rreq->ch3.recv_data_sz)
+	    {
+		rreq->status.count = rreq->ch3.segment_first;
+		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
+	    }
+	    MPIDI_CH3U_Request_complete(rreq);
+	    break;
+	}
+	
+	case MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE:
+	{
+	    MPIDI_CH3U_Request_unpack_uebuf(rreq);
+	    MPIU_Free(rreq->ch3.tmpbuf);
+	    MPIDI_CH3U_Request_complete(rreq);
+	    break;
 	}
 	
 	case MPIDI_CH3_CA_COMPLETE:

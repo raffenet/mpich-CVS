@@ -53,8 +53,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	           then free the buffer and the request. */
 		if (count > 0)
 		{
-		    MPIDI_CH3U_Request_unpack_tmp_buf(rreq);
-		    MPIU_Free(rreq->ch3.tmp_buf);
+		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
+		    MPIU_Free(rreq->ch3.tmpbuf);
 		}
 		
 		*status = rreq->status;
@@ -69,7 +69,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		/* The data is still being transfered across the net.  We'll
 		   leave it to the progress engine to handle once the entire
 		   message has arrived. */
-		rreq->ch3.ca = MPIDI_CH3_CA_COPY_COMPLETE;
+		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE;
 	    }
 	}
 	else

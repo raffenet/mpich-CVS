@@ -42,7 +42,7 @@ extern MPIDI_Process_t MPIDI_Process;
     req->ch3.vc = NULL;						\
     req->ch3.user_buf = NULL;					\
     req->ch3.datatype = MPI_DATATYPE_NULL;			\
-    req->ch3.tmp_buf = NULL;					\
+    req->ch3.tmpbuf = NULL;					\
 }
 
 #define MPIDI_CH3U_Request_destroy(req)			\
@@ -110,15 +110,15 @@ extern MPIDI_Process_t MPIDI_Process;
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
 #define MPIDI_CH3U_SRBuf_alloc(req, size)			\
 {								\
-    req->ch3.tmp_buf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
-    if (req->ch3.tmp_buf != NULL)				\
+    req->ch3.tmpbuf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
+    if (req->ch3.tmpbuf != NULL)				\
     {								\
-	req->ch3.tmp_sz = MPIDI_CH3U_SRBuf_size;		\
+	req->ch3.tmpbuf_sz = MPIDI_CH3U_SRBuf_size;		\
 	MPIDI_Request_set_srbuf_flag(req, TRUE);		\
     }								\
     else							\
     {								\
-	req->ch3.tmp_sz = 0;					\
+	req->ch3.tmpbuf_sz = 0;					\
     }								\
 }
 #endif
@@ -128,7 +128,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {						\
     assert(MPIDI_Request_get_srbuf_flag(req));	\
     MPIDI_Request_set_srbuf_flag(req, FALSE);	\
-    MPIU_Free(req->ch3.tmp_buf);		\
+    MPIU_Free(req->ch3.tmpbuf);			\
 }
 #endif
 
@@ -154,7 +154,7 @@ void MPIDI_err_printf(char *, char *, ...);
 #define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
 #define MPIDI_err_printf(func, fmt, args...)			\
 {								\
-    printf("%d %s(): " fmt "\n",				\
+    printf("%d ERROR - %s(): " fmt "\n",			\
 	   MPIR_Process.comm_world->rank, func, ## args);	\
     fflush(stdout);						\
 }

@@ -18,6 +18,9 @@
 #include "mpid_datatype.h"
 #include "mpid_dataloop.h"
 
+typedef int MPIDI_msg_sz_t;
+#define MPIDI_MSG_SZ_FMT "%d"
+
 /* Include definitions from the channel which must exist before items in this
    file (mpidimpl.h) or the file it includes (mpiimple.h) can be defined.
    NOTE: This include requires the channel to copy mpidi_ch3_pre.h to the
@@ -75,7 +78,7 @@ typedef struct
     MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
     MPIDI_Message_match match;
     MPI_Request sender_req_id;	/* needed to cancel a send */
-    long data_sz;
+    MPIDI_msg_sz_t data_sz;
 }
 MPIDI_CH3_Pkt_eager_send_t;
 
@@ -84,7 +87,7 @@ typedef struct
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_Message_match match;
     MPI_Request sender_req_id;
-    long data_sz;
+    MPIDI_msg_sz_t data_sz;
 }
 MPIDI_CH3_Pkt_rndv_req_to_send_t;
 
@@ -148,18 +151,28 @@ MPIDI_CH3_Pkt_t;
  * MPIDI_CH3_CA_NONE - Do nothing.  Used in situations where the request will
  * be referenced later by an incoming packet.
  *
- * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than
- * the IOV or buffer space allow.  Since the previously request operation has
- * completed, the IOV in the request should be reload at this time.
- *
  * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
  * The completion counter should be decremented.  If it has reached zero, then
  * the request should be released by calling MPID_Request_release().
  *
- * MPIDI_CH3_CA_COPY_COMPLETE - This is a special case of the
- * MPIDI_CH3_CA_COMPLETE.  The data is stored has been stored into a temporary
- * buffer and needs to be copied into the user buffer before the completion
- * counter can be decremented, etc.
+ * MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE - This is a special case of the
+ * MPIDI_CH3_CA_COMPLETE.  The data for an unexpected eager messaage has been
+ * stored into a temporary buffer and needs to be copied/unpacked into the user
+ * buffer before the completion counter can be decremented, etc.
+ *
+ * MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE - This is a special case of the
+ * MPIDI_CH3_CA_COMPLETE.  The data from the completing read has been stored
+ * into a temporary send/receive buffer and needs to be copied/unpacked into
+ * the user buffer before the completion counter can be decremented, etc.
+ *
+ * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than
+ * the IOV or buffer space allow.  Since the previously request operation has
+ * completed, the IOV in the request should be reload at this time.
+ *
+ * MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV - This is a special case of the
+ * MPIDI_CH3_CA_RELOAD_IOV.  The data from the completing read operation has
+ * been stored into a temporary send/receive buffer and needs to be
+ * copied/unpacked into the user buffer before the IOV is reloaded.
  *
  * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  All
  * actions numerically less than MPID_CA_END are defined by channel device.
@@ -169,9 +182,11 @@ MPIDI_CH3_Pkt_t;
 typedef enum
 {
     MPIDI_CH3_CA_NONE,
-    MPIDI_CH3_CA_RELOAD_IOV,
     MPIDI_CH3_CA_COMPLETE,
-    MPIDI_CH3_CA_COPY_COMPLETE,
+    MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE,
+    MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE,
+    MPIDI_CH3_CA_RELOAD_IOV,
+    MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV,
     MPIDI_CH3_CA_END_CH3,
 # if defined(MPIDI_CH3_CA_ENUM)
     MPIDI_CH3_CA_ENUM
@@ -195,27 +210,25 @@ struct MPIDI_Request							\
     /* XXX - should segment_first and segment_size be long or some	\
        abstract type */							\
     MPID_Segment segment;						\
-    int segment_first;							\
-    int segment_size;							\
+    MPIDI_msg_sz_t segment_first;					\
+    MPIDI_msg_sz_t segment_size;					\
 									\
     MPIDI_VC * vc;							\
 									\
-    /* iov and iov_count define the data to be transferred; iov_offset	\
-       indicates the progress made in terms of an offset into iov */	\
+    /* iov and iov_count define the data to be transferred/received */	\
     MPID_IOV iov[MPID_IOV_LIMIT];					\
     int iov_count;							\
-    int iov_offset;							\
 									\
     /* ca (completion action) identifies the action to take once the	\
        operation described by the iov has completed */			\
     MPIDI_CA_t ca;							\
 									\
-    /* tmp_buf and tmp_sz describe temporary storage used for things	\
+    /* tmpbuf and tmpbuf_sz describe temporary storage used for things	\
        like unexpected eager messages and packing/unpacking buffers. */	\
-    void * tmp_buf;							\
-    long tmp_sz;							\
+    void * tmpbuf;							\
+    MPIDI_msg_sz_t tmpbuf_sz;						\
 									\
-    long recv_data_sz;							\
+    MPIDI_msg_sz_t recv_data_sz;					\
     MPI_Request sender_req_id;						\
 									\
     unsigned state;							\

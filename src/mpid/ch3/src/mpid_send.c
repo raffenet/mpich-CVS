@@ -16,18 +16,34 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	      int rank, int tag, MPID_Comm * comm, int context_offset,
 	      MPID_Request ** request)
 {
-    int mpi_errno = MPI_SUCCESS;
-    long dt_sz;
-    long data_sz;
+    MPIDI_msg_sz_t data_sz;
+    int dt_contig;
     MPID_Request * sreq;
+    int mpi_errno = MPI_SUCCESS;    
 
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
     
-    MPID_Datatype_get_size_macro(datatype, dt_sz);
-    data_sz = count * dt_sz;
-    MPIDI_DBG_PRINTF((10, FCNAME, "dt_sz=%ld", dt_sz));
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    {
+	dt_contig = TRUE;
+	data_sz = count * MPID_Datatype_get_basic_size(datatype);
+	MPIDI_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, "
+			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, dt_contig,
+			  MPID_Datatype_get_basic_size(datatype), data_sz));
+    }
+    else
+    {
+	MPID_Datatype * dtp;
+	
+	MPID_Datatype_get_ptr(datatype, dtp);
+	dt_contig = dtp->is_contig;
+	data_sz = count * dtp->size;
+	MPIDI_DBG_PRINTF((15, FCNAME, "user defined datatype: dt_contig=%d, "
+			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, dt_contig,
+			  dtp->size, data_sz));
+    }
 
     if (data_sz == 0)
     {
@@ -74,11 +90,12 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 
 	iov[0].MPID_IOV_BUF = eager_pkt;
 	iov[0].MPID_IOV_LEN = sizeof(*eager_pkt);
-	
-	if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+
+	if (dt_contig)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending eager contiguous message, "
-			      "data_sz=%ld", eager_pkt->data_sz));
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous eager message, "
+			      "data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    
 	    iov[1].MPID_IOV_BUF = (void *) buf;
 	    iov[1].MPID_IOV_LEN = data_sz;
 	    sreq = MPIDI_CH3_iStartMsgv(comm->vcr[rank], iov, 2);
@@ -90,114 +107,48 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	}
 	else
 	{
-	    MPID_Segment seg;
-	    int last;
 	    int iov_n;
 	    
-	    /* two choices here: fill iovec or pack message into a buffer.  in
-	       either case, if we have more data to send, we need to use a
-	       completion operation that takes care of the rest of the
-	       data. */
-	
-	    MPID_Segment_init(buf, count, datatype, &seg);
-	    iov_n = MPID_IOV_LIMIT - 1;
-	    last = data_sz;
-	    MPID_Segment_pack_vector(&seg, 0, &last, &iov[1], &iov_n);
-	    assert(iov_n > 0);
-	    assert(last > 0);
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager "
+			      "message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    iov_n += 1;
-	    
-	    if (last == data_sz)
+	    sreq = MPIDI_CH3_Request_create();
+	    if (sreq == NULL)
 	    {
-		/* XXX - should the above expression also contain "&& last /
-                   iov_n >= MPIDI_IOV_DENSITY_MIN"?  */
-		
-		/* send entire message using IOV */
-		MPIDI_DBG_PRINTF((15, FCNAME, "sending eager non-contiguous "
-				  "message using single IOV, data_sz=%ld, "
-				  "iov_n=%d", eager_pkt->data_sz, iov_n));
-		sreq = MPIDI_CH3_iStartMsgv(comm->vcr[rank], iov, iov_n);
-		if (sreq != NULL)
-		{
-		    /* XXX - what else needs to be set? */
-		    sreq->comm = comm;
-		}
+		MPIDI_DBG_PRINTF((15, FCNAME,
+				  "send request allocation failed"));
+		mpi_errno = MPI_ERR_NOMEM;
+		goto fn_exit;
+	    }
+	    
+	    sreq->ref_count = 2;
+	    sreq->kind = MPID_REQUEST_SEND;
+	    sreq->comm = comm;
+	    sreq->ch3.match.rank = rank;
+	    sreq->ch3.match.tag = tag;
+	    sreq->ch3.match.context_id = comm->context_id + context_offset;
+	    sreq->ch3.user_buf = (void *) buf;
+	    sreq->ch3.user_count = count;
+	    sreq->ch3.datatype = datatype;
+	    sreq->ch3.vc = comm->vcr[rank];
+	    
+	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
+	    sreq->ch3.segment_first = 0;
+	    sreq->ch3.segment_size = data_sz;
+	    
+	    iov_n = MPID_IOV_LIMIT - 1;
+	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(
+		sreq, &iov[1], &iov_n);
+	    if (mpi_errno == MPI_SUCCESS)
+	    {
+		iov_n += 1;
+		MPIDI_CH3_iSendv(sreq->ch3.vc, sreq, iov, iov_n);
 	    }
 	    else
 	    {
-		sreq = MPIDI_CH3_Request_create();
-		if (sreq == NULL)
-		{
-		    MPIDI_ERR_PRINTF((FCNAME, "unable to allocate a send "
-				      "request; exiting with error"));
-		    mpi_errno = MPI_ERR_NOMEM;
-		    goto fn_exit;
-		}
-		sreq->ref_count = 2;
-		sreq->kind = MPID_REQUEST_SEND;
-		sreq->comm = comm;
-		sreq->ch3.match.rank = rank;
-		sreq->ch3.match.tag = tag;
-		sreq->ch3.match.context_id = comm->context_id + context_offset;
-		sreq->ch3.user_buf = (void *) buf;
-		sreq->ch3.user_count = count;
-		sreq->ch3.datatype = datatype;
-		sreq->ch3.vc = comm->vcr[rank];
-
-		if (last / (iov_n - 1) >= MPIDI_IOV_DENSITY_MIN)
-		{
-		    /* send partial message using IOV */
-		    MPIDI_DBG_PRINTF((15, FCNAME,
-				      "sending eager non-contiguous message"
-				      "using multiple IOVs, data_sz=%ld, "
-				      "iov_n=%d, iov_sz=%d",
-				      eager_pkt->data_sz, iov_n, last));
-		    sreq->ch3.segment = seg;
-		    sreq->ch3.segment_first = last;
-		    sreq->ch3.segment_size = data_sz;
-		    sreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
-		}
-		else
-		{
-		    /* allocate temporary buffer and pack */
-		    MPIDI_CH3U_SRBuf_alloc(sreq, data_sz);
-		    if (sreq->ch3.tmp_sz == 0)
-		    {
-			MPIDI_DBG_PRINTF((15, FCNAME, "unable to allocate "
-					  "SRBuf; exiting with error"));
-			MPIDI_CH3_Request_destroy(sreq);
-			sreq = NULL;
-			mpi_errno = MPI_ERR_NOMEM;
-			goto fn_exit;
-		    }
-		    
-		    last = (data_sz <= sreq->ch3.tmp_sz) ? data_sz :
-			    sreq->ch3.tmp_sz;
-		    MPID_Segment_pack(&seg, 0, &last, sreq->ch3.tmp_buf);
-		    iov[1].MPID_IOV_BUF = sreq->ch3.tmp_buf;
-		    iov[1].MPID_IOV_LEN = last;
-		    iov_n = 2;
-		    sreq->ch3.segment = seg;
-		    MPIDI_DBG_PRINTF((15, FCNAME,
-				      "sending eager non-contiguous message"
-				      "using packed buffer, data_sz=%ld, "
-				      "pack_sz=%d", eager_pkt->data_sz, last));
-
-		    if (last == data_sz)
-		    {
-			sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-		    }
-		    else 
-		    {
-			sreq->ch3.segment = seg;
-			sreq->ch3.segment_first = last;
-			sreq->ch3.segment_size = data_sz;
-			sreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
-		    }
-		}
-		
-		MPIDI_CH3_iSendv(comm->vcr[rank], sreq, iov, iov_n);
+		MPID_Request_release(sreq);
+		sreq = NULL;
+		goto fn_exit;
 	    }
 	}
     }
@@ -207,11 +158,13 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
 	
+	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz="
+			  MPIDI_MSG_SZ_FMT, data_sz));
+	    
 	sreq = MPIDI_CH3_Request_create();
 	if (sreq == NULL)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "unable to allocate a send "
-			      "request; exiting with error"));
+	    MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));
 	    mpi_errno = MPI_ERR_NOMEM;
 	    goto fn_exit;
 	}
