@@ -58,10 +58,8 @@ int PMI_Init( int *spawned )
 	   so set size to 1, rank to 0 */
 	PMI_size = 1;
 	PMI_rank = 0;
+	*spawned = 0;
 	
-	/* MPIU_Error_printf( "warning: process not started with mpiexec\n" );
-	PMI_initialized = 0;
-	return( -1 ); */
 	PMI_initialized = SINGLETON_INIT;
 	PMI_kvsname_max = 256;
 	PMI_keylen_max  = 256;
