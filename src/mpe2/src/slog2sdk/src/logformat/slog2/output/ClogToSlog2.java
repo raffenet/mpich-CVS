@@ -21,6 +21,7 @@ public class ClogToSlog2
     private static int      leaf_bytesize         = 0;
     private static String   in_filename, out_filename;
     private static boolean  enable_endtime_check;
+    private static boolean  continue_when_violation;
 
     public static final void main( String[] args )
     {
@@ -90,6 +91,11 @@ public class ClogToSlog2
                 //                   + " : " + prime_obj );
                 // System.out.println( Nobjs + " : " + prime_obj );
                 if ( enable_endtime_check ) {
+                    if ( ! prime_obj.isTimeOrdered() ) {
+                        System.out.println( "**** Primitive Time Error ****" );
+                        if ( ! continue_when_violation )
+                            System.exit( 1 );
+                    }
                     curr_dobj_endtime = prime_obj.getLatestTime();
                     if ( prev_dobj_endtime > curr_dobj_endtime ) {
                         System.err.println( "***** Violation of "
@@ -98,10 +104,10 @@ public class ClogToSlog2
                                           + prev_dobj_endtime + " ) "
                                           + " > current drawable endtiime ( "
                                           + curr_dobj_endtime + " ) " );
-                        System.exit( 1 );
+                        if ( ! continue_when_violation )
+                            System.exit( 1 );
                     }
-                    else
-                        prev_dobj_endtime = curr_dobj_endtime;
+                    prev_dobj_endtime = curr_dobj_endtime;
                 }
                 treetrunk.addDrawable( prime_obj );
             }
@@ -174,7 +180,13 @@ public class ClogToSlog2
                                    + "\t [-h|--h|-help|--help]             "
                                    + "\t Display this message.\n"
                                    + "\t [-tc]                             "
-                                   + "\t Check increasing endtime order\n"
+                                   + "\t Check increasing endtime order,\n"
+                                   + "\t                                   "
+                                   + "\t exit when 1st violation occurs.\n"
+                                   + "\t [-tcc]                            "
+                                   + "\t Check increasing endtime order,\n"
+                                   + "\t                                   "
+                                   + "\t continue when violations occur.\n"
                                    + "\t [-nc number_of_children_per_node] "
                                    + "\t Default value is "
                                    + logformat.slog2.Const.NUM_LEAFS +".\n"
@@ -196,7 +208,8 @@ public class ClogToSlog2
         int           idx;
         StringBuffer  err_msg = new StringBuffer();
         in_filename  = null;
-        enable_endtime_check = false;
+        enable_endtime_check     = false;
+        continue_when_violation  = false;
         idx = 0;
         try {
             while ( idx < argv.length ) {
@@ -210,8 +223,15 @@ public class ClogToSlog2
                         System.exit( 0 );
                     }
                     else if ( argv[ idx ].equals( "-tc" ) ) {
-                        enable_endtime_check = true;
-                        err_msg.append( "\n endtime_order_check = true" );
+                        enable_endtime_check     = true;
+                        continue_when_violation  = false;
+                        err_msg.append( "\n endtime_order_check_exit = true" );
+                        idx++;
+                    }
+                    else if ( argv[ idx ].equals( "-tcc" ) ) {
+                        enable_endtime_check     = true;
+                        continue_when_violation  = true;
+                        err_msg.append( "\n endtime_order_check_stay = true" );
                         idx++;
                     }
                     else if ( argv[ idx ].equals( "-nc" ) ) {
