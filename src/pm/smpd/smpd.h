@@ -438,6 +438,7 @@ typedef struct smpd_global_t
 #ifdef HAVE_WINDOWS_H
     HANDLE hSMPDDataMutex;
 #endif
+    char printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

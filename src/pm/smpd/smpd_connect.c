@@ -124,10 +124,11 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* stdin_redirecting       */
       NULL,             /* default_host_list       */
       NULL,             /* cur_default_host        */
-      0                 /* cur_default_iproc       */
+      0,                /* cur_default_iproc       */
 #ifdef HAVE_WINDOWS_H
-      , NULL            /* hSMPDDataMutex          */
+      NULL,             /* hSMPDDataMutex          */
 #endif
+      ""                /* printf_buffer           */
     };
 
 int smpd_post_abort_command(char *fmt, ...)

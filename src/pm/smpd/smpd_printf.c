@@ -187,8 +187,6 @@ int smpd_finalize_printf()
     return SMPD_SUCCESS;
 }
 
-char s_printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
-
 void smpd_clean_output(char *str)
 {
     char *temp_str;
@@ -205,6 +203,13 @@ void smpd_clean_output(char *str)
     {
 	smpd_hide_string_arg(temp_str, "pwd");
 	temp_str = strstr(temp_str+1, "pwd");
+    }
+
+    temp_str = strstr(str, "phrase");
+    while (temp_str != NULL)
+    {
+	smpd_hide_string_arg(temp_str, "phrase");
+	temp_str = strstr(temp_str+1, "phrase");
     }
 }
 
@@ -229,20 +234,20 @@ int smpd_err_printf(char *str, ...)
     if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
     {
 	/* prepend output with the process tree node id */
-	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%sERROR:", smpd_process.id, indent_str);
+	num_bytes = snprintf(smpd_process.printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%sERROR:", smpd_process.id, indent_str);
     }
     else
     {
-	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
+	num_bytes = snprintf(smpd_process.printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
     }
-    cur_str = &s_printf_buffer[num_bytes];
+    cur_str = &smpd_process.printf_buffer[num_bytes];
 
     va_start(list, str);
     num_bytes += vsnprintf(cur_str, SMPD_MAX_DBG_PRINTF_LENGTH - num_bytes, str, list);
     va_end(list);
 
     /* strip protected fields - passwords, etc */
-    smpd_clean_output(s_printf_buffer);
+    smpd_clean_output(smpd_process.printf_buffer);
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -257,7 +262,7 @@ int smpd_err_printf(char *str, ...)
     if (smpd_process.dbg_state & SMPD_DBG_STATE_ERROUT)
     {
 	/* use stdout instead of stderr so that ordering will be consistent with dbg messages */
-	printf("%s", s_printf_buffer);
+	printf("%s", smpd_process.printf_buffer);
 	fflush(stdout);
     }
     if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
@@ -270,7 +275,7 @@ int smpd_err_printf(char *str, ...)
 	}
 	else
 	{
-	    fprintf(fout, "%s", s_printf_buffer);
+	    fprintf(fout, "%s", smpd_process.printf_buffer);
 	    fclose(fout);
 	}
     }
@@ -303,20 +308,20 @@ int smpd_dbg_printf(char *str, ...)
     if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
     {
 	/* prepend output with the process tree node id */
-	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%s", smpd_process.id, indent_str);
+	num_bytes = snprintf(smpd_process.printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%s", smpd_process.id, indent_str);
     }
     else
     {
-	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
+	num_bytes = snprintf(smpd_process.printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
     }
-    cur_str = &s_printf_buffer[num_bytes];
+    cur_str = &smpd_process.printf_buffer[num_bytes];
 
     va_start(list, str);
     num_bytes += vsnprintf(cur_str, SMPD_MAX_DBG_PRINTF_LENGTH - num_bytes, str, list);
     va_end(list);
 
     /* strip protected fields - passwords, etc */
-    smpd_clean_output(s_printf_buffer);
+    smpd_clean_output(smpd_process.printf_buffer);
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -329,7 +334,7 @@ int smpd_dbg_printf(char *str, ...)
 
     if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
     {
-	printf("%s", s_printf_buffer);
+	printf("%s", smpd_process.printf_buffer);
 	fflush(stdout);
     }
     if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
@@ -342,7 +347,7 @@ int smpd_dbg_printf(char *str, ...)
 	}
 	else
 	{
-	    fprintf(fout, "%s", s_printf_buffer);
+	    fprintf(fout, "%s", smpd_process.printf_buffer);
 	    fclose(fout);
 	}
     }
