@@ -124,7 +124,7 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_write_shared");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_write_shared", &error_code);
 
     incr = (count*datatype_size)/fh->etype_size;
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);

@@ -48,7 +48,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     static char myname[] = "MPI_FILE_OPEN";
 #endif
     char *tmp;
-    MPI_Comm dupcomm, dupcommself;
+    MPI_Comm dupcomm;
     ADIOI_Fns *fsops;
 
 #ifdef MPI_hpux
@@ -222,43 +222,6 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if (tmp > filename + 1)
 	filename = tmp + 1;
 
-    orig_amode = amode;
-    MPI_Comm_rank(dupcomm, &rank);
-
-    /* XXX: this will not be compatible with deferred open */
-    if ((amode & MPI_MODE_CREATE) && (amode & MPI_MODE_EXCL)) {
-	/* the open should fail if the file exists. Only process 0 should
-           check this. Otherwise, if all processes try to check and the file 
-           does not exist, one process will create the file and others who 
-           reach later will return error. */
-
-	if (!rank) {
-	    MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
-	    /* NOTE: dupcommself is freed either in ADIO_Open if the open fails,
-             * or in ADIO_Close.
-	     */
-	    *fh = ADIO_Open(MPI_COMM_SELF, dupcommself, filename, file_system, amode, 
-			    0, MPI_BYTE, MPI_BYTE, M_ASYNC, info, 
-			    ADIO_PERM_NULL, &error_code);
-	    /* broadcast the error code to other processes */
-	    MPI_Bcast(&error_code, 1, MPI_INT, 0, dupcomm);
-	    /* if no error, close the file. It will be reopened normally 
-               below. */
-	    if (error_code == MPI_SUCCESS) ADIO_Close(*fh, &error_code);
-	}
-	else MPI_Bcast(&error_code, 1, MPI_INT, 0, dupcomm);
-
-	if (error_code != MPI_SUCCESS) {
-	    MPI_Comm_free(&dupcomm);
-	    *fh = MPI_FILE_NULL;
-#ifdef MPI_hpux
-	    HPMP_IO_OPEN_END(fl_xmpi, *fh, comm);
-#endif /* MPI_hpux */
-	    return error_code;
-	}
-	else amode = amode ^ MPI_MODE_EXCL;  /* turn off MPI_MODE_EXCL */
-    }
-
 /* use default values for disp, etype, filetype */    
 /* set iomode=M_ASYNC. It is used to implement the Intel PFS interface
    on top of ADIO. Not relevant for MPI-IO implementation */    
@@ -266,22 +229,20 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, amode, 0, MPI_BYTE,
                     MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
 
-    /* if MPI_MODE_EXCL was removed, add it back */
-    if ((error_code == MPI_SUCCESS) && (amode != orig_amode))
-	(*fh)->access_mode = orig_amode;
-
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
        support file locking, e.g., PIOFS, PVFS */
     if ((error_code == MPI_SUCCESS) && ((*fh)->file_system != ADIO_PIOFS)
           && ((*fh)->file_system != ADIO_PVFS)) {
+	MPI_Comm_rank(dupcomm, &rank);
 	ADIOI_Shfp_fname(*fh, rank);
 
         /* if MPI_MODE_APPEND, set the shared file pointer to end of file.
            indiv. file pointer already set to end of file in ADIO_Open. 
            Here file view is just bytes. */
 	if ((*fh)->access_mode & MPI_MODE_APPEND) {
-	    if (!rank) ADIO_Set_shared_fp(*fh, (*fh)->fp_ind, &error_code);
+	    if ((*fh)->io_worker)  /* only one person need set the sharedfp */
+		    ADIO_Set_shared_fp(*fh, (*fh)->fp_ind, &error_code);
 	    MPI_Barrier(dupcomm);
 	}
     }

@@ -180,6 +180,7 @@ typedef struct ADIOI_FileD {
     ADIOI_Fns *fns;          /* struct of I/O functions to use */
     MPI_Comm comm;           /* communicator indicating who called open */
     MPI_Comm agg_comm;      /* deferred open: aggregators who called open */
+    int io_worker;	    /* if one proc should do io, should it be me? */
     int is_open;		/* deferred open: 0: not open yet 1: is open */
     char *filename;          
     int file_system;         /* type of file system */
@@ -301,6 +302,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename,
                     int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
                     MPI_Datatype filetype, int iomode, 
                     MPI_Info info, int perm, int *error_code);
+void ADIO_ImmediateOpen(ADIO_File fd, int *error_code);
 void ADIO_Close(ADIO_File fd, int *error_code);
 void ADIO_ReadContig(ADIO_File fd, void *buf, int count, MPI_Datatype datatype,
                     int file_ptr_type,  ADIO_Offset offset, 

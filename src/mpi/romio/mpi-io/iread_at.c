@@ -187,7 +187,7 @@ int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf,
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_iread_at");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_iread_at", &error_code);
     /* contiguous or strided? */
 
     if (buftype_is_contig && filetype_is_contig) {

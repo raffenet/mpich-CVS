@@ -90,7 +90,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 
     if (size == 0) return MPI_SUCCESS;
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_preallocate");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_preallocate", &error_code);
 
     MPI_Comm_rank(fh->comm, &mynod);
     if (!mynod) {

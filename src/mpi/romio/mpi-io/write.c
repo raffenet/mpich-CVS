@@ -135,7 +135,7 @@ int MPI_File_write(MPI_File fh, void *buf, int count,
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
     
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_write");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_write", &error_code);
 
     /* contiguous or strided? */
 

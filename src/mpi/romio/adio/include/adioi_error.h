@@ -24,9 +24,6 @@
 
 
 /* TODO: handle the independent io case more gracefully  */
-#define ADIOI_TEST_DEFERRED(fh, myname)\
+#define ADIOI_TEST_DEFERRED(fh, myname, error_code)\
     if(! (fh)->is_open ) {\
-	    fprintf(stderr,\
-		"%s: Independent IO attempted after hinting no_indep_rw\n", \
-		(myname));\
-	    MPI_Abort((fh)->comm, 99); }
+	    ADIO_ImmediateOpen((fh), (error_code)); }

@@ -58,7 +58,7 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_get_size");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_get_size", &error_code);
 
     fcntl_struct = (ADIO_Fcntl_t *) ADIOI_Malloc(sizeof(ADIO_Fcntl_t));
     ADIO_Fcntl(fh, ADIO_FCNTL_GET_FSIZE, fcntl_struct, &error_code);

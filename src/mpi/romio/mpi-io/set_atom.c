@@ -50,7 +50,7 @@ int MPI_File_set_atomicity(MPI_File fh, int flag)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_set_atomicity");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_set_atomicity", &error_code);
 
     if (flag) flag = 1;  /* take care of non-one values! */
 

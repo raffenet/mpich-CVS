@@ -71,7 +71,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     }
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_seek");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_seek", &error_code);
 
     switch(whence) {
     case MPI_SEEK_SET:
@@ -110,6 +110,8 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	}
 	break;
     case MPI_SEEK_END:
+	/* we can in many cases do seeks w/o a file actually opened, but not in
+	 * the MPI_SEEK_END case */
 	/* find offset corr. to end of file */
 	ADIOI_Get_eof_offset(fh, &eof_offset);
 	offset += eof_offset;

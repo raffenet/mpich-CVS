@@ -118,7 +118,7 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_write_ordered");
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_write_ordered", &error_code);
 
     MPI_Comm_size(fh->comm, &nprocs);
     MPI_Comm_rank(fh->comm, &myrank);
