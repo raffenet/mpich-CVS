@@ -28,7 +28,7 @@ $(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	    if [ "$(F90EXT)" != "f90" ] ; then \
 	        ln -sf mpi.f90 mpi.$(F90EXT) ; \
 	    fi ; \
-	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.f90 ; \
+	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
 	        rm -f mpi.$(F90EXT) ; \
 	    fi ; \
