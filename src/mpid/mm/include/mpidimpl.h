@@ -195,10 +195,6 @@ MPID_Request * mm_request_alloc();
            int mm_get_buffers_tmp(MPID_Request *request_ptr);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
 
-           int mm_packer_read();
-           int mm_packer_write();
-           int mm_unpacker_write();
-
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
            int mm_post_read_pkt(MPIDI_VC *vc_ptr);
