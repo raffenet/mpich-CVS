@@ -72,7 +72,40 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	   write */
 	
 	mpi_errno = ibu_write(vc->ch.ibu, pkt, pkt_sz, &nb);
-	if (mpi_errno != MPI_SUCCESS)
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    if (nb == pkt_sz)
+	    {
+		MPIDI_DBG_PRINTF((55, FCNAME, "data sent immediately"));
+		/* done.  get us out of here as quickly as possible. */
+	    }
+	    else if (nb >= 0)
+	    {
+		MPIDI_DBG_PRINTF((55, FCNAME,
+		    "send delayed, request enqueued"));
+		create_request(sreq, pkt, pkt_sz, nb);
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		vc->ch.send_active = sreq;
+	    }
+	    else
+	    {
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, "
+		    "errno=%d:%s", errno, strerror(errno)));
+		sreq = MPIDI_CH3_Request_create();
+		if (sreq == NULL)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		    return mpi_errno;
+		}
+		sreq->kind = MPID_REQUEST_SEND;
+		sreq->cc = 0;
+		/* TODO: Create an appropriate error message based on the value
+		of errno */
+		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    }
+	}
+	else
 	{
 	    sreq = MPIDI_CH3_Request_create();
 	    if (sreq == NULL)
@@ -84,41 +117,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	    sreq->kind = MPID_REQUEST_SEND;
 	    sreq->cc = 0;
 	    /* TODO: Create an appropriate error message based on the return value */
-	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-	    return mpi_errno;
-	}
-
-	if (nb == pkt_sz)
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "data sent immediately"));
-	    /* done.  get us out of here as quickly as possible. */
-	}
-	else if (nb >= 0)
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME,
-		"send delayed, request enqueued"));
-	    create_request(sreq, pkt, pkt_sz, nb);
-	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-	    vc->ch.send_active = sreq;
-	}
-	else
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, "
-		"errno=%d:%s", errno, strerror(errno)));
-	    sreq = MPIDI_CH3_Request_create();
-	    if (sreq == NULL)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		return mpi_errno;
-	    }
-	    sreq->kind = MPID_REQUEST_SEND;
-	    sreq->cc = 0;
-	    /* TODO: Create an appropriate error message based on the value
-	             of errno */
-	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
 	}
     }
     else
