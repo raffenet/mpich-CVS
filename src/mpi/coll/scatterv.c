@@ -231,7 +231,7 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
     {
         if (comm_ptr->comm_kind == MPID_INTERCOMM) {
             /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
 	}

@@ -89,11 +89,11 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!graph_ptr || graph_ptr->kind != MPI_GRAPH) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
 	    else if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK,
 					  "**rank", "**rank %d %d",
 					  rank, graph_ptr->topo.graph.nnodes );
 	    }

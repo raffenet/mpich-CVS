@@ -66,20 +66,18 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (comm_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
-						  "**keyvalinvalid", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
+						  MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
 	    }
 	    else if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
-						  "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, "**keyval", 0 );
 	    } 
 	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
-						  "**keyvalnotcomm", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
+						  MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 	    }
 	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-						  "**permattr", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**permattr", 0 );
 	    }
 	    else {
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
@@ -126,7 +124,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	    if (!new_p) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
@@ -144,7 +142,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     if (!p) {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

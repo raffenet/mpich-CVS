@@ -57,11 +57,11 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
             if (!rank) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, 
                             "**nullptr", "**nullptr %s", "rank" );
             } 
             /* Validate comm_ptr */

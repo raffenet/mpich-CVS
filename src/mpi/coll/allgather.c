@@ -52,6 +52,7 @@ PMPI_LOCAL int MPIR_Allgather (
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Allgather";
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
@@ -208,7 +209,7 @@ PMPI_LOCAL int MPIR_Allgather (
 
         tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 
@@ -374,6 +375,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
    intracommunicator, and then does an intercommunicator broadcast.
 */
 
+    static const char FCNAME[] = "MPIR_Allgather_inter";
     int rank, local_size, remote_size, mpi_errno, root;
     MPI_Comm newcomm;
     MPI_Aint true_extent, true_lb, extent, send_extent;
@@ -395,7 +397,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
         tmp_buf = MPIU_Malloc(extent*sendcount*local_size);
         if (!tmp_buf) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
@@ -548,7 +550,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
                                        comm_ptr);
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Allgather_inter(sendbuf, sendcount, sendtype,

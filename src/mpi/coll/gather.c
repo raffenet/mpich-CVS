@@ -52,6 +52,7 @@ int MPIR_Gather (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Gather";
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
@@ -96,7 +97,7 @@ int MPIR_Gather (
                    reorder it into the recv_buf. */
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
                 if (!tmp_buf) {
-                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
 
@@ -125,7 +126,7 @@ int MPIR_Gather (
                nodes. max size needed is (nbytes*comm_size)/2. */
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
             if (!tmp_buf) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
             /* copy from sendbuf into tmp_buf */
@@ -219,7 +220,7 @@ int MPIR_Gather (
 
         tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 
@@ -318,6 +319,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
     Cost: p.alpha + n.beta
 */
 
+    static const char FCNAME[] = "MPIR_Gather_inter";
     int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
     int i, nbytes, sendtype_size, recvtype_size;
     MPI_Status status;
@@ -372,7 +374,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
                 tmp_buf =
                     MPIU_Malloc(sendcnt*local_size*(MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
-                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
@@ -531,7 +533,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                                     comm_ptr);  
         else {
             /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Gather_inter(sendbuf, sendcnt, sendtype,

@@ -100,7 +100,7 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             MPIR_Nest_decr();
             if ((target_rank < MPI_PROC_NULL) || (target_rank >=
                                                   comm_size))
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK,
                    "**rank", "**rank %d %d", target_rank, comm_size );
 
             if (mpi_errno != MPI_SUCCESS) {

@@ -55,7 +55,6 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     MPID_Keyval *keyval_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -63,7 +62,6 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -71,10 +69,12 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
+
     /* ... body of routine ...  */
     keyval_ptr = (MPID_Keyval *)MPIU_Handle_obj_alloc( &MPID_Keyval_mem );
     if (!keyval_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

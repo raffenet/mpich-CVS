@@ -19,6 +19,7 @@ void MPIR_SUM (
 	int *Len, 
 	MPI_Datatype *type )
 {
+    static const char FCNAME[] = "MPIR_SUM";
     int i, len = *Len;
 
 #ifdef HAVE_FORTRAN_BINDING
@@ -168,7 +169,7 @@ void MPIR_SUM (
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
-        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_SUM" );
+        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_SUM" );
         break;
     }
     }
@@ -177,6 +178,8 @@ void MPIR_SUM (
 
 int MPIR_SUM_check_dtype ( MPI_Datatype type )
 {
+    static const char FCNAME[] = "MPIR_SUM_check_dtype";
+    
     switch (type) {
     case MPI_INT: 
 #ifdef HAVE_FORTRAN_BINDING
@@ -212,6 +215,6 @@ int MPIR_SUM_check_dtype ( MPI_Datatype type )
 #endif
         return MPI_SUCCESS;
     default: 
-        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_SUM" );
+        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_SUM" );
     }
 }

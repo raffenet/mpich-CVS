@@ -67,6 +67,7 @@ int MPIR_Bcast (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
+  static const char FCNAME[] = "MPIR_Bcast";
   MPI_Status status;
   int        rank, comm_size, src, dst;
   int        relative_rank, mask, tmp_buf_size;
@@ -117,7 +118,7 @@ int MPIR_Bcast (
          how much 'position' is incremented, and multiply that by count. */
       tmp_buf = MPIU_Malloc(tmp_buf_size);
       if (!tmp_buf) {
-          mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+          mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
           return mpi_errno;
       }
 
@@ -218,7 +219,7 @@ int MPIR_Bcast (
           /* noncontiguous or heterogeneous. pack into temporary buffer. */
           tmp_buf = MPIU_Malloc(nbytes);
           if (!tmp_buf) {
-              mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
               return mpi_errno;
           }
 
@@ -576,7 +577,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,

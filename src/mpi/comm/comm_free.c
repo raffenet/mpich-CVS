@@ -95,7 +95,7 @@ int MPI_Comm_free(MPI_Comm *comm)
 	    
 	    /* Cannot free the predefined communicators */
 	    if (HANDLE_GET_KIND(*comm) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM,
 					  "**commperm", "**commperm %s", 
 						  comm_ptr->name );
 	    }

@@ -81,7 +81,7 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 		for (i=0; i<n; i++) {
 		    if (ranks1[i] < 0 || 
 			ranks1[i] >= size1) {
-			mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK,
 						  "**rank", "**rank %d %d", 
 						  ranks1[i], size1 );
 			break;

@@ -47,17 +47,12 @@ int MPI_Is_thread_main( int *flag )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IS_THREAD_MAIN);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -65,6 +60,8 @@ int MPI_Is_thread_main( int *flag )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
+    
     /* ... body of routine ...  */
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
     *flag = 1;

@@ -51,17 +51,12 @@ int MPI_Query_thread( int *provided )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_QUERY_THREAD);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_QUERY_THREAD);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -69,6 +64,8 @@ int MPI_Query_thread( int *provided )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
+    
     /* ... body of routine ...  */
     *provided = MPIR_Process.thread_provided;
     /* ... end of body of routine ... */

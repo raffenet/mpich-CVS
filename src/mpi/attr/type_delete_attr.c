@@ -64,11 +64,11 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	    /* If type_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(type_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
 	    else if (((type_keyval&0x03c00000) >> 22) != MPID_DATATYPE) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
 						  "**keyvalnotdatatype", 0 );
 	    }
 	    else {

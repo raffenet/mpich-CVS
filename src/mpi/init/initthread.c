@@ -51,8 +51,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #else
     MPIR_Process.thread_key = MPID_GetThreadKey();
     MPIR_Process.master_thread = MPID_GetThreadId();
-    MPIR_Thread_lock_init( MPIR_Process.common_lock );
-    MPIR_Thread_lock_init( MPIR_Process.allocation_lock );
+    MPID_Thread_lock_init( MPIR_Process.common_lock );
+    MPID_Thread_lock_init( MPIR_Process.allocation_lock );
 #endif    
     /* Remember level of thread support promised */
 
@@ -128,6 +128,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_parent = NULL;
 
     /* Call any and all MPID_Init type functions */
+    MPIR_Err_init();
     MPID_Wtime_init();
     /* MPIU_Timer_pre_init(); */
     mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
@@ -192,8 +193,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_PRE_INIT) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**inittwice", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**inittwice", 0 );
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);

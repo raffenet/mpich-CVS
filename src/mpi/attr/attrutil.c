@@ -209,7 +209,8 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	       attribute value, and invoking the copy function */
 	    new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	    if (!new_p) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, "MPIR_Attr_dup_list",
+						  MPI_ERR_OTHER, "**nomem", 0 );
 		return mpi_errno;
 	    }
 	    if (!*new_attr) { 
@@ -247,8 +248,8 @@ int MPIR_Attr_delete_list( int handle, MPID_Attribute *attr )
 	
 	/* Check the sentinals first */
 	if (p->pre_sentinal != 0 || p->post_sentinal != 0) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
-					      "**attrsentinal", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Attr_delete_list",
+					      MPI_ERR_OTHER, "**attrsentinal", 0 );
 	    /* We could keep trying to free the attributes, but for now
 	       we'll just bag it */
 	    return mpi_errno;

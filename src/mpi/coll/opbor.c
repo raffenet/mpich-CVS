@@ -20,6 +20,7 @@ void MPIR_BOR (
     int *Len, 
     MPI_Datatype *type )
 {
+    static const char FCNAME[] = "MPIR_BOR";
     int i, len = *Len;
     
     switch (*type) {
@@ -111,7 +112,7 @@ void MPIR_BOR (
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
-        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BOR" );
+        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BOR" );
         break;
     }
     }
@@ -120,6 +121,8 @@ void MPIR_BOR (
 
 int MPIR_BOR_check_dtype ( MPI_Datatype type )
 {
+    static const char FCNAME[] = "MPIR_BOR_check_dtype";
+    
     switch (type) {
 #ifdef HAVE_FORTRAN_BINDING
     case MPI_LOGICAL: case MPI_INTEGER: 
@@ -141,7 +144,7 @@ int MPIR_BOR_check_dtype ( MPI_Datatype type )
     case MPI_BYTE: 
         return MPI_SUCCESS;
     default: 
-        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BOR" );
+        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BOR" );
     }
 }
 

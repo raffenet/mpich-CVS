@@ -93,7 +93,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TOPOLOGY, 
 						  "**notcarttopo", 0 );
 	    }
 	    /* Validate coordinates */
@@ -104,7 +104,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 			coord = coords[i];
 			if (coord < 0 || 
 			    coord >= cart_ptr->topo.cart.dims[i] ) {
-			    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
 					  "**cartcoordinvalid",
 					  "**cartcoordinvalid %d %d %d",
 					  i, coords[i], 

@@ -23,6 +23,7 @@ void MPIR_LXOR (
     int *Len, 
     MPI_Datatype *type )
 {
+    static const char FCNAME[] = "MPIR_LXOR";
     int i, len = *Len;
     
     switch (*type) {
@@ -146,7 +147,7 @@ void MPIR_LXOR (
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
-        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
+        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
         break;
     }
     }
@@ -155,6 +156,8 @@ void MPIR_LXOR (
 
 int MPIR_LXOR_check_dtype ( MPI_Datatype type )
 {
+    static const char FCNAME[] = "MPIR_LXOR_check_dtype";
+    
     switch (type) {
     case MPI_INT: 
     case MPI_UNSIGNED: 
@@ -187,7 +190,7 @@ int MPIR_LXOR_check_dtype ( MPI_Datatype type )
 #endif
         return MPI_SUCCESS;
     default: 
-        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
+        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
     }
 }
 

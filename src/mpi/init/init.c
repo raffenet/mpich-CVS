@@ -57,8 +57,7 @@ int MPI_Init( int *argc, char ***argv )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_PRE_INIT) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**inittwice", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**inittwice", 0 );
 	    }
             if (mpi_errno) {
                 MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);

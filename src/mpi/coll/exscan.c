@@ -70,6 +70,7 @@ PMPI_LOCAL int MPIR_Exscan (
     MPI_Op op, 
     MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Exscan";
     MPI_Status status;
     int        rank, comm_size;
     int        mpi_errno = MPI_SUCCESS;
@@ -127,7 +128,7 @@ PMPI_LOCAL int MPIR_Exscan (
 
     partial_scan = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
     if (!partial_scan) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
@@ -136,7 +137,7 @@ PMPI_LOCAL int MPIR_Exscan (
     /* need to allocate temporary buffer to store incoming data*/
     tmp_buf = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
     if (!tmp_buf) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */

@@ -78,7 +78,7 @@ int MPI_Op_free(MPI_Op *op)
 	    MPID_Op_valid_ptr( op_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (op_ptr->kind < MPID_OP_USER_NONCOMMUTE) {
-		    mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
 						      "**permop", 0 );
 		}
 	    }

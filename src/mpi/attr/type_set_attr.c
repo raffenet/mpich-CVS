@@ -66,15 +66,15 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    /* If type_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (type_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
 						  "**keyvalinvalid", 0 );
 	    }
 	    else if (HANDLE_GET_MPI_KIND(type_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
 	    else if (((type_keyval&0x03c00000) >> 22) != MPID_DATATYPE) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
 						  "**keyvalnotdatatype", 0 );
 	    }
 	    else {
@@ -118,7 +118,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	    if (!new_p) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
@@ -136,7 +136,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
     if (!p) {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

@@ -86,17 +86,17 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!topo_ptr || topo_ptr->kind != MPI_GRAPH) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
 	    else if (topo_ptr->topo.graph.nnodes > maxindex) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, 
 					  "**argrange", "**argrange %s %d %d",
 					  "maxindex", maxindex, 
 					  topo_ptr->topo.graph.nnodes );
 	    }
 	    else if (topo_ptr->topo.graph.nedges > maxedges) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, 
 					  "**argrange", "**argrange %s %d %d",
 					  "maxedges", maxedges, 
 					  topo_ptr->topo.graph.nedges );

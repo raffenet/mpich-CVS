@@ -76,6 +76,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPI_Op op, 
     MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Reduce_scatter";
     int   rank, comm_size, i;
     MPI_Aint extent, true_extent, true_lb; 
     int  *disps;
@@ -136,7 +137,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
     disps = MPIU_Malloc(comm_size*sizeof(int));
     if (!disps) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
 
@@ -161,7 +162,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         /* allocate temp. buffer to receive incoming data */
         tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
         if (!tmp_recvbuf) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
@@ -171,7 +172,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
            results because recvbuf may not be big enough */
         tmp_results = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
         if (!tmp_results) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }        
         /* adjust for potential negative lower bound in datatype */
@@ -247,12 +248,12 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
             newcnts = (int *) MPIU_Malloc(pof2*sizeof(int));
             if (!newcnts) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
             newdisps = (int *) MPIU_Malloc(pof2*sizeof(int));
             if (!newdisps) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
             
@@ -408,7 +409,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             tmp_recvbuf =
                 MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))+1); 
             if (!tmp_recvbuf) {
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
@@ -529,7 +530,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             /* need to allocate temporary buffer to receive incoming data*/
             tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
             if (!tmp_recvbuf) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
@@ -539,7 +540,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                results */
             tmp_results = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
             if (!tmp_results) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }        
             /* adjust for potential negative lower bound in datatype */
@@ -780,6 +781,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
    by local intracommunicator scattervs in each group.
 */
     
+    static const char FCNAME[] = "MPIR_Reduce_scatter_inter";
     int rank, mpi_errno, root, local_size, total_count, i;
     MPI_Aint true_extent, true_lb, extent;
     void *tmp_buf=NULL;
@@ -798,7 +800,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 
         disps = MPIU_Malloc(local_size*sizeof(int));
         if (!disps) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 
@@ -815,7 +817,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 
         tmp_buf = MPIU_Malloc(total_count*(MPIR_MAX(extent,true_extent)));
         if (!tmp_buf) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
@@ -986,7 +988,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                                             op, comm_ptr);
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Reduce_scatter_inter(sendbuf, recvbuf,

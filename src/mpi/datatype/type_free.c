@@ -57,7 +57,7 @@ int MPI_Type_free(MPI_Datatype *datatype)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check for built-in type */
 	    if (HANDLE_GET_KIND(*datatype) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
 						  "**dtypeperm", 0 );
 	    }
             /* Validate datatype_ptr */

@@ -47,6 +47,7 @@ void MPIR_MAXLOC(
 	int *Len, 
 	MPI_Datatype *type )
 {
+    static const char FCNAME[] = "MPIR_MAXLOC";
     int i, len = *Len, flen;
     
     flen = len * 2; /* used for Fortran types */
@@ -179,7 +180,7 @@ void MPIR_MAXLOC(
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
-        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
         break;
     }
     }
@@ -189,6 +190,7 @@ void MPIR_MAXLOC(
 
 int MPIR_MAXLOC_check_dtype( MPI_Datatype type )
 {
+    static const char FCNAME[] = "MPIR_MAXLOC_check_dtype";
     switch (type) {
     /* first the C types */
     case MPI_2INT: 
@@ -209,7 +211,7 @@ int MPIR_MAXLOC_check_dtype( MPI_Datatype type )
 #endif
         return MPI_SUCCESS;
     default: 
-        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
     }
 }
 

@@ -62,6 +62,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Allgatherv";
     MPI_Comm comm;
     int        comm_size, rank, j, i, jnext, left, right;
     int        mpi_errno = MPI_SUCCESS;
@@ -134,7 +135,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
             tmp_buf =
                 MPIU_Malloc(total_count*(MPIR_MAX(true_extent,recv_extent)));  
             if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
                 return mpi_errno;
             }
 
@@ -302,7 +303,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
             NMPI_Pack_size(total_count, recvtype, comm, &tmp_buf_size);
             tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
                 return mpi_errno;
             }
             
@@ -494,6 +495,7 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
    and then does an intracommunicator broadcast. 
 */
 
+    static const char FCNAME[] = "MPIR_Allgatherv";
     int remote_size, mpi_errno, root, rank;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Datatype newtype;
@@ -665,7 +667,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                                         recvtype, comm_ptr); 
         else {
             /* intracommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /* mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
