@@ -25,7 +25,7 @@ or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]
 
 try:
     from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
-                                SIGCONT, SIGALRM, SIGKILL
+                                SIGCONT, SIGALRM, SIGKILL, SIGTTIN
 except KeyboardInterrupt:
     exit(0)
 
@@ -39,6 +39,7 @@ __credits__ = ""
 signal(SIGINT,SIG_IGN)
 signal(SIGTSTP,SIG_IGN)
 signal(SIGCONT,SIG_IGN)
+signal(SIGTTIN,SIG_IGN)
 
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
@@ -457,41 +458,45 @@ def mpdrun():
                         stderr.write(msg)
                         stderr.flush()
                 elif readySocket == stdin:
-                    line = stdin.readline()
-                    if line:    # not EOF
-                        msgToSend = { 'cmd' : 'stdin_from_user', 'line' : line } # default
-                        if gdb and line.startswith('z'):
-                            line = line.rstrip()
-                            if len(line) < 3:    # just a 'z'
-                                line += ' 0-%d' % (nprocs-1)
-                            s1 = line[2:].rstrip().split(',')
-                            for s in s1:
-                                s2 = s.split('-')
-                                for i in s2:
-                                    if not i.isdigit():
-                                        print 'invalid arg to z :%s:' % i
-                                        continue
-                            msgToSend = { 'cmd' : 'stdin_goes_to_who',
-                                          'stdin_procs' : line[2:] }
-                            stdout.softspace = 0
-                            print '%s:  (gdb) ' % (line[2:]),
-                        elif gdb and line.startswith('q'):
-                            msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
-                            if manSocket:
-                                mpd_send_one_msg(manSocket,msgToSend)
-                            msgToSend = { 'cmd' : 'stdin_from_user','line' : 'q\n' }
-                        elif gdb and line.startswith('^'):
-                            msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
-                            if manSocket:
-                                mpd_send_one_msg(manSocket,msgToSend)
-                            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
-                        if manSocket:
-                            mpd_send_one_msg(manSocket,msgToSend)
+                    try:
+                        line = stdin.readline()
+                    except IOError:
+                        stdin.flush()  # probably does nothing
                     else:
-                        del socketsToSelect[stdin]
-                        stdin.close()
-                        if manSocket:
-                            mpd_send_one_msg(manSocket,{ 'cmd' : 'stdin_from_user', 'eof' : '' })
+                        if line:    # not EOF
+                            msgToSend = { 'cmd' : 'stdin_from_user', 'line' : line } # default
+                            if gdb and line.startswith('z'):
+                                line = line.rstrip()
+                                if len(line) < 3:    # just a 'z'
+                                    line += ' 0-%d' % (nprocs-1)
+                                s1 = line[2:].rstrip().split(',')
+                                for s in s1:
+                                    s2 = s.split('-')
+                                    for i in s2:
+                                        if not i.isdigit():
+                                            print 'invalid arg to z :%s:' % i
+                                            continue
+                                msgToSend = { 'cmd' : 'stdin_goes_to_who',
+                                              'stdin_procs' : line[2:] }
+                                stdout.softspace = 0
+                                print '%s:  (gdb) ' % (line[2:]),
+                            elif gdb and line.startswith('q'):
+                                msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
+                                if manSocket:
+                                    mpd_send_one_msg(manSocket,msgToSend)
+                                msgToSend = { 'cmd' : 'stdin_from_user','line' : 'q\n' }
+                            elif gdb and line.startswith('^'):
+                                msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
+                                if manSocket:
+                                    mpd_send_one_msg(manSocket,msgToSend)
+                                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+                            if manSocket:
+                                mpd_send_one_msg(manSocket,msgToSend)
+                        else:
+                            del socketsToSelect[stdin]
+                            stdin.close()
+                            if manSocket:
+                                mpd_send_one_msg(manSocket,{ 'cmd' : 'stdin_from_user', 'eof' : '' })
                 else:
                     mpd_raise('unrecognized ready socket :%s:' % (readySocket) )
         except mpdError, errmsg:
@@ -847,11 +852,11 @@ def get_args_from_file():
             (loRange,hiRange) = (0,nprocs-1)
         for i in xrange(loRange,hiRange+1):
             if i >= nprocs:
-                print '*** exiting; rank %d is greater than nprocs for args'
+                print '*** exiting; rank %d is greater than nprocs for args' % (i)
                 myExitStatus = -1  # used in main
                 exit(myExitStatus) # really forces jump back into main
             if covered[i]:
-                print '*** exiting; rank %d is doubly used in proc specs'
+                print '*** exiting; rank %d is doubly used in proc specs' % (i)
                 myExitStatus = -1  # used in main
                 exit(myExitStatus) # really forces jump back into main
             covered[i] = 1
