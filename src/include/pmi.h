@@ -25,6 +25,7 @@ Error Codes:
 . PMI_ERR_INVALID_VAL - invalid val argument
 . PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
 . PMI_ERR_INVALID_LENGTH - invalid length argument
+. PMI_ERR_NOMEM - input buffer not large enough
 - PMI_ERR_INIT - PMI not initialized
 
 Booleans:
@@ -56,7 +57,7 @@ Output Parameter:
 
 Return values:
 + PMI_SUCCESS - initialization completed successfully
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - initialization failed
 
 Notes:
@@ -75,7 +76,7 @@ Output Parameter:
 
 Return values:
 + PMI_SUCCESS - initialized successfully set
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to set the variable
 
 Notes:
@@ -107,7 +108,7 @@ Output Parameters:
 
 Return values:
 + PMI_SUCCESS - size successfully obtained
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the size
 
 Notes:
@@ -125,7 +126,7 @@ Output Parameters:
 
 Return values:
 + PMI_SUCCESS - rank successfully obtained
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the rank
 
 Notes:
@@ -220,7 +221,7 @@ Output Parameters:
 
 Return values:
 + PMI_SUCCESS - size successfully obtained
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the clique size
 
 Notes:
@@ -541,7 +542,7 @@ Output Parameters:
 
 Return values:
 + PMI_SUCCESS - spawn successful
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - spawn failed
 
 Notes:
@@ -581,7 +582,7 @@ Output Parameters:
 
 Return values:
 + PMI_SUCCESS - success
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - fail
 
 Notes:
@@ -604,7 +605,7 @@ Input Parameters:
 
 Return values:
 + PMI_SUCCESS - success
-. PMI_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - fail
 
 Notes:
@@ -613,6 +614,30 @@ Notes:
  allocation of storage or 
 @*/
 int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
+
+/*@
+PMI_Get_options - get a string to print to the user with command line argument descriptions
+
+Input Parameters:
+. length - length of str
+
+Output Parameters:
++ str - description string
+- length - length of string or necessary length if input is not large enough
+
+Return values:
++ PMI_SUCCESS - success
+. PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
+. PMI_ERR_NOMEM - input length too small
+- PMI_FAIL - fail
+
+Notes:
+ This function frees the data returned by PMI_Args_to_keyval.
+ Using this routine instead of 'free' allows the PMI package to track 
+ allocation of storage or 
+@*/
+int PMI_Get_options(char *str, int *length);
 
 #if defined(__cplusplus)
 }
