@@ -83,7 +83,7 @@ int main(int argc, char ** argv)
        close(fd);
    }
    return 0;
-}],shm_open_impl=yes,shm_open_impl=no)
+}],shm_open_impl=yes,shm_open_impl=no,shm_open_impl=${CROSS_HAVE_SHM_OPEN:-no})
     AC_MSG_RESULT($shm_open_impl)
     if test $shm_open_impl = "yes" ; then
         AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available])
