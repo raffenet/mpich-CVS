@@ -477,7 +477,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	{
 	    num_read = 0;
 	    smpd_dbg_printf("MPIDU_Sock_read(%d) failed (%s), assuming %s is closed.\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
 	}
 	smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
 	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
@@ -687,7 +687,7 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     {
 	num_read = 0;
 	smpd_dbg_printf("MPIDU_Sock_read(%d) failed (%s), assuming %s is closed.\n",
-	    MPIDU_Sock_getid(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
+	    MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
     }
     smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
     smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
@@ -736,7 +736,7 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
 	if (result != SOCK_EOF)
 	{
 	    smpd_dbg_printf("MPIDU_Sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
-		get_sock_error_string(result), smpd_get_context_str(context), MPIDU_Sock_getid(context->sock));
+		get_sock_error_string(result), smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock));
 	}
 	*/
 	context->state = SMPD_CLOSING;
@@ -1045,7 +1045,7 @@ int smpd_state_writing_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
     if (strcmp(cmd_ptr->cmd_str, "closed") == 0)
     {
 	smpd_dbg_printf("closed command written, posting close of the sock.\n");
-	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(context->sock));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	if (result != MPI_SUCCESS)
@@ -1907,7 +1907,7 @@ int smpd_state_writing_no_cred_request(smpd_context_t *context, MPIDU_Sock_event
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close for the sock(%d) from a failed win_mgr, error:\n%s\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_state_writing_no_cred_request");
 	    return SMPD_FAIL;
 	}
@@ -2126,7 +2126,7 @@ int smpd_state_writing_reconnect_request(smpd_context_t *context, MPIDU_Sock_eve
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a close on sock(%d) after reconnect request written, error:\n%s\n",
-	    MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+	    MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_reconnect_request");
@@ -2174,7 +2174,7 @@ int smpd_state_writing_no_reconnect_request(smpd_context_t *context, MPIDU_Sock_
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close for the sock(%d) from a failed unx_mgr, error:\n%s\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_state_writing_no_reconnect_request");
 	    return SMPD_FAIL;
 	}
@@ -2183,7 +2183,7 @@ int smpd_state_writing_no_reconnect_request(smpd_context_t *context, MPIDU_Sock_
     }
     if (smpd_process.root_smpd)
     {
-	smpd_dbg_printf("root closing sock(%d) after fork.\n", MPIDU_Sock_getid(context->sock));
+	smpd_dbg_printf("root closing sock(%d) after fork.\n", MPIDU_Sock_get_sock_id(context->sock));
 	context->state = SMPD_CLOSING;
 	context->read_state = SMPD_IDLE;
 	context->write_state = SMPD_IDLE;
@@ -2191,14 +2191,14 @@ int smpd_state_writing_no_reconnect_request(smpd_context_t *context, MPIDU_Sock_
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close for the sock(%d) from a unx_mgr, error:\n%s\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_state_writing_no_reconnect_request");
 	    return SMPD_FAIL;
 	}
     }
     else
     {
-	smpd_dbg_printf("child closing listener sock(%d) after fork.\n", MPIDU_Sock_getid(smpd_process.listener_context->sock));
+	smpd_dbg_printf("child closing listener sock(%d) after fork.\n", MPIDU_Sock_get_sock_id(smpd_process.listener_context->sock));
 	/* close the listener in the child */
 	smpd_process.listener_context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(smpd_process.listener_context->sock);
@@ -2246,7 +2246,7 @@ int smpd_state_reading_reconnect_request(smpd_context_t *context, MPIDU_Sock_eve
 
 	smpd_dbg_printf("closing the old socket in the %s context.\n", smpd_get_context_str(context));
 	/* close the old sock */
-	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(context->sock));
 	/*context->state = SMPD_CLOSING;*/ /* don't set it here, set it later after the state has been copied to the new context */
 	result = MPIDU_Sock_post_close(context->sock);
 	if (result != MPI_SUCCESS)

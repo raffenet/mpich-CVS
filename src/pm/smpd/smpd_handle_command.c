@@ -731,7 +731,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     cmd = &context->read_cmd;
 
     /*
-    printf("handling dbs command on %s context, sock %d.\n", smpd_get_context_str(context), MPIDU_Sock_getid(context->sock));
+    printf("handling dbs command on %s context, sock %d.\n", smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock));
     fflush(stdout);
     */
 
@@ -1254,7 +1254,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
     if (context == smpd_process.left_context)
     {
 	smpd_dbg_printf("closed command received from left child, closing sock.\n");
-	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.left_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(smpd_process.left_context->sock));
 	smpd_process.left_context->state = SMPD_CLOSING;
 	MPIDU_Sock_post_close(smpd_process.left_context->sock);
 	if (smpd_process.right_context)
@@ -1266,7 +1266,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
     else if (context == smpd_process.right_context)
     {
 	smpd_dbg_printf("closed command received from right child, closing sock.\n");
-	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.right_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(smpd_process.right_context->sock));
 	smpd_process.right_context->state = SMPD_CLOSING;
 	MPIDU_Sock_post_close(smpd_process.right_context->sock);
 	if (smpd_process.left_context)
@@ -1278,7 +1278,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
     else if (context == smpd_process.parent_context)
     {
 	smpd_dbg_printf("closed command received from parent, closing sock.\n");
-	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.parent_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(smpd_process.parent_context->sock));
 	smpd_process.parent_context->state = SMPD_CLOSING;
 	MPIDU_Sock_post_close(smpd_process.parent_context->sock);
 	smpd_exit_fn("handle_closed_command");
@@ -1714,8 +1714,8 @@ int smpd_handle_stat_command(smpd_context_t *context)
 		}
 		smpd_snprintf_update(&str, &len, " host               = %s\n", iter->host);
 		smpd_snprintf_update(&str, &len, " rank               = %d\n", iter->rank);
-		smpd_snprintf_update(&str, &len, " set                = %d\n", MPIDU_Sock_getsetid(iter->set));
-		smpd_snprintf_update(&str, &len, " sock               = %d\n", MPIDU_Sock_getid(iter->sock));
+		smpd_snprintf_update(&str, &len, " set                = %d\n", MPIDU_Sock_get_sock_set_id(iter->set));
+		smpd_snprintf_update(&str, &len, " sock               = %d\n", MPIDU_Sock_get_sock_id(iter->sock));
 		smpd_snprintf_update(&str, &len, " account            = %s\n", iter->account);
 		smpd_snprintf_update(&str, &len, " password           = ***\n");
 		smpd_snprintf_update(&str, &len, " connect_return_id  = %d\n", iter->connect_return_id);
@@ -2675,7 +2675,7 @@ int smpd_handle_command(smpd_context_t *context)
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
 	}
@@ -2699,7 +2699,7 @@ int smpd_handle_command(smpd_context_t *context)
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
-		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
 	}

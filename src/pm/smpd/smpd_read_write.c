@@ -61,7 +61,7 @@ int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 
     smpd_enter_fn("smpd_read");
 
-    smpd_dbg_printf("reading %d bytes from sock %d\n", len, MPIDU_Sock_getid(sock));
+    smpd_dbg_printf("reading %d bytes from sock %d\n", len, MPIDU_Sock_get_sock_id(sock));
 
     while (len)
     {
@@ -105,7 +105,7 @@ int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 
     smpd_enter_fn("smpd_write");
 
-    smpd_dbg_printf("writing %d bytes to sock %d\n", len, MPIDU_Sock_getid(sock));
+    smpd_dbg_printf("writing %d bytes to sock %d\n", len, MPIDU_Sock_get_sock_id(sock));
 
     while (len)
     {
@@ -152,7 +152,7 @@ int smpd_write_string(MPIDU_Sock_t sock, char *str)
 
     smpd_enter_fn("smpd_write_string");
 
-    smpd_dbg_printf("writing string on sock %d: \"%s\"\n", MPIDU_Sock_getid(sock), str);
+    smpd_dbg_printf("writing string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str);
 
     len = (MPIDU_Sock_size_t)strlen(str)+1;
 
@@ -233,7 +233,7 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 
     if (maxlen == 0)
     {
-	smpd_dbg_printf("zero length read string request on sock %d\n", MPIDU_Sock_getid(sock));
+	smpd_dbg_printf("zero length read string request on sock %d\n", MPIDU_Sock_get_sock_id(sock));
 	smpd_exit_fn("smpd_read_string");
 	return SMPD_SUCCESS;
     }
@@ -248,7 +248,7 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	}
 	if (num_bytes > 0 && str[num_bytes-1] == '\0')
 	{
-	    smpd_dbg_printf("received string on sock %d: \"%s\"\n", MPIDU_Sock_getid(sock), str_orig);
+	    smpd_dbg_printf("received string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str_orig);
 	    smpd_exit_fn("smpd_read_string");
 	    return SMPD_SUCCESS;
 	}
@@ -257,7 +257,7 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	    /* received truncated string */
 	    str[num_bytes-1] = '\0';
 	    chew_up_string(sock);
-	    smpd_dbg_printf("received truncated string on sock %d: \"%s\"\n", MPIDU_Sock_getid(sock), str_orig);
+	    smpd_dbg_printf("received truncated string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str_orig);
 	    smpd_exit_fn("smpd_read_string");
 	    return SMPD_SUCCESS;
 	}

@@ -554,7 +554,7 @@ int smpd_post_read_command(smpd_context_t *context)
     smpd_enter_fn("smpd_post_read_command");
 
     /* post a read for the next command header */
-    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), MPIDU_Sock_getid(context->sock));
+    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock));
     context->read_state = SMPD_READING_CMD_HEADER;
     context->read_cmd.state = SMPD_CMD_READING_HDR;
     result = MPIDU_Sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, SMPD_CMD_HDR_LENGTH, NULL);
@@ -603,7 +603,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
     /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
     smpd_dbg_printf("smpd_post_write_command on the %s context sock %d: %d bytes for command: \"%s\"\n",
-	smpd_get_context_str(context), MPIDU_Sock_getid(context->sock),
+	smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock),
 	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,
 	cmd->cmd);
     result = MPIDU_Sock_post_writev(context->sock, cmd->iov, 2, NULL);

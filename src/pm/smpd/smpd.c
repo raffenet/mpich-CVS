@@ -204,7 +204,7 @@ int smpd_entry_point()
 	return result;
     }
     smpd_process.set = set;
-    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_getsetid(set));
+    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_get_sock_set_id(set));
     result = MPIDU_Sock_listen(set, NULL, &smpd_process.port, &listener); 
     if (result != MPI_SUCCESS)
     {
