@@ -44,6 +44,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     
     MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
+    MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
     
     if (rank == MPI_PROC_NULL)
     {
@@ -67,6 +68,8 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 
+	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	
 	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
@@ -86,6 +89,8 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
+	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	
 	iov[1].MPID_IOV_BUF = (void *) buf;
 	iov[1].MPID_IOV_LEN = data_sz;
 
