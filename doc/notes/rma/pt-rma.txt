@@ -38,9 +38,9 @@ Note that RMA requests that the target receives (put, get, acc) are
 always satisfied, because they won't be sent in the first place unless
 the source has been authorized to send them.
 
-In the case of shared locks, the target must send an acknowledgement
-to the source when the last RMA operation has completed (at least in
-the case of puts and accumulates). The source must block in win_unlock
+In the case of shared locks where none of the operations is a get, the
+target must send an acknowledgement to the source when the last RMA
+operation has completed. The source must block in win_unlock
 until it receives this acknowledgement. This is because the standard
 says that when win_unlock returns, the operations will be completed
 both at the source and at the target. Therefore, after returning from
@@ -49,6 +49,10 @@ which can then (with a shared lock) try to access the data that the
 source had put at the target. If the source didn't wait for the
 acknowledgement at win_unlock, this other process may get stale
 data. This problem does not occur in the case of exclusive locks.
+If any one of the operations is a get, we reorder the operations and
+perform the get last. In this case, since the source must wait to
+receive the data, the acknowledgement is not needed (assuming
+that data transfer is ordered). 
 
 The MPI_Win object needs the following lock info:
    int current_lock_type;  /* no_lock, shared, exclusive */
@@ -81,7 +85,8 @@ put/accumulate or get, we can send over the put data (or get info)
 along with the lock pkt. If the lock needs to be queued, it will be
 queued with this data or info. When the lock is granted, no "lock
 granted" reply needs to be sent. Instead the put data is simply copied
-or the get data is sent over. Win_unlock must block until it receives
-an acknowledgement from the target that the RMA operation has
-completed (for both shared and exclusive locks).
+or the get data is sent over. Except in the case of get operations,
+Win_unlock must block until it receives an acknowledgement from the
+target that the RMA operation has completed (for both shared and
+exclusive locks). 
 
