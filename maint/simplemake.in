@@ -892,20 +892,24 @@ sub DefaultRules {
 	}
 	$aargs =~ s/\/\//\//;
 	$autoconf_deps="";
+	print "macro loc arg is $aargs\n" if $debug_confdir;
 	# If there is a -l dir in the autoconf_args, then add that to the
 	# dependencies
 	if ($aargs =~ /-l\s*([\.\/\w]*)/) {
 	    $macroloc = $1;
-	    $autoconf_deps .= "$macroloc/aclocal.m4";
-	    # Extract includes from aclocal.m4
-	    open (AFD, "<$macroloc/aclocal.m4" );
-	    while (<AFD>) {
-		if (/^\s*builtin\(include,([\w-]*\.m4)\)\s*$/) {
-		    $filename = "$macroloc/$1";
-		    $autoconf_deps .= " $filename";
+	    # HACK.  If we've messed up the location, don't include it
+	    if (-s "$macroloc/aclocal.m4") {
+		$autoconf_deps .= "$macroloc/aclocal.m4";
+		# Extract includes from aclocal.m4
+		open (AFD, "<$macroloc/aclocal.m4" );
+		while (<AFD>) {
+		    if (/^\s*builtin\(include,([\w-]*\.m4)\)\s*$/) {
+			$filename = "$macroloc/$1";
+			$autoconf_deps .= " $filename";
+		    }
 		}
+		close (AFD);
 	    }
-	    close (AFD);
 	}
 	print FD "$newline";
 	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
@@ -1144,11 +1148,40 @@ sub ProcessFile {
     }
     M: foreach my $dir (@actdirs) {
 	if ($dir eq ".") { next M; }
-	if (! -d $dir) { print "Directory $curdir$dir does not exist\n"; next M; }
+	if ($dir =~ /\.\./ || $dir =~ /.\/./) {
+	    # Skip directory changes that aren't simple
+	    print "$dir has .. in it (skipping)\n";
+	    print "Current dir is $curdir\n" if $debug;
+	    next M;
+	    #exit(1);
+	}
+	if (! -d $dir) { 
+	    my $ldir = `pwd`;
+	    print "Directory $curdir$dir does not exist\n"; 
+	    print "(Current location is $ldir)\n";
+	    next M; }
 	if (! -s "$dir/$file") { print "File $curdir$dir/$file does not exist\n"; next M; }
 	chdir $dir;
 	$curdir .= "$dir/";
-	$rootdirpath .= "../";
+	$curdir = &CleanCurDir( $curdir );
+	if ($dir =~ /\.\./) {
+	    print "changed to a non-obvious dir = $dir\n";
+	    my $ldir = $dir;
+	    while ($ldir =~ /^\.\.\//) {
+		$rootdirpath =~ s/\.\.\/$//;
+		$ldir =~ s/^\.\.\///;
+	    }
+	    while ($ldir =~ /^[^\/]+\//) {
+		$rootdirpath .= "../";
+		$ldir =~ s/^[^\/]+\///;
+	    }
+	    if ($ldir =~ /[^\s]+/) {
+		$rootdirpath .= "../";
+	    }		
+	}
+	else {
+	    $rootdirpath .= "../";
+	}
 	print "rootdir = $rootdirpath\n" if $debug_confdir;
 	print "curdir = $curdir\n" if $debug_confdir;
 	$config_dir[$#config_dir+1] = $last_config_dir; 
@@ -1161,6 +1194,7 @@ sub ProcessFile {
 	$rootdirpath =~ s/\.\.\/$//;
 	chdir "..";
 	$curdir =~ s/[^\/]*\/$//;
+	$curdir = &CleanCurDir( $curdir );
     }
 }
 
@@ -1564,12 +1598,14 @@ sub TargetPrograms {
 	    $ext =~ s/^.*\.//g;
 	    if (defined($extrules{"$ext:o"})) {
 		$obj =~ s/\.$ext/\.o/g;
+		&print_make_line( FD, "$obj " );
+		$pgmobjs .= "$obj ";
 	    }
 	    else {
-		print "Unknown extension $ext for $sourcefile\n";
+		if (ext ne "h") {
+		    print "Unknown extension $ext for $sourcefile\n";
+		}
 	    }
-	    &print_make_line( FD, "$obj " );
-	    $pgmobjs .= "$obj ";
         }
 	# Add dependencies on libraries if requested
 	$debug_lib_dependencies = 0;
@@ -2093,6 +2129,30 @@ sub GetPathToParent {
     return $path_child;
 }
 
+#
+# Remove any trailing .. from the directory as well as that many directories
+sub CleanCurDir {
+    my $dir = $_[0];
+    my $depth = 0;
+
+    # Handle any /.. at the end
+    $dir =~ s/\/$//;
+    while ($dir =~ /\/\.\.$/) {
+	$depth++;
+	$dir =~ s/\/\.\.$//;
+    }
+    while ($depth > 0) {
+	$dir =~ s/\/[^\/]*//;
+	$depth--;
+    }
+
+    # We sometimes get ../ in the middle
+    while ($dir =~ /(.*)\/[^\/\.]+\/\.\.(.*)/) {
+	print "Changing $dir to $1$2\n" if $debug_confdir;
+	$dir = "$1$2";
+    }
+    return "$dir/";
+}    
 #
 # ===========================================================================
 # Pretty print output lines.  These routines insert line breaks and tabs
