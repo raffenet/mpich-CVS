@@ -27,7 +27,9 @@ int MPIDI_CH3_Progress(int is_blocking)
     MPIDI_VC *vc_ptr;
     int num_bytes, error;
     shm_wait_t wait_result;
+#ifdef MPICH_DBG_OUTPUT
     unsigned register count;
+#endif
     int spin_count = 1;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
