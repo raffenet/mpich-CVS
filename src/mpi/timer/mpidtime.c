@@ -141,6 +141,10 @@ void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 #include <sys/time.h>
 double g_timer_frequency;
+double MPID_Wtick(void)
+{
+    return g_timer_frequency;
+}
 void MPID_Wtime_init()
 {
     unsigned long long t1, t2;
