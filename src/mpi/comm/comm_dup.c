@@ -87,6 +87,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        attribute functions */
     mpi_errno = MPIR_Comm_attr_dup( comm_ptr, &newcomm_ptr->attributes );
 
+    *newcomm = newcomm_ptr->handle;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);

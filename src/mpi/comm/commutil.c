@@ -64,25 +64,28 @@ int MPIR_Get_contextid( MPI_Comm comm )
     unsigned int local_mask[MAX_CONTEXT_MASK];
 
     if (initialize_context_mask) {
-	for (i=0; i<MAX_CONTEXT_MASK; i++) {
+	for (i=1; i<MAX_CONTEXT_MASK; i++) {
 	    context_mask[i] = 0xFFFFFFFF;
 	}
+	/* the first two values are already used */
+	context_mask[0] = 0x3FFFFFFF; 
 	initialize_context_mask = 0;
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
-    NMPI_Allreduce( local_mask, MPI_IN_PLACE, MAX_CONTEXT_MASK, MPI_INT, 
+    NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
 		    MPI_BAND, comm );
     
     for (i=0; i<MAX_CONTEXT_MASK; i++) {
 	if (local_mask[i]) {
 	    /* There is a bit set in this word */
-	    mask = 0xa0000000;
+	    mask = 0x80000000;
 	    /* This is a simple sequential search.  */
 	    for (j=0; j<32; j++) {
 		if (mask & local_mask[i]) {
 		    /* Found the leading set bit */
 		    context_mask[i] &= ~mask;
-		    context_id = 32 * i + j;
+		    context_id = 4 * (32 * i + j);
+		    return context_id;
 		}
 		mask >>= 1;
 	    }

@@ -22,11 +22,7 @@ void MTest_Finalize( int errs )
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
 /* Do this until allreduce is implemented */
-#ifdef FOO    
     MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
-#else
-    toterrs = errs;
-#endif
     if (rank == 0) {
 	if (toterrs) {
 	    printf( " Found %d errors\n", toterrs );
