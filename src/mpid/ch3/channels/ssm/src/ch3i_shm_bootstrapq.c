@@ -11,7 +11,7 @@ typedef struct mqshm_msg_t
 {
     int tag, next, length;
     unsigned char data[BOOTSTRAP_MAX_MSG_SIZE];
-} mqshm_node_t;
+} mqshm_msg_t;
 
 typedef struct mqshm_t
 {
@@ -153,7 +153,7 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     }
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_UNLINK);
-    return MPI_FAIL;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -186,7 +186,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
     {
 	MPIDU_Process_unlock(&q_ptr->lock);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
-	return MPI_FAIL;
+	return -1;
     }
     memcpy(q_ptr->msg[index].data, buffer, length);
     q_ptr->msg[index].tag = tag;
@@ -251,7 +251,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		    return mpi_errno;
 		}
 		/* copy the message */
-		memcpy(buffer, q_ptr->msg[index].buffer, q_ptr->msg[index].length);
+		memcpy(buffer, q_ptr->msg[index].data, q_ptr->msg[index].length);
 		*length = q_ptr->msg[index].length;
 		/* add the node to the free list */
 		q_ptr->msg[index].next = q_ptr->next_free;
