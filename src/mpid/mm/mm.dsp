@@ -646,7 +646,19 @@ SOURCE=..\common\datatype\gen_dataloop.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ib\ibimpl.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\include\mm_events.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\mm_ib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\mm_ib_pre.h
 # End Source File
 # Begin Source File
 
