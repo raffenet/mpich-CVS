@@ -6,7 +6,7 @@
 
 from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex, \
-                       SOL_SOCKET,SO_REUSEADDR
+                       SOL_SOCKET,SO_REUSEADDR, error
 from re         import sub, split
 from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
@@ -15,6 +15,7 @@ from syslog     import syslog, LOG_INFO, LOG_ERR
 from os         import getuid, read
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
+from errno      import EINTR
 
 global mpd_version
 mpd_version = (0,4,0,'June, 2004 release')    # major, minor, micro, special
@@ -287,10 +288,45 @@ def mpd_socketpair():
     socket1.listen(1)
     port1 = socket1.getsockname()[1]
     socket2 = socket(AF_INET,SOCK_STREAM)
-    socket2.connect(('localhost',port1))
-    (socket3,addr) = socket1.accept()
+    mpd_connect(socket2,'localhost',port1)
+    (socket3,addr) = mpd_accept(socket1)
     socket1.close()
     return (socket2,socket3)
+
+def mpd_connect(sock,host,port):
+    done = 0
+    while not done:
+        try:
+            sock.connect((host,port))
+            done = 1
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
+                continue
+            else:
+                mpd_print(1, 'connect error: %s' % strerror(data[0]))
+            return 0
+        except Exception, data:
+            mpd_print(1, 'other error after connect %s :%s:' % ( data.__class__, data) )
+            return 0
+    return 1
+
+def mpd_accept(sock):
+    rv = (None,None)
+    done = 0
+    while not done:
+        try:
+            rv = sock.accept()    # rv = (newsock,addr)
+            done = 1
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
+                continue
+            else:
+                mpd_print(1, 'accept error: %s' % strerror(data[0]))
+            return 0
+        except Exception, data:
+            mpd_print(1, 'other error after accept %s :%s:' % ( data.__class__, data) )
+            return 0
+    return rv
 
 def mpd_get_my_username():
     return getpwuid(getuid())[0]    #### instead of environ['USER']
