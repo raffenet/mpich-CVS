@@ -276,6 +276,140 @@ static int BlockFree(BlockAllocator p, void *pBlock)
 
 /* utility socket functions */
 
+int GetLastSockError()
+{
+    int error;
+
+    error = WSAGetLastError();
+    switch (error)
+    {
+    case WSAEINTR:
+	break;
+    case WSAEACCES:
+	break;
+    case WSAEFAULT:
+	break;
+    case WSAEINVAL:
+	break;
+    case WSAEMFILE:
+	break;
+    case WSAEWOULDBLOCK:
+	break;
+    case WSAEINPROGRESS:
+	break;
+    case WSAEALREADY:
+	break;
+    case WSAENOTSOCK:
+	return SOCK_ERR_BAD_SOCK;
+	break;
+    case WSAEDESTADDRREQ:
+	break;
+    case WSAEMSGSIZE:
+	break;
+    case WSAEPROTOTYPE:
+	break;
+    case WSAENOPROTOOPT:
+	break;
+    case WSAEPROTONOSUPPORT:
+	break;
+    case WSAESOCKTNOSUPPORT:
+	break;
+    case WSAEOPNOTSUPP:
+	break;
+    case WSAEPFNOSUPPORT:
+	break;
+    case WSAEAFNOSUPPORT:
+	break;
+    case WSAEADDRINUSE:
+	break;
+    case WSAEADDRNOTAVAIL:
+	break;
+    case WSAENETDOWN:
+	break;
+    case WSAENETUNREACH:
+	break;
+    case WSAENETRESET:
+	break;
+    case WSAECONNABORTED:
+	return SOCK_ERR_CONN_FAILED;
+	break;
+    case WSAECONNRESET:
+	return SOCK_ERR_CONN_FAILED;
+	/*return SOCK_EOF;*/
+	break;
+    case WSAENOBUFS:
+	return SOCK_ERR_BAD_BUFFER;
+	break;
+    case WSAEISCONN:
+	break;
+    case WSAENOTCONN:
+	break;
+    case WSAESHUTDOWN:
+	break;
+    case WSAETIMEDOUT:
+	return SOCK_ERR_TIMEOUT;
+	break;
+    case WSAECONNREFUSED:
+	return SOCK_ERR_CONN_REFUSED;
+	break;
+    case WSAEHOSTDOWN:
+	break;
+    case WSAEHOSTUNREACH:
+	break;
+    case WSAEPROCLIM:
+	break;
+    case WSASYSNOTREADY:
+	break;
+    case WSAVERNOTSUPPORTED:
+	break;
+    case WSANOTINITIALISED:
+	break;
+    case WSAEDISCON:
+	break;
+    case WSATYPE_NOT_FOUND:
+	break;
+    case WSAHOST_NOT_FOUND:
+	return SOCK_ERR_HOST_LOOKUP;
+	break;
+    case WSATRY_AGAIN:
+	break;
+    case WSANO_RECOVERY:
+	break;
+    case WSANO_DATA:
+	break;
+    case WSA_INVALID_HANDLE:
+	return SOCK_ERR_BAD_SOCK;
+	break;
+    case WSA_INVALID_PARAMETER:
+	break;
+    case WSA_IO_INCOMPLETE:
+	break;
+    case WSA_IO_PENDING:
+	break;
+    case WSA_NOT_ENOUGH_MEMORY:
+	return SOCK_ERR_NOMEM;
+	break;
+    case WSA_OPERATION_ABORTED:
+	break;
+	/*
+    case WSAINVALIDPROCTABLE:
+	break;
+	*/
+	/*
+    case WSAINVALIDPROVIDER:
+	break;
+	*/
+	/*
+    case WSAPROVIDERFAILEDINIT:
+	break;
+	*/
+    case WSASYSCALLFAILURE:
+	break;
+    }
+    /* save error */
+    return SOCK_ERR_OS_SPECIFIC;
+}
+
 static int easy_create(SOCKET *sock, int port, unsigned long addr)
 {
     struct linger linger;
@@ -526,6 +660,7 @@ int sock_listen(sock_set_t set, void * user_ptr, int *port, sock_t *listener)
 
 int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, sock_t *connected)
 {
+    int ret_val;
     struct hostent *lphost;
     struct sockaddr_in sockAddr;
     sock_state_t *connect_state;
@@ -549,8 +684,10 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
 	    sockAddr.sin_addr.s_addr = ((struct in_addr *)lphost->h_addr)->s_addr;
 	else
 	{
+	    ret_val = GetLastSockError();
+	    err_printf("gethostbyname failed, error %d\n", WSAGetLastError());
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
-	    return SOCKET_ERROR;
+	    return ret_val;
 	}
     }
     
@@ -559,15 +696,19 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     /* create a socket */
     if (easy_create(&connect_state->sock, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
+	ret_val = GetLastSockError();
+	err_printf("easy_create failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
-	return SOCK_FAIL;
+	return ret_val;
     }
 
     /* connect */
     if (connect(connect_state->sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
+	ret_val = GetLastSockError();
+	err_printf("connect failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
-	return SOCK_FAIL;
+	return ret_val;
     }
 
     connect_state->user_ptr = user_ptr;
@@ -578,8 +719,10 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     /* associate the socket with the completion port */
     if (CreateIoCompletionPort((HANDLE)connect_state->sock, set, (ULONG_PTR)connect_state, g_num_cp_threads) == NULL)
     {
+	ret_val = GetLastSockError();
+	err_printf("CreateIOCompletionPort failed, error %d\n", GetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
-	return SOCK_FAIL;
+	return ret_val;
     }
 
     connect_state->pending_operations++;
@@ -711,7 +854,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		if (sock->closing && sock->pending_operations == 0)
 		{
 		    out->num_bytes = 0;
-		    out->error = 0;
+		    out->error = SOCK_SUCCESS;
 		    out->op_type = SOCK_OP_CLOSE;
 		    out->user_ptr = sock->user_ptr;
 		    /*BlockFree(g_sock_allocator, sock);*/
@@ -741,6 +884,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			}
 			if (sock->read.iovlen == 0)
 			{
+			    printf("sock_wait readv %d bytes\n", sock->read.total);fflush(stdout);
+			    out->error = SOCK_SUCCESS;
 			    out->num_bytes = sock->read.total;
 			    out->op_type = SOCK_OP_READ;
 			    out->user_ptr = sock->user_ptr;
@@ -767,6 +912,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			sock->read.bufflen -= num_bytes;
 			if (sock->read.bufflen == 0)
 			{
+			    printf("sock_wait read %d bytes\n", sock->read.total);fflush(stdout);
+			    out->error = SOCK_SUCCESS;
 			    out->num_bytes = sock->read.total;
 			    out->op_type = SOCK_OP_READ;
 			    out->user_ptr = sock->user_ptr;
@@ -795,7 +942,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			/* insert code here to determine that the connect succeeded */
 			/* ... */
 			sock->state ^= SOCK_CONNECTING; /* remove the SOCK_CONNECTING bit */
-			
+
+			out->error = SOCK_SUCCESS;
 			out->op_type = SOCK_OP_CONNECT;
 			out->user_ptr = sock->user_ptr;
 			sock->pending_operations--;
@@ -837,6 +985,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    }
 			    if (sock->write.iovlen == 0)
 			    {
+				printf("sock_wait writev %d bytes\n", sock->write.total);fflush(stdout);
+				out->error = SOCK_SUCCESS;
 				out->num_bytes = sock->write.total;
 				out->op_type = SOCK_OP_WRITE;
 				out->user_ptr = sock->user_ptr;
@@ -864,6 +1014,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    sock->write.bufflen -= num_bytes;
 			    if (sock->write.bufflen == 0)
 			    {
+				printf("sock_wait write %d bytes\n", sock->write.total);fflush(stdout);
+				out->error = SOCK_SUCCESS;
 				out->num_bytes = sock->write.total;
 				out->op_type = SOCK_OP_WRITE;
 				out->user_ptr = sock->user_ptr;
@@ -895,6 +1047,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    else if (sock->type == SOCK_LISTENER)
 	    {
 		sock->state |= SOCK_ACCEPTED;
+		out->error = SOCK_SUCCESS;
 		out->num_bytes = num_bytes;
 		out->op_type = SOCK_OP_ACCEPT;
 		out->user_ptr = sock->user_ptr;
@@ -914,7 +1067,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    if (error == WAIT_TIMEOUT)
 	    {
 		out->op_type = SOCK_OP_TIMEOUT;
-		out->error = SOCK_ERR_TIMEOUT;
+		/*out->error = SOCK_ERR_TIMEOUT;*/
+		out->error = SOCK_SUCCESS;
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		return SOCK_SUCCESS;
 	    }
