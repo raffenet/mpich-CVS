@@ -4,3 +4,4 @@ getextent 2
 setinfo 4
 setviewcur 4
 i_noncontig 2
+async 4
