@@ -308,7 +308,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 
         MPIR_Process.comm_parent = intercomm;
-
+	MPIU_Strncpy(intercomm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
+	
         /* TODO: Check that this intercommunicator gets freed in
            MPI_Finalize if not already freed.  */
     }
