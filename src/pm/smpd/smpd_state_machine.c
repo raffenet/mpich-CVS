@@ -296,7 +296,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    /* when does a forming context get assinged it's global place?  At creation?  At connection? */
 		    if (smpd_process.left_context == smpd_process.left_context)
 			smpd_process.left_context = NULL;
-		    if (context->connect_to)
+		    if (smpd_process.do_console)
+			result = smpd_post_abort_command("unable to connect to %s", smpd_process.console_host);
+		    else if (context->connect_to && context->connect_to->host[0] != '\0')
 			result = smpd_post_abort_command("unable to connect to %s", context->connect_to->host);
 		    else
 		    {
@@ -394,7 +396,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
 		{
 		    char *host_ptr;
-		    if (context->connect_to)
+		    if (smpd_process.do_console)
+			host_ptr = smpd_process.console_host;
+		    else if (context->connect_to && context->connect_to->host[0] != '\0')
 			host_ptr = context->connect_to->host;
 		    else if (context->host[0] != '\0')
 			host_ptr = context->host;
