@@ -9,6 +9,7 @@ NOPROFILE   = @NOPROFILE@
 MPI         = @MPI@
 PREFIX      = @PREFIX@
 FROM_MPICH  = @FROM_MPICH@
+FROM_MPICH2  = @FROM_MPICH2@
 BUILD_MPI_INFO = @BUILD_MPI_INFO@
 BUILD_MPI_ARRAY = @BUILD_MPI_ARRAY@
 DIRS        = mpi-io adio/common
@@ -29,7 +30,7 @@ mpio:
         fi;\
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
-	@if test "$(FROM_MPICH)" = 0 ; then \
+	@if test "$(FROM_MPICH)" = 0 -a "$(FROM_MPICH2)" = 0 ; then \
            echo " "; \
            echo "Completed build of ROMIO. Check the output for errors."; \
            echo " " ;\
@@ -75,7 +76,7 @@ clean:
          echo " ";
 
 mpiolib:
-	@if test "$(FROM_MPICH)" = 0 ; then \
+	@if test "$(FROM_MPICH)" = 0 -a "$(FROM_MPICH2)" = 0 ; then \
             echo " " ;\
             echo "deleting previously built library if it exists" ;\
             rm -f $(LIBNAME) ;\
