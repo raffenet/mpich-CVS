@@ -86,6 +86,14 @@ for pypgm in $PY23 $PY2 $PY22 $PY ; do \
         AC_MSG_RESULT(no)
 	continue
     fi
+
+    AC_MSG_CHECKING([that the xml minidom module works])
+    if $pypgm -c 'from xml.dom.minidom import parseString; parseString("<x>x</x>")'  >/dev/null 2>&1 ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no)
+	continue
+    fi
     PYTHON="$pypgm"
     break
 done
