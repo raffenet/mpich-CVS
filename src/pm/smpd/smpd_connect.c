@@ -116,7 +116,9 @@ smpd_global_t smpd_process =
 #endif
       SMPD_FALSE,       /* service_stop            */
       SMPD_FALSE,       /* noprompt                */
-      ""                /* smpd_filename           */
+      "",               /* smpd_filename           */
+      SMPD_FALSE,       /* stdin_toall             */
+      SMPD_FALSE        /* stdin_redirecting       */
     };
 
 int smpd_post_abort_command(char *fmt, ...)

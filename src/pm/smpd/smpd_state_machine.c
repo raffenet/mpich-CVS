@@ -476,80 +476,145 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    break;
 		}
 		smpd_dbg_printf("read from stdin\n");
-		if (context->read_cmd.cmd[context->read_cmd.stdin_read_offset] == '\n')
+		if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN)
 		{
-		    context->read_cmd.cmd[context->read_cmd.stdin_read_offset] = '\0'; /* remove the \n character */
-		    result = smpd_create_command("", -1, -1, SMPD_FALSE, &cmd_ptr);
-		    if (result != SMPD_SUCCESS)
 		    {
-			smpd_err_printf("unable to create a command structure for the stdin command.\n");
-			smpd_exit_fn("smpd_enter_at_state");
-			return SMPD_FAIL;
-		    }
-		    smpd_init_command(cmd_ptr);
-		    strcpy(cmd_ptr->cmd, context->read_cmd.cmd);
-		    if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
-		    {
-			smpd_add_command_int_arg(cmd_ptr, "src", 0);
-		    }
-		    if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
-		    {
-			smpd_add_command_int_arg(cmd_ptr, "dest", 1);
-		    }
-		    result = smpd_parse_command(cmd_ptr);
-		    if (result != SMPD_SUCCESS)
-		    {
-			smpd_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", context->read_cmd.cmd);
-		    }
-		    else
-		    {
-			if (strcmp(cmd_ptr->cmd_str, "connect") == 0)
-			{
-			    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
-			    {
-				smpd_dbg_printf("adding tag %d to connect command.\n", smpd_process.cur_tag);
-				smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
-				cmd_ptr->tag = smpd_process.cur_tag;
-				smpd_process.cur_tag++;
-			    }
-			    cmd_ptr->wait = SMPD_TRUE;
-			}
-			if (strcmp(cmd_ptr->cmd_str, "set") == 0 || strcmp(cmd_ptr->cmd_str, "delete") == 0 ||
-			    strcmp(cmd_ptr->cmd_str, "stat") == 0)
-			{
-			    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
-			    {
-				smpd_dbg_printf("adding tag %d to %s command.\n", smpd_process.cur_tag, cmd_ptr->cmd_str);
-				smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
-				cmd_ptr->tag = smpd_process.cur_tag;
-				smpd_process.cur_tag++;
-			    }
-			    cmd_ptr->wait = SMPD_TRUE;
-			}
+			sock_size_t num_read;
+			char buffer[SMPD_MAX_CMD_LENGTH];
+			int num_encoded;
 
-			smpd_dbg_printf("command read from stdin, forwarding to left_child smpd\n");
-			result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+			smpd_dbg_printf("read from %s\n", smpd_get_context_str(context));
+
+			/* one byte read, attempt to read up to the buffer size */
+			result = sock_read(context->sock, &context->read_cmd.cmd[1], SMPD_STDIN_PACKET_SIZE-1, &num_read);
+			if (result != SOCK_SUCCESS)
+			{
+			    num_read = 0;
+			    smpd_dbg_printf("sock_read(%d) failed (%s), assuming %s is closed.\n",
+				sock_getid(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
+			}
+			smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
+			smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
+			buffer[num_encoded*2] = '\0';
+			/*smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);*/
+
+			/* create an stdin command */
+			result = smpd_create_command(
+			    "stdin",
+			    0, 1 /* input always goes to node 1? */, SMPD_FALSE, &cmd_ptr);
 			if (result != SMPD_SUCCESS)
 			{
-			    smpd_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
-			    smpd_free_command(cmd_ptr);
+			    smpd_err_printf("unable to create an stdin command.\n");
 			    smpd_exit_fn("smpd_enter_at_state");
 			    return SMPD_FAIL;
 			}
-			smpd_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
+			result = smpd_add_command_arg(cmd_ptr, "data", buffer);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to add the data to the stdin command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+
+			/* send the stdout command */
+			result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to post a write of the stdin command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
 		    }
-		    context->read_cmd.stdin_read_offset = 0;
 		}
 		else
 		{
-		    context->read_cmd.stdin_read_offset++;
+		    if (context->read_cmd.stdin_read_offset == SMPD_STDIN_PACKET_SIZE || context->read_cmd.cmd[context->read_cmd.stdin_read_offset] == '\n')
+		    {
+			if (context->read_cmd.cmd[context->read_cmd.stdin_read_offset] != '\n')
+			    smpd_err_printf("truncated command.\n");
+			context->read_cmd.cmd[context->read_cmd.stdin_read_offset] = '\0'; /* remove the \n character */
+			result = smpd_create_command("", -1, -1, SMPD_FALSE, &cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to create a command structure for the stdin command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			smpd_init_command(cmd_ptr);
+			strcpy(cmd_ptr->cmd, context->read_cmd.cmd);
+			if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
+			{
+			    smpd_add_command_int_arg(cmd_ptr, "src", 0);
+			}
+			if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
+			{
+			    smpd_add_command_int_arg(cmd_ptr, "dest", 1);
+			}
+			result = smpd_parse_command(cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", context->read_cmd.cmd);
+			}
+			else
+			{
+			    if (strcmp(cmd_ptr->cmd_str, "connect") == 0)
+			    {
+				if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
+				{
+				    smpd_dbg_printf("adding tag %d to connect command.\n", smpd_process.cur_tag);
+				    smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
+				    cmd_ptr->tag = smpd_process.cur_tag;
+				    smpd_process.cur_tag++;
+				}
+				cmd_ptr->wait = SMPD_TRUE;
+			    }
+			    if (strcmp(cmd_ptr->cmd_str, "set") == 0 || strcmp(cmd_ptr->cmd_str, "delete") == 0 ||
+				strcmp(cmd_ptr->cmd_str, "stat") == 0)
+			    {
+				if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
+				{
+				    smpd_dbg_printf("adding tag %d to %s command.\n", smpd_process.cur_tag, cmd_ptr->cmd_str);
+				    smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
+				    cmd_ptr->tag = smpd_process.cur_tag;
+				    smpd_process.cur_tag++;
+				}
+				cmd_ptr->wait = SMPD_TRUE;
+			    }
+
+			    smpd_dbg_printf("command read from stdin, forwarding to left_child smpd\n");
+			    result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+			    if (result != SMPD_SUCCESS)
+			    {
+				smpd_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
+				smpd_free_command(cmd_ptr);
+				smpd_exit_fn("smpd_enter_at_state");
+				return SMPD_FAIL;
+			    }
+			    smpd_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
+			}
+			context->read_cmd.stdin_read_offset = 0;
+		    }
+		    else
+		    {
+			context->read_cmd.stdin_read_offset++;
+		    }
 		}
 		result = sock_post_read(context->sock, &context->read_cmd.cmd[context->read_cmd.stdin_read_offset], 1, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read on the stdin sock, error:\n%s\n", get_sock_error_string(result));
-		    smpd_exit_fn("smpd_enter_at_state");
-		    return SMPD_FAIL;
+		    if (result != SOCK_EOF)
+		    {
+			smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
+			    get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+		    }
+		    context->state = SMPD_CLOSING;
+		    result = sock_post_close(context->sock);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
 		}
 		break;
 	    case SMPD_READING_STDOUT:
@@ -2019,7 +2084,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    {
 			smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
 			    get_sock_error_string(result));
-			smpd_exit_fn("mp_console");
+			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
 		    break;

@@ -203,6 +203,14 @@ int smpd_handle_result(smpd_context_t *context)
     int process_id;
     smpd_context_t *pmi_context;
     smpd_process_t *piter;
+    int rank;
+    sock_t insock;
+    SOCK_NATIVE_FD stdin_fd;
+    smpd_context_t *context_in;
+#ifdef HAVE_WINDOWS_H
+    DWORD dwThreadID;
+    SOCKET hWrite;
+#endif
 
     smpd_enter_fn("handle_result");
 
@@ -280,6 +288,76 @@ int smpd_handle_result(smpd_context_t *context)
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
 			smpd_dbg_printf("successfully launched: '%s'\n", iter->cmd);
+			if (!smpd_process.stdin_redirecting)
+			{
+			    rank = 0;
+			    smpd_get_int_arg(iter->cmd, "i", &rank);
+			    if (rank == 0)
+			    {
+				smpd_dbg_printf("root process launched, starting stdin redirection.\n");
+				/* get a handle to stdin */
+#ifdef HAVE_WINDOWS_H
+				result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
+				if (result)
+				{
+				    smpd_err_printf("Unable to make a local socket loop to forward stdin.\n");
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+#else
+				stdin_fd = fileno(stdin);
+#endif
+
+				/* convert the native handle to a sock */
+				result = sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
+				if (result != SOCK_SUCCESS)
+				{
+				    smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+				/* create a context for reading from stdin */
+				result = smpd_create_context(SMPD_CONTEXT_MPIEXEC_STDIN, smpd_process.set, insock, -1, &context_in);
+				if (result != SMPD_SUCCESS)
+				{
+				    smpd_err_printf("unable to create a context for stdin.\n");
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+				sock_set_user_ptr(insock, context_in);
+
+#ifdef HAVE_WINDOWS_H
+				/* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
+				   stdin to a sock */
+				smpd_process.hCloseStdinThreadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+				if (smpd_process.hCloseStdinThreadEvent == NULL)
+				{
+				    smpd_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+				smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+				if (smpd_process.hStdinThread == NULL)
+				{
+				    smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+#endif
+				/* set this variable first before posting the first read to avoid a race condition? */
+				smpd_process.stdin_redirecting = SMPD_TRUE;
+				/* post a read for a user command from stdin */
+				context_in->read_state = SMPD_READING_STDIN;
+				result = sock_post_read(insock, context_in->read_cmd.cmd, 1, NULL);
+				if (result != SOCK_SUCCESS)
+				{
+				    smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
+					get_sock_error_string(result));
+				    smpd_exit_fn("smpd_handle_result");
+				    return SMPD_FAIL;
+				}
+			    }
+			}
 		    }
 		    else
 		    {

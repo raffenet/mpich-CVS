@@ -100,6 +100,8 @@ char * smpd_get_context_str(smpd_context_t *context)
 	return "invalid";
     case SMPD_CONTEXT_STDIN:
 	return "stdin";
+    case SMPD_CONTEXT_MPIEXEC_STDIN:
+	return "mpi_stdin";
     case SMPD_CONTEXT_STDOUT:
 	return "stdout";
     case SMPD_CONTEXT_STDERR:

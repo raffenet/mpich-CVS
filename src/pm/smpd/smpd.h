@@ -66,6 +66,7 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_PWD_REQUEST_LENGTH       100
 #define SMPD_MAX_PORT_STR_LENGTH           20
 #define SMPD_MAX_TO_STRING_INDENT          20
+#define SMPD_STDIN_PACKET_SIZE           2048
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
 #define SMPD_SALT_VALUE                   "14"
 #define SMPD_SESSION_REQUEST_LEN          100
@@ -177,6 +178,7 @@ typedef enum smpd_context_type_t
 {
     SMPD_CONTEXT_INVALID,
     SMPD_CONTEXT_STDIN,
+    SMPD_CONTEXT_MPIEXEC_STDIN,
     SMPD_CONTEXT_STDOUT,
     SMPD_CONTEXT_STDERR,
     SMPD_CONTEXT_PARENT,
@@ -413,6 +415,7 @@ typedef struct smpd_global_t
     SMPD_BOOL service_stop;
     SMPD_BOOL noprompt;
     char smpd_filename[SMPD_MAX_FILENAME];
+    SMPD_BOOL stdin_toall, stdin_redirecting;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
