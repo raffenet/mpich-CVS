@@ -19,6 +19,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int found;
     int cur_rank;
 
+    mp_dbg_printf("entering mp_parse_command_args.\n");
+
     /* check for console option */
     if (smpd_get_opt_string(argcp, argvp, "-console", g_pszConsoleHost, SMPD_MAX_HOST_LENGTH))
     {
@@ -100,6 +102,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    if (node == NULL)
 	    {
 		mp_err_printf("malloc failed to allocate a host node structure of size %d\n", sizeof(mp_host_node_t));
+		mp_dbg_printf("exiting mp_parse_command_args.\n");
 		return SMPD_FAIL;
 	    }
 	    strcpy(node->host, host);
@@ -110,6 +113,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
     }
 
+    mp_dbg_printf("exiting mp_parse_command_args.\n");
     return SMPD_SUCCESS;
 }
 
@@ -119,11 +123,14 @@ int main(int argc, char* argv[])
     int port = SMPD_LISTENER_PORT;
     mp_host_node_t *hnode;
 
+    mp_dbg_printf("entering main.\n");
+
     /* initialize */
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
 	mp_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	mp_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -131,6 +138,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("smpd_init_process failed.\n");
+	mp_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -139,6 +147,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to parse the command arguments.\n");
+	mp_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -167,7 +176,6 @@ int main(int argc, char* argv[])
     {
 	mp_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
     }
-    mp_dbg_printf("exiting\n");
 
 #ifdef HAVE_WINDOWS_H
     if (g_hCloseStdinThreadEvent)
@@ -180,6 +188,7 @@ int main(int argc, char* argv[])
     if (g_hCloseStdinThreadEvent)
 	CloseHandle(g_hCloseStdinThreadEvent);
 #endif
+    mp_dbg_printf("exiting main.\n");
     smpd_exit(0);
 }
 

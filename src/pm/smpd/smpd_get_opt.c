@@ -96,6 +96,18 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
     return SMPD_TRUE;
 }
 
+int smpd_get_int_arg(char *str, char *flag, int *val_ptr)
+{
+    char int_str[12];
+
+    if (smpd_get_string_arg(str, flag, int_str, 12))
+    {
+	*val_ptr = atoi(int_str);
+	return SMPD_TRUE;
+    }
+    return SMPD_FALSE;
+}
+
 int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
 {
     int num_chars;

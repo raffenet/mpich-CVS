@@ -8,16 +8,22 @@
 
 int smpd_set_user_data(char *key, char *value)
 {
+    smpd_dbg_printf("entering smpd_set_user_data.\n");
+    smpd_dbg_printf("exiting smpd_set_user_data.\n");
     return SMPD_FAIL;
 }
 
 int smpd_set_smpd_data(char *key, char *value)
 {
+    smpd_dbg_printf("entering smpd_set_smpd_data.\n");
+    smpd_dbg_printf("exiting smpd_set_smpd_data.\n");
     return SMPD_FAIL;
 }
 
 int smpd_get_user_data_default(char *key, char *value, int value_len)
 {
+    smpd_dbg_printf("entering smpd_get_user_data_default.\n");
+    smpd_dbg_printf("exiting smpd_get_user_data_default.\n");
     return SMPD_FAIL;
 }
 
@@ -27,6 +33,8 @@ int smpd_get_user_data(char *key, char *value, int value_len)
     HKEY tkey;
     DWORD len, result;
 
+    smpd_dbg_printf("entering smpd_get_user_data.\n");
+
     result = RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
 	0, 
 	KEY_READ,
@@ -34,6 +42,7 @@ int smpd_get_user_data(char *key, char *value, int value_len)
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_dbg_printf("exiting smpd_get_user_data.\n");
 	return SMPD_FAIL;
     }
 
@@ -43,18 +52,25 @@ int smpd_get_user_data(char *key, char *value, int value_len)
     {
 	smpd_err_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
 	RegCloseKey(tkey);
+	smpd_dbg_printf("exiting smpd_get_user_data.\n");
 	return SMPD_FAIL;
     }
 
     RegCloseKey(tkey);
+    smpd_dbg_printf("exiting smpd_get_user_data.\n");
     return SMPD_SUCCESS;
 #else
-    return smpd_get_user_data_default(key, value, value_len);
+    int result;
+    smpd_dbg_printf("entering smpd_get_user_data.\n");
+    result = smpd_get_user_data_default(key, value, value_len);
+    smpd_dbg_printf("exiting smpd_get_user_data.\n");
+    return result;
 #endif
 }
 
 int smpd_get_smpd_data_default(char *key, char *value, int value_len)
 {
+    smpd_dbg_printf("entering smpd_get_smpd_data_default.\n");
     if (strcmp(key, "phrase") == 0)
     {
 	/*smpd_dbg_printf("returning default phrase: %s\n", SMPD_DEFAULT_PASSPHRASE);*/
@@ -68,8 +84,10 @@ int smpd_get_smpd_data_default(char *key, char *value, int value_len)
     }
     else
     {
+	smpd_dbg_printf("exiting smpd_get_smpd_data_default.\n");
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("exiting smpd_get_smpd_data_default.\n");
     return SMPD_SUCCESS;
 }
 
@@ -78,6 +96,8 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
+
+    smpd_dbg_printf("entering smpd_get_smpd_data.\n");
 
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
 	0, 
@@ -88,6 +108,7 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("Unable to get the data for the key '%s'\n", key);
+	    smpd_dbg_printf("exiting smpd_get_smpd_data.\n");
 	    return SMPD_FAIL;
 	}
 	return SMPD_SUCCESS;
@@ -101,14 +122,21 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("Unable to get the data for the key '%s'\n", key);
+	    smpd_dbg_printf("exiting smpd_get_smpd_data.\n");
 	    return SMPD_FAIL;
 	}
+	smpd_dbg_printf("exiting smpd_get_smpd_data.\n");
 	return SMPD_SUCCESS;
     }
 
     RegCloseKey(tkey);
+    smpd_dbg_printf("exiting smpd_get_smpd_data.\n");
     return SMPD_SUCCESS;
 #else
-    return smpd_get_smpd_data_default(key, value, value_len);
+    int result;
+    smpd_dbg_printf("entering smpd_get_smpd_data.\n");
+    result = smpd_get_smpd_data_default(key, value, value_len);
+    smpd_dbg_printf("exiting smpd_get_smpd_data.\n");
+    return result;
 #endif
 }

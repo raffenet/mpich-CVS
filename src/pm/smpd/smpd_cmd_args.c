@@ -34,17 +34,21 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     DWORD num_written, num_read;
 #endif
 
+    smpd_dbg_printf("entering smpd_parse_command_args.\n");
+
 #ifdef HAVE_WINDOWS_H
     if (smpd_get_opt(argcp, argvp, "-mgr"))
     {
 	if (!smpd_get_opt_string(argcp, argvp, "-read", read_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a read pipe handle.\n");
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (!smpd_get_opt_string(argcp, argvp, "-write", write_handle_str, 20))
 	{
 	    smpd_err_printf("manager started without a write pipe handle.\n");
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	hRead = smpd_decode_handle(read_handle_str);
@@ -56,12 +60,14 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_create_set(listener) failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	result = sock_create_set(&session_set);
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_create_set(session) failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	port = 0;
@@ -69,6 +75,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_listen failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("smpd manager listening on port %d\n", port);
@@ -79,44 +86,52 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (!WriteFile(hWrite, str, 20, &num_written, NULL))
 	{
 	    smpd_err_printf("WriteFile failed, error %d\n", GetLastError());
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	CloseHandle(hWrite);
 	if (num_written != 20)
 	{
 	    smpd_err_printf("wrote only %d bytes of 20\n", num_written);
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("manager reading account and password from smpd.\n");
 	if (!ReadFile(hRead, smpd_process.UserAccount, 100, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (num_read != 100)
 	{
 	    smpd_err_printf("read only %d bytes of 100\n", num_read);
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (!ReadFile(hRead, smpd_process.UserPassword, 100, &num_read, NULL))
 	{
 	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (num_read != 100)
 	{
 	    smpd_err_printf("read only %d bytes of 100\n", num_read);
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock failure waiting for re-connection, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (event.op_type != SOCK_OP_ACCEPT)
 	{
 	    smpd_err_printf("unexpected sock operation while waiting for re-connection: op_type = %d\n", event.op_type);
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("accepting reconnection.\n");
@@ -124,6 +139,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_accept failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("accepted sock %d\n", sock_getid(session_sock));
@@ -133,17 +149,20 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock_post_close(listener) failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("sock failure waiting for listener to close, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	if (event.op_type != SOCK_OP_CLOSE)
 	{
 	    smpd_err_printf("unexpected sock operation while waiting for listener to close: op_type = %d\n", event.op_type);
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	*/
@@ -151,6 +170,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (result != SOCK_SUCCESS)
 	{
 	    smpd_err_printf("Unable to destroy the listener set, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
 	    return SMPD_FAIL;
 	}
 	result = smpd_session(session_set, session_sock);
@@ -162,9 +182,11 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	{
 	    smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
 	}
+	smpd_dbg_printf("exiting smpd_parse_command_args (ExitProcess).\n");
 	ExitProcess(0);
     }
 #endif
 
+    smpd_dbg_printf("exiting smpd_parse_command_args.\n");
     return SMPD_SUCCESS;
 }

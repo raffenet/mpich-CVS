@@ -16,6 +16,11 @@
 #include <stdlib.h>
 #endif
 
+#ifdef HAVE_WINDOWS_H
+static BOOL bInitialized = FALSE;
+static HANDLE hOutputMutex = NULL;
+#endif
+
 char * get_sock_error_string(int error)
 {
     static char str[256];
@@ -56,6 +61,15 @@ int smpd_err_printf(char *str, ...)
     va_list list;
     char *format_str;
 
+#ifdef HAVE_WINDOWS_H
+    if (!bInitialized)
+    {
+	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	bInitialized = TRUE;
+    }
+    WaitForSingleObject(hOutputMutex, INFINITE);
+#endif
+
     /* prepend output with the process tree node id */
     fprintf(stderr, "[%d]", smpd_process.id);
 
@@ -67,6 +81,9 @@ int smpd_err_printf(char *str, ...)
 
     fflush(stderr);
 
+#ifdef HAVE_WINDOWS_H
+    ReleaseMutex(hOutputMutex);
+#endif
     return n;
 }
 
@@ -75,6 +92,15 @@ int smpd_dbg_printf(char *str, ...)
     int n;
     va_list list;
     char *format_str;
+
+#ifdef HAVE_WINDOWS_H
+    if (!bInitialized)
+    {
+	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	bInitialized = TRUE;
+    }
+    WaitForSingleObject(hOutputMutex, INFINITE);
+#endif
 
     /* prepend output with the tree node id */
     printf("[%d]", smpd_process.id);
@@ -86,6 +112,10 @@ int smpd_dbg_printf(char *str, ...)
     va_end(list);
 
     fflush(stdout);
+
+#ifdef HAVE_WINDOWS_H
+    ReleaseMutex(hOutputMutex);
+#endif
 
     return n;
 }

@@ -18,13 +18,14 @@ int main(int argc, char* argv[])
     sock_event_t event;
     int port = SMPD_LISTENER_PORT;
 
-    smpd_dbg_printf("smpd.exe entering main()\n");
+    smpd_dbg_printf("entering main.\n");
 
     /* initialization */
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -32,6 +33,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_init_process failed.\n");
+	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -40,6 +42,7 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to parse the command arguments.\n");
+	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
 
@@ -51,12 +54,14 @@ int main(int argc, char* argv[])
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
     result = sock_listen(set, NULL, &port, &listener); 
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_listen failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
     smpd_dbg_printf("smpd listening on port %d\n", port);
@@ -77,6 +82,7 @@ int main(int argc, char* argv[])
 		result = event.error;
 	    smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
 	    sock_finalize();
+	    smpd_dbg_printf("exiting main.\n");
 	    return result;
 	}
 	switch (event.op_type)
@@ -151,6 +157,7 @@ int main(int argc, char* argv[])
     {
 	smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
     }
+    smpd_dbg_printf("exiting main.\n");
     return 0;
 }
 

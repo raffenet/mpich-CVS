@@ -171,7 +171,7 @@ HANDLE GetCachedUser(char *account, char *domain, char *password)
 			GetSystemTime(&now);
 			if (now.wDay != pIter->timestamp.wDay)
 			{
-			    // throw away cached handles not created on the same day
+			    /* throw away cached handles not created on the same day */
 			    RemoveCachedUser(pIter->hUser);
 			    return INVALID_HANDLE_VALUE;
 			}
@@ -199,12 +199,12 @@ HANDLE GetUserHandle(char *account, char *domain, char *password, int *pError)
     int error;
     int num_tries = 3;
 
-    // attempt to get a cached handle
+    /* attempt to get a cached handle */
     hUser = GetCachedUser(account, domain, password);
     if (hUser != INVALID_HANDLE_VALUE)
 	return hUser;
 
-    // logon the user
+    /* logon the user */
     while (!LogonUser(
 	account,
 	domain, 
@@ -232,7 +232,7 @@ HANDLE GetUserHandle(char *account, char *domain, char *password, int *pError)
 	}
     }
 
-    // cache the user handle
+    /* cache the user handle */
     CacheUserHandle(account, domain, password, hUser);
 
     return hUser;
@@ -244,7 +244,7 @@ HANDLE GetUserHandleNoCache(char *account, char *domain, char *password, int *pE
     int error;
     int num_tries = 3;
 
-    // logon the user
+    /* logon the user */
     while (!LogonUser(
 	account,
 	domain, 
@@ -272,7 +272,7 @@ HANDLE GetUserHandleNoCache(char *account, char *domain, char *password, int *pE
 	}
     }
 
-    // cache the user handle
+    /* cache the user handle */
     CacheUserHandle(account, domain, password, hUser);
 
     return hUser;
@@ -286,7 +286,9 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
     int error;
     int num_tries = 3;
 
-    // logon the user
+    smpd_dbg_printf("entering smpd_get_user_handle.\n");
+
+    /* logon the user */
     while (!LogonUser(
 	account,
 	domain,
@@ -303,6 +305,7 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	    else
 	    {
 		*handle_ptr = INVALID_HANDLE_VALUE;
+		smpd_dbg_printf("exiting smpd_get_user_handle.\n");
 		return error;
 	    }
 	    num_tries--;
@@ -310,19 +313,17 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 	else
 	{
 	    *handle_ptr = INVALID_HANDLE_VALUE;
+	    smpd_dbg_printf("exiting smpd_get_user_handle.\n");
 	    return error;
 	}
     }
 
     *handle_ptr = hUser;
+    smpd_dbg_printf("exiting smpd_get_user_handle.\n");
     return SMPD_SUCCESS;
 }
 
 #if 0
-// Function name	: SetEnvironmentVariables
-// Description	    : 
-// Return type		: void 
-// Argument         : char *bEnv
 static void SetEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH]="", value[MAX_PATH]="";
@@ -356,10 +357,6 @@ static void SetEnvironmentVariables(char *bEnv)
     SetEnvironmentVariable(name, value);
 }
 
-// Function name	: RemoveEnvironmentVariables
-// Description	    : 
-// Return type		: void 
-// Argument         : char *bEnv
 static void RemoveEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH]="", value[MAX_PATH]="";
@@ -393,9 +390,6 @@ static void RemoveEnvironmentVariables(char *bEnv)
     SetEnvironmentVariable(name, NULL);
 }
 
-// Function name	: LaunchProcess
-// Description	    : 
-// Return type		: HANDLE 
 HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int priority, HANDLE *hIn, HANDLE *hOut, HANDLE *hErr, int *pdwPid, int *nError, char *pszError, bool bDebug)
 {
     HANDLE hStdin, hStdout, hStderr;
@@ -409,18 +403,18 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
     HANDLE hRetVal = INVALID_HANDLE_VALUE;
     DWORD launch_flag;
     
-    // Launching of the client processes must be synchronized because
-    // stdin,out,err are redirected for the entire process, not just this thread.
+    /* Launching of the client processes must be synchronized because
+       stdin,out,err are redirected for the entire process, not just this thread.*/
     WaitForSingleObject(g_hLaunchMutex, INFINITE);
     
-    // Don't handle errors, just let the process die.
-    // In the future this will be configurable to allow various debugging options.
+    /* Don't handle errors, just let the process die.
+       In the future this will be configurable to allow various debugging options.*/
 #ifdef USE_SET_ERROR_MODE
     DWORD dwOriginalErrorMode;
     dwOriginalErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
     
-    // Save stdin, stdout, and stderr
+    /* Save stdin, stdout, and stderr */
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     hStderr = GetStdHandle(STD_ERROR_HANDLE);
@@ -432,13 +426,13 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
 	return INVALID_HANDLE_VALUE;
     }
     
-    // Set the security attributes to allow handles to be inherited
+    /* Set the security attributes to allow handles to be inherited */
     SECURITY_ATTRIBUTES saAttr;
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.lpSecurityDescriptor = NULL;
     saAttr.bInheritHandle = TRUE;
     
-    // Create pipes for stdin, stdout, and stderr
+    /* Create pipes for stdin, stdout, and stderr */
     if (!CreatePipe(&hPipeStdinR, &hPipeStdinW, &saAttr, 0))
     {
 	*nError = GetLastError();
@@ -458,7 +452,7 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
 	goto CLEANUP;
     }
     
-    // Make the ends of the pipes that this process will use not inheritable
+    /* Make the ends of the pipes that this process will use not inheritable */
     if (!DuplicateHandle(GetCurrentProcess(), hPipeStdinW, GetCurrentProcess(), hIn, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
@@ -481,7 +475,7 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
 	goto CLEANUP;
     }
     
-    // Set stdin, stdout, and stderr to the ends of the pipe the created process will use
+    /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
     if (!SetStdHandle(STD_INPUT_HANDLE, hPipeStdinR))
     {
 	*nError = GetLastError();
@@ -501,15 +495,15 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
 	goto RESTORE_CLEANUP;
     }
     
-    // Create the process
+    /* Create the process */
     memset(&saInfo, 0, sizeof(STARTUPINFO));
     saInfo.cb = sizeof(STARTUPINFO);
     saInfo.hStdError = hPipeStderrW;
     saInfo.hStdInput = hPipeStdinR;
     saInfo.hStdOutput = hPipeStdoutW;
     saInfo.dwFlags = STARTF_USESTDHANDLES;
-    //saInfo.lpDesktop = "WinSta0\\Default";
-    //saInfo.wShowWindow = SW_SHOW;
+    /*saInfo.lpDesktop = "WinSta0\\Default";*/
+    /*saInfo.wShowWindow = SW_SHOW;*/
     
     SetEnvironmentVariables(env);
     pEnv = GetEnvironmentStrings();
@@ -518,12 +512,14 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
     SetCurrentDirectory(dir);
     
     launch_flag = 
-	//DETACHED_PROCESS | IDLE_PRIORITY_CLASS;
-	//CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS;
-	//CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS;
-	//CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	//DETACHED_PROCESS | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	//CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_SUSPENDED;
+	/*
+	DETACHED_PROCESS | IDLE_PRIORITY_CLASS;
+	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS;
+	CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS;
+	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
+	DETACHED_PROCESS | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
+	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_SUSPENDED;
+	*/
 	CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
     if (bDebug)
 	launch_flag = launch_flag | DEBUG_PROCESS;
@@ -562,7 +558,7 @@ HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int pri
     RemoveEnvironmentVariables(env);
     
 RESTORE_CLEANUP:
-    // Restore stdin, stdout, stderr
+    /* Restore stdin, stdout, stderr */
     SetStdHandle(STD_INPUT_HANDLE, hStdin);
     SetStdHandle(STD_OUTPUT_HANDLE, hStdout);
     SetStdHandle(STD_ERROR_HANDLE, hStderr);
@@ -584,7 +580,9 @@ CLEANUP:
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain)
 {
     char *pCh, *pCh2;
-    
+
+    smpd_dbg_printf("entering smpd_parse_account_domain.\n");
+
     pCh = domain_account;
     pCh2 = domain;
     while ((*pCh != '\\') && (*pCh != '\0'))
@@ -604,6 +602,8 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 	strcpy(account, domain_account);
 	domain[0] = '\0';
     }
+
+    smpd_dbg_printf("exiting smpd_parse_account_domain.\n");
 }
 
 #if 0
@@ -623,7 +623,7 @@ bool ValidateUser(char *pszAccount, char *pszPassword, bool bUseCache, int *pErr
     else
 	hUser = GetUserHandleNoCache(account, pszDomain, pszPassword, pError);
 
-    // does hUser need to be closed?
+    /* does hUser need to be closed? */
 
     return (hUser != INVALID_HANDLE_VALUE);
 }
@@ -645,18 +645,18 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
     int error;
     DWORD launch_flag;
     
-    // Launching of the client processes must be synchronized because
-    // stdin,out,err are redirected for the entire process, not just this thread.
+    /* Launching of the client processes must be synchronized because
+       stdin,out,err are redirected for the entire process, not just this thread. */
     WaitForSingleObject(g_hLaunchMutex, INFINITE);
     
-    // Don't handle errors, just let the process die.
-    // In the future this will be configurable to allow various debugging options.
+    /* Don't handle errors, just let the process die.
+       In the future this will be configurable to allow various debugging options. */
 #ifdef USE_SET_ERROR_MODE
     DWORD dwOriginalErrorMode;
     dwOriginalErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
     
-    // Save stdin, stdout, and stderr
+    /* Save stdin, stdout, and stderr */
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     hStderr = GetStdHandle(STD_ERROR_HANDLE);
@@ -671,13 +671,13 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 	return INVALID_HANDLE_VALUE;
     }
     
-    // Set the security attributes to allow handles to be inherited
+    /* Set the security attributes to allow handles to be inherited */
     SECURITY_ATTRIBUTES saAttr;
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.lpSecurityDescriptor = NULL;
     saAttr.bInheritHandle = TRUE;
     
-    // Create pipes for stdin, stdout, and stderr
+    /* Create pipes for stdin, stdout, and stderr */
     if (!CreatePipe(&hPipeStdinR, &hPipeStdinW, &saAttr, 0))
     {
 	*nError = GetLastError();
@@ -697,7 +697,7 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 	goto CLEANUP;
     }
     
-    // Make the ends of the pipes that this process will use not inheritable
+    /* Make the ends of the pipes that this process will use not inheritable */
     if (!DuplicateHandle(GetCurrentProcess(), hPipeStdinW, GetCurrentProcess(), hIn, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
@@ -723,7 +723,7 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 	goto CLEANUP;
     }
     
-    // Set stdin, stdout, and stderr to the ends of the pipe the created process will use
+    /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
     if (!SetStdHandle(STD_INPUT_HANDLE, hPipeStdinR))
     {
 	*nError = GetLastError();
@@ -752,15 +752,15 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 	goto RESTORE_CLEANUP;
     }
     
-    // Create the process
+    /* Create the process */
     memset(&saInfo, 0, sizeof(STARTUPINFO));
     saInfo.cb         = sizeof(STARTUPINFO);
     saInfo.hStdInput  = hPipeStdinR;
     saInfo.hStdOutput = hPipeStdoutW;
     saInfo.hStdError  = hPipeStderrW;
     saInfo.dwFlags    = STARTF_USESTDHANDLES;
-    //saInfo.lpDesktop = "WinSta0\\Default";
-    //saInfo.wShowWindow = SW_SHOW;
+    /*saInfo.lpDesktop = "WinSta0\\Default"; */
+    /*saInfo.wShowWindow = SW_SHOW; */
     
     SetEnvironmentVariables(env);
     pEnv = GetEnvironmentStrings();
@@ -795,12 +795,14 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 	SetCurrentDirectory(dir);
 
 	launch_flag = 
+	    /*
 	    //DETACHED_PROCESS | IDLE_PRIORITY_CLASS;
 	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS;
 	    //CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS;
 	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
 	    //DETACHED_PROCESS | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
 	    //CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_SUSPENDED;
+	    */
 	    CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
 	if (bDebug)
 	    launch_flag = launch_flag | DEBUG_PROCESS;
@@ -854,7 +856,7 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
 		}
 	    }
 	} while (num_tries);
-	//RevertToSelf(); // If you call RevertToSelf, the network mapping goes away.
+	/*RevertToSelf(); */ /* If you call RevertToSelf, the network mapping goes away.*/
     }
     else
     {
@@ -867,7 +869,7 @@ HANDLE LaunchProcessLogon(char *domainaccount, char *password, char *cmd, char *
     RemoveEnvironmentVariables(env);
     
 RESTORE_CLEANUP:
-    // Restore stdin, stdout, stderr
+    /* Restore stdin, stdout, stderr */
     SetStdHandle(STD_INPUT_HANDLE, hStdin);
     SetStdHandle(STD_OUTPUT_HANDLE, hStdout);
     SetStdHandle(STD_ERROR_HANDLE, hStderr);

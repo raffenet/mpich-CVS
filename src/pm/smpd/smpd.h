@@ -72,18 +72,37 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_CHILD
 } smpd_context_type_t;
 
+typedef enum smpd_command_state_t
+{
+    SMPD_CMD_INVALID,
+    SMPD_CMD_READING_HDR,
+    SMPD_CMD_READING_CMD,
+    SMPD_CMD_WRITING_CMD,
+    SMPD_CMD_READY,
+    SMPD_CMD_HANDLED
+} smpd_command_state_t;
+
+typedef struct smpd_command_t
+{
+    smpd_command_state_t state;
+    char cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
+    char cmd_str[SMPD_MAX_CMD_LENGTH];
+    char cmd[SMPD_MAX_CMD_STR_LENGTH];
+    SOCK_IOV iov[2];
+    int length;
+    int src, dest;
+    struct smpd_command_t *next;
+} smpd_command_t;
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
-    char input_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
-    char input_str[SMPD_MAX_CMD_LENGTH];
-    char output_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
-    char output_str[SMPD_MAX_CMD_LENGTH];
-    int read_offset;
     char host[SMPD_MAX_HOST_LENGTH];
     int id;
     sock_set_t set;
     sock_t sock;
+    smpd_command_t read_cmd;
+    smpd_command_t *write_list;
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -117,10 +136,18 @@ HANDLE smpd_decode_handle(char *str);
 /* smpd_util */
 int smpd_init_process(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
+int smpd_init_command(smpd_command_t *cmd);
+int smpd_create_command(char *cmd_str, int src, int dest, smpd_command_t **cmd_pptr);
+int smpd_create_command_copy(smpd_command_t *src_ptr, smpd_command_t **cmd_pptr);
+int smpd_free_command(smpd_command_t *cmd_ptr);
+int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value);
+int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value);
+int smpd_parse_command(smpd_command_t *cmd_ptr);
 int smpd_post_read_command(smpd_context_t *context);
-int smpd_read_command(smpd_context_t *context);
-int smpd_package_command(smpd_context_t *context);
-int smpd_write_command(smpd_context_t *context);
+int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd);
+/*int smpd_read_command(smpd_context_t *context);*/
+/*int smpd_write_command(smpd_context_t *context);*/
+int smpd_package_command(smpd_command_t *cmd);
 int smpd_write_string(sock_set_t set, sock_t sock, char *str);
 int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen);
 int smpd_authenticate(sock_set_t set, sock_t sock, int type);
@@ -156,7 +183,8 @@ int smpd_interpret_session_header(char *str);
 int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val);
 int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, char *flag, int val);
 int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
-int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_context);
+int smpd_get_int_arg(char *str, char *flag, int *val_ptr);
+int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
 
 #endif
