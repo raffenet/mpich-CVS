@@ -304,6 +304,9 @@
 				RelativePath="..\..\src\mpid_win_post.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_win_test.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_win_unlock.c">
 			</File>
 			<File
