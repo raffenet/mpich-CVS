@@ -192,7 +192,7 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_spawn_context_t *spawn_context)
+int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char *domain_name, smpd_spawn_context_t *spawn_context)
 {
     int result;
     smpd_command_t *cmd_ptr;
@@ -280,6 +280,12 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", /*smpd_process.*/kvs_name);
+	    goto launch_failure;
+	}
+	result = smpd_add_command_arg(cmd_ptr, "kd", /*smpd_process.*/domain_name);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the domain name('%s') to the launch command\n", /*smpd_process.*/domain_name);
 	    goto launch_failure;
 	}
 	map_iter = launch_node_ptr->map_list;
@@ -537,8 +543,16 @@ int smpd_handle_result(smpd_context_t *context)
 			{
 			    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", context->spawn_context->kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 			    {
-				smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", context->spawn_context->kvs_name);
-				ret_val = smpd_launch_processes(context->spawn_context->launch_list, context->spawn_context->kvs_name, context->spawn_context);
+				if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "domain_name", context->spawn_context->domain_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
+				{
+				    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s', domain_name: '%s'\n", context->spawn_context->kvs_name, context->spawn_context->domain_name);
+				    ret_val = smpd_launch_processes(context->spawn_context->launch_list, context->spawn_context->kvs_name, context->spawn_context->domain_name, context->spawn_context);
+				}
+				else
+				{
+				    smpd_err_printf("invalid start_dbs result returned, no domain_name specified: '%s'\n", context->read_cmd.cmd);
+				    ret_val = SMPD_FAIL;
+				}
 			    }
 			    else
 			    {
@@ -550,8 +564,16 @@ int smpd_handle_result(smpd_context_t *context)
 			{
 			    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 			    {
-				smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", smpd_process.kvs_name);
-				ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, NULL);
+				if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "domain_name", smpd_process.domain_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
+				{
+				    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s', domain_name: '%s'\n", smpd_process.kvs_name, smpd_process.domain_name);
+				    ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, smpd_process.domain_name, NULL);
+				}
+				else
+				{
+				    smpd_err_printf("invalid start_dbs result returned, no domain_name specified: '%s'\n", context->read_cmd.cmd);
+				    ret_val = SMPD_FAIL;
+				}
 			    }
 			    else
 			    {
@@ -1129,6 +1151,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     MPIU_Str_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_DIR_LENGTH);
     MPIU_Str_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_PATH_LENGTH);
     MPIU_Str_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    MPIU_Str_get_string_arg(cmd->cmd, "kd", process->domain_name, SMPD_MAX_DBS_NAME_LEN);
     MPIU_Str_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
     MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
     MPIU_Str_get_int_arg(cmd->cmd, "s", &process->spawned);
@@ -1723,6 +1746,13 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the kvs_name string to the result command for dbs command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("handle_start_dbs_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "domain_name", smpd_process.domain_name);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the domain_name string to the result command for dbs command '%s'.\n", cmd->cmd);
 	    smpd_exit_fn("handle_start_dbs_command");
 	    return SMPD_FAIL;
 	}

@@ -253,6 +253,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     p->rank = rank;
     p->nproc = 1;
     p->kvs_name[0] = '\0';
+    p->domain_name[0] = '\0';
     p->exe[0] = '\0';
     p->env[0] = '\0';
     p->dir[0] = '\0';

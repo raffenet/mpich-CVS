@@ -654,6 +654,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     sprintf(str, "%s", process->kvs_name);
     smpd_dbg_printf("env: PMI_KVS=%s\n", str);
     SetEnvironmentVariable("PMI_KVS", str);
+    sprintf(str, "%s", process->domain_name);
+    smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
+    SetEnvironmentVariable("PMI_DOMAIN", str);
     smpd_encode_handle(sock_str, (HANDLE)hSockPmiW);
     sprintf(str, "%s", sock_str);
     smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
@@ -715,6 +718,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetEnvironmentVariable("PMI_RANK", NULL);
     SetEnvironmentVariable("PMI_SIZE", NULL);
     SetEnvironmentVariable("PMI_KVS", NULL);
+    SetEnvironmentVariable("PMI_DOMAIN", NULL);
     SetEnvironmentVariable("PMI_SMPD_FD", NULL);
     SetEnvironmentVariable("PMI_SMPD_ID", NULL);
     SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
@@ -1219,6 +1223,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	sprintf(str, "%s", process->kvs_name);
 	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
 	setenv("PMI_KVS", str, 1);
+	sprintf(str, "%s", process->domain_name);
+	smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
+	setenv("PMI_DOMAIN", str, 1);
 	sprintf(str, "%d", pmi_pipe_fds[1]);
 	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
 	setenv("PMI_SMPD_FD", str, 1);

@@ -318,6 +318,7 @@ typedef struct smpd_process_t
     smpd_pwait_t wait;
     int exitcode;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    char domain_name[SMPD_MAX_DBS_NAME_LEN];
     char err_msg[SMPD_MAX_ERROR_LEN];
     smpd_stdin_write_node_t *stdin_write_list;
     int spawned;
@@ -353,6 +354,7 @@ typedef struct smpd_spawn_context_t
     smpd_launch_node_t *launch_list;
     smpd_command_t *result_cmd;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    char domain_name[SMPD_MAX_DBS_NAME_LEN];
     int npreput;
     char preput[SMPD_MAX_CMD_LENGTH];
     int num_outstanding_launch_cmds;
@@ -431,6 +433,7 @@ typedef struct smpd_global_t
     char dbg_filename[SMPD_MAX_FILENAME];
     int  have_dbs;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    char domain_name[SMPD_MAX_DBS_NAME_LEN];
 #ifdef HAVE_WINDOWS_H
     HANDLE hCloseStdinThreadEvent;
     HANDLE hStdinThread;

@@ -68,6 +68,7 @@ smpd_global_t smpd_process =
       "",               /* dbg_filename           */
       SMPD_FALSE,       /* have_dbs               */
       "",               /* kvs_name               */
+      "",               /* domain_name            */
 #ifdef HAVE_WINDOWS_H
       NULL,             /* hCloseStdinThreadEvent */
       NULL,             /* hStdinThread           */
