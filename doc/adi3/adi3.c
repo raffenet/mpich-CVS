@@ -2130,6 +2130,9 @@ void MPID_Progress_end( void )
 /*@ MPID_Progress_wait - Wait for some communication since 
     'MPID_Progress_start' 
 
+    Return value:
+    An mpi error code.
+
     Notes:
     This instructs the progress engine to wait until some communication event
     happens since 'MPID_Progress_start' was called.  This call blocks the 
@@ -2137,15 +2140,15 @@ void MPID_Progress_end( void )
     the block begun with 'MPID_Progress_start'.
 
  @*/
-void MPID_Progress_wait( void )
+int MPID_Progress_wait( void )
 {}
 
 /*@
   MPID_Progress_test - Check for communication since 'MPID_Progress_start'
 
   Return value:
-  The number of communication actions since 'MPID_Progress_start'.
-
+  An mpi error code.
+  
   Notes:
   Like 'MPID_Progress_end' and 'MPID_Progress_wait', this completes the block
   begun with 'MPID_Progress_start'.  Unlike 'MPID_Progress_wait', it is a
@@ -2154,6 +2157,10 @@ void MPID_Progress_wait( void )
   completed.  The only restriction is that if the completion status of any 
   request changed between 'MPID_Progress_start' and  'MPID_Progress_test',
   the return value must be at least one.
+
+  This function used to return TRUE if one or more requests have completed, 
+  FALSE otherwise.  This functionality was not used so we removed it.
+
   @*/
 int MPID_Progress_test( void )
 {}
@@ -2162,13 +2169,16 @@ int MPID_Progress_test( void )
   MPID_Progress_poke - Allow a progress engine to check for pending 
   communication
 
+  Return value:
+  An mpi error code.
+  
   Notes:
   This routine provides a way to invoke the progress engine in a polling 
   implementation of the ADI.  This routine must be nonblocking.
 
   A multithreaded implementation is free to define this as an empty macro.
   @*/
-void MPID_Progress_poke( void )
+int MPID_Progress_poke( void )
 {}
 
 /*TSGOverview.tex 
