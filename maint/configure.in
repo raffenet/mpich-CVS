@@ -11,4 +11,4 @@ CXXFLAGS='@CXXFLAGS@'
 # autoconf replacement.
 # Note that top_srcdir and srcdir are special cases (they must not
 # be changed in configure.in because configure uses them to find other files)
-AC_OUTPUT(simplemake checkbuilds getstates showsizes )
+AC_OUTPUT(simplemake checkbuilds getstates showsizes getcoverage)
