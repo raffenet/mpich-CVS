@@ -2,6 +2,7 @@ configure
 simplemake
 checkbuilds
 getstates
+getcoverage
 showsizes
 getcross
 config.log
