@@ -337,6 +337,14 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 
 /* MPID_Segment_vector_pack_to_iov
  *
+ * Input Parameters:
+ * blocks_p - [inout] pointer to a count of blocks (total, for all noncontiguous pieces)
+ * count    - # of noncontiguous regions
+ * blksz    - size of each noncontiguous region
+ * stride   - distance in bytes from start of one region to start of next
+ * basic_size - size of elemental type (e.g. MPI_INT) in bytes
+ * ...
+ *
  * Note: this is only called when the starting position is at the beginning
  * of a whole block in a vector type.
  */

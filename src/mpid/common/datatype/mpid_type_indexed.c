@@ -102,7 +102,8 @@ int MPID_Type_indexed(int count,
 	}
 
 	/* fill in remainder of new datatype */
-	new_dtp->size           = el_count * el_size;
+	if (count == 0) new_dtp->size = 0;
+	else            new_dtp->size = el_count * el_size;
 	new_dtp->has_sticky_ub  = 0;
 	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
@@ -192,7 +193,8 @@ int MPID_Type_indexed(int count,
 	    if (tmp_ub > max_ub) max_ub = tmp_ub;
 	}
 
-	new_dtp->size           = el_count * el_size; /* in bytes */
+	if (count == 0) new_dtp->size = 0;
+	else            new_dtp->size = el_count * el_size; /* in bytes */
 	new_dtp->lb             = min_lb;
 	new_dtp->ub             = max_ub;
 	new_dtp->true_lb        = min_lb + (old_dtp->true_lb - el_lb);
