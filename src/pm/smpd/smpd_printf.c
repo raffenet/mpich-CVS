@@ -63,6 +63,36 @@ char * get_sock_error_string(int error)
     return NULL;
 }
 
+char * smpd_get_context_str(smpd_context_t *context)
+{
+    if (context == NULL)
+	return "null";
+    switch (context->type)
+    {
+    case SMPD_CONTEXT_INVALID:
+	return "invalid";
+    case SMPD_CONTEXT_STDIN:
+	return "stdin";
+    case SMPD_CONTEXT_STDOUT:
+	return "stdout";
+    case SMPD_CONTEXT_STDERR:
+	return "stderr";
+    case SMPD_CONTEXT_PARENT:
+	return "parent";
+    case SMPD_CONTEXT_LEFT_CHILD:
+	return "left";
+    case SMPD_CONTEXT_RIGHT_CHILD:
+	return "right";
+    case SMPD_CONTEXT_CHILD:
+	return "child";
+    case SMPD_CONTEXT_FREED:
+	return "freed";
+    default:
+	return "unknown";
+    }
+    return "error";
+}
+
 int smpd_init_printf(void)
 {
     char * envstr;
