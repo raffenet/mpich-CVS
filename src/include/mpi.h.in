@@ -23,9 +23,10 @@ extern "C" {
 
 typedef int MPI_Datatype;
 #define MPI_CHAR           ((MPI_Datatype)@MPI_CHAR@)
+#define MPI_SIGNED_CHAR    ((MPI_Datatype)@MPI_SIGNED_CHAR@)
 #define MPI_UNSIGNED_CHAR  ((MPI_Datatype)@MPI_UNSIGNED_CHAR@)
 #define MPI_BYTE           ((MPI_Datatype)@MPI_BYTE@)
-#define MPI_WCHAR_T        ((MPI_Datatype)@MPI_WCHAR_T@)
+#define MPI_WCHAR          ((MPI_Datatype)@MPI_WCHAR@)
 #define MPI_SHORT          ((MPI_Datatype)@MPI_SHORT@)
 #define MPI_UNSIGNED_SHORT ((MPI_Datatype)@MPI_UNSIGNED_SHORT@)
 #define MPI_INT            ((MPI_Datatype)@MPI_INT@)
@@ -36,6 +37,7 @@ typedef int MPI_Datatype;
 #define MPI_DOUBLE         ((MPI_Datatype)@MPI_DOUBLE@)
 #define MPI_LONG_DOUBLE    ((MPI_Datatype)@MPI_LONG_DOUBLE@)
 #define MPI_LONG_LONG_INT  ((MPI_Datatype)@MPI_LONG_LONG@)
+#define MPI_UNSIGNED_LONG_LONG ((MPI_Datatype)@MPI_UNSIGNED_LONG_LONG@)
 #define MPI_LONG_LONG      MPI_LONG_LONG_INT
 
 #define MPI_PACKED         ((MPI_Datatype)@MPI_PACKED@)

@@ -34,7 +34,7 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_CHAR,
     MPI_UNSIGNED_CHAR,
     MPI_BYTE,
-    MPI_WCHAR_T,
+    MPI_WCHAR,
     MPI_SHORT,
     MPI_UNSIGNED_SHORT,
     MPI_INT,

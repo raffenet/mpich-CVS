@@ -270,7 +270,7 @@ char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
     static char t_char[]             = "MPI_CHAR";
     static char t_uchar[]            = "MPI_UNSIGNED_CHAR";
     static char t_byte[]             = "MPI_BYTE";
-    static char t_wchar_t[]          = "MPI_WCHAR_T";
+    static char t_wchar_t[]          = "MPI_WCHAR";
     static char t_short[]            = "MPI_SHORT";
     static char t_ushort[]           = "MPI_UNSIGNED_SHORT";
     static char t_int[]              = "MPI_INT";
@@ -282,6 +282,8 @@ char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
     static char t_longdouble[]       = "MPI_LONG_DOUBLE";
     static char t_longlongint[]      = "MPI_LONG_LONG_INT";
     static char t_longlong[]         = "MPI_LONG_LONG";
+    static char t_ulonglong[]        = "MPI_UNSIGNED_LONG_LONG";
+    static char t_schar[]            = "MPI_SIGNED_CHAR";
 
     static char t_packed[]           = "MPI_PACKED";
     static char t_lb[]               = "MPI_LB";
@@ -309,8 +311,9 @@ char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
 
     if (type == MPI_CHAR)              return t_char;
     if (type == MPI_UNSIGNED_CHAR)     return t_uchar;
+    if (type == MPI_SIGNED_CHAR)       return t_schar;
     if (type == MPI_BYTE)              return t_byte;
-    if (type == MPI_WCHAR_T)           return t_wchar_t;
+    if (type == MPI_WCHAR)             return t_wchar_t;
     if (type == MPI_SHORT)             return t_short;
     if (type == MPI_UNSIGNED_SHORT)    return t_ushort;
     if (type == MPI_INT)               return t_int;
@@ -322,6 +325,7 @@ char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
     if (type == MPI_LONG_DOUBLE)       return t_longdouble;
     if (type == MPI_LONG_LONG_INT)     return t_longlongint;
     if (type == MPI_LONG_LONG)         return t_longlong;
+    if (type == MPI_UNSIGNED_LONG_LONG) return t_ulonglong;
 	
     if (type == MPI_PACKED)            return t_packed;
     if (type == MPI_LB)                return t_lb;

@@ -1144,7 +1144,7 @@ MPI_DOUBLE="0x4c00${len_double}0b"
 MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
 # If you change MPI_BYTE, you must change it in src/binding/f77/buildiface
 MPI_BYTE="0x4c00010d"
-MPI_WCHAR_T="0x4c00${len_wchar_t}0e"
+MPI_WCHAR="0x4c00${len_wchar_t}0e"
 MPI_PACKED="0x4c00010f"
 MPI_LB="0x4c000010"
 MPI_UB="0x4c000011"
@@ -1158,6 +1158,11 @@ MPI_LONG_INT="0x4c00${len_long_int}14"
 MPI_SHORT_INT="0x4c00${len_short_int}15"
 MPI_2INT="0x4c00${len_2_int}16"
 MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}17"
+
+# 2 additional predefined types named in MPI-2
+MPI_SIGNED_CHAR="0x4c000118"
+MPI_UNSIGNED_LONG_LONG="0x4c00${len_long_long}19"
+
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
 AC_SUBST(MPI_SHORT)
@@ -1171,7 +1176,7 @@ AC_SUBST(MPI_FLOAT)
 AC_SUBST(MPI_DOUBLE)
 AC_SUBST(MPI_LONG_DOUBLE)
 AC_SUBST(MPI_BYTE)
-AC_SUBST(MPI_WCHAR_T)
+AC_SUBST(MPI_WCHAR)
 AC_SUBST(MPI_PACKED)
 AC_SUBST(MPI_LB)
 AC_SUBST(MPI_UB)
@@ -1181,6 +1186,8 @@ AC_SUBST(MPI_LONG_INT)
 AC_SUBST(MPI_SHORT_INT)
 AC_SUBST(MPI_2INT)
 AC_SUBST(MPI_LONG_DOUBLE_INT)
+AC_SUBST(MPI_SIGNED_CHAR)
+AC_SUBST(MPI_UNSIGNED_LONG_LONG)
 #
 # Export the basic C types so that the Fortran system can use them
 export MPI_CHAR

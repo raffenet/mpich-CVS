@@ -34,9 +34,10 @@ typedef struct mpi_names_t { MPI_Datatype dtype; const char *name; } mpi_names_t
    not the related language names (e.g., MPI_CHAR, not char) */
 static mpi_names_t mpi_names[] = {
     { MPI_CHAR, "MPI_CHAR" },
+    { MPI_SIGNED_CHAR, "MPI_SIGNED_CHAR" },
     { MPI_UNSIGNED_CHAR, "MPI_UNSIGNED_CHAR" },
     { MPI_BYTE, "MPI_BYTE" },
-    { MPI_WCHAR_T, "MPI_WCHAR_T" },
+    { MPI_WCHAR, "MPI_WCHAR" },
     { MPI_SHORT, "MPI_SHORT" },
     { MPI_UNSIGNED_SHORT, "MPI_UNSIGNED_SHORT" },
     { MPI_INT, "MPI_INT" },
@@ -50,6 +51,7 @@ static mpi_names_t mpi_names[] = {
        type */
 /*    { MPI_LONG_LONG_INT, "MPI_LONG_LONG_INT" }, */
     { MPI_LONG_LONG, "MPI_LONG_LONG" },
+    { MPI_UNSIGNED_LONG_LONG, "MPI_UNSIGNED_LONG_LONG" }, 
     { MPI_PACKED, "MPI_PACKED" },
     { MPI_LB, "MPI_LB" },
     { MPI_UB, "MPI_UB" },
