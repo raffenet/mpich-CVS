@@ -286,6 +286,20 @@ void MPIR_Keyval_set_fortran( int keyval )
     if (keyval_ptr) 
 	keyval_ptr->language = MPID_LANG_FORTRAN;
 }
+
+/* 
+   This routine is used by the Fortran binding to change the language of a
+   keyval to Fortran90 (also used for Fortran77 when address-sized integers
+   are used 
+*/
+void MPIR_Keyval_set_fortran90( int keyval )
+{
+    MPID_Keyval *keyval_ptr;
+
+    MPID_Keyval_get_ptr( keyval, keyval_ptr );
+    if (keyval_ptr) 
+	keyval_ptr->language = MPID_LANG_FORTRAN90;
+}
 #endif
 #ifdef HAVE_CXX_BINDING
 /* This function allows the C++ interface to provide the routines that use
