@@ -1584,6 +1584,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		assert(mem_ptr != NULL);
 		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
+
+/**************************************/
+	    out->num_bytes = num_bytes;
+	    out->op_type = IBU_OP_WRITE;
+	    out->user_ptr = ibu->user_ptr;
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+	    return IBU_SUCCESS;
+/**************************************/
+#if 0
 	    MPIU_DBG_PRINTF(("ibu_wait: num_bytes sent = %d\n", num_bytes));
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
@@ -1657,6 +1666,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		/* post a write of the remaining data */
 		/*WriteFile((HANDLE)(ibu->ibu), ibu->write.buffer, ibu->write.bufflen, &ibu->write.num_bytes, &ibu->write.ovl);*/
 	    }
+#endif
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
@@ -1881,6 +1891,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
     MPIU_dbg_printf("ibu_post_write\n");
+    /*
     ibu->write.total = 0;
     ibu->write.buffer = buf;
     ibu->write.bufflen = len;
@@ -1888,6 +1899,9 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     ibu->write.progress_update = wfn;
     ibu->state |= IBU_WRITING;
     ibu->pending_operations++;
+    */
+    ibu->state |= IBU_WRITING;
+
     num_bytes = ibui_post_write(ibu, buf, len, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
     //return IBU_SUCCESS;
@@ -1902,16 +1916,18 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
     MPIU_dbg_printf("ibu_post_writev\n");
-    ibu->write.total = 0;
+    //ibu->write.total = 0;
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->write.iov = iov;*/
+    /*
     memcpy(ibu->write.iov, iov, sizeof(IBU_IOV) * n);
     ibu->write.iovlen = n;
     ibu->write.index = 0;
     ibu->write.use_iov = TRUE;
     ibu->write.progress_update = wfn;
+    */
     ibu->state |= IBU_WRITING;
-    ibu->pending_operations++;
+    //ibu->pending_operations++;
     /*
     {
 	char str[1024], *s = str;
@@ -1924,6 +1940,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     }
     */
     num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
+    //ibu->write.bufflen = num_bytes;
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
     //return IBU_SUCCESS;
     MPIU_dbg_printf("ibu_post_writev returning %d\n", num_bytes);
