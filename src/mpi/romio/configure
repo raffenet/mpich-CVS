@@ -3218,6 +3218,125 @@ if test $MPI != "mpich" ; then
    CFLAGS="$CFLAGS -D__PRINT_ERR_MSG"
 fi
 #
+
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for strerror()""... $ac_c"
+else
+echo $ac_n "checking for strerror()""... $ac_c" 1>&1
+fi
+  rm -f conftest.c
+  cat > conftest.c <<EOF
+#include <string.h>
+     main()
+     {
+        char *s = strerror(5);
+     }
+EOF
+  rm -f a.out
+  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+  if test -x a.out ; then
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+     
+{
+test -n "$verbose" && \
+echo "	defining __HAVE_STRERROR"
+echo "#define" __HAVE_STRERROR 1 >> confdefs.h
+DEFS="$DEFS -D__HAVE_STRERROR=1"
+}
+
+  else
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+     if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for sys_errlist""... $ac_c"
+else
+echo $ac_n "checking for sys_errlist""... $ac_c" 1>&1
+fi
+     rm -f conftest.c
+
+     cat > conftest.c <<EOF
+#include <stdio.h>
+        main()
+        {
+           extern char *sys_errlist[];
+	   printf("%s\n", sys_errlist[34]);
+        }
+EOF
+
+     rm -f a.out
+     $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+     if test -x a.out ; then
+        if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+        
+{
+test -n "$verbose" && \
+echo "	defining __HAVE_SYSERRLIST"
+echo "#define" __HAVE_SYSERRLIST 1 >> confdefs.h
+DEFS="$DEFS -D__HAVE_SYSERRLIST=1"
+}
+
+     else
+        if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+     fi
+  fi
+  rm -f a.out conftest.c
+
+#
 if test -z "$TEST_CC" ; then
    TEST_CC="$CC"
 fi

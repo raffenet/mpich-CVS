@@ -1097,3 +1097,45 @@ else
 fi
 ])dnl
 dnl
+dnl
+define(PAC_FUNC_STRERROR,[
+  AC_MSG_CHECKING([for strerror()])
+  rm -f conftest.c
+  cat > conftest.c <<EOF
+#include <string.h>
+     main()
+     {
+        char *s = strerror(5);
+     }
+EOF
+  rm -f a.out
+  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+  if test -x a.out ; then
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(__HAVE_STRERROR)
+  else
+     AC_MSG_RESULT(no)
+     AC_MSG_CHECKING([for sys_errlist])
+     rm -f conftest.c
+changequote(,)
+     cat > conftest.c <<EOF
+#include <stdio.h>
+        main()
+        {
+           extern char *sys_errlist[];
+	   printf("%s\n", sys_errlist[34]);
+        }
+EOF
+changequote([,])
+     rm -f a.out
+     $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+     if test -x a.out ; then
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(__HAVE_SYSERRLIST)
+     else
+        AC_MSG_RESULT(no)
+     fi
+  fi
+  rm -f a.out conftest.c
+])dnl
+dnl

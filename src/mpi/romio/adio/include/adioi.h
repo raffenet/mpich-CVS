@@ -334,6 +334,15 @@ int ADIOI_Set_lock64(int fd_sys, int cmd, int type, ADIO_Offset offset, int when
 
 #define FPRINTF fprintf
 
+#ifndef __HAVE_STRERROR
+#  ifdef __HAVE_SYSERRLIST
+      extern char *sys_errlist[];
+#     define strerror(n) sys_errlist[n]
+#  else 
+#     define __PRINT_ERR_MSG
+#  endif
+#endif
+
 #include "adioi_error.h"
 
 #endif

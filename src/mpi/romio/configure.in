@@ -1079,6 +1079,8 @@ if test $MPI != "mpich" ; then
    CFLAGS="$CFLAGS -D__PRINT_ERR_MSG"
 fi
 #
+PAC_FUNC_STRERROR
+#
 if test -z "$TEST_CC" ; then
    TEST_CC="$CC"
 fi
