@@ -1935,7 +1935,8 @@ Sub AddDefinitions( fout, filename )
 				Case "HAVE_SYS_STAT_H"
 					fout.WriteLine("/* #undef HAVE_SYS_STAT_H */")
 				Case "HAVE_SYS_TYPES_H"
-					fout.WriteLine("/* #undef HAVE_SYS_TYPES_H */")
+					'fout.WriteLine("/* #undef HAVE_SYS_TYPES_H */")
+					fout.WriteLine("#define HAVE_SYS_TYPES_H 1")
 				Case "HAVE_THR_CREATE"
 					fout.WriteLine("/* #undef HAVE_THR_CREATE */")
 				Case "HAVE_TIMING"
