@@ -31,7 +31,6 @@ int ib_handle_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_
 int ib_handle_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read);
 #endif
 
-#if 0
 /* Actively reading data */
 #ifdef WITH_METHOD_SHM
 int ib_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
@@ -51,9 +50,7 @@ int ib_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 #ifdef WITH_METHOD_NEW
 int ib_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 #endif
-#endif
 
-#if 0
 int ib_read_data(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
@@ -137,7 +134,6 @@ int ib_read_data(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_DATA);
     return -1;
 }
-#endif
 
 int ib_handle_read_data(MPIDI_VC *vc_ptr, void * mem_ptr, int num_read)
 {
@@ -222,7 +218,6 @@ int ib_handle_read_data(MPIDI_VC *vc_ptr, void * mem_ptr, int num_read)
 }
 
 #ifdef WITH_METHOD_SHM
-#if 0
 int ib_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_SHM);
@@ -230,7 +225,6 @@ int ib_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_SHM);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -242,7 +236,6 @@ int ib_handle_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #endif
 
 #ifdef WITH_METHOD_VIA
-#if 0
 int ib_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_VIA);
@@ -250,7 +243,6 @@ int ib_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_VIA);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -262,7 +254,6 @@ int ib_handle_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #endif
 
 #ifdef WITH_METHOD_VIA_RDMA
-#if 0
 int ib_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_VIA_RDMA);
@@ -270,7 +261,6 @@ int ib_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_VIA_RDMA);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -282,7 +272,6 @@ int ib_handle_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
 #endif
 
 #ifdef WITH_METHOD_IB
-#if 0
 int ib_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_IB);
@@ -290,7 +279,6 @@ int ib_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_IB);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -302,7 +290,6 @@ int ib_handle_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_
 #endif
 
 #ifdef WITH_METHOD_NEW
-#if 0
 int ib_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_IB);
@@ -310,7 +297,6 @@ int ib_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_IB);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -321,10 +307,11 @@ int ib_handle_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 }
 #endif
 
-#if 0
 int ib_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+#if 0
     int error;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_VEC);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_READ_VEC);
@@ -348,7 +335,8 @@ int ib_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* reset the number of outstanding write cars */
 	buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
     }
-    
+
+#if 0
     if (car_ptr->data.ib.buf.vec_read.cur_num_read < buf_ptr->vec.buf_size)
     {
 	/* read */
@@ -380,11 +368,11 @@ int ib_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_VEC);
 	return MPI_SUCCESS;
     }
+#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_VEC);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -448,10 +436,11 @@ int ib_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
     return MPI_SUCCESS;
 }
 
-#if 0
 int ib_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+#if 0
     int error;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_TMP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_READ_TMP);
@@ -462,6 +451,7 @@ int ib_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
     }
 
+#if 0
     if ((error = sock_post_read(vc_ptr->data.ib.sock, 
 	(char*)(buf_ptr->tmp.buf) + buf_ptr->tmp.num_read, 
 	buf_ptr->tmp.len - buf_ptr->tmp.num_read, NULL)) != SOCK_SUCCESS)
@@ -471,11 +461,11 @@ int ib_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_TMP);
 	return -1;
     }
+#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_TMP);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {
@@ -514,10 +504,11 @@ int ib_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
     return MPI_SUCCESS;
 }
 
-#if 0
 int ib_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+#if 0
     int error;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IB_READ_SIMPLE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_READ_SIMPLE);
@@ -530,6 +521,7 @@ int ib_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr
 	return -1;
     }
 
+#if 0
     if ((error = sock_post_read(vc_ptr->data.ib.sock, 
 	(char*)(buf_ptr->simple.buf) + buf_ptr->simple.num_read, 
 	buf_ptr->simple.len - buf_ptr->simple.num_read, NULL)) != SOCK_SUCCESS)
@@ -539,11 +531,11 @@ int ib_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_SIMPLE);
 	return -1;
     }
+#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_READ_SIMPLE);
     return MPI_SUCCESS;
 }
-#endif
 
 int ib_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, void *mem_ptr, int num_read)
 {

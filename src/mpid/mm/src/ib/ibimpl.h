@@ -40,7 +40,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes);
 int ib_handle_read_data(MPIDI_VC *vc_ptr, void * mem_ptr, int num_read);
 int ib_handle_written(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes);
 int ib_setup_connections();
-//int ib_read_data(MPIDI_VC *vc_ptr);
+int ib_read_data(MPIDI_VC *vc_ptr);
 int ib_write_aggressive(MPIDI_VC *vc_ptr);
 int ibu_post_receive(MPIDI_VC *vc_ptr);
 int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*));
