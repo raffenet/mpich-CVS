@@ -85,6 +85,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpe", "src\mpe2\mpe.vcproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpewrap", "src\mpe2\mpewrap.vcproj", "{AA0AAB17-BDC9-45DD-8FF0-01F8D384FB18}"
 	ProjectSection(ProjectDependencies) = postProject
+		{23709B5A-153D-422B-B006-17CC05552B57} = {23709B5A-153D-422B-B006-17CC05552B57}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiexec", "src\pm\smpd\wmpiexec\wmpiexec.csproj", "{B0365633-1495-4C2C-8FD6-6943F5208D5C}"
