@@ -8,6 +8,7 @@ administrative privileges on your machines.
 This solution is found in mpich2\src\pm\winmpd\winmpd.sln.  Install mpd.exe 
 on each machine by copying mpd.exe to a local directory on each machine and
 executing "mpd -install" while logged on as a user with adminstrator privileges.
+Use mpd.exe from the smpd project not the mpd project.
 
 2) build the mpich2 dlls and mpirun for mpich2.
 This solution is found in mpich2\mpich2.sln.
