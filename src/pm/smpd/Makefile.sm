@@ -9,7 +9,9 @@ smpd_SOURCES = smpd.c smpd_cmd_args.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/smpd -I${master_top_srcdir}/src/pmi/smpd
 mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
+mpiexec_DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smpd_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
+smpd_DEPADD = ../../../lib/lib${MPILIBNAME}.a
 install_BIN = mpiexec smpd
 distclean-local:
 	@-rm -f smpdconf.h
