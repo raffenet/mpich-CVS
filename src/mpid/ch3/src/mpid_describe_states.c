@@ -230,6 +230,27 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF, "MPIDI_CH3U_Request_unpack_uebuf",
 		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_VCRT_CREATE, "MPID_VCRT_Create",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+			MPID_STATE_MPID_VCRT_ADD_REF, "MPID_VCRT_Add_ref",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_VCRT_RELEASE, "MPID_VCRT_Release",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_VCRT_GET_PTR, "MPID_VCRT_Get_ptr",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_VCR_DUP, "MPID_VCR_Dup",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_VCR_RELEASE, "MPID_VCR_Release",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+			MPID_STATE_MPID_VCR_GET_LPID, "MPID_VCR_Get_lpid",
+		       get_random_color_str());
 
     /* call the channel function to describe the states found in the ch3/channels/xx/src directory */
     return CH3U_Describe_timer_states();
