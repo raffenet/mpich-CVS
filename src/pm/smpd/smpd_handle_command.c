@@ -425,6 +425,26 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("unable to create a done command.\n");
 		    }
 		}
+		else if (strcmp(iter->cmd_str, "get") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			/* print the result of the get command */
+			char value[SMPD_MAX_VALUE_LENGTH];
+			if (smpd_get_string_arg(context->read_cmd.cmd, "value", value, SMPD_MAX_VALUE_LENGTH))
+			{
+			    printf("%s\n", value);
+			}
+			else
+			{
+			    printf("Error: unable to get the value from the result command - '%s'\n", context->read_cmd.cmd);
+			}
+		    }
+		    else
+		    {
+			printf("%s\n", str);
+		    }
+		}
 		else if (strcmp(iter->cmd_str, "set") == 0 || strcmp(iter->cmd_str, "delete") == 0)
 		{
 		    /* print the result of the set command */
@@ -1681,25 +1701,110 @@ int smpd_handle_validate_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_get_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char result_str[100];
+    char key[SMPD_MAX_NAME_LENGTH];
+    char value[SMPD_MAX_VALUE_LENGTH];
+
+    smpd_enter_fn("smpd_handle_get_command");
+
+    cmd = &context->read_cmd;
+
+    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
+    {
+	smpd_err_printf("get command missing key parameter\n");
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+
+    /* get key */
+    result = smpd_get_smpd_data(key, value, SMPD_MAX_VALUE_LENGTH);
+    if (result != SMPD_SUCCESS)
+    {
+	/*
+	smpd_err_printf("unable to get %s\n", key);
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+	*/
+	strcpy(result_str, SMPD_FAIL_STR);
+    }
+    else
+    {
+	strcpy(result_str, SMPD_SUCCESS_STR);
+    }
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a get %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a get %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+    if (strcmp(result_str, SMPD_SUCCESS_STR) == 0)
+    {
+	/* add the value */
+	result = smpd_add_command_arg(temp_cmd, "value", value);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the value to the result command for a get %s=%s command.\n", key, value);
+	    smpd_exit_fn("smpd_handle_get_command");
+	    return SMPD_FAIL;
+	}
+    }
+    /* add the result */
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a get %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to get %s command: \"%s\"\n", key, temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_get_command");
+    return result;
+}
+
 int smpd_handle_set_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
     char result_str[100];
-    char key[SMPD_MAX_DBS_KEY_LEN];
-    char value[SMPD_MAX_DBS_VALUE_LEN];
+    char key[SMPD_MAX_NAME_LENGTH];
+    char value[SMPD_MAX_VALUE_LENGTH];
 
     smpd_enter_fn("smpd_handle_set_command");
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_DBS_KEY_LEN))
+    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
     {
 	smpd_err_printf("set command missing key parameter\n");
 	smpd_exit_fn("smpd_handle_set_command");
 	return SMPD_FAIL;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_DBS_VALUE_LEN))
+    if (!smpd_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_VALUE_LENGTH))
     {
 	smpd_err_printf("set command missing value parameter\n");
 	smpd_exit_fn("smpd_handle_set_command");
@@ -1759,13 +1864,13 @@ int smpd_handle_delete_command(smpd_context_t *context)
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
     char result_str[100];
-    char key[SMPD_MAX_DBS_KEY_LEN];
+    char key[SMPD_MAX_NAME_LENGTH];
 
     smpd_enter_fn("smpd_handle_delete_command");
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_DBS_KEY_LEN))
+    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
     {
 	smpd_err_printf("set command missing key parameter\n");
 	smpd_exit_fn("smpd_handle_delete_command");
@@ -2057,6 +2162,12 @@ int smpd_handle_command(smpd_context_t *context)
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {
 		result = smpd_handle_stat_command(context);
+		smpd_exit_fn("smpd_handle_command");
+		return result;
+	    }
+	    else if (strcmp(cmd->cmd_str, "get") == 0)
+	    {
+		result = smpd_handle_get_command(context);
 		smpd_exit_fn("smpd_handle_command");
 		return result;
 	    }

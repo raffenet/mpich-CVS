@@ -205,10 +205,13 @@ int smpd_delete_smpd_data(const char *key)
     result = RegDeleteValue(tkey, key);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to delete the smpd registry value '%s', error %d\n", key, result);
-	RegCloseKey(tkey);
-	smpd_exit_fn("smpd_delete_smpd_data");
-	return SMPD_FAIL;
+	if (result != ERROR_FILE_NOT_FOUND && result != ERROR_PATH_NOT_FOUND)
+	{
+	    smpd_err_printf("Unable to delete the smpd registry value '%s', error %d\n", key, result);
+	    RegCloseKey(tkey);
+	    smpd_exit_fn("smpd_delete_smpd_data");
+	    return SMPD_FAIL;
+	}
     }
 
     RegCloseKey(tkey);
@@ -278,7 +281,7 @@ int smpd_delete_smpd_data(const char *key)
 	free(node);
     }
     smpd_exit_fn("smpd_delete_smpd_data");
-    return SMPD_FAIL;
+    return SMPD_SUCCESS;
 #endif
 }
 
@@ -372,11 +375,6 @@ int smpd_set_smpd_data(const char *key, const char *value)
 
     list = smpd_parse_smpd_file();
     fout = smpd_open_smpd_file(SMPD_TRUE);
-#if 0
-    if (fout)
-	/*fseek(fout, 0, SEEK_SET);*/
-	rewind(fout);
-#endif
     while (list)
     {
 	node = list;

@@ -569,7 +569,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 				cmd_ptr->wait = SMPD_TRUE;
 			    }
 			    if (strcmp(cmd_ptr->cmd_str, "set") == 0 || strcmp(cmd_ptr->cmd_str, "delete") == 0 ||
-				strcmp(cmd_ptr->cmd_str, "stat") == 0)
+				strcmp(cmd_ptr->cmd_str, "stat") == 0 || strcmp(cmd_ptr->cmd_str, "get") == 0)
 			    {
 				if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
 				{
