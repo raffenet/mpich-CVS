@@ -69,6 +69,8 @@ typedef int BOOL;
 /* The following are temporary definitions */
 #define msg_printf printf
 #define msg_fprintf fprintf
+#define err_printf printf
+#define err_fprintf fprintf
 
 /* Thread basics */
 #ifdef MPICH_SINGLE_THREADED
