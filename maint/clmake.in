@@ -8,10 +8,12 @@ $debug = 0;
 	      "if", "make", "[A-Za-z0-9_\/-]*\/mpicc",
 	      "cleaning", "/bin/rm", "sleep", "g77", "f77", "f90", "pgCC",
 	      "pgf77", "CC", "g\\+\\+", "c\\+\\+",
+	      "/usr/bin/ar", 
+	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
 	      "Copying Upshot",
-	      "Making upshot", );
+	      "Making upshot", "\s*\$", );
 # Read lines.  Categorize lines as commands and output.  This
 # script suppresses commands that generate no extra output.
 # The approach is to read a line and then read the next line.
