@@ -67,7 +67,7 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
             if (pg->pSharedProcessHandles[i] == NULL)
             {
                 int err = GetLastError();
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "OpenProcess", "unable to open process %d, error %d\n", i, err);
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err); /*"unable to open process %d, error %d\n", i, err);*/
             }
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
@@ -75,7 +75,7 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
             pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
             if (pg->pSharedProcessFileDescriptors[i] == -1)
 	    {
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "open", "failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**open", "**open %s %d", filename, pSharedProcess[i].nPid); /*"failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);*/
 	    }
 #endif
         }
@@ -161,7 +161,7 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
 	if (pg->id == -1) 
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmget", "Error in shmget\n");
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**shmget", "**shmget %d", errno); /*"Error in shmget\n");*/
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
@@ -175,7 +175,7 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	    pg->key);
 	if (pg->id == NULL) 
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "CreateFileMapping", "Error in CreateFileMapping, %d\n", GetLastError());
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**CreateFileMapping", "**CreateFileMapping %d", GetLastError()); /*"Error in CreateFileMapping, %d\n", GetLastError());*/
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
@@ -204,7 +204,7 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	pg->addr = shmat(pg->id, NULL, SHM_RND);
 	if (pg->addr == (void*)-1)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmat", "Error from shmat %d\n", errno);
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**shmat", "**shmat %d", errno); /*"Error from shmat %d\n", errno);*/
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return NULL;
 	}
@@ -302,7 +302,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     /*if (nRank == 0) pLastAddr = malloc(1024000); */
     if (g_bGetMemSyncCalled)
     {
-        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "twice", "Error: Global shared memory initializer called more than once.\n");
+        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**GetMemTwice", "**GetMemTwice"); /*"Error: Global shared memory initializer called more than once.\n");*/
     }
     g_bGetMemSyncCalled = TRUE;
     if (nTotalSize < 1)
@@ -319,7 +319,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
         pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
         if (pg->id == -1) 
         {
-            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmget", "Error in shmget\n");
+            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**shmget", "**shmget %d", errno); /*"Error in shmget\n");*/
             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
             return mpi_errno;
         }
@@ -333,7 +333,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
             pg->key);
         if (pg->id == NULL) 
         {
-            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "CreateFileMapping", "Error in CreateFileMapping, %d\n", GetLastError());
+            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**CreateFileMapping", "**CreateFileMapping %d", GetLastError()); /*"Error in CreateFileMapping, %d\n", GetLastError());*/
             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
             return mpi_errno;
         }

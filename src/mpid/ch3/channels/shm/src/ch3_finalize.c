@@ -59,7 +59,7 @@ int MPIDI_CH3_Finalize()
     if (rc)
     {
 	mpi_errno = MPIR_Err_create_code(
-	    MPI_ERR_OTHER, "PMI_Finalize() failed", 0 );
+	    MPI_ERR_OTHER, "**pmi_finalize", 0 );
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
