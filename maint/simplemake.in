@@ -2522,12 +2522,27 @@ sub ReadAutoconf {
 	    $lcurdir =~ s/\/$//;
 	    foreach $file (@autoconf_files) {
 		if ($file =~ /^(.*)\/([^\/]*)$/) {
+		    # File contains a directory path, so update the
+		    # appropriate directory entry
 		    $autoconf_files_by_dir{"$curdir$1"} .= " $2";
 		    #print "{$curdir$1} .= $2\n";
 		    # Also add files that are in directories with no simplemake
 		    # input (e.g., in include directories with no makefile)
 		    if (! -s "$curdir$1/Makefile.sm") {
 			$autoconf_files_by_dir{$lcurdir} .= " $file";
+		    }
+		}
+		elsif ($file =~ /^\$(\w*)/) {
+		    # Another special case.  The name is actually
+		    # a shell variable.  This is too hard for us right now,
+		    # so generate a warning and do NOT add it to the list
+		    print STDERR "Shell variable $1 will not be added to the list\n";
+		    print STDERR "of known autoconf file files for ";
+		    if ($lcurdir ne "") {
+			print STDERR "$lcurdir\n";
+		    }
+		    else {
+			print STDERR "top directory\n";
 		    }
 		}
 		elsif ($file =~ /^.*$/) {
