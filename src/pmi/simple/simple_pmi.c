@@ -14,6 +14,8 @@
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
+char PMIU_print_id[PMIU_IDSIZE];
+
 int PMI_fd;
 int PMI_size;
 int PMI_rank;
