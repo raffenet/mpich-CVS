@@ -278,6 +278,12 @@ def mpdrun():
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1
+                    elif msg['cmd'] == 'job_terminated_early':
+                        print 'rank %d in job %s aborted with reason :%s:' % \
+                              ( msg['rank'], msg['jobid'], msg['reason'] )
+                        del socketsToSelect[readySocket]
+                        readySocket.close()
+                        done += 1
                     elif (msg['cmd'] == 'job_terminated'):
                         del socketsToSelect[readySocket]
                         readySocket.close()

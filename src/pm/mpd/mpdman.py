@@ -6,7 +6,7 @@ from sys     import exit
 from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select  import select, error
 from re      import findall, sub
-from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL, SIG_IGN
+from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
 from md5     import new
 from cPickle import dumps, loads
 from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
@@ -17,12 +17,7 @@ from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_bin
                    mpd_socketpair
 
 
-global get_sigtype_from_mpd
-
 def mpdman():
-    global get_sigtype_from_mpd
-    get_sigtype_from_mpd = 0
-    signal(SIGUSR1,sigusr1_handler)
     signal(SIGCHLD,SIG_DFL)  # reset mpd's values
 
     myHost = environ['MPDMAN_MYHOST']
@@ -54,13 +49,17 @@ def mpdman():
     host0 = environ['MPDMAN_HOST0']        # only used by right-most man
     port0 = int(environ['MPDMAN_PORT0'])   # only used by right-most man
     myPort = int(environ['MPDMAN_MY_LISTEN_PORT'])
-    listenFD = int(environ['MPDMAN_MY_LISTEN_FD'])
     mpd_print(0000, "lhost=%s lport=%d h0=%s p0=%d" % (lhsHost,lhsPort,host0,port0) )
-    stdinGoesToWho = int(environ['MPDMAN_STDIN_GOES_TO_WHO'])
+    listenFD = int(environ['MPDMAN_MY_LISTEN_FD'])
     listenSocket = fromfd(listenFD,AF_INET,SOCK_STREAM)
     close(listenFD)
-    socketsToSelect = { listenSocket : 1 }
+    socketsToSelect = { listenSocket : 1 }    # initial value
+    mpdFD = int(environ['MPDMAN_TO_MPD_FD'])
+    mpdSocket = fromfd(mpdFD,AF_INET,SOCK_STREAM)
+    close(mpdFD)
+    socketsToSelect[mpdSocket] = 1
     lineLabels = int(environ['MPDMAN_LINE_LABELS'])
+    stdinGoesToWho = int(environ['MPDMAN_STDIN_GOES_TO_WHO'])
     startStdoutLineLabel = 1
     startStderrLineLabel = 1
     myLineLabel = str(myRank) + ': '
@@ -240,39 +239,7 @@ def mpdman():
     holdingEndBarrierLoop1 = 0
     endBarrierDone = 0
     numDone = 0
-    mpdSocket = 0
     while not endBarrierDone:
-        if get_sigtype_from_mpd:
-            mpdSocket = mpd_get_inet_socket_and_connect('localhost',mpdPort)
-            msgToSend = { 'cmd' : 'manager_needs_help', 'host' : myHost, 'port' : myPort }
-            mpd_send_one_msg(mpdSocket,msgToSend)
-            msg = mpd_recv_one_msg(mpdSocket)
-            if (not msg.has_key('cmd')) or  \
-               (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')):
-                mpd_raise('%s: failed to recv challenge from rhs; msg=:%s:' % (myId,msg) )
-            response = new(''.join([mpdConfPasswd,msg['randnum']])).digest()
-            msgToSend = { 'cmd' : 'challenge_response', 'response' : response,
-                          'host' : myHost, 'port' : myPort }
-            mpd_send_one_msg(mpdSocket,msgToSend)
-            msg = mpd_recv_one_msg(mpdSocket)
-            if (not msg.has_key('cmd'))  or  (msg['cmd'] != 'OK_to_send_requests'):
-                mpd_raise('%s: NOT OK to send requests to mpd; msg=:%s:' % (myId,msg) )
-            msgToSend = { 'cmd' : 'get_signal_to_deliver', 'pid' : `getpid()`,
-                          'jobid' : jobid }
-            mpd_send_one_msg(mpdSocket,msgToSend)
-            msg = mpd_recv_one_msg(mpdSocket)
-            if msg['sigtype'].isdigit():
-                signum = int(msg['sigtype'])
-            else:
-                import signal as tmpimp  # just to get valid SIG's
-                exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
-            try:    
-                kill(clientPid,signum)
-            except Exception, errmsg:
-                mpd_print(1, 'invalid signal %d' % (signum) )
-            mpdSocket.close()
-            mpdSocket = 0
-            get_sigtype_from_mpd = 0
         try:
             (inReadySockets,None,None) = select(socketsToSelect.keys(),[],[],30)
         except error, errmsg:
@@ -813,7 +780,25 @@ def mpdman():
                 else:
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:
-                    mpd_print(1, 'unexpected msg recvd on mpdSocket :%s:' % msg )
+                msg = mpd_recv_one_msg(mpdSocket)
+                mpd_print(1111, 'msg recvd on mpdSocket :%s:' % msg )
+                if not msg:
+                    if conSocket:
+                        msgToSend = { 'cmd' : 'job_aborted', 'reason' : 'mpd disappeared',
+                                      'jobid' : jobid }
+                        mpd_send_one_msg(conSocket,msgToSend)
+                        conSocket.close()
+                    kill(0,SIGKILL)  # pid 0 -> all in my process group
+                    _exit(0)
+                if msg['sigtype'].isdigit():
+                    signum = int(msg['sigtype'])
+                else:
+                    import signal as tmpimp  # just to get valid SIG's
+                    exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
+                try:    
+                    kill(clientPid,signum)
+                except Exception, errmsg:
+                    mpd_print(1, 'invalid signal %d' % (signum) )
             else:
                 mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
     mpd_print(0000, "out of loop")
@@ -832,10 +817,6 @@ def parse_pmi_msg(msg):
         se = e.split('=')
         parsed_msg[se[0]] = se[1]
     return parsed_msg
-
-def sigusr1_handler(signum,frame):
-    global get_sigtype_from_mpd
-    get_sigtype_from_mpd = 1
 
 if __name__ == '__main__':
     if not environ.has_key('MPDMAN_CLI_PGM'):    # assume invoked from keyboard

@@ -10,7 +10,7 @@ from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname
 from select    import select, error
 from getopt    import getopt
 from types     import FunctionType
-from signal    import signal, SIGCHLD, SIGKILL, SIGUSR1, SIGHUP, SIG_IGN
+from signal    import signal, SIGCHLD, SIGKILL, SIGHUP, SIG_IGN
 from atexit    import register
 from time      import sleep
 from random    import seed, randrange
@@ -23,7 +23,8 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                       mpd_set_procedures_to_trace, mpd_trace_calls, mpd_raise, mpdError, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
-                      mpd_set_my_id, mpd_check_python_version, mpd_version
+                      mpd_set_my_id, mpd_check_python_version, mpd_version, \
+                      mpd_socketpair
 
 class _ActiveSockInfo:
     pass
@@ -36,7 +37,6 @@ def _mpd_init():
     global stdout
     close(0)
     g.myPid = getpid()
-    # print "mpd version 0.8 for Edi"   
     (g.mySocket,g.myPort) = mpd_get_inet_listen_socket('',0)
     if g.echoPortNum:    # do this before becoming a daemon
         print g.myPort
@@ -55,7 +55,7 @@ def _mpd_init():
         if rc != 0:   # parent exits; child in background
             exit(0)
         setsid()  # become session leader; no controlling tty
-        signal(SIGHUP,SIG_IGN) # make sure no sighup when leader ends
+        signal(SIGHUP,SIG_IGN)  # make sure no sighup when leader ends
         ## leader exits; svr4: make sure do not get another controlling tty
         rc = fork()
         if rc != 0:
@@ -149,8 +149,6 @@ def _mpd():
                 _handle_rhs_challenge_response(readySocket)
             elif g.activeSockets[readySocket].name == 'lhs_being_challenged':
                 _handle_lhs_challenge_response(readySocket)
-            elif g.activeSockets[readySocket].name == 'man_being_challenged':
-                _handle_man_challenge_response(readySocket)
             elif g.activeSockets[readySocket].name == 'man_msgs':
                 _handle_man_msgs(readySocket)
             else:
@@ -341,8 +339,9 @@ def _handle_lhs_input():
                 for pid in g.activeJobs[jobid].keys():
                     if g.activeJobs[jobid][pid]['username'] == msg['username']  \
                     or g.activeJobs[jobid][pid]['username'] == 'root':
-                        g.activeJobs[jobid][pid]['signal_to_deliver'] = msg['sigtype']
-                        kill(pid, SIGUSR1)  # tell man to contact me and ask about signal
+                        manSocket = g.activeJobs[jobid][pid]['socktoman']
+                        mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
+                                                      'sigtype' : sigtype } )
     elif msg['cmd'] == 'mpdkilljob':
         if msg['src'] == g.myId:
             mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack' })
@@ -407,6 +406,7 @@ def _do_mpdrun(msg):
             manLhsHost = msg['lhshost']
             manLhsPort = msg['lhsport']
         (tempSocket,tempPort) = mpd_get_inet_listen_socket('',0)
+        (toManSocket,toMpdSocket) = mpd_socketpair()
         msg['lhshost'] = g.myHost
         msg['lhsport'] = tempPort
         if currRank == 0:
@@ -441,7 +441,7 @@ def _do_mpdrun(msg):
         for ranks in args.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-		pgmArgs = dumps(args[ranks])
+                pgmArgs = dumps(args[ranks])
                 break
         envvars = msg['envvars']
         for ranks in envvars.keys():
@@ -455,11 +455,12 @@ def _do_mpdrun(msg):
             if currRank >= lo  and  currRank <= hi:
                 cwd = cwds[ranks]
                 break
-        rc = fork()
-        if rc == 0:
+        pid = fork()
+        if pid == 0:
             mpd_set_my_id('%s_man_before_exec_%d' % (g.myHost,g.myPid) )
             for sock in g.activeSockets:
                 sock.close()
+            toManSocket.close()
             setpgrp()
             environ['MPDMAN_MYHOST'] = g.myHost
             environ['MPDMAN_JOBID'] = jobid
@@ -481,6 +482,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_PORT0'] = str(manPort0)
             environ['MPDMAN_MY_LISTEN_PORT'] = str(tempPort)
             environ['MPDMAN_MY_LISTEN_FD'] = str(tempSocket.fileno())
+            environ['MPDMAN_TO_MPD_FD'] = str(toMpdSocket.fileno())
             environ['MPDMAN_STDIN_GOES_TO_WHO'] = msg['stdin_goes_to_who']
             if msg.has_key('line_labels'):
                 environ['MPDMAN_LINE_LABELS'] = '1'
@@ -501,7 +503,13 @@ def _do_mpdrun(msg):
             _exit(0);  # do NOT do cleanup
         else:
             tempSocket.close()
-            _add_active_job(jobid,username,pgm,currRank,rc)
+            toMpdSocket.close()
+            if not g.activeJobs.has_key(jobid):
+                g.activeJobs[jobid] = {}
+            g.activeJobs[jobid][pid] = { 'pgm' : pgm, 'rank' : currRank,
+                                         'username' : username, 'socktoman' : toManSocket }
+            _add_active_socket(toManSocket,'man_msgs','_handle_man_msgs',
+                               'localhost',tempPort)
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
     mpd_send_one_msg(g.rhsSocket,msg)  # forward it on around
 
@@ -568,16 +576,6 @@ def _handle_new_connection():
         _add_active_socket(newConnSocket,'lhs_being_challenged',
                            '_handle_lhs_challenge_response',
                            msg['host'],msg['port'])
-    elif msg['cmd'] == 'manager_needs_help':
-        randNumStr = '%04d' % (randrange(1,randHiRange))  # 0001-(hi-1), inclusive
-        g.correctChallengeResponse[newConnSocket] = \
-            new(''.join([g.configParams['password'],randNumStr])).digest()
-        msgToSend = { 'cmd' : 'challenge',
-                      'randnum' : randNumStr }
-        mpd_send_one_msg(newConnSocket,msgToSend)
-        _add_active_socket(newConnSocket,'man_being_challenged',
-                           '_handle_man_challenge_response',
-                           msg['host'],msg['port'])
     else:
         mpd_print(1, 'INVALID msg from new connection :%s: msg=:%s:' % (newConnAddr,msg) )
         newConnSocket.close()
@@ -629,25 +627,6 @@ def _handle_rhs_challenge_response(responseSocket):
         g.rhsPort = int(msg['port'])
         _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
 
-def _handle_man_challenge_response(responseSocket):
-    msg = mpd_recv_one_msg(responseSocket)
-    if (not msg)   or  \
-       (not msg.has_key('cmd'))   or  (not msg.has_key('response'))  or  \
-       (not msg.has_key('host'))  or  (not msg.has_key('port'))  or  \
-       (msg['response'] != g.correctChallengeResponse[responseSocket]):
-        mpd_print(1, 'INVALID msg for man response msg=:%s:' % (msg) )
-        msgToSend = { 'cmd' : 'invalid_response' }
-        mpd_send_one_msg(responseSocket,msgToSend)
-        del g.correctChallengeResponse[responseSocket]
-        del g.activeSockets[responseSocket]
-        responseSocket.close()
-    else:
-        msgToSend = { 'cmd' : 'OK_to_send_requests' }
-        mpd_send_one_msg(responseSocket,msgToSend)
-        _add_active_socket(responseSocket,
-                           'man_msgs','_handle_man_input',
-                           msg['host'],msg['port'])
-
 def _handle_man_msgs(manSocket):
     msg = mpd_recv_one_msg(manSocket)
     if not msg:
@@ -672,12 +651,6 @@ def _handle_man_msgs(manSocket):
         else:
             mpd_send_one_msg(g.rhsSocket,msg)
         ## mpd_send_one_msg(manSocket, {'cmd' : 'mpdrun_ack', } )
-    elif msg['cmd'] == 'get_signal_to_deliver':
-        jobid = msg['jobid']  # jobid of the job being signaled
-        pid = int(msg['pid']) # pid of manager dooing the request
-        sigtype = g.activeJobs[jobid][pid]['signal_to_deliver']
-        del g.activeJobs[jobid][pid]['signal_to_deliver']
-        mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_deliver', 'sigtype' : sigtype } )
     else:
         mpd_print(1, 'INVALID request from man msg=:%s:' % (msg) )
         msgToSend = { 'cmd' : 'invalid_request' }
@@ -689,11 +662,6 @@ def _add_active_socket(socket,name,handler,host,port):
     g.activeSockets[socket].handler = handler
     g.activeSockets[socket].rhsHost = host
     g.activeSockets[socket].rhsPort = port
-
-def _add_active_job(jobid,username,pgm,rank,pid):
-    if not g.activeJobs.has_key(jobid):
-        g.activeJobs[jobid] = {}
-    g.activeJobs[jobid][pid] = { 'pgm' : pgm, 'rank' : rank, 'username' : username }
 
 def _enter_existing_ring():
     # connect to lhs
@@ -819,7 +787,7 @@ def _process_cmdline_args():
         (opts,args) = getopt(argv[1:],
                              'h:p:i:tnedb',
                              ['host=','port=','idmyhost','trace','noconsole','echo',
-			      'daemon','bulletproof'])
+                              'daemon','bulletproof'])
     except:
         usage()
 
@@ -905,24 +873,24 @@ if __name__ == '__main__':
     
         _mpd_init()
 
-	if g.bulletproof:
-	    # may use SIG_IGN on all but SIGCHLD and SIGHUP (handled above)
+        if g.bulletproof:
+            # may use SIG_IGN on all but SIGCHLD and SIGHUP (handled above)
             while 1:
-	        mpdtid = Thread(target=_mpd)
-	        mpdtid.start()
+                mpdtid = Thread(target=_mpd)
+                mpdtid.start()
                 mpdtid.join()   # only come out if exiting or thread fails
-	        if g.allExiting:
-	            break
-	        if g.conSocket:
-	            if g.activeSockets[g.conSocket]:
+                if g.allExiting:
+                    break
+                if g.conSocket:
+                    if g.activeSockets[g.conSocket]:
                         msgToSend = { 'cmd' : 'restarting_mpd' }
                         mpd_send_one_msg(g.conSocket,msgToSend)
                         del g.activeSockets[g.conSocket]
                     g.conSocket.close()
                     g.conSocket = 0
-	else:
+        else:
             #    import profile
             #    profile.run('_mpd()')
-	    _mpd()
+            _mpd()
     except mpdError, errmsg:
         print 'mpd failed (%s); cause: %s' % (g.myId,errmsg)
