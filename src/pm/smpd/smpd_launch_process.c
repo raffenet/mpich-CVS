@@ -422,6 +422,8 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     DWORD launch_flag;
     int nError;
 
+    smpd_enter_fn("smpd_launch_process");
+
     smpd_priority_class_to_win_class(&priorityClass);
     smpd_priority_to_win_priority(&priority);
 
@@ -433,6 +435,7 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     {
 	nError = GetLastError();
 	smpd_err_printf("GetStdHandle failed, error %d\n", nError);
+	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;;
     }
 
@@ -573,8 +576,10 @@ CLEANUP:
     if (hRetVal != INVALID_HANDLE_VALUE)
     {
         CloseHandle(hRetVal);
+	smpd_exit_fn("smpd_launch_process");
 	return SMPD_SUCCESS;
     }
+    smpd_exit_fn("smpd_launch_process");
     return SMPD_FAIL;
 }
 
@@ -770,7 +775,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 {
     char *pCh, *pCh2;
 
-    smpd_enter_fn("smpd_parse_account_domain.\n");
+    smpd_enter_fn("smpd_parse_account_domain");
 
     pCh = domain_account;
     pCh2 = domain;
@@ -792,7 +797,7 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 	domain[0] = '\0';
     }
 
-    smpd_exit_fn("smpd_parse_account_domain.\n");
+    smpd_exit_fn("smpd_parse_account_domain");
 }
 
 #else

@@ -135,9 +135,9 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
     return SMPD_SUCCESS;
 #else
     int result;
-    smpd_enter_fn("smpd_get_smpd_data.\n");
+    smpd_enter_fn("smpd_get_smpd_data");
     result = smpd_get_smpd_data_default(key, value, value_len);
-    smpd_exit_fn("smpd_get_smpd_data.\n");
+    smpd_exit_fn("smpd_get_smpd_data");
     return result;
 #endif
 }
