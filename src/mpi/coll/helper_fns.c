@@ -222,6 +222,9 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
 
 int MPIC_Wait(MPID_Request * request_ptr)
 {
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_WAIT);
+
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPIC_WAIT);
     while((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_start();
@@ -233,6 +236,7 @@ int MPIC_Wait(MPID_Request * request_ptr)
 	    mpi_errno = MPID_Progress_wait();
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
 		return mpi_errno;
 	    }
 	}
@@ -243,5 +247,6 @@ int MPIC_Wait(MPID_Request * request_ptr)
 	}
     }
 
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
     return MPI_SUCCESS;
 }
