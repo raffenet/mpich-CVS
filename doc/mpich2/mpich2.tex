@@ -3889,6 +3889,16 @@ we can use the fact that the first \code{size} values of local PIDs
 simplify the computation.  The code used in MPICH-1 for this function
 can then be used with only slight modification (due to the different
 data structures for groups in MPICH-2).
+
+The algorithm in MPICH-1 had complexity that was the product of the
+number of ranks and the size of group2.  For the important special
+case of ranks that correspond to increasing local processor order
+(e.g., increasing ranks against the group of \code{MPI_COMM_WORLD} or any 
+split of \code{MPI_COMM_WORLD} that uses rank as the key), we start
+the search for the corresponding local pid at the location where the
+last rank was found.  This reduces the complexity to the sum of the
+number of ranks and size of group2 in this case.
+
 %\end{algorithm}
 
 % Question: should there be a
