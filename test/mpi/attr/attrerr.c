@@ -94,6 +94,8 @@ int test_communicators( void )
 	printf( "delete function return code was MPI_SUCCESS in put\n" );
     }
 
+    /* Because the attribute delete function should fail, the attribute
+       should *not be removed* */
     err = MPI_Attr_delete( dup_comm_world, key_1 );
     if (err == MPI_SUCCESS) {
 	errs++;
@@ -105,7 +107,7 @@ int test_communicators( void )
 	errs++;
 	printf( "copy function return code was MPI_SUCCESS in dup\n" );
     }
-    if (d2 != MPI_COMM_NULL) {
+    if (err && d2 != MPI_COMM_NULL) {
 	errs++;
 	printf( "dup did not return MPI_COMM_NULL on error\n" );
     }
