@@ -105,16 +105,23 @@ typedef int MPI_Op;
 #define MPI_MAXLOC (MPI_Op)(12)
 
 /* Permanent key values */
-/* C Versions (return pointer to value) */
-#define MPI_TAG_UB           81
-#define MPI_HOST             83
-#define MPI_IO               85
-#define MPI_WTIME_IS_GLOBAL  87
-/* Fortran Versions (return integer value) */
-#define MPIR_TAG_UB          80
-#define MPIR_HOST            82
-#define MPIR_IO              84
-#define MPIR_WTIME_IS_GLOBAL 86
+/* C Versions (return pointer to value),
+   Fortran Versions (return integer value).
+   Handled directly by the attribute value routine
+   
+   DO NOT CHANGE THESE.  The values encode:
+   builtin kind (0x1 in bit 30-31)
+   Keyval object (0x9 in bits 26-29)
+   for communicator (0x1 in bits 22-25)
+   
+ */
+#define MPI_TAG_UB           0x5c400001
+#define MPI_HOST             0x5c400002
+#define MPI_IO               0x5c400003
+#define MPI_WTIME_IS_GLOBAL  0x5c400004
+#define MPI_UNIVERSE         0x5c400005
+#define MPI_LASTUSEDCODE     0x5c400006
+#define MPI_APPNUM           0x5c400007
 
 /* Define some null objects */
 #define MPI_COMM_NULL      ((MPI_Comm)0x04000000)
@@ -359,6 +366,8 @@ extern int MPICHX_TOPOLOGY_COLORS;
 #define MPI_ERR_SPAWN       42      /* */
 #define MPI_ERR_UNSUPPORTED_OPERATION 44 /* */
 #define MPI_ERR_WIN         45      /* */
+
+#define MPI_ERR_KEYVAL      46      /* Erroneous attribute key */
 
 #define MPI_ERR_LASTCODE    0x3FFFFFFF      /* Last error code*/
 /* End of MPI's error classes */
