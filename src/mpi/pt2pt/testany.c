@@ -58,8 +58,7 @@ program to unexecpectedly terminate or produce incorrect results.
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
-		int *flag, MPI_Status *status)
+int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Testany";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -190,11 +189,10 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     {
 	*flag = TRUE;
 	*index = MPI_UNDEFINED;
-	MPIR_Status_set_empty(status);
+	/* status set to empty by MPIR_Request_complete() */
     }
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

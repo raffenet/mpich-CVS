@@ -65,8 +65,7 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_ARG
 .N MPI_ERR_IN_STATUS
 @*/
-int MPI_Waitall(int count, MPI_Request array_of_requests[],
-		MPI_Status array_of_statuses[])
+int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Waitall";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -101,11 +100,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
-				 mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
 	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
-				 mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
 	    if (array_of_requests != NULL && count > 0)
 	    {
 		for (i = 0; i < count; i++)
@@ -159,8 +156,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	}
 	else
 	{
-	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
-		&array_of_statuses[i] : MPI_STATUS_IGNORE;
+	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[i] : MPI_STATUS_IGNORE;
 	    MPIR_Status_set_empty(status_ptr);
 	    request_ptrs[i] = NULL;
 	    n_completed += 1;
@@ -180,31 +176,26 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	    {
-		    
-		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
-		    &array_of_statuses[i] : MPI_STATUS_IGNORE;
-		rc = MPIR_Request_complete(&array_of_requests[i],
-					   request_ptrs[i], status_ptr,
-					   &active_flag);
-		if (active_flag)
+		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[i] : MPI_STATUS_IGNORE;
+		rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);
+		if (rc == MPI_SUCCESS) 
+		{ 
+		    request_ptrs[i] = NULL;
+		}
+		else
 		{
-		    if (rc != MPI_SUCCESS)
-		    {
-			mpi_errno = MPI_ERR_IN_STATUS;
+		    mpi_errno = MPI_ERR_IN_STATUS;
+		    if (status_ptr != MPI_STATUS_IGNORE)
+		    { 
+			status_ptr->MPI_ERROR = rc;
 		    }
 		}
 		
-		request_ptrs[i] = NULL;
 		n_completed += 1;
 	    }
 	}
 	
-	if (n_completed == count)
-	{
-	    MPID_Progress_end();
-	    break;
-	}
-	else if (mpi_errno == MPI_ERR_IN_STATUS)
+	if (mpi_errno == MPI_ERR_IN_STATUS)
 	{
 	    MPID_Progress_end();
 	    
@@ -212,13 +203,25 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	    {
 		for (i = 0; i < count; i++)
 		{
-		    if (request_ptrs[i] != NULL)
+		    if (request_ptrs[i] == NULL)
 		    {
-			array_of_statuses[i].MPI_ERROR = MPI_ERR_PENDING;
+			array_of_statuses[i].MPI_ERROR = MPI_SUCCESS;
+		    }
+		    else
+		    {
+			if (array_of_requests[i] != MPI_REQUEST_NULL)
+			{ 
+			    array_of_statuses[i].MPI_ERROR = MPI_ERR_PENDING;
+			}
 		    }
 		}
 	    }
 	    
+	    break;
+	}
+	else if (n_completed == count)
+	{
+	    MPID_Progress_end();
 	    break;
 	}
 
@@ -232,7 +235,6 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }
 

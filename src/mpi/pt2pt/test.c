@@ -143,6 +143,5 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(request_ptr?request_ptr->comm:0, FCNAME, mpi_errno);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(request_ptr?request_ptr->comm:0, FCNAME, mpi_errno);
 }

@@ -173,8 +173,8 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 		mpi_errno = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status, &active_flag);
 		if (active_flag)
 		{
-		    *index = i;
 		    MPID_Progress_end();
+		    *index = i;
 		    goto break_l1;
 		}
 		else
@@ -184,8 +184,9 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 
 		    if (n_inactive == count)
 		    {
+			MPID_Progress_end();
 			*index = MPI_UNDEFINED;
-			MPIR_Status_set_empty(status);
+			/* status is set to empty by MPIR_Request_complete */
 			goto break_l1;
 		    }
 		}

@@ -16,6 +16,16 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
     switch(request_ptr->kind)
     {
 	case MPID_REQUEST_SEND:
+	{
+	    if (status != MPI_STATUS_IGNORE)
+	    {
+		status->cancelled = request_ptr->status.cancelled;
+	    }
+	    mpi_errno = request_ptr->status.MPI_ERROR;
+	    MPID_Request_release(request_ptr);
+	    *request = MPI_REQUEST_NULL;
+	    break;
+	}
 	case MPID_REQUEST_RECV:
 	{
 	    MPIR_Request_extract_status(request_ptr, status);
@@ -26,6 +36,45 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	}
 			
 	case MPID_PREQUEST_SEND:
+	{
+	    if (request_ptr->partner_request != NULL)
+	    {
+		MPID_Request * prequest_ptr = request_ptr->partner_request;
+
+		/* reset persistent request to inactive state */
+		request_ptr->cc = 0;
+		request_ptr->cc_ptr = &request_ptr->cc;
+		request_ptr->partner_request = NULL;
+		
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    status->cancelled = prequest_ptr->status.cancelled;
+		}
+		mpi_errno = prequest_ptr->status.MPI_ERROR;
+	    
+		MPID_Request_release(prequest_ptr);
+	    }
+	    else
+	    {
+		if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
+		{
+		    /* if the persistent request failed to start then make the error code available */
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			status->cancelled = FALSE;
+		    }
+		    mpi_errno = request_ptr->status.MPI_ERROR;
+		}
+		else
+		{
+		    MPIR_Status_set_empty(status);
+		    *active = FALSE;
+		}
+	    }
+	    
+	    break;
+	}
+	
 	case MPID_PREQUEST_RECV:
 	{
 	    if (request_ptr->partner_request != NULL)
@@ -44,6 +93,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	    }
 	    else
 	    {
+		MPIR_Status_set_empty(status);
 		if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
 		{
 		    /* if the persistent request failed to start then make the error code available */
@@ -52,7 +102,6 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		else
 		{
 		    *active = FALSE;
-		    MPIR_Status_set_empty(status);
 		}
 	    }
 	    
@@ -74,6 +123,45 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	    
 	    MPID_Request_release(request_ptr);
 	    *request = MPI_REQUEST_NULL;
+	    break;
+	}
+    }
+
+    return mpi_errno;
+}
+
+
+int MPIR_Request_get_error(MPID_Request * request_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    switch(request_ptr->kind)
+    {
+	case MPID_REQUEST_SEND:
+	case MPID_REQUEST_RECV:
+	{
+	    mpi_errno = request_ptr->status.MPI_ERROR;
+	    break;
+	}
+			
+	case MPID_PREQUEST_SEND:
+	case MPID_PREQUEST_RECV:
+	{
+	    if (request_ptr->partner_request != NULL)
+	    {
+		mpi_errno = request_ptr->partner_request->status.MPI_ERROR;
+	    }
+	    else
+	    {
+		mpi_errno = request_ptr->status.MPI_ERROR;
+	    }
+	    
+	    break;
+	}
+
+	case MPID_UREQUEST:
+	{
+	    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
 	    break;
 	}
     }

@@ -178,31 +178,50 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     {
 	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	{
-	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
-		&array_of_statuses[n_active] : MPI_STATUS_IGNORE;
-	    rc = MPIR_Request_complete(&array_of_requests[i],
-				       request_ptrs[i], status_ptr,
-				       &active_flag);
+	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
+	    rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);
 	    if (active_flag)
 	    {
 		array_of_indices[n_active] = i;
 		n_active += 1;
 		    
-		if (rc != MPI_SUCCESS)
+		if (rc == MPI_SUCCESS)
+		{ 
+		    request_ptrs[i] = NULL;
+		}
+		else
 		{
 		    mpi_errno = MPI_ERR_IN_STATUS;
+		    if (status_ptr != MPI_STATUS_IGNORE)
+		    {
+			status_ptr->MPI_ERROR = rc;
+		    }
 		}
 	    }
 	    else
 	    {
+		request_ptrs[i] = NULL;
 		n_inactive += 1;
 	    }
 
-	    request_ptrs[i] = NULL;
 	}
     }
 
-    if (n_active > 0)
+    if (mpi_errno == MPI_ERR_IN_STATUS)
+    {
+	if (array_of_statuses != MPI_STATUSES_IGNORE)
+	{ 
+	    for (i = 0; i < n_active; i++)
+	    {
+		if (request_ptrs[array_of_indices[i]] == NULL)
+		{ 
+		    array_of_statuses[i].MPI_ERROR = MPI_SUCCESS;
+		}
+	    }
+	}
+	*outcount = n_active;
+    }
+    else if (n_active > 0)
     {
 	*outcount = n_active;
     }
