@@ -1253,18 +1253,28 @@ sub printDefineChecks {
     # Let the user define MPICH_IGNORE_CXX_SEEK to both
     # suppress the check for SEEK_SET etc. and to suppress the definition
     # of the values.
+    print $OUTFD "
+// There is a name conflict between stdio.h and the MPI C++ binding 
+// with respect to the names SEEK_SET, SEEK_CUR, and SEEK_END.  MPI
+// wants these in the MPI namespace, but stdio.h will #define these
+// to integer values.  #undef'ing these can cause obscure problems
+// with other include files (such as iostream), so we instead use
+// #error to indicate a fatal error.  Users can either #undef 
+// the names before including mpi.h or include mpi.h *before* stdio.h
+// or iostream.  
+\n";
     print $OUTFD "#ifndef MPICH_IGNORE_CXX_SEEK
 #ifdef SEEK_SET
-/* #warning \"SEEK_SET is defined by MPI\" */
-#undef SEEK_SET
+#error \"SEEK_SET is #defined but must not be for the C++ binding of MPI\"
+//#undef SEEK_SET
 #endif
 #ifdef SEEK_CUR
-/* #warning \"SEEK_CUR is defined by MPI\" */
-#undef SEEK_CUR
+#error \"SEEK_CUR is #defined but must not be for the C++ binding of MPI\"
+//#undef SEEK_CUR
 #endif
 #ifdef SEEK_END
-#undef SEEK_END
-/* #warning \"SEEK_END is defined by MPI\" */
+//#undef SEEK_END
+#error \"SEEK_END is #defined but must not be for the C++ binding of MPI\"
 #endif
 #endif\n\n";
 

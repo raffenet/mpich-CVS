@@ -1,7 +1,10 @@
 <cxxheader/>
 
-#include <stdio.h>
 #include "mpi.h"
+// We place stdio.h *after* mpi.h to avoid conflicts with SEEK_SET et al
+// (the name is #defined in stdio.h and used as an MPI constant
+// MPI::SEEK_SET in the C++ binding for MPI)
+#include <stdio.h>
 #include "mpitestconf.h"
 #ifdef HAVE_IOSTREAM
 // Not all C++ compilers have iostream instead of iostream.h
