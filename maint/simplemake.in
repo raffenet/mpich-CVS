@@ -1874,6 +1874,14 @@ sub InstallDocs {
     # LaTeX manual is different and requires a special case
 }
 
+# Add any dirs that are referred to by InstallDocs
+sub InstallDirs {
+    # Add target only at the top
+    if (!$doc_attop) { return; }
+
+    print FD "htmldir = @htmldir@\nmandir = @mandir@\n";
+}
+
 #
 # Installation is complicated by VPATH builds; files that are derived and
 # files that are not may be in different locations (one relative, the other
