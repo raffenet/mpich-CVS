@@ -4,11 +4,25 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/*
+ * This file provides a set of routines that can be used to record debug
+ * messages in a ring so that the may be dumped at a later time.  For example,
+ * this can be used to record debug messages without printing them; when
+ * a special event, such as an error occurs, a call to 
+ * MPIU_dump_dbg_memlog( stderr ) will print the contents of the file ring
+ * to stderr.
+ */
 #include "mpiimpl.h"
 #include <stdio.h>
+#ifdef HAVE_STDARG_H
 #include <stdarg.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
 
 /* Temporary.  sig values will change */
 /* style: allow:vprintf:3 sig:0 */
@@ -29,16 +43,13 @@ static char **dbg_memlog = NULL;
 static int dbg_memlog_next = 0;
 static int dbg_memlog_count = 0;
 
-/* function prototypes to avoid compiler warnings */
-void log_error(char *str);
-void log_msg(char *str);
-
 static void dbg_init(void)
 {
     char * envstr;
     
     MPIUI_dbg_state = 0;
     
+    /* FIXME: This should use MPIU_Param_get_string */
     envstr = getenv("MPICH_DBG_OUTPUT");
     if (envstr == NULL)
     {
@@ -200,11 +211,12 @@ int MPIU_dbg_printf(char * str, ...)
     return n;
 }
 
-
-void log_error(char *str)
-{
-}
-
+/*
+ * err_printf and msg_printf are names that we should not use, since they
+ * may conflict with names in other programs.  In addition, this file should
+ * be limited to the debug ring routines.
+ */
+#if 0
 #undef err_printf
 int err_printf(char *str, ...)
 {
@@ -218,15 +230,9 @@ int err_printf(char *str, ...)
 
     fflush(stdout);
 
-    log_error(str);
-
     exit(-1);
 
     return n;
-}
-
-void log_msg(char *str)
-{
 }
 
 #undef msg_printf
@@ -242,10 +248,9 @@ int msg_printf(char *str, ...)
 
     fflush(stdout);
 
-    log_msg(str);
-
     return n;
 }
+#endif
 
 void MPIU_dump_dbg_memlog_to_stdout(void)
 {
