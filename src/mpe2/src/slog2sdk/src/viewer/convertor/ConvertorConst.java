@@ -25,18 +25,19 @@ public class ConvertorConst
     private static final String  RLOG_TO_SLOG2_JAR  = "traceTOslog2.jar";
     private static final String  UTE_TO_SLOG2_JAR   = "traceTOslog2.jar";
 
-    // if XXX_TraceLibPath = null, means no need to use -Djava.library.path=
-    // if XXX_TraceLibPath contains ".", i.e. Jar Directory.
-    private static       String  CLOG_TraceLibPath  = null;
-    private static       String  RLOG_TraceLibPath  = ".:../trace_rlog/lib";
-    private static       String  UTE_TraceLibPath   = ".";
-
     // Assume Unix convention.
     private static       String  FileSeparator      = "/";
     private static       String  PathSeparator      = ":";
     private static       String  JavaHome           = null;
     private static       String  ClassPath          = null;
     private static final String  JVM                = "java";
+
+    // if XXX_TraceLibPath = null, means no need to use -Djava.library.path=
+    // if XXX_TraceLibPath contains ".", i.e. Jar Directory.
+    private static       String  CLOG_TraceLibPath  = "";
+    private static       String  RLOG_TraceLibPath  = ".:../trace_rlog/lib";
+    private static       String  UTE_TraceLibPath   = ".:/usr/lpp/ppe.perf/lib";
+
 
 
     public  static String getDefaultConvertor( String filename )
@@ -77,14 +78,15 @@ public class ConvertorConst
             return getDefaultJarName( convertor );
     }
 
-    public  static String getDefaultTraceLibPath( String convertor )
+    public  static String getDefaultTraceLibPath( String  convertor,
+                                                  String  prefix )
     {
         if ( convertor.equals( CLOG_TO_SLOG2 ) )
-            return CLOG_TraceLibPath;
+            return updateLibraryPath( prefix, CLOG_TraceLibPath );
         else if ( convertor.equals( RLOG_TO_SLOG2 ) )
-            return RLOG_TraceLibPath;
+            return updateLibraryPath( prefix, RLOG_TraceLibPath );
         else if ( convertor.equals( UTE_TO_SLOG2 ) )
-            return UTE_TraceLibPath;
+            return updateLibraryPath( prefix, UTE_TraceLibPath );
         else
             return ".";
     }
@@ -190,20 +192,5 @@ public class ConvertorConst
                 new_libpath.append( PathSeparator );
         }
         return new_libpath.toString();
-    }
-
-    public  static void updateDefaultTraceLibPaths( String  path2jardir )
-    {
-        if ( path2jardir != null ) {
-            if ( CLOG_TraceLibPath != null )
-                CLOG_TraceLibPath  = updateLibraryPath( path2jardir,
-                                                        CLOG_TraceLibPath );
-            if ( RLOG_TraceLibPath != null )
-                RLOG_TraceLibPath  = updateLibraryPath( path2jardir,
-                                                        RLOG_TraceLibPath );
-            if ( UTE_TraceLibPath != null )
-                UTE_TraceLibPath   = updateLibraryPath( path2jardir,
-                                                        UTE_TraceLibPath );
-        }
     }
 }
