@@ -98,7 +98,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 # Value of the hash is the argument of the routine that returns a value
 %class_mpi1comm = ( Send => 0, Recv => 0, Bsend => 0, Ssend => 0, Rsend => 0, 
 		    Isend => MPI_Request, Irsend => MPI_Request, 
-		    Issend => MPI_Request, Ibsend => MPI_Request, 
+		    Issend => MPI_Request, Ibsend => MPI_Request,
+		    Irecv => MPI_Request, 
 		    Iprobe => 'int', Probe => 0, 
 		    Send_init => MPI_Request, Bsend_init => MPI_Request, 
 		    Rsend_init => MPI_Request, Recv_init => MPI_Request, 
@@ -181,7 +182,10 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		   'Test' => 'int',
 		   'Free' => 0, 
 		   'Cancel' => 0,
-		   # multiple completion still missing
+		   'Waitall' => 0,
+		   'Waitany' => 'int',
+		   'Testall' => 'int'
+		   # other multiple completion still missing
 );
 %class_mpi1st = ( 'Get_count' => 'int',
 		  'Is_cancelled' => 'int',
@@ -698,6 +702,8 @@ if (!$build_sep_files) {
         print $OUTFD "extern Datatype $dtype;\n";
     }
     print $OUTFD "extern Datatype TWOINT;\n";
+    print $OUTFD "extern Datatype DATATYPE_NULL;\n";
+
     # Initialize the operations
     foreach $op (@ops) {
 	print $OUTFD "extern const Op $op;\n";
@@ -708,7 +714,21 @@ if (!$build_sep_files) {
     print $OUTFD "extern Intracomm COMM_SELF;\n";
     print $OUTFD "extern const Comm COMM_NULL;\n";
     print $OUTFD "extern const Group GROUP_EMPTY;\n";
+    print $OUTFD "extern const Group GROUP_NULL;\n";
 
+    # Predefined requests
+    print $OUTFD "extern const Request REQUEST_NULL;\n";
+
+    # Predefined integers
+    foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
+		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
+		  ANY_TAG, ANY_SOURCE, TAG_UB, IO, HOST, WTIME_IS_GLOBAL,
+		  UNDEFINED, 
+		  SUCCESS, ERR_OTHER ) {
+	print $OUTFD "extern const int $int;\n";
+    }
+
+    # Other routines
     print $OUTFD "extern void Init(void);\n";
     print $OUTFD "extern void Finalize(void);\n";
 
@@ -1042,6 +1062,7 @@ sub build_specials {
     }
     # special case
     print $OUTFD "Datatype TWOINT(MPI_2INT);\n";
+    print $OUTFD "Datatype DATATYPE_NULL;\n";
 
     # Initialize the operations
     foreach $op (@ops) {
@@ -1053,6 +1074,19 @@ sub build_specials {
     print $OUTFD "Intracomm COMM_SELF(MPI_COMM_SELF);\n";
     print $OUTFD "const Comm COMM_NULL;\n";
     print $OUTFD "const Group GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
+    print $OUTFD "const Group GROUP_NULL;\n";
+
+    # Predefined requests
+    print $OUTFD "const Request REQUEST_NULL;\n";
+
+    # Predefined integers
+    foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
+		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
+		  ANY_TAG, ANY_SOURCE, TAG_UB, IO, HOST, WTIME_IS_GLOBAL,
+		  UNDEFINED,
+		  SUCCESS, ERR_OTHER ) {
+	print $OUTFD "const int $int = MPI_$int;\n";
+    }
 
     print $OUTFD "void Init";
     $args = "";
