@@ -77,13 +77,13 @@ foreach $_ (@ARGV) {
 		    Iprobe => 'int', Probe => 0, 
 		    Send_init => MPI_Request, Bsend_init => MPI_Request, 
 		    Rsend_init => MPI_Request, Recv_init => MPI_Request, 
-		    Sendrecv => 0, Sendrecv_repl => 0, Get_size => int, 
-		    Get_rank => int, Free => 0, Get_topology => 2, Abort => 0);
+		    Sendrecv => 0, Sendrecv_repl => 0, Get_size => 'int', 
+		    Get_rank => 'int', Free => 0, Get_topology => 2, Abort => 0);
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
-		    'Get_dim' => int,
-		    'Get_topo' => int,
-		    'Get_cart_rank' => int,
-		    'Shift' => int,
+		    'Get_dim' => 'int',
+		    'Get_topo' => 'int',
+		    'Get_cart_rank' => 'int',
+		    'Shift' => 'int',
 		    'Sub' => MPI_Comm,
 		    'Map' => 0,
 );
@@ -102,7 +102,7 @@ foreach $_ (@ARGV) {
 		    );
 %class_mpi1graph = ( 'Get_dims' => 0, 
 		     'Get_topo' => 0,
-		     'Get_neighbors_count' => int, 
+		     'Get_neighbors_count' => 'int', 
 		     'Get_neighbors' => 0,
 		     'Map' => 0,
 		     );
@@ -121,7 +121,7 @@ foreach $_ (@ARGV) {
 		     'Free' => 0,
 );
 %class_mpi1inter = ( 'Dup' => MPI_Comm, 
-		     'Get_remote_size' => int, 
+		     'Get_remote_size' => 'int', 
 		     'Get_remote_group' => MPI_Group,
 		     'Merge' => MPI_Comm,
 		     );
@@ -150,14 +150,14 @@ foreach $_ (@ARGV) {
 %class_mpi1ppreq = ( 'Start' => 0,
 		     'Startall' => 0 );
 %class_mpi1req = ( 'Wait' => 0, 
-		   'Test' => int,
+		   'Test' => 'int',
 		   'Free' => 0, 
 		   'Cancel' => 0,
 		   # multiple completion still missing
 );
-%class_mpi1st = ( 'Get_count' => int,
-		  'Is_cancelled' => int,
-		  'Get_elements' => int,
+%class_mpi1st = ( 'Get_count' => 'int',
+		  'Is_cancelled' => 'int',
+		  'Get_elements' => 'int',
 		  # get/set source, tag, error have no C binding
 		  );
 
@@ -359,6 +359,7 @@ while (<FD>) {
 # If we aren't building separate files, create the master file
 if (!$build_sep_files) {
     $filename = "mpicxx.h";
+    $OUTFD = OUTFILEHANDLE;
     open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
     $files[$#files+1] = $filename;
     &print_header;
@@ -389,7 +390,10 @@ foreach $class (@classes) {
 
 	# Find the corresponding args.  Some C++ routines don't use the
 	# natural names, so we check for that here
-	$args = $mpi_routine{$routine};
+	$args = "";
+	if (defined($mpi_routine{$routine})) {
+	    $args = $mpi_routine{$routine};
+	}
 	$mpi_routine_name = $routine;
 	if ($args eq "") {
 	    # Check for an alternate name

@@ -2,5 +2,12 @@ Makefile
 Makefile.in
 Makefile.sm
 mpicxx.h
+mpicxxconf.h
+mpicxxconf.h.in
 *.o
 initcxx.cpp
+configure
+config.log
+config.status
+config.system
+config.cache
