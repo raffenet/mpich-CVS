@@ -445,6 +445,10 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_TEST, "MPID_STATE_MPI_WIN_TEST", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_UNLOCK, "MPID_STATE_MPI_WIN_UNLOCK", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_WAIT, "MPID_STATE_MPI_WIN_WAIT", get_random_color_str());
+
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_IRECV, "MPID_STATE_MPIC_IRECV", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_ISEND, "MPID_STATE_MPIC_ISEND", get_random_color_str());
+
     /* END OF BLOCK OF AUTOMATICALLY GENERATED ENTRIES */
 
     return 0;
