@@ -14,3 +14,12 @@ MPID_Request MPID_Request_direct[MPID_REQUEST_PREALLOC];
 MPIU_Object_alloc_t MPID_Request_mem = { 0, 0, 0, 0, 0,
 					 sizeof(MPID_Request), MPID_Request_direct,
 					 MPID_REQUEST_PREALLOC, };
+
+MPID_Request * MPID_Request_new()
+{
+    return NULL;
+}
+
+void MPID_Request_free(MPID_Request *request_ptr)
+{
+}
