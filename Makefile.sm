@@ -155,7 +155,11 @@ testing:
 	(cd test && $(MAKE) testing)
 
 install_LIB = lib/lib${MPILIBNAME}.a
+optinstall_LIB = lib/lib${MPIFLIBNAME.a}
+optinstall_LIB = lib/lib${MPICXXLIBNAME.a}
+
 install_INCLUDE = src/include/mpi.h
+
 optinstall_LIB = lib/libp${MPILIBNAME}.a
 optinstall_SHLIB = lib/lib${MPILIBNAME}.so
 optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
