@@ -78,16 +78,22 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 # VPATH builds
 # We must build the srcdir and top_srcdir specially because autoconf
 # insists on replacing this text.
-$srcdir_name =               'srcdir      =@' . "srcdir" . '@';
-$topsrcdir_name =            'top_srcdir  =@' . "top_srcdir" . '@';
+$srcdir_name =               'srcdir      =@' . "srcdir"      . '@';
+$topsrcdir_name =            'top_srcdir  =@' . "top_srcdir"  . '@';
+$prefix_name =               'prefix      =@' . "prefix"      . '@'; 
+$exec_prefix_name =          'exec_prefix =@' . "exec_prefix" . '@';
+$bindir_name =               'bindir      =@' . "bindir"      . '@';
+$sbindir_name =              'sbindir     =@' . "sbindir"     . '@';
+$libdir_name =               'libdir      =@' . "libdir"      . '@';
+$includedir_name =           'includedir  =@' . "includedir"  . '@';
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
-	     'prefix'     => 'prefix      = @prefix@',
-	     'exec_prefix'=> 'exec_prefix = @exec_prefix@',
-	     'bindir'     => 'bindir      = @bindir@',
-	     'sbindir'    => 'sbindir     = @sbindir@',
-	     'libdir'     => 'libdir      = @libdir@',
-	     'includedir' => 'includedir  = @includedir@',
+	     'prefix'     => $prefix_name,
+	     'exec_prefix'=> $exec_prefix_name,
+	     'bindir'     => $bindir_name,
+	     'sbindir'    => $sbindir_name,
+	     'libdir'     => $libdir_name,
+	     'includedir' => $includedir_name,
 	    );
 # etc.
 #

@@ -6,13 +6,14 @@ AC_OUTPUT_COMMANDS([chmod a+x simplemake])
 CFLAGS='@CFLAGS@'
 FFLAGS='@FFLAGS@'
 CXXFLAGS='@CXXFLAGS@'
-top_srcdir='@top_srcdir@'
-prefix='@prefix@'
-exec_prefix='@exec_prefix@'
-bindir='@bindir@'
-sbindir='@sbindir@'
-libdir='@libdir@'
-includedir='@includedir@'
+# These substitutions don't work using the cygwin tools:
+#top_srcdir='@top_srcdir@'
+#prefix='@prefix@'
+#exec_prefix='@exec_prefix@'
+#bindir='@bindir@'
+#sbindir='@sbindir@'
+#libdir='@libdir@'
+#includedir='@includedir@'
 # Ergh. srcdir cannot be changed because autoconf uses its value to find
 # the source files.
 #srcdir='@srcdir@'
