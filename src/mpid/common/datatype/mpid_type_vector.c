@@ -96,13 +96,13 @@ int MPID_Type_vector(int count,
 
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
 	/* NOTE: element size is off. */
-	dlp->kind                      = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
-	dlp->loop_params.v_t.count     = count;
-	dlp->loop_params.v_t.blocksize = blocklength;
-	dlp->loop_params.v_t.stride    = stride * oldsize; /* in bytes */
-	dlp->loop_params.v_t.dataloop  = 0;
-	dlp->el_extent                 = oldsize;
-	dlp->el_size                   = oldsize;
+	dlp->kind                       = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
+	dlp->loop_params.v_t.count      = count;
+	dlp->loop_params.v_t.blocksize  = blocklength;
+	dlp->loop_params.v_t.stride     = stride * oldsize; /* in bytes */
+	dlp->loop_params.v_t.u.handle   = oldtype;
+	dlp->el_extent                  = oldsize;
+	dlp->el_size                    = oldsize;
     }
     else /* user-defined type */ {
 	assert(0);

@@ -127,7 +127,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK 
 	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.loop_params.c_t.count = count;
-	segp->builtin_loop.loop_params.c_t.dataloop = 0;
+	segp->builtin_loop.loop_params.c_t.u.dataloop = 0;
 	segp->builtin_loop.el_size = elmsize;
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
 
@@ -149,7 +149,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	segp->builtin_loop.kind = DLOOP_KIND_CONTIG 
 	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.loop_params.c_t.count = count;
-	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
+	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.u.dataloop);
 	segp->builtin_loop.el_size = elmsize;
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
 
@@ -696,7 +696,7 @@ static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
             case DLOOP_KIND_CONTIG:
                 /* no blocksize for contig */
                 new_elmp->loop_p = 
-                    elmp->loop_p->loop_params.c_t.dataloop;
+                    elmp->loop_p->loop_params.c_t.u.dataloop;
                 new_elmp->curoffset = elmp->curoffset +
                     count_index * new_elmp->loop_p->el_extent;
                 break;
@@ -704,7 +704,7 @@ static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
                 block_index = elmp->loop_p->loop_params.v_t.blocksize - 
                     elmp->curblock;
                 new_elmp->loop_p = 
-                    elmp->loop_p->loop_params.v_t.dataloop;
+                    elmp->loop_p->loop_params.v_t.u.dataloop;
                 new_elmp->curoffset = elmp->curoffset +
                     count_index * elmp->loop_p->loop_params.v_t.stride +
                     block_index * new_elmp->loop_p->el_extent;
@@ -713,7 +713,7 @@ static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
                 block_index = elmp->loop_p->loop_params.bi_t.blocksize - 
                     elmp->curblock;
                 new_elmp->loop_p = 
-                    elmp->loop_p->loop_params.bi_t.dataloop;
+                    elmp->loop_p->loop_params.bi_t.u.dataloop;
                 new_elmp->curoffset = elmp->curoffset +
                     elmp->loop_p->loop_params.bi_t.offset_array[count_index] +
                     block_index * new_elmp->loop_p->el_extent;
@@ -723,7 +723,7 @@ static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
                     elmp->loop_p->loop_params.i_t.blocksize_array[count_index]-
                     elmp->curblock;
                 new_elmp->loop_p = 
-                    elmp->loop_p->loop_params.i_t.dataloop;
+                    elmp->loop_p->loop_params.i_t.u.dataloop;
                 new_elmp->curoffset = elmp->curoffset +
                     elmp->loop_p->loop_params.i_t.offset_array[count_index] +
                     block_index * new_elmp->loop_p->el_extent;

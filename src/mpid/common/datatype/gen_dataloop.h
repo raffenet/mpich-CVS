@@ -65,7 +65,10 @@
   S*/
 typedef struct DLOOP_Dataloop_contig {
     DLOOP_Count count;
-    struct DLOOP_Dataloop *dataloop;
+    union {
+	struct DLOOP_Dataloop *dataloop;
+	DLOOP_Handle handle;
+    } u;
 } DLOOP_Dataloop_contig;
 
 /*S
@@ -82,7 +85,10 @@ typedef struct DLOOP_Dataloop_contig {
   S*/
 typedef struct DLOOP_Dataloop_vector { 
     DLOOP_Count count;
-    struct DLOOP_Dataloop *dataloop;
+    union {
+	struct DLOOP_Dataloop *dataloop;
+	DLOOP_Handle handle;
+    } u;
     DLOOP_Count blocksize;
     DLOOP_Offset stride;
 } DLOOP_Dataloop_vector;
@@ -102,7 +108,10 @@ typedef struct DLOOP_Dataloop_vector {
   S*/
 typedef struct DLOOP_Dataloop_blockindexed {
     DLOOP_Count count;
-    struct DLOOP_Dataloop *dataloop;
+    union {
+	struct DLOOP_Dataloop *dataloop;
+	DLOOP_Handle handle;
+    } u;
     DLOOP_Count blocksize;
     DLOOP_Offset *offset_array;
 } DLOOP_Dataloop_blockindexed;
@@ -122,7 +131,10 @@ typedef struct DLOOP_Dataloop_blockindexed {
   S*/
 typedef struct DLOOP_Dataloop_indexed {
     DLOOP_Count count;
-    struct DLOOP_Dataloop *dataloop;
+    union {
+	struct DLOOP_Dataloop *dataloop;
+	DLOOP_Handle handle;
+    } u;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
 } DLOOP_Dataloop_indexed;
@@ -155,7 +167,10 @@ typedef struct DLOOP_Dataloop_struct {
 */
 typedef struct DLOOP_Dataloop_common {
     DLOOP_Count count;
-    struct DLOOP_Dataloop *dataloop;
+    union {
+	struct DLOOP_Dataloop *dataloop;
+	DLOOP_Handle handle;
+    } u;
 } DLOOP_Dataloop_common;
 
 /*S
@@ -225,7 +240,7 @@ typedef struct DLOOP_Dataloop {
 /* The max datatype depth is the maximum depth of the stack used to 
    evaluate datatypes.  It represents the length of the chain of 
    datatype dependencies.  Defining this and testing when a datatype
-   is created removes a test for the datatype evaluation loop. */
+   is created removes a test in the datatype evaluation loop. */
 #define DLOOP_MAX_DATATYPE_DEPTH 8
 
 
