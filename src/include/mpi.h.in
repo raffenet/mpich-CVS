@@ -221,7 +221,8 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 
 #define MPI_VERSION    1
 #define MPI_SUBVERSION 2
-#define MPICH_NAME     1
+#define MPICH_NAME     2
+#define MPICH2         1
 
 /********************** MPI-2 FEATURES BEGIN HERE ***************************/
 #define MPICH_HAS_C2F
