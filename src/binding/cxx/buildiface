@@ -38,7 +38,7 @@ $build_sep_files = 1; # If false, build one huge mpicxx.h file
 $indent = "";
 $print_line_len = 0;
 $debug = 0;
-
+@mpilevels = ( 'mpi1' , 'mpi2' );
 #feature variables
 $do_subdecls = 1;
 
@@ -176,6 +176,63 @@ foreach $_ (@ARGV) {
 %class_mpi2ppreq = ();
 %class_mpi2req = ();
 %class_mpi2st = ();
+%class_mpi2file = ( 
+		   'File_open' => 'MPI_File',
+		   'File_close' => 0,
+		   'File_delete' => 0,
+		   'File_set_size' => 0,
+		   'File_preallocate' => 0,
+		   'File_get_size' => 0,
+		   'File_get_group' => 0,
+		   'File_get_amode' => 0,
+		   'File_set_info' => 0,
+		   'File_get_info' => 0,
+		   'File_set_view' => 0,
+		   'File_get_view' => 0,
+		   'File_read_at' => 0,
+		   'File_read_at_all' => 0,
+		   'File_write_at' => 0,
+		   'File_write_at_all' => 0,
+		   'File_iread_at' => 0, 
+		   'File_iwrite_at' => 0,
+		   'File_read' => 0,
+		   'File_read_all' => 0,
+		   'File_write' => 0,
+		   'File_write_all' => 0,
+		   'File_iread' => 0,
+		   'File_iwrite' => 0,
+		   'File_seek' => 0,
+		   'File_get_position' => 0,
+		   'File_get_byte_offset' => 0,
+		   'File_read_shared' => 0,
+		   'File_write_shared' => 0,
+		   'File_iread_shared' => 0,
+		   'File_iwrite_shared' => 0,
+		   'File_read_ordered' => 0,
+		   'File_write_ordered' => 0,
+		   'File_seek_shared' => 0,
+		   'File_get_position_shared' => 0,
+		   'File_read_at_all_begin' => 0,
+		   'File_read_at_all_end' => 0,
+		   'File_write_at_all_begin' => 0,
+		   'File_write_at_all_end' => 0,
+		   'File_read_all_begin' => 0,
+		   'File_read_all_end' => 0,
+		   'File_write_all_begin' => 0,
+		   'File_write_all_end' => 0,
+		   'File_read_ordered_begin' => 0,
+		   'File_read_ordered_end' => 0,
+		   'File_write_ordered_begin' => 0,
+		   'File_write_ordered_end' => 0,
+		   'File_get_type_extent' => 0,
+		   'File_set_atomicity' => 0,
+		   'File_get_atomicity' => 0,
+		   'File_sync' => 0,
+		   'File_set_errhandler' => 0,
+		   'File_get_errhandler' => 0,
+		   );		
+%class_mpi2win = ( );
+%class_mpi2info = ( );
 
 # MPI objects
 @dtypes = ( 'CHAR', 'UNSIGNED_CHAR', 'BYTE', 'SHORT', 'UNSIGNED_SHORT',
@@ -185,7 +242,6 @@ foreach $_ (@ARGV) {
 	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT' );
 @ops = ( 'MAX', 'MIN', 'SUM', 'PROD', 'LAND', 'BAND', 'LOR', 'BOR', 
 	 'LXOR', 'BXOR', 'MINLOC', 'MAXLOC', 'REPLACE' );
-
 
 #
 # Special routines require special processing in C++
@@ -198,42 +254,11 @@ foreach $_ (@ARGV) {
 
 $arg_string = join( ' ', @ARGV );
 
-open( FD, "<../../include/mpi.h.in" ) || die "Cannot open mpi.h.in\n";
-
-# Skip to prototypes
-while (<FD>) {
-    if ( /\/\*\s*Begin Prototypes/ ) { last; }
+&ReadInterface( "../../include/mpi.h.in" );
+# if doing MPI2, we also need to read the MPI-2 protottypes
+if ( -s "../../mpi/romio/include/mpio.h.in" ) { 
+    &ReadInterface( "../../mpi/romio/include/mpio.h.in" );
 }
-
-# Read each one
-# Save as
-#$mpi_routine{name} = args;
-while (<FD>) {
-    if (/\/\*\s*End Prototypes/ ) { last; }
-    if (/^int\s*MPI_([A-Z][a-z0-9_]*)\s*\((.*)/) {
-	$routine_name = $1;
-	$args = $2;
-	while (! ($args =~ /;/)) {
-	    $args .= <FD>;
-	}
-	$args =~ s/\)\s*;//g;
-	$args =~ s/[\r\n]*//g;
-	$lcname = lc($routine_name);
-	# Eventually, we'll create a new file here.  
-	# For C++, we may create similar files by looking up 
-	# the corresponding routines.
-	if (defined($special_routines{$routine_name})) {
-	    print "Skiping $routine_name\n" if $debug;
-	}
-	else {
-	    # Clear variables
-	    $clean_up = "";
-	    &clean_args;
-	    $mpi_routine{$routine_name} = $args;
-	}
-    }
-}
-
 # Name of classes, in the order in which they must be declared.
 @classes = ( 
 		   'dtype', 
@@ -330,6 +355,8 @@ while (<FD>) {
 	     'dtype-Pack_size' => 'Pack_size',
 	     'dtype-Free' => 'Type_free',
 	     'dtype-Get_size' => 'Type_size',
+	     'dtype-Get_name' => 'Type_get_name',
+	     'dtype-Set_name' => 'Type_set_name',
 	     'group-Get_size' => 'Group_size',
 	     'group-Get_rank' => 'Group_rank',
 	     'group-Intersect' => 'Group_intersection',
@@ -380,104 +407,105 @@ if (!$build_sep_files) {
 {int err; err = fnc ; if (err) throw Exception(err);}
 #else
 #define MPIX_CALL( fnc ) (void)fnc
-#endif
-"
+#endif\n";
 }
 
 # Build the routines by class
 foreach $class (@classes) {
-    $mpiclass = "mpi1$class";   # We'll add a loop enabling mpi1/mpi2 soon.
-    $class_hash = "class_$mpiclass";
-    $Class = $fullclassname{$class};
-    $mpi_type = $class_type{$class};
-    if ($build_sep_files) {
-	$filename = "${mpiclass}-cpp.h";
-	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
-	$files[$#files+1] = $filename;
-	&print_header;
-	print $OUTFD "namespace MPI {\n";
-    }
-    if (!$build_sep_files) {
-	# Here is where we add (some) of the code to write the
-	# class definition, including the destructor, assignment,
-	# and compare operations.
-	$shortclass = $class;
-	&PrintClassHead( $OUTFD, $Class, $mpi_type, $class_friends{$class} );
-    }
-    foreach $routine (keys(%$class_hash)) {
-	$info = $$class_hash{$routine};
-	print STDERR "processing $routine\n" if $debug;
-
-	# Find the corresponding args.  Some C++ routines don't use the
-	# natural names, so we check for that here
-	$args = "";
-	if (defined($mpi_routine{$routine})) {
-	    $args = $mpi_routine{$routine};
+    foreach $mpilevel (@mpilevels) {
+        $mpiclass = "$mpilevel$class";
+        $class_hash = "class_$mpiclass";
+	$Class = $fullclassname{$class};
+	$mpi_type = $class_type{$class};
+	if ($build_sep_files) {
+	    $filename = "${mpiclass}-cpp.h";
+	    open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
+	    $files[$#files+1] = $filename;
+	    &print_header;
+	    print $OUTFD "namespace MPI {\n";
 	}
-	$mpi_routine_name = $routine;
-	if ($args eq "") {
-	    # Check for an alternate name
-	    print STDERR "Checking for $class-$routine\n" if $debug;
-	    # Check for $Class_$routine
-	    $trial_name = "${Class}_" . lc($routine);
-	    print STDERR "Trial = $trial_name\n" if $debug;
-	    if (defined($mpi_routine{$trial_name})) {
-		$mpi_routine_name = $trial_name;
-		$args = $mpi_routine{$mpi_routine_name};
-	    }
-	    elsif (defined($altname{"$class-$routine"})) {
-		$mpi_routine_name = $altname{"$class-$routine"};
-		$args = $mpi_routine{$mpi_routine_name};
-	    }
-	    else {
-		print STDERR "Name $routine has no known MPI routine\n";
-	    }
+	if (!$build_sep_files) {
+	    # Here is where we add (some) of the code to write the
+	    # class definition, including the destructor, assignment,
+	    # and compare operations.
+	    $shortclass = $class;
+	    &PrintClassHead( $OUTFD, $Class, $mpi_type, $class_friends{$class} );
 	}
-	# Process info for finding the return value info.
-	&FindReturnInfo( $info, $args );
-
-	$real_return_type = $return_type;
-	if ($return_type =~ /MPI_/) {
-	    $real_return_type =~ s/MPI_//;
-	}
-	print $OUTFD "${indent}$real_return_type $routine";
-
-	# OUTFD, C declaration, C datatype for Class, output info
-	&print_args( $OUTFD, $args, $class_type{$class}, $info );
-	
-	if (!defined($defer_definition{$routine})) {
-	    # Some routines must be defined after another class is
-	    # defined.
-	    print $OUTFD "${indent}{\n";
-	    # If there is a return type, declare it here
-	    $finalcast = "";
-	    if ($return_parm_pos > 0) {
-		if ($return_type =~ /MPI_/) {
-		    print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
-		    $finalcast = "*";
+	foreach $routine (keys(%$class_hash)) {
+	    $info = $$class_hash{$routine};
+	    print STDERR "processing $routine\n" if $debug;
+	    
+	    # Find the corresponding args.  Some C++ routines don't use the
+	    # natural names, so we check for that here
+	    $args = "";
+	    if (defined($mpi_routine{$routine})) {
+		$args = $mpi_routine{$routine};
+	    }
+	    $mpi_routine_name = $routine;
+	    if ($args eq "") {
+		# Check for an alternate name
+		print STDERR "Checking for $class-$routine\n" if $debug;
+		# Check for $Class_$routine
+		$trial_name = "${Class}_" . lc($routine);
+		print STDERR "Trial = $trial_name\n" if $debug;
+		if (defined($mpi_routine{$trial_name})) {
+		    $mpi_routine_name = $trial_name;
+		    $args = $mpi_routine{$mpi_routine_name};
+		}
+		elsif (defined($altname{"$class-$routine"})) {
+		    $mpi_routine_name = $altname{"$class-$routine"};
+		    $args = $mpi_routine{$mpi_routine_name};
 		}
 		else {
-		    print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+		    print STDERR "Name $routine has no known MPI routine\n";
 		}
 	    }
-	    print $OUTFD "$indent    MPIX_CALL( MPI_$mpi_routine_name";
-	    &print_call_args( $OUTFD, $args, $class_type{$class}, $info );
-	    print $OUTFD ");\n";
-	    if ($return_parm_pos > 0) {
-		print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
+	    # Process info for finding the return value info.
+	    &FindReturnInfo( $info, $args );
+
+	    $real_return_type = $return_type;
+	    if ($return_type =~ /MPI_/) {
+		$real_return_type =~ s/MPI_//;
 	    }
-	    print $OUTFD "$indent}\n";
+	    print $OUTFD "${indent}$real_return_type $routine";
+	    
+	    # OUTFD, C declaration, C datatype for Class, output info
+	    &print_args( $OUTFD, $args, $class_type{$class}, $info );
+	    
+	    if (!defined($defer_definition{$routine})) {
+		# Some routines must be defined after another class is
+		# defined.
+		print $OUTFD "${indent}{\n";
+		# If there is a return type, declare it here
+		$finalcast = "";
+		if ($return_parm_pos > 0) {
+		    if ($return_type =~ /MPI_/) {
+			print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
+			$finalcast = "*";
+		    }
+		    else {
+			print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+		    }
+		}
+		print $OUTFD "$indent    MPIX_CALL( MPI_$mpi_routine_name";
+		&print_call_args( $OUTFD, $args, $class_type{$class}, $info );
+		print $OUTFD ");\n";
+		if ($return_parm_pos > 0) {
+		    print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
+		}
+		print $OUTFD "$indent}\n";
+	    }
+	    else {
+		print $OUTFD ";\n"; 
+	    }
+	}
+	if ($build_sep_files) {
+	    print $OUTFD "} // namespace MPI\n";
+	    close( $OUTFD );
 	}
 	else {
-	    print $OUTFD ";\n"; 
+	    &PrintClassTail( $OUTFD );
 	}
-    }
-    if ($build_sep_files) {
-	print $OUTFD "} // namespace MPI\n";
-	close( $OUTFD );
-    }
-    else {
-	&PrintClassTail( $OUTFD );
     }
 }
 
@@ -487,35 +515,37 @@ if (!$build_sep_files) {
     foreach $routine (keys(%defer_definition)) {
 	$mpiclass = $defer_definition{$routine};
 	$class = "$short_from_long_class{$mpiclass}";
-	$mpiclass = "mpi1$class";
-	print STDERR "$mpiclass\n" if $debug;
-	$class_hash = "class_$mpiclass";
-	$Class = $fullclassname{$class};
-	$info = $$class_hash{$routine};
-	$args = $mpi_routine{$routine};
-	# Process info for finding the return value info.
-	&FindReturnInfo( $info, $args );
-	$real_return_type = $return_type;
-	print $OUTFD "$real_return_type $defer_definition{$routine}::$routine";
-	&print_args( $OUTFD, $args, $defer_definition{$routine}, $info );
-	print $OUTFD "{\n";
-	if ($return_parm_pos > 0) {
-	    $finalcast = "";
-	    if ($return_type =~ /MPI_/) {
-		print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
-		$finalcast = "*";
+	foreach $mpilevel (@mpilevels) {
+	    $mpiclass = "$mpilevel$class";
+	    print STDERR "$mpiclass\n" if $debug;
+	    $class_hash = "class_$mpiclass";
+	    $Class = $fullclassname{$class};
+	    $info = $$class_hash{$routine};
+	    $args = $mpi_routine{$routine};
+	    # Process info for finding the return value info.
+	    &FindReturnInfo( $info, $args );
+	    $real_return_type = $return_type;
+	    print $OUTFD "$real_return_type $defer_definition{$routine}::$routine";
+	    &print_args( $OUTFD, $args, $defer_definition{$routine}, $info );
+	    print $OUTFD "{\n";
+	    if ($return_parm_pos > 0) {
+		$finalcast = "";
+		if ($return_type =~ /MPI_/) {
+		    print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
+		    $finalcast = "*";
+		}
+		else {
+		    print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+		}
 	    }
-	    else {
-		print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+	    print $OUTFD "$indent    MPIX_CALL( MPI_$routine";
+	    &print_call_args( $OUTFD, $args, $defer_definition{$routine}, $info );
+	    print $OUTFD ");"; 
+	    if ($return_parm_pos > 0) {
+		print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
 	    }
+	    print $OUTFD "\n}\n";
 	}
-	print $OUTFD "$indent    MPIX_CALL( MPI_$routine";
-	&print_call_args( $OUTFD, $args, $defer_definition{$routine}, $info );
-	print $OUTFD ");"; 
-	if ($return_parm_pos > 0) {
-  	    print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
-        }
-	print $OUTFD "\n}\n";
     }
     print $OUTFD "} // namespace MPI\n";
 
@@ -1146,6 +1176,50 @@ sub HandleObjectParm {
 #   .... MPI_Isend( ..., &(v7->the_real_request) )
 #   return *v7;
 #
+# ----------------------------------------------------------------------------
+#
+# ReadInterface( filename )
+sub ReadInterface {
+    my $filename =$_[0];
+    open( FD, "<$filename" ) || die "Cannot open $filename\n";
+
+    # Skip to prototypes
+    while (<FD>) {
+	if ( /\/\*\s*Begin Prototypes/ ) { last; }
+    }
+
+    # Read each one
+    # Save as
+    #$mpi_routine{name} = args;
+    while (<FD>) {
+	if (/\/\*\s*End Prototypes/ ) { last; }
+	if (/^int\s+MPI_([A-Z][a-z0-9_]*)\s*\((.*)/) {
+	    $routine_name = $1;
+	    $args = $2;
+	    while (! ($args =~ /;/)) {
+		$args .= <FD>;
+	    }
+	    $args =~ s/\)\s*;//g;
+	    $args =~ s/[\r\n]*//g;
+	    $lcname = lc($routine_name);
+	    # Eventually, we'll create a new file here.  
+	    # For C++, we may create similar files by looking up 
+				# the corresponding routines.
+	    if (defined($special_routines{$routine_name})) {
+		print "Skipping $routine_name\n" if $debug;
+	    }
+	    else {
+		# Clear variables
+		$clean_up = "";
+		&clean_args;
+		$mpi_routine{$routine_name} = $args;
+		print "Saving $routine_name ( $args )\n" if $debug;
+	    }			
+	}
+    }
+    close( FD );
+}
+
 #
 # ISSUES NOT YET HANDLED
 # ----------------------------------------------------------------------------
@@ -1160,3 +1234,5 @@ sub HandleObjectParm {
 #   Just provide the Pack_size, Pack, Unpack prototypes in the Datatype
 #   class definition
 #   Add these to the end
+
+
