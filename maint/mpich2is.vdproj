@@ -219,12 +219,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7436003263A34E05B3E68549E656075C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_768BAD369AC74BA88E293442A288845D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -340,6 +334,12 @@
         "Entry"
         {
         "MsmKey" = "8:_AFD38AAD45E24DEB9D9204DCD866D36A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B1475F49A7F9430585308F1C539E43AD"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1265,26 +1265,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7436003263A34E05B3E68549E656075C"
-            {
-            "SourcePath" = "8:..\\src\\include\\mpif.h"
-            "TargetName" = "8:mpif.h"
-            "Tag" = "8:"
-            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_768BAD369AC74BA88E293442A288845D"
             {
             "SourcePath" = "8:..\\lib\\mpich2ssmd.lib"
@@ -1671,6 +1651,26 @@
             "TargetName" = "8:mpich2shmp.dll"
             "Tag" = "8:"
             "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B1475F49A7F9430585308F1C539E43AD"
+            {
+            "SourcePath" = "8:..\\src\\include\\win32\\mpif.h"
+            "TargetName" = "8:mpif.h"
+            "Tag" = "8:"
+            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
