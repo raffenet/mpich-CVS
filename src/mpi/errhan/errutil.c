@@ -169,6 +169,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
     }
 
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	MPID_Thread_lock(&error_ring_mutex);
 	{
@@ -190,7 +191,8 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 	}
 	MPID_Thread_unlock(&error_ring_mutex);
     }
-
+#   endif
+    
     if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN)
     {
 	return errcode;
@@ -262,6 +264,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     }
 
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	MPID_Thread_lock(&error_ring_mutex);
 	{
@@ -283,7 +286,8 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 	}
 	MPID_Thread_unlock(&error_ring_mutex);
     }
-
+#   endif
+    
     if (win_ptr->errhandler->handle == MPI_ERRORS_RETURN)
     {
 	return errcode;
@@ -358,6 +362,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     }
 
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	MPID_Thread_lock(&error_ring_mutex);
 	{
@@ -379,7 +384,8 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 	}
 	MPID_Thread_unlock(&error_ring_mutex);
     }
-
+#   endif
+    
     if (file_ptr->errhandler->handle == MPI_ERRORS_RETURN)
     {
 	return errcode;
