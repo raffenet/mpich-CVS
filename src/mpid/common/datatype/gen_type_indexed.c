@@ -102,7 +102,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 						   old_extent);
 
     /* TODO: WHAT IF THE BLOCKS ARE ALL ZERO LENGTH? */
-    assert(contig_count > 0);
+    DLOOP_Assert(contig_count > 0);
 
     /* optimization:
      *
@@ -189,7 +189,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 	old_loop_sz;
     /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
     new_dlp = PREPEND_PREFIX(Dataloop_alloc)(new_loop_sz);
-    assert(new_dlp != NULL);
+    DLOOP_Assert(new_dlp != NULL);
 
     if (is_builtin)
     {
@@ -313,7 +313,7 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	    else
 	    {
 		cur_idx++;
-		assert(cur_idx < contig_count);
+		DLOOP_Assert(cur_idx < contig_count);
 		out_disp_array[cur_idx] =
 		    ((DLOOP_Offset) ((int *) in_disp_array)[i]) * old_extent;
 		out_blklen_array[cur_idx] = in_blklen_array[i];
@@ -340,7 +340,7 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	    else
 	    {
 		cur_idx++;
-		assert(cur_idx < contig_count);
+		DLOOP_Assert(cur_idx < contig_count);
 		out_disp_array[cur_idx] = ((DLOOP_Offset *) in_disp_array)[i];
 		out_blklen_array[cur_idx] = in_blklen_array[i];
 	    }

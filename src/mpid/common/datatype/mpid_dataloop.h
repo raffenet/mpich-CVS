@@ -74,6 +74,9 @@
 /* debugging output function */
 #define DLOOP_dbg_printf MPIU_dbg_printf
 
+/* assert function */
+#define DLOOP_Assert MPIU_Assert
+
 /* Include gen_dataloop.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */

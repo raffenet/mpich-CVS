@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* NOTE: This is kind-of a hack; it would be better to somehow get this
  * included on the compile line.
@@ -179,14 +178,14 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 		break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
-		    assert(0);
+		    DLOOP_Assert(0);
 		    break;
 		    /* --END ERROR HANDLING-- */
 	    }
 
 	    if (dl_p->kind & DLOOP_FINAL_MASK) break;
 	    else {
-		assert(dl_p->loop_params.cm_t.dataloop != NULL);
+		DLOOP_Assert(dl_p->loop_params.cm_t.dataloop != NULL);
 		dl_p = dl_p->loop_params.cm_t.dataloop;
 	    }
 	}
@@ -281,7 +280,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    break;
 	default:
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(0);
+	    DLOOP_Assert(0);
 	    break;
 	    /* --END ERROR HANDLING-- */
     }
@@ -358,7 +357,7 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 	    }
 	    break;
 	default:
-	    assert(0);
+	    DLOOP_Assert(0);
 	    break;
     }
     return;

@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* Includes specific to MPICH2 use of this code. */
 #include <mpid_dataloop.h>
@@ -185,7 +184,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	    break;
 	default:
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(0);
+	    DLOOP_Assert(0);
 	    break;
 	    /* --END ERROR HANDLING-- */
     }
@@ -200,7 +199,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	branch_detected = elmp->may_require_reloading;
 
 	if (i < depth-1) {
-	    assert (!(dlp->kind & DLOOP_FINAL_MASK));
+	    DLOOP_Assert(!(dlp->kind & DLOOP_FINAL_MASK));
 
 	    switch (dlp->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
@@ -214,13 +213,13 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		    break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
-		    assert(0);
+		    DLOOP_Assert(0);
 		    break;
 		    /* --END ERROR HANDLING-- */
 	    }
 
 	}
-	else assert(dlp->kind & DLOOP_FINAL_MASK);
+	else DLOOP_Assert(dlp->kind & DLOOP_FINAL_MASK);
     }
 
     segp->valid_sp = depth-1;
@@ -411,7 +410,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    
 	    /* --BEGIN ERROR HANDLING-- */
 	    /* verify that we're in the right location */
-	    if (tmp_last != first) assert(0);
+	    if (tmp_last != first) DLOOP_Assert(0);
 	    /* --END ERROR HANDLING-- */
 	}
 
@@ -437,7 +436,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    DLOOP_Type el_type;
 
 	    /* structs are never finals (leaves) */
-	    assert((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) !=
+	    DLOOP_Assert((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) !=
 		   DLOOP_KIND_STRUCT);
 
 	    /* pop immediately on zero count */
@@ -491,7 +490,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
-		    assert(0);
+		    DLOOP_Assert(0);
 		    break;
 		    /* --END ERROR HANDLING-- */
 	    }
@@ -525,7 +524,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 		    break;
 		case PF_CONTIG:
-		    assert(myblocks <= cur_elmp->curblock);
+		    DLOOP_Assert(myblocks <= cur_elmp->curblock);
 		    piecefn_indicated_exit =
 			contigfn(&myblocks,
 				 el_type,
@@ -571,8 +570,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    /* update local values based on piecefn returns (myblocks and
 	     * piecefn_indicated_exit)
 	     */
-	    assert(piecefn_indicated_exit >= 0);
-	    assert(myblocks >= 0);
+	    DLOOP_Assert(piecefn_indicated_exit >= 0);
+	    DLOOP_Assert(myblocks >= 0);
 	    stream_off += myblocks * stream_el_size;
 
 	    /* myblocks of 0 or less than cur_elmp->curblock indicates
@@ -596,7 +595,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		 * of the current block, or we're processing as many blocks as
 		 * we like starting at the beginning of one.
 		 */
-		assert(myblocks == cur_elmp->curblock ||
+		DLOOP_Assert(myblocks == cur_elmp->curblock ||
 		       cur_elmp->curblock == cur_elmp->orig_block);
 
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
@@ -604,7 +603,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			while (myblocks > 0 && myblocks >= cur_elmp->curblock) {
 			    myblocks -= cur_elmp->curblock;
 			    cur_elmp->curcount--;
-			    assert(cur_elmp->curcount >= 0);
+			    DLOOP_Assert(cur_elmp->curcount >= 0);
 
 			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
 			    cur_elmp->curblock =
@@ -613,7 +612,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 			if (cur_elmp->curcount == 0) {
 			    /* don't bother to fill in values; we're popping anyway */
-			    assert(myblocks == 0);
+			    DLOOP_Assert(myblocks == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
 			else {
@@ -629,7 +628,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			/* this math relies on assertions at top of code block */
 			cur_elmp->curcount -= myblocks / cur_elmp->curblock;
 			if (cur_elmp->curcount == 0) {
-			    assert(myblocks % cur_elmp->curblock == 0);
+			    DLOOP_Assert(myblocks % cur_elmp->curblock == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
 			else {
@@ -648,7 +647,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			break;
 		    case DLOOP_KIND_CONTIG:
 			/* contigs that reach this point have always been completely processed */
-			assert(myblocks == cur_elmp->curblock &&
+			DLOOP_Assert(myblocks == cur_elmp->curblock &&
 			       cur_elmp->curcount == 1);
 			DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			break;
@@ -656,14 +655,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			while (myblocks > 0 && myblocks >= cur_elmp->curblock) {
 			    myblocks -= cur_elmp->curblock;
 			    cur_elmp->curcount--;
-			    assert(cur_elmp->curcount >= 0);
+			    DLOOP_Assert(cur_elmp->curcount >= 0);
 
 			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
 			    cur_elmp->curblock = cur_elmp->orig_block;
 			}
 			if (cur_elmp->curcount == 0) {
 			    /* popping */
-			    assert(myblocks == 0);
+			    DLOOP_Assert(myblocks == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
 			else {
@@ -713,7 +712,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			break;
 		    default:
 			/* --BEGIN ERROR HANDLING-- */
-			assert(0);
+			DLOOP_Assert(0);
 			break;
 			/* --END ERROR HANDLING-- */
 		}
@@ -744,7 +743,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			break;
 		    default:
 			/* --BEGIN ERROR HANDLING-- */
-			assert(0);
+			DLOOP_Assert(0);
 			break;
 			/* --END ERROR HANDLING-- */
 		}
@@ -797,7 +796,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
-		    assert(0);
+		    DLOOP_Assert(0);
 		    break;
 		    /* --END ERROR HANDLING-- */
 	    }
@@ -833,7 +832,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
-		    assert(0);
+		    DLOOP_Assert(0);
 		    break;
 		    /* --END ERROR HANDLING-- */
 	    }
@@ -889,7 +888,7 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
 	    break;
 	default:
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(0);
+	    DLOOP_Assert(0);
 	    break;
 	    /* --END ERROR HANDLING-- */
     }
@@ -926,7 +925,7 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	    break;
 	default:
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(0);
+	    DLOOP_Assert(0);
 	    break;
 	    /* --END ERROR HANDLING-- */
     }
