@@ -452,6 +452,29 @@ with MPI_Alloc_mem.
 **badsock:internal error - bad sock
 **failure:unknown failure
 **failure %d:unknown failure, error %d
+**pmi_init":PMI_Init failed
+**pmi_init %d:PMI_Init returned %d
+**pmi_get_rank":PMI_Get_rank failed
+**pmi_get_rank %d:PMI_Get_rank returned %d
+**pmi_get_size:PMI_Get_size failed
+**pmi_get_size %d:PMI_Get_size returned %d
+**pmi_my_name:PMI_Get_my_name failed
+**pmi_my_name %d:PMI_Get_my_name returned %d
+**init_vcrt:failed to create VCRT
+**init_getptr:failed to get the vcr
+**init_progress:progress_init failed
+**snprintf:snprintf returned an invalid number
+**snprintf %d:snprintf returned %d
+**init_buscard:failed to get my business card
+**pmi_put:PMI_KVS_Put failed
+**pmi_put %d:PMI_KVS_Put returned %d
+**init_strtok_host:failed to copy the hostname from the business card
+**init_strtok_host %s:failed to copy the hostname from this business card: %s
+**boot_tostring:unable to get a string representation of the boostrap queue
+**pmi_commit:PMI_KVS_Commit failed
+**pmi_commit %d:PMI_KVS_Commit returned %d
+**pmi_barrier:PMI_Barrier failed
+**pmi_barrier %d:PMI_Barrier returned %d
 
 #
 # CH3:shm
