@@ -7,6 +7,7 @@
 
 #include "mpiimpl.h"
 
+
 /* -- Begin Profiling Symbol Block for routine MPI_Request_get_status */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Request_get_status = PMPI_Request_get_status
@@ -113,24 +114,21 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    case MPID_REQUEST_SEND:
 	    case MPID_REQUEST_RECV:
 	    {
+		MPIR_Request_extract_status(request_ptr, status);
 		mpi_errno = request_ptr->status.MPI_ERROR;
-		if (status != MPI_STATUS_IGNORE)
-		{
-		    *status = request_ptr->status;
-		}
+
 		break;
 	    }
 			
 	    case MPID_PREQUEST_SEND:
 	    case MPID_PREQUEST_RECV:
 	    {
-		if (request_ptr->partner_request != NULL)
+		MPID_Request * prequest_ptr = request_ptr->partner_request;
+		
+		if (prequest_ptr != NULL)
 		{
-		    mpi_errno = request_ptr->partner_request->status.MPI_ERROR;
-		    if (status != MPI_STATUS_IGNORE)
-		    {
-			*status = request_ptr->partner_request->status;
-		    }
+		    MPIR_Request_extract_status(prequest_ptr, status);
+		    mpi_errno = prequest_ptr->status.MPI_ERROR;
 		}
 		else
 		{
@@ -138,10 +136,6 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		    {
 			/* if the persistent request failed to start then make the error code available */
 			mpi_errno = request_ptr->status.MPI_ERROR;
-			if (status != MPI_STATUS_IGNORE)
-			{
-			    *status = request_ptr->status;
-			}
 		    }
 		    else
 		    {
@@ -155,16 +149,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    case MPID_UREQUEST:
 	    {
 		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		if (mpi_errno == MPI_SUCCESS)
-		{
-		    mpi_errno = request_ptr->status.MPI_ERROR;
-		}
-	    
-		if (status != MPI_STATUS_IGNORE)
-		{
-		    *status = request_ptr->status;
-		}
-		
+		MPIR_Request_extract_status(request_ptr, status);
 		break;
 	    }
 	}
