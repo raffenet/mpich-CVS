@@ -332,13 +332,16 @@ const char *MPIR_Err_get_string( int errorcode )
 	ring_seq    = (errorcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
 	generic_idx = (errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
 
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 	if (error_ring_seq[ring_idx] == ring_seq) {
 	    p = error_ring[ring_idx];
 	}
 	else if (generic_idx > 0) {
 	    p = generic_err_msgs[generic_idx].long_name;
 	}
-	else {
+	else
+#endif
+	{
 	    p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
 	}
     }
