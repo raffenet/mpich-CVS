@@ -74,7 +74,8 @@ typedef MPI_Aint MPI_FAint;
 /* Fortran logical values */
 #ifndef _CRAY
 #if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
-extern const MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
+#define MPIR_F_TRUE  F77_TRUE_VALUE
+#define MPIR_F_FALSE F77_FALSE_VALUE
 #else
 extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #endif
@@ -92,7 +93,7 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 /* CRAY Vector processors only; these are defined in /usr/include/fortran.h 
    Thanks to lmc@cray.com */
 #define MPIR_TO_FLOG(a) (_btol(a))
-#define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
+#define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /* (a) must be a pointer */
 #endif
 
 /* If Cray-style pointers are supported, we don't need to check for a 

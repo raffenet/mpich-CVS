@@ -17,9 +17,20 @@
 #define mpirinitc_ mpirinitc
 #endif
 
+#if defined(F77_RUNTIME_VALUES) || !defined(F77_TRUE_VALUE_SET)
+MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
+#endif
+
+#ifndef USE_POINTER_FOR_BOTTOM
+void *MPIR_F_MPI_BOTTOM     = 0;
+void *MPI_F_STATUS_IGNORE   = 0;
+void *MPI_F_STATUSES_IGNORE = 0;
+#endif
+
+
 FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
 {
-    MPIR_F_MPI_BOTTOM = a;
-    MPI_F_STATUS_IGNORE = b;
+    MPIR_F_MPI_BOTTOM     = a;
+    MPI_F_STATUS_IGNORE   = b;
     MPI_F_STATUSES_IGNORE = c;
 }

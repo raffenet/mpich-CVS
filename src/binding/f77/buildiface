@@ -1856,29 +1856,6 @@ sub build_specials {
     open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
     $files[$#files+1] = "initf.c";
     &print_header( "MPI_Init", "init", "" );
-    # This is temporary.  Eventually, these should move into
-    # support file.
-    # Note that the global variables have values.  This is to work around
-    # a bug in some C environments (e.g., Mac OS/X) that don't load
-    # external symbols that don't have a value assigned at compile time 
-    # (so called common symbols)
-    print $OUTFD "
-#if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
-const MPI_Fint MPIR_F_TRUE= F77_TRUE_VALUE, MPIR_F_FALSE= F77_FALSE_VALUE;
-#else
-MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
-#endif
-";
-    # This is also temporary.
-    # MPI-2, section 4.12.5, on the declaration of MPI_F_STATUS_IGNORE
-    # MPI_F_STATUSES_IGNORE as global variables in mpi.h (!)
-    print $OUTFD "
-#ifndef USE_POINTER_FOR_BOTTOM
-void *MPIR_F_MPI_BOTTOM = 0;
-void *MPI_F_STATUS_IGNORE = 0;
-void *MPI_F_STATUSES_IGNORE = 0;
-#endif
-\n";
 
     &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
@@ -1914,6 +1891,7 @@ void *MPI_F_STATUSES_IGNORE = 0;
     open( $OUTFD, ">setbot.c" ) || die "Cannot open setbot.c\n";
     $files[$#files+1] = "setbot.c";
     &print_copyright;
+
     print $OUTFD "
 #ifdef F77_NAME_UPPER
 #define mpirinitc_ MPIRINITC
@@ -1923,12 +1901,34 @@ void *MPI_F_STATUSES_IGNORE = 0;
 #define mpirinitc_ mpirinitc
 #endif
 ";
+    # These are here rather than in initf.c to solve some link order 
+    # problems for Windows when separate libraries are used for the C and
+    # Fortran routines.
+    # Note that the global variables have values.  This is to work around
+    # a bug in some C environments (e.g., Mac OS/X) that don't load
+    # external symbols that don't have a value assigned at compile time 
+    # (so called common symbols)
+    print $OUTFD "
+#if defined(F77_RUNTIME_VALUES) || !defined(F77_TRUE_VALUE_SET)
+MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
+#endif
+";
+    # MPI-2, section 4.12.5, on the declaration of MPI_F_STATUS_IGNORE
+    # MPI_F_STATUSES_IGNORE as global variables in mpi.h (!)
+    print $OUTFD "
+#ifndef USE_POINTER_FOR_BOTTOM
+void *MPIR_F_MPI_BOTTOM     = 0;
+void *MPI_F_STATUS_IGNORE   = 0;
+void *MPI_F_STATUSES_IGNORE = 0;
+#endif
+\n";
+
 
     print $OUTFD "
 FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
 {
-    MPIR_F_MPI_BOTTOM = a;
-    MPI_F_STATUS_IGNORE = b;
+    MPIR_F_MPI_BOTTOM     = a;
+    MPI_F_STATUS_IGNORE   = b;
     MPI_F_STATUSES_IGNORE = c;
 }
 ";
