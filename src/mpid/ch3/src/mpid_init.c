@@ -194,7 +194,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|connparent", "**ch3|connparent %s", val);
+						 "**ch3|conn_parent", "**ch3|conn_parent %s", val);
 		goto fn_fail;
 		/* --END ERROR HANDLING-- */
 	    }

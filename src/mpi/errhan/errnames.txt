@@ -469,20 +469,31 @@ with MPI_Alloc_mem.
 **opnotpredefined:only predefined ops are valid
 **opundefined_rma %d:RMA target received unknown RMA operation type %d
 **opundefined_rma:RMA target received unknown RMA operation
-
-**ch3|vcrt_create_failed:failed to a create VCRT
+**ch3|vcrt_create:failed to a create VCRT
 **ch3|vcrt_create %s:failed to create VCRT for %s
 **ch3|vcrt_get_ptr:failed to get a pointer to VCR table
 **ch3|vcrt_get_ptr %s:failed to get a pointer to VCR table for %s
 **ch3|get_parent_port:spawn process group was unable to obtain parent port name from the channel
 **ch3|get_parent_port_err_bcast:an error occurred while broadcasting the error code from MPIDI_CH3_Get_parent_port()
-**ch3|connparent:spawned process group was unable to connect back to the parent
-**ch3|connparent %s:spawned process group was unable to connect back to the parent on port <%s>
+**ch3|conn_parent:spawned process group was unable to connect back to the parent
+**ch3|conn_parent %s:spawned process group was unable to connect back to the parent on port <%s>
+**ch3|unhandled_connection_state:encountered an unexpected connection state
+**ch3|unhandled_connection_state %p %d:encountered an unexpected connection state (vc=%p, state=%d)
+**ch3|send_close_ack:an error occurred when the device attempted to acknowledge the closing of a connection
+
+#
+# To be removed
+#
+**init_vcrt:failed to create VCRT
+**init_getptr:failed to get the vcr
 
 #
 # CH3 errors common to all channels
 #
-**ch3|pgcreate:unable to create a new process group
+**ch3|pg_init:unable to initialize the process group management module
+**ch3|pg_create:unable to create a new process group
+**ch3|pg_not_found: the specified process group object could not be located
+**ch3|pg_not_found %p: the specified process group object could not be located (pg=%p)
 
 #
 # CH3:sock errors
@@ -496,6 +507,7 @@ with MPI_Alloc_mem.
 **ch3|sock|connterm:[ch3:sock] active connection unexpectedly terminated
 **ch3|sock|connfailed:[ch3:sock] failed to connnect to remote process
 **ch3|sock|connfailed %d %d:[ch3:sock] failed to connnect to remote process %d:%d
+**ch3|sock|connfailed %s %d:[ch3:sock] failed to connnect to remote process %s:%d
 **ch3|sock|badsock:[ch3:sock] internal error - bad sock
 **ch3|sock|failure:[ch3:sock] unknown failure
 **ch3|sock|failure %d:[ch3:sock] unknown failure, sock_errno=%d
@@ -653,8 +665,10 @@ with MPI_Alloc_mem.
 **init_vcrdup:failed to duplicate the virtual connection reference
 **invalid_handle:invalid handle
 **invalid_handle %d:invalid handle (%d)
+**invalid_handle %d %p:invalid handle (handle=%d, object=%p)
 **invalid_refcount:invalid reference count
 **invalid_refcount %d:invalid reference count (%d)
+**invalid_refcount %d %p %d:invalid reference count (handle=%d, object=%p, count=%d)
 **invalid_shmq:invalid shm queue pointer
 **invalid_shmq %p %p:invalid shm queue pointer (%p != %p)
 **iov_offset:invalid iov offset

@@ -146,7 +146,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 
     /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**ch3|pg_destroy|pg_notfound", "**ch3|pg_destroy|pg_notfound %p", pg);
+				     "**ch3|pg_not_found", "**ch3|pg_not_found %p", pg);
     /* --END ERROR HANDLING-- */
 
   fn_exit:
