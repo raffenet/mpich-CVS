@@ -126,7 +126,11 @@ def mpdrun():
         for hostname in hostSpec[0].childNodes:
             hostname = hostname.data.strip()
             if hostname:
-                ipaddr = gethostbyname_ex(hostname)[2][0]
+                try:
+                    ipaddr = gethostbyname_ex(hostname)[2][0]
+                except:
+                    print 'unable to determine IP info for host %s' % (hostname)
+                    exit(-1)
                 if ipaddr.startswith('127.0.0'):
                     hostList.append(gethostname())
                 else:
