@@ -560,6 +560,9 @@ static int MPIDI_Type_indexed_count_contig(int count,
  * Copies arrays into place, combining adjacent contiguous regions.
  *
  * Extent passed in is for the original type.
+ *
+ * Output displacements are always output in bytes, while block
+ * lengths are always output in terms of the base type.
  */
 static void MPIDI_Type_indexed_array_copy(int count,
 					  int contig_count,
@@ -576,7 +579,7 @@ static void MPIDI_Type_indexed_array_copy(int count,
 
     if (!dispinbytes)
     {
-	 out_disp_array[0] = (MPI_Aint) ((int *) in_disp_array)[0];
+	out_disp_array[0] = (MPI_Aint) ((int *) in_disp_array)[0] * old_extent;
 	
 	for (i = 1; i < count; i++)
 	{

@@ -25,6 +25,8 @@ subarray-pack_SOURCES = subarray-pack.c
 
 blockindexed-misc_SOURCES = blockindexed-misc.c
 
+indexed-misc_SOURCES = indexed-misc.c
+
 blockindexed-zero-count_SOURCES = blockindexed-zero-count.c
 
 struct-zero-count_SOURCES = struct-zero-count.c
