@@ -583,7 +583,7 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "getbyidx_results", PMIU_MAXLINE ) != 0 ) {
 	PMIU_printf( 1, "got unexpected response to getbyidx :%s:\n", buf );
-	return( -1 );
+	return( PMI_FAIL );
     }
     else {
 	PMIU_getval( "rc", buf, PMIU_MAXLINE );
@@ -593,15 +593,17 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
 	    *next_idx = atoi( buf );
 	    PMIU_getval( "key", key, PMI_keylen_max );
 	    PMIU_getval( "val", val, PMI_vallen_max );
-	    return( 0 );
+	    return( PMI_SUCCESS );
 	}
 	else {
 	    PMIU_getval( "reason", buf, PMIU_MAXLINE );
-	    if ( strncmp( buf, "no_more_keyvals", PMIU_MAXLINE ) == 0 )
-		return( -2 );
+	    if ( strncmp( buf, "no_more_keyvals", PMIU_MAXLINE ) == 0 ) {
+		key[0] = '\0';
+		return( PMI_SUCCESS );
+	    }
 	    else {
 		PMIU_printf( 1, "iter failed; reason = %s\n", buf );
-		return( -1 );
+		return( PMI_FAIL );
 	    }
 	}
     }
