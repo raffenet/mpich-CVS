@@ -63,6 +63,13 @@ if test -z "$master_top_srcdir" ; then
 fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
 dnl
 dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
@@ -114,8 +121,7 @@ if test -z "$ENABLE_SHLIB" ; then
     CC_SHL="$CC"
     ENABLE_SHLIB=none
 fi
-AC_SUBST(CC_SHL)
-AC_SUBST(ENABLE_SHLIB)
+PAC_CC_SUBDIR_SHLIBS
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)

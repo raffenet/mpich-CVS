@@ -62,6 +62,13 @@ if test -z "$master_top_srcdir" ; then
 fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
 
 AC_PROG_INSTALL
 PAC_PROG_MKDIR_P
