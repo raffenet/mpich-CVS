@@ -2362,7 +2362,8 @@ int smpd_state_reading_cred_request(smpd_context_t *context, MPIDU_Sock_event_t 
 #endif
 	if (strcmp(context->account, "invalid account") == 0)
 	{
-	    smpd_err_printf("Attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");
+	    /*smpd_err_printf("Attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");*/
+	    smpd_err_printf("Credentials required to connect to the process manager on %s.  Please use \"mpiexec -register\" or \"mpiexec -logon ...\" to provide user credentials.\n");
 	    strcpy(context->cred_request, "no");
 	    context->write_state = SMPD_WRITING_CRED_ACK_NO;
 	    context->read_state = SMPD_IDLE;
