@@ -29,11 +29,14 @@ public class Category
     private InfoType[]   infotypes;    // % token to represent infoval type
     private Method[]     methods;
 
+    private boolean      isVisible;   // For SLOG-2 Input API, or Jumpshot
+
     public Category()
     {
         infokeys    = null;
         infotypes   = null;
         methods     = null;
+        isVisible   = true;
     }
 
     public Category( int in_idx, String in_name, Topology in_topo,
@@ -47,6 +50,7 @@ public class Category
         infokeys    = null;
         infotypes   = null;
         methods     = null;
+        isVisible   = true;
     }
 
     //  For TRACE-API
@@ -58,11 +62,22 @@ public class Category
         infokeys    = null;
         infotypes   = null;
         methods     = null;
+        isVisible   = true;
     }
 
     public int getIndex()
     {
         return index;
+    }
+
+    public void setVisible( boolean new_value )
+    {
+        isVisible = new_value;
+    }
+
+    public boolean isVisible()
+    {
+        return isVisible;
     }
 
     public void setName( String in_name )

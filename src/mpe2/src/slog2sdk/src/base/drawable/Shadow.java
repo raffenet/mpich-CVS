@@ -292,9 +292,12 @@ public class Shadow extends Primitive
 
         int    rowID;
         float  nesting_ftr;
+        /*
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
+        */
+        rowID       = super.getRowID();
         // nesting_ftr = NestingStacks.getShadowNestingHeight();
         /* assume NestingFactor has been calculated */
         nesting_ftr = super.getNestingFactor();

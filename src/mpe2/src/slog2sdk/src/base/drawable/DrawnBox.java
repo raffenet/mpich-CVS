@@ -34,6 +34,10 @@ public class DrawnBox
         if ( new_width <= TOLERANCE )
             return    Math.abs( new_tail - tail ) <= TOLERANCE
                    || Math.abs( new_head - head ) <= TOLERANCE;
+        /*
+        if ( new_width == 0 )
+            return  new_tail == tail || new_head == head;
+        */
         return false;
     }
 

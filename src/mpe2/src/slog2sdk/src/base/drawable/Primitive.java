@@ -408,6 +408,7 @@ public class Primitive extends Drawable
 
         int    rowID;
         float  nesting_ftr;
+        /* assume RowID and NestingFactor have been calculated */
         rowID       = super.getRowID();
         nesting_ftr = super.getNestingFactor();
 
@@ -464,10 +465,13 @@ public class Primitive extends Drawable
 
         int    rowID;
         float  nesting_ftr;
+        /*
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
-        /* assume NestingFactor has been calculated */
+        */
+        /* assume RowID and NestingFactor have been calculated */
+        rowID       = super.getRowID();
         nesting_ftr = super.getNestingFactor();
 
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
