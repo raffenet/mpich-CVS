@@ -262,31 +262,34 @@ extern char *strdup( const char * );
 
 
 
-#if 1
 /* Memory allocation macros. See document. */
 
 /* You can redefine this to indicate whether memory allocation errors
-   are fatal */
-#define MPID_CHKMEM_ISFATAL 1
+   are fatal.  Recoverable by default */
+#define MPID_CHKMEM_ISFATAL MPIR_ERR_RECOVERABLE
+
 
 /* Memory used and freed within the current scopy (alloca if feasible) */
-#ifdef HAVE_ALLOCA
+#if defined(HAVE_ALLOCA) && defined(USE_ALLOCA)
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 #define MPID_CHKLMEM_DECL(_n)
 #define MPID_CHKLMEM_FREEALL
-#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
-{_pointer = (_type)MPID_Malloc(_nbytes); \
+#define MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
+{_pointer = (_type)alloca(_nbytes); \
 if (!(_pointer)) { \
     _rc = MPIR_Err_create_code( MPI_SUCCESS, MPID_CHKMEM_ISFATAL,  \
           FCNAME, __LINE__, \
           MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
          _nbytes, _name ); \
-    goto _label; \
+    _stmt;\
 }
 #else
 #define MPID_CHKLMEM_DECL(_n) \
  void *(_mpid_chklmem_stk[_n]);\
  int _mpid_chklmem_stk_sp=0;
-#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+#define MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
 {_pointer = (_type)MPID_Malloc(_nbytes); \
 if (_pointer) { \
     _mpid_chklmem_stk[_mpid_chklmem_stk_sp++] = _pointer;\
@@ -295,7 +298,7 @@ if (_pointer) { \
           FCNAME, __LINE__, \
           MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
          _nbytes, _name ); \
-    goto _label; \
+    _stmt;\
 }
 #define MPID_CHKLMEM_FREEALL \
     { while (_mpid_chklmem_stk_sp > 0) {\
@@ -303,12 +306,14 @@ if (_pointer) { \
 #endif /* HAVE_ALLOCA */
 #define MPID_CHKLMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
     MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
+#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+    MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,goto _label)
 
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPID_CHKPMEM_DECL(_n) \
  void *(_mpid_chkpmem_stk[_n]);\
  int _mpid_chkpmem_stk_sp=0;
-#define MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+#define MPID_CHKPMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
 {_pointer = (_type)MPID_Malloc(_nbytes); \
 if (_pointer) { \
     _mpid_chkpmem_stk[_mpid_chkpmem_stk_sp++] = _pointer;\
@@ -316,7 +321,7 @@ if (_pointer) { \
     _rc = MPIR_Err_create_code( MPI_SUCCESS, 1, FCNAME, __LINE__, \
           MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
          _nbytes, _name ); \
-    goto _label; \
+    _stmt;\
 }
 #define MPID_CHKPMEM_REAP \
     { while (_mpid_chkpmem_stk_sp > 0) {\
@@ -325,25 +330,8 @@ if (_pointer) { \
     _mpid_chkpmem_stk_sp = 0
 #define MPID_CHKPMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
     MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
-
-#endif 
-
-#if 0
-/* Memory allocation stack.
-   These are used to allocate multiple chunks of memory (with MPIU_Malloc)
-   and ensuring that they are all freed.  This simplifies error handling
-   for routines that may need to allocate multiple temporaries, and works
-   on systems without alloca (allocate off of the routine's stack) */
-#define MAX_MEM_STACK 16
-typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
-#define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
-               if (memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
-               memstack.ptrs[memstack.n_alloc++] = a;}
-#define FREE_STK     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
-               MPIU_Free(memstack.ptrs[i]);}}
-#define MALLOC_STK_INIT memstack.n_alloc = 0
-#define MALLOC_STK_DECL MPIU_Mem_stack memstack
-#endif
+#define MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+    MPID_CHKPMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,goto _label)
 
 /* Utilities: Safe string copy and sprintf */
 int MPIU_Strncpy( char *, const char *, size_t );
