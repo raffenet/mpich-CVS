@@ -326,32 +326,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
-#if 0
-    if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) != MPIU_STR_SUCCESS)
-    {
-	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
-	goto spawn_failed;
-	smpd_exit_fn("smpd_handle_spawn_command");
-	return SMPD_FAIL;
-    }
-    /*printf("npreput = %d\n", npreput);fflush(stdout);*/
-    if (MPIU_Str_get_string_arg(cmd->cmd, "preput", keyvals_str, 1024) == MPIU_STR_SUCCESS)
-    {
-	/*printf("preput = '%s'\n", keyvals_str);fflush(stdout);*/
-	for (j=0; j<npreput; j++)
-	{
-	    sprintf(key, "%d", j);
-	    if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
-	    {
-		smpd_err_printf("unable to get the %sth key from the preput keyval string '%s'.\n", key, keyvals_str);
-		goto spawn_failed;
-		smpd_exit_fn("smpd_handle_spawn_command");
-		return SMPD_FAIL;
-	    }
-	    /*printf("key %d = %s\n", j, val);fflush(stdout);*/
-	}
-    }
-#endif
     free(maxprocs);
     free(nkeyvals);
 
@@ -419,6 +393,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		return result;
 	    }
 
+	    smpd_dbg_printf("sending first connect command to add new hosts for the spawn command.\n");
+	    /*printf("sending first connect command to add new hosts for the spawn command.\n");fflush(stdout);*/
 	    /* post a write of the command */
 	    result = smpd_post_write_command(context, cmd);
 	    if (result != SMPD_SUCCESS)
@@ -437,6 +413,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     }
 
     /* create the new kvs space */
+    smpd_dbg_printf("all hosts needed for the spawn command are available, sending start_dbs command.\n");
+    /*printf("all hosts needed for the spawn command are available, sending start_dbs command.\n");fflush(stdout);*/
     /* create the start_dbs command to be sent to the first host */
     result = smpd_create_command("start_dbs", 0, 1, SMPD_TRUE, &cmd);
     if (result != SMPD_SUCCESS)

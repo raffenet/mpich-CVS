@@ -670,6 +670,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_dbg_printf("env: PMI_CLIQUE=%s\n", str);
 	SetEnvironmentVariable("PMI_CLIQUE", str);
     }
+    sprintf(str, "%d", process->spawned);
+    smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
+    SetEnvironmentVariable("PMI_SPAWN", str);
     pEnv = GetEnvironmentStrings();
 
     GetCurrentDirectory(MAX_PATH, tSavedPath);
@@ -715,6 +718,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetEnvironmentVariable("PMI_SMPD_FD", NULL);
     SetEnvironmentVariable("PMI_SMPD_ID", NULL);
     SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
+    SetEnvironmentVariable("PMI_SPAWN", NULL);
 
     if (bSuccess)
     {
@@ -1224,6 +1228,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	sprintf(str, "%d", process->id);
 	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
 	setenv("PMI_SMPD_KEY", str, 1);
+	sprintf(str, "%d", process->spawned);
+	smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
+	setenv("PMI_SPAWN", str, 1);
 
 	set_environment_variables(process->env);
 

@@ -200,6 +200,7 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_
     smpd_map_drive_node_t *map_iter;
     char drive_map_str[SMPD_MAX_EXE_LENGTH];
 
+    smpd_enter_fn("smpd_launch_processes");
     /* launch the processes */
     smpd_dbg_printf("launching the processes.\n");
     launch_node_ptr = /*smpd_process.*/launch_list;
@@ -218,6 +219,12 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the command line to the launch command: '%s'\n", launch_node_ptr->exe);
+	    goto launch_failure;
+	}
+	result = smpd_add_command_int_arg(cmd_ptr, "s", spawn_context ? 1 : 0);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the spawn flag to the launch command: '%s'\n", launch_node_ptr->exe);
 	    goto launch_failure;
 	}
 	if (launch_node_ptr->env[0] != '\0')
@@ -305,8 +312,10 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_
 	/* move to the next node */
 	launch_node_ptr = launch_node_ptr->next;
     }
+    smpd_exit_fn("smpd_launch_processes");
     return SMPD_SUCCESS;
 launch_failure:
+    smpd_exit_fn("smpd_launch_processes");
     return SMPD_FAIL;
 }
 
@@ -405,17 +414,26 @@ int smpd_handle_result(smpd_context_t *context)
 		    smpd_process.nproc_launched++;
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
-			smpd_dbg_printf("successfully launched: '%s'\n", iter->cmd);
 			if (context->spawn_context)
 			{
+			    smpd_dbg_printf("successfully spawned: '%s'\n", iter->cmd);
+			    /*printf("successfully spawned: '%s'\n", iter->cmd);fflush(stdout);*/
 			    context->spawn_context->num_outstanding_launch_cmds--;
 			    if (context->spawn_context->num_outstanding_launch_cmds == 0)
 			    {
 				/* send the spawn result command */
+				result = smpd_post_write_command(context, context->spawn_context->result_cmd);
+				if (result != SMPD_SUCCESS)
+				{
+				    smpd_err_printf("unable to post a write of the connect command.\n");
+				    smpd_exit_fn("smpd_handle_result");
+				    return result;
+				}
 			    }
 			}
 			else
 			{
+			    smpd_dbg_printf("successfully launched: '%s'\n", iter->cmd);
 			    if (!smpd_process.stdin_redirecting)
 			    {
 				rank = 0;
@@ -1097,6 +1115,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     MPIU_Str_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
     MPIU_Str_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
     MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
+    MPIU_Str_get_int_arg(cmd->cmd, "s", &process->spawned);
     /* parse the -m drive mapping options */
 
     /* launch the process */
@@ -1602,10 +1621,12 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
     {
 	if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) == MPIU_STR_SUCCESS)
 	{
+	    smpd_dbg_printf("npreput = %d\n", npreput);
 	    /*printf("npreput = %d\n", npreput);fflush(stdout);*/
 	    if (MPIU_Str_get_string_arg(cmd->cmd, "preput", keyvals_str, SMPD_MAX_CMD_LENGTH) == MPIU_STR_SUCCESS)
 	    {
-		/*printf("preput = '%s'\n", keyvals_str);fflush(stdout);*/
+		smpd_dbg_printf("preput string = '%s'\n", keyvals_str);
+		/*printf("preput string = '%s'\n", keyvals_str);fflush(stdout);*/
 		for (j=0; j<npreput; j++)
 		{
 		    sprintf(key, "%d", j);
@@ -1641,7 +1662,7 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 			smpd_exit_fn("handle_start_dbs_command");
 			return SMPD_FAIL;
 		    }
-		    /*printf("key %d = %s\n", j, val);fflush(stdout);*/
+		    /*printf("preput %s = %s\n", key,val2);fflush(stdout);*/
 		}
 	    }
 	}

@@ -956,6 +956,26 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 		return result;
 	    }
 
+	    if (context->spawn_context)
+	    {
+		smpd_dbg_printf("spawn_context found, adding preput values to the start_dbs command.\n");
+		result = smpd_add_command_int_arg(cmd_ptr, "npreput", context->spawn_context->npreput);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
+		    smpd_exit_fn("smpd_state_writing_session_header");
+		    return result;
+		}
+
+		result = smpd_add_command_arg(cmd_ptr, "preput", context->spawn_context->preput);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
+		    smpd_exit_fn("smpd_state_writing_session_header");
+		    return result;
+		}
+	    }
+
 	    /* post a write of the command */
 	    result = smpd_post_write_command(context, cmd_ptr);
 	    if (result != SMPD_SUCCESS)
@@ -2418,6 +2438,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	context->connect_to = context->connect_to->next;
 	if (context->connect_to)
 	{
+	    smpd_dbg_printf("creating connect command to '%s'\n", context->connect_to->host);
 	    /* create a connect command to be sent to the parent */
 	    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
@@ -2452,6 +2473,10 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	}
 	else
 	{
+	    smpd_err_printf("this code seems to never get executed.\n");
+	    return SMPD_FAIL;
+
+	    smpd_dbg_printf("hosts connected, sending start_dbs command.\n");
 	    /* create the start_dbs command to be sent to the first host */
 	    result = smpd_create_command("start_dbs", 0, 1, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
@@ -2463,6 +2488,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 
 	    if (context->spawn_context)
 	    {
+		smpd_dbg_printf("spawn_context found, adding preput values to the start_dbs command.\n");
 		result = smpd_add_command_int_arg(cmd_ptr, "npreput", context->spawn_context->npreput);
 		if (result != SMPD_SUCCESS)
 		{

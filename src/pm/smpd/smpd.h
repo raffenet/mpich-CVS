@@ -320,6 +320,7 @@ typedef struct smpd_process_t
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
     char err_msg[SMPD_MAX_ERROR_LEN];
     smpd_stdin_write_node_t *stdin_write_list;
+    int spawned;
     struct smpd_process_t *next;
 } smpd_process_t;
 

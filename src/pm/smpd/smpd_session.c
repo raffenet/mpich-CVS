@@ -307,6 +307,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     p->err->process = p;
     p->pmi->process = p;
     p->next = NULL;
+    p->spawned = 0;
 
     *process_ptr = p;
 
