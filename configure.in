@@ -2504,7 +2504,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
 	  doc/mansrc/createhtmlindex \
 	  doc/refman/Makefile \
-	  doc/adi3/Makefile \
 	  doc/installguide/Makefile \
 	  doc/userguide/Makefile \
 	  doc/logging/Makefile \
