@@ -38,7 +38,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
 	goto fn_exit;
     }
 
-    if (rank == comm->rank)
+    if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
 	MPIDI_Message_match match;
 	MPID_Request * rreq;

@@ -45,7 +45,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank,
 
     sreq->ch3.vc = comm->vcr[rank];
     
-    if (rank == comm->rank)
+    if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
 	MPIDI_Message_match match;
 	MPID_Request * rreq;
