@@ -459,13 +459,13 @@ if ($build_io) {
 # Name of classes, in the order in which they must be declared.  This
 # includes all classes, by their short names
 @classes = ( 
+	           'except',
 		   'dtype', 
 		   'info', 
 		   'st', 
 		   'group', 
 		   'op', 
 		   'errh',
-	           'except',
 		   'req', 
 		   'preq', 
                    'comm', 
@@ -781,13 +781,14 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 
 # If we aren't building separate files, create the master file
 if (!$build_sep_files) {
-    $filename = "mpicxx.h";
+    $filename = "mpicxx.h.in";
     $OUTFD = OUTFILEHANDLE;
     open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
-    $files[$#files+1] = $filename;
+    # Use the derived file as a source
+    $files[$#files+1] = "mpicxx.h";
     &print_header;
     print $OUTFD "namespace MPI {\n";
-    print $OUTFD "#ifdef HAVE_CXX_EXCEPTIONS
+    print $OUTFD "#if \@HAVE_CXX_EXCEPTIONS\@
 #define MPIX_CALL( fnc ) \\
 {int err; err = fnc ; if (err) throw Exception(err);}
 #else
@@ -870,7 +871,7 @@ foreach $class (@classes) {
     # Special case.  Once we define a Datatype, add this typedef
     if ($class eq "dtype") {
         print $OUTFD "
-typedef void User_function(const void *, void*, int, const Datatype&); 
+    typedef void User_function(const void *, void*, int, const Datatype&); 
 ";
     }
 }
@@ -976,7 +977,7 @@ print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
 INCLUDES = -I../../include -I\${top_srcdir}/src/include\
 maintainerclean-local:\
 \trm -f \${mpi_sources}\
-install_INCLUDE = \${top_srcdir}/mpicxx.h\
+install_INCLUDE = mpicxx.h\
 install_BIN     = mpicxx\n";
 
 # Since configure copies mpicxx to the bin dir, we need to remove it
@@ -1330,7 +1331,9 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     print $OUTFD "const Errhandler ERRHANDLER_NULL;\n";
     print $OUTFD "const Errhandler ERRORS_RETURN(MPI_ERRORS_RETURN);\n";
     print $OUTFD "const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);\n";
-    print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
+    # Errors_return is not quite right for errors-throw-exceptions,
+    # but it is close.
+    print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS(MPI_ERRORS_RETURN);\n";
 
     # Predefined integers
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
@@ -1816,9 +1819,9 @@ sub Comm_methods {
     &Clone_method( $OUTFD, "Comm" );
     # Typedefs
     print $OUTFD  "
-typedef int Copy_attr_function(const Comm& oldcomm, int comm_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
-typedef int Delete_attr_function(Comm& comm, int comm_keyval, void* attribute_val, void* extra_state); 
-typedef void Errhandler_fn(Comm &, int *, ... );
+    typedef int Copy_attr_function(const Comm& oldcomm, int comm_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
+    typedef int Delete_attr_function(Comm& comm, int comm_keyval, void* attribute_val, void* extra_state); 
+    typedef void Errhandler_fn(Comm &, int *, ... );
 
     static int Create_keyval( Copy_attr_function *, Delete_attr_function *,
                               void * );

@@ -2,6 +2,7 @@ Makefile
 Makefile.in
 Makefile.sm
 mpicxx.h
+mpicxx.h.in
 mpicxxconf.h
 mpicxxconf.h.in
 *.o

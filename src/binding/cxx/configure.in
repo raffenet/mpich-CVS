@@ -1,4 +1,4 @@
-AC_INIT(mpicxx.h)
+AC_INIT(initcxx.cpp)
 AC_CONFIG_HEADER(mpicxxconf.h)
 dnl We need install.sh, config.guess, etc. for the code that
 dnl finds the Fortran libraries
@@ -31,6 +31,11 @@ AC_CXX_BOOL
 AC_CXX_NAMESPACES
 if test "$ac_cv_cxx_namespaces" != "yes" ; then
     AC_MSG_ERROR([Namespaces are required for the MPI C++ interface])
+fi
+HAVE_CXX_EXCEPTIONS=0
+AC_SUBST(HAVE_CXX_EXCEPTIONS)
+if test "$ac_cv_cxx_exceptions" = "yes" ; then
+    HAVE_CXX_EXCEPTIONS=1
 fi
 
 # Here are the commands to substitute the compilers to be used to create
@@ -66,4 +71,4 @@ AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 )
-AC_OUTPUT(Makefile mpicxx) 
+AC_OUTPUT(Makefile mpicxx mpicxx.h) 
