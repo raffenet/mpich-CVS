@@ -100,6 +100,8 @@ int main( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
+    MPI_Comm_size( MPI_COMM_WORLD, &matSize );
+
     MPI_Op_create( uop, 0, &op );
     
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
