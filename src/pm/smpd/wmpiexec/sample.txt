@@ -9,4 +9,4 @@ map H:\\myserver\myhome
 channel ssm
 log no
 extra 
-interactive yes
+window yes
