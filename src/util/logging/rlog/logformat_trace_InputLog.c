@@ -220,7 +220,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     if ( legend_sz ) {
         legend_max  = legend_sz+1;
 	if (legend_max > ACHAR_LENGTH)
-	    legend_base = (char *) malloc( legend_max * sizeof( char ) );
+	    legend_base = (char *) MPIU_Malloc( legend_max * sizeof( char ) );
 	else
 	    legend_base = slegend_base;
     }
@@ -231,7 +231,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     if ( label_sz > 0 ) {
         label_max   = label_sz+1;
 	if (label_max > ACHAR_LENGTH)
-	    label_base  = (char *) malloc( label_max * sizeof( char ) );
+	    label_base  = (char *) MPIU_Malloc( label_max * sizeof( char ) );
 	else
 	    label_base = slabel_base;
     }
@@ -242,7 +242,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
 	if (methods_max > AINT_LENGTH)
-	    methods_base = (int *)  malloc( methods_max * sizeof( int ) );
+	    methods_base = (int *)  MPIU_Malloc( methods_max * sizeof( int ) );
 	else
 	    methods_base = smethods_base;
     }
@@ -260,11 +260,11 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
         fprintf( errfile, "%s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
 	if ( legend_base != NULL && legend_base != slegend_base )
-	    free( legend_base );
+	    MPIU_Free( legend_base );
 	if ( label_base != NULL && label_base != slabel_base )
-	    free( label_base );
+	    MPIU_Free( label_base );
 	if ( methods_base != NULL && methods_base != smethods_base )
-	    free( methods_base );
+	    MPIU_Free( methods_base );
         return NULL;
     }
 
@@ -313,17 +313,17 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     if ( jlegend != NULL )
         (*env)->DeleteLocalRef( env, jlegend );
     if ( legend_base != NULL && legend_base != slegend_base )
-        free( legend_base );
+        MPIU_Free( legend_base );
 
     if ( jlabel != NULL )
         (*env)->DeleteLocalRef( env, jlabel );
     if ( label_base != NULL && label_base != slabel_base )
-        free( label_base );
+        MPIU_Free( label_base );
 
     if ( jmethods != NULL )
         (*env)->DeleteLocalRef( env, jmethods );
     if ( methods_base != NULL && methods_base != smethods_base )
-        free( methods_base );
+        MPIU_Free( methods_base );
 
     return objdef;
 }
@@ -376,20 +376,20 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     }
 
     /* Prepare various arrays for C data */
-    title_name    = (char *) malloc( max_title_name * sizeof(char) );
-    column_names  = (char **) malloc( (ncolumns-1) * sizeof(char *) );
+    title_name    = (char *) MPIU_Malloc( max_title_name * sizeof(char) );
+    column_names  = (char **) MPIU_Malloc( (ncolumns-1) * sizeof(char *) );
     for ( icol = 0; icol < ncolumns-1; icol++ )
-        column_names[ icol ] = (char *) malloc( max_column_name
+        column_names[ icol ] = (char *) MPIU_Malloc( max_column_name
                                               * sizeof(char) );
     coordmap_max  = nrows * ncolumns;
-    coordmap_base = (int *) malloc( coordmap_max * sizeof( int ) );
+    coordmap_base = (int *) MPIU_Malloc( coordmap_max * sizeof( int ) );
     coordmap_sz   = 0;
     coordmap_pos  = 0;
 
    	methods_pos  = 0;
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
-        methods_base = (int *) malloc( methods_max * sizeof( int ) );
+        methods_base = (int *) MPIU_Malloc( methods_max * sizeof( int ) );
     }
     else
         methods_base = NULL;
@@ -403,17 +403,17 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
         fprintf( errfile, "Error: %s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
 	if ( coordmap_base != NULL )
-	    free( coordmap_base );
+	    MPIU_Free( coordmap_base );
 	if ( title_name != NULL )
-	    free( title_name );
+	    MPIU_Free( title_name );
 	if ( column_names != NULL ) {
 	    for ( icol = 0; icol < ncolumns-1; icol++ )
 		if ( column_names[ icol ] != NULL )
-		    free( column_names[ icol ] );
-		free( column_names );
+		    MPIU_Free( column_names[ icol ] );
+		MPIU_Free( column_names );
 	}
 	if ( methods_base != NULL )
-	    free( methods_base );
+	    MPIU_Free( methods_base );
         return NULL;
     }
 
@@ -473,21 +473,21 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     if ( coordmap_pos > 0 )
         (*env)->DeleteLocalRef( env, j_coordmap_elems );
     if ( coordmap_base != NULL )
-        free( coordmap_base );
+        MPIU_Free( coordmap_base );
 
     if ( title_name != NULL )
-        free( title_name );
+        MPIU_Free( title_name );
     if ( column_names != NULL ) {
         for ( icol = 0; icol < ncolumns-1; icol++ )
             if ( column_names[ icol ] != NULL )
-                free( column_names[ icol ] );
-        free( column_names );
+                MPIU_Free( column_names[ icol ] );
+        MPIU_Free( column_names );
     }
 
     if ( jmethods != NULL )
         (*env)->DeleteLocalRef( env, jmethods );
     if ( methods_base != NULL )
-        free( methods_base );
+        MPIU_Free( methods_base );
 
     return ycoordmap;
 }
@@ -537,19 +537,19 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
     tcoord_pos  = 0;
     tcoord_max  = tcoord_sz;
     if (tcoord_max > ADOUBLE_LENGTH)
-	tcoord_base = (double *) malloc( tcoord_max * sizeof( double ) );
+	tcoord_base = (double *) MPIU_Malloc( tcoord_max * sizeof( double ) );
     else
 	tcoord_base = stcoord_base;
     ycoord_pos  = 0;
     ycoord_max  = ycoord_sz;
     if (ycoord_max > AINT_LENGTH)
-	ycoord_base = (int *)    malloc( ycoord_max * sizeof( int ) );
+	ycoord_base = (int *)    MPIU_Malloc( ycoord_max * sizeof( int ) );
     else
 	ycoord_base = sycoord_base;
     info_pos    = 0;
     info_max    = info_sz;
     if (info_max > AINT_LENGTH)
-	info_base   = (char *)   malloc( info_max * sizeof( char ) );
+	info_base   = (char *)   MPIU_Malloc( info_max * sizeof( char ) );
     else
 	info_base = sinfo_base;
     ierr = TRACE_Get_next_primitive( tracefile, &type_idx,
@@ -563,11 +563,11 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
         fprintf( errfile, "%s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
 	if ( tcoord_base != NULL && tcoord_base != stcoord_base )
-	    free( tcoord_base );
+	    MPIU_Free( tcoord_base );
 	if ( ycoord_base != NULL && ycoord_base != sycoord_base )
-	    free( ycoord_base );
+	    MPIU_Free( ycoord_base );
 	if ( info_base != NULL && info_base != sinfo_base )
-	    free( info_base );
+	    MPIU_Free( info_base );
         return NULL;
     }
 
@@ -615,17 +615,17 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
     if ( tcoord_pos > 0 )
         (*env)->DeleteLocalRef( env, j_tcoords );
     if ( tcoord_base != NULL && tcoord_base != stcoord_base )
-        free( tcoord_base );
+        MPIU_Free( tcoord_base );
 
     if ( ycoord_pos > 0 )
         (*env)->DeleteLocalRef( env, j_ycoords );
     if ( ycoord_base != NULL && ycoord_base != sycoord_base )
-        free( ycoord_base );
+        MPIU_Free( ycoord_base );
 
     if ( info_pos > 0 )
         (*env)->DeleteLocalRef( env, j_infos );
     if ( info_base != NULL && info_base != sinfo_base )
-        free( info_base );
+        MPIU_Free( info_base );
 
     return prime;
 }
@@ -674,7 +674,7 @@ Java_logformat_trace_InputLog_getNextComposite( JNIEnv *env, jobject this )
     if ( cm_info_sz > 0 ) {
         cm_info_pos    = 0;
         cm_info_max    = cm_info_sz;
-        cm_info_base   = (char *)   malloc( cm_info_max * sizeof( char ) );
+        cm_info_base   = (char *)   MPIU_Malloc( cm_info_max * sizeof( char ) );
         ierr = TRACE_Get_next_composite( tracefile, &cmplx_type_idx,
                                          &cm_info_sz, cm_info_base,
                                          &cm_info_pos, cm_info_max );
@@ -734,7 +734,7 @@ Java_logformat_trace_InputLog_getNextComposite( JNIEnv *env, jobject this )
     if ( cm_info_sz > 0 && cm_info_pos > 0 )
         (*env)->DeleteLocalRef( env, j_cm_infos );
     if ( cm_info_base != NULL )
-        free( cm_info_base );
+        MPIU_Free( cm_info_base );
 
     return cmplx;
 }

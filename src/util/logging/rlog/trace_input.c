@@ -81,14 +81,14 @@ TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp )
 	return TRACEINPUT_SUCCESS;
     }
 
-    *fp = (_trace_file*)malloc(sizeof(_trace_file));
+    *fp = (_trace_file*)MPIU_Malloc(sizeof(_trace_file));
     if (*fp == NULL)
 	return TRACEINPUT_FAIL;
 
     (*fp)->pInput = pInput = RLOG_CreateInputStruct(filespec);
     if (pInput == NULL)
     {
-	free(*fp);
+	MPIU_Free(*fp);
 	*fp = NULL;
 	return TRACEINPUT_FAIL;
     }
@@ -96,15 +96,15 @@ TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp )
     (*fp)->bArrowAvail = (RLOG_GetNextArrow(pInput, &(*fp)->arrow) == 0);
     if (pInput->nNumRanks > 0)
     {
-	(*fp)->ppEvent = (RLOG_EVENT**)malloc(sizeof(RLOG_EVENT*) * pInput->nNumRanks);
-	(*fp)->ppEventAvail = (int**)malloc(sizeof(int*) * pInput->nNumRanks);
+	(*fp)->ppEvent = (RLOG_EVENT**)MPIU_Malloc(sizeof(RLOG_EVENT*) * pInput->nNumRanks);
+	(*fp)->ppEventAvail = (int**)MPIU_Malloc(sizeof(int*) * pInput->nNumRanks);
 
 	for (i=0; i<pInput->nNumRanks; i++)
 	{
 	    if (pInput->pNumEventRecursions[i] > 0)
 	    {
-		(*fp)->ppEvent[i] = (RLOG_EVENT*)malloc(sizeof(RLOG_EVENT) * pInput->pNumEventRecursions[i]);
-		(*fp)->ppEventAvail[i] = (int*)malloc(sizeof(int) * pInput->pNumEventRecursions[i]);
+		(*fp)->ppEvent[i] = (RLOG_EVENT*)MPIU_Malloc(sizeof(RLOG_EVENT) * pInput->pNumEventRecursions[i]);
+		(*fp)->ppEventAvail[i] = (int*)MPIU_Malloc(sizeof(int) * pInput->pNumEventRecursions[i]);
 	    }
 	    else
 	    {
@@ -140,17 +140,17 @@ TRACE_EXPORT int TRACE_Close( TRACE_file *fp )
 	for (i=0; i<(*fp)->pInput->nNumRanks; i++)
 	{
 	    if ( (*fp)->ppEvent[i] )
-		free( (*fp)->ppEvent[i] );
+		MPIU_Free( (*fp)->ppEvent[i] );
 	    if ( (*fp)->ppEventAvail[i] )
-		free( (*fp)->ppEventAvail[i] );
+		MPIU_Free( (*fp)->ppEventAvail[i] );
 	}
 	RLOG_CloseInputStruct(&(*fp)->pInput);
     }
     if ((*fp)->ppEvent)
-	free( (*fp)->ppEvent );
+	MPIU_Free( (*fp)->ppEvent );
     if ((*fp)->ppEventAvail)
-	free( (*fp)->ppEventAvail );
-    free( (*fp) );
+	MPIU_Free( (*fp)->ppEventAvail );
+    MPIU_Free( (*fp) );
     *fp = NULL;
 
     return TRACEINPUT_SUCCESS;
