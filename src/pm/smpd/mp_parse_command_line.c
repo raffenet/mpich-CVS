@@ -77,7 +77,7 @@ void mp_print_extra_options(void)
     printf("-np x\n");
     printf("  launch x processes\n");
     printf("-localonly x\n");
-    printf("-np x -localonly\n");
+    printf("-n x -localonly\n");
     printf("  launch x processes on the local machine\n");
     printf("-machinefile filename\n");
     printf("  use a file to list the names of machines to launch on\n");
@@ -119,13 +119,14 @@ void mp_print_extra_options(void)
     printf("  class = 0,1,2,3,4   = idle, below, normal, above, high\n");
     printf("  level = 0,1,2,3,4,5 = idle, lowest, below, normal, above, highest\n");
     printf("  the default is -priority 1:3\n");
+    /*
     printf("-localroot\n");
     printf("  launch the root process without smpd if the host is local.\n");
     printf("  (This allows the root process to create windows and be debugged.)\n");
     printf("-iproot\n");
     printf("-noiproot\n");
     printf("  use or not the ip address of the root host instead of the host name.\n");
-
+    */
     printf("-port port\n");
     printf("-p port\n");
     printf("  specify the port that smpd is listening on.\n");
@@ -137,8 +138,10 @@ void mp_print_extra_options(void)
     printf("  acceptable number of processes to launch up to maxprocs\n");
     printf("-path search_path\n");
     printf("  search path for executable, ; separated\n");
+    /*
     printf("-arch architecture\n");
     printf("  sun, linux, rs6000, ...\n");
+    */
     printf("-register\n");
     printf("  encrypt a user name and password to the Windows registry.\n");
     printf("-remove\n");
