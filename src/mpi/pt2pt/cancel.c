@@ -44,16 +44,14 @@ int MPI_Cancel(MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Cancel";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Request * request_ptr;
+    MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CANCEL);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -63,6 +61,78 @@ int MPI_Cancel(MPI_Request *request)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CANCEL);
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Request_get_ptr( *request, request_ptr );
+    
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Validate request_ptr */
+            MPID_Request_valid_ptr( request_ptr, mpi_errno );
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    switch (request_ptr->kind)
+    {
+	case MPID_REQUEST_RECV:
+	{
+	    MPID_Cancel_recv(request_ptr);
+	    break;
+	}
+
+	case MPID_PREQUEST_RECV:
+	{
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_ERR_INTERN, "cancellation of persistent receive requests "
+		"is not supported", 0);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+
+	case MPID_REQUEST_SEND:
+	{
+	    MPID_Cancel_send(request_ptr);
+	    break;
+	}
+
+	case MPID_PREQUEST_SEND:
+	{
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_ERR_INTERN, "cancellation of persistent send requests is "
+		"not supported", 0);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+
+	case MPID_UREQUEST:
+	{
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_ERR_INTERN, "cancellation of user requests is not "
+		"supported", 0);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+
+	default:
+	{
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_ERR_INTERN, "attempt to cancel an unsupported request "
+		"type", 0);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+    }
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
     return MPI_SUCCESS;
 }
