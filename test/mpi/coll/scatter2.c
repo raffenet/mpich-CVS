@@ -19,19 +19,26 @@ int main( int argc, char **argv )
     double *vecin, *vecout, ivalue;
     int    root, i, n, stride, err = 0;
     int    rank, size;
+    MPI_Aint vextent;
 
     MTest_Init( &argc, &argv );
     
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    n = 2;
+    n = 12;
     stride = 10;
     vecin = (double *)malloc( n * stride * size * sizeof(double) );
     vecout = (double *)malloc( n * sizeof(double) );
     
     MPI_Type_vector( n, 1, stride, MPI_DOUBLE, &vec );
     MPI_Type_commit( &vec );
+    MPI_Type_extent( vec, &vextent );
+    if (vextent != ((n-1)*stride + 1) * sizeof(double) ) {
+	err++;
+	printf( "Vector extent is %ld, should be %ld\n", 
+		 (long) vextent, (long)(((n-1)*stride+1)*sizeof(double)) );
+    }
     /* Note that the exted of type vector is from the first to the
        last element, not n*stride.
        E.g., with n=1, the extent is a single double */
