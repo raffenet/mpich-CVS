@@ -36,10 +36,11 @@ void CLOG_Util_abort( int errorcode )
 #endif
 }
 
-char* CLOG_Util_get_tmpfilename( void )
+/*
+   tmp_pathname[] is assumed to be of size CLOG_PATH_STRLEN
+*/
+void CLOG_Util_set_tmpfilename( char *tmp_pathname )
 {
-    char   *tmp_pathname = NULL;
-
     char   *env_tmpdir = NULL;
     char    tmpdirname_ref[ CLOG_PATH_STRLEN ] = "";
     char    tmpdirname[ CLOG_PATH_STRLEN ] = "";
@@ -52,12 +53,11 @@ char* CLOG_Util_get_tmpfilename( void )
     int     tmp_fd;
 #endif
                                                                                 
-    tmp_pathname = (char *) MALLOC( CLOG_PATH_STRLEN );
     if ( tmp_pathname == NULL ) {
-        fprintf( stderr, __FILE__":CLOG_Util_get_tmpfilename() - \n"
-                         "\t""MALLOC() fails for variable tmp_pathname.\n" );
+        fprintf( stderr, __FILE__":CLOG_Util_set_tmpfilename() - \n"
+                         "\t""The input string buffer is NULL.\n" );
         fflush( stderr );
-        return NULL;
+        CLOG_Util_abort( 1 );
     }
 
 #if !defined( CLOG_NOMPI )
@@ -107,7 +107,7 @@ char* CLOG_Util_get_tmpfilename( void )
                          "\t""strlen(tmpdirname) = %d\n",
                          (int)strlen( tmpdirname ) );
         fflush( stderr );
-        return NULL;
+        CLOG_Util_abort( 1 );
     }
                                                                                 
     /*  Set the local tmp filename then tmp_pathname */
@@ -129,8 +129,6 @@ char* CLOG_Util_get_tmpfilename( void )
 #else
     mktemp( tmp_pathname );
 #endif
-
-    return tmp_pathname;
 }
 
 /*

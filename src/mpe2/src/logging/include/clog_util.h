@@ -9,7 +9,7 @@
 
 void CLOG_Util_abort( int errorcode );
 
-char* CLOG_Util_get_tmpfilename( void );
+void CLOG_Util_set_tmpfilename( char *tmp_pathname );
 
 void CLOG_Util_swap_bytes( void *bytes, int elem_sz, int Nelem );
 
