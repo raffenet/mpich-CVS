@@ -280,12 +280,14 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 	    MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_read_progress: reading from queue %p\n", shm_ptr));
 
 	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
+	    assert(mem_ptr < (void*)(pkt_ptr + 1));
 	    num_bytes = pkt_ptr->num_bytes;
+	    assert(num_bytes);
 	    /*recv_vc_ptr = &vc->ch.pg->vc_table[i];*/ /* This should be some GetVC function with a complete context */
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		/*assert(num_bytes > sizeof(packet));*/
+		assert(num_bytes >= sizeof(MPIDI_CH3_Pkt_t));
 		MPIDI_DBG_PRINTF((60, FCNAME, "reading header(%d bytes) from read_shmq %08p packet[%d]", sizeof(MPIDI_CH3_Pkt_t), shm_ptr, index));
 		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
