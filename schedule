@@ -26,6 +26,22 @@ Dependencies should list routines, separated by blanks.
 
 This file is read by an automated tool; don't use commas except in this
 header and within a schedule line.  
+
+Points of contact:
+The following people are the first points of contact on the various 
+parts.  Most of these actually involve multiple people; for example,
+Brian, David, and Bill are also involved in RMA.
+
+Rusty - BNR/PMI/MPD
+Rob R - IO/Datatypes
+Rajeev - RMA
+David - Xfer/Windows/MM
+Brian - CH3
+Bill  - Collective/build environment/error handling
+
+Bill is also the tie-breaker and final decision maker
+
+*the following line ends the header*
 --------------------------------------------------------------------
 
 MPI-1 functions
