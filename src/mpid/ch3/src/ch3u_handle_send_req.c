@@ -37,7 +37,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 
 	    /* mark data transfer as complete and decrement CC */
 	    MPIDI_CH3U_Request_complete(sreq);
-	    *complete = 1;
+	    *complete = TRUE;
 
 	    break;
 	}
@@ -53,13 +53,13 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 		goto fn_exit;
 	    }
 	    
-	    *complete = 0;
+	    *complete = FALSE;
 	    break;
 	}
 	
 	default:
 	{
-	    *complete = 0;
+	    *complete = FALSE;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badca",
 					     "**ch3|badca %d", sreq->dev.ca);
 	    break;

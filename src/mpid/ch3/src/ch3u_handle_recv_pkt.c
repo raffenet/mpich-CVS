@@ -735,7 +735,6 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received get pkt"));
 
             req = MPID_Request_create();
-            MPIU_Object_set_ref(req, 1);
             req->dev.decr_ctr = get_pkt->decr_ctr;
             req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 

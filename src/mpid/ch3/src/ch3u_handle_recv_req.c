@@ -6,14 +6,14 @@
 
 #include "mpidimpl.h"
 
-static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp);
-static int do_accumulate_op(MPID_Request *rreq);
+static int create_derived_datatype(MPID_Request * rreq, MPID_Datatype ** dtp);
+static int do_accumulate_op(MPID_Request * rreq);
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete)
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complete)
 {
     static int in_routine = FALSE;
     int mpi_errno = MPI_SUCCESS;
@@ -36,7 +36,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 	    {
                 /* mark data transfer as complete and decrement CC */
 		MPIDI_CH3U_Request_complete(rreq);
-		*complete = 1;
+		*complete = TRUE;
 	    }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
 	    {
@@ -47,7 +47,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 		
                 /* mark data transfer as complete and decrement CC */
 		MPIDI_CH3U_Request_complete(rreq);
-		*complete = 1;
+		*complete = TRUE;
             }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP)
 	    {
@@ -62,7 +62,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 
                 /* mark data transfer as complete and decrement CC */
 		MPIDI_CH3U_Request_complete(rreq);
-		*complete = 1;
+		*complete = TRUE;
             
             }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT)
@@ -98,9 +98,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
                     goto fn_exit;
                 }
 
-		/* FIXME: if the datatype defines a buffer that contains no data, the request will never complete */
-
-		*complete = 0;
+		*complete = FALSE;
             }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT)
 	    {
@@ -165,9 +163,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
                     goto fn_exit;
                 }
 
-		/* FIXME: if the datatype defines a buffer that contains no data, the request will never complete */
-
-		*complete = 0;
+		*complete = FALSE;
             }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT)
 	    {
@@ -182,22 +178,18 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
                 create_derived_datatype(rreq, &new_dtp);
                 MPIU_Free(rreq->dev.dtype_info);
 
-                /* update request for sending data */
-		/* FIXME: XXX: sreq = MPID_CH3_Request_create(); -- the send should use a separate request as the receive request
-                   is used by the channel to determine completion of the receive.  Reuse of the request will likely confuse the
-                   progress engine. */
+                /* create request for sending data */
 		sreq = MPIDI_CH3_Request_create();
-		*sreq = *rreq;
                 sreq->kind = MPID_REQUEST_SEND;
                 MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_GET_RESP);
+                sreq->dev.user_buf = rreq->dev.user_buf;
+                sreq->dev.user_count = rreq->dev.user_count;
                 sreq->dev.datatype = new_dtp->handle;
-                sreq->dev.recv_data_sz = new_dtp->size * sreq->dev.user_count; 
                 sreq->dev.datatype_ptr = new_dtp;
-                /* this will cause the datatype to be freed when the
-                   request is freed. free dtype_info here. */
-
+		sreq->dev.decr_ctr = rreq->dev.decr_ctr;
+		
                 get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
-                get_resp_pkt->request = sreq->dev.request;
+                get_resp_pkt->request = rreq->dev.request;
                 
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
@@ -207,7 +199,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
                                   sreq->dev.datatype,
                                   &sreq->dev.segment);
                 sreq->dev.segment_first = 0;
-                sreq->dev.segment_size = sreq->dev.recv_data_sz;
+		sreq->dev.segment_size = new_dtp->size * sreq->dev.user_count;
 
                 iov_n = MPID_IOV_LIMIT - 1;
                 mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
@@ -229,14 +221,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 
                 /* mark receive data transfer as complete and decrement CC in receive request */
 		MPIDI_CH3U_Request_complete(rreq);
-		*complete = 1;
+		*complete = TRUE;
             }
 	    else
 	    {
 		/* We shouldn't reach this code because the only other request types are sends */
 		assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
 		MPIDI_CH3U_Request_complete(rreq);
-		*complete = 1;
+		*complete = TRUE;
 	    }
 	    
 	    break;
@@ -262,7 +254,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 	    
 	    /* mark data transfer as complete and decrement CC */
 	    MPIDI_CH3U_Request_complete(rreq);
-	    *complete = 1;
+	    *complete = TRUE;
 	    
 	    break;
 	}
@@ -292,7 +284,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 
 	    /* mark data transfer as complete and decrement CC */
 	    MPIDI_CH3U_Request_complete(rreq);
-	    *complete = 1;
+	    *complete = TRUE;
 	    
 	    break;
 	}
@@ -307,7 +299,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV");
 		goto fn_exit;
 	    }
-	    *complete = 0;
+	    *complete = FALSE;
 	    break;
 	}
 	
@@ -320,13 +312,13 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int *complete
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_RELOAD_IOV");
 		goto fn_exit;
 	    }
-	    *complete = 0;
+	    *complete = FALSE;
 	    break;
 	}
 	
 	default:
 	{
-	    *complete = 1;
+	    *complete = TRUE;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badca",
 					     "**ch3|badca %d", rreq->dev.ca);
 	    break;
