@@ -9,7 +9,7 @@
 #include "ad_pvfs2.h"
 
 struct ADIOI_PVFS2_fs_s {
-    PVFS_pinode_reference pinode;
+    PVFS_pinode_reference pinode_refn;
     PVFS_credentials credentials;
 } ADIOI_PVFS2_fs_s;
 
@@ -23,3 +23,4 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials);
 void ADIOI_PVFS2_End(int *error_code);
 int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval, 
 	void *attribute_val, void *extra_state);
+int ADIOI_PVFS2_pvfs_error_convert(int pvfs_error, int *mpi_error);

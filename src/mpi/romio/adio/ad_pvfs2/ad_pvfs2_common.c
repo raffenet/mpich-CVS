@@ -89,6 +89,13 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
     credentials->perms = PVFS_U_WRITE|PVFS_U_READ;
 }
 
+/* pvfs_error_convert: given a pvfs error code, make it into the appropriate
+ * mpi error code */ 
+int ADIOI_PVFS2_pvfs_error_convert(int pvfs_error, int *mpi_error)
+{
+    *mpi_error = MPI_UNDEFINED;
+    return 0;
+}
 /* 
  * vim: ts=8 sts=4 sw=4 noexpandtab 
  */
