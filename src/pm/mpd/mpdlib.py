@@ -4,6 +4,7 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+import string
 from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex, \
                        SOL_SOCKET,SO_REUSEADDR
@@ -310,6 +311,119 @@ def mpd_same_ips(host1,host2):    # hosts may be names or IPs
             if ip1 == ip2:
                 return 1
     return 0
+
+# There probably is a better way to check whitespace, but being
+# a python newbee I wrote this simple function
+def is_whitespace(c):
+    list = [ ' ', '\t', '\r', '\n' ]
+    for i in range(len(list)):
+        if c[0] == list[i]:
+            return 1
+    return 0
+
+# This function takes a string of keyvals and returns a dictionary object
+# The keys and values can have spaces and ='s in them if they are quoted.
+# quotes are escaped, example:  my_key="equal \" in the middle"
+def mpd_parse_keyvals(msg):
+    parsed_msg = {}
+    try:
+        i = 0
+        max = len(msg)
+        while i < max:
+            # skip whitespace
+            while i < max and is_whitespace(msg[i]):
+                i = i + 1
+            if i < max:
+                #print "parsing key"
+                # parse the key
+                key = ""
+                if msg[i] == '"':
+                    # parse a quoted string
+                    i = i + 1
+                    while i < max and msg[i] != '"':
+                        if msg[i] == '\\':
+                            i = i + 1
+                            if i < max:
+                                key = key + msg[i]
+                                i = i + 1
+                        else:
+                            key = key + msg[i]
+                            i = i + 1
+                    i = i + 1
+                else:
+                    # parse a literal string
+                    while i < max and msg[i] != '=' and not is_whitespace(msg[i]):
+                        key = key + msg[i]
+                        i = i + 1
+                #print "key = %s" % key
+                # skip whitespace
+                while i < max and is_whitespace(msg[i]):
+                    i = i + 1
+                if i < max:
+                    # parse the deliminator
+                    if msg[i] != '=':
+                        #print "no deliminator found"
+                        mpd_raise("no deliminator found in msg")
+                    i = i + 1
+                    while i < max and is_whitespace(msg[i]):
+                        i = i + 1
+                    # parse the value
+                    #print "parsing val"
+                    val = ""
+                    if msg[i] == '"':
+                        # parse a quoted string
+                        i = i + 1
+                        while i < max and msg[i] != '"':
+                            if msg[i] == '\\':
+                                i = i + 1
+                                if i < max:
+                                    val = val + msg[i]
+                                    i = i + 1
+                            else:
+                                val = val + msg[i]
+                                i = i + 1
+                        i = i + 1
+                        #print "parsed quoted value: %s" % val
+                    else:
+                        # parse a literal string
+                        while i < max and not is_whitespace(msg[i]):
+                            val = val + msg[i]
+                            i = i + 1
+                    #print "val = %s" % val
+                    parsed_msg[key] = val
+    except:
+        print 'unable to parse pmi msg :%s:' % msg
+    return parsed_msg
+
+# This function quotes a string if necessary
+def mpd_prep_string(str):
+    if string.find(str, "=") == -1 and string.find(str, " ") == -1 and string.find(str, "\"") != 0:
+        return str
+    quoted = "\""
+    for i in range(len(str)):
+        if str[i] == "\"":
+            quoted = quoted + "\\"
+        quoted = quoted + str[i]
+    quoted = quoted + "\""
+    return quoted
+
+# This function adds a keyval to a string, quoting as necessary
+def mpd_add_keyval_to_string(str, key, val):
+    key_str = mpd_prep_string(key)
+    val_str = mpd_prep_string(val)
+    if len(str) > 0:
+        if not is_whitespace(str[len(str)-1]):
+            str = str + " " + key_str + "=" + val_str
+        else:
+            str = str + key_str + "=" + val_str
+    #print "keyval added string: <%s>" % str
+    return str
+
+#Add something like this to handle multiple keyvals in one call:
+#def mpd_add_keyvals_to_string(str, n, ...):
+#    for i in range(n):
+#        str = mpd_add_keyval_to_string(str, "foo", "bar")
+#    return str
 
 if __name__ == '__main__':
     print 'mpdlib for mpd version: %s' % str(mpd_version)
