@@ -462,7 +462,7 @@ extern MPID_Comm MPID_Comm_direct[];
 
 /* Requests */
 typedef struct MPID_Request {
-    int           handle;
+    int          handle;
     volatile int ref_count;
     volatile int busy;
     /* A comm is needed to find the proper error handler */
@@ -822,9 +822,6 @@ void MPID_Progress_wait();
 void MPID_Progress_poke();
 #endif
 
-#if !defined(MPID_Request_new)
-MPID_Request * MPID_Request_new();
-#endif
 #if !defined(MPID_Request_free)
 void MPID_Request_free(MPID_Request *);
 #endif
