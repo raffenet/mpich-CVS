@@ -100,7 +100,7 @@
 - The sock channel now has preliminary support for MPI_THREAD_SERIALIZED and
   MPI_THREAD_MULTIPLE on both UNIX and Microsoft Windows.  We have performed
   rudimentary testing; and while overall the results were very positive, known
-  issues do exist.  ROMIO is particular experiences hangs in several places.
+  issues do exist.  ROMIO in particular experiences hangs in several places.
   We plan to correct that in the next release.  As always, please report any
   difficulties you encounter.
 
