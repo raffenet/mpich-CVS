@@ -84,8 +84,11 @@ dnl
 # Get a test value and flag whether we should remove/replace the 
 # cache_system file (do so unless cache_system_ok is yes)
 # FC and F77 should be synonyms.  Save both in case
-cleanargs=`echo "$CC $F77 $FC $CXX $F90 $PATH" | tr '"' ' '`
-# We might want to add CFLAGS and some of the configure parms ($*)
+# We include the xxxFLAGS in case the user is using the flags to change
+# the language (either input or output) of the compiler.  E.g., 
+# using -xarch=v9 on Solaris to select 64 bit output or using -D_BSD_SOURCE 
+# with gcc to get different header files on input.
+cleanargs=`echo "$CC $F77 $FC $CXX $F90 $CFLAGS $FFLAGS $CXXFLAGS $F90FLAGS $PATH" | tr '"' ' '`
 if uname -srm >/dev/null 2>&1 ; then
     cache_system_text="`uname -srm` $cleanargs"
 else
