@@ -303,7 +303,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_host_node_t *host_node_ptr, *host_list, *host_node_iter;
     smpd_host_node_t *ghost_list;
     int no_drive_mapping;
-    int n_priority_class, n_priority, use_priorities;
+    int n_priority_class, n_priority;
+    int use_priorities;
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile, delete_configfile;
@@ -511,6 +512,8 @@ configfile_loop:
 	host_list = NULL;
 	no_drive_mapping = SMPD_FALSE;
 	use_priorities = SMPD_FALSE;
+	n_priority_class = SMPD_DEFAULT_PRIORITY_CLASS;
+	n_priority = SMPD_DEFAULT_PRIORITY;
 	use_machine_file = SMPD_FALSE;
 	path[0] = '\0';
 
@@ -1187,6 +1190,12 @@ configfile_loop:
 			str++;
 			n_priority = atoi(str);
 		    }
+		    if (n_priority_class < 0 || n_priority_class > 4 || n_priority < 0 || n_priority > 5)
+		    {
+			printf("Error: priorities must be between 0-4:0-5\n");
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
 		}
 		else
 		{
@@ -1690,6 +1699,8 @@ configfile_loop:
 	    smpd_get_next_host(&host_list, launch_node);
 	    launch_node->iproc = cur_rank++;
 	    launch_node->appnum = appnum;
+	    launch_node->priority_class = n_priority_class;
+	    launch_node->priority_thread = n_priority;
 	    launch_node->env = launch_node->env_data;
 	    strcpy(launch_node->env_data, env_data);
 	    if (wdir[0] != '\0')
