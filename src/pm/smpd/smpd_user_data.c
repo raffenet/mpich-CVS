@@ -367,6 +367,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    {
 		fseek(fin, 0, SEEK_END);
 		len = ftell(fin);
+		fseek(fin, 0, SEEK_SET);
 		if (len > 0)
 		{
 		    buffer = (char*)malloc(len+1);
