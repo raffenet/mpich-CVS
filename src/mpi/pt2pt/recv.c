@@ -73,7 +73,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_RECV);
     
-    /* Get handles to MPI objects. */
+    /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
     /* Validate parameters if error checking is enabled */

@@ -66,7 +66,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WAIT);
     
-    /* Get handles to MPI objects. */
+    /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
     
     /* Validate parameters if error checking is enabled */

@@ -71,7 +71,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ISEND);
 
-    /* Get handles to MPI objects. */
+    /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
 #   ifdef HAVE_ERROR_CHECKING

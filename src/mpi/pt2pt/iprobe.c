@@ -66,6 +66,9 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
     
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    
     /* Validate parameters if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -81,9 +84,6 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-    
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
     
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, status);
     

@@ -71,6 +71,9 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
     
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
     /* Validate parameters if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -86,6 +89,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             }
 	    
             /* Validate datatype */
+	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
@@ -95,10 +99,6 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
 
     mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr,
 			  MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
