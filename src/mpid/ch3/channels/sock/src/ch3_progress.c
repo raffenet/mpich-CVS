@@ -594,7 +594,11 @@ int MPIDI_CH3I_Progress_finalize()
 
     MPIR_Nest_incr();
     {
-	NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
+	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_finalize", 0);
+	}
 	shutting_down = TRUE;
 	NMPI_Barrier(MPI_COMM_WORLD);
     }
