@@ -259,7 +259,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
     g_queue_list = queue;
 
     key = MPICH_MSG_QUEUE_ID;
-    id = msgget(key, IPC_CREAT | MSG_R | MSG_W | MSG_R >> 3 | MSG_W >> 3 | MSG_R >> 6 | MSG_W >> 6);
+    id = msgget(key, IPC_CREAT | 0666);
     if (id == -1)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgget", "**msgget %d", errno);
@@ -319,7 +319,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 
     srand(time(0));
     key = rand();
-    id = msgget(key, IPC_CREAT | IPC_EXCL | MSG_R | MSG_W | MSG_R >> 3 | MSG_W >> 3 | MSG_R >> 6 | MSG_W >> 6);
+    id = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     while (id == -1)
     {
 	if (errno != EEXIST)
@@ -329,7 +329,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 	    return mpi_errno;
 	}
 	key = rand();
-	id = msgget(key, IPC_CREAT | IPC_EXCL | MSG_R | MSG_W | MSG_R >> 3 | MSG_W >> 3 | MSG_R >> 6 | MSG_W >> 6);
+	id = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     }
     queue->id = id;
     sprintf(queue->name, "%d", key);
@@ -497,7 +497,7 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
     }
     MPIU_Strncpy(iter->name, name, MPIDI_BOOTSTRAP_NAME_LEN);
     key = atoi(name);
-    id = msgget(key, IPC_CREAT | MSG_R | MSG_W | MSG_R >> 3 | MSG_W >> 3 | MSG_R >> 6 | MSG_W >> 6);
+    id = msgget(key, IPC_CREAT | 0666);
     if (id == -1)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgget", "**msgget %d", errno());
