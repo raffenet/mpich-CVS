@@ -1817,6 +1817,12 @@ typedef struct MPICH_PerProcess_t {
 			    void (*)(void) );
     int  (*cxx_call_copyfn)( int, int, void *, void *, 
 			    void (*)(void) );
+    /* Error handling functions.  As for the attribute functions,
+       we pass the integer file/comm/win, the address of the error code, 
+       and the C function to call (itself a function defined by the
+       C++ interface and exported to C).  The first argument is used
+       to specify the kind (comm,file,win) */
+    void  (*cxx_call_errfn) ( int, int *, int *, void (*)(void) );
 #endif    
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;

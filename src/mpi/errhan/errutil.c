@@ -1572,3 +1572,15 @@ void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr)
 {
     MPIU_Handle_obj_free(&MPID_Errhandler_mem, errhan_ptr);
 }
+
+#ifdef HAVE_CXX_BINDING
+void MPIR_Errhandler_set_cxx( MPI_Errhandler errhand, void (*errcall)(void) )
+{
+    MPID_Errhandler *errhand_ptr;
+    
+    MPID_Errhandler_get_ptr( errhand, errhand_ptr );
+    errhand_ptr->language		= MPID_LANG_CXX;
+    MPIR_Process.cxx_call_errfn	= (void (*)( int, int *, int *, 
+					    void (*)(void) ))errcall;
+}
+#endif
