@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+from sys import *
+from re  import *
+phrases = [ 'copyright' ]     # could add to list
+f = open(argv[1])
+lines = f.readlines()
+matched = [ l for l in lines for p in phrases if search(p,l,IGNORECASE) ]
+# print matched
+if len(matched) < 1:
+    print 'no copyright in file', argv[1]
