@@ -31,6 +31,8 @@ $depth = 1;
 $curdir = ".";
 %skipfiles = ();
 $line_num = 0;
+$allowRomioNames = 1;
+$withinRomio = 0;
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
@@ -38,6 +40,8 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-debug/) { $debug = 1; }
     elsif ( $arg =~ /-verbose/) { $verbose = 1; }
     elsif ( $arg =~ /-skipfile=(.*)/) { $skipfiles{$1} = 1; }
+    elsif ( $arg =~ /-allowromio=no/) { $allowRomioNames = 0; }
+    elsif ( $arg =~ /-allowromio/) { $allowRomioNames = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -59,6 +63,10 @@ sub ProcessFile {
 	return;
     }
 
+    # Check for romio
+    if ($filename =~ /romio/) { $withinRomio = 1; }
+    else                      { $withinRomio = 0; }
+
     &ClearPreamble;
     %warningmsgs = ();
     &ClearMismatchedStates;
@@ -70,7 +78,7 @@ sub ProcessFile {
 	$line_num++;
 	$errsrc = " in $filename";
 	# Check for special comments
-	if (/\/\*\s*style:\s*allow:(\w*):(\d*)\s+sig:(\d*)/) {
+	if (/\/\*\s*style:\s*allow:(\w+):(\d+)\s+sig:(\d+)/) {
 	    # Found a style comment.  Add the routine name to this 
 	    # list of allowed routines.  Eventually, this may require
 	    # a signed key
@@ -156,7 +164,7 @@ sub CheckForBadSubs {
     # This code should look for some sort of configure-style CPP value
     # and allow the ones that are properly guarded.
     foreach $subname (@guardedsubs) {
-	if (/$subname\s*\(/) {
+	if (/$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
 	    print "Caution: found reference to routine $subname in $filename\n";
 	}
     }
@@ -197,15 +205,34 @@ sub CheckForBadSubs {
 	       'MPID_[A-Za-z0-9_]*',
 	       'MPIDI_[A-Za-z0-9_]*',   # Internal MPID names
 	       'MPICH_[A-Za-z0-9_]*', 
+	       'ROMIO_[A-Za-z0-9_]*', 
+	       'MPIO_[A-Za-z0-9_]*', 
 	       'DBG_[A-Z0-9_]*',
 	       'WITH_[A-Z0-9_]*',
 	       'F77_[A-Z_]*',
-	       'MPI_BUILD_PROFILING' );
+	       'MPI_BUILD_PROFILING',
+	       'MPI_Info_f2c', 'MPI_Info_c2f', );
 @BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
+@GoodRomioNames = ( 'PROFILE', 'PRINT_ERR_MSG', 'HPUX', 'SPPUX', 'SX4',
+		   'AIO_SUN', 'AIO_HANDLE_IN_AIOCB', 'NO_FD_IN_AIOCB',
+		   'NO_AIO', 'AIO_PRIORITY_DEFAULT', 'AIO_SIGNOTIFY_NONE',
+		   'MPISGI', 'CRAY', 'PARAGON', 'FREEBSD', 'LINUX',
+		   'tflops', 'NFS', 'XFS', 'CB_CONFIG_LIST_DEBUG',
+		   'SFS', 'HFS', 'UFS', 'MPI_hpux', 'FORTRANCAPS',
+		   'MPILAM', 'NEEDS_ADIOCB_T', 'AGG_DEBUG', 'SOLARIS',
+		   'IRIX', 'AIX', 'DEC', 'NEEDS_MPI_TEST', 'PFS', 
+		   'PIOFS', 'MPICH', 'MPI_OFFSET_IS_INT', 
+		   'MPI_COMBINER_NAMED', '_UNICOS', 'MPIHP', 
+		   );
 sub CheckName {
     my $name = $_[0];
     foreach $good (@GoodNames) {
 	if ($name =~ /$good/) { return 0; }
+    }
+    if ($allowRomioNames && $withinRomio) {
+	foreach $good (@GoodRomioNames) {
+	    if ($name =~ /$good/) { return 0; }
+	}
     }
     foreach $bad (@BadNames) {
 	if ($name =~ /$bad/) { return 1; }
