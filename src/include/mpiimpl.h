@@ -1246,6 +1246,33 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_Dev_comm_destroy_hook( a )
 #endif
 
+#define MPIR_Test(request_ptr, flag)		\
+{						\
+    flag = (*request_ptr->cc_ptr == 0);		\
+    if (!flag)					\
+    {						\
+	MPID_Progress_test();			\
+	flag = (*request_ptr->cc_ptr == 0);	\
+    }						\
+}
+
+#define MPIR_Wait(request_ptr)			\
+{						\
+    while((*request_ptr->cc_ptr) != 0)		\
+    {						\
+        MPID_Progress_start();			\
+        					\
+        if ((*request_ptr->cc_ptr) != 0)	\
+        {					\
+            MPID_Progress_wait();		\
+        }					\
+        else					\
+        {					\
+            MPID_Progress_end();		\
+            break;				\
+        }					\
+    }						\
+}
 
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
@@ -1264,8 +1291,6 @@ void MPIR_Nest_incr( void );
 void MPIR_Nest_decr( void );
 int MPIR_Nest_value( void );
 #endif
-void MPIR_Wait(MPID_Request *);
-int MPIR_Test(MPID_Request *);
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );

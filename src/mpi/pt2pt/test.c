@@ -72,6 +72,23 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TEST);
 
+    /* If this is a null request handle, then return an empty status */
+    if (*request == MPI_REQUEST_NULL)
+    {
+	if (status != MPI_STATUS_IGNORE)
+	{
+	    status->MPI_SOURCE = MPI_ANY_SOURCE;
+	    status->MPI_TAG = MPI_ANY_TAG;
+	    status->MPI_ERROR = MPI_SUCCESS;
+	    status->count = 0;
+	    status->cancelled = FALSE;
+	    *flag = TRUE;
+	}
+	
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST);
+	return MPI_SUCCESS;
+    }
+    
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
     
@@ -91,19 +108,109 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    *flag = MPIR_Test(request_ptr);
-    if (*flag)
+    switch (request_ptr->kind)
     {
-	if (status != NULL)
+	case MPID_REQUEST_SEND:
+	case MPID_REQUEST_RECV:
 	{
-	    *status = request_ptr->status;
+	    MPIR_Test(request_ptr, *flag);
+	    if (*flag)
+	    {
+		*request = MPI_REQUEST_NULL;
+
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    *status = request_ptr->status;
+		}
+		mpi_errno = request_ptr->status.MPI_ERROR;
+		MPID_Request_release(request_ptr);
+	    }
+	    break;
 	}
 	
-	*request = MPI_REQUEST_NULL;
+	case MPID_PREQUEST_SEND:
+	case MPID_PREQUEST_RECV:
+	{
+	    /* The device uses a partner request to track the actual
+               communication.  If a partner request is not found, then the
+               persistent request is inactive and an empty status is
+               returned. */
+	    if (request_ptr->partner_request != NULL)
+	    {
+		MPID_Request * req;
+
+		req = request_ptr->partner_request;
+		MPIR_Test(req, *flag);
+		if (*flag)
+		{
+		    request_ptr->partner_request = NULL;
+		    
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			*status = req->status;
+		    }
+		    mpi_errno = req->status.MPI_ERROR;
+		    MPID_Request_release(req);
+		}
+	    }
+	    else
+	    {
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    status->MPI_SOURCE = MPI_ANY_SOURCE;
+		    status->MPI_TAG = MPI_ANY_TAG;
+		    status->MPI_ERROR = MPI_SUCCESS;
+		    status->count = 0;
+		    status->cancelled = FALSE;
+		    *flag = TRUE;
+		}
+	    }
+	    
+	    break;
+	}
+	
+	case MPID_UREQUEST:
+	{
+	    int rc;
+	
+	    MPIR_Test(request_ptr, *flag);
+	    if (*flag)
+	    {
+		*request = MPI_REQUEST_NULL;
+		rc = (request_ptr->query_fn)(
+		    request_ptr->grequest_extra_state, &request_ptr->status);
+		if (rc == MPI_SUCCESS)
+		{
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			*status = request_ptr->status;
+		    }
+		    mpi_errno = request_ptr->status.MPI_ERROR;
+		}
+		else
+		{
+		    if (mpi_errno == MPI_SUCCESS)
+		    {
+			mpi_errno = rc;
+		    }
+		}
+		
+		rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+		if (mpi_errno == MPI_SUCCESS)
+		{
+		    mpi_errno = rc;
+		}
+
+		MPID_Request_release(request_ptr);
+	    }
+	    
+	    break;
+	}
     }
 
     /* ... end of body of routine ... */
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(request_ptr->comm, FCNAME, mpi_errno);
 }
