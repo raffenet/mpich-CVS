@@ -19,7 +19,7 @@
 typedef struct SOCKET_PerProcess {
     MPID_Thread_lock_t lock;
             sock_set_t set;
-           sock_wait_t out;
+          sock_event_t out;
                 sock_t listener;
 		   int port;
 		  char host[100];

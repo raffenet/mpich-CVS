@@ -691,7 +691,7 @@ int sock_post_close(sock_t sock)
     return SOCK_SUCCESS;
 }
 
-int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
+int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 {
     int error;
     DWORD num_bytes;
