@@ -243,7 +243,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     }
     else
     {
-	smpd_err_printf("invalid session request: %s\n", session);
+	smpd_err_printf("invalid session request: '%s'\n", session);
 	return SMPD_FAIL;
     }
     return SMPD_SUCCESS;

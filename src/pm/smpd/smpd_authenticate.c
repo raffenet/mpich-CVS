@@ -153,6 +153,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
     if (strcmp(pszStr, SMPD_AUTHENTICATION_ACCEPTED_STR))
     {
+	smpd_err_printf("smpd_client_authenticate: server returned - %s\n", pszStr);
 	return SMPD_FAIL;
     }
     return SMPD_SUCCESS;
