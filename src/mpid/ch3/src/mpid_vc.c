@@ -25,26 +25,30 @@ typedef struct MPIDI_VCRT
 MPIDI_VCRT;
 
 
-int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
+int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
 {
     MPIDI_VCRT * vcrt;
     
     vcrt = MPIU_Malloc(sizeof(MPIDI_VCRT) + (size - 1) * sizeof(MPIDI_VC));
-    assert(vcrt != NULL);
-
-    vcrt->ref_count = 1;
-    *vcrt_ptr = vcrt;
-    
-    return MPI_SUCCESS;
+    if (vcrt != NULL)
+    {
+	vcrt->ref_count = 1;
+	*vcrt_ptr = vcrt;
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	return MPI_ERR_NOMEM;
+    }
 }
 
-int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
+int MPID_VCRT_add_ref(MPID_VCRT vcrt)
 {
     MPIU_Object_add_ref(vcrt);
     return MPI_SUCCESS;
 }
 
-int MPID_VCRT_Release(MPID_VCRT vcrt)
+int MPID_VCRT_release(MPID_VCRT vcrt)
 {
     int count;
 
@@ -56,9 +60,31 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
-int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
+int MPID_VCRT_get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 {
     *vc_pptr = vcrt->vcr_table;
     return MPI_SUCCESS;
 }
+
+int MPID_VCR_dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
+{
+    /* MM - need to atomically increment ref_count */
+    orig_vcr->ref_count++;
+    *new_vcr = orig_vcr;
+    return MPI_SUCCESS;
+}
+
+int MPID_VCR_release(MPID_VCR vcr)
+{
+    /* MM - need to atomically decrement ref_count */
+    vcr->ref_count--;
+    return MPI_SUCCESS;
+}
+
+int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr)
+{
+    *lpid_ptr = vcr->lpid;
+    return MPI_SUCCESS;
+}
+
 
