@@ -19,93 +19,6 @@
 
 int g_bUseProcessSession = 0;
 
-#if 0
-int mp_dbg_printf(char *str, ...)
-{
-    int n;
-    va_list list;
-    char *format_str;
-
-    if (smpd_process.dbg_state == SMPD_DBG_STATE_ERROUT)
-	return 0;
-
-    va_start(list, str);
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
-    {
-	fprintf(stdout, "[%d]", smpd_process.id);
-	format_str = str;
-	n = vfprintf(stdout, format_str, list);
-    }
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
-    {
-	format_str = str;
-	n = vfprintf(smpd_process.dbg_fout, format_str, list);
-    }
-    va_end(list);
-
-    fflush(stdout);
-
-    return n;
-}
-
-int mp_err_printf(char *str, ...)
-{
-    int n = 0;
-    va_list list;
-    char *format_str;
-
-    if (smpd_process.dbg_state == 0)
-	return 0;
-
-    va_start(list, str);
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_ERROUT)
-    {
-	fprintf(stdout, "[%d]", smpd_process.id);
-	format_str = str;
-	n = vfprintf(stdout, format_str, list);
-    }
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
-    {
-	format_str = str;
-	n = vfprintf(smpd_process.dbg_fout, format_str, list);
-    }
-    va_end(list);
-
-    fflush(stdout);
-
-    return n;
-}
-
-#define MP_MAX_INDENT 20
-static char indent[MP_MAX_INDENT+1] = "";
-static int cur_indent = 0;
-
-int mp_enter_fn(char *fcname)
-{
-    mp_dbg_printf("%sentering %s\n", indent, fcname);
-    if (cur_indent >= 0 && cur_indent < MP_MAX_INDENT)
-    {
-	indent[cur_indent] = '.';
-	indent[cur_indent+1] = '\0';
-    }
-    cur_indent++;
-
-    return SMPD_SUCCESS;
-}
-
-int mp_exit_fn(char *fcname)
-{
-    if (cur_indent > 0 && cur_indent < MP_MAX_INDENT)
-    {
-	indent[cur_indent-1] = '\0';
-    }
-    cur_indent--;
-    mp_dbg_printf("%sexiting %s\n", indent, fcname);
-
-    return SMPD_SUCCESS;
-}
-#endif
-
 int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
 {
     int result;
@@ -403,7 +316,7 @@ int handle_command(smpd_context_t *context)
 	mp_process.nproc--;
 	if (mp_process.nproc == 0)
 	{
-	    mp_dbg_printf("last process exited, returning SMPD_CLOSE.\n");
+	    mp_dbg_printf("last process exited, returning SMPD_EXIT.\n");
 	    mp_exit_fn("handle_command");
 	    return SMPD_EXIT;
 	}
@@ -435,7 +348,6 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
     static int read_offset = 0;
     smpd_command_t *cmd_ptr;
     int ret_val = SMPD_SUCCESS;
-    char *type_str;
 
     mp_enter_fn("handle_read");
 
@@ -443,37 +355,8 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
     {
 	if (context != NULL)
 	{
-	    switch (context->type)
-	    {
-	    case SMPD_CONTEXT_INVALID:
-		type_str = "invalid";
-		break;
-	    case SMPD_CONTEXT_STDIN:
-		type_str = "stdin";
-		break;
-	    case SMPD_CONTEXT_STDOUT:
-		type_str = "stdout";
-		break;
-	    case SMPD_CONTEXT_STDERR:
-		type_str = "stderr";
-		break;
-	    case SMPD_CONTEXT_PARENT:
-		type_str = "parent";
-		break;
-	    case SMPD_CONTEXT_LEFT_CHILD:
-		type_str = "left child";
-		break;
-	    case SMPD_CONTEXT_RIGHT_CHILD:
-		type_str = "right child";
-		break;
-	    case SMPD_CONTEXT_CHILD:
-		type_str = "child";
-		break;
-	    default:
-		type_str = "unknown";
-		break;
-	    }
-	    mp_err_printf("sock read error on %s context connected to '%s': %s\n", type_str, context->host, get_sock_error_string(error));
+	    mp_err_printf("sock read error on %s context connected to '%s': %s\n",
+		smpd_get_context_str(context), context->host, get_sock_error_string(error));
 	}
 	else
 	    mp_err_printf("sock read error:\n%s\n", get_sock_error_string(error));
@@ -770,15 +653,6 @@ void StdinThread(SOCKET hWrite)
 		mp_err_printf("unable to forward stdin, WriteFile failed, error %d\n", GetLastError());
 		return;
 	    }
-	    /*
-	    if (strncmp(str, "close", 5) == 0)
-	    {
-		shutdown(hWrite, SD_BOTH);
-		closesocket(hWrite);
-		mp_dbg_printf("closing stdin reader thread.\n");
-		return;
-	    }
-	    */
 	}
 	else if (result == WAIT_OBJECT_0 + 1)
 	{
@@ -949,16 +823,6 @@ int mp_console(char *host)
 	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
-    /*
-    context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
-    if (context == NULL)
-    {
-	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	mp_exit_fn("mp_console");
-	return SMPD_FAIL;
-    }
-    smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
-    */
     strcpy(context->host, host);
     sock_set_user_ptr(sock, context);
     session_context = context;
@@ -1010,16 +874,6 @@ int mp_console(char *host)
 	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
-    /*
-    context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
-    if (context == NULL)
-    {
-	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	mp_exit_fn("mp_console");
-	return SMPD_FAIL;
-    }
-    smpd_init_context(context, SMPD_CONTEXT_STDIN, set, insock, -1);
-    */
     sock_set_user_ptr(insock, context);
 
 #ifdef HAVE_WINDOWS_H

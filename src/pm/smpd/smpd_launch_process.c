@@ -14,284 +14,6 @@
 
 #ifdef HAVE_WINDOWS_H
 
-#if 0
-HANDLE g_hLaunchMutex = NULL;
-
-struct CachedUserNode
-{
-    HANDLE hUser;
-    char account[40];
-    char domain[40];
-    char password[100];
-    SYSTEMTIME timestamp;
-    CachedUserNode *pNext;
-};
-
-CachedUserNode *g_pCachedList = NULL;
-
-static void PrintPriorities(DWORD dwClass, DWORD dwPriority)
-{
-    char *str;
-    switch (dwClass)
-    {
-    case ABOVE_NORMAL_PRIORITY_CLASS:
-	str = "ABOVE_NORMAL_PRIORITY_CLASS";
-	break;
-    case BELOW_NORMAL_PRIORITY_CLASS:
-	str = "BELOW_NORMAL_PRIORITY_CLASS";
-	break;
-    case HIGH_PRIORITY_CLASS:
-	str = "HIGH_PRIORITY_CLASS";
-	break;
-    case IDLE_PRIORITY_CLASS:
-	str = "IDLE_PRIORITY_CLASS";
-	break;
-    case NORMAL_PRIORITY_CLASS:
-	str = "NORMAL_PRIORITY_CLASS";
-	break;
-    case REALTIME_PRIORITY_CLASS:
-	str = "REALTIME_PRIORITY_CLASS";
-	break;
-    default:
-	str = "unknown priority class";
-	break;
-    }
-    switch(dwPriority)
-    {
-    case THREAD_PRIORITY_ABOVE_NORMAL:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_ABOVE_NORMAL\n", str);
-	break;
-    case THREAD_PRIORITY_BELOW_NORMAL:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_BELOW_NORMAL\n", str);
-	break;
-    case THREAD_PRIORITY_HIGHEST:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_HIGHEST\n", str);
-	break;
-    case THREAD_PRIORITY_IDLE:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_IDLE\n", str);
-	break;
-    case THREAD_PRIORITY_LOWEST:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_LOWEST\n", str);
-	break;
-    case THREAD_PRIORITY_NORMAL:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_NORMAL\n", str);
-	break;
-    case THREAD_PRIORITY_TIME_CRITICAL:
-	dbg_printf("class: %s, priority: THREAD_PRIORITY_TIME_CRITICAL\n", str);
-	break;
-    default:
-	dbg_printf("class: %s, priority: unknown\n", str);
-	break;
-    }
-}
-
-void statCachedUsers(char *pszOutput, int length)
-{
-    CachedUserNode *pIter;
-
-    *pszOutput = '\0';
-    length--;
-
-    pIter = g_pCachedList;
-    while (pIter)
-    {
-	if (pIter->domain[0] != '\0')
-	    snprintf_update(pszOutput, length, "USER: %s\\%s\n", pIter->domain, pIter->account);
-	else
-	    snprintf_update(pszOutput, length, "USER: %s\n", pIter->account);
-	pIter = pIter->pNext;
-    }
-}
-
-void CacheUserHandle(char *account, char *domain, char *password, HANDLE hUser)
-{
-    CachedUserNode *pNode;
-
-    pNode = new CachedUserNode;
-    strcpy(pNode->account, account);
-    if (domain != NULL)
-	strcpy(pNode->domain, domain);
-    else
-	pNode->domain[0] = '\0';
-    strcpy(pNode->password, password);
-    pNode->hUser = hUser;
-    GetSystemTime(&pNode->timestamp);
-    pNode->pNext = g_pCachedList;
-    g_pCachedList = pNode;
-}
-
-void RemoveCachedUser(HANDLE hUser)
-{
-    CachedUserNode *pTrailer, *pIter;
-
-    if (g_pCachedList == NULL)
-	return;
-
-    if (g_pCachedList->hUser == hUser)
-    {
-	pIter = g_pCachedList;
-	g_pCachedList = g_pCachedList->pNext;
-	CloseHandle(pIter->hUser);
-	delete pIter;
-	return;
-    }
-
-    pTrailer = g_pCachedList;
-    pIter = g_pCachedList->pNext;
-    while (pIter)
-    {
-	if (pIter->hUser == hUser)
-	{
-	    pTrailer->pNext = pIter->pNext;
-	    CloseHandle(pIter->hUser);
-	    delete pIter;
-	    return;
-	}
-	pTrailer = pTrailer->pNext;
-	pIter = pIter->pNext;
-    }
-}
-
-void RemoveAllCachedUsers()
-{
-    CachedUserNode *pIter;
-    while (g_pCachedList)
-    {
-	pIter = g_pCachedList;
-	g_pCachedList = g_pCachedList->pNext;
-	CloseHandle(pIter->hUser);
-	delete pIter;
-    }
-}
-
-HANDLE GetCachedUser(char *account, char *domain, char *password)
-{
-    CachedUserNode *pIter;
-    SYSTEMTIME now;
-
-    pIter = g_pCachedList;
-    while (pIter)
-    {
-	if (strcmp(pIter->account, account) == 0)
-	{
-	    if (domain != NULL)
-	    {
-		if (strcmp(pIter->domain, domain) == 0)
-		{
-		    if (strcmp(pIter->password, password) == 0)
-		    {
-			GetSystemTime(&now);
-			if (now.wDay != pIter->timestamp.wDay)
-			{
-			    /* throw away cached handles not created on the same day */
-			    RemoveCachedUser(pIter->hUser);
-			    return INVALID_HANDLE_VALUE;
-			}
-			return pIter->hUser;
-		    }
-		}
-	    }
-	    else
-	    {
-		if (strcmp(pIter->password, password) == 0)
-		{
-		    return pIter->hUser;
-		}
-	    }
-	}
-	pIter = pIter->pNext;
-    }
-
-    return INVALID_HANDLE_VALUE;
-}
-
-HANDLE GetUserHandle(char *account, char *domain, char *password, int *pError)
-{
-    HANDLE hUser;
-    int error;
-    int num_tries = 3;
-
-    /* attempt to get a cached handle */
-    hUser = GetCachedUser(account, domain, password);
-    if (hUser != INVALID_HANDLE_VALUE)
-	return hUser;
-
-    /* logon the user */
-    while (!LogonUser(
-	account,
-	domain, 
-	password,
-	LOGON32_LOGON_INTERACTIVE, 
-	LOGON32_PROVIDER_DEFAULT, 
-	&hUser))
-    {
-	error = GetLastError();
-	if (error == ERROR_NO_LOGON_SERVERS)
-	{
-	    if (num_tries)
-		Sleep(250);
-	    else
-	    {
-		*pError = error;
-		return INVALID_HANDLE_VALUE;
-	    }
-	    num_tries--;
-	}
-	else
-	{
-	    *pError = error;
-	    return INVALID_HANDLE_VALUE;
-	}
-    }
-
-    /* cache the user handle */
-    CacheUserHandle(account, domain, password, hUser);
-
-    return hUser;
-}
-
-HANDLE GetUserHandleNoCache(char *account, char *domain, char *password, int *pError)
-{
-    HANDLE hUser;
-    int error;
-    int num_tries = 3;
-
-    /* logon the user */
-    while (!LogonUser(
-	account,
-	domain, 
-	password,
-	LOGON32_LOGON_INTERACTIVE, 
-	LOGON32_PROVIDER_DEFAULT, 
-	&hUser))
-    {
-	error = GetLastError();
-	if (error == ERROR_NO_LOGON_SERVERS)
-	{
-	    if (num_tries)
-		Sleep(250);
-	    else
-	    {
-		*pError = error;
-		return INVALID_HANDLE_VALUE;
-	    }
-	    num_tries--;
-	}
-	else
-	{
-	    *pError = error;
-	    return INVALID_HANDLE_VALUE;
-	}
-    }
-
-    /* cache the user handle */
-    CacheUserHandle(account, domain, password, hUser);
-
-    return hUser;
-}
-
-#endif
-
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr)
 {
     HANDLE hUser;
@@ -414,6 +136,401 @@ int smpd_priority_to_win_priority(int *priority)
 }
 
 /* Windows code */
+
+#define USE_LAUNCH_THREADS
+
+#ifdef USE_LAUNCH_THREADS
+
+typedef struct smpd_piothread_arg_t
+{
+    HANDLE hIn;
+    SOCKET hOut;
+} smpd_piothread_arg_t;
+
+static int smpd_easy_send(SOCKET sock, char *buffer, int length)
+{
+    int error;
+    int num_sent;
+
+    while ((num_sent = send(sock, buffer, length, 0)) == SOCKET_ERROR)
+    {
+	error = WSAGetLastError();
+	if (error == WSAEWOULDBLOCK)
+	{
+            Sleep(0);
+	    continue;
+	}
+	if (error == WSAENOBUFS)
+	{
+	    /* If there is no buffer space available then split the buffer in half and send each piece separately.*/
+	    if (smpd_easy_send(sock, buffer, length/2) == SOCKET_ERROR)
+		return SOCKET_ERROR;
+	    if (smpd_easy_send(sock, buffer+(length/2), length - (length/2)) == SOCKET_ERROR)
+		return SOCKET_ERROR;
+	    return length;
+	}
+	WSASetLastError(error);
+	return SOCKET_ERROR;
+    }
+    
+    return length;
+}
+
+int smpd_piothread(smpd_piothread_arg_t *p)
+{
+    char buffer[1024];
+    int num_read;
+    HANDLE hIn;
+    SOCKET hOut;
+
+    hIn = p->hIn;
+    hOut = p->hOut;
+    free(p);
+    p = NULL;
+
+    smpd_dbg_printf("*** entering smpd_piothread ***\n");
+    while (1)
+    {
+	if (!ReadFile(hIn, buffer, 1024, &num_read, NULL))
+	{
+	    smpd_dbg_printf("ReadFile failed, error %d\n", GetLastError());
+	    break;
+	}
+	if (num_read < 1)
+	{
+	    smpd_dbg_printf("ReadFile returned %d bytes\n", num_read);
+	    break;
+	}
+	/*smpd_dbg_printf("*** smpd_piothread read %d bytes ***\n", num_read);*/
+	if (smpd_easy_send(hOut, buffer, num_read) == SOCKET_ERROR)
+	{
+	    smpd_dbg_printf("smpd_easy_send of %d bytes failed.\n", num_read);
+	    break;
+	}
+	/*smpd_dbg_printf("*** smpd_piothread wrote %d bytes ***\n", num_read);*/
+    }
+    smpd_dbg_printf("*** smpd_piothread finishing ***\n");
+    FlushFileBuffers((HANDLE)hOut);
+    shutdown(hOut, SD_BOTH);
+    closesocket(hOut);
+    CloseHandle(hIn);
+    /*smpd_dbg_printf("*** exiting smpd_piothread ***\n");*/
+    return 0;
+}
+
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
+{
+    HANDLE hStdin, hStdout, hStderr;
+    SOCKET hSockStdinR = INVALID_SOCKET, hSockStdinW = INVALID_SOCKET;
+    SOCKET hSockStdoutR = INVALID_SOCKET, hSockStdoutW = INVALID_SOCKET;
+    SOCKET hSockStderrR = INVALID_SOCKET, hSockStderrW = INVALID_SOCKET;
+    /*HANDLE hPipeStdinR = NULL, hPipeStdinW = NULL;*/
+    HANDLE hPipeStdoutR = NULL, hPipeStdoutW = NULL;
+    HANDLE hPipeStderrR = NULL, hPipeStderrW = NULL;
+    HANDLE hIn, hOut, hErr;
+    STARTUPINFO saInfo;
+    PROCESS_INFORMATION psInfo;
+    void *pEnv=NULL;
+    char tSavedPath[MAX_PATH] = ".";
+    DWORD launch_flag;
+    int nError, result;
+    unsigned long blocking_flag;
+    sock_t sock_in, sock_out, sock_err;
+    SECURITY_ATTRIBUTES saAttr;
+
+    smpd_enter_fn("smpd_launch_process");
+
+    smpd_priority_class_to_win_class(&priorityClass);
+    smpd_priority_to_win_priority(&priority);
+
+    /* Save stdin, stdout, and stderr */
+    hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    hStderr = GetStdHandle(STD_ERROR_HANDLE);
+    if (hStdin == INVALID_HANDLE_VALUE || hStdout == INVALID_HANDLE_VALUE  || hStderr == INVALID_HANDLE_VALUE)
+    {
+	nError = GetLastError(); /* This will only be correct if stderr failed */
+	smpd_err_printf("GetStdHandle failed, error %d\n", nError);
+	smpd_exit_fn("smpd_launch_process");
+	return SMPD_FAIL;;
+    }
+
+    /* Create sockets for stdin, stdout, and stderr */
+    if (nError = smpd_make_socket_loop_choose(&hSockStdinR, SMPD_FALSE, &hSockStdinW, SMPD_TRUE))
+    {
+	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (nError = smpd_make_socket_loop_choose(&hSockStdoutR, SMPD_TRUE, &hSockStdoutW, SMPD_FALSE))
+    {
+	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (nError = smpd_make_socket_loop_choose(&hSockStderrR, SMPD_TRUE, &hSockStderrW, SMPD_FALSE))
+    {
+	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.lpSecurityDescriptor = NULL;
+    saAttr.bInheritHandle = TRUE;
+
+    /* Create the pipes for stdout, stderr */
+    if (!CreatePipe(&hPipeStdoutR, &hPipeStdoutW, &saAttr, 0))
+    {
+	smpd_err_printf("CreatePipe(stdout) failed, error %d\n", GetLastError());
+	goto CLEANUP;
+    }
+    if (!CreatePipe(&hPipeStderrR, &hPipeStderrW, &saAttr, 0))
+    {
+	smpd_err_printf("CreatePipe(stderr) failed, error %d\n", GetLastError());
+	goto CLEANUP;
+    }
+
+    /* Make the ends of the pipes that this process will use not inheritable */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdinW, GetCurrentProcess(), &hIn, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    /*
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutR, GetCurrentProcess(), &hOut, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrR, GetCurrentProcess(), &hErr, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hPipeStdoutR, GetCurrentProcess(), &hOut, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hPipeStderrR, GetCurrentProcess(), &hErr, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+
+    /* prevent the socket loops from being inherited */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutR, GetCurrentProcess(), &hSockStdoutR, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrR, GetCurrentProcess(), &hSockStderrR, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutW, GetCurrentProcess(), &hSockStdoutW, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrW, GetCurrentProcess(), &hSockStderrW, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+
+    /* make the ends used by the spawned process blocking */
+    blocking_flag = 0;
+    ioctlsocket(hSockStdinR, FIONBIO, &blocking_flag);
+    /*
+    blocking_flag = 0;
+    ioctlsocket(hSockStdoutW, FIONBIO, &blocking_flag);
+    blocking_flag = 0;
+    ioctlsocket(hSockStderrW, FIONBIO, &blocking_flag);
+    */
+
+    /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
+    if (!SetStdHandle(STD_INPUT_HANDLE, (HANDLE)hSockStdinR))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    /*
+    if (!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)hSockStdoutW))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto RESTORE_CLEANUP;
+    }
+    if (!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)hSockStderrW))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto RESTORE_CLEANUP;
+    }
+    */
+    if (!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)hPipeStdoutW))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto RESTORE_CLEANUP;
+    }
+    if (!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)hPipeStderrW))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto RESTORE_CLEANUP;
+    }
+
+    /* Create the process */
+    memset(&saInfo, 0, sizeof(STARTUPINFO));
+    saInfo.cb = sizeof(STARTUPINFO);
+    saInfo.hStdInput = (HANDLE)hSockStdinR;
+    /*
+    saInfo.hStdOutput = (HANDLE)hSockStdoutW;
+    saInfo.hStdError = (HANDLE)hSockStderrW;
+    */
+    saInfo.hStdOutput = (HANDLE)hPipeStdoutW;
+    saInfo.hStdError = (HANDLE)hPipeStderrW;
+    saInfo.dwFlags = STARTF_USESTDHANDLES;
+
+    SetEnvironmentVariables(process->env);
+    pEnv = GetEnvironmentStrings();
+
+    GetCurrentDirectory(MAX_PATH, tSavedPath);
+    SetCurrentDirectory(process->dir);
+
+    launch_flag = 
+	CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
+    if (dbg)
+	launch_flag = launch_flag | DEBUG_PROCESS;
+
+    psInfo.hProcess = INVALID_HANDLE_VALUE;
+    if (CreateProcess(
+	NULL,
+	process->exe,
+	NULL, NULL, TRUE,
+	launch_flag,
+	pEnv,
+	NULL,
+	&saInfo, &psInfo))
+    {
+	SetThreadPriority(psInfo.hThread, priority);
+	process->pid = psInfo.dwProcessId;
+    }
+    else
+    {
+	nError = GetLastError();
+	smpd_err_printf("CreateProcess failed, error %d\n", nError);
+    }
+
+    FreeEnvironmentStrings((TCHAR*)pEnv);
+    SetCurrentDirectory(tSavedPath);
+    RemoveEnvironmentVariables(process->env);
+
+    /* make sock structures out of the sockets */
+    nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
+    if (nError != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+    }
+    nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
+    if (nError != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+    }
+    nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
+    if (nError != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+    }
+
+    process->in->sock = sock_in;
+    process->out->sock = sock_out;
+    process->err->sock = sock_err;
+    process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
+    sock_set_user_ptr(sock_in, process->in);
+    sock_set_user_ptr(sock_out, process->out);
+    sock_set_user_ptr(sock_err, process->err);
+
+RESTORE_CLEANUP:
+    /* Restore stdin, stdout, stderr */
+    SetStdHandle(STD_INPUT_HANDLE, hStdin);
+    SetStdHandle(STD_OUTPUT_HANDLE, hStdout);
+    SetStdHandle(STD_ERROR_HANDLE, hStderr);
+
+CLEANUP:
+    CloseHandle((HANDLE)hSockStdinR);
+    /*
+    CloseHandle((HANDLE)hSockStdoutW);
+    CloseHandle((HANDLE)hSockStderrW);
+    */
+    CloseHandle((HANDLE)hPipeStdoutW);
+    CloseHandle((HANDLE)hPipeStderrW);
+
+    if (psInfo.hProcess != INVALID_HANDLE_VALUE)
+    {
+	HANDLE hThread;
+	smpd_piothread_arg_t *arg_ptr;
+
+	arg_ptr = (smpd_piothread_arg_t*)malloc(sizeof(smpd_piothread_arg_t));
+	arg_ptr->hIn = hOut;
+	arg_ptr->hOut = hSockStdoutW;
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
+	CloseHandle(hThread);
+	arg_ptr = (smpd_piothread_arg_t*)malloc(sizeof(smpd_piothread_arg_t));
+	arg_ptr->hIn = hErr;
+	arg_ptr->hOut = hSockStderrW;
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
+	CloseHandle(hThread);
+
+	result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
+		get_sock_error_string(result));
+	    smpd_exit_fn("smpd_launch_process");
+	    return SMPD_FAIL;
+	}
+	result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
+		get_sock_error_string(result));
+	    smpd_exit_fn("smpd_launch_process");
+	    return SMPD_FAIL;
+	}
+	ResumeThread(psInfo.hThread);
+	process->wait = process->in->wait = process->out->wait = process->err->wait = psInfo.hProcess;
+	CloseHandle(psInfo.hThread);
+	smpd_exit_fn("smpd_launch_process");
+	return SMPD_SUCCESS;
+    }
+
+    smpd_exit_fn("smpd_launch_process");
+    return SMPD_FAIL;
+}
+
+#else
 
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
@@ -546,14 +663,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	&saInfo, &psInfo))
     {
 	SetThreadPriority(psInfo.hThread, priority);
-
-	/*
-	ResumeThread(psInfo.hThread);
-	psInfo.hProcess;
-	*/
 	process->pid = psInfo.dwProcessId;
-
-	/*CloseHandle(psInfo.hThread);*/
     }
     else
     {
@@ -620,7 +730,6 @@ CLEANUP:
 	    return SMPD_FAIL;
 	}
 	ResumeThread(psInfo.hThread);
-        /*CloseHandle(psInfo.hProcess);*/
 	process->wait = process->in->wait = process->out->wait = process->err->wait = psInfo.hProcess;
 	CloseHandle(psInfo.hThread);
 	smpd_exit_fn("smpd_launch_process");
@@ -630,6 +739,8 @@ CLEANUP:
     smpd_exit_fn("smpd_launch_process");
     return SMPD_FAIL;
 }
+
+#endif
 
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain)
 {
@@ -711,9 +822,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	close(stderr_pipe_fds[0]);
 	close(stderr_pipe_fds[1]);
 
-	/*sprintf( env_path_for_exec, "PATH=%s", getenv( "PATH" ) );*/
-	/*strcpy( pwd_for_exec, getenv( "PWD" ) );*/
-	result = chdir( process->dir );
+	result = -1;
+	if (process->dir[0] != '\0')
+	    result = chdir( process->dir );
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 

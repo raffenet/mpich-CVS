@@ -259,20 +259,11 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
 int smpd_get_int_arg(char *str, char *flag, int *val_ptr);
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
-#if 0
-/*int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr, smpd_pwait_t *pwait);*/
-int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg,
-			sock_set_t set,
-			/*sock_t *sock_in, sock_t *sock_out, sock_t *sock_err,*/
-			smpd_context_t *context_in,
-			smpd_context_t *context_out,
-			smpd_context_t *context_err,
-			int *pid_ptr);
-#endif
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set);
 int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded);
 int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded);
-int smpd_create_process(int rank, smpd_process_t **process_ptr);
-int smpd_free_process(smpd_process_t *process);
+int smpd_create_process_struct(int rank, smpd_process_t **process_ptr);
+int smpd_free_process_struct(smpd_process_t *process);
+char * smpd_get_context_str(smpd_context_t *context);
 
 #endif

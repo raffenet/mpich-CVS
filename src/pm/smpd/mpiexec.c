@@ -26,167 +26,6 @@ mp_process_t mp_process =
     SMPD_FALSE   /* verbose               */
 };
 
-#if 0
-void doTest()
-{
-    int result;
-    SOCK_NATIVE_FD hRead, hWrite;
-    sock_t sock_read, sock_write;
-    sock_set_t set;
-    char buffer[1024];
-    int num_read, num_written;
-    sock_event_t event;
-    int i;
-    char *str;
-
-    result = sock_init();
-    if (result != SOCK_SUCCESS)
-    {
-	mp_err_printf("sock_init failed, sock error:\n%s\n",
-		      get_sock_error_string(result));
-	exit(0);
-    }
-
-    result = smpd_init_process();
-    if (result != SMPD_SUCCESS)
-    {
-	mp_err_printf("smpd_init_process failed.\n");
-	exit(0);
-    }
-    mp_process.verbose = SMPD_TRUE;
-    smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT;
-
-    mp_dbg_printf("first test: post_read, write, wait, post_close, wait\n");
-
-    mp_dbg_printf("create_set\n");
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_create_set failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-
-    mp_dbg_printf("make_loop\n");
-    result = smpd_make_socket_loop(&hRead, &hWrite);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("smpd_make_socket_loop failed\n");
-	exit(0);
-    }
-    mp_dbg_printf("native_to_sock(read)\n");
-    result = sock_native_to_sock(set, hRead, NULL, &sock_read);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_native_to_sock failed(sock_read), error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-    mp_dbg_printf("native_to_sock(write)\n");
-    result = sock_native_to_sock(set, hWrite, NULL, &sock_write);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_native_to_sock(sock_write) failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-
-    mp_dbg_printf("post_read\n");
-    result = sock_post_read(sock_read, buffer, 20, NULL);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_post_read failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-
-    /*
-    mp_dbg_printf("write\n");
-    strcpy(buffer, "dude, where's my car.\n");
-    result = smpd_write(sock_write, buffer, 20);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("sock_write failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-
-    mp_dbg_printf("wait\n");
-    result = sock_wait(set, SOCK_INFINITE_TIME, &event);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_wait failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-    if (event.op_type != SOCK_OP_READ)
-    {
-	smpd_err_printf("sock_wait returned, type %d, error %d\n", event.op_type, event.error);
-	exit(0);
-    }
-    smpd_dbg_printf("%d bytes read.\n", event.num_bytes);
-    */
-
-    mp_dbg_printf("post_close\n");
-    result = sock_post_close(sock_read);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_post_close failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-
-    for (i=0; i<2; i++)
-    {
-	mp_dbg_printf("wait\n");
-	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_wait failed, error %s\n", get_sock_error_string(result));
-	    exit(0);
-	}
-	/*
-	if (event.op_type != SOCK_OP_CLOSE)
-	{
-	smpd_err_printf("sock_wait returned, type %d, error %d\n", event.op_type, event.error);
-	exit(0);
-	}
-	*/
-	switch (event.op_type)
-	{
-	case SOCK_OP_READ:
-	    str = "op_read";
-	    break;
-	case SOCK_OP_WRITE:
-	    str = "op_write";
-	    break;
-	case SOCK_OP_ACCEPT:
-	    str = "op_accept";
-	    break;
-	case SOCK_OP_CONNECT:
-	    str = "op_connect";
-	    break;
-	case SOCK_OP_CLOSE:
-	    str = "op_close";
-	    break;
-	default:
-	    str = "op_unknown";
-	    break;
-	}
-	mp_dbg_printf("wait returned: %s, num_bytes %d, %s\n", str, event.num_bytes,
-	    get_sock_error_string(event.error));
-    }
-
-    mp_dbg_printf("destroy_set\n");
-    result = sock_destroy_set(set);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_destroy_set failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-    mp_dbg_printf("finalize\n");
-    sock_finalize();
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_finalize failed, error %s\n", get_sock_error_string(result));
-	exit(0);
-    }
-}
-#endif
-
 int main(int argc, char* argv[])
 {
     int result;
@@ -197,11 +36,6 @@ int main(int argc, char* argv[])
     mp_launch_node_t *launch_node_ptr;
 
     mp_enter_fn("main");
-
-#if 0
-    doTest();
-    exit(0);
-#endif
 
     /* catch an empty command line */
     if (argc < 2)
@@ -356,6 +190,7 @@ int main(int argc, char* argv[])
 		if (result == SMPD_CLOSE)
 		{
 		    mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		    result = SMPD_SUCCESS;
 		    break;
 		}
 		if (result == SMPD_EXIT)
@@ -382,16 +217,17 @@ int main(int argc, char* argv[])
 		mp_err_printf("unexpected connect event returned by sock_wait.\n");
 		break;
 	    case SOCK_OP_CLOSE:
-		mp_err_printf("unexpected close event returned by sock_wait.\n");
-		smpd_free_context(smpd_process.left_context);
-		mp_dbg_printf("closing the session.\n");
-		result = sock_destroy_set(smpd_process.set);
-		if (result != SOCK_SUCCESS)
+		if (event.user_ptr == smpd_process.left_context)
 		{
-		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
+		    mp_dbg_printf("child context closed.\n");
+		    smpd_free_context(smpd_process.left_context);
+		    result = SMPD_EXIT;
 		}
-		mp_exit_fn("mp_connect_tree");
-		return SMPD_FAIL;
+		else
+		{
+		    mp_err_printf("unexpected close event returned by sock_wait.\n");
+		    result = SMPD_EXIT;
+		}
 		break;
 	    default:
 		mp_err_printf("unknown event returned by sock_wait: %d\n", event.op_type);
@@ -432,6 +268,7 @@ int main(int argc, char* argv[])
 		if (result == SMPD_CLOSE)
 		{
 		    mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		    result = SMPD_SUCCESS;
 		    break;
 		}
 		if (result == SMPD_EXIT)
@@ -458,16 +295,17 @@ int main(int argc, char* argv[])
 		mp_err_printf("unexpected connect event returned by sock_wait.\n");
 		break;
 	    case SOCK_OP_CLOSE:
-		mp_err_printf("unexpected close event returned by sock_wait.\n");
-		smpd_free_context(smpd_process.left_context);
-		mp_dbg_printf("closing the session.\n");
-		result = sock_destroy_set(smpd_process.set);
-		if (result != SOCK_SUCCESS)
+		if (event.user_ptr == smpd_process.left_context)
 		{
-		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
+		    mp_dbg_printf("child context closed.\n");
+		    smpd_free_context(smpd_process.left_context);
+		    result = SMPD_EXIT;
 		}
-		mp_exit_fn("mp_connect_tree");
-		return SMPD_FAIL;
+		else
+		{
+		    mp_err_printf("unexpected close event returned by sock_wait.\n");
+		    result = SMPD_EXIT;
+		}
 		break;
 	    default:
 		mp_err_printf("unknown event returned by sock_wait: %d\n", event.op_type);
