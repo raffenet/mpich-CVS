@@ -403,6 +403,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
 	    int dt_contig;
+	    MPI_Aint dt_true_lb;
 	    MPIDI_msg_sz_t data_sz;
 	    MPID_Datatype * dt_ptr;
 	    MPID_IOV iov[MPID_IOV_LIMIT];
@@ -428,7 +429,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
-	    MPIDI_CH3U_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr);
+	    MPIDI_CH3U_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 	
 	    if (dt_contig) 
 	    {
@@ -436,7 +437,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		
 		sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 		
-		iov[1].MPID_IOV_BUF = sreq->dev.user_buf;
+		iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
 		iov[1].MPID_IOV_LEN = data_sz;
 		iov_n = 2;
 	    }
@@ -830,6 +831,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 {
     int dt_contig;
+    MPI_Aint dt_true_lb;
     MPIDI_msg_sz_t userbuf_sz;
     MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t data_sz;
@@ -851,7 +853,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 	
-	MPIDI_CH3U_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr);
+	MPIDI_CH3U_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
 		
 	if (rreq->dev.recv_data_sz <= userbuf_sz)
 	{
@@ -872,7 +874,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    /* user buffer is contiguous and large enough to store the
 	       entire message */
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for contiguous read"));
-	    rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.user_buf;
+	    rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.user_buf + dt_true_lb;
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;

@@ -64,12 +64,13 @@ extern MPIDI_Process_t MPIDI_Process;
 /*
  * Datatype Utility Macros (internal - do not use in MPID macros)
  */
-#define MPIDI_CH3U_Datatype_get_info(_count, _datatype, _dt_contig_out, _data_sz_out, _dt_ptr)				\
+#define MPIDI_CH3U_Datatype_get_info(_count, _datatype, _dt_contig_out, _data_sz_out, _dt_ptr, _dt_true_lb)		\
 {															\
     if (HANDLE_GET_KIND(_datatype) == HANDLE_KIND_BUILTIN)								\
     {															\
 	(_dt_ptr) = NULL;												\
 	(_dt_contig_out) = TRUE;											\
+        (_dt_true_lb)    = 0;                                                                                           \
 	(_data_sz_out) = (_count) * MPID_Datatype_get_basic_size(_datatype);						\
 	MPIDI_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,		\
 			  (_dt_contig_out), MPID_Datatype_get_basic_size(_datatype), (_data_sz_out)));			\
@@ -79,6 +80,7 @@ extern MPIDI_Process_t MPIDI_Process;
 	MPID_Datatype_get_ptr((_datatype), (_dt_ptr));									\
 	(_dt_contig_out) = (_dt_ptr)->is_contig;									\
 	(_data_sz_out) = (_count) * (_dt_ptr)->size;									\
+        (_dt_true_lb)    = (_dt_ptr)->true_lb;                                                                          \
 	MPIDI_DBG_PRINTF((15, FCNAME, "user defined datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,	\
 			  (_dt_contig_out), (_dt_ptr)->size, (_data_sz_out)));						\
     }															\

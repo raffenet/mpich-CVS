@@ -21,6 +21,7 @@ void MPIDI_CH3U_Buffer_copy(
 {
     int sdt_contig;
     int rdt_contig;
+    MPI_Aint sdt_true_lb, rdt_true_lb;
     MPIDI_msg_sz_t sdata_sz;
     MPIDI_msg_sz_t rdata_sz;
     MPID_Datatype * sdt_ptr;
@@ -31,8 +32,8 @@ void MPIDI_CH3U_Buffer_copy(
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
-    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr);
-    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr);
+    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr, sdt_true_lb);
+    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr, rdt_true_lb);
 
     if (sdata_sz > rdata_sz)
     {
@@ -50,7 +51,7 @@ void MPIDI_CH3U_Buffer_copy(
     
     if (sdt_contig && rdt_contig)
     {
-	memcpy(rbuf, sbuf, sdata_sz);
+	memcpy((char *)rbuf + rdt_true_lb, (const char *)sbuf + sdt_true_lb, sdata_sz);
 	*rsz = sdata_sz;
     }
     else if (sdt_contig)
@@ -61,7 +62,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPID_Segment_init(rbuf, rcount, rdt, &seg);
 	last = sdata_sz;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
-	MPID_Segment_unpack(&seg, 0, &last, sbuf);
+	MPID_Segment_unpack(&seg, 0, &last, sbuf + sdt_true_lb);
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
 	if (last != sdata_sz)
 	{
@@ -78,7 +79,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPID_Segment_init(sbuf, scount, sdt, &seg);
 	last = sdata_sz;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack last=" MPIDI_MSG_SZ_FMT, last ));
-	MPID_Segment_pack(&seg, 0, &last, rbuf);
+	MPID_Segment_pack(&seg, 0, &last, rbuf + rdt_true_lb);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack last=" MPIDI_MSG_SZ_FMT, last ));
 	if (last != sdata_sz)
 	{

@@ -17,13 +17,14 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
     int dt_contig, mpi_errno = MPI_SUCCESS, rank;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
+    MPI_Aint dt_true_lb;
     MPIDI_msg_sz_t data_sz;
     MPIDI_STATE_DECL(MPID_STATE_MPID_PUT);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_PUT);
 
     MPIDI_CH3U_Datatype_get_info(origin_count, origin_datatype,
-                                 dt_contig, data_sz, dtp); 
+                                 dt_contig, data_sz, dtp,dt_true_lb); 
 
     if ((data_sz == 0) || (target_rank == MPI_PROC_NULL)) {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_PUT);    

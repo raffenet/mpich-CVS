@@ -20,6 +20,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 {
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
+    MPI_Aint dt_true_lb;
     MPID_Datatype * dt_ptr;
     MPID_Request * sreq;
     MPIDI_VC * vc;
@@ -50,7 +51,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
 
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr);
+    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
     
     vc = comm->vcr[rank];
     
@@ -115,7 +116,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    iov[1].MPID_IOV_BUF = (void *) buf;
+	    iov[1].MPID_IOV_BUF = (void *) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
     
 	    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
