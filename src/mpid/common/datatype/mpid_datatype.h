@@ -37,6 +37,19 @@ int MPID_Type_vector(int count,
 		     MPI_Datatype oldtype,
 		     MPI_Datatype *newtype);
 
+int MPID_Type_get_envelope(MPI_Datatype datatype,
+			   int *num_integers,
+			   int *num_addresses,
+			   int *num_datatypes,
+			   int *combiner);
+
+int MPID_Type_get_contents(MPI_Datatype datatype, 
+			   int max_integers, 
+			   int max_addresses, 
+			   int max_datatypes, 
+			   int array_of_integers[], 
+			   MPI_Aint array_of_addresses[], 
+			   MPI_Datatype array_of_datatypes[]);
 /* Dataloop functions */
 
 typedef struct MPID_Dataloop * MPID_Dataloop_foo; /* HACK */
