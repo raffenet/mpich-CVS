@@ -238,6 +238,7 @@ dnl variable containing the option name as the first argument.
 dnlD*/
 AC_DEFUN(PAC_F77_CHECK_COMPILER_OPTION,[
 AC_MSG_CHECKING([that Fortran 77 compiler accepts option $1])
+ac_result="no"
 save_FFLAGS="$FFLAGS"
 FFLAGS="$1 $FFLAGS"
 rm -f conftest.out
@@ -249,69 +250,46 @@ cat >conftest.f <<EOF
         program main
         end
 EOF
-if ${F77-f77} $save_FFLAGS -o conftest conftest.f >conftest.bas 2>&1 ; then
-   if ${F77-f77} $FFLAGS -o conftest conftest.f >conftest.out 2>&1 ; then
+dnl It is important to use the AC_TRY_EVAL in case F77 is not a single word
+dnl but is something like "f77 -64" (where the switch has changed the
+dnl compiler)
+ac_fscompilelink='${F77-f77} $save_FFLAGS -o conftest conftest.f >conftest.bas 2>&1'
+ac_fscompilelink2='${F77-f77} $FFLAGS -o conftest conftest.f >conftest.out 2>&1'
+if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
+   if AC_TRY_EVAL(ac_fscompilelink2) && test -x conftest ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
          AC_MSG_CHECKING([that routines compiled with $1 can be linked with ones compiled  without $1])       
          /bin/rm -f conftest.out
          /bin/rm -f conftest.bas
-         if ${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1 ; then
-            if ${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f >conftest.bas 2>&1 ; then
-               if ${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f >conftest.out 2>&1 ; then
-                  if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
-	             AC_MSG_RESULT(yes)	  
-		     FFLAGS="$save_FFLAGS"
-                     ifelse([$2],,FOPTIONS="$FOPTIONS $1",$2)
-                  elif test -s conftest.out ; then
-	             cat conftest.out >&AC_FD_CC
-	             AC_MSG_RESULT(no)
-                     FFLAGS="$save_FFLAGS"
-	             $3
-                  else
-                     AC_MSG_RESULT(no)
-                     FFLAGS="$save_FFLAGS"
-	             $3
-                  fi  
-               else
-	          if test -s conftest.out ; then
-	             cat conftest.out >&AC_FD_CC
-	          fi
-                  AC_MSG_RESULT(no)
-                  FFLAGS="$save_FFLAGS"
-                  $3
-               fi
-	    else
-               # Could not link with the option!
-               AC_MSG_RESULT(no)
-            fi
-         else
-            if test -s conftest2.out ; then
-               cat conftest.out >&AC_FD_CC
-            fi
-	    AC_MSG_RESULT(no)
-            FFLAGS="$save_FFLAGS"
-	    $3
-         fi
-      else
-         cat conftest.out >&AC_FD_CC
-         AC_MSG_RESULT(no)
-         $3
-         FFLAGS="$save_FFLAGS"         
+	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
+	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f >conftest.bas 2>&1'
+         if AC_TRY_EVAL(ac_fscompile3) && test -s conftest2.o ; then
+            if AC_TRY_EVAL(ac_fscompilelink4) && test -x conftest ; then
+               if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	          ac_result="yes"
+	       fi
+	    fi
+	  fi
       fi
-   else
-      AC_MSG_RESULT(no)
-      $3
-      if test -s conftest.out ; then cat conftest.out >&AC_FD_CC ; fi    
-      FFLAGS="$save_FFLAGS"
+   fi
+   if test "$ac_result" != "yes" -a -s conftest.out ; then
+	cat conftest.out >&AC_FD_CC
    fi
 else
     # Could not compile without the option!
     echo "configure: Could not compile program" >&AC_FD_CC
     cat conftest.f >&AC_FD_CC
     cat conftest.bas >&AC_FD_CC
-    AC_MSG_RESULT(no)
 fi
+if test "$ac_result" = "yes" ; then
+     AC_MSG_RESULT(yes)	  
+     ifelse([$2],,FOPTIONS="$FOPTIONS $1",$2)
+else
+     AC_MSG_RESULT(no)
+     $3
+fi
+FFLAGS="$save_FFLAGS"
 rm -f conftest*
 ])
 dnl
@@ -353,13 +331,17 @@ AC_CACHE_VAL(pac_cv_prog_f77_cmdarg,
     # Grumph.  Here are a bunch of different approaches
     # We have several axes the check:
     # Library to link with (none, -lU77 (HPUX), -lg2c (LINUX f77))
-    # The first line is "<space><newline>, the space is important
-trial_LIBS=" 
+    # The first line is a dummy
+    # (we experimented with using a <space>, but this caused other 
+    # problems because we need <space> in the IFS)
+trial_LIBS="0
 -lU77
 -lg2c"
     # Discard libs that are not availble:
     save_IFS="$IFS"
-    IFS="
+    # Make sure that IFS includes a space, or the tests that run programs
+    # may fail
+    IFS=" 
 "
     save_trial_LIBS="$trial_LIBS"
     trial_LIBS=""
@@ -369,7 +351,7 @@ trial_LIBS="
 EOF
     ac_fcompilelink_test='${F77-f77} -o conftest $FFLAGS conftest.f $libs $LIBS 1>&AC_FD_CC'
     for libs in $save_trial_LIBS ; do
-	if test "$libs" = " " ; then
+	if test "$libs" = "0" ; then
 	    lib_ok="yes"
         else
 	    AC_MSG_CHECKING([whether Fortran 77 links with $libs])
@@ -398,26 +380,29 @@ $libs"
     # The -YEXT_NAMES=LCS will cayse external names to be output as lower
     # case letter for Absoft F90 compilers (default is upper case)
     # The first line is "<space><newline>, the space is important
-trial_FLAGS=" 
+trial_FLAGS="000
 -f
 -N109
 -YEXT_NAMES=LCS
 +U77"
     # Discard options that are not available:
     save_IFS="$IFS"
-    IFS="
+    IFS=" 
 "
     save_trial_FLAGS="$trial_FLAGS"
     trial_FLAGS=""
     for flag in $save_trial_FLAGS ; do
-	if test "$flag" = " " ; then
+	if test "$flag" = " " -o "$flag" = "000" ; then
 	    opt_ok="yes"
         else
             PAC_F77_CHECK_COMPILER_OPTION($flag,opt_ok=yes,opt_ok=no)
         fi
 	if test "$opt_ok" = "yes" ; then
-	    if test "$flag" = " " ; then fflag="" ; else fflag="$flag" ; fi
-	    
+	    if test "$flag" = " " -o "$flag" = "000" ; then 
+		fflag="" 
+	    else 
+		fflag="$flag" 
+	    fi
 	    # discard options that don't allow mixed-case name matching
 	    cat > conftest.f <<EOF
         program main
@@ -528,13 +513,13 @@ EOF
     # Now, try to find some way to compile and link that program, looping 
     # over the possibilities of options and libraries
         save_IFS="$IFS"
-        IFS="
+        IFS=" 
 "
         for libs in $trial_LIBS ; do
             if test -n "$pac_cv_prog_f77_cmdarg" ; then break ; fi
-	    if test "$libs" = " " ; then libs="" ; fi
+	    if test "$libs" = " " -o "$libs" = "0" ; then libs="" ; fi
             for flags in $trial_FLAGS ; do
-	        if test "$flags" = " " ; then flags="" ; fi
+	        if test "$flags" = " " -o "$flags" = "000"; then flags="" ; fi
                 AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with $MSG])
 		IFS="$save_IFS"
 		dnl We need this here because we've fiddled with IFS
@@ -550,7 +535,7 @@ EOF
 		    echo "configure: failed program was:" >&AC_FD_CC
                     cat conftest.f >&AC_FD_CC
 	        fi
-		IFS="
+		IFS=" 
 "
             done
         done
