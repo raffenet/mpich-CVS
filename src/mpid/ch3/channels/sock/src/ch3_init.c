@@ -28,7 +28,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int pg_size;
     MPIDI_VC * vc_table;
     MPID_Comm * comm, *commworld, *intercomm;
-    int p, i;
+    int p;
+#ifdef FOO
+    int i;
+#endif
 	
     char * key;
     char * val;
