@@ -51,7 +51,9 @@
 int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
     static const char FCNAME[] = "MPI_Comm_join";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, err;
+    char *local_port, *remote_port;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_JOIN);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
@@ -66,7 +68,77 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, "**notimpl", 0);
+    local_port = MPIU_Malloc(MPI_MAX_PORT_NAME);
+    /* --BEGIN ERROR HANDLING-- */
+    if (local_port == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_fail;
+    }
+    /* --END ERROR HANDLING-- */
+    
+    mpi_errno = NMPI_Open_port(MPI_INFO_NULL, local_port);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_fail;
+    }
+    /* --END ERROR HANDLING-- */
+
+    remote_port = MPIU_Malloc(MPI_MAX_PORT_NAME);
+    /* --BEGIN ERROR HANDLING-- */
+    if (remote_port == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_fail;
+    }
+    /* --END ERROR HANDLING-- */
+
+    err = write(fd, local_port, MPI_MAX_PORT_NAME);
+    if (err < 0) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_write", 0);
+        goto fn_fail;
+    }
+
+    err = read(fd, remote_port, MPI_MAX_PORT_NAME);
+    if (err < 0) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_read", 0);
+        goto fn_fail;
+    }
+
+    if (strcmp(local_port, remote_port) == 0) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_port", "**join_port %s %s", local_port, remote_port);
+        goto fn_fail;
+    }
+
+    if (strcmp(local_port, remote_port) < 0) {
+        mpi_errno = NMPI_Comm_accept(local_port, MPI_INFO_NULL, 0, 
+                                     MPI_COMM_SELF, intercomm);
+    }
+    else {
+        mpi_errno = NMPI_Comm_connect(remote_port, MPI_INFO_NULL, 0, 
+                                     MPI_COMM_SELF, intercomm);
+    }
+
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_fail;
+    }
+    /* --END ERROR HANDLING-- */
+
+    mpi_errno = NMPI_Close_port(local_port);
+
+    MPIU_Free(local_port);
+    MPIU_Free(remote_port);
+    
+    if (mpi_errno == MPI_SUCCESS)
+    {
+        MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
+        return MPI_SUCCESS;
+    }
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:

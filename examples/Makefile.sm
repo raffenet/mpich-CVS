@@ -44,3 +44,4 @@ pmandel_fence_LDADD = -lm
 spawn_merge_parent_SOURCES = spawn_merge_parent.c
 spawn_merge_child1_SOURCES = spawn_merge_child1.c
 spawn_merge_child2_SOURCES = spawn_merge_child2.c
+join_SOURCES = join.c

@@ -429,6 +429,10 @@ with MPI_Alloc_mem.
 **usercancel %d:user request cancel function returned error code %d
 **userfree %d:user request free function returned error code %d
 **oremote_fail:open failed on a remote node
+**join_portname: local and remote port names are the same
+**join_portname %s %s: local %s, remote %s
+**join_write: write on the socket failed
+**join_read: read from the socket failed
 
 # Duplicates?
 #**argnull:Invalid null parameter

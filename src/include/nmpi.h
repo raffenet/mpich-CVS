@@ -81,6 +81,9 @@
 #define NMPI_Comm_get_errhandler MPI_Comm_get_errhandler
 #define NMPI_Comm_set_errhandler MPI_Comm_set_errhandler
 #define NMPI_Comm_create_errhandler MPI_Comm_create_errhandler
+#define NMPI_Open_port MPI_Open_port
+#define NMPI_Comm_accept MPI_Comm_accept
+#define NMPI_Comm_connect MPI_Comm_connect
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -139,6 +142,10 @@
 #define NMPI_Comm_get_errhandler PMPI_Comm_get_errhandler
 #define NMPI_Comm_set_errhandler PMPI_Comm_set_errhandler
 #define NMPI_Comm_create_errhandler PMPI_Comm_create_errhandler
+#define NMPI_Open_port MPI_Open_port
+#define NMPI_Close_port MPI_Close_port
+#define NMPI_Comm_accept MPI_Comm_accept
+#define NMPI_Comm_connect MPI_Comm_connect
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */
 
