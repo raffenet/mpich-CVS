@@ -1207,10 +1207,11 @@ pac_cv_func_decl_$2,[
 AC_TRY_COMPILE([$1],[int a=$2(27,1.0,"foo");],
 pac_cv_func_decl_$2=yes,pac_cv_func_decl_$2=no)])
 if test "$pac_cv_func_decl_$2" = "yes" ; then
-changequote(, )dnl
-  ac_tr_func=NEEDS_`echo $1 | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`_DECL
+changequote(<<,>>)dnl
+define(<<PAC_FUNC_NAME>>, translit(NEEDS_$2_DECL, [a-z *], [A-Z__]))dnl
 changequote([, ])dnl
-    AC_DEFINE_UNQUOTED($ac_tr_func,,[Define if $2 needs a declaration])
+    AC_DEFINE_UNQUOTED(PAC_FUNC_NAME,1,[Define if $2 needs a declaration])
+undefine([PAC_FUNC_NAME])
 fi
 ])dnl
 dnl

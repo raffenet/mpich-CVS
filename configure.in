@@ -1002,6 +1002,9 @@ dnl These are used for error reporting
 AC_CHECK_FUNCS(vsnprintf vsprintf)
 dnl Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
+if test "$ac_cv_func_snprintf" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
+fi
 dnl
 dnl If internationalization selected, try to find the needed functions
 if test "$enable_internat" = "yes" ; then
@@ -1017,6 +1020,10 @@ dnl
 if test "$enable_g_mem" != "yes" ; then
     dnl Strdup is needed only if memory tracing is not enabled.
     AC_CHECK_FUNCS(strdup)
+    if test "$ac_cv_func_strdup" = "yes" ; then
+        # Do we need to declare strdup?
+        PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+    fi
 else
     dnl search.h is used for fancier output from trmem.  Disabled for now,
     dnl since the tsearch routines have problematic prototypes.
