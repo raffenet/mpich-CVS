@@ -15,7 +15,7 @@ void ADIOI_PFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
     struct sattr attr;
     int err, myrank, fd_sys, perm, amode, old_mask;
 
-    if (!(fd->info)) {
+    if ( (fd->info) == MPI_INFO_NULL) {
 	/* This must be part of the open call. can set striping parameters 
            if necessary. */ 
 	MPI_Info_create(&(fd->info));
