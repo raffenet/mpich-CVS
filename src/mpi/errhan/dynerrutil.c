@@ -12,7 +12,7 @@
  * This file contains the routines needed to implement the MPI routines that
  * can add error classes and codes during runtime.  This file is organized
  * so that applications that do not use the MPI-2 routines to create new
- * error codes will not load any of the 
+ * error codes will not load any of this code.
  */
 
 /* Local data structures.
@@ -23,14 +23,25 @@
    We also allow the use of instance-specific messages.  This allows an 
    implementation of ADI-3 to add messages without changing the predefined
    set of error messages.
+
+   We *could* allow 256 codes with each class.  However, we don't expect 
+   any need for this many codes, so we simply allow 256 (actually
+   ERROR_MAX_NCODE) codes, and distribute these among the error codes.
 */
 
 static int  initialized = 0;
-static char *(user_class_msgs[256]) = { 0 };
-static char *(user_code_msgs[256]) = { 0 };
-static char *(user_instance_msgs[256]) = { 0 };
+static char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
+static char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
+static char *(user_instance_msgs[ERROR_MAX_NCODE]) = { 0 };
 static int  first_free_class = 0;
 static int  first_free_code  = 0;
+#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+volatile static int ready = 0;
+#endif
+
+/* Forward reference */
+int MPIR_Err_get_string( int code, char *msg, int msg_len );
+
 /* Each user_code_msgs is allowed to have a single related instance message,
    so no separate counter is required for allocating user_instance_msgs */
 
@@ -39,7 +50,49 @@ static int  first_free_code  = 0;
    A cleaner implementation could replace this exposed global with a method
    defined in the error_string.c file that allowed this package to set 
    the routine. */
-extern int (*MPIR_dnyErr_to_string)( int, char *, int );
+
+/* Local routine to initialize the data structures for the dynamic
+   error classes and codes.
+
+   MPIR_Init_err_dyncodes is called if initialized is false.  In
+   a multithreaded case, it must check *again* in case two threads
+   are in a race to call this routine
+ */
+static void MPIR_Init_err_dyncodes( )
+{
+    int i;
+#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+    { 
+	int init_value;
+	MPIR_Fetch_and_increment( &initialized, &init_value );
+	if (init_value != 0) {
+	    /* Some other thread is initializing the data.  Wait
+	       until that thread completes */
+	    while (!ready) {
+		MPIR_Thread_yield();
+	    }
+	}
+    }
+#else
+    initialized = 1;
+#endif
+    
+    for (i=0; i<ERROR_MAX_NCLASS; i++) {
+	user_class_msgs[i] = 0;
+    }
+    for (i=0; i<ERROR_MAX_NCODE; i++) {
+	user_code_msgs[i] = 0;
+	user_instance_msgs[i] = 0;
+    }
+    /* Set the routine to provides access to the dynamically created
+       error strings */
+    MPIR_Process.errcode_to_string = MPIR_Err_get_string;
+
+#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+    /* Release the other threads */
+    ready = 1;
+#endif
+}
 
 int MPIR_Err_get_string( int code, char *msg, int msg_len );
 
@@ -51,13 +104,16 @@ int MPIR_Err_get_string( int code, char *msg, int msg_len );
 - msg  - New message to use
 
   Notes:
-  This routine is needed to implement 'MPI_Add_error_string'
+  This routine is needed to implement 'MPI_Add_error_string'.
  
   Module:
   Error
 @*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
+    if (!initialized)
+	MPIR_Init_err_dyncodes();
+
     return MPI_SUCCESS;
 }
 
@@ -90,6 +146,9 @@ int MPIR_Err_add_class( const char *msg_string,
 {
     int new_class;
 
+    if (!initialized)
+	MPIR_Init_err_dyncodes();
+	
     /* Get new class */
     MPIR_Fetch_and_increment( &first_free_class, &new_class );
 
@@ -98,18 +157,13 @@ int MPIR_Err_add_class( const char *msg_string,
 	return -1;
     }
     
-    if (new_class == 0) {
-	initialized = 1;
-	MPIR_dnyErr_to_string = MPIR_Err_get_string;
-    }
-
     if (msg_string) {
 	user_class_msgs[new_class] = MPIU_Strdup( msg_string );
     }
     else {
 	user_class_msgs[new_class] = 0;
     }
-    return MPI_SUCCESS;
+    return new_class;
 }
 
 /*+
@@ -135,7 +189,22 @@ int MPIR_Err_add_class( const char *msg_string,
 int MPIR_Err_add_code( int class, const char *msg_string, 
 		       const char *instance_msg_string )
 {
-    return MPI_SUCCESS;
+    int new_code;
+
+    if (!initialized)
+	MPIR_Init_err_dyncodes();
+
+    /* Get the new code */
+    MPIR_Fetch_and_increment( &first_free_code, &new_code );
+    if (new_code >= ERROR_MAX_NCODE) {
+	/* Fail if out of codes */
+	return -1;
+    }
+
+    /* Create the full error code */
+    new_code = class | ERROR_DYN_MASK | (new_code << ERROR_GENERIC_SHIFT);
+
+    return new_code;
 }
 
 /*+
@@ -156,6 +225,8 @@ int MPIR_Err_add_code( int class, const char *msg_string,
   @*/
 void MPIR_Err_delete_code( int code )
 {
+    if (!initialized)
+	MPIR_Init_err_dyncodes();
 }
 
 /*+
@@ -169,6 +240,8 @@ void MPIR_Err_delete_code( int code )
   @*/
 void MPIR_Err_delete_class( int class )
 {
+    if (!initialized)
+	MPIR_Init_err_dyncodes();
 }
 
 /*+

@@ -23,11 +23,10 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Error_string PMPI_Error_string
 
-/* This global is used to decouple the code for the predefined from the
-   dynamically defined error codes and classes */
-int (*MPIR_dnyErr_to_string)( int, char *, int ) = 0;
-const char *MPIR_Err_get_generic_string( int class );
 #endif
+
+/* Forward reference for accessing error strings */
+const char *MPIR_Err_get_generic_string( int class );
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Error_string
@@ -78,7 +77,13 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 	   else use generic code (lookup index in table of messages)
        }
      */
-    if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
+    if (errorcode & ERROR_DYN_MASK) {
+	/* This is a dynamically created error code (e.g., with
+	   MPI_Err_add_class) */
+	mpi_errno = 
+	    MPIR_Process.errcode_to_string( errorcode, string, resultlen );
+    }
+    else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
 	/* code is a raw error class.  Convert the class to an index */
 	const char *p = MPIR_Err_get_generic_string( errorcode );
 	*resultlen = strlen( p );

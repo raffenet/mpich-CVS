@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "errcodes.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Add_error_class */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -30,8 +31,8 @@
 /*@
    MPI_Add_error_class - add error class
 
-   Arguments:
-.  int *errorclass - error class
+   Output Parameter:
+.  errorclass - New error class
 
    Notes:
 

@@ -31,9 +31,11 @@
 /*@
    MPI_Add_error_code - add error code
 
-   Arguments:
-+  int errorclass - error class
--  int *errorcode - error code
+   Input Parameter:
+.  errorclass - Error class to add an error code.
+
+   Output Parameter:
+.  errorcode - New error code for this error class.
 
    Notes:
 
@@ -65,7 +67,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    new_code = MPIR_Err_add_code( 0, 0 );
+    new_code = MPIR_Err_add_code( errorclass, 0, 0 );
     if (new_code < 0) {
 	/* Error return.  */
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**noerrcodes", 0 );
@@ -73,7 +75,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 
-    *errorclass = ERROR_DYN_MASK | errorclass | (new_code < 
+    *errorcode = new_code;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CODE);

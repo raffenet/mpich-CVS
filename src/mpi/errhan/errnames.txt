@@ -63,6 +63,8 @@ was not started with MPI_GREQUEST_START
 **permop:Cannot free permanent MPI_Op 
 **attrsentinal:Internal fields in an attribute have been overwritten; \
  possible errors in using the attribute value in user code.
+**toomanycomm:Too many communicators
+
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
