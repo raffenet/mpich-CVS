@@ -34,7 +34,7 @@ int MPIR_Infotable_ptr = 0, MPIR_Infotable_max = 0;
 #endif
 
 #ifdef XFS
-int ADIOI_Direct_read, ADIOI_Direct_write;
+int ADIOI_Direct_read = 0, ADIOI_Direct_write = 0;
 #endif
 
 int ADIO_Init_keyval=MPI_KEYVAL_INVALID;
