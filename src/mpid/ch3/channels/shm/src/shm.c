@@ -461,7 +461,11 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		pkt_ptr->cur_pos += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
 		if (pkt_ptr->num_bytes == 0)
+		{
+		    pkt_ptr->cur_pos = pkt_ptr->data;
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		}
 		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
 		{
 		    /*printf("handling packet\n");fflush(stdout);*/
@@ -477,6 +481,13 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    MPIDI_err_printf("MPIDI_CH3I_SHM_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
 		    recv_vc_ptr->shm.shm_reading_pkt = TRUE;
 		}
+		/*
+		if (millisecond_timeout == 0)
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+		    return SHM_WAIT_TIMEOUT;
+		}
+		*/
 		continue;
 	    }
 
