@@ -307,7 +307,7 @@ EOF
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    echo $dir
 		    (cd $dir ; \
-		     autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h ; \
+		     autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
 		     autoconf -l ../../../confdb configure2.in > configure )
 		fi
 	        continue
