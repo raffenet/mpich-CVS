@@ -126,12 +126,14 @@ dist-check:
 # mpe2 is an outside project and is tested against the default
 # checks
 coding-check: 
-	if [ -z $(CODINGCHECK) ] ;then \
+	@if [ -z $(CODINGCHECK) ] ;then \
 	    echo "You must define CODINGCHECK for this target" ; \
 	else \
+	   echo "Checking the MPICH2 sources" ;\
 	   $(CODINGCHECK) -addchecks=mpich2,funcstates,funcnests \
 		-skipfiles=src/mpe2,src/mpid/mm src examples test ;\
 	   if [ -d src/mpe2 ] ; then \
+	        echo "Checking mpe2 sources" ;\
 		$(CODINGCHECK) src/mpe2 ; \
 	   fi ; \
 	fi
