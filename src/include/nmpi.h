@@ -15,5 +15,6 @@
 #define NMPI_Reduce PMPI_Reduce
 #define NMPI_Unpack PMPI_Unpack
 #define NMPI_Wait PMPI_Wait
+#define NMPI_Allreduce PMPI_Allreduce
 
 #endif /* MPICH_NMPI_H_INCLUDED */
