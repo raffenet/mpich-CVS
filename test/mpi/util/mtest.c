@@ -56,6 +56,7 @@ void MTest_Init( int *argc, char ***argv )
 	    /* This is the error case for strtol */
 	    fprintf( stderr, "Warning: %s not valid for MPITEST_VERBOSE\n", 
 		     envval );
+	    fflush( stderr );
 	}
 	else {
 	    if (val >= 0) {
@@ -64,6 +65,7 @@ void MTest_Init( int *argc, char ***argv )
 	    else {
 		fprintf( stderr, "Warning: %s not valid for MPITEST_VERBOSE\n", 
 			 envval );
+		fflush( stderr );
 	    }
 	}
     }
@@ -195,6 +197,7 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 		if (mtype->printErrors && err < 10) {
 		    printf( "Data expected = %x but got %x for %dth entry\n",
 			    expected, p[i], i );
+		    fflush( stdout );
 		}
 	    }
 	}
@@ -315,6 +318,7 @@ static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
 			if (mtype->printErrors && err < 10) {
 			    printf( "Data expected = %x but got %x for %dth entry\n",
 				    expected, p[j], j );
+			    fflush( stdout );
 			}
 		    nc++;
 		}
@@ -446,6 +450,7 @@ static int MTestTypeIndexCheckbuf( MTestDatatype *mtype )
 		    if (mtype->printErrors && err < 10) {
 			printf( "Data expected = %x but got %x for %dth entry\n",
 				expected, p[offset+j], k );
+			fflush( stdout );
 		    }
 		}
 		k++;
@@ -1013,12 +1018,14 @@ void MTestPrintfMsg( int level, const char format[], ... )
 	va_start(list,format);
 	n = vprintf( format, list );
 	va_end(list);
+	fflush(stdout);
     }
 }
 /* Fatal error.  Report and exit */
 void MTestError( const char *msg )
 {
     fprintf( stderr, "%s\n", msg );
+    fflush( stderr );
     MPI_Abort( MPI_COMM_WORLD, 1 );
 }
 /* ------------------------------------------------------------------------ */
