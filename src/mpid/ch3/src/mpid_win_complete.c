@@ -35,7 +35,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPIDI_RMA_dtype_info *dtype_infos=NULL;
         void **dataloops=NULL;    /* to store dataloops for each datatype */
         MPI_Group win_grp, start_grp;
-        int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
+        int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp, rank;
         
         MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
         comm_size = comm_ptr->local_size;
@@ -97,18 +97,21 @@ int MPID_Win_complete(MPID_Win *win_ptr)
            message from each target process */
         if ((win_ptr->start_assert & MPI_MODE_NOCHECK) == 0)
         {
+            NMPI_Comm_rank(win_ptr->comm, &rank);
             for (i=0; i<start_grp_size; i++)
             {
                 src = ranks_in_win_grp[i];
-                mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
-                                      win_ptr->comm, MPI_STATUS_IGNORE);
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                    goto fn_exit;
+                if (src != rank) {
+                    mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
+                                          win_ptr->comm, MPI_STATUS_IGNORE);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
                 }
-                /* --END ERROR HANDLING-- */
             }
         }
         

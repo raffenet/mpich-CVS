@@ -28,7 +28,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     }
     else {
         MPI_Group win_grp, post_grp;
-        int i, post_grp_size, *ranks_in_post_grp, *ranks_in_win_grp, dst;
+        int i, post_grp_size, *ranks_in_post_grp, *ranks_in_win_grp, dst, rank;
 
         /* Reset the fence counter so that in case the user has switched from fence to 
            post-wait synchronization, he cannot use the previous fence to mark the beginning 
@@ -125,18 +125,23 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
             }
             /* --END ERROR HANDLING-- */
             
+            NMPI_Comm_rank(win_ptr->comm, &rank);
+
             /* Send a 0-byte message to the source processes */
             for (i=0; i<post_grp_size; i++)
             {
                 dst = ranks_in_win_grp[i];
-                mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                    goto fn_exit;
+
+                if (dst != rank) {
+                    mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
                 }
-                /* --END ERROR HANDLING-- */
             }
             
             MPIU_Free(ranks_in_win_grp);
