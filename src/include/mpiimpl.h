@@ -1328,6 +1328,18 @@ void MPIR_Wait(MPID_Request *);
 	(status)->cancelled = FALSE;		\
     }						\
 }
+/* See MPI 1.1, section 3.11, Null Processes */
+#define MPIR_Status_set_procnull(status)		\
+{						\
+    if (status != MPI_STATUS_IGNORE)		\
+    {						\
+	status->MPI_SOURCE = MPI_PROC_NULL;	\
+	status->MPI_TAG = MPI_ANY_TAG;		\
+	status->MPI_ERROR = MPI_SUCCESS;	\
+	status->count = 0;			\
+	status->cancelled = FALSE;		\
+    }						\
+}
 
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
