@@ -38,9 +38,8 @@ public class SearchCriteria
     {
         if ( searchAllRows )
             return true;
-        else {
-            int dobj_rowID = dobj.getRowID();
-            return ( Arrays.binarySearch(selected_rowIDs, dobj_rowID) >= 0 );
-        }
+        else
+            return ( Arrays.binarySearch( selected_rowIDs, dobj.getRowID() )
+                     >= 0 );
     }
 }

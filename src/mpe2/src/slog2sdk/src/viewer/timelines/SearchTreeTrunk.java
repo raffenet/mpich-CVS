@@ -14,6 +14,7 @@ import java.util.Iterator;
 import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
+import base.drawable.Category;
 import logformat.slog2.input.TreeTrunk;
 
 public class SearchTreeTrunk
@@ -53,9 +54,10 @@ public class SearchTreeTrunk
                                                   true );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
-            dobj = (Drawable) dobjs.next();
-            if (    dobj.getCategory().isVisible()
+            dobj    = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
                  && dobj.getEarliestTime() <= searching_time
+                 && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) { 
                 last_found_dobj = dobj;
                 return last_found_dobj;
@@ -85,9 +87,10 @@ public class SearchTreeTrunk
                                                   true );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
-            dobj = (Drawable) dobjs.next();
-            if (    dobj.getCategory().isVisible()
+            dobj    = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
                  && DRAWING_ORDER.compare( dobj, last_found_dobj ) < 0
+                 && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
                 last_found_dobj = dobj;
                 return last_found_dobj;
@@ -111,9 +114,10 @@ public class SearchTreeTrunk
                                                   true );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
-            dobj = (Drawable) dobjs.next();
-            if (    dobj.getCategory().isVisible()
+            dobj    = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
                  && dobj.getEarliestTime() >= searching_time
+                 && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
                 last_found_dobj = dobj;
                 return last_found_dobj;
@@ -143,9 +147,10 @@ public class SearchTreeTrunk
                                                   true );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
-            dobj = (Drawable) dobjs.next();
-            if (    dobj.getCategory().isVisible()
+            dobj    = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
                  && DRAWING_ORDER.compare( dobj, last_found_dobj ) > 0
+                 && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
                 last_found_dobj = dobj;
                 return last_found_dobj;

@@ -22,7 +22,8 @@ import viewer.common.Routines;
 public class InfoDialogForDuration extends InfoDialog
 {
     private static final String          FORMAT = Const.INFOBOX_TIME_FORMAT;
-    private static       DecimalFormat   fmt = null;
+    private static       DecimalFormat   fmt    = null;
+    private static       TimeFormat      tfmt   = null;
 
     private              TimeBoundingBox timebox;
 
@@ -38,6 +39,8 @@ public class InfoDialogForDuration extends InfoDialog
             fmt = (DecimalFormat) NumberFormat.getInstance();
             fmt.applyPattern( FORMAT );
         }
+        if ( tfmt == null )
+            tfmt = new TimeFormat();
         
         Container root_panel = this.getContentPane();
         root_panel.setLayout( new BoxLayout( root_panel, BoxLayout.Y_AXIS ) );
@@ -47,7 +50,7 @@ public class InfoDialogForDuration extends InfoDialog
 
             StringBuffer linebuf = new StringBuffer();
             linebuf.append( "duration = "
-                          + fmt.format(timebox.getDuration()) );
+                          + tfmt.format(timebox.getDuration()) );
             num_cols = linebuf.length();
             textbuf.append( linebuf.toString() + "\n" );
 
