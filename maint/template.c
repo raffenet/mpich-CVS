@@ -54,7 +54,7 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Foo( MPI_Comm comm, int a ) 
+int MPI_Foo( MPI_Comm comm, MPI_Datatype dataype, int a ) 
 {
     static const char FCNAME[] = "MPI_Foo";
     int mpi_errno = MPI_SUCCESS;
@@ -83,12 +83,22 @@ int MPI_Foo( MPI_Comm comm, int a )
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Datatype *datatype_ptr = NULL;
+
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_FOO);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
             }
         }
         MPID_END_ERROR_CHECKS;
