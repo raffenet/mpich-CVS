@@ -11,7 +11,7 @@
 
 MM_Timer_state g_timer_state[MM_NUM_TIMER_STATES];
 
-int g_prof_rank, g_prof_size;
+static int g_prof_rank;
 static char g_prof_filename[256];
 
 /*
@@ -213,9 +213,8 @@ int prof_init(int rank, int size)
     unsigned char r,g,b;
 
     g_prof_rank = rank;
-    g_prof_size = size;
 
-    MPE_Init_log();
+    MPE_Init_log(rank, size);
 
     for (i=0; i<MM_NUM_TIMER_STATES; i++)
     {
