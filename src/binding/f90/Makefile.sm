@@ -13,7 +13,7 @@ all-preamble: $(MPIMOD).$(MOD)
 # the mpif90 script before an install takes place
 $(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	$(F90_COMPILE_MODS) -c $(srcdir)/mpi.f90
-	cp @(MPIMOD).$(MOD) ../../../src/include
+	cp $(MPIMOD).$(MOD) ../../../src/include
 	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
 	    cp work.pc ../../../src/include/mpimod.pc ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
