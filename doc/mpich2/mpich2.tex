@@ -4390,6 +4390,33 @@ Question: Do we want to support context id caching?  If so, how many?
 If provided, the \code{configure} flag is
 \cfgoption{--enable-comm=id-cache=n}? 
 
+If a cache is supported, one of the issues is ensuring the in a
+multithreaded environment, \mpifunc{MPI_Comm_free} can correctly
+recover any cached ids.  In addition, allocating context ids to a
+communicator cache that are never used (because the recipient
+communicator is never dup'ed or split) wastes context ids, which may
+become a problem if the context space is kept small to reduce the
+number of bits in an MPI envelope.  Considerations of this kind lead
+to the following requirements:
+\begin{enumerate}
+\item A communicator may have extra context ids (the context id cache)
+\item A freed communicator must return the context id to the cache if
+  the value came from the cache.
+\item A freed communicator that contains a cache must ensure that the
+  cache is restored to the pool of available context ids.  Of course,
+  the cache cannot be returned until all communicators using context
+  ids from the cache are freed.
+\end{enumerate}
+One simple approach is to provide a single pool of context ids for
+\code{MPI_COMM_WORLD}.  Since this communicator is never freed (except
+by \mpifunc{MPI_Finalize}), we can avoid the problems of freeing the
+context id cache.
+
+A more complex approach is to make the context id cache a separate
+object, subject to the usual reference count semantics.  That allows
+us to delete the communicator that created the cache without loosing
+the information about the cache.
+
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
 One approach is to extract the group from the incoming communicator,
 invoke \mpifunc{MPI_Comm_create}, and then invoke the attribute
