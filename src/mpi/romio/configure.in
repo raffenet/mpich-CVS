@@ -260,7 +260,7 @@ case $arg in
   -cflags=* | --cflags=*)
      package="`echo $arg|sed 's/-*cflags=//'`"
      USER_CFLAGS="$package"
-     CFLAGS="$CFLAGS $package" 
+     CFLAGS="$package $CFLAGS"
      ;;
   -fflags=* | --fflags=*)
      package="`echo $arg|sed 's/-*fflags=//'`"
