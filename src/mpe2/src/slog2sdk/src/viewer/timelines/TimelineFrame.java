@@ -14,6 +14,7 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import logformat.slog2.input.InputLog;
+import viewer.common.Routines;
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 import viewer.common.Parameters;

@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 import base.drawable.TimeBoundingBox;
+import viewer.common.Parameters;
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 
@@ -378,7 +379,8 @@ public class ModelTime extends DefaultBoundedRangeModel
                 sb_block_incre = 0;
             }
             scrollbar.setBlockIncrement( sb_block_incre );
-            sb_unit_incre  =  timeRange2pixelRange( tView_extent / 10.0 );
+            sb_unit_incre  =  timeRange2pixelRange( tView_extent
+                                       * Parameters.TIME_SCROLL_UNIT_RATIO );
             if ( sb_unit_incre <= 0 ) {
                 Dialogs.error( TopWindow.Timeline.getWindow(),
                                "You have reached the Zoom limit! "
@@ -390,12 +392,37 @@ public class ModelTime extends DefaultBoundedRangeModel
         }
     }
 
+    // tView_change is  the time measured in second.
     public void scroll( double tView_change )
     {
-
         this.setTimeViewPosition( tView_init + tView_change );
         this.updatePixelCoords();
         // this.setScrollBarIncrements();
+    }
+
+    // iView_change is measured in image or viewport pixel coordinates in pixel.
+    // NOT measured in scrollbar's model, ie DefaultBoundRangeModel, coodinates
+    public void scroll( int iView_change )
+    {
+        double tView_change = (double) iView_change /iViewPerTime;
+        this.scroll( tView_change );
+    }
+
+    // iView_change is measured in image or viewport pixel coordinates in pixel.
+    // The following function allows scroll pass tGlobal_min and tGlobal_max.
+    // In general, it is not desirable, so Avoid using this scroll() function.
+    public void scroll( int iView_change, boolean isValueAdjusting )
+    {
+        old_tView_init = tView_init;
+        double tView_change = (double) iView_change / iViewPerTime;
+        int iScrollbar_change = this.timeRange2pixelRange( tView_change );
+        super.setRangeProperties( super.getValue() + iScrollbar_change,
+                                  super.getExtent(),
+                                  super.getMinimum(),
+                                  super.getMaximum(),
+                                  isValueAdjusting );
+        tView_init     = pixel2time( super.getValue() );
+        updateParamDisplay();
     }
 
 

@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Enumeration;
 
-import viewer.common.Routines;
-import viewer.common.Parameters;
+// import viewer.common.Routines;
+// import viewer.common.Parameters;
 
 public class YaxisTree extends JTree
 {
@@ -110,9 +110,10 @@ public class YaxisTree extends JTree
         //                   * super.getRowHeight() );
         super.setEditable( true );
 
-        this.initDisplaySize();
+        // this.initDisplaySize();
     }
 
+/*
     private void initDisplaySize()
     {
         int avail_screen_height;
@@ -122,24 +123,19 @@ public class YaxisTree extends JTree
         int vis_row_count;
 
         super.setRootVisible( Parameters.Y_AXIS_ROOT_VISIBLE );
-        super.setRowHeight( Parameters.Y_AXIS_ROW_HEIGHT );
-
+        y_tree_row_count    = super.getRowCount();
         avail_screen_height = (int) ( Routines.getScreenSize().height
                                     * Parameters.SCREEN_HEIGHT_RATIO );
-        y_tree_row_height   = super.getRowHeight();
-        y_tree_row_count    = super.getRowCount();
-        canvas_height       = y_tree_row_count * y_tree_row_height;
-        if ( canvas_height > avail_screen_height )
-            vis_row_count = avail_screen_height / y_tree_row_height;
-        else
-            vis_row_count = y_tree_row_count;
-        super.setVisibleRowCount( vis_row_count );
+        y_tree_row_height   = avail_screen_height / y_tree_row_count;
+        super.setRowHeight( y_tree_row_height );
+        super.setVisibleRowCount( y_tree_row_count );
         System.out.println( "avail_screen_height = " + avail_screen_height +"\n"
                           + "y_tree_row_height = " + y_tree_row_height + "\n"
                           + "y_tree_row_count = " + y_tree_row_count + "\n"
                           + "canvas_height = " + canvas_height + "\n"
                           + "vis_row_count = " + vis_row_count );
     }
+*/
 
     public void update_leveled_paths()
     {

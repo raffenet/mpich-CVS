@@ -108,8 +108,9 @@ public class CanvasTime extends ScrollableObject
 
     public Dimension getMinimumSize()
     {
-        int  min_view_height = MIN_VISIBLE_ROW_COUNT
-                             * Parameters.Y_AXIS_ROW_HEIGHT;
+        // int  min_view_height = MIN_VISIBLE_ROW_COUNT
+        //                      * Parameters.Y_AXIS_ROW_HEIGHT;
+        int  min_view_height = 0;
         //  the width below is arbitary
         if ( Debug.isActive() )
             Debug.println( "CanvasTime: min_size = "

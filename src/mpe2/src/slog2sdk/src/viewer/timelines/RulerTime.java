@@ -14,9 +14,11 @@ import java.text.DecimalFormat;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.*;
 
 import base.drawable.TimeBoundingBox;
 import viewer.common.Const;
+import viewer.common.Routines;
 
 public class RulerTime extends ScrollableObject
 {
@@ -31,10 +33,13 @@ public class RulerTime extends ScrollableObject
     private double         tIncrement;
     private DecimalFormat  fmt;
 
+    private ModelTime      time_model;
+
     public RulerTime( ModelTime model )
     {
         super( model );
-        fmt = (DecimalFormat) NumberFormat.getInstance();
+        time_model  = model;
+        fmt         = (DecimalFormat) NumberFormat.getInstance();
         fmt.applyPattern( Const.RULER_TIME_FORMAT );
     }
 
@@ -128,4 +133,5 @@ public class RulerTime extends ScrollableObject
     {
         return super.getTimePropertyAt( view_click );
     }
+
 }

@@ -33,6 +33,7 @@ SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
             ToolBarStatus.java ViewportTime.java ViewportTimeYaxis.java \
             RulerTime.java ViewportTimePanel.java CoordPixelImage.java \
             SearchCriteria.java SearchTreeTrunk.java CanvasTime.java \
+            ScaledSlider.java RowAdjustments.java \
             ActionVportUp.java ActionVportDown.java \
             ActionTimelineMark.java ActionTimelineMove.java \
             ActionTimelineDelete.java \

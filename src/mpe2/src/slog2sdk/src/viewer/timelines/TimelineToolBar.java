@@ -27,6 +27,7 @@ public class TimelineToolBar extends JToolBar
     private YaxisMaps               y_maps;
     private ScrollbarTime           time_scrollbar;
     private ModelTime               time_model;
+    private RowAdjustments          row_adjs;
 
     public  JButton                 mark_btn;
     public  JButton                 move_btn;
@@ -60,13 +61,13 @@ public class TimelineToolBar extends JToolBar
     public  JButton                 print_btn;
     public  JButton                 stop_btn;
 
-    private String                  img_path = "/images/";
 
-    public TimelineToolBar( ViewportTimeYaxis canvas_viewport,
-                            JScrollBar yaxis_scrollbar,
-                            YaxisTree yaxis_tree, YaxisMaps yaxis_maps,
-                            ScrollbarTime a_time_scrollbar,
-                            ModelTime a_time_model )
+    public TimelineToolBar( ViewportTimeYaxis  canvas_viewport,
+                            JScrollBar  yaxis_scrollbar,
+                            YaxisTree  yaxis_tree, YaxisMaps  yaxis_maps,
+                            ScrollbarTime  a_time_scrollbar,
+                            ModelTime  a_time_model,
+                            RowAdjustments  a_row_adjs )
     {
         super();
         canvas_vport     = canvas_viewport;
@@ -75,6 +76,7 @@ public class TimelineToolBar extends JToolBar
         y_maps           = yaxis_maps;
         time_scrollbar   = a_time_scrollbar;
         time_model       = a_time_model;
+        row_adjs         = a_row_adjs;
         this.addButtons();
         canvas_vport.setToolBarStatus( this );
     }
@@ -87,9 +89,7 @@ public class TimelineToolBar extends JToolBar
     protected URL getURL( String filename )
     {
         URL url = null;
-
         url = getClass().getResource( filename );
-
         return url;
     }
 
@@ -100,7 +100,7 @@ public class TimelineToolBar extends JToolBar
 
         mini_separator_size = new Dimension( 5, 5 );
 
-        icon_URL = getURL( img_path + "Up24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Up24.gif" );
         if ( icon_URL != null )
             up_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -111,7 +111,7 @@ public class TimelineToolBar extends JToolBar
         up_btn.setMnemonic( KeyEvent.VK_UP );
         super.add( up_btn );
 
-        icon_URL = getURL( img_path + "Down24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Down24.gif" );
         if ( icon_URL != null )
             down_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -124,7 +124,7 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
-        icon_URL = getURL( img_path + "Edit24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Edit24.gif" );
         if ( icon_URL != null )
             mark_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -135,7 +135,7 @@ public class TimelineToolBar extends JToolBar
                  new ActionTimelineMark( this, y_tree ) );
         super.add( mark_btn );
 
-        icon_URL = getURL( img_path + "Paste24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Paste24.gif" );
         if ( icon_URL != null )
             move_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -146,7 +146,7 @@ public class TimelineToolBar extends JToolBar
                  new ActionTimelineMove( this, y_tree ) );
         super.add( move_btn );
 
-        icon_URL = getURL( img_path + "Delete24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Delete24.gif" );
         if ( icon_URL != null )
             delete_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -158,7 +158,7 @@ public class TimelineToolBar extends JToolBar
         super.add( delete_btn );
 
         /*
-        icon_URL = getURL( img_path + "Remove24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Remove24.gif" );
         if ( icon_URL != null )
             remove_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -172,7 +172,7 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
-        icon_URL = getURL( img_path + "TreeExpand24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "TreeExpand24.gif" );
         if ( icon_URL != null )
             expand_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -184,7 +184,7 @@ public class TimelineToolBar extends JToolBar
                    new ActionYaxisTreeExpand( this, y_tree ) );
         super.add( expand_btn );
 
-        icon_URL = getURL( img_path + "TreeCollapse24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "TreeCollapse24.gif" );
         if ( icon_URL != null )
             collapse_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -196,7 +196,7 @@ public class TimelineToolBar extends JToolBar
                      new ActionYaxisTreeCollapse( this, y_tree ) );
         super.add( collapse_btn );
 
-        icon_URL = getURL( img_path + "TreeCommit24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "TreeCommit24.gif" );
         if ( icon_URL != null )
             commit_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -206,13 +206,14 @@ public class TimelineToolBar extends JToolBar
         commit_btn.setMnemonic( KeyEvent.VK_D );
         // collapse_btn.setPreferredSize( btn_dim );
         commit_btn.addActionListener(
-                   new ActionYaxisTreeCommit( this, canvas_vport, y_maps ) );
+                   new ActionYaxisTreeCommit( this, canvas_vport, y_maps,
+                                              row_adjs ) );
         super.add( commit_btn );
 
         super.addSeparator();
         super.addSeparator();
 
-        icon_URL = getURL( img_path + "Backward24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Backward24.gif" );
         if ( icon_URL != null )
             backward_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -224,7 +225,7 @@ public class TimelineToolBar extends JToolBar
                      new ActionVportBackward( time_scrollbar ) );
         super.add( backward_btn );
 
-        icon_URL = getURL( img_path + "Forward24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Forward24.gif" );
         if ( icon_URL != null )
             forward_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -238,7 +239,8 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
-        icon_URL = getURL( img_path + "Undo24.gif" );
+        // icon_URL = getURL( Const.IMG_PATH + "Undo24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "WinUndo.gif" );
         if ( icon_URL != null )
             zoomUndo_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -252,7 +254,7 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
-        icon_URL = getURL( img_path + "ZoomOut24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "ZoomOut24.gif" );
         if ( icon_URL != null )
             zoomOut_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -264,7 +266,7 @@ public class TimelineToolBar extends JToolBar
                     new ActionZoomOut( this, time_model ) );
         super.add( zoomOut_btn );
 
-        icon_URL = getURL( img_path + "Home24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Home24.gif" );
         if ( icon_URL != null )
             zoomHome_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -277,7 +279,7 @@ public class TimelineToolBar extends JToolBar
                  new ActionZoomHome( this, time_model ) );
         super.add( zoomHome_btn );
 
-        icon_URL = getURL( img_path + "ZoomIn24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "ZoomIn24.gif" );
         if ( icon_URL != null )
             zoomIn_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -291,7 +293,8 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
-        icon_URL = getURL( img_path + "Redo24.gif" );
+        // icon_URL = getURL( Const.IMG_PATH + "Redo24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "WinRedo.gif" );
         if ( icon_URL != null )
             zoomRedo_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -306,7 +309,7 @@ public class TimelineToolBar extends JToolBar
         super.addSeparator( mini_separator_size );
 
         /*
-        icon_URL = getURL( img_path + "ZoomSet24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "ZoomSet24.gif" );
         if ( icon_URL != null )
             zoomSet_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -321,7 +324,7 @@ public class TimelineToolBar extends JToolBar
         super.addSeparator();
         super.addSeparator();
 
-        icon_URL = getURL( img_path + "FindBack24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "FindBack24.gif" );
         if ( icon_URL != null )
             searchBack_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -333,7 +336,7 @@ public class TimelineToolBar extends JToolBar
                        new ActionSearchBackward( this, canvas_vport ) );
         super.add( searchBack_btn );
 
-        icon_URL = getURL( img_path + "Find24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Find24.gif" );
         if ( icon_URL != null )
             searchInit_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -345,7 +348,7 @@ public class TimelineToolBar extends JToolBar
                        new ActionSearchInit( this, canvas_vport ) );
         super.add( searchInit_btn );
 
-        icon_URL = getURL( img_path + "FindFore24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "FindFore24.gif" );
         if ( icon_URL != null )
             searchFore_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -360,7 +363,7 @@ public class TimelineToolBar extends JToolBar
         super.addSeparator();
         super.addSeparator();
 
-        icon_URL = getURL( img_path + "Refresh24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Refresh24.gif" );
         if ( icon_URL != null )
             refresh_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -373,7 +376,7 @@ public class TimelineToolBar extends JToolBar
                    new ActionPptyRefresh( y_tree, commit_btn ) );
         super.add( refresh_btn );
 
-        icon_URL = getURL( img_path + "Print24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Print24.gif" );
         if ( icon_URL != null )
             print_btn = new JButton( new ImageIcon( icon_URL ) );
         else
@@ -383,7 +386,7 @@ public class TimelineToolBar extends JToolBar
         print_btn.addActionListener( new ActionPptyPrint() );
         super.add( print_btn );
 
-        icon_URL = getURL( img_path + "Stop24.gif" );
+        icon_URL = getURL( Const.IMG_PATH + "Stop24.gif" );
         if ( icon_URL != null )
             stop_btn = new JButton( new ImageIcon( icon_URL ) );
         else

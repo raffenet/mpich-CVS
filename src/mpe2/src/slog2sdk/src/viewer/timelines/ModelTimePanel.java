@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.ArrayList;
+import java.net.URL;
 import javax.swing.*;
 
 import viewer.common.Const;
@@ -44,7 +45,7 @@ public class ModelTimePanel extends JPanel
 
         vport_list         = new ArrayList();
 
-        fld_iZoom_level    = new LabeledTextField( "Zoom Level",
+        fld_iZoom_level    = new LabeledTextField( "Zoom Level ",
                                                    Const.INTEGER_FORMAT );
         fld_iZoom_level.setEditable( false );
         fld_iZoom_level.setHorizontalAlignment( JTextField.CENTER );
@@ -159,7 +160,7 @@ public class ModelTimePanel extends JPanel
             time_model.setTimeZoomFocus( tView_focus );
             for ( int idx = vport_list.size()-1; idx >=0; idx-- ) {
                 vport  = (ViewportTime) vport_list.get( idx );
-                vport.markTimeZoomFocus();
+                vport.repaint();
             }
         }
     }
@@ -230,7 +231,7 @@ public class ModelTimePanel extends JPanel
             ViewportTime  vport;
             for ( int idx = vport_list.size()-1; idx >=0; idx-- ) {
                 vport  = (ViewportTime) vport_list.get( idx );
-                vport.markTimeZoomFocus();
+                vport.repaint();
                 vport.resetToolBarZoomButtons();
             }
         }
@@ -272,7 +273,7 @@ public class ModelTimePanel extends JPanel
             ViewportTime  vport;
             for ( int idx = vport_list.size()-1; idx >=0; idx-- ) {
                 vport  = (ViewportTime) vport_list.get( idx );
-                vport.markTimeZoomFocus();
+                vport.repaint();
                 vport.resetToolBarZoomButtons();
             }
         }

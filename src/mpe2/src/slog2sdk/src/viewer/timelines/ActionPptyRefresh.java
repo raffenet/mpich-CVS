@@ -40,7 +40,6 @@ public class ActionPptyRefresh implements ActionListener
             pptys_frame.updateAllParameters();
         Parameters.initStaticClasses();
         y_tree.setRootVisible( Parameters.Y_AXIS_ROOT_VISIBLE );
-        y_tree.setRowHeight( Parameters.Y_AXIS_ROW_HEIGHT );
         y_tree_redraw_btn.doClick();
     }
 }

@@ -31,6 +31,7 @@ public class ViewportTimeYaxis extends ViewportTime
                                   = Math.sin( SEARCH_ARROW_ANGLE );
 
     private ModelTime             time_model      = null;
+    private BoundedRangeModel     y_model         = null;
     private YaxisTree             tree_view       = null;
 
     private Point                 view_pt         = null;
@@ -43,10 +44,12 @@ public class ViewportTimeYaxis extends ViewportTime
     private Drawable              searched_dobj   = null;
     private double                searching_time;              
 
-    public ViewportTimeYaxis( final ModelTime a_time_model, YaxisTree y_tree )
+    public ViewportTimeYaxis( final ModelTime time_axis_model, 
+                              BoundedRangeModel yaxis_model, YaxisTree y_tree )
     {
-        super( a_time_model );
-        time_model  = a_time_model;
+        super( time_axis_model );
+        time_model  = time_axis_model;
+        y_model     = yaxis_model;
         tree_view   = y_tree;
         view_pt     = new Point( 0, 0 );
         resize_evt  = new ComponentEvent( this,
@@ -216,9 +219,11 @@ public class ViewportTimeYaxis extends ViewportTime
         super.paint( g );
 
         // Draw a line at searching_time
-        x_pos = super.coord_xform.convertTimeToPixel( searching_time );
-        g.setColor( SEARCH_LINE_COLOR );
-        g.drawLine( x_pos, 0, x_pos, this.getHeight() );
+        if ( super.coord_xform.contains( searching_time ) ) {
+            x_pos = super.coord_xform.convertTimeToPixel( searching_time );
+            g.setColor( SEARCH_LINE_COLOR );
+            g.drawLine( x_pos, 0, x_pos, this.getHeight() );
+        }
         // Draw marker around searched_dobj if it exists
         if ( searched_dobj != null )
             this.drawMarkerForSearchedDrawable( g );
@@ -358,18 +363,86 @@ public class ViewportTimeYaxis extends ViewportTime
         }
     }
 
+
+
         /*
             Interface to Overload MouseInputListener()
         */
         public void mouseClicked( MouseEvent mouse_evt )
         {
             Point  vport_click;
-            if (    mouse_evt.isControlDown()
-                 || SwingUtilities.isMiddleMouseButton( mouse_evt ) ) {
-                vport_click    = mouse_evt.getPoint();
-                searching_time = super.coord_xform.convertPixelToTime(
-                                                   vport_click.x );
-                this.repaint();
+
+            super.mouseClicked( mouse_evt );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( ! super.isLeftMouseClick4Zoom ) {  // Hand Mode
+                    vport_click    = mouse_evt.getPoint();
+                    searching_time = super.coord_xform.convertPixelToTime(
+                                                       vport_click.x );
+                    this.repaint();
+                }
+            }
+        }
+
+        private int     mouse_last_Yloc;
+        private double  ratio_ymodel2vportH;
+
+        /*
+            In order to allow grasp & scroll along Y-axis, the change in
+            mouse movement in Y-axis on this Viewport needs to be translated
+            to movement in Yaxis scrollbar's model coordinate.  The trick is
+            that the "extent" of Yaxis scrollbar's model should be mapped
+            to the viewport height in pixel.
+        */
+        public void mousePressed( MouseEvent mouse_evt )
+        {
+            Point  vport_click;
+
+            super.mousePressed( mouse_evt );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( ! super.isLeftMouseClick4Zoom ) {  // Hand Mode
+                    vport_click          = mouse_evt.getPoint();
+                    mouse_last_Yloc      = vport_click.y;
+                    ratio_ymodel2vportH  = (double) y_model.getExtent()
+                                                  / this.getHeight();
+                }
+            }
+        }
+
+        public void mouseDragged( MouseEvent mouse_evt )
+        {
+            Point  vport_click;
+            int    y_change, sb_change;
+
+            super.mouseDragged( mouse_evt );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( ! super.isLeftMouseClick4Zoom ) {  // Hand Mode
+                    vport_click = mouse_evt.getPoint();
+                    y_change    = mouse_last_Yloc - vport_click.y; 
+                    sb_change   = (int) Math.round( ratio_ymodel2vportH
+                                                  * y_change );
+                    // y_model.setValue() invokes adjustmentValueChanged() above
+                    y_model.setValue( y_model.getValue() + sb_change );
+                    mouse_last_Yloc = vport_click.y;
+                }
+            }
+        }
+
+        public void mouseReleased( MouseEvent mouse_evt )
+        {
+            Point  vport_click;
+            int    y_change, sb_change;
+
+            super.mouseReleased( mouse_evt );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( ! super.isLeftMouseClick4Zoom ) {
+                    vport_click = mouse_evt.getPoint();
+                    y_change  = mouse_last_Yloc - vport_click.y; 
+                    sb_change = (int) Math.round( ratio_ymodel2vportH
+                                                * y_change );
+                    // y_model.setValue() invokes adjustmentValueChanged() above
+                    y_model.setValue( y_model.getValue() + sb_change );
+                    mouse_last_Yloc = vport_click.y;
+                }
             }
         }
 }

@@ -29,7 +29,7 @@ public class ScrollbarTime extends JScrollBar
         setModel( model );
         this.addAdjustmentListener( model );
 
-        super.setUnitIncrement( Const.TIME_SCROLLBAR_UNIT_INCREMENT );
+        super.setUnitIncrement( Const.TIME_SCROLL_UNIT_INIT );
 
         min_size = super.getMinimumSize();
         if ( min_size.height <= 0 )

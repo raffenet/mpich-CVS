@@ -22,14 +22,17 @@ public class ActionYaxisTreeCommit implements ActionListener
     private TimelineToolBar    toolbar;
     private ViewportTimeYaxis  canvas_vport;
     private YaxisMaps          y_maps;
+    private RowAdjustments     row_adjs;
 
     public ActionYaxisTreeCommit( TimelineToolBar    in_toolbar,
                                   ViewportTimeYaxis  in_canvas_vport,
-                                  YaxisMaps          in_maps )
+                                  YaxisMaps          in_maps,
+                                  RowAdjustments     in_row_adjs )
     {
         toolbar       = in_toolbar;
         canvas_vport  = in_canvas_vport;
         y_maps        = in_maps;
+        row_adjs      = in_row_adjs;
     }
 
     public void actionPerformed( ActionEvent event )
@@ -42,6 +45,7 @@ public class ActionYaxisTreeCommit implements ActionListener
                            "Error in updating YaxisMaps!" );
         // y_maps.printMaps( System.out );
         canvas_vport.fireComponentResized();
+        row_adjs.updateSlidersAfterTreeExpansion();
 
         /*
            There are too many occasion that need to redraw timelines canvas.
