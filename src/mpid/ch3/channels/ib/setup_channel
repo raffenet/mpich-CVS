@@ -43,7 +43,9 @@ fi
 if test "$rdma_mode" = get ; then
     CPPFLAGS="$CPPFLAGS -DUSE_RDMA_GET"
 fi
-CPPFLAGS="$CPPFLAGS -DMPIDI_CH3_CHANNEL_RNDV"
+if test "$channel_rndv" = yes ; then
+    CPPFLAGS="$CPPFLAGS -DMPIDI_CH3_CHANNEL_RNDV"
+fi
 
 #
 # These are defined by configure.in and localdefs.in
