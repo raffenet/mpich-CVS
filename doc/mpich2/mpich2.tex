@@ -373,6 +373,12 @@ pages, in their natural place (e.g.,
 \label{sec:template}
 
 The following is a sample implementation template for an MPI routine.
+This template should be used when a file is created that implements an
+MPI routine.  This file should be edited as appropriate for the
+routine.  To make it easier to identify which MPI routines have not
+yet been implemented, files should not be created for those routines.
+% I thought that the above was obvious, but live and learn
+
 A few comments first:
 \begin{enumerate}
 \item The first line must set the C style.  Because of limitations in
@@ -483,7 +489,7 @@ timer (and any profiling) with \code{MPID_MPI_FUNC_EXIT}.  There are
 several variations on this described in Section~\ref{sec:builtin-timing}.
 \item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
   might return an error code should use \code{MPIR_Err_return_comm} (or
-  \code{MPIR_Err_return_win} or \code{MPIR_Err_return_file}) instead.  
+  \code{MPIR_Err_return_win} or \code{MPIR_Err_return_file}) instead. 
 \end{enumerate}
 
 \begin{verbatim}
