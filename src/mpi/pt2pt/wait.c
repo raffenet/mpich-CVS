@@ -85,6 +85,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* TEMPORARY - WAIT WILL BE REPLACED WITH PROGRESS ENGINE CHECK */
     MPIR_Wait(request_ptr);
     if (status != NULL)
     {
