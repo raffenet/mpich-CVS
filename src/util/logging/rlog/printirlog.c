@@ -4,6 +4,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+/* Allow the printf's that describe the contents of the file.  Error 
+   messages use the MPIU_Error_printf routines */
+/* style: allow:printf:9 sig:0 */
 
 #include "rlog.h"
 #include <stdio.h>
@@ -49,7 +52,7 @@ void PrintRecord(IRLOG_IOStruct *pInput)
 	printf("RLOG_ENDLOG\n");
 	break;
     default:
-	printf("unknown record type %d\n", pInput->header.type);
+	MPIU_Error_printf("unknown record type %d\n", pInput->header.type);
     }
 }
 
@@ -63,14 +66,14 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-	printf("%s irlogfile [REC_TYPE]\n", argv[0]);
+	MPIU_Error_printf("%s irlogfile [REC_TYPE]\n", argv[0]);
 	return -1;
     }
 
     pInput = IRLOG_CreateInputStruct(argv[1]);
     if (pInput == NULL)
     {
-	printf("Error setting up file '%s'\n", argv[1]);
+	MPIU_Error_printf("Error setting up file '%s'\n", argv[1]);
 	return -1;
     }
 

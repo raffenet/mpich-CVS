@@ -201,7 +201,7 @@ int MPIDI_CH3I_mqshm_unlink(int id)
 #ifdef DBG_PRINT_SEND_RECEIVE
 #define print_msgq(q_ptr_)									\
 {												\
-    printf("msg_q: first = %d, last = %d, next_free = %d, num=%d\n",				\
+    MPIU_dbg_printf("msg_q: first = %d, last = %d, next_free = %d, num=%d\n",				\
 	   (q_ptr_)->first, (q_ptr_)->last, (q_ptr_)->next_free, (q_ptr_)->cur_num_messages);	\
 }
 
@@ -209,11 +209,11 @@ int MPIDI_CH3I_mqshm_unlink(int id)
 static void print_msgq(mqshm_t *q_ptr)
 {
     int i = q_ptr->first;
-    printf("msg_q: first = %d, last = %d, next_free = %d\n",
+    MPIU_dbg_printf("msg_q: first = %d, last = %d, next_free = %d\n",
 	   q_ptr->first, q_ptr->last, q_ptr->next_free);
     while (i != MQSHM_END)
     {
-	printf("msg[%d].tag = %d\n", i, q_ptr->msg[i].tag);
+	MPIU_dbg_printf("msg[%d].tag = %d\n", i, q_ptr->msg[i].tag);
 	i = q_ptr->msg[i].next;
     }
     fflush(stdout);
@@ -253,7 +253,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 #ifdef DBG_TEST_LOCKING
 	if (q_ptr->inuse)
 	{
-	    printf("Error, multiple processes acquired the lock.\n");
+	    MPIU_Error_printf("Error, multiple processes acquired the lock.\n");
 	    fflush(stdout);
 	}
 	q_ptr->inuse = 1;
@@ -263,7 +263,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	{
 	    q_ptr->next_free = q_ptr->msg[index].next;
 #ifdef DBG_PRINT_SEND_RECEIVE
-	    printf("[%d] send: writing %d bytes to index %d with tag %d\n", MPIR_Process.comm_world->rank, length, index, tag);
+	    MPIU_dbg_printf("[%d] send: writing %d bytes to index %d with tag %d\n", MPIR_Process.comm_world->rank, length, index, tag);
 	    fflush(stdout);
 #endif
 	    memcpy(q_ptr->msg[index].data, buffer, length);
@@ -273,7 +273,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	    if (q_ptr->first == MQSHM_END)
 	    {
 #ifdef DBG_PRINT_SEND_RECEIVE
-		printf("[%d] send: setting first and last to %d\n", MPIR_Process.comm_world->rank, index);
+		MPIU_dbg_printf("[%d] send: setting first and last to %d\n", MPIR_Process.comm_world->rank, index);
 		fflush(stdout);
 #endif
 		q_ptr->first = index;
@@ -282,7 +282,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	    else
 	    {
 #ifdef DBG_PRINT_SEND_RECEIVE
-		printf("[%d] send: old_last = %d, new last = %d\n",
+		MPIU_dbg_printf("[%d] send: old_last = %d, new last = %d\n",
 		  MPIR_Process.comm_world->rank, q_ptr->last, index);
 		fflush(stdout);
 #endif
@@ -346,7 +346,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 #ifdef DBG_TEST_LOCKING
 	if (q_ptr->inuse)
 	{
-	    printf("Error, multiple processes acquired the lock.\n");
+	    MPIU_Error_printf("Error, multiple processes acquired the lock.\n");
 	    fflush(stdout);
 	}
 	q_ptr->inuse = 1;
@@ -373,7 +373,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		if (q_ptr->first == index)
 		{
 #ifdef DBG_PRINT_SEND_RECEIVE
-		    printf("[%d] recv(%d): removing index %d from the head\n", MPIR_Process.comm_world->rank, tag, index);
+		    MPIU_dbg_printf("[%d] recv(%d): removing index %d from the head\n", MPIR_Process.comm_world->rank, tag, index);
 		    fflush(stdout);
 #endif
 		    q_ptr->first = q_ptr->msg[index].next;
@@ -386,7 +386,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		else
 		{
 #ifdef DBG_PRINT_SEND_RECEIVE
-		    printf("[%d] recv(%d): removing index %d\n", MPIR_Process.comm_world->rank, tag, index);
+		    MPIU_dbg_printf("[%d] recv(%d): removing index %d\n", MPIR_Process.comm_world->rank, tag, index);
 		    fflush(stdout);
 #endif
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;

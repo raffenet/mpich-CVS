@@ -115,7 +115,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
         assert(rc == 0);
 
 #ifdef DEBUG
-        printf("Parent: kvs %s, key %s, val %s\n", kvsname, key, val);
+        MPIU_dbg_printf("Parent: kvs %s, key %s, val %s\n", kvsname, key, val);
         fflush(stdout);
 #endif
         rc = MPIU_Snprintf(key, key_max_sz, "Comm-size");
@@ -184,7 +184,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
             rc = PMI_KVS_Get(kvsname, key, val);
             assert(rc == 0);
 #ifdef DEBUG
-            printf("Parent: child rank %d b card %s\n", i, val);
+            MPIU_dbg_printf("Parent: child rank %d b card %s\n", i, val);
             fflush(stdout);
 #endif
         }
@@ -194,7 +194,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
     } 
 
 #ifdef DEBUG
-    printf("spawned kvsname %s\n", kvsname);
+    MPIU_dbg_printf("spawned kvsname %s\n", kvsname);
     fflush(stdout);
 #endif
 

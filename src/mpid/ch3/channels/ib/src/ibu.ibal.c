@@ -930,9 +930,7 @@ static int ibui_get_first_active_ca()
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**get_guids", 0);
 	return mpi_errno;
     }
-
     /*printf("Total number of CA's = %d\n", (uint32_t)guid_count);fflush(stdout);*/
-
     if(guid_count == 0) 
     {
 	MPIU_Internal_error_printf("no channel adapters available.\n");

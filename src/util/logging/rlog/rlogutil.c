@@ -11,6 +11,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
+#include "mpimem.h"
 
 static int ReadFileData(char *pBuffer, int length, FILE *fin)
 {
@@ -21,7 +22,7 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
 	num_read = fread(pBuffer, 1, length, fin);
 	if (num_read == -1)
 	{
-	    printf("Error: fread failed - %s\n", strerror(errno));
+	    MPIU_Error_printf("Error: fread failed - %s\n", strerror(errno));
 	    return errno;
 	}
 	if (num_read == 0 && length)
@@ -44,7 +45,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 	num_written = fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
-	    printf("Error: fwrite failed - %s\n", strerror(errno));
+	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
 	if (num_written == 0 && length)
@@ -79,10 +80,10 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     int type, length;
 
     /* allocate an input structure */
-    pInput = (RLOG_IOStruct*)malloc(sizeof(RLOG_IOStruct));
+    pInput = (RLOG_IOStruct*)MPIU_Malloc(sizeof(RLOG_IOStruct));
     if (pInput == NULL)
     {
-	printf("malloc failed - %s\n", strerror(errno));
+	MPIU_Error_printf("malloc failed - %s\n", strerror(errno));
 	return NULL;
     }
     pInput->ppCurEvent = NULL;
@@ -96,8 +97,8 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     pInput->f = fopen(filename, "rb");
     if (pInput->f == NULL)
     {
-	printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
-	free(pInput);
+	MPIU_Error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
+	MPIU_Free(pInput);
 	return NULL;
     }
     pInput->nNumRanks = 0;
@@ -111,7 +112,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    /*printf("type: RLOG_HEADER_SECTION, length: %d\n", length);*/
 	    if (length != sizeof(RLOG_FILE_HEADER))
 	    {
-		printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
+		MPIU_Error_printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
 	    }
 	    if (ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f))
 	    {
@@ -122,14 +123,14 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    pInput->nNumRanks = pInput->header.nMaxRank + 1 - pInput->header.nMinRank;
 	    min_rank = pInput->header.nMinRank;
 	    
-	    pInput->pRank = (int*)malloc(pInput->nNumRanks * sizeof(int));
-	    pInput->pNumEventRecursions = (int*)malloc(pInput->nNumRanks * sizeof(int));
-	    pInput->ppNumEvents = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->ppCurEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->ppCurGlobalEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->gppCurEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
-	    pInput->gppPrevEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
-	    pInput->ppEventOffset = (long**)malloc(pInput->nNumRanks * sizeof(long*));
+	    pInput->pRank = (int*)MPIU_Malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->pNumEventRecursions = (int*)MPIU_Malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->ppNumEvents = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurEvent = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurGlobalEvent = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->gppCurEvent = (RLOG_EVENT**)MPIU_Malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->gppPrevEvent = (RLOG_EVENT**)MPIU_Malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->ppEventOffset = (long**)MPIU_Malloc(pInput->nNumRanks * sizeof(long*));
 	    for (i=0; i<pInput->nNumRanks; i++)
 	    {
 		pInput->pRank[i] = -1;
@@ -159,8 +160,8 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    fread(&cur_rank, sizeof(int), 1, pInput->f);
 	    if (cur_rank - min_rank >= pInput->nNumRanks)
 	    {
-		printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
-		free(pInput);
+		MPIU_Error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
+		MPIU_Free(pInput);
 		return NULL;
 	    }
 	    rank_index = cur_rank - min_rank;
@@ -168,12 +169,12 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    /*printf("levels: %d\n", pInput->nNumEventRecursions);*/
 	    if (pInput->pNumEventRecursions[rank_index])
 	    {
-		pInput->ppCurEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->ppCurGlobalEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->gppCurEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
-		pInput->gppPrevEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
-		pInput->ppNumEvents[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->ppEventOffset[rank_index] = (long*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(long));
+		pInput->ppCurEvent[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppCurGlobalEvent[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->gppCurEvent[rank_index] = (RLOG_EVENT*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->gppPrevEvent[rank_index] = (RLOG_EVENT*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->ppNumEvents[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppEventOffset[rank_index] = (long*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(long));
 	    }
 	    for (i=0; i<pInput->pNumEventRecursions[rank_index]; i++)
 	    {
@@ -231,16 +232,16 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     arrow_pos = ftell(f);
     if (arrow_pos == -1)
 	return errno;
-    pArray = (RLOG_ARROW*)malloc(nNumArrows * sizeof(RLOG_ARROW));
+    pArray = (RLOG_ARROW*)MPIU_Malloc(nNumArrows * sizeof(RLOG_ARROW));
     if (pArray)
     {
-	printf("Modifying %d arrows\n", nNumArrows);
+	MPIU_Msg_printf("Modifying %d arrows\n", nNumArrows);
 	/* read the arrows */
 	fseek(f, 0, SEEK_CUR);
 	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
 	{
-	    free(pArray);
+	    MPIU_Free(pArray);
 	    return error;
 	}
 
@@ -284,15 +285,15 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
 	{
-	    free(pArray);
+	    MPIU_Free(pArray);
 	    return error;
 	}
 	fseek(f, 0, SEEK_CUR);
-	free(pArray);
+	MPIU_Free(pArray);
     }
     else
     {
-	printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
+	MPIU_Error_printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
 	return -1;
     }
     return 0;
@@ -308,14 +309,14 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     int error;
     double temp_time;
 
-    printf("Modifying %d arrows\n", nNumArrows);
+    MPIU_Msg_printf("Modifying %d arrows\n", nNumArrows);
     arrow_pos = ftell(f);
     for (i=0; i<nNumArrows; i++)
     {
 	num_bytes = fread(&arrow, 1, sizeof(RLOG_ARROW), f);
 	if (num_bytes != sizeof(RLOG_ARROW))
 	{
-	    printf("reading arrow failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_ARROW), ferror(f));
+	    MPIU_Error_printf("reading arrow failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_ARROW), ferror(f));
 	    return -1;
 	}
 	bModified = FALSE;
@@ -343,14 +344,14 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	    fseek(f, -(int)sizeof(RLOG_ARROW), SEEK_CUR);
 	    if (fwrite(&arrow, 1, sizeof(RLOG_ARROW), f) != sizeof(RLOG_ARROW))
 	    {
-		printf("writing modified arrow failed - error %d\n", ferror(f));
+		MPIU_Error_printf("writing modified arrow failed - error %d\n", ferror(f));
 		return -1;
 	    }
 	    fseek(f, 0, SEEK_CUR);
 	}
     }
 
-    pArray = (RLOG_ARROW*)malloc(nNumArrows * sizeof(RLOG_ARROW));
+    pArray = (RLOG_ARROW*)MPIU_Malloc(nNumArrows * sizeof(RLOG_ARROW));
     if (pArray)
     {
 	/* read the arrows */
@@ -358,7 +359,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
 	{
-	    free(pArray);
+	    MPIU_Free(pArray);
 	    return error;
 	}
 	/* sort the arrows */
@@ -369,15 +370,15 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
 	{
-	    free(pArray);
+	    MPIU_Free(pArray);
 	    return error;
 	}
 	fseek(f, 0, SEEK_CUR);
-	free(pArray);
+	MPIU_Free(pArray);
     }
     else
     {
-	printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
+	MPIU_Error_printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
 	return -1;
     }
     return 0;
@@ -390,7 +391,7 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
     int i, index;
     int error;
 
-    printf("Modifying %d events\n", nNumEvents);
+    MPIU_Msg_printf("Modifying %d events\n", nNumEvents);
     fseek(f, 0, SEEK_CUR);
     for (i=0; i<nNumEvents; i++)
     {
@@ -427,10 +428,10 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     int error;
 
     /* allocate an input structure */
-    pInput = (RLOG_IOStruct*)malloc(sizeof(RLOG_IOStruct));
+    pInput = (RLOG_IOStruct*)MPIU_Malloc(sizeof(RLOG_IOStruct));
     if (pInput == NULL)
     {
-	printf("malloc failed - %s\n", strerror(errno));
+	MPIU_Error_printf("malloc failed - %s\n", strerror(errno));
 	return -1;
     }
     pInput->ppCurEvent = NULL;
@@ -444,8 +445,8 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     pInput->f = fopen(filename, "rb+");
     if (pInput->f == NULL)
     {
-	printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
-	free(pInput);
+	MPIU_Error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
+	MPIU_Free(pInput);
 	return -1;
     }
     pInput->nNumRanks = 0;
@@ -471,14 +472,14 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    pInput->nNumRanks = pInput->header.nMaxRank + 1 - pInput->header.nMinRank;
 	    min_rank = pInput->header.nMinRank;
 	    
-	    pInput->pRank = (int*)malloc(pInput->nNumRanks * sizeof(int));
-	    pInput->pNumEventRecursions = (int*)malloc(pInput->nNumRanks * sizeof(int));
-	    pInput->ppNumEvents = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->ppCurEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->ppCurGlobalEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
-	    pInput->gppCurEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
-	    pInput->gppPrevEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
-	    pInput->ppEventOffset = (long**)malloc(pInput->nNumRanks * sizeof(long*));
+	    pInput->pRank = (int*)MPIU_Malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->pNumEventRecursions = (int*)MPIU_Malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->ppNumEvents = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurEvent = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurGlobalEvent = (int**)MPIU_Malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->gppCurEvent = (RLOG_EVENT**)MPIU_Malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->gppPrevEvent = (RLOG_EVENT**)MPIU_Malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->ppEventOffset = (long**)MPIU_Malloc(pInput->nNumRanks * sizeof(long*));
 	    for (i=0; i<pInput->nNumRanks; i++)
 	    {
 		pInput->pRank[i] = -1;
@@ -504,7 +505,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    error = ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
 	    if (error)
 	    {
-		printf("Modifying the arrow section failed, error %d\n", error);
+		MPIU_Error_printf("Modifying the arrow section failed, error %d\n", error);
 		RLOG_CloseInputStruct(&pInput);
 		return -1;
 	    }
@@ -515,7 +516,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    fread(&cur_rank, sizeof(int), 1, pInput->f);
 	    if (cur_rank - min_rank >= pInput->nNumRanks)
 	    {
-		printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
+		MPIU_Error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
 		RLOG_CloseInputStruct(&pInput);
 		return -1;
 	    }
@@ -524,12 +525,12 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    /*printf("levels: %d\n", pInput->nNumEventRecursions);*/
 	    if (pInput->pNumEventRecursions[rank_index])
 	    {
-		pInput->ppCurEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->ppCurGlobalEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->gppCurEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
-		pInput->gppPrevEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
-		pInput->ppNumEvents[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
-		pInput->ppEventOffset[rank_index] = (long*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(long));
+		pInput->ppCurEvent[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppCurGlobalEvent[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->gppCurEvent[rank_index] = (RLOG_EVENT*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->gppPrevEvent[rank_index] = (RLOG_EVENT*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->ppNumEvents[rank_index] = (int*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppEventOffset[rank_index] = (long*)MPIU_Malloc(pInput->pNumEventRecursions[rank_index] * sizeof(long));
 	    }
 	    for (i=0; i<pInput->pNumEventRecursions[rank_index]; i++)
 	    {
@@ -578,31 +579,31 @@ int RLOG_CloseInputStruct(RLOG_IOStruct **ppInput)
     for (i=0; i<(*ppInput)->nNumRanks; i++)
     {
 	if ((*ppInput)->ppCurEvent[i])
-	    free((*ppInput)->ppCurEvent[i]);
+	    MPIU_Free((*ppInput)->ppCurEvent[i]);
 	if ((*ppInput)->ppCurGlobalEvent[i])
-	    free((*ppInput)->ppCurGlobalEvent[i]);
+	    MPIU_Free((*ppInput)->ppCurGlobalEvent[i]);
 	if ((*ppInput)->gppCurEvent[i])
-	    free((*ppInput)->gppCurEvent[i]);
+	    MPIU_Free((*ppInput)->gppCurEvent[i]);
 	if ((*ppInput)->gppPrevEvent[i])
-	    free((*ppInput)->gppPrevEvent[i]);
+	    MPIU_Free((*ppInput)->gppPrevEvent[i]);
 	if ((*ppInput)->ppEventOffset[i])
-	    free((*ppInput)->ppEventOffset[i]);
+	    MPIU_Free((*ppInput)->ppEventOffset[i]);
 	if ((*ppInput)->ppNumEvents[i])
-	    free((*ppInput)->ppNumEvents[i]);
+	    MPIU_Free((*ppInput)->ppNumEvents[i]);
     }
     if ((*ppInput)->ppCurEvent)
-	free((*ppInput)->ppCurEvent);
+	MPIU_Free((*ppInput)->ppCurEvent);
     if ((*ppInput)->ppCurGlobalEvent)
-	free((*ppInput)->ppCurGlobalEvent);
+	MPIU_Free((*ppInput)->ppCurGlobalEvent);
     if ((*ppInput)->gppCurEvent)
-	free((*ppInput)->gppCurEvent);
+	MPIU_Free((*ppInput)->gppCurEvent);
     if ((*ppInput)->gppPrevEvent)
-	free((*ppInput)->gppPrevEvent);
+	MPIU_Free((*ppInput)->gppPrevEvent);
     if ((*ppInput)->ppEventOffset)
-	free((*ppInput)->ppEventOffset);
+	MPIU_Free((*ppInput)->ppEventOffset);
     if ((*ppInput)->ppNumEvents)
-	free((*ppInput)->ppNumEvents);
-    free(*ppInput);
+	MPIU_Free((*ppInput)->ppNumEvents);
+    MPIU_Free(*ppInput);
     *ppInput = NULL;
     return 0;
 }
@@ -1121,7 +1122,7 @@ int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp,
 		/*
 		if (pInput->ppCurGlobalEvent[i][j] != 0);
 		{
-		    printf("RLOG_FindGlobalEventBeforeTimestamp: Error, start_time > timestamp, %g > %g", pInput->gppPrevEvent[i][j].start_time, timestamp);
+		    MPIU_Error_printf("RLOG_FindGlobalEventBeforeTimestamp: Error, start_time > timestamp, %g > %g", pInput->gppPrevEvent[i][j].start_time, timestamp);
 		    return -1;
 		}
 		*/

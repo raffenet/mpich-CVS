@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h> /* isdigit */
+#include "mpimem.h"
 
 #ifndef BOOL
 #define BOOL int
@@ -80,7 +81,7 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
 	num_read = fread(pBuffer, 1, length, fin);
 	if (num_read == -1)
 	{
-	    printf("Error: fread failed - %s\n", strerror(errno));
+	    MPIU_Error_printf("Error: fread failed - %s\n", strerror(errno));
 	    return errno;
 	}
 
@@ -102,7 +103,7 @@ static int WriteFileData(const void *pvBuffer, int length, FILE *fout)
 	num_written = fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
-	    printf("Error: fwrite failed - %s\n", strerror(errno));
+	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
 
@@ -125,7 +126,7 @@ ArrowNode *GetArrowNode(int rank)
 	pNode = pNode->pNext;
     }
 
-    pNode = (ArrowNode *)malloc(sizeof(ArrowNode));
+    pNode = (ArrowNode *)MPIU_Malloc(sizeof(ArrowNode));
     pNode->pEndList = NULL;
     pNode->pStartList = NULL;
     pNode->rank = rank;
@@ -198,7 +199,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	g_fArrow = fopen(g_pszArrowFilename, "w+b");
 	if (g_fArrow == NULL)
 	{
-	    printf("unable to open ArrowFile.tmp\n");
+	    MPIU_Error_printf("unable to open ArrowFile.tmp\n");
 	    return;
 	}
     }
@@ -209,7 +210,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	pEnd = ExtractEndNode(pNode, pArrow->rank, pArrow->tag);
 	if (pEnd == NULL)
 	{
-	    pStart = (StartArrowStruct *)malloc(sizeof(StartArrowStruct));
+	    pStart = (StartArrowStruct *)MPIU_Malloc(sizeof(StartArrowStruct));
 	    pStart->src = pArrow->rank;
 	    pStart->tag = pArrow->tag;
 	    pStart->length = pArrow->length;
@@ -237,7 +238,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	arrow.leftright = RLOG_ARROW_LEFT;
 	/* fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow); */
 	WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
-	free(pEnd);
+	MPIU_Free(pEnd);
     }
     else
     {
@@ -254,13 +255,13 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	    arrow.start_time = pStart->start_time;
 	    arrow.length = pStart->length; /* the sender length is more accurate than the receiver length */
 	    arrow.leftright = RLOG_ARROW_RIGHT;
-	    free(pStart);
+	    MPIU_Free(pStart);
 	    /* fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow); */
 	    WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
 	}
 	else
 	{
-	    pEnd = (EndArrowStruct *)malloc(sizeof(EndArrowStruct));
+	    pEnd = (EndArrowStruct *)MPIU_Malloc(sizeof(EndArrowStruct));
 	    pEnd->src = pArrow->remote;
 	    pEnd->tag = pArrow->tag;
 	    pEnd->timestamp = pArrow->timestamp;
@@ -295,7 +296,7 @@ RecursionStruct *GetLevel(int rank, int recursion)
 	pLevel = pLevel->next;
     }
 
-    pLevel = (RecursionStruct*)malloc(sizeof(RecursionStruct));
+    pLevel = (RecursionStruct*)MPIU_Malloc(sizeof(RecursionStruct));
     sprintf(pLevel->filename, "irlog.%d.%d.tmp", rank, recursion);
     pLevel->fout = fopen(pLevel->filename, "w+b");
     pLevel->rank = rank;
@@ -333,7 +334,7 @@ void SaveState(RLOG_STATE *pState)
 	pIter = pIter->next;
     }
 
-    pIter = (RLOG_State_list*)malloc(sizeof(RLOG_State_list));
+    pIter = (RLOG_State_list*)MPIU_Malloc(sizeof(RLOG_State_list));
     memcpy(&pIter->state, pState, sizeof(RLOG_STATE));
     pIter->next = g_pList;
     g_pList = pIter;
@@ -350,7 +351,7 @@ FILE *OpenRlogFile(char *filename)
     {
 	memcpy(out_filename, filename, pExt-filename);
 	strcpy(&out_filename[pExt-filename], ".rlog");
-	printf("out_filename: %s\n", out_filename);
+	MPIU_Msg_printf("out_filename: %s\n", out_filename);
     }
     else
     {
@@ -369,7 +370,7 @@ void AppendFile(FILE *fout, FILE *fin)
     int num_read, num_written;
     char *buffer, *buf;
 
-    buffer = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+    buffer = (char*)MPIU_Malloc(sizeof(char) * BUFFER_SIZE);
 
     total = ftell(fin);
     fseek(fin, 0L, SEEK_SET);
@@ -379,7 +380,7 @@ void AppendFile(FILE *fout, FILE *fin)
 	num_read = fread(buffer, 1, min(BUFFER_SIZE, total), fin);
 	if (num_read == 0)
 	{
-	    printf("failed to read from input file\n");
+	    MPIU_Error_printf("failed to read from input file\n");
 	    return;
 	}
 	total -= num_read;
@@ -389,7 +390,7 @@ void AppendFile(FILE *fout, FILE *fin)
 	    num_written = fwrite(buf, 1, num_read, fout);
 	    if (num_written == 0)
 	    {
-		printf("failed to write to output file\n");
+		MPIU_Error_printf("failed to write to output file\n");
 		return;
 	    }
 	    num_read -= num_written;
@@ -397,7 +398,7 @@ void AppendFile(FILE *fout, FILE *fin)
 	}
     }
 
-    free(buffer);
+    MPIU_Free(buffer);
 }
 
 int FindMinRank(RecursionStruct *pLevel)
@@ -474,7 +475,7 @@ void RemoveLevel(int rank)
 		pLevel = pLevel->next;
 		fclose(pTrailer->fout);
 		unlink(pTrailer->filename);
-		free(pTrailer);
+		MPIU_Free(pTrailer);
 		pTrailer = pLevel;
 	    }
 	    else
@@ -482,7 +483,7 @@ void RemoveLevel(int rank)
 		pTrailer->next = pLevel->next;
 		fclose(pLevel->fout);
 		unlink(pLevel->filename);
-		free(pLevel);
+		MPIU_Free(pLevel);
 		pLevel = pTrailer->next;
 	    }
 	}
@@ -581,7 +582,7 @@ void GenerateNewArgv(int *pargc, char ***pargv, int n)
     char *buffer, *str;
 
     length = (sizeof(char*) * (n+3)) +strlen((*pargv)[0]) + 1 + strlen((*pargv)[1]) + 1 + (15 * n);
-    buffer = (char*)malloc(length);
+    buffer = (char*)MPIU_Malloc(length);
 
     argc = n+2;
     argv = (char**)buffer;
@@ -629,8 +630,8 @@ int main(int argc, char *argv[])
 
     if (argc < 3)
     {
-	printf("Usage: irlog2rlog out.rlog in0.irlog in1.irlog ...\n");
-	printf("       irlog2rlog out.rlog n\n");
+	MPIU_Usage_printf("Usage: irlog2rlog out.rlog in0.irlog in1.irlog ...\n\
+       irlog2rlog out.rlog n\n");
 	return 0;
     }
 
@@ -645,18 +646,18 @@ int main(int argc, char *argv[])
     fout = fopen(argv[1], "wb");
     if (fout == NULL)
     {
-	printf("unable to open output file '%s'\n", argv[1]);
+	MPIU_Error_printf("unable to open output file '%s'\n", argv[1]);
 	return -1;
     }
 
     /* read the arrows from all the files in order */
-    ppInput = (IRLOG_IOStruct**)malloc(nNumInputs * sizeof(IRLOG_IOStruct*));
+    ppInput = (IRLOG_IOStruct**)MPIU_Malloc(nNumInputs * sizeof(IRLOG_IOStruct*));
     for (i=0; i<nNumInputs; i++)
     {
 	ppInput[i] = IRLOG_CreateInputStruct(argv[i+2]);
 	if (ppInput[i] == NULL)
 	{
-	    printf("Unable to create an input structure for '%s', skipping\n", argv[i+2]);
+	    MPIU_Error_printf("Unable to create an input structure for '%s', skipping\n", argv[i+2]);
 	}
     }
     for (i=0; i<nNumInputs; i++)
@@ -669,7 +670,7 @@ int main(int argc, char *argv[])
 	    i--;
 	}
     }
-    printf("reading the arrows from all the input files.\n");fflush(stdout);
+    MPIU_Msg_printf("reading the arrows from all the input files.\n");fflush(stdout);
     ReadAllArrows(ppInput, nNumInputs);
 
     nNumInputs = argc - 2;
@@ -680,11 +681,11 @@ int main(int argc, char *argv[])
 	pInput = IRLOG_CreateInputStruct(argv[i+2]);
 	if (pInput == NULL)
 	{
-	    printf("Unable to create an input structure for '%s', skipping\n", argv[i+2]);
+	    MPIU_Error_printf("Unable to create an input structure for '%s', skipping\n", argv[i+2]);
 	}
 	else
 	{
-	    printf("reading irlog file: %s\n", argv[i+2]);fflush(stdout);
+	    MPIU_Msg_printf("reading irlog file: %s\n", argv[i+2]);fflush(stdout);
 	    for(;;)
 	    {
 		switch (pInput->header.type)
@@ -703,7 +704,7 @@ int main(int argc, char *argv[])
 		    SaveEvent(&pInput->record.event);
 		    break;
 		default:
-		    printf("Unknown irlog record type: %d\n", pInput->header.type);
+		    MPIU_Error_printf("Unknown irlog record type: %d\n", pInput->header.type);
 		    break;
 		}
 		
@@ -720,12 +721,12 @@ int main(int argc, char *argv[])
     header.nMinRank = FindMinRank(g_pLevel);
     header.nMaxRank = FindMaxRank(g_pLevel);
     if (nMinRank != header.nMinRank)
-	printf("minimum event rank %d does not equal the minimum comm record rank %d\n", header.nMinRank, nMinRank);
+	MPIU_Error_printf("minimum event rank %d does not equal the minimum comm record rank %d\n", header.nMinRank, nMinRank);
     if (nMaxRank != header.nMaxRank)
-	printf("maximum event rank %d does not equal the maximum comm record rank %d\n", header.nMaxRank, nMaxRank);
+	MPIU_Error_printf("maximum event rank %d does not equal the maximum comm record rank %d\n", header.nMaxRank, nMaxRank);
 
     /* write header */
-    printf("writing header.\n");fflush(stdout);
+    MPIU_Msg_printf("writing header.\n");fflush(stdout);
     type = RLOG_HEADER_SECTION;
     length = sizeof(RLOG_FILE_HEADER);
     /* fwrite(&type, sizeof(int), 1, fout); */
@@ -738,7 +739,7 @@ int main(int argc, char *argv[])
     /* write states */
     if (g_pList)
     {
-	printf("writing states.\n");fflush(stdout);
+	MPIU_Msg_printf("writing states.\n");fflush(stdout);
     }
     pState = g_pList;
     while (pState)
@@ -763,7 +764,7 @@ int main(int argc, char *argv[])
     /* write arrows */
     if (g_fArrow)
     {
-	printf("writing arrows.\n");fflush(stdout);
+	MPIU_Msg_printf("writing arrows.\n");fflush(stdout);
 	type = RLOG_ARROW_SECTION;
 	length = ftell(g_fArrow);
 	/* fwrite(&type, sizeof(int), 1, fout); */
@@ -806,7 +807,7 @@ int main(int argc, char *argv[])
 	}
 	for (i=0; i<nNumLevels; i++)
 	{
-	    printf("writing event level %d:%d\n", nRank, i);fflush(stdout);
+	    MPIU_Msg_printf("writing event level %d:%d\n", nRank, i);fflush(stdout);
 	    pLevel = GetLevel(nRank, i);
 	    AppendFile(fout, pLevel->fout);
 	}
@@ -819,7 +820,7 @@ int main(int argc, char *argv[])
     {
 	pState = g_pList;
 	g_pList = g_pList->next;
-	free(pState);
+	MPIU_Free(pState);
     }
     if (g_fArrow)
     {
@@ -828,7 +829,7 @@ int main(int argc, char *argv[])
     }
 
     if (s_bFreeArgv)
-	free(argv);
+	MPIU_Free(argv);
 
     return 0;
 }

@@ -197,7 +197,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #   if defined(DEBUG)
     {
 	/*dbg_printf("[%d] Published hostname=%s port=%d\n", pg_rank, hostname, port);*/
-	dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
+	MPIU_dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
 	fflush(stdout);
     }
 #   endif
@@ -225,7 +225,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
 	    assert(mpi_errno == 0);
 
-	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
+	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	    fflush(stdout);
 	}
     }
@@ -295,7 +295,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
      */
     mpi_errno = PMI_Init(has_parent);
 #ifdef DEBUG
-    printf("HAS PARENT %d\n", *has_parent);
+    MPIU_dbg_printf("HAS PARENT %d\n", *has_parent);
     fflush(stdout);
 #endif
     if (mpi_errno != 0)
@@ -449,7 +449,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #   if defined(DEBUG)
     {
 	/*dbg_printf("[%d] Published hostname=%s port=%d\n", pg_rank, hostname, port);*/
-	dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
+	MPIU_dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
 	fflush(stdout);
     }
 #   endif
@@ -468,7 +468,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
                 usleep(1000);
             }
             mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
-            printf("Child: rank %d b card %s\n", i, val);
+            MPIU_dbg_printf("Child: rank %d b card %s\n", i, val);
             fflush(stdout);
         }
     }
@@ -497,7 +497,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
 	    assert(mpi_errno == 0);
 
-	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
+	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	    fflush(stdout);
 	}
     }
@@ -551,7 +551,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
         intercomm->context_id = atoi(val);
 #ifdef DEBUG
-        printf("child: context_id %d\n", atoi(val));
+        MPIU_dbg_printf("child: context_id %d\n", atoi(val));
         fflush(stdout);
 #endif
         mpi_errno = MPIU_Snprintf(key, key_max_sz, "Comm-size");
@@ -568,7 +568,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
         intercomm->remote_size = atoi(val);
 #ifdef DEBUG
-        printf("child: remote_size %d\n", atoi(val));
+        MPIU_dbg_printf("child: remote_size %d\n", atoi(val));
         fflush(stdout);
 #endif
         /* Fill in new intercomm */

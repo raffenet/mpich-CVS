@@ -643,7 +643,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
             
             MPIU_Strncpy(bizcard_ptr, val, val_max_sz);
             
-            printf("Child's biz card %s\n", bizcard_ptr);
+            MPIU_Msg_printf("Child's biz card %s\n", bizcard_ptr);
             fflush(stdout);
 
             bizcard_ptr += strlen(val) + 1;
@@ -692,7 +692,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
                 return mpi_errno;
             }
 
-            printf("Child: Put %d's biz card %s\n", i, bizcard_ptr);
+            MPIU_Msg_printf("Child: Put %d's biz card %s\n", i, bizcard_ptr);
             fflush(stdout);
 
             mpi_errno = PMI_KVS_Put(remote_kvsname, key, bizcard_ptr);

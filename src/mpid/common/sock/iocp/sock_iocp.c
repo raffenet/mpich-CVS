@@ -550,7 +550,7 @@ static inline int post_next_accept(sock_state_t * listen_state)
 	error = WSAGetLastError();
 	if (error == ERROR_IO_PENDING)
 	    return TRUE;
-	printf("AcceptEx failed with error %d\n", error);fflush(stdout);
+	MPIU_Error_printf("AcceptEx failed with error %d\n", error);fflush(stdout);
 	return FALSE;
     }
     return TRUE;
@@ -602,7 +602,7 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
     /*printf("CreateIOCompletionPort(%d, %p, %p, %d)\n", sock_state->sock, set, sock_state, g_num_cp_threads);fflush(stdout);*/
     if (CreateIoCompletionPort((HANDLE)sock_state->sock, set, (ULONG_PTR)sock_state, g_num_cp_threads) == NULL)
     {
-	printf("Unable to associate native handle with the completion port, setting NATIVE mode.\n");fflush(stdout);
+	MPIU_Error_printf("Unable to associate native handle with the completion port, setting NATIVE mode.\n");fflush(stdout);
 	/* If it cannot be associated with the completion port, use the callback interface */
 	sock_state->type = SOCK_NATIVE;
 	/* the hEvent fields are not used by the OS so use them to save a pointer to the sock structure */
@@ -1915,7 +1915,7 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 	{
 	case ERROR_HANDLE_EOF:
 	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
-	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
+	    MPIU_Error_printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = SOCK_EOF;
 	    break;
         case ERROR_IO_PENDING:
@@ -1923,7 +1923,7 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 	    break;
 	default:
 	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
-	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
+	    MPIU_Error_printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = WinToSockError(e);
 	    break;
 	}

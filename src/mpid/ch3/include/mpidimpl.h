@@ -426,7 +426,7 @@ void MPIDI_err_printf(char *, char *, ...);
 }
 #define MPIDI_err_printf(func, fmt, args...)							\
 {												\
-    printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
+    MPIU_Error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
     fflush(stdout);										\
 }
 #endif

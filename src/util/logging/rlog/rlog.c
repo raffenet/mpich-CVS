@@ -10,6 +10,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "mpimem.h"
+
 #include "mpi.h"
 #define RLOG_timestamp PMPI_Wtime
 
@@ -22,7 +24,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 	num_written = fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
-	    printf("Error: fwrite failed - %s\n", strerror(errno));
+	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
 
@@ -51,7 +53,7 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
 {
     RLOG_Struct* pRLOG;
 
-    pRLOG = (RLOG_Struct*)malloc(sizeof(RLOG_Struct));
+    pRLOG = (RLOG_Struct*)MPIU_Malloc(sizeof(RLOG_Struct));
     if (pRLOG == NULL)
 	return NULL;
 
@@ -66,8 +68,8 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
     pRLOG->pOutput = IRLOG_CreateOutputStruct(pRLOG->pszFileName);
     if (pRLOG->pOutput == NULL)
     {
-	printf("RLOG Error: unable to allocate an output structure.\n");
-	free(pRLOG);
+	MPIU_Error_printf("RLOG Error: unable to allocate an output structure.\n");
+	MPIU_Free(pRLOG);
 	return NULL;
     }
 
@@ -282,7 +284,7 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     pState->event = state;
     if (color)
     {
-	strncpy(pState->color, color, RLOG_COLOR_LENGTH);
+	MPIU_Strncpy(pState->color, color, RLOG_COLOR_LENGTH);
 	pState->color[RLOG_COLOR_LENGTH-1] = '\0';
     }
     else
@@ -291,7 +293,7 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     }
     if (name)
     {
-	strncpy(pState->description, name, RLOG_DESCRIPTION_LENGTH);
+	MPIU_Strncpy(pState->description, name, RLOG_DESCRIPTION_LENGTH);
 	pState->description[RLOG_DESCRIPTION_LENGTH-1] = '\0';
     }
     else

@@ -22,12 +22,12 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code)
 	char msg[MPI_MAX_ERROR_STRING];
 	
 	MPIR_Err_get_string(mpi_errno, msg);
-	fprintf(stderr, "ABORT - process %d: %s\n", MPIR_Process.comm_world->rank, msg);
+	MPIU_Error_printf("ABORT - process %d: %s\n", MPIR_Process.comm_world->rank, msg);
 	fflush(stderr);
     }
     else
     {
-	fprintf(stderr, "ABORT - process %d\n", MPIR_Process.comm_world->rank);
+	MPIU_Error_printf("ABORT - process %d\n", MPIR_Process.comm_world->rank);
 	fflush(stderr);
     }
     

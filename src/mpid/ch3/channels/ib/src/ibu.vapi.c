@@ -1064,13 +1064,13 @@ int ibu_finalize()
 
 void FooBar(VAPI_hca_hndl_t hca_handle, VAPI_cq_hndl_t cq_handle, void *p)
 {
-    printf("Help me I'm drowning\n");
+    MPIU_Error_printf("Help me I'm drowning\n");
     fflush(stdout);
 }
 
 void FooBar2(VAPI_hca_hndl_t hca_handle, VAPI_event_record_t *event, void *p)
 {
-    printf("Help me I'm drowning in events\n");
+    MPIU_Error_printf("Help me I'm drowning in events\n");
     fflush(stdout);
 }
 
