@@ -21,6 +21,7 @@ import logformat.slog2.input.InputLog;
 import logformat.slog2.input.TreeTrunk;
 import logformat.slog2.input.TreeNode;
 import viewer.common.Const;
+import viewer.common.TopWindow;
 
 public class TimelinePanel extends JPanel
 {
@@ -29,6 +30,7 @@ public class TimelinePanel extends JPanel
     private TreeNode                treeroot;
 
     private TimelineToolBar         toolbar;
+    private SearchDialog            search_dialog;
     private TreeTrunkPanel          treetrunk_panel;
     private BoundedRangeModel       y_model;
     private YaxisMaps               y_maps;
@@ -243,9 +245,11 @@ public class TimelinePanel extends JPanel
         this.add( splitter, BorderLayout.CENTER );
 
             /* The ToolBar for various user controls */
+            search_dialog = new SearchDialog( TopWindow.Timeline.getWindow() );
             toolbar = new TimelineToolBar( time_canvas_vport,
                                            y_scrollbar, y_tree, y_maps,
-                                           time_scrollbar, time_model );
+                                           time_scrollbar, time_model,
+                                           search_dialog );
 
         this.add( toolbar, BorderLayout.NORTH );
 

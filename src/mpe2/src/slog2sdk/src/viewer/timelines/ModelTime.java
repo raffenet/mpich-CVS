@@ -385,6 +385,14 @@ public class ModelTime extends DefaultBoundedRangeModel
         }
     }
 
+    public void scroll( double tView_change )
+    {
+
+        this.setTimeViewPosition( tView_init + tView_change );
+        this.updatePixelCoords();
+        // this.setScrollBarIncrements();
+    }
+
 
 
     /*

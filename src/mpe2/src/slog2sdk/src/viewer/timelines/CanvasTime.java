@@ -30,6 +30,7 @@ import viewer.common.TopWindow;
 import viewer.common.Parameters;
 
 public class CanvasTime extends ScrollableObject
+                        implements SearchableView
 {
     private static final int     MIN_VISIBLE_ROW_COUNT = 2;
     private static final boolean INCRE_STARTTIME_ORDER = true;
@@ -51,6 +52,8 @@ public class CanvasTime extends ScrollableObject
     private NestingStacks      nesting_stacks;
     private Map                map_line2row;
     private DrawnBoxSet        drawn_boxes;
+
+    private SearchTreeTrunk    tree_search;
 
     private Date               zero_time, init_time, final_time;
 
@@ -84,6 +87,8 @@ public class CanvasTime extends ScrollableObject
         treetrunk.growInTreeWindow( treeroot, depth_init,
                                     new TimeBoundingBox( treeroot ) );
         treetrunk.setNumOfViewsPerUpdate( ScrollableObject.NumViewsTotal );
+
+        tree_search     = new SearchTreeTrunk( treetrunk, time_model );
 
         root_window     = null;
         change_event    = null;
@@ -427,4 +432,31 @@ public class CanvasTime extends ScrollableObject
 
         return super.getTimePropertyAt( local_click );
     }
+
+
+
+    // public Drawable searchPreviousDrawable( double time )
+    public Component searchPreviousComponent( boolean isNewSearch )
+    {
+        Drawable  dobj = tree_search.previousDrawable( isNewSearch );
+        if ( dobj != null ) {
+            Map map_line2treeleaf = y_maps.getMapOfLineIDToTreeLeaf();
+            return new InfoPanelForDrawable( map_line2treeleaf,
+                                             y_colnames, dobj );
+        }
+        return null;
+    }
+
+    // public Drawable searchNextDrawable( double time )
+    public Component searchNextComponent( boolean isNewSearch )
+    {
+        Drawable  dobj = tree_search.nextDrawable( isNewSearch );
+        if ( dobj != null ) {
+            Map map_line2treeleaf = y_maps.getMapOfLineIDToTreeLeaf();
+            return new InfoPanelForDrawable( map_line2treeleaf,
+                                             y_colnames, dobj );
+        }
+        return null;
+    }
+
 }

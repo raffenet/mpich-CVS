@@ -24,6 +24,7 @@ import viewer.common.Const;
 import viewer.common.Routines;
 import viewer.legends.CategoryLabel;
 
+
 public class InfoPanelForDrawable extends JPanel
 {
     private static final Component      STRUT = Box.createHorizontalStrut( 5 );
@@ -32,12 +33,16 @@ public class InfoPanelForDrawable extends JPanel
     private static final String         FORMAT = Const.INFOBOX_TIME_FORMAT;
     private static       DecimalFormat  fmt = null;
 
+    private              Drawable       drawable;
+
     public InfoPanelForDrawable( final Map       map_line2treenodes,
                                  final String[]  y_colnames,
                                  final Drawable  dobj )
     {
         super();
         super.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
+
+        drawable = dobj;
 
         /* Define DecialFormat for the displayed time */
         if ( fmt == null ) {
@@ -159,5 +164,10 @@ public class InfoPanelForDrawable extends JPanel
             text_area.setEditable( false );
             text_area.setLineWrap( true );
         super.add( new JScrollPane( text_area ) );
+    }
+
+    public Drawable getDrawable()
+    {
+        return drawable;
     }
 }

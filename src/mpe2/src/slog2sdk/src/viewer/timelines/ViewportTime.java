@@ -32,21 +32,23 @@ public class ViewportTime extends JViewport
     private static final Color   INFO_LINE_COLOR = Color.green;
     private static final Color   INFO_AREA_COLOR = new Color(255,255,  0,64);
 
-    private Point                     view_pt;
+    private   Point                     view_pt;
     // view_img is both a Component and ScrollableView object
-    private ScrollableView            view_img      = null;
-    private ModelTime                 time_model    = null;
-    private ToolBarStatus             toolbar       = null;
+    private   ScrollableView            view_img      = null;
+    private   ModelTime                 time_model    = null;
+    private   ToolBarStatus             toolbar       = null;
 
-    private TimeBoundingBox           vport_timebox = null;
-    private CoordPixelImage           coord_xform   = null;
+    private   TimeBoundingBox           vport_timebox = null;
+    private   CoordPixelImage           coord_xform   = null;
 
-    private TimeBoundingBox           zoom_timebox  = null;
-    private TimeBoundingBox           info_timebox  = null;
-    private List                      info_dialogs;
+    protected TimeBoundingBox           zoom_timebox  = null;
+    private   TimeBoundingBox           info_timebox  = null;
 
-    private InfoDialogActionListener  info_action_listener;
-    private InfoDialogWindowListener  info_window_listener;
+    // info_dialogs list is used to keep track of all InfoDialog boxes.
+    private   List                      info_dialogs;
+
+    private   InfoDialogActionListener  info_action_listener;
+    private   InfoDialogWindowListener  info_window_listener;
 
     public ViewportTime( final ModelTime in_model )
     {
@@ -427,7 +429,9 @@ public class ViewportTime extends JViewport
     }
 */
 
-    /*  Interface to fulfill MouseInputListener()  */
+        /*
+            Interface to fulfill MouseInputListener()
+        */
 
         public void mouseEntered( MouseEvent mouse_evt ) {}
         public void mouseExited( MouseEvent mouse_evt ) {}
@@ -577,7 +581,7 @@ public class ViewportTime extends JViewport
                 }
             }
         }
-    }
+    }   // InfoDialogActionListener
 
     private class InfoDialogWindowListener extends WindowAdapter
     {
@@ -605,6 +609,6 @@ public class ViewportTime extends JViewport
                 }
             }
         }
-    }
+    }   // Class InfoDialogWindowListener
 
 }

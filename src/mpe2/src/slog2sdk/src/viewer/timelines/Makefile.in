@@ -20,7 +20,7 @@ RM           = @RM@
 
 TARGET    = $(libbuild_dir)/timeline_view.jar
 PACKAGE   = viewer.timelines
-SRC       = Diagnosis.java Debug.java Profile.java \
+SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
             YaxisTreeNode.java IntegerArrayComparator.java YaxisMaps.java \
             named_vector.java YaxisTree.java \
             TimeEvent.java TimeListener.java \
@@ -28,10 +28,10 @@ SRC       = Diagnosis.java Debug.java Profile.java \
             ModelTimePanel.java TreeTrunkPanel.java \
             InfoDialog.java InfoDialogForTime.java InfoDialogForDuration.java \
             InfoPanelForDrawable.java InfoDialogForDrawable.java \
-            ScrollableView.java ScrollableObject.java \
+            ScrollableView.java ScrollableObject.java SearchableView.java \
             ToolBarStatus.java ViewportTime.java ViewportTimeYaxis.java \
             RulerTime.java ViewportTimePanel.java \
-            CoordPixelImage.java CanvasTime.java \
+            CoordPixelImage.java SearchTreeTrunk.java CanvasTime.java \
             ActionVportUp.java ActionVportDown.java \
             ActionTimelineMark.java ActionTimelineMove.java \
             ActionTimelineDelete.java \
@@ -40,7 +40,8 @@ SRC       = Diagnosis.java Debug.java Profile.java \
             ActionVportBackward.java ActionVportForward.java \
             ActionVportUp.java ActionZoomHome.java ActionVportDown.java \
             ActionZoomIn.java ActionZoomOut.java \
-            ActionZoomUndo.java ActionZoomRedo.java ActionSearch.java \
+            ActionZoomUndo.java ActionZoomRedo.java \
+            ActionSearchForward.java ActionSearchBackward.java \
             ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
             TimelineToolBar.java TimelinePanel.java TimelineFrame.java
 
