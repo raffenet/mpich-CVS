@@ -47,6 +47,8 @@ int main( int argc, char *argv[] )
     strcpy( port_name, "otherhost:122" );
     strcpy( serv_name, "MyTest" );
 
+    MPI::COMM_WORLD.Set_errhandler( MPI::ERRORS_THROW_EXCEPTIONS );
+
     if (rank == 0) {
 	try {
 	    MPI::Publish_name( serv_name, MPI::INFO_NULL, port_name );
