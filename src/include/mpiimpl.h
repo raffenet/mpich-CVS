@@ -266,6 +266,9 @@ typedef enum MPID_Object_kind {
    have MPIU_Handle_common as the head */
 typedef struct MPIU_Handle_common {
     int  handle;
+    volatile int ref_count; /* This field is used to indicate that the
+			       object is not in use (see, e.g., 
+			       MPID_Comm_valid_ptr) */
     void *next;   /* Free handles use this field to point to the next
                      free object */
 } MPIU_Handle_common;
