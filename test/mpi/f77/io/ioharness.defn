@@ -39,10 +39,11 @@ enddo
 
 <checkContigBuffer>
 do i=1, n
-    if (buf(i) .ne. r*n + (k-1)*n*s + i-1) then
+    ans = r*n + (k-1)*n*s + i-1
+    if (buf(i) .ne. ans) then
         errs = errs + 1
         if (errs .le. 10) then
-            print *, 'buf(',i,') = ', buf(i)
+            print *, r, ' buf(',i,') = ', buf(i), ' expected ', ans
         endif
     endif
 enddo
@@ -57,7 +58,7 @@ do i=1, n
     if (buf2(i) .ne. r*n + (k)*n*s + i-1) then
         errs = errs + 1
         if (errs .le. 10) then
-            print *, 'buf2(',i,') = ', buf2(i)
+            print *, r,' buf2(',i,') = ', buf2(i)
         endif
     endif
 enddo
@@ -98,7 +99,7 @@ call mpi_type_free( filetype, ierr )
 <TESTDEFN filename="writef.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -131,7 +132,7 @@ enddo
 <TESTDEFN filename="writeatf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -160,7 +161,7 @@ enddo
 <TESTDEFN filename="writeatallf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans 
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -189,7 +190,7 @@ enddo
 <TESTDEFN filename="writeatallbef.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -222,7 +223,7 @@ enddo
 <TESTDEFN filename="iwriteatf.f">
 <writefiledecl>
 integer statuses(MPI_STATUS_SIZE,2)
-integer buf(MAX_BUFFER), buf2(MAX_BUFFER)
+integer buf(MAX_BUFFER), buf2(MAX_BUFFER), ans
 integer req(2), nreq
 include 'iooffset.h'
 </writefiledecl>
@@ -276,7 +277,7 @@ enddo
 <TESTDEFN filename="iwritef.f">
 <writefiledecl>
 integer statuses(MPI_STATUS_SIZE,2)
-integer buf(MAX_BUFFER), buf2(MAX_BUFFER)
+integer buf(MAX_BUFFER), buf2(MAX_BUFFER), ans
 integer req(2), nreq
 include 'iooffset.h'
 </writefiledecl>
@@ -333,7 +334,7 @@ enddo
 <TESTDEFN filename="iwriteshf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 integer src, dest
 integer req
 </writefiledecl>
@@ -400,7 +401,7 @@ endif
 <TESTDEFN filename="writeallf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 integer filetype
 include 'iooffset.h'
 </writefiledecl>
@@ -430,7 +431,7 @@ enddo
 <TESTDEFN filename="writeallbef.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 integer filetype
 include 'iooffset.h'
 </writefiledecl>
@@ -464,7 +465,7 @@ enddo
 <TESTDEFN filename="writeordf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -491,7 +492,7 @@ enddo
 <TESTDEFN filename="writeordbef.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 include 'iooffset.h'
 </writefiledecl>
 <writefile>
@@ -523,7 +524,7 @@ enddo
 <TESTDEFN filename="writeshf.f">
 <writefiledecl>
 integer status(MPI_STATUS_SIZE)
-integer buf(MAX_BUFFER)
+integer buf(MAX_BUFFER), ans
 integer src, dest
 </writefiledecl>
 <writefile>
