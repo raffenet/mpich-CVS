@@ -2032,6 +2032,19 @@ int smpd_handle_delete_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_cred_request_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd;
+
+    smpd_enter_fn("smpd_handle_cred_request_command");
+
+    cmd = &context->read_cmd;
+
+    smpd_exit_fn("smpd_handle_cred_request_command");
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -2042,6 +2055,8 @@ int smpd_handle__command(smpd_context_t *context)
     smpd_enter_fn("smpd_handle__command");
 
     cmd = &context->read_cmd;
+
+    result = handle command code;
 
     smpd_exit_fn("smpd_handle__command");
     return result;
@@ -2204,6 +2219,12 @@ int smpd_handle_command(smpd_context_t *context)
     else if (strcmp(cmd->cmd_str, "barrier") == 0)
     {
 	result = smpd_handle_barrier_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "cred_request") == 0)
+    {
+	result = smpd_handle_cred_request_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
