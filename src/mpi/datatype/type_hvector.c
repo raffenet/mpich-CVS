@@ -65,7 +65,7 @@ int MPI_Type_hvector(int count,
 
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(blocklen,"blocklen",mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(blocklen,"blocklen",mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
 		if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {

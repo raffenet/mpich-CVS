@@ -74,7 +74,7 @@ int MPI_Type_create_hindexed(int count,
 		    MPID_Datatype_get_ptr( oldtype, datatype_ptr );
 		    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 		}
-		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNONPOS(array_of_blocklengths[i], "blocklen", mpi_errno);
+		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);

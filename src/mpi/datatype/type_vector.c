@@ -67,7 +67,7 @@ int MPI_Type_vector(int count,
 
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(blocklength, "blocklen", mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
 	    if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr( old_type, old_ptr );

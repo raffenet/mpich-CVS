@@ -75,7 +75,7 @@ int MPI_Type_hindexed(int count,
 		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 		}
 		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
-		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNONPOS(blocklens[i], "blocklen", mpi_errno);
+		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNEG(blocklens[i], "blocklen", mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);

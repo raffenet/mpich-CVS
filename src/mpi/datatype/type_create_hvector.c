@@ -65,7 +65,7 @@ int MPI_Type_create_hvector(int count,
 
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(blocklength, "blocklen", mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
 		MPID_Datatype_get_ptr(oldtype, datatype_ptr);
