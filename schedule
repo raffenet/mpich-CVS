@@ -104,23 +104,23 @@ MPI_Sendrecv_replace,,,,,Brian,,done,
 
 Datatypes
 
-MPI_Type_contiguous,1,1,2,1,Rob,,1,08/16/2002,
-MPI_Type_vector,1,1,2,1,Rob,,1,08/14/2002,
-MPI_Type_hvector,1,1,2,1,Rob,,1,08/15/2002,
-MPI_Type_indexed,1,1,2,1,Rob,,1,10/02/2002,
+MPI_Type_contiguous,1,1,2,1,Rob,,done,08/16/2002,
+MPI_Type_vector,1,1,2,1,Rob,,done,08/14/2002,
+MPI_Type_hvector,1,1,2,1,Rob,,done,08/15/2002,
+MPI_Type_indexed,1,1,2,1,Rob,,done,10/02/2002,
 MPI_Type_hindexed,1,1,2,1,Rob,,done,10/30/2002,
-MPI_Type_struct,1,1,2,1,Rob,,,10/30/2002,
+MPI_Type_struct,1,1,2,1,Rob,,done,10/30/2002,
 MPI_Address,1,1,1,2,Bill,,.1,1/7/02
-MPI_Type_extent,1,1,2,1,Rob,,1,08/15/2002,
-MPI_Type_size,1,1,2,1,Rob,,1,08/15/2002,
-MPI_Type_lb,1,1,2,1,Rob,,1,10/08/2002,
-MPI_Type_ub,1,1,2,1,Rob,,1,10/08/2002,
-MPI_Type_commit,1,1,2,1,Rob,,,done
-MPI_Type_free,1,1,2,1,Rob,,,done
-MPI_Get_elements,,,,,Rob,,,done
-MPI_Pack,1,1,2,1,Rob,,1,08/16/2002,
-MPI_Unpack,1,1,2,1,Rob,,1,08/16/2002,
-MPI_Pack_size,1,1,2,1,Rob,,1,08/15/2002,
+MPI_Type_extent,1,1,2,1,Rob,,done,08/15/2002,
+MPI_Type_size,1,1,2,1,Rob,,done,08/15/2002,
+MPI_Type_lb,1,1,2,1,Rob,,done,10/08/2002,
+MPI_Type_ub,1,1,2,1,Rob,,done,10/08/2002,
+MPI_Type_commit,1,1,2,1,Rob,,,done,
+MPI_Type_free,1,1,2,1,Rob,,,done,
+MPI_Get_elements,,,,,Rob,,,done,
+MPI_Pack,1,1,2,1,Rob,,done,08/16/2002,
+MPI_Unpack,1,1,2,1,Rob,,done,08/16/2002,
+MPI_Pack_size,1,1,2,1,Rob,,done,08/15/2002,
 
 Collective Communication
 
