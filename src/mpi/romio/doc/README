@@ -9,5 +9,5 @@ dtype.ps.gz: Explains how I/O performance improves when users use derived
 ext2ph.ps.gz: For collective I/O, ROMIO uses a generalized version of 
               the algorithm described in this paper.
 
-users-guide.ps.gz: User's Guide for ROMIO
+users-guide.ps.gz: ROMIO Users Guide
 
