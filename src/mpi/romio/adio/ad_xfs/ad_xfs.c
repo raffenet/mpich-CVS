@@ -17,7 +17,7 @@ struct ADIOI_Fns_struct ADIO_XFS_operations = {
     ADIOI_XFS_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
-    ADIOI_XFS_SeekIndividual, /* SeekIndividual */
+    ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_XFS_Fcntl, /* Fcntl */
     ADIOI_XFS_SetInfo, /* SetInfo */
     ADIOI_GEN_ReadStrided, /* ReadStrided */

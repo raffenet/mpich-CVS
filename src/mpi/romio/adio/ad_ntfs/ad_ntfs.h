@@ -60,7 +60,5 @@ void ADIOI_NTFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       *error_code);
 void ADIOI_NTFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_NTFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
-ADIO_Offset ADIOI_NTFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
-                       int whence, int *error_code);
 
 #endif

@@ -16,7 +16,7 @@ struct ADIOI_Fns_struct ADIO_NTFS_operations = {
     ADIOI_NTFS_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
-    ADIOI_NTFS_SeekIndividual, /* SeekIndividual */
+    ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_NTFS_Fcntl, /* Fcntl */
     ADIOI_GEN_SetInfo, /* SetInfo */
     ADIOI_GEN_ReadStrided, /* ReadStrided */
