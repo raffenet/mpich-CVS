@@ -73,17 +73,12 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( *datatype, datatype_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( datatype, "datatype", mpi_errno );
-	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
