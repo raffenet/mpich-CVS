@@ -15,6 +15,7 @@ fi
 # Default choices
 do_codingcheck=yes
 do_geterrmsgs=yes
+do_bindings=yes
 #
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
@@ -30,6 +31,13 @@ for arg in "$@" ; do
     -without-errmsgs|--without-errmsgs)
     do_geterrmsgs=no
     ;;
+    -with-bindings|--with-bindings)
+    do_bindings=yes
+    ;;
+    -without-bindings|--without-bindings)
+    do_bindings=no
+    ;;
+
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-codecheck | --without-codecheck ] 
@@ -111,31 +119,34 @@ EOF
 fi
 #
 # Create the bindings if necessary 
-if [ ! -s src/binding/f77/abortf.c ] ; then 
-    build_f77=yes
-elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
-    build_f77=yes
-else
-    build_f77=no
-fi
-if [ $build_f77 = "yes" ] ; then
-    echo "Building Fortran 77 interface"
-    (cd src/binding/f77 ; ./buildiface )
-fi
-if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
-    build_cxx=yes
-elif find -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
-    build_cxx=yes
-else
-    build_cxx=no
-fi
-if [ $build_cxx = "yes" ] ; then
-    echo "Building C++ interface"
-#    File code still needs work
-#    if [ ! -d src/mpi/romio ] ; then
-        otherarg="-noromio"
-#    fi
-    (cd src/binding/cxx ; ./buildiface -nosep $otherarg )
+if [ $do_bindings = "yes" ] ; then
+    if [ ! -s src/binding/f77/abortf.c ] ; then 
+	build_f77=yes
+    elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
+	build_f77=yes
+    else
+	build_f77=no
+    fi
+
+    if [ $build_f77 = "yes" ] ; then
+	echo "Building Fortran 77 interface"
+	(cd src/binding/f77 ; ./buildiface )
+    fi
+    if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
+	build_cxx=yes
+    elif find -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
+	build_cxx=yes
+    else
+	build_cxx=no
+    fi
+    if [ $build_cxx = "yes" ] ; then
+	echo "Building C++ interface"
+    #    File code still needs work
+    #    if [ ! -d src/mpi/romio ] ; then
+	    otherarg="-noromio"
+    #    fi
+	(cd src/binding/cxx ; ./buildiface -nosep $otherarg )
+    fi
 fi
 # Build simplemake if necessary
 made_simplemake=no
@@ -305,13 +316,13 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     # skip *only* files provided by an outside source
     # vipl.h is probably ok, even though copyrighted.  Question:
     # Should there be three versions or just one?
-    maint/codingcheck -skipfile=./src/pmi/impls/winmpd/crypt.c \
-		      -skipfile=./src/pmi/impls/winmpd/des.c \
-		      -skipfile=./src/pmi/impls/winmpd/des.h \
-		      -skipfile=./src/pmi/impls/mpd/proxy.c \
-		      -skipfile=./src/pmi/impls/mpd/sigcatcher.c \
-		      -skipfile=./src/pmi/impls/mpd/sleeploop.c \
-		      -skipfile=./src/pmi/impls/mpd/infloop.c \
+    maint/codingcheck -skipfile=./src/pmi/winmpd/crypt.c \
+		      -skipfile=./src/pmi/winmpd/des.c \
+		      -skipfile=./src/pmi/winmpd/des.h \
+		      -skipfile=./src/pm/mpd/proxy.c \
+		      -skipfile=./src/pm/mpd/sigcatcher.c \
+		      -skipfile=./src/pm/mpd/sleeploop.c \
+		      -skipfile=./src/pm/mpd/infloop.c \
 		      -skipfile=./src/mpid/mm/include/vipl.h \
 		      -skipfile=./src/mpid/mm/src/via/vipl.h \
 		      -skipfile=./src/mpid/mm/src/viardma/vipl.h \
