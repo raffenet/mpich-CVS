@@ -4,3 +4,4 @@ configure
 config.status
 config.system
 config.log
+*.cache

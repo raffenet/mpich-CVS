@@ -4,5 +4,6 @@ sendrecv
 wtime
 netpipe
 patterns
+srtest
 Debug*
 Release*
