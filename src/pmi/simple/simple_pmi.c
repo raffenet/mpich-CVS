@@ -155,7 +155,7 @@ int PMI_Init( int *spawned )
     else
 	PMI_spawned = 0;
     if (PMI_spawned)
-	*spawned = 1;    
+	*spawned = 1;
     else
 	*spawned = 0;
 
@@ -490,7 +490,9 @@ int PMI_Spawn_multiple(int count,
         strcat(buf,tempbuf);
         for (i=0; i < preput_keyval_size; i++)
         { 
-	    sprintf(tempbuf,"preput_%d=%s:%s ",i,preput_keyval_vector[i].key,preput_keyval_vector[i].val);
+	    sprintf(tempbuf,"preput_key_%d=%s ",i,preput_keyval_vector[i].key);
+	    strcat(buf,tempbuf); 
+	    sprintf(tempbuf,"preput_val_%d=%s ",i,preput_keyval_vector[i].val);
 	    strcat(buf,tempbuf); 
         } 
 
