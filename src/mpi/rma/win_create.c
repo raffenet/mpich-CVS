@@ -21,18 +21,6 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Win_create PMPI_Win_create
-
-#ifndef MPID_WIN_PREALLOC 
-#define MPID_WIN_PREALLOC 1
-#endif
-
-/* Preallocated op objects */
-MPID_Win MPID_Win_direct[MPID_WIN_PREALLOC];
-MPIU_Object_alloc_t MPID_Win_mem = { 0, 0, 0, 0, MPID_WIN, 
-					    sizeof(MPID_Win), 
-					    MPID_Win_direct,
-					    MPID_WIN_PREALLOC, };
-
 #endif
 
 #undef FUNCNAME
