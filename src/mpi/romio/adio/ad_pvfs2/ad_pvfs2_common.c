@@ -49,7 +49,7 @@ void ADIOI_PVFS2_Init(int *error_code )
 		return;
 	}
 
-	ret = PVFS_util_parse_pvfstab(NULL, &ADIOI_PVFS2_mntlist);
+	ret = PVFS_util_parse_pvfstab(&ADIOI_PVFS2_mntlist);
 	if (ret < 0) {
 	    /* XXX: better error handling */
 	    fprintf(stderr, "error parsing pvfstab\n");

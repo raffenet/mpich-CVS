@@ -30,9 +30,9 @@ void ADIOI_PVFS2_Delete(char *filename, int *error_code)
     ADIOI_PVFS2_makecredentials(&credentials);
 
     /* given the filename, figure out which pvfs filesystem it is on */
-    for (i=0; i<ADIOI_PVFS2_mntlist.nr_entry; i++) {
+    for (i=0; i<ADIOI_PVFS2_mntlist.ptab_count; i++) {
 	ret = PVFS_util_remove_dir_prefix(filename, 
-		ADIOI_PVFS2_mntlist.ptab_p[i].local_mnt_dir, 
+		ADIOI_PVFS2_mntlist.ptab_array[i].mnt_dir, 
 		pvfs_path, PVFS_NAME_MAX);
 	if (ret == 0) {
 	    mnt_index = i;

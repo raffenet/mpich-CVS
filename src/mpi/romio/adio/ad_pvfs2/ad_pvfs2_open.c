@@ -138,9 +138,9 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 
     if (rank == fd->hints->ranklist[0]) {
 	/* given the filename, figure out which pvfs filesystem it is on */
-	for(i=0; i<ADIOI_PVFS2_mntlist.nr_entry; i++) {
+	for(i=0; i<ADIOI_PVFS2_mntlist.ptab_count; i++) {
 	    ret = PVFS_util_remove_dir_prefix(fd->filename, 
-		    ADIOI_PVFS2_mntlist.ptab_p[i].local_mnt_dir, 
+		    ADIOI_PVFS2_mntlist.ptab_array[i].mnt_dir, 
 		    pvfs_path, PVFS_NAME_MAX);
 	    if (ret == 0) {
 		mnt_index = i;
