@@ -166,7 +166,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].ch.shm_state = 0;
 	vc_table[p].ch.shm_next_reader = NULL;
 	vc_table[p].ch.shm_next_writer = NULL;
-	vc_table[p].ch.bShm = FALSE;
     }
     pg->vc_table = vc_table;
     
@@ -250,21 +249,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     bc_length = val_max_sz;
     bc_orig = business_card;
-
-    /*
-    mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
-	return mpi_errno;
-    }
-    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
-	return mpi_errno;
-    }
-    */
 
 #ifdef HAVE_WINDOWS_H
     {

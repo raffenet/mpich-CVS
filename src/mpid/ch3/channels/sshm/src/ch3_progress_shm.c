@@ -99,8 +99,6 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 		   device is not expecting any more data for request.  As a result, the channels posts a read for another
 		   packet */
 		MPIDI_DBG_PRINTF((65, FCNAME, "finished receiving iovec, calling CH3U_Handle_recv_req()"));
-		/* decrement the number of active reads */
-		MPIDI_CH3I_shm_read_active--;
 		MPIDI_CH3U_Handle_recv_req(vc, req);
 		if (req->dev.iov_count == 0)
 		{

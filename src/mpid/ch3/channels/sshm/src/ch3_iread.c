@@ -28,11 +28,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    /* increment the number of active reads */
-    MPIDI_CH3I_shm_read_active++;
-    /*MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT;*/
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "vc.bShm == TRUE"));
     index = vc->ch.read_shmq->head_index;
     if (vc->ch.read_shmq->packet[index].avail == MPIDI_CH3I_PKT_EMPTY)
     {
@@ -48,7 +43,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
     num_bytes = pkt_ptr->num_bytes;
 #ifdef MPICH_DBG_OUTPUT
-    /*assert(num_bytes > 0);*/
     if (num_bytes < 1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq", 0);
@@ -119,8 +113,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     else
     {
 	/* FIXME: excessive recursion... */
-	/* decrement the number of active reads */
-	MPIDI_CH3I_shm_read_active--;
 	MPIDI_CH3U_Handle_recv_req(vc, rreq);
 	MPIDI_DBG_PRINTF((60, FCNAME, "called handle_recv_req"));
     }

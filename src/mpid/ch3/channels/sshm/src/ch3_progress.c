@@ -6,10 +6,6 @@
 
 #include "ch3i_progress.h"
 
-int MPIDI_CH3I_shm_read_active = 0;
-int MPIDI_CH3I_shm_write_active = 0;
-int MPIDI_CH3I_active_flag = 0;
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
@@ -117,7 +113,6 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-		vc_ptr->ch.bShm = TRUE;
 		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 		vc_ptr->ch.shm_reading_pkt = TRUE;
@@ -225,7 +220,7 @@ int MPIDI_CH3I_Progress_finalize()
     MPIR_Nest_incr();
     {
 	NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
-	shutting_down = TRUE;
+	/*shutting_down = TRUE;*/
 	NMPI_Barrier(MPI_COMM_WORLD);
     }
     MPIR_Nest_decr();
