@@ -56,7 +56,8 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	if (qcar_ptr)
 	{
 	    /* merge the unex car with the posted car using the method in the vc */
-	    qcar_ptr->vc_ptr->merge_with_unexpected(qcar_ptr, car_ptr);
+	    /*qcar_ptr->vc_ptr->merge_with_unexpected(qcar_ptr, car_ptr);*/
+	    car_ptr->vc_ptr->merge_with_unexpected(qcar_ptr, car_ptr);
 	}
 	else
 	{
@@ -142,7 +143,10 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
     {
 	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    mm_dec_cc(car_ptr->request_ptr);
+    if (car_ptr->request_ptr != NULL)
+    {
+	mm_dec_cc(car_ptr->request_ptr);
+    }
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
 }
@@ -236,185 +240,5 @@ int mm_cq_test()
     }
 
     MM_EXIT_FUNC(MM_CQ_TEST);
-    return MPI_SUCCESS;
-}
-
-int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
-{
-    MM_Car *rndv_car_ptr;
-    MPID_Rndv_data_pkt *rndv_data_ptr;
-    MM_Car *sender_car_ptr;
-
-    MM_ENTER_FUNC(MM_POST_RNDV_DATA_SEND);
-
-    /* get a rndv car and the sender car */
-    rndv_car_ptr = mm_car_alloc();
-    sender_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr;
-
-    /* initialize the rndv car for sending a rndv data header packet */
-    sender_car_ptr->vc_ptr->setup_packet_car(
-	sender_car_ptr->vc_ptr, 
-	MM_WRITE_CAR,
-	sender_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
-	rndv_car_ptr);
-    
-    /* set up the rndv data header packet */
-    rndv_data_ptr = &rndv_car_ptr->msg_header.pkt.u.rdata;
-    rndv_data_ptr->receiver_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr;
-    rndv_data_ptr->size = 0; /* How do I figure out this value? */
-    rndv_data_ptr->type = MPID_RNDV_DATA_PKT;
-
-    rndv_car_ptr->next_ptr = sender_car_ptr->next_ptr;
-
-    sender_car_ptr->vc_ptr->post_write(sender_car_ptr->vc_ptr, rndv_car_ptr);
-
-    MM_EXIT_FUNC(MM_POST_RNDV_DATA_SEND);
-    return MPI_SUCCESS;
-}
-
-int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
-{
-    MM_Car *rndv_car_ptr;
-    MPID_Rndv_clear_to_send_pkt *rndv_cts_ptr;
-
-    MM_ENTER_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
-
-    rndv_car_ptr = mm_car_alloc();
-    
-    posted_car_ptr->vc_ptr->setup_packet_car(
-	posted_car_ptr->vc_ptr,
-	MM_WRITE_CAR,
-	posted_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
-	rndv_car_ptr);
-
-    /* set up the cts header packet */
-    rndv_cts_ptr = &rndv_car_ptr->msg_header.pkt.u.cts;
-    rndv_cts_ptr->receiver_car_ptr = posted_car_ptr;
-    rndv_cts_ptr->sender_car_ptr = rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr;
-    rndv_cts_ptr->type = MPID_RNDV_CLEAR_TO_SEND_PKT;
-
-    posted_car_ptr->vc_ptr->post_write(posted_car_ptr->vc_ptr, rndv_car_ptr);
-
-    MM_EXIT_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
-    return MPI_SUCCESS;
-}
-
-int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
-{
-    MM_Car *car_ptr;
-
-    MM_ENTER_FUNC(MM_ENQUEUE_REQUEST_TO_SEND);
-    dbg_printf("mm_enqueue_request_to_send\n");
-
-    car_ptr = mm_car_alloc();
-
-    car_ptr->msg_header = unex_head_car_ptr->msg_header;
-    car_ptr->buf_ptr = &car_ptr->msg_header.buf;
-    car_ptr->qnext_ptr = NULL;
-
-    /* enqueue the car in the unexpected queue */
-    if (MPID_Process.unex_q_tail == NULL)
-	MPID_Process.unex_q_head = car_ptr;
-    else
-	MPID_Process.unex_q_tail->qnext_ptr = car_ptr;
-    MPID_Process.unex_q_tail = car_ptr;
-
-    MM_EXIT_FUNC(MM_ENQUEUE_REQUEST_TO_SEND);
-    return MPI_SUCCESS;
-}
-
-int mm_create_post_unex(MM_Car *unex_head_car_ptr)
-{
-    MPID_Request *request_ptr;
-    MM_Car *car_ptr;
-    MM_Segment_buffer *buf_ptr;
-    MPID_Header_pkt *hdr_ptr;
-
-    MM_ENTER_FUNC(MM_CREATE_POST_UNEX);
-
-    hdr_ptr = &unex_head_car_ptr->msg_header.pkt.u.hdr;
-
-    /* XFER_INIT */
-    request_ptr = mm_request_alloc();
-    if (request_ptr == NULL)
-    {
-	err_printf("mm_create_post_unex failed to allocate a request.\n");
-	MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
-	return -1;
-    }
-
-    request_ptr->comm = MPIR_Process.comm_world; /* ??? We don't know the comm yet. */
-    request_ptr->mm.tag = hdr_ptr->tag;
-    request_ptr->mm.op_valid = TRUE;
-    request_ptr->cc = 0;
-    request_ptr->cc_ptr = &request_ptr->cc;
-    /* END XFER_INIT */
-
-    /* XFER_RECV_OP */
-    request_ptr->mm.next_ptr = NULL;
-    request_ptr->mm.user_buf.recv = NULL;
-    request_ptr->mm.count = hdr_ptr->size;
-    request_ptr->mm.dtype = MPI_BYTE;
-    request_ptr->mm.first = 0;
-    request_ptr->mm.size = hdr_ptr->size;
-    request_ptr->mm.last = hdr_ptr->size;
-
-    /* save the packet header */
-    car_ptr = &request_ptr->mm.rcar[0];
-    car_ptr->msg_header.pkt = unex_head_car_ptr->msg_header.pkt;
-
-    /* set up the read car */
-    car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
-    car_ptr->src = hdr_ptr->src;
-    car_ptr->request_ptr = request_ptr;
-    car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
-    car_ptr->buf_ptr = &car_ptr->msg_header.buf;
-    car_ptr->opnext_ptr = &request_ptr->mm.rcar[1];
-    car_ptr->next_ptr = &request_ptr->mm.rcar[1];
-    car_ptr->qnext_ptr = NULL;
-    /*mm_inc_cc(request_ptr);*/ /* the head car has already been received */
-
-    /* use rcar[1] as the data car */
-    car_ptr->next_ptr = &request_ptr->mm.rcar[1];
-    car_ptr = car_ptr->next_ptr;
-    
-    /* allocate a temporary buffer to hold the unexpected data */
-    car_ptr->type = MM_READ_CAR;
-    car_ptr->src = /*unex_head_car_ptr->src;*/ hdr_ptr->src;
-    car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
-    car_ptr->request_ptr = request_ptr;
-    car_ptr->freeme = FALSE;
-    car_ptr->next_ptr = NULL;
-    car_ptr->opnext_ptr = NULL;
-    car_ptr->qnext_ptr = NULL;
-    mm_inc_cc(request_ptr);
-
-    buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
-    buf_ptr->type = MM_TMP_BUFFER;
-    buf_ptr->tmp.buf = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.u.hdr.size);
-    buf_ptr->tmp.len = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
-    buf_ptr->tmp.num_read = 0;
-    /* END XFER_RECV_OP */
-    
-    /* XFER_START */
-    /* enqueue the head car in the unexpected queue so it can be matched */
-    if (MPID_Process.unex_q_tail == NULL)
-    {
-	MPID_Process.unex_q_head = &request_ptr->mm.rcar[0];
-    }
-    else
-    {
-	MPID_Process.unex_q_tail->qnext_ptr = &request_ptr->mm.rcar[0];
-    }
-    MPID_Process.unex_q_tail = &request_ptr->mm.rcar[0];
-    
-    if (hdr_ptr->type == MPID_EAGER_PKT)
-    {
-	/* post a read of the unexpected data */
-	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
-    }
-    /* END XFER_START */
-
-    MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
     return MPI_SUCCESS;
 }

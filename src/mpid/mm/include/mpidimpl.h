@@ -9,6 +9,7 @@
 #include "mpiimpl.h"
 #include "bsocket.h"
 #include "blockallocator.h"
+#include <assert.h>
 
 #ifdef USE_MPE_PROFILING
 #include "mm_mpe_prof.h"
@@ -125,6 +126,7 @@ typedef struct MPIDI_VC
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 	      int (*enqueue_read_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+	      int (*merge_unexpected_data)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length);
               int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 	      int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*reset_car)(struct MM_Car *car_ptr);

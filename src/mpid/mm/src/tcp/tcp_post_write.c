@@ -45,6 +45,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 	tcp_setup_packet_car(vc_ptr, MM_WRITE_CAR, car_ptr->dest, rndv_car_ptr);
 
+	rndv_car_ptr->request_ptr = car_ptr->request_ptr;
 	/* set up the rts header packet */
 	rndv_rts_ptr = &rndv_car_ptr->msg_header.pkt.u.hdr;
 	rndv_rts_ptr->context = car_ptr->msg_header.pkt.u.hdr.context;

@@ -185,6 +185,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	/* function pointers */
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
+	vc_ptr->merge_unexpected_data = tcp_merge_unexpected_data;
 	vc_ptr->post_write = tcp_post_write;
 	vc_ptr->reset_car = tcp_reset_car;
 	vc_ptr->post_read_pkt = tcp_post_read_pkt;
