@@ -30,29 +30,38 @@ public class PreviewState
         BorderStyle = state_border;
     }
 
-    public  static final String OVERLAP_RATIOS          = "OverlapRatios";
-    private static final int    OVERLAP_RATIOS_ID       = 0;
-    public  static final String CUMULATIVE_RATIOS       = "CumulativeRatios";
-    private static final int    CUMULATIVE_RATIOS_ID    = 1;
-    public  static final String CUMULATIVE_EXCLUSION    = "CumulativeExclusion";
-    private static final int    CUMULATIVE_EXCLUSION_ID = 2;
-    public  static final String FIT_MOST_LEGENDS        = "FitMostLegends";
-    private static final int    FIT_MOST_LEGENDS_ID     = 3;
+    public  static final String FIT_MOST_LEGENDS
+                                = "FitMostLegends";
+    private static final int    FIT_MOST_LEGENDS_ID     = 0;
+    public  static final String OVERLAP_INCLUSION
+                                = "OverlapInclusionRatio";
+    private static final int    OVERLAP_INCLUSION_ID    = 1;
+    public  static final String CUMULATIVE_INCLUSION
+                                = "CumulativeInclusionRatio";
+    private static final int    CUMULATIVE_INCLUSION_ID = 2;
+    public  static final String OVERLAP_EXCLUSION
+                                = "OverlapExclusionRatio";
+    private static final int    OVERLAP_EXCLUSION_ID    = 3;
+    public  static final String CUMULATIVE_EXCLUSION
+                                = "CumulativeExclusionRatio";
+    private static final int    CUMULATIVE_EXCLUSION_ID = 4;
 
-    private static       int    DisplayType             = OVERLAP_RATIOS_ID;
+    private static       int    DisplayType             = OVERLAP_INCLUSION_ID;
 
     public static void setDisplayType( String new_display_type )
     {
         if ( new_display_type.equals( FIT_MOST_LEGENDS ) )
             DisplayType = FIT_MOST_LEGENDS_ID;
+        else if ( new_display_type.equals( OVERLAP_INCLUSION ) )
+            DisplayType = OVERLAP_INCLUSION_ID;
+        else if ( new_display_type.equals( CUMULATIVE_INCLUSION ) )
+            DisplayType = CUMULATIVE_INCLUSION_ID;
+        else if ( new_display_type.equals( OVERLAP_EXCLUSION ) )
+            DisplayType = OVERLAP_EXCLUSION_ID;
         else if ( new_display_type.equals( CUMULATIVE_EXCLUSION ) )
-            DisplayType = CUMULATIVE_RATIOS_ID;
-        else if ( new_display_type.equals( CUMULATIVE_RATIOS ) )
-            DisplayType = CUMULATIVE_RATIOS_ID;
-        else if ( new_display_type.equals( OVERLAP_RATIOS ) )
-            DisplayType = OVERLAP_RATIOS_ID;
+            DisplayType = CUMULATIVE_EXCLUSION_ID;
         else
-            DisplayType = OVERLAP_RATIOS_ID;
+            DisplayType = OVERLAP_INCLUSION_ID;
     }
 
     private static        int    MinCategoryHeight          = 2;  
@@ -123,18 +132,75 @@ public class PreviewState
 
         CategoryWeight  twgt = null;
         int             idx, twgts_length;
-        float           height_per_wgt;
+        float           tot_wgt, height_per_wgt;
         int             jLevel, jDelta, jCenter;
         int             iLevel, iDelta, iCenter;
+        boolean         isInclusive;
 
         twgts_length = twgts.length;
-        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+        if (    DisplayType == CUMULATIVE_INCLUSION_ID
+             || DisplayType == CUMULATIVE_EXCLUSION_ID ) {
+            isInclusive = ( DisplayType == CUMULATIVE_INCLUSION_ID );
+            if ( isInclusive )
+                Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
+            else
+                Arrays.sort( twgts, CategoryWeight.EXCL_RATIO_ORDER );
+ 
+            if ( DisplayType == CUMULATIVE_INCLUSION_ID ) {
+                // Compute the pixel height per unit weight
+                tot_wgt = 0.0f;
+                for ( idx = 0; idx < twgts_length; idx++ ) {
+                    twgt = twgts[ idx ];
+                    if ( twgt.getCategory().isVisible() )
+                        tot_wgt += twgt.getRatio( isInclusive );
+                }
+                height_per_wgt = (float) jHeight / tot_wgt;
+            }
+            else
+                height_per_wgt = jHeight;
+
+            // set sub-rectangles' height from the bottom, ie. jHead+jTail
+            jLevel = jHead + jHeight;  // jLevel = jTail + 1
+            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
+                twgt = twgts[ idx ];
+                if ( twgt.getCategory().isVisible() ) {
+                    jDelta = (int) ( height_per_wgt
+                                   * twgt.getRatio( isInclusive ) + 0.5f );
+                    if ( jDelta > 0 ) {
+                        if ( jLevel > jHead ) {
+                            if ( jLevel-jDelta >= jHead ) {
+                                jLevel  -= jDelta;
+                                twgt.setPixelHeight( jDelta );
+                            }
+                            else {
+                                twgt.setPixelHeight( jLevel - jHead );
+                                jLevel = jHead;
+                            }
+                        }
+                        else
+                            twgt.setPixelHeight( 0 );
+                    }
+                    else
+                        twgt.setPixelHeight( 0 );
+                }
+                else
+                    twgt.setPixelHeight( 0 );
+            }
+        }
+        else if (    DisplayType == OVERLAP_INCLUSION_ID
+                  || DisplayType == OVERLAP_EXCLUSION_ID ) {
+            isInclusive = ( DisplayType == OVERLAP_INCLUSION_ID );
+            if ( isInclusive )
+                Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
+            else
+                Arrays.sort( twgts, CategoryWeight.EXCL_RATIO_ORDER );
             jLevel = Integer.MAX_VALUE; // JLevel should be named as JDelta_prev
             iDelta = iRange;
             for ( idx = twgts_length-1; idx >= 0; idx-- ) {
                 twgt = twgts[ idx ];
                 if ( twgt.getCategory().isVisible() ) {
-                    jDelta = (int) (twgt.getRatio() * jHeight + 0.5f);
+                    jDelta = (int) ( twgt.getRatio( isInclusive ) * jHeight
+                                   + 0.5f );
                     twgt.setPixelHeight( jDelta );
                     if ( jDelta >= jLevel )
                         iDelta -= MinCategorySeparation;
@@ -145,7 +211,8 @@ public class PreviewState
                     twgt.setPixelHeight( 0 );
             }
         }
-        else if ( DisplayType == FIT_MOST_LEGENDS_ID ) {
+        else { // if ( DisplayType == FIT_MOST_LEGENDS_ID )
+            Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
             int num_visible_twgts = 0;
             for ( idx = 0; idx < twgts_length; idx++ ) {
                 if ( twgts[ idx ].getCategory().isVisible() )
@@ -176,57 +243,11 @@ public class PreviewState
                     twgt.setPixelHeight( 0 );
             }
         }
-        else {
-            // Compute the pixel height per unit weight
-            float  tot_wgt = 0.0f;
-            for ( idx = 0; idx < twgts_length; idx++ ) {
-                twgt = twgts[ idx ];
-                if ( twgt.getCategory().isVisible() )
-                    tot_wgt += twgt.getRatio();
-            }
-            height_per_wgt = (float) jHeight / tot_wgt;
-
-            // Assume the input twgt[] is arranged in RATIO_ORDER
-            // Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
-
-            // set sub-rectangles' height from the bottom, ie. jHead+jTail
-            jLevel = jHead + jHeight;  // jLevel = jTail + 1
-            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
-                twgt = twgts[ idx ];
-                if ( twgt.getCategory().isVisible() ) {
-                    jDelta = (int) (height_per_wgt * twgt.getRatio() + 0.5f);
-                    if ( jDelta > 0 ) {
-                        if ( jLevel > jHead ) {
-                            if ( jLevel-jDelta >= jHead ) {
-                                jLevel  -= jDelta;
-                                twgt.setPixelHeight( jDelta );
-                            }
-                            else {
-                                twgt.setPixelHeight( jLevel - jHead );
-                                jLevel = jHead;
-                            }
-                        }
-                        else
-                            twgt.setPixelHeight( 0 );
-                    }
-                    else
-                        twgt.setPixelHeight( 0 );
-                }
-                else
-                    twgt.setPixelHeight( 0 );
-            }
-        }
-
-        /*
-        if ( DisplayType == CUMULATIVE_LEGENDS_ID )
-            Arrays.sort( twgts, CategoryWeight.INDEX_ORDER );
-        else // if ( DisplayType == CUMULATIVE_RATIOS || FIT_MOST_LEGENDS )
-            Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
-        */
 
         // Fill the color of the sub-rectangles from the bottom, ie. jHead+jTail
         int num_sub_rects_drawn = 0;
-        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+        if (    DisplayType == OVERLAP_INCLUSION_ID
+             || DisplayType == OVERLAP_EXCLUSION_ID ) {
             // iBoxXXXX : variables that twgt isn't cut by image border
             int iBoxHead, iBoxTail, iBoxWidth;
             jCenter = jHead  + jHeight / 2; // i.e. jCenter % jHead & jTail
@@ -323,7 +344,8 @@ public class PreviewState
         // Locate the sub-rectangle from the bottom, ie. jHead+jTail
         int jLevel, jDelta, jCenter;
         int iLevel, iDelta, iCenter;
-        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+        if (    DisplayType == OVERLAP_INCLUSION_ID
+             || DisplayType == OVERLAP_EXCLUSION_ID ) {
             int iImageWidth, iRange;
             // iBoxXXXX : variables that twgt isn't cut by image border
             int iBoxHead, iBoxTail, iBoxWidth;
