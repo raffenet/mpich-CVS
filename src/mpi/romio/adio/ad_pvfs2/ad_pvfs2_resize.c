@@ -11,7 +11,6 @@
 
 void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-#if 0
     int ret;
     ADIOI_PVFS2_fs *pvfs_fs;
 
@@ -23,9 +22,6 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     } else {
 	*error_code = MPI_SUCCESS;
     }
-#endif
-    /* pvfs2 does not yet have PVFS_sys_truncate */
-    *error_code = MPI_UNDEFINED;
 }
 
 /*
