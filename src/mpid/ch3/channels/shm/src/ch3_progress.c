@@ -169,6 +169,16 @@ int MPIDI_CH3I_Progress_finalize()
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
 
+    /*
+     * Wait for any pending communication to complete.  This prevents another process from hanging if it performs a send and then
+     * attempts to cancel it.
+     */
+    MPIR_Nest_incr();
+    {
+	NMPI_Barrier(MPI_COMM_WORLD);
+    }
+    MPIR_Nest_decr();
+    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     return MPI_SUCCESS;
