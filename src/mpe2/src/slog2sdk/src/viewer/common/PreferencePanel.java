@@ -157,12 +157,14 @@ public class PreferencePanel extends JPanel
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
 
+        //  Temporary disable it as this field is not being used
         lst_ACTIVE_REFRESH = new LabeledComboBox( "ACTIVE_REFRESH" );
         lst_ACTIVE_REFRESH.addItem( Boolean.TRUE );
         lst_ACTIVE_REFRESH.addItem( Boolean.FALSE );
         lst_ACTIVE_REFRESH.setToolTipText(
         "Whelther to let Jumpshot-4 actively update the Timeline canvas." );
         super.add( lst_ACTIVE_REFRESH );
+        lst_ACTIVE_REFRESH.setEnabled( false );
         /*
         fld_Y_AXIS_ROW_HEIGHT = new LabeledTextField( true,
                                     "Y_AXIS_ROW_HEIGHT",

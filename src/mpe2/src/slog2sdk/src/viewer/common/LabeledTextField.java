@@ -157,14 +157,14 @@ public class LabeledTextField extends JPanel
 
     public int getInteger()
     {
-        if ( self_listener != null )
-            return Integer.parseInt( self_listener.getLastUpdatedText() );
-        else
-            try {
+        try {
+            if ( self_listener != null )
+                return Integer.parseInt( self_listener.getLastUpdatedText() );
+            else
                 return Integer.parseInt( fld.getText() );
-            } catch ( NumberFormatException err ) {
-                return Integer.MIN_VALUE;
-            }
+        } catch ( NumberFormatException err ) {
+            return Integer.MIN_VALUE;
+        }
     }
 
     public void setFloat( float fval )
@@ -187,15 +187,24 @@ public class LabeledTextField extends JPanel
 
     public double getDouble()
     {
-        if ( self_listener != null )
-            return Double.parseDouble( self_listener.getLastUpdatedText() );
-        else
-            return Double.parseDouble( fld.getText() );
+        try {
+            if ( self_listener != null )
+                return Double.parseDouble( self_listener.getLastUpdatedText() );
+            else
+                return Double.parseDouble( fld.getText() );
+        } catch ( NumberFormatException err ) {
+            return Double.MIN_VALUE;
+        }
     }
 
     public void setEditable( boolean flag )
     {
         fld.setEditable( flag );
+    }
+
+    public void setEnabled( boolean flag )
+    {
+        fld.setEnabled( flag );
     }
 
     public void addActionListener( ActionListener listener )

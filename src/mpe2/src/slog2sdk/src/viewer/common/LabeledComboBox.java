@@ -74,6 +74,11 @@ public class LabeledComboBox extends JPanel
         lst.setEditable( flag );
     }
 
+    public void setEnabled( boolean flag )
+    {
+        lst.setEnabled( flag );
+    }
+
     public void addItem( Object new_item )
     {
         lst.addItem( new_item );

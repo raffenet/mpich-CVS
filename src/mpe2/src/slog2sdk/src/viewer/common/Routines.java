@@ -22,6 +22,7 @@ public class Routines
     private static Cursor   hand_open_cursor    = null;
     private static Cursor   hand_close_cursor   = null;
     private static Cursor   zoom_plus_cursor    = null;
+    private static Cursor   zoom_minus_cursor   = null;
 
     private static Toolkit  toolkit             = null;
 
@@ -83,9 +84,12 @@ public class Routines
         img  = this.getBestCursorImage( "HandCloseUpLeft25.gif" );
         hand_close_cursor = toolkit.createCustomCursor( img, pt,
                                                         "Hand Close" );
-        img  = this.getBestCursorImage( "ZoomUpLeft.gif" );
+        img  = this.getBestCursorImage( "ZoomPlusUpLeft25.gif" );
         zoom_plus_cursor  = toolkit.createCustomCursor( img, pt,
                                                         "Zoom Plus" );
+        img  = this.getBestCursorImage( "ZoomMinusUpLeft25.gif" );
+        zoom_minus_cursor = toolkit.createCustomCursor( img, pt,
+                                                        "Zoom Minus" );
     }
 
     public static void setAllCursors( Component comp, Cursor csr )
@@ -127,6 +131,21 @@ public class Routines
     public static void setAllCursorsToZoomPlus( Component comp )
     {
         setAllCursors( comp, zoom_plus_cursor );
+    }
+
+    public static void setAllCursorsToZoomMinus( Component comp )
+    {
+        setAllCursors( comp, zoom_minus_cursor );
+    }
+
+    public static boolean isCursorSetToZoomPlus( Component comp )
+    {
+        return comp.getCursor() == zoom_plus_cursor;
+    }
+
+    public static boolean isCursorSetToZoomMinus( Component comp )
+    {
+        return comp.getCursor() == zoom_minus_cursor;
     }
 
 

@@ -11,6 +11,7 @@ package viewer.common;
 
 import java.awt.Container;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -36,9 +37,20 @@ public class PreferenceFrame extends JFrame
         Container root_panel = this.getContentPane();
         root_panel.setLayout( new BoxLayout( root_panel, BoxLayout.Y_AXIS ) );
 
-        pptys_panel = new PreferencePanel();
-        pptys_panel.updateAllFields();
-        root_panel.add( new JScrollPane( pptys_panel ) );
+        JScrollPane  scroller;
+            pptys_panel = new PreferencePanel();
+            pptys_panel.updateAllFields();
+            scroller   = new JScrollPane( pptys_panel );
+            Dimension screen_size = Routines.getScreenSize();
+            scroller.setMinimumSize(
+                     new Dimension( 100, 100 ) );
+            scroller.setMaximumSize(
+                     new Dimension( screen_size.width / 2,
+                                    screen_size.height * 4/5 ) );
+            scroller.setPreferredSize(
+                     new Dimension( pptys_panel.getPreferredSize().width * 10/9,
+                                    screen_size.height * 3/5 ) );
+        root_panel.add( scroller );
 
         JPanel mid_panel = new JPanel();
         mid_panel.setLayout( new BoxLayout( mid_panel, BoxLayout.X_AXIS ) );
@@ -87,6 +99,7 @@ public class PreferenceFrame extends JFrame
     {
         pptys_panel.updateAllParameters();
     }
+
 
     public void actionPerformed( ActionEvent evt )
     {

@@ -29,12 +29,12 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.8";
+    private static final String       VERSION_INFO             = "1.0.0.9";
     private static       String       setupfile_path           = null;
 
     public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
     public  static       short        INIT_SLOG2_LEVEL_READ    = 3;
-    public  static       float        SCREEN_HEIGHT_RATIO      = 0.6f;
+    public  static       float        SCREEN_HEIGHT_RATIO      = 0.5f;
     public  static       float        TIME_SCROLL_UNIT_RATIO   = 0.01f;
 
     public  static       String       Y_AXIS_ROOT_LABEL        = "SLOG-2";
@@ -243,13 +243,17 @@ public class Parameters
         if ( ppty_val != null )
             BACKGROUND_COLOR = Const.parseBackgroundColor( ppty_val );
 
-        // ppty_val = pptys.getProperty( "Y_AXIS_ROW_HEIGHT" );
-        // if ( ppty_val != null )
-        //     Y_AXIS_ROW_HEIGHT = Integer.parseInt( ppty_val );
+        /*
+        ppty_val = pptys.getProperty( "Y_AXIS_ROW_HEIGHT" );
+        if ( ppty_val != null )
+            Y_AXIS_ROW_HEIGHT = Integer.parseInt( ppty_val );
+        */
+        /*
         ppty_val = pptys.getProperty( "ACTIVE_REFRESH" );
         if ( ppty_val != null )
             ACTIVE_REFRESH =    ppty_val.equalsIgnoreCase( "true" )
                              || ppty_val.equalsIgnoreCase( "yes" );
+        */
         ppty_val = pptys.getProperty( "ROW_RESIZE_MODE" );
         if ( ppty_val != null )
             ROW_RESIZE_MODE = ppty_val;
