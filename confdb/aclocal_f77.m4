@@ -16,6 +16,7 @@ dnl   lower -> UPPER                  F77_NAME_UPPER
 dnl   lower_lower -> lower__          F77_NAME_LOWER_2USCORE
 dnl   mixed -> mixed                  F77_NAME_MIXED
 dnl   mixed -> mixed_                 F77_NAME_MIXED_USCORE
+dnl   mixed -> UPPER@STACK_SIZE       F77_NAME_UPPER_STDCALL
 dnl.ve
 dnl If an action is specified, it is executed instead.
 dnl 
@@ -26,7 +27,10 @@ dnl compiling a Fortran program and running strings -a over it.  Depending on
 dnl strings is a bad idea, so instead we try compiling and linking with a 
 dnl C program, since that is why we are doing this anyway.  A similar approach
 dnl is used by FFTW, though without some of the cases we check (specifically, 
-dnl mixed name mangling)
+dnl mixed name mangling).  STD_CALL not only specifies a particular name
+dnl mangling convention (adding the size of the calling stack into the function
+dnl name, but also the stack management convention (callee cleans the stack,
+dnl and arguments are pushed onto the stack from right to left)
 dnl
 dnl D*/
 dnl
@@ -45,7 +49,7 @@ pac_cv_prog_f77_name_mangle,
    # external name format (rs6000 xlf, for example).
    rm -f conftest*
    cat > conftest.f <<EOF
-       subroutine MY_name( a )
+       subroutine MY_name( i )
        return
        end
 EOF
@@ -70,6 +74,9 @@ EOF
      AC_TRY_LINK(,my_name_();,pac_cv_prog_f77_name_mangle="lower underscore")
    fi
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+     AC_TRY_LINK(void __stdcall MY_NAME(int);,MY_NAME(0);,pac_cv_prog_f77_name_mangle="upper stdcall")
+   fi
+   if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
      AC_TRY_LINK(,MY_NAME();,pac_cv_prog_f77_name_mangle="upper")
    fi
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -89,6 +96,7 @@ EOF
 # Make the actual definition
 pac_namecheck=`echo X$pac_cv_prog_f77_name_mangle | sed 's/ /-/g'`
 ifelse([$1],,[
+pac_cv_test_stdcall=""
 case $pac_namecheck in
     X) AC_MSG_WARN([Cannot determine Fortran naming scheme]) ;;
     Xlower) AC_DEFINE(F77_NAME_LOWER,1,[Define if Fortran names are lowercase]) 
@@ -109,9 +117,18 @@ case $pac_namecheck in
     Xmixed-underscore) AC_DEFINE(F77_NAME_MIXED_USCORE,1,[Define if Fortran names preserve the original case and add a trailing underscore]) 
 	F77_NAME_MANGLE="F77_NAME_MIXED_USCORE"
 	;;
+    Xupper-stdcall) AC_DEFINE(F77_NAME_UPPER,1,[Define if Fortran names are uppercase])
+        F77_NAME_MANGLE="F77_NAME_UPPER_STDCALL"
+        pac_cv_test_stdcall="__stdcall"
+        ;;
     *) AC_MSG_WARN([Unknown Fortran naming scheme]) ;;
 esac
 AC_SUBST(F77_NAME_MANGLE)
+if test "X$pac_cv_test_stdcall" = "X" ; then
+        AC_DEFINE(STDCALL,,[Define calling convention])
+else
+        AC_DEFINE(STDCALL,__stdcall,[Define calling convention])
+fi
 ],[$1])
 ])
 dnl

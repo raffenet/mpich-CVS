@@ -36,7 +36,7 @@ if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
      fi
   fi
   # Look for MPILIB first if it is defined
-  AC_SEARCH_LIBS(MPI_Init,$MPILIB mpi mpich)
+  AC_SEARCH_LIBS(MPI_Init,$MPILIB mpi mpich mpich2)
   if test "$ac_cv_search_MPI_Init" = "no" ; then
     ifelse($2,,
     AC_MSG_ERROR([Could not find MPI library]),[$2])
@@ -179,10 +179,21 @@ case $ac_mpi_type in
         mpichnt)
         dnl
         dnl This isn't adequate, but it helps with using MPICH-NT/SDK.gcc
-        CFLAGS="-I$with_mpichnt/include"
-        CPPFLAGS="-I$with_mpichnt/include"
-        LDFLAGS="-L$with_mpichnt/lib"
-        MPILIBNAME="mpich"
+	save_CFLAGS="$CFLAGS"
+        CFLAGS="$save_CFLAGS -I$with_mpichnt/include"
+        save_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$save_CPPFLAGS -I$with_mpichnt/include"
+        save_LDFLAGS="$LDFLAGS"
+        LDFLAGS="$save_LDFLAGS -L$with_mpichnt/lib"
+        AC_CHECK_LIB(mpich,MPI_Init,found="yes",found="no")
+        if test "$found" = "no" ; then
+          AC_CHECK_LIB(mpich2,MPI_Init,found="yes",found="no")
+        fi
+        if test "$found" = "no" ; then
+          CFLAGS=$save_CFLAGS
+          CPPFLAGS=$save_CPPFLAGS
+          LDFLAGS=$save_LDFLAGS
+        fi
         ;;
 
 	lammpi)
