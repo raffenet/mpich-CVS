@@ -89,14 +89,18 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_CREATE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_CREATE);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
+    
     op_ptr = (MPID_Op *)MPIU_Handle_obj_alloc( &MPID_Op_mem );
     if (!op_ptr)
     {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Op" );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+					  "**nomem %s", "MPI_Op" );
 	goto fn_fail;
     }
 
@@ -105,17 +109,25 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     op_ptr->kind     = commute ? MPID_OP_USER : MPID_OP_USER_NONCOMMUTE;
     op_ptr->function.c_function = (void (*)(const void *, void *, const int *, const MPI_Datatype *))function;
     MPIU_Object_set_ref(op_ptr,1);
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				    FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_op_create", "**mpi_op_create %p %d %p", function, commute, op);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_op_create",
+	    "**mpi_op_create %p %d %p", function, commute, op);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 

@@ -74,9 +74,14 @@ int MPI_Type_create_subarray(int ndims,
     MPID_Datatype *new_dtp;
 
     MPID_Datatype *datatype_ptr = NULL;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
+
     MPIR_Nest_incr();
     
     /* Get handles to MPI objects. */
@@ -85,8 +90,6 @@ int MPI_Type_create_subarray(int ndims,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
 	    /* Check parameters */
 	    MPIR_ERRTEST_ARGNONPOS(ndims, "ndims", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_sizes, "array_of_sizes", mpi_errno);
@@ -154,14 +157,14 @@ int MPI_Type_create_subarray(int ndims,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If datatype_ptr is not valid, it will be reset to null */
-            if (mpi_errno != MPI_SUCCESS) {
-		goto fn_exit;
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
     /* TODO: CHECK THE ERROR RETURNS FROM ALL THESE!!! */
 
     /* TODO: GRAB EXTENT WITH A MACRO OR SOMETHING FASTER */
@@ -281,10 +284,7 @@ int MPI_Type_create_subarray(int ndims,
      */
 
     /* Save contents */
-    ints = (int *) MPIU_Malloc((3 * ndims + 2) * sizeof(int));
-    /* --BEGIN ERROR HANDLING-- */
-    MPIU_Assert(ints != NULL);
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKLMEM_MALLOC_ORJUMP(ints, int *, (3 * ndims + 2) * sizeof(int), mpi_errno, "content description");
 
     ints[0] = ndims;
     for (i=0; i < ndims; i++) {
@@ -308,25 +308,28 @@ int MPI_Type_create_subarray(int ndims,
 					   NULL,
 					   &oldtype);
 
-    MPIU_Free(ints);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /* ... end of body of routine ... */
+    
   fn_exit:
     MPIR_Nest_decr();
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_create_subarray", 
-	"**mpi_type_create_subarray %d %p %p %p %d %D %p", 
-				     ndims, array_of_sizes, array_of_subsizes,
-	array_of_starts, order, oldtype, newtype);
-#endif
+    MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_create_subarray", 
+	    "**mpi_type_create_subarray %d %p %p %p %d %D %p", ndims, array_of_sizes, array_of_subsizes,
+	    array_of_starts, order, oldtype, newtype);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

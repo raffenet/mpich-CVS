@@ -114,20 +114,13 @@ int MPI_Finalize( void )
     MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
 
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
 
+    MPID_CS_ENTER();
     MPID_MPI_FINALIZE_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
     
-    /* ... body of routine ...  */
+    /* ... body of routine ... */
+    
 #if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
     rank = MPIR_Process.comm_world->rank;
 #endif    
@@ -200,21 +193,24 @@ int MPI_Finalize( void )
        any files */
     usleep( rank * 100000 );
 #endif
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
     /* ... end of body of routine ... */
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_finalize", 0);
-#endif
+  fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    MPID_CS_FINALIZE();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_finalize", 0);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

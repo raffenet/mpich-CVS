@@ -51,6 +51,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_win_test.c		\
     mpidi_isend_self.c		\
     mpidi_pg.c			\
-    mpidi_printf.c
+    mpidi_printf.c		\
+    @MPID_THREAD_SOURCES@
     
 

@@ -98,7 +98,7 @@ int MPIR_Exscan (
     rank = comm_ptr->rank;
     
     /* set op_errno to 0. stored in perthread structure */
-    MPID_GetPerThread(p);
+    MPIR_GetPerThread(&p);
     p->op_errno = 0;
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
@@ -325,14 +325,16 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_EXSCAN);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_EXSCAN);
 
-    /* Verify that MPI has been initialized */
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
@@ -340,9 +342,10 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* Get handles to MPI objects. */
+    /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -407,20 +410,25 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 	MPIR_Nest_decr();
     }
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
-				     __LINE__, MPI_ERR_OTHER,
-	    "**mpi_exscan", "**mpi_exscan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
-#endif
+    /* ... end of body of routine ... */
+    
+  fn_exit:    
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_exscan",
+	    "**mpi_exscan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

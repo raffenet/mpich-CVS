@@ -57,23 +57,9 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAIT);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**mpi_wait", "**mpi_wait %p %p", request, status);
-		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
-	    }
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAIT);
 
     /* Check the arguments */
@@ -116,6 +102,8 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
     if ((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_state progress_state;
@@ -136,20 +124,18 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 
     mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /* ... end of body of routine ... */
+    
   fn_exit:
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-	return mpi_errno;
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+    MPID_CS_EXIT();
+    return mpi_errno;
 	
   fn_fail:
-#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
 				     "**mpi_wait", "**mpi_wait %p %p", 

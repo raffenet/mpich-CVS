@@ -267,7 +267,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
     (req_)->dev.state |= ((type_) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
 }
 
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIDI_Request_cancel_pending(req_, flag_)	\
 {							\
     *(flag_) = (req_)->dev.cancel_pending;		\
@@ -286,7 +286,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
 }
 #endif
 
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #   define MPIDI_Request_recv_pending(req_, recv_pending_)	\
     {								\
  	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
@@ -311,7 +311,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
 #endif
 
 /* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current partner RTS sreq and nullify partner request */
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #   define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
     {									\
     	*(rts_sreq_) = (sreq_)->partner_request;			\
@@ -434,7 +434,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 /*--------------------------------
   BEGIN VIRTUAL CONNECTION SECTION
   --------------------------------*/
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #   define MPIDI_VC_Get_next_lpid(lpid_ptr_)		\
     {							\
     	*(lpid_ptr_) = MPIDI_Process.lpid_counter++;	\
@@ -474,7 +474,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 }
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
-#   if defined(MPICH_SINGLE_THREADED)
+#   if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #       define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)	\
         {							\
 	    (seqnum_out_) = (vc_)->seqnum_send++;		\

@@ -80,14 +80,31 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_DUP);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_DUP);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -98,6 +115,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Generate a new context value and a new communicator structure */ 
     /* We must use the local size, because this is compared to the 
        rank of the process in the communicator.  For intercomms, 
@@ -136,25 +154,30 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 	    *newcomm = MPI_COMM_NULL;
 	    /* FIXME : free newcomm (better yet, consider running 
 	     attribute dup functions before generating the new communicator) */
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
     }
 
     *newcomm = newcomm_ptr->handle;
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_dup",
+	    "**mpi_comm_dup %C %p", comm, newcomm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

@@ -6,8 +6,13 @@
 
 #include "mpidimpl.h"
 
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIDI_Recvq_lock() MPID_Thread_lock(&MPIDI_Process.recvq_mutex)
 #define MPIDI_Recvq_unlock() MPID_Thread_unlock(&MPIDI_Process.recvq_mutex)
+#else
+#define MPIDI_Recvq_lock()
+#define MPIDI_Recvq_unlock()
+#endif
 
 /*
  * MPIDI_CH3U_Recvq_FU()

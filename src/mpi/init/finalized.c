@@ -48,20 +48,47 @@ int MPI_Finalized( int *flag )
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZED);
 
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Should check that flag is not null */
+	    if (flag == NULL)
+	    {
+		mpi_errno = MPI_ERR_ARG;
+		goto fn_fail;
+	    }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     /* ... body of routine ...  */
+    
     *flag = (MPIR_Process.initialized >= MPICH_POST_FINALIZED);
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZED);
-    return MPI_SUCCESS;
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_finalized", "**mpi_finalized %p", flag);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZED);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    if (MPIR_Process.initialized == MPICH_WITHIN_MPI)
+    { 
+	MPID_CS_ENTER();
+#       ifdef HAVE_ERROR_CHECKING
+	{
+	    mpi_errno = MPIR_Err_create_code(
+		mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_finalized",
+		"**mpi_finalized %p", flag);
+	}
+#       endif
+	
+	mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	MPID_CS_EXIT();
+    }
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

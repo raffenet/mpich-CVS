@@ -106,8 +106,8 @@ static struct BsendBuffer {
 					  available) */
     BsendData_t        *active;        /* Pointer to the first active (sending)
 					  message */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
-    MPID_Thread_lock_t bsend_lock;     /* Thread lock for bsend access */
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+    MPID_Thread_mutex_t bsend_lock;    /* Thread lock for bsend access */
 #endif
 
 } BsendBuffer = { 0, 0, 0, 0, 0, 0, 0 };
@@ -174,8 +174,8 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     BsendBuffer.avail		= buffer;
     BsendBuffer.pending		= 0;
     BsendBuffer.active		= 0;
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
-    MPID_Thread_initlock( BsendBuffer.bsend_lock );
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+    MPID_Thread_mutex_create( BsendBuffer.bsend_lock );
 #endif
 
     /* Set the first block */
@@ -259,7 +259,9 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
      * ones.  If the message can be initiated in the first pass,
      * do not perform the second pass.
      */
-    MPID_Thread_lock( &BsendBuffer.bsend_lock );
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+    MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock );
+#endif
     for (pass = 0; pass < 2; pass++) {
 	
 	p = MPIR_Bsend_find_buffer( packsize );
@@ -338,7 +340,9 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	/* Give priority to any pending operations */
 	MPIR_Bsend_retry_pending( );
     }
-    MPID_Thread_unlock( &BsendBuffer.bsend_lock );
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+    MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock );
+#endif
     MPIR_Nest_decr();
     
     if (!p) {

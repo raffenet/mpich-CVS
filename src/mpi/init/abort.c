@@ -60,14 +60,31 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     int len = MPI_MAX_NAME_STRING;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ABORT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ABORT);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -78,6 +95,7 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     if (!comm_ptr)
     {
 	/* Use comm world if the communicator is not valid */
@@ -91,22 +109,33 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 	MPIU_Snprintf(comm_name, MPI_MAX_NAME_STRING, "comm=0x%X", comm);
     }
     MPIU_Snprintf(abort_str, 100, "application called MPI_Abort(%s, %d) - process %d", comm_name, errorcode, comm_ptr->rank);
-    MPID_Abort( comm_ptr, mpi_errno, errorcode, abort_str );
-    /* ... end of body of routine ... */
+    mpi_errno = MPID_Abort( comm_ptr, mpi_errno, errorcode, abort_str );
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /* MPID_Abort() should never return MPI_SUCCESS */
+    MPIU_Assert(mpi_errno != MPI_SUCCESS);
+
+    /* ... end of body of routine ... */
+    
+  fn_exit:
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
     /* It is not clear that doing aborting abort makes sense.  We may
        want to specify that erroneous arguments to MPI_Abort will
        cause an immediate abort. */
        
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_abort", "**mpi_abort %C %d", 
-				     comm, errorcode);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);
-    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_abort",
+	    "**mpi_abort %C %d", comm, errorcode);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

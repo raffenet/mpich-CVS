@@ -50,12 +50,16 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TEST_CANCELLED);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TEST_CANCELLED);
+    
+    /* Validate parameters if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
             if (mpi_errno) goto fn_fail;
@@ -64,19 +68,28 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    *flag = status->cancelled;
+    /* ... body of routine ...  */
     
+    *flag = status->cancelled;
+
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_test_cancelled", "**mpi_test_cancelled %p %p", status, flag);
-#endif
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
-    return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_test_cancelled",
+	    "**mpi_test_cancelled %p %p", status, flag);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

@@ -59,16 +59,18 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 {
     static const char FCNAME[] = "MPI_Startall";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
-    MPID_Request ** request_ptrs = NULL;
+    MPID_Request ** request_ptrs = request_ptr_array;
     int i;
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_STARTALL);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_STARTALL);
 
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
-
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -76,8 +78,7 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    if (count != 0)
 	    {
-		MPIR_ERRTEST_ARGNULL(array_of_requests,"array_of_requests",
-				     mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_requests,"array_of_requests", mpi_errno);
 		if (array_of_requests != NULL && count > 0)
 		{
 		    for (i = 0; i < count; i++)
@@ -86,34 +87,16 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 		    }
 		}
 	    }
-            if (mpi_errno != MPI_SUCCESS)
-	    {
-		/* --BEGIN ERROR HANDLING -- */
-		goto fn_fail;
-		/* --END ERROR HANDLING -- */
-	    }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
     /* Convert MPI request handles to a request object pointers */
-    if (count <= MPID_REQUEST_PTR_ARRAY_SIZE)
+    if (count > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	request_ptrs = request_ptr_array;
-    }
-    else
-    {
-	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
-	/* --BEGIN ERROR HANDLING-- */
-	if (request_ptrs == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                      "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC_ORJUMP(request_ptrs, MPID_Request **, count * sizeof(MPID_Request *), mpi_errno, "request pointers");
     }
 
     for (i = 0; i < count; i++)
@@ -142,32 +125,33 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
+    /* ... body of routine ... */
+    
     mpi_errno = MPID_Startall(count, request_ptrs);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (request_ptrs != request_ptr_array && request_ptrs != NULL)
+    /* ... end of body of routine ... */
+    
+  fn_exit:
+    if (count > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	MPIU_Free(request_ptrs);
+	MPIU_CHKLMEM_FREEALL();
     }
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_startall", "**mpi_startall %d %p", count, array_of_requests);
-#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
-    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_startall",
+	    "**mpi_startall %d %p", count, array_of_requests);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -6,8 +6,13 @@
 
 #include "mpidi_ch3_impl.h"
 
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)
 #define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&MPIDI_CH3I_Process.acceptq_mutex)
+#else
+#define MPIDI_Acceptq_lock()
+#define MPIDI_Acceptq_unlock()
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Acceptq_enqueue

@@ -70,13 +70,16 @@ int MPI_Init( int *argc, char ***argv )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
 
+    MPID_CS_INITIALIZE();
+    MPID_CS_ENTER();
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_PRE_INIT) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**inittwice", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						  "**inittwice", NULL );
 	    }
             if (mpi_errno) goto fn_fail;
         }
@@ -84,20 +87,28 @@ int MPI_Init( int *argc, char ***argv )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
     mpi_errno = MPIR_Init_thread( argc, argv, MPI_THREAD_SINGLE, (int *)0 );
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_HANDLING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_init", "**mpi_init %p %p", argc, argv);
-#endif
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    /* ... end of body of routine ... */
+    
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_HANDLING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_init", "**mpi_init %p %p", argc, argv);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    MPID_CS_FINALIZE();
+    return mpi_errno;
     /* --END ERROR HANDLING-- */
 }

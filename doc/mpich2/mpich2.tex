@@ -1960,32 +1960,27 @@ macros.
 Access to the fields in \code{MPICH_PerThread_t} is made through a macro that
 allows both the compile-time and run-time single-threaded case to directly
 access the data without using, for example, \code{pthread_getspecific}.
-To access this data, the routine \code{MPID_GetPerThread} is used.  This
+To access this data, the routine \code{MPIR_GetPerThread} is used.  This
 has the following definition:
 \begin{verbatim}
-#ifdef MPICH_SINGLE_THREADED
-extern MPICH_PerThread_t MPIR_Thread;
-#define MPID_GetPerThread(p) p = &MPIR_Thread
-#else /* Assumes pthreads for simplicity */
-#define MPID_GetPerThread(p) {\
-     p = pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!(p)) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
-               pthread_setspecific( MPIR_Process.thread_key, p );}}
+#if (MPICH_THREAD_LEVEL < MPICH_THREAD_MULTIPLE)
+#define MPIR_GetPerThread(pt_)                  \
+{                                               \
+    *(pt_) = &MPIR_Thread;                      \
+}
+#else
+#define MPIR_GetPerThread(pt_)                                              \
+{                                                                           \
+    MPID_Thread_tls_get(&MPIR_Process.thread_storage, (void **) (pt_));     \
+    if (*(pt_) == NULL)                                                     \
+    {                                                                       \
+        *(pt_) = (MPICH_PerThread_t *)                                      \
+            MPIU_Calloc(1, sizeof(MPICH_PerThread_t));                      \
+        MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_)); \
+    }                                                                       \
+}
 #endif
 \end{verbatim}
-
-Note that this macro cannot be implemented as a function,
-since the argument is returned and would need to be a pointer if this
-was a function.  However, we can still use a function by simply
-taking the address of the variable before calling a function, e.g., 
-\begin{verbatim}
-#define MPID_GetPerThread(p) MPID_GetPerThread_fcn( &p )
-\end{verbatim}
-
-Note that a device is likely to have its own per process and per
-thread data blocks.  Rather than try to merge them into a single
-block, we have choosen to define the data needed in the MPI and MPIR
-routines.
 
 \subsection{Integral Profiling}
 \label{sec:builtin-timing}

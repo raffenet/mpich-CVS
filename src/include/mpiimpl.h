@@ -89,7 +89,7 @@
 
 #include "mpiimplthread.h"
 #include "mpiatomic.h"
-#include "mpiu_monitors.h"
+/* #include "mpiu_monitors.h" */
 
 #include "mpiutil.h"
 
@@ -342,7 +342,7 @@ typedef enum MPID_Lang_t { MPID_LANG_C
  */
 #define MPICH_DEBUG_MAX_REFCOUNT 64
 
-#ifdef MPICH_SINGLE_THREADED
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #ifdef MPICH_DEBUG_HANDLES
 #define MPIU_Object_set_ref(objptr,val)												\
 {																\
@@ -1161,9 +1161,6 @@ typedef enum MPID_Comm_kind_t {
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
     volatile int  ref_count;
-#if !defined(MPICH_SINGLE_THREADED)
-    MPID_Thread_lock_t mutex;
-#endif
     int16_t       context_id;    /* Assigned context id */
     int           remote_size;   /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
@@ -1276,13 +1273,9 @@ typedef void (MPIR_Grequest_f77_query_function)(void *, MPI_Status *, int *);
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
-#ifndef MPICH_SINGLE_THREADED
-    MPID_Thread_lock_t mutex;
-#endif
-#ifndef MPICH_SINGLE_THREADED
-    /* initialized flag/lock used to by recv queue and recv code for 
-       thread safety */
-    MPID_Thread_lock_t initialized;
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    /* initialized flag/lock used to by recv queue and recv code for thread safety */
+    MPID_Thread_mutex_t initialized;
 #endif
     MPID_Request_kind_t kind;
     /* completion counter */
@@ -1713,8 +1706,9 @@ typedef struct MPICH_PerThread_t {
 #endif    
 } MPICH_PerThread_t;
 
-#ifdef MPICH_SINGLE_THREADED
+#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 extern MPICH_PerThread_t MPIR_Thread;
+
 #define MPID_Common_thread_lock()
 #define MPID_Common_thread_unlock()
 
@@ -1797,11 +1791,11 @@ M*/
 /* #define MPID_Thread_lock( ptr ) */
 /* #define MPID_Thread_unlock( ptr ) */
 #else
-#define MPID_Common_thread_lock() MPID_Thread_lock( &MPIR_Process.common_lock )
-#define MPID_Common_thread_unlock() MPID_Thread_unlock( &MPIR_Process.common_lock )
+#define MPID_Common_thread_lock() MPID_Thread_mutex_lock( &MPIR_Process.common_lock )
+#define MPID_Common_thread_unlock() MPID_Thread_mutex_unlock( &MPIR_Process.common_lock )
 
-#define MPID_Comm_thread_lock(comm_ptr_) MPID_Thread_lock(&(comm_ptr_)->mutex)
-#define MPID_Comm_thread_unlock(comm_ptr_) MPID_Thread_unlock(&(comm_ptr_)->mutex)
+#define MPID_Comm_thread_lock(comm_ptr_) MPID_Thread_mutex_lock(&(comm_ptr_)->mutex)
+#define MPID_Comm_thread_unlock(comm_ptr_) MPID_Thread_mutex_unlock(&(comm_ptr_)->mutex)
 
 #define MPID_Request_construct(request_ptr_)			\
 {								\
@@ -1813,16 +1807,16 @@ M*/
     MPID_Thread_lock_destroy(&(request_ptr_)->mutex);		\
     MPID_Thread_lock_destroy(&(request_ptr_)->initialized);	\
 }
-#define MPID_Request_thread_lock(request_ptr_) MPID_Thread_lock(&(request_ptr_)->mutex)
-#define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_unlock(&(request_ptr_)->mutex)
+#define MPID_Request_thread_lock(request_ptr_) MPID_Thread_mutex_lock(&(request_ptr_)->mutex)
+#define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_mutex_unlock(&(request_ptr_)->mutex)
 /* TODO: MT: these should be rewritten to use busy waiting and appropriate processor memory fences.  They and an necessary
    variables should probably be defined by the device rather than in the top level include file.  */
-#define MPID_Request_initialized_clear(request_ptr_) MPID_Thread_lock(&(request_ptr_)->initialized)
-#define MPID_Request_initialized_set(request_ptr_)  MPID_Thread_unlock(&(request_ptr_)->initialized)
-#define MPID_Request_initialized_wait(request_ptr_)	\
-{							\
-    MPID_Thread_lock(&(request_ptr_)->initialized);	\
-    MPID_Thread_unlock(&(request_ptr_)->initialized);	\
+#define MPID_Request_initialized_clear(request_ptr_) MPID_Thread_mutex_lock(&(request_ptr_)->initialized)
+#define MPID_Request_initialized_set(request_ptr_)  MPID_Thread_mutex_unlock(&(request_ptr_)->initialized)
+#define MPID_Request_initialized_wait(request_ptr_)		\
+{								\
+    MPID_Thread_mutex_lock(&(request_ptr_)->initialized);	\
+    MPID_Thread_mutex_unlock(&(request_ptr_)->initialized);	\
 }    
 #endif
 
@@ -1845,11 +1839,16 @@ struct MPID_Datatype;
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     int               thread_provided;  /* Provided level of thread support */
-    MPID_Thread_key_t thread_key;       /* Id for perthread data */
+#if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)    
+    MPID_Thread_tls_t thread_storage;   /* Id for perthread data */
+#endif
+#if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)    
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
-    MPID_Thread_lock_t allocation_lock; /* Used to lock around 
-                                           list-allocations */
-    MPID_Thread_lock_t common_lock;     /* General purpose common lock */
+#endif
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    MPID_Thread_mutex_t allocation_lock; /* Used to lock around list-allocations */
+    MPID_Thread_mutex_t common_lock;     /* General purpose common lock */
+#endif
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
@@ -1884,8 +1883,8 @@ typedef struct MPICH_PerProcess_t {
        to specify the kind (comm,file,win) */
     void  (*cxx_call_errfn) ( int, int *, int *, void (*)(void) );
 #endif
-# if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
-    pthread_mutex_t global_mutex;
+# if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    MPID_Thread_mutex_t global_mutex;
 # endif
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
@@ -1920,22 +1919,19 @@ extern int MPID_THREAD_LEVEL;
   Module:
   Environment-DS
   D*/
-#ifdef MPICH_SINGLE_THREADED
-#define MPID_MAX_THREAD_LEVEL MPI_THREAD_FUNNELED
-#else
-#define MPID_MAX_THREAD_LEVEL MPI_THREAD_MULTIPLE
-#endif
+#define MPID_MAX_THREAD_LEVEL MPICH_THREAD_LEVEL
 
 /* Allocation locks */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+
 #define MPID_Allocation_lock()
 #define MPID_Allocation_unlock()
 #else
 /* A more sophisticated version of these would handle the case where 
    the library supports MPI_THREAD_MULTIPLE but the user only asked for
    MPI_THREAD_FUNNELLED */
-#define MPID_Allocation_lock() MPID_Thread_lock( &MPIR_Process.allocation_lock )
-#define MPID_Allocation_unlock() MPID_Thread_unlock( &MPIR_Procss.allocation_lock )
+#define MPID_Allocation_lock() MPID_Thread_mutex_lock( &MPIR_Process.allocation_lock )
+#define MPID_Allocation_unlock() MPID_Thread_mutex_unlock( &MPIR_Procss.allocation_lock )
 #endif
 /* ------------------------------------------------------------------------- */
 
@@ -1974,20 +1970,20 @@ extern int MPID_THREAD_LEVEL;
  * and codes.  Note that MPI object reference counts are handled with
  * their own routines.
  */
-#if MPID_MAX_THREAD_LEVEL < MPI_THREAD_FUNNELED
+#if (MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIR_Setmax(a_ptr,b) if (b>*(a_ptr)) { *(a_ptr) = b; }
 #define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
     { *value_ptr = *count_ptr; *count_ptr += 1; }
 /* Here should go assembly language versions for various architectures */
 #else
 #define MPIR_Setmax(a_ptr,b) \
-    {MPID_Thread_lock(&MPIR_Process.common_lock);\
+    {MPID_Thread_mutex_lock(&MPIR_Process.common_lock);\
     if (b > *(a_ptr)) *(a_ptr)=b;\
-    MPID_Thread_unlock(&MPIR_Process.common_lock);}
+    MPID_Thread_mutex_unlock(&MPIR_Process.common_lock);}
 #define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
-    {MPID_Thread_lock(&MPIR_Process.common_lock);\
+    {MPID_Thread_mutex_lock(&MPIR_Process.common_lock);\
     *value_ptr = *count_ptr; *count_ptr += 1; \
-    MPID_Thread_unlock(&MPIR_Process.common_lock);}
+    MPID_Thread_mutex_unlock(&MPIR_Process.common_lock);}
 #endif
 /* ------------------------------------------------------------------------- */
 
@@ -2061,15 +2057,15 @@ extern int MPID_THREAD_LEVEL;
 void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
-#ifdef MPICH_SINGLE_THREADED
-#define MPIR_Nest_incr() MPIR_Thread.nest_count++
-#define MPIR_Nest_decr() MPIR_Thread.nest_count--
-#define MPIR_Nest_value() MPIR_Thread.nest_count
-#else
-void MPIR_Nest_incr( void );
-void MPIR_Nest_decr( void );
-int MPIR_Nest_value( void );
+void MPIR_Nest_incr(void);
+void MPIR_Nest_decr(void);
+int MPIR_Nest_value(void);
+#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+#define MPIR_Nest_incr() {MPIR_Thread.nest_count++;}
+#define MPIR_Nest_decr() {MPIR_Thread.nest_count--;}
+#define MPIR_Nest_value() (MPIR_Thread.nest_count)
 #endif
+
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );

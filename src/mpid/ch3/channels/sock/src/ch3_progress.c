@@ -16,10 +16,6 @@
 #define MAX_HOST_DESCRIPTION_LEN 256
 
 
-# if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE && USE_THREAD_PKG != MPICH_THREAD_PKG_POSIX)
-#   error selected thread package is not supported
-#endif
-
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
     volatile int MPIDI_CH3I_progress_blocked = FALSE;
@@ -31,14 +27,14 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 	    {
 		unsigned int count;
 		volatile int flag;
-		pthread_cond_t cond;
+		MPID_Thread_cond_t cond;
 		struct MPIDI_CH3I_Progress_delay_queue_elem * next;
 	    };
 
             static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_head = NULL;
             static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_tail = NULL;
 #       else
-            pthread_cond_t MPIDI_CH3I_progress_completion_cond;
+            MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 #       endif
 #   endif
 #endif
@@ -82,7 +78,7 @@ int MPIDI_CH3_Progress_test()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
 
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
@@ -110,15 +106,18 @@ int MPIDI_CH3_Progress_test()
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**ch3|sock|handle_sock_event", NULL);
+	    goto fn_exit;
 	}
     }
     else if (MPIR_ERR_GET_CLASS(mpi_errno) == MPIDU_SOCK_ERR_TIMEOUT)
     {
 	mpi_errno = MPI_SUCCESS;
+	goto fn_exit;
     }
     else
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", NULL);
+	goto fn_exit;
     }
 
   fn_exit:
@@ -169,7 +168,6 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	     * the progress engine.
 	     */
 	    MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
-	    
 		
 	    goto fn_exit;
 	}
@@ -277,7 +275,7 @@ int MPIDI_CH3I_Progress_init()
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
     {
-	pthread_cond_init(&MPIDI_CH3I_progress_completion_cond, NULL);
+	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
 #   endif
 	
@@ -394,7 +392,7 @@ int MPIDI_CH3I_Progress_finalize()
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
     {
-	pthread_cond_destroy(&MPIDI_CH3I_progress_completion_cond);
+	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
 #   endif
     
@@ -1181,33 +1179,21 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 		MPIDI_CH3I_Progress_delay_queue_head = &dq_elem;
 	    }
 
-#           if defined(HAVE_PTHREAD_COND_INITIALIZER)
-	    {
-		dq_elem.cond = PTHREAD_COND_INITIALIZER;
-	    }
-#           else
+	    rc = MPID_Thread_cond_create(&dq_elem.cond, NULL);
+	    if (rc != 0)
 	    { 
-		rc = pthread_cond_init(&dq_elem.cond, NULL);
-		if (rc != 0)
-		{ 
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-		    goto impl_exit;
-		}
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+		goto impl_exit;
 	    }
-#           endif
     
 	    do
 	    {
-		pthread_cond_wait(&dq_elem.cond, &MPIR_Process.global_mutex);
+		MPID_Thread_cond_wait(&dq_elem.cond, &MPIR_Process.global_mutex);
 	    }
 	    while(dq_elem.flag == FALSE);
 	    
-#           if !defined(HAVE_PTHREAD_COND_INITIALIZER)
-	    {
-		pthread_cond_destroy(&dq_elem.cond);
-	    }
-#           endif
-    
+	    MPID_Thread_cond_destroy(&dq_elem.cond, NULL);
+	    
 	  impl_exit:
 	    {
 	    }
@@ -1216,7 +1202,7 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 	{ 
 	    while (completion_count == MPIDI_CH3I_progress_completion_count)
 	    {
-		pthread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
+		MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
 	    }
 	}
 #       endif
@@ -1258,14 +1244,14 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 	    while(dq_elem != NULL && dq_elem->count != completion_count)
 	    {
 		dq_elem->flag = TRUE;
-		pthread_cond_signal(&dq_elem->cond);
+		MPID_Thread_cond_signal(&dq_elem->cond);
 		dq_elem = dq_elem->next;
 	    }
 	    MPIDI_CH3I_Progress_delay_queue_head = dq_elem;
 	}
 #	else
 	{
-	    pthread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
+	    MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
 	}
 #	endif
     }

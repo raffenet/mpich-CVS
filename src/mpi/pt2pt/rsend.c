@@ -60,39 +60,23 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_Request * request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_RSEND);
 
-    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
+    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_RSEND);
+    
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-	    
-    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_RSEND);
     
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-                           MPI_ERR_OTHER, "**mpi_rsend",
-		           "**mpi_rsend %p %d %D %d %d %C", 
-                           buf, count, datatype, dest, tag, comm);
-		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-	    }
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
@@ -121,14 +105,11 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
     mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr, 
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     if (request_ptr == NULL)
     {
@@ -159,25 +140,25 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     mpi_errno = request_ptr->status.MPI_ERROR;
     MPID_Request_release(request_ptr);
 		
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /* ... end of body of routine ... */
+    
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
+    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:
-#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_rsend", "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
-#endif
-    mpi_errno =  MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_rsend",
+	    "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

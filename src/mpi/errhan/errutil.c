@@ -73,8 +73,18 @@ static MPIR_Err_msg_t ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
 #if !defined(MPICH_SINGLE_THREADED)
 static MPID_Thread_lock_t error_ring_mutex;
+#define error_ring_mutex_create() MPID_Thread_mutex_create(&error_ring_mutex)
+#define error_ring_mutex_destroy() MPID_Thread_mutex_create(&error_ring_mutex)
+#define error_ring_mutex_lock() MPID_Thread_mutex_lock(&error_ring_mutex)
+#define error_ring_mutex_unlock() MPID_Thread_mutex_unlock(&error_ring_mutex)
+#else
+#define error_ring_mutex_create()
+#define error_ring_mutex_destroy()
+#define error_ring_mutex_lock()
+#define error_ring_mutex_unlock()
 #endif
-#endif
+
+#endif /* (MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL) */
 
 /* turn this flag on until we debug and release mpich2 */
 int MPIR_Err_print_stack_flag = TRUE;
@@ -86,7 +96,7 @@ void MPIR_Err_init( void )
     {
 	char *env;
 
-	MPID_Thread_lock_init(&error_ring_mutex);
+	error_ring_mutex_create();
 	
 	env = getenv("MPICH_ABORT_ON_ERROR");
 	if (env)
@@ -175,7 +185,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    if (errcode != MPI_SUCCESS)
 	    {
@@ -193,7 +203,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
     }
 #   endif
     
@@ -270,7 +280,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    if (errcode != MPI_SUCCESS)
 	    {
@@ -288,7 +298,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
     }
 #   endif
     
@@ -368,7 +378,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    if (errcode != MPI_SUCCESS)
 	    {
@@ -386,7 +396,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
     }
 #   endif
     
@@ -1007,7 +1017,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	char * ring_msg;
 	int i;
 	
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    ring_idx = error_ring_loc++;
 	    if (error_ring_loc >= MAX_ERROR_RING) error_ring_loc %= MAX_ERROR_RING;
@@ -1111,7 +1121,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		ErrorRing[ring_idx].fcname[0] = '\0';
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
 	
 	err_code |= ring_idx << ERROR_SPECIFIC_INDEX_SHIFT;
 	err_code |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
@@ -1240,7 +1250,7 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_cl
 	{
 #           if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 	    {
-		MPID_Thread_lock(&error_ring_mutex);
+		error_ring_mutex_lock();
 		{
 		    while (errorcode != MPI_SUCCESS)
 		    {
@@ -1270,7 +1280,7 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_cl
 			}
 		    }
 		}
-		MPID_Thread_unlock(&error_ring_mutex);
+		error_ring_mutex_unlock();
 
 		if (errorcode == MPI_SUCCESS)
 		{
@@ -1371,7 +1381,7 @@ void MPIR_Err_get_string_ext(int errorcode, char * msg, int maxlen, MPIR_Err_get
 	    {
 		int flag = FALSE;
 
-		MPID_Thread_lock(&error_ring_mutex);
+		error_ring_mutex_lock();
 		{
 		    int ring_id;
 
@@ -1386,7 +1396,7 @@ void MPIR_Err_get_string_ext(int errorcode, char * msg, int maxlen, MPIR_Err_get
 			flag = TRUE;
 		    }
 		}
-		MPID_Thread_unlock(&error_ring_mutex);
+		error_ring_mutex_unlock();
 
 		if (flag)
 		{
@@ -1434,7 +1444,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    while (errcode != MPI_SUCCESS)
 	    {
@@ -1462,7 +1472,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
 
 	if (errcode == MPI_SUCCESS)
 	{
@@ -1510,7 +1520,7 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
     char *str_orig = str;
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    while (errcode != MPI_SUCCESS)
 	    {
@@ -1541,7 +1551,7 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
 
 	if (errcode == MPI_SUCCESS)
 	{
@@ -1603,7 +1613,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
     int len;
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(&error_ring_mutex);
+	error_ring_mutex_lock();
 	{
 	    while (errcode != MPI_SUCCESS)
 	    {
@@ -1634,7 +1644,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 		}
 	    }
 	}
-	MPID_Thread_unlock(&error_ring_mutex);
+	error_ring_mutex_unlock();
 
 	if (errcode == MPI_SUCCESS)
 	{
@@ -1706,23 +1716,23 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
    In a single-threaded environment, These are replaced with
    MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
-#ifndef MPICH_SINGLE_THREADED
+#if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
 void MPIR_Nest_incr( void )
 {
     MPICH_PerThread_t *p;
-    MPID_GetPerThread(p);
+    MPIR_GetPerThread(&p);
     p->nest_count++;
 }
 void MPIR_Nest_decr( void )
 {
     MPICH_PerThread_t *p;
-    MPID_GetPerThread(p);
+    MPIR_GetPerThread(&p);
     p->nest_count--;
 }
-int MPIR_Nest_value( void )
+int MPIR_Nest_value()
 {
     MPICH_PerThread_t *p;
-    MPID_GetPerThread(p);
+    MPIR_GetPerThread(&p);
     return p->nest_count;
 }
 #endif

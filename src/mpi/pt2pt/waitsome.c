@@ -84,7 +84,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 {
     static const char FCNAME[] = "MPI_Waitsome";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
-    MPID_Request ** request_ptrs = NULL;
+    MPID_Request ** request_ptrs = request_ptr_array;
     MPI_Status * status_ptr;
     MPID_Progress_state progress_state;
     int i;
@@ -93,29 +93,12 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     int active_flag;
     int rc;
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITSOME);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-		    MPI_ERR_OTHER, "**mpi_waitsome",
-		    "**mpi_waitsome %d %p %p %p %p", incount, 
-		    array_of_requests, outcount, array_of_indices, 
-		    array_of_statuses);
-		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
-	    }
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
 
     /* Check the arguments */
@@ -153,27 +136,14 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
+    /* ... body of routine ...  */
+    
     *outcount = 0;
     
     /* Convert MPI request handles to a request object pointers */
-    if (incount <= MPID_REQUEST_PTR_ARRAY_SIZE)
+    if (incount > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	request_ptrs = request_ptr_array;
-    }
-    else
-    {
-	request_ptrs = MPIU_Malloc(incount * sizeof(MPID_Request *));
-	if (request_ptrs == NULL)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-					     FCNAME, __LINE__, MPI_ERR_OTHER, 
-					     "**nomem",
-					     "**nomem %d", 
-					     incount * sizeof(MPID_Request*));
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
-	}
+	MPIU_CHKLMEM_MALLOC_ORJUMP(request_ptrs, MPID_Request **, incount * sizeof(MPID_Request *), mpi_errno, "request pointers");
     }
     
     n_inactive = 0;
@@ -296,13 +266,16 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     }
     MPID_Progress_end(&progress_state);
 
+    /* ... end of body of routine ... */
+    
   fn_exit:
-    if (request_ptrs != request_ptr_array && request_ptrs != NULL)
+    if (incount > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	MPIU_Free(request_ptrs);
+	MPIU_CHKLMEM_FREEALL();
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
+    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

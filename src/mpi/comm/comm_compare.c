@@ -71,15 +71,32 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     MPID_Comm *comm_ptr2 = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_COMPARE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm1, comm_ptr1 );
-    MPID_Comm_get_ptr( comm2, comm_ptr2 );
+    
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm1, mpi_errno);
+	    MPIR_ERRTEST_COMM(comm2, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm1, comm_ptr1 );
+    MPID_Comm_get_ptr( comm2, comm_ptr2 );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
             MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
@@ -147,20 +164,22 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     }
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_HANDLING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_compare", "**mpi_comm_compare %C %C %p", 
-				     comm1, comm2, result);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
+#   ifdef HAVE_ERROR_HANDLING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_compare",
+	    "**mpi_comm_compare %C %C %p", comm1, comm2, result);
+    }
+#   endif
     /* Use whichever communicator is non-null if possible */
-    return MPIR_Err_return_comm( comm_ptr1 ? comm_ptr1 : comm_ptr2, 
-				 FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm( comm_ptr1 ? comm_ptr1 : comm_ptr2, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-

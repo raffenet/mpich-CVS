@@ -107,7 +107,7 @@ int MPIR_Reduce_scatter (
     rank = comm_ptr->rank;
 
     /* set op_errno to 0. stored in perthread structure */
-    MPID_GetPerThread(p);
+    MPIR_GetPerThread(&p);
     p->op_errno = 0;
 
     MPID_Datatype_get_extent_macro(datatype, extent);
@@ -1084,14 +1084,16 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REDUCE_SCATTER);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_REDUCE_SCATTER);
 
-    /* Verify that MPI has been initialized */
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
@@ -1099,9 +1101,10 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* Get handles to MPI objects. */
+    /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -1180,20 +1183,26 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts,
         }
 	MPIR_Nest_decr();
     }
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
-	return MPI_SUCCESS;
-    }
 
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_reduce_scatter", "**mpi_reduce_scatter %p %p %p %D %O %C", sendbuf, recvbuf, recvcnts, datatype, op, comm);
-#endif
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_reduce_scatter",
+	    "**mpi_reduce_scatter %p %p %p %D %O %C", sendbuf, recvbuf, recvcnts, datatype, op, comm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

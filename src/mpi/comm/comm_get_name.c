@@ -57,14 +57,31 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GET_NAME);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_NAME);
-    /* Get handles to MPI objects. */
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	MPID_Comm_get_ptr( comm, comm_ptr );
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Validate parameters and objects (post conversion) */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -74,30 +91,33 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   else
-    MPID_Comm_get_ptr( comm, comm_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* The user must allocate a large enough section of memory */
     MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_OBJECT_NAME );
 
     *resultlen = (int)strlen( comm_name );
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
 
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_get_name", "**mpi_comm_get_name %C %p %p", 
-				     comm, comm_name, resultlen);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_get_name",
+	    "**mpi_comm_get_name %C %p %p", comm, comm_name, resultlen);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

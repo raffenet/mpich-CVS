@@ -56,6 +56,9 @@ int MPI_Type_contiguous(int count,
     MPID_Datatype *new_dtp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -65,9 +68,13 @@ int MPI_Type_contiguous(int count,
             MPID_Datatype *datatype_ptr = NULL;
 
 	    /* MPIR_ERRTEST_XXX macros defined in mpiimpl.h */
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    
+	    MPIR_ERRTEST_DATATYPE(count, old_type, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    
             if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(old_type, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
@@ -78,14 +85,13 @@ int MPI_Type_contiguous(int count,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
     mpi_errno = MPID_Type_contiguous(count,
 				     old_type,
 				     new_type_p);
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-	goto fn_fail;
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     MPID_Datatype_get_ptr(*new_type_p, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,
@@ -97,28 +103,26 @@ int MPI_Type_contiguous(int count,
 				           NULL,
 				           &old_type);
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno,
-				     MPIR_ERR_RECOVERABLE,
-				     FCNAME,
-				     __LINE__,
-				     MPI_ERR_OTHER,
-				     "**mpi_type_contiguous",
-				     "**mpi_type_contiguous %d %D %p",
-				     count,
-				     old_type,
-				     new_type_p);
-#endif
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+    mpi_errno = MPIR_Err_create_code(
+	mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_contiguous",
+	"**mpi_type_contiguous %d %D %p", count, old_type, new_type_p);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

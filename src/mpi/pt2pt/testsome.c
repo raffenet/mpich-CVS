@@ -67,7 +67,7 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 {
     static const char FCNAME[] = "MPI_Testsome";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
-    MPID_Request ** request_ptrs = NULL;
+    MPID_Request ** request_ptrs = request_ptr_array;
     MPI_Status * status_ptr;
     int i;
     int n_active;
@@ -75,11 +75,13 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
     int active_flag;
     int rc;
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTSOME);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTSOME);
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -116,25 +118,14 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
+    /* ... body of routine ... */
+    
     *outcount = 0;
     
     /* Convert MPI request handles to a request object pointers */
-    if (incount <= MPID_REQUEST_PTR_ARRAY_SIZE)
+    if (incount > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	request_ptrs = request_ptr_array;
-    }
-    else
-    {
-	request_ptrs = MPIU_Malloc(incount * sizeof(MPID_Request *));
-	/* --BEGIN ERROR HANDLING-- */
-	if (request_ptrs == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-                    "**nomem", "**nomem %d", incount * sizeof(MPID_Request *));
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC_ORJUMP(request_ptrs, MPID_Request **, incount * sizeof(MPID_Request *), mpi_errno, "request pointers");
     }
 
     n_inactive = 0;
@@ -206,7 +197,6 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 		request_ptrs[i] = NULL;
 		n_inactive += 1;
 	    }
-
 	}
     }
 
@@ -233,25 +223,30 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 	*outcount = MPI_UNDEFINED;
     }
 
-fn_exit:
-    if (request_ptrs != request_ptr_array && request_ptrs != NULL)
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    
+    /* ... end of body of routine ... */
+    
+  fn_exit:
+    if (incount > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	MPIU_Free(request_ptrs);
+	MPIU_CHKLMEM_FREEALL();
     }
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_testsome", "**mpi_testsome %d %p %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
-#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
-    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_testsome",
+	    "**mpi_testsome %d %p %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

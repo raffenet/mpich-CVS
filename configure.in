@@ -167,19 +167,6 @@ AC_ARG_WITH(pm, [--with-pm=name - Specify the process manager for MPICH.
       is installed into the bin directory.],,
 with_pm=default)
 dnl
-AC_ARG_WITH(thread-package,
-[--with-thread-package=package - Thread package to use.  Supported thread
-packages include:
-    posix or pthreads - POSIX threads
-    solaris - Solaris threads (Solaris OS only)
-The default package is posix.],,
-with_thread_package=posix)
-if test "$with_thread_package" = "yes" ; then
-    AC_MSG_ERROR([a thread package must be specified with the --with-thread-package option])
-elif test "$with_thread_package" = "no" ; then
-    AC_MSG_ERROR([--without-thread-package is not supported])
-fi
-dnl
 AC_ARG_WITH(logging,
 [--with-logging=name - Specify the logging library for MPICH.],,
 with_logging=default)
@@ -470,7 +457,6 @@ case "$enable_threads" in
     thread_impl=none
     ;;
     serialized)
-    AC_MSG_ERROR([MPI_THREAD_SERIALIZED not implemented])
     thread_pkg_required=yes
     thread_impl=none
     ;;
@@ -491,30 +477,29 @@ case "$enable_threads" in
 	;;
     esac
     ;;
+    runtime)
+    AC_MSG_ERROR([Runtime selection of the MPI thread level supported by the MPICH2 library is not implemented yet.])
+    ;;
     *)
     AC_MSG_ERROR(["$enable_threads" is not a valid value for --enable-threads])     
     ;;
 esac
+
 AC_DEFINE(MPICH_SINGLE_THREADED,1,[FIXME: for now always defined regardless of thread support])
-mpich_thread_level="MPI_THREAD_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
-AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$mpich_thread_level,[Level of thread support selected at compile time])
-mpich_thread_impl="MPICH_THREAD_IMPL_`echo $thread_impl | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
-AC_DEFINE_UNQUOTED(USE_THREAD_IMPL,$mpich_thread_impl,[Multi-threaded implementation selected at compile time])
-dnl
-dnl	case "$enable_threads" in
-dnl	    no|single)
-dnl	    AC_DEFINE(MPICH_SINGLE_THREADED,1,[define to for single threaded])
-dnl	    ;;
-dnl	    runtime=*|multiple=*)
-dnl	    thread_type=`echo $enable_threads | sed -e 's/^.*=//'g`
-dnl	    ;;
-dnl	    all|yes|multiple|runtime)
-dnl	    thread_type=pthread
-dnl	    ;;
-dnl	    *)
-dnl	    AC_MSG_WARN([Unknown value $enable_threads for enable-threads])
-dnl	    ;; 
-dnl	esac
+
+MPICH_THREAD_LEVEL="MPI_THREAD_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
+export MPICH_THREAD_LEVEL
+AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$MPICH_THREAD_LEVEL,[Level of thread support selected at compile time])
+
+MPICH_THREAD_IMPL="MPICH_THREAD_IMPL_`echo $thread_impl | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
+export MPICH_THREAD_IMPL
+AC_DEFINE_UNQUOTED(USE_THREAD_IMPL,$MPICH_THREAD_IMPL,[Multi-threaded implementation selected at compile time])
+
+if test "$thread_pkg_required" = "no" ; then
+    MPE_THREAD_DEFAULT=${MPE_THREAD_DEFAULT:-none}
+fi
+export MPE_THREAD_DEFAULT
+
 dnl
 dnl enable-g
 # strip off multiple options, separated by commas
@@ -1757,45 +1742,6 @@ export SIZEOF_MPI_STATUS
 AC_SUBST(SIZEOF_MPI_STATUS)
 
 dnl
-dnl check for library functions
-if test "$thread_pkg_required" = "yes" ; then
-    case $with_thread_package in 
-        posix|pthreads)
-	with_thread_package=posix
-	AC_CHECK_HEADERS(pthread.h)
-	AC_CHECK_FUNCS(pthread_yield)
-	# OSF1 has __pthread_create but not pthread_create (because of 
-	# inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
-	AC_SEARCH_LIBS(pthread_key_create,pthread,found=yes,found=no)
-	if test "$found" != "yes" ; then
-	   AC_MSG_ERROR([unable to find pthreads library])
-	fi
-	;;
-	solaris)
-	AC_CHECK_HEADERS(thread.h)
-	AC_SEARCH_LIBS(thr_create,thread,found=yes,found=no)
-	if test "$found" != "yes" ; then
-	   AC_MSG_ERROR([unable to find Solaris threads library])
-	fi
-	# FIXME: need to add -mt if using solaris compilers
-	;;
-	*)
-	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.]) 
-	;;
-    esac
-
-    AC_CHECK_FUNCS(thr_yield sched_yield yield)
-
-    AC_DEFINE(_REENTRANT,,[Must be defined for thread support on Linux systems])
-    AC_DEFINE(_THREAD_SAFE,,[Must be defined for thread OS support on some systems])
-
-    use_thread_pkg="MPICH_THREAD_PKG_`echo $with_thread_package | \
-      tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
-else
-    use_thread_pkg="MPICH_THREAD_PKG_NONE"
-fi
-AC_DEFINE_UNQUOTED(USE_THREAD_PKG,$use_thread_pkg,[Thread package selected at configure time])
-dnl
 dnl Check for special compile characteristics
 # If we are either gcc or icc, see if we can use __asm__
 # We test on prog_gcc to allow gcc by any name; if we are using
@@ -2094,10 +2040,21 @@ export RANLIB
 export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
-# Build the device first.  This way, any libraries or variables that it needs
-# can be extracted before building the other subsystems (this is particularly
-# important for the bindings, which may need to know the libraries in order
-# to create the compilation scripts)
+#
+# Configure threads first.  This is necessary to obtain all required
+# definitions, flags, and libraries that the other subsystems will need
+#
+PAC_CONFIG_SUBDIRS_IMMEDIATE(src/util/thread)
+if test -f src/util/thread/localdefs ; then
+    . src/util/thread/localdefs
+elif test -f $use_top_srcdir/src/util/thread/localdefs ; then
+    . $use_top_srcdir/src/util/thread/localdefs
+fi
+#
+# Configure the device second.  This way, any libraries or variables that
+# it needs can be extracted before building the other subsystems (this is
+# particularly important for the bindings, which may need to know the
+# libraries in order to create the compilation scripts)
 PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $devsubsystems)
 # Check for any localdefs files.  These may be created, so we look in
 # the local directory first.
@@ -2483,7 +2440,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/util/mem/Makefile \
 	  src/util/msgs/Makefile \
 	  src/util/param/Makefile \
-	  src/util/thread/Makefile \
           src/util/dbg/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/runtests test/util/Makefile \

@@ -67,19 +67,20 @@ int MPI_Request_free(MPI_Request *request)
     MPID_Request *request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REQUEST_FREE);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
     
-    /* Check the arguments */
+    MPID_CS_ENTER();
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
+    
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
-	    if (request != NULL)
-	    {
-		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
-	    }
+	    if (mpi_errno) goto fn_fail;
+
+	    MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
@@ -102,6 +103,8 @@ int MPI_Request_free(MPI_Request *request)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     MPID_Progress_poke();
     
     switch (request_ptr->kind)
@@ -151,19 +154,17 @@ int MPI_Request_free(MPI_Request *request)
 	    
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-			MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-			"**user", "**userfree %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(
+		    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userfree %d", mpi_errno);
 	    }
 	    break;
 	}
 
 	default:
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-			 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		         "**request_invalid_kind", 
-			 "**request_invalid_kind %d", request_ptr->kind);
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**request_invalid_kind", 
+		"**request_invalid_kind %d", request_ptr->kind);
 	    break;
 	}
     }
@@ -171,19 +172,25 @@ int MPI_Request_free(MPI_Request *request)
     MPID_Request_release(request_ptr);
     *request = MPI_REQUEST_NULL;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_request_free", "**mpi_request_free %p", request);
-#endif
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_request_free",
+	    "**mpi_request_free %p", request);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

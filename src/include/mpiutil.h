@@ -16,7 +16,7 @@
  * small and a deep nesting of routines that each allocate a reasonably size error for a message can result in stack overrun.
  */
 #if defined(HAVE_STRERROR)
-#   if defined(MPICH_SINGLE_THREADED)
+#   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE || USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 #       define MPIU_Strerror(errno_) strerror(errno_)
 #   else
 #       error need a thread safe implementation of MPIU_Strerror

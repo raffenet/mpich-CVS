@@ -44,10 +44,12 @@ static int assert_hook( int reportType, char *message, int *returnValue )
 }
 #endif
 
-#ifdef MPICH_SINGLE_THREADED
+
+#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread = { 0 };
 #endif
+
 
 int MPIR_Init_thread(int * argc, char ***argv, int required,
 		     int * provided)
@@ -76,28 +78,29 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
-	/*
-	 * FIXME: this is for temporary testing purposes only and will be replaced with a suitable abstraction once initial
-	 * testing is complete.
-	 */
-	#if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
-	{
-	    pthread_mutex_init(&MPIR_Process.global_mutex, NULL);
-	}
-#	else
-#	    error specified thread package is not supported
-#	endif
+	MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);
+    }
+#   endif
+
+#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)
+    {
+	MPID_Thread_self(&MPIR_Process.master_thread);
     }
 #   endif
     
-#   if !defined(MPICH_SINGLE_THREADED)
+#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
     {
-	MPID_Thread_key_create(&MPIR_Process.thread_key) ;
-	MPIR_Process.master_thread = MPID_Thread_get_id();
+	MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);
+    }
+#   endif
+    
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    {
 	MPID_Thread_lock_init(&MPIR_Process.common_lock);
 	MPID_Thread_lock_init(&MPIR_Process.allocation_lock);
     }
 #   endif    
+    
 
 #ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
@@ -284,7 +287,10 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
+    MPID_CS_INITIALIZE();
+    MPID_CS_ENTER();
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
+    
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -299,22 +305,30 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPIR_Init_thread( argc, argv, required, provided );
-
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-	return MPI_SUCCESS;
-    }
+    /* ... body of routine ... */
     
-fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-#ifdef HAVE_ERROR_HANDLING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
-#endif
+    mpi_errno = MPIR_Init_thread( argc, argv, required, provided );
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail; 
+
+    /* ... end of body of routine ... */
+    
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_HANDLING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_init_thread",
+	    "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+    MPID_CS_EXIT();
+    MPID_CS_FINALIZE();
+    return mpi_errno;
     /* --END ERROR HANDLING-- */
 }

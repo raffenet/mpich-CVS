@@ -57,8 +57,10 @@ int MPI_Op_free(MPI_Op *op)
     int     mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_FREE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_FREE);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     MPID_Op_get_ptr( *op, op_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -80,22 +82,30 @@ int MPI_Op_free(MPI_Op *op)
 #   endif /* HAVE_ERROR_CHECKING */
     
     /* ... body of routine ...  */
+    
     MPIU_Object_release_ref( op_ptr, &in_use);
     if (!in_use) {
 	MPIU_Handle_obj_free( &MPID_Op_mem, op_ptr );
     }
     *op = MPI_OP_NULL;
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_op_free", "**mpi_op_free %p", op);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+        MPID_CS_EXIT();
+	return mpi_errno;
+	
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_op_free", "**mpi_op_free %p", op);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 

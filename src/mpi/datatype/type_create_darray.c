@@ -332,19 +332,36 @@ int MPI_Type_create_darray(int size,
 
     int *ints;
     MPID_Datatype *datatype_ptr = NULL;
+    MPIU_CHKLMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( oldtype, datatype_ptr );
-    MPID_Datatype_get_extent_macro(oldtype, orig_extent);
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(0, oldtype, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Datatype_get_ptr( oldtype, datatype_ptr );
+    MPID_Datatype_get_extent_macro(oldtype, orig_extent);
 
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    /* Check parameters */
 	    MPIR_ERRTEST_ARGNEG(rank, "rank", mpi_errno);
 	    MPIR_ERRTEST_ARGNONPOS(size, "size", mpi_errno);
@@ -435,10 +452,11 @@ int MPI_Type_create_darray(int size,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ... */
+    
 /* calculate position in Cartesian grid as MPI would (row-major
    ordering) */
-    coords = (int *) MPIU_Malloc(ndims*sizeof(int));
-    MPIU_Assert(coords != NULL);
+    MPIU_CHKLMEM_MALLOC_ORJUMP(coords, int *, ndims * sizeof(int), mpi_errno, "position is Cartesian grid");
 
     procs = size;
     tmp_rank = rank;
@@ -448,12 +466,7 @@ int MPI_Type_create_darray(int size,
 	tmp_rank = tmp_rank % procs;
     }
 
-    st_offsets = (MPI_Aint *) MPIU_Malloc(ndims*sizeof(MPI_Aint));
-    if (st_offsets == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_fail;
-    }
+    MPIU_CHKLMEM_MALLOC_ORJUMP(st_offsets, MPI_Aint *, ndims * sizeof(MPI_Aint), mpi_errno, "st_offsets");
 
     type_old = oldtype;
 
@@ -609,8 +622,6 @@ int MPI_Type_create_darray(int size,
     MPIR_Nest_incr();
     NMPI_Type_free(&type_new);
     MPIR_Nest_decr();
-    MPIU_Free(st_offsets);
-    MPIU_Free(coords);
 
     /* at this point we have the new type, and we've cleaned up any
      * intermediate types created in the process.  we just need to save
@@ -618,12 +629,7 @@ int MPI_Type_create_darray(int size,
      */
 
     /* Save contents */
-    ints = (int *) MPIU_Malloc((4 * ndims + 4) * sizeof(int));
-    if (ints == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_fail;
-    }
+    MPIU_CHKLMEM_MALLOC_ORJUMP(ints, int *, (4 * ndims + 4) * sizeof(int), mpi_errno, "content description");
 
     ints[0] = size;
     ints[1] = rank;
@@ -651,22 +657,28 @@ int MPI_Type_create_darray(int size,
 					   ints,
 					   NULL,
 					   &oldtype);
-    MPIU_Free(ints);
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
-	return MPI_SUCCESS;
-    }
-fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_create_darray", "**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p",
-	size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
-#endif
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    /* ... end of body of routine ... */
+    
+  fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_create_darray",
+	    "**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p", size, rank, ndims, array_of_gsizes,
+	    array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -288,7 +288,7 @@ extern char *strdup( const char * );
    after the macro without causing the declaration block to end (restriction
    imposed by C) */
 #define MPIU_CHKLMEM_DECL(n_) int dummy_
-#define MPIU_CHKLMEM_FREEALL
+#define MPIU_CHKLMEM_FREEALL()
 #define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)alloca(nbytes_); \
 if (!(pointer_)) { \
@@ -307,15 +307,15 @@ if (pointer_) { \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
-#define MPIU_CHKLMEM_FREEALL \
+#define MPIU_CHKLMEM_FREEALL() \
     { while (mpiu_chklmem_stk_sp_ > 0) {\
        MPIU_Free( mpiu_chklmem_stk_[--mpiu_chklmem_stk_sp_] ); } }
 #endif /* HAVE_ALLOCA */
 
 #define MPIU_CHKLMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
-    MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,fn_fail)
-#define MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,label_) \
-    MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto label_)
+    MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_)
+#define MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto fn_fail)
 
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPIU_CHKPMEM_DECL(n_) \
@@ -329,15 +329,15 @@ if (pointer_) { \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
-#define MPIU_CHKPMEM_REAP \
+#define MPIU_CHKPMEM_REAP() \
     { while (mpiu_chkpmem_stk_sp_ > 0) {\
        MPIU_Free( mpiu_chkpmem_stk_[--mpiu_chkpmem_stk_sp_] ); } }
-#define MPIU_CHKPMEM_COMMIT \
+#define MPIU_CHKPMEM_COMMIT() \
     mpiu_chkpmem_stk_sp_ = 0
 #define MPIU_CHKPMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
-    MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,fn_fail)
-#define MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,label_) \
-    MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto label_)
+    MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_)
+#define MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto fn_fail)
 
 /* A special version for routines that only allocate one item */
 #define MPIU_CHKPMEM_MALLOC1(pointer_,type_,nbytes_,rc_,name_,stmt_) \

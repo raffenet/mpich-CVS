@@ -61,30 +61,53 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE);
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Group_get_ptr( group, group_ptr );
+    /* Validate parameters, and convert MPI object handles to object pointers */
 #   ifdef HAVE_ERROR_CHECKING
     {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+	
+	MPID_Comm_get_ptr( comm, comm_ptr );
+	
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 
+	    MPIR_ERRTEST_GROUP(group, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+	
+	MPID_Group_get_ptr( group, group_ptr );
+    
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    /* Check the group ptr */
 	    MPID_Group_valid_ptr( group_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#   else
+    {
+	MPID_Comm_get_ptr( comm, comm_ptr );
+	MPID_Group_get_ptr( group, group_ptr );
+    }
+#   endif
 
     /* ... body of routine ...  */
+    
     /* Create a new communicator from the specified group members */
 
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
@@ -176,25 +199,29 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/* This process is not in the group */
 	*newcomm = MPI_COMM_NULL;
     }
+    
     /* ... end of body of routine ... */
 
     /* mpi_errno = MPID_Comm_create(); */
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPIU_CHKLMEM_FREEALL;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    MPIU_CHKLMEM_FREEALL;
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_create", "**mpi_comm_create %C %G %p", comm, group, newcomm);
-#endif
+  fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_create",
+	    "**mpi_comm_create %C %G %p", comm, group, newcomm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

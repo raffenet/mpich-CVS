@@ -47,27 +47,41 @@ int MPI_Is_thread_main( int *flag )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IS_THREAD_MAIN);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     /* ... body of routine ...  */
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
-    *flag = 1;
-#else
-    *flag = (MPIR_Process.master_thread == MPID_Thread_get_id());
-#endif
+#   if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
+    {
+	*flag = TRUE;
+    }
+#   else
+    {
+	MPID_Thread_id_t my_thread_id;
+
+	MPID_Thread_self(&my_thread_id);
+	MPID_Thread_same(MPIR_Process.master_thread, my_thread_id, &flag);
+    }
+#   endif
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_is_thread_main", "**mpi_is_thread_main %p", flag);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_is_thread_main",
+	    "**mpi_is_thread_main %p", flag);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

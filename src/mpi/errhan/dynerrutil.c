@@ -48,7 +48,7 @@ static const char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
 static const char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
 static int  first_free_class = 0;
 static int  first_free_code  = 1;  /* code 0 is reserved */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 volatile static int ready = 0;
 #endif
 
@@ -71,7 +71,7 @@ const char *MPIR_Err_get_dynerr_string( int code );
 static void MPIR_Init_err_dyncodes( void )
 {
     int i;
-#if MPID_MAX_THREAD_LEVEL > MPI_THREAD_FUNNELED
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     { 
 	int nzflag;
 
@@ -98,7 +98,7 @@ static void MPIR_Init_err_dyncodes( void )
        error strings */
     MPIR_Process.errcode_to_string = MPIR_Err_get_dynerr_string;
 
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     /* Release the other threads */
     /* FIXME - Add MPID_Write_barrier for thread-safe operation,
        or consider using a flag incr that contains a write barrier */

@@ -59,20 +59,22 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IPROBE);
 
-    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
+    
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-	    
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
     
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -84,6 +86,8 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
         {
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    
+	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
 	    MPIR_ERRTEST_RECV_TAG(tag,mpi_errno);
 	    if (comm_ptr) {
 		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
@@ -94,24 +98,30 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     /* FIXME: Is this correct for intercomms? */
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
 			    flag, status);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
-	return MPI_SUCCESS;
-    }
-
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_iprobe", "**mpi_iprobe %d %d %C %p %p", source, tag, comm, flag, status);
-#endif
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_iprobe",
+	    "**mpi_iprobe %d %d %C %p %p", source, tag, comm, flag, status);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -69,19 +69,24 @@ int MPI_Pack_external(char *datarep,
     MPID_Segment *segp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_EXTERNAL);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_EXTERNAL);
 
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
 	    /* NOTE: inbuf could be null (MPI_BOTTOM) */
 	    MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(position, "position", mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+	    MPIR_ERRTEST_DATATYPE(incount, datatype, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
 		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
@@ -97,6 +102,8 @@ int MPI_Pack_external(char *datarep,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    
+    /* ... body of routine ... */
     
     segp = MPID_Segment_alloc();
     /* --BEGIN ERROR HANDLING-- */
@@ -114,12 +121,7 @@ int MPI_Pack_external(char *datarep,
     }
     /* --END ERROR HANDLING-- */
     mpi_errno = MPID_Segment_init(inbuf, incount, datatype, segp, 1);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* NOTE: the use of buffer values and positions in MPI_Pack_external and
      * in MPID_Segment_pack_external are quite different.  See code or docs
@@ -137,25 +139,23 @@ int MPI_Pack_external(char *datarep,
 
     MPID_Segment_free(segp);
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno,
-				     MPIR_ERR_RECOVERABLE,
-				     FCNAME,
-				     __LINE__,
-				     MPI_ERR_OTHER,
-				     "**mpi_pack_external",
-				     "**mpi_pack_external %s %p %d %D %p %d %p",
-				     datarep,
-				     inbuf,
-				     incount,
-				     datatype,
-				     outbuf,
-				     outcount,
-				     position);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_pack_external",
+	    "**mpi_pack_external %s %p %d %D %p %d %p", datarep, inbuf, incount, datatype, outbuf, outcount, position);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

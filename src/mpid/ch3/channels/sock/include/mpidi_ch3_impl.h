@@ -20,7 +20,7 @@ typedef struct MPIDI_CH3I_Process_s
     char * parent_port_name;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
     MPIDI_CH3I_Acceptq_t * acceptq_tail;
-#if !defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     MPID_Thread_lock_t acceptq_mutex;
 #endif
 }

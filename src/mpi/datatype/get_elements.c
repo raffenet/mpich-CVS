@@ -289,13 +289,31 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ELEMENTS);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ELEMENTS);
 
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(0, datatype, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(elements, "elements", mpi_errno);
             /* Validate datatype_ptr */
@@ -310,11 +328,8 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   else
-    /* just grab the pointer */
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-#   endif /* HAVE_ERROR_CHECKING */
-
+#   endif
+    
     /* ... body of routine ...  */
 
     /* three cases:
@@ -366,14 +381,22 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_get_elements", "**mpi_get_elements %p %D %p", status, datatype, elements);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_get_elements",
+	    "**mpi_get_elements %p %D %p", status, datatype, elements);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

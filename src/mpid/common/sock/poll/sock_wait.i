@@ -101,16 +101,11 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-#                       if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
-			{
-			    pthread_mutex_unlock(&MPIR_Process.global_mutex);
-			}
-#			else
-#			    error selected thread package not supported
-#			endif
+			MPID_CS_EXIT();
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
+			/* FIXME: this code is an experiment and is not even close to correct. */
 			if (MPIU_Monitor_closet_get_occupany_count(MPIR_Process.global_closet) == 0)
 			{
 			    MPIU_Monitor_exit(&MPIR_Process.global_monitor);
@@ -130,13 +125,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-#                       if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
-			{
-			    pthread_mutex_lock(&MPIR_Process.global_mutex);
-			}
-#			else
-#			    error selected thread package not supported
-#			endif
+			MPID_CS_ENTER();
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {

@@ -237,7 +237,7 @@ static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
     }
     return 0;
 }
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
 /* Unthreaded (only one MPI call active at any time) */
 
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
@@ -266,38 +266,8 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
     return context_id;
 }
 
-void MPIR_Free_contextid( int context_id )
-{
-    int idx, bitpos;
-    /* Convert the context id to the bit position */
-    /* printf( "Freed id = %d\n", context_id ); */
-    context_id >>= 2;       /* Remove the shift of a factor of four */
-    idx    = context_id / 32;
-    bitpos = context_id % 32;
-
-    /* --BEGIN ERROR HANDLING-- */
-    if (idx < 0 || idx >= MAX_CONTEXT_MASK) {
-	MPID_Abort( 0, MPI_ERR_INTERN, 1, 
-		    "In MPIR_Free_contextid, idx is out of range" );
-    }
-    /* --END ERROR HANDLING-- */
-    /* This update must be done atomically in the multithreaded case */
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
-    context_mask[idx] |= (0x1 << bitpos);
 #else
-    MPID_Common_thread_lock();
-    context_mask[idx] |= (0x1 << bitpos);
-    MPID_Common_thread_unlock();
-#endif
 
-#ifdef MPICH_DEBUG_INTERNAL
-    if (MPIR_IDebug("context")) {
-	DBG_FPRINTF( stderr, "Freed context %d\n", context_id );
-	DBG_FPRINTF( stderr, "mask[%d] bit %d\n", idx, bitpos );
-    }
-#endif
-}
-#else
 /* Additional values needed to maintain thread safety */
 static volatile int mask_in_use = 0;
 /* lowestContextId is used to break ties when multiple threads
@@ -307,7 +277,7 @@ static volatile int lowestContextId = MPIR_MAXID;
 
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
-    int          i, j, context_id = 0;
+    int          context_id = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
     int          own_mask = 0;
 
@@ -336,7 +306,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	MPIR_Nest_incr();
 	/* Comm must be an intracommunicator */
 	NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
-			MPI_BAND, commptr->handle );
+			MPI_BAND, comm_ptr->handle );
 	MPIR_Nest_decr();
 
 	if (own_mask) {
@@ -436,6 +406,38 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
     }
     /* printf( "intercomm context = %d\n", final_context_id ); */
     return final_context_id;
+}
+
+void MPIR_Free_contextid( int context_id )
+{
+    int idx, bitpos;
+    /* Convert the context id to the bit position */
+    /* printf( "Freed id = %d\n", context_id ); */
+    context_id >>= 2;       /* Remove the shift of a factor of four */
+    idx    = context_id / 32;
+    bitpos = context_id % 32;
+
+    /* --BEGIN ERROR HANDLING-- */
+    if (idx < 0 || idx >= MAX_CONTEXT_MASK) {
+	MPID_Abort( 0, MPI_ERR_INTERN, 1, 
+		    "In MPIR_Free_contextid, idx is out of range" );
+    }
+    /* --END ERROR HANDLING-- */
+    /* This update must be done atomically in the multithreaded case */
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
+    context_mask[idx] |= (0x1 << bitpos);
+#else
+    MPID_Common_thread_lock();
+    context_mask[idx] |= (0x1 << bitpos);
+    MPID_Common_thread_unlock();
+#endif
+
+#ifdef MPICH_DEBUG_INTERNAL
+    if (MPIR_IDebug("context")) {
+	DBG_FPRINTF( stderr, "Freed context %d\n", context_id );
+	DBG_FPRINTF( stderr, "mask[%d] bit %d\n", idx, bitpos );
+    }
+#endif
 }
 
 /*

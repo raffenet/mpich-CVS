@@ -254,12 +254,18 @@
  * additional error checking
  */
 #ifdef HAVE_ERROR_CHECKING
-#define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP \
-  if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {\
-      mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 ); goto fn_fail;}
+#define MPIR_ERRTEST_INITIALIZED_ORRETURN()											\
+{																\
+    if (MPIR_Process.initialized != MPICH_WITHIN_MPI)										\
+    {																\
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 );	\
+    }																\
+}
 #else
-#define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP
+#define MPIR_ERRTEST_INITIALIZED_ORRETURN(err_) {return MPI_ERR_OTHER;}
 #endif
+#define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP MPIR_ERRTEST_INITIALIZED_ORRETURN()
+
 /* ------------------------------------------------------------------------- */
 /* end of mpierrs.h */
 /* ------------------------------------------------------------------------- */

@@ -91,14 +91,31 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_Request *request_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_BSEND);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_BSEND);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate object pointers if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
@@ -119,33 +136,39 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-#ifdef MPID_HAS_TBSEND
-    mpi_errno = MPID_tBsend( buf, count, datatype, dest, tag, comm_ptr, 0 );
-    if (mpi_errno == MPI_SUCCESS)
+    
+#   ifdef MPID_HAS_TBSEND
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-	return MPI_SUCCESS;
+	mpi_errno = MPID_tBsend( buf, count, datatype, dest, tag, comm_ptr, 0 );
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
+	/* FIXME: Check for MPID_WOULD_BLOCK? */
     }
-    /* Check for MPID_WOULD_BLOCK? */
-#endif    
+#   endif
+    
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  BSEND, &request_ptr );
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	/* We'll wait on the request, if any, within the bsendutil.c functions
-	   that advance active sends */
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_bsend", "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
-#endif
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+	
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_bsend",
+	    "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

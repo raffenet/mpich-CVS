@@ -1,0 +1,8 @@
+- convert usage of MPICH_THREAD_LEVEL to MPICH_MAX_THREAD_LEVEL as
+  described in the documentation (BRT: I learned about the MAX version
+  after having smattered the other throughout the code.)
+
+- define a set of error codes for the MPE_Thread and MPID_Thread
+  interfaces
+
+- remove MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP

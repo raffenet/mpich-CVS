@@ -561,8 +561,11 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 
 /*
  * Request utility macros (public - can be used in MPID macros)
+ *
+ * MT: The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one
+ * thread and the application could be cancelling the request in another thread.
  */
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 /* SHMEM: In the case of a single-threaded shmem channel sharing requests between processes, a write barrier must be performed
    before decrementing the completion counter.  This insures that other fields in the req structure are updated before the
    completion is signalled.  How should that be incorporated into this code from the channel level? */
@@ -570,10 +573,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 {								\
     *(incomplete_) = --(*(req_)->cc_ptr);			\
 }
-#else /* !defined(MPICH_SINGLE_THREADED) */
-/* The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one thread
-   and the application could be cancelling the request in another thread. */
-#if defined(USE_ATOMIC_UPDATES)
+#elif defined(USE_ATOMIC_UPDATES)
 /* If locks are not used, a write barrier must be performed if *before* the completion counter reaches zero.  This insures that
    other fields in the req structure are updated before the completion is signalled. */
 #define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
@@ -584,7 +584,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     MPID_Atomic_decr_flag((req_)->cc_ptr, new_cc__);		\
     *(incomplete_) = new_cc__;					\
 }
-#else /* !defined(USE_ATOMIC_UPDATES) */
+#else
 #define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
 {								\
     MPID_Request_thread_lock(req_);				\
@@ -593,18 +593,14 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
-#endif /* defined(USE_ATOMIC_UPDATES) */
-#endif /* defined(MPICH_SINGLE_THREADED) */
+#endif
 
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     *(was_incomplete_) = (*(req_)->cc_ptr)++;			\
 }
-#else /* !defined(MPICH_SINGLE_THREADED) */
-/* The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one thread
-   and the application could be cancelling the request in another thread. */
-#if defined(USE_ATOMIC_UPDATES)
+#elif defined(USE_ATOMIC_UPDATES)
 #define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     int old_cc__;						\
@@ -612,7 +608,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     MPID_Atomic_fetch_and_incr((req_)->cc_ptr, old_cc__);	\
     *(was_incomplete_) = old_cc__;				\
 }
-#else /* !defined(USE_ATOMIC_UPDATES) */
+#else
 #define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     MPID_Request_thread_lock(req_);				\
@@ -621,8 +617,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
-#endif /* defined(USE_ATOMIC_UPDATES) */
-#endif /* defined(MPICH_SINGLE_THREADED */
+#endif
 
 /*
  * Device level request management macros
@@ -642,7 +637,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     }							\
 }
 
-#if defined(MPICH_SINGLE_THREADED)
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPID_Request_set_completed(req_)	\
 {						\
     *(req_)->cc_ptr = 0;			\

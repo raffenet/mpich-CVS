@@ -74,26 +74,22 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Request * rreq;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV);
     
-    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
+    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV);
+    
+    /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_sendrecv",
-		    "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p",
-		    sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-	    }
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-	    
-    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV);
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -107,9 +103,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	    
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
 	    
             /* Validate datatypes */
 	    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
@@ -135,32 +129,27 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno );
 		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno );
 	    }
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* FIXME - Performance for small messages might be better if MPID_Send() were used here instead of MPID_Isend() */
     mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
+    if (mpi_errno != MPI_SUCCESS)
     {
+	/* --BEGIN ERROR HANDLING-- */
 	/* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
 	MPID_Request_release(rreq);
-	goto fn_exit;
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
-    /* --END ERROR HANDLING-- */
 
     if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
     {
@@ -174,7 +163,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		MPID_Progress_end(&progress_state);
-		goto fn_exit;
+		goto fn_fail;
 		/* --END ERROR HANDLING-- */
 	    }
 	}
@@ -191,22 +180,25 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     }
     MPID_Request_release(sreq);
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
-fn_exit:
+    /* ... end of body of routine ... */
+    
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV);
+    MPID_CS_EXIT();
     return mpi_errno;
 
-fn_fail:
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_sendrecv", "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p",
-	sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_sendrecv",
+	    "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p", sendbuf, sendcount, sendtype, dest, sendtag,
+	    recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+    }
+#   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
