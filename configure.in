@@ -397,6 +397,9 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpi/rma/Makefile \
           src/mpi/spawn/Makefile \
           src/mpi/topo/Makefile \
+          src/mpid/Makefile \
+          src/mpid/bsocket/Makefile \
+          src/mpid/mm/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/mem/Makefile \
