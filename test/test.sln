@@ -75,6 +75,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MandelViewer", "..\examples
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bcast2", "mpi\coll\bcast2.vcproj", "{DF2577A1-B25E-4538-9183-40A7B9907B73}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "putfence1", "mpi\rma\putfence1.vcproj", "{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -157,6 +165,14 @@ Global
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Debug.Build.0 = Debug|.NET
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release.ActiveCfg = Release|.NET
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release.Build.0 = Release|.NET
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Debug.ActiveCfg = Debug|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Debug.Build.0 = Debug|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Release.ActiveCfg = Release|Win32
+		{DF2577A1-B25E-4538-9183-40A7B9907B73}.Release.Build.0 = Release|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Debug.ActiveCfg = Debug|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Debug.Build.0 = Debug|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Release.ActiveCfg = Release|Win32
+		{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
