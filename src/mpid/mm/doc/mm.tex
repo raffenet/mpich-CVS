@@ -8,7 +8,7 @@
 \usepackage{code}       % Allows special characters
 \usepackage{fileinclude}% Include files verbatim
 \usepackage{mpiman}     % Generic manual info
-\usepackage{tpage}      % Title page macro
+%\usepackage{tpage}      % Title page macro
 
 %\begin{itemize}
 %\item First item
@@ -115,13 +115,13 @@ MPID_Request * mm_request_alloc(void);
            int mm_choose_buffer(MPID_Request *request_ptr);
            int mm_reset_cars(MPID_Request *request_ptr);
            int mm_get_buffers_tmp(MPID_Request *request_ptr);
-	   int mm_release_buffers_tmp(MPID_Request *request_ptr);
+           int mm_release_buffers_tmp(MPID_Request *request_ptr);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
-	   int vec_buffer_init(MPID_Request *request_ptr);
-	   int tmp_buffer_init(MPID_Request *request_ptr);
-	   int simple_buffer_init(MPID_Request *request_ptr);
+           int vec_buffer_init(MPID_Request *request_ptr);
+           int tmp_buffer_init(MPID_Request *request_ptr);
+           int simple_buffer_init(MPID_Request *request_ptr);
 
-	   int mm_make_progress();
+           int mm_make_progress();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
@@ -129,16 +129,16 @@ MPID_Request * mm_request_alloc(void);
            int mm_cq_test(void);
            int mm_cq_wait(void);
            int mm_cq_enqueue(MM_Car *car_ptr);
-	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
-	   int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr);
-	   int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr);
-	   int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr);
+           int mm_create_post_unex(MM_Car *unex_head_car_ptr);
+           int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr);
+           int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr);
+           int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr);
 
 /* requests */
           void mm_inc_cc(MPID_Request *request_ptr);
           void mm_dec_cc(MPID_Request *request_ptr);
-	  void mm_dec_atomic(int *pcounter);
-	  void mm_inc_atomic(int *pcounter);
+          void mm_dec_atomic(int *pcounter);
+          void mm_inc_atomic(int *pcounter);
 \end{verbatim}
 
 \section{xfer}
@@ -172,24 +172,24 @@ Xfer blocks are used to create graphs of cars. Multiple cars within an xfer
 block may be aggregated in the order issued.
 
 mop = MPI operation
-Do not add xfer_mop_send_op because it is not necessary at the xfer level.
+Do not add xfer\_mop\_send\_op because it is not necessary at the xfer level.
 
 The xfer...mop functions generate cars like this:
-(recv_mop) - (send)
-(recv) - (mop_send)
+(recv\_mop) - (send)
+(recv) - (mop\_send)
 
-The mop_send exists at the car level, not the xfer level.
+The mop\_send exists at the car level, not the xfer level.
 
-xfer_recv_forward_op generates these cars:
+xfer\_recv\_forward\_op generates these cars:
 (recv) - (send)
 
-recv_mop can be used for accumulate
+recv\_mop can be used for accumulate
 
-send_mop could cause remote operations to occur.  We will not use send_mop 
+send\_mop could cause remote operations to occur.  We will not use send\_mop 
 currently.
 
-\section{MPI_Send}
-This is what happens when MPI_Send is called.
+\section{MPI\_Send}
+This is what happens when MPI\_Send is called.
 \begin{verbatim}
 MPI_Send
 MPID_Send
@@ -205,7 +205,7 @@ vc_ptr-> socket_post_write
 socket_car_enqueue
 \end{verbatim}
 
-\section{MPID_Progress_wait - MPI_Send}
+\section{MPID\_Progress\_wait - MPI\_Send}
 This is what happens when the progress engine completes the send operation.
 \begin{verbatim}
 MPID_Progress_wait
@@ -219,7 +219,7 @@ socket_car_dequeue_write
 mm_cq_enqueue
 \end{verbatim}
 
-\section{Completion queue - MPI_Send}
+\section{Completion queue - MPI\_Send}
 This is what the completion queue does when the send completes.
 \begin{verbatim}
 cq_handle_write_car
@@ -227,8 +227,8 @@ mm_dec_cc
 mm_car_free
 \end{verbatim}
 
-\section{MPI_Recv}
-This is what happens when MPI_Recv is called.
+\section{MPI\_Recv}
+This is what happens when MPI\_Recv is called.
 \begin{verbatim}
 MPI_Recv
 MPID_Recv
@@ -247,7 +247,7 @@ mm_post_recv
 unpacker_vc_ptr->post_write
 \end{verbatim}
 
-\section{MPID_Progress_wait - MPI_Recv}
+\section{MPID\_Progress\_wait - MPI\_Recv}
 This is what happens when the progress engine completes the recv operation.
 \begin{verbatim}
 MPID_Progress_wait
@@ -265,7 +265,7 @@ socket_handle_read
    mm_cq_enqueue(DATA_CAR)
 \end{verbatim}
 
-\section{Completion queue - MPI_Recv}
+\section{Completion queue - MPI\_Recv}
 This is what the completion queue does when the recv completes
 \begin{verbatim}
 cq_handle_read_car
