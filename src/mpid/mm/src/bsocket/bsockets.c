@@ -145,22 +145,21 @@ int bsocket_init(void)
 #ifdef HAVE_WINSOCK2_H
     WSADATA wsaData;
     int err;
-    
+#endif
+
     if (g_nInitRefCount)
     {
 	g_nInitRefCount++;
 	return 0;
     }
 
+#ifdef HAVE_WINSOCK2_H
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
     {
 	printf("Winsock2 dll not initialized, error %d\n", err);
 	return err;
     }
-#else
-    if (g_bInitFinalize == 1)
-	return 0;
 #endif
 
     szNum = getenv("BSOCKET_CONN_TRIES");
@@ -357,6 +356,7 @@ int bsocket_init(void)
 #ifdef HAVE_WINSOCK2_H
     WSADATA wsaData;
     int err;
+#endif
     
     if (g_nInitRefCount)
     {
@@ -364,18 +364,12 @@ int bsocket_init(void)
 	return 0;
     }
 
+#ifdef HAVE_WINSOCK2_H
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
     {
 	BPRINTF("Winsock2 dll not initialized, error %d\n", err);
 	return err;
-    }
-#else
-    dbg_printf("bsocket_init\n");
-    if (g_nInitRefCount)
-    {
-	g_nInitRefCount++;
-	return 0;
     }
 #endif
 
@@ -1615,7 +1609,6 @@ int beasy_send(int bfd, char *buffer, int length)
     int error;
     int num_sent;
 
-    //while ((num_sent = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length)) == SOCKET_ERROR)
     while ((num_sent = bwrite(bfd, buffer, length)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
@@ -1646,7 +1639,6 @@ int beasy_send(int bfd, char *buffer, int length)
 
     /*dbg_printf("beasy_send\n");*/
     
-    //num_written = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
     num_written = bwrite(bfd, buffer, length);
     if (num_written == SOCKET_ERROR)
     {
@@ -1667,7 +1659,6 @@ int beasy_send(int bfd, char *buffer, int length)
 	ret_val = bselect(1, NULL, &writefds, NULL, NULL);
 	if (ret_val == 1)
 	{
-	    //num_written = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
 	    num_written = bwrite(bfd, buffer, length);
 	    if (num_written == SOCKET_ERROR)
 	    {
