@@ -12,5 +12,6 @@ import java.io.DataOutput;
 
 public interface MixedDataOutput extends DataOutput
 {
-    public void writeString( String str ) throws java.io.IOException;
+    public void writeString( String str )
+    throws java.io.IOException;
 }

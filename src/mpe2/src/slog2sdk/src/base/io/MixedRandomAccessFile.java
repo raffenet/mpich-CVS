@@ -56,6 +56,22 @@ public class MixedRandomAccessFile extends RandomAccessFile
             return null;
     }
 
+    public String readStringWithLimit( short max_strlen )
+    throws IOException
+    {
+        short strlen = super.readShort();
+        if ( strlen > 0 ) {
+            if ( strlen > max_strlen )
+                strlen = max_strlen;
+            byte[] bytebuf = new byte[ strlen ];
+            super.readFully( bytebuf );
+            // return ( new String( bytebuf ) ).trim();
+            return ( new String( bytebuf ) );
+        }
+        else
+            return null;
+    }
+
     // private static final String  version_ID     = "SLOG 2.0.0";
 
     public static final void main( String[] args )

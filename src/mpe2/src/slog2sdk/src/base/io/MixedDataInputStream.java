@@ -32,4 +32,20 @@ public class MixedDataInputStream extends DataInputStream
         else
             return "";
     }
+
+    public String readStringWithLimit( short max_strlen )
+    throws java.io.IOException
+    {
+        short strlen = super.readShort();
+        if ( strlen > 0 ) {
+            if ( strlen > max_strlen )
+                strlen = max_strlen;
+            byte[] bytebuf = new byte[ strlen ];
+            super.readFully( bytebuf );
+            // return ( new String( bytebuf ) ).trim();
+            return ( new String( bytebuf ) );
+        }
+        else
+            return "";
+    }
 }
