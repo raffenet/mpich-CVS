@@ -197,6 +197,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     }
     else {
 	/* This process is not in the group */
+	MPIR_Free_contextid( new_context_id );
 	*newcomm = MPI_COMM_NULL;
     }
     
