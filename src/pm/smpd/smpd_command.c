@@ -331,9 +331,28 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
     char *str;
     int len;
     int result;
+    int cmd_length;
 
-    len = (int)(SMPD_MAX_CMD_LENGTH - strlen(cmd_ptr->cmd));
-    str = &cmd_ptr->cmd[strlen(cmd_ptr->cmd)];
+    cmd_length = (int)strlen(cmd_ptr->cmd);
+
+    len = (int)(SMPD_MAX_CMD_LENGTH - cmd_length);
+    str = &cmd_ptr->cmd[cmd_length];
+
+    /* make sure there is a space after the last parameter in the command */
+    if (cmd_length > 0)
+    {
+	if (cmd_ptr->cmd[cmd_length-1] != ' ')
+	{
+	    if (len < 2)
+	    {
+		smpd_err_printf("unable to add the command parameter: %s=%s\n", param, value);
+		return SMPD_FAIL;
+	    }
+	    cmd_ptr->cmd[cmd_length] = ' ';
+	    len--;
+	    str++;
+	}
+    }
 
     result = smpd_add_string_arg(&str, &len, param, value);
     if (result != SMPD_SUCCESS)
@@ -349,9 +368,28 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     char *str;
     int len;
     int result;
+    int cmd_length;
 
-    len = (int)(SMPD_MAX_CMD_LENGTH - strlen(cmd_ptr->cmd));
-    str = &cmd_ptr->cmd[strlen(cmd_ptr->cmd)];
+    cmd_length = (int)strlen(cmd_ptr->cmd);
+
+    len = (int)(SMPD_MAX_CMD_LENGTH - cmd_length);
+    str = &cmd_ptr->cmd[cmd_length];
+
+    /* make sure there is a space after the last parameter in the command */
+    if (cmd_length > 0)
+    {
+	if (cmd_ptr->cmd[cmd_length-1] != ' ')
+	{
+	    if (len < 2)
+	    {
+		smpd_err_printf("unable to add the command parameter: %s=%d\n", param, value);
+		return SMPD_FAIL;
+	    }
+	    cmd_ptr->cmd[cmd_length] = ' ';
+	    len--;
+	    str++;
+	}
+    }
 
     result = smpd_add_int_arg(&str, &len, param, value);
     if (result != SMPD_SUCCESS)

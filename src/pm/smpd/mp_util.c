@@ -85,6 +85,7 @@ int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
 {
     int result;
     smpd_command_t cmd;
+    int tag;
 
     mp_enter_fn("mp_create_command_from_stdin");
 
@@ -99,6 +100,13 @@ int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
     }
     if (strcmp(cmd.cmd_str, "connect") == 0)
     {
+	if (!smpd_get_int_arg(str, "tag", &tag))
+	{
+	    mp_dbg_printf("adding tag %d to connect command.\n", smpd_process.cur_tag);
+	    smpd_add_command_int_arg(&cmd, "tag", smpd_process.cur_tag);
+	    cmd.tag = smpd_process.cur_tag;
+	    smpd_process.cur_tag++;
+	}
 	cmd.wait = SMPD_TRUE;
     }
     result = smpd_create_command_copy(&cmd, cmd_pptr);
@@ -110,6 +118,67 @@ int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
     }
     mp_exit_fn("mp_create_command_from_stdin");
     return SMPD_SUCCESS;
+}
+
+int handle_result(smpd_context_t *context)
+{
+    int result;
+    char str[1024];
+    smpd_command_t *iter, *trailer;
+    int match_tag;
+
+    mp_enter_fn("handle_result");
+
+    if (!smpd_get_int_arg(context->read_cmd.cmd, "cmd_tag", &match_tag))
+    {
+	mp_err_printf("result command received without a cmd_tag field: '%s'\n", context->read_cmd.cmd);
+	mp_exit_fn("handle_result");
+	return SMPD_FAIL;
+    }
+
+    trailer = iter = context->wait_list;
+    while (iter)
+    {
+	if (iter->tag == match_tag)
+	{
+	    if (smpd_get_string_arg(context->read_cmd.cmd, "result", str, 1024))
+	    {
+		mp_dbg_printf("command: '%s'\nresult: '%s'\n", iter->cmd, str);
+	    }
+	    else
+	    {
+		mp_err_printf("no result string in the result command.\n");
+	    }
+	    if (trailer == iter)
+	    {
+		context->wait_list = context->wait_list->next;
+	    }
+	    else
+	    {
+		trailer->next = iter->next;
+	    }
+	    result = smpd_free_command(iter);
+	    if (result != SMPD_SUCCESS)
+	    {
+		mp_err_printf("unable to free command in the wait_list\n");
+	    }
+	    mp_exit_fn("handle_result");
+	    return SMPD_SUCCESS;
+	}
+	if (trailer != iter)
+	    trailer = trailer->next;
+	iter = iter->next;
+    }
+    if (context->wait_list == NULL)
+    {
+	mp_err_printf("result command received but the wait_list is empty.\n");
+    }
+    else
+    {
+	mp_err_printf("result command did not match any commands in the wait_list.\n");
+    }
+    mp_exit_fn("handle_result");
+    return SMPD_FAIL;
 }
 
 int handle_command(smpd_context_t *context)
@@ -179,7 +248,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the context.\n");
-	    smpd_exit_fn("handle_command");
+	    mp_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending closed command to context: \"%s\"\n", temp_cmd->cmd);
@@ -187,12 +256,18 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the closed command to the context.\n");
-	    smpd_exit_fn("handle_command");
+	    mp_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("posted closed command to context.\n");
-	smpd_exit_fn("handle_command");
+	mp_exit_fn("handle_command");
 	return SMPD_CLOSE;
+    }
+    else if (strcmp(cmd->cmd_str, "result") == 0)
+    {
+	result = handle_result(context);
+	mp_exit_fn("handle_command");
+	return result;
     }
 
     mp_err_printf("ignoring unknown command from the session: '%s'\n", cmd->cmd);

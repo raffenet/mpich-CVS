@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #ifndef SMPD_H
 #define SMPD_H
 
@@ -47,6 +52,8 @@
 #define SMPD_PWD_REQUEST                  "pwd"
 #define SMPD_NO_PWD_REQUEST               "nopwd"
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
+#define SMPD_SUCCESS_STR                  "SUCCESS"
+#define SMPD_FAIL_STR                     "FAIL"
 
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"

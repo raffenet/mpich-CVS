@@ -222,11 +222,70 @@ int handle_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("the root smpd is not allowed to connect to other smpds, ignoring command.\n");
 	    /* send connect failed return command */
+	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a result command for the connect request.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the tag to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - root smpd is not allowed to connect to other smpds.");
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result string to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
+	    result = smpd_post_write_command(context, temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the result command to the context.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (smpd_process.closing)
 	{
 	    smpd_err_printf("connect command received while session is closing, ignoring connect.\n");
+	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a result command for the connect request.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the tag to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - connect command received while closing.");
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result string to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
+	    result = smpd_post_write_command(context, temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the result command to the context.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
@@ -270,6 +329,35 @@ int handle_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to connect to %s\n", host);
 	    /* send fail connect command back */
+	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a result command for the connect request.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the tag to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - unable to connect to smpd.");
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result string to the result command.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
+	    smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
+	    result = smpd_post_write_command(context, temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the result command to the context.\n");
+		smpd_exit_fn("handle_command");
+		return SMPD_FAIL;
+	    }
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
@@ -307,6 +395,38 @@ int handle_command(smpd_context_t *context)
 	    smpd_err_printf("unable to post a read for the next command on the newly connected context.\n");
 	    return SMPD_FAIL;
 	}
+	/* write a success result back to the connect requester */
+	result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a result command for the connect request.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the tag to the result command.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("handle_command");
+	return SMPD_SUCCESS;
     }
     else if (strcmp(cmd->cmd_str, "print") == 0)
     {
