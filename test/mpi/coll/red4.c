@@ -136,7 +136,12 @@ int main( int argc, char *argv[] )
 
 	    /* Try the same test, but using MPI_IN_PLACE */
 	    initMat( comm, bufout );
-	    MPI_Reduce( MPI_IN_PLACE, bufout, count, mattype, op, root, comm );
+	    if (rank == root) {
+		MPI_Reduce( MPI_IN_PLACE, bufout, count, mattype, op, root, comm );
+	    }
+	    else {
+		MPI_Reduce( bufout, NULL, count, mattype, op, root, comm );
+	    }
 	    if (rank == root) {
 		errs += isIdentity( comm, bufout );
 	    }

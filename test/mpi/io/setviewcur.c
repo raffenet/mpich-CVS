@@ -18,7 +18,6 @@ int main( int argc, char *argv[] )
     MPI_Offset offset;
     MPI_File fh;
     MPI_Comm comm;
-    MPI_Datatype filetype;
     MPI_Status status;
 
     MTest_Init( &argc, &argv );
@@ -49,12 +48,12 @@ int main( int argc, char *argv[] )
 
     /* Reopen the file as sequential */
     err = MPI_File_open( comm, "test.ord", 
-		   MPI_MODE_RDONLY | MPI_MODE_SEQUENTIAL | 0
-			 /*MPI_MODE_DELETE_ON_CLOSE*/, MPI_INFO_NULL, &fh );
+		   MPI_MODE_RDONLY | MPI_MODE_SEQUENTIAL | 
+			 MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &fh );
     if (err) { errs++; MTestPrintErrorMsg( "Open(Read)", err ); }
     
     if (rank == 0) {
-	err = MPI_File_read_shared( fh, buf, size, MPI_INT, &status );
+	err = MPI_File_read_shared( fh, buf, 1, MPI_INT, &status );
 	if (err) { errs++; MTestPrintErrorMsg( "Read_all", err ); }
 	if (buf[0] != size) { 
 	    errs++;
@@ -63,11 +62,12 @@ int main( int argc, char *argv[] )
 	}
     }
     MPI_Barrier( comm );
-    MPI_Type_vector( 2, 1, size, MPI_INT, &filetype );
+    /* All processes must provide the same file view for MODE_SEQUENTIAL */
     err = MPI_File_set_view( fh, MPI_DISPLACEMENT_CURRENT, MPI_INT, 
-		       filetype, "native", MPI_INFO_NULL );
+		       MPI_INT, "native", MPI_INFO_NULL );
     if (err) { errs++; MTestPrintErrorMsg( "Set_view", err ); }
-    err = MPI_File_read_shared( fh, buf, 1, MPI_INT, &status );
+    buf[0] = -1;
+    err = MPI_File_read_ordered( fh, buf, 1, MPI_INT, &status );
     if (err) { errs++; MTestPrintErrorMsg( "Read_all", err ); }
     if (buf[0] != rank) {
 	errs++;

@@ -558,6 +558,16 @@ void MTestPrintError( int errcode )
     MPI_Error_string( errcode, string, &slen );
     printf( "Error class %d (%s)\n", errclass, string );
 }
+void MTestPrintErrorMsg( const char msg[], int errcode )
+{
+    int errclass, slen;
+    char string[MPI_MAX_ERROR_STRING];
+    
+    MPI_Error_class( errcode, &errclass );
+    MPI_Error_string( errcode, string, &slen );
+    printf( "%s: Error class %d (%s)\n", msg, errclass, string ); 
+    fflush( stdout );
+}
 
 #ifdef HAVE_MPI_WIN_CREATE
 /*

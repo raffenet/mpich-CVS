@@ -30,5 +30,8 @@ gaddress_LDADD = ../util/mtest.o
 getpartelm_SOURCES = getpartelm.c
 getpartelm_LDADD = ../util/mtest.o
 
+tresized_SOURCES = tresized.c
+tresized_LDADD = ../util/mtest.o 
+		 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )

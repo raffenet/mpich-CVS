@@ -12,6 +12,7 @@
 void MTest_Init( int *, char *** );
 void MTest_Finalize( int );
 void MTestPrintError( int );
+void MTestPrintErrorMsg( const char [], int );
 
 /*
  * This structure contains the information used to test datatypes
