@@ -63,6 +63,12 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+		/* Also check for a valid errhandler kind */
+		if (!mpi_errno) {
+		    if (errhan_ptr->kind != MPID_WIN) {
+			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**errhandnotwin", 0 );
+		    }
+		}
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
