@@ -508,7 +508,7 @@ void MPIU_Param_finalize( void );
 /* Info */
 typedef struct MPID_Info {
     int                handle;
-    struct MPID_Info_s *next;
+    struct MPID_Info   *next;
     char               *key;
     char               *value;
 } MPID_Info;
@@ -581,10 +581,10 @@ typedef struct MPID_Keyval {
    common block allocator for them, we must provide those elements 
 */
 typedef struct MPID_Attribute {
-    int                  handle;
-    volatile int         ref_count;
-    MPID_Keyval *keyval;            /* Keyval structure for this attribute */
-    struct MPID_Attr_s *next;       /* Pointer to next in the list */
+    int          handle;
+    volatile int ref_count;
+    MPID_Keyval  *keyval;           /* Keyval structure for this attribute */
+    struct MPID_Attribute *next;    /* Pointer to next in the list */
     long        pre_sentinal;       /* Used to detect user errors in accessing
 				       the value */
     void *      value;              /* Stored value */
@@ -652,7 +652,7 @@ typedef struct MPID_Comm {
     MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
-    struct MPID_Collops_struct  *coll_fns; /* Pointer to a table of functions 
+    struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */
 #ifndef MPICH_SINGLE_THREADED
@@ -786,7 +786,7 @@ typedef struct MPID_Datatype {
     int           n_elements;   /* Number of basic elements in this datatype */
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
                                    not all the same size */
-    int (*free_fn)( struct MPID_Datatype_st * ); /* Function to free this datatype */
+    int (*free_fn)( struct MPID_Datatype * ); /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
     MPID_DEV_DATATYPE_DECL
