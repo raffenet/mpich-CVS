@@ -92,13 +92,6 @@ dist-with-version:
 		(cd tmpdir2 && ls ) ; fi
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-${version}/man
 	cp -r tmpdir2/www tmpdir/${PACKAGE}-${version}/www
-	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-${version}/doc/refman
-	( cd tmpdir2/doc/adi3 && ${MAKE} )
-	( cd tmpdir2/doc/mpich2 && ${MAKE} )
-	( cd tmpdir2/doc/refman && ${MAKE} )
-	-cp -f tmpdir2/doc/adi3/*.pdf tmpdir/${PACKAGE}-${version}/doc/adi3
-	-cp -f tmpdir2/doc/mpich2/*.pdf tmpdir/${PACKAGE}-${version}/doc/mpich2
-	-cp -f tmpdir2/doc/refman/mpiman.pdf tmpdir/${PACKAGE}-${version}/doc/refman
 	rm -rf tmpdir2
 	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -r ${tag} mpe >>cvsexp.log 2>&1 && \
 	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
@@ -131,8 +124,7 @@ snap:
 	rm -rf tmpdir
 
 # Check that all modules are present in the development version
-MODULE_DIRS = doc/adi3 doc/mpich2 doc/notes src/mpi/romio src/pm/winmpd \
-    src/pm/mpd
+MODULE_DIRS = doc/notes src/mpi/romio src/pm/winmpd src/pm/mpd
 dist-check:
 	@for dir in $(MODULE_DIRS) ; do \
 	    if [ ! -d $(master_top_srcdir)/$$dir ] ; then \
