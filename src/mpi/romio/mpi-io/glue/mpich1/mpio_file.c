@@ -7,6 +7,7 @@
  */
 
 #include "mpioimpl.h"
+#include "adio_extern.h"
 
 /* Hooks for allocation of MPI_File handles.
  *
