@@ -4,6 +4,47 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
+           [--trace] [--echo] [--daemon] [--bulletproof] \ 
+           [--idmyhost=<hostname>] [--listenport=<listenport>]' 
+
+Long parameter names may be abbreviated to their first letters by using
+  only one hyphen and no equal sign:
+     mpd -h donner -p 4268 -n
+  is equivalent to
+     mpd --host=donner --port=4268 --noconsole
+
+--host and --port must be specified together; they tell the new mpd where
+  to enter an existing ring;  if they are omitted, the new mpd forms a
+  stand-alone ring that other mpds may enter later
+--noconsole is useful for running 2 mpds on the same machine; only one of
+  them will accept mpd commands
+--trace yields lots of traces thru mpd routines; currently too verbose
+  them can have a unix socket which a console program can connect to
+--echo causes the mpd echo its listener port by which other mpds may connect
+--daemon causes mpd to run backgrounded, with no controlling tty
+--bulletproof says to turn bulletproofing on (experimental)
+--idmyhost specifies an alternate hostname for the host this mpd is running on
+--listenport specifies a port for this mpd to listen on; by default it will
+  acquire one from the system.
+
+A file named .mpd.conf file must be present in the user's home directory
+  with read and write access only for the user, and must contain at least
+  a line with secretword=<secretword>
+
+To run mpd as root, install it while root and instead of a .mpd.conf file
+use mpd.conf (no initial dot) in the /etc directory.' 
+"""
+from time import ctime
+from mpdlib import mpd_version
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__version__ += "  " + str(mpd_version)
+__credits__ = ""
+
+
 from sys       import stdout, argv, settrace, exit, excepthook, __stdout__, __stderr__
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
@@ -1179,39 +1220,8 @@ def sigchld_handler(signum,frame):
             done = 1
 
 def usage():
-    print 'usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ '
-    print '           [--trace] [--echo] [--daemon] [--bulletproof] \ '
-    print '           [--idmyhost=<hostname>] [--listenport=<listenport>]' 
-    print ''
-    print 'Long parameter names may be abbreviated to their first letters by using'
-    print '  only one hyphen and no equal sign:'
-    print '     mpd -h donner -p 4268 -n'
-    print '  is equivalent to'
-    print '     mpd --host=donner --port=4268 --noconsole'
-    print ''
-    print '--host and --port must be specified together; they tell the new mpd where'
-    print '  to enter an existing ring;  if they are omitted, the new mpd forms a'
-    print '  stand-alone ring that other mpds may enter later'
-    print '--noconsole is useful for running 2 mpds on the same machine; only one of'
-    print '  them will accept mpd commands'
-    print '--trace yields lots of traces thru mpd routines; currently too verbose'
-    print '  them can have a unix socket which a console program can connect to'
-    print '--echo causes the mpd echo its listener port by which other mpds may connect'
-    print '--daemon causes mpd to run backgrounded, with no controlling tty'
-    print '--bulletproof says to turn bulletproofing on (experimental)'
-    print '--idmyhost specifies an alternate hostname for the host this mpd is running on'
-    print '--listenport specifies a port for this mpd to listen on; by default it will'
-    print '  acquire one from the system.'
-    print ''
-    print 'A file named .mpd.conf file must be present in the user''s home directory'
-    print '  with read and write access only for the user, and must contain at least'
-    print '  a line with secretword=<secretword>'
-    print ''
-    print 'To run mpd as root, install it while root and instead of a .mpd.conf file'
-    print 'use mpd.conf (no initial dot) in the /etc directory.' 
-    print ''
-    print 'This version of mpd is %s' % str(mpd_version)
-
+    print __doc__
+    print "This version of mpd is", mpd_version
     exit(-1)
 
 def _cleanup():

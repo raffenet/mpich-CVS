@@ -9,6 +9,11 @@ usage: mpdtrace [-l]
 Lists the (short) hostname of each of the mpds in the ring
 The -l (ell) option shows full hostnames and listening ports
 """
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
 
 from sys    import argv, exit
 from os     import environ, getuid, close
@@ -17,12 +22,6 @@ from re     import sub
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
-
-from time import ctime
-__author__ = "Ralph Butler and Rusty Lusk"
-__date__ = ctime()
-__version__ = "$Revision$"
-__credits__ = "mom"
 
 def mpdtrace():
     mpd_set_my_id('mpdtrace_')

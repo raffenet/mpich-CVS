@@ -42,15 +42,14 @@ The three major modes of operation for this program are:
         runs a client on another (or same) host; connects to the specifed
         host/port where you previously started the server
 """
-
-from sys    import argv, exit
-from socket import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
-
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
 __date__ = ctime()
 __version__ = "$Revision$"
-__credits__ = "mom"
+__credits__ = ""
+
+from sys    import argv, exit
+from socket import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
 
 msg_to_server = 'hello_from_client_to_server'
 
