@@ -48,13 +48,13 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-0.96
+      cd mpich2-0.96p2
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-0.96
+      cd mpich2-0.96p2
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -315,8 +315,6 @@ manager is still under development.
 
 Alternative channels and devices
 --------------------------------
-NOTE: The 0.96 release does not support any alternative channels
-
 The communication mechanisms in MPICH2 are called "devices", paired with
 specific "channels".  The most thoroughly tested device is the "ch3"
 device.  The default configuration chooses the "sock" channel in the ch3
