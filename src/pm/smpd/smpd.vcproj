@@ -33,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib dbgd.lib sockd.lib pmid.lib mpich2ffd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib dbgd.lib sockd.lib pmid.lib mpich2ffd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib dbg.lib sock.lib pmi.lib mpich2ff.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib dbg.lib sock.lib pmi.lib mpich2ff.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
