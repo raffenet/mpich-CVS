@@ -33,6 +33,10 @@ $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
 $np_default = 2;         # Default number of processes to use
 
+$srcdir = ".";           # Used to set the source dir for testlist files
+
+$curdir = ".";           # used to track the relative current directory
+
 # Output forms
 $xmloutput = 0;          # Set to true to get xml output (also specify file)
 $verbose = 0;            # Set to true to get more output
@@ -53,6 +57,7 @@ foreach $_ (@ARGV) {
     if (/-mpiexec=(.*)/) { $mpiexec = $1; }
     elsif (/-np=(.*)/)   { $np_default = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
+    elsif (/-srcdir=(.*)/) { $srcdir = $1; }
     elsif (/-verbose/) { $verbose = 1; }
     elsif (/-debug/) { $debug = 1; }
     elsif (/-xmlfile=(.*)/) {
@@ -88,15 +93,21 @@ sub ProcessDir {
     my $dir = $_[0]; $dir =~ s/\/$//;
     my $listfile = $_[1];
     my $savedir = `pwd`;
-    
+    my $savecurdir = $curdir;
+
     chop $savedir;
 
     print "Processing directory $dir\n" if ($verbose || $debug);
     chdir $dir;
+    if ($dir =~ /\//) {
+	print STDERR "only direct subdirectories allowed in list files";
+    }
+    $curdir .= "/$dir";
 
     &RunList( $listfile );
 
     chdir $savedir;
+    $curdir = $savecurdir;
 }
 # ---------------------------------------------------------------------------
 # Run the programs listed in the file given as the argument. 
@@ -107,8 +118,14 @@ sub ProcessDir {
 sub RunList { 
     my $LIST = "LIST$depth"; $depth++;
     my $listfile = $_[0];
-    
-    open( $LIST, "<$listfile" ) || die "Could not open $listfile\n";
+
+    print "Looking in $curdir/$listfile\n" if $debug;
+    if (! -s "$listfile" && -s "$srcdir/$curdir/$listfile" ) {
+	open( $LIST, "<$srcdir/$curdir/$listfile" ) || die "Could not open $srcdir/$curdir/$listfile\n";
+    }
+    else {
+	open( $LIST, "<$listfile" ) || die "Could not open $listfile\n";
+    }
     while (<$LIST>) {
 	# Skip comments
 	s/#.*//g;
