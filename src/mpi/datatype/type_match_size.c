@@ -54,7 +54,6 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 {
     static const char FCNAME[] = "MPI_Type_match_size";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
     static const char *tname = 0;
     static MPI_Datatype real_types[] = { MPI_FLOAT, MPI_DOUBLE
 #ifdef HAVE_LONG_DOUBLE
