@@ -7,3 +7,4 @@ fcoll_test.f
 fperf.f
 pfcoll_test.f
 *.out
+romiotests
