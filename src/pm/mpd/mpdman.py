@@ -24,6 +24,8 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                      mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
                      mpd_socketpair, mpd_get_ranks_in_binary_tree
+# add these imports for arbitrary strings support
+#                     mpd_parse_keyvals, mpd_add_keyval_to_string
 
 def mpdman():
     signal(SIGCHLD,SIG_DFL)  # reset mpd's values
@@ -412,7 +414,12 @@ def mpdman():
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
+# simple strings
                             pmiMsgToSend = 'cmd=get_result rc=-1 key="%s"\n' % msg['key']
+# arbitrary strings
+#                            pmiMsgToSend = 'cmd=get_result rc=-1'
+#                            pmiMsgToSend = mpd_add_keyval_to_string(pmiMsgToSend, 'key', msg['key'])
+#                            pmiMsgToSend = pmiMsgToSend + "\n"
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         key = msg['key']
@@ -430,8 +437,13 @@ def mpdman():
                             if KVSs[default_kvsname].keys():
                                 key = KVSs[default_kvsname].keys()[0]
                                 val = KVSs[default_kvsname][key]
+# simple strings
                                 pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=1 key=%s val=%s\n' % \
                                                (key,val)
+# arbitrary strings
+#                                pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=1 key=%s ' % key
+#                                pmiMsgToSend = mpd_add_keyval_to_string(pmiMsgToSend, "val", val)
+#                                pmiMsgToSend = pmiMsgToSend + "\n"
                             else:
                                 pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
@@ -441,7 +453,12 @@ def mpdman():
                 elif msg['cmd'] == 'response_to_pmi_get':
                     if msg['to_rank'] == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
+# simple strings
                             pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])
+# arbitrary strings
+#                            pmiMsgToSend = 'cmd=get_result rc=0 '
+#                            pmiMsgToSend = mpd_add_keyval_to_string(pmiMsgToSend, "value", msg['value'])
+#                            pmiMsgToSend = pmiMsgToSend + "\n"
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
@@ -774,7 +791,12 @@ def mpdman():
                     kvsname = parsedMsg['kvsname']
                     if KVSs.has_key(kvsname)  and  KVSs[kvsname].has_key(key):
                         value = KVSs[kvsname][key]
+# simple strings
                         pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (value)
+# arbitrary strings
+#                        pmiMsgToSend = 'cmd=get_result rc=0'
+#                        pmiMsgToSend = mpd_add_keyval_to_string(pmiMsgToSend, 'value', value)
+#                        pmiMsgToSend = pmiMsgToSend + "\n"
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         msgToSend = { 'cmd' : 'pmi_get', 'key' : key,
@@ -792,8 +814,13 @@ def mpdman():
                             key = KVSs[default_kvsname].keys()[idx]
                             val = KVSs[default_kvsname][key]
                             nextidx = idx + 1
+# simple strings
                             pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=%d key=%s val=%s\n' % \
                                            (nextidx,key,val)
+# arbitrary strings
+#                            pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=%d key=%s ' % (nextidx,key)
+#                            pmiMsgToSend = mpd_add_keyval_to_string(pmiMsgToSend, "val", val)
+#                            pmiMsgToSend = pmiMsgToSend + "\n"
                         else:
                             pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
@@ -995,10 +1022,13 @@ def in_stdinRcvrs(myRank,stdinGoesToWho):
 def parse_pmi_msg(msg):
     parsed_msg = {}
     try:
+# simple strings
         sm = findall(r'\S+',msg)
         for e in sm:
             se = e.split('=')
             parsed_msg[se[0]] = se[1]
+# arbitrary strings
+#        parsed_msg = mpd_parse_keyvals(msg)
     except:
         print 'unable to parse pmi msg :%s:' % msg
     return parsed_msg
