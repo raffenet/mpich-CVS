@@ -11,7 +11,7 @@ from sys    import argv, exit
 from socket import socket, AF_UNIX, SOCK_STREAM
 from signal import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError
+                   mpd_get_my_username, mpdError
 
 def mpdallexit():
     mpd_set_my_id('mpdallexit_')
@@ -28,11 +28,16 @@ def mpdallexit():
         exit(-1)
     mpd_send_one_msg(conSocket, {'cmd':'mpdallexit'})
     msg = mpd_recv_one_msg(conSocket)
-    if not msg or msg['cmd'] != 'mpdallexit_ack':
+    if not msg:
+        print 'mpdallexit failed: empty msg from mpd'
+        exit(-1)
+    if msg['cmd'] != 'mpdallexit_ack':
         if msg['cmd'] == 'already_have_a_console':
-            mpd_raise('mpd already has a console (e.g. for long ringtest); try later')
+            print 'mpd already has a console (e.g. for long ringtest); try later'
+            exit(-1)
         else:
-            mpd_raise('unexpected message from mpd: %s' % (msg) )
+            print 'mpdallexit failed: unexpected message from mpd: %s' % (msg)
+            exit(-1)
     conSocket.close()
 
 def sigint_handler(signum,frame):
