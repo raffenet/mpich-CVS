@@ -99,6 +99,7 @@ int MPID_Type_vector(int count,
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
 	/* NOTE: element size is off. */
 	dlp->kind                       = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
+	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
 	dlp->loop_params.v_t.stride     = stride * oldsize; /* in bytes */
@@ -138,9 +139,10 @@ int MPID_Type_vector(int count,
 
 	/* fill in top part of dataloop */
 	dlp->kind                       = DLOOP_KIND_VECTOR | (old_dtp->size << DLOOP_ELMSIZE_SHIFT); /* WRONG I THINK */
+	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
-	dlp->loop_params.v_t.stride     = stride * new_dtp->size; /* in bytes */
+	dlp->loop_params.v_t.stride     = stride * old_dtp->size; /* in bytes */
 	dlp->el_extent                  = old_dtp->extent;
 	dlp->el_size                    = old_dtp->size;
 
