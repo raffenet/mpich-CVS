@@ -44,7 +44,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	else if (errno == ENOBUFS || errno == ENOMEM)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
-					     "**sock|noosmem", NULL);
+					     "**sock|osnomem", NULL);
 	}
 	else if (errno == EBADF || errno == ENOTSOCK || errno == EOPNOTSUPP)
 	{

@@ -30,7 +30,7 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, st
     if (mpi_errno != MPI_SUCCESS)										\
     { 														\
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,	\
-					 "**sock|eqfail", "**sock|poll|eqfail %d %d %d",			\
+					 "**sock|poll|eqfail", "**sock|poll|eqfail %d %d %d",			\
 					 pollinfo->sock_set->id, pollinfo->sock_id, (op_));			\
 	goto label_;												\
     }														\
@@ -70,7 +70,7 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, st
     if (MPIDU_Socki_initialized <= 0)											\
     {															\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT,	\
-					 "**sock|uninit", 0);								\
+					 "**sock|uninit", NULL);							\
 	goto fn_exit;													\
     }															\
 }
