@@ -2119,7 +2119,7 @@ example,\index{MPIU_Param_init}\index{MPIU_Param_get_int}%
 \index{MPIU_Param_bcast}\index{MPIU_Param_register}
 \begin{verbatim}
 int MPIU_Param_init( int *argc, char **argv[] );
-int MPIU_Param_bcast( );
+int MPIU_Param_bcast( void );
 int MPIU_Param_register( const char name[], const char envname[], 
                          const char description[] );
 int MPIU_Param_get_int( const char name[], int default_val, int *value );
@@ -5796,6 +5796,39 @@ It is the long-term goal of the MPICH group to provide sample implementations
 of these for several important classes of machine interconnects.  However,
 until that time, these routines provide a way for a device implementor to
 communicate topology information to the MPI routines. 
+
+\subsubsection{Proposed Interface 2}
+An alternative to the above interface would be an interface that allowed
+the device to specify one of the following topology types:
+\begin{description}
+\item[cart]Cartesian; the device provides the number of dimensions, the size 
+of each dimension, and whether the dimension is periodic (i.e., a
+torus or mesh).  Systems with SMPs connected on a mesh can use a first
+dimension with size 2 and periodic.
+\item[heirarchical]The device provides, for each process, a set of
+  levels and the color and key of the process within that level.
+  These arguments have meanings similar to \mpifunc{MPI_Comm_split}.
+  Processes that belong to the same group at a particular level (e.g.,
+  an SMP or a cluster) have the same value of \code{color}; each
+  process has a distinct value of \code{key}.  The number of levels is
+  provided by the device, allowing the description of an arbitrary
+  hierarchy of processes.  In addition, at any level, the processes
+  with the same \code{color} may have additional structure; e.g., they
+  may have cartesian topology.
+\item[switched]The processes are connected by a switched network that
+  either provides or approximates a complete connection network.  This
+  is appropriate for systems with full bisection bandwidth independent
+  of the number of processes and with good handling of contention.
+  Note that most large systems will only approximate this, but it may
+  still be an appropriate choice because the details of the
+  interconnect are too complex to be exploited.
+\item[bus]The processes are connected by a shared resource, such as a
+  bus, non-switched Ethernet (e.g., using hubs), or even with switched
+  networks that do not have adequate bandwidth to handle all processes
+  at one time.  One additional parameter may be the number of
+  processes that may communicate simultaneously without significant
+  contention.
+\end{description}
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 Access the topology description and return the number of dimensions of
