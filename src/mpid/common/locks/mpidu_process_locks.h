@@ -102,8 +102,8 @@ typedef mutex_t                 MPIDU_Process_lock_t;
 #define MPIDU_Process_lock_free(lock)   mutex_destroy(lock)
 static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_LOCK_BUSY_WAIT);
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_LOCK_BUSY_WAIT);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK_BUSY_WAIT);
     mutex_lock(lock);
     mutex_unlock(lock);
