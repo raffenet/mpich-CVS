@@ -9,6 +9,7 @@ define([AC_CACHE_SAVE], )dnl
 dnl
 dnl
 AC_INIT()
+AC_PREREQ(2.52)
 AC_CONFIG_AUX_DIR([.])
  
 AC_ARG_ENABLE(echo, 
@@ -377,28 +378,22 @@ trial_pkgs="source sample rlog"
 # i.e. use AC_MSG_WARN instead of AC_MSG_ERROR
 slog2_enable_softerror=yes
 export slog2_enable_softerror
-PKGS=""
 selected_pkgs=""
 if test "$enable_source" = "yes" \
      -a -s $srcdir/src/configure ; then
-    PKGS="$PKGS src"
     selected_pkgs="$selected_pkgs source"
     AC_CONFIG_SUBDIRS(src)
 fi
 if test "$enable_sample" = "yes" \
      -a -s $srcdir/trace_sample/configure ; then
-    PKGS="$PKGS trace_sample"
     selected_pkgs="$selected_pkgs sample"
     AC_CONFIG_SUBDIRS(trace_sample)
 fi
 if test "$enable_rlog" = "yes" \
      -a -s $srcdir/trace_rlog/configure ; then
-    PKGS="$PKGS trace_rlog"
     selected_pkgs="$selected_pkgs rlog"
     AC_CONFIG_SUBDIRS(trace_rlog)
 fi
-
-AC_SUBST(PKGS)
 
 # Define bindir's executables, and pass them down to sbindir's install-package
 BASIC_PGMS="clogprint clogTOslog2 clog2print clog2TOslog2 slog2navigator slog2print logconvertor jumpshot"

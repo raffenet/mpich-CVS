@@ -4,7 +4,7 @@ SHELL  = /bin/sh
 
 # The empty string, "", in PKGS is needed to avoid /bin/sh from complaining
 # when @PKGS@ is/are really empty.
-PKGS   = "" @PKGS@
+PKGS   = "" @subdirs@
 
 all:
 	@-for pkg in $(PKGS) ; do \
