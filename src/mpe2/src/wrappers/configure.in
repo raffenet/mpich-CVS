@@ -313,18 +313,28 @@ fi
 
 dnl Check MPI-RMA
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    if test "$enable_checkMPI" = "yes" ; yjem
+    if test "$enable_checkMPI" = "yes" ; then
         AC_MSG_CHECKING( [for the C version of MPI_Win_create] )
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                               [ int itmp; MPI_Win win ],
-                              [ itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win ) ],
+                              [
+#ifndef NULL
+#define NULL 0
+#endif
+    itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win )
+                              ],
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)
             AC_MSG_CHECKING( [for the C version of PMPI_Win_create] )
             PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                   [ int itmp; MPI_Win win ],
-                                  [ itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win ) ],
+                                  [
+#ifndef NULL
+#define NULL 0
+#endif
+    itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win )
+                                  ],
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
