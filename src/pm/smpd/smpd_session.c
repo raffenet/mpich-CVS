@@ -35,162 +35,6 @@ static int exists(char *filename)
     }
     return 1;
 }
-
-static SMPD_BOOL search_path(const char *smpd_path, const char *exe, int maxlen, char *str)
-{
-    char test[SMPD_MAX_EXE_LENGTH];
-    char path[SMPD_MAX_PATH_LENGTH];
-    char *token;
-    int n;
-
-    if (smpd_path == NULL || exe == NULL || maxlen < 1 || str == NULL)
-	return SMPD_FALSE;
-
-    strncpy(path, smpd_path, SMPD_MAX_PATH_LENGTH);
-    path[SMPD_MAX_PATH_LENGTH - 1] = '\0';
-    token = strtok(path, ";:");
-    while (token)
-    {
-	/* this does not catch the case where SMPD_MAX_EXE_LENGTH is not long enough and the file exists */
-	if (token[strlen(token)-1] != '/')
-	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s/%s", token, exe);
-	else
-	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s%s", token, exe);
-	test[SMPD_MAX_EXE_LENGTH-1] = '\0';
-	if (exists(test))
-	{
-	    if (n < maxlen)
-	    {
-		strcpy(str, test);
-		return SMPD_TRUE;
-	    }
-	    smpd_err_printf("buffer provided is too small: %d provided, %d needed\n", maxlen, n);
-	    return SMPD_FALSE;
-	}
-	token = strtok(NULL, ";:");
-    }
-    return SMPD_FALSE;
-}
-#endif
-
-#if 0
-char *search_path(char **env, char *cmd, char *cwd, int uid, int gid, char *uname)
-{
-    int i, len;
-    char *tmp, *path, succeeded = 0;
-    static char filename[4096];
-
-    for (i=0; env[i]; i++)
-    {
-	if (strncmp(env[i], "PATH=", 5) != 0)
-	    continue;
-
-	len = strlen(env[i])+1;
-	if (!(path=(char *)malloc(len * sizeof(char))))
-	{
-	    return(NULL);
-	}
-	bcopy(env[i], path, len * sizeof(char));
-
-	/* check for absolute or relative pathnames */
-	if ((strncmp(cmd,"./",2)) && (strncmp(cmd,"../",3)) && (cmd[0]!='/'))
-	{
-	    /* ok, no pathname specified, search for a valid executable */
-	    tmp = NULL;
-	    for (strtok(path, "="); (tmp = strtok(NULL, ":")); )
-	    {
-		/* concatenate search path and command */
-		/* use cwd if relative path is being used in environment */
-		if (!strncmp(tmp,"../",3) || !strncmp(tmp,"./",2) ||
-		    !strcmp(tmp,".") || !strcmp(tmp,".."))
-		{
-		    snprintf(filename, 4096, "%s/%s/%s", cwd, tmp, cmd);
-		}
-		else
-		{
-		    snprintf(filename, 4096, "%s/%s", tmp, cmd);
-		}
-		/* see if file is executable */
-		if (is_executable(filename, uname, uid, gid))
-		{
-		    succeeded=1;
-		    break;
-		}
-	    }
-	}
-	else
-	{
-	    /* ok, pathname is specified */
-	    if (!(strncmp(cmd,"../",3)) || !(strncmp(cmd,"./",2)))
-		snprintf(filename, 4096, "%s/%s", cwd, cmd);
-	    else
-		strncpy(filename,cmd,4096);
-	    if (is_executable(filename, uname, uid, gid))
-		succeeded=1;
-	}
-	return((succeeded) ? filename : NULL);
-    }
-    return(NULL);
-}
-
-/* IS_EXECUTABLE() - checks to see if a given filename refers to a file
- * which a given user could execute
- *
- * Parameters:
- * fn  - pointer to string containing null terminated file name,
- *       including path
- * un  - pointer to string containing user name
- * uid - numeric user id for user
- * gid - numeric group id for user (from password entry)
- *
- * Returns 1 if the file exists and is executable, 0 otherwise.
- *
- * NOTE: This code in and of itself isn't a good enough check unless it
- * is called by a process with its uid/gid set to the values passed in.
- * Otherwise the directory path would not necessarily be traversable by
- * the user.
- */
-int is_executable(char *fn, char *un, int uid, int gid)
-{
-    struct stat file_stat;
-
-    if ((stat(fn, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
-    {
-	return(0); /* no such file, or not a regular file */
-    }
-
-    if (file_stat.st_mode & S_IXOTH)
-    {
-	return(1); /* other executable */
-    }
-
-    if ((file_stat.st_mode & S_IXUSR) && (file_stat.st_uid == uid))
-    {
-	return(1); /* user executable and user owns file */
-    }
-
-    if (file_stat.st_mode & S_IXGRP)
-    {
-	struct group *grp_info;
-	int i;
-
-	if (file_stat.st_gid == gid)
-	{
-	    return(1); /* group in passwd entry matches, executable */
-	}
-
-	/* check to see if user is in this group in /etc/group */
-	grp_info = getgrgid(file_stat.st_gid);
-	for(i=0; grp_info->gr_mem[i]; i++)
-	{
-	    if (!strcmp(un, grp_info->gr_mem[i]))
-	    {
-		return(1); /* group from groups matched, executable */
-	    }
-	}
-    }
-    return(0);
-}
 #endif
 
 SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, char **namepart)
@@ -296,7 +140,7 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     /* add searching of the path and verifying file exists */
     path = getenv("PATH");
     strcpy(temp_str, *namepart);
-    if (search_path(path, temp_str, maxlen, exe_path))
+    if (smpd_search_path(path, temp_str, maxlen, exe_path))
     {
 	*namepart = strrchr(exe_path, '/');
 	**namepart = '\0';
@@ -307,16 +151,16 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
 #endif
 }
 
-SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *str)
+SMPD_BOOL smpd_search_path(const char *smpd_path, const char *exe, int maxlen, char *str)
 {
 #ifdef HAVE_WINDOWS_H
     char *filepart;
 
     /* search for exactly what's specified */
-    if (SearchPath(path, exe, NULL, maxlen, str, &filepart) == 0)
+    if (SearchPath(smpd_path, exe, NULL, maxlen, str, &filepart) == 0)
     {
 	/* search for file + .exe */
-	if (SearchPath(path, exe, ".exe", maxlen, str, &filepart) == 0)
+	if (SearchPath(smpd_path, exe, ".exe", maxlen, str, &filepart) == 0)
 	{
 	    /* search the default path */
 	    if (SearchPath(NULL, exe, NULL, maxlen, str, &filepart) == 0)
@@ -329,7 +173,38 @@ SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *
     }
     return SMPD_TRUE;
 #else
-    return search_path(path, exe, maxlen, str);
+    char test[SMPD_MAX_EXE_LENGTH];
+    char path[SMPD_MAX_PATH_LENGTH];
+    char *token;
+    int n;
+
+    if (smpd_path == NULL || exe == NULL || maxlen < 1 || str == NULL)
+	return SMPD_FALSE;
+
+    strncpy(path, smpd_path, SMPD_MAX_PATH_LENGTH);
+    path[SMPD_MAX_PATH_LENGTH - 1] = '\0';
+    token = strtok(path, ";:");
+    while (token)
+    {
+	/* this does not catch the case where SMPD_MAX_EXE_LENGTH is not long enough and the file exists */
+	if (token[strlen(token)-1] != '/')
+	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s/%s", token, exe);
+	else
+	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s%s", token, exe);
+	test[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	if (exists(test))
+	{
+	    if (n < maxlen)
+	    {
+		strcpy(str, test);
+		return SMPD_TRUE;
+	    }
+	    smpd_err_printf("buffer provided is too small: %d provided, %d needed\n", maxlen, n);
+	    return SMPD_FALSE;
+	}
+	token = strtok(NULL, ";:");
+    }
+    return SMPD_FALSE;
 #endif
 }
 
