@@ -7,13 +7,13 @@
 #include "mpiimpl.h"
 #include "mpif90conf.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Type_create_f90_integer */
+/* -- Begin Profiling Symbol Block for routine MPI_Type_create_f90_complex */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Type_create_f90_integer = PMPI_Type_create_f90_integer
+#pragma weak MPI_Type_create_f90_complex = PMPI_Type_create_f90_complex
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Type_create_f90_integer  MPI_Type_create_f90_integer
+#pragma _HP_SECONDARY_DEF PMPI_Type_create_f90_complex  MPI_Type_create_f90_complex
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Type_create_f90_integer as PMPI_Type_create_f90_integer
+#pragma _CRI duplicate MPI_Type_create_f90_complex as PMPI_Type_create_f90_complex
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -21,15 +21,15 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Type_create_f90_integer PMPI_Type_create_f90_integer
+#define MPI_Type_create_f90_complex PMPI_Type_create_f90_complex
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Type_create_f90_integer
+#define FUNCNAME MPI_Type_create_f90_complex
 
 /*@
-   MPI_Type_create_f90_integer - Return a predefined type that matches 
+   MPI_Type_create_f90_complex - Return a predefined type that matches 
    the specified range
 
    Input Arguments:
@@ -49,15 +49,15 @@ returns an error of class 'MPI_ERR_ARG'.
 .N MPI_SUCCESS
 .N MPI_ERR_ARG
 @*/
-int MPI_Type_create_f90_integer( int range, MPI_Datatype *newtype )
+int MPI_Type_create_f90_complex( int precision, int range, MPI_Datatype *newtype )
 {
-    static const char FCNAME[] = "MPI_Type_create_f90_integer";
+    static const char FCNAME[] = "MPI_Type_create_f90_complex";
     int mpi_errno = MPI_SUCCESS;
-    static int f90_integer_model = MPIR_F90_INTEGER_MODEL;
-    static int f90_integer_map[] = { MPIR_F90_INTEGER_MODEL_MAP 0, 0 };
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
+    static int f90_real_model[4] = { MPIR_F90_REAL_MODEL,
+                                     MPIR_F90_DOUBLE_MODEL };
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_F90_COMPLEX);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_F90_COMPLEX);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -75,6 +75,6 @@ int MPI_Type_create_f90_integer( int range, MPI_Datatype *newtype )
 
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_F90_COMPLEX);
     return MPI_SUCCESS;
 }
