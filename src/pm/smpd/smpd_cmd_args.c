@@ -207,6 +207,27 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_exit(-1);
     }
 
+    if (smpd_get_opt(argcp, argvp, "-enumerate") || smpd_get_opt(argcp, argvp, "-enum"))
+    {
+	smpd_data_t *data;
+	if (smpd_get_all_smpd_data(&data) == SMPD_SUCCESS)
+	{
+	    smpd_data_t *iter = data;
+	    while (iter != NULL)
+	    {
+		printf("%s\n%s\n", iter->name, iter->value);
+		iter = iter->next;
+	    }
+	    while (data != NULL)
+	    {
+		iter = data;
+		data = data->next;
+		free(iter);
+	    }
+	}
+	smpd_exit(0);
+    }
+
     if (smpd_get_opt_string(argcp, argvp, "-query", domain, SMPD_MAX_HOST_LENGTH))
     {
 	printf("querying hosts in the %s domain:\n", domain);
@@ -458,11 +479,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_err_printf("state machine failed.\n");
 	}
 
+	/*
 	result = MPIDU_Sock_finalize();
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
+	*/
 	smpd_exit(0);
 	smpd_exit_fn("smpd_parse_command_args (ExitProcess)");
 	ExitProcess(0);
