@@ -25,7 +25,7 @@ all: $(LIBNAME)
 	$(CC) $(CFLAGS) -c $*.c
 
 .c.p:
-	@\cp $*.c _$*.c
+	@cp $*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
 	@rm -f _$*.c
 
@@ -37,4 +37,5 @@ $(LIBNAME): $(MPIO_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS)
 
 clean:
-	rm -f *.o
+	@rm -f *.o
+

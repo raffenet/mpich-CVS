@@ -28,20 +28,20 @@ mpio:
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
 	@if test "$(FROM_MPICH)" = 0 ; then \
-	   echo " "; \
-	   echo "Completed build of ROMIO. Check the output for errors."; \
-	   echo " " ;\
-	   echo "To compile the example programs, cd to the test directory"; \
-	   echo "and type make."; \
-	   echo "Run the examples the way you would run any MPI program."; \
-	   echo "Each program takes the filename as a command-line argument"; \
-	   echo "'-fname filename'." ; \
-	   echo " " ;\
+           echo " "; \
+           echo "Completed build of ROMIO. Check the output for errors."; \
+           echo " " ;\
+           echo "To compile the example programs, cd to the test directory"; \
+           echo "and type make."; \
+           echo "Run the examples the way you would run any MPI program."; \
+           echo "Each program takes the filename as a command-line argument"; \
+           echo "'-fname filename'." ; \
+           echo " " ;\
         fi
 
 clean:
 	@dirs=`echo "$(DIRS)"`; \
-	for x in $(FILE_SYSTEM) ;\
+        for x in $(FILE_SYSTEM) ;\
          do \
              dirs=`echo "$$dirs" adio/ad_$$x` ;\
          done ; \
@@ -60,7 +60,7 @@ clean:
         if test "$(NOF77)" = 0 ; then\
             dirs=`echo "$$dirs" mpi-io/fortran` ;\
         fi;\
-	for dir in $$dirs ;\
+        for dir in $$dirs ;\
          do \
             echo " " ;\
             echo cleaning directory $$dir ;\
@@ -97,7 +97,7 @@ mpiolib:
         if test "$(NOF77)" = 0 ; then \
             dirs=`echo "$$dirs" mpi-io/fortran` ;\
         fi; \
-	for dir in $$dirs ;\
+        for dir in $$dirs ;\
          do \
             echo " " ;\
             echo compiling ROMIO in directory $$dir ;\
@@ -124,7 +124,7 @@ profile:
         if test "$(NOF77)" = 0 ; then\
             dirs=`echo "$$dirs" mpi-io/fortran` ;\
         fi;\
-	for dir in $$dirs ;\
+        for dir in $$dirs ;\
          do \
             echo " " ;\
             echo building profiling interface in directory $$dir ;\
@@ -138,7 +138,7 @@ profile:
 cleanall:
 	@dirs=`echo "$(ALL_DIRS)"`; \
         echo cleaning current directory ;\
-	(rm -f config.status Makefile *~ *.log romio.tar*) ;\
+        (rm -f config.status Makefile *~ *.log romio.tar*) ;\
         for dir in $$dirs ;\
          do \
             echo " " ;\
