@@ -42,7 +42,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_NTFS:
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	*(fd->fns) = ADIO_NTFS_operations;
 #else
 	FPRINTF(stderr, "ADIOI_SetFunctions: ROMIO has not been configured to use the NTFS file system\n");

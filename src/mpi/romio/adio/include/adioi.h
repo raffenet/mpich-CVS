@@ -319,7 +319,7 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
      ADIOI_Set_lock64((fd)->fd_sys, F_SETLK64, F_UNLCK, offset, whence, len); \
    else ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len)
 
-#elif (defined(NTFS))
+#elif (defined(ROMIO_NTFS))
 
 #define ADIOI_LOCK_CMD		0
 #define ADIOI_UNLOCK_CMD	1

@@ -7,7 +7,7 @@
 
 #include "adio.h"
 
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
 	     ADIO_Offset len) 
 {

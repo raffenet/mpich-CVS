@@ -14,7 +14,7 @@ void ADIOI_GEN_Flush(ADIO_File fd, int *error_code)
     static char myname[] = "ADIOI_GEN_FLUSH";
 #endif
 
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	err = FlushFileBuffers(fd);
 #else
     err = fsync(fd->fd_sys);

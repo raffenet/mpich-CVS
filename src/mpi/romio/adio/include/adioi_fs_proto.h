@@ -260,7 +260,7 @@ ADIO_Offset ADIOI_UFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 void ADIOI_UFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif
 
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 extern struct ADIOI_Fns_struct ADIO_NTFS_operations;
 
 void ADIOI_NTFS_Open(ADIO_File fd, int *error_code);

@@ -61,7 +61,7 @@ Output Parameters:
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code)
 {
     char *dir, *slash;
-#ifndef NTFS
+#ifndef ROMIO_NTFS
     int err;
 #endif
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
@@ -173,7 +173,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #else
     /* on other systems, make NFS the default */
     free(dir);
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	*fstype = ADIO_NTFS;
 #else
     *fstype = ADIO_NFS;   
@@ -232,7 +232,7 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
 	*fstype = ADIO_TESTFS;
     }
     else {
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	*fstype = ADIO_NTFS;
 #else
 	*fstype = 0;

@@ -80,7 +80,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 #ifdef PROFILE
     MPE_Log_event(11, 0, "start seek");
 #endif
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	{
 #ifdef HAVE_INT64
 		DWORD dwTemp;

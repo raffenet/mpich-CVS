@@ -34,7 +34,7 @@ void ADIOI_Shfp_fname(ADIO_File fd, int rank)
 	
 	strcpy(fd->shared_fp_fname, fd->filename);
 	
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 	slash = strrchr(fd->filename, '\\');
 #else
 	slash = strrchr(fd->filename, '/');
@@ -45,7 +45,7 @@ void ADIOI_Shfp_fname(ADIO_File fd, int rank)
 	}
 	else {
 	    ptr = slash;
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 		slash = strrchr(fd->shared_fp_fname, '\\');
 #else
 	    slash = strrchr(fd->shared_fp_fname, '/');

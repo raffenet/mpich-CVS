@@ -38,7 +38,7 @@
 #include <sys/cnx_fcntl.h>
 #endif
 
-#ifdef NTFS
+#ifdef ROMIO_NTFS
 #include <winsock2.h>
 #include <windows.h>
 #define FDTYPE HANDLE
