@@ -113,13 +113,13 @@ typedef struct ibu_state_t
 #define IBU_ACK_WATER_LEVEL        16
 
 typedef struct IBU_Global {
-       VAPI_hca_hndl_t hca_handle;
-        VAPI_pd_hndl_t pd_handle;
-       VAPI_hca_port_t hca_port;
-              IB_lid_t lid;
-         ibu_state_t * unex_finished_list;
-		   int error;
-		  char err_msg[IBU_ERROR_MSG_LENGTH];
+    VAPI_hca_hndl_t  hca_handle;
+    VAPI_pd_hndl_t   pd_handle;
+    VAPI_hca_port_t  hca_port;
+    IB_lid_t         lid;
+    ibu_state_t *    unex_finished_list;
+    int              error;
+    char             err_msg[IBU_ERROR_MSG_LENGTH];
 } IBU_Global;
 
 IBU_Global IBU_Process;
@@ -257,15 +257,14 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RQ_PSN);
 	qp_attr.pkey_ix          = 0;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_PKEY_IX);
-	qp_attr.min_rnr_timer    = 5;
+	qp_attr.min_rnr_timer    = 0;/*5;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_MIN_RNR_TIMER);
-
+	qp_attr.dest_qp_num = ibu->dest_qp_num;
+	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_DEST_QP_NUM);
 	qp_attr.av.sl            = 0;
 	qp_attr.av.grh_flag      = 0;
 	qp_attr.av.static_rate   = 0;
 	qp_attr.av.src_path_bits = 0;
-	qp_attr.dest_qp_num = ibu->dest_qp_num;
-	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_DEST_QP_NUM);
 	qp_attr.av.dlid = ibu->dlid;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_AV);
     }
@@ -276,13 +275,13 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_QP_STATE);
 	qp_attr.sq_psn           = 0;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_SQ_PSN);
-	qp_attr.timeout          = 10;
+	qp_attr.timeout          = 0x20; /*10;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_TIMEOUT);
-	qp_attr.retry_count      = 5; 
+	qp_attr.retry_count      = 1; /*5;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RETRY_COUNT);
-	qp_attr.rnr_retry        = 1;
+	qp_attr.rnr_retry        = 3; /*1;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RNR_RETRY);
-	qp_attr.ous_dst_rd_atom  = 255;
+	qp_attr.ous_dst_rd_atom  = 1; /*255;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_OUS_DST_RD_ATOM);
     }
     else if (qp_state == VAPI_RESET)
@@ -337,6 +336,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
     status = VAPI_create_qp(IBU_Process.hca_handle, &qp_init_attr, &ibu->qp_handle, &qp_prop);
     if (status != VAPI_OK)
     {
+	printf("VAPI_create_qp failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
     }
@@ -382,7 +382,7 @@ static void *ib_malloc_register(unsigned int size)
 	&mem_out);
     if (status != IBU_SUCCESS)
     {
-	err_printf("ib_malloc_register: VAPI_register_mr failed, error %d\n", status);
+	err_printf("ib_malloc_register: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
@@ -442,7 +442,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = createQP(p, set);
     if (status != IBU_SUCCESS)
     {
-	err_printf("ibu_create_qp: createQP failed, error %d\n", status);
+	err_printf("ibu_create_qp: createQP failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -451,7 +451,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = modifyQP(p, VAPI_INIT);
     if (status != IBU_SUCCESS)
     {
-	err_printf("ibu_create_qp: modifyQP(INIT) failed, error %d\n", status);
+	err_printf("ibu_create_qp: modifyQP(INIT) failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -459,15 +459,18 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = modifyQP(p, VAPI_RTR);
     if (status != IBU_SUCCESS)
     {
-	err_printf("ibu_create_qp: modifyQP(RTR) failed, error %d\n", status);
+	err_printf("ibu_create_qp: modifyQP(RTR) failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
+
+    /* The Mellanox code adds a barrier here so that both sides are in the RTR state before moving to RTS */
+
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(RTS)"));*/
     status = modifyQP(p, VAPI_RTS);
     if (status != IBU_SUCCESS)
     {
-	err_printf("ibu_create_qp: modifyQP(RTS) failed, error %d\n", status);
+	err_printf("ibu_create_qp: modifyQP(RTS) failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -533,7 +536,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
     work_req.sg_lst_len = 1;
-    data.addr = (VAPI_virt_addr_t)mem_ptr;
+    data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
     data.lkey = ibu->lkey;
 
@@ -545,7 +548,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     if (status != VAPI_OK)
     {
 	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
+	err_printf("%s: Error: failed to post ib receive, status = %s\n", FCNAME, VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return status;
     }
@@ -609,7 +612,7 @@ static int ibui_post_receive(ibu_t ibu)
     if (status != VAPI_OK)
     {
 	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
+	err_printf("%s: Error: failed to post ib receive, status = %s\n", FCNAME, VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
@@ -674,7 +677,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if (status != VAPI_OK)
     {
 	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
+	err_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
     }
@@ -731,7 +734,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	g_cur_write_stack_index++;
 
 	data.len = length;
-	data.addr = (VAPI_virt_addr_t)mem_ptr;
+	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
 	data.lkey = ibu->lkey;
 	
 	work_req.opcode = VAPI_SEND;
@@ -774,7 +777,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	    err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
+	    err_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, VAPI_strerror(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
 	}
@@ -903,7 +906,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	    err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
+	    err_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, VAPI_strerror(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return -1;
 	}
@@ -937,16 +940,16 @@ int ibu_init()
     status = VAPI_open_hca(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: VAPI_open_hca failed, status %d\n", status);
+	err_printf("ibu_init: VAPI_open_hca failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
 #endif
-    status = EVAPI_open_hca(id, NULL, &sugg_profile);
+    /*status = EVAPI_open_hca(id, NULL, &sugg_profile);*/
 #if 0
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: EVAPI_open_hca failed, status %d\n", status);
+	err_printf("ibu_init: EVAPI_open_hca failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -954,7 +957,7 @@ int ibu_init()
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: EVAPI_get_hca_hndl failed, status %d\n", status);
+	err_printf("ibu_init: EVAPI_get_hca_hndl failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -962,7 +965,7 @@ int ibu_init()
     status = VAPI_alloc_pd(IBU_Process.hca_handle, &IBU_Process.pd_handle);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: VAPI_alloc_pd failed, status %d\n", status);
+	err_printf("ibu_init: VAPI_alloc_pd failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -972,7 +975,7 @@ int ibu_init()
 				      (IB_port_t)1, &IBU_Process.hca_port);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: VAPI_query_hca_port_prop failed, status %d\n", status);
+	err_printf("ibu_init: VAPI_query_hca_port_prop failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -982,7 +985,7 @@ int ibu_init()
     status = VAPI_set_comp_event_handler(IBU_Process.hca_handle, NULL, NULL);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: VAPI_set_comp_event_handler failed, status %d\n", status);
+	err_printf("ibu_init: VAPI_set_comp_event_handler failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -1028,6 +1031,12 @@ void FooBar(VAPI_hca_hndl_t hca_handle, VAPI_cq_hndl_t cq_handle, void *p)
     fflush(stdout);
 }
 
+void FooBar2(VAPI_hca_hndl_t hca_handle, VAPI_event_record_t *event, void *p)
+{
+    printf("Help me I'm drowning in events\n");
+    fflush(stdout);
+}
+
 #undef FUNCNAME
 #define FUNCNAME ibu_create_set
 #undef FCNAME
@@ -1037,6 +1046,7 @@ int ibu_create_set(ibu_set_t *set)
     VAPI_ret_t status;
     VAPI_cqe_num_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
     EVAPI_compl_handler_hndl_t ch;
+    EVAPI_async_handler_hndl_t ah;
     MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_SET);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_SET);
@@ -1049,24 +1059,34 @@ int ibu_create_set(ibu_set_t *set)
 	&max_cq_entries);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_create_set: VAPI_create_cq failed, error %d\n", status);
+	err_printf("ibu_create_set: VAPI_create_cq failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
-    status = EVAPI_set_comp_eventh(IBU_Process.hca_handle, *set, FooBar, NULL, &ch);
+    status = EVAPI_set_comp_eventh(IBU_Process.hca_handle, *set, FooBar /* EVAPI_POLL_CQ_UNBLOCK_HANDLER */, NULL, &ch);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_create_set: VAPI_set_comp_evenh failed, status %d\n", status);
+	err_printf("ibu_create_set: VAPI_set_comp_evenh failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
+    /*
     status = EVAPI_clear_comp_eventh(IBU_Process.hca_handle, ch);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_create_set: VAPI_clear_comp_eventh failed, status %d\n", status);
+	err_printf("ibu_create_set: VAPI_clear_comp_eventh failed, status %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
+    */
+    status = EVAPI_set_async_event_handler(IBU_Process.hca_handle, FooBar2, NULL, &ah);
+    if (status != VAPI_OK)
+    {
+	err_printf("ibu_create_set: EVAPI_set_async_event_handler failed, status %s\n", VAPI_strerror(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+	return status;
+    }
+
     MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
     return status;
@@ -1307,7 +1327,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 
 	status = VAPI_poll_cq(
 	    IBU_Process.hca_handle,
-	    set,
+	    *set,
 	    &completion_data);
 	if (status == VAPI_EAGAIN || status == VAPI_CQ_EMPTY)
 	{
@@ -1327,15 +1347,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	}
 	if (status != VAPI_OK)
 	{
-	    err_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %d\n", FCNAME, status);
+	    err_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %s\n", FCNAME, VAPI_strerror(status));
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
 	if (completion_data.status != VAPI_SUCCESS)
 	{
-	    err_printf("%s: error: status = %d != VAPI_SUCCESS\n", 
-		FCNAME, completion_data.status);
+	    err_printf("%s: error: status = %s != VAPI_SUCCESS\n", 
+		FCNAME, VAPI_strerror(completion_data.status));
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
