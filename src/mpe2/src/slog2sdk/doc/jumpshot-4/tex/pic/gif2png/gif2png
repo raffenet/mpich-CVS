@@ -1,0 +1,7 @@
+#!/bin/sh
+
+for giffile in *.gif ; do
+    pngfile="`echo $giffile | sed -e 's/\.gif/\.png/'`"
+    echo "converting $giffile to $pngfile"
+    convert $giffile $pngfile
+done
