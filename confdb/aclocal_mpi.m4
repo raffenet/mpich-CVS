@@ -90,12 +90,17 @@ dnl Output Effects:
 dnl Adds the following command line options to configure
 dnl+ \-\-with\-mpich[=path] - MPICH.  'path' is the location of MPICH commands
 dnl. \-\-with\-ibmmpi - IBM MPI
+dnl. \-\-with\-lammpi[=path] - LAM/MPI
 dnl- \-\-with\-sgimpi - SGI MPI
 dnl If no type is selected, and a default ("mpich", "ibmmpi", or "sgimpi")
 dnl is given, that type is used as if '--with-<default>' was given.
 dnl
 dnl Sets 'CC', 'F77', 'TESTCC', 'TESTF77', and 'MPILIBNAME'.  Does `not`
 dnl perform an AC_SUBST for these values.
+dnl Also sets 'MPIBOOT' and 'MPIUNBOOT'.  These are used to specify 
+dnl programs that may need to be run before and after running MPI programs.
+dnl For example, 'MPIBOOT' may start demons necessary to run MPI programs and
+dnl 'MPIUNBOOT' will stop those demons.
 dnl
 dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
@@ -109,6 +114,9 @@ AC_SUBST(F90)
 AC_ARG_WITH(mpich,
 [--with-mpich=path  - Assume that we are building with MPICH],
 ac_mpi_type=mpich)
+AC_ARG_WITH(lammpi,
+[--with-lammpi=path  - Assume that we are building with LAM/MPI],
+ac_mpi_type=lammpi)
 AC_ARG_WITH(ibmmpi,
 [--with-ibmmpi    - Use the IBM SP implementation of MPI],
 ac_mpi_type=ibmmpi)
@@ -149,6 +157,10 @@ case $ac_mpi_type in
             AC_PATH_PROG(MPICXX,mpiCC)
             TESTCXX=${CXX-CC}
             CXX="$MPICXX"
+	    # We may want to restrict this to the path containing mpirun
+	    AC_PATH_PROG(MPIRUN,mpirun)
+	    AC_PATH_PROG(MPIBOOT,mpichboot)
+	    AC_PATH_PROG(MPIUNBOOT,mpichstop)
 	    PATH="$save_PATH"
   	    MPILIBNAME="mpich"
         else 
@@ -156,6 +168,38 @@ case $ac_mpi_type in
 	    :
         fi
 	;;
+
+	lammpi)
+	dnl
+        dnl This isn't correct.  It should try to get the underlying compiler
+        dnl from the mpicc and mpif77 scripts or mpireconfig
+        save_PATH="$PATH"
+        if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
+	    # Look for commands; if not found, try adding bin to the path
+		if test ! -x $with_lammpi/mpicc -a -x $with_lammpi/bin/mpicc ; then
+			with_lammpi="$with_lammpi/bin"
+		fi
+                PATH=$with_lammpi:${PATH}
+        fi
+        AC_PATH_PROG(MPICC,mpicc)
+        TESTCC=${CC-cc}
+        CC="$MPICC"
+        AC_PATH_PROG(MPIF77,mpif77)
+        TESTF77=${F77-f77}
+        F77="$MPIF77"
+        AC_PATH_PROG(MPIF90,mpif90)
+        TESTF90=${F90-f90}
+        F90="$MPIF90"
+        AC_PATH_PROG(MPICXX,mpiCC)
+        TESTCXX=${CXX-CC}
+        CXX="$MPICXX"
+	PATH="$save_PATH"
+  	MPILIBNAME="lammpi"
+	MPIBOOT="lamboot"
+	MPIUNBOOT="wipe"
+	MPIRUN="mpirun"
+	;;
+
 	ibmmpi)
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
 	# There is no mpxlf90, but the options langlvl and free can
@@ -163,6 +207,7 @@ case $ac_mpi_type in
 	TESTF90=${F90-xlf90}; F90="mpxlf -qlanglvl=90ext -qfree=f90"
 	MPILIBNAME=""
 	;;
+
 	sgimpi)
 	TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; 
 	TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
@@ -170,7 +215,11 @@ case $ac_mpi_type in
 	if test "$ac_cv_lib_mpi_MPI_Init" = "yes" ; then
 	    MPILIBNAME="mpi"
 	fi	
+	MPIRUN=mpirun
+	MPIBOOT=""
+	MPIUNBOOT=""
 	;;
+
 	*)
 	# Find the compilers
 	PAC_PROG_CC
