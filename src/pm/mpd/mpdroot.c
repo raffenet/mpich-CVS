@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
         {
 	    /* nothing to do; just stick with default console */
         }
-        else if (argc > 1  &&  strncmp(argv[1],"--mpduuc",4) == 0)
+        else if (argc > 1  &&  strncmp(argv[1],"--mpduuc",8) == 0)
         {
             for (i=1; i < argc; i++)
                 argv[i] = argv[i+1];
