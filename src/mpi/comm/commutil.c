@@ -153,6 +153,7 @@ int MPIR_Get_contextid( MPI_Comm comm )
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
     MPIR_Nest_incr();
+    /* Comm must be an intracommunicator */
     NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
 		    MPI_BAND, comm );
     MPIR_Nest_decr();
