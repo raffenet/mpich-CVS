@@ -151,7 +151,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt_string(argcp, argvp, "-query", domain, SMPD_MAX_HOST_LENGTH))
     {
 	printf("querying hosts in the %s domain:\n", domain);
-	printf("Not implemented yet.\n");
+	printf("Not implemented.\n");
 	smpd_exit(0);
     }
 
