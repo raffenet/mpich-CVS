@@ -116,7 +116,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	    MPIR_Request_extract_status(request_ptr, status);
 	    
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
-	    if (mpi_errno == MPI_SUCCESS)
+	    if (rc != MPI_SUCCESS)
 	    {
 		mpi_errno = rc;
 	    }
