@@ -81,7 +81,9 @@ PMPI_LOCAL int MPIR_Alltoallv (
                                recvcnts[dst], recvtype, dst,
                                MPIR_ALLTOALLV_TAG, comm,
                                &reqarray[i]);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
 
     for ( i=0; i<comm_size; i++ ) { 
@@ -90,17 +92,21 @@ PMPI_LOCAL int MPIR_Alltoallv (
                                sendcnts[dst], sendtype, dst,
                                MPIR_ALLTOALLV_TAG, comm,
                                &reqarray[i+comm_size]);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
 
     mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_ERR_IN_STATUS) {
         for (i=0; i<2*comm_size; i++) {
             if (starray[i].MPI_ERROR != MPI_SUCCESS) 
                 mpi_errno = starray[i].MPI_ERROR;
         }
     }
+    /* --END ERROR HANDLING-- */
     
     MPIU_Free(reqarray);
     MPIU_Free(starray);
@@ -185,7 +191,9 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
                                   MPIR_ALLTOALLV_TAG, recvaddr, recvcount, 
                                   recvtype, src, MPIR_ALLTOALLV_TAG,
                                   comm, &status); 
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
     
     /* check if multiple threads are calling this collective function */

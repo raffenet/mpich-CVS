@@ -101,7 +101,9 @@ PMPI_LOCAL int MPIR_Alltoall(
     /* get true extent of sendtype */
     mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
                                           &sendtype_true_extent);  
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno) return mpi_errno;
+    /* --END ERROR HANDLING-- */
 
     MPID_Datatype_get_size_macro(sendtype, sendtype_size);
     nbytes = sendtype_size * sendcount * comm_size;
@@ -120,10 +122,12 @@ PMPI_LOCAL int MPIR_Alltoall(
         sendbuf_extent = sendcount * comm_size *
             (MPIR_MAX(sendtype_true_extent, sendtype_extent));
         tmp_buf = MPIU_Malloc(sendbuf_extent*comm_size);
+	/* --BEGIN ERROR HANDLING-- */
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         
         /* adjust for potential negative lower bound in datatype */
         tmp_buf = (void *)((char*)tmp_buf - sendtype_true_lb);
@@ -133,7 +137,9 @@ PMPI_LOCAL int MPIR_Alltoall(
         mpi_errno = MPIR_Localcopy(sendbuf, curr_cnt, sendtype,
                                    ((char *)tmp_buf + rank*sendbuf_extent),
                                    curr_cnt, sendtype);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
         
         mask = 0x1;
         i = 0;
@@ -156,7 +162,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                           sendcount*comm_size*mask,
                                           sendtype, dst, MPIR_ALLTOALL_TAG, 
                                           comm, &status);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno) return mpi_errno;
+		/* --END ERROR HANDLING-- */
                 
                 /* in case of non-power-of-two nodes, less data may be
                    received than specified */
@@ -205,7 +213,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                               last_recv_cnt, sendtype,
                                               dst, MPIR_ALLTOALL_TAG,
                                               comm);  
+			/* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno) return mpi_errno;
+			/* --END ERROR HANDLING-- */
                     }
                     /* recv only if this proc. doesn't have data and sender
                        has data */
@@ -218,7 +228,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                               sendtype,   
                                               dst, MPIR_ALLTOALL_TAG,
                                               comm, &status); 
+			/* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno) return mpi_errno;
+			/* --END ERROR HANDLING-- */
                         NMPI_Get_count(&status, sendtype, &last_recv_cnt);
                         curr_cnt += last_recv_cnt;
                     }
@@ -240,7 +252,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                         ((char*)recvbuf +
                                          p*recvcount*recvtype_extent), 
                                         recvcount, recvtype);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno) return mpi_errno;
+	    /* --END ERROR HANDLING-- */
         }
         
         MPIU_Free((char *)tmp_buf+sendtype_true_lb); 
@@ -262,7 +276,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                   recvcount, recvtype, dst,
                                   MPIR_ALLTOALL_TAG, comm,
                                   &reqarray[i]);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno) return mpi_errno;
+	    /* --END ERROR HANDLING-- */
         }
 
         for ( i=0; i<comm_size; i++ ) { 
@@ -272,7 +288,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                    sendcount, sendtype, dst,
                                    MPIR_ALLTOALL_TAG, comm,
                                    &reqarray[i+comm_size]);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno) return mpi_errno;
+	    /* --END ERROR HANDLING-- */
         }
   
         /* ... then wait for *all* of them to finish: */
@@ -301,7 +319,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                    ((char *)recvbuf +
                                     rank*recvcount*recvtype_extent),
                                    recvcount, recvtype);
+	/* --BEGIN ERROR HANDING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
 
         /* Is comm_size a power-of-two? */
         i = 1;
@@ -331,7 +351,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                                        src*recvcount*recvtype_extent),
                                       recvcount, recvtype, src,
                                       MPIR_ALLTOALL_TAG, comm, &status);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno) return mpi_errno;
+	    /* --END ERROR HANDLING-- */
         }
     }
     
@@ -406,7 +428,9 @@ PMPI_LOCAL int MPIR_Alltoall_inter(
                                   MPIR_ALLTOALL_TAG, recvaddr,
                                   recvcount, recvtype, src,
                                   MPIR_ALLTOALL_TAG, comm, &status);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno) return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
 
     /* check if multiple threads are calling this collective function */

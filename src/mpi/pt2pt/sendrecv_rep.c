@@ -62,7 +62,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     static const char FCNAME[] = "MPI_Sendrecv_replace";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-#ifdef LOG_ARROWS
+#ifdef MPID_LOG_ARROWS
     /* This isn't the right test, but it is close enough for now */
     int sendcount = count, recvcount = count;
 #endif
@@ -141,38 +141,48 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	if (count > 0 && dest != MPI_PROC_NULL)
 	{
 	    mpi_errno = NMPI_Pack_size(count, datatype, comm, &tmpbuf_size);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		goto blk_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 
 	    tmpbuf = MPIU_Malloc(tmpbuf_size);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmpbuf == NULL)
 	    {
 		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 		goto blk_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 
 	    mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		goto blk_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	
 	mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 
 	mpi_errno = MPID_Isend(tmpbuf, tmpbuf_count, MPI_PACKED, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
 	    /* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
 	    MPID_Request_release(rreq);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 
 	while(1)
 	{
@@ -181,10 +191,12 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	    {
 		mpi_errno = MPID_Progress_wait();
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    goto blk_exit;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	    else
 	    {

@@ -110,12 +110,14 @@ void MPIR_BAND (
             a[i] = MPIR_LBAND(a[i],b[i]);
         break;
     }
+	/* --BEGIN ERROR HANDLING-- */
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
         p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BAND" );
         break;
     }
+	/* --END ERROR HANDLING-- */
     }
 }
 
