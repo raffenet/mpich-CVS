@@ -475,6 +475,25 @@ with MPI_Alloc_mem.
 **pmi_commit %d:PMI_KVS_Commit returned %d
 **pmi_barrier:PMI_Barrier failed
 **pmi_barrier %d:PMI_Barrier returned %d
+**ch3ireadagressive:aggressive reading failed
+**msgctl:msgctl failed
+**msgctl %d:msgctl returned %d
+**msgget:msgget failed
+**msgget %d:msgget returned %d
+**msgsnd:msgsnd failed
+**msgsnd %d:msgsnd returned %d
+**msgrcv:msgrcv failed
+**msgrcv %d:msgrcv returned %d
+**nextbootmsg:failed to get the next bootstrap message
+**pmi_get_rank:PMI_Get_rank failed
+**pmi_init:PMI_Init failed
+**winwait:WaitForSingleObject failed
+**CreateThread:CreateThread failed
+**CreateThread %d:CreateThread failed, error %d
+**FindWindowEx:FindWindowEx failed
+**FindWindowEx %d:FindWindowEx failed, error %d
+**boot_attach:failed to attach to a bootstrap queue
+**boot_attach %s:failed to attach to a bootstrap queue - %s
 
 #
 # CH3:shm
