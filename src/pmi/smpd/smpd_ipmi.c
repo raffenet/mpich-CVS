@@ -2137,6 +2137,58 @@ int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     return PMI_SUCCESS;
 }
 
+#ifndef HAVE_WINDOWS_H
+static int writebuf(int fd, void *buffer, int length)
+{
+    unsigned char *buf;
+    int num_written;
+    
+    buf = (unsigned char *)buffer;
+    while (length)
+    {
+	num_written = write(fd, buf, length);
+	if (num_written < 0)
+	{
+	    if (errno != EINTR)
+	    {
+		return errno;
+	    }
+	    num_written = 0;
+	}
+	buf = buf + num_written;
+	length = length - num_written;
+    }
+    return 0;
+}
+
+static int readbuf(int fd, void *buffer, int length)
+{
+    unsigned char *buf;
+    int num_read;
+
+    buf = (unsigned char *)buffer;
+    while (length)
+    {
+	num_read = read(fd, buf, length);
+	if (num_read < 0)
+	{
+	    if (errno != EINTR)
+	    {
+		return errno;
+	    }
+	    num_read = 0;
+	}
+	else if (num_read == 0)
+	{
+	    return -1;
+	}
+	buf = buf + num_read;
+	length = length - num_read;
+    }
+    return 0;
+}
+#endif
+
 int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port)
 {
 #ifdef HAVE_WINDOWS_H
@@ -2178,16 +2230,16 @@ int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port)
     if (result == 0)
     {
 	close(pipe_fd[0]); /* close the read end of the pipe */
-	root_smpd(&pipe_fd[1]);
-	exit(0);
+	result = root_smpd(&pipe_fd[1]);
+	exit(result);
     }
 
     /* close the write end of the pipe */
     close(pipe_fd[1]);
     /* read the port from the root_smpd process */
-    read(pipe_fd[0], &pmi_process.root_port, sizeof(int));
+    readbuf(pipe_fd[0], &pmi_process.root_port, sizeof(int));
     /* read the kvs name */
-    read(pipe_fd[0], smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    readbuf(pipe_fd[0], smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
     /* close the read end of the pipe */
     close(pipe_fd[0]);
     pmi_process.root_pid = result;
@@ -2231,6 +2283,7 @@ static int root_smpd(void *p)
     int i;
 #ifndef HAVE_WINDOWS_H
     int send_kvs = 0;
+    int pipe_fd;
 #endif
 
     smpd_process.id = 1;
@@ -2327,13 +2380,14 @@ static int root_smpd(void *p)
 #else
     if (p != NULL)
     {
+	pipe_fd = *(int*)p;
 	/* send the root port back over the pipe */
-	write(*(int*)p, &pmi_process.root_port, sizeof(int));
+	writebuf(pipe_fd, &pmi_process.root_port, sizeof(int));
 	if (send_kvs)
 	{
-	    write(*(int*)p, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
+	    writebuf(pipe_fd, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
 	}  
-	close(*(int*)p);
+	close(pipe_fd);
     }
 #endif
 
