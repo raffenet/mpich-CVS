@@ -42,9 +42,12 @@
 % 
 % These provide environments to describe the implementation of each routine
 %
-\newenvironment{adi3}{\begin{quote}\textbf{ADI3:}\\}{\end{quote}}
-\newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
-\newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
+%\newenvironment{adi3}{\begin{quote}\textbf{ADI3:}\\}{\end{quote}}
+%\newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
+%\newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
+\newenvironment{adi3}{}{}
+\newenvironment{mmadi}{}{}
+\newenvironment{core}{}{}
 
 %
 % For rma, there are these three kinds:
@@ -52,10 +55,14 @@
 \newcommand\shmemname{SharedMem}
 \newcommand\vianame{RemoteMem}
 \newcommand\shmemallname{AllSharedMem}
-\newenvironment{tcp}{\begin{quote}\textbf{\tcpname:}\\}{\end{quote}}
-\newenvironment{shmem}{\begin{quote}\textbf{\shmemname:}\\}{\end{quote}}
-\newenvironment{via}{\begin{quote}\textbf{\vianame:}\\}{\end{quote}}
-\newenvironment{shmemall}{\begin{quote}\textbf{\shmemallname:}\\}{\end{quote}}
+% \newenvironment{tcp}{\begin{quote}\textbf{\tcpname:}\\}{\end{quote}}
+% \newenvironment{shmem}{\begin{quote}\textbf{\shmemname:}\\}{\end{quote}}
+% \newenvironment{via}{\begin{quote}\textbf{\vianame:}\\}{\end{quote}}
+% \newenvironment{shmemall}{\begin{quote}\textbf{\shmemallname:}\\}{\end{quote}}
+\newenvironment{tcp}{}{}
+\newenvironment{shmem}{}{}
+\newenvironment{via}{}{}
+\newenvironment{shmemall}{}{}
 
 %
 % Algorithm
