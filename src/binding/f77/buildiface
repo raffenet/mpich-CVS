@@ -228,6 +228,8 @@ foreach $_ (@ARGV) {
 #    addrint: Given the address of an int, provide the int.  Used
 #             for attr_put/set routines 
 #    attrint: Convert an attribute value to an int.
+#    bufaddr: Argument is *output* as a buffer address.  Discarded before
+#             passing to Fortran.
 %special_args = ( 
 #    'Allreduce' => '1:2', 'Allreduce-1' => 'in:bufptr',	
 #		 'Allreduce-2' => 'in:bufptr', 
@@ -248,6 +250,7 @@ foreach $_ (@ARGV) {
     'Attr_put' => '3', 'Attr_put-3' => 'in:addrint',
     'Attr_get' => '3:4', 'Attr_get-4' => 'out:logical', 
 		 'Attr_get-3' => 'out:attrint:4',
+    'Buffer_detach' => '1', 'Buffer_detach-1' => 'out:bufaddr',		 
     'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array:*v2', 
     'Cart_create-5' => 'in:logical', 
     'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array:*v2',
@@ -915,6 +918,26 @@ sub attrint_out_arg {
     my $count = $_[0];
     print $OUTFD "&attrv$count";
 }
+
+#
+# Buffer Address output handling (Buffer_detach)
+#out:bufaddr
+sub bufaddr_ftoc {
+}
+sub bufaddr_out_decl {
+    my $count =$_[0];
+    print $OUTFD "    void *t$count = v$count;\n";
+}
+sub bufaddr_out_arg {
+    my $count = $_[0];
+    print $OUTFD "&t$count";
+}
+
+sub bufaddr_ctof {
+    my $fvar = $_[0];
+    my $cvar = $_[1];
+}
+
 
 # This is the routine that handles the post-call processing
 sub print_post_call {
