@@ -15,6 +15,8 @@ void MPID_Cancel_send(MPID_Request * sreq)
     MPIDI_VC * vc;
     int proto;
     int flag;
+    int cancelled;
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_SEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
@@ -78,7 +80,11 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	    MPIDI_Request_fetch_rts_sreq_and_clear(sreq, &rts_sreq);
 	    if (rts_sreq != NULL) 
 	    {
-		if (MPIDI_CH3_Cancel_send(vc, rts_sreq))
+		mpi_errno = MPIDI_CH3_Cancel_send(vc, rts_sreq, &cancelled);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		}
+		if (cancelled)
 		{
 		    sreq->status.cancelled = TRUE;
 		    /* no other thread should be waiting on sreq, so it is safe to reset ref_count and cc */
@@ -93,7 +99,11 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	}
 	else
 	{
-	    if (MPIDI_CH3_Cancel_send(vc, sreq))
+	    mpi_errno = MPIDI_CH3_Cancel_send(vc, sreq, &cancelled);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+	    }
+	    if (cancelled)
 	    {
 		sreq->status.cancelled = TRUE;
 		/* no other thread should be waiting on sreq, so it is safe to reset ref_count and cc */
@@ -130,7 +140,10 @@ void MPID_Cancel_send(MPID_Request * sreq)
 	csr_pkt->match.context_id = sreq->ch3.match.context_id;
 	csr_pkt->sender_req_id = sreq->handle;
 	
-	csr_sreq = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	}
 	if (csr_sreq != NULL)
 	{
 	    MPID_Request_release(csr_sreq);

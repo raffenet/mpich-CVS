@@ -145,8 +145,9 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 {
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
@@ -269,7 +270,10 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 			
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
 		esa_pkt->sender_req_id = es_pkt->sender_req_id;
-		esa_req = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt));
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		}
 		if (esa_req != NULL)
 		{
 		    MPID_Request_release(esa_req);
@@ -325,7 +329,10 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
 		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
 		cts_pkt->receiver_req_id = rreq->handle;
-		cts_req = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt));
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		}
 		if (cts_req != NULL)
 		{
 		    MPID_Request_release(cts_req);
@@ -446,7 +453,10 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    resp_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_RESP;
 	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
-	    resp_sreq = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt));
+	    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+	    }
 	    if (resp_sreq != NULL)
 	    {
 		MPID_Request_release(resp_sreq);
@@ -517,6 +527,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
+    return MPI_SUCCESS;
 }
 
 

@@ -66,7 +66,10 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	
-	sreq = MPIDI_CH3_iStartMsg(vc, ready_pkt, sizeof(*ready_pkt));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, ready_pkt, sizeof(*ready_pkt), &sreq);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	}
 	if (sreq != NULL)
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
@@ -92,7 +95,10 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	    
-	sreq = MPIDI_CH3_iStartMsgv(vc, iov, 2);
+	mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	}
 	if (sreq != NULL)
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);

@@ -94,7 +94,10 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
 		esa_pkt->sender_req_id = rreq->ch3.sender_req_id;
-		esa_req = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt));
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		}
 		if (esa_req != NULL)
 		{
 		    MPID_Request_release(esa_req);
@@ -138,7 +141,10 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
 	    cts_pkt->sender_req_id = rreq->ch3.sender_req_id;
 	    cts_pkt->receiver_req_id = rreq->handle;
-	    cts_req = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt));
+	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+	    }
 	    if (cts_req != NULL)
 	    {
 		/* FIXME: Ideally we could specify that a req not be returned.  This would avoid our having to decrement the

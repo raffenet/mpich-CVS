@@ -175,7 +175,10 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	MPIDI_CH3U_Pkt_set_seqnum(rts_pkt, seqnum);
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 
-	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	}
 	if (rts_sreq != NULL)
 	{
 	    MPID_Request_release(rts_sreq);
