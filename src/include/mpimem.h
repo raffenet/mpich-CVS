@@ -14,6 +14,7 @@
 /* style: allow:free:2 sig:0 */
 /* style: allow:strdup:2 sig:0 */
 /* style: allow:calloc:2 sig:0 */
+/* style: allow:alloca:1 sig:0 */
 /* style: define:__strdup:1 sig:0 */
 /* style: define:strdup:1 sig:0 */
 /* style: allow:fprintf:5 sig:0 */   /* For handle debugging ONLY */
@@ -266,72 +267,85 @@ extern char *strdup( const char * );
 
 /* You can redefine this to indicate whether memory allocation errors
    are fatal.  Recoverable by default */
-#define MPID_CHKMEM_ISFATAL MPIR_ERR_RECOVERABLE
+#define MPIU_CHKMEM_ISFATAL MPIR_ERR_RECOVERABLE
 
+/* Standard macro for generating error codes.   */
+#ifdef HAVE_ERROR_CHECKING
+#define MPIU_CHKMEM_SETERR(rc_,nbytes_,name_) \
+     rc_=MPIR_Err_create_code( MPI_SUCCESS, \
+          MPIU_CHKMEM_ISFATAL, FCNAME, __LINE__, \
+          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", nbytes_, name_ )
+#else
+#define MPIU_CHKMEM_SETERR(rc_,nbytes_,name_) rc_=MPI_ERR_OTHER
+#endif
 
 /* Memory used and freed within the current scopy (alloca if feasible) */
 #if defined(HAVE_ALLOCA) && defined(USE_ALLOCA)
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
-#define MPID_CHKLMEM_DECL(_n)
-#define MPID_CHKLMEM_FREEALL
-#define MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
-{_pointer = (_type)alloca(_nbytes); \
-if (!(_pointer)) { \
-    _rc = MPIR_Err_create_code( MPI_SUCCESS, MPID_CHKMEM_ISFATAL,  \
-          FCNAME, __LINE__, \
-          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
-         _nbytes, _name ); \
-    _stmt;\
+/* Define decl with a dummy definition to allow us to put a semi-colon
+   after the macro without causing the declaration block to end (restriction
+   imposed by C) */
+#define MPIU_CHKLMEM_DECL(n_) int dummy_
+#define MPIU_CHKLMEM_FREEALL
+#define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
+{pointer_ = (type_)alloca(nbytes_); \
+if (!(pointer_)) { \
+    MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
+    stmt_;\
 }
 #else
-#define MPID_CHKLMEM_DECL(_n) \
- void *(_mpid_chklmem_stk[_n]);\
- int _mpid_chklmem_stk_sp=0;
-#define MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
-{_pointer = (_type)MPID_Malloc(_nbytes); \
-if (_pointer) { \
-    _mpid_chklmem_stk[_mpid_chklmem_stk_sp++] = _pointer;\
+#define MPIU_CHKLMEM_DECL(n_) \
+ void *(mpiu_chklmem_stk_[n_]);\
+ int mpiu_chklmem_stk_sp_=0
+#define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
+{pointer_ = (type_)MPIU_Malloc(nbytes_); \
+if (pointer_) { \
+    mpiu_chklmem_stk_[mpiu_chklmem_stk_sp_++] = pointer_;\
 } else {\
-    _rc = MPIR_Err_create_code( MPI_SUCCESS, MPID_CHKMEM_ISFATAL, \
-          FCNAME, __LINE__, \
-          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
-         _nbytes, _name ); \
-    _stmt;\
-}
-#define MPID_CHKLMEM_FREEALL \
-    { while (_mpid_chklmem_stk_sp > 0) {\
-       MPID_Free( _mpid_chklmem_stk[--_mpid_chklmem_stk_sp] ); } }
+    MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
+    stmt_;\
+}}
+#define MPIU_CHKLMEM_FREEALL \
+    { while (mpiu_chklmem_stk_sp_ > 0) {\
+       MPIU_Free( mpiu_chklmem_stk_[--mpiu_chklmem_stk_sp_] ); } }
 #endif /* HAVE_ALLOCA */
-#define MPID_CHKLMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
-    MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
-#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
-    MPID_CHKLMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,goto _label)
+
+#define MPIU_CHKLMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,fn_fail)
+#define MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,label_) \
+    MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto label_)
 
 /* Persistent memory that we may want to recover if something goes wrong */
-#define MPID_CHKPMEM_DECL(_n) \
- void *(_mpid_chkpmem_stk[_n]);\
- int _mpid_chkpmem_stk_sp=0;
-#define MPID_CHKPMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,_stmt) \
-{_pointer = (_type)MPID_Malloc(_nbytes); \
-if (_pointer) { \
-    _mpid_chkpmem_stk[_mpid_chkpmem_stk_sp++] = _pointer;\
+#define MPIU_CHKPMEM_DECL(n_) \
+ void *(mpiu_chkpmem_stk_[n_]);\
+ int mpiu_chkpmem_stk_sp_=0
+#define MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
+{pointer_ = (type_)MPIU_Malloc(nbytes_); \
+if (pointer_) { \
+    mpiu_chkpmem_stk_[mpiu_chkpmem_stk_sp_++] = pointer_;\
 } else {\
-    _rc = MPIR_Err_create_code( MPI_SUCCESS, 1, FCNAME, __LINE__, \
-          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
-         _nbytes, _name ); \
-    _stmt;\
-}
-#define MPID_CHKPMEM_REAP \
-    { while (_mpid_chkpmem_stk_sp > 0) {\
-       MPID_Free( _mpid_chkpmem_stk[--_mpid_chkpmem_stk_sp] ); } }
-#define MPID_CHKPMEM_COMMIT \
-    _mpid_chkpmem_stk_sp = 0
-#define MPID_CHKPMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
-    MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
-#define MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
-    MPID_CHKPMEM_MALLOC_ORSTMT(_pointer,_type,_nbytes,_rc,_name,goto _label)
+    MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
+    stmt_;\
+}}
+#define MPIU_CHKPMEM_REAP \
+    { while (mpiu_chkpmem_stk_sp_ > 0) {\
+       MPIU_Free( mpiu_chkpmem_stk_[--mpiu_chkpmem_stk_sp_] ); } }
+#define MPIU_CHKPMEM_COMMIT \
+    mpiu_chkpmem_stk_sp_ = 0
+#define MPIU_CHKPMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,fn_fail)
+#define MPIU_CHKPMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_,label_) \
+    MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto label_)
+
+/* A special version for routines that only allocate one item */
+#define MPIU_CHKPMEM_MALLOC1(pointer_,type_,nbytes_,rc_,name_,stmt_) \
+{pointer_ = (type_)MPIU_Malloc(nbytes_); \
+if (!(pointer_)) { \
+    MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
+    stmt_;\
+}}
 
 /* Utilities: Safe string copy and sprintf */
 int MPIU_Strncpy( char *, const char *, size_t );
