@@ -359,10 +359,26 @@ dnl
 PAC_PROG_F77_LINKER_WITH_C
 dnl For name mangle, we need the library flags
 PAC_PROG_F77_NAME_MANGLE
+dnl
+# Warn about mixed name mangling, since many of the tests will fail
+if test "$pac_cv_prog_f77_name_mangle" = "mixed" ; then
+    AC_MSG_WARN([The compiler $F77 uses mixed case names.  Fortran is monocase
+and many Fortran programs may use either upper or lower case names for MPI
+calls.  Consider specifying a particular parameter to your Fortran compiler
+to select either upper or lower case names.  For the Absoft compiler, 
+-f selects lower case and -N109 selects upper case.  Specify new command
+line options by setting the environment variable F77 to include
+the options (e.g., setenv F77 \"f77 -f\")])
+fi
 
 dnl Once we have name mangle, we can try to limit the number of needed libs
 PAC_PROG_F77_IN_C_LIBS
 AC_SUBST(F77_IN_C_LIBS)
+
+#
+# Eventually, we should include a test for proper handling of characters.
+# The Absoft compiler may require -N90 
+
 AC_LANG_FORTRAN77
 PAC_PROG_F77_EXCLAIM_COMMENTS(has_exclaim="yes",has_exclaim="no")
 PAC_PROG_F77_NEW_CHAR_DECL(CHARDECL="(LEN=*)",CHARDECL="*(*)")
