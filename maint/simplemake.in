@@ -839,6 +839,9 @@ sub DefaultRules {
 	if ($topdir eq "") {	
 	    $topdir = ".";
 	}		
+	# We need to use the enclosing configure, not always the top-level
+	# configure.  Thus, we need to keep track of the directory of the
+	# current configure, and the path to get to that configure.
 	if ($topdir ne ".") {
 	    print FD "\tcd $topdir && \\$newline";
 	}

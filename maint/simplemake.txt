@@ -220,5 +220,7 @@ Suggestions and Plans for Future Versions
 
    Currently, only the all target is supported.
 
-
+2. The targets to regenerate files need to understand the scoping of the
+   configure calls, since the project may contain configure files within the 
+   tree.  
    
