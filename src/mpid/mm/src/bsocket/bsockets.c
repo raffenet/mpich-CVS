@@ -1340,3 +1340,41 @@ int beasy_send(int bfd, char *buffer, int length)
     return total;
 #endif
 }
+
+int beasy_getlasterror()
+{
+#ifdef HAVE_WINSOCK2_H
+    return WSAGetLastError();
+#else
+    return errno;
+#endif
+}
+
+int beasy_error_to_string(int error, char *str, int length)
+{
+#ifdef HAVE_WINSOCK2_H
+    HLOCAL str_local;
+    int num_bytes;
+    num_bytes = FormatMessage(
+	FORMAT_MESSAGE_FROM_SYSTEM |
+	FORMAT_MESSAGE_ALLOCATE_BUFFER,
+	0,
+	error,
+	MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+	(LPTSTR) &str_local,
+	0,0);
+    if (num_bytes < length)
+	memcpy(str, str_local, num_bytes+1);
+    else
+    {
+	/* sprintf(str, "error %d", error); */
+	LocalFree(str);
+	return num_bytes+1;
+    }
+    LocalFree(str);
+    strtok(str, "\r\n"); /* remove any CR/LF characters from the output */
+#else
+    sprintf(str, "error %d", error);
+#endif
+    return 0;
+}
