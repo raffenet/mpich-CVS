@@ -441,6 +441,8 @@ with MPI_Alloc_mem.
 **join_recv %d:recv from the socket failed (errno %d)
 **flag:invalid flag parameter
 **flag %d:invalid flag parameter (flag = %d)
+**badcase:INTERNAL ERROR: unexpected value in case statement
+**badcase %d:INTERNAL ERROR: unexpected value in case statement (value=%d)
 
 # Duplicates?
 #**argnull:Invalid null parameter
