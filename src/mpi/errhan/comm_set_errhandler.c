@@ -73,6 +73,9 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
 	    }
+	    /* FIXME: Add a check that this is a comm errhandler.
+	       This test should be a macro so that it can be used
+	       in all calls, along with similar calls for win and file */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
