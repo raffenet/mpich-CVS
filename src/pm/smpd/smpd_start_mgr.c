@@ -255,6 +255,7 @@ int smpd_start_unx_mgr(smpd_context_t *context)
     {
 	/* the child is not the root so clear the flag */
 	smpd_process.root_smpd = SMPD_FALSE;
+	smpd_init_process();
 	/* I'm the child so handle a session and then exit */
 	/*
 	result = smpd_session(set, sock);
