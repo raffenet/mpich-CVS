@@ -11,6 +11,24 @@
 /* set the shared file pointer to "offset" etypes relative to the current 
    view */
 
+/*
+This looks very similar to ADIOI_GEN_Set_shared_fp, except this 
+function avoids locking the file twice.  The generic version does
+
+Write lock
+ADIO_WriteContig
+Unlock
+
+For NFS, ADIOI_NFS_WriteContig does a lock before writing to disable
+caching. To avoid the lock being called twice, this version for NFS does
+
+Write lock
+Lseek
+Write
+Unlock 
+
+*/
+
 void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 {
     int err;
