@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 #include "smpd.h"
+#ifdef HAVE_WINDOWS_H
+#include "smpd_service.h"
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -13,8 +16,13 @@
 int main(int argc, char* argv[])
 {
     int result;
-    sock_set_t set;
-    sock_t listener;
+#ifdef HAVE_WINDOWS_H
+    SERVICE_TABLE_ENTRY dispatchTable[] =
+    {
+        { TEXT(SMPD_SERVICE_NAME), (LPSERVICE_MAIN_FUNCTION)smpd_service_main },
+        { NULL, NULL }
+    };
+#endif
 
     smpd_enter_fn("main");
 
@@ -45,9 +53,59 @@ int main(int argc, char* argv[])
     }
 
 #ifdef HAVE_WINDOWS_H
+    if (smpd_process.bService)
+    {
+	printf( "\nStartServiceCtrlDispatcher being called.\n" );
+	printf( "This may take several seconds.  Please wait.\n" );
+	fflush(stdout);
+
+	/* If StartServiceCtrlDispatcher returns true the service has exited */
+	result = StartServiceCtrlDispatcher(dispatchTable);
+	if (result)
+	{
+	    smpd_exit_fn("main");
+	    smpd_exit(0);
+	}
+
+	result = GetLastError();
+	if (result != ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
+	{
+	    smpd_add_error_to_message_log(TEXT("StartServiceCtrlDispatcher failed."));
+	    smpd_exit_fn("main");
+	    smpd_exit(0);
+	}
+    }
+    smpd_process.bService = SMPD_FALSE;
+#endif
+    
+    result = smpd_entry_point(argc, argv);
+    smpd_exit_fn("main");
+    return result;
+}
+
+int smpd_entry_point()
+{
+    int result;
+    sock_set_t set;
+    sock_t listener;
+
+    /* This function is called by main or by smpd_service_main in the case of a Windows service */
+
+    smpd_enter_fn("smpd_entry_point");
+
+#ifdef HAVE_WINDOWS_H
     /* prevent the os from bringing up debug message boxes if this process crashes */
     if (smpd_process.bService)
+    {
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	if (!ReportStatusToSCMgr(SERVICE_RUNNING, NO_ERROR, 0))
+	{
+	    result = GetLastError();
+	    smpd_err_printf("Unable to report that the service has started, error: %d\n", result);
+	    smpd_exit_fn("smpd_entry_point");
+	    return result;
+	}
+    }
 #else
     /* put myself in the background if flag is set */
     if (smpd_process.bNoTTY)
@@ -91,7 +149,7 @@ int main(int argc, char* argv[])
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("main");
+	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
     smpd_process.set = set;
@@ -101,7 +159,7 @@ int main(int argc, char* argv[])
     {
 	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("main");
+	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
     smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
@@ -110,14 +168,14 @@ int main(int argc, char* argv[])
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a context for the smpd listener.\n");
-	smpd_exit_fn("main");
+	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
     result = sock_set_user_ptr(listener, smpd_process.listener_context);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("main");
+	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
     smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
@@ -140,7 +198,7 @@ int main(int argc, char* argv[])
     {
 	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
-    smpd_exit_fn("main");
+    smpd_exit_fn("smpd_entry_point");
     return 0;
 }
 

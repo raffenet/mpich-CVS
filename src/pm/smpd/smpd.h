@@ -6,7 +6,10 @@
 #ifndef SMPD_H
 #define SMPD_H
 
-#ifndef HAVE_WINDOWS_H
+#ifdef HAVE_WINDOWS_H
+#include <winsock2.h>
+#include <windows.h>
+#else
 #include "smpdconf.h"
 #endif
 #include "sock.h"
@@ -30,6 +33,7 @@
 #define SMPD_DBS_RETURN                     5
 #define SMPD_ABORT                          6
 
+typedef int SMPD_BOOL;
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
 
@@ -371,19 +375,23 @@ typedef struct smpd_global_t
     int nNextAvailableDBSID;
     int nInitDBSRefCount;
     smpd_barrier_node_t *barrier_list;
+#ifdef HAVE_WINDOWS_H
+    SERVICE_STATUS ssStatus;
+    SERVICE_STATUS_HANDLE sshStatusHandle;
+#endif
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
 
 
-/* smpd */
+/* function prototypes */
+
 int smpd_parse_command_args(int *argcp, char **argvp[]);
 #ifdef HAVE_WINDOWS_H
 char *smpd_encode_handle(char *str, HANDLE h);
 HANDLE smpd_decode_handle(char *str);
 #endif
-
-/* smpd_util */
+int smpd_entry_point();
 int smpd_enter_at_state(sock_set_t set, smpd_state_t state);
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);

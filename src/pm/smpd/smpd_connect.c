@@ -91,6 +91,18 @@ smpd_global_t smpd_process =
       0,                /* nNextAvailableDBSID    */
       0,                /* nInitDBSRefCount       */
       NULL              /* barrier_list           */
+#ifdef HAVE_WINDOWS_H
+      , {
+	  SERVICE_WIN32_OWN_PROCESS, /* dwServiceType  */
+	  SERVICE_STOPPED,           /* dwCurrentState */
+	  SERVICE_ACCEPT_STOP,   /* dwControlsAccepted */
+	  NO_ERROR,     /* dwWin32ExitCode             */
+	  0,            /* dwServiceSpecificExitCode   */
+	  0,            /* dwCheckPoint                */
+	  3000,         /* dwWaitHint                  */
+      },
+      NULL
+#endif
     };
 
 int smpd_post_abort_command(char *fmt, ...)

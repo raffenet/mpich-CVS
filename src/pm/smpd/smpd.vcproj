@@ -140,6 +140,9 @@
 			<File
 				RelativePath="smpd_cmd_args.c">
 			</File>
+			<File
+				RelativePath=".\smpd_service.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

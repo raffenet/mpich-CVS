@@ -10,7 +10,7 @@
 #define SMPD_DBS_FAIL            -1
 #define SMPD_MAX_DBS_NAME_LEN     256
 #define SMPD_MAX_DBS_KEY_LEN      256
-#define SMPD_MAX_DBS_VALUE_LEN    1024
+#define SMPD_MAX_DBS_VALUE_LEN    4096
 
 #if defined(__cplusplus)
 extern "C" {
