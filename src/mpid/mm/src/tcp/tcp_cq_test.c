@@ -29,7 +29,9 @@ int tcp_accept_connection()
 	return -1;
     }
     vc_ptr = mm_vc_get(remote_rank);
+    
     MPID_Thread_lock(vc_ptr->lock);
+
     if (vc_ptr->method == MM_UNBOUND_METHOD)
     {
 	vc_ptr->method = MM_TCP_METHOD;
@@ -39,44 +41,64 @@ int tcp_accept_connection()
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_post_read = tcp_merge_post_read;
 	vc_ptr->post_write = tcp_post_write;
+
+	/* send a keep acknowledgement */
+	ack = TCP_ACCEPT_CONNECTION;
+	beasy_send(bfd, &ack, 1);
+	/* add the new connection to the read set */
+	TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
+	BFD_SET(bfd, &TCP_Process.readset);
+	vc_ptr->read_next_ptr = TCP_Process.read_list;
+	TCP_Process.read_list = vc_ptr;
+
+	/* change the state of the vc to connected */
+	vc_ptr->data.tcp.connected = TRUE;
+	vc_ptr->data.tcp.connecting = FALSE;
+	
+	MPID_Thread_unlock(vc_ptr->lock);
+
+	/* post the first packet read on the newly connected vc */
+	mm_post_read_pkt(vc_ptr);
     }
     else
     {
 	if (vc_ptr->method != MM_TCP_METHOD)
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected with method %d\n", vc_ptr->method);
+	    MPID_Thread_unlock(vc_ptr->lock);
 	    return -1;
 	}
-	if ((vc_ptr->data.tcp.connected) ||
-	    (vc_ptr->data.tcp.connecting && (remote_rank > MPIR_Process.comm_world->rank)))
+	if (!vc_ptr->data.tcp.connecting || vc_ptr->data.tcp.connected)
 	{
-	    /* send a reject acknowledgement */
-	    ack = TCP_REJECT_CONNECTION;
-	    beasy_send(bfd, &ack, 1);
-	    if (vc_ptr->data.tcp.connecting)
-	    {
-		beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1);
-		if (ack != TCP_ACCEPT_CONNECTION)
-		{
-		    err_printf("Error:tcp_accept_connection: both head to head connections rejected.\n");
-		    return -1;
-		}
-	    }
+	    err_printf("Error:tcp_accept_connection: vc is already connected.\n");
+	    MPID_Thread_unlock(vc_ptr->lock);
+	    return -1;
 	}
-	else
+	if (remote_rank > MPIR_Process.comm_world->rank)
 	{
-	    /* send a keep acknowledgement */
-	    ack = TCP_ACCEPT_CONNECTION;
-	    beasy_send(bfd, &ack, 1);
-	    /* change the state of the vc to connected */
-	    vc_ptr->data.tcp.connected = TRUE;
-	    vc_ptr->data.tcp.connecting = FALSE;
+	    /* close the old socket and keep the new */
+	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
+		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+	    beasy_closesocket(vc_ptr->data.tcp.bfd);
+	    vc_ptr->data.tcp.bfd = bfd;
 	    /* add the new connection to the read set */
 	    TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
 	    BFD_SET(bfd, &TCP_Process.readset);
 	    vc_ptr->read_next_ptr = TCP_Process.read_list;
 	    TCP_Process.read_list = vc_ptr;
 	}
+	else
+	{
+	    /* close the new socket and keep the old */
+	    beasy_closesocket(bfd);
+	}
+	/* change the state of the vc to connected */
+	vc_ptr->data.tcp.connected = TRUE;
+	vc_ptr->data.tcp.connecting = FALSE;
+	
+	MPID_Thread_unlock(vc_ptr->lock);
     }
 
     return MPI_SUCCESS;

@@ -28,12 +28,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	}
 	else
 	{
-	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
-		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
-	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
-		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
-	    beasy_closesocket(vc_ptr->data.tcp.bfd);
-	    vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
+	    err_printf("tcp_read: TCP_REJECT_CONNECTION ack received in read function.\n");
 	}
 	return MPI_SUCCESS;
     }
