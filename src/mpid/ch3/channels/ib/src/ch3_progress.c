@@ -166,6 +166,7 @@ static inline void post_pkt_recv(MPIDI_VC *vc)
     vc->ib.req->ib.iov_offset = 0;
     vc->ib.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
     vc->ib.recv_active = vc->ib.req;
+    ibu_post_read(vc->ib.ibu, &vc->ib.req->ib.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL);
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
 }
 
