@@ -384,7 +384,9 @@ namespace wmpiexec
 																  "shm",
 																  "sshm",
 																  "ssm",
+																  "essm",
 																  "ib",
+																  "mt",
 																  "default",
 																  "auto"});
 			this.channel_comboBox.Location = new System.Drawing.Point(424, 464);
