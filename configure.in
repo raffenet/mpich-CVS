@@ -1663,6 +1663,9 @@ for type in int long long_long short ; do
     eval len=\$ac_cv_sizeof_$type
     if test "$len" = "$ac_cv_sizeof_void_p" ; then
         MPI_AINT=`echo $type | sed -e 's/_/ /'`
+	# Make the sizeof AINT available to other configures
+	MPI_SIZEOF_AINT=$len
+	export MPI_SIZEOF_AINT
         break
     fi
 done
@@ -1806,22 +1809,71 @@ AC_SUBST(MPI_2COMPLEX)
 AC_SUBST(MPI_2DOUBLE_COMPLEX)
 AC_SUBST(MPI_FINT)
 
-# Temporary values for MPI_Offset (need help from IO subsystem)
+# FIXME: Temporary values for MPI_Offset (need help from IO subsystem)
 if test -n "$MPI_OFFSET_TYPE" ; then
-   # We got the value from the ROMIO configure
-   MPI_OFFSET="$MPI_OFFSET_TYPE"
+    # We got the value from the ROMIO configure
+    MPI_OFFSET="$MPI_OFFSET_TYPE"
+    # Get and export the size of this type if possible
+    if test -z "$MPI_SIZEOF_OFFSET" ; then 
+        # set a default
+        dnl We'd like to use AC_CHECK_SIZEOF, but that won't take a variable.
+        AC_CACHE_CHECK([the sizeof MPI_Offset],ac_cv_sizeof_MPI_Offset,[
+        ac_cv_sizeof_MPI_Offset=unknown
+        rm -f conftest*
+        cat >> conftest.c <<EOF
+#include <stdio.h>
+int main( int argc, char **argv )
+{
+    $MPI_OFFSET a;
+    FILE *f = fopen("conftestval", "w" );
+    if (! f) exit(1);
+    fprintf( f, "%ld\n", (long)sizeof(a) );
+    fclose(f);
+    return 0;
+}
+EOF
+        if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
+            if ./conftest$ac_exeext ; then
+                #success
+                ac_cv_sizeof_MPI_Offset=`cat conftestval`
+            else
+                # failure
+                AC_MSG_WARN([Unable to run the program to determine the size of MPI_Offset])
+	        echo "configure: failed program was:" >&AC_FD_CC
+	        cat conftest.c >&AC_FD_CC
+	    fi
+        else
+	    # failure
+            AC_MSG_WARN([Unable to build the program to determine the size of MPI_Offset])
+	    echo "configure: failed program was:" >&AC_FD_CC
+	    cat conftest.c >&AC_FD_CC
+        fi
+        rm -f conftest*
+	])
+	if test "$ac_cv_sizeof_MPI_Offset" != "unknown" ; then 
+  	    MPI_SIZEOF_OFFSET=$ac_cv_sizeof_MPI_Offset
+        fi
+    fi
+    export MPI_SIZEOF_OFFSET
 else
     # Make a guess at the appropriate definition for offset.  Try to 
     # find a 64bit type.
     if test "$ac_cv_sizeof_long_long" = 8 ; then
         MPI_OFFSET="long long"
+	# Make the size of this type available to other configures
+	MPI_SIZEOF_OFFSET=8
+	export MPI_SIZEOF_OFFSET
     else
         MPI_OFFSET=long
     fi
 fi
-MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET)
+#
+# FIXME: we need an explanation of why we need both MPI_OFFSET and 
+# MPI_OFFSET_TYPEDEF.   Why is MPI_OFFSET_TYPEDEF necessary?
+MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET_TYPEDEF)
+#
 dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
