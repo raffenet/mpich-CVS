@@ -91,7 +91,9 @@ if test "X$real_enable_cache" = "Xnotgiven" ; then
 	    echo "$testval" > $cache_system
 	    # remove the cache file because it may not correspond to our
 	    # system
-	    rm -f $cache_file
+	    if test "$cache_file" != "/dev/null" ; then 
+	        rm -f $cache_file
+	    fi
 	    real_enable_cache="yes"
         fi
     fi
