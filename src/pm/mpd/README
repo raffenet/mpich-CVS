@@ -31,17 +31,17 @@ shakey.mcs.anl.gov
 terra.mcs.anl.gov
 donner% 
 
-The mpich2 mpd commands are currently in mpich2/src/pmi/impls/mpd.  Put this
+The mpich2 mpd commands are currently in mpich2/src/pm/mpd.  Put this
 in your PATH in your .cshrc or .bashrc, so that it will be picked up by the mpd's that
 are started remotely:
 
-Put in .cshrc:  setenv PATH /home/you/mpich2/src/pmi/impls/mpd:$PATH
+Put in .cshrc:  setenv PATH /home/you/mpich2/src/pm/mpd:$PATH
 
-Put in .bashrc: export PATH=/home/you/mpich2/src/pmi/impls/mpd:$PATH
+Put in .bashrc: export PATH=/home/you/mpich2/src/pm/mpd:$PATH
 
 To start some mpds, use mpdboot.py.  It uses the mpd.hosts file:
 
-donner% mpdboot.py -n 3 -m /home/lusk/mpich2/src/pmi/impls/mpd/mpd.py
+donner% mpdboot.py -n 3 -m /home/lusk/mpich2/src/pm/mpd/mpd.py
 donner%
 
 This command starts a total of 3 daemons, one on the local machine and the
