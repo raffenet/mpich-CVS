@@ -107,23 +107,68 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag,
-			   comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[0]);
-    if (mpi_errno)
+    /* NOTE: we check for MPI_PROC_NULL first so if an error occurs while
+       allocating the request, we can back out without having to cancel a
+       pending send or receive. */
+    if (source == MPI_PROC_NULL)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	reqs[0] = MPID_Request_create();
+	
+	if (reqs[0] == NULL)
+	{
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	    return MPI_ERR_NOMEM;
+	}
+	
+	reqs[0]->status.MPI_SOURCE = MPI_PROC_NULL;
+	reqs[0]->status.MPI_TAG = MPI_ANY_TAG;
+	reqs[0]->kind = MPID_REQUEST_RECV;
+	reqs[0]->cc = 0;
+    }
+    
+    if (dest == MPI_PROC_NULL)
+    {
+	reqs[1] = MPID_Request_create();
+	if (reqs[1] == NULL)
+	{
+	    if (source == MPI_PROC_NULL)
+	    {
+		MPID_Request_release(reqs[0]);
+	    }
+	    
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	    return MPI_ERR_NOMEM;
+	}
+
+	reqs[1]->kind = MPID_REQUEST_SEND;
+	reqs[1]->cc = 0;
     }
 
-    /* XXX: Performance for small messages might be better if MPID_Send() were
-       used here instead of MPID_Isend() */
-    mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag,
-			   comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[1]);
-    if (mpi_errno)
+    if (source != MPI_PROC_NULL)
     {
-	MPID_Request_release(reqs[0]);
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag,
+			       comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[0]);
+	if (mpi_errno)
+	{
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+    }
+
+    /* XXX - Performance for small messages might be better if MPID_Send() were
+       used here instead of MPID_Isend() */
+    if (dest != MPI_PROC_NULL)
+    {
+	mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag,
+			       comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[1]);
+	if (mpi_errno)
+	{
+	    /* XXX - should we cancel the pending (possibly completed) receive
+               request? */
+	    MPID_Request_release(reqs[0]);
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
     }
 
     while(1)

@@ -115,6 +115,23 @@ int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (dest == MPI_PROC_NULL)
+    {
+	request_ptr = MPID_Request_create();
+	if (request_ptr != NULL)
+	{
+	    request_ptr->kind = MPID_REQUEST_SEND;
+	    request_ptr->cc = 0;
+	    *request = request_ptr->handle;
+	
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISSEND);
+	    return MPI_SUCCESS;
+	}
+	
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ISSEND);
+	return MPI_ERR_NOMEM;
+    }
+
     mpi_errno = MPID_Issend(buf, count, datatype, dest, tag, comm_ptr,
 			    MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
