@@ -109,18 +109,16 @@ public class InputLog // implements drawable.InputAPI
 
     public Category  getShadowCategoryForTopology( final Topology aTopo )
     {
-        Category    type;
-        ColorAlpha  white_opaque  = new ColorAlpha( ColorAlpha.white,
-                                                    ColorAlpha.OPAQUE );
-        ColorAlpha  white_semi    = new ColorAlpha( ColorAlpha.white,
-                                                    ColorAlpha.HALF_OPAQUE );
-        ColorAlpha  yellow_opaque = new ColorAlpha( ColorAlpha.yellow,
-                                                    ColorAlpha.OPAQUE );
-        ColorAlpha  yellow_semi   = new ColorAlpha( ColorAlpha.yellow,
-                                                    ColorAlpha.HALF_OPAQUE );
+        Category   type;
+        ColorAlpha yellow_opaque = new ColorAlpha( ColorAlpha.yellow,
+                                                   ColorAlpha.OPAQUE );
+        ColorAlpha white_opaque  = new ColorAlpha( ColorAlpha.white,
+                                                   ColorAlpha.OPAQUE );
+        ColorAlpha white_near_opaque = new ColorAlpha( ColorAlpha.white,
+                                                       ColorAlpha.NEAR_OPAQUE );
         if ( aTopo.isEvent() ) {
             type = new Category( -1, "Shadow_" + aTopo.toString(),
-                                 aTopo, white_semi, 5 );
+                                 aTopo, white_near_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
             */
@@ -136,7 +134,7 @@ public class InputLog // implements drawable.InputAPI
         }
         else if ( aTopo.isState() ) {
             type = new Category( -3, "Shadow_" + aTopo.toString(),
-                                 aTopo, white_semi, 5 );
+                                 aTopo, white_near_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
             */
