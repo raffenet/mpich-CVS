@@ -10,10 +10,10 @@ int smpd_handle_stdin_command(smpd_context_t *context)
 {
     char data[SMPD_MAX_STDOUT_LENGTH];
     smpd_command_t *cmd;
-    int num_decoded;
     smpd_process_t *piter;
     smpd_stdin_write_node_t *node, *iter;
-    int result, num_written;
+    int result;
+    sock_size_t num_written, num_decoded;
 
     smpd_enter_fn("handle_stdin_command");
 

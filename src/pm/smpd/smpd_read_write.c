@@ -185,7 +185,7 @@ static int read_string(sock_t sock, char *str, int maxlen)
 {
     char ch;
     int result;
-    int num_bytes;
+    sock_size_t num_bytes;
     int total = 0;
 
     if (maxlen < 1)
