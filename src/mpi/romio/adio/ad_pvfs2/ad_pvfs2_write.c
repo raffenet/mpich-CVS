@@ -72,6 +72,6 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 {
     /* for now, defer to the generic operations. pvfs2 should have a lot of
      * ogood ways to express strided io, however... */
-    ADIOI_GEN_ReadStrided(fd, buf, count, datatype, 
+    ADIOI_GEN_WriteStrided(fd, buf, count, datatype, 
 	    file_ptr_type, offset, status, error_code);
 }
