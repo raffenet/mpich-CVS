@@ -1,6 +1,9 @@
 ===============================================================================
 				Changes in 0.97
 ===============================================================================
+
+- MPI-2 one-sided communication has been implemented in the CH3 device.
+
 - MPI_Type_create_darray() and MPI_Type_create_subarray() implemented including
   the right contents and envelope data.
 

@@ -49,3 +49,7 @@
   not include a process for which any process in the remote
   communicator already shares an existing or previously existing
   communicator.
+
+- For passive target RMA, there is no asynchronous agent at the target
+  that will cause progress to occur. Progress occurs only when the user
+  calls an MPI function at the target (which could well be MPI_Win_free).
