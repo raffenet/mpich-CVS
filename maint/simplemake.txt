@@ -1,0 +1,21 @@
+Simplemake
+
+Simplemake is a a program that writes Makefile.in files for use with
+autoconf (configure).  Simplemake is an alternative to automake that
+provides different facilities.
+
+-- documentation is incomplete.  This is a placeholder for items as
+they are added. --
+
+x. SUBDIRS
+The variables SUBDIRS instructs simplemake which subdirectories to
+process.  Normally, this is a list of directories, but in some cases,
+some of the directory names may be created by configure.  That is,
+they are of the form @name@.  Simplemake can handle these variables if
+the simplemake input file contains 
+
+SUBDIRS_name = names of directories
+for each @name@ that appears in a SUBDIRS list.  For example,
+
+SUBDIRS_device_name = mm tcp shmem
+SUBDIRS = util @device_name@ .
