@@ -143,23 +143,25 @@ int main( int argc, char **argv )
     }
 
 /* Use range_excl instead of ranks */
-    printf ("range excl\n" ); fflush( stdout );
+    /* printf ("range excl\n" ); fflush( stdout ); */
     range[0][0] = 1;
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g8 );
+#ifdef DEBUG
     if (rank == 0) {
 	MPITEST_Group_print( g8 );
     }
-    printf( "out  of range excl\n" ); fflush( stdout );
+#endif
+    /* printf( "out  of range excl\n" ); fflush( stdout ); */
     MPI_Group_compare( g5, g8, &result );
-    printf( "out of compare\n" ); fflush( stdout );
+    /* printf( "out of compare\n" ); fflush( stdout ); */
     if (result != MPI_IDENT) {
 	errs++;
 	fprintf( stdout, "Group range excl did not give ident groups\n" );
     }
 
-    printf( "intersection\n" ); fflush( stdout );
+    /* printf( "intersection\n" ); fflush( stdout ); */
     MPI_Group_intersection( basegroup, g4, &g9 );
     MPI_Group_compare( g9, g4, &result );
     if (result != MPI_IDENT) {
@@ -168,18 +170,23 @@ int main( int argc, char **argv )
     }
 
 /* Exclude EVERYTHING and check against MPI_GROUP_EMPTY */
-    printf( "range excl all\n" ); fflush( stdout );
+    /* printf( "range excl all\n" ); fflush( stdout ); */
     range[0][0] = 0;
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g10 );
+
+    /* printf( "done range excl all\n" ); fflush(stdout); */
     MPI_Group_compare( g10, MPI_GROUP_EMPTY, &result );
+    /* printf( "done compare to MPI_GROUP_EMPTY\n" ); fflush(stdout); */
+
     if (result != MPI_IDENT) {
 	errs++;
 	fprintf( stdout, 
 		 "MPI_GROUP_EMPTY didn't compare against empty group\n");
     }
 
+    /* printf( "freeing groups\n" ); fflush( stdout ); */
     MPI_Group_free( &basegroup );
     MPI_Group_free( &g1 );
     MPI_Group_free( &g2 );

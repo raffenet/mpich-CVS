@@ -17,7 +17,7 @@ int main( int argc, char *argv[] )
     MPI_Group g1, g2, g4, g5, g45;
     int ranks[16], size, rank, myrank, mysize, range[1][3];
     int errs = 0;
-    int i, rin[3], rout[3];
+    int i, rin[3], rout[3], result;
 
     MPI_Init(0,0);
 
@@ -94,6 +94,12 @@ int main( int argc, char *argv[] )
 
 	MPI_Group_union( g4, g5, &g45 );
 
+	MPI_Group_compare( MPI_GROUP_EMPTY, g4, &result );
+	if (result != MPI_UNEQUAL) {
+	    errs++;
+	    fprintf( stderr, "Comparison with empty group gave %d, not 3\n",
+		     result );
+	}
 	MPI_Group_free( &g4 );
 	MPI_Group_free( &g5 );
 	MPI_Group_free( &g45 );
