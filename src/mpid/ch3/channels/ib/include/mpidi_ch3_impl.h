@@ -95,8 +95,9 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
+#define USE_INLINE_PKT_RECEIVE
 #ifdef USE_INLINE_PKT_RECEIVE
-#define post_pkt_recv(vc) vc->ch.receiving_pkt = TRUE
+#define post_pkt_recv(vc) vc->ch.reading_pkt = TRUE
 #else
 #define post_pkt_recv(vc) \
 { \
