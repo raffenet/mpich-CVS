@@ -554,6 +554,8 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/mpi/romio/adio/sgi/mpi3.1/mpi.h \
 		      -skipfile=./src/mpi/romio/adio/sgi/mpi3.1/mpif.h \
 	 	      -skipfile=./src/mpi/romio/adio/include/mpisgi2.h \
+		      -skipfile=./src/util/slog2sdk \
+		      -skipfile=./src/mpe \
 			$codecheck_args src 
 fi
 if [ -s "$error_summary" ] ; then
