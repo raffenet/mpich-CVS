@@ -479,7 +479,7 @@ char * simplify_fmt_string(const char *str)
 }
 #endif
 
-#ifndef min(a,b)
+#ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
