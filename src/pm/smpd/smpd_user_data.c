@@ -371,7 +371,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 		{
 		    buffer = (char*)malloc(len+1);
 		    iter = buffer;
-		    if (fread(buffer, 1, len, fin) == len)
+		    if ((len = fread(buffer, 1, len, fin)) > 0)
 		    {
 			buffer[len] = '\0';
 			while (iter)
