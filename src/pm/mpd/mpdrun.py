@@ -16,7 +16,7 @@ signal(SIGCONT,SIG_IGN)
 
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
-                            close, wait, waitpid, kill, unlink, _exit,  \
+                            close, wait, waitpid, kill, unlink, system, _exit,  \
                             WIFSIGNALED, WEXITSTATUS, strerror
 from pwd             import getpwnam
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
@@ -39,7 +39,7 @@ class mpdrunInterrupted(Exception):
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
        try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
-global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
 global singinitPID, singinitPORT, doingBNR
@@ -48,7 +48,7 @@ global singinitPID, singinitPORT, doingBNR
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
-    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
     global singinitPID, singinitPORT, doingBNR
@@ -75,6 +75,7 @@ def mpdrun():
     singinitPID  = 0
     singinitPORT = 0
     doingBNR = 0
+    totalview = 0
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
@@ -200,6 +201,7 @@ def mpdrun():
                   'envvars'  : envvars,
                   'limits'   : limits,
                   'gdb'      : gdb,
+                  'totalview'      : totalview,
                   'singinitpid'    : singinitPID,
                   'singinitport'   : singinitPORT,
                   'host_spec_pool' : hostList,
@@ -263,6 +265,22 @@ def mpdrun():
         if outXmlEC:
             outXmlEC.setAttribute('jobid',jobid.strip())
         # print 'mpdrun: job %s started' % (jobid)
+        if totalview:
+            import mtv
+            tv_cmd = 'dattach python ' + `getpid()` + '; dgo; dassign MPIR_being_debugged 1'
+            system('totalview -e "%s" &' % (tv_cmd) )
+            mtv.wait_for_debugger()
+            mtv.allocate_proctable(nprocs)
+            # extract procinfo (rank,hostname,exec,pid) tuples from msg
+            for i in range(nprocs):
+                host = msg['procinfo'][i][0]
+                pgm  = msg['procinfo'][i][1]
+                pid  = msg['procinfo'][i][2]
+                print "%d %s %s %d" % (i,host,pgm,pid)
+                mtv.append_proctable_entry(host,pgm,pid)
+            mtv.complete_spawn()
+            msgToSend = { 'cmd' : 'tv_ready' }
+            mpd_send_one_msg(manSocket,msgToSend)
     else:
         mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
 
@@ -532,7 +550,7 @@ def print_ready_merged_lines(minRanks):
 
 def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
-           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput
+           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput, totalview
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
     global singinitPID, singinitPORT, doingBNR
 
@@ -641,6 +659,9 @@ def get_args_from_cmdline():
                 elif argv[argidx] == '-s':
                     stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
                     argidx += 1
+                elif argv[argidx] == '-tv':
+                    totalview = 1
+                    argidx += 1
                 else:
                     usage()
             else:
@@ -654,7 +675,7 @@ def get_args_from_cmdline():
 def get_args_from_file():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
-    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
     global singinitPID, singinitPORT, doingBNR
@@ -704,6 +725,8 @@ def get_args_from_file():
             mergingOutput = 1   # implied
             lineLabels = 1      # implied
             stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
+    if createReq.hasAttribute('tv'):
+        totalview = int(createReq.getAttribute('tv'))
 
     nextHost = 0
     hostSpec = createReq.getElementsByTagName('host-spec')
@@ -855,7 +878,7 @@ def get_args_from_file():
 def get_vals_for_attach():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
-    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
     global singinitPID, singinitPORT, doingBNR

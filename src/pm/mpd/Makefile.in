@@ -134,3 +134,11 @@ mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	${C_COMPILE} -c mpich2-mpdroot.c
 	/bin/rm -f mpich2-mpdroot.c
 
+
+# EXPERIMENTAL TOTALVIEW STUFF
+mtv:
+	mtv_setup.py build_ext --inplace
+
+install_mtv:	mtv.so
+	-@${INSTALL} -m 755 ${srcdir}/mtv.so ${bindir}/mtv.so
+	

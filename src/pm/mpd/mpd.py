@@ -691,6 +691,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_MY_LISTEN_FD'] = str(tempSocket.fileno())
             environ['MPDMAN_TO_MPD_FD'] = str(toMpdSocket.fileno())
             environ['MPDMAN_STDIN_GOES_TO_WHO'] = msg['stdin_goes_to_who']
+            environ['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
             environ['MPDMAN_GDB'] = str(msg['gdb'])
             fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
             environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv

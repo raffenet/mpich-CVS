@@ -19,7 +19,7 @@ def mpiexec():
     global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
-    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0,
+    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1, '-gexec' : 1,
                         '-genv' : 2, '-genvnone' : 0, '-genvlist' : 1 }
     validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1, '-soft' : 0,
@@ -76,6 +76,8 @@ def mpiexec():
             xmlCPG.setAttribute('doing_bnr', '1')
         if globalArgs['-gdb']:
             xmlCPG.setAttribute('gdb', '1')
+        if globalArgs['-tv']:
+            xmlCPG.setAttribute('tv', '1')
         submitter = getpwuid(getuid())[0]
         xmlCPG.setAttribute('submitter', submitter)
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
@@ -104,6 +106,7 @@ def collect_args(args):
     globalArgs['-usize']    = 1
     globalArgs['-gdb']      = 0
     globalArgs['-bnr']      = 0
+    globalArgs['-tv']       = 0
     globalArgs['-gn']       = 1
     globalArgs['-ghost']    = '_any_'
     globalArgs['-gpath']    = environ['PATH']

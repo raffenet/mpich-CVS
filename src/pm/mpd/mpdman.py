@@ -71,6 +71,7 @@ def mpdman():
     close(mpdFD)
     socketsToSelect[mpdSocket] = 1
     stdinGoesToWho = environ['MPDMAN_STDIN_GOES_TO_WHO']
+    totalview = int(environ['MPDMAN_TOTALVIEW'])
     gdb = int(environ['MPDMAN_GDB'])
     lineLabels = int(environ['MPDMAN_LINE_LABELS'])
     startStdoutLineLabel = 1
@@ -242,6 +243,7 @@ def mpdman():
         cli_environ['PMI_SIZE']  = str(nprocs)
         cli_environ['PMI_RANK']  = str(myRank)
         cli_environ['PMI_DEBUG'] = str(0)
+        cli_environ['PMI_TOTALVIEW'] = str(totalview)
         if spawned:
             cli_environ['PMI_SPAWNED'] = '1'
         else:
@@ -349,11 +351,12 @@ def mpdman():
         # rshipSocket.close()
         waitPids.append(rshipPid)
 
+    tvReady = 0
     pmiBarrierInRecvd = 0
     holdingPMIBarrierLoop1 = 0
     if myRank == 0:
         holdingEndBarrierLoop1 = 1
-        holdingJobgoLoop1 = 1
+        holdingJobgoLoop1 = { 'cmd' : 'jobgo_loop_1', 'procinfo' : [] }
     else:
         holdingEndBarrierLoop1 = 0
         holdingJobgoLoop1 = 0
@@ -378,9 +381,9 @@ def mpdman():
         except Exception, data:
             mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
         if holdingJobgoLoop1 and numConndWithIO >= numWithIO:
-            holdingJobgoLoop1 = 0
-            msgToSend = { 'cmd' : 'jobgo_loop_1' }
+            msgToSend = holdingJobgoLoop1
             mpd_send_one_msg(rhsSocket,msgToSend)
+            holdingJobgoLoop1 = 0
         if clientExited:
             if jobStarted  and  not clientExitStatusSent:
                 msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
@@ -435,16 +438,21 @@ def mpdman():
                     lhsSocket.close()
                 elif msg['cmd'] == 'jobgo_loop_1':
                     if myRank == 0:
+                        if totalview:
+                            msg['procinfo'].insert(0,(gethostname(),clientPgm,clientPid))
 			# let console pgm proceed
-                        msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
+                        msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid,
+                                      'procinfo' : msg['procinfo'] }
                         mpd_send_one_msg_noprint(conSocket,msgToSend)
                         msgToSend = { 'cmd' : 'jobgo_loop_2' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
                     else:
+                        if totalview:
+                            msg['procinfo'].append((gethostname(),clientPgm,clientPid))
                         if numConndWithIO >= numWithIO:
                             mpd_send_one_msg(rhsSocket,msg)  # forward it on
                         else:
-                            holdingJobgoLoop1 = 1
+                            holdingJobgoLoop1 = msg
                 elif msg['cmd'] == 'jobgo_loop_2':
                     if myRank != 0:
                        mpd_send_one_msg(rhsSocket,msg)  # forward it on
@@ -646,6 +654,14 @@ def mpdman():
                             kill(clientPid,SIGUSR1)
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
+                elif msg['cmd'] == 'tv_ready':
+                    tvReady = 1
+                    if myRank != 0:
+                        msg['src'] = myId
+                        mpd_send_one_msg(rhsSocket,msg)
+                        if pmiSocket:    # should be valid socket if running tv
+                            pmiMsgToSend = 'cmd=tv_ready\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 else:
                     mpd_print(1, 'unexpected msg recvd on lhsSocket :%s:' % msg )
             elif readySocket == rhsSocket:
@@ -1111,6 +1127,13 @@ def mpdman():
                     stdinGoesToWho = msg['stdin_procs']
                     msg['src'] = myId
                     mpd_send_one_msg(rhsSocket,msg)
+                elif msg['cmd'] == 'tv_ready':
+                    tvReady = 1
+                    msg['src'] = myId
+                    mpd_send_one_msg(rhsSocket,msg)
+                    if pmiSocket:    # should be valid socket if running tv
+                        pmiMsgToSend = 'cmd=tv_ready\n'
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 else:
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:
@@ -1152,6 +1175,9 @@ def mpdman():
                 ##### del socketsToSelect[pmiListenSocket]
                 ##### pmiListenSocket.close()
                 socketsToSelect[pmiSocket] = 1
+                if tvReady:
+                    pmiMsgToSend = 'cmd=tv_ready\n'
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
             else:
                 msg = mpd_recv_one_msg(readySocket)
                 mpd_print(1, 'recvd msg :%s: on unknown socket :%s:' % (msg,readySocket) )
