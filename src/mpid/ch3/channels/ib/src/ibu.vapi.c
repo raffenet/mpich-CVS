@@ -15,7 +15,11 @@
 
 #ifdef USE_IB_VAPI
 
-#define GETLKEY(p) ((((ibmem_t*)p) - 1)->lkey)
+#define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
+/*
+VAPI_mr_hndl_t s_mr_handle;
+VAPI_lkey_t s_lkey;
+*/
 typedef struct ibmem_t
 {
     VAPI_mr_hndl_t handle;
@@ -161,6 +165,7 @@ static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, 
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
+static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock);
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
 {
@@ -198,11 +203,13 @@ static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, 
     VAPI_lkey_t lkey;
     VAPI_rkey_t rkey;
     ibmem_t *mem_ptr;
+    void *pVoid;
 
     blocksize += sizeof(ibmem_t);
     incrementsize += sizeof(ibmem_t);
 
     p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count), &handle, &lkey, &rkey );
+    /*assert(lkey == s_lkey);*/
 
     p->alloc_fn = (void*(*)(size_t ))alloc_fn;
     p->free_fn = free_fn;
@@ -216,13 +223,22 @@ static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, 
     for (i=0; i<count-1; i++)
     {
 	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
-	mem_ptr = (ibmem_t*)(ppVoid + 1);
+	ppVoid = *ppVoid;
+    }
+    *ppVoid = NULL;
+
+    ppVoid = p->pNextFree;
+    while (*ppVoid != NULL)
+    {
+	pVoid = (void*)((ibmem_t*)((void**)ppVoid + 1) + 1);
+	mem_ptr = (ibmem_t*)pVoid;
+	mem_ptr--;
 	mem_ptr->handle = handle;
 	mem_ptr->lkey = lkey;
 	mem_ptr->rkey = rkey;
 	ppVoid = *ppVoid;
     }
-    *ppVoid = NULL;
+    /*assert(GETLKEY(((ibmem_t*)((void**)p->pNextFree + 1)) + 1) == s_lkey);*/
 
     return p;
 }
@@ -257,16 +273,17 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
 static void * ibuBlockAllocIB(ibuBlockAllocator p)
 {
     void *pVoid;
-    
+
     if (p->pNextFree == NULL)
     {
 	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
 	return NULL;
     }
 
-    pVoid = ((ibmem_t*)(p->pNextFree + 1)) + 1;
+    pVoid = (void*)(((ibmem_t*)((void**)(p->pNextFree) + 1)) + 1);
     p->pNextFree = *(p->pNextFree);
 
+    /*assert(GETLKEY(pVoid) == s_lkey);*/
     return pVoid;
 }
 
@@ -276,6 +293,15 @@ static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
     *((void**)pBlock) = p->pNextFree;
     p->pNextFree = pBlock;
 
+    return 0;
+}
+
+static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock)
+{
+    ((ibmem_t*)pBlock)--;
+    ((void**)pBlock)--;
+    *((void**)pBlock) = p->pNextFree;
+    p->pNextFree = pBlock;
     return 0;
 }
 
@@ -460,6 +486,11 @@ static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *l
     *lp = mem_out.l_key;
     *rp = mem_out.r_key;
 
+/*
+    s_mr_handle = *mhp;
+    s_lkey = mem_out.l_key;
+*/
+
     MPIU_DBG_PRINTF(("exiting ib_malloc_register\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
     return ptr;
@@ -627,6 +658,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
     data.lkey = GETLKEY(mem_ptr);
+    /*assert(data.lkey == s_lkey);*/
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -694,6 +726,7 @@ static int ibui_post_receive(ibu_t ibu)
     data.addr = (VAPI_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
     data.lkey = GETLKEY(mem_ptr);
+    /*assert(data.lkey == s_lkey);*/
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -831,6 +864,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	data.len = length;
 	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
 	data.lkey = GETLKEY(mem_ptr);
+	/*assert(data.lkey == s_lkey);*/
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
@@ -965,6 +999,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	data.len = msg_size;
 	data.addr = (VAPI_virt_addr_t)mem_ptr;
 	data.lkey = GETLKEY(mem_ptr);
+	/*assert(data.lkey == s_lkey);*/
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
@@ -1267,7 +1302,7 @@ static int ibui_read_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1342,8 +1377,8 @@ int ibui_readv_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFree(mem_ptr)"));
-	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
+	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1520,7 +1555,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
 			MPIU_Internal_error_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
 		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
-		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
 		}
 	    }
 	    else
@@ -1528,7 +1563,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		if (mem_ptr == NULL)
 		    MPIU_Internal_error_printf("ibu_wait: send mem_ptr == NULL\n");
 		assert(mem_ptr != NULL);
-		ibuBlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 	    }
 
 	    out->num_bytes = num_bytes;
@@ -1543,7 +1578,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		ibu->nAvailRemote += completion_data.imm_data;
 		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.imm_data, ibu->nAvailRemote));
-		ibuBlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
 		assert(completion_data.byte_len == 0); /* check this after the printfs to see if the immediate data is correct */
 		break;
@@ -1593,7 +1628,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    if (mem_ptr == NULL)
 			MPIU_Internal_error_printf("ibu_wait: read mem_ptr == NULL\n");
 		    assert(mem_ptr != NULL);
-		    ibuBlockFree(ibu->allocator, mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
 		    ibui_post_receive(ibu);
 		}
 		else
@@ -1640,7 +1675,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
 		    ibu->read.bufflen -= num_bytes;
 		    /* put the receive packet back in the pool */
-		    ibuBlockFree(ibu->allocator, mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
 		    ibui_post_receive(ibu);
 		}
 		if (ibu->read.bufflen == 0)
