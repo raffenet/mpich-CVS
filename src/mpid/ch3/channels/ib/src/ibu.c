@@ -1161,7 +1161,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	case OP_SEND:
 	    //num_bytes = ibui_next_num_written(ibu);
 	    num_bytes = g_num_bytes_written_stack[--g_cur_write_stack_index];
-	    printf("ibu_wait: num_bytes = %d\n", num_bytes);fflush(stdout);
+	    /*printf("ibu_wait: num_bytes = %d\n", num_bytes);fflush(stdout);*/
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    /* put the receive packet back in the pool */
