@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+configure
+config.*
+forkerconf.h.in
+forkerconf.h
