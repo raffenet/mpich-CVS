@@ -32,6 +32,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
     int length;
     int index;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
@@ -48,7 +49,9 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
 	}
 	length = min(len, MPIDI_CH3I_PACKET_SIZE);
 	vc->shm.shm->packet[index].num_bytes = length;
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->shm.shm->packet[index].data, buf, length);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	WRITE_BARRIER();
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	total += length;
@@ -112,6 +115,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
     unsigned char *cur_pos, *dest_pos;
     int index;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 
@@ -129,10 +133,14 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_eager_send_t) && 
 	iov[1].MPID_IOV_LEN < 16*1024-sizeof(MPIDI_CH3_Pkt_eager_send_t))
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->shm.shm->packet[index].data, 
 	       iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(&vc->shm.shm->packet[index].data[iov[0].MPID_IOV_LEN],
 	       iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	vc->shm.shm->packet[index].num_bytes = 
 	    iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN;
 	total = vc->shm.shm->packet[index].num_bytes;
@@ -157,7 +165,9 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    total += iov[i].MPID_IOV_LEN;
 	    vc->shm.shm->packet[index].num_bytes += iov[i].MPID_IOV_LEN;
 	    dest_avail -= iov[i].MPID_IOV_LEN;
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    dest_pos += iov[i].MPID_IOV_LEN;
 	    if (dest_avail == 0)
 	    {
@@ -179,7 +189,9 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	{
 	    total += dest_avail;
 	    vc->shm.shm->packet[index].num_bytes = MPIDI_CH3I_PACKET_SIZE;
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, dest_avail);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    WRITE_BARRIER();
 	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
@@ -197,7 +209,9 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		}
 		num_bytes = min(cur_avail, MPIDI_CH3I_PACKET_SIZE);
 		vc->shm.shm->packet[index].num_bytes = num_bytes;
+		MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		memcpy(vc->shm.shm->packet[index].data, cur_pos, num_bytes);
+		MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 		total += num_bytes;
 		cur_pos += num_bytes;
 		cur_avail -= num_bytes;
@@ -273,6 +287,7 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
     unsigned int len;
     MPIDI_CH3I_SHM_Unex_read_t *temp;
     MPIDI_STATE_DECL(MPID_STATE_SHMI_READ_UNEX);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SHMI_READ_UNEX);
 
@@ -283,7 +298,9 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
     while (vc_ptr->shm.unex_list)
     {
 	len = min(vc_ptr->shm.unex_list->length, vc_ptr->shm.read.bufflen);
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc_ptr->shm.read.buffer, vc_ptr->shm.unex_list->buf, len);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	/* advance the user pointer */
 	vc_ptr->shm.read.buffer = (char*)(vc_ptr->shm.read.buffer) + len;
 	vc_ptr->shm.read.bufflen -= len;
@@ -330,6 +347,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
     unsigned int num_bytes;
     MPIDI_CH3I_SHM_Unex_read_t *temp;
     MPIDI_STATE_DECL(MPID_STATE_SHMI_READV_UNEX);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SHMI_READV_UNEX);
 
@@ -343,7 +361,9 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 			    vc_ptr->shm.read.iov[vc_ptr->shm.read.index].MPID_IOV_LEN);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "copying %d bytes\n", num_bytes));
 	    /* copy the received data */
+	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(vc_ptr->shm.read.iov[vc_ptr->shm.read.index].MPID_IOV_BUF, vc_ptr->shm.unex_list->buf, num_bytes);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    vc_ptr->shm.read.total += num_bytes;
 	    vc_ptr->shm.unex_list->buf += num_bytes;
 	    vc_ptr->shm.unex_list->length -= num_bytes;
@@ -397,9 +417,10 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
     MPIDI_VC *recv_vc_ptr;
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     int i;
-    register int index;
+    register int index, working;
     MPIDI_VC *temp_vc_ptr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 
@@ -421,6 +442,8 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    return SHM_WAIT_READ;
 	}
 
+	working = FALSE;
+
 	for (i=0; i<vc->shm.pg->size; i++)
 	{
 	    /* skip over the vc to myself */
@@ -432,6 +455,8 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    /* if the packet at the head index is available, the queue is empty */
 	    if (vc->shm.shm[i].packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE)
 		continue;
+
+	    working = TRUE;
 
 	    mem_ptr = (void*)vc->shm.shm[i].packet[index].cur_pos; /*(void*)vc->shm.shm[i].packet[index].data;*/
 	    pkt_ptr = &vc->shm.shm[i].packet[index];
@@ -455,8 +480,10 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    if ((int)recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_LEN <= num_bytes)
 		    {
 			/* copy the received data */
+			MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 			memcpy(recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_BUF, iter_ptr,
 			    recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_LEN);
+			MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 			iter_ptr += recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_LEN;
 			/* update the iov */
 			num_bytes -= recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_LEN;
@@ -466,7 +493,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    else
 		    {
 			/* copy the received data */
+			MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 			memcpy(recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_BUF, iter_ptr, num_bytes);
+			MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 			iter_ptr += num_bytes;
 			/* update the iov */
 			recv_vc_ptr->shm.read.iov[recv_vc_ptr->shm.read.index].MPID_IOV_LEN -= num_bytes;
@@ -508,7 +537,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		if ((unsigned int)num_bytes > recv_vc_ptr->shm.read.bufflen)
 		{
 		    /* copy the received data */
+		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->shm.read.buffer, mem_ptr, recv_vc_ptr->shm.read.bufflen);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 		    recv_vc_ptr->shm.read.total = recv_vc_ptr->shm.read.bufflen;
 		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->shm.read.bufflen, num_bytes - recv_vc_ptr->shm.read.bufflen);*/
 		    pkt_ptr->cur_pos += recv_vc_ptr->shm.read.bufflen;
@@ -518,7 +549,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		else
 		{
 		    /* copy the received data */
+		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->shm.read.buffer, mem_ptr, num_bytes);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 		    recv_vc_ptr->shm.read.total += num_bytes;
 		    /* advance the user pointer */
 		    recv_vc_ptr->shm.read.buffer = (char*)(recv_vc_ptr->shm.read.buffer) + num_bytes;
@@ -540,7 +573,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    }
 	}
 
-	if (millisecond_timeout == 0)
+	if (millisecond_timeout == 0 && !working)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_WAIT_TIMEOUT;
@@ -585,6 +618,7 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
     int i;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef MPICH_DBG_OUTPUT
@@ -598,7 +632,9 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
     vc->shm.read.total = 0;
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*vc->shm.read.iov = iov;*/
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(vc->shm.read.iov, iov, sizeof(MPID_IOV) * n);
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
     vc->shm.read.iovlen = n;
     vc->shm.read.index = 0;
     vc->shm.read.use_iov = TRUE;
