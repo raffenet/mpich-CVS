@@ -50,20 +50,29 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-            /* Validate comm_ptr */
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
+    
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -72,7 +81,19 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
-    return MPI_SUCCESS;
+    
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    mpi_errno = MPID_Iprobe(source, tag, comm_ptr, status);
+    
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PROBE);
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
 }
