@@ -33,10 +33,10 @@ int main( int argc, char *argv[] )
     if (parentcomm == MPI_COMM_NULL) {
 	/* Create 2 more processes */
 	/* This uses a Unix name for the program; 
-	   Windows applications may need to use just spawn1 or
-	   spawn1.exe.  We can't rely on using info to place . in the
+	   Windows applications may need to use just spawn2 or
+	   spawn2.exe.  We can't rely on using info to place . in the
 	   path, since info is not required to be followed. */
-	MPI_Comm_spawn( "./spawn1", MPI_ARGV_NULL, np,
+	MPI_Comm_spawn( "./spawn2", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, errcodes );
     }
@@ -105,10 +105,10 @@ int main( int argc, char *argv[] )
     if (parentcomm == MPI_COMM_NULL) {
 	/* Create 2 more processes */
 	/* This uses a Unix name for the program; 
-	   Windows applications may need to use just spawn1 or
-	   spawn1.exe.  We can't rely on using info to place . in the
+	   Windows applications may need to use just spawn2 or
+	   spawn2.exe.  We can't rely on using info to place . in the
 	   path, since info is not required to be followed. */
-	MPI_Comm_spawn( "./spawn1", MPI_ARGV_NULL, np,
+	MPI_Comm_spawn( "./spawn2", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm2, MPI_ERRCODES_IGNORE );
     }
