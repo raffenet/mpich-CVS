@@ -91,6 +91,7 @@ typedef int SMPD_BOOL;
 #define SMPD_FAIL_STR                     "FAIL"
 #define SMPD_OUTPUT_MUTEX_NAME            "SMPD_OUTPUT_MUTEX"
 #define SMPD_DATA_MUTEX_NAME              "SMPD_DATA_MUTEX"
+#define SMPD_DYNAMIC_HOSTS_KEY            "dynamic_hosts"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -566,5 +567,7 @@ int smpd_hide_string_arg(char *str, const char *flag);
 int smpd_get_default_hosts(void);
 int smpd_lock_smpd_data(void);
 int smpd_unlock_smpd_data(void);
+int smpd_insert_into_dynamic_hosts(void);
+int smpd_remove_from_dynamic_hosts(void);
 
 #endif

@@ -730,7 +730,7 @@ int smpd_get_default_hosts()
 	return SMPD_FAIL;
 #else
 	smpd_lock_smpd_data();
-	if (smpd_get_smpd_data("dynamic_hosts", hosts, 8192) != SMPD_SUCCESS)
+	if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
 	{
 	    smpd_unlock_smpd_data();
 	    if (gethostname(hosts, 8192) == 0)
@@ -749,7 +749,7 @@ int smpd_get_default_hosts()
 		strcpy(myhostname, hosts);
 		smpd_lock_smpd_data();
 		hosts[0] = '\0';
-		smpd_get_smpd_data("dynamic_hosts", hosts, 8192);
+		smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192);
 		if (strlen(hosts) > 0)
 		{
 		    /* FIXME this could overflow */
@@ -760,7 +760,7 @@ int smpd_get_default_hosts()
 		{
 		    strcpy(hosts, myhostname);
 		}
-		smpd_set_smpd_data("dynamic_hosts", hosts);
+		smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
 		smpd_unlock_smpd_data();
 		smpd_exit_fn("smpd_get_default_hosts");
 		return SMPD_SUCCESS;
@@ -828,7 +828,7 @@ int smpd_get_default_hosts()
 		/* add this host to the dynamic_hosts key */
 		smpd_lock_smpd_data();
 		hosts[0] = '\0';
-		smpd_get_smpd_data("dynamic_hosts", hosts, 8192);
+		smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192);
 		if (strlen(hosts) > 0)
 		{
 		    /* FIXME this could overflow */
@@ -839,7 +839,7 @@ int smpd_get_default_hosts()
 		{
 		    strcpy(hosts, myhostname);
 		}
-		smpd_set_smpd_data("dynamic_hosts", hosts);
+		smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
 		smpd_unlock_smpd_data();
 	    }
 	}
@@ -854,5 +854,140 @@ int smpd_get_default_hosts()
     }
 
     smpd_exit_fn("smpd_get_default_hosts");
+    return SMPD_SUCCESS;
+}
+
+int smpd_insert_into_dynamic_hosts(void)
+{
+#ifndef HAVE_WINDOWS_H
+    char myhostname[SMPD_MAX_HOST_LENGTH];
+    char hosts[8192];
+    char *host;
+#endif
+
+    smpd_enter_fn("smpd_insert_into_dynamic_hosts");
+
+#ifndef HAVE_WINDOWS_H
+    smpd_lock_smpd_data();
+    if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
+    {
+	smpd_unlock_smpd_data();
+	if (gethostname(hosts, 8192) == 0)
+	{
+	    /* add this host to the dynamic_hosts key */
+	    strcpy(myhostname, hosts);
+	    smpd_lock_smpd_data();
+	    hosts[0] = '\0';
+	    smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192);
+	    if (strlen(hosts) > 0)
+	    {
+		/* FIXME this could overflow */
+		strcat(hosts, " ");
+		strcat(hosts, myhostname);
+	    }
+	    else
+	    {
+		strcpy(hosts, myhostname);
+	    }
+	    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
+	    smpd_unlock_smpd_data();
+	    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	    return SMPD_SUCCESS;
+	}
+	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	return SMPD_FAIL;
+    }
+    smpd_unlock_smpd_data();
+
+    if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+    {
+	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	return SMPD_FAIL;
+    }
+
+    /* check to see if the host is already in the key */
+    host = strtok(hosts, " \t\r\n");
+    while (host)
+    {
+	if (strcmp(host, myhostname) == 0)
+	{
+	    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	    return SMPD_SUCCESS;
+	}
+	host = strtok(NULL, " \t\r\n");
+    }
+    
+    /* add this host to the dynamic_hosts key */
+    smpd_lock_smpd_data();
+
+    hosts[0] = '\0';
+    if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
+    {
+	smpd_unlock_smpd_data();
+	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	return SMPD_FAIL;
+    }
+    if (strlen(hosts) > 0)
+    {
+	/* FIXME this could overflow */
+	strcat(hosts, " ");
+	strcat(hosts, myhostname);
+    }
+    else
+    {
+	strcpy(hosts, myhostname);
+    }
+    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
+    smpd_unlock_smpd_data();
+#endif
+    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+    return SMPD_SUCCESS;
+}
+
+int smpd_remove_from_dynamic_hosts(void)
+{
+#ifndef HAVE_WINDOWS_H
+    char myhostname[SMPD_MAX_HOST_LENGTH];
+    char hosts[8192];
+    char hosts_less_me[8192];
+    char *host;
+#endif
+
+    smpd_enter_fn("smpd_remove_from_dynamic_hosts");
+#ifndef HAVE_WINDOWS_H
+    if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+    {
+	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
+	return SMPD_FAIL;
+    }
+
+    smpd_lock_smpd_data();
+
+    hosts[0] = '\0';
+    if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
+    {
+	smpd_unlock_smpd_data();
+	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
+	return SMPD_FAIL;
+    }
+
+    /* create a new hosts lists without this host name in it */
+    hosts_less_me[0] = '\0';
+    host = strtok(hosts, " \t\r\n");
+    while (host)
+    {
+	if (strcmp(host, myhostname))
+	{
+	    if (hosts_less_me[0] != '\0')
+		strcat(hosts_less_me, " ");
+	    strcat(hosts_less_me, host);
+	}
+	host = strtok(NULL, " \t\r\n");
+    }
+
+    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts_less_me);
+    smpd_unlock_smpd_data();
+#endif
+    smpd_exit_fn("smpd_remove_from_dynamic_hosts");
     return SMPD_SUCCESS;
 }
