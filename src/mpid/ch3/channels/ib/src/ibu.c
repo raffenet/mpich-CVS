@@ -137,10 +137,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 /* utility allocator functions */
 //#if 0
 
-ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
-int ibuBlockAllocFinalize(ibuBlockAllocator *p);
-void * ibuBlockAlloc(ibuBlockAllocator p);
-int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
+static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
+static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
+static void * ibuBlockAlloc(ibuBlockAllocator p);
+static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
 
 static int g_nLockSpinCount = 100;
 
