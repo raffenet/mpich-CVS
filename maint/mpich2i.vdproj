@@ -1085,13 +1085,13 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MPICH2"
-        "ProductCode" = "8:{76CD78D2-4E47-461A-BBB2-EAE755FADF47}"
-        "PackageCode" = "8:{6687DC2E-F12C-4D6A-BA48-75366D465DFB}"
+        "ProductCode" = "8:{EC824813-9B54-42C2-84E2-026E1FEF73ED}"
+        "PackageCode" = "8:{CBAEC410-558D-4E2B-8848-9191E7D6EB96}"
         "UpgradeCode" = "8:{2CC63CCF-15DA-4D23-97BE-D82ACE5600E1}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:0.9.71"
+        "ProductVersion" = "8:0.9.80"
         "Manufacturer" = "8:Argonne National Lab"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:www.mcs.anl.gov/mpi/mpich2"
@@ -1301,7 +1301,7 @@
                 {
                     "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_2F175ACA1424471E89B4EE1D585E3EF8"
                     {
-                    "Sequence" = "3:300"
+                    "Sequence" = "3:400"
                     "DisplayName" = "8:Installation Folder"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
@@ -1372,7 +1372,7 @@
                     }
                     "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_5CEB0608B4154E308BB26DA8EDA77D37"
                     {
-                    "Sequence" = "3:200"
+                    "Sequence" = "3:300"
                     "DisplayName" = "8:License Agreement"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
@@ -1412,7 +1412,7 @@
                             "ContextData" = "8:4;True=4;False=0"
                             "Attributes" = "3:0"
                             "Setting" = "3:0"
-                            "Value" = "3:4"
+                            "Value" = "3:0"
                             "DefaultValue" = "3:4"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -1420,7 +1420,7 @@
                     }
                     "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_73B6ACDAE00B49B6A412ACF22D05ED24"
                     {
-                    "Sequence" = "3:400"
+                    "Sequence" = "3:500"
                     "DisplayName" = "8:Confirm Installation"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
@@ -1437,6 +1437,54 @@
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
                             "Value" = "8:_D252FCCAF18446E4AD9F15AE3E54AAB4"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
+                    "{18ADD6EC-89FE-4ED7-AD3E-211C40278470}:_CEDDEC8F764A436A8DF9E27B6ECD1782"
+                    {
+                    "Sequence" = "3:200"
+                    "DisplayName" = "8:Read Me"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminReadmeDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:2"
+                            "Value" = "8:_D252FCCAF18446E4AD9F15AE3E54AAB4"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "ReadmeText"
+                            {
+                            "Name" = "8:ReadmeText"
+                            "DisplayName" = "8:#1010"
+                            "Description" = "8:#1110"
+                            "Type" = "3:6"
+                            "ContextData" = "8:"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:2"
+                            "Value" = "8:_F7292DDA7C60421394EC69BDBF9132B3"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "Sunken"
+                            {
+                            "Name" = "8:Sunken"
+                            "DisplayName" = "8:#1007"
+                            "Description" = "8:#1107"
+                            "Type" = "3:5"
+                            "ContextData" = "8:4;True=4;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:4"
+                            "DefaultValue" = "3:4"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
