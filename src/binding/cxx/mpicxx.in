@@ -34,6 +34,7 @@ libdir=@libdir@
 #
 # Default settings for compiler, flags, and libraries
 CXX="@CXX@"
+CXX_LINKPATH_SHL="@CXX_LINKPATH_SHL@"
 MPI_CXXFLAGS="@MPI_CXXFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
@@ -167,6 +168,10 @@ LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries
 if [ "$linking" = yes ] ; then
+    if [ -n "$CXX_LINKPATH_SHL" ] ; then
+        # Prepend the path for the shared libraries to the library list
+        mpilibs="$CXX_LINKPATH_SHL$libdir $mpilibs"
+    fi
     $Show $CXX $CXXFLAGS $LDFLAGS -I$includedir -L$libdir $allargs $mpilibs $MPI_OTHERLIBS
     rc=$?
 else

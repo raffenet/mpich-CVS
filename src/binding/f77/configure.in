@@ -291,9 +291,11 @@ AC_SUBST(MPILIBNAME)
 AC_SUBST(CC_SHL)
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(FC_SHL)
+AC_SUBST(FC_LINKPATH_SHL)
 if test "$ENABLE_SHLIB" = "gcc" ; then
    # Assume that the compiler is g77 if gcc style shared libraries chosen
    FC_SHL="$FC -shared -fpic"
+   FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 fi
 
 if test "$pac_lib_mpi_is_building" = "yes" ; then

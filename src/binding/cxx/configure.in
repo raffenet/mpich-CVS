@@ -47,9 +47,11 @@ fi
 AC_SUBST(CC_SHL)
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(CXX_SHL)
+AC_SUBST(CXX_LINKPATH_SHL)
 if test "$ENABLE_SHLIB" = "gcc" ; then
    # Assume that the compiler is g++ if gcc style shared libraries chosen
    CXX_SHL="$CXX -shared -fpic"
+   CXX_LINKPATH_SHL="-Wl,-rpath -Wl,"
 fi
 dnl     checks for library functions
 dnl     checks for system services
