@@ -1,4 +1,6 @@
 uallreduce.f90
+alltoallwf.f90
+exscanf.f90
 Makefile.sm
 Makefile
 Makefile.in

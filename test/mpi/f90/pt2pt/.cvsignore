@@ -2,3 +2,4 @@ Makefile.sm
 Makefile
 Makefile.in
 statusesf.f90
+greqf.f90

@@ -1,5 +1,8 @@
 baseattr.f90
 baseattrwin.f90
+commattrf.f90
+typeattrf.f90
+winattrf.f90
 Makefile.sm
 Makefile
 Makefile.in
