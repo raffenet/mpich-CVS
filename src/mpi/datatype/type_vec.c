@@ -108,7 +108,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
     new_ptr->loopinfo	     = new_ptr->opt_loopinfo;
     new_ptr->is_permanent    = 0;
     new_ptr->is_committed    = 0;
-    new_ptr->attributes.next = 0;
+    new_ptr->attributes      = 0;
     new_ptr->cache_id	     = 0;
     new_ptr->name[0]	     = 0;
     if (HANDLE_GET_KIND(old_type) == HANDLE_KIND_BUILTIN) {

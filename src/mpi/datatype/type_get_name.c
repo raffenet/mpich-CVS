@@ -75,7 +75,7 @@ static mpi_names_t mpi_names[] = {
 void MPIR_Datatype_init_names( void ) 
 {
     int i;
-    MPID_Datatype *datatype_ptr;
+    MPID_Datatype *datatype_ptr = NULL;
     static int setup = 0;
     
     if (setup) return;
