@@ -3847,11 +3847,11 @@ make this more precise)
 
 Here is an algorithm that will work in the multithreaded case.  It
 uses a bit mask of context ids (each bit set indicates a context id
-available; 32 32-bit integers covers 1024 context ids.  This mask,
+available; 32 32-bit integers covers 1024 context ids).  This mask,
 along with a queue containing the context ids of communicators that
 are requesting a new context id and a variable that indicates that
 some thread has acquired the rights to the mask, are stored in
-thread-shared memory.
+thread-shared memory (in \code{MPIR_Process}).
 
 \begin{algorithm}
 while (no context id found) {
@@ -3966,9 +3966,10 @@ group.
 Return the \mpids{MPI_Comm}{size} field.  This is really the size of the local
 group, which for an intercommunicator may be different from the remote
 size.  Note that for point-to-point communication, error checking for
-destination or source ranks must look at the remote size.  Should
-there be \mpids{MPI_Comm}{local_size} and \mpids{MPI_Comm}{remote_size} fields
-in the communicator? 
+destination or source ranks must look at the remote size.  To avoid
+requiring or accessing groups in the communicator, the communicator
+contains fields for \mpids{MPI_Comm}{local_size} and
+\mpids{MPI_Comm}{remote_size}. 
 
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
 Perform an Allgather on the color and key.  Processes with the same color are
@@ -3983,14 +3984,19 @@ we can create the group explicitly with \mpifunc{MPI_Group_incl} and
 use \mpifunc{MPI_Comm_create} as is.
 
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
-Should this simply test to see if the remote group and the local groups are
-the same, or should there be a separate communicator ``kind'' field?  Note
-that the C++ binding defines 4 kinds of communicators: intercomm, intracomm,
-graphcomm, and cartcomm. 
 
-Suggestion: Either no separate field (using
-\mpids{MPI_Comm}{local_group} \code{==}
-\mpids{MPI_Comm}{remote_group}), or a single bit in a boolean flags field.  
+% Should this simply test to see if pointers to the remote group and the
+% local groups are 
+% the same, or should there be a separate communicator ``kind'' field?  Note
+% that the C++ binding defines 4 kinds of communicators: intercomm, intracomm,
+% graphcomm, and cartcomm. 
+
+% Suggestion: Either no separate field (using
+% \mpids{MPI_Comm}{local_group} \code{==}
+% \mpids{MPI_Comm}{remote_group}), or a single bit in a boolean flags
+% field.  
+This simply checks the communicator kind field to see if the
+communicator is an inter- or intra-communicator.
 Note that this test does need to be performed for every collective operation,
 since the inter- and intra-communicator algorithms are different.
 
@@ -4131,38 +4137,38 @@ drop into a special optimized case.  Should we set things up so that a single
 int of flags, where the ``good'' case is a zero bit for each flag, can be
 tested with a single compare against zero?
 
-\subsubsection{\mpidfunc{MPID_Rhcv}}
-This function is not part of MPI but is a critical part of the ADI.
-The choice of implementation depends on the properties of the ADI;
-some are reviewed below.
+% \subsubsection{\mpidfunc{MPID_Rhcv}}
+% This function is not part of MPI but is a critical part of the ADI.
+% The choice of implementation depends on the properties of the ADI;
+% some are reviewed below.
 
-\paragraph{Threadedness.}\index{thread overhead!handler
-invocatoin}\index{thread overhead!MPID_Rhcv}In a single-threaded ADI
-implementation, 
-\mpidfunc{MPID_Rhcv} can simply call the appropriate routine to act on
-the object (e.g., deliver a message or inspect a remote queue in
-shared memory).  In an implementation that allows multiple-user
-threads to invoke the ADI routine, \mpidfunc{MPID_Rhcv} must ensure
-that it is thread-safe.  One easy way to do this is to use a lock;
-that is, consider \mpidfunc{MPID_Rhcv} a \emph{synchronized}
-function.  An alternative, particularly when there is a separate
-communication agent (See Section~\ref{sec:comm-agent}), is to have
-\mpidfunc{MPID_Rhcv} enqueue operations on a pending work queue.  This
-operation can sometime be done without a lock (using memory atomic
-operations or load-reservation/store-conditional split operations);
-removing items from the queue can also be done without a lock.
+% \paragraph{Threadedness.}\index{thread overhead!handler
+% invocatoin}\index{thread overhead!MPID_Rhcv}In a single-threaded ADI
+% implementation, 
+% \mpidfunc{MPID_Rhcv} can simply call the appropriate routine to act on
+% the object (e.g., deliver a message or inspect a remote queue in
+% shared memory).  In an implementation that allows multiple-user
+% threads to invoke the ADI routine, \mpidfunc{MPID_Rhcv} must ensure
+% that it is thread-safe.  One easy way to do this is to use a lock;
+% that is, consider \mpidfunc{MPID_Rhcv} a \emph{synchronized}
+% function.  An alternative, particularly when there is a separate
+% communication agent (See Section~\ref{sec:comm-agent}), is to have
+% \mpidfunc{MPID_Rhcv} enqueue operations on a pending work queue.  This
+% operation can sometime be done without a lock (using memory atomic
+% operations or load-reservation/store-conditional split operations);
+% removing items from the queue can also be done without a lock.
 
-Questions: do we want a separate send and receive agent in this case?
-The send agent could wait on a condition variable that is set by any
-thread that adds to the queue.  The receiving agent needs to respond
-to events coming from other processes, making the situation somewhat
-asymmetric.  Do we want to have a virtual split, allowing either zero,
-one, or two agents?  
+% Questions: do we want a separate send and receive agent in this case?
+% The send agent could wait on a condition variable that is set by any
+% thread that adds to the queue.  The receiving agent needs to respond
+% to events coming from other processes, making the situation somewhat
+% asymmetric.  Do we want to have a virtual split, allowing either zero,
+% one, or two agents?  
 
 \subsubsection{\mpifunc{MPI_PROBE}}
 
-Call \mpidfunc{MPID_Request_probe}.  An implementation of this routine 
-might look something like:
+Call \mpidfunc{MPID_Probe}.  
+An implementation of this routine might look something like:
 
 \begin{mmadi}
 Look for a match in the unexpected receive queue. 
@@ -4292,8 +4298,8 @@ available.
 
 
 We take advantage of \mpiconst{MPI_BSEND_OVERHEAD} to ensure that each
-block is aligned on a \code{double} (question: should we make it a
-cacheline?)
+block is aligned on a \code{double}.
+% (question: should we make it a cacheline?)
 
 The fields in the bsend buffer element include
 \mpids{MPIR_Bsend_elm}{tag},
@@ -4313,15 +4319,15 @@ or to \code{tail} if the buffer is empty.
 Question: for the nonblocking versions, in principle, we could wait to
 copy into the buffer until the wait/test.  Maybe in 2008.
 
-An implementation of \mpidfunc{MPID_tBsend} might look like:
+% An implementation of \mpidfunc{MPID_tBsend} might look like:
 
-Check message size.  
-If not within eager limit, return false
-If flow control allows, send and return true, 
-else return false
+% Check message size.  
+% If not within eager limit, return false
+% If flow control allows, send and return true, 
+% else return false
 
-Note that the flow control check may require a lock so that another
-thread doesn't also try to send and change the flow control state.
+% Note that the flow control check may require a lock so that another
+% thread doesn't also try to send and change the flow control state.
 
 
 \subsubsection{\mpifunc{MPI_IBSEND}}
@@ -4354,12 +4360,12 @@ a \mpiconst{MPI_ERR_OTHER} class of type \code{THREAD_RACE} if the flag is
 set.
 
 \subsubsection{\mpifunc{MPI_CANCEL}}
-Call \mpidfunc{MPID_Request_cancel}, which may be implemented as follows:
-Start by separating the cases:
+Check the kind of the request:
 \begin{itemize}
 \item Inactive persistent.  Return error.
 \item Active persistent.  Handle as a non-persistent of the same type.
-\item Receive.  If already complete or in progess, cancel fails.  
+\item Receive.  Call \mpidfunc{MPID_Cancel_recv}.  If already complete
+or in progess, cancel fails.   
 % \begin{core} 
 % Otherwise, remove request from receive queue (atomically).  In many
 % ADIs, this is a local operation.  However, some systems may require
@@ -4371,7 +4377,8 @@ Start by separating the cases:
 % variation of the find-or-allocate that performs a find-and-remove.
 
 % \end{core}
-\item Send. If already complete or in progress, cancel fails.
+\item Send. Call \mpidfunc{MPID_Cancel_send}.  If already complete or
+in progress, cancel fails. 
 % \begin{core} 
 % Otherwise use \mpidfunc{MPID_Rhcv} to send a cancel
 % request (\mpidconst{MPID_Hid_cancel}).  The cancel operation must wait for a
@@ -4418,15 +4425,22 @@ that the correct request was cancelled.  Here's the situation
                                             cancel arrives (late)
 \end{verbatim}
 At the end of this, the cancel matches the second isend even though it
-should only match the first.  To avoid this, we only need a sequence
-number on the messages; we need this anyway for supporting profiling.
-Another alternative is to manage the list of available requests as a
-FIFO rather than LIFO queue; in that case, there's very little chance
-that the same request woul be used soon enough to cause any problems.  
-Other solutions can be used; if the communication is handled by a
-single thread, the fact that the request is not made available again
-until the cancel is known to either have succeeded or failed
-guarantees that no mismatch can occur.
+should only match the first.  However, to avoid this, we need only
+wait until we receive a response from the destination process about
+whether the cancel succeeded or not before freeing the request.  To
+accomplish this, we need only increment the reference count on the
+request when canceling it, decrementing the reference count on the
+response from the destination process.
+
+% To avoid this, we only need a sequence
+% number on the messages; we need this anyway for supporting profiling.
+% Another alternative is to manage the list of available requests as a
+% FIFO rather than LIFO queue; in that case, there's very little chance
+% that the same request woul be used soon enough to cause any problems.  
+% Other solutions can be used; if the communication is handled by a
+% single thread, the fact that the request is not made available again
+% until the cancel is known to either have succeeded or failed
+% guarantees that no mismatch can occur.
 
 \subsubsection{\mpifunc{MPI_IPROBE}}
 \mpidfunc{MPID_Request_iprobe}
@@ -4468,12 +4482,13 @@ guarantees that no mismatch can occur.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_IRSEND}}
-Is this the same as \code{MPI_ISEND}, but with the ready mode set?  Or is
-there a separate routine that exploits the ready nature of the operation?
-Special note: we should be able to report an error when a ready send is not
-matched by a posted receive.  This requires a bit for ready mode in the
-\mpidconst{MPID_Hid_short} and \mpidconst{MPID_Hid_request_to_send}; perhaps a
-\mpids{MPID_Hid_short}{is_ready}\index{MPID_Hid_request_to_send!is_ready}. 
+Call \mpidfunc{MPID_Irsend}.
+% Is this the same as \code{MPI_ISEND}, but with the ready mode set?  Or is
+% there a separate routine that exploits the ready nature of the operation?
+% Special note: we should be able to report an error when a ready send is not
+% matched by a posted receive.  This requires a bit for ready mode in the
+% \mpidconst{MPID_Hid_short} and \mpidconst{MPID_Hid_request_to_send}; perhaps a
+% \mpids{MPID_Hid_short}{is_ready}\index{MPID_Hid_request_to_send!is_ready}. 
 
 \subsubsection{\mpifunc{MPI_ISEND}}
 \begin{adi3}
@@ -4496,20 +4511,23 @@ matched by a posted receive.  This requires a bit for ready mode in the
 % \end{mmadi}
 \end{adi3}
 
-Question: do we want a special case for short messages that reduces
-overhead by indicating that the message is completed?  Note that for
-any operation that is not complete, we must ensure that the related
-objects, such as datatypes and communicators, are marked as in use (by
-incrementing their \mpids{MPI_Comm}{ref_count}.  This is not needed if
-the operation is already complete, and eliminating these steps may be
-important for reducing the latency of short messages (particularly
-since, in the multi-threaded case, updating the reference count
-requires a write and, for objects being used by several threads, a
-cache miss.
+% Question: do we want a special case for short messages that reduces
+% overhead by indicating that the message is completed?  Note that for
+% any operation that is not complete, we must ensure that the related
+% objects, such as datatypes and communicators, are marked as in use (by
+% incrementing their \mpids{MPI_Comm}{ref_count}.  This is not needed if
+% the operation is already complete, and eliminating these steps may be
+% important for reducing the latency of short messages (particularly
+% since, in the multi-threaded case, updating the reference count
+% requires a write and, for objects being used by several threads, a
+% cache miss.
 
+%% The following is commented out because the MPID layer is
+%% responsible for updating the reference counts
 Another special case is the predefined, permanent objects.  Should the
-\mpids{MPI_Datatype}{ref_count} be updated for those objects?  Is the
-branch (we've already loaded the object identifier) faster than the
+\mpids{MPI_Datatype}{ref_count} be updated for those objects (answer:
+no)?  Is the branch (we've already loaded the object identifier)
+faster than the 
 load/increment/store?  
 
 \subsubsection{\mpifunc{MPI_ISSEND}}
@@ -4528,26 +4546,32 @@ Same as \code{MPI_ISEND}, but with the synchronous mode set.
 % approach (it was used in MPICH/ADI-1, but was not really worth the effort). 
 
 \subsubsection{\mpifunc{MPI_RECV}}
-This can simply be \code{MPI_IRECV} followed by an \code{MPI_WAIT}.  However,
-we might want to let the partner (matching sender) know that this is blocking
-a thread or process.  
+Call \mpidfunc{MPID_Recv}.  Note that this routine is permitted to return a
+\mpidconst{MPI_Request}; in that case, we must wait on the request.
 
-Note that an early version of MPICH waited for a specific tag,
-context-id, and source tuple.  This sped up the process of matching
-against the message queue (incoming messages were first matched
-against that tuple), but it isn't correct if the queue already
-contains entries with wild cards (e.g., \mpiconst{MPI_ANY_SOURCE}).
+% This can simply be \code{MPI_IRECV} followed by an \code{MPI_WAIT}.  However,
+% we might want to let the partner (matching sender) know that this is blocking
+% a thread or process.  
+
+% Note that an early version of MPICH waited for a specific tag,
+% context-id, and source tuple.  This sped up the process of matching
+% against the message queue (incoming messages were first matched
+% against that tuple), but it isn't correct if the queue already
+% contains entries with wild cards (e.g., \mpiconst{MPI_ANY_SOURCE}).
 
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
 
-Create a persistent request and save the message
+Call \mpidfunc{MPID_Recv_init} to create a persistent request and save
+the message 
 parameters (\mpids{MPI_Request(persistent)}{communicator}, 
 \mpids{MPI_Request(persistent)}{tag}, \mpids{MPI_Request(persistent)}{source_rank}, 
 \mpids{MPI_Request(persistent)}{datatype},
 \mpids{MPI_Request(persistent)}{buffer}, and
 \mpids{MPI_Request(persistent)}{count}). 
-Call \code{MPID_Memory_register} for either the buffer or a created segment
-that will be used for receiving the data.  
+
+%% Now part of the persistent request code
+% Call \code{MPID_Memory_register} for either the buffer or a created segment
+% that will be used for receiving the data.  
 
 Note that a persistent request is not like an
 \mpidconst{MPID_Request}; rather, it only contains enough information
@@ -4640,8 +4664,8 @@ immediately.
 
 Note that since \mpifunc{MPI_Sendrecv} can match other MPI
 communication calls, such as \mpifunc{MPI_Send} and
-\mpifunc{MPI_Irecv}, we cannot depend on \mpifunc{MPI_Sendrecv} as
-giving us enough information to decide whether to piggyback acks on a
+\mpifunc{MPI_Irecv}, we cannot depend on \mpifunc{MPI_Sendrecv} to
+give us enough information to decide whether to piggyback acks on a
 data stream.
 \subsubsection{\mpifunc{MPI_SENDRECV_REPLACE}}
 % Question: Should this use the segment code to bound the memory buffer that
@@ -4652,7 +4676,8 @@ data stream.
 % \end{adi3}
 
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
-See \mpifunc{MPI_RECV_INIT}.
+Call \mpidfunc{MPID_Send_init}.  See \mpifunc{MPI_Recv_init} for more
+details. 
 
 \subsubsection{\mpifunc{MPI_SSEND}}
 Like \mpifunc{MPI_Send}, but with the synchronous mode.
@@ -4661,9 +4686,10 @@ Like \mpifunc{MPI_Send}, but with the synchronous mode.
 See \mpifunc{MPI_RECV_INIT}.
 
 \subsubsection{\mpifunc{MPI_START}}
-This just calls \mpifunc{MPI_STARTALL} with a single request.  Note that
-errors must indicate that the error occurred in \code{MPI_START}, not
-\code{MPI_STARTALL}.  
+This just calls \mpifunc{MPID_Startall} with a single request.  
+% Note that
+% errors must indicate that the error occurred in \code{MPI_START}, not
+% \code{MPI_STARTALL}.  
 
 \subsubsection{\mpifunc{MPI_STARTALL}}
 Do we want startall to allow for some scheduling of the operations?  For
@@ -4701,6 +4727,38 @@ Persistent requests: The actual request is the
 \mpids{MPI_Request(persistent)}{active_request} in the
 \mpidconst{MPID_Request} structure.
 
+Rather than have separate routines for each of the MPI completion
+functions, we instead use the \mpids{MPI_Request}{busy} flag in the
+\mpiconst{MPID_Request}.  In the case of a completed request, this
+eliminates the need to call an additional function.  Otherwise, the
+MPI code must make the appropriate progress engine calls.  For
+example, \mpifunc{MPI_Wait} looks something like this:
+\begin{verbatim}
+    MPI_Wait( ... )
+    {
+	while (request->busy) {
+            MPID_Progress_start( );   // Notes that we are about to
+                                      // check ready flags.  No busy 
+                                      // flags will be cleared
+	    if (request->busy) {
+                MPID_Progress_wait();
+            }
+	    else {
+                MPID_Progress_end();
+            }
+        }
+        if (request->type & REQUEST_IS_RECV && status) {
+	    *status = request->status;
+	}
+    }
+\end{verbatim}
+The reason for the \mpidfunc{MPID_Progress_start} and the other
+progress routines becomes clear when you consider \mpifunc{MPI_Waitsome).
+
+\paragraph{Previous Discussion.}
+(This text is still true but represents a different direction that we
+are no longer planning to take.)
+
 The two most basic routines are \mpifunc{MPI_Testany} and
 \mpifunc{MPI_Waitany} in the sense that all of the other operations
 can be built from these.  For example:
@@ -4726,44 +4784,52 @@ as long as the number of requests provided to the completion function
 is not too large (since some of the algorithms above have complexity
 proportional to the square of the number of requests).
 
-Question:  Should we define \mpidfunc{MPID_Testany} and
-\mpidfunc{MPID_Waitany} instead of the \mpidfunc{MPID_Testsome} and
-\mpidfunc{MPID_Waitsome} routines?
+% Question:  Should we define \mpidfunc{MPID_Testany} and
+% \mpidfunc{MPID_Waitany} instead of the \mpidfunc{MPID_Testsome} and
+% \mpidfunc{MPID_Waitsome} routines?
 
 \subsubsection{\mpifunc{MPI_TEST}}
-Call \mpifunc{MPI_Testany}.
+Check the \mpids{MPI_Request}{busy} flag.  Call
+\mpidfunc{MPID_Progress_poke} and check again if
+\mpids{MPI_Request}{busy} is true.
 
 \subsubsection{\mpifunc{MPI_TESTALL}}
-See \mpifunc{MPI_TESTANY}.
+Like \mpifunc{MPI_Test}, but for all requests.  However, call
+\mpidfunc{MPID_Progress_poke} \emph{first}, since it is likely that
+not all requests will already be completed.
 
 \subsubsection{\mpifunc{MPI_TESTANY}}
-Call \mpidfunc{MPID_Testsome} on each request, one at a time.
+Like \mpifunc{MPI_Testall}, but stop on the first completed request.
 
-Question: do we want something better?  Can we subdivide
-\mpidfunc{MPID_Testsome} into smaller building blocks from which we
-can build the four test routines without dropping down to an
-\mpidfunc{MPID_Test}?  For example, the closest match to \code{select} is to
-implement xxxsome, for advancing the state/completing operations, but decide
-how to update/record the requests that have completed based on whether the
-call is implementing the any, all, or some version.
+% Call \mpidfunc{MPID_Testsome} on each request, one at a time.
+
+% Question: do we want something better?  Can we subdivide
+% \mpidfunc{MPID_Testsome} into smaller building blocks from which we
+% can build the four test routines without dropping down to an
+% \mpidfunc{MPID_Test}?  For example, the closest match to \code{select} is to
+% implement xxxsome, for advancing the state/completing operations, but decide
+% how to update/record the requests that have completed based on whether the
+% call is implementing the any, all, or some version.
 
 \subsubsection{\mpifunc{MPI_TESTSOME}}
-Call \mpidfunc{MPID_Testsome}.
+Like \mpifunc{MPI_Testall}.
 
 \subsubsection{\mpifunc{MPI_TEST_CANCELLED}}
-Does this use the status field in a request to test for a cancelled message?
+This uses the status field, specifically the
+\mpids{MPI_Status}{MPI_TAG} field, in a request to test for a cancelled
+message.  
 
 \subsubsection{\mpifunc{MPI_WAIT}}
-Call \mpifunc{MPI_Waitany}.
+As described abover under point-to-point completion functions.
 
 \subsubsection{\mpifunc{MPI_WAITALL}}
-See \mpifunc{MPI_Testall}.
+Like \mpifunc{MPI_Testall}, but must wait until all requests are complete.
 
 \subsubsection{\mpifunc{MPI_WAITANY}}
 See \mpifunc{MPI_Testany}.
 
 \subsubsection{\mpifunc{MPI_WAITSOME}}
-Call \mpidfunc{MPID_Waitsome}.
+See \mpifunc{MPI_Testsome}.
 
 \subsection{Communication Agent}
 \label{sec:comm-agent}
@@ -5160,7 +5226,9 @@ algorithm will be needed.
 
 \begin{figure}
 \centerline{\psfig{file=scanpattern.eps}}
-\caption{Communication pattern for \code{MPI_Scan}}\label{fig:scan-pattern}
+\caption{Communication pattern for \code{MPI_Scan}.  The communication
+runs from bottom to top; this figure shows the three steps necessary for
+eight processes.}\label{fig:scan-pattern}
 \end{figure}
 
 \subsubsection{\mpifunc{MPI_SCATTER}}
@@ -5736,7 +5804,7 @@ MPI_Win_lock( 0, rank, 0, win );
 MPI_Put( buf, 1, MPI_INT, rank, 0, 1, MPI_INT, win );
 MPI_Win_unlock( rank, win );
 \end{verbatim}
-to turn into a single \mpidfunc{MPID_Rhcv} call, issued at the
+to turn into a single \mpidfunc{MPID_Win_do} call, issued at the
 \mpifunc{MPI_Win_unlock} operation.  To implement this, the window
 object could store a single \mpidconst{MPID_Hid_rma_op} structure and
 issue it as soon as either a second operation is defined or an access
@@ -5837,11 +5905,12 @@ don't think so)?
 Question: If only one group is ever used for scalable synchronization on this
 window, is there anything that we can take advantage of?  Do we indicate this
 with an info key \mpidconst{onegroup}\index{MPI_Info!keys!onegroup}?
+
 \subsubsection{\mpifunc{MPI_WIN_POST}}
 Begin an exposure epoch for the local window.
 
-For each member of the group, use \mpidfunc{MPID_Rhcv} with type
-\mpidconst{MPID_Hid_access_cnt} to increment the start counter of that
+For each member of the group, use \mpidfunc{MPID_Win_do} with type
+\mpidconst{MPID_Access_cnt} to increment the start counter of that
 process.  (Each window object has a separate start and complete counter for
 each process.)
 Save the group (increment reference count and save in the window object's data structure).
@@ -5855,7 +5924,7 @@ Save the group (increment reference count and save in the window object's data s
 
 \begin{description}
 \item[\mpiconst{MPI_MODE_NOCHECK}]This matches the same assert value for
-  \mpifunc{MPI_WIN_START}.  If set, no \mpidfunc{MPID_Rhcv} calls are made.
+  \mpifunc{MPI_WIN_START}.  If set, no \mpidfunc{MPID_Win_do} calls are made.
 \item[\mpiconst{MPI_MODE_NOSTORE}]No write barrier/flush.  THis refers to a
   memory operation needed in some architectures to ensure that writes to
   memory have completed.
@@ -6162,7 +6231,10 @@ as well.
 \label{sec:bnr}
 
 The purpose of the BNR is to provide an interface to external process
-managers and related resources.  
+managers and related resources.\footnote{BNR was named after ``Bill,
+Brian, Nick, Ralph, and Rusty,'' who were the initial developers of
+the interface.  Contributions have since been made by David Ashton and
+Rob Ross.}
 
 ({\em Rationale:\/} The external process manager may be
 very sophisticated and offer many useful functions or it may be very
@@ -6365,7 +6437,7 @@ int MM_Recv(int conn, char *buffer, int length);
 int MM_Close(int conn);
 MM_???
 \end{verbatim}
-Question: Should the length parameter for MM_Recv be [IN/OUT]?
+Question: Should the length parameter for \code{MM_Recv} be [IN/OUT]?
 
 One use of this form of communication is to copy keymaps between domains.
 Here are functions to carry this out:
@@ -6655,7 +6727,10 @@ status of ``connected'' processes.
 
 
 \subsubsection{\mpifunc{MPI_COMM_GET_PARENT}}
-Return \mpidconst{MPID_COMM_PARENT}.
+Return the \mpids{MPI_Comm}{id} field in
+\mpids{MPIR_Process}{comm_parent}, or \mpiconst{MPI_COMM_NULL} if
+\mpids{MPIR_Process}{comm_parent} is null.
+
 %This value is set by \mpifunc{MPI_Init_thread}. 
 
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
@@ -6859,10 +6934,12 @@ An MPI ``port'' is just a string that is used in \mpifunc{MPI_Comm_attach} and
 Question:  What ADI support is required for these?  Note that the
 request is under the control of the device, so many of the fields
 aren't defined yet.
+Answer: None.  The MPI code that implements the completion functions
+must check for user requests and handle them at the MPI (not ADI) level.
 
-Note that if \mpidfunc{MPID_Waitsome} is implemented in the ADI, then the
-ADI must understand these requests (or at least be able to ignore
-them).
+% Note that if \mpidfunc{MPID_Waitsome} is implemented in the ADI, then the
+% ADI must understand these requests (or at least be able to ignore
+% them).
 Note that a user-defined request is started with callbacks (functions
 to call for query, cancel, and free); these need to be associated with
 the request.  
@@ -6882,8 +6959,12 @@ For example, \mpids{MPI_Request(generalized)}{query_fn},
 \subsection{Error Handlers}
 \label{sec:errhand}
 
+%
+% Changet the internal routines from MPID to MPIR since they're not
+% part of the device anymore.
+
 \subsubsection{\mpifunc{MPI_ERRHANDLER_FREE}}
-Calls \mpidfunc{MPID_Errhandler_free}
+Calls \mpidfunc{MPIR_Errhandler_free}
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_CREATE}}
 Deprecated.  Call \mpifunc{MPI_COMM_CREATE_ERRHANDLER}.
@@ -6899,22 +6980,22 @@ Return the error class of an error code.  We may either allow the
 error reporting module to do this, or define the mask used to extract
 the class field from the error code.  I prefer defining a routine in
 order to modularize the error reporting.  In this case, the routine
-might be \mpidfunc{MPID_Err_code_to_class}.
+might be \mpidfunc{MPIR_Err_code_to_class}.
 
 \subsubsection{\mpifunc{MPI_ERROR_STRING}}
-Calls \mpidfunc{MPID_Err_get_string} to return the error string
+Calls \mpidfunc{MPIR_Err_get_string} to return the error string
 associated with an error code. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_CLASS}}
-Call \mpidfunc{MPID_Err_add_class} with a null string for the
+Call \mpidfunc{MPIR_Err_add_class} with a null string for the
 \code{instance_msg_string}. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_CODE}}
-Call \mpidfunc{MPID_Err_add_code} with a null string for the
+Call \mpidfunc{MPIR_Err_add_code} with a null string for the
 \code{instance_msg_string}. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_STRING}}
-Call \mpidfunc{MPID_Err_set_msg}.
+Call \mpidfunc{MPIR_Err_set_msg}.
 
 \subsubsection{\mpifunc{MPI_COMM_CALL_ERRHANDLER}}
 All error handler calls use the common error handler structure
@@ -7055,24 +7136,31 @@ Like \mpifunc{MPI_STATUS_F2C}, but must handle the C constants
 \label{sec:timer}
 The MPI standard allows \code{MPI_Wtime} and \code{MPI_Wtick} to be
 implemented as macros; we should also allow that, at least as an
-option.  Question:  should there be a
-\cfgoption{--enable-mpi-macros} feature in
-configure?
+option.  
+The configure option, \cfgoption{--enable-mpi-macros}, causes
+\mpifunc{MPI_Wtime} and \mpifunc{MPI_Wtick} to be defined as macros in
+\file{mpi.h}. 
 
 Eventually, we should allow for a synchronized timer.  That is, even
 if the underlying hardware does not provide a global timer, we should
-provide one as an option.
+provide one as an option.  (Earlier versions of the ADI defined a
+\mpidfunc{MPID_Gwtime} for this purpose; this has been removed for now
+to simplify the ADI.)
 
-Question: Since we have \mpidfunc{MPID_Gwtime}, should we make that available?
+%Question: Since we have \mpidfunc{MPID_Gwtime}, should we make that available?
 
 \subsubsection{\mpifunc{MPI_WTICK}}
 Call \mpidfunc{MPID_Wtick}.
 
 \subsubsection{\mpifunc{MPI_WTIME}}
-Call \mpidfunc{MPID_Wtime}.  Use \mpidfunc{MPID_Wtime_diff} to convert this to
-a double and return that value.
-This requires that \mpifunc{MPI_Init} cause \mpidfunc{MPID_Wtime_init} to be
-called, and that an initial time stamp is stored.
+Call \mpidfunc{MPID_Wtime}.  If this is the first call to
+\mpifunc{MPI_Wtime}, save that value and return zero.  Otherwise, use
+\mpidfunc{MPID_Wtime_diff} to convert the time to a double that is
+relative to the value of the first call to \mpifunc{MPI_Wtime} and
+return that value.   
+
+% This requires that \mpifunc{MPI_Init} cause \mpidfunc{MPID_Wtime_init} to be
+% called, and that an initial time stamp is stored.
 
 \subsection{Runtime Environment}
 \label{sec:runtime-env}
@@ -7339,16 +7427,19 @@ options for generating optimized code or for creating object files for shared li
 \item[optimize]Options for optimizing.
 \item[debug]Options for debugging.
 \item[ansi]Options to force ANSI (or a superset)
-\item[posix]Options to force Posix
+\item[posix]Options to force POSIX
 \item[threads]Options to allow threads
 \item[sharedobject]Options to create a shared object
 \item[version]Options to generate a version and name string.  See signature
-\item[size32]Options for 32bit pointers
-\item[size64]Options for 64bit pointers
+\item[size32]Options for 32-bit pointers
+\item[size64]Options for 64-bit pointers
 \item[size=xx]Options for other sizes (128 bit pointers, anyone?) or
 for special versions (e.g., IRIX n32)
 \item[searchdir]Options to specify search directories for shared
 libraries
+\item[searchdirkind]Indicates whether the \code{searchdir} option
+supplements (as \code{-I} does for include files) or replaces the
+search directories.  
 \item[sharedlib]Options to create a shared library
 \item[cross]Specify values for \code{CROSS_xxx} for cross-compiler case
 \item[verbose]Options to generate verbose output, particularly showing
@@ -7453,6 +7544,25 @@ that can be implemented to output to a file, stdout, or a graphical display?
 Answer: We should define replacement routines.  These should implement
 something like the \code{DLAST} feature of MPICH (e.g., hold the last 100
 messages).  Question: what is the \code{--enable} value for this?
+
+Question:  Should we have something like the following:
+\begin{verbatim}
+void MPIR_Dbg_msg( int kindmask, const char *fmt, ... )
+\end{verbatim}
+where \code{kindmask} is used to indicate what kind of debugging
+message this is; this is a bit field and allows a message to belong to
+multiple kinds.  The remaining arguments are interpreted as
+\code{printf} arguments.  
+
+Question:  To allow this to be a macro, do we want to use
+\begin{verbatim}
+#ifdef USE_DEBUG
+#defind MPIR_DBG_MSG(a) MPIR_Dbg_msg a
+#else
+#define MPIR_DBG_MSG(a)
+#endif
+\end{verbatim}
+in the code?
 
 \subsection{NT Friendly}
 

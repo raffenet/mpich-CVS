@@ -34,32 +34,36 @@ Section~\ref{sec:fortran}).
 Some reduction functions are not defined on a particular datatype.  To
 indicate errors, the routine \code{MPID_Op_set_error} is called.
 The MPI reduction routine (reduce, allreduce, scan, exscan, and reducescatter)
-checks this with \code{MPID_Op_get_error}.
-An implementation of this might be
-\begin{verbatim}
-#ifdef MPID_HAS_THREADS
-/* Use thread private storage for the error value.  Allocate on demand */
-#extern int MPID_Op_error_key;
-void MPID_Op_error_delete( void *val ) { if (val) free(val); }
-#define MPID_Op_error_init \
-    pthread_key_create( &MPID_Op_error_key, MPID_Op_error_delete )
-#define MPID_Op_error_finalize \
-    pthread_key_delete( MPID_Op_error_key )
-#define MPID_Op_set_error(err) {\
- int *e = (int*)pthread_get_specific(MPID_Op_error_key); \
- if (!e) { e = (int*)malloc(sizeof(int));\
-           pthread_set_specific( MPID_Op_error_key, e );}\
- *e = err; }
-#define MPID_Op_get_error(err_p) \
-    *err_p = *(int*)pthread_get_specific(MPID_Op_error_key)
-#else
-#extern int MPID_Op_error;
-#define MPID_Op_error_init
-#define MPID_Op_error_finalize
-#define MPID_Op_set_error(err) MPID_Op_error = err
-#define MPID_Op_get_error(err_p)  *(err_p)=  MPID_Op_error
-#endif
-\end{verbatim}
+checks this with \code{MPID_Op_get_error}.  In order to ensure that
+separate threads manage their own error flags for reductions, there is
+an \mpids{MPIR_PerThread}{op_error} field in the per-thread data
+structure.
+
+% An implementation of this might be 
+% \begin{verbatim}
+% #ifdef MPID_HAS_THREADS
+% /* Use thread private storage for the error value.  Allocate on demand */
+% extern int MPID_Op_error_key;
+% void MPID_Op_error_delete( void *val ) { if (val) free(val); }
+% #define MPID_Op_error_init \
+%     pthread_key_create( &MPID_Op_error_key, MPID_Op_error_delete )
+% #define MPID_Op_error_finalize \
+%     pthread_key_delete( MPID_Op_error_key )
+% #define MPID_Op_set_error(err) {\
+%  int *e = (int*)pthread_get_specific(MPID_Op_error_key); \
+%  if (!e) { e = (int*)malloc(sizeof(int));\
+%            pthread_set_specific( MPID_Op_error_key, e );}\
+%  *e = err; }
+% #define MPID_Op_get_error(err_p) \
+%     *err_p = *(int*)pthread_get_specific(MPID_Op_error_key)
+% #else
+% #extern int MPID_Op_error;
+% #define MPID_Op_error_init
+% #define MPID_Op_error_finalize
+% #define MPID_Op_set_error(err) MPID_Op_error = err
+% #define MPID_Op_get_error(err_p)  *(err_p)=  MPID_Op_error
+% #endif
+% \end{verbatim}
 
 
 \subsubsection{Code Structure for the Implementation of the Collective
@@ -73,10 +77,10 @@ otherwise set, each communicator points to the predefined structure
 initialized to point to \emph{all} of 
 these functions.  
 
-For MPICH2, I'd prefer that the default case have no structure, and
-each of the MPI functions (in its own file) contains the generic
-implementation of the collective operation, based (most likely) on the
-stream operations.  This will simplify the process of tuning each
+For MPICH2, each of the MPI functions (in its own file) contains the generic
+implementation of the collective operation, based initially on the
+point-to-point code similar to that in MPICH-1 and eventually on the
+stream-oriented operations.  This will simplify the process of tuning each
 operation; it will also reduce the size of (unshared) executables since few if
 any programs use all of the collective operations.
 See the discussion of the implementation of PMPI.
