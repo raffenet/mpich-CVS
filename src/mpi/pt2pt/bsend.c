@@ -124,9 +124,21 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		MPIR_ERRTEST_SEND_TAG(tag,mpi_errno);
 		MPIR_ERRTEST_SEND_RANK(comm_ptr,dest,mpi_errno)
 	    }
-	    /* Validate datatype */
+	    /* Validate datatype handle */
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+            if (mpi_errno) goto fn_fail;
 
+	    /* Validate datatype object */
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	    {
+		MPID_Datatype *datatype_ptr = NULL;
+
+		MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno) goto fn_fail;
+	    }
+	    
 	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) goto fn_fail;

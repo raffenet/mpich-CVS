@@ -97,19 +97,29 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Datatype * datatype_ptr = NULL;
-
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
             if (mpi_errno) goto fn_fail;
 	    
-	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    /* Validate datatype handle */
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+	    
+	    /* Validate datatype object */
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	    {
+		MPID_Datatype *datatype_ptr = NULL;
+
+		MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno) goto fn_fail;
+	    }
+	    
+	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
