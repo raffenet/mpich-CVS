@@ -164,21 +164,21 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
 #endif
     
     /* for now we'll just be stupid about this */
-    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF=
-        (char*)dbufp + dbufoff;
-    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN=
-        size;
-    
-    /* it would be a good idea to aggregate contiguous regions here! */
-    
-    paramp->u.pack_vector.index++;
-    if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) {
-        /* we have used up our entire vector buffer; quit */
-        return 1;
+    if (paramp->u.pack_vector.index > 0 && ((char *)dbufp + dbufoff) ==
+	(paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF +
+	 paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
+    {
+	/* add this size to the last vector rather than using up another one */
+	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
     }
     else {
-        return 0;
+	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char*)dbufp + dbufoff;
+	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
+	paramp->u.pack_vector.index++;
+	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
+	if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) return 1;
     }
+    return 0;
 }
 
 /* MPID_Segment_unpack_vector
