@@ -89,7 +89,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 					  "**nomem", "**nomem %s", "generalized request" );
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_grequest_start", "**mpi_grequest_start %p %p %p %p %p", query_fn, free_fn, cancel_fn, request);
+	    "**mpi_grequest_start", "**mpi_grequest_start %p %p %p %p %p", query_fn, free_fn, cancel_fn, extra_state, request);
         MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
 	return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     }
