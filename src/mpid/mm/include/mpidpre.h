@@ -16,28 +16,31 @@ typedef struct MPID_VC
     struct MM_Car * recvq;
 } MPID_VC;
 
+enum MM_CAR_TYPE { 
+    MM_UNBOUND_WRITE_CAR,
+    MM_UNPACK_CAR,
+#ifdef WITH_METHOD_SHM
+    MM_SHM_CAR, 
+#endif
+#ifdef WITH_METHOD_TCP
+    MM_TCP_CAR, 
+#endif
+#ifdef WITH_METHOD_VIA
+    MM_VIA_CAR, 
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    MM_VIA_RDMA_CAR 
+#endif
+#ifdef WITH_METHOD_NEW
+    MM_NEW_METHOD_CAR
+#endif
+};
+
 typedef struct MM_Car
 {
     struct MPID_Request *request_ptr;
     int dest;
-    enum MM_CAR_TYPE { 
-#ifdef WITH_METHOD_SHM
-	MM_SHM_CAR, 
-#endif
-#ifdef WITH_METHOD_TCP
-	MM_TCP_CAR, 
-#endif
-#ifdef WITH_METHOD_VIA
-	MM_VIA_CAR, 
-#endif
-#ifdef WITH_METHOD_VIA_RDMA
-	MM_VIA_RDMA_CAR 
-#endif
-#ifdef WITH_METHOD_NEW
-	MM_NEW_METHOD_CAR
-#endif
-	MM_END_CAR
-    } type;
+    enum MM_CAR_TYPE type;
     union {
 	int dummy;
 #ifdef WITH_METHOD_SHM
