@@ -835,13 +835,16 @@ skip_12_trial:
 				/* args012.rbuff += args012.bufflen; */
 			    }
 			}
-			for (k=0; k < (ii % nrepeat012); k++)
+			j = ii % nrepeat012;
+			if (j == 0 && nrepeat012 > ii)
+			    j = ii;
+			for (k=0; k < j; k++)
 			{
 			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
 			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
 			}
 			/* do the left process second because it does the timing and needs to include time to send to the right process. */
-			for (k=0; k < (ii % nrepeat012); k++)
+			for (k=0; k < j; k++)
 			{
 			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
 			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
