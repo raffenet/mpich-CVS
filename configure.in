@@ -162,8 +162,8 @@ AC_ARG_WITH(namepublisher,
                                         usually only within the same MPD ring)
 			       file:directory
                                ldap:ldapservername
-                             Only no has been implemented so far.],,
-with_namepublisher=no)
+                             Only no and file have been implemented so far.],,
+with_namepublisher=file)
 dnl
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
@@ -539,6 +539,9 @@ for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
 	if test -f src/pm/$pm_name/setup_pm ; then
 	    echo sourcing src/pm/$pm_name/setup_pm
 	    . src/pm/$pm_name/setup_pm
+        elif test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
+	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
+	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
 	fi
     fi
 done
