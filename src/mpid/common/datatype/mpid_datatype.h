@@ -59,15 +59,15 @@ do {													    \
 	__lb = __old_lb;										    \
 	__ub = __old_ub;										    \
     }													    \
-    else if (__stride >= 0 && (__old_ub >= __old_lb)) {							    \
+    else if (__stride >= 0 && (__old_extent) >= 0) {							    \
 	__lb = __old_lb;										    \
 	__ub = __old_ub + (__old_extent) * ((__blklen) - 1) + (__stride) * ((__cnt) - 1);		    \
     }													    \
-    else if (__stride < 0 && (__old_ub >= __old_lb)) {							    \
+    else if (__stride < 0 && (__old_extent) >= 0) {							    \
 	__lb = __old_lb + (__stride) * ((__cnt) - 1);							    \
 	__ub = __old_ub + (__old_extent) * ((__blklen) - 1);						    \
     }													    \
-    else if (__stride < 0 && (__old_ub < __old_lb)) {							    \
+    else if (__stride >= 0 && (__old_extent) < 0) {							    \
 	__lb = __old_lb + (__old_extent) * ((__blklen) - 1);						    \
 	__ub = __old_ub + (__stride) * ((__cnt) - 1);							    \
     }													    \
