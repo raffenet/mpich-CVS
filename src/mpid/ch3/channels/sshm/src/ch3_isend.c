@@ -28,6 +28,7 @@
 int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz)
 {
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -66,10 +67,11 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 		{ 
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
 		    /* ssm version: */
-		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->dev.iov_count != 0 && MPIDI_CH3I_SendQ_head(vc) != sreq)
+		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+		    if (!complete)
 		    {
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			vc->ch.send_active = sreq;
 		    }
 		    /*
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);

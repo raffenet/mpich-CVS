@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="ch3sshm"
-	ProjectGUID="{2B25AF63-3E57-455C-85BB-591426ACEF80}"
+	ProjectGUID="{058F6648-094B-4e60-8936-65D4C61C35DB}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -164,9 +164,6 @@
 				RelativePath="src\ch3_init.c">
 			</File>
 			<File
-				RelativePath="src\ch3_iread.c">
-			</File>
-			<File
 				RelativePath="src\ch3_isend.c">
 			</File>
 			<File
@@ -177,9 +174,6 @@
 			</File>
 			<File
 				RelativePath="src\ch3_istartmsgv.c">
-			</File>
-			<File
-				RelativePath="src\ch3_iwrite.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_open_port.c">
