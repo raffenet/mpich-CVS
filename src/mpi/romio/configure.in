@@ -1066,6 +1066,7 @@ dnl
 dnl
 
 AC_HAVE_FUNCS(memalign)
+PAC_TEST_MPIR_STATUS_SET_BYTES
 
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"

@@ -2277,6 +2277,75 @@ rm -f conftest*
 done
 
 
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking if MPIR_Status_set_bytes is defined""... $ac_c"
+else
+echo $ac_n "checking if MPIR_Status_set_bytes is defined""... $ac_c" 1>&1
+fi
+  rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+     main(int argc, char **argv)
+     {
+     	 MPI_Status status;
+         MPI_Datatype type;
+	 int err;
+
+         MPI_Init(&argc,&argv);
+         MPIR_Status_set_bytes(status,type,err);
+         MPI_Finalize(); 
+     }
+EOF
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > c_status.log 2>&1
+  if test -x conftest ; then
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+     
+{
+test -n "$verbose" && \
+echo "	defining HAVE_STATUS_SET_BYTES"
+echo "#define" HAVE_STATUS_SET_BYTES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_STATUS_SET_BYTES=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_STATUS_SET_BYTES\${SEDuB}HAVE_STATUS_SET_BYTES\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_STATUS_SET_BYTES\${SEDeB}HAVE_STATUS_SET_BYTES\${SEDeC}1\${SEDeD}
+"
+}
+
+  else
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+  fi
+  rm -f conftest mpitest.c
+
+
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
     

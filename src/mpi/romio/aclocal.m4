@@ -1221,3 +1221,34 @@ changequote([, ])dnl
   AC_DEFINE($ac_tr_hdr) $2], $3)dnl
 done
 ])dnl
+dnl
+define(PAC_TEST_MPIR_STATUS_SET_BYTES,[
+  AC_MSG_CHECKING(if MPIR_Status_set_bytes is defined)
+  rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+     main(int argc, char **argv)
+     {
+     	 MPI_Status status;
+         MPI_Datatype type;
+	 int err;
+
+         MPI_Init(&argc,&argv);
+         MPIR_Status_set_bytes(status,type,err);
+         MPI_Finalize(); 
+     }
+EOF
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > c_status.log 2>&1
+  if test -x conftest ; then
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(HAVE_STATUS_SET_BYTES)
+  else
+     AC_MSG_RESULT(no)
+  fi
+  rm -f conftest mpitest.c
+])dnl
+dnl
+dnl
+dnl
+
