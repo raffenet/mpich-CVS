@@ -44,7 +44,10 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * upkt)
 		MPIDI_dbg_printf(30, FCNAME, "found match in posted queue");
 		if (pkt->data_sz == 0)
 		{
-		    if (--(*req->cc_ptr) == 0)
+		    int cc;
+
+		    MPIDI_CH3U_Request_decrement_cc(req, &cc);
+		    if (cc == 0)
 		    {
 			completion = TRUE;
 			MPID_Request_free(req);
@@ -125,7 +128,30 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * upkt)
 	
 	case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
 	{
+	    MPIDI_CH3_Pkt_rndv_req_to_send_t * pkt = &upkt->rndv_req_to_send;
+	    MPID_Request * req;
+	    int found;
+
 	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous RTS packet");
+	    MPIDI_dbg_printf(10, FCNAME, "rank=%d, tag=%d, context=%d",
+			     pkt->match.rank, pkt->match.tag,
+			     pkt->match.context_id);
+	    
+	    req = MPIDI_CH3U_Request_FPOAU(&pkt->match, &found);
+
+	    if (found)
+	    {
+		MPIDI_dbg_printf(30, FCNAME, "found match in posted queue");
+		/* TODO: send CTS including new req */
+	    }
+	    else
+	    {
+		MPIDI_dbg_printf(30, FCNAME,
+				 "allocated request in unexpected queue");
+		/* TODO: mark new request as RNDV_RTS so MPID_Recv() knows to
+                   send CTS */
+	    }
+	    
 	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
 	    abort();
 	    break;
@@ -133,7 +159,17 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * upkt)
 	
 	case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
 	{
+	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * pkt = &upkt->rndv_clr_to_send;
+	    MPID_Request * sreq;
+	    MPID_Request * rreq;
+	    
 	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous CTS packet");
+
+	    MPID_Request_get_ptr(pkt->req_id_sender, sreq);
+	    MPID_Request_get_ptr(pkt->req_id_receiver,rreq);
+
+	    /* TODO: construct RNDV_SEND pkt and send */
+	    
 	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
 	    abort();
 	    break;
