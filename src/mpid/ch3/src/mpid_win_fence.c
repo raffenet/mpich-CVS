@@ -224,8 +224,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 		/* --END ERROR HANDLING-- */
                 break;
             default:
+		/* --BEGIN ERROR HANDLING-- */
                 /* FIXME - return some error code here */
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "invalid RMA operation");
+		MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+		return mpi_errno;
                 break;
+		/* --END ERROR HANDLING-- */
             }
             i++;
             curr_ops_cnt[curr_ptr->target_rank]++;
@@ -244,7 +249,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 if (requests[i] != NULL)
 		{
                     if (*(requests[i]->cc_ptr) != 0)
+		    {
                         done = 0;
+		    }
                     else
 		    {
                         mpi_errno = requests[i]->status.MPI_ERROR;
