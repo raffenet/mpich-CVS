@@ -28,3 +28,5 @@ putfence1
 putpscw1
 wintest
 .deps
+*ebug
+*elease

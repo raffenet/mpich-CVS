@@ -11,3 +11,5 @@ initstat
 timeout
 version
 .deps
+*ebug
+*elease

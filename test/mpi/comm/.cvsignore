@@ -13,3 +13,5 @@ dupic
 .deps
 *.exe
 *.stackdump
+*ebug
+*elease

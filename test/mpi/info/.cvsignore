@@ -10,3 +10,5 @@ infodup
 infoorder
 infovallen
 .deps
+*ebug
+*elease

@@ -13,3 +13,5 @@ graphmap1
 topodup
 topotest
 .deps
+*ebug
+*elease

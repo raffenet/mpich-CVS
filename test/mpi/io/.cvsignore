@@ -7,3 +7,5 @@ Makefile.in
 Makefile
 rdwrord
 .deps
+*ebug
+*elease
