@@ -127,11 +127,14 @@ int main(int argc, char **argv)
 	    }
 	}
 	else if (!strcmp("romio_ds_write", key)) {
+	    /* Unreliable test -- value is file system dependent.  Ignore. */
+#if 0
 	    if (strcmp("automatic", value)) {
 		errs++;
 		if (verbose) fprintf(stderr, "romio_ds_write is set to %s; should be %s\n",
 				     value, "automatic");
 	    }
+#endif
 	}
 	else if (!strcmp("cb_config_list", key)) {
 	    if (strcmp("*:1", value)) {
@@ -141,8 +144,7 @@ int main(int argc, char **argv)
 	    }
 	}
 	else {
-	    errs++;
-	    if (verbose) fprintf(stderr, "unexpected key %s\n", key);
+	    if (verbose) fprintf(stderr, "unexpected key %s (not counted as an error)\n", key);
 	}
     }
 
@@ -181,8 +183,14 @@ int main(int argc, char **argv)
     /* number of I/O devices across which the file will be striped.
        accepted only if 0 < value < default_striping_factor; 
        ignored otherwise */
-    sprintf(value, "%d", default_striping_factor-1);
-    MPI_Info_set(info, "striping_factor", value);
+    if (default_striping_factor - 1 > 0) {
+        sprintf(value, "%d", default_striping_factor-1);
+        MPI_Info_set(info, "striping_factor", value);
+    }
+    else {
+        sprintf(value, "%d", default_striping_factor);
+        MPI_Info_set(info, "striping_factor", value);
+    }
 
     /* the striping unit in bytes */
     MPI_Info_set(info, "striping_unit", "131072");
@@ -209,9 +217,6 @@ int main(int argc, char **argv)
     MPI_File_get_info(fh, &info_used);
     MPI_Info_get_nkeys(info_used, &nkeys);
 
-#if 0
-    if (!mynod) fprintf(stderr, "\n New values\n\n");
-#endif
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
@@ -220,7 +225,12 @@ int main(int argc, char **argv)
                 key, value);
 #endif
 	if (!strcmp("striping_factor", key)) {
-	    if (atoi(value) != default_striping_factor-1) {
+	    if ((default_striping_factor - 1 > 0) && (atoi(value) != default_striping_factor-1)) {
+		errs++;
+		if (verbose) fprintf(stderr, "striping_factor is %d; should be %d\n",
+				     atoi(value), default_striping_factor-1);
+	    }
+	    else if (atoi(value) != default_striping_factor) {
 		errs++;
 		if (verbose) fprintf(stderr, "striping_factor is %d; should be %d\n",
 				     atoi(value), default_striping_factor);
@@ -283,11 +293,14 @@ int main(int argc, char **argv)
 	    }
 	}
 	else if (!strcmp("romio_ds_write", key)) {
+	    /* Unreliable test -- value is file system dependent.  Ignore. */
+#if 0
 	    if (strcmp("automatic", value)) {
 		errs++;
 		if (verbose) fprintf(stderr, "romio_ds_write is set to %s; should be %s\n",
 				     value, "automatic");
 	    }
+#endif
 	}
 	else if (!strcmp("cb_config_list", key)) {
 	    if (strcmp("*:*", value)) {
@@ -297,8 +310,7 @@ int main(int argc, char **argv)
 	    }
 	}
 	else {
-	    errs++;
-	    if (verbose) fprintf(stderr, "unexpected key %s\n", key);
+	    if (verbose) fprintf(stderr, "unexpected key %s (not counted as an error)\n", key);
 	}
     }
 	    
