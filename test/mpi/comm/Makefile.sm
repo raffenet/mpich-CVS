@@ -9,3 +9,8 @@ cfree_SOURCES    = cfree.c
 commname_SOURCES = commname.c
 ctxalloc_SOURCES = ctxalloc.c
 icgroup_SOURCES  = icgroup.c
+cmfree_SOURCES   = cmfree.c
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o )
+
