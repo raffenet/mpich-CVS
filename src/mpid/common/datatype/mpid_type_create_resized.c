@@ -34,6 +34,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
     new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
+    new_dtp->contents     = 0;
 
     /* if oldtype is a basic, we build a contiguous dataloop of count = 1 */
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {

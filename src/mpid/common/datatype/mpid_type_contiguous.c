@@ -52,6 +52,7 @@ int MPID_Type_contiguous(int count,
     new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
+    new_dtp->contents     = 0;
 
     /* NOTE: see mpid_type_vector.c for a more thoroughly commented MPID type fn. */
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {

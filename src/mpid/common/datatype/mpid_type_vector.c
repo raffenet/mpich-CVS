@@ -60,6 +60,7 @@ int MPID_Type_vector(int count,
     new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
+    new_dtp->contents     = 0;
 
     /* The remaining parameters are filled in based on whether oldtype is 
      * a builtin or not: loopinfo, loopsize, size, extent, has_sticky_ub,

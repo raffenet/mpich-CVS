@@ -81,6 +81,7 @@ int MPID_Type_indexed(int count,
     new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
+    new_dtp->contents     = 0;
 
     /* builtins are handled differently than user-defined types because they
      * have no associated dataloop or datatype structure.
