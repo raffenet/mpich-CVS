@@ -36,3 +36,10 @@ x.  Fortran does provide a way to initialize items at link time, with
     because (a) the result is undefined data (b) users who insist on 
     using their own compile and link lines will have trouble that will 
     appear to be a flaw in the MPI library, not their code.
+
+y.  Tests: Use the continuation convention that is valid for both
+    fixed (Fortran 77) and free format: use an ampersand in both
+    column six of the continued line and in columns 73-80 of the line
+    to be continued.  This style works with both free and fixed
+    format, and simplifies the creation of tests for the extended 
+    Fortran support from ones for the original F77 MPI binding.
