@@ -16,6 +16,9 @@
 #define usleep Sleep
 #endif
 
+extern int g_num_receive_posted;
+extern int g_num_send_posted;
+
 int ib_handle_accept()
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_ACCEPT);
@@ -49,7 +52,7 @@ int ib_make_progress()
     if (status == IBA_CQ_EMPTY)
     {
 	count++;
-	/*if (count > 500)*/
+	if (count > 500)
 	    usleep(1);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return MPI_SUCCESS;
@@ -76,11 +79,14 @@ int ib_make_progress()
     switch (completion_data.op_type)
     {
     case OP_SEND:
+	g_num_send_posted--;
 	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
 	/* put the send packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	break;
     case OP_RECEIVE:
+	g_num_receive_posted--;
+	printf("%d ", g_num_receive_posted);
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);
 	/* put the receive packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);

@@ -12,6 +12,8 @@
 
 static int s_cur_receive = 0;
 static int s_cur_send = 0;
+int g_num_receive_posted = 0;
+int g_num_send_posted = 0;
 
 int ibu_post_receive(MPIDI_VC *vc_ptr)
 {
@@ -35,6 +37,7 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     ((ib_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
     MPIU_dbg_printf("ib_post_rcv_req_us %d\n", s_cur_receive++);
+    g_num_receive_posted++;
     status = ib_post_rcv_req_us(IB_Process.hca_handle, 
 				vc_ptr->data.ib.info.m_qp_handle,
 				&work_req);
@@ -126,6 +129,7 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
 	((ib_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 	
 	MPIU_dbg_printf("ib_post_send_req_us %d\n", s_cur_send++);
+	g_num_send_posted++;
 	status = ib_post_send_req_us( IB_Process.hca_handle,
 	    vc_ptr->data.ib.info.m_qp_handle, 
 	    &work_req);
