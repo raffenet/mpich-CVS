@@ -31,6 +31,19 @@
 #            returnvalue-arg (0 if void, type if unique, position if not)
 #   Pass by reference to process routine
 #    
+# TODO:
+#    The derived classes (such as Intracomm) must *not* have their own
+#    protected the_real_intracomm; instead, the must refer to the 
+#    parent class's private storage.
+#
+#    The pack, unpack, packsize, init, and finalize routines must be 
+#    placed in initcpp.cpp.
+#
+#    externs for the predefined objects need to be added to the
+#    end of mpicxx.h
+#
+#    The optional no-status versions need to be created for 
+#    methods such as Recv, Test, and Sendrecv .
 #
 # Setup global variables
 $buildfiles = 1;
@@ -412,6 +425,17 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		   'cart' => 'Intracomm',
 		   );
 
+#
+# Maps all of the derived classes to their ultimate parent
+%mytopclass = ( 'graph'     => 'comm', 
+	        'intracomm' => 'comm', 
+	        'intercomm' => 'comm',
+	        'intra'     => 'comm', 
+	        'inter'     => 'comm',
+	        'cart'      => 'comm',
+	        'greq'      => 'request',
+  	        'preq'      => 'request' );
+
 %altname = ( 'comm-Sendrecv_repl' => 'Sendrecv_replace',
 	     'comm-Get_topology' => 'Topo_test',
 	     'comm-Get_rank' => 'Comm_rank',
@@ -589,6 +613,8 @@ foreach $class (@classes) {
 
 %short_from_long_class = ( 'Datatype' => 'dtype' );
 if (!$build_sep_files) {
+    if (0) {
+	# The defered functions are now in the initcpp file.
     # First, add the deferred definition
     foreach $routine (keys(%defer_definition)) {
 	$mpiclass = $defer_definition{$routine};
@@ -626,8 +652,28 @@ if (!$build_sep_files) {
 		print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
 	    }
 	    print $OUTFD "\n}\n";
-	}
+	}			 
     }
+}
+
+    foreach $dtype (@dtypes) {
+        print $OUTFD "extern Datatype MPI::$dtype;\n";
+    }
+    print $OUTFD "extern Datatype MPI::TWOINT;\n";
+    # Initialize the operations
+    foreach $op (@ops) {
+	print $OUTFD "extern const Op MPI::$op;\n";
+    }
+
+    # Predefined communicators and groups
+    print $OUTFD "extern Intracomm MPI::COMM_WORLD;\n";
+    print $OUTFD "extern Intracomm MPI::COMM_SELF;\n";
+    print $OUTFD "extern const Comm MPI::COMM_NULL;\n";
+    print $OUTFD "extern const Group MPI::GROUP_EMPTY;\n";
+
+    print $OUTFD "extern void Init(void);\n";
+    print $OUTFD "extern void Finalize(void);\n";
+
     print $OUTFD "} // namespace MPI\n";
 
     close ( $OUTFD );
@@ -803,7 +849,12 @@ sub print_call_args {
 
     my $lcclass = lc($fullclassname{$class});
 ;
-
+    my $lctopclass = $lcclass;
+    # For derived classes, we sometimes need to know the name of the
+    # top-most class, particularly for the "the_real_xxx" name.
+    if (defined($mytopclass{$lcclass})) {
+	$lctopclass = $mytopclass{$lcclass};
+    }
     foreach $parm (@parms) {
 	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
 
@@ -816,6 +867,9 @@ sub print_call_args {
 		my $lctype = $real_return_type;
 		# Convert class_type to the appropriate name
 		$lctype = lc($lctype);
+		if (defined($mytopclass{$lctype})) {
+		    $lctype = $mytopclass{$lctype};
+		}
 		print $OUTFD "&(v$count->the_real_$lctype)";
 	    }
 	    else {
@@ -825,10 +879,10 @@ sub print_call_args {
 	elsif ($count == $class_pos) {
 	    # Skip this arg in the definition 
 	    if ($parm =~ /\*/) {
-		print $OUTFD "($parm) &the_real_$lcclass";
+		print $OUTFD "($parm) &the_real_$lctopclass";
 	    }
 	    else {
-		print $OUTFD "($parm) the_real_$lcclass";
+		print $OUTFD "($parm) the_real_$lctopclass";
 	    }
 	}
 	elsif (defined($special_args{"${routine_name}-$count"})) {
@@ -941,10 +995,10 @@ sub build_specials {
 
     # Initialize the datatypes
     foreach $dtype (@dtypes) {
-	print $OUTFD "const Datatype MPI::$dtype(MPI_$dtype);\n";
+	print $OUTFD "Datatype MPI::$dtype(MPI_$dtype);\n";
     }
     # special case
-    print $OUTFD "const Datatype MPI::TWOINT(MPI_2INT);\n";
+    print $OUTFD "Datatype MPI::TWOINT(MPI_2INT);\n";
 
     # Initialize the operations
     foreach $op (@ops) {
@@ -963,6 +1017,14 @@ sub build_specials {
     &print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    MPI_Init( 0, 0 );\n";
+    print $OUTFD "}\n";
+
+    print $OUTFD "void Finalize"; 
+    $args = "";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{\n";
+    print $OUTFD "    MPI_Finalize( );\n";
     print $OUTFD "}\n";
 
     print $OUTFD "} // namespace MPI\n";
@@ -1000,6 +1062,12 @@ sub PrintClassHead {
     my $mpi_null_type = uc("${mpi_type}_NULL" );
 
     my $lcclass = lc($class);
+    my $lctopclass = $lcclass;
+    # For derived classes, we sometimes need to know the name of the
+    # top-most class, particularly for the "the_real_xxx" name.
+    if (defined($mytopclass{$lcclass})) {
+	$lctopclass = $mytopclass{$lcclass};
+    }
     my $parent = "";
 
     if (defined($derived_class{$shortclass})) {
@@ -1012,42 +1080,45 @@ sub PrintClassHead {
 	    print $OUTFD "    friend class $name;\n";
 	}
     }
-    print $OUTFD "\
+    if ($lcclass eq $lctopclass) {
+	print $OUTFD "\		
   protected:
-    $mpi_type the_real_$lcclass;
+    $mpi_type the_real_$lcclass;\n"
+    }
+  print $OUTFD "\
   public:
     // new/delete
-    inline $class($mpi_type obj) { the_real_$lcclass = obj; }\n";
+    inline $class($mpi_type obj) { the_real_$lctopclass = obj; }\n";
     if (defined($class_has_no_default{$class})) {
 	print $OUTFD "    inline $class(void) {}\n";
     }
     else {
-	print $OUTFD "    inline $class(void) {the_real_$lcclass = $mpi_null_type;}\n";
+	print $OUTFD "    inline $class(void) {the_real_$lctopclass = $mpi_null_type;}\n";
     }
     print $OUTFD "\
     virtual ~$class() {}
     // copy/assignment
     $class :: $class(const $class &obj) {
-      the_real_$lcclass = obj.the_real_$lcclass; }
+      the_real_$lctopclass = obj.the_real_$lctopclass; }
     $class& ${class}::operator=(const $class &obj) {
-      the_real_$lcclass = obj.the_real_$lcclass; return *this; }";
+      the_real_$lctopclass = obj.the_real_$lctopclass; return *this; }";
 
     if (!defined($class_has_no_compare{$class})) {
 	# Some classes (e.g., Status) do not have compare operations
 	print $OUTFD "
     // logical
     bool operator== (const $class &obj) {
-      return (the_real_$lcclass == obj.the_real_$lcclass); }
+      return (the_real_$lctopclass == obj.the_real_$lctopclass); }
     bool operator!= (const $class &obj) {
-      return (the_real_$lcclass != obj.the_real_$lcclass); }";
+      return (the_real_$lctopclass != obj.the_real_$lctopclass); }";
     }
 
     print $OUTFD "
     // C/C++ cast and assignment
-    inline operator $mpi_type*() { return &the_real_$lcclass; }
-    inline operator $mpi_type() { return the_real_$lcclass; }
+    inline operator $mpi_type*() { return &the_real_$lctopclass; }
+    inline operator $mpi_type() { return the_real_$lctopclass; }
     $class& ${class}::operator=(const $mpi_type& obj) {
-      the_real_$lcclass = obj; return *this; }
+      the_real_$lctopclass = obj; return *this; }
 ";
 }
 
@@ -1122,6 +1193,12 @@ sub HandleObjectParm {
 	}
 	$ctype =~ s/MPI_//;
 	$lctype = lc( $ctype );
+	# For derived classes, we sometimes need to know the name of the
+	# top-most class, particularly for the "the_real_xxx" name.
+	if (defined($mytopclass{$lctype})) {
+	    $lctype = $mytopclass{$lctype};
+	}
+
 	if ($need_address) {
 	    $newparm = "($parmtype)&($parm.the_real_$lctype)";
 	}
