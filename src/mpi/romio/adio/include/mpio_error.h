@@ -1,4 +1,9 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 /* MPI_ERR_FILE */
 #define MPIR_ERR_FILE_NULL 3
 #define MPIR_ERR_FILE_CORRUPT 5

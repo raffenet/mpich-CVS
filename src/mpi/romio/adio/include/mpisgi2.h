@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  * Copyright (C) 1997, Silicon Graphics, Inc.
  * All Rights Reserved

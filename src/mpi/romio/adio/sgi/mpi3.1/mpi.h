@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* USMID @(#)mpi/include/mpi.h	31.4	10/07/97 18:14:32 */
 
 /*
@@ -667,6 +668,17 @@ enum {
 enum {
 	MPI_FUNDAMENTAL		= -1
 };
+
+/* added these combiners for ROMIO */
+
+#define MPI_COMBINER_NAMED      (-1)
+#define MPI_COMBINER_CONTIGUOUS 0
+#define MPI_COMBINER_VECTOR     1
+#define MPI_COMBINER_HVECTOR    2
+#define MPI_COMBINER_INDEXED    3
+#define MPI_COMBINER_HINDEXED   4
+#define MPI_COMBINER_STRUCT     5
+
 
 /* 5.2 */
 
