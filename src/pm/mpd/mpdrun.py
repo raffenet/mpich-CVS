@@ -141,7 +141,7 @@ def mpdrun():
             hostNames = [ x.strip() for x in hostNames if x[0] != '#' ]
             hostIdx = 0
             for i in range(nprocs):
-                hosts[(i,i)] = hostNames[hostIdx]
+                hosts[(i,i)] = gethostbyname_ex(hostNames[hostIdx])[2][0]
                 hostIdx += 1
                 if hostIdx >= len(hostNames):
                     hostIdx = 0
@@ -204,6 +204,7 @@ def mpdrun():
     msgToSend['stdin_goes_to_who'] = stdinGoesToWho
 
     mpd_send_one_msg(conSocket,msgToSend)
+    print "HOSTS=", msgToSend['hosts']
     msg = recv_one_msg_with_timeout(conSocket,5)
     if not msg:
         mpd_raise('no msg recvd from mpd when expecting ack of request')
