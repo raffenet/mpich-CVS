@@ -59,6 +59,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     static const char FCNAME[] = "MPI_Allreduce";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = 0;
+    MPID_MPI_STATE_DECLS;
 
     /* This is a temporary version to support the testing library */
 
@@ -69,17 +70,14 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (count < 0) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
                             "**argneg", "**argneg %s %d", "count", count );
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -89,23 +87,31 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* This is a *very* temporary implementation that allows the
+       single-process test codes to use the common test runtime 
+       routines */
     /* ... body of routine ...  */
-    /* Some routines must ensure only one thread modifies a communicator
-       at a time, e.g., MPI_Comm_set_attr.  */
-    MPID_Comm_thread_lock( comm_ptr );
-    {
-        if (comm_ptr->size > 1) {
+    if (comm_ptr->remote_size > 1) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
+					      "**notimpl", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    else {
+	/* count in bytes */
+	/* This also assumes that the datatypes are basic */
+	int dtype_size;
+
+	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
 					      "**notimpl", 0 );
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
-	else {
-	    /* count in bytes */
-	    memcpy( recvbuf, sendbuf, count );
-	}
+	dtype_size = MPID_Datatype_get_size(datatype);
+	
+	memcpy( recvbuf, sendbuf, count*dtype_size );
     }
-    MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
