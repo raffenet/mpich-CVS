@@ -199,4 +199,44 @@ public class Routines
         // System.out.println( "num_char_columns = " + num_char_columns );
         return num_char_columns;
     }
+
+    private static final  double  MATH_LOG_10 = Math.log( 10.0 );
+    /*
+       getRulerIncrement() takes in an estimated time increment and
+       returns a more appropriate time increment
+    */
+    public static double getTimeRulerIncrement( double t_incre )
+    {
+        double incre, incre_expo, incre_ftr, tmp_mant, incre_mant;
+        incre      = t_incre;
+        incre_expo = Math.ceil( Math.log( incre ) / MATH_LOG_10 );
+        incre_ftr  = Math.pow( 10.0, incre_expo );
+        tmp_mant   = incre / incre_ftr;
+        if ( tmp_mant < 0.1125 )
+            incre_mant = 0.1;
+        else if ( tmp_mant < 0.1625 )
+            incre_mant = 0.125;
+        else if ( tmp_mant < 0.225 )
+            incre_mant = 0.2;
+        else if ( tmp_mant < 0.325 )
+            incre_mant = 0.25;
+        else if ( tmp_mant < 0.45 )
+            incre_mant = 0.4;
+        else if ( tmp_mant < 0.75 )
+            incre_mant = 0.5;
+        else
+            incre_mant = 1.0;
+
+        // system.err.println( "Routines.getTimeRulerIncrement("
+        //                   + t_incre + ") = " + incre_mant * incre_ftr );
+        return incre_mant * incre_ftr;
+    }
+
+    public static double getTimeRulerFirstMark( double t_init, double t_incre )
+    {
+        double quotient;
+        // quotient = Math.ceil( t_init / t_incre );
+        quotient = Math.floor( t_init / t_incre );
+        return quotient * t_incre;
+    }
 }

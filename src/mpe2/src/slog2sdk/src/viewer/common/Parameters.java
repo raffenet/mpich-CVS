@@ -29,11 +29,11 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.9";
+    private static final String       VERSION_INFO             = "1.0.0.10";
     private static       String       setupfile_path           = null;
 
     public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
-    public  static       short        INIT_SLOG2_LEVEL_READ    = 3;
+    public  static       short        INIT_SLOG2_LEVEL_READ    = 4;
     public  static       float        SCREEN_HEIGHT_RATIO      = 0.5f;
     public  static       float        TIME_SCROLL_UNIT_RATIO   = 0.01f;
 
@@ -56,10 +56,10 @@ public class Parameters
     public  static       int          CLICK_RADIUS_TO_LINE     = 3;
 
     public  static       String       PREVIEW_STATE_DISPLAY
-                                      = PreviewState.DECRE_WEIGHT_ORDER;
+                                      = PreviewState.OVERLAP_RATIOS;
     public  static       int          PREVIEW_STATE_LEGEND_H   = 2;
     public  static       StateBorder  PREVIEW_STATE_BORDER
-                                      = StateBorder.WHITE_RAISED_BORDER;
+                                      = StateBorder.COLOR_XOR_BORDER;
     public  static       int          PREVIEW_STATE_BORDER_W   = 3;
     public  static       int          PREVIEW_STATE_BORDER_H   = 0;
     public  static       float        PREVIEW_ARROW_LINE_W     = 3.0f;

@@ -39,7 +39,7 @@ public class PreferenceFrame extends JFrame
 
         JScrollPane  scroller;
             pptys_panel = new PreferencePanel();
-            pptys_panel.updateAllFields();
+            pptys_panel.updateAllFieldsFromParameters();
             scroller   = new JScrollPane( pptys_panel );
             Dimension screen_size = Routines.getScreenSize();
             scroller.setMinimumSize(
@@ -101,19 +101,24 @@ public class PreferenceFrame extends JFrame
         TopWindow.Control.setEditPreferenceButtonEnabled( !val );
     }
 
-    public void updateAllParameters()
+    public void updateAllParametersFromFields()
     {
-        pptys_panel.updateAllParameters();
+        pptys_panel.updateAllParametersFromFields();
+    }
+
+    public void updateAllFieldsFromParameters()
+    {
+        pptys_panel.updateAllFieldsFromParameters();
     }
 
 
     public void actionPerformed( ActionEvent evt )
     {
         if ( evt.getSource() == this.update_btn ) {
-            pptys_panel.updateAllParameters();
+            pptys_panel.updateAllParametersFromFields();
         }
         else if ( evt.getSource() == this.save_btn ) {
-            pptys_panel.updateAllParameters();
+            pptys_panel.updateAllParametersFromFields();
             Parameters.writeToSetupFile( this );
         }
         else if ( evt.getSource() == this.close_btn ) {

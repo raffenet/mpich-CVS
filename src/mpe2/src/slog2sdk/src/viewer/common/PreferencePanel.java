@@ -255,15 +255,17 @@ public class PreferencePanel extends JPanel
 
         lst_PREVIEW_STATE_DISPLAY = new LabeledComboBox(
                                         "PREVIEW_STATE_DISPLAY" );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.DECRE_LEGEND_ORDER );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.DECRE_WEIGHT_ORDER );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.MOST_LEGENDS_ORDER );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.OVERLAP_RATIOS );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_RATIOS );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_EXCLUSION );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.FIT_MOST_LEGENDS );
         lst_PREVIEW_STATE_DISPLAY.setToolTipText(
         "Display option of Preview state." );
         super.add( lst_PREVIEW_STATE_DISPLAY );
 
         lst_PREVIEW_STATE_BORDER = new LabeledComboBox(
                                        "PREVIEW_STATE_BORDER" );
+        lst_PREVIEW_STATE_BORDER.addItem( StateBorder.COLOR_XOR_BORDER );
         lst_PREVIEW_STATE_BORDER.addItem( StateBorder.COLOR_RAISED_BORDER );
         lst_PREVIEW_STATE_BORDER.addItem( StateBorder.COLOR_LOWERED_BORDER );
         lst_PREVIEW_STATE_BORDER.addItem( StateBorder.WHITE_RAISED_BORDER );
@@ -368,7 +370,7 @@ public class PreferencePanel extends JPanel
         super.setBorder( BorderFactory.createEtchedBorder() );
     }
 
-    public void updateAllFields()
+    public void updateAllFieldsFromParameters()
     {
         fld_Y_AXIS_ROOT_LABEL.setText( Parameters.Y_AXIS_ROOT_LABEL );
         sdr_SCREEN_HEIGHT_RATIO.setFloat( Parameters.SCREEN_HEIGHT_RATIO );
@@ -417,7 +419,7 @@ public class PreferencePanel extends JPanel
                                    Parameters.LEFTCLICK_INSTANT_ZOOM );
     }
 
-    public void updateAllParameters()
+    public void updateAllParametersFromFields()
     {
         Parameters.Y_AXIS_ROOT_LABEL
                   = fld_Y_AXIS_ROOT_LABEL.getText();
