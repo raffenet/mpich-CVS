@@ -53,7 +53,7 @@ def _mpd_init():
     import sys    # to get access to excepthook in next line
     sys.excepthook = mpd_uncaught_except_tb
     openlog("mpd",0,LOG_DAEMON)
-    syslog(LOG_INFO,"mpdid=%s (port=%d)" % (g.myId,g.myPort) )
+    syslog(LOG_INFO,"mpd starting  mpdid=%s (port=%d)" % (g.myId,g.myPort) )
 
     if g.daemon:      # see if I should become a daemon with no controlling tty
         rc = fork()
@@ -103,9 +103,10 @@ def _mpd_init():
                 unlink(g.conListenName)
         if consoleAlreadyExists:
             # mpd_raise('an mpd is already running with console at %s' %  (g.conListenName) )
-            print 'An mpd is already running with console at %s on %s. ' %  (g.conListenName, g.myHost) 
+            print 'An mpd is already running with console at %s on %s. ' %  (g.conListenName, g.myHost)
             print 'Start mpd with the -n option for second mpd on same host.'
-            exit(0)
+            syslog(LOG_ERR,"%s: exiting; an mpd is already using the console" % (g.myId) )
+            exit(-1)
         g.conListenSocket = socket(AF_UNIX,SOCK_STREAM)  # UNIX
         g.conListenSocket.bind(g.conListenName)
         g.conListenSocket.listen(1)
@@ -637,7 +638,7 @@ def _handle_rhs_input():
         if g.activeSockets.has_key(g.lhsSocket):
             del g.activeSockets[g.lhsSocket]
             g.lhsSocket.close()
-        mpd_print(0000, 're-entering the ring' )
+        mpd_print(1,'lost rhs; re-entering ring')
         reenter_ring()
         return 1
     if msg['cmd'] == 'pulse_ack':
@@ -685,7 +686,7 @@ def _handle_new_connection():
                            '_handle_lhs_challenge_response',
                            msg['host'],msg['port'])
     else:
-        mpd_print(1, 'INVALID msg from new connection :%s: msg=:%s:' % (newConnAddr,msg) )
+        mpd_print(1, 'INVALID msg from new connection :%s:  msg=:%s:' % (newConnAddr,msg) )
         newConnSocket.close()
 
 def _handle_lhs_challenge_response(responseSocket):
