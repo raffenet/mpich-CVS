@@ -225,8 +225,12 @@ define(<<PAC_CV_NAME>>, translit(pac_cv_f77_sizeof_$1, [ *], [__]))dnl
 changequote([,])dnl
 AC_CACHE_CHECK([for size of Fortran type $1],PAC_CV_NAME,[
 AC_REQUIRE([PAC_PROG_F77_NAME_MANGLE])
-/bin/rm -f conftest*
-cat <<EOF > conftestc.c
+if test "$cross_compiling" = yes ; then
+    ifelse([$2],,[AC_MSG_WARN([No value provided for size of $1 when cross-compiling])]
+,eval PAC_CV_NAME=$2)
+else
+    /bin/rm -f conftest*
+    cat <<EOF > conftestc.c
 #include <stdio.h>
 #include "confdefs.h"
 #ifdef F77_NAME_UPPER
@@ -248,26 +252,48 @@ int cisize_(char *i1p, char *i2p)
     return 0;
 }
 EOF
-pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
-if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
-    saveLIBS=$LIBS
-    LIBS="conftestc.o $LIBS"
-    AC_TRY_RUN([
+    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+    if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
+        AC_LANG_SAVE
+        AC_LANG_FORTRAN77
+        saveLIBS=$LIBS
+        LIBS="conftestc.o $LIBS"
+        dnl TRY_RUN does not work correctly for autoconf 2.13 (the
+        dnl macro includes C-preprocessor directives that are not 
+        dnl valid in Fortran.  Instead, we do this by hand
+        cat >conftest.f <<EOF
          program main
          $1 a(2)
          integer irc
          irc = cisize(a(1),a(2))
          end
-],,ifelse([$2],,,eval PAC_CV_NAME=$2))
-    if test -s conftestval ; then
-        eval PAC_CV_NAME=`cat conftestval`
+EOF
+        rm -f conftest$ac_exeext
+        rm -f conftestval
+        if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
+	    if ./conftest$ac_exeext ; then
+	        # success
+                :
+            else
+	        # failure 
+                :
+	    fi
+        else
+	    # failure
+            AC_MSG_WARN([Unable to build program to determine size of $1])
+        fi
+        AC_LANG_RESTORE
+        if test -s conftestval ; then
+            eval PAC_CV_NAME=`cat conftestval`
+        else
+	    eval PAC_CV_NAME=0
+        fi
+        rm -f conftest*
+        LIBS=$saveLIBS
     else
-	eval PAC_CV_NAME=0
+        AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
     fi
-    LIBS=$saveLIBS
-else
-    AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
-fi
+fi # cross-compiling
 ])
 AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME,[Define size of PAC_TYPE_NAME])
 undefine([PAC_TYPE_NAME])
