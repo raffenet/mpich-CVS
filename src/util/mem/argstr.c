@@ -21,7 +21,6 @@
    values on which isascii returns true). */
 #include <ctype.h>
 
-/*
 #define MPIU_STR_QUOTE_CHAR     '\"'
 #define MPIU_STR_QUOTE_STR      "\""
 #define MPIU_STR_DELIM_CHAR     '='
@@ -30,8 +29,8 @@
 #define MPIU_STR_HIDE_CHAR      '*'
 #define MPIU_STR_SEPAR_CHAR     ' '
 #define MPIU_STR_SEPAR_STR      " "
-*/
 
+/*
 #define MPIU_STR_QUOTE_CHAR     '\"'
 #define MPIU_STR_QUOTE_STR      "\""
 #define MPIU_STR_DELIM_CHAR     '#'
@@ -40,6 +39,7 @@
 #define MPIU_STR_HIDE_CHAR      '*'
 #define MPIU_STR_SEPAR_CHAR     '$'
 #define MPIU_STR_SEPAR_STR      "$"
+*/
 
 #define MPIU_STR_TRUNCATED MPIU_STR_NOMEM
 
