@@ -59,6 +59,7 @@ public class LineIDMap extends TreeMap
         methods       = null;
     }
 
+    // Transform a YCoordMap to a LineIDMap.
     public LineIDMap( final YCoordMap  y_map )
     {
         super();
@@ -97,6 +98,62 @@ public class LineIDMap extends TreeMap
                 value[ icol ] = new Integer( map_elems[ idx++ ] );
             super.put( key, value );
         }
+    }
+
+    // Transform a LineIDMap to a YCoordMap.
+    // Reverse proces of LineIDMap( YCoordMap )
+    public YCoordMap toYCoordMap()
+    {
+        int        num_rows;
+        int        num_columns;
+        String     title_name;
+        String[]   column_names;   /* of length num_columns - 1 */
+        int[]      map_elems;      /* of length num_rows * num_columns */
+        int[]      method_indexes;
+
+        // Setup the size relationship between LindIDMap and YCoordMap.
+        num_rows     = super.size();
+        num_columns  = this.num_treenodes + 1;
+        title_name   = this.title_label;
+        column_names = this.column_labels;
+    
+        // Convert LineIDMap's TreeMap to map_elems[] stored in YCoordMap.
+        Map.Entry  entry;
+        Integer    key;
+        Integer[]  value;   // LineIDNodePath;
+        Iterator   entries;
+        int        map_idx;
+        int        idx;
+
+        map_elems    = new int[ num_rows * num_columns ];
+
+        map_idx = 0;
+        entries = super.entrySet().iterator();
+        while ( entries.hasNext() ) {
+            entry = (Map.Entry) entries.next();
+            key   = (Integer) entry.getKey();
+            value = (Integer[]) entry.getValue();
+            map_elems[ map_idx++ ] = key.intValue(); 
+            for ( idx = 0; idx < value.length; idx++ )
+                map_elems[ map_idx++ ] = value[ idx ].intValue();
+        }
+        if ( map_idx < map_elems.length )
+            throw new IllegalStateException(
+                        "LineIDMap's TreeMap contains less int than "
+                      + "the expected " + map_elems.length + "." );
+
+        // Convert LineIDMap's methods[] to YCoordMap's method_indexes[].
+        if ( this.methods != null && this.methods.length > 0 ) {
+            method_indexes = new int[ this.methods.length ];
+            for ( idx = 0; idx < method_indexes.length; idx++ )
+                 method_indexes[ idx ] = this.methods[ idx ].getMethodIndex();
+        }
+        else
+            method_indexes = null;
+
+        return new YCoordMap( num_rows, num_columns,
+                              title_name, column_names,
+                              map_elems, method_indexes );
     }
 
     public Method[] getMethods()
@@ -145,7 +202,7 @@ public class LineIDMap extends TreeMap
         for ( idx = 0; idx < num_treenodes; idx++ )
             outs.writeString( column_labels[ idx ] );
         outs.writeInt( super.size() );
-        Iterator entries = this.entrySet().iterator();
+        Iterator entries = super.entrySet().iterator();
         while ( entries.hasNext() ) {
             entry = (Map.Entry) entries.next();
             key   = (Integer)   entry.getKey();
@@ -216,7 +273,7 @@ public class LineIDMap extends TreeMap
         for ( idx = 0; idx < num_treenodes; idx++ )
             rep.append( column_labels[ idx ] + " " );
         rep.append( "\n" );
-        Iterator entries = this.entrySet().iterator();
+        Iterator entries = super.entrySet().iterator();
         ientry = 0;
         while ( entries.hasNext() ) {
             ientry++;
