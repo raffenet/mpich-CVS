@@ -1303,7 +1303,10 @@ configfile_loop:
 	    if (wdir[0] != '\0')
 		strcpy(launch_node->dir, wdir);
 	    else
+	    {
 		launch_node->dir[0] = '\0';
+		getcwd(launch_node->dir, SMPD_MAX_DIR_LENGTH);
+	    }
 	    if (path[0] != '\0')
 		strcpy(launch_node->path, path);
 	    else
