@@ -262,13 +262,24 @@ int sock_listen(sock_set_t sock_set, void * user_ptr, int * port, sock_t * sockp
 	goto fail;
     }
 
+    if (*port != 0)
+    {
+	flags = 1;
+	rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(long));
+	if (rc == -1)
+	{
+	    sock_errno = SOCK_FAIL;
+	    goto fail_close;
+	}
+    }
+
     flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1)
     {
 	sock_errno = SOCK_FAIL;
 	goto fail_close;
     }
-    
+
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (rc == -1)
     {
