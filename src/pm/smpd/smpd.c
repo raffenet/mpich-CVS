@@ -278,6 +278,9 @@ int smpd_entry_point()
 	smpd_err_printf("state machine failed.\n");
     }
 
+    if (smpd_process.root_smpd)
+	smpd_remove_from_dynamic_hosts();
+
     result = sock_destroy_set(set);
     if (result != SOCK_SUCCESS)
     {
@@ -290,9 +293,6 @@ int smpd_entry_point()
     {
 	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
-
-    if (smpd_process.root_smpd)
-	smpd_remove_from_dynamic_hosts();
 
     smpd_exit_fn("smpd_entry_point");
     return 0;
