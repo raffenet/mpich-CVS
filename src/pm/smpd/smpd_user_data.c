@@ -89,7 +89,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 			iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
 		    }
 		    iter = smpd_get_string(iter, data, SMPD_MAX_VALUE_LENGTH, &num_chars);
-		    smpd_dbg_printf("parsed <%s> <%s> <%s>\n", name, equal_str, data);
+		    /*smpd_dbg_printf("parsed <%s> <%s> <%s>\n", name, equal_str, data);*/
 		    if (num_chars > 0)
 		    {
 			node = (smpd_data_t*)malloc(sizeof(smpd_data_t));
@@ -174,9 +174,11 @@ int smpd_delete_user_data(const char *key)
     smpd_exit_fn("smpd_delete_user_data");
     return SMPD_SUCCESS;
 #else
+    int result;
     smpd_enter_fn("smpd_delete_user_data");
+    result = smpd_delete_smpd_data(key);
     smpd_exit_fn("smpd_delete_user_data");
-    return SMPD_FAIL;
+    return result;
 #endif
 }
 
@@ -213,7 +215,68 @@ int smpd_delete_smpd_data(const char *key)
     smpd_exit_fn("smpd_delete_smpd_data");
     return SMPD_SUCCESS;
 #else
+    int result;
+    smpd_data_t *list = NULL, *node, *trailer;
+    int num_bytes;
+    int found = 0;
+
     smpd_enter_fn("smpd_delete_smpd_data");
+
+    list = smpd_parse_smpd_file();
+
+    node = trailer = list;
+    while (node)
+    {
+	if (strcmp(key, node->name) == 0)
+	{
+	    if (trailer != node)
+		trailer->next = node->next;
+	    else
+	    {
+		list = list->next;
+	    }
+	    found = 1;
+	    free(node);
+	    break;
+	}
+	if (trailer != node)
+	    trailer = trailer->next;
+	node = node->next;
+    }
+    if (found)
+    {
+	FILE *fout;
+	char buffer[1024];
+	char *str;
+	int maxlen;
+
+	fout = smpd_open_smpd_file(SMPD_TRUE);
+	if (fout)
+	{
+	    while (list)
+	    {
+		str = buffer;
+		maxlen = 1024;
+		if (smpd_add_string_arg(&str, &maxlen, list->name, list->value) == SMPD_SUCCESS)
+		{
+		    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
+		    fprintf(fout, "%s\n", buffer);
+		}
+		node = list;
+		list = list->next;
+		free(node);
+	    }
+	    fclose(fout);
+	    smpd_exit_fn("smpd_get_smpd_data");
+	    return SMPD_SUCCESS;
+	}
+    }
+    while (list)
+    {
+	node = list;
+	list = list->next;
+	free(node);
+    }
     smpd_exit_fn("smpd_delete_smpd_data");
     return SMPD_FAIL;
 #endif
@@ -253,9 +316,11 @@ int smpd_set_user_data(const char *key, const char *value)
     smpd_exit_fn("smpd_set_user_data");
     return SMPD_SUCCESS;
 #else
+    int result;
     smpd_enter_fn("smpd_set_user_data");
+    result = smpd_set_smpd_data(key, value);
     smpd_exit_fn("smpd_set_user_data");
-    return SMPD_FAIL;
+    return result;
 #endif
 }
 
@@ -399,7 +464,9 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
 #else
     int result;
     smpd_enter_fn("smpd_get_user_data");
-    result = smpd_get_user_data_default(key, value, value_len);
+    result = smpd_get_smpd_data(key, value, value_len);
+    if (result != SMPD_SUCCESS)
+	result = smpd_get_user_data_default(key, value, value_len);
     smpd_exit_fn("smpd_get_user_data");
     return result;
 #endif
