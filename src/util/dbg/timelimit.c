@@ -17,7 +17,7 @@
    Generate a SIGALRM after the specified number of seconds.
    If seconds is zero, turn off the alarm 
 */
-MPIU_SetTimeout( int seconds )
+void MPIU_SetTimeout( int seconds )
 {
 #ifdef HAVE_SETITIMER
     struct itimerval timelimit;
