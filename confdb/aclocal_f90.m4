@@ -224,16 +224,18 @@ dnl Cache these so we don't need to change in and out of f90 mode
 ac_f90ext=$pac_cv_f90_ext
 ac_f90compile='${F90-f90} -c $F90FLAGS conftest.$ac_f90ext 1>&AC_FD_CC'
 ac_f90link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 1>&AC_FD_CC'
-# Check for problems with Intel efc compiler
-cat > conftest.$ac_f90ext <<EOF
+# Check for problems with Intel efc compiler, if the compiler works
+if test "$pac_cv_prog_f90_works" = yes ; then
+    cat > conftest.$ac_f90ext <<EOF
         program main
         end
 EOF
-pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 2>&1 | grep 'bfd assertion fail'`
-if test -n "$pac_msg" ; then
-    pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext -i_dynamic $LIBS 2>&1 | grep 'bfd assertion fail'`
-    if test -z "$pac_msg" ; then LDFLAGS="-i_dynamic" ; fi
-    # There should really be f90linker flags rather than generic ldflags.
+    pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 2>&1 | grep 'bfd assertion fail'`
+    if test -n "$pac_msg" ; then
+        pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext -i_dynamic $LIBS 2>&1 | grep 'bfd assertion fail'`
+        if test -z "$pac_msg" ; then LDFLAGS="-i_dynamic" ; fi
+        # There should really be f90linker flags rather than generic ldflags.
+    fi
 fi
 ])
 dnl Internal routine for testing F90

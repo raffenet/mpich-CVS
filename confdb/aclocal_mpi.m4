@@ -273,7 +273,7 @@ AC_TRY_LINK([#include "mpi.h"],
 pac_cv_mpi_f2c="yes",pac_cv_mpi_f2c="no")
 ])
 if test "$pac_cv_mpi_f2c" = "yes" ; then 
-    AC_DEFINE(HAVE_MPI_F2C) 
+    AC_DEFINE(HAVE_MPI_F2C,1,[Define if MPI has F2C]) 
 fi
 ])
 dnl
