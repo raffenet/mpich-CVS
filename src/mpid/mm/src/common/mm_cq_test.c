@@ -31,6 +31,7 @@ int mm_cq_test()
     new_cq_test();
 #endif
 
+    /* good place for an atomic swap? */
     car_ptr = MPID_Process.cq_head;
     MPID_Process.cq_head = NULL;
 

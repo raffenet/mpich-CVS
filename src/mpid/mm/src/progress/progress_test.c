@@ -16,23 +16,18 @@
 @*/
 int MPID_Progress_test( void )
 {
-    MPIDI_VC *vc_ptr;
+    /* advance any read packing */
+    if (MPID_Process.pkr_read_list)
+	mm_packer_read();
 
-    vc_ptr = MPID_Process.read_list;
-    while (vc_ptr)
-    {
-	vc_ptr->read(vc_ptr);
-	vc_ptr = vc_ptr->read_next_ptr;
-    }
-
+    /* test the completion queue */
     mm_cq_test();
 
-    vc_ptr = MPID_Process.write_list;
-    while (vc_ptr)
-    {
-	vc_ptr->write(vc_ptr);
-	vc_ptr = vc_ptr->write_next_ptr;
-    }
+    /* advance any write packing and unpacking */
+    if (MPID_Process.pkr_write_list)
+	mm_packer_write();
+    if (MPID_Process.unpkr_write_list)
+	mm_unpacker_write();
 
     return 0;
 }

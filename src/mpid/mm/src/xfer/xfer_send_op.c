@@ -41,15 +41,15 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	{
 	    if (pCarIter->dest == dest)
 	    {
-		while (pCarIter->qnext_ptr)
+		while (pCarIter->next_ptr)
 		{
-		    pCarIter = pCarIter->qnext_ptr;
+		    pCarIter = pCarIter->next_ptr;
 		}
-		pCarIter->qnext_ptr = pRequest->mm.wcar;
+		pCarIter->next_ptr = pRequest->mm.wcar;
 		bNeedHeader = FALSE;
 		break;
 	    }
-	    pCarIter = pCarIter->next_ptr;
+	    pCarIter = pCarIter->opnext_ptr;
 	}
 	while (pRequestIter->mm.next_ptr)
 	{
@@ -61,15 +61,15 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 		{
 		    if (pCarIter->dest == dest)
 		    {
-			while (pCarIter->qnext_ptr)
+			while (pCarIter->next_ptr)
 			{
-			    pCarIter = pCarIter->qnext_ptr;
+			    pCarIter = pCarIter->next_ptr;
 			}
-			pCarIter->qnext_ptr = pRequest->mm.wcar;
+			pCarIter->next_ptr = pRequest->mm.wcar;
 			bNeedHeader = FALSE;
 			break;
 		    }
-		    pCarIter = pCarIter->next_ptr;
+		    pCarIter = pCarIter->opnext_ptr;
 		}
 	    }
 	}
@@ -95,14 +95,15 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 
     /* setup the read car for packing the mpi buffer to be sent */
     pRequest->mm.rcar[0].request_ptr = pRequest;
-    pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
-    pRequest->mm.rcar[0].vc_ptr = mm_get_packer_vc();
+    pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR | MM_PACKER_CAR;
+    pRequest->mm.rcar[0].vc_ptr = NULL;
     pRequest->mm.rcar[0].next_ptr = NULL;
+    pRequest->mm.rcar[0].opnext_ptr = NULL;
     pRequest->mm.rcar[0].qnext_ptr = NULL;
     pRequest->mm.rcar[0].src = request_ptr->comm->rank; /* packer source is myself */
     mm_inc_cc(pRequest);
 
-
+    /* setup the write car, adding a header car if this is the first send op to this destination */
     if (bNeedHeader)
     {
 	pRequest->mm.wcar[0].request_ptr = pRequest;
@@ -112,8 +113,9 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].data.pkt.context = request_ptr->comm->context_id;
 	pRequest->mm.wcar[0].data.pkt.tag = request_ptr->mm.tag;
 	pRequest->mm.wcar[0].data.pkt.size = 0;
-	pRequest->mm.wcar[0].qnext_ptr = &pRequest->mm.wcar[1];
-	pRequest->mm.wcar[0].next_ptr = NULL;
+	pRequest->mm.wcar[0].next_ptr = &pRequest->mm.wcar[1];
+	pRequest->mm.wcar[0].opnext_ptr = NULL;
+	pRequest->mm.wcar[0].qnext_ptr = NULL;
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.wcar[1];
@@ -129,6 +131,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pCar->type = MM_WRITE_CAR;
     pCar->dest = dest;
     pCar->next_ptr = NULL;
+    pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
     mm_inc_cc(pRequest);
 

@@ -95,9 +95,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-    strncat(sCapabilities, "viardma ", 9);
+    strncat(sCapabilities, "via_rdma ", 9);
     via_rdma_get_business_card(value);
-    snprintf(key, 100, "business_card_viardma:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, 100, "business_card_via_rdma:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_NEW
@@ -106,6 +106,8 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     snprintf(key, 100, "business_card_new:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
+
+    free(value);
 
     sprintf(key, "businesscard:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);

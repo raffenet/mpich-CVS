@@ -40,11 +40,11 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	{
 	    if (pCarIter->src == src)
 	    {
-		while (pCarIter->qnext_ptr)
+		while (pCarIter->next_ptr)
 		{
-		    pCarIter = pCarIter->qnext_ptr;
+		    pCarIter = pCarIter->next_ptr;
 		}
-		pCarIter->qnext_ptr = pRequest->mm.rcar;
+		pCarIter->next_ptr = pRequest->mm.rcar;
 		bNeedHeader = FALSE;
 	    }
 	}
@@ -58,11 +58,11 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 		{
 		    if (pCarIter->src == src)
 		    {
-			while (pCarIter->qnext_ptr)
+			while (pCarIter->next_ptr)
 			{
-			    pCarIter = pCarIter->qnext_ptr;
+			    pCarIter = pCarIter->next_ptr;
 			}
-			pCarIter->qnext_ptr = pRequest->mm.rcar;
+			pCarIter->next_ptr = pRequest->mm.rcar;
 			bNeedHeader = FALSE;
 		    }
 		}
@@ -97,8 +97,9 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pRequest->mm.rcar[0].data.pkt.context = request_ptr->comm->context_id;
 	pRequest->mm.rcar[0].data.pkt.tag = request_ptr->mm.tag;
 	pRequest->mm.rcar[0].data.pkt.size = 0;
-	pRequest->mm.rcar[0].qnext_ptr = &pRequest->mm.rcar[1];
-	pRequest->mm.rcar[0].next_ptr = NULL;
+	pRequest->mm.rcar[0].next_ptr = &pRequest->mm.rcar[1];
+	pRequest->mm.rcar[0].opnext_ptr = NULL;
+	pRequest->mm.rcar[0].qnext_ptr = NULL;
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.rcar[1];
@@ -114,15 +115,17 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->type = MM_READ_CAR;
     pCar->src = src;
     pCar->next_ptr = NULL;
+    pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
     mm_inc_cc(pRequest);
 
     /* allocate a write car for unpacking */
     pCar = pRequest->mm.wcar;
     pCar->request_ptr = pRequest;
-    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR;
-    pCar->vc_ptr = mm_get_unpacker_vc();
+    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
+    pCar->vc_ptr = NULL;
     pCar->next_ptr = NULL;
+    pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
     mm_inc_cc(pRequest);
 

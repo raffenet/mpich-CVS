@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "pmi.h"
 
 /*@
    mm_vcutil_init - initialize vc stuff
@@ -124,57 +125,23 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     MPIDI_VC *vc_ptr;
 
     vc_ptr = (MPIDI_VC*)BlockAlloc(MPID_Process.VC_allocator);
+    vc_ptr->method = method;
+    vc_ptr->ref_count = 1;
+    vc_ptr->readq_head = NULL;
+    vc_ptr->readq_tail = NULL;
+    vc_ptr->writeq_head = NULL;
+    vc_ptr->writeq_tail = NULL;
+#ifdef MPICH_DEV_BUILD
+    vc_ptr->pmi_kvsname[0] = '\0';
+    vc_ptr->rank = -1;
+    vc_ptr->read_next_ptr = NULL;
+    vc_ptr->write_next_ptr = NULL;
+#endif
     switch (method)
     {
     case MM_NULL_METHOD:
 	break;
     case MM_UNBOUND_METHOD:
-	break;
-    case MM_CONNECTOR_METHOD:
-	vc_ptr->write = mm_connector_connect;
-	vc_ptr->read = mm_connector_connect;
-	vc_ptr->method = MM_CONNECTOR_METHOD;
-	vc_ptr->ref_count = 1;
-	vc_ptr->readq_head = NULL;
-	vc_ptr->readq_tail = NULL;
-	vc_ptr->writeq_head = NULL;
-	vc_ptr->writeq_tail = NULL;
-#ifdef MPICH_DEV_BUILD
-	vc_ptr->read_next_ptr = NULL;
-	vc_ptr->write_next_ptr = NULL;
-#endif
-	break;
-    case MM_PACKER_METHOD:
-	vc_ptr->write = mm_packer_write;
-	vc_ptr->read = mm_packer_read;
-	vc_ptr->method = MM_PACKER_METHOD;
-	vc_ptr->ref_count = 1;
-	vc_ptr->readq_head = NULL;
-	vc_ptr->readq_tail = NULL;
-	vc_ptr->writeq_head = NULL;
-	vc_ptr->writeq_tail = NULL;
-#ifdef MPICH_DEV_BUILD
-	vc_ptr->pmi_kvsname[0] = '\0';
-	vc_ptr->rank = -1;
-	vc_ptr->read_next_ptr = NULL;
-	vc_ptr->write_next_ptr = NULL;
-#endif
-	break;
-    case MM_UNPACKER_METHOD:
-	vc_ptr->write = mm_unpacker_write;
-	vc_ptr->read = NULL;
-	vc_ptr->method = MM_UNPACKER_METHOD;
-	vc_ptr->ref_count = 1;
-	vc_ptr->readq_head = NULL;
-	vc_ptr->readq_tail = NULL;
-	vc_ptr->writeq_head = NULL;
-	vc_ptr->writeq_tail = NULL;
-#ifdef MPICH_DEV_BUILD
-	vc_ptr->pmi_kvsname[0] = '\0';
-	vc_ptr->rank = -1;
-	vc_ptr->read_next_ptr = NULL;
-	vc_ptr->write_next_ptr = NULL;
-#endif
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
@@ -203,6 +170,138 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 }
 
 /*@
+mm_vc_connect_alloc - allocate a new vc and post a connect to its method
+
+  Parameters:
+  +  char *kvs_name - kvs name
+  -  int rank - rank in the kvs database
+  
+    Notes:
+@*/
+MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
+{
+    MPIDI_VC *vc_ptr;
+    char key[100];
+    char *value;
+    int value_len;
+    char methods[256];
+#ifdef WITH_METHOD_VIA
+    char *temp;
+#endif
+    
+    value_len = PMI_KVS_Get_value_length_max();
+    value = (char*)malloc(value_len);
+    
+    snprintf(key, 100, "businesscard:%d", rank);
+    PMI_KVS_Get(kvs_name, key, methods);
+    
+    /* choose method */
+    
+#ifdef WITH_METHOD_SHM
+    if (strstr(methods, "shm"))
+    {
+	/* get the shm method business card */
+	snprintf(key, 100, "business_card_shm:%d", rank);
+	PMI_KVS_Get(kvs_name, key, value);
+	
+	/* check to see if we can connect with this business card */
+	if (shm_can_connect(value))
+	{
+	    /* allocate a vc for this method */
+	    vc_ptr = mm_vc_alloc(MM_SHM_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->rank = rank;
+	    /* post a connection request to the method */
+	    shm_post_connect(vc_ptr, value);
+	    
+	    free(value);
+	    return vc_ptr;
+	}
+    }
+#endif
+    
+#ifdef WITH_METHOD_VIA_RDMA
+    if (strstr(methods, "via_rdma"))
+    {
+	/* get the via method business card */
+	snprintf(key, 100, "business_card_via_rdma:%d", rank);
+	PMI_KVS_Get(kvs_name, key, value);
+	
+	/* check to see if we can connect with this business card */
+	if (via_rdma_can_connect(value))
+	{
+	    /* allocate a vc for this method */
+	    vc_ptr = mm_vc_alloc(MM_VIA_RDMA_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->rank = rank;
+	    /* post a connection request to the method */
+	    via_rdma_post_connect(vc_ptr, value);
+	    
+	    free(value);
+	    return vc_ptr;
+	}
+    }
+#endif
+    
+#ifdef WITH_METHOD_VIA
+    /* check for a false match with the via_rdma method */
+    temp = strstr(methods, "via_rdma");
+    if (temp != NULL)
+	*temp = 'x';
+    if (strstr(methods, "via"))
+    {
+	/* get the via rdma method business card */
+	snprintf(key, 100, "business_card_via:%d", rank);
+	PMI_KVS_Get(kvs_name, key, value);
+	
+	/* check to see if we can connect with this business card */
+	if (via_can_connect(value))
+	{
+	    /* allocate a vc for this method */
+	    vc_ptr = mm_vc_alloc(MM_VIA_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->rank = rank;
+	    /* post a connection request to the method */
+	    via_post_connect(vc_ptr, value);
+	    
+	    free(value);
+	    return vc_ptr;
+	}
+    }
+#endif
+    
+#ifdef WITH_METHOD_TCP
+    if (strstr(methods, "tcp"))
+    {
+	/* get the tcp method business card */
+	snprintf(key, 100, "business_card_tcp:%d", rank);
+	PMI_KVS_Get(kvs_name, key, value);
+	
+	/* check to see if we can connect with this business card */
+	if (tcp_can_connect(value))
+	{
+	    /* allocate a vc for this method */
+	    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->rank = rank;
+	    /* post a connection request to the method */
+	    tcp_post_connect(vc_ptr, value);
+	    
+	    free(value);
+	    return vc_ptr;
+	}
+    }
+#endif
+
+    free(value);
+    return NULL;
+}
+
+/*@
    mm_vc_free - free a virtual connection
 
    Parameters:
@@ -215,3 +314,4 @@ int mm_vc_free(MPIDI_VC *ptr)
     BlockFree(MPID_Process.VC_allocator, ptr);
     return MPI_SUCCESS;
 }
+

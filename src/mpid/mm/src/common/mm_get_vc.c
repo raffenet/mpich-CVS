@@ -39,30 +39,8 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
     vc_ptr = comm_ptr->vcr[rank];
     if (vc_ptr == NULL)
     {
-	comm_ptr->vcr[rank] = vc_ptr = mm_vc_alloc(MM_CONNECTOR_METHOD);
-	vc_ptr->rank = rank;
-	vc_ptr->pmi_kvsname = comm_ptr->mm.pmi_kvsname;
+	comm_ptr->vcr[rank] = vc_ptr = mm_vc_connect_alloc(comm_ptr->mm.pmi_kvsname, rank);
     }
 
     return vc_ptr;
-}
-
-/*@
-   *mm_get_packer_vc - get the packer virtual connection
-
-   Notes:
-@*/
-MPIDI_VC *mm_get_packer_vc()
-{
-    return mm_vc_alloc(MM_PACKER_METHOD);
-}
-
-/*@
-   *mm_get_unpacker_vc - get the unpacker virtual connection
-
-   Notes:
-@*/
-MPIDI_VC *mm_get_unpacker_vc()
-{
-    return mm_vc_alloc(MM_UNPACKER_METHOD);
 }

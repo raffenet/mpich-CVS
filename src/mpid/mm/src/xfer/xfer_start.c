@@ -40,11 +40,11 @@ int xfer_start(MPID_Request *request_ptr)
 	{
 	    /* add up the size of the message and put it in the packet */
 	    pRequest->mm.rcar[0].data.pkt.size = 0;
-	    pCarIter = pRequest->mm.rcar->qnext_ptr;
+	    pCarIter = pRequest->mm.rcar->next_ptr;
 	    while (pCarIter)
 	    {
 		pRequest->mm.rcar[0].data.pkt.size += pCarIter->request_ptr->mm.size;
-		pCarIter = pCarIter->qnext_ptr;
+		pCarIter = pCarIter->next_ptr;
 	    }
 	    /* post the recv */
 	    mm_post_recv(pRequest->mm.rcar);
@@ -60,12 +60,12 @@ int xfer_start(MPID_Request *request_ptr)
 		while (pCarIter)
 		{
 		    pCar->data.pkt.size += pCarIter->request_ptr->mm.size;
-		    pCarIter = pCarIter->qnext_ptr;
+		    pCarIter = pCarIter->next_ptr;
 		}
 		/* enqueue the send */
 		mm_post_send(pCar);
 	    }
-	    pCar = pCar->next_ptr;
+	    pCar = pCar->opnext_ptr;
 	}
 	pRequest = pRequest->mm.next_ptr;
     }

@@ -16,6 +16,7 @@
 @*/
 int mm_car_enqueue(MM_Car *car_ptr)
 {
+#ifdef foo
     MPIDI_VC *vc_ptr;
 
     vc_ptr = car_ptr->vc_ptr;
@@ -56,12 +57,13 @@ int mm_car_enqueue(MM_Car *car_ptr)
     }
 
     car_ptr->qnext_ptr = NULL;
-
+#endif
     return MPI_SUCCESS;
 }
 
 static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
+#ifdef foo
     MPIDI_VC *iter_ptr;
     if (vc_ptr == MPID_Process.write_list)
     {
@@ -78,11 +80,13 @@ static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
 	}
 	iter_ptr = iter_ptr->write_next_ptr;
     }
+#endif
     return MPI_ERR_ARG;
 }
 
 static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
 {
+#ifdef foo
     MPIDI_VC *iter_ptr;
     if (vc_ptr == MPID_Process.read_list)
     {
@@ -99,6 +103,7 @@ static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
 	}
 	iter_ptr = iter_ptr->read_next_ptr;
     }
+#endif
     return MPI_ERR_ARG;
 }
 
@@ -112,6 +117,7 @@ static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
 @*/
 int mm_car_dequeue(MM_Car *car_ptr)
 {
+#ifdef foo
     MPIDI_VC *vc_ptr;
     MM_Car *iter_ptr;
 
@@ -177,6 +183,6 @@ int mm_car_dequeue(MM_Car *car_ptr)
     }
 
     car_ptr->qnext_ptr = NULL;
-
+#endif
     return MPI_SUCCESS;
 }

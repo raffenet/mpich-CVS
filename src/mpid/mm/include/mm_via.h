@@ -14,5 +14,7 @@ int via_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_get_buffers(MPID_Request *request_ptr);
 int via_get_business_card(char *value);
 int via_cq_test();
+int via_can_connect(char *business_card);
+int via_post_connect(MPIDI_VC *vc_ptr, char *business_card);
 
 #endif

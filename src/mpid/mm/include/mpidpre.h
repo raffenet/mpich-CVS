@@ -62,22 +62,13 @@ typedef enum {
 } MPID_Packet_type;
 
 /* Communication agent request type */
-/*
-typedef enum MM_CAR_TYPE { 
-    MM_NULL_CAR,
-    MM_HEADER_CAR,
-    MM_READ_CAR,
-    MM_PACKER_READ_CAR,
-    MM_WRITE_CAR,
-    MM_UNPACKER_WRITE_CAR,
-    MM_END_MARKER_TYPE_CAR
-} MM_CAR_TYPE;
-*/
 typedef int MM_CAR_TYPE;
 #define MM_NULL_CAR      0x00
 #define MM_HEAD_CAR      0x01
 #define MM_READ_CAR      0x02
 #define MM_WRITE_CAR     0x04
+#define MM_PACKER_CAR    0x08
+#define MM_UNPACKER_CAR  0x10
 
 /* packet definitions */
 typedef struct MPID_Packet
@@ -137,7 +128,7 @@ typedef struct MM_Car
 #endif
 #endif
     } data;
-    struct MM_Car *next_ptr, *qnext_ptr;
+    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr;
 } MM_Car;
 
 /* multi-method segment */

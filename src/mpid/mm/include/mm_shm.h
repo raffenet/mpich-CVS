@@ -14,5 +14,7 @@ int shm_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int shm_get_buffers(MPID_Request *request_ptr);
 int shm_get_business_card(char *value);
 int shm_cq_test();
+int shm_can_connect(char *business_card);
+int shm_post_connect(MPIDI_VC *vc_ptr, char *business_card);
 
 #endif

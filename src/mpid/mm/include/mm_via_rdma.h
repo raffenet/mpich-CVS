@@ -14,5 +14,7 @@ int via_rdma_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_rdma_get_buffers(MPID_Request *request_ptr);
 int via_rdma_get_business_card(char *value);
 int via_rdma_cq_test();
+int via_rdma_can_connect(char *business_card);
+int via_rdma_post_connect(MPIDI_VC *vc_ptr, char *business_card);
 
 #endif

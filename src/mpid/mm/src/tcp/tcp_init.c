@@ -10,7 +10,6 @@ TCP_PerProcess TCP_Process;
 /*@
    tcp_init - initialize the tcp method
 
-
    Notes:
 @*/
 int tcp_init()
@@ -49,7 +48,6 @@ int tcp_init()
 
 /*@
    tcp_finalize - finalize the tcp method
-
 
    Notes:
 @*/

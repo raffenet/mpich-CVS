@@ -9,15 +9,12 @@
 /*@
    mm_packer_write - write
 
-   Parameters:
-+  struct MPIDI_VC *vc_ptr - virtual connection pointer
-
    Notes:
 @*/
-int mm_packer_write(struct MPIDI_VC *vc_ptr)
+int mm_packer_write()
 {
     MM_Car *car_ptr;
-    car_ptr = vc_ptr->writeq_head;
+    car_ptr = MPID_Process.pkr_write_list;
     while (car_ptr)
     {
 	switch (car_ptr->request_ptr->mm.buf_type)
