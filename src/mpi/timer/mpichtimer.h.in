@@ -71,6 +71,19 @@ void MPID_Wtime_init(void);
 #define MPID_Wtime_init()
 
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+/* This is a new version of the cycle counter, based on the read time stamp
+   (rdtsc) instruction */
+#define MPID_Wtime_init()
+/* There may be a better way to read the two 32 bit values into a single
+   long long, but this should work */
+#define MPID_Wtime(var_ptr) { unsigned int ttth, tttl; long long tttt;
+    __asm__ __volatile__  ( "rdtsc ; movl %%edx,%0 ; movl %%eax,%1" \
+                            : "=r" (ttth), "=r" (tttl) :: \
+                            "eax", "edx" ); \
+    tttt = ttth; tttt << 32 ; tttt |= tttl; \
+    *(var_ptr) = tttt; }
+
+#elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE_2
 #define MPID_Wtime_init()
 #define MPID_Wtime(var) {long long t1;\
   __asm__ volatile (".byte 0x0f, 0x31" : "=A" (t1));\

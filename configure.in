@@ -295,9 +295,13 @@ if test "$with_logging" = "default" -o "$with_logging" = "yes" ; then
     with_logging=dlog
 fi
 logging_name=$with_logging
+if test "$with_logging" != "no" ; then
+    logging_dir=logging
+fi
+AC_SUBST(logging_dir)
 dnl
 if test "$with_logging" = "no" ; then
-    logging_name = ""
+    logging_name=""
 elif test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
     AC_MSG_WARN([$use_top_srcdir/src/util/logging/$logging_name does not exist.  Logging library is unknown])
 elif test ! -x $use_top_srcdir/src/util/logging/$logging_name/configure ; then
@@ -671,6 +675,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/util/dbg/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/util/Makefile \
+	  test/mpid/Makefile \
 	  test/util/info/Makefile \
 	  test/mpi/Makefile \
           test/mpi/basic/Makefile \
@@ -688,7 +693,3 @@ dnl          src/mpid/mm/Makefile \
 
 PAC_SUBDIR_CACHE_CLEANUP
 echo 'Configuration completed.'
-
-
-
-

@@ -1,1 +1,2 @@
-SUBDIRS = mem info msgs instrm param thread dbg logging .
+SUBDIRS = mem info msgs instrm param thread dbg @logging_dir@ .
+SUBDIRS_logging_dir = logging

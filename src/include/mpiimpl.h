@@ -274,6 +274,12 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
    atomic so that multiple threads don't decide that they were 
    responsible for setting the value to zero.
  */
+#if USE_ATOMIC_UPDATES
+#define MPIU_Object_add_ref(objptr) \
+    MPID_Atomic_incr(&((objptr)->ref_count))
+#define MPIU_Object_release_ref(objptr,newval_ptr) \
+    MPID_Atomic_decr_flag(&((objptr)->ref_count),flag)
+#else
 #define MPIU_Object_add_ref(objptr) \
     {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
     MPID_Thread_unlock(&(objptr)->mutex);}
@@ -281,7 +287,7 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
     {MPID_Thread_lock(&(objptr)->mutex);*(newval_ptr)=--(objptr)->ref_count;\
     MPID_Thread_unlock(&(objptr)->mutex);}
 #endif
-
+#endif
 /* Routines to initialize handle allocations */
 /* These are now internal to the handlemem package
 void *MPIU_Handle_direct_init( void *, int, int, int );

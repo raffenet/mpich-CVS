@@ -144,7 +144,7 @@ pac_cv_posix_clock_realtime=no)])
 ])
     ;;
 
-    linux86_cycle)
+    linux86_cycle|linux86_cycle_2)
     MPID_TIMER_TYPE="long long"
     ;;
     linuxalpha_cycle)

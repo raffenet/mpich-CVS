@@ -100,6 +100,23 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
   *t3 += (*t2 - *t1);
 }
+#elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE_2
+/* Time stamps created by a macro */
+void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
+{
+    *diff = (double)( *t2 - *t1 );
+}
+void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
+{
+    /* This returns the number of cycles as the "time".  This isn't correct
+       for implementing MPI_Wtime, but it does allow us to insert cycle
+       counters into test programs */
+    *val = (double)*t;
+}
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+  *t3 += (*t2 - *t1);
+}
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 /* Code from LinuxJournal #42 (Oct-97), p50; 
    thanks to Dave Covey dnc@gi.alaska.edu
