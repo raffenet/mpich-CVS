@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-#use Crypt::DSA;
+#use Crypt::TripleDES;
 #
 # Check that coding standards have been followed.  This checks for common
 # and easy to overlook errors, such as the use of non-portable system routines
