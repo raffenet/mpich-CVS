@@ -39,7 +39,7 @@
    MPI_Pack, scatter it as bytes, and unpack it after the allgather.
 
    For the allgather, we use a recursive doubling algorithm for 
-   medium-size messages. This
+   medium-size messages and power-of-two number of processes. This
    takes lgp steps. In each step pairs of processes exchange all the
    data they have (we take care of non-power-of-two situations). This
    costs approximately lgp.alpha + n.((p-1)/p).beta. (Approximately
@@ -52,7 +52,8 @@
    versus n.lgp.beta. Therefore, for long messages and when lgp > 2,
    this algorithm will perform better.
 
-   For very long messages, we use a ring algorithm for the allgather, which
+   For long messages and for medium-size messages and non-power-of-two 
+   processes, we use a ring algorithm for the allgather, which 
    takes p-1 steps, because it performs better than recursive doubling.
    Total Cost = (lgp+p-1).alpha + 2.n.((p-1)/p).beta
 
@@ -81,7 +82,7 @@ int MPIR_Bcast (
   int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
   int relative_dst, dst_tree_root, my_tree_root, send_offset;
   int recv_offset, tree_root, nprocs_completed, offset, position;
-  int *recvcnts, *displs, left, right, jnext;
+  int *recvcnts, *displs, left, right, jnext, pof2, comm_size_is_pof2;
   void *tmp_buf;
   MPI_Comm comm;
   MPID_Datatype *dtp;
@@ -361,9 +362,18 @@ int MPIR_Bcast (
 
       /* Scatter complete. Now do an allgather .  */ 
 
-      if (nbytes < MPIR_BCAST_LONG_MSG)
+      /* check if comm_size is a power of two */
+      pof2 = 1;
+      while (pof2 < comm_size)
+          pof2 *= 2;
+      if (pof2 == comm_size) 
+          comm_size_is_pof2 = 1;
+      else
+          comm_size_is_pof2 = 0;
+
+      if ((nbytes < MPIR_BCAST_LONG_MSG) && (comm_size_is_pof2))
       {
-          /* short message allgather. use recurive doubling. */
+          /* medium size allgather and pof2 comm_size. use recurive doubling. */
 
           mask = 0x1;
           i = 0;
@@ -414,6 +424,12 @@ int MPIR_Bcast (
                  the havenots. We use a logarithmic recursive-halfing algorithm
                  for this. */
               
+              /* This part of the code will not currently be
+                 executed because we are not using recursive
+                 doubling for non power of two. Mark it as experimental
+                 so that it doesn't show up as red in the coverage tests. */  
+
+	      /* --BEGIN EXPERIMENTAL-- */
               if (dst_tree_root + mask > comm_size)
 	      {
                   nprocs_completed = comm_size - my_tree_root - mask;
@@ -502,6 +518,7 @@ int MPIR_Bcast (
                       k--;
                   }
               }
+              /* --END EXPERIMENTAL-- */
               
               mask <<= 1;
               i++;
@@ -509,7 +526,7 @@ int MPIR_Bcast (
       } 
       else
       {
-          /* long-message allgather. use ring algorithm. */
+          /* long-message allgather or medium-size but non-power-of-two. use ring algorithm. */ 
 
           recvcnts = MPIU_Malloc(comm_size*sizeof(int));
 	  /* --BEGIN ERROR HANDLING-- */
