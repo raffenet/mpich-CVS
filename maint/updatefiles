@@ -27,6 +27,7 @@ do_bindings=yes
 do_f77=yes
 use_patched_autoonf=no
 do_build_configure=yes
+do_genstates=yes
 autoconfdir=""
 #
 # Extract the arguments intended for updatefiles.  Any others are
@@ -46,6 +47,13 @@ for arg in "$@" ; do
     -without-codecheck|--without-codecheck)
     ;;
 
+    -with-genstates|--with-genstates)
+    do_genstates=yes
+    ;;
+    -without-genstates|--without-genstates)
+    do_genstates=no
+    ;;
+ 
     -with-errmsgs|--with-errmsgs)
     do_geterrmsgs=yes
     ;;
@@ -339,6 +347,11 @@ fi
 
 # Run some of the simple codes
 #
+if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
+    echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
+    maint/genstates
+fi
+
 if [ $made_simplemake != "no" ] ; then
     # Check that only the first line was changed:
     rm -f .t1 .t2
