@@ -846,7 +846,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
-
+    MPIU_dbg_printf("ibu_wait\n");
     for (;;) 
     {
 	status = ib_completion_poll_us(
@@ -1065,6 +1065,7 @@ int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_SET_USER_PTR);
+    MPIU_dbg_printf("ibu_set_user_ptr\n");
     if (ibu == IBU_INVALID_QP)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_SET_USER_PTR);
@@ -1082,6 +1083,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READ);
+    MPIU_dbg_printf("ibu_post_read\n");
     ibu->read.total = 0;
     ibu->read.buffer = buf;
     ibu->read.bufflen = len;
@@ -1100,6 +1102,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READV);
+    MPIU_dbg_printf("ibu_post_readv\n");
     ibu->read.total = 0;
     /*ibu->read.iov = iov;*/
     memcpy(ibu->read.iov, iov, sizeof(IBU_IOV) * n);
@@ -1120,6 +1123,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
+    MPIU_dbg_printf("ibu_post_write\n");
     ibu->write.total = 0;
     ibu->write.buffer = buf;
     ibu->write.bufflen = len;
@@ -1137,6 +1141,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
+    MPIU_dbg_printf("ibu_post_writev\n");
     ibu->write.total = 0;
     /*ibu->write.iov = iov;*/
     memcpy(ibu->write.iov, iov, sizeof(IBU_IOV) * n);
