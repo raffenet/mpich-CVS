@@ -74,10 +74,14 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
-    if (!in_use) {
-	MPID_Errhandler_free( comm_ptr->errhandler );
+    if (comm_ptr->errhandler != NULL)
+    {
+	MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
+	if (!in_use) {
+	    MPID_Errhandler_free( comm_ptr->errhandler );
+	}
     }
+    
     MPIU_Object_add_ref(errhan_ptr);
     comm_ptr->errhandler = errhan_ptr;
     /* ... end of body of routine ... */
