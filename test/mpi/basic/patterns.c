@@ -1,6 +1,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef TRUE
 #define TRUE 1
@@ -129,9 +130,9 @@ int ForceUnexpectedTest(int rank)
     }
     else if (rank == 1)
     {
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request1);
+	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request2, &status);
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request2);
+	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
 	MPI_Wait(&request1, &status);
 	/*printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);*/
     }
@@ -143,6 +144,8 @@ int main(int argc, char *argv[])
 {
     int result;
     int size, rank;
+    int bDoAll = FALSE;
+    int reps;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -155,51 +158,98 @@ int main(int argc, char *argv[])
 	return 0;
     }
 
-    if (rank == 0)
+    if (rank > 1)
     {
-	printf("Single send/recv test\n");fflush(stdout);
-	result = SendRecvTest(rank, 1);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Send/recv twice test\n");fflush(stdout);
-	result = SendRecvTest(rank, 2);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Send/recv multiple test: 100\n");fflush(stdout);
-	result = SendRecvTest(rank, 100);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Isend/irecv wait test\n");fflush(stdout);
-	result = IsendIrecvTest(rank);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Isend,isend/irecv,irecv wait wait test\n");fflush(stdout);
-	result = IsendIrecvTest2(rank);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Out of order isend/irecv test\n");fflush(stdout);
-	result = OutOfOrderTest(rank);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-
-	printf("Force unexpected message test\n");fflush(stdout);
-	result = ForceUnexpectedTest(rank);
-	printf(result ? "SUCCESS\n" : "FAILURE\n");fflush(stdout);
-    }
-    else if (rank == 1)
-    {
-	SendRecvTest(rank, 1);
-	SendRecvTest(rank, 2);
-	SendRecvTest(rank, 100);
-	IsendIrecvTest(rank);
-	IsendIrecvTest2(rank);
-	OutOfOrderTest(rank);
-	ForceUnexpectedTest(rank);
+	printf("Rank %d, I am not participating.\n", rank);
+	fflush(stdout);
     }
     else
     {
-      printf("Rank %d, I am not participating.\n", rank);fflush(stdout);
-    }
+	if (argc < 2)
+	    bDoAll = TRUE;
 
+	if (bDoAll || (strcmp(argv[1], "sr") == 0))
+	{
+	    reps = 1;
+	    if (argc > 2)
+	    {
+		reps = atoi(argv[2]);
+		if (reps < 1)
+		    reps = 1;
+	    }
+	    if (rank == 0)
+	    {
+		printf("Send/recv test: %d reps\n", reps);
+		fflush(stdout);
+	    }
+	    result = SendRecvTest(rank, reps);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "isr") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Isend/irecv wait test\n");
+		fflush(stdout);
+	    }
+	    result = IsendIrecvTest(rank);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "iisr") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Isend,isend/irecv,irecv wait wait test\n");
+		fflush(stdout);
+	    }
+	    result = IsendIrecvTest2(rank);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "oo") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Out of order isend/irecv test\n");
+		fflush(stdout);
+	    }
+	    result = OutOfOrderTest(rank);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "unex") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Force unexpected message test\n");
+		fflush(stdout);
+	    }
+	    result = ForceUnexpectedTest(rank);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+    }
 
     MPI_Finalize();
     return 0;
