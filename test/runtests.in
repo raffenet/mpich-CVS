@@ -54,6 +54,15 @@ $remove_this_pgm = 0;
 $clean_pgms      = 1;
 
 #---------------------------------------------------------------------------
+# Get some arguments from the environment
+#   Currently, only the following are understood:
+#   VERBOSE
+#---------------------------------------------------------------------------
+if (defined($ENV{"VERBOSE"})) {
+    $verbose = 1;
+}
+
+#---------------------------------------------------------------------------
 # Process arguments and override any defaults
 #---------------------------------------------------------------------------
 foreach $_ (@ARGV) {
