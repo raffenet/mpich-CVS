@@ -104,8 +104,8 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 	    }
 
 	    MPIU_dbg_printf("el_sz = %d; el_ext = %d }\"];\n",
-			    loop_p->el_size,
-			    loop_p->el_extent);
+			    (int) loop_p->el_size,
+			    (int) loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"blockindexed |{ ct = %d; blk = %d; disps = ",
@@ -519,7 +519,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0],
 			    ints[1],
-			    aints[0]);
+			    (int) aints[0]);
 	    MPIDI_Datatype_contents_printf(*types,
 					   depth + 1,
 					   acount);
@@ -547,8 +547,8 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 		MPIU_dbg_printf("# %s  hindexed [%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
-				ints[i+1],
-				aints[i]);
+				(int) ints[i+1],
+				(int) aints[i]);
 		MPIDI_Datatype_contents_printf(*types,
 					       depth + 1,
 					       acount);
@@ -557,13 +557,13 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	case MPI_COMBINER_STRUCT:
 	    MPIU_dbg_printf("# %sstruct ct = %d:\n",
 			    MPIDI_Datatype_depth_spacing(depth),
-			    ints[0]);
+			    (int) ints[0]);
 	    for (i=0; i < acount && i < ints[0]; i++) {
 		MPIU_dbg_printf("# %s  struct[%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
-				ints[i+1],
-				aints[i]);
+				(int) ints[i+1],
+				(int) aints[i]);
 		MPIDI_Datatype_contents_printf(types[i],
 					       depth + 1,
 					       acount);
