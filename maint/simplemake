@@ -15,6 +15,7 @@ $am_a = "";          # set to _a for automake style input
 $smdir = "";         # directory containing simplemake
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
+$do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
 $root_tags = 1;
 $local_tags = 0;
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
@@ -26,7 +27,11 @@ $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
 	      'f' => '$(F77_COMPILE) -c $<',
 	     'cxx' => '$(CXX_COMPILE) -c $<' 
 	     );
-
+# Similarly, but for shared-library versions
+%extrules_sh = ( 'c' => '$(C_COMPILE_SHL) -c $<', 
+	      'f' => '$(F77_COMPILE_SHL) -c $<',
+	     'cxx' => '$(CXX_COMPILE_SHL) -c $<' 
+	     );
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
 %extdef = ( 'c'   => 'CC          = @CC@
@@ -39,6 +44,14 @@ F77_COMPILE = $(FC) $(FFLAGS)',
 CXXFLAGS    = @CXXFLAGS@
 CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 	   );
+# Similarly, but for shared-library versions
+%extdef_sh = ( 'c'   => 'CC_SHL      = @CC_SHL@
+C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS)',
+	    'f'   => 'FC_SHL      = @FC_SHL@
+F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
+	    'cxx' => 'CXX_SHL     = @CXX_SHL@
+CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
+	   );
 #
 # Rules to build programs (.o:)
 %progrules = ( 'c' => '$(C_LINK)',
@@ -49,7 +62,16 @@ CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 	      'cxx' => 'CXX_LINK    = $(CXX)',
 	      'f'   => 'F77_LINK    = $(FC)'
 	     );
-
+# Rules to build shared libraries (these are like programs
+# Question: Do we want a common rule or separate rules for each language?
+%shlibdefs = ( 'c' =>   'C_LINK_SHL  = @C_LINK_SHL@',
+	       'cxx' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
+	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@'
+	     );
+%shlibrules = ( 'c' => '$(C_LINK_SHL)',
+	       'cxx' => '$(CXX_LINK_SHL)',
+	       'f'   => '$(F77_LINK_SHL)'
+	      );
 #
 # Directories needed.  These are the prefix etc.  Many are needed only
 # at the top level, particularly for installation.  srcdir is needed only for
@@ -59,7 +81,9 @@ CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 	     'prefix'     => 'prefix      = @prefix@',
 	     'exec_prefix'=> 'exec_prefix = @exec_prefix@',
 	     'bindir'     => 'bindir      = @bindir@',
+	     'sbindir'    => 'sbindir     = @sbindir@',
 	     'libdir'     => 'libdir      = @libdir@',
+	     'includedir' => 'includedir  = @includedir@',
 	    );
 # etc.
 #
@@ -93,6 +117,9 @@ foreach $_ (@ARGV) {
     elsif (/-distrib/) {
 	# Turn off the maintenance targets in the distribution version
 	$maint_targets = 0;
+    }
+    elsif (/-shared/) {
+	$do_sharedlibs = 1;
     }
     elsif (/-vpath=?(.*)/) {
 	$val = $1;
@@ -155,6 +182,9 @@ sub ReadMfile {
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
 	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.a";
+	    if ($do_sharedlibs) {
+		$alltargets[$#alltargets+1] = "${libloc}lib$libname.so";
+	    }
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
 	    # Keep track of source files
@@ -257,6 +287,9 @@ sub WriteMfile {
 
     # Output the generated targets.  First, the libraries
     &TargetLibraries;
+    if ($do_sharedlibs) {
+	&TargetSharedLibraries;
+    }
 
     # Next, the programs
     &TargetPrograms;
@@ -285,6 +318,13 @@ sub DefaultRules {
     if (scalar(%libraries)) {
 	# Add ar, ranlib definitions if there are any library targets.
         print FD "AR          = \@AR\@\nRANLIB      = \@RANLIB\@\n";
+	if ($do_sharedlibs) {
+	    foreach $ext (keys(%ext_seen)) {
+		if (defined($shlibdefs{$ext})) {
+		    print FD "$shlibdefs{$ext}\n";
+		}
+	    }
+	}
     }
 
     # Directory definitions
@@ -324,6 +364,9 @@ sub DefaultRules {
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}\n";
 	}
+	if ($do_sharedlibs) { 
+	    print FD "$extdef_sh{$ext}\n";
+	}
     }
     print FD "\n";
 #    foreach $ext (keys(%pgmlinktypes)) {
@@ -340,6 +383,9 @@ sub DefaultRules {
     # given files.  Remove all default suffix rules
     if (scalar(%ext_seen)) {
 	$suffixes = ".o";
+	if ($do_sharedlibs) { 
+	    $suffixes .= " .lo";
+	}
     }
     foreach $ext (keys(%ext_seen)) {
 	$suffixes .= " .$ext";
@@ -352,6 +398,10 @@ sub DefaultRules {
     foreach $ext (keys(%ext_seen)) {
 	print FD ".$ext.o:\n";
 	print FD "\t$extrules{$ext}\n";
+	if ($do_sharedlibs) {
+	    print FD ".$ext.lo:\n";
+	    print FD "\t$extrules_sh{$ext}\n";
+	}
     }
 
     # Configure update targets
@@ -556,6 +606,7 @@ sub GetLibLoc {
     $libloc;
 }
 
+
 #
 # Look for autoconf directory variables that are used 
 sub LookForAutoconfDirs {
@@ -656,9 +707,6 @@ sub TargetLibraries {
 		print "Unknown extension $ext for $sourcefile\n";
 	    }
 	    
-#           $obj =~ s/\.cxx/\.o/;
-#    	    $obj =~ s/\.c/\.o/;
-#  	    $obj =~ s/\.f/\.o/;
             if (length($obj) + $linelen + 2 >= $maxline) {
 	        print FD "\\\n\t";
                 $linelen = 8;
@@ -678,6 +726,35 @@ sub TargetLibraries {
     }
 }
 
+sub TargetSharedLibraries {
+    foreach $lib (keys(%libraries)) {
+	$libloc = &GetLibLoc( $lib );
+        print FD "${libloc}lib$lib.so: ";
+        $linelen = length("${libloc}$lib.so: ");
+        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+            $obj = $sourcefile;
+            # Convert to object file
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    if (defined($extrules{$ext})) {
+		$obj =~ s/\.$ext/\.lo/g;
+	    }
+	    else {
+		print "Unknown extension $ext for $sourcefile\n";
+	    }
+	    
+            if (length($obj) + $linelen + 2 >= $maxline) {
+	        print FD "\\\n\t";
+                $linelen = 8;
+            }
+            print FD "$obj ";
+            $linelen += length($obj) + 1;
+        }
+        print FD "\n";
+        print FD "\t\${C_LINK_SHL} -o ${libloc}lib$lib.so \$?\n";
+    }
+}
+
 #
 # ===========================================================================
 sub TargetPrograms {
@@ -688,9 +765,14 @@ sub TargetPrograms {
 	foreach $sourcefile (split(/\s\s*/,$programs{$pgm})) {
             $obj = $sourcefile;
             # Convert to object file
-            $obj =~ s/\.cxx/\.o/;
-  	    $obj =~ s/\.c/\.o/;
-	    $obj =~ s/\.f/\.o/;
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    if (defined($extrules{$ext})) {
+		$obj =~ s/\.$ext/\.o/g;
+	    }
+	    else {
+		print "Unknown extension $ext for $sourcefile\n";
+	    }
             if (length($obj) + $linelen + 2 >= $maxline) {
 	        print FD "\\\n\t";
                 $linelen = 8;
@@ -757,14 +839,12 @@ sub TargetTags {
 #   Including common headers (e.g., all file.sm's get a common header of
 #       variables defined by configure.  This is cleaner than the automake 
 #       approach of including *every* AC_SUBST value).
-#   Support for dependencies
 #   Support for shared libraries.  Unlike automake, we will not require
 #       separate rules (automake uses lib_LTLIBRARIES and la extensions)
 #       for shared library support.
 #   Dependencies on the file.sm's (e.g., rerun simplemake when source
 #   Makefile.sm's change, including updating the Makefile from the
 #       Makefile.in) 
-#   TAGS (partially done)
 #   Handling files to be installed (e.g., automake's sbin_PROGRAMS = ...)
 #      (automake understands <dir>_PROGRAMS and <dir>_LIBRARIES)
 #   LDADD (automake has target_LDADD; we want a general LD_ADD as well)
@@ -792,6 +872,19 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     -include=LIST    - CPP style list of include directories (e.g., -Ia -Ib)\
                        These define INCLUDES unless a Makefile.sm defines\
                        that value\n";
+    print STDERR "\
+    Recognized target forms\
+    libname_a_SOURCES = source files for library \"name\"\
+    libname_a_DIR     = location of directory into which lib \"name\" goes\
+    SUBDIRS = blank separated list of subdirectories to process.  Use \".\"\
+              to control the order in which the current directory is processed\
+    EXTRA_PROGRAMS = names of programs to define rules for but not to build\
+                     by default\
+    name_SOURCES = source files for program \"name\"\
+    name_LDADD   = extra linker flags for building program \"name\"\
+\
+    simplemake also allows all usual Makefile commands, including variable\
+    assignment and targets.\n";
 }
 
 #

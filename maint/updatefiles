@@ -9,9 +9,10 @@ if [ ! -d confdb ] ; then
 fi
 #
 # Create the Makefile.in files
+otherargs="$@"
 maint/simplemake -common=maint/makedefs \
     -autoconf="-l ROOTDIR/confdb" \
-    -libdir='${MPILIBNAME}'=ROOTDIR/lib \
+    -libdir='${MPILIBNAME}'=ROOTDIR/lib $otherargs \
     Makefile.sm
 #
 # Create the configure files and run autoheader
