@@ -546,6 +546,8 @@ with MPI_Alloc_mem.
 **shm_read_progress:shared memory read progress failed
 **shmconnect_getmem:failed to allocate shared memory for a write queue
 **shmwrite:shared memory write failed
+**ssmwrite:sock/shared memory write failed
+**ssmwritev:sock/shared memory writev failed
 **attach_to_mem %d:attach to shared memory returned error %d
 **post_connect %s:%s failed in VC_post_connect
 **mqshm_create:failed to create a shared memory message queue
