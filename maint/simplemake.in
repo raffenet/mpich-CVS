@@ -215,6 +215,8 @@ F90_COMPILE = $(F90) $(F90FLAGS) $(F90INCLUDES)',
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
 	    'f:lo'   => 'FC_SHL      = @FC_SHL@
 F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
+	    'f90:lo'   => 'F90_SHL      = @F90_SHL@
+F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS)',
 	    'cxx:lo' => 'CXX_SHL     = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	    'cpp:lo' => 'CXX_SHL     = @CXX_SHL@
@@ -244,11 +246,13 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	       'cxx' => 'CXX_LINK_SHL    = @CXX_LINK_SHL@',
 	       'cpp' => 'CXX_LINK_SHL    = @CXX_LINK_SHL@',
 	       'f'   => 'F77_LINK_SHL    = @F77_LINK_SHL@',
+	       'f90' => 'F90_LINK_SHL    = @F90_LINK_SHL@',
 	     );
 #%shlibrules = ( 'c' => '$(C_LINK_SHL) $(LDFLAGS)',
 #	       'cxx' => '$(CXX_LINK_SHL) $(LDFLAGS)',
 #	       'cpp' => '$(CXX_LINK_SHL) $(LDFLAGS)',
 #	       'f'   => '$(F77_LINK_SHL) $(LDFLAGS)',
+#	       'f90' => '$(F90_LINK_SHL) $(LDFLAGS)',
 #	      );
 
 #
@@ -592,7 +596,7 @@ sub ReadMfile {
 	    &SaveSrcNames( $libsource );
 	    # We need to include .lo as a necessary suffix.
         }
-        elsif (/^lib([@\${}\(\)\w-]*)_a_DIR\s*=\s*(.*)\s*$/) {
+        elsif (/^lib([@\${}\(\)\w-]*)_a_DIR\s*=\s*(\S+)\s*$/) {
 	    # This is an extension over automake.  It makes it easy
 	    # to modify a library in a different directory
 	    # Add a trailing / because this way we can unconditionally
@@ -1140,6 +1144,8 @@ sub DefaultRules {
     # To make it easier to build programs, conditionally add a 
     # default "build program" rule from the seen sourcecode extensions
     foreach $ext (keys(%ext_seen)) {
+	# Skip any rules for .o files that we've seen
+	if ($ext eq "o") { next; }
 	print FD ".$ext.o:$newline";
 	if ($found_profilelib) {
 	    # Use a special rule when building the non-profile-lib version
@@ -1863,6 +1869,9 @@ sub TargetAll {
 		print FD "\t    \${MAKE} $shlib ; \\\n";
 	    }
 	    print FD "\tfi\n";
+	}
+	else {
+	    print_make_endline( FD );
 	}
 	&TargetPostamble( "all" );
     }
