@@ -49,6 +49,7 @@ int smpd_get_user_data(char *key, char *value, int value_len)
     RegCloseKey(tkey);
     return SMPD_SUCCESS;
 #else
+    return smpd_get_user_data_default(key, value, value_len);
 #endif
 }
 
@@ -108,6 +109,6 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
     RegCloseKey(tkey);
     return SMPD_SUCCESS;
 #else
-    return SMPD_FAIL;
+    return smpd_get_smpd_data_default(key, value, value_len);
 #endif
 }
