@@ -546,3 +546,28 @@ PMI_KVS_iter_next
 
 PMI_Spawn_multiple
 PMI_Args_to_info
+
+-------------------------------------------------
+
+PMI functions - winmpd implementation
+
+PMI_Init,done,,,,David
+PMI_Get_size,done,,,,David
+PMI_Get_rank,done,,,,David
+PMI_Barrier,done,,,,David
+PMI_Finalize,done,,,,David
+
+PMI_KVS_Get_my_name,done,,,,David
+PMI_KVS_Get_name_length_max,done,,,,David
+PMI_KVS_Get_key_length_max,done,,,,David
+PMI_KVS_Get_value_length_max,done,,,,David
+PMI_KVS_Create,done,,,,David
+PMI_KVS_Destroy,done,,,,David
+PMI_KVS_Put,done,,,,David
+PMI_KVS_Commit,done,,,,David
+PMI_KVS_Get,done,,,,David
+PMI_KVS_iter_first,done,,,,David
+PMI_KVS_iter_next,done,,,,David
+
+PMI_Spawn_multiple,done,,,,David
+PMI_Args_to_info,done,,,David
