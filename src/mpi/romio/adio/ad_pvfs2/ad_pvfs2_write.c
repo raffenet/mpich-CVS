@@ -207,7 +207,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 			    PVFS_BYTE, &file_req);
 		    if (err_flag < 0) break;
 		    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 
-			    off, buf, mem_req, pvfs_fs->credentials, &resp_io);
+			    off, PVFS_BOTTOM, mem_req, 
+			    pvfs_fs->credentials, &resp_io);
 		  
 		    /* in the case of error or the last read list call, 
 		     * leave here */
@@ -778,7 +779,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
 	    /* offset will be expressed in memory and file datatypes */
 	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
-		    buf, mem_req, pvfs_fs->credentials, &resp_io);
+		    PVFS_BOTTOM, mem_req, pvfs_fs->credentials, &resp_io);
 	    size_wrote += new_buffer_write;
 	    start_k = k;
 	    start_j = j;
