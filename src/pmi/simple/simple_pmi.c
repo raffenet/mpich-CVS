@@ -88,7 +88,7 @@ int PMI_Init( int *spawned )
 	/* Not yet implemented.  Connect to the indicated port (in
 	   format hostname:portnumber) and get the fd for the socket */
 
-	PMI_debug = 1;
+	PMI_debug = 0;
 	
 	/* Split p into host and port */
 	pn = strchr( p, ':' );
