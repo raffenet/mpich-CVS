@@ -95,7 +95,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		goto fn_exit;
 	    }
 #ifdef MPICH_DBG_OUTPUT
-	    /*assert(num_bytes == 0 || num_bytes == sizeof(info));*/
+	    /*MPIU_Assert(num_bytes == 0 || num_bytes == sizeof(info));*/
 	    if (num_bytes != 0 && num_bytes != sizeof(info))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);

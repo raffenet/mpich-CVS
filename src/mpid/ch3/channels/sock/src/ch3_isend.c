@@ -17,7 +17,7 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
     memcpy(&sreq->ch.pkt, hdr, hdr_sz);
     MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
     */
-    assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
     sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb;
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;

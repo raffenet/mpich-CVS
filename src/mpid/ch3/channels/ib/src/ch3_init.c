@@ -261,9 +261,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	for (p = 0; p < pg_size; p++)
 	{
 	    mpi_errno = snprintf(key, key_max_sz, "P%d-lid", p);
-	    assert(mpi_errno > -1 && mpi_errno < key_max_sz);
+	    MPIU_Assert(mpi_errno > -1 && mpi_errno < key_max_sz);
 	    pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	    assert(pmi_errno == 0);
+	    MPIU_Assert(pmi_errno == 0);
 	    
 	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
 	    fflush(stdout);

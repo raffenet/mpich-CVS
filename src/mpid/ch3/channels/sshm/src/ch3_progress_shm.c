@@ -93,7 +93,7 @@ int handle_shm_read(MPIDI_VC_t *vc, int nb)
 	else
 	{
 #ifdef MPICH_DBG_OUTPUT
-	    /*assert(req->ch.iov_offset < req->dev.iov_count);*/
+	    /*MPIU_Assert(req->ch.iov_offset < req->dev.iov_count);*/
 	    if (req->ch.iov_offset >= req->dev.iov_count)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
@@ -137,7 +137,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 	    return mpi_errno;
 	}
-	/*assert(req->ch.iov_offset < req->dev.iov_count);*/
+	/*MPIU_Assert(req->ch.iov_offset < req->dev.iov_count);*/
 #endif
 	/* Check here or inside shm_writev?
 	if (vc->ch.write_shmq->packet[vc->ch.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
@@ -176,7 +176,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 	    else
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete", nb));
-		assert(req->ch.iov_offset < req->dev.iov_count);
+		MPIU_Assert(req->ch.iov_offset < req->dev.iov_count);
 		break;
 	    }
 	}

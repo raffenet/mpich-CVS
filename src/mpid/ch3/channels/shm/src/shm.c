@@ -327,7 +327,7 @@ static int shmi_read_unex(MPIDI_VC_t *vc_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_SHMI_READ_UNEX);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-    assert(vc_ptr->ch.unex_list);
+    MPIU_Assert(vc_ptr->ch.unex_list);
 
     /* copy the received data */
     while (vc_ptr->ch.unex_list)
@@ -348,7 +348,7 @@ static int shmi_read_unex(MPIDI_VC_t *vc_ptr)
 	else
 	{
 	    /* put the receive packet back in the pool */
-	    assert(vc_ptr->ch.unex_list->pkt_ptr != NULL);
+	    MPIU_Assert(vc_ptr->ch.unex_list->pkt_ptr != NULL);
 	    vc_ptr->ch.unex_list->pkt_ptr->cur_pos = 
 		vc_ptr->ch.unex_list->pkt_ptr->data;
 	    vc_ptr->ch.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
@@ -416,7 +416,7 @@ int shmi_readv_unex(MPIDI_VC_t *vc_ptr)
 	if (vc_ptr->ch.unex_list->length == 0)
 	{
 	    /* put the receive packet back in the pool */
-	    assert(vc_ptr->ch.unex_list->pkt_ptr != NULL);
+	    MPIU_Assert(vc_ptr->ch.unex_list->pkt_ptr != NULL);
 	    vc_ptr->ch.unex_list->pkt_ptr->cur_pos = vc_ptr->ch.unex_list->pkt_ptr->data;
 	    vc_ptr->ch.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	    /* MPIU_Free the unexpected data node */

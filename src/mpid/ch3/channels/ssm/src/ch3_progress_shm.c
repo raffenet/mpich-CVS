@@ -178,7 +178,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 	    else
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete", nb));
-		assert(req->ch.iov_offset < req->dev.iov_count);
+		MPIU_Assert(req->ch.iov_offset < req->dev.iov_count);
 		break;
 	    }
 	}

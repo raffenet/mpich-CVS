@@ -24,7 +24,7 @@
     } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
-    /*assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t));*/ \
+    /*MPIU_Assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t));*/ \
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
     sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \

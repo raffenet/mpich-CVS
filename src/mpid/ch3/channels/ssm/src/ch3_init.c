@@ -528,9 +528,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	for (p = 0; p < pg_size; p++)
 	{
 	    rc = snprintf(key, key_max_sz, "P%d-businesscard", p);
-	    assert(rc > -1 && rc < key_max_sz);
+	    MPIU_Assert(rc > -1 && rc < key_max_sz);
 	    rc = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	    assert(rc == 0);
+	    MPIU_Assert(rc == 0);
 
 	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	}

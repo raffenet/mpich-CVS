@@ -37,7 +37,7 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
 	memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	*/
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
+	MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
     }

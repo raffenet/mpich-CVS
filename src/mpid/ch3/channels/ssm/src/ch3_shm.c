@@ -123,7 +123,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	MPID_WRITE_BARRIER();
 	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 #ifdef MPICH_DBG_OUTPUT
-	/*assert(index == vc->ch.write_shmq->tail_index);*/
+	/*MPIU_Assert(index == vc->ch.write_shmq->tail_index);*/
 	if (index != vc->ch.write_shmq->tail_index)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq_index", "**shmq_index %d %d", index, vc->ch.write_shmq->tail_index);
@@ -376,7 +376,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 #ifdef MPICH_DBG_OUTPUT
-		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    /*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
 		    if (&shm_ptr->packet[index] != pkt_ptr)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
@@ -432,7 +432,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 #ifdef MPICH_DBG_OUTPUT
-		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    /*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
 		    if (&shm_ptr->packet[index] != pkt_ptr)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);

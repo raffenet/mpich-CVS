@@ -14,7 +14,7 @@
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
-    /*assert(sreq != NULL);*/ \
+    /*MPIU_Assert(sreq != NULL);*/ \
     if (sreq == NULL) \
     { \
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
@@ -29,7 +29,7 @@
     if (offset == 0) \
     { \
 	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
 	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
     } \

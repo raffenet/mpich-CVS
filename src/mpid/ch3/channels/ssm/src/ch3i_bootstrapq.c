@@ -191,7 +191,7 @@ void MessageQueueThreadFn(MPIDI_CH3I_BootstrapQ_struct *queue)
     queue->hMessageArrivedEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     queue->hMutex = CreateMutex(NULL, FALSE, NULL);
 
-    /*assert(s_queue == NULL);*/ /* we can only handle one message queue */
+    /*MPIU_Assert(s_queue == NULL);*/ /* we can only handle one message queue */
     if (s_queue != NULL)
     {
 	MPIU_Error_printf("Error: more than one message queue created\n");
@@ -880,7 +880,7 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
 
 #ifdef MPICH_DBG_OUTPUT
-    /*assert(length <= BOOTSTRAP_MAX_MSG_SIZE);*/
+    /*MPIU_Assert(length <= BOOTSTRAP_MAX_MSG_SIZE);*/
     if (length > BOOTSTRAP_MAX_MSG_SIZE)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
@@ -977,7 +977,7 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 
 #ifdef MPICH_DBG_OUTPUT
-    /*assert(length <= BOOTSTRAP_MAX_MSG_SIZE);*/
+    /*MPIU_Assert(length <= BOOTSTRAP_MAX_MSG_SIZE);*/
     if (length > BOOTSTRAP_MAX_MSG_SIZE)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,

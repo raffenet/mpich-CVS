@@ -419,8 +419,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    {
 			conn->state = CONN_STATE_CONNECTED;
 			conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
-			assert(conn->vc->ch.conn == conn);
-			assert(conn->vc->ch.sock == conn->sock);
+			MPIU_Assert(conn->vc->ch.conn == conn);
+			MPIU_Assert(conn->vc->ch.sock == conn->sock);
 			    
 			mpi_errno = connection_post_recv_pkt(conn);
 			if (mpi_errno != MPI_SUCCESS)
