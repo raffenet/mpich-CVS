@@ -20,6 +20,7 @@
 #define USE_GETTIMEOFDAY 3
 #define USE_LINUX86_COUNTER 4
 #define USE_LINUXALPHA_COUNTER 5
+#define USE_QUERYPERFORMANCECOUNTER 6
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
@@ -31,6 +32,9 @@
 #include <sys/time.h>
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
+#elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
+#include <winsock2.h>
+#include <windows.h>
 #endif
 
 /* Define a time stamp */
