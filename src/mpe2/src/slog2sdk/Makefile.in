@@ -1,0 +1,50 @@
+MAKE   = @MAKE@
+RM     = @RM@
+SHELL  = /bin/sh
+
+# The empty string, "", in PKGS is needed to avoid /bin/sh from complaining
+# when @PKGS@ is/are really empty.
+PKGS   = "" @PKGS@
+
+all:
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          echo "Making $$pkg" ; \
+	          ( cd $$pkg ; $(MAKE) ) ; \
+	      fi ; \
+	  done
+
+install:
+	@if [ -n "$(PREFIX)" ] ; then \
+	     ./sbin/install-package -prefix=$(PREFIX) ; \
+	 else \
+	     ./sbin/install-package ; \
+	 fi
+
+uninstall:
+	@-./sbin/uninstall-package
+
+clean:
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg ; $(MAKE) clean ) ; \
+	      fi ; \
+	  done
+
+rmprog:
+	@-for file in bin/* sbin/* ; do \
+	      suffix="`echo $$file|sed -e 's%\.% %'|awk '{print $$NF}' -`" ; \
+	      if [ "X$$suffix" != "Xin" ] ; then \
+	          $(RM) $$file ; \
+	      fi ; \
+	  done
+
+distclean: rmprog
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg ; $(MAKE) distclean ) ; \
+	      fi ; \
+	  done
+	@-if [ -d doc/tex ] ; then cd doc/tex; $(MAKE) distclean ; fi
+	@-$(RM) sbin/*
+	@-$(RM) config.log config.status

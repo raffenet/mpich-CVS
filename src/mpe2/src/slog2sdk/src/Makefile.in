@@ -1,0 +1,30 @@
+MAKE=@MAKE@
+SHELL=/bin/sh
+
+TARGETS = base/io base/topology base/drawable \
+          logformat/clog logformat/clogTOdrawable \
+          logformat/trace logformat/slog2 \
+          viewer/common viewer/legends viewer/timelines \
+          viewer/preview viewer/first
+
+#          viewer/swingextn viewer/timelines
+
+all:
+	@for dir in $(TARGETS) ; do \
+	    ( cd $$dir ; $(MAKE) ) ; \
+	 done
+
+clean:
+	@for dir in $(TARGETS) ; do \
+	    ( cd $$dir ; $(MAKE) clean ) ; \
+	 done
+
+rmlib:
+	@for dir in $(TARGETS) ; do \
+	    ( cd $$dir ; $(MAKE) rmlib ) ; \
+	 done
+
+realclean:
+	@for dir in $(TARGETS) ; do \
+	    ( cd $$dir ; $(MAKE) realclean ) ; \
+	 done
