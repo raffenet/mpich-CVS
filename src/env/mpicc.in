@@ -37,7 +37,7 @@ MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
 #
-mpilibs=-=l$MPILIBNAME
+mpilibs=-l$MPILIBNAME
 #
 # Concatenate the user flags with the ones needed by MPI
 CFLAGS="$CFLAGS $MPI_CFLAGS"
