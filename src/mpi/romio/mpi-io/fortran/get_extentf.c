@@ -105,10 +105,10 @@ void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Fint *datatype,
 
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Datatype *datatype,
+void FORT_CALL mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Datatype *datatype,
 			       MPI_Fint *extent, int *ierr );
 
-void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Datatype *datatype,
+void FORT_CALL mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Datatype *datatype,
                              MPI_Fint *extent, int *ierr )
 {
     MPI_File fh_c;

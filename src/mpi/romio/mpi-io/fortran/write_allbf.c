@@ -100,9 +100,9 @@ void mpi_file_write_all_begin_(MPI_Fint *fh,void *buf,int *count,
 }
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_write_all_begin_(MPI_Fint *fh,void *buf,int *count,
+void FORT_CALL mpi_file_write_all_begin_(MPI_Fint *fh,void *buf,int *count,
 			       MPI_Datatype *datatype, int *ierr );
-void mpi_file_write_all_begin_(MPI_Fint *fh,void *buf,int *count,
+void FORT_CALL mpi_file_write_all_begin_(MPI_Fint *fh,void *buf,int *count,
                        MPI_Datatype *datatype, int *ierr ){
     MPI_File fh_c;
     

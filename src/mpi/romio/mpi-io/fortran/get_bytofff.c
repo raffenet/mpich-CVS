@@ -85,9 +85,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-void mpi_file_get_byte_offset_(MPI_Fint *fh,MPI_Offset *offset,MPI_Offset *disp, int *ierr );
+void FORT_CALL mpi_file_get_byte_offset_(MPI_Fint *fh,MPI_Offset *offset,MPI_Offset *disp, int *ierr );
 
-void mpi_file_get_byte_offset_(MPI_Fint *fh,MPI_Offset *offset,MPI_Offset *disp, int *ierr )
+void FORT_CALL mpi_file_get_byte_offset_(MPI_Fint *fh,MPI_Offset *offset,MPI_Offset *disp, int *ierr )
 {
     MPI_File fh_c;
     

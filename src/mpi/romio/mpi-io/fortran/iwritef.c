@@ -104,10 +104,10 @@ void mpi_file_iwrite_(MPI_Fint *fh,void *buf,int *count,
 }
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_iwrite_(MPI_Fint *fh,void *buf,int *count,
+void FORT_CALL mpi_file_iwrite_(MPI_Fint *fh,void *buf,int *count,
 		      MPI_Datatype *datatype,MPI_Fint *request, int *ierr );
 
-void mpi_file_iwrite_(MPI_Fint *fh,void *buf,int *count,
+void FORT_CALL mpi_file_iwrite_(MPI_Fint *fh,void *buf,int *count,
                     MPI_Datatype *datatype,MPI_Fint *request, int *ierr )
 {
     MPI_File fh_c;

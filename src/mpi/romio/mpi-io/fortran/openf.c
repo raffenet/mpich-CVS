@@ -136,11 +136,19 @@ void mpi_file_open_(MPI_Comm *comm,_fcd filename_fcd,int *amode,
     int str_len = _fcdlen(filename_fcd);
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
+/*
+void FORT_CALL mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
 		    MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len );
 
-void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
+void FORT_CALL mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )
+*/
+/* Prototype to keep compiler happy */
+void FORT_CALL mpi_file_open_(MPI_Comm *comm,char *filename FORT_MIXED_LEN_DECL,int *amode,
+		    MPI_Fint *info, MPI_Fint *fh, int *ierr FORT_END_LEN_DECL);
+
+void FORT_CALL mpi_file_open_(MPI_Comm *comm,char *filename FORT_MIXED_LEN(str_len),int *amode,
+                  MPI_Fint *info, MPI_Fint *fh, int *ierr FORT_END_LEN(str_len))
 {
 #endif
     char *newfname;

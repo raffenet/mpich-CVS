@@ -85,10 +85,10 @@
 #endif
 
 /* Prototype to keep compiler happy */
-void mpi_file_read_all_end_(MPI_Fint *fh,void *buf,MPI_Status *status, 
+void FORT_CALL mpi_file_read_all_end_(MPI_Fint *fh,void *buf,MPI_Status *status, 
 			    int *ierr );
 
-void mpi_file_read_all_end_(MPI_Fint *fh,void *buf,MPI_Status *status, int *ierr )
+void FORT_CALL mpi_file_read_all_end_(MPI_Fint *fh,void *buf,MPI_Status *status, int *ierr )
 {
     MPI_File fh_c;
     

@@ -99,9 +99,9 @@ void mpi_file_get_group_(MPI_Fint *fh,MPI_Fint *group, int *ierr )
 }
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr );
+void FORT_CALL mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr );
 
-void mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr )
+void FORT_CALL mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr )
 {
     MPI_File fh_c;
     

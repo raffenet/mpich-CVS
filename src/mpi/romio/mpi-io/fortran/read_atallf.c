@@ -104,11 +104,11 @@ void mpi_file_read_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
 }
 #else
 /* Prototype to keep compiler happy */
-void mpi_file_read_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+void FORT_CALL mpi_file_read_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                          int *count,MPI_Datatype *datatype,
 			   MPI_Status *status, int *ierr );
 
-void mpi_file_read_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+void FORT_CALL mpi_file_read_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                          int *count,MPI_Datatype *datatype,
                          MPI_Status *status, int *ierr )
 {

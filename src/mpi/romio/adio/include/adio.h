@@ -26,6 +26,26 @@
 #define _POSIX_SOURCE
 #endif
 
+#ifdef USE_FORT_STDCALL
+#define FORT_CALL __stdcall
+#elif defined (USE_FORT_CDECL)
+#define FORT_CALL __cdecl
+#else
+#define FORT_CALL
+#endif
+
+#ifdef USE_FORT_MIXED_STR_LEN
+#define FORT_MIXED_LEN_DECL   , int
+#define FORT_END_LEN_DECL
+#define FORT_MIXED_LEN(a)     , int a
+#define FORT_END_LEN(a)
+#else
+#define FORT_MIXED_LEN_DECL
+#define FORT_END_LEN_DECL     , int
+#define FORT_MIXED_LEN(a)
+#define FORT_END_LEN(a)       , int a
+#endif
+
 #include "romioconf.h"
 
 #include "mpi.h"
