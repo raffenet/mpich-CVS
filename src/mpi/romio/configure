@@ -928,6 +928,81 @@ test -n "$F77" || F77="f77"
     else 
                 CFLAGS="$CFLAGS -O"
     fi
+    # Check that aio is available (many systems appear to have aio
+    # either installed improperly or turned off).
+    # The test is the following: if not cross compiling, try to run a 
+    # program that includes a *reference* to aio_write but does not call it
+    # If the libraries are not set up correctly, then this will fail.
+    if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking whether aio routines can be used""... $ac_c"
+else
+echo $ac_n "checking whether aio routines can be used""... $ac_c" 1>&1
+fi
+    echo checking whether cross-compiling
+# If we cannot run a trivial program, we must be cross compiling.
+cat > conftest.c <<EOF
+#include "confdefs.h"
+main(){exit(0);}
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  :
+else
+  cross_compiling=1
+fi
+rm -fr conftest*
+
+if test -n "$cross_compiling"
+then
+  aio_runs=unknown
+else
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main( int argc, char **argv )
+{
+    if (argc > 10) aio_write();
+    return 0;
+}
+
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  aio_runs=yes
+
+else
+  aio_runs=no
+fi
+fi
+rm -fr conftest*;    
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$aio_runs"
+else
+echo "$ac_t""$aio_runs" 1>&1
+fi						 
+    if test "$enable_aio" = "yes" -a "$aio_runs" = "no" ; then
+        enable_aio=no
+    fi
     if test "$enable_aio" = "no" ; then
         
 {

@@ -607,6 +607,23 @@ if test -n "$arch_rs6000"; then
         dnl CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
         CFLAGS="$CFLAGS -O"
     fi
+    # Check that aio is available (many systems appear to have aio
+    # either installed improperly or turned off).
+    # The test is the following: if not cross compiling, try to run a 
+    # program that includes a *reference* to aio_write but does not call it
+    # If the libraries are not set up correctly, then this will fail.
+    AC_MSG_CHECKING([whether aio routines can be used])
+    AC_TEST_PROGRAM([
+int main( int argc, char **argv )
+{
+    if (argc > 10) aio_write();
+    return 0;
+}
+],aio_runs=yes,aio_runs=no,aio_runs=unknown);    
+    AC_MSG_RESULT($aio_runs)						 
+    if test "$enable_aio" = "yes" -a "$aio_runs" = "no" ; then
+        enable_aio=no
+    fi
     if test "$enable_aio" = "no" ; then
         AC_DEFINE(NO_AIO)
     else
