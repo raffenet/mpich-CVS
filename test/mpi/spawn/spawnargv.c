@@ -101,8 +101,6 @@ int main( int argc, char *argv[] )
 	MTest_Finalize( errs );
     }
 
-    /* FIXME: this sleep should not be required */
-    sleep(5);
     MPI_Finalize();
     return 0;
 }
