@@ -129,6 +129,13 @@ for arg in "$@" ; do
     # Pass this argument to the compiler as well.
     echo "mpicc for $MPIVERSION"
     ;;
+    -profile=*)
+    # Pass the name of a profiling configuration.  As
+    # a special case, lib<name>.so or lib<name>.la may be used
+    # if the library is in $libdir
+    profConf=`echo A$arg | sed -e 's/A-profile=//g'`
+    # Loading the profConf file is handled below
+    ;;
 	# -help
     -help)
     ;;
@@ -163,6 +170,27 @@ fi
 # Concatenate the user flags with the ones needed by MPI
 CFLAGS="$CFLAGS $MPI_CFLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
+#
+# Handle the case of a profile switch
+if [ -n "$profConf" ] ; then
+    if [ -s "$libdir/lib$profConf.a" -o -s "$libdir/lib$profConf.so" ] ; then
+	mpilibs=-l$profConf $mpilibs"
+    elif [ -s "$sysconfdir/$profConf.conf" ] ; then
+	. "$sysconfdir/$profConf.conf
+	if [ -n "$PROFILE_INCPATHS" ] ; then
+	    CFLAGS="$PROFILE_INCPATHS $CFLAGS"
+        fi
+        if [ -n "$PROFILE_PRELIB" ] ; then
+	    mpilibs="$PROFILE_PRELIB $mpilibs"
+        fi
+        if [ -n "$PROFILE_POSTLIB" ] ; then
+	    mpilibs="$mpilibs $PROFILE_POSTLIB"
+        fi
+    else
+        echo "Profiling configuration file $profConf.conf not found in $sysconfdir"
+    fi
+fi
+
 # -----------------------------------------------------------------------
 #
 # A temporary statement to invoke the compiler

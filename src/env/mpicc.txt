@@ -25,6 +25,8 @@
 .  -link_info - Show the steps for linking a program.  This optoin 
                 can be used to see what options and libraries are used by
                 mpicc.
+.  -profile=name - Use the MPI profiling given by name.  See below for
+                details
 .  -echo      - Show exactly what this program is doing.
                 This option should normally not be used.
 -  others     - are passed to the compiler or linker.  For example, '-c'
@@ -65,6 +67,36 @@ Combining compilation and linking in a single command
    mpicc -o foo foo.c
 .ve
 is a convenient way to build simple programs.
+
+ Selecting a Profiling Library:
+ The '-profile=name' argument allows you to specify an MPI profiling
+ library to be used.  'name' can have two forms:
+.vb
+ A library in the same directory as the MPI library 
+ The name of a profile configuration file - 
+.ve
+ If 'name' is a library, then this library is included before the MPI 
+ library.  This allows the simple use of libraries that make use of the
+ MPI profiling interface and that are installed in the same directory as 
+ the MPI library.
+
+ If 'name.conf' is the name of a file in the sysconfdir directory, then this
+ is read and may define the following variables:
++ PROFILE_PRELIB - Libraries (and paths) to include before the MPI library
+. PROFILE_POSTLIB - Libraries to include after the MPI library
+- PROFILE_INCPATHS - C preprocessor arguments for any include files
+ For example, to add '/usr/local/myprof/include' to the include path and
+ the library 'libmyprof.a' in '/usr/local/myprof/lib' to the link step, 
+ you could create the file 'myprof.conf' with the lines
+
+.vb
+    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof'
+    PRFILE_INCPATHS="-I/usr/local/myprof/include"
+.ve
+ and place it in the sysconfdir directory (this directory is set at
+ configure time when MPICH is built).  Then using the command-line 
+ argument '-profile=myprof' will cause these 
+ definitions to be added to the relevant compile commands.
 
 .seealso: mpif77, mpicxx, mpif90, mpiexec
 D*/
