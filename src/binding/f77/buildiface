@@ -223,12 +223,34 @@ foreach $_ (@ARGV) {
 #    'Reduce_scatter' => '1:2', 'Reduce_scatter-1' => 'in:bufptr', 
 #		  'Reduce_scatter-2' => 'in:bufptr',
 #    'Scan' => '1:2', 'Scan-1' => 'in:bufptr', 'Scan-2' => 'in:bufptr',
+    'Add_error_string' => '2', 'Add_error_string-2' => 'in:addnull',
     'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array:*v2', 
     'Cart_create-5' => 'in:logical', 
     'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array:*v2',
+    'Comm_accept' => '1', 'Comm_accept-1' => 'in:addnull',
+    'Comm_connect' => '1', 'Comm_connect-1' => 'in:addnull',
+    'Comm_get_name' => '2', 'Comm_get_name-2' => 'out:blankpad',
+    'Comm_set_name' => '2', 'Comm_set_name-2' => 'in:addnull',
+    'Comm_spawn' => '1', 'Comm_spawn-1' => 'in:addnull', # really needs 2 args
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
     'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
+    'Info_get' => '2:4:5', 'Info_get-2' => 'in:addnull',
+		  'Info_get-4' => 'out:blankpad',
+		  'Info_get-5' => 'out:logical',
+    'Info_set' => '2:3', 'Info_set-2' => 'in:addnull', 
+		  'Info_set-3' => 'in:addnull',
+    'Info_get_nthkey' => '3', 'Info_get_nthkey-3' => 'in:addnull',
+    'Info_get_valuelen' => '2:4', 'Info_get_valuelen-2' => 'in:addnull',
+		  'Info_get_valuelen-4' => 'out:logical',
+    'Lookup_name' => '1:3', 'Lookup_name-1' => 'in:addnull', 
+		  'Lookup_name-3' => 'out:blankpad',
+    'Open_port' => '2', 'Open_port-2' => 'in:addnull',
+    'Pack_external' => '1', 'Pack_external-1' => 'in:addnull',
+    'Pack_external_size' => '1', 'Pack_external_size-1' => 'in:addnull',
+    'Publish_name' => '1:3', 'Publish_name-1' => 'in:addnull',
+		  'Publish_name-3' => 'in:addnull',
+#    'Comm_spawn_multiple => '2:3' are arrays and arrays of arrays
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
     'Iprobe' => '4', 'Iprobe-4' => 'out:logical',
 #    'Send' => '1', 'Send-1' => 'in:bufptr',
@@ -254,7 +276,13 @@ foreach $_ (@ARGV) {
     'Testany' => '3:4', 'Testany-4' => 'out:logical',
     'Testany-3' => 'out:index',
     'Testsome' => '4', 'Testsome-4' => 'out:index_array:*v3',
+    'Type_get_name' => '2', 'Type_get_name-2' => 'out:blankpad',
     'Type_set_name' => '2', 'Type_set_name-2' => 'in:addnull',
+    'Unpack_external' => '1', 'Unpack_external-1' => 'in:addnull',
+    'Unpublish_name' => '1:3', 'Unpublish_name-1' => 'in:addnull',
+		  'Unpublish_name-3' => 'in:addnull',
+    'Win_get_name' => '2', 'Win_get_name-2' => 'out:blankpad',
+    'Win_set_name' => '2', 'Win_set_name-2' => 'in:addnull',		  
     'Waitany' => '3', 'Waitany-3' => 'out:index',
     'Waitsome' => '4', 'Waitsome-4' => 'out:index_array:*v3'
     );
@@ -908,6 +936,11 @@ sub print_special_decls {
 	foreach $count (split(/:/,$special_args{$routine_name})) {
 	    $rule = $special_args{"${routine_name}-$count"};
 	    ($direction,$method,$Array_size) = split(/:/,$rule);
+	    # Sanity check: method and direction must be nonnull
+	    if ($method eq "" || $direction eq "") {
+		print STDERR "Error in special args for argument number $count of $routine_name\n";
+		last;
+	    }
 	    $processing_routine = "${method}_${direction}_decl";
 	    &$processing_routine( $count );
 	}
