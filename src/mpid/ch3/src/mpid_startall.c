@@ -59,10 +59,20 @@ int MPID_Startall(int count, MPID_Request * requests[])
 
 	    case MPIDI_REQUEST_TYPE_BSEND:
 	    {
+		MPID_Request *request_ptr;
 		rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count,
 				      preq->ch3.datatype, preq->ch3.match.rank,
 				      preq->ch3.match.tag, preq->comm, 2,
 				      &preq->partner_request);
+
+		request_ptr = MPID_Request_create();
+		assert( request_ptr );
+		request_ptr->kind   = MPID_REQUEST_SEND;
+		MPIU_Object_set_ref( request_ptr, 1 );
+		request_ptr->cc_ptr = &request_ptr->cc;
+		request_ptr->cc     = 0;
+		request_ptr->comm   = preq->comm;
+		preq->partner_request = request_ptr;
 		break;
 	    }
 
