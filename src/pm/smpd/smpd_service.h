@@ -13,8 +13,8 @@
 #define SMPD_SERVICE_NAME         "mpich2_smpd"
 #define SMPD_SERVICE_NAMEW       L"mpich2_smpd"
 /* displayed name of the service */
-#define SMPD_SERVICE_DISPLAY_NAME   "MPICH2 Process Manager (C) 2003 Argonne National Lab"
-#define SMPD_SERVICE_DISPLAY_NAMEW L"MPICH2 Process Manager (C) 2003 Argonne National Lab"
+#define SMPD_SERVICE_DISPLAY_NAME   "MPICH2 Process Manager, Argonne National Lab"
+#define SMPD_SERVICE_DISPLAY_NAMEW L"MPICH2 Process Manager, Argonne National Lab"
 /* guid to represent the service */
 #define SMPD_SERVICE_GUID   "5722fe5f-cf46-4594-af7c-0997ca2e9d72"
 #define SMPD_SERVICE_GUIDW L"5722fe5f-cf46-4594-af7c-0997ca2e9d72"
