@@ -504,11 +504,15 @@ if (!$build_sep_files) {
 #define MPIX_CALL( fnc ) (void)fnc
 #endif\n";
 
+#
+# Within a "namespace" qualifier, the namespace name should not be used.
+# Thus, we use Offset, not MPI::Offset.
+# FIXME: The types for these should be determined by configure first.
 print $OUTFD "
 // Typedefs for basic int types
-typedef long MPI::Offset;
-typedef long MPI::Aint;
-typedef int MPI::Fint;\n";
+typedef long Offset;
+typedef long Aint;
+typedef int  Fint;\n";
 }
 
 # Build the routines by class
@@ -652,24 +656,26 @@ if (!$build_sep_files) {
 		print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
 	    }
 	    print $OUTFD "\n}\n";
-	}			 
+	}			
     }
 }
 
+    # As for the typedefs, we must leave off the MPI:: within an MPI 
+    # namespace
     foreach $dtype (@dtypes) {
-        print $OUTFD "extern Datatype MPI::$dtype;\n";
+        print $OUTFD "extern Datatype $dtype;\n";
     }
-    print $OUTFD "extern Datatype MPI::TWOINT;\n";
+    print $OUTFD "extern Datatype TWOINT;\n";
     # Initialize the operations
     foreach $op (@ops) {
-	print $OUTFD "extern const Op MPI::$op;\n";
+	print $OUTFD "extern const Op $op;\n";
     }
 
     # Predefined communicators and groups
-    print $OUTFD "extern Intracomm MPI::COMM_WORLD;\n";
-    print $OUTFD "extern Intracomm MPI::COMM_SELF;\n";
-    print $OUTFD "extern const Comm MPI::COMM_NULL;\n";
-    print $OUTFD "extern const Group MPI::GROUP_EMPTY;\n";
+    print $OUTFD "extern Intracomm COMM_WORLD;\n";
+    print $OUTFD "extern Intracomm COMM_SELF;\n";
+    print $OUTFD "extern const Comm COMM_NULL;\n";
+    print $OUTFD "extern const Group GROUP_EMPTY;\n";
 
     print $OUTFD "extern void Init(void);\n";
     print $OUTFD "extern void Finalize(void);\n";
@@ -994,23 +1000,24 @@ sub build_specials {
     # Start the namespace
     print $OUTFD "namespace MPI {\n";
 
-    # Initialize the datatypes
+    # Initialize the datatypes.
+    # We do not use MPI:: within the MPI namespace
     foreach $dtype (@dtypes) {
-	print $OUTFD "Datatype MPI::$dtype(MPI_$dtype);\n";
+	print $OUTFD "Datatype $dtype(MPI_$dtype);\n";
     }
     # special case
-    print $OUTFD "Datatype MPI::TWOINT(MPI_2INT);\n";
+    print $OUTFD "Datatype TWOINT(MPI_2INT);\n";
 
     # Initialize the operations
     foreach $op (@ops) {
-	print $OUTFD "const Op MPI::$op(MPI_$op);\n";
+	print $OUTFD "const Op $op(MPI_$op);\n";
     }
 
     # Predefined communicators and groups
-    print $OUTFD "Intracomm MPI::COMM_WORLD(MPI_COMM_WORLD);\n";
-    print $OUTFD "Intracomm MPI::COMM_SELF(MPI_COMM_SELF);\n";
-    print $OUTFD "const Comm MPI::COMM_NULL;\n";
-    print $OUTFD "const Group MPI::GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
+    print $OUTFD "Intracomm COMM_WORLD(MPI_COMM_WORLD);\n";
+    print $OUTFD "Intracomm COMM_SELF(MPI_COMM_SELF);\n";
+    print $OUTFD "const Comm COMM_NULL;\n";
+    print $OUTFD "const Group GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
 
     print $OUTFD "void Init";
     $args = "";
@@ -1096,12 +1103,15 @@ sub PrintClassHead {
     else {
 	print $OUTFD "    inline $class(void) {the_real_$lctopclass = $mpi_null_type;}\n";
     }
+    
+    # These had $class :: $class..., but pgCC complained,
+    # so the $class :: was removed.
     print $OUTFD "\
     virtual ~$class() {}
     // copy/assignment
-    $class :: $class(const $class &obj) {
+    $class(const $class &obj) {
       the_real_$lctopclass = obj.the_real_$lctopclass; }
-    $class& ${class}::operator=(const $class &obj) {
+    $class& operator=(const $class &obj) {
       the_real_$lctopclass = obj.the_real_$lctopclass; return *this; }";
 
     if (!defined($class_has_no_compare{$class})) {
@@ -1114,11 +1124,13 @@ sub PrintClassHead {
       return (the_real_$lctopclass != obj.the_real_$lctopclass); }";
     }
 
+    # These had $class :: $class..., but pgCC complained,
+    # so the $class :: was removed on operator=
     print $OUTFD "
     // C/C++ cast and assignment
     inline operator $mpi_type*() { return &the_real_$lctopclass; }
     inline operator $mpi_type() { return the_real_$lctopclass; }
-    $class& ${class}::operator=(const $mpi_type& obj) {
+    $class& operator=(const $mpi_type& obj) {
       the_real_$lctopclass = obj; return *this; }
 ";
 }
