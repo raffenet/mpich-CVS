@@ -680,6 +680,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+	return IBU_FAIL;
     }
     assert(mem_ptr);
 
@@ -737,6 +738,7 @@ static int ibui_post_receive(ibu_t ibu)
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+	return IBU_FAIL;
     }
     assert(mem_ptr);
 
