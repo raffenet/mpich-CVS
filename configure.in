@@ -289,12 +289,7 @@ logging_subsystems=
 if test "$logging_name" != "none" ; then
     logdir=$srcdir/src/util/logging
     logging_subsystems="$logging_subsystems src/util/logging/$logging_name"
-    if test "$logging_name" = "dlog" ; then
-    	logging_subdirs="slog_api dlog dlog2slog"
-    	logging_subsystems="$logging_subsystems src/util/logging/slog_api"
-    else
-    	logging_subdirs=$logging_name
-    fi
+    logging_subdirs=$logging_name
     for dir in $logging_subdirs ; do
         if test ! -d $logdir/$dir ; then
 	    AC_MSG_WARN([$logdir/$dir does not exist.  Logging library $logging_name has been diabled.])
