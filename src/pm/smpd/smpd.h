@@ -316,6 +316,7 @@ typedef struct smpd_host_node_t
 {
     int id, parent;
     char host[SMPD_MAX_HOST_LENGTH];
+    char alt_host[SMPD_MAX_HOST_LENGTH];
     int nproc;
     SMPD_BOOL connected;
     struct smpd_host_node_t *next;
@@ -440,6 +441,7 @@ typedef struct smpd_launch_node_t
     smpd_map_drive_node_t *map_list;
     int host_id;
     char hostname[SMPD_MAX_HOST_LENGTH];
+    char alt_hostname[SMPD_MAX_HOST_LENGTH];
     int iproc;
     int nproc;
     int appnum;
@@ -773,7 +775,7 @@ int smpd_unlock_smpd_data(void);
 int smpd_insert_into_dynamic_hosts(void);
 int smpd_remove_from_dynamic_hosts(void);
 int smpd_get_pwd_from_file(char *file_name);
-int smpd_get_next_hostname(char *host);
+int smpd_get_next_hostname(char *host, char *alt_host);
 SMPD_BOOL smpd_parse_machine_file(char *file_name);
 int smpd_get_host_id(char *host, int *id_ptr);
 int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node);
@@ -802,5 +804,6 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port);
 SMPD_BOOL smpd_map_user_drives(char *pszMap, char *pszAccount, char *pszPassword, char *pszError, int maxerrlength);
 SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
 void smpd_finalize_drive_maps();
+int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val);
 
 #endif

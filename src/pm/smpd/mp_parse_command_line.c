@@ -757,6 +757,7 @@ configfile_loop:
 		host_list->next = NULL;
 		host_list->connected = SMPD_FALSE;
 		host_list->nproc = -1;
+		host_list->alt_host[0] = '\0';
 		smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
 #endif
 	    }
@@ -1090,6 +1091,7 @@ configfile_loop:
 		host_list->next = NULL;
 		host_list->connected = SMPD_FALSE;
 		host_list->nproc = -1;
+		host_list->alt_host[0] = '\0';
 		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
 	    }
@@ -1119,6 +1121,7 @@ configfile_loop:
 		ghost_list->next = NULL;
 		ghost_list->connected = SMPD_FALSE;
 		ghost_list->nproc = -1;
+		ghost_list->alt_host[0] = '\0';
 		strncpy(ghost_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
 	    }
@@ -1169,6 +1172,7 @@ configfile_loop:
 			    host_node_ptr->next = NULL;
 			    host_node_ptr->connected = SMPD_FALSE;
 			    host_node_ptr->nproc = 1;
+			    host_node_ptr->alt_host[0] = '\0';
 			    strncpy(host_node_ptr->host, (*argvp)[index], SMPD_MAX_HOST_LENGTH);
 			    index++;
 			    if (argc > index)
@@ -1526,6 +1530,7 @@ configfile_loop:
 		    host_list->next = NULL;
 		    host_list->connected = SMPD_FALSE;
 		    host_list->nproc = -1;
+		    host_list->alt_host[0] = '\0';
 		    smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
 		}
 		else
@@ -1664,6 +1669,7 @@ configfile_loop:
 	    host_list->next = NULL;
 	    host_list->connected = SMPD_FALSE;
 	    host_list->nproc = -1;
+	    host_list->alt_host[0] = '\0';
 	    strncpy(host_list->host, ghost_list->host, SMPD_MAX_HOST_LENGTH);
 	}
 	if (host_list != NULL && host_list->nproc == -1)
@@ -1774,6 +1780,15 @@ configfile_loop:
 	    launch_node->priority_thread = n_priority;
 	    launch_node->env = launch_node->env_data;
 	    strcpy(launch_node->env_data, env_data);
+	    if (launch_node->alt_hostname[0] != '\0')
+	    {
+		if (smpd_append_env_option(launch_node->env_data, SMPD_MAX_ENV_LENGTH, "MPICH_INTERFACE_HOSTNAME", launch_node->alt_hostname) != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the MPICH_INTERFACE_HOSTNAME environment variable to the launch command.\n");
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
+		}
+	    }
 	    if (wdir[0] != '\0')
 	    {
 		strcpy(launch_node->dir, wdir);

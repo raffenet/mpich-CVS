@@ -898,6 +898,7 @@ int smpd_get_default_hosts()
 		return SMPD_FAIL;
 	    }
 	    strcpy(smpd_process.default_host_list->host, hosts);
+	    smpd_process.default_host_list->alt_host[0] = '\0';
 	    smpd_process.default_host_list->nproc = 1;
 	    smpd_process.default_host_list->connected = SMPD_FALSE;
 	    smpd_process.default_host_list->next = smpd_process.default_host_list;
@@ -921,6 +922,7 @@ int smpd_get_default_hosts()
 		    return SMPD_FAIL;
 		}
 		strcpy(smpd_process.default_host_list->host, hosts);
+		smpd_process.default_host_list->alt_host[0] = '\0';
 		smpd_process.default_host_list->nproc = 1;
 		smpd_process.default_host_list->connected = SMPD_FALSE;
 		smpd_process.default_host_list->next = smpd_process.default_host_list;
@@ -972,6 +974,7 @@ int smpd_get_default_hosts()
 	{
 	    /*printf("default host: %s\n", host);*/
 	    strcpy(cur_host->host, host);
+	    cur_host->alt_host[0] = '\0';
 	    cur_host->nproc = 1;
 	    ncpu = strstr(cur_host->host, ":");
 	    if (ncpu)

@@ -2300,6 +2300,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     strcpy(dest->connect_to->host, host);
+    dest->connect_to->alt_host[0] = '\0';
     dest->connect_to->id = dest_id;
     dest->connect_to->nproc = 1;
     dest->connect_to->connected = SMPD_FALSE;

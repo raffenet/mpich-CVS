@@ -20,6 +20,21 @@
 #include <direct.h>
 #endif
 
+int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val)
+{
+    int len = (int)strlen(str);
+    if (len > (maxlen-2))
+	return SMPD_FAIL;
+    str[len] = ' ';
+    str = &str[len+1];
+    maxlen = maxlen - len - 1;
+    if (MPIU_Str_add_string_arg(&str, &maxlen, env_name, env_val) != MPIU_STR_SUCCESS)
+	return SMPD_FAIL;
+    str--;
+    *str = '\0'; /* trim the extra space at the end */
+    return SMPD_SUCCESS;
+}
+
 int smpd_get_hostname(char *host, int length)
 {
 #ifdef HAVE_WINDOWS_H
@@ -89,7 +104,7 @@ int smpd_get_pwd_from_file(char *file_name)
     return SMPD_SUCCESS;
 }
 
-int smpd_get_next_hostname(char *host)
+int smpd_get_next_hostname(char *host, char *alt_host)
 {
     if (smpd_process.s_host_list == NULL)
     {
@@ -103,6 +118,7 @@ int smpd_get_next_hostname(char *host)
 		    return SMPD_FAIL;
 	    }
 	    strcpy(host, smpd_process.cur_default_host->host);
+	    strcpy(alt_host, smpd_process.cur_default_host->alt_host);
 	    smpd_process.cur_default_iproc++;
 	}
 	else
@@ -118,12 +134,47 @@ int smpd_get_next_hostname(char *host)
 	smpd_process.s_cur_count = 0;
     }
     strcpy(host, smpd_process.s_cur_host->host);
+    strcpy(alt_host, smpd_process.s_cur_host->alt_host);
     smpd_process.s_cur_count++;
     if (smpd_process.s_cur_count >= smpd_process.s_cur_host->nproc)
     {
 	smpd_process.s_cur_host = smpd_process.s_cur_host->next;
 	smpd_process.s_cur_count = 0;
     }
+    return SMPD_SUCCESS;
+}
+
+int smpd_parse_extra_machinefile_options(const char *line, smpd_host_node_t *node)
+{
+    char *flag, *p;
+
+    flag = strstr(line, "-ifhn");
+    if (flag != NULL)
+    {
+	p = flag + 5;
+	while (isspace(*p))
+	    p++;
+	MPIU_Strncpy(node->alt_host, p, SMPD_MAX_HOST_LENGTH);
+    }
+
+    flag = strstr(line, "-ifip");
+    if (flag != NULL)
+    {
+	p = flag + 5;
+	while (isspace(*p))
+	    p++;
+	MPIU_Strncpy(node->alt_host, p, SMPD_MAX_HOST_LENGTH);
+    }
+
+    flag = strstr(line, "-ifn");
+    if (flag != NULL)
+    {
+	p = flag + 4;
+	while (isspace(*p))
+	    p++;
+	MPIU_Strncpy(node->alt_host, p, SMPD_MAX_HOST_LENGTH);
+    }
+
     return SMPD_SUCCESS;
 }
 
@@ -168,7 +219,17 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 		iter++;
 		while (isspace(*iter))
 		    iter++;
-		nproc = atoi(iter);
+		nproc = 1;
+		if (isdigit(*iter))
+		{
+		    nproc = atoi(iter);
+		    /* move over the number */
+		    while (isdigit(*iter))
+			iter++;
+		    /* move over the space between the number and any other options */
+		    while (isspace(*iter))
+			iter++;
+		}
 		if (nproc < 1)
 		    nproc = 1;
 	    }
@@ -177,12 +238,19 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 		nproc = 1;
 	    }
 	    node = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	    if (node == NULL)
+	    {
+		smpd_err_printf("unable to allocate memory to parse the machinefile\n");
+		return SMPD_FALSE;
+	    }
 	    strcpy(node->host, hostname);
+	    node->alt_host[0] = '\0';
 	    node->connected = SMPD_FALSE;
 	    node->id = -1;
 	    node->parent = -1;
 	    node->nproc = nproc;
 	    node->next = NULL;
+	    smpd_parse_extra_machinefile_options(iter, node);
 	    if (smpd_process.s_host_list == NULL)
 		smpd_process.s_host_list = node;
 	    else
@@ -244,6 +312,7 @@ int smpd_get_host_id(char *host, int *id_ptr)
 	return SMPD_FAIL;
     }
     strcpy(node->host, host);
+    node->alt_host[0] = '\0';
     node->parent = smpd_process.tree_parent;
     node->id = smpd_process.tree_id;
     node->connected = SMPD_FALSE;
@@ -273,6 +342,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 {
     int result;
     char host[SMPD_MAX_HOST_LENGTH];
+    char alt_host[SMPD_MAX_HOST_LENGTH];
     smpd_host_node_t *host_node_ptr;
 
     if (host_node_pptr == NULL)
@@ -283,7 +353,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 
     if (*host_node_pptr == NULL)
     {
-	result = smpd_get_next_hostname(host);
+	result = smpd_get_next_hostname(host, alt_host);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the next available host name\n");
@@ -296,6 +366,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	    return SMPD_FAIL;
 	}
 	MPIU_Strncpy(launch_node->hostname, host, SMPD_MAX_HOST_LENGTH);
+	MPIU_Strncpy(launch_node->alt_hostname, alt_host, SMPD_MAX_HOST_LENGTH);
 	return SMPD_SUCCESS;
     }
 
@@ -318,6 +389,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	return SMPD_FAIL;
     }
     MPIU_Strncpy(launch_node->hostname, host_node_ptr->host, SMPD_MAX_HOST_LENGTH);
+    MPIU_Strncpy(launch_node->alt_hostname, host_node_ptr->alt_host, SMPD_MAX_HOST_LENGTH);
     host_node_ptr->nproc--;
     if (host_node_ptr->nproc == 0)
     {

@@ -117,21 +117,21 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     if (smpd_get_opt(argcp, argvp, "-hosts"))
     {
-	char first_host[SMPD_MAX_HOST_LENGTH], host[SMPD_MAX_HOST_LENGTH];
+	char first_host[SMPD_MAX_HOST_LENGTH], host[SMPD_MAX_HOST_LENGTH], alt_host[SMPD_MAX_HOST_LENGTH];
 
 	smpd_get_default_hosts();
 
-	result = smpd_get_next_hostname(first_host);
+	result = smpd_get_next_hostname(first_host, alt_host);
 	if (result != SMPD_SUCCESS)
 	    smpd_exit(result);
 	printf("%s\n", first_host);
-	result = smpd_get_next_hostname(host);
+	result = smpd_get_next_hostname(host, alt_host);
 	if (result != SMPD_SUCCESS)
 	    smpd_exit(result);
 	while (strcmp(host, first_host) != 0)
 	{
 	    printf("%s\n", host);
-	    result = smpd_get_next_hostname(host);
+	    result = smpd_get_next_hostname(host, alt_host);
 	    if (result != SMPD_SUCCESS)
 		smpd_exit(result);
 	}

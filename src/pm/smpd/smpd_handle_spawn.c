@@ -362,11 +362,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    {
 		launch_iter->host_id = node.host_id;
 		strcpy(launch_iter->hostname, node.hostname);
+		strcpy(launch_iter->alt_hostname, node.alt_hostname);
 	    }
 	    else
 	    {
 		launch_iter->host_id = -1;
 		launch_iter->hostname[0] = '\0';
+		launch_iter->alt_hostname[0] = '\0';
 	    }
 	    launch_iter->map_list = NULL;
 	    launch_iter->path[0] = '\0';
@@ -456,6 +458,14 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	if (launch_iter->host_id == -1)
 	{
 	    smpd_get_next_host(&host_list, launch_iter);
+	}
+	if (launch_iter->alt_hostname[0] != '\0')
+	{
+	    if (smpd_append_env_option(launch_iter->env_data, SMPD_MAX_ENV_LENGTH, "MPICH_INTERFACE_HOSTNAME", launch_iter->alt_hostname) != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the MPICH_INTERFACE_HOSTNAME to the launch node environment block\n");
+		goto spawn_failed;
+	    }
 	}
 	launch_iter->nproc = nproc;
 	launch_iter = launch_iter->next;
