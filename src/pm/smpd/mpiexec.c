@@ -91,8 +91,10 @@ BOOL WINAPI mpiexec_ctrl_handler(DWORD dwCtrlType)
 		/* The first break signal tries to abort the job with an abort message */
 		first = 0;
 		printf("mpiexec aborting job...\n");fflush(stdout);
+		num_written = 0;
 		MPIDU_Sock_write(smpd_process.mpiexec_abort_sock, &ch, 1, &num_written);
-		return TRUE;
+		if (num_written == 1)
+		    return TRUE;
 	    }
 	    /* The second break signal unconditionally exits mpiexec */
 	}
