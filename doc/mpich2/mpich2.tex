@@ -251,12 +251,14 @@ because an MPI implementation is not complete without these components.
 
   \item[binding]Alternative Language bindings (C is the primary binding)
     \begin{description}
-    \item[c++]C++ binding (includes \file{configure})
+    \item[cxx]C++ binding (includes \file{configure}); \code{cxx} is
+    used instead of \code{c++} to avoid using special characters in
+    directory names.
       \begin{description}
       \item[src]
       \item[include]
       \end{description}
-    \item[fortran]Fortran 77 binding (includes \file{configure})
+    \item[fortran77]Fortran 77 binding (includes \file{configure})
       \begin{description}
       \item[src]
       \item[include]
