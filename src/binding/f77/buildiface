@@ -400,6 +400,7 @@ INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
 maint-clean:\
 \trm -f \${mpi_sources} fproto.h\n";
 
+print MAKEFD "install_INCLUDE = mpif.h\n";
 close( MAKEFD );
 
 #
