@@ -112,6 +112,7 @@ int MPID_Type_vector(int count,
 	new_dtp->alignsize      = oldsize;
 	new_dtp->n_elements     = count * blocklength;
 	new_dtp->is_contig      = ((stride == blocklength || count == 1) ? 1 : 0);
+        new_dtp->eltype         = oldtype;
 
 	/* allocate dataloop */
 	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
@@ -172,6 +173,7 @@ int MPID_Type_vector(int count,
 
 	new_dtp->alignsize   = old_dtp->alignsize;
 	new_dtp->n_elements  = old_dtp->n_elements * count * blocklength; /* ??? */
+        new_dtp->eltype      = old_dtp->eltype;
 
 	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1; /* ??? */
 	else new_dtp->is_contig = 0;

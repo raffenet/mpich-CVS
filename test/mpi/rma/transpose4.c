@@ -3,7 +3,10 @@
 
 /* transposes a matrix using passive target RMA and derived
    datatypes. Uses  vector and hvector (Example 3.32 from MPI 1.1
-   Standard). Run on 2 processes */
+   Standard). Run on 2 processes. This example DOES NOT RUN by default
+   because of lack of thread-safety in the progress engine. I have
+   tested it by making temporary tweaks to the RMA code to account for
+   thread-safety issues.  */
 
 #define NROWS 100
 #define NCOLS 100

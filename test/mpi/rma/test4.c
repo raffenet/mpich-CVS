@@ -1,8 +1,10 @@
 #include "mpi.h" 
 #include "stdio.h"
 
-/* tests passive target RMA on 2 processes. This test DOES NOT RUN
-   currently because of lack of thread-safety in the progress engine. */
+/* tests passive target RMA on 2 processes. This test DOES NOT RUN by default
+   because of lack of thread-safety in the progress engine. I have
+   tested it by making temporary tweaks to the RMA code to account for
+   thread-safety issues. */
 
 #define SIZE1 10
 #define SIZE2 20

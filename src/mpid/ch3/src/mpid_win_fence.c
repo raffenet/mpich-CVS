@@ -25,12 +25,14 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     MPIU_RMA_op_info *rma_op_infos;
     typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
         int           is_contig; 
+        int           n_contig_blocks;
         int           size;     
         MPI_Aint      extent;   
         int           loopsize; 
         void          *loopinfo;  /* pointer needed to update pointers
                                      within dataloop on remote side */
         int           loopinfo_depth; 
+        int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
     } MPIU_RMA_dtype_info;
@@ -40,8 +42,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     MPI_User_function *uop;
     MPI_Op op;
     void *tmp_buf;
-    MPI_Aint extent, ptrdiff;
+    MPI_Aint extent, ptrdiff, true_lb, true_extent;
     MPID_Datatype *dtp, *new_dtp=NULL;
+    void *win_buf_addr;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
 
@@ -172,10 +175,12 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 /* fill derived datatype info */
                 MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
                 dtype_infos[i].is_contig = dtp->is_contig;
+                dtype_infos[i].n_contig_blocks = dtp->n_contig_blocks;
                 dtype_infos[i].size = dtp->size;
                 dtype_infos[i].extent = dtp->extent;
                 dtype_infos[i].loopsize = dtp->loopsize;
                 dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+                dtype_infos[i].eltype = dtp->eltype;
                 dtype_infos[i].loopinfo = dtp->loopinfo;
                 dtype_infos[i].ub = dtp->ub;
                 dtype_infos[i].lb = dtp->lb;
@@ -340,11 +345,14 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     new_dtp->cache_id     = 0;
                     new_dtp->name[0]      = 0;
                     new_dtp->is_contig = dtype_infos[total_op_count].is_contig;
+                    new_dtp->n_contig_blocks =
+                        dtype_infos[total_op_count].n_contig_blocks; 
                     new_dtp->size = dtype_infos[total_op_count].size;
                     new_dtp->extent = dtype_infos[total_op_count].extent;
                     new_dtp->loopsize = dtype_infos[total_op_count].loopsize;
                     new_dtp->loopinfo_depth =
                         dtype_infos[total_op_count].loopinfo_depth; 
+                    new_dtp->eltype = dtype_infos[total_op_count].eltype;
                     /* set dataloop pointer */
                     new_dtp->loopinfo = dataloops[total_op_count];
                     /* set datatype handle to be used in send/recv
@@ -395,16 +403,22 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 case MPID_REQUEST_ACCUMULATE:
                     /* recv the data into a temp buffer and perform
                        the reduction operation */
-                    NMPI_Type_extent(rma_op_infos[total_op_count].datatype, 
-                                     &extent); 
-                    tmp_buf = MPIU_Malloc(extent * 
-                                          rma_op_infos[total_op_count].count);
+                    mpi_errno =
+                        NMPI_Type_get_true_extent(rma_op_infos[total_op_count].datatype, 
+                                                  &true_lb, &true_extent);  
+                    if (mpi_errno) return mpi_errno;
+
+                    MPID_Datatype_get_extent_macro(rma_op_infos[total_op_count].datatype, 
+                                                   extent); 
+                    tmp_buf = MPIU_Malloc(rma_op_infos[total_op_count].count * 
+                                          (MPIR_MAX(extent,true_extent)));  
                     if (!tmp_buf) {
-                        mpi_errno = MPIR_Err_create_code(
-                            MPI_ERR_OTHER, "**nomem", 0 ); 
-                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                         return mpi_errno;
                     }
+                    /* adjust for potential negative lower bound in datatype */
+                    tmp_buf = (void *)((char*)tmp_buf - true_lb);
+                    
                     mpi_errno = NMPI_Recv(tmp_buf,
                                           rma_op_infos[total_op_count].count,
                                           rma_op_infos[total_op_count].datatype,
@@ -426,12 +440,59 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
-                    (*uop)(tmp_buf, (char *) win_ptr->base +
-                           win_ptr->disp_unit *
-                           rma_op_infos[total_op_count].disp,
-                           &(rma_op_infos[total_op_count].count),
-                           &(rma_op_infos[total_op_count].datatype));
-                    MPIU_Free(tmp_buf);
+
+                    win_buf_addr = (char *) win_ptr->base +
+                        win_ptr->disp_unit * rma_op_infos[total_op_count].disp;
+
+                    if (rma_op_infos[total_op_count].datatype_kind ==
+                        MPID_RMA_DATATYPE_BASIC) {
+                        (*uop)(tmp_buf, win_buf_addr,
+                               &(rma_op_infos[total_op_count].count),
+                               &(rma_op_infos[total_op_count].datatype));
+                    }
+                    else { /* derived datatype */
+                        MPID_Segment *segp;
+                        DLOOP_VECTOR *dloop_vec;
+                        DLOOP_Offset first, last, dloop_vec_len;
+                        MPI_Datatype type;
+                        int type_size, count;
+
+                        segp = MPID_Segment_alloc();
+                        MPID_Segment_init(NULL,
+                                          rma_op_infos[total_op_count].count, 
+                                 rma_op_infos[total_op_count].datatype, segp);
+                        first = 0;
+                        last  = SEGMENT_IGNORE_LAST;
+
+                        dloop_vec_len = new_dtp->n_contig_blocks *
+                            rma_op_infos[total_op_count].count + 1; 
+                        /* +1 needed because Rob says  so */
+                        dloop_vec = (DLOOP_VECTOR *)
+                            MPIU_Malloc(dloop_vec_len * sizeof(DLOOP_VECTOR));
+                        if (!dloop_vec) {
+                            mpi_errno = MPIR_Err_create_code(
+                                MPI_ERR_OTHER, "**nomem", 0 ); 
+                            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                            return mpi_errno;
+                        }
+
+                        MPID_Segment_pack_vector(segp, first, &last,
+                                                 dloop_vec, &dloop_vec_len);
+
+                        type = new_dtp->eltype;
+                        type_size = MPID_Datatype_get_basic_size(type);
+                        for (i=0; i<dloop_vec_len; i++) {
+                            count = (dloop_vec[i].iov_len)/type_size;
+                          (*uop)((char *)tmp_buf + (int) dloop_vec[i].iov_base,
+                           (char *)win_buf_addr + (int) dloop_vec[i].iov_base,
+                                 &count, &type);
+                        }
+
+                        MPID_Segment_free(segp);
+                        MPIU_Free(dloop_vec);
+                    }
+
+                    MPIU_Free((char*)tmp_buf + true_lb);
                     break;
                 default:
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,

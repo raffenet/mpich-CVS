@@ -23,3 +23,7 @@ transpose3_SOURCES = transpose3.c
 transpose3_LDADD = -lpthread
 transpose4_SOURCES = transpose4.c
 transpose4_LDADD = -lpthread
+fetchandadd_SOURCES = fetchandadd.c
+fetchandadd_LDADD = -lpthread
+fetchandadd_tree_SOURCES = fetchandadd_tree.c
+fetchandadd_tree_LDADD = -lpthread

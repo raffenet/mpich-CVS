@@ -115,6 +115,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->alignsize      = el_size;
 	new_dtp->n_elements     = el_count;
 	new_dtp->is_contig      = 0; /* ??? */
+        new_dtp->eltype         = oldtype;
 
 	/* allocate dataloop
 	 * 
@@ -204,6 +205,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = el_count * old_dtp->n_elements;
+        new_dtp->eltype         = old_dtp->eltype;
 
 	new_dtp->is_contig = 0; /* TODO: FIX THIS */
 

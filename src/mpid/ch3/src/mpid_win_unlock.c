@@ -24,12 +24,14 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIU_RMA_op_info *rma_op_infos;
     typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
         int           is_contig; 
+        int           n_contig_blocks; 
         int           size;     
         MPI_Aint      extent;   
         int           loopsize; 
         void          *loopinfo;  /* pointer needed to update pointers
                                      within dataloop on remote side */
         int           loopinfo_depth; 
+        int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
     } MPIU_RMA_dtype_info;
@@ -156,10 +158,12 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             /* fill derived datatype info */
             MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
             dtype_infos[i].is_contig = dtp->is_contig;
+            dtype_infos[i].n_contig_blocks = dtp->n_contig_blocks;
             dtype_infos[i].size = dtp->size;
             dtype_infos[i].extent = dtp->extent;
             dtype_infos[i].loopsize = dtp->loopsize;
             dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+            dtype_infos[i].eltype = dtp->eltype;
             dtype_infos[i].loopinfo = dtp->loopinfo;
             dtype_infos[i].ub = dtp->ub;
             dtype_infos[i].lb = dtp->lb;
@@ -217,7 +221,6 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         }
 
         /* now send or recv the data */
-
         if ((curr_ptr->type == MPID_REQUEST_PUT) ||
             (curr_ptr->type == MPID_REQUEST_ACCUMULATE)) {
             mpi_errno = NMPI_Isend(curr_ptr->origin_addr,

@@ -177,6 +177,9 @@ typedef struct MPID_Datatype {
     int           is_permanent;  /* True if datatype is a predefined type */
     int           is_committed;  /* */
 
+    int           eltype;      /* type of elementary datatype. Needed
+                                 to implement MPI_Accumulate */
+
     int           loopinfo_depth; /* Depth of dataloop stack needed
                                      to process this datatype.  This 
                                      information is used to ensure that

@@ -81,7 +81,8 @@ int MPID_Type_struct(int count,
 		     MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, nr_real_types = 0, all_basics = 1, all_same = 1, has_lb_builtin = 0, has_ub_builtin = 0;
+    int i, nr_real_types = 0, all_basics = 1, all_same = 1,
+        has_lb_builtin = 0, has_ub_builtin = 0, eltype;
 
     MPID_Datatype *new_dtp, *old_dtp;
 
@@ -169,6 +170,7 @@ int MPID_Type_struct(int count,
 				      1, /* displacement in bytes */
 				      MPI_BYTE,
 				      newtype);
+
 	MPIU_Free(tmp_blocklength_array);
 
 	/* account for padding */
@@ -182,6 +184,9 @@ int MPID_Type_struct(int count,
 	}
 
 	new_dtp->element_size = -1; /* not all the same size */
+
+        new_dtp->eltype = MPI_DATATYPE_NULL; /* indicates different
+                                                elementary types */
 
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
@@ -212,6 +217,7 @@ int MPID_Type_struct(int count,
 	 * - create the tmp blocklength and displacemment arrays
 	 * - get tmp count
 	 */
+        eltype = MPI_LB; /*initialize */
 	for (i=0; i < count; i++) {
 	    if (oldtype_array[i] == MPI_LB) {
 		if (!found_lb) {
@@ -229,6 +235,10 @@ int MPID_Type_struct(int count,
 	    }
 	    else {
 		int sz = MPID_Datatype_get_basic_size(oldtype_array[i]);
+
+                if (eltype == MPI_LB) eltype = oldtype_array[i];
+                else if (eltype != oldtype_array[i]) 
+                    eltype = MPI_DATATYPE_NULL;
 
 		tmp_blocklength_array[tmp_idx]  = sz * blocklength_array[i];
 		tmp_displacement_array[tmp_idx] = displacement_array[i];
@@ -259,6 +269,8 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+
+        new_dtp->eltype = eltype;
 
 	/* TODO: don't bother with alignsize because of the lb/ub (?) */
 
@@ -360,6 +372,7 @@ int MPID_Type_struct(int count,
 	 * 
 	 */
 
+        eltype = MPI_LB; 
 	for (i=0; i < count; i++) {
 	    int tmp_pieces = 0, tmp_lb, tmp_ub;
 
@@ -377,9 +390,18 @@ int MPID_Type_struct(int count,
 		}
 		else if (displacement_array[i] > ub_disp) ub_disp = displacement_array[i];
 	    }
-	    else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) tmp_pieces = 1;
+	    else if (HANDLE_GET_KIND(oldtype_array[i]) ==
+                     HANDLE_KIND_BUILTIN) {
+                tmp_pieces = 1;
+                if (eltype == MPI_LB) eltype = oldtype_array[i];
+                else if (eltype != oldtype_array[i])
+                    eltype = MPI_DATATYPE_NULL;
+            }
 	    else {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
+                if (eltype == MPI_LB) eltype = old_dtp->eltype;
+                else if (eltype != old_dtp->eltype)
+                    eltype = MPI_DATATYPE_NULL;
 
 		/* calculate lb and ub of this type; see mpid_datatype.h */
 		MPID_DATATYPE_BLOCK_LB_UB(blocklength_array[i],
@@ -509,6 +531,7 @@ int MPID_Type_struct(int count,
 	}
 
 	new_dtp->element_size = -1;
+        new_dtp->eltype = eltype;
 
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);

@@ -69,6 +69,7 @@ int MPID_Type_contiguous(int count,
 	new_dtp->alignsize      = oldsize; /* ??? */
 	new_dtp->n_elements     = count;
 	new_dtp->is_contig      = 1;
+        new_dtp->eltype         = oldtype;
 
 	/* allocate dataloop */
 	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
@@ -98,6 +99,7 @@ int MPID_Type_contiguous(int count,
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
+        new_dtp->eltype         = old_dtp->eltype;
 
 	/* calculate lb, ub, true_lb, true_ub */
 	/* MPID_DATATYPE_CONTIG_LB_UB() defined in mpid_datatype.h */
