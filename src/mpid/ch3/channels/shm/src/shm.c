@@ -1036,6 +1036,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
 		MPIU_DBG_PRINTF(("shm_read_progress: reading %d byte header from shm packet %d offset %d\n", sizeof(MPIDI_CH3_Pkt_t), index, pkt_ptr->offset));
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type > MPIDI_CH3_PKT_END_CH3)
 		{
 		    if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_IOV)
@@ -1267,6 +1268,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    }
 		}
 		else
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		{
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		    if (mpi_errno != MPI_SUCCESS)
@@ -1383,6 +1385,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 			return MPI_SUCCESS;
 		    }
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_RTS_IOV_READ_REQUEST)
 		    {
 			int found;
@@ -1472,6 +1475,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 			return MPI_SUCCESS;
 		    }
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "invalid request type", recv_vc_ptr->ch.recv_active->kind);
