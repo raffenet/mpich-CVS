@@ -22,12 +22,17 @@ fi
 
 PAC_PROG_MAKE
 
+dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
 AC_TRY_COMPILE([
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <net/if.h>
-],[
-return 0;
-],AC_DEFINE(HAVE_NET_IF_H, 1, [net/if.h is present on this system]))
+],,lac_cv_header_net_if_h=yes,lac_cv_header_net_if_h=no)
+
+echo "checking for net/if.h... $lac_cv_header_net_if_h"
+
+if test "$lac_cv_header_net_if_h" = "yes" ; then
+    AC_DEFINE(HAVE_NET_IF_H, 1, [Define if you have the <net/if.h> header file.])
 fi
 
 AC_CHECK_HEADERS(				\
