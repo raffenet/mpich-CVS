@@ -354,9 +354,11 @@ AC_CACHE_VAL(pac_cv_prog_f77_cmdarg,
     # The first line is a dummy
     # (we experimented with using a <space>, but this caused other 
     # problems because we need <space> in the IFS)
-trial_LIBS="0
--lU77
--lg2c"
+if test "$NOG2C" = "1" ; then
+    trial_LIBS="0 -lU77"
+else
+    trial_LIBS="0 -lU77 -lg2c"
+fi
     # Discard libs that are not availble:
     save_IFS="$IFS"
     # Make sure that IFS includes a space, or the tests that run programs
@@ -577,6 +579,7 @@ EOF
                     AC_MSG_RESULT([no])
 		    echo "configure: failed program was:" >&AC_FD_CC
                     cat conftest.f >&AC_FD_CC
+	        fi
 	        fi
             done
         done
