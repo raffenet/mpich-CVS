@@ -16,6 +16,7 @@ lib${MPILIBNAME}_a_SOURCES = address.c get_address.c get_count.c \
  type_contiguous.c type_free.c type_hvector.c type_dup.c \
  typeutil.c type_get_envelope.c type_get_contents.c \
  type_ub.c type_lb.c type_get_extent.c type_get_true_extent.c \
+ type_match_size.c \
  type_create_struct.c type_create_hindexed.c type_create_hvector.c \
  pack_external.c pack_external_size.c unpack_external.c \
  type_create_indexed_block.c type_create_resized.c \

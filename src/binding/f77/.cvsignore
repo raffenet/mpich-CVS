@@ -203,6 +203,7 @@ type_hindexedf.c
 type_hvectorf.c
 type_indexedf.c
 type_lbf.c
+type_match_sizef.c
 type_sizef.c
 type_structf.c
 type_ubf.c

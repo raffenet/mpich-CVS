@@ -55,6 +55,21 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     static const char FCNAME[] = "MPI_Type_match_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    static const char *tname = 0;
+    static MPI_Datatype real_types[] = { MPI_FLOAT, MPI_DOUBLE
+#ifdef HAVE_LONG_DOUBLE
+					 ,MPI_LONG_DOUBLE
+#endif
+    };
+    static MPI_Datatype int_types[] = { MPI_CHAR, MPI_SHORT, MPI_INT, 
+					MPI_LONG
+#ifdef HAVE_LONG_LONG
+					, MPI_LONG_LONG
+#endif
+    };
+    static MPI_Datatype complex_types[] = { MPI_COMPLEX, MPI_DOUBLE_COMPLEX };
+    MPI_Datatype matched_datatype = MPI_DATATYPE_NULL;
+    int i, tsize;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
@@ -77,7 +92,61 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* FIXME UNIMPLEMENTED */
+    /* FIXME: Should make use of Fortran optional types (e.g., MPI_INTEGER2) */
+
+    /* The following implementation follows the suggestion in the
+       MPI-2 standard.  
+       The version in the MPI-2 spec makes use of the Fortran optional types;
+       currently, we don't support these from C (see mpi.h.in).  
+       Thus, we look at the candidate types and make use of the first fit.
+    */
+    switch (typeclass) {
+    case MPI_TYPECLASS_REAL:
+	tname = "MPI_TYPECLASS_REAL";
+	for (i=0; i<sizeof(real_types)/sizeof(MPI_Datatype); i++) {
+	    if (real_types[i] == MPI_DATATYPE_NULL) { continue; }
+	    PMPI_Type_size( real_types[i], &tsize );
+	    if (tsize == size) {
+		matched_datatype = real_types[i];
+		break;
+	    }
+	}
+	break;
+    case MPI_TYPECLASS_INTEGER:
+	tname = "MPI_TYPECLASS_INTEGER";
+	for (i=0; i<sizeof(int_types)/sizeof(MPI_Datatype); i++) {
+	    if (int_types[i] == MPI_DATATYPE_NULL) { continue; }
+	    PMPI_Type_size( int_types[i], &tsize );
+	    if (tsize == size) {
+		matched_datatype = int_types[i];
+		break;
+	    }
+	}
+	break;
+    case MPI_TYPECLASS_COMPLEX:
+	tname = "MPI_TYPECLASS_COMPLEX";
+	for (i=0; i<sizeof(complex_types)/sizeof(MPI_Datatype); i++) {
+	    if (complex_types[i] == MPI_DATATYPE_NULL) { continue; }
+	    PMPI_Type_size( complex_types[i], &tsize );
+	    if (tsize == size) {
+		matched_datatype = complex_types[i];
+		break;
+	    }
+	}
+	break;
+    default:
+	mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchnoclass", 0);
+	break;
+    }
+
+    if (mpi_errno == MPI_SUCCESS && 
+	matched_datatype == MPI_DATATYPE_NULL) {
+	mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchsize", "**typematchsize %s %d", tname, size );
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
+    if (mpi_errno) {
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    }
     return MPI_SUCCESS;
 }

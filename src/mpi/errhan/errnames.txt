@@ -133,6 +133,10 @@ be in the range 0 to %d
 **namepubnotpub %s:Lookup failed for service name %s
 **nonamepub:No name publishing service available
 **needthreads:This function needs threads and threads have not been enabled
+**typematchnoclass:The value of typeclass is not one of MPI_TYPECLASS_REAL, \
+MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
+**typematchsize:No MPI datatype available for the given typeclass and size
+**typematchsize %s %d:No MPI datatype available for typeclass %s and size %d
 #
 #---- The messages below this line haven't been used yet.
 #
