@@ -198,7 +198,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             if (rank % 2 == 0) { /* even */
                 mpi_errno = MPIC_Send(tmp_results, total_count, 
                                       datatype, rank+1,
-                                      MPIR_ALLREDUCE_TAG, comm);
+                                      MPIR_REDUCE_SCATTER_TAG, comm);
                 if (mpi_errno) return mpi_errno;
                 
                 /* temporarily set the rank to -1 so that this
@@ -209,7 +209,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             else { /* odd */
                 mpi_errno = MPIC_Recv(tmp_recvbuf, total_count, 
                                       datatype, rank-1,
-                                      MPIR_ALLREDUCE_TAG, comm,
+                                      MPIR_REDUCE_SCATTER_TAG, comm,
                                       MPI_STATUS_IGNORE);
                 if (mpi_errno) return mpi_errno;
                 
@@ -298,11 +298,11 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                 mpi_errno = MPIC_Sendrecv((char *) tmp_results +
                                           newdisps[send_idx]*extent,
                                           send_cnt, datatype,  
-                                          dst, MPIR_ALLREDUCE_TAG, 
+                                          dst, MPIR_REDUCE_SCATTER_TAG, 
                                           (char *) tmp_recvbuf +
                                           newdisps[recv_idx]*extent,
                                           recv_cnt, datatype, dst,
-                                          MPIR_ALLREDUCE_TAG, comm,
+                                          MPIR_REDUCE_SCATTER_TAG, comm,
                                           MPI_STATUS_IGNORE); 
                 if (mpi_errno) return mpi_errno;
                 
@@ -348,11 +348,11 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                 mpi_errno = MPIC_Send((char *) tmp_results +
                                       disps[rank-1]*extent, recvcnts[rank-1],
                                       datatype, rank-1,
-                                      MPIR_ALLREDUCE_TAG, comm);
+                                      MPIR_REDUCE_SCATTER_TAG, comm);
             else  /* even */
                 mpi_errno = MPIC_Recv(recvbuf, recvcnts[rank],
                                       datatype, rank+1,
-                                      MPIR_ALLREDUCE_TAG, comm,
+                                      MPIR_REDUCE_SCATTER_TAG, comm,
                                       MPI_STATUS_IGNORE); 
             
             if (mpi_errno) return mpi_errno;
