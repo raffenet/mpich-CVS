@@ -2,9 +2,10 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 	 -I${srcdir}/../include
 LDADD = -L ../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
-
+EXTRA_PROGRAMS = bsend1cxx
 bsend1_SOURCES = bsend1.c
 bsend2_SOURCES = bsend2.c
 bsend3_SOURCES = bsend3.c
 bsend4_SOURCES = bsend4.c
 isendself_SOURCES = isendself.c
+bsend1cxx_SOURCES = bsend1cxx.cxx
