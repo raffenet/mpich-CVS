@@ -123,8 +123,10 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 		ps->path = path;
 		ps->wdir = wdir;
 		ps->rank = ptable->nProcesses + i;
-		ps->pmiGroup = -1;
-		ps->pmiKVS = -1;
+
+		/* The PMI implementation must initialize the PMI fields */
+		PMIServInitEntry( &ps->pmientry );
+
 		ps->exitReason = 0;
 		ps->exitSig = 0;
 		ps->exitStatus = 0;

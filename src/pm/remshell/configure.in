@@ -128,7 +128,7 @@ dnl
 dnl Check for functions.  This invokes another test if the function is 
 dnl found.  The braces around the second test are essential. 
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
-AC_CHECK_FUNCS(strsignal)
+AC_CHECK_FUNCS(strsignal snprintf)
 dnl 
 dnl Check for signal handlers
 AC_CHECK_FUNCS(sigaction signal setset)

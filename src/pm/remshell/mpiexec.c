@@ -29,6 +29,10 @@
    process table */
 #include "remshell.h"
 
+#ifdef HAVE_SNPRINTF
+#define MPIU_Snprintf snprintf
+#endif
+
 /* Debug definitions */
 #define DEBUG_ARGS
 
@@ -70,7 +74,7 @@ int mpiexecGetPort( int *, int * );
 int main( int argc, char *argv[] )
 {
     int rc = 0;
-    int fdPMI, portnum;             /* fd and port for PMI messages */
+    int fdPMI=-1, portnum;             /* fd and port for PMI messages */
     char myname[MAX_HOST_NAME+1];
     processTable.maxProcesses = MAXPROCESSES;
     processTable.nProcesses   = 0;
@@ -126,7 +130,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Poll on the active FDs and handle each input type */
-    rc = mpiexecPollFDs( &processTable );
+    rc = mpiexecPollFDs( &processTable, fdPMI );
 
     /* Clean up and determine the return code.  Log any anomolous events */
     /* FIXME: NOT DONE */
@@ -381,10 +385,6 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	       in */
 	}
 	else if (pid == 0) {
-	    char **myargv;
-	    char port_as_string[1024];
-	    int rshNargs, j, rc;
-
 	    /* FIXME: we need to close the fdPMI */
 	    close(read_out_pipe[0]);
 	    close(write_in_pipe[1]);
@@ -422,12 +422,6 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		if (putenv( envvar )) {
 		    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
 		}
-		/*
-		char portstring[256];
-		MPIU_Strncpy( portstring, "MPIEXEC_PORT=", 256 );
-		MPIU_Strnapp( portstring, port_as_string, 256 );
-		putenv( portstring );
-		*/
 		close( pmi_pipe[0] );
 		/* Must set PMI_RANK, PMI_SIZE, PMI_DEBUG, PMI_FD 
 		   environment variables */
@@ -562,11 +556,15 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
 /* ----------------------------------------------------------------------- */
 #include <sys/poll.h>
 
-int mpiexecPollFDs( ProcessTable_t *ptable )
+int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 {
     struct pollfd *pollarray;
     int i, j, nfds, nprocess;
     int mpiexecFdIdx;
+    /* pollIdxToPtable[i] gives the index into ptable of the process 
+       that is using poll array elements 4i to 4i+3 (each process uses
+       4 fds) */
+    int pollIdxToPtable[MAXPROCESSES];
 
     /* Compute the array size needed for the poll operation */
     nprocess = ptable->nProcesses;
@@ -582,21 +580,9 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
      * Fill to poll array.  Initialize all of the fds.
      */
     j = 0;
-    for (i=0; i<nprocess; i++) {
-	pollarray[j].fd = ptable->table[i].fdStdin;
-	pollarray[j].events = POLLOUT;
-	j++;
-	pollarray[j].fd = ptable->table[i].fdStdout;
-	pollarray[j].events = POLLIN;
-	j++;
-	pollarray[j].fd = ptable->table[i].fdStderr;
-	pollarray[j].events = POLLIN;
-	j++;
-	pollarray[j].fd = ptable->table[i].fdPMI;
-	pollarray[j].events = POLLIN;
-	j++;
-    }
-    /* Add the last four */
+
+    /* Start with the four fd's used by mpiexec to connect to 
+       stdin/out/err and the socket to create connections on */
     mpiexecFdIdx = j;
     pollarray[j].fd = 0; 
     pollarray[j].events = POLLIN;
@@ -610,6 +596,23 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
     pollarray[j].fd = fdPMI;
     pollarray[j].events = POLLOUT;
 
+    for (i=0; i<nprocess; i++) {
+	pollIdxToPtable[i+1] = i;
+	pollarray[j].fd = ptable->table[i].fdStdin;
+	pollarray[j].events = POLLOUT;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdStdout;
+	pollarray[j].events = POLLIN;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdStderr;
+	pollarray[j].events = POLLIN;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdPMI;
+	pollarray[j].events = POLLIN;
+	j++;
+    }
+
+    /* Loop until we exit or timeout */
     while (1) {
 	int timeout, rc;
 
@@ -618,7 +621,10 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	timeout = GetRemainingTime();
 	rc = poll( pollarray, nfds, timeout );
 
-	/* rc = ? is a timeout, with nothing read */
+	/* rc = 0 is a timeout, with nothing read */
+	if (rc == 0) {
+	    break;
+	}
 
 	/* loop through the entries, looking at the processes first */
 	j = 0;
@@ -639,7 +645,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	    }
 	    j++;
 	    if (pollarray[j].revents == POLLIN) {
-		rc = PMIServHandleStdin( &ptable->table[i].pmientry );
+		rc = PMIServHandleInputFd( &ptable->table[i].pmientry );
 	    }
 	}
 	if (pollarray[mpiexecFdIdx].revents == POLLIN) {
@@ -675,7 +681,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 void CreateNewSession( void )
 {
 #if defined(HAVE_SETSID) && defined(HAVE_ISATTY) && defined(USE_NEW_SESSION)
-if (!isatty(0)) {
+if (!isatty(0) && getsid(0) != getpid()) {
     pid_t rc;
     rc = setsid();
     if (rc < 0) {
@@ -702,7 +708,7 @@ int mpiexecHandleStdin( int fd, charbuf *buf )
     do {
 	n = write( fd, buf->firstchar, buf->nleft );
     }
-    while (n < 0 && errno = EINTR);
+    while (n < 0 && errno == EINTR);
 
     if (n >= 0) {
 	buf->firstchar += n;
@@ -726,7 +732,7 @@ int mpiexecHandleStdout( int infd, charbuf *buf, int outfd )
     do {
 	n = read( infd, buf->firstchar, buf->nleft );
     }
-    while (n < 0 && errno = EINTR);
+    while (n < 0 && errno == EINTR);
     if (n >= 0) {
 	buf->nleft -= n;
 	/* Try to write to outfd */

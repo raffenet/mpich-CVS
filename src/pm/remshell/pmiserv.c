@@ -191,6 +191,13 @@ int PMIServ_Init( int nprocs, char kvsname[] )
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
 
+int PMIServInitEntry( PMI_Process *pmientry )
+{
+    pmientry->fd    = -1;
+    pmientry->group = -1;
+    pmientry->kvs   = -1;
+}
+
 int PMIServ_addto_group( int group, int rank, pid_t pid, int fd )
 {
     pmi.grouptable[group].fds[rank]  = fd;
