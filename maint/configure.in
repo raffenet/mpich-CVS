@@ -1,7 +1,15 @@
 # -*- Mode: shell-script; -*-
 AC_INIT
+#
+# Try to find the version
+if test -s "$srcdir/Version" ; then
+    VERSION="`cat $srcdir/Version`"
+else
+    VERSION="Unknown"
+fi
+AC_SUBST(VERSION)
 AC_PATH_PROG(PERL,perl)
-AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates])
+AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm])
 # We have to redefine the variables that autoconf always substitutes and that
 # are used in simplemake
 CFLAGS='@CFLAGS@'
@@ -12,4 +20,4 @@ CXXFLAGS='@CXXFLAGS@'
 # autoconf replacement.
 # Note that top_srcdir and srcdir are special cases (they must not
 # be changed in configure.in because configure uses them to find other files)
-AC_OUTPUT(simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates)
+AC_OUTPUT(simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm)
