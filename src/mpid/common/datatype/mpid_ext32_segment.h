@@ -20,6 +20,9 @@
 #ifdef HAVE_INT64
 #define uint64_t __int64
 #define uint32_t __int32
+#elif defined(MPIU_INT64_T)
+/* This is necessary with some compilers or compiler settings */
+#define uint64_t unsigned MPIU_INT64_T
 #endif
 
 #if ((defined(_BIG_ENDIAN) && !defined(ntohl)) || (__BYTE_ORDER == __BIG_ENDIAN))
