@@ -213,7 +213,7 @@ void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp)
  * first - first byte index to be packed (or actually packed (??))
  *
  * InOut Parameters:
- * last - pointer to last byte index to be packed
+ * last - pointer to last byte index to be packed plus 1 (makes math easier)
  *
  * This and the similar functions all set up a piece_params structure that
  * they then pass to DLOOP_Segment_manipulate along with the function that 

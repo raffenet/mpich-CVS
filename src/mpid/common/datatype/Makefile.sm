@@ -1,2 +1,2 @@
-lib${MPILIBNAME}_a_SOURCES = mpid_segment.c
+lib${MPILIBNAME}_a_SOURCES = gen_segment.c gen_dataloop.c mpid_type_vector.c
 INCLUDES = -I${srcdir} -I../../../include -I${master_top_srcdir}/src/include
