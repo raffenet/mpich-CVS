@@ -77,8 +77,11 @@ public class TreeNodeID implements Comparable
 
     /*
        Define the "natural ordering" imposed by Comparable used in SortedMap
-       The ordering here needs to be consistent with DrawOrderComparator
-       which is first increasing startime order then decreasing endtime
+       The ordering here needs to be consistent with the primitive time order
+       (i.e. increasing or decreasing not the starttime or finaltime part)
+       defined in Drawable.DRAWING_ORDER (TimeBoundingBox.INCRE_STARTTIME_ORDER)
+       which is first determined by increasing startime then
+       decreasing endtime order.
     */
     public int compareTo( final TreeNodeID ID )
     {

@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.NoSuchElementException;
 
-import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Shadow;
@@ -24,12 +23,6 @@ import logformat.slog2.*;
 public class TreeFloorList
 {
     private static final short               NULL_DEPTH = -1;
-
-    // Drawing Order for all drawables (especially State) is defined to be
-    // first Increasing Starttime and then Decreasing EndTime.
-    private static final DrawOrderComparator    DRAWING_ORDER
-                                                = new DrawOrderComparator();
-
 
     private TreeFloor[]      floors;
     private short            lowest_depth;
@@ -282,7 +275,7 @@ public class TreeFloorList
                                          boolean          withShadows )
         {
             // map_obj2itr has Drawables arranged in Increasing Starttime order
-            map_obj2itr = new TreeMap( DRAWING_ORDER );
+            map_obj2itr = new TreeMap( Drawable.DRAWING_ORDER );
             for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
                 this_floor_itr = floors[ idx ].iteratorOfDrawables(
                                                tframe, isComposite,
@@ -405,7 +398,7 @@ public class TreeFloorList
                                          boolean          withShadows )
         {
             // map_obj2itr has Drawables arranged in Increasing Starttime order
-            map_obj2itr = new TreeMap( DRAWING_ORDER );
+            map_obj2itr = new TreeMap( Drawable.DRAWING_ORDER );
             for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
                 this_floor_itr = floors[ idx ].iteratorOfDrawables(
                                                tframe, isComposite,

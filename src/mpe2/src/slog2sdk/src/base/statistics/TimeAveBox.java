@@ -29,9 +29,6 @@ import base.drawable.Shadow;
 
 public class TimeAveBox extends TimeBoundingBox
 {
-    private static final DrawOrderComparator DRAWING_ORDER
-                                             = new DrawOrderComparator();
-
     private              Map                 map_type2twgt;
     private              List                list_nestables;
     private              SortedSet           set_timeblocks;
@@ -53,7 +50,7 @@ public class TimeAveBox extends TimeBoundingBox
 
         if ( isNestable ) {
             list_nestables = new ArrayList();
-            set_timeblocks = new TreeSet( DRAWING_ORDER );
+            set_timeblocks = new TreeSet(TimeBoundingBox.INCRE_STARTTIME_ORDER);
         }
         else {
             list_nestables = null;

@@ -12,7 +12,6 @@ package viewer.timelines;
 import java.util.Iterator;
 import java.util.Map;
 
-import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Shadow;
@@ -25,8 +24,6 @@ public class SearchTreeTrunk
 {
     private static final boolean              INCRE_STARTTIME_ORDER = true;
     private static final boolean              IS_NESTABLE           = true;
-    private static final DrawOrderComparator  DRAWING_ORDER
-                                              = new DrawOrderComparator();
 
     private              TreeTrunk            treetrunk;
     private              boolean              isConnectedComposite;
@@ -93,7 +90,7 @@ public class SearchTreeTrunk
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();
             if (    dobj.getCategory().isVisiblySearchable()
-                 && DRAWING_ORDER.compare( dobj, last_found_dobj ) < 0
+                 && Drawable.DRAWING_ORDER.compare( dobj, last_found_dobj ) < 0
                  && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
                 last_found_dobj = dobj;
@@ -155,7 +152,7 @@ public class SearchTreeTrunk
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();
             if (    dobj.getCategory().isVisiblySearchable()
-                 && DRAWING_ORDER.compare( dobj, last_found_dobj ) > 0
+                 && Drawable.DRAWING_ORDER.compare( dobj, last_found_dobj ) > 0
                  && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
                 last_found_dobj = dobj;

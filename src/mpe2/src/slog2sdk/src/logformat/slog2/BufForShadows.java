@@ -18,7 +18,6 @@ import java.util.Collections;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
-import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Topology;
 import base.drawable.Category;
@@ -31,8 +30,6 @@ public class BufForShadows extends BufForObjects
     private static final int  INIT_BYTESIZE = BufForObjects.BYTESIZE
                                             + 4  /* buf4nestable.size() */
                                             + 4  /* buf4nestless.size() */ ;
-    private static final DrawOrderComparator DRAWING_ORDER
-                                             = new DrawOrderComparator();
 
     private Map               buf4shadows;   // For Output API
     private Map               shadowdefs_map;
@@ -253,8 +250,8 @@ public class BufForShadows extends BufForObjects
             else
                 buf4nestless.add( sobj );
         }
-        Collections.sort( buf4nestable, DRAWING_ORDER );
-        Collections.sort( buf4nestless, DRAWING_ORDER );
+        Collections.sort( buf4nestable, Drawable.DRAWING_ORDER );
+        Collections.sort( buf4nestless, Drawable.DRAWING_ORDER );
 
         Nobjs  = buf4nestless.size();
         outs.writeInt( Nobjs );

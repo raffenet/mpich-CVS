@@ -28,19 +28,18 @@ import java.util.Iterator;
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
 import base.topology.Line;
+import base.topology.PreviewEvent;
+import base.topology.PreviewState;
+/*
 import base.topology.Arrow;
 import base.topology.State;
-import base.topology.Event;
-import base.topology.PreviewState;
+*/
 
 public class Shadow extends Primitive
 {
     private static final int     BYTESIZE   = TimeBoundingBox.BYTESIZE /*super*/
                                             + 8  /* num_real_objs */
                                             + 4  /* map_type2twgt's size() */;
-
-    private static final DrawOrderComparator DRAWING_ORDER
-                                             = new DrawOrderComparator();
 
     private              long                num_real_objs;
 
@@ -114,7 +113,7 @@ public class Shadow extends Primitive
         map_type2dobjs.put( prime.getCategory(), dobj_list );
 
         if ( shadow_type.getTopology().isState() ) {
-            set_nestables     = new TreeSet( DRAWING_ORDER );
+            set_nestables     = new TreeSet( Drawable.DRAWING_ORDER );
             set_nestables.add( prime );
             list_childshades  = new ArrayList();
         }
@@ -617,21 +616,27 @@ public class Shadow extends Primitive
         Coord  vtx;
         vtx = this.getStartVertex();
 
+        double tStart, tFinal;
+        tStart = super.getEarliestTime();    /* different from Primitive */
+        tFinal = super.getLatestTime();      /* different from Primitive */
+
         double tPoint;
-        tPoint = vtx.time;  /* different from Shadow */
+        tPoint = vtx.time;
 
         int    rowID;
         float  rPeak, rStart, rFinal;
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(vtx.lineID) )
                  ).intValue();
-        rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
         rFinal = rStart + 1.0f;
 
-        return Event.draw( g, color, null, coord_xform,
-                           drawn_boxes.getLastEventPos( rowID ),
-                           tPoint, rPeak, rStart, rFinal );
+        return PreviewEvent.draw( g, color, null, coord_xform,
+                                 drawn_boxes.getLastEventPos( rowID ),
+                                 tStart, rStart, tFinal, rFinal,
+                                 tPoint, rPeak );
     }
 
     /* 
@@ -702,19 +707,26 @@ public class Shadow extends Primitive
         Coord  vtx;
         vtx = this.getStartVertex();
 
+        double tStart, tFinal;
+        tStart = super.getEarliestTime();    /* different from Primitive */
+        tFinal = super.getLatestTime();      /* different from Primitive */
+
         double tPoint;
-        tPoint = vtx.time;  /* different from Shadow */
+        tPoint = vtx.time;
 
         int    rowID;
-        float  rStart, rFinal;
+        float  rPeak, rStart, rFinal;
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(vtx.lineID) )
                  ).intValue();
+        // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
         rFinal = rStart + 1.0f;
 
-        return Event.containsPixel( coord_xform, pix_pt,
-                                    tPoint, rStart, rFinal );
+        return PreviewEvent.containsPixel( coord_xform, pix_pt,
+                                           tStart, rStart, tFinal, rFinal,
+                                           tPoint, rPeak );
     }
 
     public boolean containSearchable()

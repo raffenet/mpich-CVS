@@ -411,7 +411,8 @@ public class Primitive extends Drawable
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(vtx.lineID) )
                  ).intValue();
-        rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
         rFinal = rStart + 1.0f;
 

@@ -19,7 +19,6 @@ import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Composite;
 import base.drawable.Primitive;
-import base.drawable.DrawOrderComparator;
 
 /*
    Iterator of Primitives in a given List in Increasing StartTime order.
@@ -27,11 +26,9 @@ import base.drawable.DrawOrderComparator;
  */
 public class IteratorOfForePrimitives implements Iterator
 {
-    // Drawing Order for all drawables (especially State) is defined to be
-    // first Increasing Starttime and then Decreasing EndTime.
-    private static final DrawOrderComparator    DRAWING_ORDER
-                                                = new DrawOrderComparator();
-
+    // Drawable.DRAWING_ORDER defines the drawing order of drawables
+    // (especially for State), i.e.first Increasing Starttime and
+    // then Decreasing EndTime.
     private ListIterator     drawables_itr;
     private TimeBoundingBox  timeframe;
 
@@ -43,7 +40,7 @@ public class IteratorOfForePrimitives implements Iterator
     {
         drawables_itr  = dobjs_list.listIterator( 0 );
         timeframe      = tframe;
-        set_primes     = new TreeSet( DRAWING_ORDER );
+        set_primes     = new TreeSet( Drawable.DRAWING_ORDER );
         next_primitive = this.getNextInQueue();
     }
 

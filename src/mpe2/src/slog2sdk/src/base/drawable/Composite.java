@@ -36,9 +36,6 @@ public class Composite extends Drawable
 {
     private static final int INIT_BYTESIZE   = 2  /* primes.length */ ; 
 
-    private static final DrawOrderComparator DRAWING_ORDER
-                                             = new DrawOrderComparator();
-
     private   Primitive[]      primes;
     private   int              last_prime_idx;
 
@@ -165,7 +162,7 @@ public class Composite extends Drawable
         int primes_length, idx;
 
         // Save the Lists in Increasing Starttime order
-        Arrays.sort( primes, DRAWING_ORDER );
+        Arrays.sort( primes, Drawable.DRAWING_ORDER );
 
         super.writeObject( outs );
 
@@ -509,7 +506,8 @@ public class Composite extends Drawable
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(vtx.lineID) )
                  ).intValue();
-        rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
         rFinal = rStart + 1.0f;
 

@@ -26,8 +26,8 @@ SRC     = ColorAlpha.java Coord.java CoordPixelXform.java \
           Category.java CategoryWeight.java \
           DrawnBox.java DrawnBoxSet.java \
           InfoBox.java NestingStacks.java Drawable.java \
-          Primitive.java Primitive_TwoVtx.java Shadow.java \
-          DrawOrderComparator.java Composite.java \
+          Primitive.java Primitive_TwoVtx.java \
+          Shadow.java Composite.java \
           Kind.java YCoordMap.java InputAPI.java \
 
 OBJ     = $(SRC:.java=.class)

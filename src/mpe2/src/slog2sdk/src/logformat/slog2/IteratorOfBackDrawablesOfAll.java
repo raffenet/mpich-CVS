@@ -9,9 +9,9 @@
 
 package logformat.slog2;
 
+import java.util.Comparator;
 import java.util.Iterator;
 
-import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 
@@ -22,10 +22,10 @@ import base.drawable.Drawable;
 */
 public class IteratorOfBackDrawablesOfAll implements Iterator
 {
-   // Drawing Order for all drawables (especially State) is defined to be
-    // first Increasing Starttime and then Decreasing EndTime.
-    private static final DrawOrderComparator    DRAWING_ORDER
-                                                = new DrawOrderComparator();
+    // Drawable.DRAWING_ORDER defines the drawing order of drawables
+    // (especially for State), i.e.first Increasing Starttime and
+    // then Decreasing EndTime.
+    private static final Comparator    DRAWING_ORDER = Drawable.DRAWING_ORDER;
 
     private Iterator         nestable_itr;
     private Iterator         nestless_itr;

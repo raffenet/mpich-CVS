@@ -18,7 +18,6 @@ import java.util.Collections;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
-import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Primitive;
@@ -29,8 +28,6 @@ public class BufForDrawables extends BufForObjects
     private static final int  INIT_BYTESIZE = BufForObjects.BYTESIZE
                                             + 4  /* buf4nestable.size() */
                                             + 4  /* buf4nestless.size() */ ;
-    private static final DrawOrderComparator DRAWING_ORDER
-                                             = new DrawOrderComparator();
 
     private static final byte PRIMITIVE_ID  = 0;
     private static final byte COMPOSITE_ID  = 1;
@@ -168,8 +165,8 @@ public class BufForDrawables extends BufForObjects
         super.writeObject( outs );   // BufForObjects.writeObject( outs )
 
         // Save the Lists in Increasing Starttime order
-        Collections.sort( buf4nestable, DRAWING_ORDER );
-        Collections.sort( buf4nestless, DRAWING_ORDER );
+        Collections.sort( buf4nestable, Drawable.DRAWING_ORDER );
+        Collections.sort( buf4nestless, Drawable.DRAWING_ORDER );
 
         // assume buf4nestless contains only primitives, e.g. arrow/event
         Nobjs  = buf4nestless.size();

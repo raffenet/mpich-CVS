@@ -355,8 +355,8 @@ public class InputLog
     {
         StringBuffer rep = new StringBuffer();
         rep.append( filehdr.toString() + "\n" );
-        rep.append( treedir.toString() + "\n" );
         rep.append( objdefs.toString() + "\n" );
+        rep.append( treedir.toString() + "\n" );
         rep.append( lineIDmaps.toString() + "\n" );
         return rep.toString();
     }
