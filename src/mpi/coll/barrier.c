@@ -72,7 +72,7 @@ int MPI_Barrier( MPI_Comm comm )
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
