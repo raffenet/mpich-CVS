@@ -61,9 +61,12 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     /* Depending on the compiler flags and options, struct flock 
        may not be defined with types that are the same size as
        ADIO_Offsets.  */
-/* FIXME: This NEEDS is a temporary hack until we use flock64 where
+/* FIXME: This is a temporary hack until we use flock64 where
    available. It also doesn't fix the broken Solaris header sys/types.h
-   header file, which declars off_t as a UNION ! */
+   header file, which declars off_t as a UNION ! Configure tests to
+   see if the off64_t is a union if large file support is requested; 
+   if so, it does not select large file support.
+*/
 #ifdef NEEDS_INT_CAST_WITH_FLOCK
     lock.l_type	  = type;
     lock.l_start  = (int)offset;
@@ -71,8 +74,8 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     lock.l_len	  = (int)len;
 #else
     lock.l_type	  = type;
-    lock.l_start  = offset;
     lock.l_whence = whence;
+    lock.l_start  = offset;
     lock.l_len	  = len;
 #endif
 
