@@ -43,7 +43,9 @@
 
    This is an intracommunicator barrier only!
 */
-PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
+
+/* not declared static because it is called in ch3_comm_connect/accept */
+int MPIR_Barrier( MPID_Comm *comm_ptr )
 {
     int size, rank, src, dst, mask, mpi_errno=MPI_SUCCESS;
     MPI_Comm comm;
