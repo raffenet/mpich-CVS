@@ -404,8 +404,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #elif defined (USE_SYSV_SHM)
     if (shmctl(pg->id, IPC_RMID, NULL))
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d", errno);
-	return mpi_errno;
+	/* Everyone is removing the same object so failure is ok? */
+	if (errno != EINVAL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d %d", pg->id, errno);
+	    return mpi_errno;
+	}
     }
 #endif
 
