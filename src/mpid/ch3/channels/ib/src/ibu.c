@@ -888,6 +888,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
     // tell the stack how many elements were pushed on it
     g_num_bytes_written_stack[g_cur_write_stack_index++].length = -index;
+    printf("ibui_post_writev: posting send with %d ib buffers\n", index);fflush(stdout);
 
     sg_list.data_seg_p = data;
     sg_list.data_seg_num = index;
@@ -1286,7 +1287,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		BlockFree(ibu->allocator, mem_ptr);
 	    }
-	    /*printf("ibu_wait: num_bytes = %d\n", num_bytes);fflush(stdout);*/
+	    printf("ibu_wait: num_bytes sent = %d\n", num_bytes);fflush(stdout);
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    ibu->write.total += num_bytes;
@@ -1362,6 +1363,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
+	    printf("ibu_wait: read %d bytes\n", num_bytes);fflush(stdout);
 	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
