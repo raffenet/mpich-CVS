@@ -224,7 +224,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 				    MPI_ERR_OTHER, "**namepubnotpub",
 				    "**namepubnotpub %s", service_name );
 	return err;
-	/* -- END ERROR HANDLING-- */
+	/* --END ERROR HANDLING-- */
     }
 
     /* Later, we can reduce the number of active and compress the list */
