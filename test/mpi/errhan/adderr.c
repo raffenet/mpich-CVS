@@ -36,19 +36,21 @@ int main( int argc, char *argv[] )
 	MPI_Error_class( newclass[i], &outclass );
 	if (outclass != newclass[i]) {
 	    errs++;
-	    printf( "Error class %d is not a valid error code\n", i );
+	    printf( "Error class %d is not a valid error code %x %x\n", i,
+		    outclass, newclass[i]);
 	}
 	for (j=0; j<NCODES; j++) {
 	    MPI_Error_class( newcode[i][j], &outclass );
 	    if (outclass != newclass[i]) {
 		errs++;
-		printf( "Class of code for %d is not correct\n", j );
+		printf( "Class of code for %d is not correct %x %x\n", j,
+			outclass, newclass[i] );
 	    }
 	    MPI_Error_string( newcode[i][j], outstring, &slen );
 	    sprintf( string, "code for class %d code %d\n", i, j );
 	    if (strcmp( outstring, string )) {
 		errs++;
-		printf( "Error string is %s but should be %s\n",
+		printf( "Error string is :%s: but should be :%s:\n",
 			outstring, string );
 	    }
 	}
