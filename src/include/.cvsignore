@@ -26,3 +26,5 @@ mpiallstates.h
 lwnames.h
 mpitest.h
 mpitestconf.h
+Makefile.in
+Makefile
