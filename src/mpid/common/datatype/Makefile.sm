@@ -1,6 +1,7 @@
 lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
 	gen_dataloop.c \
 	mpid_segment.c \
+	mpid_type_dup.c \
 	mpid_type_vector.c \
 	mpid_type_contiguous.c \
 	mpid_type_indexed.c \

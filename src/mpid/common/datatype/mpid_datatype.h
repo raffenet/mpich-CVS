@@ -33,6 +33,9 @@
 #define MPID_DTYPE_END       -1
 
 /* Datatype functions */
+int MPID_Type_dup(MPI_Datatype oldtype,
+		  MPI_Datatype *newtype);
+
 int MPID_Type_struct(int count,
 		     int *blocklength_array,
 		     MPI_Aint *displacement_array,

@@ -43,13 +43,9 @@ int MPID_Type_struct(int count,
 		     MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, all_basics = 1, all_same = 1, has_lb = 0, has_ub = 0;
+    int i, nr_real_types = 0, all_basics = 1, all_same = 1, has_lb = 0, has_ub = 0;
 
     MPID_Datatype *new_dtp;
-#if 0
-    struct MPID_Dataloop *dlp;
-    MPI_Aint *aptr;
-#endif
 
     if (count == 1) {
 	/* simplest case: count == 1 */
@@ -72,9 +68,13 @@ int MPID_Type_struct(int count,
      * that we can make.
      */
     for (i=1; i < count; i++) {
-	if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) all_basics = 0;
+	if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
+	    all_basics = 0;
+	    nr_real_types++;
+	}
 	else if (oldtype_array[i] == MPI_LB) has_lb = 1;
 	else if (oldtype_array[i] == MPI_UB) has_ub = 1;
+	else /* builtin that isn't an LB or UB */ nr_real_types++;
 
 	if (oldtype_array[i] != *oldtype_array) all_same = 0;
     }
@@ -113,6 +113,11 @@ int MPID_Type_struct(int count,
 	MPIU_Free(tmp_blocklength_array);
 	return mpi_errno;
     }
+
+    /* TODO: Catch case of a single basic with an LB and/or UB; this can be done
+     * with a contig followed by an adjustment of the LB and UB, which would be
+     * simpler to process than the indexed that we use below.
+     */
 
     if (all_basics) {
 	/* There are only basics, but there are LBs and/or UBs that we need to
@@ -168,6 +173,8 @@ int MPID_Type_struct(int count,
 	MPIU_Free(tmp_blocklength_array);
 	MPIU_Free(tmp_displacement_array);
 
+	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
 	/* deal with the LB and/or UB */
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	if (has_lb) {
@@ -178,13 +185,89 @@ int MPID_Type_struct(int count,
 	    new_dtp->has_sticky_ub = 1;
 	    new_dtp->ub            = ub_disp;
 	}
-
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 
 	return mpi_errno;
     }
 
-    /* derived types ... */
+    if (nr_real_types == 1) {
+	/* There's exactly one derived type in the struct.
+	 * 
+	 * steps:
+	 * - find the locations of the UB and LB, index of actual type
+	 * - 
+	 *
+	 * NOTE: if displacement of type is zero, we can dup and adjust
+	 * lb/ub/extent.  otherwise we need to deal with the displacement.
+	 * the easiest way to do that is with an byte indexed type again.
+	 */
+	int found_lb = 0, found_ub = 0, real_type_idx = -1;
+	MPI_Aint lb_disp = -1, ub_disp = -1;
+
+	for (i=0; i < count; i++) {
+	    if (oldtype_array[i] == MPI_LB) {
+		if (!found_lb) {
+		    found_lb = 1;
+		    lb_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] < lb_disp) lb_disp = displacement_array[i];
+	    }
+	    else if (oldtype_array[i] == MPI_UB) {
+		if (!found_ub) {
+		    found_ub = 1;
+		    ub_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] > ub_disp) ub_disp = displacement_array[i];
+	    }
+	    else real_type_idx = i;
+	}
+
+	if (displacement_array[real_type_idx] == 0) {
+	    mpi_errno = MPID_Type_dup(oldtype_array[real_type_idx], newtype);
+
+	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+	    MPID_Datatype_get_ptr(*newtype, new_dtp);
+	    if (has_lb) {
+		new_dtp->has_sticky_lb = 1;
+		new_dtp->lb            = lb_disp;
+	    }
+	    if (has_ub) {
+		new_dtp->has_sticky_ub = 1;
+		new_dtp->ub            = ub_disp;
+	    }
+	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	   
+	    return mpi_errno;
+	}
+	else {
+	    mpi_errno = MPID_Type_indexed(1,
+					  &blocklength_array[real_type_idx],
+					  &displacement_array[real_type_idx],
+					  1,
+					  oldtype_array[real_type_idx],
+					  newtype);
+
+	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+	    MPID_Datatype_get_ptr(*newtype, new_dtp);
+	    if (has_lb) {
+		new_dtp->has_sticky_lb = 1;
+		new_dtp->lb            = lb_disp;
+	    }
+	    if (has_ub) {
+		new_dtp->has_sticky_ub = 1;
+		new_dtp->ub            = ub_disp;
+	    }
+	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	   
+	    return mpi_errno;
+	}
+    }
+
+    /* Multiple derived types ... this is essentially the flattening case from
+     * ROMIO.
+     */
     assert(0);
 
     return MPI_SUCCESS;
