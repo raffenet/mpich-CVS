@@ -34,7 +34,7 @@ AC_PROG_LN_S
 
 AC_CHECK_PROG(PY23, python2.3, python2.3)
 AC_CHECK_PROG(PY2,  python2, python2)
-AC_CHECK_PROG(PY22, python2.2, python2)
+AC_CHECK_PROG(PY22, python2.2, python2.2)
 AC_CHECK_PROG(PY,   python, python)
 dnl Find a usable Python
 PYTHON=""
