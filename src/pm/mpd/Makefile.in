@@ -51,7 +51,8 @@ etags:  ${HEADERS} ${SOURCES}
 
 fix_python_shebangs:
 	-@for pypgm in *.py ; do \
-	    sed -i -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' $$pypgm ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' $$pypgm > temp ; \
+	    cp temp $$pypgm ; \
 	done
 
 mpdroot: ${mpdroot_OBJECTS}
