@@ -27,6 +27,9 @@ dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for share
 
 AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl mmap shm_unlink )
 AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
+if test "$ac_cv_search_shm_open" != "none required" ; then
+    SHM_LIBS="$SHM_LIBS $ac_cv_search_shm_open" 
+fi
 
 AC_CHECK_HEADERS(				\
     assert.h					\
@@ -94,7 +97,7 @@ if test -z "$ENABLE_SHLIB" ; then
     CC_SHL="$CC"
     ENABLE_SHLIB=none
 fi
-
+AC_SUBST(SHM_LIBS)
 AC_SUBST(CC_SHL)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
