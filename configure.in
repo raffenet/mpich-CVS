@@ -29,8 +29,8 @@ AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
 CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi")
 dnl
 AC_ARG_ENABLE(coverage,
-[--enable-coverage - Turn on coverage analysis using gcc and gcov],
-CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage")
+[--enable-coverage - Turn on coverage analysis using gcc and gcov],,
+enable_coverage=no)
 dnl
 AC_ARG_ENABLE(error-checking,
 [--enable-error-checking=level - Control the amount of error checking.  
@@ -559,6 +559,16 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
     ac_cv_prog_f77_cross=yes
     ac_cv_prog_cxx_cross=yes
 fi
+dnl
+dnl Check for strict.  Do this *first* because the -ansi switch changes what
+dnl gcc will accept
+if test "$enable_strict" = "yes" ; then
+    if test "$ac_cv_prog_gcc" = "yes" ; then
+       CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi"
+    else 
+        AC_MSG_WARN([--enable-strict only supported for GCC])
+    fi
+fi
 AC_CHECK_PROGS(AR,ar)
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
@@ -660,7 +670,8 @@ AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
-PAC_C_GNU_ATTRIBUTE# Check on support for long double and long long types.  Do this before the
+PAC_C_GNU_ATTRIBUTE
+# Check on support for long double and long long types.  Do this before the
 # structure alignment test because it will test for including those
 # types as well
 AC_CACHE_CHECK([whether long double is supported],
@@ -1004,6 +1015,15 @@ return (compval == 20) ? 0 : -1;
 Define if using gcc on a system with an Intel Pentium class chip]), 
 AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 dnl
+dnl Check for support of enable-coverage.  Put this near the end of the tests
+dnl because the coverage options may affect the other tests.
+if test "$enable_coverage" = "yes" ; then
+    if test "$ac_cv_prog_gcc" = "yes" ; then
+        CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+    else
+        AC_MSG_WARN([--enable-coverage only supported for GCC])
+    fi
+fi
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
 dnl
