@@ -14,6 +14,13 @@ $tmpdir = "/sandbox/gropp";
 # rundir is the directory in which to run the tests.
 $rundir = "";
 $mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
+if (! -d $mpich1_dir && -d "/homes/gropp/tmp/cvstesting/mpich" ) {
+    $mpich1_dir = "/homes/gropp/tmp/cvstesting/mpich";
+}
+$sowing_dir = "/home/gropp/sowing-proj/sowing";
+if (! -d $sowing_dir && -d "/homes/gropp/sowing-proj/sowing" ) {
+    $sowing_dir = "/homes/gropp/sowing-proj/sowing";
+}
 # By default, use random arguments for the tests
 $use_rand_args = 1;
 #
@@ -337,7 +344,7 @@ sub RunTest {
 		# Only perform these steps if the make succeeded
 
 		# Check the libraries for nonconforming global symbols.
-		$globnametest = "/home/gropp/sowing-proj/sowing/bin/checkforglobs";
+		$globnametest = "$sowing_dir/bin/checkforglobs";
 		if ( -x $globnametest ) { 
 		    my @pgm = split( /\s+/, 
               "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
