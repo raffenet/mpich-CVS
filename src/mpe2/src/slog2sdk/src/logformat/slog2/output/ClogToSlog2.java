@@ -92,7 +92,6 @@ public class ClogToSlog2
                 // System.out.println( Nobjs
                 //                   + ", bytesize=" + prime_obj.getByteSize()
                 //                   + " : " + prime_obj );
-                // System.out.println( Nobjs + " : " + prime_obj );
                 if ( enable_endtime_check ) {
                     if ( ! prime_obj.isTimeOrdered() ) {
                         System.out.println( "**** Primitive Time Error ****" );
