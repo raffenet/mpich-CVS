@@ -520,7 +520,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 	        # if it isn't, we remake it.	
 		rm -f $dir/mf.out 
                 (cd $dir && rm -f mf.tmp ; \
-	        sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
+	        sed -e 's%@SHELL@%/bin/sh%' \
 		    -e "s%@srcdir@%.%g" \
 		    -e '/include .deps/d' \
 		    -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
