@@ -382,6 +382,32 @@ dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
+AC_SEARCH_LIBS(socket, socket)
+AC_CHECK_LIB(thread, mutex_init)
+AC_CHECK_HEADERS(pthread.h fcntl.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h)
+AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h linux/unistd.h)
+AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
+AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
+
+AC_MSG_CHECKING(for gcc __asm__ and pentium cmpxchgl instruction)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+long int compval = 10;
+volatile long int *p = &compval;
+long int oldval = 10;
+long int newval = 20;
+char ret;
+long int readval;
+__asm__ __volatile__ (*lock; cmpxchgl %3, %1; sete %0"
+        : "=q" (ret), "=m" (*p), "=a" (readval)
+        : "r" (newval), "m" (*p), "a" (oldval));
+return (compval == 20) ? 0 : -1;
+}
+], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
+Define if using gcc on a system with an Intel Pentium class chip),
+AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
+
 AC_OUTPUT(Makefile src/Makefile \
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
