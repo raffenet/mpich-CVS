@@ -8,6 +8,14 @@
 # and all fields tab separated.  Powerpoint appears to ignore durations
 # and takes only dates.  This is called the "Task export map"
 
+$do_html = 0;
+foreach $_ (@ARGV) {
+    if (/-html/) { $do_html = 1; shift; }
+    else {
+	print STDERR "Unexpected option $_\n";
+	exit 1;
+    }
+}
 #
 # Skip header
 while (<>) {
@@ -21,6 +29,7 @@ while (<>) {
 #   nametoid{routine} = id
 #   nametotime{routine} = avg
 #   nametodepend{routine} = dependstring
+# This phase does no output
 %nametoid = ();
 %nametotime = ();
 %nametodepend = ();
@@ -117,6 +126,7 @@ sub Earlier {
 
 $firstdate = "3/2/02";
 
+sub PrintAsSpreadsheet {
 print "ID\tUnique_ID\tTask_name\tDuration\tPredecessors\tResource_Names\tActual_Finish\r\n";
 for ($i = 1; $i <$id; $i++) {
     $routine = $idtoname[$i];
@@ -133,4 +143,39 @@ for ($i = 1; $i <$id; $i++) {
     $nl = "\r\n";
     $nl = "\n";
     print "$i\t$i\t$routine\t$avg\t\"$dependlist\"\t\"$owner\"\t\"$finished\"$nl";
+}
+}
+
+sub PrintAsHtml {
+    $done_count = 0;
+    $tot_count = 0;
+    print "<TABLE>\n";
+    foreach $key (sort(keys(%nametotime))) {
+	if ($key =~ /^MPI_/) { 
+	    $tot_count ++;
+	    $routine = $key;
+	    $avg     = $nametotime{$routine};
+	    $depend  = $nametodepend{$routine};
+	    $dependlist = convert_depend( $depend );
+	    $owner   = $nametoowner{$routine};
+	    $finished = $nametofinished{$routine};
+	    $color = "FF0000";
+	    if ($finished ne "") { 
+		$done_count++;
+		$finished = "done";
+	        $color = "00FF00";}
+	    print "<TR><TD><FONT COLOR=\"$color\">$routine</FONT><TD>$finished<TD>$owner</TR>\n";
+	}
+    }
+    print "</TABLE>\n";
+    print "<TABLE><TR><TH>Routines Finished<TH>Routines Left</TR>\n";
+    $left_count = $tot_count - $done_count;
+    print "<TR><TD>$done_count<TD>$left_count</TR></TABLE>\n";
+}
+
+if ($do_html) {
+    &PrintAsHtml;
+}
+else {
+    &PrintAsSpreadsheet;
 }
