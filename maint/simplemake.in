@@ -588,6 +588,18 @@ sub ReadMfile {
 		$external_libraries{$lib} = 1;
 	    }
 	}
+	elsif (/^(\w*)\s*\+=\s*(.*)\s*$/){
+	    # Use this form to prepend values to some of the 
+	    # autoconf generate names, e.g., to change
+	    # LIBS = \@LIBS\@ 
+	    # to
+	    # LIBS = \@EXAMPLE_LIBS\@ \@LIBS\@
+	    # use
+	    # LIBS += \@EXAMPLE_LIBS\@
+	    $varname = $1;
+	    $varvalue = $2;
+	    $PrependVar{$1} = $2;
+	}
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
@@ -869,17 +881,20 @@ sub DefaultRules {
     # The definition of DEFS is the same as for Automake
     if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"}) ||
 	defined($ext_seen{"cpp"})) {
-	print FD "DEFS        = \@DEFS\@ -I. -I\${srcdir}$newline";
+	$otherdefs = $PrependVars{'DEFS'};
+	print FD "DEFS            = $otherdefs \@DEFS\@ -I. -I\${srcdir}$newline";
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
-	    print FD "INCLUDES        = $include_list$newline";
+	    print FD "INCLUDES            = $include_list$newline";
         }
-	print FD "CPPFLAGS        = \@CPPFLAGS\@$newline";
+	$otherflags = $PrependVar{'CPPFLAGS'};
+	print FD "CPPFLAGS        = $otherflags \@CPPFLAGS\@$newline";
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
-	print FD "LIBS            = \@LIBS\@$newline";
+	$otherlibs = $PrependVar{'LIBS'};
+	print FD "LIBS            = $otherlibs \@LIBS\@$newline";
     }
 
     # If there are subdirs, we need make
@@ -913,7 +928,8 @@ sub DefaultRules {
     if ($any_prog_def) {
 	# These are special definitions that are shared by all 
 	# pgmlink types
-	print FD "LDFLAGS     = \@LDFLAGS\@ $ldadd_all$newline";
+	$otherflags = $PrependVar{'LDFLAGS'};
+	print FD "LDFLAGS     = $otherflags \@LDFLAGS\@ $ldadd_all$newline";
     }
     print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
@@ -1199,6 +1215,7 @@ sub ClearVars {
     %pgm_depadd = ();
     $depadd_all = "";
     # Variables
+    %PrependVar = ();
     %makevars = ();
     # Information about program targets
     %pgmlinktypes = ();
