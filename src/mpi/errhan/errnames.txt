@@ -484,8 +484,12 @@ with MPI_Alloc_mem.
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 **ch3|sock|postread:attempt to post a read operation failed
 **ch3|sock|postread %p %p %p:attempt to post a read operation failed (rreq=%p,conn=%p,vc=%p)
+**ch3|sock|immedread:immediate read operation failed
+**ch3|sock|immedread %p %p %p:immediate read operation failed (rreq=%p,conn=%p,vc=%p)
 **ch3|sock|postwrite:attempt to post a write operation failed
 **ch3|sock|postwrite %p %p %p:attempt to post a write operation failed (sreq=%p,conn=%p,vc=%p)
+**ch3|sock|immedwrite:immediate write operation failed
+**ch3|sock|immedwrite %p %p %p:immediate write operation failed (rreq=%p,conn=%p,vc=%p)
 **ch3|sock|addrinuse:[ch3:sock] tcp port already in use
 **ch3|sock|addrinuse %d:[ch3:sock] tcp port %d already in use
 **ch3|sock|post_write:[ch3:sock] posting a write failed
