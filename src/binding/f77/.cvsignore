@@ -127,6 +127,7 @@ infognkf.c
 infognthkf.c
 infovallenf.c
 initf.c
+initf.c.in
 initthreadf.c
 initializedf.c
 iprobef.c
