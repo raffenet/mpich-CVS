@@ -27,7 +27,9 @@ reasons for them.
    appears to be the only suffix recognized by all compilers).  C++ header
     files should set the Emacs mode to C++, as in 
     /* -*- Mode: C++;  c-basic-offset:4 ; -*- */  
-   Don't forget that // is not a valid C comment.
+
+   // is not a valid C comment.  C files that use // are *BROKEN*.  
+   Please take responsibility for these and *FIX THEM*!!!!
 
 5. strcpy etc.: The standard C routines are very dangerous, since it
    is easy for them to allow an overwrite of memory.  The versions in
@@ -110,3 +112,6 @@ Or things not checked for but desired
    not
      #define foo(a) a > 1
 
+4. Enum lists must *not* end with a trailing comma.  Some C compilers
+   will not accept this.  When appending a list, use leading, not trailing
+   commas.
