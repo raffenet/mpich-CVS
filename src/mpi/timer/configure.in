@@ -117,6 +117,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     ],timer_type=$enable_timer_type)
 dnl
 if test -z "$timer_type" ; then 
+    # Try to pick a timer based on what is available
     AC_CHECK_FUNCS(clock_gettime clock_getres gethrtime gettimeofday)
     if test "$ac_cv_func_gethrtime" = "yes" ; then
         # Sigh.  The Solaris include files do not define hrtime_t
@@ -136,7 +137,10 @@ pac_cv_hrtime_works=yes,pac_cv_hrtime_works=no)])
     if test "$ac_cv_func_gethrtime" = "yes" -a \
             "$pac_cv_hrtime_works" = "yes" ; then
         timer_type=gethrtime
-    elif test "$ac_cv_func_clock_gettime" = "yes" ; then
+    elif test "$ac_cv_func_clock_gettime" = "yes" -a \
+              "$ac_cv_func_clock_getres" = "yes" ; then
+	 # Test on both because some systems (e.g., cygwin) provide
+	 # clock_gettime but not clock_getres
         timer_type=clock_gettime
     elif test "$ac_cv_func_gettimeofday" = "yes" ; then
         timer_type=gettimeofday
@@ -168,7 +172,7 @@ case "$timer_type" in
     fi
     AC_CHECK_FUNC(clock_getres,,[missing_function=yes])
     if test "$missing_function" = yes ; then
-        AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available])
+        AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available because clock_getres, also needed, is not available])
     fi
     MPID_TIMER_TYPE="struct timespec"
     # FreeBSD 4.3 incorrectly puts the header into sys/time.h; 
