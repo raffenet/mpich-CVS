@@ -1171,6 +1171,13 @@ fi
 
 PAC_CONFIG_SUBDIRS_IMMEDIATE($subsystems $TOPLEVEL_SUBDIRS)
 #
+# Get any localdefs that the subsystems created. Use a guard in case
+# the list is empty
+for dir in $subsystems $TOPLEVEL_SUBDIRS /dev/null ; do 
+    if test -f $dir/localdefs ; then
+        . $dir/localdefs
+    fi
+done
 # Make subsystems available to makefiles.
 subsystems="$devsubsystems $subsystems"
 AC_SUBST(subsystems)
