@@ -438,8 +438,6 @@ with MPI_Alloc_mem.
 **ch3|mm|OpenProcess %d %d:OpenProcess failed for process %d, error %d
 **ch3|mm|open:open failed
 **ch3|mm|open %s %d %d:open(%s) failed for process %d, error %d
-**ch3|mm|shmget:shmget failed
-**ch3|mm|shmget %d:shmget failed, error %d
 **ch3|mm|CreateFileMapping:CreateFileMapping failed
 **ch3|mm|CreateFileMapping %d:CreateFileMapping failed, error %d
 **ch3|mm|shmat:shmat failed
@@ -453,3 +451,21 @@ with MPI_Alloc_mem.
 **ch3|mm|badsock:internal error - bad sock
 **ch3|mm|failure:unknown failure
 **ch3|mm|failure %d:unknown failure, error %d
+
+#
+# CH3:shm
+#
+**ch3|shm|pmi_finalize:PMI_Finalize failed
+**ch3|shm|pmi_finalize %d:PMI_Finalize failed, error %d
+**ch3|shm|OpenProcess:OpenProcess failed
+**ch3|shm|OpenProcess %d %d:OpenProcess failed for process %d, error %d
+**ch3|shm|open:open failed
+**ch3|shm|open %s %d %d:open(%s) failed for process %d, error %d
+**ch3|shm|CreateFileMapping:CreateFileMapping failed
+**ch3|shm|CreateFileMapping %d:CreateFileMapping failed, error %d
+**ch3|shm|shmat:shmat failed
+**ch3|shm|shmat %d:shmat failed, error %d
+**ch3|shm|shmget:shmget failed
+**ch3|shm|shmget %d:shmget failed, error %d
+**ch3|shm|MapViewOfFileEx:MapViewOfFileEx failed
+**ch3|shm|MapViewOfFileEx %d:MapViewOfFileEx failed, error %d
