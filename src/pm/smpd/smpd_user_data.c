@@ -590,7 +590,8 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    list = list->next;
 	    if (strcmp(key, node->name) == 0)
 	    {
-		smpd_get_string(node->value, value, value_len, &num_bytes);
+		/*smpd_get_string(node->value, value, value_len, &num_bytes);*/
+		strcpy(value, node->value);
 		smpd_dbg_printf("smpd data: %s=%s\n", key, value);
 		found = 1;
 	    }
