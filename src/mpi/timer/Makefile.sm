@@ -1,4 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = wtime.c mpidtime.c wtick.c
+profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 distclean-local:

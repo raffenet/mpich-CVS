@@ -1,15 +1,10 @@
 lib${MPILIBNAME}_a_SOURCES =  comm_call_errhandler.c comm_create_errhandler.c \
-                              comm_get_errhandler.c comm_set_errhandler.c \
-			   errhandler_create.c errhandler_free.c \
-			   errhandler_get.c errhandler_set.c \
-			   errutil.c dynerrutil.c error_class.c \
-			   error_string.c \
-			   file_call_errhandler.c file_create_errhandler.c \
-			   file_get_errhandler.c file_set_errhandler.c \
-			   win_create_errhandler.c win_call_errhandler.c \
-			   win_get_errhandler.c win_set_errhandler.c 
-#lib${MPILIBNAME}_a_SOURCES = \
-error_string.c add_error_class.c add_error_code.c add_error_string.c
+ comm_get_errhandler.c comm_set_errhandler.c errhandler_create.c errhandler_free.c \
+ errhandler_get.c errhandler_set.c errutil.c dynerrutil.c error_class.c \
+ error_string.c file_call_errhandler.c file_create_errhandler.c \
+ file_get_errhandler.c file_set_errhandler.c \
+ win_create_errhandler.c win_call_errhandler.c \
+ win_get_errhandler.c win_set_errhandler.c 
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
