@@ -1041,11 +1041,11 @@ dnl
 dnl First, ensure that echo works within the config.status 
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
 dnl add ROMIO part of mpif.h if it exists
-AC_OUTPUT_COMMANDS([if test -f ../../romio/include/mpiof.h -a "$ROMIO" = 1 ; then \
-  sed -e '/MPI_OFFSET_KIND/d' ../../romio/include/mpiof.h | \
-  cat mpif.h - > mpif-tmp.h ; \
-  rm -f $includebuild_dir/mpif.h ; \
-  mv mpif-tmp.h mpif.h ; fi])
+dnl AC_OUTPUT_COMMANDS([if test -f ../../romio/include/mpiof.h -a "$ROMIO" = 1 ; then \
+dnl   sed -e '/MPI_OFFSET_KIND/d' ../../romio/include/mpiof.h | \
+dnl  cat mpif.h - > mpif-tmp.h ; \
+dnl  rm -f $includebuild_dir/mpif.h ; \
+dnl   mv mpif-tmp.h mpif.h ; fi])
 
 dnl This must be run before converting C to !
 AC_OUTPUT_COMMANDS([rm -f .tmp ; 
