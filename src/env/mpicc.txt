@@ -1,0 +1,47 @@
+/*D
+    mpicc - Compiles and links MPI programs written in C
+
+    Description:
+    This command can be used to compile and link MPI programs written in
+    C.  It provides the options and any special libraries that are
+    needed to compile and link MPI programs.  
+
+    It is important to use this command, particularly when linking programs, 
+    as it provides the necessary libraries.  
+
+    Command line arguments:
++  -show      - Show the commands that would be used without
+             runnning them
+.  -help      - Give short help
+.  -echo      - Show exactly what this program is doing.
+             This option should normally not be used.
+-  others     - are passed to the compiler or linker.  For example, '-c'
+    causes files to be compiled, '-g' selects compilation with debugging
+    on most systems, and '-o name' causes linking with the output
+    executable given the name 'name'.
+
+    Environment Variables:
+    The environment variables 'MPICH_CC' and 'MPICH_CLINKER' may be used
+    to select different C compiler and linker.  Note that since
+    MPICH is built with a particular C and Fortran compiler, change the
+    compilers used can cause problems.  Use this only if you could intermix
+    code compiled with the different compilers.
+
+    Examples:
+To compile a single file 'foo.c', use
+.vb
+   mpicc -c foo.c 
+.ve
+
+To link the output and make an executable, use
+.vb
+   mpicc -o foo foo.o
+.ve
+Combining compilation and linking in a single command
+.vb
+   mpicc -o foo foo.c
+.ve
+is a convenient way to build simple programs.
+
+.seealso: mpif77, mpicxx, mpif90, mpiexec
+D*/
