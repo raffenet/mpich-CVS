@@ -1,3 +1,4 @@
+# -*- Mode: shell-script
 # build with
 # autoconf --localdir=../confdb configure.in
 # (or wherever the confdb is)
@@ -28,6 +29,10 @@ MIPS=0
 BITS=0
 FROM_MPICH=${FROM_MPICH:-no}
 FROM_MPICH2=${FROM_MPICH2:-no}
+if test "$FROM_MPICH" = yes -a "$FROM_MPICH2" = yes ; then
+    AC_MSG_WARN([Both FROM_MPICH and FROM_MPICH set to yes; at most one should  be yes])
+    
+fi
 FROM_LAM=${FROM_LAM:-no}
 if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
 CFLAGS=${CFLAGS:-""}
@@ -1385,17 +1390,17 @@ done
 EXTRA_SRC_DIRS=""
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
-    if test "$NOF77" = 0 ; then
+    if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
         EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info/fortran"
     fi
 fi
 if test "$BUILD_MPI_ARRAY" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/array"
-    if test "$NOF77" = 0 ; then
+    if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
         EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/array/fortran"
     fi
 fi
-if test "$NOF77" = 0 ; then
+if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/fortran"
 fi
 AC_SUBST(EXTRA_SRC_DIRS)
@@ -1479,6 +1484,9 @@ dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
 dnl Support shared libraries
+if test -z "$ENABLE_SHLIB" ; then
+   ENABLE_SHLIB=none
+fi
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(CC_SHL)
 # Remove the .a from the library file name (so that we can use .so or
