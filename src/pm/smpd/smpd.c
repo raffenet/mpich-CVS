@@ -196,7 +196,9 @@ int smpd_entry_point()
     smpd_process.root_smpd = SMPD_TRUE;
 
     if (smpd_process.pszExe[0] != '\0')
+    {
 	smpd_set_smpd_data("binary", smpd_process.pszExe);
+    }
 
     result = MPIDU_Sock_create_set(&set);
     if (result != MPI_SUCCESS)
