@@ -33,6 +33,14 @@ static int error_ring_seq[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
 #endif
 
+/* Special error handler to call if we are not yet initialized */
+/* BUG - NOT YET CALLED ANYWHERE */
+void MPIR_Err_preinit( void )
+{
+    fprintf( stderr, "Error encountered before initializing MPICH\n" );
+}
+
+
 /* void for now until error handlers are defined */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
 			  int errcode )
@@ -57,7 +65,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d in %s\n", errcode, fcname );
+	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
@@ -86,7 +94,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d in %s\n", errcode, fcname );
+	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
@@ -115,7 +123,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d in %s\n", errcode, fcname );
+	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;

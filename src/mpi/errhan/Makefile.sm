@@ -11,3 +11,8 @@ lib${MPILIBNAME}_a_SOURCES =  comm_call_errhandler.c comm_create_errhandler.c \
 #lib${MPILIBNAME}_a_SOURCES = \
 error_string.c add_error_class.c add_error_code.c add_error_string.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+profilelib_${MPILIBNAME} = p${MPILIBNAME}
+#
+# This is a test for the document generation
+doc_HTML_SOURCES = 
+
