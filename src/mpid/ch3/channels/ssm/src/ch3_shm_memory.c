@@ -256,7 +256,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     }
 #elif defined (USE_SYSV_SHM)
     /* Insert code here to convert the name into a key */
-    fout = fopen(pOutput->name, "w");
+    fout = fopen(pOutput->name, "a+");
     pOutput->key = ftok(pOutput->name, 12345);
     fclose(fout);
     if (pOutput->key == -1)
@@ -266,11 +266,11 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
-    pOutput->id = shmget(pOutput->key, size, IPC_EXCL | IPC_CREAT | SHM_R | SHM_W);
+    pOutput->id = shmget(pOutput->key, size, IPC_CREAT | SHM_R | SHM_W);
     if (pOutput->id == -1)
     {
 	pOutput->error = errno;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmget", "**shmget %d", pOutput->error); /*"Error in shmget, %d", pOutput->error);*/
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmget", "**shmget %d", pOutput->error);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
