@@ -53,7 +53,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int
 {
     static const char FCNAME[] = "MPI_Comm_spawn";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN);
 
     /* Verify that MPI has been initialized */
@@ -95,6 +95,23 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int
     MPID_Comm_thread_lock( comm_ptr );
     MPID_Comm_thread_unlock( comm_ptr );
     */
+
+/* begin experimental code by Rusty and Ralph */ 
+
+    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    printf( "calling MPID_Comm_spawn\n" );
+    mpi_errno = MPID_Comm_spawn(command, argv, maxprocs, info, root,
+			 comm_ptr, newcomm_ptr, array_of_errcodes);
+    printf( "back from MPID_Comm_spawn, errno = %d\n", mpi_errno );
+
+    *intercomm = newcomm_ptr->handle;
+
+/* end experimental code by Rusty and Ralph */ 
 
     if (mpi_errno == MPI_SUCCESS)
     {
