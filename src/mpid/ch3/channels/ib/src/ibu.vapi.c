@@ -16,6 +16,13 @@
 
 #ifdef USE_IB_VAPI
 
+#ifdef MPICH_DBG_OUTPUT
+static int g_num_received = 0;
+static int g_num_sent = 0;
+static int g_num_posted_receives = 0;
+static int g_num_posted_sends = 0;
+#endif
+
 #define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
 typedef struct ibmem_t
 {
@@ -361,7 +368,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_QP_STATE);
 	qp_attr.sq_psn           = 0;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_SQ_PSN);
-	qp_attr.timeout          = 0x20; /*10;*/
+	qp_attr.timeout          = /*0x20;*/ 10;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_TIMEOUT);
 	qp_attr.retry_count      = 1; /*5;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RETRY_COUNT);
@@ -666,6 +673,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return status;
     }
+    MPIU_DBG_PRINTF(("___posted_r: %d\n", ++g_num_posted_receives));
 
     MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
@@ -734,10 +742,18 @@ static int ibui_post_receive(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
+    MPIU_DBG_PRINTF(("___posted_r: %d\n", ++g_num_posted_receives));
     if (++ibu->nUnacked > IBU_ACK_WATER_LEVEL)
     {
+	MPIU_DBG_PRINTF(("nUnacked = %d, sending ack.\n", ibu->nUnacked));
 	ibui_post_ack_write(ibu);
     }
+#ifdef MPICH_DBG_OUTPUT
+    else
+    {
+	MPIU_DBG_PRINTF(("nUnacked = %d\n", ibu->nUnacked));
+    }
+#endif
 
     MPIU_DBG_PRINTF(("exiting ibui_post_receive\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
@@ -799,6 +815,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
     }
+    MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
     ibu->nUnacked = 0;
 
     MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));
@@ -907,7 +924,9 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
 	}
+	MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
 	ibu->nAvailRemote--;
+	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, nUnacked: %d\n", ibu->nAvailRemote, ibu->nUnacked));
 
 	buf = (char*)buf + length;
     }
@@ -1046,8 +1065,10 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
+	MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
 	ibu->nAvailRemote--;
-	
+	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, nUnacked: %d\n", ibu->nAvailRemote, ibu->nUnacked));
+
     } while (cur_index < n);
 
     *num_bytes_ptr = total;
@@ -1399,7 +1420,7 @@ int ibui_readv_unex(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-/*#define PRINT_IBU_WAIT*/
+#define PRINT_IBU_WAIT
 #ifdef PRINT_IBU_WAIT
 #define MPIU_DBG_PRINTFX(a) MPIU_DBG_PRINTF(a)
 #else
@@ -1488,6 +1509,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    &completion_data);
 	if (status == VAPI_EAGAIN || status == VAPI_CQ_EMPTY)
 	{
+	    /*usleep(1);*/
 	    /* ibu_wait polls until there is something in the queue */
 	    /* or the timeout has expired */
 	    if (millisecond_timeout == 0)
@@ -1538,6 +1560,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: send completion status = %s != VAPI_SUCCESS\n", 
 		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_FAIL;
@@ -1545,8 +1568,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    if (mem_ptr == (void*)-1)
 	    {
 		/* flow control ack completed, no user data so break out here */
+		MPIU_DBG_PRINTF(("ack sent.\n"));
 		break;
 	    }
+	    MPIU_DBG_PRINTF(("___total_s: %d\n", ++g_num_sent));
 	    g_cur_write_stack_index--;
 	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "send num_bytes = %d\n", num_bytes));
@@ -1585,6 +1610,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: recv completion status = %s != VAPI_SUCCESS\n", 
 		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_FAIL;
@@ -1598,6 +1624,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		assert(completion_data.byte_len == 0); /* check this after the printfs to see if the immediate data is correct */
 		break;
 	    }
+	    MPIU_DBG_PRINTF(("___total_r: %d\n", ++g_num_received));
 	    num_bytes = completion_data.byte_len;
 #ifdef USE_INLINE_PKT_RECEIVE
 	    recv_vc_ptr = ibu->vc_ptr;
@@ -1606,11 +1633,19 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
 		{
 		    /*printf("P");fflush(stdout);*/
+		    recv_vc_ptr->ch.recv_active = NULL;
 		    MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
 		    if (recv_vc_ptr->ch.recv_active == NULL)
 		    {
+			MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
 			recv_vc_ptr->ch.reading_pkt = TRUE;
 		    }
+#ifdef MPICH_DBG_OUTPUT
+		    else
+		    {
+			MPIU_DBG_PRINTF(("packet %d with data handled.\n", g_num_received));
+		    }
+#endif
 		}
 		else
 		{
@@ -1618,14 +1653,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
-/*
+
 		if (num_bytes == 0)
 		{
 		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
 		    ibui_post_receive(ibu);
-		    continue;
+		    break;
 		}
-*/
 	    }
 /*
 	    else
@@ -1768,6 +1802,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: unknown completion status = %s != VAPI_SUCCESS\n", 
 		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_FAIL;
