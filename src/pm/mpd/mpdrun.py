@@ -87,10 +87,11 @@ def mpdrun():
         try:
             conSocket.connect(consoleName)
         except Exception, errmsg:
-            print 'cannot connect to local mpd; possible causes:'
+            print 'cannot connect to local mpd (%s); possible causes:' % consoleName
             print '    1. no mpd running on this host'
             print '    2. mpd is running but was started without a "console" (-n option)'
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
 	msgToSend = { 'cmd' : 'get_mpd_version' }
 	mpd_send_one_msg(conSocket,msgToSend)

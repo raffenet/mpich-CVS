@@ -30,7 +30,10 @@ def mpdkilljob():
         try:
             conSocket.connect(consoleName)
         except Exception, errmsg:
-            mpd_raise('cannot connect to local mpd')
+            print 'cannot connect to local mpd (%s); possible causes:' % consoleName
+            print '    1. no mpd running on this host'
+            print '    2. mpd is running but was started without a "console" (-n option)'
+            exit(-1)
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
     mpdid = ''
     if argv[1] == '-a':
