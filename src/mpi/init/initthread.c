@@ -38,7 +38,7 @@ static int assert_hook( int reportType, char *message, int *returnValue )
     fprintf(stderr, "%s", message);
     if (returnValue != NULL)
 	exit(*returnValue);
-    exit(-1);
+    ExitProcess(-1);
     return TRUE;
 }
 #endif
