@@ -24,18 +24,21 @@ quotes.
     SESSION     -> PREAMBLE [ STATEMENTS ]* POSTAMBLE
     STATEMENTS  -> COMMAND
                 |  MULTILINE_COMMAND
-    PREAMBLE    -> 'cmd=open\s+version=' VERSION_NUM '\n'
+    PREAMBLE    -> 'cmd=open\s+version=' VERSION_NUM EOL
                 | empty
-    POSTAMBLE   -> 'cmd=close\n'
+    POSTAMBLE   -> 'cmd=close' EOL
                 | empty
-    COMMAND     -> 'cmd=' NAME [ '\s+'  RESTRICTED_KEYVAL ]* '\n'
+    COMMAND     -> 'cmd=' NAME [ '\s+'  RESTRICTED_KEYVAL ]* EOL
     RESTRICTED_KEYVAL -> NAME '=' NAME
-    NAME        -> '[^=\s\n]+'
+    NAME        -> '[^=\s\r\n]+'
     
-    MULTILINE_COMMAND => 'mcmd=' NAME [ '\s+' [ KEYVAL '\n' ]* ] 'endcmd\n'
-    KEYVAL      -> '\s*' NAME '=' VALUE '\n'
+    MULTILINE_COMMAND => 'mcmd=' NAME '\s+' 
+                            [ KEYVAL EOL ]* 'endcmd' EOL
+    KEYVAL      -> '\s*' NAME '=' VALUE EOL
     VALUE       -> '.*'
+
     VERSION_NUM -> '[0-9]+\.[0-9]+'
+    EOL         -> '\r?\n'
 \end{verbatim}
 The following is a short summary of the Perl-style regular expression
 terms used above:
@@ -43,11 +46,13 @@ terms used above:
 \item[\texttt{[...]}]a character class.  E.g, the digits zero through
  nine are \texttt{[0-9]}.
 \item[\texttt{[\char`\^...]}]the complement of a character class.
-\item[\texttt{*}]zero or more instances of the previous expression
-\item[\texttt{+}]one or more instances of the previous expression
+\item[\texttt{*}]zero or more instances of the previous expression.
+\item[\texttt{+}]one or more instances of the previous expression.
 \item[\texttt{.}]any character other than newline or null.
-\item[\texttt{\char`\\s}]a space character (blank, tab, etc.)
-\item[\texttt{\char`\\n}]a newline
+\item[\texttt{?}]zero or one instance of the previous expression.
+\item[\texttt{\char`\\s}]a space character (blank, tab, etc.).
+\item[\texttt{\char`\\n}]a newline.
+\item[\texttt{\char`\\r}]a carriage return.
 \end{description}
 Following common BNF practice, square brackets outside of a string
 denote an optional item.  To shorten the BNF, an asterisk (\texttt{*})
