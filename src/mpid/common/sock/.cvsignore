@@ -1,10 +1,12 @@
+configure
+config.*
 Makefile.in
 Makefile
+sockconf.h.in
+sockconf.h
 *.o
 *.lo
 *.bb
 *.bbg
 *.da
 *.gcov
-configure
-config.*

@@ -6,9 +6,14 @@
 #ifndef SOCK_H
 #define SOCK_H
 
-#if defined(__cplusplus) && !defined(CPLUSPLUS_BEGIN)
+#if defined(__cplusplus)
+#if !defined(CPLUSPLUS_BEGIN)
 #define CPLUSPLUS_BEGIN extern "C" {
-#define CPLUSPLUS_END }
+#define CPLUSPLUS_END {
+#endif
+#else
+#define CPLUSPLUS_BEGIN
+#define CPLUSPLUS_END
 #endif
 
 CPLUSPLUS_BEGIN
@@ -17,13 +22,13 @@ CPLUSPLUS_BEGIN
 #include "sockconf.h"
 
 /* implemenatation specific header file */    
-#include "@sock_name@/sockimpl.h"
+#include "sockimpl.h"
 
 
 /*
  * definitions
  */
-typedef enum sock_op_e
+typedef enum sock_op
 {
     SOCK_OP_TIMEOUT,
     SOCK_OP_READ,
@@ -38,21 +43,22 @@ typedef enum sock_op_e
 /* insert error codes here */
 #define SOCK_SUCCESS           0
 #define SOCK_FAIL              -1
+#define SOCK_ERR_NOMEM         1000
 #define SOCK_ERR_TIMEOUT       1001
-#define SOCK_ERR_CONN_REFUSED  1002
-#define SOCK_ERR_OS_SPECIFIC   1003
-
+#define SOCK_ERR_HOST_LOOKUP   1002
+#define SOCK_ERR_CONN_REFUSED  1003
+#define SOCK_ERR_OS_SPECIFIC   1004
 
 /*
  * structures
  */
-typedef struct sock_wait_t
+typedef struct sock_event
 {
     sock_op_t op_type;
     sock_size_t num_bytes;
     void *user_ptr;
     int error;
-} sock_wait_t;
+} sock_event_t;
 
 
 /* Progress update callback functions
@@ -73,26 +79,26 @@ typedef int (*sock_progress_update_func_t)(int num_bytes, void *user_ptr);
 int sock_init(void);
 int sock_finalize(void);
 
-int sock_create_set(sock_set_t *set);
+int sock_create_set(sock_set_t * set);
 int sock_destroy_set(sock_set_t set);
 
-int sock_set_user_ptr(sock_t sock, void *user_ptr);
+int sock_set_user_ptr(sock_t sock, void * user_ptr);
 
-int sock_listen(sock_set_t set, void *user_ptr, int *port, sock_t *listener);
-int sock_post_connect(sock_set_t set, void *user_ptr, char *host, int port, sock_t *connected);
+int sock_listen(sock_set_t set, void * user_ptr, int * port, sock_t * listener);
+int sock_post_connect(sock_set_t set, void * user_ptr, char * host, int port, sock_t * connected);
 int sock_post_close(sock_t sock);
-int sock_post_read(sock_t sock, void *buf, int len, sock_progress_update_func_t fn);
-int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, sock_progress_update_func_t fn);
-int sock_post_write(sock_t sock, void *buf, int len, sock_progress_update_func_t fn);
-int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, sock_progress_update_func_t fn);
+int sock_post_read(sock_t sock, void * buf, int len, sock_progress_update_func_t fn);
+int sock_post_readv(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_func_t fn);
+int sock_post_write(sock_t sock, void * buf, int len, sock_progress_update_func_t fn);
+int sock_post_writev(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_func_t fn);
 
-int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out);
+int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t * out);
 
-int sock_accept(sock_set_t set, void *user_ptr, sock_t listener, sock_t *accepted);
-int sock_read(sock_t sock, void *buf, int len, int *num_read);
-int sock_readv(sock_t sock, SOCK_IOV *iov, int n, int *num_read);
-int sock_write(sock_t sock, void *buf, int len, int *num_written);
-int sock_writev(sock_t sock, SOCK_IOV *iov, int n, int *num_written);
+int sock_accept(sock_set_t set, void * user_ptr, sock_t listener, sock_t * accepted);
+int sock_read(sock_t sock, void * buf, int len, int * num_read);
+int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read);
+int sock_write(sock_t sock, void * buf, int len, int * num_written);
+int sock_writev(sock_t sock, SOCK_IOV * iov, int n, int * num_written);
 
 /* extended functions */
 int sock_getid(sock_t sock);

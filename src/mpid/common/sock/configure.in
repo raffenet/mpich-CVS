@@ -22,7 +22,7 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && \
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
-sock_name=poll
+. ${master_top_srcdir}/src/mpid/common/sock/setup.args
 export sock_name
 AC_SUBST(sock_name)
 
@@ -39,6 +39,6 @@ AC_SUBST(master_top_srcdir)
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(${sock_name})
 
-AC_OUTPUT(Makefile sock.h)
+AC_OUTPUT(Makefile sock.h localdefs)
 
 PAC_SUBDIR_CACHE_CLEANUP
