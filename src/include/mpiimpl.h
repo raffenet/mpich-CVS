@@ -859,9 +859,9 @@ int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
 int MPID_Win_fence(int, MPID_Win *);
-int MPI_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
+int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
             MPI_Datatype, MPID_Win *); 
-int MPI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
+int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
             MPI_Datatype, MPID_Win *);
 int MPID_Win_free(MPID_Win **); 
 
