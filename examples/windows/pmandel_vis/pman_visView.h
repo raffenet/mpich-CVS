@@ -18,6 +18,7 @@ public:
 	CPoint m_p1, m_p2;
 	HANDLE m_hThread;
 	RECT m_rLast;
+	bool bConnected;
 
 // Operations
 public:

@@ -78,6 +78,7 @@ Cpman_visView::Cpman_visView()
     g_hMutex = CreateMutex(NULL, FALSE, NULL);
     g_bDrawing = false;
     g_bDemoMode = false;
+    bConnected = false;
     m_hThread = NULL;
     g_demo_list = NULL;
     g_cur_node = NULL;
@@ -96,6 +97,7 @@ Cpman_visView::Cpman_visView()
 
 Cpman_visView::~Cpman_visView()
 {
+    g_bDemoMode = false;
     CloseHandle(g_hMutex);
     if (g_hMPIThread != NULL)
     {
@@ -230,8 +232,6 @@ int work_thread(void *p)
 	    if (g_bDemoMode)
 	    {
 		Sleep(5000);
-		if (get_next_demo_data())
-		    return -1;
 	    }
 	}
     }
@@ -314,7 +314,6 @@ void Cpman_visView::OnFileConnect()
     char host[100];
     DWORD len;
     CBitmap *canvas;
-    static bool bConnected = false;
 
     if (bConnected)
     {
@@ -433,6 +432,10 @@ void Cpman_visView::OnLButtonUp(UINT nFlags, CPoint point)
 
     if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
     {
+	if (m_p1.x == point.x && m_p1.y == point.y)
+	{
+	    return CView::OnLButtonUp(nFlags, point);
+	}
 	if (m_hThread)
 	    CloseHandle(m_hThread);
 	if (point.x > g_width)
@@ -500,7 +503,7 @@ void Cpman_visView::OnRButtonUp(UINT nFlags, CPoint point)
 
 void Cpman_visView::OnFileEnterpoint()
 {
-    if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
+    if (bConnected && (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread))))
     {
 	CBoundsDlg dlg;
 	if (dlg.DoModal() == IDOK)
@@ -532,7 +535,7 @@ void Cpman_visView::OnFileEnterdemopoints()
 	g_demo_list = dlg.m_node_list;
 	g_cur_node = g_demo_list;
 	g_bDemoMode = true;
-	if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
+	if (bConnected && (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread))))
 	{
 	    if (m_hThread)
 		CloseHandle(m_hThread);
