@@ -24,7 +24,7 @@ int main( int argc, char *argv[] )
     datatype = MPI_INT;
     while (MTestGetIntercomm( &comm, &leftGroup, 4 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	for (count = 1; count < 65000; count = 2 * count) {
+	for (count = 1; count < 66000; count = 2 * count) {
 	    /* Get an intercommunicator */
 	    MPI_Comm_remote_size( comm, &rsize );
 	    MPI_Comm_rank( comm, &rank );
