@@ -43,8 +43,6 @@ RM="@RM@"
 LN_S="@LN_S@"
 MPI_IMPL=@MPI_IMPL@
 MPE_BUILD_FORTRAN2C=@MPE_BUILD_FORTRAN2C@
-LOGVIEWERS=@LOGVIEWERS@
-SLOG2TOOLS=@SLOG2TOOLS@
 
 # File access mode
 MODE=0644
@@ -480,33 +478,17 @@ fi
 
 chmod u+x $UNINSTALLFILE
 
-# Install the old log viewers if they exist
-# Don't set the prefix if the default is chosen.  This
-# lets us use --with-common-prefix with the viewers
-if [ "$LOGVIEWERS" = 1 ] ; then
-    if [ "$prefix_override" = "1" ] ; then
-        ( cd $libbuild_dir/../viewers ; \
-          ./sbin/install-viewers -prefix=$prefix -uninstall=$UNINSTALLFILE \
-          -mode=$MODE -xmode=$XMODE )
-    else
-        ( cd $libbuild_dir/../viewers ; \
-          ./sbin/install-viewers -uninstall=$UNINSTALLFILE \
-          -mode=$MODE -xmode=$XMODE )
-    fi
-fi
-
 # Install the SLOG-2 tools if they exist
-# Don't set the prefix if the default is chosen.  This
-# lets us use --with-common-prefix with the viewers
-if [ -s $libbuild_dir/../src/slog2sdk -a $SLOG2TOOLS = 1 ] ; then
+# Don't set the prefix if the default is chosen.
+if [ -x $libbuild_dir/../src/slog2sdk/sbin/install-package ] ; then
     if [ "$prefix_override" = "1" ] ; then
         ( cd $libbuild_dir/../src/slog2sdk ; \
           ./sbin/install-package -prefix=$prefix -uninstall=$UNINSTALLFILE \
-          -mode=$MODE -xmode=$XMODE -copymode=core)
+                                 -mode=$MODE -xmode=$XMODE -copymode=core )
     else
         ( cd $libbuild_dir/../src/slog2sdk ; \
           ./sbin/install-package -uninstall=$UNINSTALLFILE \
-          -mode=$MODE -xmode=$XMODE -copymode=core )
+                                 -mode=$MODE -xmode=$XMODE -copymode=core )
     fi
 fi
 
