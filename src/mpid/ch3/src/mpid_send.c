@@ -16,7 +16,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	      int rank, int tag, MPID_Comm * comm, int context_offset,
 	      MPID_Request ** request)
 {
-    int dt_sz;
+    long dt_sz;
     int dt_contig;
     MPID_Request * req;
 

@@ -46,7 +46,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		/* This is an eager send message.  We need to copy the data and
                    then free the buffer and the request. */
 		
-		int dt_sz;
+		long dt_sz;
 		int dt_contig;
     
 		if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
