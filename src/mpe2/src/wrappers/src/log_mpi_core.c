@@ -3393,7 +3393,7 @@ MPI_Status * array_of_statuses;
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
-        free( array_statuses );
+        free( array_of_statuses );
 #endif
 
     return returnVal;
@@ -3529,7 +3529,7 @@ MPI_Status * array_of_statuses;
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
-        free( array_statuses );
+        free( array_of_statuses );
 #endif
 
     return returnVal;
@@ -3912,7 +3912,7 @@ MPI_Status * array_of_statuses;
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
-        free( array_statuses );
+        free( array_of_statuses );
 #endif
 
     return returnVal;
@@ -4034,7 +4034,7 @@ MPI_Status * array_of_statuses;
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
-        free( array_statuses );
+        free( array_of_statuses );
 #endif
 
     return returnVal;
