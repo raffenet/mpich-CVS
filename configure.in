@@ -301,11 +301,17 @@ dnl from the file.
 AC_OUTPUT(Makefile src/Makefile \
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
-	  src/mpi/coll/Makefile src/mpi/comm/Makefile \
+	  src/mpi/coll/Makefile \
+          src/mpi/comm/Makefile \
 	  src/mpi/datatype/Makefile \
-          src/mpi/init/Makefile src/mpi/errhan/Makefile \
-          src/mpi/spawn/Makefile \
+          src/mpi/errhan/Makefile \
+          src/mpi/group/Makefile \
+          src/mpi/init/Makefile \
+          src/mpi/io/Makefile \
+          src/mpi/misc/Makefile \
           src/mpi/pt2pt/Makefile \
+          src/mpi/rma/Makefile \
+          src/mpi/spawn/Makefile \
           src/mpi/topo/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
