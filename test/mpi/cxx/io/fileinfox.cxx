@@ -29,10 +29,14 @@ int main( int argc, char **argv )
     MPI::Info info1, info2;
     bool flag;
     char filename[50];
-    char mykey[MPI::MAX_INFO_KEY];
-    char myvalue[MPI::MAX_INFO_VAL];
+    char *mykey;
+    char *myvalue;
 
     MTest_Init( );
+
+    mykey = new char [MPI::MAX_INFO_KEY];
+    myvalue = new char [MPI::MAX_INFO_VAL];
+
     // Open a simple file
     strcpy( filename, "iotest.txt" );
     fh = MPI::File::Open( MPI::COMM_WORLD, filename, MPI::MODE_RDWR |
@@ -67,6 +71,7 @@ int main( int argc, char **argv )
     
     MTest_Finalize( errs );
     MPI::Finalize();
-    
+    delete [] mykey;
+    delete [] myvalue;
     return 0;
 }

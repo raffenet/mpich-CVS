@@ -30,10 +30,12 @@ int main( int argc, char *argv[] )
     char *keys[NKEYS] = { "file", "soft", "host" };
     char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
 			    "myhost.myorg.org" };
-    char value[MPI::MAX_INFO_VAL];
+    char *value;
     int i, flag, nkeys;
 
     MTest_Init( );
+
+    value = new char [MPI::MAX_INFO_VAL];
 
     info = MPI::Info::Create();
     /* Use only named keys incase the info implementation only supports
@@ -84,6 +86,6 @@ int main( int argc, char *argv[] )
 
     MTest_Finalize( errs );
     MPI::Finalize();
-    return 0;
-  
+    delete [] value;
+    return 0;  
 }

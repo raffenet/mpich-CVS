@@ -33,10 +33,12 @@ int main( int argc, char **argv )
     MPI::Intracomm comm;
     MPI::Errhandler myerrhan, qerr;
     char filename[50];
-    char errstring[MPI::MAX_ERROR_STRING];
+    char *errstring;
     int code[2], newerrclass, eclass, rlen;
 
     MTest_Init( );
+
+    errstring = new char [MPI::MAX_ERROR_STRING];
 
     callcount = 0;
 
@@ -130,14 +132,16 @@ int main( int argc, char **argv )
     
     MTest_Finalize( errs );
     MPI::Finalize();
-
+    delete [] errstring;
     return 0;
 }
 
 void myerrhanfunc( MPI::File &fh, int *errcode, ... )
 {
-    char errstring[MPI::MAX_ERROR_STRING];
+    char *errstring;
     int  rlen;
+
+    errstring =  new char [MPI::MAX_ERROR_STRING];
 
     callcount++;
 
@@ -146,4 +150,5 @@ void myerrhanfunc( MPI::File &fh, int *errcode, ... )
 	codesSeen[callcount-1] = *errcode;
     }
     MPI::Get_error_string( *errcode, errstring, rlen );
+    delete [] errstring;
 }

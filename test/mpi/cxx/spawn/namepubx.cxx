@@ -109,16 +109,20 @@ int main( int argc, char *argv[] )
 	/* Must be class MPI::ERR_NAME */
 	mclass = MPI::Get_error_class( merr );
 	if (mclass != MPI::ERR_NAME) {
-	    char lerrmsg[MPI::MAX_ERROR_STRING];
+	    char *lerrmsg;
+	    lerrmsg = new char [MPI::MAX_ERROR_STRING];
 	    errs++;
 	    MPI::Get_error_string( merr, lerrmsg, msglen );
 	    cout << "Lookup name returned the wrong error class (" << mclass <<
-		"), msg " << errmsg << "\n";
+		"), msg " << lerrmsg << "\n";
+	    delete [] lerrmsg;
 	}
     }
 
     MTest_Finalize( errs );
     MPI::Finalize();
+    delete [] port_name;
+    delete [] port_name_out;
     return 0;
   
 }

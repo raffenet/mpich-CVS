@@ -28,9 +28,12 @@ int main( int argc, char *argv[] )
     int errs = 0;
     MPI::Win win;
     int cnt, namelen;
-    char name[MPI::MAX_OBJECT_NAME], nameout[MPI::MAX_OBJECT_NAME];
+    char *name, *nameout;
 
     MTest_Init();
+
+    name = new char [MPI::MAX_OBJECT_NAME];
+    nameout = new char [MPI::MAX_OBJECT_NAME];
 
     cnt = 0;
     while (MTestGetWin( win, true )) {
@@ -56,5 +59,7 @@ int main( int argc, char *argv[] )
 
     MTest_Finalize( errs );
     MPI::Finalize();
+    delete [] name;
+    delete [] nameout;
     return 0;
 }

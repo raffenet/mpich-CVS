@@ -27,10 +27,15 @@ int main( int argc, char *argv[] )
     int errs = 0;
     MPI::Info info1, infodup;
     int nkeys, nkeysdup, i, vallen, flag, flagdup;
-    char key[MPI::MAX_INFO_KEY], keydup[MPI::MAX_INFO_KEY];
-    char value[MPI::MAX_INFO_VAL], valdup[MPI::MAX_INFO_VAL];
+    char *key, *keydup;
+    char *value, *valdup;
 
     MTest_Init( );
+
+    key = new char [MPI::MAX_INFO_KEY];
+    keydup = new char [MPI::MAX_INFO_KEY];
+    value = new char [MPI::MAX_INFO_VAL];
+    valdup = new char [MPI::MAX_INFO_VAL];
 
     info1 = MPI::Info::Create( );
     /* Use only named keys incase the info implementation only supports
@@ -88,6 +93,9 @@ int main( int argc, char *argv[] )
     
     MTest_Finalize( errs );
     MPI::Finalize();
-    return 0;
-  
+    delete [] key;
+    delete [] keydup;
+    delete [] value;
+    delete [] valdup;
+    return 0;  
 }

@@ -33,18 +33,21 @@ void InitMPINames (void);
 
 int main( int argc, char **argv )
 {
-    char name[MPI::MAX_OBJECT_NAME];
+    char *name;
     int namelen, i;
     int errs = 0;
 
     MPI::Init();
-    
+
+    namelen = MPI::MAX_OBJECT_NAME;
+    name = new char[MPI::MAX_OBJECT_NAME];
+
     InitMPINames();
 
     /* Sample some datatypes */
     /* See 8.4, "Naming Objects" in MPI-2.  The default name is the same
        as the datatype name */
-    
+
     MPI::DOUBLE.Get_name( name, namelen );
     if (strncmp( name, "MPI_DOUBLE", MPI::MAX_OBJECT_NAME )) {
 	errs++;
@@ -87,6 +90,8 @@ int main( int argc, char **argv )
 	cout << " No Errors\n";
     }
     MPI::Finalize();
+    delete [] name;
+    delete [] mpi_names;
     return 0;
 }
 
