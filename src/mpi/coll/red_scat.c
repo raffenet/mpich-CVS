@@ -955,8 +955,9 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 
-	    /* FIXME: Intracomm collective (MPI-1) only */
-	    size = comm_ptr->local_size;
+            size = comm_ptr->local_size; 
+            /* even in intercomm. case, recvcnts is of size local_size */
+
 	    for (i=0; i<size; i++) {
 		MPIR_ERRTEST_COUNT(recvcnts[i],mpi_errno);
 	    }
@@ -1007,12 +1008,12 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                                             op, comm_ptr);
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+	    /* mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Reduce_scatter_inter(sendbuf, recvbuf,
+					      "**intercommcoll %s", FCNAME ); */
+            mpi_errno = MPIR_Reduce_scatter_inter(sendbuf, recvbuf,
                                                   recvcnts, datatype, 
-                                                  op, comm_ptr);           */
+                                                  op, comm_ptr); 
         }
 	MPIR_Nest_decr();
     }

@@ -269,7 +269,12 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
-            comm_size = comm_ptr->local_size;
+
+            if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+                comm_size = comm_ptr->local_size;
+            else
+                comm_size = comm_ptr->remote_size;
+
             for (i=0; i<comm_size; i++) {
                 MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
                 MPIR_ERRTEST_COUNT(recvcnts[i], mpi_errno);
@@ -311,12 +316,12 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
                                        rdispls, recvtype, comm_ptr);
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+	    /* mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Alltoallv_inter(sendbuf, sendcnts, sdispls,
+					      "**intercommcoll %s", FCNAME ); */
+            mpi_errno = MPIR_Alltoallv_inter(sendbuf, sendcnts, sdispls,
                                              sendtype, recvbuf, recvcnts,
-                                             rdispls, recvtype, comm_ptr);*/
+                                             rdispls, recvtype, comm_ptr);
         }
 	MPIR_Nest_decr();
     }
