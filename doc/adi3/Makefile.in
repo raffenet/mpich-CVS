@@ -99,10 +99,10 @@ adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
 	    -e '/usepackage{.*url}/d' \
 		adi3new.tex > adi3newpdf.tex
-	latex adi3newpdf < /dev/null 2>&1 >/dev/null
+	-latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	-bibtex adi3newpdf
 	make adi3newpdf.ind
-	latex adi3newpdf < /dev/null 2>&1 >/dev/null
+	-latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	latex adi3newpdf < /dev/null
 	dvipdfm adi3newpdf
 	rm -f adi3new.pdf

@@ -37,11 +37,11 @@ MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 
 mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
-	latex mpich2 </dev/null 2>&1 >/dev/null
+	-latex mpich2 </dev/null 2>&1 >/dev/null
 	-bibtex mpich2
 	-rm -f tmp.idx tmp.ind
 	cat mpich2.idx | ./fixupindex > tmp.idx
-	@makeindex tmp ;\
+	@makeindex tmp
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
@@ -50,8 +50,8 @@ mpich2.dvi: $(MPICH2FILES)
 	    -e 's/\([A-Za-z0-9_!()]*\)_MPI$$/MPI_\1/g' \
 	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' \
-		tmp.ind > mpich2.ind ; \
-	latex mpich2 </dev/null 2>&1 >/dev/null
+		tmp.ind > mpich2.ind
+	-latex mpich2 </dev/null 2>&1 >/dev/null
 	latex mpich2
 	rm -f tmp.ind tmp.idx
 
@@ -122,17 +122,17 @@ agent.dvi: agent.tex Makefile mpich2-arch.eps ca-nomenclature.eps vc-sm.eps \
 	latex agent
 
 mpich2pdf.dvi: $(MPICH2FILES)
-	touch mpich2pdf.ind
+	touch mpich2.ind
 	rm -f mpich2pdf.tex
 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
 	    -e '/usepackage{.*url}/d' \
 		mpich2.tex > mpich2pdf.tex
-	latex mpich2pdf </dev/null 2>&1 >/dev/null
+	-latex mpich2pdf </dev/null 2>&1 >/dev/null
 	-bibtex mpich2pdf
 	-rm -f tmp.idx tmp.ind
 	cat mpich2pdf.idx | ./fixupindex > tmp.idx
-	@makeindex tmp ;\
+	makeindex tmp
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
@@ -141,8 +141,8 @@ mpich2pdf.dvi: $(MPICH2FILES)
 	    -e 's/\([A-Za-z0-9_!()]*\)_MPI$$/MPI_\1/g' \
 	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' \
-		tmp.ind > mpich2pdf.ind ; \
-	latex mpich2pdf </dev/null 2>&1 >/dev/null
+		tmp.ind > mpich2.ind
+	-latex mpich2pdf </dev/null 2>&1 >/dev/null
 	latex mpich2pdf
 
 mpich2.pdf: mpich2pdf.dvi
