@@ -12,6 +12,15 @@ dnl unless a specific option is selected.  Unfortunately, there is no
 dnl documented option to turn off dead code elimination.
 dnl
 dnl
+dnl (AC_CHECK_HEADER and AC_CHECK_HEADERS both make the erroneous assumption
+dnl that the C-preprocessor and the C (or C++) compilers are the same program
+dnl and have the same search paths.  In addition, CHECK_HEADER looks for 
+dnl error messages to decide that the file is not available; unfortunately,
+dnl it also interprets messages such as "evaluation copy" and warning messages
+dnl from broken CPP programs (such as IBM's xlc -E, which often warns about 
+dnl "lm not a valid option").  Instead, we try a compilation step with the 
+dnl C compiler.
+dnl
 dnl AC_CONFIG_AUX_DIRS only checks for install-sh, but assumes other
 dnl values are present.  Also doesn't provide a way to override the
 dnl sources of the various configure scripts.  This replacement
@@ -68,3 +77,49 @@ ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 AC_PROVIDE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
 ])
 
+undefine([AC_CHECK_HEADER])
+AC_DEFUN(AC_CHECK_HEADER,
+[dnl Do the transliteration at runtime so arg 1 can be a shell variable.
+ac_safe=`echo "$1" | sed 'y%./+-%__p_%'`
+AC_MSG_CHECKING([for $1])
+AC_CACHE_VAL(ac_cv_header_$ac_safe,
+[cat >conftest.c<<EOF
+[#]line __oline__ "configure"
+#include "confdefs.h"
+#include <$1>
+int conftest() {return 0;}
+EOF
+ac_compile_for_cpp='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.c 1>&AC_FD_CC'
+if AC_TRY_EVAL(ac_compile_for_cpp); then
+    eval "ac_cv_header_$ac_safe=yes"
+else
+    eval "ac_cv_header_$ac_safe=no"
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.c >&AC_FD_CC
+fi
+rm -f conftest*
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  AC_MSG_RESULT(yes)
+  ifelse([$2], , :, [$2])
+else
+  AC_MSG_RESULT(no)
+ifelse([$3], , , [$3
+])dnl
+fi
+])
+])
+
+
+dnl ---
+dnl AC_CHECK_HEADERS(HEADER-FILE... [, ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
+undefine([AC_CHECK_HEADERS])
+AC_DEFUN(AC_CHECK_HEADERS,
+[for ac_hdr in $1
+do
+AC_CHECK_HEADER($ac_hdr,
+[changequote(, )dnl
+  ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+changequote([, ])dnl
+  AC_DEFINE_UNQUOTED($ac_tr_hdr) $2], $3)dnl
+done
+])
