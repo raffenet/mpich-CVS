@@ -113,6 +113,7 @@ dnl
 dnl Get any LIBS required by the sock implementation
 dnl
 . ../../mpid/common/sock/localdefs
+. ../../pmi/smpd/localdefs
 dnl
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile)
