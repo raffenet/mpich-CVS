@@ -28,10 +28,13 @@ public class InfoBox extends TimeBoundingBox
     private   byte[]       infobuffer;     // byte[] passed down by TRACE-API
     private   InfoValue[]  infovals;       // InfoValue[] for InfoKey[]
 
+    private   StringBuffer err_msg;        // For possible decodeInfoBuffer err
+
     public InfoBox()
     {
         super();
         this.initCategoryToNull();
+        err_msg   = null;
     }
 
     //  For support of Trace API's  Primitive/Composite generation
@@ -40,12 +43,14 @@ public class InfoBox extends TimeBoundingBox
         super();
         this.initCategoryToNull();
         type_idx  = in_type_idx;
+        err_msg   = null;
     }
 
     public InfoBox( final Category in_type )
     {
         super();
         this.setCategory( in_type );
+        err_msg   = null;
     }
 
     //  This is NOT a copy constructor,
@@ -54,12 +59,14 @@ public class InfoBox extends TimeBoundingBox
     {
         super( infobox );  // TimeBoundingBox( TimeBoundingBox );
         this.setCategory( infobox.type );
+        err_msg   = null;
     }
 
     public InfoBox( Category in_type, final InfoBox infobox )
     {
         super( infobox );  // TimeBoundingBox( TimeBoundingBox );
         this.setCategory( in_type );
+        err_msg   = null;
     }
 
     private void initCategoryToNull()
@@ -134,6 +141,14 @@ public class InfoBox extends TimeBoundingBox
 
 
 
+    public void addErrMsg( String new_msg )
+    {
+        if ( err_msg == null )
+            err_msg = new StringBuffer( new_msg );
+        else
+            err_msg.append( " " + new_msg );
+    }
+
     public void setInfoBuffer( final byte[] byte_infovals )
     {
         this.infobuffer  = byte_infovals;
@@ -148,7 +163,7 @@ public class InfoBox extends TimeBoundingBox
                 int infotypes_length = infotypes.length;
                 infovals  = new InfoValue[ infotypes_length ];
                 // Set InfoValue[i]'s type first
-                // fill content later with this.setInfoValues( Byte[] )
+                // fill content later with InfoValue.readValue( infobuffer )
                 for ( int idx = 0; idx < infotypes_length; idx++ )
                     infovals[ idx ] = new InfoValue( infotypes[ idx ] );
             }
@@ -162,22 +177,30 @@ public class InfoBox extends TimeBoundingBox
         ByteArrayInputStream  bary_ins;
         MixedDataInputStream  data_ins;
 
-        if ( this.infobuffer == null )
-            return;
-
         this.setInfoValueTypes();
 
-        bary_ins = new ByteArrayInputStream( this.infobuffer );
-        data_ins = new MixedDataInputStream( bary_ins );
-        try {
-            for ( int idx = 0; idx < infovals.length; idx++ )
-                infovals[ idx ].readValue( data_ins );
-            data_ins.close();
-            bary_ins.close();
-        } catch ( java.io.IOException ioerr ) {
-            ioerr.printStackTrace();
-            System.exit( 1 );
+        if ( infobuffer == null )
+            if ( infovals != null && infovals.length > 0 )
+                this.addErrMsg( "Null infobuffer byte[] without InfoValue[]." );
+            else  // if ( infovals == null || infovals.length == 0 )
+                return;
+
+        if ( infovals != null ) {
+            bary_ins = new ByteArrayInputStream( this.infobuffer );
+            data_ins = new MixedDataInputStream( bary_ins );
+            try {
+                for ( int idx = 0; idx < infovals.length; idx++ )
+                    infovals[ idx ].readValue( data_ins );
+                data_ins.close();
+                bary_ins.close();
+            } catch ( java.io.IOException ioerr ) {
+                ioerr.printStackTrace();
+                System.exit( 1 );
+            }
         }
+        else
+            this.addErrMsg( "Can't decode infobuffer byte[] "
+                          + "because of missing InfoValue[]." );
     }
 
     private void decodeInfoBuffer()
@@ -333,6 +356,8 @@ public class InfoBox extends TimeBoundingBox
                     rep.append( infovals[ idx ] + " " );
             }
         }
+        if ( err_msg != null )
+            rep.append( "\n" + err_msg );
         return rep.toString();
     }
 
@@ -376,6 +401,8 @@ public class InfoBox extends TimeBoundingBox
                     rep.append( infovals[ idx ] + " " );
             }
         }
+        if ( err_msg != null )
+            rep.append( "!" + err_msg + "!" );
 
         rep.append( "]" );
         return rep.toString();
