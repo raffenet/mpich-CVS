@@ -47,13 +47,6 @@ int main( int argc, char *argv[] )
     error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     check_error(error, "MPI_Comm_rank");
 
-
-    /* commenting this out because this test no longer hangs with 
-       the sock channel */
-
-/*    fprintf( stderr, "Aborting test because it may hang.\n" );
-      MPI_Abort( MPI_COMM_WORLD, 1 ); */
-
     if (size < 2)
     {
 	printf("Two processes needed.\n");
