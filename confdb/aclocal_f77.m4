@@ -524,16 +524,21 @@ $flag"
            break
 	   ;;
 	esac
-	# Create the program
+	# Create the program.  Make sure that we can run it.
+	# Force a divide-by-zero if there is a problem
         cat > conftest.f <<EOF
         program main
 $FXX_MODULE
-        integer i
+        integer i, j
         character*20 s
-
         $F77_GETARGDECL
+	i = 0
         $F77_GETARG
         i=$F77_IARGC
+	if (i .gt. 1) then
+	    j = i - i
+	    j = 1.0 / j
+	endif
         end
 EOF
     #
@@ -551,7 +556,18 @@ EOF
 		IFS="$save_IFS"
 		dnl We need this here because we've fiddled with IFS
 	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $libs $LIBS 1>&AC_FD_CC"
+		found_answer="no"
                 if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
+		    if test "$ac_cv_prog_f77_cross" = "no" ; then
+			if conftest >/dev/null 2>&1 ; then
+			    found_answer="yes"
+			fi
+		    else 
+			found_answer="yes"
+		    fi
+		IFS=" 
+"
+		if test "$found_answer" = "yes" ; then
 	            AC_MSG_RESULT([yes])
 		    pac_cv_prog_f77_cmdarg="$MSG"
 		    pac_cv_prog_f77_cmdarg_fflags="$flags"
@@ -562,8 +578,6 @@ EOF
 		    echo "configure: failed program was:" >&AC_FD_CC
                     cat conftest.f >&AC_FD_CC
 	        fi
-		IFS=" 
-"
             done
         done
         IFS="$save_IFS"   
