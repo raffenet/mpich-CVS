@@ -9,22 +9,27 @@ from select import select, error
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, mpd_same_ips
 
 def mpdboot():
+    myOwnDir  = path.abspath(path.split(argv[0])[0])
     rshCmd    = 'ssh'
     user      = mpd_get_my_username()
-    mpdCmd    = 'mpd'
+    mpdCmd    = path.join(myOwnDir,'mpd')
     hostsFile = 'mpd.hosts'
     totalNum  = 1
     debug     = 0
     verbosity = 0
     localConsoleVal  = ''
     remoteConsoleVal = ''
-    shell = 'csh'
     oneLocal = 1
     entryHost = ''
     entryPort = ''
     numBoots = 1    # including this one
     mpdHostsFromHere  = []
     bootHostsFromHere = []
+    try:
+        shell = path.split(environ['SHELL'])[-1]
+    except:
+        shell = 'csh'
+
     try:
         (opts, args) = getopt(argv[1:], 'hf:r:u:m:n:dsv1e:z:',
                               ['help', 'file=', 'rsh=', 'user=', 'mpd=', 'totalnum=',
@@ -114,12 +119,18 @@ def mpdboot():
         xOpt = '-x'
     else:
         xOpt = ''
-    shellRedirect = ' >& /dev/null '  # default
-    if shell == 'bourne':
-	shellRedirect = ' > /dev/null 2>&1 '
 
-    fullDirName = path.abspath(path.split(argv[0])[0])
-    mpdbootPathName = path.normpath(fullDirName + '/mpdboot.py')
+    redirect = {
+        'sh'     :  ' > /dev/null 2>&1 ',
+        'ksh'    :  ' > /dev/null 2>&1 ',
+        'csh'    :  ' >& /dev/null ',
+        'tcsh'   :  ' >& /dev/null ',
+        'bash'   :  ' > /dev/null 2>&1 ',
+        'bourne' :  ' > /dev/null 2>&1 '
+        }       
+    shellRedirect = redirect.get(shell, ' >& /dev/null ')
+
+    mpdbootPathName = path.join(myOwnDir,'mpdboot.py')
 
     for host in bootHostsFromHere:
 	## may be short for last one
@@ -138,7 +149,8 @@ def mpdboot():
             print 'cmd=:%s:' % (cmd)
         if verbosity == 1:
             print 'starting remote mpd on %s' % (host)
-        system(cmd)
+        status = system(cmd)
+        assert status is 0, '%s bombed with status %d' % (cmd,status)
         numStarted = numStarted + numMPDsPerBoot + 1 
 
     if numBoots  and  numStarted < totalNum:
@@ -157,7 +169,9 @@ def mpdboot():
             print 'cmd=:%s:' % (cmd)
         if verbosity == 1:
             print 'starting remote mpd on %s' % (host)
-        system(cmd)
+        status = system(cmd)
+        print "RMB STATUS=", status
+        assert status is 0, '%s bombed with status %d' % (cmd,status)
         numStarted += 1
 
 
