@@ -27,6 +27,9 @@ Argonne National Laboratory}{00}{\today}
 \pagenumbering{arabic}
 \pagestyle{headings}
 
+\obeylines
+\obeyspaces
+
 Here is a basic outline for the document
 
 1. Structure of MPICH2 
@@ -41,9 +44,9 @@ Here is a basic outline for the document
 
 2. Adding a channel
 
-2a. Adding a socket
-
-2b. Adding an RDMA
+   2a. Adding a socket
+  
+   2b. Adding an RDMA
 
 3. Adding a device
 
@@ -80,6 +83,12 @@ Here is a basic outline for the document
       7bii.  updatefiles (using the code style checker)
 
       7biii. \code{--enable-g=all} (includes runtime checks)
+
+   7c. Resources
+      
+      7ci. \url{www.mcs.anl.gov/mpi/mpich2/todo.htm} points to the
+      current state of the implementation, including nightly tests, 
+      coverage analysis, and a web portal for browsing the CVS tree.
 
 9. Troubleshooting
 
