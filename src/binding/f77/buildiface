@@ -1066,7 +1066,7 @@ sub print_attr {
     my $OUTFD = $_[0];
     my $name  = $_[1];
     if ($do_weak) {
-	print $OUTFD " FUNC_ATTRIBUTES($name)\n";
+	print $OUTFD " FUNC_ATTRIBUTES($name)";
     }
 }
 
@@ -2203,8 +2203,10 @@ sub build_specials {
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "init" );
 	&print_args( PROTOFD, $args, 1, "init" );
+	&print_attr( PROTOFD, "${out_prefix}init_" );
 	print PROTOFD ";\n";
     }
 
@@ -2221,8 +2223,10 @@ sub build_specials {
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "init_thread" );
 	&print_args( PROTOFD, $args, 1, "init_thread" );
+	&print_attr( PROTOFD, "${out_prefix}init_thread_" );
 	print PROTOFD ";\n";
     }
 
@@ -2296,8 +2300,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "pcontrol" );
 	&print_args( PROTOFD, $args, 1, "pcontrol" );
+	&print_attr( PROTOFD, "${out_prefix}pcontrol_" );
 	print PROTOFD ";\n";
     }
 
@@ -2335,8 +2341,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "address" );
 	&print_args( PROTOFD, $args, 1, "address" );
+	&print_attr( PROTOFD, "${out_prefix}address_" );
 	print PROTOFD ";\n";
     }
 
@@ -2366,8 +2374,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "get_address" );
 	&print_args( PROTOFD, $args, 1, "get_address" );
+	&print_attr( PROTOFD, "${out_prefix}get_address_" );
 	print PROTOFD ";\n";
     }
     $tof77{"MPI_Aint*"} =  $saveAINT;
@@ -2375,11 +2385,14 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     $OUTFD = "WTIMEFD";
     open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
     $files[$#files+1] = "wtimef.c";
+    $returnType = "double";
     &set_weak_decl( "MPI_Wtime", "void", "double" );
+    &set_weak_decl( "PMPI_Wtime", "void", "double" );
     &print_header( "MPI_Wtime", "wtime", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "FORTRAN_API double FORT_CALL mpi_wtime_( void ) ";
+    &print_routine_type_decl( $OUTFD, "wtime" );
+    print $OUTFD "( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; MPID_Time_t t;\n
@@ -2389,17 +2402,25 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
-	print PROTOFD "double mpi_wtime_( void );\n";
+        print PROTOFD "extern ";
+        &print_routine_type_decl( PROTOFD, "wtime" );
+	print PROTOFD "( void )";
+	&print_attr( PROTOFD, "${out_prefix}wtime_" );
+        print PROTOFD ";\n";
     }
+    $returnType = "void";
 
     $OUTFD = "WTICKFD";
     open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
     $files[$#files+1] = "wtickf.c";
+    $returnType = "double";
     &set_weak_decl( "MPI_Wtick", "void", "double" );
+    &set_weak_decl( "PMPI_Wtick", "void", "double" );
     &print_header( "MPI_Wtick", "wtick", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "FORTRAN_API double FORT_CALL mpi_wtick_( void ) ";
+    &print_routine_type_decl( $OUTFD, "wtick" );
+    print $OUTFD "( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; 
@@ -2408,8 +2429,13 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
-	print PROTOFD "double mpi_wtick_( void );\n";
+        print PROTOFD "extern ";
+        &print_routine_type_decl( PROTOFD, "wtick" );
+	print PROTOFD "( void )";
+	&print_attr( PROTOFD, "${out_prefix}wtick_" );
+        print PROTOFD ";\n";
     }
+    $returnType = "void";
 
     $OUTFD = "KEYVALCREATEF";
     open ($OUTFD, ">keyval_createf.c" ) || die "Cannot open keyval_createf.c\n";
@@ -2427,8 +2453,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "keyval_create" );
 	&print_args( PROTOFD, $args, 1, "keyval_create" );
+	&print_attr( PROTOFD, "${out_prefix}keyval_create_" );
 	print PROTOFD ";\n";
     }
 
@@ -2447,8 +2475,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "dup_fn" );
 	&print_args( PROTOFD, $args, 1, "dup_fn" );
+	&print_attr( PROTOFD, "${out_prefix}dup_fn_" );
 	print PROTOFD ";\n";
     }
 
@@ -2465,8 +2495,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "null_delete_fn" );
 	&print_args( PROTOFD, $args, 1, "null_delete_fn" );
+	&print_attr( PROTOFD, "${out_prefix}null_delete_fn_" );
 	print PROTOFD ";\n";
     }
 
@@ -2477,15 +2509,16 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     &print_header( "mpi_null_copy_fn", "null_copy_fn", $args );
     &print_routine_type_decl( $OUTFD, "null_copy_fn" );
     &print_args( $OUTFD, $args, 0, "null_copy_fn" );
-    #&print_attr;
     print $OUTFD "{
         *ierr = MPI_SUCCESS;
         *v6 = MPIR_TO_FLOG(0);
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
+        print PROTOFD "extern ";
 	&print_routine_type_decl( PROTOFD, "null_copy_fn" );
 	&print_args( PROTOFD, $args, 1, "null_copy_fn" );
+	&print_attr( PROTOFD, "${out_prefix}null_copy_fn_" );
 	print PROTOFD ";\n";
     }
 
