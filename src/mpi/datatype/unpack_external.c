@@ -108,10 +108,12 @@ int MPI_Unpack_external(char *datarep,
 	/* --END ERROR HANDLING-- */
     }
     mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, segp, 1);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* NOTE: buffer values and positions in MPI_Unpack_external are used very
      * differently from use in MPID_Segment_unpack_external...

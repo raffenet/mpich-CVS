@@ -102,10 +102,12 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 	
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     new_group_ptr->rank = MPI_UNDEFINED;
 
     /* Group members taken in order specified by the range array */

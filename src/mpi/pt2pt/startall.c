@@ -146,10 +146,12 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 #   endif /* HAVE_ERROR_CHECKING */
     
     mpi_errno = MPID_Startall(count, request_ptrs);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     if (request_ptrs != request_ptr_array && request_ptrs != NULL)
     {

@@ -96,10 +96,12 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 	return MPI_SUCCESS;
     }
     mpi_errno = MPIR_Group_create( size - n, &new_group_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     new_group_ptr->rank = MPI_UNDEFINED;
     /* Use flag fields to mark the members to *exclude* .
        Note: except in a THREAD_MULTIPLE case, and if error checking

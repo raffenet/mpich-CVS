@@ -62,11 +62,13 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
 
     /* ... body of routine ...  */
     errhan_ptr = (MPID_Errhandler *)MPIU_Handle_obj_alloc( &MPID_Errhandler_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!errhan_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_FILE;

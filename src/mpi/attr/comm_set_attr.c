@@ -133,10 +133,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (!new_p) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 		goto fn_fail;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
 	    new_p->value	 = attribute_val;
@@ -151,10 +153,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     }
     if (!p) {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!new_p) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;

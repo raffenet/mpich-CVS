@@ -118,8 +118,10 @@ int MPI_Type_indexed(int count,
 				  old_type,
 				  newtype);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     /* copy all integer values into a temporary buffer; this
      * includes the count, the blocklengths, and the displacements.

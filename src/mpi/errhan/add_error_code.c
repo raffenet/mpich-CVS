@@ -66,11 +66,13 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
 
     /* ... body of routine ...  */
     new_code = MPIR_Err_add_code( errorclass, 0 );
+    /* --BEGIN ERROR HANDLING-- */
     if (new_code < 0) {
 	/* Error return.  */
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrcodes", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     *errorcode = new_code;
     /* ... end of body of routine ... */

@@ -71,10 +71,12 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 
     /* ... body of routine ...  */
     keyval_ptr = (MPID_Keyval *)MPIU_Handle_obj_alloc( &MPID_Keyval_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!keyval_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     /* Initialize the attribute dup function */
     if (!MPIR_Process.attr_dup) {
 	MPIR_Process.attr_dup  = MPIR_Attr_dup_list;

@@ -80,8 +80,10 @@ int MPI_Type_contiguous(int count,
 				     old_type,
 				     new_type_p);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     MPID_Datatype_get_ptr(*new_type_p, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,

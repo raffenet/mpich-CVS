@@ -74,8 +74,10 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Type_create_resized(oldtype, lb, extent, newtype);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     aints[0] = lb;
     aints[1] = extent;

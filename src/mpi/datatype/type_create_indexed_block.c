@@ -92,8 +92,10 @@ int MPI_Type_create_indexed_block(int count,
 				       0, /* dispinbytes */
 				       oldtype,
 				       newtype);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     ints = (int *) MPIU_Malloc((count + 2) * sizeof(int));
     if (ints == NULL)

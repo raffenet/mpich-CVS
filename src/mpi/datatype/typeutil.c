@@ -119,12 +119,16 @@ int MPIR_Datatype_init( void )
 		if (d == MPI_DATATYPE_NULL) continue;
 
 		MPID_Datatype_get_ptr(d,dptr);
-		if (dptr < MPID_Datatype_builtin || dptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
+		/* --BEGIN ERROR HANDLING-- */
+		if (dptr < MPID_Datatype_builtin || 
+		    dptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
 		{
 		    MPIU_Snprintf(error_msg, 1024, "%dth builtin datatype handle references invalid memory", i);
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
+
 		/* dptr will point into MPID_Datatype_builtin */
 		dptr->handle	   = d;
 		dptr->is_permanent = 1;

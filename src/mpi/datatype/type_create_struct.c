@@ -103,8 +103,10 @@ int MPI_Type_create_struct(int count,
 				 array_of_types,
 				 newtype);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
     if (ints == NULL)

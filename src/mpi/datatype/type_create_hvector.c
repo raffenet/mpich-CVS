@@ -87,8 +87,10 @@ int MPI_Type_create_hvector(int count,
 				 oldtype,
 				 newtype);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     ints[0] = count;
     ints[1] = blocklength;

@@ -187,10 +187,12 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     }
     MPID_Request_release(sreq);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
 fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV);

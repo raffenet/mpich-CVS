@@ -72,8 +72,10 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 
     mpi_errno = MPID_Type_dup(datatype, newtype);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
 	goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     MPID_Datatype_get_ptr(*newtype, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,

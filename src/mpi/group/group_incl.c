@@ -95,10 +95,12 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( n, &new_group_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     new_group_ptr->rank = MPI_UNDEFINED;
     for (i=0; i<n; i++)
     {

@@ -85,20 +85,25 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     if (!MPIR_Namepub)
     {
 	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr,
 	(const char *)service_name, port_name );
-    if (mpi_errno != MPI_SUCCESS && MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME)
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS && 
+	MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
     return mpi_errno;

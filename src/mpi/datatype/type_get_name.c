@@ -111,11 +111,13 @@ int MPIR_Datatype_init_names( void )
 
 	    /* Make sure that the datatypes are initialized */
 	    mpi_errno = MPIR_Datatype_init();
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 
 	    /* For each predefined type, ensure that there is a corresponding
 	       object and that the object's name is set */
@@ -124,13 +126,18 @@ int MPIR_Datatype_init_names( void )
 		if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
 
 		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
-		if (datatype_ptr < MPID_Datatype_builtin || datatype_ptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
+
+		/* --BEGIN ERROR HANDLING-- */
+		if (datatype_ptr < MPID_Datatype_builtin || 
+		    datatype_ptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
 		{
-		    MPIU_Snprintf(error_msg, 1024, "%dth builtin datatype handle references invalid memory", i);
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		    MPIU_Snprintf(error_msg, 1024, 
+		  "%dth builtin datatype handle references invalid memory", i);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+		            MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, 
+			    "**fail", "**fail %s", error_msg);
 		    return mpi_errno;
 		}
-		/* --BEGIN ERROR HANDLING-- */
 		if (!datatype_ptr) {
 		    /*
 		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 
@@ -206,8 +213,10 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     /* If this is the first call, initialize all of the predefined names */
     if (!setup) { 
 	mpi_errno = MPIR_Datatype_init_names();
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	    goto fn_fail;
+	/* --END ERROR HANDLING-- */
 	setup = 1;
     }
 

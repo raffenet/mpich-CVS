@@ -170,10 +170,12 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
     /* Create a new communicator */
     mpi_errno = MPIR_Comm_copy( comm_ptr, nnodes, &newcomm_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* If this process is not in the resulting communicator, return a 
        null communicator and exit */
@@ -213,10 +215,12 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     /* Finally, place the topology onto the new communicator and return the
        handle */
     mpi_errno = MPIR_Topology_put( newcomm_ptr, graph_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     *comm_graph = newcomm_ptr->handle;
     /* ... end of body of routine ... */
