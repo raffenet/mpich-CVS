@@ -981,7 +981,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     ib_data_segment_t data;
     ib_work_req_send_t work_req;
     void *mem_ptr;
-    unsigned int len;
+    unsigned int len, msg_size;
     int total = 0;
     unsigned int num_avail;
     unsigned char *buf;
@@ -1019,13 +1019,14 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		iov->IBU_IOV_BUF = (unsigned char *)(iov->IBU_IOV_BUF) + len;
 	    }
 	}
+	msg_size = IBU_PACKET_SIZE - num_avail;
 	
-	MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, total));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
+	MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, msg_size));
+	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
 	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	g_cur_write_stack_index++;
 	
-	data.length = total;
+	data.length = msg_size;
 	data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 	data.l_key = ibu->lkey;
 	
@@ -1051,7 +1052,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 	
-	MPIU_dbg_printf("ibui_post_write(%d bytes)\n", total);
+	MPIU_dbg_printf("ibui_post_write(%d bytes)\n", msg_size);
 	status = ib_post_send_req_us( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
 	    &work_req);
