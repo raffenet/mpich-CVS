@@ -123,6 +123,11 @@ $quiet = 0;
 # Assembler *output* definitions
 	      'c:s' => '$(C_COMPILE) -S $<',
 	      'f:s' => '$(F77_COMPILE) -S $<',
+# C preprocessor *output* definitions.  We don' use cpp as the 
+# output suffix to avoid conflicts with C++ 
+	      'c:txt' => '$(CPP) $(INCLUDES) $< >$*.txt',
+	      'F:txt' => '$(CPP) $(INCLUDES) $<  >$*.txt',
+	      'cxx:txt' => '$(CXXCPP) $(INCLUDES) $< >$*.txt',
 # Program from source rules
 	      'c:' => '$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
 	      'f:' => '$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
