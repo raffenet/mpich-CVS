@@ -88,6 +88,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 		MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
 		if (!complete)
 		{
+		    sreq->ch.iov_offset = 0;
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    vc->ch.send_active = sreq;
 		}
