@@ -64,7 +64,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		    /* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
 		       request may still be active (see MPI_Ssend()) */
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
 		}
 	    }
 	    else if (nb < hdr_sz)
@@ -72,14 +72,14 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
 		update_request(sreq, hdr, hdr_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
 	    }
 	    else if (nb == 0)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 		update_request(sreq, hdr, hdr_sz, 0);
 		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
 	    }
 	    else
 	    {
