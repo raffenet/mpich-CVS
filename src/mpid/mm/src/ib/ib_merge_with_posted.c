@@ -41,7 +41,7 @@ int ib_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
     } 
     else if (pkt_car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
     {
-	/*err_printf("ib_merge_with_unexpected doesn't handle unexpected rndv yet.\n");*/
+	err_printf("ib_merge_with_unexpected doesn't handle unexpected rndv yet.\n");
 	mm_post_rndv_clear_to_send(posted_car_ptr, pkt_car_ptr);
     }
     else

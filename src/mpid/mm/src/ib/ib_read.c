@@ -394,7 +394,7 @@ int ib_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ_VEC);
 
-    MPIU_dbg_printf("ib_handle_read_vec: received %d bytes total\n");
+    MPIU_dbg_printf("ib_handle_read_vec: received %d bytes total\n", num_read);
 
     num_left = num_read;
     i = car_ptr->data.ib.buf.vec_read.cur_index;

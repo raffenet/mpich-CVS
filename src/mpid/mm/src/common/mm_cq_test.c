@@ -77,11 +77,13 @@ int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 	if (qcar_ptr)
 	{
 	    /* merge the received header car with the posted car */
+	    MPIU_dbg_printf("mm_cq_handle_read_head_car: receive found, merging with posted\n");
 	    car_ptr->vc_ptr->fn.merge_with_posted(car_ptr, qcar_ptr);
 	}
 	else
 	{
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
+	    MPIU_dbg_printf("mm_cq_handle_read_head_car: receive not found, creating unexpected\n");
 	    mm_create_post_unex(car_ptr);
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
