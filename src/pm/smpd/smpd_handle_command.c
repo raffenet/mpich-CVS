@@ -6,7 +6,7 @@
 
 #include "smpd.h"
 
-int handle_stdout_command(smpd_context_t *context)
+int smpd_handle_stdout_command(smpd_context_t *context)
 {
     int rank;
     char data[SMPD_MAX_STDOUT_LENGTH];
@@ -37,7 +37,7 @@ int handle_stdout_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int handle_stderr_command(smpd_context_t *context)
+int smpd_handle_stderr_command(smpd_context_t *context)
 {
     int rank;
     char data[SMPD_MAX_STDOUT_LENGTH];
@@ -68,7 +68,7 @@ int handle_stderr_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int launch_processes()
+int smpd_launch_processes()
 {
     int result;
     smpd_command_t *cmd_ptr;
@@ -130,7 +130,7 @@ launch_failure:
     return SMPD_FAIL;
 }
 
-int handle_result(smpd_context_t *context)
+int smpd_handle_result(smpd_context_t *context)
 {
     int result, ret_val;
     char str[1024];
@@ -199,7 +199,7 @@ int handle_result(smpd_context_t *context)
 			if (smpd_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN))
 			{
 			    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", smpd_process.kvs_name);
-			    ret_val = launch_processes();
+			    ret_val = smpd_launch_processes();
 			}
 			else
 			{
@@ -258,7 +258,7 @@ int handle_result(smpd_context_t *context)
     return SMPD_FAIL;
 }
 
-int handle_dbs_command(smpd_context_t *context)
+int smpd_handle_dbs_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -339,7 +339,7 @@ int handle_dbs_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int handle_launch_command(smpd_context_t *context)
+int smpd_handle_launch_command(smpd_context_t *context)
 {
     int result;
     int iproc;
@@ -463,7 +463,7 @@ int handle_launch_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int handle_close_command(smpd_context_t *context)
+int smpd_handle_close_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -537,7 +537,7 @@ int handle_close_command(smpd_context_t *context)
     return SMPD_CLOSE;
 }
 
-int handle_closed_command(smpd_context_t *context)
+int smpd_handle_closed_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -612,7 +612,7 @@ int handle_closed_command(smpd_context_t *context)
     return SMPD_CLOSE;
 }
 
-int handle_closed_request_command(smpd_context_t *context)
+int smpd_handle_closed_request_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -641,7 +641,7 @@ int handle_closed_request_command(smpd_context_t *context)
     return SMPD_CLOSE;
 }
 
-int handle_connect_command(smpd_context_t *context)
+int smpd_handle_connect_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -862,7 +862,7 @@ int handle_connect_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int handle_start_dbs_command(smpd_context_t *context)
+int smpd_handle_start_dbs_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -945,7 +945,7 @@ int handle_start_dbs_command(smpd_context_t *context)
     return result;
 }
 
-int handle_print_command(smpd_context_t *context)
+int smpd_handle_print_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
@@ -1000,7 +1000,7 @@ int handle_print_command(smpd_context_t *context)
     return result;
 }
 
-int handle_stat_command(smpd_context_t *context)
+int smpd_handle_stat_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -1031,7 +1031,7 @@ int handle_stat_command(smpd_context_t *context)
 
 #if 0
 /* use this template to add new command handler functions */
-int handle__command(smpd_context_t *context)
+int smpd_handle__command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
@@ -1089,25 +1089,25 @@ int smpd_handle_command(smpd_context_t *context)
     }
     if (strcmp(cmd->cmd_str, "close") == 0)
     {
-	result = handle_close_command(context);
+	result = smpd_handle_close_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "closed") == 0)
     {
-	result = handle_closed_command(context);
+	result = smpd_handle_closed_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "closed_request") == 0)
     {
-	result = handle_closed_request_command(context);
+	result = smpd_handle_closed_request_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "result") == 0)
     {
-	result = handle_result(context);
+	result = smpd_handle_result(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
@@ -1140,37 +1140,37 @@ int smpd_handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "stdout") == 0)
     {
-	result = handle_stdout_command(context);
+	result = smpd_handle_stdout_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "stderr") == 0)
     {
-	result = handle_stderr_command(context);
+	result = smpd_handle_stderr_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "launch") == 0)
     {
-	result = handle_launch_command(context);
+	result = smpd_handle_launch_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "connect") == 0)
     {
-	result = handle_connect_command(context);
+	result = smpd_handle_connect_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "print") == 0)
     {
-	result = handle_print_command(context);
+	result = smpd_handle_print_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "start_dbs") == 0)
     {
-	result = handle_start_dbs_command(context);
+	result = smpd_handle_start_dbs_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
@@ -1178,7 +1178,7 @@ int smpd_handle_command(smpd_context_t *context)
     else if ((cmd->cmd_str[0] == 'd') && (cmd->cmd_str[1] == 'b'))
     {
 	/* handle database command */
-	result = handle_dbs_command(context);
+	result = smpd_handle_dbs_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
@@ -1223,7 +1223,7 @@ int smpd_handle_command(smpd_context_t *context)
 	    }
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {
-		result = handle_stat_command(context);
+		result = smpd_handle_stat_command(context);
 		smpd_exit_fn("smpd_handle_command");
 		return result;
 	    }
