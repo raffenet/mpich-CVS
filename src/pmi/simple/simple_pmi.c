@@ -449,8 +449,7 @@ int PMI_Spawn_multiple(int count,
                        const PMI_keyval_t ** info_keyval_vectors,
                        int preput_keyval_size,
                        const PMI_keyval_t * preput_keyval_vector,
-                       int * errors,
-                       int * same_domain)
+                       int * errors)
 {
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -459,7 +458,6 @@ int PMI_Spawn_multiple(int count,
     /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
        /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
     /* snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
-    *same_domain = 0;    /* spawner and spawnee can NOT see each other's KVSs */
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
         snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
