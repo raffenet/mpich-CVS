@@ -3691,7 +3691,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 
 #undef FCNAME
 #define FCNAME "smpd_sspi_context_init"
-int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
@@ -3706,7 +3706,8 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
     smpd_sspi_client_context_t *sspi_context;
     char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
-    char target[SMPD_MAX_ACCOUNT_LENGTH];
+    char *target, target_[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    target = target_;
 
     smpd_enter_fn(FCNAME);
 
@@ -3775,6 +3776,9 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 		case 'n':
 		    GetUserNameEx(NameSamCompatible, target, &len);
 		    break;
+		case 'x':
+		    target = NULL;
+		    break;
 		default:
 		    GetUserName(target, &len);
 		    break;
@@ -3783,13 +3787,27 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	}
 	else
 	{
-	    result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);
+	    /*result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);*/
+	    result = DsMakeSpn(SMPD_SERVICE_NAME, NULL, host, (USHORT)port, NULL, &len, target);
 	    if (result != ERROR_SUCCESS)
 	    {
 		smpd_translate_win_error(result, err_msg, 255, NULL);
 		smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
-		target[0] = '\0';
+		target = NULL;
 	    }
+	    /*
+	    char **spns;
+	    result = DsGetSpn(DS_SPN_DNS_HOST, SMPD_SERVICE_NAME, NULL, port, 1, &host, NULL, &len, &spns);
+	    if (result != ERROR_SUCCESS)
+	    {
+		smpd_translate_win_error(result, err_msg, 255, NULL);
+		smpd_err_printf("DsGetSpn failed: %s\n", err_msg);
+		target = NULL;
+	    }
+	    MPIU_Strncpy(target, spns[0], SMPD_MAX_ACCOUNT_LENGTH);
+	    DsFreeSpnArray(1, spns);
+	    */
+	    /*MPIU_Snprintf(target, SMPD_MAX_ACCOUNT_LENGTH, "%s/%s:%d", SMPD_SERVICE_NAME, host, port);*/
 	    /*GetUserNameEx(NameUserPrincipal, target, &len);*/
 	    /*GetUserNameEx(NameDnsDomain, target, &len);*/
 	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
@@ -3848,11 +3866,19 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", target);
+    if (target != NULL)
+    {
+	result = MPIU_Strncpy(sspi_context->target, target, SMPD_MAX_NAME_LENGTH);
+	if (result != MPI_SUCCESS)
+	{
+	}
+    }
+    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", sspi_context->target);
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential, NULL,
-	target,
+	sspi_context->target,
 	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_MUTUAL_AUTH | ISC_REQ_DELEGATE,
+	/*ISC_REQ_DELEGATE,*/
 	/*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT,*/
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
@@ -3916,6 +3942,8 @@ int smpd_handle_sspi_init_command(smpd_context_t *context)
     smpd_command_t *cmd, *temp_cmd;
     char context_str[20];
     smpd_sspi_client_context_t *sspi_context;
+    char host[SMPD_MAX_HOST_LENGTH];
+    int port;
 
     smpd_enter_fn(FCNAME);
 
@@ -3924,6 +3952,20 @@ int smpd_handle_sspi_init_command(smpd_context_t *context)
     if (MPIU_Str_get_string_arg(cmd->cmd, "sspi_context", context_str, 20) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no context parameter in the sspi_init command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "sspi_host", host, SMPD_MAX_HOST_LENGTH) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no host parameter in the sspi_init command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_int_arg(cmd->cmd, "sspi_port", &port) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no port parameter in the sspi_init command: '%s'\n", cmd->cmd);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -3960,7 +4002,7 @@ int smpd_handle_sspi_init_command(smpd_context_t *context)
     }
 
     /* create and initialize an sspi context */
-    result = smpd_sspi_context_init(&sspi_context);
+    result = smpd_sspi_context_init(&sspi_context, host, port);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to initialize an sspi context\n");
@@ -4023,7 +4065,7 @@ fn_fail:
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr)
 {
 #ifdef HAVE_WINDOWS_H
-    int result;
+    /*int result;*/
     char err_msg[256];
     SEC_WINNT_AUTH_IDENTITY *identity = NULL;
     SECURITY_STATUS sec_result, sec_result_copy;
@@ -4033,7 +4075,10 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     TimeStamp ts;
     SecPkgInfo *info;
     smpd_sspi_client_context_t *sspi_context;
-    char target[SMPD_MAX_ACCOUNT_LENGTH];
+    /*
+    char *target, target_[SMPD_MAX_ACCOUNT_LENGTH];
+    target = target_;
+    */
 
     smpd_enter_fn(FCNAME);
 
@@ -4064,6 +4109,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	return SMPD_FAIL;
     }
 
+#if 0
     if (smpd_process.UserAccount[0] != '\0')
     {
 	strncpy(target, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH);
@@ -4092,6 +4138,9 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 		case 'n':
 		    GetUserNameEx(NameSamCompatible, target, &len);
 		    break;
+		case 'x':
+		    target = NULL;
+		    break;
 		default:
 		    GetUserName(target, &len);
 		    break;
@@ -4101,7 +4150,8 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	else
 	{
 	    /*Add DsServerRegisterSpn() or DsWriteAccountSpn() to the service installation code? */
-	    result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);
+	    /*result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);*/
+	    result = DsMakeSpn(SMPD_SERVICE_NAME, NULL, host, (USHORT)port, NULL, &len, target);
 	    if (result != ERROR_SUCCESS)
 	    {
 		smpd_translate_win_error(result, err_msg, 255, NULL);
@@ -4113,6 +4163,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
 	}
     }
+#endif
 
     inbound_descriptor.ulVersion = SECBUFFER_VERSION;
     inbound_descriptor.cBuffers = 1;
@@ -4153,13 +4204,15 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", target);
+    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", sspi_context->target);
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential,
 	&sspi_context->context,
-	target,
+	/*target,*/
+	sspi_context->target,
 	/*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT,*/
-	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | /*ISC_REQ_MUTUAL_AUTH |*/ ISC_REQ_DELEGATE,
+	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_MUTUAL_AUTH | ISC_REQ_DELEGATE,
+	/*ISC_REQ_DELEGATE,*/
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	&inbound_descriptor, 0, &sspi_context->context,

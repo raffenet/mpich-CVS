@@ -129,6 +129,7 @@ typedef int SMPD_BOOL;
 #define SMPD_SSPI_MAX_BUFFER_SIZE         (64*1024)
 /*#define SMPD_SECURITY_PACKAGE             "NTLM"*/
 #define SMPD_SECURITY_PACKAGE             "Kerberos"
+/*#define SMPD_SECURITY_PACKAGE             "Negotiate"*/
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -328,6 +329,7 @@ typedef struct smpd_sspi_client_context_t
     TimeStamp expiration_time;
     HANDLE user_handle;
 #endif
+    char target[SMPD_MAX_NAME_LENGTH];
     void *buffer;
     int buffer_length;
     void *out_buffer;
@@ -789,7 +791,8 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 int smpd_get_all_smpd_data(smpd_data_t **data);
 int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context);
 int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
-int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr);
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port);
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
+int smpd_register_spn(const char *dc, const char *dn, const char *dh);
 
 #endif

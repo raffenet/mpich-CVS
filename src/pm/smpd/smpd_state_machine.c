@@ -2480,8 +2480,9 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	&inbound_descriptor,
 	/*0,*/
 	/*ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE,*/
-	ASC_REQ_REPLAY_DETECT | ASC_REQ_SEQUENCE_DETECT | ASC_REQ_CONFIDENTIALITY /*| ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE*/,
-	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
+	ASC_REQ_REPLAY_DETECT | ASC_REQ_SEQUENCE_DETECT | ASC_REQ_CONFIDENTIALITY,
+	/*ASC_REQ_REPLAY_DETECT | ASC_REQ_SEQUENCE_DETECT | ASC_REQ_CONFIDENTIALITY | ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE,*/
+	/*SECURITY_NATIVE_DREP*/ SECURITY_NETWORK_DREP,
 	&context->sspi_context->context,
 	&outbound_descriptor,
 	&attr, &ts);
@@ -3262,7 +3263,8 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
     if (dest_context == NULL)
     {
 	/* I am node 0 so handle the command here. */
-	result = smpd_sspi_context_init(&context->sspi_context);
+	smpd_dbg_printf("calling smpd_sspi_init with host=%s and port=%d\n", context->connect_to->host, smpd_process.port);
+	result = smpd_sspi_context_init(&context->sspi_context, context->connect_to->host, smpd_process.port);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to initialize an sspi context command.\n");
@@ -3319,6 +3321,20 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the context parameter to the sspi_init command for host %s\n", context->connect_to->host);
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    result = smpd_add_command_arg(cmd_ptr, "sspi_host", context->connect_to->host);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the host parameter to the sspi_init command for host %s\n", context->connect_to->host);
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    result = smpd_add_command_int_arg(cmd_ptr, "sspi_port", smpd_process.port);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the port parameter to the sspi_init command for host %s\n", context->connect_to->host);
 	smpd_exit_fn(FCNAME);
 	return result;
     }

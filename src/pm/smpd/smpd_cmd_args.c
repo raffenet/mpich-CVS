@@ -7,7 +7,6 @@
 #include "smpd.h"
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
-#include <Ntdsapi.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -350,7 +349,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_set_smpd_data("port", port_str);
 	}
 	/*ParseRegistry(true);*/
-	smpd_install_service(SMPD_FALSE, SMPD_TRUE);
+	smpd_install_service(SMPD_FALSE, SMPD_TRUE, smpd_get_opt(argcp, argvp, "-delegation"));
 	/*
 	GetMPDVersion(version, 100);
 	WriteMPDRegistry("version", version);
@@ -369,39 +368,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     if (smpd_get_opt(argcp, argvp, "-register_spn"))
     {
-	DWORD len;
-	char err_msg[256];
-	char **spns;
-	HANDLE ds;
-	DWORD result;
-	result = DsBind(NULL/*DCName*/, NULL/*DomainName*/, &ds);
-	if (result != ERROR_SUCCESS)
-	{
-	    smpd_translate_win_error(result, err_msg, 256, NULL);
-	    smpd_err_printf("DsBind failed: %s\n", err_msg);
-	    ExitProcess(result);
-	}
-	len = 1;
-	result = DsGetSpn(DS_SPN_SERVICE, SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, 0, 0, NULL, NULL, &len, &spns);
-	if (result != ERROR_SUCCESS)
-	{
-	    smpd_translate_win_error(result, err_msg, 256, NULL);
-	    smpd_err_printf("DsGetSpn failed: %s\n", err_msg);
-	    ExitProcess(result);
-	}
-	printf("registering: %s\n", spns[0]);
-	/*
-	result = DsWriteAccountSpn(ds, DS_SPN_ADD_SPN_OP, "SYSTEM", 1, spns);
-	if (result != ERROR_SUCCESS)
-	{
-	    DsFreeSpnArray(1, spns);
-	    smpd_translate_win_error(result, err_msg, 256, NULL);
-	    smpd_err_printf("DsWriteAccountSpn failed: %s\n", err_msg);
-	    ExitProcess(result);
-	}
-	*/
-	DsFreeSpnArray(1, spns);
-	result = DsUnBind(&ds);
+	char domain_controller[100] = "";
+	char domain_name[100] = "";
+	char domain_host[100] = "";
+	smpd_get_opt_string(argcp, argvp, "-domain", domain_name, 100);
+	smpd_get_opt_string(argcp, argvp, "-dc", domain_controller, 100);
+	smpd_get_opt_string(argcp, argvp, "-host", domain_host, 100);
+	smpd_register_spn(domain_controller, domain_name, domain_host);
 	ExitProcess(result);
     }
 

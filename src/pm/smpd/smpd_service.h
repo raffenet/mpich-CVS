@@ -12,9 +12,15 @@
 /* name of the service */
 #define SMPD_SERVICE_NAME         "mpich2_smpd"
 /* displayed name of the service */
-#define SMPD_SERVICE_DISPLAY_NAME "MPICH2 Daemon (C) 2003 Argonne National Lab"
+#define SMPD_SERVICE_DISPLAY_NAME "MPICH2 Process Manager (C) 2003 Argonne National Lab"
+/* guid to represent the service */
+#define SMPD_SERVICE_GUID "5722fe5f-cf46-4594-af7c-0997ca2e9d72"
+/* vendor */
+#define SMPD_PRODUCT_VENDOR "Argonne National Lab"
+/* product */
+#define SMPD_PRODUCT "smpd"
 
-void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart);
+void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart, SMPD_BOOL bSetupScp);
 SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled);
 void smpd_stop_service();
 void smpd_start_service();
