@@ -97,8 +97,10 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    mpi_errno = MPIDU_SOCK_ERR_TIMEOUT;
 		    goto fn_exit;
 		}
+
+		continue;
 	    }
-	    if (errno == ENOMEM || errno == EAGAIN)
+	    else if (errno == ENOMEM || errno == EAGAIN)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 						 "**sock|osnomem", NULL);
