@@ -364,12 +364,6 @@
 			<File
 				RelativePath=".\iocp\sock.c">
 			</File>
-			<File
-				RelativePath="sock_describe_states.c">
-			</File>
-			<File
-				RelativePath="iocp\socki_describe_states.c">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

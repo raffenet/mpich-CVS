@@ -158,9 +158,6 @@
 				RelativePath=".\src\ch3_comm_spawn_multiple.c">
 			</File>
 			<File
-				RelativePath="src\ch3_describe_states.c">
-			</File>
-			<File
 				RelativePath="src\ch3_finalize.c">
 			</File>
 			<File
@@ -261,9 +258,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_comm_spawn_multiple.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_describe_states.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_finalize.c">
