@@ -1,3 +1,4 @@
+*.vcproj
 Makefile.in
 Makefile
 segtest
