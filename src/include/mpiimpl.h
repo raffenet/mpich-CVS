@@ -812,15 +812,40 @@ extern MPIU_Object_alloc_t MPID_Request_mem;
 /* Preallocated request objects */
 extern MPID_Request MPID_Request_direct[];
 
+typedef struct MPIU_RMA_ops { 
+/* for keeping track of puts and gets, which will be executed at fence */
+    struct MPIU_RMA_ops *next;  /* pointer to next element in list */
+    int type;  /* MPID_REQUEST_PUT, MPID_REQUEST_GET,
+                  MPID_REQUEST_ACCUMULATE */  
+    void *origin_addr;
+    int origin_count;
+    MPI_Datatype origin_datatype;
+    int target_rank;
+    MPI_Aint target_disp;
+    int target_count;
+    MPI_Datatype target_datatype;
+    MPI_Op op;  /* for accumulate */
+} MPIU_RMA_ops;
+
+#define MPID_REQUEST_PUT 23
+#define MPID_REQUEST_GET 24
+#define MPID_REQUEST_ACCUMULATE 25
+
+extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
+
+
 /* Windows */
 typedef struct MPID_Win {
     int           handle;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
+    int fence_cnt;     /* 0 = no fence has been called; 
+                          1 = fence has been called */ 
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
-    MPI_Aint    length;        
+    void *base;
+    MPI_Aint    size;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_Attribute *attributes;
-    MPID_Comm    *comm;         /* communicator of window */
+    MPI_Comm    comm;         /* communicator of window (dup) */
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
 #ifdef MPID_DEV_WIN_DECL
@@ -1182,6 +1207,9 @@ extern int MPID_THREAD_LEVEL;
 #define MPIR_ERRTEST_COUNT(count,err) \
     if ((count) < 0) {\
         err = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg", "**countneg %d", count );}
+#define MPIR_ERRTEST_DISP(disp,err) \
+    if ((disp) < 0) {\
+        err = MPIR_Err_create_code( MPI_ERR_DISP, "**rmadisp", 0 );}
 #define MPIR_ERRTEST_ALIAS(ptr1,ptr2,err) \
     if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {\
         err = MPIR_Err_create_code( MPI_ERR_BUFFER, "**bufalias", 0 );}
@@ -1433,6 +1461,8 @@ int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
             MPI_Datatype, MPID_Win *); 
 int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
             MPI_Datatype, MPID_Win *);
+int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
+		   MPI_Datatype,  MPI_Op, MPID_Win *);
 int MPID_Win_free(MPID_Win **); 
 
 

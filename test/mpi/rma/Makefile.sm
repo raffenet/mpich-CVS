@@ -1,0 +1,9 @@
+# LIBS includes -lmpich and other libraries (e.g., -lpmpich if
+# weak symbols are not supported)
+EXTERNAL_LIBS = m
+LDADD = -L ../../../lib
+DEPADD = ../../../lib/libmpich.a
+#
+cpi_SOURCES = cpi.c test1.c
+
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include

@@ -6,9 +6,10 @@
 
 #include "mpidimpl.h"
 
-int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr)
+int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
+                    origin_datatype, int target_rank, MPI_Aint target_disp,
+                    int target_count, MPI_Datatype target_datatype, MPI_Op op,
+                    MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIU_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
@@ -34,7 +35,7 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
         MPIU_RMA_ops_list = new_ptr;
 
     new_ptr->next = NULL;  
-    new_ptr->type = MPID_REQUEST_PUT;
+    new_ptr->type = MPID_REQUEST_ACCUMULATE;
     new_ptr->origin_addr = origin_addr;
     new_ptr->origin_count = origin_count;
     new_ptr->origin_datatype = origin_datatype;
@@ -42,6 +43,7 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
     new_ptr->target_disp = target_disp;
     new_ptr->target_count = target_count;
     new_ptr->target_datatype = target_datatype;
+    new_ptr->op = op;
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
 

@@ -46,30 +46,40 @@ int MPI_Win_wait(MPI_Win win)
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_WAIT);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_WAIT);
+
+    /* Verify that MPI has been initialized */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
+                return MPIR_Err_return_win( NULL, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
     return MPI_SUCCESS;
 }
 

@@ -7,4 +7,5 @@ lib${MPILIBNAME}_a_SOURCES = \
     mpid_irecv.c mpid_irsend.c mpid_isend.c mpid_issend.c mpid_probe.c \
     mpid_recv.c mpid_recv_init.c mpid_rsend.c mpid_rsend_init.c \
     mpid_send.c mpid_send_init.c mpid_ssend.c mpid_ssend_init.c \
-    mpid_startall.c mpid_vc.c 
+    mpid_startall.c mpid_vc.c mpid_win_fence.c mpid_put.c mpid_get.c \
+    mpid_accumulate.c

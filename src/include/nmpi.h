@@ -27,5 +27,16 @@
 #define NMPI_Group_compare PMPI_Group_compare
 #define NMPI_Group_free PMPI_Group_free
 #define NMPI_Comm_split PMPI_Comm_split
+#define NMPI_Comm_size PMPI_Comm_size 
+#define NMPI_Comm_rank PMPI_Comm_rank
+#define NMPI_Alltoall PMPI_Alltoall
+#define NMPI_Isend PMPI_Isend
+#define NMPI_Irecv PMPI_Irecv
+#define NMPI_Recv PMPI_Recv 
+#define NMPI_Send PMPI_Send
+#define NMPI_Waitall PMPI_Waitall
 #define NMPI_Sendrecv PMPI_Sendrecv
+#define NMPI_Type_extent PMPI_Type_extent
+#define NMPI_Comm_free PMPI_Comm_free
+#define NMPI_Comm_dup PMPI_Comm_dup
 #endif /* MPICH_NMPI_H_INCLUDED */
