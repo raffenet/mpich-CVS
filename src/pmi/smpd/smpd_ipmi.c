@@ -1029,23 +1029,11 @@ int iPMI_Get_clique_ranks( int ranks[], int length )
 
 int iPMI_Get_id( char id_str[], int length )
 {
-    /*
-    char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
-    char key[PMI_MAX_KEY_LEN] = PMI_KVS_ID_KEY;
-    char value[PMI_MAX_VALUE_LEN] = "";
-
-    strcpy(kvs_name, pmi_process.kvs_name);
-    iPMI_KVS_Get(kvs_name, key, value);
-    strcpy(id_str, value);
-
-    return PMI_SUCCESS;
-    */
     return iPMI_KVS_Get_my_name(id_str, length);
 }
 
 int iPMI_Get_id_length_max(int *maxlen)
 {
-    /*return 40;*/
     return iPMI_KVS_Get_name_length_max(maxlen);
 }
 
@@ -1553,9 +1541,9 @@ int iPMI_Spawn_multiple(int count,
 		{
 		    result = MPIU_Str_add_string(&iter, &maxlen, argvs[i][j]);
 		}
+		iter--;
+		*iter = '\0'; /* erase the trailing space */
 	    }
-	    iter--;
-	    *iter = '\0'; /* erase the trailing space */
 	    sprintf(key, "argv%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
 	    if (result != SMPD_SUCCESS)
@@ -1640,13 +1628,35 @@ int iPMI_Spawn_multiple(int count,
 		maxlen2 = SMPD_MAX_CMD_LENGTH;
 		if (strcmp(info_keyval_vectors[i][j].key, "path") == 0)
 		{
+		    size_t val2len;
+		    char *val2;
+		    val2len = sizeof(char) * strlen(info_keyval_vectors[i][j].val) + 1 + strlen(path) + 1;
+		    val2 = (char*)MPIU_Malloc(val2len);
+		    if (val2 == NULL)
+		    {
+			pmi_err_printf("unable to allocate memory for the path key.\n");
+			return PMI_FAIL;
+		    }
+		    printf("creating path %d: <%s>;<%s>\n", val2len, info_keyval_vectors[i][j].val, path);fflush(stdout);
+		    MPIU_Snprintf(val2, val2len, "%s;%s", info_keyval_vectors[i][j].val, path);
+		    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, val2);
+		    if (result != MPIU_STR_SUCCESS)
+		    {
+			pmi_err_printf("unable to add %s=%s to the spawn command.\n", info_keyval_vectors[i][j].key, val2);
+			MPIU_Free(val2);
+			return PMI_FAIL;
+		    }
+		    MPIU_Free(val2);
 		    path_specified = 1;
 		}
-		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
-		if (result != MPIU_STR_SUCCESS)
+		else
 		{
-		    pmi_err_printf("unable to add %s=%s to the spawn command.\n", info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
-		    return PMI_FAIL;
+		    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+		    if (result != MPIU_STR_SUCCESS)
+		    {
+			pmi_err_printf("unable to add %s=%s to the spawn command.\n", info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+			return PMI_FAIL;
+		    }
 		}
 		iter2--;
 		*iter2 = '\0'; /* remove the trailing space */
@@ -1676,8 +1686,11 @@ int iPMI_Spawn_multiple(int count,
 		}
 		info_keyval_sizes[i]++;
 	    }
-	    iter--;
-	    *iter = '\0'; /* remove the trailing space */
+	    if (iter != buffer)
+	    {
+		iter--;
+		*iter = '\0'; /* remove the trailing space */
+	    }
 	    sprintf(key, "keyvals%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
 	    if (result != SMPD_SUCCESS)
