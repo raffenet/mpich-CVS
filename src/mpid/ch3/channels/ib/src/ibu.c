@@ -681,6 +681,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	printf("ib_post_send_req_us %d\n", s_cur_send++);
 	g_num_send_posted++;
 	*/
+	MPIU_dbg_printf("ibui_post_write(%d bytes)\n", length);
 	status = ib_post_send_req_us( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
 	    &work_req);
