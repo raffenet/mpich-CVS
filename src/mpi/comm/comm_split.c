@@ -210,6 +210,12 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 
 	/* Free all storage */
 	MPIU_Free( keytable );
+
+        /* Notify the device of this new communicator */
+	/*printf( "about to notify device\n" ); */
+	MPID_Dev_comm_create_hook( newcomm_ptr );
+	/*printf( "about to return from comm_split\n" ); */
+	
 	*newcomm = newcomm_ptr->handle;
     }
     else {
