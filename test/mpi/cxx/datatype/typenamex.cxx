@@ -24,67 +24,12 @@ using namespace std;
 
 /* Create an array with all of the MPI names in it */
 
-typedef struct mpi_names_t { MPI::Datatype dtype; const char *name; } mpi_names_t;
+typedef struct mpi_names_t { 
+    MPI::Datatype dtype; const char *name; } mpi_names_t;
 
-/* The MPI standard specifies that the names must be the MPI names,
-   not the related language names (e.g., MPI_CHAR, not char) */
 
-static mpi_names_t mpi_names[] = {
-    { MPI::CHAR, "MPI_CHAR" },
-    { MPI::SIGNED_CHAR, "MPI_SIGNED_CHAR" },
-    { MPI::UNSIGNED_CHAR, "MPI_UNSIGNED_CHAR" },
-    { MPI::BYTE, "MPI_BYTE" },
-    { MPI::WCHAR, "MPI_WCHAR" },
-    { MPI::SHORT, "MPI_SHORT" },
-    { MPI::UNSIGNED_SHORT, "MPI_UNSIGNED_SHORT" },
-    { MPI::INT, "MPI_INT" },
-    { MPI::UNSIGNED, "MPI_UNSIGNED" },
-    { MPI::LONG, "MPI_LONG" },
-    { MPI::UNSIGNED_LONG, "MPI_UNSIGNED_LONG" },
-    { MPI::FLOAT, "MPI_FLOAT" },
-    { MPI::DOUBLE, "MPI_DOUBLE" },
-    { MPI::LONG_DOUBLE, "MPI_LONG_DOUBLE" },
-/*    { MPI::LONG_LONG_INT, "MPI_LONG_LONG_INT" }, */
-    { MPI::LONG_LONG, "MPI_LONG_LONG" },
-    { MPI::UNSIGNED_LONG_LONG, "MPI_UNSIGNED_LONG_LONG" }, 
-    { MPI::PACKED, "MPI_PACKED" },
-    { MPI::LB, "MPI_LB" },
-    { MPI::UB, "MPI_UB" },
-    { MPI::FLOAT_INT, "MPI_FLOAT_INT" },
-    { MPI::DOUBLE_INT, "MPI_DOUBLE_INT" },
-    { MPI::LONG_INT, "MPI_LONG_INT" },
-    { MPI::SHORT_INT, "MPI_SHORT_INT" },
-    { MPI::TWOINT, "MPI_2INT" },
-    { MPI::LONG_DOUBLE_INT, "MPI_LONG_DOUBLE_INT" },
-    /* Fortran */
-#if 0
-    { MPI::COMPLEX, "MPI_COMPLEX" },
-    { MPI::DOUBLE_COMPLEX, "MPI_DOUBLE_COMPLEX" },
-    { MPI::LOGICAL, "MPI_LOGICAL" },
-    { MPI::REAL, "MPI_REAL" },
-    { MPI::DOUBLE_PRECISION, "MPI_DOUBLE_PRECISION" },
-    { MPI::INTEGER, "MPI_INTEGER" },
-    { MPI::2INTEGER, "MPI_2INTEGER" },
-    { MPI::2COMPLEX, "MPI_2COMPLEX" },
-    { MPI::2DOUBLE_COMPLEX, "MPI_2DOUBLE_COMPLEX" },
-    { MPI::2REAL, "MPI_2REAL" },
-    { MPI::2DOUBLE_PRECISION, "MPI_2DOUBLE_PRECISION" },
-    { MPI::CHARACTER, "MPI_CHARACTER" },
-#endif
-    /* Size-specific types */
-    { MPI::REAL4, "MPI_REAL4" },
-    { MPI::REAL8, "MPI_REAL8" },
-    { MPI::REAL16, "MPI_REAL16" },
-    { MPI::COMPLEX8, "MPI_COMPLEX8" },
-    { MPI::COMPLEX16, "MPI_COMPLEX16" },
-    { MPI::COMPLEX32, "MPI_COMPLEX32" },
-    { MPI::INTEGER1, "MPI_INTEGER1" },
-    { MPI::INTEGER2, "MPI_INTEGER2" },
-    { MPI::INTEGER4, "MPI_INTEGER4" },
-    { MPI::INTEGER8, "MPI_INTEGER8" },
-    { MPI::INTEGER16, "MPI_INTEGER16" },
-    { 0, (char *)0 },  /* Sentinal used to indicate the last element */
-};
+static mpi_names_t *mpi_names = 0;
+void InitMPINames (void);
 
 int main( int argc, char **argv )
 {
@@ -94,6 +39,8 @@ int main( int argc, char **argv )
 
     MPI::Init();
     
+    InitMPINames();
+
     /* Sample some datatypes */
     /* See 8.4, "Naming Objects" in MPI-2.  The default name is the same
        as the datatype name */
@@ -141,4 +88,79 @@ int main( int argc, char **argv )
     }
     MPI::Finalize();
     return 0;
+}
+
+// Initialize the mpi_names array here.  This make sure that we don't
+// initialize the values before Init or Init_thread are called.
+
+/* The MPI standard specifies that the names must be the MPI names,
+   not the related language names (e.g., MPI_CHAR, not char).
+*/
+void InitMPINames (void) {
+    int i;
+    mpi_names_t lmpi_names[] = {
+	{ MPI::CHAR, "MPI_CHAR" },
+	{ MPI::SIGNED_CHAR, "MPI_SIGNED_CHAR" },
+	{ MPI::UNSIGNED_CHAR, "MPI_UNSIGNED_CHAR" },
+	{ MPI::BYTE, "MPI_BYTE" },
+	{ MPI::WCHAR, "MPI_WCHAR" },
+	{ MPI::SHORT, "MPI_SHORT" },
+	{ MPI::UNSIGNED_SHORT, "MPI_UNSIGNED_SHORT" },
+	{ MPI::INT, "MPI_INT" },
+	{ MPI::UNSIGNED, "MPI_UNSIGNED" },
+	{ MPI::LONG, "MPI_LONG" },
+	{ MPI::UNSIGNED_LONG, "MPI_UNSIGNED_LONG" },
+	{ MPI::FLOAT, "MPI_FLOAT" },
+	{ MPI::DOUBLE, "MPI_DOUBLE" },
+	{ MPI::LONG_DOUBLE, "MPI_LONG_DOUBLE" },
+	/*    { MPI::LONG_LONG_INT, "MPI_LONG_LONG_INT" }, */
+	{ MPI::LONG_LONG, "MPI_LONG_LONG" },
+	{ MPI::UNSIGNED_LONG_LONG, "MPI_UNSIGNED_LONG_LONG" }, 
+	{ MPI::PACKED, "MPI_PACKED" },
+	{ MPI::LB, "MPI_LB" },
+	{ MPI::UB, "MPI_UB" },
+	{ MPI::FLOAT_INT, "MPI_FLOAT_INT" },
+	{ MPI::DOUBLE_INT, "MPI_DOUBLE_INT" },
+	{ MPI::LONG_INT, "MPI_LONG_INT" },
+	{ MPI::SHORT_INT, "MPI_SHORT_INT" },
+	{ MPI::TWOINT, "MPI_2INT" },
+	{ MPI::LONG_DOUBLE_INT, "MPI_LONG_DOUBLE_INT" },
+	/* Fortran */
+#if 0
+	{ MPI::COMPLEX, "MPI_COMPLEX" },
+	{ MPI::DOUBLE_COMPLEX, "MPI_DOUBLE_COMPLEX" },
+	{ MPI::LOGICAL, "MPI_LOGICAL" },
+	{ MPI::REAL, "MPI_REAL" },
+	{ MPI::DOUBLE_PRECISION, "MPI_DOUBLE_PRECISION" },
+	{ MPI::INTEGER, "MPI_INTEGER" },
+	{ MPI::2INTEGER, "MPI_2INTEGER" },
+	{ MPI::2COMPLEX, "MPI_2COMPLEX" },
+	{ MPI::2DOUBLE_COMPLEX, "MPI_2DOUBLE_COMPLEX" },
+	{ MPI::2REAL, "MPI_2REAL" },
+	{ MPI::2DOUBLE_PRECISION, "MPI_2DOUBLE_PRECISION" },
+	{ MPI::CHARACTER, "MPI_CHARACTER" },
+#endif
+    /* Size-specific types */
+	{ MPI::REAL4, "MPI_REAL4" },
+	{ MPI::REAL8, "MPI_REAL8" },
+	{ MPI::REAL16, "MPI_REAL16" },
+	{ MPI::COMPLEX8, "MPI_COMPLEX8" },
+	{ MPI::COMPLEX16, "MPI_COMPLEX16" },
+	{ MPI::COMPLEX32, "MPI_COMPLEX32" },
+	{ MPI::INTEGER1, "MPI_INTEGER1" },
+	{ MPI::INTEGER2, "MPI_INTEGER2" },
+	{ MPI::INTEGER4, "MPI_INTEGER4" },
+	{ MPI::INTEGER8, "MPI_INTEGER8" },
+	{ MPI::INTEGER16, "MPI_INTEGER16" },
+	{ 0, (char *)0 },  /* Sentinal used to indicate the last element */
+    };
+
+    mpi_names = new mpi_names_t [sizeof(lmpi_names)/sizeof(mpi_names_t)];
+    i = 0;
+    while (lmpi_names[i].name) {
+	mpi_names[i] = lmpi_names[i];
+	i++;
+    }
+    mpi_names[i].name = 0;
+    mpi_names[i].dtype = 0;
 }
