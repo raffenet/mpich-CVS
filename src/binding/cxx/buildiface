@@ -1967,26 +1967,69 @@ print $OUTFD "\
 
     # Keyval and attribute routines
     print $OUTFD "
-extern \"C\" int MPIR_Call_delfn( MPI_Comm comm, int keyval,
-				   void *value, void *extra_state, 
-				   MPI::Comm::Delete_attr_function *f )
+#include \"mpihandlemem.h\"
+extern \"C\" int MPIR_Call_delfn( int handleType, int handle, int keyval,
+				  void *value, void *extra_state, 
+				  void (*f)(void) )
 {
-    MPI::Comm cxxcomm = comm;
     int err;
-    err = (*f)( cxxcomm, keyval, value, extra_state );
+    switch (handleType) {
+	case MPID_COMM:
+	{
+	MPI::Comm cxxcomm = handle;
+	MPI::Comm::Delete_attr_function *f1 = (MPI::Comm::Delete_attr_function *)f;
+	err=(*f1)( cxxcomm, keyval, value, extra_state );
+        }
+	break;
+	case MPID_DATATYPE:
+	{
+	MPI::Datatype cxxtype = handle;
+        MPI::Datatype::Delete_attr_function *f1 = (MPI::Datatype::Delete_attr_function *)f;
+	err=(*f1)( cxxtype, keyval, value, extra_state );
+        }
+	break;
+	case MPID_WIN:
+	{
+	MPI::Win cxxwin = handle;
+        MPI::Win::Delete_attr_function *f1 = (MPI::Win::Delete_attr_function *)f;
+	err=(*f1)( cxxwin, keyval, value, extra_state );
+        }
+	break;
+    }
     return err;  
 }
-extern \"C\" int MPIR_Call_copyfn( MPI_Comm comm, int keyval,
+extern \"C\" int MPIR_Call_copyfn( int handleType, int handle, int keyval,
 				   void *extra_state, void *value,
-				    void *new_value, int *cflag,
-				   MPI::Comm::Copy_attr_function *f )
+				   void *new_value, int *cflag,
+				   void (*f)(void) )
 {
-    MPI::Comm cxxcomm = comm;
     int err;
     bool flag;
-    err=(*f)( cxxcomm, keyval, extra_state, value, new_value, flag );
+    switch (handleType) {
+	case MPID_COMM:
+	{
+	MPI::Comm cxxcomm = handle;
+	MPI::Comm::Copy_attr_function *f1 = (MPI::Comm::Copy_attr_function *)f;
+	err=(*f1)( cxxcomm, keyval, extra_state, value, new_value, flag );
+        }
+	break;
+	case MPID_DATATYPE:
+	{
+	MPI::Datatype cxxtype = handle;
+        MPI::Datatype::Copy_attr_function *f1 = (MPI::Datatype::Copy_attr_function *)f;
+	err=(*f1)( cxxtype, keyval, extra_state, value, new_value, flag );
+        }
+	break;
+	case MPID_WIN:
+	{
+	MPI::Win cxxwin = handle;
+        MPI::Win::Copy_attr_function *f1 = (MPI::Win::Copy_attr_function *)f;
+	err=(*f1)( cxxwin, keyval, extra_state, value, new_value, flag );
+        }
+	break;
+    }
     *cflag = flag;
-      return err;
+    return err;
 }
 extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, 

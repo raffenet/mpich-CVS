@@ -85,7 +85,9 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 #ifdef HAVE_CXX_BINDING
     case MPID_LANG_CXX: 
 	if (delfn.C_DeleteFunction) {
-	    mpi_errno = (*MPIR_Process.cxx_call_delfn)( handle,
+	    int handleType = HANDLE_GET_MPI_KIND(handle);
+	    mpi_errno = (*MPIR_Process.cxx_call_delfn)( handleType,
+						handle,
 						attr_p->keyval->handle, 
 						attr_p->value,
 						attr_p->keyval->extra_state, 
@@ -185,7 +187,19 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    break;
 #ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX: 
-	    /* FIXME :!!!!! No attribute copy for C++ */
+	    if (copyfn.C_CopyFunction) {
+		int handleType = HANDLE_GET_MPI_KIND(handle);
+		mpi_errno = (*MPIR_Process.cxx_call_copyfn)( 
+				   handleType,
+				   handle,
+				   p->keyval->handle, 
+				   p->keyval->extra_state, 
+				   p->value, &new_value, &flag,
+				   (void (*)(void)) copyfn.C_CopyFunction );
+		if (mpi_errno != 0) {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		}
+	    }
 	    break;
 #endif
 #ifdef HAVE_FORTRAN_BINDING
@@ -345,9 +359,10 @@ void MPIR_Keyval_set_cxx( int keyval, void (*delfn)(void), void (*copyfn)(void) 
     MPID_Keyval_get_ptr( keyval, keyval_ptr );
     
     keyval_ptr->language	 = MPID_LANG_CXX;
-    MPIR_Process.cxx_call_delfn	 = (int (*)(int, int, void *, void *, 
+    MPIR_Process.cxx_call_delfn	 = (int (*)(int, int, int, void *, void *, 
 					    void (*)(void)))delfn;
-    MPIR_Process.cxx_call_copyfn = (int (*)(int, int, void *, void *, 
+    MPIR_Process.cxx_call_copyfn = (int (*)(int, int, int, void *, void *, 
+					    void *, int *, 
 					    void (*)(void)))copyfn;
 }
 #endif

@@ -1875,9 +1875,9 @@ typedef struct MPICH_PerProcess_t {
 			    MPI_User_function * );
     /* Attribute functions.  We use a single "call" function for Comm, Datatype,
        and File, since all are ints (and we can cast in the call) */
-    int  (*cxx_call_delfn)( int, int, void *, void *, 
+    int  (*cxx_call_delfn)( int, int, int, void *, void *, 
 			    void (*)(void) );
-    int  (*cxx_call_copyfn)( int, int, void *, void *, 
+    int  (*cxx_call_copyfn)( int, int, int, void *, void *, void *, int *, 
 			    void (*)(void) );
     /* Error handling functions.  As for the attribute functions,
        we pass the integer file/comm/win, the address of the error code, 
