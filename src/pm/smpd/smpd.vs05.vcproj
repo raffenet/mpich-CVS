@@ -64,7 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib dbgd.lib pmid.lib sockd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib dbgd.lib pmid.lib sockd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -145,7 +145,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib sockd.lib pmid.lib dbgd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socksd.lib ch3sockd.lib smpd_utild.lib sockd.lib pmid.lib dbgd.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -227,7 +227,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib pmi.lib dbg.lib sock.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib pmi.lib dbg.lib sock.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -311,7 +311,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib dbg.lib pmi.lib sock.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
+				AdditionalDependencies="Ntdsapi.lib Secur32.lib mpich2socks.lib ch3sock.lib smpd_util.lib dbg.lib pmi.lib sock.lib ws2_32.lib mswsock.lib mpr.lib Rpcrt4.lib crypt32.lib"
 				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
