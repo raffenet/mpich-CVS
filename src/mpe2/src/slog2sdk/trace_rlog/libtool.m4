@@ -4891,10 +4891,14 @@ AC_MSG_CHECKING([for $compiler option to produce PIC])
 
     linux*)
       case $CC in
-      icc* | ecc*)
-	_LT_AC_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
-	_LT_AC_TAGVAR(lt_prog_compiler_pic, $1)='-KPIC'
-	_LT_AC_TAGVAR(lt_prog_compiler_static, $1)='-static'
+      *pgcc )
+        _LT_AC_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+        ;;
+      *icc* | ecc*)
+        _LT_AC_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+        _LT_AC_TAGVAR(lt_prog_compiler_pic, $1)='-KPIC'
+        _LT_AC_TAGVAR(lt_prog_compiler_static, $1)='-static'
+        _LT_AC_TAGVAR(archive_cmds_need_lc, $1)=no
         ;;
       ccc*)
         _LT_AC_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
