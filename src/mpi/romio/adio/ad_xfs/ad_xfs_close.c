@@ -9,8 +9,10 @@
 
 void ADIOI_XFS_Close(ADIO_File fd, int *error_code)
 {
-    int err;
+    int err, err1;
 
     err = close(fd->fd_sys);
-    *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
+    err1 = close(fd->fd_direct);
+
+    *error_code = ((err == 0) && (err1 == 0)) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 }

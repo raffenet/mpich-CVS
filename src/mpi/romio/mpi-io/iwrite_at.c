@@ -48,7 +48,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if (buf <= (void *) 0) {
+    if (buf < (void *) 0) {
         printf("MPI_File_iwrite_at: buf is not a valid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -68,6 +68,11 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
     if ((count*datatype_size) % fh->etype_size != 0) {
         printf("MPI_File_iwrite_at: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+	printf("MPI_File_iwrite_at: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
@@ -94,14 +99,14 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 	    (*request)->handle = 0;
 
             if ((fh->file_system != ADIO_PIOFS) && 
-                (fh->file_system != ADIO_NFS))
+              (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 
             ADIO_WriteContig(fh, buf, bufsize, ADIO_EXPLICIT_OFFSET, off, 
                     &status, &error_code);  
 
             if ((fh->file_system != ADIO_PIOFS) && 
-                (fh->file_system != ADIO_NFS))
+               (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 
             fh->async_count++;

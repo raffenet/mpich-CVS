@@ -16,12 +16,14 @@ _IRIXN32_
 _IRIX64_
 _alpha_
 _freebsd_
+_netbsd_
 _LINUX_
 _CRAY_
 _nfs_
 _ufs_
 _pfs_
 _piofs_
+_pvfs_
 _xfs_
 _hfs_
 _sfs_

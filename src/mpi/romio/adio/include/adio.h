@@ -105,6 +105,17 @@ typedef struct ADIOI_Fns_struct ADIOI_Fns;
 struct ADIOI_FileD {
     int cookie;              /* for error checking */
     int fd_sys;              /* system file descriptor */
+#ifdef __XFS
+    int fd_direct;           /* On XFS, this is used for direct I/O; 
+                                fd_sys is used for buffered I/O */
+    int direct_read;         /* flag; 1 means use direct read */
+    int direct_write;        /* flag; 1 means use direct write  */
+    /* direct I/O attributes */
+    unsigned d_mem;          /* data buffer memory alignment */
+    unsigned d_miniosz;      /* min xfer size, xfer size multiple,
+                                and file seek offset alignment */
+    unsigned d_maxiosz;      /* max xfer size */
+#endif
     ADIO_Offset fp_ind;      /* individual file pointer in MPI-IO (in bytes)*/
     ADIO_Offset fp_sys_posn; /* current location of the system file-pointer
                                 in bytes */
@@ -118,6 +129,10 @@ struct ADIOI_FileD {
     MPI_Datatype filetype;   /* reqd. for MPI-IO */
     int etype_size;          /* in bytes */
     MPI_Info info;
+    int split_coll_count;    /* count of outstanding split coll. ops. */
+    char *shared_fp_fname;   /* name of file containing shared file pointer */
+    struct ADIOI_FileD *shared_fp_fd;  /* file handle of file 
+                                         containing shared fp */
     int async_count;         /* count of outstanding nonblocking operations */
     int perm;
     int atomicity;          /* true=atomic, false=nonatomic */
@@ -182,6 +197,7 @@ typedef struct {
 #define ADIO_XFS                 154   /* SGI */
 #define ADIO_HFS                 155   /* HP/Convex */
 #define ADIO_SFS                 156   /* NEC */
+#define ADIO_PVFS                157   /* PVFS for Linux Clusters from Clemson Univ. */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR
@@ -278,6 +294,10 @@ void ADIO_Flush(ADIO_File fd, int *error_code);
 void ADIO_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIO_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 void ADIO_FileSysType(char *filename, int *fstype, int *error_code);
+void ADIO_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
+			 int *error_code);
+void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
+
 
 #include "adioi.h"
 #include "adioi_fs_proto.h"

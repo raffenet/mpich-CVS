@@ -63,6 +63,14 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
             printf("MPI_Type_create_subarray: Invalid value in array_of_starts\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
+        if (array_of_subsizes[i] > array_of_sizes[i]) {
+            printf("MPI_Type_create_subarray: Error! array_of_subsizes[%d] > array_of_sizes[%d]\n", i, i);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+        if (array_of_starts[i] > (array_of_sizes[i] - array_of_subsizes[i])) {
+            printf("MPI_Type_create_subarray: Error! array_of_starts[%d] > (array_of_sizes[%d] - array_of_subsizes[%d])\n", i, i, i);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
     }
 
     /* order argument checked below */

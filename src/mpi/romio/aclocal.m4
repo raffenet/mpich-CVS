@@ -859,3 +859,62 @@ else
 fi
 ])dnl
 dnl
+dnl
+define(PAC_TEST_MPI_HAS_OFFSET_KIND,[
+  AC_MSG_CHECKING(if MPI_OFFSET_KIND is defined in mpif.h)
+  rm -f mpitest.f
+  cat > mpitest.f <<EOF
+      program main
+      implicit none
+      include 'mpif.h'
+      integer i
+      i = MPI_OFFSET_KIND
+      stop
+      end
+EOF
+  rm -f a.out
+  $F77 $FFLAGS -I$MPI_INCLUDE_DIR mpitest.f $MPI_LIB > /dev/null 2>&1
+  if test -x a.out ; then
+     AC_MSG_RESULT(yes)
+     MPI_OFFSET_KIND1="!"
+     MPI_OFFSET_KIND2="!"
+  else
+     AC_MSG_RESULT(no)
+  fi
+  rm -f a.out mpitest.f
+])dnl
+dnl
+dnl
+dnl PAC_GET_XFS_MEMALIGN
+dnl 
+dnl
+define(PAC_GET_XFS_MEMALIGN,
+[AC_MSG_CHECKING([for memory alignment needed for direct I/O])
+/bin/rm -f memalignval
+/bin/rm -f /tmp/romio_tmp.bin
+AC_TEST_PROGRAM([#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+main() { 
+  struct dioattr st;
+  int fd = open("/tmp/romio_tmp.bin", O_RDWR | O_CREAT, 0644);
+  FILE *f=fopen("memalignval","w");
+  if (fd == -1) exit(1);
+  if (!f) exit(1);
+  fcntl(fd, F_DIOINFO, &st);
+  fprintf( f, "%u\n", st.d_mem);
+  exit(0);
+}],Pac_CV_NAME=`cat memalignval`,Pac_CV_NAME="")
+/bin/rm -f memalignval
+/bin/rm -f /tmp/romio_tmp.bin
+if test -n "$Pac_CV_NAME" -a "$Pac_CV_NAME" != 0 ; then
+    AC_MSG_RESULT($Pac_CV_NAME)
+    CFLAGS="$CFLAGS -D__XFS_MEMALIGN=$Pac_CV_NAME"
+else
+    AC_MSG_RESULT(unavailable, assuming 128)
+    CFLAGS="$CFLAGS -D__XFS_MEMALIGN=128"
+fi
+])dnl
+dnl
+   

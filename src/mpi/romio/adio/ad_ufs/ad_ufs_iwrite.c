@@ -235,7 +235,7 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 #elif (!defined(__NO_AIO) && !defined(__AIO_SUN))
 /* DEC, SGI IRIX 5 and 6 */
 
-    aiocbp = (struct aiocb *) ADIOI_Malloc(sizeof(struct aiocb));
+    aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
     aiocbp->aio_fildes = fd_sys;
     aiocbp->aio_offset = offset;
     aiocbp->aio_buf = buf;

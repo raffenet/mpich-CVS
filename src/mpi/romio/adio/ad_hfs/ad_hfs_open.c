@@ -37,13 +37,11 @@ void ADIOI_HFS_Open(ADIO_File fd, int *error_code)
 #ifdef __HPUX
 	fd->fp_sys_posn = fd->fp_ind;
 #endif
+    }
+
 #ifdef __SPPUX
 	fd->fp_sys_posn = -1;  /* set it to null bec. we use pread, pwrite*/
 #endif
-	MPI_Barrier(fd->comm);
-	/* the barrier ensures that no process races ahead and modifies
-           the file size before all processes have opened the file. */
-    }
 
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }

@@ -32,12 +32,8 @@ void ADIOI_UFS_Open(ADIO_File fd, int *error_code)
 
     fd->fd_sys = open(fd->filename, amode, perm);
 
-    if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND)) {
+    if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
 	fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
-	MPI_Barrier(fd->comm);
-	/* the barrier ensures that no process races ahead and modifies
-           the file size before all processes have opened the file. */
-    }
 
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }

@@ -5,6 +5,9 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+#if _UNICOS
+#include <fortran.h>
+#endif
 #include "mpio.h"
 #include "adio.h"
 
@@ -41,8 +44,15 @@
 #endif
 #endif
 
+#if _UNICOS
+void mpi_file_delete_(_fcd filename_fcd, MPI_Fint *info, int *__ierr)
+{
+    char *filename = _fcdtocp(filename_fcd);
+    int str_len = _fcdlen(filename_fcd);
+#else
 void mpi_file_delete_(char *filename, MPI_Fint *info, int *__ierr, int str_len)
 {
+#endif
     char *newfname;
     int real_len, i;
     MPI_Info info_c;

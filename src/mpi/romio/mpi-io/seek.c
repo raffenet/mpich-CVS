@@ -32,6 +32,11 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+	printf("MPI_File_seek: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
     switch(whence) {
     case MPI_SEEK_SET:
 	if (offset < 0) {

@@ -214,6 +214,35 @@ void ADIOI_SetFunctions(ADIO_File fd)
 #endif
 	break;
 
+    case ADIO_PVFS:
+#ifdef __PVFS	
+	fd->fns->ADIOI_xxx_Open = ADIOI_PVFS_Open;
+	fd->fns->ADIOI_xxx_ReadContig = ADIOI_PVFS_ReadContig;
+	fd->fns->ADIOI_xxx_WriteContig = ADIOI_PVFS_WriteContig;
+	fd->fns->ADIOI_xxx_ReadStridedColl = ADIOI_PVFS_ReadStridedColl;
+	fd->fns->ADIOI_xxx_WriteStridedColl = ADIOI_PVFS_WriteStridedColl;
+	fd->fns->ADIOI_xxx_SeekIndividual = ADIOI_PVFS_SeekIndividual;
+	fd->fns->ADIOI_xxx_Fcntl = ADIOI_PVFS_Fcntl;
+	fd->fns->ADIOI_xxx_SetInfo = ADIOI_PVFS_SetInfo;
+	fd->fns->ADIOI_xxx_ReadStrided = ADIOI_PVFS_ReadStrided;
+	fd->fns->ADIOI_xxx_WriteStrided = ADIOI_PVFS_WriteStrided;
+	fd->fns->ADIOI_xxx_Close = ADIOI_PVFS_Close;
+	fd->fns->ADIOI_xxx_IreadContig = ADIOI_PVFS_IreadContig;
+	fd->fns->ADIOI_xxx_IwriteContig = ADIOI_PVFS_IwriteContig;
+	fd->fns->ADIOI_xxx_ReadDone = ADIOI_PVFS_ReadDone;
+	fd->fns->ADIOI_xxx_WriteDone = ADIOI_PVFS_WriteDone;
+	fd->fns->ADIOI_xxx_ReadComplete = ADIOI_PVFS_ReadComplete;
+	fd->fns->ADIOI_xxx_WriteComplete = ADIOI_PVFS_WriteComplete;
+	fd->fns->ADIOI_xxx_IreadStrided = ADIOI_PVFS_IreadStrided;
+	fd->fns->ADIOI_xxx_IwriteStrided = ADIOI_PVFS_IwriteStrided;
+	fd->fns->ADIOI_xxx_Flush = ADIOI_PVFS_Flush;
+	fd->fns->ADIOI_xxx_Resize = ADIOI_PVFS_Resize;
+#else
+	printf("ADIOI_SetFunctions: ROMIO has not been configured to use the PVFS file system\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+	break;
+
     default:
 	printf("ADIOI_SetFunctions: Unsupported file system type\n");
         MPI_Abort(MPI_COMM_WORLD, 1);

@@ -11,75 +11,18 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int err=-1;
-#ifdef __PFS_ON_ADIO
-    int myrank, nprocs, i, *len_vec;
-    ADIO_Offset off;
-#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
     (*request)->next = ADIO_REQUEST_NULL;
 
-    if ((fd->iomode == M_ASYNC) || (fd->iomode == M_UNIX)) {
-	if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-
-	err = ADIOI_XFS_aio(fd, buf, len, offset, 1, 
+    if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
+    
+    err = ADIOI_XFS_aio(fd, buf, len, offset, 1, 
                            &((*request)->handle));
 
-	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
-    }
-
-#ifdef __PFS_ON_ADIO
-/* The remaining file pointer modes are relevant only for implementing 
-   the Intel PFS interface on top of ADIO. They should never appear,
-   for example, in the MPI-IO implementation. */
-
-    if (fd->iomode == M_RECORD) {
-/* this occurs only in the Intel PFS interface where there is no
-   explicit offset */
-
-        MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-        MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-	err = ADIOI_XFS_aio(fd, buf, len, fd->fp_ind + myrank*len, 1, 
-                           &((*request)->handle));
-	fd->fp_ind += nprocs*len;
-    }
-
-    if (fd->iomode == M_GLOBAL) {
-/* this occurs only in the Intel PFS interface where there is no
-   explicit offset */
-        MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-        if (myrank == 0) {
-	    err = ADIOI_XFS_aio(fd, buf, len, fd->fp_ind, 1, 
-                           &((*request)->handle));
-	    fd->fp_ind += len;
-	}
-	else {
-	    (*request)->queued = 0;
-	    fd->fp_ind += len;
-	    *error_code = MPI_SUCCESS;
-	    return;
-	}
-    }
-
-    if (fd->iomode == M_SYNC) {
-        MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-        MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-        len_vec = (int *) ADIOI_Malloc(nprocs*sizeof(int));
-        MPI_Allgather(&len, 1, MPI_INT, len_vec, 1, MPI_INT,
-                      MPI_COMM_WORLD); 
-        off = 0;
-        for (i=0; i<myrank; i++) off += len_vec[i];
-
-	err = ADIOI_XFS_aio(fd, buf, len, fd->fp_ind + off, 1, 
-                           &((*request)->handle));
-
-        for (i=myrank; i<nprocs; i++) off += len_vec[i];
-        fd->fp_ind += off;
-        ADIOI_Free(len_vec);
-    }
-#endif
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
@@ -93,7 +36,6 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 /* status info. must be linked to the request structure, so that it
    can be accessed later from a wait */
 }
-
 
 
 
@@ -133,8 +75,15 @@ int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     int err, error_code;
     aiocb64_t *aiocbp;
 
-    aiocbp = (aiocb64_t *) ADIOI_Malloc(sizeof(aiocb64_t));
-    aiocbp->aio_fildes = fd->fd_sys;
+    aiocbp = (aiocb64_t *) ADIOI_Calloc(sizeof(aiocb64_t), 1);
+
+    if (((wr && fd->direct_write) || (!wr && fd->direct_read))
+	&& !(((long) buf) % fd->d_mem) && !(offset % fd->d_miniosz) && 
+	!(len % fd->d_miniosz) && (len >= fd->d_miniosz) && 
+	(len <= fd->d_maxiosz))
+	aiocbp->aio_fildes = fd->fd_direct;
+    else aiocbp->aio_fildes = fd->fd_sys;
+
     aiocbp->aio_offset = offset;
     aiocbp->aio_buf = buf;
     aiocbp->aio_nbytes = len;

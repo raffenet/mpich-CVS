@@ -115,7 +115,6 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Resize) (ADIO_File fd, ADIO_Offset size, int *error_code);
 };
 
-
 /* optypes for ADIO_RequestD */
 #define ADIOI_READ                26
 #define ADIOI_WRITE               27
@@ -288,6 +287,7 @@ void ADIOI_Calc_others_req(ADIO_File fd, int count_my_req_procs,
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                       int whence, int *error_code);
 void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+void ADIOI_Shfp_fname(ADIO_File fd, int rank);
 
 
 /* Unix-style file locking */

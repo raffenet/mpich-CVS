@@ -1,10 +1,17 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                       Version 1.0.1, July 1998
+                    Version 1.0.2 beta, September 1998
 
 
 Major Changes in This Version:
 -----------------------------
+
+* Implemented the shared file pointer functions (Section 9.4.4) and 
+  split collective I/O functions (Section 9.4.5).
+
+
+Major Changes in Version 1.0.1:
+------------------------------
 
 * This version is included in MPICH 1.1.1 and HP MPI 1.4.
 
@@ -72,17 +79,12 @@ http://www.mcs.anl.gov/home/thakur/romio . The MPI-2 standard itself
 is available at http://www.mpi-forum.org/docs/docs.html .
 
 This version of ROMIO includes everything defined in the MPI-2 I/O
-chapter except shared file pointer functions (Sec. 9.4.4), split
-collective data access functions (Sec. 9.4.5), support for file
-interoperability (Sec. 9.5), I/O error handling (Sec. 9.7), and I/O
-error classes (Sec. 9.8). Since shared file pointer functions are not
-supported, the MPI_MODE_SEQUENTIAL amode to MPI_File_open is also not
-supported.
-
-The subarray and distributed array datatype constructor functions from
-Chapter 4 (Sec. 4.14.4 & 4.14.5) have been implemented. They are
-useful for accessing arrays stored in files. The functions
-MPI_File_f2c and MPI_File_c2f (Sec. 4.12.4) are also implemented.
+chapter except support for file interoperability (Sec. 9.5), I/O error
+handling (Sec. 9.7), and I/O error classes (Sec. 9.8).  The subarray
+and distributed array datatype constructor functions from Chapter 4
+(Sec. 4.14.4 & 4.14.5) have been implemented. They are useful for
+accessing arrays stored in files. The functions MPI_File_f2c and
+MPI_File_c2f (Sec. 4.12.4) are also implemented.
 
 C, Fortran, and profiling interfaces are provided for all functions
 that have been implemented. 
@@ -264,9 +266,6 @@ and only the "native" file data representation is supported.
 
 * All functions return only two possible error codes---MPI_SUCCESS on
 success and MPI_ERR_UNKNOWN on failure.
-
-* On HP machines running HPUX, atomic mode is not supported for files
-residing on HFS file systems.
 
 * On HP machines running HPUX and on NEC SX-4, you need to compile
 Fortran programs with mpif90 instead of mpif77, because the f77

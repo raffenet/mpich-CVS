@@ -63,6 +63,9 @@ void ADIOI_NFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 ADIO_Offset ADIOI_NFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                        int whence, int *error_code);
 void ADIOI_NFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
+			 int *error_code);
+void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 #endif
 
 #ifdef __PFS
@@ -399,6 +402,62 @@ void ADIOI_SFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 ADIO_Offset ADIOI_SFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                        int whence, int *error_code);
 void ADIOI_SFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+#endif
+
+#ifdef __PVFS
+void ADIOI_PVFS_Open(ADIO_File fd, int *error_code);
+void ADIOI_PVFS_Close(ADIO_File fd, int *error_code);
+void ADIOI_PVFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+                     ADIO_Offset offset, ADIO_Status *status, int
+		     *error_code);
+void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Status *status, int
+		      *error_code);   
+void ADIOI_PVFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+void ADIOI_PVFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+int ADIOI_PVFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+int ADIOI_PVFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PVFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code); 
+void ADIOI_PVFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
+			int *error_code); 
+void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
+		*error_code); 
+void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PVFS_ReadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PVFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PVFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PVFS_IreadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_PVFS_IwriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_PVFS_Flush(ADIO_File fd, int *error_code);
+void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
+ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
+                       int whence, int *error_code);
+void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif
 
 #endif

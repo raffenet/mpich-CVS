@@ -41,7 +41,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if (buf <= (void *) 0) {
+    if (buf < (void *) 0) {
         printf("MPI_File_read: buf is not a valid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -57,10 +57,25 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
     }
 
     MPI_Type_size(datatype, &datatype_size);
-    if (count*datatype_size == 0) return MPI_SUCCESS;
+    if (count*datatype_size == 0) {
+#ifdef MPI_hpux
+	HPMP_IO_END(fl_xmpi, fh, datatype, count);
+#endif /* MPI_hpux */
+	return MPI_SUCCESS;
+    }
 
     if ((count*datatype_size) % fh->etype_size != 0) {
 	printf("MPI_File_read: Only an integral number of etypes can be accessed\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if (fh->access_mode & MPI_MODE_WRONLY) {
+	printf("MPI_File_read: Can't read from a file opened with MPI_MODE_WRONLY\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+	printf("MPI_File_read: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -75,17 +90,17 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
 
 	/* if atomic mode requested, lock (exclusive) the region, because there
            could be a concurrent noncontiguous request. Locking doesn't 
-           work on PIOFS, and on NFS it is done in the ADIO_ReadContig.*/
+           work on PIOFS and PVFS, and on NFS it is done in the ADIO_ReadContig.*/
 	off = fh->fp_ind;
 	if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
-	      (fh->file_system != ADIO_NFS))
+            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
 	    ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 
 	ADIO_ReadContig(fh, buf, bufsize, ADIO_INDIVIDUAL, 0,
 			status, &error_code);
 
 	if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
-              (fh->file_system != ADIO_NFS))
+            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
 	    ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
     }
     else ADIO_ReadStrided(fh, buf, count, datatype, ADIO_INDIVIDUAL,

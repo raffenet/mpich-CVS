@@ -37,9 +37,10 @@ Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                  
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
-                  Valid values are pfs, piofs, hfs, xfs, sfs, ufs, and nfs 
-                  (case-sensitive). They correspond to Intel's PFS, 
-                  IBM's PIOFS, HP/Convex's HFS, SGI's XFS, NEC's SFS, any Unix 
+                  Valid values are pfs, piofs, hfs, xfs, sfs, pvfs, ufs,
+                  and nfs (case-sensitive). They correspond to Intel's PFS, 
+                  IBM's PIOFS, HP/Convex's HFS, SGI's XFS, NEC's SFS, 
+                  Clemson University's PVFS (for Linux clusters), any Unix 
                   file system, and NFS. 
                   To configure for multiple file systems, use "+" as a 
                   separator; e.g., ufs+nfs
@@ -113,7 +114,7 @@ of MPI-IO.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.1"
+echo "Configuring ROMIO Version 1.0.2 beta"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
@@ -524,9 +525,9 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     fi
 fi
 #
-if test -n "$arch_freebsd" || test -n "$arch_LINUX" ; then
+if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_netbsd" ; then
     CC=${CC:-gcc}
-    if test -n "$arch_freebsd" ; then
+    if test -n "$arch_freebsd" || test -n "$arch_netbsd" ; then
        F77=${FC:-f77}
        CFLAGS="$CFLAGS -D__FREEBSD"
        longlongsize=${longlongsize:-0}
@@ -606,12 +607,6 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
         CC=${CC:-mpicc -Ae}
         F77=${FC:-mpif77 +U77}
     fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_hfs=1
-        file_system_nfs=1
-        FILE_SYSTEM="hfs nfs"
-        echo "configuring for file systems hfs and nfs"
-    fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
         CFLAGS="$CFLAGS -D__HPUX -D_LARGEFILE64_SOURCE"
@@ -622,6 +617,21 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
         fi
     else
         CFLAGS="$CFLAGS -D__SPPUX"
+    fi
+    if test -z "$FILE_SYSTEM" ; then
+        AC_COMPILE_CHECK(struct flock64,[#include <fcntl.h>],[
+struct flock64 fl;],flock64_ok="yes",flock64_ok="no")
+        if test $flock64_ok = "yes" ; then
+            file_system_hfs=1
+            file_system_nfs=1
+            FILE_SYSTEM="hfs nfs"
+            echo "configuring for file systems hfs and nfs"
+        else
+            file_system_ufs=1
+            file_system_nfs=1
+            FILE_SYSTEM="ufs nfs"
+            echo "no flock64; configuring for file systems ufs and nfs"
+        fi
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
@@ -658,13 +668,15 @@ if test -n "$arch_CRAY" ; then
     CC=${CC:-cc}
     F77=${FC:-f90}
     NOF77=1
+    FTESTDEFINE="integer ilen"
+    F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g -D__NO_AIO"
     else 
         CFLAGS="$CFLAGS -O -D__NO_AIO"
     fi
     RANLIB=":"
-    CFLAGS="$CFLAGS -D__CRAY"
+    CFLAGS="$CFLAGS -D__CRAY -D_UNICOS"
     if test -z "$MPI" || test -n "$mpi_sgi" ; then
         MPI=cray
         mpi_cray=1
@@ -836,6 +848,7 @@ if test -n "$mpi_sgi"; then
    fi
    PAC_TEST_MPI_SGI_type_is_contig
    PAC_TEST_MPI_COMBINERS
+   PAC_TEST_MPI_HAS_OFFSET_KIND
 fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
@@ -870,6 +883,10 @@ if test -n "$file_system_sfs"; then
 fi
 if test -n "$file_system_xfs"; then
     CFLAGS="$CFLAGS -D__XFS"
+    PAC_GET_XFS_MEMALIGN
+fi
+if test -n "$file_system_pvfs"; then
+    CFLAGS="$CFLAGS -D__PVFS"
 fi
 if test -n "$file_system_pfs"; then
     CFLAGS="$CFLAGS -D__PFS"
@@ -1041,6 +1058,9 @@ if test -n "$file_system_sfs"; then
 fi
 if test -n "$file_system_pfs"; then
     CONFIG_FILES="$CONFIG_FILES adio/ad_pfs/Makefile"
+fi
+if test -n "$file_system_pvfs"; then
+    CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs/Makefile"
 fi
 if test -n "$file_system_piofs"; then
     CONFIG_FILES="$CONFIG_FILES adio/ad_piofs/Makefile"

@@ -6,8 +6,8 @@ USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
 USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
 
 all: simple perf async coll_test coll_perf misc file_info excl large_array \
-     atomicity noncontig i_noncontig noncontig_coll large_file fperf \
-     fcoll_test fmisc
+     atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
+     large_file fperf fcoll_test fmisc
 
 default: all
 
@@ -18,7 +18,7 @@ default: all
 	$(F77) $(USER_FFLAGS) -c $*.f
 
 clean: 
-	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out
+	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out
 
 simple: simple.o
 	$(CC) $(USER_CFLAGS) -o simple simple.o $(LIBS)
@@ -55,6 +55,12 @@ noncontig_coll: noncontig_coll.o
 
 file_info: file_info.o
 	$(CC) $(USER_CFLAGS) -o file_info file_info.o $(LIBS)
+
+shared_fp: shared_fp.o
+	$(CC) $(USER_FFLAGS) -o shared_fp shared_fp.o $(LIBS)
+
+split_coll: split_coll.o
+	$(CC) $(USER_FFLAGS) -o split_coll split_coll.o $(LIBS)
 
 fperf: fperf.o
 	$(F77) $(USER_FFLAGS) -o fperf fperf.o $(LIBS)
