@@ -32,6 +32,7 @@ BEGIN_MESSAGE_MAP(CRimshotView, CView)
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_TOGGLE_ARROWS, OnToggleArrows)
 	ON_WM_LBUTTONDOWN()
+	ON_COMMAND(ID_VIEW_UNIFORM, OnViewUniform)
 	//}}AFX_MSG_MAP
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
@@ -54,13 +55,26 @@ CRimshotView::CRimshotView()
     m_Draw.max_copy_size.cx = 0;
     m_Draw.max_copy_size.cy = 0;
     m_Draw.bDrawUniform = false;
+    m_Draw.nUniformWidth = 15;
     m_Draw.pCursorRanks = NULL;
+    m_Draw.ppUniRecursionColor = NULL;
 }
 
 CRimshotView::~CRimshotView()
 {
+    int i;
+
     if (m_Draw.pCursorRanks)
 	delete [] m_Draw.pCursorRanks;
+    if (m_Draw.ppUniRecursionColor)
+    {
+	for (i=0; i<m_Draw.nUniNumRanks; i++)
+	{
+	    delete m_Draw.ppUniRecursionColor[i];
+	}
+	delete m_Draw.ppUniRecursionColor;
+	m_Draw.ppUniRecursionColor = NULL;
+    }
 }
 
 BOOL CRimshotView::PreCreateWindow(CREATESTRUCT& cs)
@@ -708,4 +722,16 @@ void CRimshotView::OnLButtonDown(UINT nFlags, CPoint point)
 	StartDrawing();
     }
     CView::OnLButtonDown(nFlags, point);
+}
+
+void CRimshotView::OnViewUniform() 
+{
+    CMenu *pMenu = GetParentFrame()->GetMenu();
+
+    m_Draw.bDrawUniform = !m_Draw.bDrawUniform;
+
+    if (pMenu)
+	pMenu->CheckMenuItem(ID_VIEW_UNIFORM, MF_BYCOMMAND | m_Draw.bDrawUniform ? MF_CHECKED : MF_UNCHECKED);
+    StopDrawing();
+    StartDrawing();
 }

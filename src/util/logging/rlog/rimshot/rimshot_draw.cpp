@@ -20,6 +20,7 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
     CString str;
     CSize size;
     double duration;
+    double dLeft, dRight;
 
     while (true)
     {
@@ -78,87 +79,153 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		    pArg->pCanvas->LineTo(big_rect.right, y);
 		}
 		
-		// draw the event boxes
-		for (j=0; j<pArg->pDoc->m_pInput->nNumRanks; j++)
+		if (pArg->bDrawUniform)
 		{
+		    int num_moved = 0;
+		    int num_left = 0;
+
+		    // reset colors
+		    for (i=0; i<pArg->pDoc->m_pInput->nNumRanks; i++)
+		    {
+			for (j=0; j<pArg->pDoc->m_pInput->pNumEventRecursions[i]; j++)
+			    pArg->ppUniRecursionColor[i][j] = RGB(0,0,0);
+		    }
+
+		    // draw to the left
+		    int cur_pos = (big_rect.left + big_rect.right) / 2;
+		    while (cur_pos > big_rect.left)
+		    {
+			if (RLOG_GetPreviousGlobalEvent(pArg->pDoc->m_pInput, &event) != 0)
+			    break;
+			num_left++;
+			cur_pos -= pArg->nUniformWidth;
+			if (pArg->bStop)
+			    break;
+		    }
+		    dLeft = event.start_time;
+
+		    // draw to the right
+		    while (cur_pos < big_rect.right)
+		    {
+			pArg->ppUniRecursionColor[event.rank][event.recursion] = pArg->pDoc->GetEventColor(event.event);
+			for (i=0; i<=event.recursion; i++)
+			{
+			    //rect.top = big_rect.top + (event.rank * height) + (lip * (event.recursion + 1));
+			    //rect.bottom = rect.top + height - (lip * (event.recursion + 1) * 2);
+			    rect.top = big_rect.top + (event.rank * height) + (lip * (i + 1));
+			    rect.bottom = rect.top + height - (lip * (i + 1) * 2);
+			    rect.left = cur_pos;
+			    rect.right = cur_pos + pArg->nUniformWidth;
+			    if (rect.left < big_rect.left)
+				rect.left = big_rect.left;
+			    if (rect.right > big_rect.right)
+				rect.right = big_rect.right;
+			    //pArg->pCanvas->FillSolidRect(rect, pArg->pDoc->GetEventColor(event.event));
+			    pArg->pCanvas->FillSolidRect(rect, pArg->ppUniRecursionColor[event.rank][i]);
+			}
+			if (pArg->bStop)
+			    break;
+			if (RLOG_GetNextGlobalEvent(pArg->pDoc->m_pInput, &event) != 0)
+			    break;
+			num_moved++;
+			cur_pos += pArg->nUniformWidth;
+		    }
+		    dRight = event.end_time;
+
+		    // return to the middle
+		    for (i=0; i<num_moved - num_left; i++)
+			RLOG_GetPreviousGlobalEvent(pArg->pDoc->m_pInput, &event);
 		    if (pArg->bStop)
 			break;
-		    for (i=0; i<pArg->pDoc->m_pInput->pNumEventRecursions[j]; i++)
+
+		}
+		else
+		{
+		    dLeft = pArg->pDoc->m_dLeft;
+		    dRight = pArg->pDoc->m_dRight;
+
+		    // draw the event boxes
+		    for (j=0; j<pArg->pDoc->m_pInput->nNumRanks; j++)
 		    {
 			if (pArg->bStop)
 			    break;
-			if (RLOG_FindEventBeforeTimestamp(pArg->pDoc->m_pInput, 
-			    pArg->pDoc->m_pInput->header.nMinRank + j, i, pArg->pDoc->m_dLeft, &event, NULL) == 0)
-			{
-			    if (event.end_time < pArg->pDoc->m_dLeft)
-				RLOG_GetNextEvent(pArg->pDoc->m_pInput, pArg->pDoc->m_pInput->header.nMinRank + j, i, &event);
-			    else
-			    {
-				if (event.start_time < pArg->pDoc->m_dLeft)
-				    event.start_time = pArg->pDoc->m_dLeft;
-			    }
-			    for (k=0; k<pArg->pDoc->m_pInput->nNumRanks; k++)
-				pdNextPixel[k] = event.start_time;
-			    while (event.start_time < pArg->pDoc->m_dRight)
-			    {
-				if (event.end_time > pdNextPixel[event.rank])
-				{
-				    pdNextPixel[event.rank] = event.end_time + dwPixel;
-				    rect.top = big_rect.top + (event.rank * height) + (lip * (i+1));
-				    rect.bottom = rect.top + height - (lip * (i+1) * 2);
-				    rect.left = big_rect.left + (long)(dx * (event.start_time - pArg->pDoc->m_dLeft));
-				    rect.right = rect.left + (long)(dx * (event.end_time - event.start_time));
-				    if (rect.left == rect.right) rect.right++;
-				    if (rect.right > big_rect.right)
-					rect.right = big_rect.right;
-				    
-				    pArg->pCanvas->FillSolidRect(rect, pArg->pDoc->GetEventColor(event.event));
-				}
-				
-				if (RLOG_GetNextEvent(pArg->pDoc->m_pInput, 
-				    pArg->pDoc->m_pInput->header.nMinRank + j, i, &event) != 0)
-				    event.start_time = pArg->pDoc->m_dRight + 1;
-			    }
-			}
-		    }
-		}
-		if (pArg->bStop)
-		    break;
-		
-		if (pArg->bDrawArrows)
-		{
-		    // draw the arrows
-		    if (RLOG_FindArrowBeforeTimestamp(pArg->pDoc->m_pInput, pArg->pDoc->m_dLeft, &arrow, NULL) == 0)
-		    {
-			if (arrow.end_time < pArg->pDoc->m_dLeft)
-			    RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow);
-			pArg->pCanvas->SelectObject(GetStockObject(WHITE_PEN));
-			while (arrow.start_time < pArg->pDoc->m_dRight)
+			for (i=0; i<pArg->pDoc->m_pInput->pNumEventRecursions[j]; i++)
 			{
 			    if (pArg->bStop)
 				break;
-			    if (arrow.leftright == RLOG_ARROW_LEFT)
+			    if (RLOG_FindEventBeforeTimestamp(pArg->pDoc->m_pInput, 
+				pArg->pDoc->m_pInput->header.nMinRank + j, i, pArg->pDoc->m_dLeft, &event, NULL) == 0)
 			    {
-				x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
-				y = big_rect.top + (height * arrow.dest) + (height / 2);
-				pArg->pCanvas->MoveTo(x, y);
-				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
-				y = big_rect.top + (height * arrow.src) + (height / 2);
-				pArg->pCanvas->LineTo(x, y);
-				pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+				if (event.end_time < pArg->pDoc->m_dLeft)
+				    RLOG_GetNextEvent(pArg->pDoc->m_pInput, pArg->pDoc->m_pInput->header.nMinRank + j, i, &event);
+				else
+				{
+				    if (event.start_time < pArg->pDoc->m_dLeft)
+					event.start_time = pArg->pDoc->m_dLeft;
+				}
+				for (k=0; k<pArg->pDoc->m_pInput->nNumRanks; k++)
+				    pdNextPixel[k] = event.start_time;
+				while (event.start_time < pArg->pDoc->m_dRight)
+				{
+				    if (event.end_time > pdNextPixel[event.rank])
+				    {
+					pdNextPixel[event.rank] = event.end_time + dwPixel;
+					rect.top = big_rect.top + (event.rank * height) + (lip * (i+1));
+					rect.bottom = rect.top + height - (lip * (i+1) * 2);
+					rect.left = big_rect.left + (long)(dx * (event.start_time - pArg->pDoc->m_dLeft));
+					rect.right = rect.left + (long)(dx * (event.end_time - event.start_time));
+					if (rect.left == rect.right) rect.right++;
+					if (rect.right > big_rect.right)
+					    rect.right = big_rect.right;
+					
+					pArg->pCanvas->FillSolidRect(rect, pArg->pDoc->GetEventColor(event.event));
+				    }
+				    
+				    if (RLOG_GetNextEvent(pArg->pDoc->m_pInput, 
+					pArg->pDoc->m_pInput->header.nMinRank + j, i, &event) != 0)
+					event.start_time = pArg->pDoc->m_dRight + 1;
+				}
 			    }
-			    else
+			}
+		    }
+		    if (pArg->bStop)
+			break;
+		    
+		    if (pArg->bDrawArrows)
+		    {
+			// draw the arrows
+			if (RLOG_FindArrowBeforeTimestamp(pArg->pDoc->m_pInput, pArg->pDoc->m_dLeft, &arrow, NULL) == 0)
+			{
+			    if (arrow.end_time < pArg->pDoc->m_dLeft)
+				RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow);
+			    pArg->pCanvas->SelectObject(GetStockObject(WHITE_PEN));
+			    while (arrow.start_time < pArg->pDoc->m_dRight)
 			    {
-				x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
-				y = big_rect.top + (height * arrow.src) + (height / 2);
-				pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
-				pArg->pCanvas->MoveTo(x, y);
-				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
-				y = big_rect.top + (height * arrow.dest) + (height / 2);
-				pArg->pCanvas->LineTo(x, y);
+				if (pArg->bStop)
+				    break;
+				if (arrow.leftright == RLOG_ARROW_LEFT)
+				{
+				    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
+				    y = big_rect.top + (height * arrow.dest) + (height / 2);
+				    pArg->pCanvas->MoveTo(x, y);
+				    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
+				    y = big_rect.top + (height * arrow.src) + (height / 2);
+				    pArg->pCanvas->LineTo(x, y);
+				    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+				}
+				else
+				{
+				    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
+				    y = big_rect.top + (height * arrow.src) + (height / 2);
+				    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+				    pArg->pCanvas->MoveTo(x, y);
+				    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
+				    y = big_rect.top + (height * arrow.dest) + (height / 2);
+				    pArg->pCanvas->LineTo(x, y);
+				}
+				if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
+				    break;
 			    }
-			    if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
-				break;
 			}
 		    }
 		}
@@ -303,9 +370,11 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		}
 		
 		// draw the left and right timestamps
-		str.Format("%.6f", pArg->pDoc->m_dLeft);
+		//str.Format("%.6f", pArg->pDoc->m_dLeft);
+		str.Format("%.6f", dLeft);
 		pArg->pCanvas->TextOut(big_rect.left, big_rect.bottom + 7, str);
-		str.Format("%.6f", pArg->pDoc->m_dRight);
+		//str.Format("%.6f", pArg->pDoc->m_dRight);
+		str.Format("%.6f", dRight);
 		size = pArg->pCanvas->GetTextExtent(str);
 		pArg->pCanvas->TextOut(big_rect.right - size.cx, big_rect.bottom + 7, str);
 		

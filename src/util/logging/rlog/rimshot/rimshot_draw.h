@@ -26,6 +26,9 @@ struct RimshotDrawStruct
     int nCmd;
     bool bDrawArrows;
     bool bDrawUniform;
+    int nUniformWidth;
+    int nUniNumRanks;
+    COLORREF **ppUniRecursionColor;
     CursorRank *pCursorRanks;
     CDC *pCanvas;
     CBitmap *pBitmap, *pOriginalBmp;

@@ -122,6 +122,7 @@ BEGIN
     BEGIN
         MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
         MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+        MENUITEM "&Uniform",                    ID_VIEW_UNIFORM
     END
     POPUP "&Help"
     BEGIN
@@ -361,6 +362,7 @@ BEGIN
     ID_RESET_ZOOM           "Reset the zoom to show the entire file"
     ID_ZOOM_TO              "Zoom to the current event"
     ID_TOGGLE_ARROWS        "Toggle arrows"
+    ID_VIEW_UNIFORM         "Display events with a uniform width"
 END
 
 #endif    // English (U.S.) resources

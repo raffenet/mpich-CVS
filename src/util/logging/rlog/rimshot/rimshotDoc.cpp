@@ -198,6 +198,7 @@ CBrush* CRimshotDoc::GetEventBrush(int event)
 
 void CRimshotDoc::OnFileOpen() 
 {
+    int i,j;
     CFileDialog f(TRUE, "rlog", NULL, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST, 
 	"RLog Files (*.rlog)|*.rlog|All Files (*.*)|*.*||", NULL);
 
@@ -214,12 +215,32 @@ void CRimshotDoc::OnFileOpen()
 	    if (pView->m_Draw.pCursorRanks)
 		delete [] pView->m_Draw.pCursorRanks;
 	    pView->m_Draw.pCursorRanks = new CursorRank[m_pInput->nNumRanks];
-	    for (int i=0; i<m_pInput->nNumRanks; i++)
+	    for (i=0; i<m_pInput->nNumRanks; i++)
 	    {
 		pView->m_Draw.pCursorRanks[i].active = true;
 		pView->m_Draw.pCursorRanks[i].rank = i;
 		pView->m_Draw.pCursorRanks[i].rect.SetRect(0,0,0,0);
 	    }
+
+	    // delete the old
+	    if (pView->m_Draw.ppUniRecursionColor)
+	    {
+		for (i=0; i<pView->m_Draw.nUniNumRanks; i++)
+		{
+		    delete pView->m_Draw.ppUniRecursionColor[i];
+		}
+		delete pView->m_Draw.ppUniRecursionColor;
+	    }
+	    // allocate the new 
+	    pView->m_Draw.nUniNumRanks = m_pInput->nNumRanks;
+	    pView->m_Draw.ppUniRecursionColor = new COLORREF*[m_pInput->nNumRanks];
+	    for (i=0; i<m_pInput->nNumRanks; i++)
+	    {
+		pView->m_Draw.ppUniRecursionColor[i] = new COLORREF[m_pInput->pNumEventRecursions[i]];
+		for (j=0; j<m_pInput->pNumEventRecursions[i]; j++)
+		    pView->m_Draw.ppUniRecursionColor[i][j] = RGB(0,0,0);
+	    }
+
 	    pView->Invalidate(FALSE);
 	    SetTitle(f.GetPathName());
 	    pView->StartDrawing();
