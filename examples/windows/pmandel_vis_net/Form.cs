@@ -29,6 +29,7 @@ namespace MandelViewer
 		private static Bitmap bitmap = null;
 		private int nWidth, nHeight;
 		private int nNumColors;
+		private int nMax;
 		private static Color [] colors = null;
 		private static double xmin = -1.0, ymin = -1.0, xmax = 1.0, ymax = 1.0;
 		private static bool bDrawing = false;
@@ -119,7 +120,16 @@ namespace MandelViewer
 		{
 			InitializeComponent();
 
-			host.Text = System.Environment.MachineName;
+			try
+			{
+				// This throws a security exception if you are on a network share or
+				// running from the web.
+				host.Text = System.Environment.MachineName;
+			} 
+			catch (Exception e)
+			{
+				host.Text = "localhost";
+			}
 			port.Text = "7470";
 			p1 = new Point(0,0);
 			p2 = new Point(0,0);
@@ -262,6 +272,7 @@ namespace MandelViewer
 			nWidth = sock_reader.ReadInt32();
 			nHeight = sock_reader.ReadInt32();
 			nNumColors = sock_reader.ReadInt32();
+			nMax = sock_reader.ReadInt32();
 			//MessageBox.Show(String.Format("Width: {0}, Height: {1}, num_colors: {2}", nWidth, nHeight, nNumColors), "Note");
 			// validate input values
 			if (nWidth > 2048)
@@ -276,9 +287,13 @@ namespace MandelViewer
 				nNumColors = 1024;
 			if (nNumColors < 1)
 				nNumColors = 128;
-			colors = new Color[nNumColors+1];
-			ColorRainbow.Make_color_array(colors);
-			colors[nNumColors] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
+			if (nMax > 5000)
+				nMax = 5000;
+			if (nMax < 1)
+				nMax = 100;
+			colors = new Color[nMax+1];
+			ColorRainbow.Make_color_array(nNumColors, colors);
+			colors[nMax] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
 			bitmap = new Bitmap(nWidth, nHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 			Graphics g;
 			g = Graphics.FromImage(bitmap);
@@ -505,17 +520,17 @@ namespace MandelViewer
 			return Color.FromArgb(r,g,b);
 		}
 
-		public static void Make_color_array(Color[] colors)
+		public static void Make_color_array(int num_colors, Color[] colors)
 		{
 			double fraction, intensity;
 			int i;
-			int num_colors;
+			int max;
 
-			num_colors = colors.Length;
+			max = colors.Length;
 			intensity = 1.0;
-			for (i=0; i<num_colors; i++)
+			for (i=0; i<max; i++)
 			{
-				fraction = (double)i / (double)num_colors;
+				fraction = (double)(i % num_colors) / (double)num_colors;
 				colors[i] = getColor(fraction, intensity);
 			}
 		}
