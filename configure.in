@@ -787,6 +787,35 @@ int main( int argc, char *argv[] ){
 ])
 BSEND_OVERHEAD=$pac_cv_mpi_bsend_overhead
 AC_SUBST(BSEND_OVERHEAD)
+#
+# The size of MPI_Status is needed for the Fortran interface. 
+# This is not quite right unless the device setup script, executed above,
+# sets the EXTRA_STATUS_DECL that will be used in defining a status.
+# The default size assumes that there are 5 ints
+default_status_size=`expr 5 \* $ac_cv_sizeof_int`
+AC_CACHE_CHECK([for size of MPI_Status],pac_cv_sizeof_mpi_status,[
+AC_TRY_RUN([
+#include <stdio.h>
+typedef struct { 
+    int count;
+    int cancelled;
+    int MPI_SOURCE;
+    int MPI_TAG;
+    int MPI_ERROR;
+    $EXTRA_STATUS_DECL
+} MPI_Status;
+int main( int argc, char *argv[] ){
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(MPI_Status));
+  exit(0);
+}
+],pac_cv_sizeof_mpi_status=`cat conftestval`,pac_cv_sizeof_mpi_status=$default_status_size,pac_cv_sizeof_mpi_status=$default_status_size)
+])
+SIZEOF_MPI_STATUS=$pac_cv_sizeof_mpi_status
+export SIZEOF_MPI_STATUS
+AC_SUBST(SIZEOF_MPI_STATUS)
+
 dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
@@ -915,6 +944,8 @@ dnl
 if test -x $use_top_srcdir/src/mpid/$device_name/setup_device ; then
     echo sourcing $use_top_srcdir/src/mpid/$device_name/setup_device
     . $use_top_srcdir/src/mpid/$device_name/setup_device
+elif test -f $use_top_srcdir/src/mpid/$device_name/setup_device ; then
+     AC_MSG_WARN([$use_top_srcdir/src/mpid/$device_name/setup_device is not executable])
 fi
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
