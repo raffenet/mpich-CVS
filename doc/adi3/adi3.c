@@ -2741,9 +2741,10 @@ void MPID_Trdump( FILE *file )
   in seconds with the routine 'MPID_Wtime_diff'.
 
   This routine is defined this way to simplify its implementation as a macro.
-  For example, (still need to make the following correct for Linux)
+  For example, for Intel x86 and gcc, 
 .vb
-#define MPID_Wtime(timeval) { asm(read timer,r1); asm(store r1,timeval); }
+#define MPID_Wtime(timeval) \
+  __asm__ volatile (".byte 0x0f, 0x31" : "=A" (*timeval))
 .ve
 
   For some purposes, it is important
@@ -2775,6 +2776,11 @@ void MPID_Wtime( MPID_Wtime_t *timeval )
 
   Output Parameter:
 . diff - The different in time between t2 and t1, measured in seconds.
+
+  Note: 
+  If 't1' is null, then 't2' is assumed to be differences accumulated with
+  'MPID_Wtime_acc', and the output value gives the number of seconds that
+  were accumulated.
 
   Module:
   Timer
@@ -2812,8 +2818,52 @@ double MPID_Wtick( void )
 
   Module:
   Timer
+
+  See Also:
+  'MPID_Wtime_finalize'
   @*/
 void MPID_Wtime_init( void )
+{}
+
+/*@
+  MPID_Wtime_finalize - Shut down the timer
+
+  Note:
+  This routine should perform any steps needed to shutdown the timer.
+  In most cases, this routine is a no-op, but it is provided for those 
+  cases where the timer must allocate (and hence free) an operating-system 
+  managed resource.
+
+  Module:
+  Timer
+
+  See Also:
+  'MPID_Wtime_init'
+  @*/
+void MPID_Wtime_init( void )
+{}
+
+/*@
+  MPID_Wtime_acc - Accumulate time values
+
+  Input Parameters:
+. t1,t2,t3 - Three time values.  't3' is updated with the difference between 
+             't2' and 't1': '*t3 += (t2 - t1)'.
+
+  Notes:
+  This routine is used to accumulate the time spent with a block of code 
+  without first converting the time stamps into a particular arithmetic
+  type such as a 'double'.  For example, if the 'MPID_Wtime' routine accesses
+  a cycle counter, this routine (or macro) can perform the accumulation using
+  integer arithmetic.  
+
+  To convert a time value accumulated with this routine, use 'MPID_Wtime_diff' 
+  with a 't1' of zero.  
+
+  Module:
+  Timer
+  @*/
+void MPID_Wtime_acc( MPID_Time_t t1, MPID_Time_t t2, MPID_Time_t *t3 )
 {}
 
 /*@
