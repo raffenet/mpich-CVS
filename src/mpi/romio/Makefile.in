@@ -166,5 +166,8 @@ romio_liblist:
 romio_tcflags:
 	@echo '@ROMIO_TCFLAGS@'
 
+romio_tcppflags:
+	@echo '@ROMIO_TCPPFLAGS@'
+
 romio_tfflags:
 	@echo '@ROMIO_TFFLAGS@'
