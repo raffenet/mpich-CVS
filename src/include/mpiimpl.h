@@ -661,6 +661,8 @@ typedef struct {
     MPID_Comm         *comm_self;       /* Easy access to comm_self */
     MPID_Comm         *comm_parent;     /* Easy access to comm_parent */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
+    /* Communicator context ids.  Special data is needed for thread-safety */
+    int context_id_mask[32];
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
