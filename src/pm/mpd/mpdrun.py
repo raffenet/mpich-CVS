@@ -100,6 +100,8 @@ def mpdrun():
         jobTimeout = int(environ['MPIEXEC_TIMEOUT'])
     else:
         jobTimeout = 0
+    if environ.has_key('MPIEXEC_BNR'):
+        doingBNR = 1
     if environ.has_key('UNIX_SOCKET'):
         conFD = int(environ['UNIX_SOCKET'])
         conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
@@ -653,7 +655,7 @@ def get_args_from_file():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT
+    global singinitPID, singinitPORT, doingBNR
 
     try:
         argsFile = open(argsFilename,'r')
@@ -692,6 +694,8 @@ def get_args_from_file():
         jobAlias = createReq.getAttribute('pgid')
     if createReq.hasAttribute('stdin_goes_to_who'):
         stdinGoesToWho = createReq.getAttribute('stdin_goes_to_who')
+    if createReq.hasAttribute('doing_bnr'):
+        doingBNR = int(createReq.getAttribute('doing_bnr'))
     if createReq.hasAttribute('gdb'):
         gdb = int(createReq.getAttribute('gdb'))
         if gdb:
@@ -843,7 +847,7 @@ def get_vals_for_attach():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT
+    global singinitPID, singinitPORT, doingBNR
 
     sjobid = gdbAttachJobid.split('@')    # jobnum and originating host
     msgToSend = { 'cmd' : 'mpdlistjobs' }

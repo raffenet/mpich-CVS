@@ -20,12 +20,12 @@ from urllib import quote
 import xml.dom.minidom
 
 global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, appnum, usize
-global gEnv, gHost, gWDIR, gPath, gNProcs
+global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
 
 def mpiexec():
     global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, \
            appnum, usize
-    global gEnv, gHost, gWDIR, gPath, gNProcs
+    global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
     totalProcs    = 0
     nextRange     = 0
     configLines   = []
@@ -42,6 +42,7 @@ def mpiexec():
     gPath         = environ['PATH'] # default ; avoid name conflict with python path module
     gNProcs       = 1                   # default
     gdb           = 0                   # default
+    doingBNR      = 0                   # default
 
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
@@ -93,6 +94,9 @@ def mpiexec():
                     gargIdx += 3
                 elif defaultArgs[gargIdx] == '-l':
                     linelabels = 1
+                    gargIdx += 1
+                elif defaultArgs[gargIdx] == '-bnr':
+                    doingBNR = 1
                     gargIdx += 1
                 elif defaultArgs[gargIdx] == '-usize':
                     if len(defaultArgs) < (gargIdx+2):
@@ -148,6 +152,8 @@ def mpiexec():
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if linelabels:
             xmlCPG.setAttribute('output', 'label')
+        if doingBNR:
+            xmlCPG.setAttribute('doing_bnr', '1')
         if gdb:
             xmlCPG.setAttribute('gdb', '1')
         submitter = getpwuid(getuid())[0]
@@ -196,7 +202,7 @@ def get_next_argset():
 # def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
 def handle_argset(argset,xmlDOC,xmlPROCSPEC):
     global totalProcs, nextRange, setenvall, appnum, usize
-    global gEnv, gHost, gWDIR, gPath, gNProcs
+    global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
     host   = gHost
     wdir   = gWDIR
     wpath  = gPath
