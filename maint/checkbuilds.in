@@ -48,7 +48,7 @@ $has_cxx = 1;
 %chosenEnable = ();
 @with_array = (
 	       'logging;none;rlog;dlog',
-	       'pmi;simple;uni',
+	       'pmi;simple',    #; uni no longer supported
 	       'pm;forker;mpd', #;remshell
 	       'device;ch3;ch3:shm',
 );
