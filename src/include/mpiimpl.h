@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  $Id$
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -39,29 +39,33 @@ typedef short int16_t;
 
 /* Memory allocation */
 #ifdef USE_MEMORY_TRACING
-#define MPID_Malloc(a)    MPID_trmalloc((unsigned)(a),__LINE__,__FILE__)
-#define MPID_Calloc(a,b)  \
-    MPID_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
-#define MPID_Free(a)      MPID_trfree(a,__LINE__,__FILE__)
-#define MPID_Strdup(a)    MPID_trstrdup(a,__LINE__,__FILE__)
-void *MPID_trmalloc ( unsigned int, int, char * );
-void MPID_trfree ( void *, int, char * );
-void *MPID_trstrdup( const char *, int, const char * );
-void *MPID_trcalloc ( unsigned, unsigned, int, char * );
-void *MPID_trrealloc ( void *, int, int, char * );
+#define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
+#define MPIU_Calloc(a,b)  \
+    MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
+#define MPIU_Free(a)      MPIU_trfree(a,__LINE__,__FILE__)
+#define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
+void *MPIU_trmalloc ( unsigned int, int, char * );
+void MPIU_trfree ( void *, int, char * );
+void *MPIU_trstrdup( const char *, int, const char * );
+void *MPIU_trcalloc ( unsigned, unsigned, int, char * );
+void *MPIU_trrealloc ( void *, int, int, char * );
 /* Define these as invalid C to catch their use in the code */
-#define malloc(a)         'Error use MPID_Malloc'
-#define calloc(a,b)       'Error use MPID_Calloc'
-#define free(a)           'Error use MPID_Free'
+#define malloc(a)         'Error use MPIU_Malloc'
+#define calloc(a,b)       'Error use MPIU_Calloc'
+#define free(a)           'Error use MPIU_Free'
 #if defined(strdup) || defined(__strdup)
 #undef strdup
 #endif
-#define strdup(a)         'Error use MPID_Strdup'
+#define strdup(a)         'Error use MPIU_Strdup'
 #else
-#define MPID_Malloc(a)    malloc((unsigned)(a))
-#define MPID_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
-#define MPID_Free(a)      free((void *)(a))
-#define MPID_Strdup(a)    strdup(a)
+#define MPIU_Malloc(a)    malloc((unsigned)(a))
+#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPIU_Free(a)      free((void *)(a))
+#ifdef HAVE_STRDUP
+#define MPIU_Strdup(a)    strdup(a)
+#else
+#define MPIU_Strdup(a)    ?????
+#endif
 #endif
 
 /* Memory allocation stack */
@@ -78,9 +82,55 @@ typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 /* Known language bindings */
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
-/* Known MPI object types */
+
+/* Known MPI object types.  These are used for both the error handlers 
+   and for the handles.  This is a 3 bit value */
 typedef enum { 
-  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Object_kind;
+  MPID_COMM       = 0x0, 
+  MPID_GROUP      = 0x1,
+  MPID_DATATYPE   = 0x2,
+  MPID_FILE       = 0x3,
+  MPID_ERRHANDLER = 0x4,
+  MPID_OP         = 0x5,
+  MPID_INFO       = 0x6,
+  MPID_WIN        = 0x7,
+  } MPID_Object_kind;
+#define HANDLE_KIND(a) ( ((a)&0x38000000) >> 27 )
+
+/* Handle types.  These are really 2 bits */
+#define CONSTRUCT_INVALID  0x0
+#define CONSTRUCT_BUILTIN  0x1
+#define CONSTRUCT_DIRECT   0x2
+#define CONSTRUCT_INDIRECT 0x3
+/* Mask assumes that ints are at least 4 bytes */
+#define CONSTRUCT_MASK 0xC0000000
+#define CONSTRUCT_TYPE(a) ((a)&CONSTRUCT_MASK)>>30
+
+/* For indirect, the remainder of the handle has a block and index */
+#define HANDLE_BLOCK(a) (((a)& 0x07FF0000) >> 16)
+#define HANDLE_BLOCK_INDEX(a) ((a) & 0x0000FFFF)
+
+/* For direct, the remainder of the handle is the index into a predefined 
+   block */
+#define HANDLE_MASK 0x07FFFFFF
+#define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
+
+/* Handles conversion */
+#define MPID_Get_ptr(kind,a,ptr) \
+     switch (CONSTRUCT(TYPE(a)) {\
+         case CONSTRUCT_INVALID: ptr=0; break;\
+         case CONSTRUCT_BUILTIN: ptr=0;break;\
+         case CONSTRUCT_DIRECT: ptr=MPID##kind##direct+HANDLE_INDEX(a);break;\
+         case CONSTRUCT_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
+     }
+#define MPID_Comm_get_ptr(a,ptr)
+#define MPID_Group_get_ptr(a,ptr)
+#define MPID_Datatype_get_ptr(a,ptr)
+#define MPID_File_get_ptr(a,ptr)
+#define MPID_Errhandler_get_ptr(a,ptr)
+#define MPID_Op_get_ptr(a,ptr)
+#define MPID_Info_get_ptr(a,ptr) MPID_Get_ptr(Info,a,ptr)
+#define MPID_Win_get_ptr(a,ptr)
 
 /* Error Handlers */
 typedef union {
@@ -197,16 +247,21 @@ typedef struct {
 extern MPICH_PerThread_t MPIR_Thread;
 typedef int MPID_Thread_key_t;
 typedef int MPID_Thread_id_t;
+typedef int MPID_Thread_lock_t;
 #define MPID_GetPerThread(p) p = &MPIR_Thread
 #else /* Assumes pthreads for simplicity */
 #if defined HAVE_PTHREAD_CREATE
 #include <pthread.h>
 typedef pthread_key_t MPID_Thread_key_t;
 typedef pthread_t MPID_Thread_id_t;
+typedef pthread_mutex_t MPID_Thread_lock_t;
 #define MPID_GetPerThread(p) {\
      p = (MPICH_PerThread_t*)pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPID_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
+     if (!p) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
+#define MPID_Thread_lock( a ) pthread_mutex_lock( a )
+#define MPID_Thread_unlock( a ) pthread_mutex_unlock( a )
+#define MPID_Thread_lock_init( a ) pthread_mutex_init( a, 0 )
 #else
 #error No Thread Package Chosen
 #endif
@@ -216,13 +271,29 @@ typedef pthread_t MPID_Thread_id_t;
 /* Per process data */
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
                MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
+
+typedef PreDefined_attrs struct {
+    int appnum;          /* Application number provided by mpiexec (MPI-2) */
+    int host;            /* host */
+    int io;              /* standard io allowed */
+    int lastusedcode;    /* last used error code (MPI-2) */
+    int tag_ub;          /* Maximum message tag */
+    int universe;        /* Universe size from mpiexec (MPI-2) */
+    int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
+};
+
 typedef struct {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
+    int               thread_provided;  /* Provided level of thread support */
     MPID_Thread_key_t thread_key;       /* Id for perthread data */
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
+    MPID_Thread_lock_t allocation_lock; /* Used to lock around 
+                                           list-allocations */
+    MPID_Thread_lock_t common_lock;     /* General purpose common lock */
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
+    PreDefined        attrs;            /* Predefined attribute values */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -235,6 +306,17 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_MAX_THREAD_LEVEL MPI_THREAD_MULTIPLE
 #endif
 
+/* Allocation locks */
+#ifdef MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#define MPID_Allocation_lock()
+#define MPID_Allocation_unlock()
+#else
+/* A more sophisticated version of these would handle the case where 
+   the library supports MPI_THREAD_MULTIPLE but the user only asked for
+   MPI_THREAD_FUNNELLED */
+#define MPID_Allocation_lock() MPID_Thread_lock( &MPIR_Process.allocation_lock )
+#define MPID_Allocation_unlock() MPID_Thread_unlock( &MPIR_Procss.allocation_lock )
+#endif
 
 /* Routine tracing */
 #define MPID_MPI_FUNC_EXIT(a)
