@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #define LARGE_SIZE  100*1024
-#define RNDV_SIZE   128*1024
+#define RNDV_SIZE   256*1024
 
 int main(int argc, char *argv[])
 {
