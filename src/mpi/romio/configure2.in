@@ -3,6 +3,11 @@
 # (or wherever the confdb is)
 # The following usage message is out-of-date
 # It is retained only to remind us which options were defined.
+
+print_error() {
+    echo "*# $*" 2>&1 ;
+}
+
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                 [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
