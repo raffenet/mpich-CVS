@@ -54,8 +54,7 @@ int MPI_Free_mem(void *base)
 
     /* ... body of routine ...  */
     
-    /* FIXME: this should call MPID_Free_mem() */
-    MPIU_Free(base);
+    mpi_errno = MPID_Free_mem(base);
 
     /* ... end of body of routine ... */
 

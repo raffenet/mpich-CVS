@@ -62,6 +62,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
     static const char FCNAME[] = "MPI_Alloc_mem";
     int mpi_errno = MPI_SUCCESS;
     void *ap;
+    MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLOC_MEM);
 
     MPIR_ERRTEST_INITIALIZED_ORRETURN();
@@ -83,8 +84,10 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 
     /* ... body of routine ...  */
     
-    /* FIXME: This should be MPID_Alloc_mem */
-    ap = MPIU_Malloc(size);
+    MPID_Info_get_ptr( info, info_ptr );
+
+    ap = MPID_Alloc_mem(size, info_ptr);
+
     /* --BEGIN ERROR HANDLING-- */
     if (!ap)
     {
@@ -92,6 +95,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
+
     *(void **)baseptr = ap;
 
     /* ... end of body of routine ... */
