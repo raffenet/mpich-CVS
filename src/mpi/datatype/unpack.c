@@ -46,12 +46,20 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Unpack(void *inbuf, int insize, int *position, void *outbuf, int outcount, MPI_Datatype datatype, MPI_Comm comm )
+int MPI_Unpack(void *inbuf,
+	       int insize,
+	       int *position,
+	       void *outbuf,
+	       int outcount,
+	       MPI_Datatype datatype,
+	       MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Unpack";
     int mpi_errno = MPI_SUCCESS;
+    int first, last;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_Segment *segp;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK);
     /* Get handles to MPI objects. */
@@ -78,6 +86,38 @@ int MPI_Unpack(void *inbuf, int insize, int *position, void *outbuf, int outcoun
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* TODO: CHECK RETURN VALUES?? */
+    /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
+    segp = MPID_Segment_alloc();
+    MPID_Segment_init(outbuf, outcount, datatype, segp);
+
+    /* NOTE: the use of buffer values and positions in MPI_Pack and in
+     * MPID_Segment_pack are quite different.  See code or docs or something.
+     */
+    first = *position;
+    last  = insize;
+
+    MPID_Segment_pack(segp,
+		      first,
+		      &last,
+		      (void *) ((char *) outbuf + first));
+
+    *position = last;
+
+    MPID_Segment_free(segp);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
     return MPI_SUCCESS;
 }
+
+
+
+
+
+
+
+
+
+
+
+

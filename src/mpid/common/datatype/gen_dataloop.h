@@ -305,8 +305,6 @@ typedef struct DLOOP_Segment {
     /* other, device-specific information */
 } DLOOP_Segment;
 
-/* MOVING PROTOTYPES OUT OF HERE */
-
 /* Dataloop functions */
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,

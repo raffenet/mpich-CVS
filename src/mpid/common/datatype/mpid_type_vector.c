@@ -16,7 +16,10 @@
   Input Parameters:
 + count - number of blocks in vector
 . blocklength - number of elements in each block
-. stride - distance in terms of extent of datatype between datatypes
+. stride - distance from beginning of one block to the next (see next
+  parameter for units)
+. strideinbytes - if nonzero, then stride is in bytes, otherwise stride
+  is in terms of extent of oldtype
 - oldtype - type (using handle) of datatype on which vector is based
 
   Output Parameters:
@@ -32,6 +35,7 @@
 int MPID_Type_vector(int count,
 		     int blocklength,
 		     int stride,
+		     int strideinbytes,
 		     MPI_Datatype oldtype,
 		     MPI_Datatype *newtype)
 {
@@ -102,7 +106,10 @@ int MPID_Type_vector(int count,
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
-	dlp->loop_params.v_t.stride     = stride * oldsize; /* in bytes */
+	if (strideinbytes)
+	    dlp->loop_params.v_t.stride = stride; /* already in bytes */
+	else
+	    dlp->loop_params.v_t.stride = stride * oldsize; /* convert to bytes */
 	dlp->loop_params.v_t.u.handle   = oldtype;
 	dlp->el_extent                  = oldsize;
 	dlp->el_size                    = oldsize;
@@ -142,7 +149,10 @@ int MPID_Type_vector(int count,
 	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
-	dlp->loop_params.v_t.stride     = stride * old_dtp->extent; /* in bytes */
+	if (strideinbytes)
+	    dlp->loop_params.v_t.stride = stride; /* already in bytes */
+	else
+	    dlp->loop_params.v_t.stride = stride * old_dtp->extent; /* convert to bytes */
 	dlp->el_extent                  = old_dtp->extent;
 	dlp->el_size                    = old_dtp->size;
 

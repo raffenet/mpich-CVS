@@ -93,8 +93,8 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    assert(HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN);
-    
+    MPID_Datatype_get_size_macro(datatype, *size);
+
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
     return MPI_SUCCESS;

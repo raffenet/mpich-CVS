@@ -45,6 +45,7 @@ int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
 {
     static const char FCNAME[] = "MPI_Type_extent";
     int mpi_errno = MPI_SUCCESS;
+    int type_extent;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_EXTENT);
@@ -68,6 +69,9 @@ int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_Datatype_get_extent_macro(datatype, type_extent);
+    *extent = type_extent;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_EXTENT);
     return MPI_SUCCESS;

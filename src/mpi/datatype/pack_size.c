@@ -43,17 +43,21 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+int MPI_Pack_size(int incount,
+		  MPI_Datatype datatype,
+		  MPI_Comm comm,
+		  int *size)
 {
     static const char FCNAME[] = "MPI_Pack_size";
     int mpi_errno = MPI_SUCCESS;
+    int typesize;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_SIZE);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    MPID_Datatype_get_ptr(datatype, datatype_ptr);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -75,6 +79,19 @@ int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_Datatype_get_size_macro(datatype, typesize);
+    *size = incount * typesize;
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
     return MPI_SUCCESS;
 }
+
+
+
+
+
+
+
+
+
+

@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_hvector(int count, int blocklen, MPI_Aint stride, MPI_Datatype old_type, MPI_Datatype *newtype)
+int MPI_Type_hvector(int count,
+		     int blocklen,
+		     MPI_Aint stride,
+		     MPI_Datatype old_type,
+		     MPI_Datatype *newtype_p)
 {
     static const char FCNAME[] = "MPI_Type_hvector";
     int mpi_errno = MPI_SUCCESS;
@@ -72,6 +76,13 @@ int MPI_Type_hvector(int count, int blocklen, MPI_Aint stride, MPI_Datatype old_
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_vector(count,
+				 blocklen,
+				 stride,
+				 1, /* stride in bytes */
+				 old_type,
+				 newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HVECTOR);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

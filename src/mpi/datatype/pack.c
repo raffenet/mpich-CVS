@@ -39,20 +39,35 @@
 .  int *position - position
 -  MPI_Comm comm - communicator
 
-   Notes:
+   Notes (from the specifications):
+
+   The input value of position is the first location in the output buffer to be
+   used for packing.  position is incremented by the size of the packed message,
+   and the output value of position is the first location in the output buffer
+   following the locations occupied by the packed message.  The comm argument is
+   the communicator that will be subsequently used for sending the packed
+   message.
+
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, 
-	     int outcount, int *position, MPI_Comm comm)
+int MPI_Pack(void *inbuf,
+	     int incount,
+	     MPI_Datatype datatype,
+	     void *outbuf, 
+	     int outcount,
+	     int *position,
+	     MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Pack";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, first, last;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_Segment *segp;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK);
@@ -81,10 +96,40 @@ int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+
+    /* TODO: CHECK RETURN VALUES?? */
+    /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
+    segp = MPID_Segment_alloc();
+    MPID_Segment_init(inbuf, incount, datatype, segp);
+
+    /* NOTE: the use of buffer values and positions in MPI_Pack and in
+     * MPID_Segment_pack are quite different.  See code or docs or something.
+     */
+    first = *position;
+    last  = outcount;
+
+    MPID_Segment_pack(segp,
+		      first,
+		      &last,
+		      (void *) ((char *) outbuf + first));
+
+    *position = last;
+
+    MPID_Segment_free(segp);
+
+#if 0
     /* This is a temporary call */
     MPIR_Segment_pack( datatype_ptr->opt_loopinfo, inbuf, outbuf );
+#endif
 
     /* ... end of body of routine ... */
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
     return MPI_SUCCESS;
 }
+
+
+
+
+
+
