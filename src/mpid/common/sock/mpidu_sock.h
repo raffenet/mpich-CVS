@@ -1027,6 +1027,27 @@ int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set);
 
 
 /*@
+MPIDU_Sock_get_error_class_string - get a generic error string from an error code
+
+Input Parameter:
++ error - sock error
+- length - length of error string
+
+Output Parameter:
+. error_string - error string
+
+Return value: a string representation of the sock error
+
+Notes:
+
+The returned string is the generic error message for the supplied error code.
+
+Module:
+Utility-Sock
+@*/
+int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length);
+
+/*@
 MPIDU_Sock_describe_timer_states - registers the RLOG states exported by Sock
 
 Return value: a MPI error code with a Sock extended error class
@@ -1035,7 +1056,6 @@ Module:
 Utility-Sock
 @*/
 int MPIDU_Sock_describe_timer_states(void);
-
 
 CPLUSPLUS_END
 

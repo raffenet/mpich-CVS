@@ -2227,6 +2227,76 @@ int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set)
     return ret_val;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sock_get_error_class_string
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
+{
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
+    switch (MPIR_ERR_GET_CLASS(error))
+    {
+    case MPIDU_SOCK_ERR_FAIL:
+	MPIU_Strncpy(error_string, "generic socket failure", length);
+	break;
+    case MPIDU_SOCK_ERR_INIT:
+	MPIU_Strncpy(error_string, "socket module not initialized", length);
+	break;
+    case MPIDU_SOCK_ERR_NOMEM:
+	MPIU_Strncpy(error_string, "not enough memory to complete the socket operation", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_SET:
+	MPIU_Strncpy(error_string, "invalid socket set", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_SOCK:
+	MPIU_Strncpy(error_string, "invalid socket", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_HOST:
+	MPIU_Strncpy(error_string, "host description buffer not large enough", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_HOSTNAME:
+	MPIU_Strncpy(error_string, "invalid host name", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_PORT:
+	MPIU_Strncpy(error_string, "invalid port", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_BUF:
+	MPIU_Strncpy(error_string, "invalid buffer", length);
+	break;
+    case MPIDU_SOCK_ERR_BAD_LEN:
+	MPIU_Strncpy(error_string, "invalid length", length);
+	break;
+    case MPIDU_SOCK_ERR_SOCK_CLOSED:
+	MPIU_Strncpy(error_string, "socket closed", length);
+	break;
+    case MPIDU_SOCK_ERR_CONN_CLOSED:
+	MPIU_Strncpy(error_string, "socket connection closed", length);
+	break;
+    case MPIDU_SOCK_ERR_CONN_FAILED:
+	MPIU_Strncpy(error_string, "socket connection failed", length);
+	break;
+    case MPIDU_SOCK_ERR_INPROGRESS:
+	MPIU_Strncpy(error_string, "socket operation in progress", length);
+	break;
+    case MPIDU_SOCK_ERR_TIMEOUT:
+	MPIU_Strncpy(error_string, "socket operation timed out", length);
+	break;
+    case MPIDU_SOCK_ERR_INTR:
+	MPIU_Strncpy(error_string, "socket operation interrupted", length);
+	break;
+    case MPIDU_SOCK_ERR_NO_NEW_SOCK:
+	MPIU_Strncpy(error_string, "no new connection available", length);
+	break;
+    default:
+	MPIU_Snprintf(error_string, length, "unknown socket error %d", error);
+	break;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
+    return MPI_SUCCESS;
+}
+
 /*
 int test_string_functions()
 {
