@@ -388,8 +388,15 @@ def _handle_lhs_input():
                 for manPid in g.activeJobs[jobid].keys():
                     if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
                     or g.activeJobs[jobid][manPid]['username'] == 'root':
-                        kill(manPid * (-1), SIGKILL)  # neg manPid -> group
-                        handledHere = 1
+                        try:
+                            pgrp = manPid * (-1)  # neg manPid -> group
+                            kill(pgrp,SIGKILL)
+                            cliPid = g.activeJobs[jobid][manPid]['clipid']
+                            pgrp = cliPid * (-1)  # neg manPid -> group
+                            kill(pgrp,SIGKILL)  # neg Pid -> group
+                            handledHere = 1
+                        except:
+                            pass
                 # del g.activeJobs[jobid]  ## handled when child goes away
         if handledHere:
             msg['handled'] = 1
@@ -404,7 +411,14 @@ def _handle_lhs_input():
         for jobid in g.activeJobs.keys():
             if jobid == msg['jobid']:
                 for manPid in g.activeJobs[jobid].keys():
-                    kill(manPid * (-1), SIGKILL)  # neg manPid -> group
+                    try:
+                        pgrp = manPid * (-1)  # neg manPid -> group
+                        kill(pgrp,SIGKILL)
+                        cliPid = g.activeJobs[jobid][manPid]['clipid']
+                        pgrp = cliPid * (-1)  # neg manPid -> group
+                        kill(pgrp,SIGKILL)  # neg Pid -> group
+                    except:
+                        pass
                 # del g.activeJobs[jobid]  ## handled when child goes away
     elif msg['cmd'] == 'pulse':
         mpd_send_one_msg(g.lhsSocket,{'cmd':'pulse_ack'})
