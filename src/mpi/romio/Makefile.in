@@ -6,12 +6,8 @@ AR          = @AR@
 LIBNAME     = @LIBNAME@
 NOF77       = @NOF77@
 NOPROFILE   = @NOPROFILE@
-MIPS        = @MIPS@
-BITS        = @BITS@
-arch_IRIX   = @arch_IRIX@
 MPI         = @MPI@
 PREFIX      = @PREFIX@
-SGIMPI31    = @SGIMPI31@
 FROM_MPICH  = @FROM_MPICH@
 BUILD_MPI_INFO = @BUILD_MPI_INFO@
 BUILD_MPI_ARRAY = @BUILD_MPI_ARRAY@
@@ -27,7 +23,7 @@ mpio:
 	$(MAKE) mpiolib
 	$(MAKE) clean
 	@if test "$(NOPROFILE)" = 0 ; then\
-     	    $(MAKE) profile; \
+	    $(MAKE) profile; \
         fi;\
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
@@ -81,21 +77,7 @@ mpiolib:
             echo "deleting previously built library if it exists" ;\
             rm -f $(LIBNAME) ;\
         fi; \
-	if test "$(arch_IRIX)" = 1 && test "$(MPI)" = "sgi" && test "$(SGIMPI31)" = 0; then \
-             if test "$(MIPS)" = 3 && test "$(BITS)" = 32 ; then \
-                 $(AR) $(LIBNAME) adio/sgi/mpi2/mips3.32/get_contents.o adio/sgi/mpi2/mips3.32/get_envelope.o; \
-             fi; \
-             if test "$(MIPS)" = 3 && test "$(BITS)" = 64 ; then \
-                 $(AR) $(LIBNAME) adio/sgi/mpi2/mips3.64/get_contents.o adio/sgi/mpi2/mips3.64/get_envelope.o; \
-             fi; \
-             if test "$(MIPS)" = 4 && test "$(BITS)" = 32 ; then \
-                 $(AR) $(LIBNAME) adio/sgi/mpi2/mips4.32/get_contents.o adio/sgi/mpi2/mips4.32/get_envelope.o; \
-             fi; \
-             if test "$(MIPS)" = 4 && test "$(BITS)" = 64 ; then \
-                 $(AR) $(LIBNAME) adio/sgi/mpi2/mips4.64/get_contents.o adio/sgi/mpi2/mips4.64/get_envelope.o; \
-             fi; \
-        fi;\
- 	dirs=`echo "$(DIRS)"`; \
+	dirs=`echo "$(DIRS)"`; \
 	for x in $(FILE_SYSTEM) ;\
          do \
              dirs=`echo "$$dirs" adio/ad_$$x` ;\
@@ -163,7 +145,7 @@ cleanall:
             echo cleaning directory $$dir ;\
             (cd $$dir; rm -f *.o Makefile *~) ;\
          done; \
-         (cd test; rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity); \
+         (cd test; \rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests); \
          echo " " ;\
          echo "cleaning directory include" ;\
          (cd include; rm -f *.h);\
