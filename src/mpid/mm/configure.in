@@ -57,6 +57,13 @@ AC_ARG_ENABLE(sharedlibs,
 This option is currently ignored])
 dnl
 dnl Process any enable or with values
+if test "$with_device" = "default" ; then
+    # Pick the method.  For now, always choose shm and tcp
+    with_device=mm:shm:tcp
+fi
+dnl Extract the methods
+method_subdirs=`echo $with_device | sed -e 's/mm://g' | sed -e 's/://g' | sed -e 's/://g' | sed -e 's/://g'`
+AC_SUBST(method_subdirs)
 dnl error-checking
 case "$enable_error_checking" in 
     no)
@@ -246,12 +253,12 @@ AC_OUTPUT(Makefile \
           src/Makefile \
           src/bsocket/Makefile \
           src/common/Makefile \
-	  src/init/Makefile \
+          src/init/Makefile \
           src/mm/Makefile \
           src/progress/Makefile \
           src/pt2pt/Makefile \
           src/request/Makefile \
-	  src/spawn/Makefile \
+          src/spawn/Makefile \
           src/util/Makefile \
           src/xfer/Makefile \
           src/tcp/Makefile \
