@@ -9,6 +9,7 @@ static int verbose = 0;
 
 /* tests */
 int darray_2d_c_test1(void);
+int darray_4d_c_test1(void);
 
 /* helper functions */
 static int parse_args(int argc, char **argv);
