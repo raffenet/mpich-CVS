@@ -81,7 +81,15 @@ int main(int argc, char *argv[])
     setregid(getgid(),getgid());
 
     newargv = (char **) malloc(sizeof(char*) * (argc + 2));  /* pad a bit */
-    strncpy(cmd,argv[0],NAME_LEN);
+    if ((NAME_LEN - (strlen("mpdchkpyver.py")+1)) > 0)
+    {
+	strncpy(cmd,argv[0],NAME_LEN);
+    }
+    else
+    {
+	printf("insufficient space for full pathname of mpdchkpyver.py in buffer\n");
+	exit(-1);
+    }
     if (s = strrchr(cmd,'/'))
     {
         *(s+1) = '\0';
@@ -90,7 +98,7 @@ int main(int argc, char *argv[])
     {
         cmd[0] = '\0';
     }
-    strncat(cmd,"mpdchkpyver.py",NAME_LEN);
+    strcat(cmd,"mpdchkpyver.py");
     /* printf("MPDROOT: CMD=%s\n",cmd); */
     newargv[0] = cmd;
     for (i=0; i < argc; i++)
