@@ -430,7 +430,8 @@ def _handle_lhs_input():
                 if msg.has_key('jobid'):
                     mpd_send_one_msg(g.rhsSocket,
                                      {'cmd':'abortjob', 'src' : g.myId,
-                                      'jobid' : msg['jobid']})
+                                      'jobid' : msg['jobid'],
+                                      'reason' : 'some_procs_not_started'})
                 if g.conSocket:
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'job_failed',
                                                    'reason' : 'some_procs_not_started',
@@ -576,6 +577,10 @@ def _handle_lhs_input():
         for jobid in g.activeJobs.keys():
             if jobid == msg['jobid']:
                 for manPid in g.activeJobs[jobid].keys():
+                    manSocket = g.activeJobs[jobid][manPid]['socktoman']
+                    if manSocket:
+                        mpd_send_one_msg(manSocket,msg)
+                        sleep(0.5)  # give man a brief chance to deal with this
                     try:
                         pgrp = manPid * (-1)  # neg manPid -> group
                         kill(pgrp,SIGKILL)

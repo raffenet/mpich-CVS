@@ -1049,8 +1049,10 @@ def mpdman():
                         msgToSend = { 'cmd'          : 'spawn',
                                       'conhost'      : myHost,
                                       'conip'        : myIP,
+                                      'conifhn'      : myIP,
                                       'conport'      : myPort,
                                       'spawned'      : spawnedCnt,
+                                      'jobid'        : jobid,
                                       'nstarted'     : 0,
                                       'nprocs'       : tpsf,
                                       'hosts'        : spawnHosts,
@@ -1228,7 +1230,9 @@ def mpdman():
                     except:
                         pass
                     exit(0)
-                if msg['cmd'] == 'signal_to_handle'  and  msg.has_key('sigtype'):
+                if msg['cmd'] == 'abortjob':
+                    mpd_print(1, "job aborted by mpd; reason=%s" % (msg['reason']))
+                elif msg['cmd'] == 'signal_to_handle'  and  msg.has_key('sigtype'):
                     if msg['sigtype'].isdigit():
                         signum = int(msg['sigtype'])
                     else:
