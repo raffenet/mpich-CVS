@@ -75,7 +75,7 @@ mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	$(C_LINK) -o $* $*.o $(LIBS)
 
 clean: 
-	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core* *.1
+	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core* *.1 *.pyc
 
 # echo "some of the following might be executables you want to remove"
 # ls -l | grep rwx
