@@ -242,6 +242,7 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 #else
+#ifdef HAVE_UUID_UUID_H
     uuid_t guid;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
@@ -252,6 +253,9 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
     }
     uuid_generate(guid);
     uuid_unparse(guid, name);
+#else
+    sprintf(name, "%08lX%08lX%08lX%08lX", rand(), rand(), rand(), rand());
+#endif
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
     return MPI_SUCCESS;
