@@ -125,7 +125,7 @@ int MPI_Comm_free(MPI_Comm *comm)
 	/* Free the context value */
 	MPIR_Free_contextid( comm_ptr->context_id );
 
-	MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );
+	MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr ); 
     }
     /* ... end of body of routine ... */
 
