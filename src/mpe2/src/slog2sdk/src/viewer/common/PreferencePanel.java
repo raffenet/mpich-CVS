@@ -115,7 +115,7 @@ public class PreferencePanel extends JPanel
         lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.TRUE );
         lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.FALSE );
         lst_AUTO_WINDOWS_LOCATION.setToolTipText(
-        "Whelther to let Jumpshot-4 automatically set windows placement." );
+        "Whether to let Jumpshot-4 automatically set windows placement." );
         super.add( lst_AUTO_WINDOWS_LOCATION );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
@@ -158,7 +158,7 @@ public class PreferencePanel extends JPanel
         lst_Y_AXIS_ROOT_VISIBLE.addItem( Boolean.TRUE );
         lst_Y_AXIS_ROOT_VISIBLE.addItem( Boolean.FALSE );
         lst_Y_AXIS_ROOT_VISIBLE.setToolTipText(
-        "Whelther to show the top of the Y-axis tree-styled directory label." );
+        "Whether to show the top of the Y-axis tree-styled directory label." );
         super.add( lst_Y_AXIS_ROOT_VISIBLE );
 
         //  Temporary disable it as this field is not being used
@@ -166,7 +166,7 @@ public class PreferencePanel extends JPanel
         lst_ACTIVE_REFRESH.addItem( Boolean.TRUE );
         lst_ACTIVE_REFRESH.addItem( Boolean.FALSE );
         lst_ACTIVE_REFRESH.setToolTipText(
-        "Whelther to let Jumpshot-4 actively update the timeline canvas." );
+        "Whether to let Jumpshot-4 actively update the timeline canvas." );
         super.add( lst_ACTIVE_REFRESH );
         lst_ACTIVE_REFRESH.setEnabled( false );
 
@@ -220,7 +220,7 @@ public class PreferencePanel extends JPanel
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_OFF );
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_ON );
         lst_ARROW_ANTIALIASING.setToolTipText(
-          "Whelther to draw arrow with antialiasing lines. Turning this on "
+          "Whether to draw arrow with antialiasing lines. Turning this on "
         + "will slow down the canvas drawing by a factor of ~3" );
         super.add( lst_ARROW_ANTIALIASING );
 
@@ -249,7 +249,7 @@ public class PreferencePanel extends JPanel
         lst_LEFTCLICK_INSTANT_ZOOM.addItem( Boolean.TRUE );
         lst_LEFTCLICK_INSTANT_ZOOM.addItem( Boolean.FALSE );
         lst_LEFTCLICK_INSTANT_ZOOM.setToolTipText(
-        "Whelther to zoom in immediately after left mouse click on canvas." );
+        "Whether to zoom in immediately after left mouse click on canvas." );
         super.add( lst_LEFTCLICK_INSTANT_ZOOM );
 
         super.add( Box.createVerticalStrut( 2 * VERTICAL_GAP_HEIGHT ) );
@@ -394,7 +394,7 @@ public class PreferencePanel extends JPanel
         lst_SEARCHED_OBJECT_ON_TOP.addItem( Boolean.TRUE );
         lst_SEARCHED_OBJECT_ON_TOP.addItem( Boolean.FALSE );
         lst_SEARCHED_OBJECT_ON_TOP.setToolTipText(
-        "Whelther to display the searched object on top of the search frame." );
+        "Whether to display the searched object on top of the search frame." );
         super.add( lst_SEARCHED_OBJECT_ON_TOP );
 
         super.add( Box.createVerticalStrut( 2 * VERTICAL_GAP_HEIGHT ) );
@@ -417,7 +417,7 @@ public class PreferencePanel extends JPanel
         lst_HISTOGRAM_ZERO_ORIGIN.addItem( Boolean.TRUE );
         lst_HISTOGRAM_ZERO_ORIGIN.addItem( Boolean.FALSE );
         lst_HISTOGRAM_ZERO_ORIGIN.setToolTipText(
-        "Whelther to the time ruler is in duration, i.e. starts with 0.0." );
+        "Whether to the time ruler is in duration, i.e. starts with 0.0." );
         super.add( lst_HISTOGRAM_ZERO_ORIGIN );
 
         lst_SUMMARY_STATE_BORDER = new LabeledComboBox(
@@ -464,7 +464,7 @@ public class PreferencePanel extends JPanel
         lst_LEGEND_PREVIEW_ORDER.addItem( Boolean.TRUE );
         lst_LEGEND_PREVIEW_ORDER.addItem( Boolean.FALSE );
         lst_LEGEND_PREVIEW_ORDER.setToolTipText(
-        "Whelther to arrange the legends with a hidden Preview order." );
+        "Whether to arrange the legends with a hidden Preview order." );
         super.add( lst_LEGEND_PREVIEW_ORDER );
 
         lst_LEGEND_TOPOLOGY_ORDER = new LabeledComboBox(
@@ -472,7 +472,7 @@ public class PreferencePanel extends JPanel
         lst_LEGEND_TOPOLOGY_ORDER.addItem( Boolean.TRUE );
         lst_LEGEND_TOPOLOGY_ORDER.addItem( Boolean.FALSE );
         lst_LEGEND_TOPOLOGY_ORDER.setToolTipText(
-        "Whelther to arrange the legends with a hidden Topology order." );
+        "Whether to arrange the legends with a hidden Topology order." );
         super.add( lst_LEGEND_TOPOLOGY_ORDER );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
