@@ -190,6 +190,9 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 #define FUNCNAME MPIDU_Sock_listen
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
+#ifndef USHRT_MAX
+#define USHRT_MAX 65535   /* 2^16-1 */
+#endif
 int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * port, struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock;
@@ -554,7 +557,6 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	assert(flags != -1);
 	rc = fcntl(pollinfo->fd, F_SETFL, flags & ~O_NONBLOCK);
 	assert(rc != -1);
-    
 	close(pollinfo->fd);
     }
     MPIDU_Socki_sock_free(sock);
