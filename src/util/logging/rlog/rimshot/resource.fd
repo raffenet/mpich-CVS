@@ -1,0 +1,13 @@
+!MS$FREEFORM
+! Microsoft Developer Studio generated include file.
+! Used by rimshot.rc
+!
+      integer, parameter :: IDD_ABOUTBOX                    = 100
+      integer, parameter :: IDR_MAINFRAME                   = 128
+      integer, parameter :: IDR_RIMSHOTYPE                  = 129
+      integer, parameter :: ID_PREVIOUS                     = 32771
+      integer, parameter :: ID_NEXT                         = 32772
+      integer, parameter :: ID_ZOOM_IN                      = 32773
+      integer, parameter :: ID_ZOOM_OUT                     = 32774
+      integer, parameter :: ID_RESET_ZOOM                   = 32775
+      integer, parameter :: ID_ZOOM_TO                      = 32776

@@ -1,7 +1,6 @@
 *.o
 Makefile
 Makefile.in
-mpiexec.dsp
 mpiexec.plg
 Debug
 Release

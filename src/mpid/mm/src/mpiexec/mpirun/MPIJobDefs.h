@@ -1,0 +1,7 @@
+#ifndef MPIJOBDEFS_H
+#define MPIJOBDEFS_H
+
+#define MPICHKEY	TEXT("SOFTWARE\\MPICH")
+#define LMPICHKEY	L"SOFTWARE\\MPICH"
+
+#endif

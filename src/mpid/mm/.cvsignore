@@ -3,7 +3,6 @@ Makefile
 Makefile.in
 Debug*
 Release*
-*.dsp
 *.plg
 configure
 config.log
