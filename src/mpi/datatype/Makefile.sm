@@ -4,12 +4,12 @@ mpi_sources = pack_size.c type_commit.c type_contig.c \
  pack_external_size.c register_datarep.c status_set_elements.c \
  type_create_darray.c type_create_hindexed.c type_create_hvector.c \
  type_create_indexed_block.c type_create_resized.c type_create_struct.c \
- type_create_subarray.c type_dup.c type_get_contents.c type_get_envelope.c \
+ type_create_subarray.c type_dup.c  \
  type_get_extent.c type_get_name.c type_get_true_extent.c type_match_size.c \
  unpack_external.c
 lib${MPILIBNAME}_a_SOURCES = address.c get_address.c getcount.c \
  getelements.c pack.c type_get_name.c type_set_name.c type_size.c type_vec.c \
- typeutil.c
+ typeutil.c type_get_envelope.c type_get_contents.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 #

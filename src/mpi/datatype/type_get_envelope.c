@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_get_envelope(MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner)
+int MPI_Type_get_envelope(MPI_Datatype datatype,
+			  int *num_integers,
+			  int *num_addresses,
+			  int *num_datatypes,
+			  int *combiner)
 {
     static const char FCNAME[] = "MPI_Type_get_envelope";
     int mpi_errno = MPI_SUCCESS;
@@ -62,17 +66,30 @@ int MPI_Type_get_envelope(MPI_Datatype datatype, int *num_integers, int *num_add
                             "**initialized", 0 );
             }
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_get_envelope(datatype,
+				       num_integers,
+				       num_addresses,
+				       num_datatypes,
+				       combiner);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
     return MPI_SUCCESS;
 }
+
+
+

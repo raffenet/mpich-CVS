@@ -46,7 +46,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_get_contents(MPI_Datatype datatype, int max_integers, int max_addresses, int max_datatypes, int array_of_integers[], MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
+int MPI_Type_get_contents(MPI_Datatype datatype,
+			  int max_integers,
+			  int max_addresses,
+			  int max_datatypes,
+			  int array_of_integers[],
+			  MPI_Aint array_of_addresses[],
+			  MPI_Datatype array_of_datatypes[])
 {
     static const char FCNAME[] = "MPI_Type_get_contents";
     int mpi_errno = MPI_SUCCESS;
@@ -75,6 +81,21 @@ int MPI_Type_get_contents(MPI_Datatype datatype, int max_integers, int max_addre
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_get_contents(datatype,
+				       max_integers,
+				       max_addresses,
+				       max_datatypes,
+				       array_of_integers,
+				       array_of_addresses,
+				       array_of_datatypes);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_CONTENTS);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_CONTENTS);
     return MPI_SUCCESS;
 }
+
+
+
