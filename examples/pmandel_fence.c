@@ -6,8 +6,10 @@
 #include <process.h> /* getpid() */
 #include <winsock2.h>
 #else
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <errno.h>
 #endif
