@@ -4,10 +4,47 @@
 # For best performance, execute this in the top-level directory.
 # There are some experimental features to allow it to be executed in
 # subdirectories
+#
+# Eventually, we want to allow this script to be executed anywhere in the
+# mpich tree.  This is not yet implemented.
 at_top=no
 if [ -d maint -a -s maint/simplemake.in ] ; then
     at_top=yes
 fi
+#
+# Default choices
+do_codingcheck=yes
+do_geterrmsgs=yes
+#
+# Extract the arguments intended for updatefiles.  Any others are
+# given to simplemake.  
+temp_args=""
+for arg in "$@" ; do
+    case $arg in 
+    -with-codecheck|--with-codecheck)
+    do_codingcheck=yes
+    ;;
+    -without-codecheck|--without-codecheck)
+    do_codingcheck=no
+    ;;
+    -help|--help|-usage|--usage)
+    cat <<EOF
+    updatefiles [ --with-codecheck | --without-codecheck ] 
+                [ args for simplemake ] 
+    Update the files in the MPICH2 build tree.  This file builds the 
+    configure files, creates the Makefile.in files (using the simplemake
+    program), extracts the error messages, and performs basic coding checks.
+    Coding checks may be suppressed with --without-codecheck .
+EOF
+    exit
+    ;;
+    *)
+    temp_args="$temp_args $arg"
+    esac
+done
+# Reset the arguments.  Note that this doesn't handle arguments that contain
+# blanks.  I hope that we don't need those.
+set -- $temp_args
 #
 # Get the Autoconf macro files
 if [ $at_top = "yes" -a ! -d confdb ] ; then
@@ -28,7 +65,7 @@ if [ $at_top = "no" ] ; then
 fi
 #
 # Capture the error messages
-if [ -x maint/extracterrmsgs ] ; then
+if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes"] ; then
     echo "Extracting the error messages..."
     maint/extracterrmsgs src/mpi/*/*.c src/util/*/*.c > .tmp 2>.err
     # (error here is ok)
@@ -98,10 +135,16 @@ rm_prepost=no
 if [ ! -s src/include/mpidpre.h ] ; then
     rm_prepost=yes
 fi
-touch src/include/mpidpre.h src/include/mpidpost.h
 otherargs="$@"
+# If there is no mpi.h file (and other files, but testing on mpi.h should
+# be enough), don't generate the dependency information in the Makefiles
+# Currently, the dependency generation relies on using gcc, so we may 
+# want to test on that as well.
 if [ ! -s src/include/mpi.h ] ; then 
     otherargs="$otherargs -nodepend"
+else
+    # The next two files may be needed to build the dependency lists
+    touch src/include/mpidpre.h src/include/mpidpost.h
 fi
 maint/simplemake -common=maint/makedefs \
     -autoconf="-l ROOTDIR/confdb" \
@@ -132,7 +175,7 @@ if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
 #
-if [ -x maint/codingcheck ] ; then
+if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     echo "Running coding check"
     echo "checking mpi code"
     maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
