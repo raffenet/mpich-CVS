@@ -789,6 +789,7 @@ if test -n "$pragma_extra_message" ; then
     echo $pragma_extra_message
 fi
 dnl
+])
 if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
     ifelse([$2],,:,[$2])
 else
@@ -802,7 +803,6 @@ else
     esac
     ifelse([$1],,:,[$1])
 fi
-])
 AC_CACHE_CHECK([whether __attribute__ ((weak)) allowed],
 pac_cv_attr_weak,[
 AC_TRY_COMPILE([int foo(int) __attribute__ ((weak));],[int a;],
