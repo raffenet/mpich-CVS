@@ -118,6 +118,9 @@ mpich2-build-install: mpich2-mpdroot install
 	fi
 	/bin/rm -f mpich2-mpdroot
 
+mpich2-build-uninstall:
+	/bin/rm -f ${bindir}/mpdroot
+
 mpich2-mpdroot: mpich2-mpdroot.o
 	$(C_LINK) -o mpich2-mpdroot mpich2-mpdroot.o $(LIBS)
 	/bin/rm -f mpich2-mpdroot.o
