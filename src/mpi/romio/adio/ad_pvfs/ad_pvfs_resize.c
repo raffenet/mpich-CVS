@@ -11,7 +11,7 @@
 void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;
-    int ret, rank;
+    int rank;
     static char myname[] = "ADIOI_PVFS_RESIZE";
 
     /* because MPI_File_set_size is a collective operation, and PVFS1 clients
