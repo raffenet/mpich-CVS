@@ -86,6 +86,7 @@ profile_all:
 #
 default: clean rmprog
 	$(MAKE) mpe_debug_objs 
+	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME).a
 
 #
@@ -122,6 +123,12 @@ ${libbuild_dir}/lib$(PROF_LIBNAME).a: build_Cobjs
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) build_Wobjs ; \
 	 fi
+
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
+	 $(CC) $(CFLAGS) -DMPE_NOMPI -c $(srcdir)/mpehname.c
+	 $(AR) $(ARFLAGS) $@ mpehname.@OBJEXT@
+	 $(RANLIB) $@
+	 -$(RM) -f mpehname.@OBJEXT@
 
 dbxtest: dbxtest.@OBJEXT@ ${libbuild_dir}/lib$(PROF_LIBNAME).a
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o dbxtest@EXEEXT@ dbxtest.@OBJEXT@ \
