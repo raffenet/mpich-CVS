@@ -269,7 +269,8 @@ int smpd_entry_point()
     }
     smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
 
-    smpd_insert_into_dynamic_hosts();
+    if (smpd_process.root_smpd)
+	smpd_insert_into_dynamic_hosts();
 
     result = smpd_enter_at_state(set, SMPD_SMPD_LISTENING);
     if (result != SMPD_SUCCESS)
@@ -290,7 +291,8 @@ int smpd_entry_point()
 	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
 
-    smpd_remove_from_dynamic_hosts();
+    if (smpd_process.root_smpd)
+	smpd_remove_from_dynamic_hosts();
 
     smpd_exit_fn("smpd_entry_point");
     return 0;
