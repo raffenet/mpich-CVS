@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="mpich2"
+	RootNamespace="mpich2"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -59,7 +60,7 @@
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy mmRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -131,7 +132,7 @@ copy mmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy shmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -202,7 +203,7 @@ copy shmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy mmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -277,7 +278,7 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy shmRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -348,7 +349,7 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -418,7 +419,7 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -491,7 +492,7 @@ copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -568,7 +569,7 @@ copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3sockRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -645,7 +646,7 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -716,7 +717,7 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3ssmPDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -787,7 +788,7 @@ copy ch3ssmPDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3rdmaDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -857,7 +858,7 @@ copy ch3rdmaDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3rdmaRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1075,7 +1076,7 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1146,7 +1147,7 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3sshmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1217,7 +1218,7 @@ copy ch3sshmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3sshmPDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1287,7 +1288,7 @@ copy ch3sshmPDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3sshmRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1358,7 +1359,7 @@ copy ch3sshmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1428,7 +1429,7 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1499,7 +1500,7 @@ copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1572,7 +1573,7 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.lib to lib directory"
-				CommandLine="copy ch3sock64Debug\mpich2d.lib lib\mpich2d.lib
+				CommandLine="copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1649,7 +1650,7 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.lib to the lib directory"
-				CommandLine="copy ch3sock64Release\mpich2.lib lib\mpich2.lib"/>
+				CommandLine="copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -1721,7 +1722,7 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
+copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1798,7 +1799,7 @@ copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3sockRelease\mpich2.lib lib\mpich2.lib
+copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
