@@ -133,7 +133,7 @@ namespace wmpiregister
 			this.cancel_button.Location = new System.Drawing.Point(216, 216);
 			this.cancel_button.Name = "cancel_button";
 			this.cancel_button.Size = new System.Drawing.Size(64, 23);
-			this.cancel_button.TabIndex = 6;
+			this.cancel_button.TabIndex = 7;
 			this.cancel_button.Text = "Cancel";
 			this.cancel_button.Click += new System.EventHandler(this.cancel_button_Click);
 			// 
@@ -142,7 +142,7 @@ namespace wmpiregister
 			this.usage_label.Location = new System.Drawing.Point(24, 8);
 			this.usage_label.Name = "usage_label";
 			this.usage_label.Size = new System.Drawing.Size(224, 48);
-			this.usage_label.TabIndex = 7;
+			this.usage_label.TabIndex = 9;
 			this.usage_label.Text = "Use this tool to encrypt an account and password to be used by mpiexec to launch " +
 				"mpich2 jobs.";
 			// 
@@ -151,7 +151,7 @@ namespace wmpiregister
 			this.usage2_label.Location = new System.Drawing.Point(24, 56);
 			this.usage2_label.Name = "usage2_label";
 			this.usage2_label.Size = new System.Drawing.Size(224, 48);
-			this.usage2_label.TabIndex = 8;
+			this.usage2_label.TabIndex = 10;
 			this.usage2_label.Text = "The account provided must be a valid user account available on all nodes particip" +
 				"ating in mpich2 jobs.";
 			// 
@@ -160,7 +160,7 @@ namespace wmpiregister
 			this.example_label.Location = new System.Drawing.Point(24, 104);
 			this.example_label.Name = "example_label";
 			this.example_label.Size = new System.Drawing.Size(120, 40);
-			this.example_label.TabIndex = 9;
+			this.example_label.TabIndex = 11;
 			this.example_label.Text = "Example: mydomain\\myaccount or myaccount";
 			// 
 			// result_textBox
@@ -170,7 +170,7 @@ namespace wmpiregister
 			this.result_textBox.Name = "result_textBox";
 			this.result_textBox.ReadOnly = true;
 			this.result_textBox.Size = new System.Drawing.Size(272, 64);
-			this.result_textBox.TabIndex = 10;
+			this.result_textBox.TabIndex = 8;
 			this.result_textBox.Text = "";
 			// 
 			// ok_button
@@ -178,7 +178,7 @@ namespace wmpiregister
 			this.ok_button.Location = new System.Drawing.Point(152, 216);
 			this.ok_button.Name = "ok_button";
 			this.ok_button.Size = new System.Drawing.Size(56, 23);
-			this.ok_button.TabIndex = 11;
+			this.ok_button.TabIndex = 6;
 			this.ok_button.Text = "OK";
 			this.ok_button.Click += new System.EventHandler(this.ok_button_Click);
 			// 
