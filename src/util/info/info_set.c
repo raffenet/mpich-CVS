@@ -109,7 +109,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 
     if (!curr_ptr) {
 	/* Key not present, insert value */
-	curr_ptr         = MPIU_Info_create();
+	curr_ptr         = (MPID_Info *)MPIU_Handle_obj_new( &MPID_Info_mem );
 	if (!curr_ptr) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
 					      "**nomem" );

@@ -125,7 +125,7 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
 /* Known MPI object types.  These are used for both the error handlers 
-   and for the handles.  This is a 3 bit value */
+   and for the handles.  This is a 4 bit value */
 typedef enum { 
   MPID_COMM       = 0x0, 
   MPID_GROUP      = 0x1,
@@ -135,8 +135,10 @@ typedef enum {
   MPID_OP         = 0x5,
   MPID_INFO       = 0x6,
   MPID_WIN        = 0x7,
+  MPID_KEYVAL     = 0x8,
   } MPID_Object_kind;
-#define HANDLE_GET_MPI_KIND(a) ( ((a)&0x38000000) >> 27 )
+#define HANDLE_MPI_KIND_SHIFT 26
+#define HANDLE_GET_MPI_KIND(a) ( ((a)&0x3c000000) >> HANDLE_MPI_KIND_SHIFT )
 
 /* Handle types.  These are really 2 bits */
 #define HANDLE_KIND_INVALID  0x0
@@ -144,26 +146,29 @@ typedef enum {
 #define HANDLE_KIND_DIRECT   0x2
 #define HANDLE_KIND_INDIRECT 0x3
 /* Mask assumes that ints are at least 4 bytes */
-#define HANDLE_KIND_MASK 0xC0000000
-#define HANDLE_GET_KIND(a) (((a)&HANDLE_KIND_MASK)>>30)
-#define HANDLE_SET_KIND(a,kind) ((a)|(kind)>>30)
+#define HANDLE_KIND_MASK 0xc0000000
+#define HANDLE_KIND_SHIFT 30
+#define HANDLE_GET_KIND(a) (((a)&HANDLE_KIND_MASK)>>HANDLE_KIND_SHIFT)
+#define HANDLE_SET_KIND(a,kind) ((a)|((kind)<<HANDLE_KIND_SHIFT))
 
 /* For indirect, the remainder of the handle has a block and index */
-#define HANDLE_BLOCK(a) (((a)& 0x07FF0000) >> 16)
+#define HANDLE_INDIRECT_SHIFT 16
+#define HANDLE_BLOCK(a) (((a)& 0x03FF0000) >> HANDLE_INDIRECT_SHIFT)
 #define HANDLE_BLOCK_INDEX(a) ((a) & 0x0000FFFF)
 
 /* For direct, the remainder of the handle is the index into a predefined 
    block */
-#define HANDLE_MASK 0x07FFFFFF
+#define HANDLE_MASK 0x03FFFFFF
 #define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
 
-/* Handle block is between 1 and 2048 *elements* */
+/* Handle block is between 1 and 1024 *elements* */
 #define HANDLE_BLOCK_SIZE 256
 /* Index size is bewtween 1 and 65536 *elements* */
 #define HANDLE_BLOCK_INDEX_SIZE 1024
 
 #define PREDEFINED_HANDLE(name,index) \
-     (HANDLE_KIND_DIRECT << 30) | (MPID_##name <<27) | index
+     (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | \
+     (MPID_##name << HANDLE_MPI_KIND_SHIFT) | index
 
 /* ALL objects have the id as the first value. */
 /* Inactive (unused and stored on the appropriate avail list) objects 
@@ -182,25 +187,47 @@ typedef struct {
     volatile int ref_count;
 } MPIU_Handle_head;
 
+/* This type contains all of the data, except for the direct array,
+   used by the object allocators. */
+typedef struct {
+    MPIU_Handle_common *avail;          /* Next available object */
+    int                initialized;     /* */
+    void              *(*indirect)[];   /* Pointer to indirect object blocks */
+    int                indirect_size;   /* Number of allocated indirect blocks */
+    MPID_Object_kind   kind;            /* Kind of object this is for */
+    int                size;            /* Size of an individual object */
+    void               *direct;         /* Pointer to direct block, used 
+					   for allocation */
+    int                direct_size;     /* Size of direct block */
+} MPIU_Object_alloc_t;
+extern void *MPIU_Handle_obj_new( MPIU_Object_alloc_t * );
+extern void MPIU_Handle_obj_free( MPIU_Object_alloc_t *, void * );
+void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
+
 /* This isn't quite right, since we need to distinguish between multiple 
    user threads and multiple implementation threads.
  */
 #ifdef MPICH_SINGLE_THREADED
 #define MPID_Object_add_ref(objptr) \
     ((MPIU_Handle_head*)(objptr))->ref_count++
-#define MPID_Object_release_ref(objptr) \
-    --((MPIU_Handle_head*)(objptr))->ref_count
+#define MPID_Object_release_ref(objptr,newval_ptr) \
+    *(newval)=--((MPIU_Handle_head*)(objptr))->ref_count
 #else
 /* These can be implemented using special assembly language operations
    on most processors.  If no such operation is available, then each
-   object, in addition to the ref_count field, must have a thread-lock. */
+   object, in addition to the ref_count field, must have a thread-lock. 
+   
+   We also need the old value when decrementing so that we can see if
+   we must deallocate the object.  This fetch and decrement must be 
+   atomic so that multiple threads don't decide that they were 
+   responsible for setting the value to zero.
+ */
 #define MPID_Object_add_ref(objptr) \
     {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
     MPID_Thread_unlock(&(objptr)->mutex);}
-#define MPID_Object_release_ref(objptr) \
-    (MPID_Thread_lock(&(objptr)->mutex),obj_count=--(objptr)->ref_count,\
-    MPID_Thread_unlock(&(objptr)->mutex),obj_count)
-static int obj_count;
+#define MPID_Object_release_ref(objptr,newval_ptr) \
+    {MPID_Thread_lock(&(objptr)->mutex);*(newval_ptr)=--(objptr)->ref_count;\
+    MPID_Thread_unlock(&(objptr)->mutex);}
 #endif
 
 /* Routines to initialize handle allocations */
@@ -216,7 +243,8 @@ int MPIU_Handle_free( void *((*)[]), int );
       case HANDLE_KIND_INVALID: ptr=0; break;\
       case HANDLE_KIND_BUILTIN: ptr=0;break;\
       case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
-      case HANDLE_KIND_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
+      case HANDLE_KIND_INDIRECT: \
+      ptr=(MPID_##kind*)MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem);break;\
      }
 #define MPID_Comm_get_ptr(a,ptr) MPID_Get_ptr(Comm,a,ptr)
 #define MPID_Group_get_ptr(a,ptr) MPID_Get_ptr(Group,a,ptr)
@@ -249,10 +277,9 @@ typedef struct MPID_Info_s {
     char               *key;
     char               *value;
 } MPID_Info;
+extern MPIU_Object_alloc_t MPID_Info_mem;
 /* Preallocated info objects */
 extern MPID_Info MPID_Info_direct[];
-/* Function to access indirect objects */
-extern MPID_Info *MPID_Info_Get_ptr_indirect( int handle );
 
 /* Error Handlers */
 typedef union {
@@ -289,6 +316,7 @@ typedef union {
 			      void *, void *, void *, int * );
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
+
 typedef union {
   int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
@@ -299,6 +327,7 @@ typedef union {
   int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
   
 } MPID_Delete_function;
+
 typedef struct {
     int                  id;
     volatile int         ref_count;
@@ -309,6 +338,7 @@ typedef struct {
     MPID_Delete_function delfn;
   /* other, device-specific information */
 } MPID_Keyval;
+
 typedef struct {
     void *      value;              /* Stored value */
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
@@ -323,10 +353,10 @@ typedef struct {
 				    process number */
   /* other, device-specific information */
 } MPID_Group;
+
+extern MPIU_Object_alloc_t MPID_Group_mem;
 /* Preallocated group objects */
 extern MPID_Group MPID_Group_direct[];
-/* Function to access indirect objects */
-extern MPID_Group *MPID_Group_Get_ptr_indirect( int handle );
 
 /* Communicators */
 typedef struct { 
@@ -351,10 +381,9 @@ typedef struct {
 				      in this communicator belong to the
 				      same method */
 } MPID_Comm;
+extern MPIU_Object_alloc_t MPID_Comm_mem;
 /* Preallocated comm objects */
 extern MPID_Comm MPID_Comm_direct[];
-/* Function to access indirect objects */
-extern MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle );
 
 /* Windows */
 typedef struct {
@@ -363,10 +392,9 @@ typedef struct {
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 } MPID_Win;
+extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
 extern MPID_Win MPID_Win_direct[];
-/* Function to access indirect objects */
-extern MPID_Win *MPID_Win_Get_ptr_indirect( int handle );
 
 /* Datatypes */
 
@@ -421,20 +449,18 @@ typedef struct MPID_Datatype_st {
 
     /* other, device-specific information */
 } MPID_Datatype;
+extern MPIU_Object_alloc_t MPID_Datatype_mem;
 /* Preallocated datatype objects */
 extern MPID_Datatype MPID_Datatype_direct[];
-/* Function to access indirect objects */
-extern MPID_Datatype *MPID_Datatype_Get_ptr_indirect( int handle );
 
 typedef struct {
     int           id;             /* value of MPI_File for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
 } MPID_File;
+extern MPIU_Object_alloc_t MPID_File_mem;
 /* Preallocated file objects */
 extern MPID_File MPID_File_direct[];
-/* Function to access indirect objects */
-extern MPID_File *MPID_File_Get_ptr_indirect( int handle );
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is

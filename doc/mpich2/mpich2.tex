@@ -879,17 +879,20 @@ bad parameters passed to us (although negative ints won't be caught).
 \code{MPI_BYTE} and \code{MPI_DOUBLE} as well as the predefined communicators
 \code{MPI_COMM_WORLD} and \code{MPI_COMM_SELF}.
 
-The next three highest bits will encode the MPI type stored:
+The next four highest bits will encode the MPI type stored:
 \begin{description}
-\item[\code{MPI_Comm}]     (000) \mpidconst{MPID_COMM}
-\item[\code{MPI_Group}]    (001) \mpidconst{MPID_GROUP}
-\item[\code{MPI_Datatype}] (010) \mpidconst{MPID_DATATYPE}
-\item[\code{MPI_File}]     (011) \mpidconst{MPID_FILE}
-\item[\code{MPI_Errhandler}](100) \mpidconst{MPID_ERRHANDLER}
-\item[\code{MPI_Op}]       (101) \mpidconst{MPID_OP}
-\item[\code{MPI_Info}]     (110) \mpidconst{MPID_INFO}
-\item[\code{MPI_Win}]      (111) \mpidconst{MPID_WIN}
+\item[\code{MPI_Comm}]     (0000) \mpidconst{MPID_COMM}
+\item[\code{MPI_Group}]    (0001) \mpidconst{MPID_GROUP}
+\item[\code{MPI_Datatype}] (0010) \mpidconst{MPID_DATATYPE}
+\item[\code{MPI_File}]     (0011) \mpidconst{MPID_FILE}
+\item[\code{MPI_Errhandler}](0100) \mpidconst{MPID_ERRHANDLER}
+\item[\code{MPI_Op}]       (0101) \mpidconst{MPID_OP}
+\item[\code{MPI_Info}]     (0110) \mpidconst{MPID_INFO}
+\item[\code{MPI_Win}]      (0111) \mpidconst{MPID_WIN}
+\item[keyval]              (1000) \mpidconst{MPID_KEYVAL}
 \end{description}
+MPI \code{keyval}s are defined as type integer, but each keyval is associated
+with a structure.  
 The macro \code{HANDLE_MPI_TYPE(id)} returns this value as an integer in
 the range $0$--$7$.  The names belong to the enum type
 \mpidconst{MPID_Object_kind}. 
@@ -1049,8 +1052,8 @@ pseudocode,
 while (ptr = avail) {
     char flag;
     nxt = ptr->next; 
-    flag = 0
-    asm( %eax = avail; lock ; cmpxchg avail,nxt ; sete flag );
+    flag = 0;
+    asm( %eax = ptr; lock ; cmpxchg avail,nxt ; sete flag );
     if (flag) break;
 }
 \end{verbatim}
@@ -1058,8 +1061,21 @@ The \code{asm} code is not correct and merely indicates the instructions
 needed; the \code{sete} instruction is used to set the flag if the compare and
 exchange (\code{cmpxchg}) succeeded.  The pseudoinstruction \code{lock} is
 actually an opcode prefix that causes the \code{cmpxchg} instruction to happen
-atomically (this is the default on some but not all Pentiums).
-Note that this code does not require any thread locks.
+atomically (this is the default on some but not all Pentiums).  Finally,
+if \code{avail} is null this code falls through; that case requires special
+handling and is discussed below.
+
+Note that this code does not require any thread locks.  Similar code may be
+used to free an object:
+\begin{verbatim}
+while (ptr = avail) {
+    char flag;
+    obj->next = ptr;
+    flag = 0;
+    asm( %eax = ptr; lock ; cmpxchg avail,obj ; sete flag );
+    if (flag) break;
+}
+\end{verbatim}
 
 For a generic RISC processor that supports a load-link and store-conditional
 instruction, the pseudocode is
@@ -1074,7 +1090,8 @@ instruction, the pseudocode is
      )
 \end{verbatim}
 As above, this \code{asm} code is not correct on simply sketches the
-operations that are necessary.
+operations that are necessary.  Similar code is used to free an object.
+
 In both of these cases, the \mpids{MPIR_Process}{allocation_lock} is still
 needed when allocating new blocks of storage; this code is invoked when a
 thread detects that \code{avail} is \code{NULL}.  A sketch of the appropriate
@@ -1093,6 +1110,7 @@ code is
        /* Call routine to get new storage */
        ptr = MPIU_Handle_indirect_init( ... );
        if (ptr) {
+           /* As soon as avail is set, some other thread may make use of it */
            avail = ptr->next;
        }
    MPID_Allocation_unlock();

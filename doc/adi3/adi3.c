@@ -189,10 +189,11 @@ void MPID_Object_add_ref( MPIU_Object_head *ptr )
    MPIU_Object_release_ref - Decrement the reference count for an MPI object
 
    Input Parameter:
-.  ptr - Pointer to the object.
+.  objptr - Pointer to the object.
 
-   Return value:
-   Value of the reference count after decrementing.
+   Output Parameter:
+.  newval_ptr - Pointer to the value of the reference count after decrementing.
+   This value is either zero or non-zero. See below for details.
    
    Notes:
    In an unthreaded implementation, this function will usually be implemented
@@ -205,15 +206,19 @@ void MPID_Object_add_ref( MPIU_Object_head *ptr )
       sub                1 to r2
       store-conditional  r2 to refcount-address
       if failed branch to try-again:
+      store              r2 to newval_ptr
 .ve
    on RISC architectures or
 .vb
-   lock
-   dec                   refcount-address or
+      lock
+      dec                   refcount-address 
+      if zf store 0 to newval_ptr else store 1 to newval_ptr
 .ve
    on IA32; "lock" is a special opcode prefix that forces atomicity.  This 
    is not a separate instruction; however, the GNU assembler expects opcode
-   prefixes on a separate line.
+   prefixes on a separate line.  'zf' is the zero flag; this is set if the
+   result of the operation is zero.  Implementing a full decrement-and-fetch
+   would require more code and the compare and swap instruction.
 
    Once the reference count is decremented to zero, it is an error to 
    change it.  A correct MPI program will never do that, but an incorrect one 

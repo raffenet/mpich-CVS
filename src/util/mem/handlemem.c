@@ -118,7 +118,8 @@ void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
 	hptr = (MPIU_Handle_common *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (HANDLE_KIND_DIRECT << 30) | (handle_type << 27) | i;
+	hptr->id   = (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
+	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
 	}
     hptr->next = 0;
     return direct;
@@ -163,8 +164,9 @@ void *MPIU_Handle_indirect_init( void *(**indirect)[], int *indirect_size,
 	hptr       = (MPIU_Handle_common *)ptr;
 	ptr        = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (HANDLE_KIND_INDIRECT << 30) | (handle_type << 27) | 
-	    (*indirect_size << 16) | i;
+	hptr->id   = (HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
+	    (handle_type << HANDLE_MPI_KIND_SHIFT) | 
+	    (*indirect_size << HANDLE_INDIRECT_SHIFT) | i;
     }
     hptr->next = 0;
     /* We're here because avail is null, so there is no need to set 
@@ -181,6 +183,115 @@ void *MPIU_Handle_indirect_init( void *(**indirect)[], int *indirect_size,
   key or value.
 
  */
+
+static int MPIU_Handle_finalize( void *objmem_ptr )
+{
+    MPIU_Object_alloc_t *objmem = (MPIU_Object_alloc_t *)objmem_ptr;
+
+    (void)MPIU_Handle_free( objmem->indirect, objmem->indirect_size );
+    /* This does *not* remove any Info objects that the user created 
+       and then did not destroy */
+    return 0;
+}
+/* Create an object using the handle allocator */
+void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
+{
+    MPIU_Handle_common *ptr;
+    int objsize, objkind;
+
+    /* Lock if necessary */
+    MPID_Allocation_lock();
+
+    if (objmem->avail) {
+	ptr		    = objmem->avail;
+	objmem->avail       = objmem->avail->next;
+	ptr->next	    = 0;
+	/* Unlock */
+	MPID_Allocation_unlock();
+	/* printf ("returning info %x\n", ptr->id ); */
+	return ptr;
+    }
+
+    objsize = objmem->size;
+    objkind = objmem->kind;
+    if (!objmem->initialized) {
+	/* Setup the first block.  This is done here so that short MPI
+	   jobs do not need to include any of the Info code if no
+	   Info-using routines are used */
+	/* Tell finalize to free up any memory that we allocate */
+	MPIR_Add_finalize( MPIU_Handle_finalize, objmem );
+
+	objmem->initialized = 1;
+	ptr   = MPIU_Handle_direct_init( MPID_Info_direct, objmem->direct_size,
+					 objsize, objkind );
+	if (ptr)
+	    objmem->avail = ptr->next;
+	/* unlock */
+	MPID_Allocation_unlock();
+	return ptr;
+    }
+
+    ptr = MPIU_Handle_indirect_init( &objmem->indirect, 
+				     &objmem->indirect_size, 
+				     HANDLE_BLOCK_SIZE, 
+				     HANDLE_BLOCK_INDEX_SIZE,
+				     objsize, objkind );
+    if (ptr)
+	objmem->avail = ptr->next;
+
+    /* Unlock */
+    MPID_Allocation_unlock();
+    return ptr;
+}   
+
+void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
+{
+    MPIU_Handle_common *obj = (MPIU_Handle_common *)object;
+    /* Lock */
+    MPID_Allocation_lock();
+    obj->next	        = objmem->avail;
+    objmem->avail	= obj;
+    /* Unlock */
+    MPID_Allocation_unlock();
+}
+
+/* 
+ * Get an pointer to dynamically allocated storage for Info objects.
+ * This has an MPID prefix to simplify the "get object" routines
+ */
+void *MPIU_Handle_get_ptr_indirect( int handle, MPIU_Object_alloc_t *objmem )
+{
+    int block_num, index_num;
+
+    /* Check for a valid handle type */
+    if (HANDLE_GET_MPI_KIND(handle) != objmem->kind) {
+	return 0;
+    }
+
+    /* Find the block */
+    block_num = HANDLE_BLOCK(handle);
+    if (block_num >= objmem->indirect_size) {
+	return 0;
+    }
+    
+    /* Find the entry */
+    index_num = HANDLE_BLOCK_INDEX(handle);
+    /* If we could declare the blocks to a known size object, we
+     could do something like 
+       return &( (MPID_Info**)*MPIU_Info_mem.indirect)[block_num][index_num];
+     since we cannot, we do the calculation by hand.
+    */
+    /* Get the pointer to the block of addresses.  This is an array of 
+       void * */
+    {
+	char *block_ptr;
+	/* Get the pointer to the block */
+	block_ptr = (char *)(*(objmem->indirect))[block_num];
+	/* Get the item */
+	block_ptr += index_num * objmem->size;
+	return block_ptr;
+    }
+}
 
 /* For debugging */
 void MPIU_Print_handle( int handle )

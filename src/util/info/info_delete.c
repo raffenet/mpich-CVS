@@ -92,7 +92,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 	    MPIU_Free(curr_ptr->key);   
 	    MPIU_Free(curr_ptr->value);
 	    prev_ptr->next = curr_ptr->next;
-	    MPIU_Info_destroy( curr_ptr );
+	    MPIU_Handle_obj_free( &MPID_Info_mem, curr_ptr );
 	    break;
 	}
 	prev_ptr = curr_ptr;

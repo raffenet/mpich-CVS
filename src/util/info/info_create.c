@@ -65,7 +65,7 @@ int MPI_Info_create( MPI_Info *info )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    info_ptr = MPIU_Info_create();
+    info_ptr = (MPID_Info *)MPIU_Handle_obj_new( &MPID_Info_mem );
     if (!info_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
