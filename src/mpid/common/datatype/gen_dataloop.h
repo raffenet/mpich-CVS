@@ -214,6 +214,7 @@ typedef struct DLOOP_Dataloop {
 			   * needed to get the packed size right at the moment.
 			   */
     DLOOP_Offset el_extent;
+    DLOOP_Type   el_type;
 } DLOOP_Dataloop;
 
 #define DLOOP_FINAL_MASK 0x00000008
