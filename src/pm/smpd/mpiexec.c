@@ -8,46 +8,169 @@
 #include "mpiexec.h"
 #include "smpd.h"
 
-int g_bDoConsole = 0;
-char g_pszConsoleHost[SMPD_MAX_HOST_LENGTH];
-mp_host_node_t *g_host_list = NULL;
+mp_process_t mp_process =
+{
+    SMPD_FALSE,
+    "",
+    NULL,
+    SMPD_TRUE,
+    SMPD_TRUE,
+    SMPD_FALSE,
+    SMPD_FALSE,
+    SMPD_FALSE,
+    SMPD_FALSE,
+    SMPD_FALSE
+};
+
+void mp_print_options(void)
+{
+    printf("\n");
+    printf("Usage:\n");
+    printf("   mpiexec -n #processes [options] executable [args ...]\n");
+    printf("   mpiexec [options] configfile [args ...]\n");
+    printf("\n");
+    printf("mpiexec options:\n");
+    printf("   -n num_processes\n");
+    printf("   -host hostname\n");
+    printf("   -env var=val\n");
+    printf("   -wdir drive:\\my\\working\\directory\n");
+    printf("   -wdir /my/working/directory\n");
+    printf("   -file configfile\n");
+    printf("\n");
+    printf("For a list of all mpiexec options, execute 'mpiexec -help2'\n");
+    printf("\n");
+}
+
+void mp_print_extra_options(void)
+{
+    printf("\n");
+    printf("All options to mpiexec:\n");
+    printf("\n");
+    printf("-n x\n");
+    printf("-np x\n");
+    printf("  launch x processes\n");
+    printf("-localonly x\n");
+    printf("-np x -localonly\n");
+    printf("  launch x processes on the local machine\n");
+    printf("-machinefile filename\n");
+    printf("  use a file to list the names of machines to launch on\n");
+    printf("-host hostname\n");
+    printf("-hosts n host1 host2 ... hostn\n");
+    printf("-hosts n host1 m1 host2 m2 ... hostn mn\n");
+    printf("  launch on the specified hosts\n");
+    printf("  In the second version the number of processes = m1 + m2 + ... + mn\n");
+    printf("-map drive:\\\\host\\share\n");
+    printf("  map a drive on all the nodes\n");
+    printf("  this mapping will be removed when the processes exit\n");
+    printf("-dir drive:\\my\\working\\directory\n");
+    printf("-wdir /my/working/directory\n");
+    printf("  launch processes in the specified directory\n");
+    printf("-env var=val\n");
+    printf("-env \"var1=val1;var2=val2;var3=val3...\"\n");
+    printf("  set environment variables before launching the processes\n");
+    printf("-logon\n");
+    printf("  prompt for user account and password\n");
+    printf("-pwdfile filename\n");
+    printf("  read the account and password from the file specified\n");
+    printf("  put the account on the first line and the password on the second\n");
+    printf("-nocolor\n");
+    printf("  don't use process specific output coloring\n");
+    printf("-nompi\n");
+    printf("  launch processes without the mpi startup mechanism\n");
+    printf("-nomapping\n");
+    printf("  don't try to map the current directory on the remote nodes\n");
+    printf("-nopopup_debug\n");
+    printf("  disable the system popup dialog if the process crashes\n");
+    printf("-dbg\n");
+    printf("  catch unhandled exceptions\n");
+    printf("-exitcodes\n");
+    printf("  print the process exit codes when each process exits.\n");
+    printf("-noprompt\n");
+    printf("  prevent mpirun from prompting for user credentials.\n");
+    printf("-priority class[:level]\n");
+    printf("  set the process startup priority class and optionally level.\n");
+    printf("  class = 0,1,2,3,4   = idle, below, normal, above, high\n");
+    printf("  level = 0,1,2,3,4,5 = idle, lowest, below, normal, above, highest\n");
+    printf("  the default is -priority 1:3\n");
+    printf("-localroot\n");
+    printf("  launch the root process without smpd if the host is local.\n");
+    printf("  (This allows the root process to create windows and be debugged.)\n");
+    printf("-iproot\n");
+    printf("-noiproot\n");
+    printf("  use or not the ip address of the root host instead of the host name.\n");
+}
+
+static int strip_args(int *argcp, char **argvp[], int n)
+{
+    int i;
+
+    if (n+1 > (*argcp))
+    {
+	printf("Error: cannot strip %d args, only %d left.\n", n, (*argcp)-1);
+	return SMPD_FAIL;
+    }
+    for (i=n+1; i<=(*argcp); i++)
+    {
+	(*argvp)[i-n] = (*argvp)[i];
+    }
+    (*argcp) -= n;
+    return SMPD_SUCCESS;
+}
+
+static int isnumber(char *str)
+{
+    size_t i, n = strlen(str);
+    for (i=0; i<n; i++)
+    {
+	if (!isdigit(str[i]))
+	    return SMPD_FALSE;
+    }
+    return SMPD_TRUE;
+}
 
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
-    mp_host_node_t *node;
-    char host[MP_MAX_HOST_LENGTH];
-    int found;
+    /*mp_host_node_t *node;*/
+    /*char host[MP_MAX_HOST_LENGTH];*/
+    /*int found;*/
     int cur_rank;
-    int n, parent, id;
+    /*int n, parent, id;*/
     int argc, next_argc;
     char **next_argv;
     char *exe_ptr;
+    int num_args_to_strip;
+    int nproc;
+    int run_local = SMPD_FALSE;
+    char machine_file_name[MP_MAX_EXE_LENGTH];
+    int use_machine_file = SMPD_FALSE;
+    mp_map_drive_node *map_node, *drive_map_list;
+    mp_env_node *env_node, *env_list;
+    char *equal_sign_pos;
+    char wdir[MP_MAX_EXE_LENGTH];
+    int logon;
+    int use_debug_flag;
+    char pwd_file_name[MP_MAX_EXE_LENGTH];
+    int use_pwd_file;
+    mp_host_node_t *host_node_ptr, *host_list, *host_node_iter;
+    int no_drive_mapping;
+    int n_priority_class, n_priority, use_priorities;
+    int index, i;
 
     mp_enter_fn("mp_parse_command_args");
 
     /* check for console option */
-    if (smpd_get_opt_string(argcp, argvp, "-console", g_pszConsoleHost, SMPD_MAX_HOST_LENGTH))
+    if (smpd_get_opt_string(argcp, argvp, "-console", mp_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
-	g_bDoConsole = 1;
+	mp_process.do_console = 1;
     }
     if (smpd_get_opt(argcp, argvp, "-console"))
     {
-	g_bDoConsole = 1;
-	gethostname(g_pszConsoleHost, SMPD_MAX_HOST_LENGTH);
+	mp_process.do_console = 1;
+	gethostname(mp_process.console_host, SMPD_MAX_HOST_LENGTH);
     }
     if (smpd_get_opt(argcp, argvp, "-p"))
     {
-	g_bUseProcessSession = 1;
-    }
-    if (smpd_get_opt_int(argcp, argvp, "-tree", &n))
-    {
-	while (n)
-	{
-	    mp_connect_next(&parent, &id);
-	    printf("connect: %d -> %d\n", parent, id);
-	    n--;
-	}
-	exit(0);
+	mp_process.use_process_session = 1;
     }
     
     /* check for mpi options */
@@ -116,7 +239,283 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
 	argcp = &argc;
 
+	/* reset block global variables */
+	nproc = 0;
+	drive_map_list = NULL;
+	env_list = NULL;
+	wdir[0] = '\0';
+	logon = SMPD_FALSE;
+	use_debug_flag = SMPD_FALSE;
+	use_pwd_file = SMPD_FALSE;
+	host_list = NULL;
+	no_drive_mapping = SMPD_FALSE;
+	use_priorities = SMPD_FALSE;
+
 	/* parse the current block */
+	while ((*argvp)[1] && (*argvp)[1][0] == '-')
+	{
+	    num_args_to_strip = 1;
+	    if ((strcmp(&(*argvp)[1][1], "np") == 0) || (strcmp(&(*argvp)[1][1], "n") == 0))
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no number specified after %s option.\n", (*argvp)[1]);
+		    return SMPD_FAIL;
+		}
+		nproc = atoi((*argvp)[2]);
+		if (nproc < 1)
+		{
+		    printf("Error: must specify a number greater than 0 after the %s option\n", (*argvp)[1]);
+		    return SMPD_FAIL;
+		}
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "localonly") == 0)
+	    {
+		run_local = SMPD_TRUE;
+		if (argc > 2)
+		{
+		    if (isnumber((*argvp)[2]))
+		    {
+			nproc = atoi((*argvp)[2]);
+			if (nproc < 1)
+			{
+			    printf("Error: If you specify a number after -localonly option,\n        it must be greater than 0.\n");
+			    return SMPD_FAIL;
+			}
+			num_args_to_strip = 2;
+		    }
+		}
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "machinefile") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no filename specified after -machinefile option.\n");
+		    return SMPD_FAIL;
+		}
+		strcpy(machine_file_name, (*argvp)[2]);
+		use_machine_file = SMPD_TRUE;
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "map") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no drive specified after -map option.\n");
+		    return SMPD_FAIL;
+		}
+		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
+		{
+		    map_node = (mp_map_drive_node*)malloc(sizeof(mp_map_drive_node));
+		    if (map_node == NULL)
+		    {
+			printf("Error: malloc failed to allocate map structure.\n");
+			return SMPD_FAIL;
+		    }
+		    map_node->drive = (*argvp)[2][0];
+		    strcpy(map_node->share, &(*argvp)[2][2]);
+		    map_node->next = drive_map_list;
+		    drive_map_list = map_node;
+		}
+		num_args_to_strip = 2;
+	    }
+	    else if ( (strcmp(&(*argvp)[1][1], "dir") == 0) || (strcmp(&(*argvp)[1][1], "wdir") == 0) )
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no directory after %s option\n", (*argvp)[1]);
+		    return SMPD_FAIL;
+		}
+		strcpy(wdir, (*argvp)[2]);
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no environment variables after -env option\n");
+		    return SMPD_FAIL;
+		}
+		env_node = (mp_env_node*)malloc(sizeof(mp_env_node));
+		if (env_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    return SMPD_FAIL;
+		}
+		equal_sign_pos = strstr((*argvp)[2], "=");
+		if (equal_sign_pos == NULL)
+		{
+		    printf("Error: improper environment variable option. '%s %s' is not in the format '-env var=value'\n",
+			(*argvp)[1], (*argvp)[2]);
+		    return SMPD_FAIL;
+		}
+		*equal_sign_pos = '\0';
+		strcpy(env_node->name, (*argvp)[2]);
+		strcpy(env_node->value, equal_sign_pos+1);
+		env_node->next = env_list;
+		env_list = env_node;
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
+	    {
+		logon = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
+	    {
+		mp_process.credentials_prompt = SMPD_FALSE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "dbg") == 0)
+	    {
+		use_debug_flag = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "pwdfile") == 0)
+	    {
+		use_pwd_file = SMPD_TRUE;
+		if (argc < 3)
+		{
+		    printf("Error: no filename specified after -pwdfile option\n");
+		    return SMPD_FAIL;
+		}
+		strcpy(pwd_file_name, (*argvp)[2]);
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "host") == 0)
+	    {
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
+	    {
+		if (nproc != 0)
+		{
+		    printf("Error: only one option is allowed to determine the number of processes.\n");
+		    printf("       -hosts cannot be used with -n, -np or -localonly\n");
+		    return SMPD_FAIL;
+		}
+		if (argc > 2)
+		{
+		    if (isnumber((*argvp)[2]))
+		    {
+			nproc = atoi((*argvp)[2]);
+			if (nproc < 1)
+			{
+			    printf("Error: You must specify a number greater than 0 after -hosts.\n");
+			    return SMPD_FAIL;
+			}
+			num_args_to_strip = 2 + nproc;
+			index = 3;
+			for (i=0; i<nproc; i++)
+			{
+			    if (index >= argc)
+			    {
+				printf("Error: missing host name after -hosts option.\n");
+				return SMPD_FAIL;
+			    }
+			    host_node_ptr = (mp_host_node_t*)malloc(sizeof(mp_host_node_t));
+			    host_node_ptr->next = NULL;
+			    host_node_ptr->nproc = 1;
+			    strcpy(host_node_ptr->host, (*argvp)[index]);
+			    index++;
+			    if (argc > index)
+			    {
+				if (isnumber((*argvp)[index]))
+				{
+				    host_node_ptr->nproc = atoi((*argvp)[index]);
+				    index++;
+				    num_args_to_strip++;
+				}
+			    }
+			    if (host_list == NULL)
+			    {
+				host_list = host_node_ptr;
+			    }
+			    else
+			    {
+				host_node_iter = host_list;
+				while (host_node_iter->next)
+				    host_node_iter = host_node_iter->next;
+				host_node_iter->next = host_node_ptr;
+			    }
+			}
+		    }
+		    else
+		    {
+			printf("Error: You must specify the number of hosts after the -hosts option.\n");
+			return SMPD_FAIL;
+		    }
+		}
+		else
+		{
+		    printf("Error: not enough arguments specified for -hosts option.\n");
+		    return SMPD_FAIL;
+		}
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "nocolor") == 0)
+	    {
+		mp_process.do_multi_color_output = SMPD_FALSE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "nompi") == 0)
+	    {
+		mp_process.no_mpi = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "nomapping") == 0)
+	    {
+		no_drive_mapping = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "nopopup_debug") == 0)
+	    {
+#ifdef HAVE_WINDOWS_H
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+#endif
+	    }
+	    /* catch -help, -?, and --help */
+	    else if (strcmp(&(*argvp)[1][1], "help") == 0 || (*argvp)[1][1] == '?' || strcmp(&(*argvp)[1][1], "-help") == 0)
+	    {
+		mp_print_options();
+		return SMPD_FAIL;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "help2") == 0)
+	    {
+		mp_print_extra_options();
+		return SMPD_FAIL;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "exitcodes") == 0)
+	    {
+		mp_process.output_exit_codes = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "localroot") == 0)
+	    {
+		mp_process.local_root = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "priority") == 0)
+	    {
+		char *str;
+		n_priority_class = atoi((*argvp)[2]);
+		str = strchr((*argvp)[2], ':');
+		if (str)
+		{
+		    str++;
+		    n_priority = atoi(str);
+		}
+		mp_dbg_printf("priorities = %d:%d\n", n_priority_class, n_priority);
+		use_priorities = SMPD_TRUE;
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "iproot") == 0)
+	    {
+		mp_process.use_iproot = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "noiproot") == 0)
+	    {
+		mp_process.use_iproot = SMPD_FALSE;
+	    }
+	    else
+	    {
+		printf("Unknown option: %s\n", (*argvp)[1]);
+	    }
+	    strip_args(argcp, argvp, num_args_to_strip);
+	}
+
+	/*
 	while (smpd_get_opt_string(argcp, argvp, "-host", host, MP_MAX_HOST_LENGTH))
 	{
 	    node = g_host_list;
@@ -152,11 +551,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		strcpy(node->host, host);
 		node->ip_str[0] = '\0';
-		node->id = cur_rank;
-		cur_rank++;
 		node->next = NULL;
 	    }
 	}
+	*/
 
 	/* move to the next block */
 	*argvp = next_argv - 1;
@@ -204,18 +602,18 @@ int main(int argc, char* argv[])
     }
 
     /* handle a console session or a job session */
-    if (g_bDoConsole)
+    if (mp_process.do_console)
     {
 	/* do a console session */
 
-	result = mp_console(g_pszConsoleHost);
+	result = mp_console(mp_process.console_host);
     }
     else
     {
 	/* do mpi job */
 
 	/* connect to all the hosts in the job */
-	result = mp_connect_tree(g_host_list);
+	result = mp_connect_tree(mp_process.host_list);
 	if (result != SMPD_SUCCESS)
 	{
 	    mp_err_printf("unable to connect all the hosts in the job.\n");

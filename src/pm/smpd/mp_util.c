@@ -764,7 +764,7 @@ int mp_console(char *host)
 
     /* create a session with the host */
     set = SOCK_INVALID_SET;
-    if (g_bUseProcessSession)
+    if (mp_process.use_process_session)
     {
 	result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, 1, &set, &sock);
     }
