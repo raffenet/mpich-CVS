@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_init failed, sock error:\n%s\n",
+	smpd_err_printf("sock_init failed,\nsock error: %s\n",
 		      get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	goto quit_job;
     }
     smpd_process.set = set;
@@ -95,7 +95,8 @@ int main(int argc, char* argv[])
     result = sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_post_connect failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
+	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
 	goto quit_job;
     }
     result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
@@ -110,7 +111,7 @@ int main(int argc, char* argv[])
     result = sock_set_user_ptr(sock, context);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to set the smpd sock user pointer, sock error:\n%s\n",
+	smpd_err_printf("unable to set the smpd sock user pointer,\nsock error: %s\n",
 	    get_sock_error_string(result));
 	goto quit_job;
     }
@@ -128,7 +129,7 @@ quit_job: /* use a goto label to avoid deep indenting in the above code */
     result = sock_finalize();
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
 
 #ifdef HAVE_WINDOWS_H

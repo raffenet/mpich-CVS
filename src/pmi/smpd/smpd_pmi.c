@@ -188,7 +188,7 @@ int PMI_Init(int *spawned)
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
-	pmi_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	pmi_err_printf("sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
 	return PMI_FAIL;
     }
 
@@ -340,7 +340,7 @@ int PMI_Finalize()
 	result = sock_finalize();
 	if (result != SOCK_SUCCESS)
 	{
-	    pmi_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
+	    pmi_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
     }
 

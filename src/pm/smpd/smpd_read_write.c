@@ -69,7 +69,7 @@ int smpd_read(sock_t sock, void *buf, sock_size_t len)
 	result = sock_read(sock, buf, len, &num_read);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("Unable to read %d bytes, sock error:\n%s\n", len, get_sock_error_string(result));
+	    smpd_err_printf("Unable to read %d bytes,\nsock error: %s\n", len, get_sock_error_string(result));
 	    smpd_exit_fn("smpd_read");
 	    return SMPD_FAIL;
 	}
@@ -113,7 +113,7 @@ int smpd_write(sock_t sock, void *buf, sock_size_t len)
 	result = sock_write(sock, buf, len, &num_written);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("Unable to write %d bytes, sock error:\n%s\n", len, get_sock_error_string(result));
+	    smpd_err_printf("Unable to write %d bytes,\nsock error: %s\n", len, get_sock_error_string(result));
 	    smpd_exit_fn("smpd_write");
 	    return SMPD_FAIL;
 	}
@@ -159,7 +159,7 @@ int smpd_write_string(sock_t sock, char *str)
 	result = sock_write(sock, str, len, &num_written);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("Unable to write string of length %d, sock error:\n%s\n", len, get_sock_error_string(result));
+	    smpd_err_printf("Unable to write string of length %d,\nsock error: %s\n", len, get_sock_error_string(result));
 	    smpd_exit_fn("smpd_write_string");
 	    return SMPD_FAIL;
 	}
@@ -199,7 +199,7 @@ static int read_string(sock_t sock, char *str, int maxlen)
 	    return total;
 	result = sock_read(sock, &ch, 1, &num_bytes);
     }
-    smpd_err_printf("Unable to read a string, sock error:\n%s\n", get_sock_error_string(result));
+    smpd_err_printf("Unable to read a string,\nsock error: %s\n", get_sock_error_string(result));
     return -1;
 }
 
@@ -215,7 +215,7 @@ static int chew_up_string(sock_t sock)
 	    return SMPD_SUCCESS;
 	smpd_read_string(sock, &ch, 1);
     }
-    smpd_err_printf("Unable to read a string, sock error:\n%s\n", get_sock_error_string(result));
+    smpd_err_printf("Unable to read a string,\nsock error: %s\n", get_sock_error_string(result));
     return SMPD_FAIL;
 }
 

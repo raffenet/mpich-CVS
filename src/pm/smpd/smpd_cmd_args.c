@@ -22,7 +22,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     if (smpd_get_opt(argcp, argvp, "-d"))
     {
-	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK;
+	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE;
     }
 
 #ifdef HAVE_WINDOWS_H
@@ -48,7 +48,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	result = sock_create_set(&set);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_create_set(listener) failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_create_set(listener) failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
@@ -58,7 +58,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	result = sock_listen(set, NULL, &port, &listener); 
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_listen failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
@@ -74,7 +74,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	result = sock_set_user_ptr(listener, smpd_process.listener_context);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_set_user_ptr failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return result;
 	}
@@ -131,7 +131,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	result = sock_finalize();
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
 	smpd_exit_fn("smpd_parse_command_args (ExitProcess)");
 	ExitProcess(0);

@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     result = sock_init();
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
     }
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
     }
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     result = sock_listen(set, NULL, &port, &listener); 
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_listen failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
     }
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     result = sock_set_user_ptr(listener, smpd_process.listener_context);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
     }
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     result = sock_finalize();
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
     smpd_exit_fn("main");
     return 0;

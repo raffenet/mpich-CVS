@@ -475,7 +475,7 @@ int smpd_post_read_command(smpd_context_t *context)
     result = sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to post a read for the next command header, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("unable to post a read for the next command header,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_post_read_command");
 	return SMPD_FAIL;
     }
@@ -524,7 +524,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     result = sock_post_writev(context->sock, cmd->iov, 2, NULL);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to post a write for the next command, sock error:\n%s\n", get_sock_error_string(result));
+	smpd_err_printf("unable to post a write for the next command,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_post_write_command");
 	return SMPD_FAIL;
     }
