@@ -65,10 +65,10 @@ This requires an ordered write to the flag value\index{thread overhead!ready
   flag}; that is, there must be a write barrier to flush any pending write
 operations before the flag is written.
 Question: do we want a special ordered-assignment operation that can issue the
-appropriate operation?  E.g., a \mpidfunc{MPID_Write_ordered} macro that takes
+appropriate operation?  E.g., a \mpidfunc{MPID_MemWrite_ordered} macro that takes
 the assignment as an argment?  For example,
 \begin{verbatim}
-#define MPID_Write_ordered(stmt) { asm(wsync); stmt; }
+#define MPID_MemWrite_ordered(stmt) { asm(wsync); stmt; }
 \end{verbatim}
 Note that in OpenMP, this can use the \code{flush} directive, although that
 may require a routine call, since you can't include a \code{\#pragma} within a
@@ -100,7 +100,7 @@ destination buffer according to the \code{datatype1} using
 data must also be remembered (in \mpids{MPID_Request}{recved_format}).
 The buffer that holds the received data must be freed, and any flow control
 updated (e.g., with \mpidfunc{MPID_Flow_recv}).  The request is marked as
-complete (also using the \mpidfunc{MPID_Write_ordered} macro).
+complete (also using the \mpidfunc{MPID_MemWrite_ordered} macro).
 Question: should the status fields be filled in now, or should that be left
 until later in case the user specified \mpiconst{MPI_STATUS_NULL}?
 Question:  Note that no \mpidconst{MPID_Segment} is required in this case
@@ -177,7 +177,7 @@ the low-level part of the ADI.  The request is no longer needed.
 
 \item The data must be sent with rendezvous.
 Create a segment and associated stream.  Save these in the request.
-Mark the send request as ready (\mpidfunc{MPID_Write_ordered}) and use
+Mark the send request as ready (\mpidfunc{MPID_MemWrite_ordered}) and use
 \mpidfunc{MPID_Rhcv} to send a \mpidconst{MPID_Hid_Request_to_send} message to
 the destination.  All further processing will be handled by the communication
 agent. 
@@ -425,7 +425,7 @@ Check remote queue for matching receive request (using
 \begin{enumerate}
 \item If not found, insert (an unexpected receive), set the matching data
   including the sender's 
-  request id, use \mpidfunc{MPID_Write_ordered} to clear the busy flag, and
+  request id, use \mpidfunc{MPID_MemWrite_ordered} to clear the busy flag, and
   return. 
 \item If found, match (remove from queue) and begin transfer.  There are
   several cases:
@@ -433,14 +433,14 @@ Check remote queue for matching receive request (using
     \item The destination buffer is in shared memory and the datatype is
       simple (not the case in this example, but one that must be considered). 
       In this case, copy to the destination buffer (basically
-      \mpidfunc{MPID_Pack}), followed by \mpidfunc{MPID_Write_ordered} to set
+      \mpidfunc{MPID_Pack}), followed by \mpidfunc{MPID_MemWrite_ordered} to set
       the completed flag in the receive request.  Also mark the send request
       as completed.
     \item The destination buffer is not in shared memory, but the total
       message length is small.  In this case, use \mpidfunc{MPID_Pack} to pack
       the message into a shared-memory buffer (Question: who allocates this?
       The sender?  The receiver?) and mark the send request as complete.
-      Use \mpidfunc{MPID_Write_ordered} to mark the receive request as having
+      Use \mpidfunc{MPID_MemWrite_ordered} to mark the receive request as having
       the data but not yet complete (e.g., a final step is needed to move the
       data from shared memory into the user's buffer).  Question: how do we
       indicate this in the request?
@@ -612,21 +612,107 @@ indicating that data has been transferred.
 \clearpage
 
 \subsubsection{Implementation of Point-to-Point}
+\label{sec:pt2pt-implementation}
 This section is a placeholder for pseudocode for the various routines.  They
 are organized by method.
 
+The following sample implementation assumes a homogeneous system (all
+processes use the same data representation).  
+
 \paragraph{\tcpname}
-\mpifunc{MPI_Irecv}:
+This method is a prototype for a TCP method.  
+
+The basic communication is provided by
+\begin{enumerate}
+\item Buffered read and write.  These are roughly like the Unix
+\code{fread} and \code{fwrite}.
+\item Direct read and write.  These are roughly like the Unix
+\code{read} and \code{write}.  
+\item Stream read and write.  These provide a way to send data that
+may not be in contiguous locations.  Roughly, a stream used for
+    sending data:
+    \begin{enumerate}
+    \item packs some number of bytes into a contiguous buffer
+    \item writes those bytes to a socket
+    \item when all of those bytes are written, returns to step 1 to
+    get the next group of bytes
+    \item when all bytes are written, a completion routine is called
+    that may, for example, free the buffer used to pack data.
+    \end{enumerate}
+    All of this happens without any further action by the upper levels
+    of the code.  A special case of a stream is one in which the data
+    is contiguous; in this case, no intermediate copy of the data is
+    made.
+
+    A stream is initialized by providing a \code{segment}.  A
+    \code{segment} is used to handle packing and unpacking of general 
+    datatypes, and is initialized with the usual MPI tuple of
+    \code{buffer} address, \code{count}, and \code{datatype}.  The
+    actual \code{segment} data structure is always part of a larger 
+    structure, such as an \mpidconst{MPID_Request}.  In addition, 
+    a local buffer is allocated (if necessary) to be used for packing
+    or unpacking.  (In other methods, such as the \shmemname, this
+    memory may be special, such as memory shared between processes or
+    registered to a network driver.)  
+
+    A stream is sent by specifying a destination process.  All streams
+    start with a \mpidconst{MPID_Hid_data} packet that contains a
+    matching request number.
+
+    A stream used for reading data is similar, with data read into a
+    contiguous buffer and then unpacked instead.
+
+    A refinement that is not used here is to allow for \emph{double
+    buffering}; in the case of a stream used for sending, the next
+    group of bytes to be sent is packed before the first is entirely
+    sent, overlapping the communication with the packing operation.
+
+\item Socket agent.  This can be thought of as a \code{select}
+    or \code{poll} loop that advances the communication.  In the case
+    of buffered write, for example, it sends more data whenever the
+    socket becomes available for writing.
+
+    ``Whenever'' should be interpreted loosely.  If the socket
+    agent is running in a separate thread, this may happen when the
+    thread is scheduled.  If a polling implementation is used, this
+    will happen when the agent is called.
+
+\end{enumerate}
+These are the low-level communication services that are used to
+implemement a TCP version of a two-sided communication method.
+These can be implemented with an ``active queue'' system.  In this
+approach, each I/O operation adds an element to a FIFO queue.  Each
+file descriptor has separate read and write queues.  As operations
+complete, the queue element is removed.  Special operations, such as
+streams, stay in their position in the queue until all data has been
+transfered.  This allows us to use the underlying flow control in TCP,
+rather than adding an extra layer of our own, when moving large
+amounts of data.
+
+When a queue element is removed, a special handler is invoked.  The
+most common handler is the do-nothing handler (actually a NULL, so no
+function call is made).  The second most common
+sets a flag to one; this is normally used to set the
+\code{request_ptr->complete} flag.  For efficiency, this could be a
+special case of the \code{NULL} handler with a non-null argument.
+For a stream involving a noncontiguous datatype, it could call a true
+routine to free up any temporary buffers.
+
+\implementation{\mpifunc{MPI_Irecv}}
 \begin{verbatim}
 err = MPI_SUCCESS;
 /* Error checking */
 ...
 request_ptr = MPID_Request_recv_FOA( tag, rank, comm_ptr, &found );
 /* FOA ensures that the request is not busy when it is returned if found, and
-   is busy if not found */
+   is busy if not found.  FOA is really ``Find and remove or allocate and 
+   insert'' */
 if (found) {
     if (request_ptr->data_avail) {
         /* This is the eager case; all data is available */
+        /* This requires FOA to wait while receiving data (busy).  The
+           assumption is that eager messages will be short relatively
+           short */
         /* Check for Truncation */
         if (count * datatype->size < request_ptr->data_size ) {
             err = MPI_ERR_TRUNCATE;
@@ -635,37 +721,51 @@ if (found) {
         if (datatype->is_contig) 
             memcpy( buffer, request->data_avail, request->data_size );
         else {
-            /* Do we need a special unpack for this */
+            /* Do we need a special unpack for this?  */
+	    /* We don't use MPID_Unpack, because that is specifically
+               for data packed with MPID_Pack */
             MPID_Segment_unpack( request_ptr->data_avail, 
                                  request_ptr->data_size, 
                                  buffer, count, datatype );
         }
         /* release data_avail (includes flow control) */
-        MPID_EagerFree( rank, comm_ptr, request_ptr->data_avail );
-        MPID_Write_ordered( request_ptr->complete = 1 );
+        MPID_EagerFree( rank, comm_ptr, request_ptr->data_avail,
+	                request_ptr->data_size );
+        MPID_MemWrite_ordered( request_ptr->complete = 1 );
     }
     else {
          MPID_Hid_ok_to_send_t *packet;
+         struct iovec vector[1];
+
          /* Must redirect to method-specific routine */
          packet = &request_ptr.packet;
          vector[0].iov_base = &packet;
          vector[0].iov_len  = sizeof(MPID_Hid_ok_to_send_t);
-         packet->request_id = request_ptr->self;
-         ... other packet fields ...
-         MPID_Rhcv( request_ptr->sender_rank, comm_ptr, MPID_Hid_ok_to_send,
-                    vector, 1, NULL );
+         packet->recv_request_id = request_ptr->self;
+         ... other packet fields, such as ...
+	 packet->send_request_id = request_ptr->send_request_id;
+         MPID_Rhcv_tcp( request_ptr->sender_rank, comm_ptr,
+	                MPID_Hid_ok_to_send, vector, 1, NULL );
+	 /* Note that MPID_Rhcv_tcp must remember vector if is can't
+	    send the data immediately (e.g., because the socket is full).
+	    However, if it can send it immediately, no copy needs ever
+	    be made */
     }
 }
 else {
-    /* Unmatched.  Attach datatype/buffer and wait for communication agent */
-    request_ptr->segment = MPID_Segment_init_unpack( buffer, count, datatype );
-    MPID_Write_ordered(request_ptr->busy = 0);
+    /* Unmatched.  Attach datatype/buffer and wait for communication
+       agent */
+    /* The tag, communicator, and source rank are already saved (by
+       FOA) */ 
+    MPID_Segment_init_unpack( buffer, count, datatype, &request_ptr->segment );
+    MPID_MemWrite_ordered(request_ptr->busy = 0);
 }
 *request = request_ptr->self;
 return err;
 \end{verbatim}
 
-\mpifunc{MPI_Isend}:
+
+\implementation{\mpifunc{MPI_Isend}}
 \begin{verbatim}
 /* Error checking */
 ...
@@ -675,13 +775,19 @@ request_ptr = MPID_Request_send_FOA( tag, rank, comm_ptr, &found );
 if (count * datatype->size > eager_limit ||
     !MPID_Flow_limit( count * datatype->size , rank, comm_ptr )) {
     MPID_Hid_request_to_send_t *packet;
+    struct iovec vector[1];
     /* rendezvous */
     /* save request fields */
     ...
-    request_ptr->segment = MPID_Segment_pack_init(buffer,count,datatype);
+    MPID_Segment_pack_init( buffer, count, datatype, &request_ptr->segment );
     packet = &request_ptr->packet;
-    packet->request_id = request_ptr->self;
-    .. other fields ..
+    packet->sender_request_id  = request_ptr->self;
+    packet->msg_size           = count * datatype->size;
+    packet->tag                = tag;
+    packet->sender_rank        = sender_rank;
+    packet->dest_rank          = rank;
+    packet->context_id         = comm_ptr->context_id;
+    ... other fields (??) ...
     vector[0].iov_base = packet;
     vector[0].iov_len  = sizeof(MPID_Hid_request_to_send_t);
     MPID_Rhcv( rank, comm_ptr, MPID_Hid_request_to_send, vector, 1, 
@@ -692,6 +798,8 @@ else {
        This ensure that the test is thread-safe 
        (it is really test and reserve on success) */
     MPID_Hid_eager_t *packet;
+    struct iovec vector[2];
+
     packet = &request_ptr->packet; 
     vector[0].iov_base = packet;
     vector[0].iov_len  = sizeof(MPID_Hid_eager_t);
@@ -699,93 +807,159 @@ else {
         vector[1].iov_base = buffer;
         }
     else {
-        vector[1].iov_base = ???
-        memcpy( vector[1].iov_base, buffer, count*datatype->size );
+        vector[1].iov_base = ??? (MPID_LocalBufferAlloc?)
+        MPID_Segment_pack( buffer, count, datatype, vector[1].iov_base, 
+                           count*datatype->size );
         ?? How do we free this buffer ??
+        /* Remember buffer where we can free is */
+        request_ptr->local_buffer = vector[1].iov_base;
     }
     vector[1].iov_len  = count * datatype->size;
     MPID_Rhcv( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
                &request_ptr->complete );
     /* MPID_Rhcv sets complete when the message is sent. */
+    /* In the non-contig case we could check for completion immediately
+       and free the local buffer if the message has been sent, rather than 
+       saving the buffer and waiting to free later.
+       In this case, what does ``complete'' mean?  Do we want
+       ``complete'' to mean ``communication complete,'' but not ``done''? */
 }
 \end{verbatim}
 
-\texttt{Communication Agent}
+\implementation{\texttt{Communication Agent}}
+In a multi-method device, it is often easiest if each method's communication 
+agent runs in a separate thread.  That allows the operating system to 
+schedule the threads.  If the agents are running in the same thread (and 
+particularly, if they are running in the main thread in a polling-mode 
+implementation), each must normally be executed in the NONBLOCKING (or 
+EXPECTING) mode.
+
 \begin{verbatim}
 /* Waiting on incoming messages */
-#if !SINGLE_THREADED
+
+/* Blocking (in GetNextPacket) has three values:
+   BLOCKING: Wait until a packet is available
+   NONBLOCKING: Test for any communication and return null if nothing 
+   available
+   EXPECTING: Data is expected ``soon''.  This can be implemented as 
+   NONBLOCKING, but may use a short wait (e.g., the round-trip time) 
+   instead. 
+ */
+enum { BLOCKING, NOTBLOCKING, EXPECTING } MPID_Blocking_t;
+
+#ifdef AGENT_IN_THREAD
 /* If the communication agent runs in a separate thread, run it
    forever */
 while (1) 
 #endif
 {
+    MPID_Hid_general_packet_t *packet;
     /* returns the next successfully read complete packet */
     /* This isn't quite correct - we don't want to require reading all
        of a MPID_Hid_data packet, and maybe not all of an MPID_Hid_eager
-       packet */
-    packet = GetNextPacket( blocking );
+       packet.  We assume that this returns a pointer to a 
+       complete packet header, upto but not necessarily including any
+       data portion.  ? How do we know how much of any data portion 
+       is valid? */
+    packet = GetNextPacket( blocking, &source );
     if (!packet) break;
     switch (packet->type) {
         case MPID_Hid_eager:
-        comm_ptr = &global_comm[packet->comm_id];
-        request_ptr = MPID_Request_recv_FOA( packet->tag, packet->sender_rank, 
+        MPID_Hid_eager_t *lpacket = (MPID_Hid_eager_t *)packet;
+        comm_ptr = &global_comm[lpacket->comm_id];
+        request_ptr = MPID_Request_recv_FOA( lpacket->tag, l
+                                             packet->sender_rank, 
                                              comm_ptr, &found );
         if (found) {
             /* Matching receive exists */
             /* Check for truncation */
-            MPID_Segment_unpack( packet->data, packet->msg_bytes, 
-                                 request_ptr ... );
+            /* Initiate an unpack.  Note that the data may not all 
+               have arrived yet.  This must:
+               1. Process all available data (up to lpacket->msg_bytes)
+               2. If not all data is available, indicate to low-level
+                  communication that the data is stream.
+               3. Indicate to stream what field to set in the request
+                  when all data is read and unpacked.
+            */
+            MPID_Segment_unpack( lpacket->data, lpacket->msg_bytes, source
+                                 &request_ptr->stream, 
+                                 &request_ptr->complete );
         }
         else {
+            if (lpacket->mode == MPID_MSG_READY) {
+                ... indicate error ...
+            }
             /* Copy byte data */
-            void *ptr = MPID_EagerAlloc( packet->sender_rank, comm, 
-                                         packet->msg_bytes );
+            void *ptr = MPID_EagerAlloc( lpacket->sender_rank, comm, 
+                                         lpacket->msg_bytes );
                                       /* EagerAlloc updates flow */
-            request_ptr->data_size  = packet->msg_bytes;
-            memcpy( ptr, packet->data, packet->msg_bytes );
-            MPID_Write_ordered( request_ptr->data_avail = ptr);
+            MPID_Memwrite_ordered( request_ptr->busy = 1 );
+            request_ptr->data_size  = lpacket->msg_bytes;
+            /* Copy data to a temporary buffer.  Note that the data may
+               not have arrived yet.  This is similar to the found case
+               above */
+     (not quite)  memcpy( ptr, lpacket->data, lpacket->msg_bytes );
+            request_ptr->data_avail = ptr;
+            MPID_MemWrite_ordered( request_ptr->busy = 0 );
+            pthread_cont_bcast( request_ptr->cond ); /* ???? */
         }
         break;
 
         case MPID_Hid_request_to_send:
-        request_ptr = MPID_Request_recv_FOA( ... same as MPID_Hid_eager )
+        MPID_Hid_request_to_send_t *lpacket = (MPID_Hid_request_to_send_t *)packet;
+        request_ptr = MPID_Request_recv_FOA( lpacket->tag, 
+                                             lpacket->sender_rank, 
+                                             comm_ptr, &found );
         if (found) {
-             /* Same as Irecv case */
+             /* Same as Irecv case for found and not eager */
         }
         else {
-             request_ptr->request_id = packet->request_id;
-             request_ptr->msg_bytes  = packet->msg_bytes;
-             MPID_Write_ordered( request_ptr->busy = 0 );
+             request_ptr->send_request_id = lpacket->request_id;
+             request_ptr->msg_bytes       = lpacket->msg_bytes;
+             MPID_MemWrite_ordered( request_ptr->busy = 0 );
         }
         break;
 
         case MPID_Hid_ok_to_send:
-        request_ptr = &global_request[packet->request_id];
-        vector[0].iov_base = &request_ptr->packet; /* Use the packet in the 
-                                                      request */
-        vector[0].iov_len  = sizeof(MPID_Hid_data_t);
-        MPID_Segment_pack( &request_ptr->segment, ??? );/* updates position */
-        vector[1].iov_base = request_ptr->segment.data;
-        vector[1].iov_len  = request_ptr->segment.len;
-        MPID_Rhcv( request_ptr->recv_rank, request_ptr->comm_ptr, 
-                   MPID_Hid_data, vector, 2, 
-                   all_sent ? &request_ptr->completed : NULL );
+	MPID_Hid_ok_to_send_t *lpacket = (MPID_Hid_ok_to_send *)packet;
+
+        request_ptr = &global_request[lpacket->request_id];
+        if (request_ptr->datatype->is_contig) {
+            struct iovec vector[2];
+            vector[0].iov_base = &request_ptr->packet; /* Use the packet 
+                                                          in the request */
+            vector[0].iov_len  = sizeof(MPID_Hid_data_t);
+            vector[1].iov_base = request_ptr->buffer;
+            vector[1].iov_len  = request_ptr->msg_bytes;
+            MPID_Rhcv_tcp( request_ptr->recv_rank, request_ptr->comm_ptr, 
+                           MPID_Hid_data, vector, 2, 
+                           &request_ptr->complete );
+        } else {
+            /* Start a send stream.  Is this the routine?  Note that the
+               segment was initialized in the isend */
+            MPID_Stream_isend_tcp( source, 
+                                   &request_ptr->segment, &request_ptr->stream,
+                                   &request_ptr->complete );
+        }
         break;
 
         case MPID_Hid_data:
         /* Expected data */
-        request_ptr = &global_request[packet->request_id];
+        MPID_Hid_data_t *lpacket = (MPID_Hid_data_t *)packet;
+        request_ptr = &global_request[lpacket->request_id];
 
         /* If the destination is contiguous, we can read directly into it.
            Otherwise, we need an intermediate buffer to unpack from */
-        MPID_Segment_unpack( &packet->data, packet->msg_bytes, ... );
-        ... update position in request; if all bytes received, set complete.
+        /* The data may not be available yet.  Define a stream to read it */
+        MPID_Stream_recv_tcp( source, &lpacket->data, lpacket->msg_bytes, 
+                              &request->segment, &request->stream, 
+                              &request->complete );
         break;
     ...
     }
-    FreePacket( packet );  /* must remember what buffer this was
-                              read into.  Is it easier to make a 
-                              local copy? */
+    FreePacket( packet, source );  /* must remember what buffer this was
+                                      read into.  Is it easier to make a 
+                                      local copy? */
 }
 \end{verbatim}
 
@@ -808,16 +982,28 @@ while (1) {
          /* as above */
     }
     else {
-        request_ptr->thread_id = global_my_thread_id;
+        request_ptr->thread_id = local->my_thread_id;  /* thread local var. */
         pthread_cond_wait( &request_ptr->mutex, &global->cond );
         /* Saving the thread_id of the waiting thread allows the 
            communication agent to use pthread_cond_signal instead
            of pthread_cond_broadcast */
+        /* Should the condition variable be in the request? */
     }
 #endif
 } 
+
 \end{verbatim}
 
 \paragraph{\shmemname}
+(not done)
+
+We still need streams here, but since we're responsible for
+everything, we may need to send messages back and forth for each
+segment.  This may add an additional message type,
+\mpidconst{MPID_Hid_next_data_t}.  
 
 \paragraph{\vianame}
+(not done)
+
+
+

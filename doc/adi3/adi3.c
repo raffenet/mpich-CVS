@@ -1389,8 +1389,8 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
 - count - Number of elements in 'vector'
 
   Output Parameter:
-. local_flag - The location specified by this pointer is set when the operation
-  has completed.
+. local_flag - The location specified by this pointer is set to one
+  when the operation has completed.
 
   Notes:
   The first element of 'vector' points to a predefined handler datatype that
@@ -1424,6 +1424,22 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
   err = MPID_Rhcv( rank, comm, MPID_Hid_Request_to_send, 
                    vector, 1, &local_flag );
 .ve
+  
+  There is no requirement the that requested handler be invoked during
+  the call to the routine.  In fact, this routine can be implemented,
+  particularly in a TCP method, by simply sending a message to the
+  designated process.  In fact, since this routine may locally complete
+  (in the MPI sense), in the case where messages must be temporarily
+  buffered at the sender (because of flow control limits or a full
+  socket buffer), the message may not even have been sent by the time
+  it returns.
+
+  When this routine returns, all parameters may be reused.  For
+  example, the 'vector' argument can be allocated off of the stack; if
+  'MPID_Rhcv' hasn't sent the message or invoked the handler by the
+  time it returns, 'MPID_Rhcv' will make an internal copy of the
+  contents of 'vector' (that is, the elements of the vector, not what
+  they point at).  
 
   Module:
   MPID_CORE
@@ -1459,7 +1475,7 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
   This routine is designed to allow (for most operations) either a 
   threaded or a polling implementation.  For each 'id' (i.e., operation
   type), the operation specifies whether a polling implementation is
-  allowed.  Since each operation is deffined by an id rather than a
+  allowed.  Since each operation is defined by an id rather than a
   function pointer, the implementation of 'MPID_Rhcv' can use the 'id' 
   value to decide how to implement each operation.  In the simplest 
   implementation, 'MPID_Rhcv' could send a message to a thread running 
