@@ -106,6 +106,8 @@ and MPID module.}
 \item[Utilities]Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
+\item[Environment]This module contains both compile-time and run-time
+constants that describe the environment. 
 \end{description}
 
 By dividing the ADI into these modules, it becomes easy to implement
@@ -134,7 +136,7 @@ different mechanism for indicating completion of data transfers (see \code{MPID_
 \item[MPID Rhcv]This is used for messages; it is rougly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
-\code[MPID Waitsome, MPID Testsome]These are used to complete \code{MPID_Rhcv}
+\item[MPID Waitsome, MPID Testsome]These are used to complete \code{MPID_Rhcv}
 and \code{MPID_Put} operations
 \item[MPID Poll]This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
@@ -260,6 +262,13 @@ then either packing the message into that buffer (for a send) or
 unpacking it after it was delivered (for a receive).  This was a
 reasonable expediant when the original MPICH implementation was done,
 but is not acceptable in a mature package.
+
+\section{Things left to do}
+Dynamic processes.  What is the ADI interface?
+
+\code{MPID_Join} involves sockets, to we might make it part of the
+utility module.  But what routines from \code{MPID_Core} must it call
+to connect up the processes?
 
 \section{ADI-3 Routines}
 \input adi3func.tex

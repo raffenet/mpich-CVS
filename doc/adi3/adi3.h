@@ -530,3 +530,43 @@ typedef struct {
    } MPID_Hid_Cancel_t;
 
 
+/*T
+  Section x: Enviroment and Global Values
+  T*/
+
+/*D
+  Constants - .
+
+  The thread levels are 'defined' rather than enumerated so that they 
+  can be used in preprocessor tests.
+  D*/
+#define MPID_THREAD_SINGLE     0
+#define MPID_THREAD_FUNNELLED  1
+#define MPID_THREAD_SERIALIZED 2
+#define MPID_THREAD_MULTIPLE   3
+
+/*D
+  MPID_MAX_THREAD_LEVEL - Indicates the maximum level of thread
+  support provided at compile time.
+ 
+  Values:
+. Any of the 'MPI_THREAD_xxx' values (but as preprocessor-time constants)
+
+  Notes:
+  The macro 'MPID_MAX_THREAD_LEVEL' defines the maximum level of
+  thread support provided, and may be used at compile time to remove
+  thread locks and other code needed only in a multithreaded environment.
+
+  A typical use is 
+.vb
+  #if MPID_MAX_THREAD_LEVEL >= MPID_THREAD_MULTIPLE
+     lock((r)->lock_ptr);
+     (r)->ref_count++;
+     unlock((r)->lock_ptr);
+  #else
+     (r)->ref_count ++;
+  #fi
+.ve
+
+  D*/
+#define MPID_MAX_THREAD_LEVEL 
