@@ -118,6 +118,10 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     rreq->ch.iov_offset = 0;
     vc->ch.recv_active = rreq;
     mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, rreq->dev.iov + rreq->ch.iov_offset, rreq->dev.iov_count - rreq->ch.iov_offset, NULL);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
 
 #endif /* USE_AGGRESSIVE_READ */
 

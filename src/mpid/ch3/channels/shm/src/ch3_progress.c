@@ -329,7 +329,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 			post_pkt_recv(vc);
 			MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 			MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
-			return;
+			return mpi_errno;
 		    }
 		}
 	    }
