@@ -122,11 +122,11 @@ static inline is_float_type(DLOOP_Type el_type)
 /*             (el_type == MPI_REAL16)); */
 }
 
-int external32_basic_convert(char *dest_buf,
-                             char *src_buf,
-                             int dest_el_size,
-                             int src_el_size,
-                             DLOOP_Offset count)
+static int external32_basic_convert(char *dest_buf,
+                                    char *src_buf,
+                                    int dest_el_size,
+                                    int src_el_size,
+                                    DLOOP_Offset count)
 {
     char *src_ptr = src_buf, *dest_ptr = dest_buf;
     char *src_end = (char *)(src_buf + ((int)count * src_el_size));
@@ -184,11 +184,11 @@ int external32_basic_convert(char *dest_buf,
     return 0;
 }
 
-int external32_float_convert(char *dest_buf,
-                             char *src_buf,
-                             int dest_el_size,
-                             int src_el_size,
-                             int count)
+static int external32_float_convert(char *dest_buf,
+                                    char *src_buf,
+                                    int dest_el_size,
+                                    int src_el_size,
+                                    int count)
 {
     char *src_ptr = src_buf, *dest_ptr = dest_buf;
     char *src_end = (char *)(src_buf + ((int)count * src_el_size));
