@@ -4,8 +4,10 @@
 SHELL = @SHELL@
 
 SOURCES = aclocal.m4 aclocal_cache.m4 aclocal_cc.m4 aclocal_cross.m4 \
-	  aclocal_f77.m4 aclocal_make.m4 \
-	  aclocal_mpi.m4 aclocal_perl.m4
+	  aclocal_f77.m4 aclocal_f90.m4 aclocal_make.m4 \
+	  aclocal_mpi.m4 aclocal_perl.m4 \
+	  aclocal_shl.m4 aclocal_cxx.m4 aclocal_bugfix.m4 \
+	  aclocal_am.m4 aclocal_web.m4 aclocal_java.m4
 config_SOURCES = acconfig.h.in acconfig_cc.h acconfig_f77.h
 DOCTEXT = ../src/doctext/doctext
 DOCTEXT_ARGS = -nolocation -heading Sowing -quotefmt -skipprefix dnl
