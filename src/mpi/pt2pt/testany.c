@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+#if !defined(MPID_REQUEST_PTR_ARRAY_SIZE)
+#define MPID_REQUEST_PTR_ARRAY_SIZE 16
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_Testany */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Testany = PMPI_Testany
@@ -52,8 +56,12 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 		int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Testany";
-    int mpi_errno = MPI_SUCCESS;
+    MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
+    MPID_Request ** request_ptrs = NULL;
     int i;
+    int n_inactive;
+    int active_flag;
+    int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTANY);
 
     /* Verify that MPI has been initialized */
@@ -83,6 +91,13 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    if (array_of_requests != NULL && count > 0)
+	    {
+		for (i = 0; i < count; i++)
+		{
+		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
+		}
+	    }
             if (mpi_errno) {
                 goto fn_exit;
             }
@@ -91,50 +106,88 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#   if !defined(USE_MPID_PROGRESS_AVOIDANCE)
+    /* Convert MPI request handles to a request object pointers */
+    if (count <= MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	MPID_Progress_test();
+	request_ptrs = request_ptr_array;
     }
-#   endif
-
-    *flag = FALSE;
-    *index = MPI_UNDEFINED;
-    
-    for (i = 0; i < count; i++)
+    else
     {
-	MPID_Request * request_ptr;
-	
-	MPID_Request_get_ptr(array_of_requests[i], request_ptr);
-	if ((*request_ptr->cc_ptr) == 0)
+	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
+	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_Request_complete(
-		&array_of_requests[i], request_ptr, status);
-	    *index = i;
-	    *flag = TRUE;
+	    mpi_errno = MPI_ERR_NOMEM;
 	    goto fn_exit;
 	}
     }
 
-#   if defined(USE_MPID_PROGRESS_AVOIDANCE)
+    n_inactive = 0;
+    for (i = 0; i < count; i++)
     {
-	MPID_Progress_test();
-	
-	for (i = 0; i < count; i++)
+	if (array_of_requests[i] != MPI_REQUEST_NULL)
 	{
-	    MPID_Request * request_ptr;
-	    
-	    MPID_Request_get_ptr(array_of_requests[i], request_ptr);
-	    if ((*request_ptr->cc_ptr) == 0)
+	    MPID_Request_get_ptr(array_of_requests[i], request_ptrs[i]);
+	    /* Validate object pointers if error checking is enabled */
+#           ifdef HAVE_ERROR_CHECKING
 	    {
-		mpi_errno = MPIR_Request_complete(
-		    &array_of_requests[i], request_ptr, status);
-		*index = i;
+		MPID_BEGIN_ERROR_CHECKS;
+		{
+		    MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+		    if (mpi_errno) {
+			goto fn_exit;
+		    }
+		    
+		}
+		MPID_END_ERROR_CHECKS;
+	    }
+#           endif	    
+	}
+	else
+	{
+	    request_ptrs[i] = NULL;
+	    n_inactive += 1;
+	}
+    }
+
+    if (n_inactive == count)
+    {
+	*flag = TRUE;
+	*index = MPI_UNDEFINED;
+	MPIR_Status_set_empty(status);
+	goto fn_exit;
+    }
+    
+    *flag = FALSE;
+    *index = MPI_UNDEFINED;
+    
+    MPID_Progress_test();
+	
+    for (i = 0; i < count; i++)
+    {
+	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
+	{
+	    mpi_errno = MPIR_Request_complete(&array_of_requests[i],
+					      request_ptrs[i], status,
+					      &active_flag);
+	    if (active_flag)
+	    {
 		*flag = TRUE;
+		*index = i;
 		goto fn_exit;
+	    }
+	    else
+	    {
+		n_inactive += 1;
 	    }
 	}
     }
-#   endif
+    
+    if (n_inactive == count)
+    {
+	*flag = TRUE;
+	*index = MPI_UNDEFINED;
+	MPIR_Status_set_empty(status);
+    }
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);

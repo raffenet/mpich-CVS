@@ -122,12 +122,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
     if (source == MPI_PROC_NULL)
     {
-	status->MPI_SOURCE = MPI_PROC_NULL;
-	status->MPI_TAG = MPI_ANY_TAG;
-	status->MPI_ERROR = MPI_SUCCESS;
-	status->count = 0;
-	status->cancelled = FALSE;
-	
+	MPIR_Status_set_empty(status);
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
 	return MPI_SUCCESS;
     }

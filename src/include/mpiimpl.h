@@ -1317,6 +1317,18 @@ void MPIR_Wait(MPID_Request *);
 }
 #endif
 
+#define MPIR_Status_set_empty(status)		\
+{						\
+    if (status != MPI_STATUS_IGNORE)		\
+    {						\
+	status->MPI_SOURCE = MPI_ANY_SOURCE;	\
+	status->MPI_TAG = MPI_ANY_TAG;		\
+	status->MPI_ERROR = MPI_SUCCESS;	\
+	status->count = 0;			\
+	status->cancelled = FALSE;		\
+    }						\
+}
+
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
@@ -1341,7 +1353,7 @@ int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 int MPIR_Group_create( int, MPID_Group ** );
 
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
-int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *);
+int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);

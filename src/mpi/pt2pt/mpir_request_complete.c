@@ -8,10 +8,11 @@
 #include "mpiimpl.h"
 
 int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
-			  MPI_Status * status)
+			  MPI_Status * status, int * active)
 {
     int mpi_errno = MPI_SUCCESS;
-    
+
+    *active = TRUE;
     switch(request_ptr->kind)
     {
 	case MPID_REQUEST_SEND:
@@ -40,6 +41,8 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 		MPID_Request * prequest_ptr;
 
 		prequest_ptr = request_ptr->partner_request;
+		request_ptr->cc = 0;
+		request_ptr->cc_ptr = &request_ptr->cc;
 		request_ptr->partner_request = NULL;
 		
 		if (prequest_ptr->status.MPI_ERROR != MPI_SUCCESS)
@@ -56,14 +59,8 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	    }
 	    else
 	    {
-		if (status != MPI_STATUS_IGNORE)
-		{
-		    status->MPI_SOURCE = MPI_ANY_SOURCE;
-		    status->MPI_TAG = MPI_ANY_TAG;
-		    status->MPI_ERROR = MPI_SUCCESS;
-		    status->count = 0;
-		    status->cancelled = FALSE;
-		}
+		*active = FALSE;
+		MPIR_Status_set_empty(status);
 	    }
 	    
 	    break;
@@ -84,6 +81,10 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	    {
 		request_ptr->status.MPI_ERROR = rc;
 		mpi_errno = rc;
+	    }
+	    else
+	    {
+		mpi_errno = request_ptr->status.MPI_ERROR;
 	    }
 	    
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);

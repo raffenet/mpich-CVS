@@ -67,7 +67,12 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     static const char FCNAME[] = "MPI_Waitsome";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
     MPID_Request ** request_ptrs = NULL;
+    MPI_Status * status_ptr;
     int i;
+    int n_active;
+    int n_inactive;
+    int active_flag;
+    int rc;
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITSOME);
 
@@ -131,67 +136,96 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	    goto fn_exit;
 	}
     }
-
+    
+    n_inactive = 0;
     for (i = 0; i < incount; i++)
     {
-	MPID_Request_get_ptr(array_of_requests[i], request_ptrs[i]);
-    }
-    
-    /* Validate object pointers if error checking is enabled */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    for (i = 0; i < incount; i++)
+	if (array_of_requests[i] != MPI_REQUEST_NULL)
+	{
+	    MPID_Request_get_ptr(array_of_requests[i], request_ptrs[i]);
+	    /* Validate object pointers if error checking is enabled */
+#           ifdef HAVE_ERROR_CHECKING
 	    {
-		MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+		MPID_BEGIN_ERROR_CHECKS;
+		{
+		    MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+		    if (mpi_errno) {
+			goto fn_exit;
+		    }
+		    
+		}
+		MPID_END_ERROR_CHECKS;
 	    }
-            if (mpi_errno) {
-		goto fn_exit;
-            }
-        }
-        MPID_END_ERROR_CHECKS;
+#           endif	    
+	}
+	else
+	{
+	    n_inactive += 1;
+	    request_ptrs[i] = NULL;
+	} 
     }
-#   endif /* HAVE_ERROR_CHECKING */
 
-    /* Bill G. says MPI_Waitsome() is expected to wait for progress, so we kick
-       the pipes once and then fall into a loop checking for completion and
-       waiting for progress. */
-    MPID_Progress_test();
+    if (n_inactive == incount)
+    {
+	*outcount = MPI_UNDEFINED;
+	goto fn_exit;
+    }
     
+    /* Bill Gropp says MPI_Waitsome() is expected to try to make progress even
+       if some requests have already completed; therefore, we kick the pipes
+       once and then fall into a loop checking for completion and waiting for
+       progress. */
+    MPID_Progress_test();
+
+    n_active = 0;
     for(;;)
     {
 	MPID_Progress_start();
 
 	for (i = 0; i < incount; i++)
 	{
-	    if ((*request_ptrs[i]->cc_ptr) == 0)
+	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	    {
-		MPI_Status * status_ptr;
-		int rc;
-		    
 		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
-		    &array_of_statuses[*outcount] : MPI_STATUS_IGNORE;
+		    &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
 		rc = MPIR_Request_complete(&array_of_requests[i],
-					   request_ptrs[i],
-					   status_ptr);
-		if (rc != MPI_SUCCESS)
+					   request_ptrs[i], status_ptr,
+					   &active_flag);
+		if (active_flag)
 		{
-		    mpi_errno = MPI_ERR_IN_STATUS;
+		    array_of_indices[n_active] = i;
+		    n_active += 1;
+		    
+		    if (rc != MPI_SUCCESS)
+		    {
+			mpi_errno = MPI_ERR_IN_STATUS;
+		    }
 		}
-		(*outcount)++;
+		else
+		{
+		    n_inactive += 1;
+		}
+		
+		request_ptrs[i] = NULL;
 	    }
-	    
 	}
 	
-	if (*outcount > 0)
+	if (n_active > 0)
 	{
 	    MPID_Progress_end();
+	    *outcount = n_active;
+	    break;
+	}
+	else if (n_inactive == incount)
+	{
+	    MPID_Progress_end();
+	    *outcount = MPI_UNDEFINED;
 	    break;
 	}
 
 	MPID_Progress_wait();
     }
+
 
   fn_exit:
     if (request_ptrs != request_ptr_array && request_ptrs != NULL)

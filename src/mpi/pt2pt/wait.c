@@ -49,6 +49,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Wait";
     MPID_Request * request_ptr = NULL;
+    int active_flag;
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAIT);
 
@@ -80,7 +81,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_exit;
             }
 	}
         MPID_END_ERROR_CHECKS;
@@ -90,17 +91,8 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     /* If this is a null request handle, then return an empty status */
     if (*request == MPI_REQUEST_NULL)
     {
-	if (status != MPI_STATUS_IGNORE)
-	{
-	    status->MPI_SOURCE = MPI_ANY_SOURCE;
-	    status->MPI_TAG = MPI_ANY_TAG;
-	    status->MPI_ERROR = MPI_SUCCESS;
-	    status->count = 0;
-	    status->cancelled = FALSE;
-	}
-	
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-	return MPI_SUCCESS;
+	MPIR_Status_set_empty(status);
+	goto fn_exit;
     }
     
     /* Convert MPI request handle to a request object pointer */
@@ -113,8 +105,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         {
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -122,12 +113,14 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     MPIR_Wait(request_ptr);
-    mpi_errno = MPIR_Request_complete(request, request_ptr, status);
+    mpi_errno = MPIR_Request_complete(request, request_ptr, status,
+				      &active_flag);
     if (mpi_errno == MPI_SUCCESS)
     {
 	mpi_errno = request_ptr->status.MPI_ERROR;
     }
 
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
 	MPIR_Err_return_comm(request_ptr->comm, FCNAME, mpi_errno);
