@@ -44,7 +44,12 @@ IF "%1" == "--with-checkout" GOTO CHECKOUT
 GOTO AFTERCHECKOUT
 :CHECKOUT
 set CVS_RSH=ssh
+IF "%2" == "" GOTO CHECKOUT_HEAD
+cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r %2 mpich2all
+GOTO AFTER_CHECKOUT_HEAD
+:CHECKOUT_HEAD
 cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2all
+:AFTER_CHECKOUT_HEAD
 if %errorlevel% NEQ 0 goto CVSERROR
 pushd mpich2
 GOTO CONFIGURE
@@ -57,7 +62,12 @@ REM bash --login < bashcmds.txt
 echo cd /sandbox/%USERNAME% > sshcmds.txt
 echo mkdir dotintmp >> sshcmds.txt
 echo cd dotintmp >> sshcmds.txt
+if "%2" == "" GOTO EXPORT_HEAD
+echo cvs -d /home/MPI/cvsMaster export -r %2 mpich2all >> sshcmds.txt
+GOTO AFTER_EXPORT_HEAD
+:EXPORT_HEAD
 echo cvs -d /home/MPI/cvsMaster export -r HEAD mpich2all >> sshcmds.txt
+:AFTER_EXPORT_HEAD
 echo cd mpich2 >> sshcmds.txt
 echo maint/updatefiles >> sshcmds.txt
 echo tar cvf dotin.tar `find . -name "*.h.in"` >> sshcmds.txt
@@ -69,7 +79,7 @@ ssh -l %USERNAME% petagate.mcs.anl.gov rm -rf /sandbox/%USERNAME%/dotintmp
 del sshcmds.txt
 tar xvfz dotin.tar.gz
 del dotin.tar.gz
-cscript winconfigure.wsf
+cscript winconfigure.wsf --enable-timer-type=queryperformancecounter
 GOTO BUILD
 :AFTERCONFIGURE
 IF "%1" == "--with-curdir" GOTO BUILD
