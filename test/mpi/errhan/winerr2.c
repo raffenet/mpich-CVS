@@ -83,14 +83,14 @@ int main( int argc, char *argv[] )
     
     expected_err_class = MPI_ERR_RANK;
     err = MPI_Put( buf, 1, MPI_INT, -5, 0, 1, MPI_INT, win );
-    if (calls != 1) {
+    if (w1Called != 1) {
 	errs ++;
 	printf( "newerr1 not called\n" );
-	calls = 1;
+	w1Called = 1;
     }
     expected_err_class = MPI_ERR_OTHER;
     MPI_Win_call_errhandler( win, MPI_ERR_OTHER );
-    if (calls != 2) {
+    if (w1Called != 2) {
 	errs ++;
 	printf( "newerr1 not called (2)\n" );
     }
@@ -107,16 +107,16 @@ int main( int argc, char *argv[] )
     
     expected_err_class = MPI_ERR_RANK;
     err = MPI_Put( buf, 1, MPI_INT, -5, 0, 1, MPI_INT, win );
-    if (calls != 1) {
+    if (w2Called != 1) {
 	errs ++;
-	printf( "newerr1 not called\n" );
+	printf( "newerr2 not called\n" );
 	calls = 1;
     }
     expected_err_class = MPI_ERR_OTHER;
     MPI_Win_call_errhandler( win, MPI_ERR_OTHER );
-    if (calls != 2) {
+    if (w2Called != 2) {
 	errs ++;
-	printf( "newerr1 not called (2)\n" );
+	printf( "newerr2 not called (2)\n" );
     }
     if (w1Called != 2 || w2Called != 2) {
 	errs++;
