@@ -10,6 +10,9 @@ static int verbose = 0;
 
 /* tests */
 int indexed_contig_test(void);
+int indexed_zeroblock_first_test(void);
+int indexed_zeroblock_middle_test(void);
+int indexed_zeroblock_last_test(void);
 
 /* helper functions */
 int parse_args(int argc, char **argv);
@@ -27,7 +30,26 @@ int main(int argc, char **argv)
 
     /* perform some tests */
     err = indexed_contig_test();
-    if (err && verbose) fprintf(stderr, "%d errors in indexed test.\n",
+    if (err && verbose) fprintf(stderr,
+				"%d errors in indexed_contig_test.\n",
+				err);
+    errs += err;
+
+    err = indexed_zeroblock_first_test();
+    if (err && verbose) fprintf(stderr,
+				"%d errors in indexed_zeroblock_first_test.\n",
+				err);
+    errs += err;
+
+    err = indexed_zeroblock_middle_test();
+    if (err && verbose) fprintf(stderr,
+				"%d errors in indexed_zeroblock_middle_test.\n",
+				err);
+    errs += err;
+
+    err = indexed_zeroblock_last_test();
+    if (err && verbose) fprintf(stderr,
+				"%d errors in indexed_zeroblock_last_test.\n",
 				err);
     errs += err;
 
@@ -40,6 +62,126 @@ int main(int argc, char **argv)
     }
     MPI_Finalize();
     return 0;
+}
+
+int indexed_zeroblock_first_test(void)
+{
+    int err, errs = 0;
+
+    MPI_Datatype type;
+    int len[3]  = { 0, 1, 1 };
+    int disp[3] = { 0, 1, 4 };
+    MPI_Aint lb, ub;
+
+    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error creating indexed type in indexed_zeroblock_first_test()\n");
+	}
+	errs += 1;
+    }
+
+    MPI_Type_lb(type, &lb);
+    if (lb != sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "lb mismatch; is %d, should be %d\n",
+		    (int) lb, sizeof(int));
+	}
+	errs++;
+    }
+    MPI_Type_ub(type, &ub);
+    if (ub != 5 * sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "ub mismatch; is %d, should be %d\n",
+		    (int) ub, 5 * sizeof(int));
+	}
+	errs++;
+    }
+    
+    return errs;
+}
+
+int indexed_zeroblock_middle_test(void)
+{
+    int err, errs = 0;
+
+    MPI_Datatype type;
+    int len[3]  = { 1, 0, 1 };
+    int disp[3] = { 1, 2, 4 };
+    MPI_Aint lb, ub;
+
+    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error creating indexed type in indexed_zeroblock_middle_test()\n");
+	}
+	errs += 1;
+    }
+
+    MPI_Type_lb(type, &lb);
+    if (lb != sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "lb mismatch; is %d, should be %d\n",
+		    (int) lb, sizeof(int));
+	}
+	errs++;
+    }
+    MPI_Type_ub(type, &ub);
+    if (ub != 5 * sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "ub mismatch; is %d, should be %d\n",
+		    (int) ub, 5 * sizeof(int));
+	}
+	errs++;
+    }
+    
+    return errs;
+}
+
+int indexed_zeroblock_last_test(void)
+{
+    int err, errs = 0;
+
+    MPI_Datatype type;
+    int len[3]  = { 1, 1, 0 };
+    int disp[3] = { 1, 4, 8 };
+    MPI_Aint lb, ub;
+
+    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error creating indexed type in indexed_zeroblock_last_test()\n");
+	}
+	errs += 1;
+    }
+
+    MPI_Type_lb(type, &lb);
+    if (lb != sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "lb mismatch; is %d, should be %d\n",
+		    (int) lb, sizeof(int));
+	}
+	errs++;
+    }
+    MPI_Type_ub(type, &ub);
+    if (ub != 5 * sizeof(int)) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "ub mismatch; is %d, should be %d\n",
+		    (int) ub, 5 * sizeof(int));
+	}
+	errs++;
+    }
+    
+    return errs;
 }
 
 /* indexed_contig_test()
