@@ -458,7 +458,7 @@ void MTestPrintError( int errcode )
     printf( "Error class %d (%s)\n", errclass, string );
 }
 
-/*#ifdef HAVE_MPI_WIN_CREATE*/
+#ifdef HAVE_MPI_WIN_CREATE
 /*
  * Create MPI Windows
  */
@@ -510,4 +510,4 @@ const char *MTestGetWinName( void )
     
     return winName;
 }
-/* #endif */
+#endif
