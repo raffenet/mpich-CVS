@@ -46,7 +46,15 @@ int main( int argc, char *argv[] )
 		for (i=0; i<count; i++) sendbuf[i] = -i;
 	    }
 	    for (i=0; i<count; i++) recvbuf[i] = 0;
-	    comm.Allreduce( sendbuf, recvbuf, count, datatype, MPI::SUM );
+	    try
+	    {
+		comm.Allreduce( sendbuf, recvbuf, count, datatype, MPI::SUM );
+	    }
+	    catch (MPI::Exception e)
+	    {
+		errs++;
+		MTestPrintError( e.Get_error_code() );
+	    }
 	    /* In each process should be the sum of the values from the
 	       other process */
 	    rsize = comm.Get_remote_size();

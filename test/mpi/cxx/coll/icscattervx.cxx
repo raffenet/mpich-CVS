@@ -56,9 +56,17 @@ int main( int argc, char *argv[] )
 		else {
 		    for (i=0; i<count*rsize; i++) buf[i] = -1;
 		}
-		comm.Scatterv( buf, sendcounts, senddispls, datatype, 
-			       NULL, 0, datatype,
-			       (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		try
+		{
+		    comm.Scatterv( buf, sendcounts, senddispls, datatype, 
+			NULL, 0, datatype,
+			(rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		}
+		catch (MPI::Exception e)
+		{ 
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Test that no other process in this group received the 
 		   scatter */
 		if (rank != 0) {
@@ -80,8 +88,16 @@ int main( int argc, char *argv[] )
 		buf = new int [ count ];
 		/* In the right group */
 		for (i=0; i<count; i++) buf[i] = -1;
-		comm.Scatterv( NULL, 0, 0, datatype, 
-			       buf, count, datatype, 0 );
+		try
+		{
+		    comm.Scatterv( NULL, 0, 0, datatype, 
+			buf, count, datatype, 0 );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Check that we have received the correct data */
 		for (i=0; i<count; i++) {
 		    if (buf[i] != i + rank * count) {

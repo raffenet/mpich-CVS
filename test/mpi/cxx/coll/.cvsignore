@@ -1,6 +1,9 @@
 Makefile.in
 Makefile
 *.o
+*ebug*
+*elease*
+*.vcproj
 uallreduce
 ureduce
 uscan
@@ -14,5 +17,3 @@ icscattervx
 icallgatherx
 icallgathervx
 icallreducex
-
-

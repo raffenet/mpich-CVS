@@ -32,8 +32,16 @@ int main( int argc, char *argv[] )
 	    }
 	    if (leftGroup) {
 		rank = comm.Get_rank();
-		comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM,
-			     (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		try
+		{
+		    comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM,
+			(rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Test that no other process in this group received the 
 		   broadcast, and that we got the right answers */
 		if (rank == 0) {
@@ -56,7 +64,15 @@ int main( int argc, char *argv[] )
 	    else {
 		/* In the right group */
 		for (i=0; i<count; i++) sendbuf[i] = i;
-		comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM, 0 );
+		try
+		{
+		    comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM, 0 );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Check that we have received no data */
 		for (i=0; i<count; i++) {
 		    if (recvbuf[i] != -1) {

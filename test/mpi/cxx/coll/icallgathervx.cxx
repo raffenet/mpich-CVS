@@ -45,8 +45,16 @@ int main( int argc, char *argv[] )
 	    else {
 		for (i=0; i<count; i++)       sbuf[i] = -(i + rank*count);
 	    }
-	    comm.Allgatherv( sbuf, count, datatype,
-			     rbuf, recvcounts, recvdispls, datatype );
+	    try
+	    {
+		comm.Allgatherv( sbuf, count, datatype,
+		    rbuf, recvcounts, recvdispls, datatype );
+	    }
+	    catch (MPI::Exception e)
+	    { 
+		errs++;
+		MTestPrintError( e.Get_error_code() );
+	    }
 	    if (leftGroup) {
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
@@ -65,8 +73,16 @@ int main( int argc, char *argv[] )
 	    /* Use Allgather in a unidirectional way */
 	    for (i=0; i<count*rsize; i++) rbuf[i] = -1;
 	    if (leftGroup) {
-		comm.Allgatherv( sbuf, 0, datatype,
-				 rbuf, recvcounts, recvdispls, datatype );
+		try
+		{
+		    comm.Allgatherv( sbuf, 0, datatype,
+			rbuf, recvcounts, recvdispls, datatype );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
 			errs++;
@@ -78,8 +94,16 @@ int main( int argc, char *argv[] )
                     recvcounts[i] = 0;
                     recvdispls[i] = 0;
                 }
-		comm.Allgatherv( sbuf, count, datatype,
-				 rbuf, recvcounts, recvdispls, datatype );
+		try
+		{
+		    comm.Allgatherv( sbuf, count, datatype,
+			rbuf, recvcounts, recvdispls, datatype );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -1) {
 			errs++;

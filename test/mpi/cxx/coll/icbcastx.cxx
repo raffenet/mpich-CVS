@@ -33,8 +33,15 @@ int main( int argc, char *argv[] )
 		else {
 		    for (i=0; i<count; i++) buf[i] = -1;
 		}
-		comm.Bcast( buf, count, datatype, 
-			    (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		try {
+		    comm.Bcast( buf, count, datatype, 
+			        (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Test that no other process in this group received the 
 		   broadcast */
 		if (rank != 0) {
@@ -48,7 +55,15 @@ int main( int argc, char *argv[] )
 	    else {
 		/* In the right group */
 		for (i=0; i<count; i++) buf[i] = -1;
-		comm.Bcast( buf, count, datatype, 0 );
+		try
+		{
+		    comm.Bcast( buf, count, datatype, 0 );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Check that we have received the correct data */
 		for (i=0; i<count; i++) {
 		    if (buf[i] != i) {

@@ -32,9 +32,17 @@ int main( int argc, char *argv[] )
 		buf   = new int [ count * rsize ];
 		for (i=0; i<count*rsize; i++) buf[i] = -1;
 
-		comm.Gather( NULL, 0, datatype,
-			     buf, count, datatype, 
-			     (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		try
+		{
+		    comm.Gather( NULL, 0, datatype,
+			buf, count, datatype, 
+			(rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Test that no other process in this group received the 
 		   broadcast */
 		if (rank != 0) {
@@ -60,7 +68,15 @@ int main( int argc, char *argv[] )
 		size = comm.Get_size();
 		buf = new int [ count ];
 		for (i=0; i<count; i++) buf[i] = rank * count + i;
-		comm.Gather( buf, count, datatype, NULL, 0, datatype, 0 );
+		try
+		{
+		    comm.Gather( buf, count, datatype, NULL, 0, datatype, 0 );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 	    }
 	    delete [] buf;
 	}

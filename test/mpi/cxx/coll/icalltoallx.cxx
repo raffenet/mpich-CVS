@@ -48,7 +48,15 @@ int main( int argc, char *argv[] )
 			sendbuf[idx++] = i + rank;
 		    }
 		}
-		comm.Alltoall( sendbuf, count, datatype, NULL, 0, datatype );
+		try
+		{
+		    comm.Alltoall( sendbuf, count, datatype, NULL, 0, datatype );
+		}
+		catch (MPI::Exception e)
+		{ 
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 	    }
 	    else {
 		int rank, size;
@@ -57,7 +65,15 @@ int main( int argc, char *argv[] )
 		size = comm.Get_size();
 
 		/* In the right group */
-		comm.Alltoall( NULL, 0, datatype, recvbuf, count, datatype );
+		try
+		{
+		    comm.Alltoall( NULL, 0, datatype, recvbuf, count, datatype );
+		}
+		catch (MPI::Exception e)
+		{
+		    errs++;
+		    MTestPrintError( e.Get_error_code() );
+		}
 		/* Check that we have received the correct data */
 		idx = 0;
 		for (j=0; j<rsize; j++) {

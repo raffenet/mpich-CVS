@@ -27,11 +27,27 @@ int main( int argc, char *argv[] )
     while (MTestGetIntercomm( comm, leftGroup, 4 )) {
 	/* Get an intercommunicator */
 	if (leftGroup) {
-	    comm.Barrier( );
+	    try
+	    {
+		comm.Barrier( );
+	    }
+	    catch (MPI::Exception e)
+	    {
+		errs++;
+		MTestPrintError( e.Get_error_code() );
+	    }
 	}
 	else {
 	    /* In the right group */
-	    comm.Barrier();
+	    try
+	    {
+		comm.Barrier();
+	    }
+	    catch (MPI::Exception e)
+	    {
+		errs++;
+		MTestPrintError( e.Get_error_code() );
+	    }
 	}
     }
 
