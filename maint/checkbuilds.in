@@ -5,23 +5,19 @@
 # Configure and build mpich2 with some of the options
 #
 # Set default values
-$projects_dir = "/home/gropp/projects/software";
-if (! -d $projects_dir && -d "/homes/gropp/projects/software" ) {
-    $projects_dir = "/homes/gropp/projects/software";
+$projects_dir = "/home/MPI/testing/tsuites";
+# alt is for systems that have /homes instead of /home
+$altprojects_dir = "/homes/MPI/testing/tsuites";
+if (! -d $projects_dir && -d $altprojects_dir ) {
+    $projects_dir = $altprojects_dir;
 }
 $srcdir  = "/home/MPI/testing/mpich2/mpich2";
 $logname = $ENV{"LOGNAME"};
 $tmpdir = "/sandbox/$logname";
 # rundir is the directory in which to run the tests.
 $rundir = "";
-$mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
-if (! -d $mpich1_dir && -d "/homes/gropp/tmp/cvstesting/mpich" ) {
-    $mpich1_dir = "/homes/gropp/tmp/cvstesting/mpich";
-}
-$sowing_dir = "/home/gropp/sowing-proj/sowing";
-if (! -d $sowing_dir && -d "/homes/gropp/sowing-proj/sowing" ) {
-    $sowing_dir = "/homes/gropp/sowing-proj/sowing";
-}
+$mpich1_dir = "$projects_dir/mpich1test";
+
 # By default, use random arguments for the tests
 $use_rand_args = 1;
 #
@@ -363,52 +359,13 @@ sub RunTest {
 
 # Deleted this test because it is no longer a design goal for MPICH
 # that it have no nonconforming global symbols
-#		# Check the libraries for nonconforming global symbols.
-#		$globnametest = "$sowing_dir/bin/checkforglobs";
-#		if ( -x $globnametest ) { 
-#		    my @pgm = split( /\s+/, 
-#              "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
-#		    print $OUTFD $GlobNameStart;
-#		    $globcheck_status = &RunProgram( @pgm );
-#		    print $OUTFD $GlobNameEnd;
-#		    # It would also be good to run
-#		    #   find . -name Makefile -exec egrep '@[A-Za-z0-9_]*@' \
-#		    #   \{\} /dev/null \;
-#		    # over the files to check for unsubstituted names
-#		}
-#
+
 # Deleted this test because it is no longer a design goal for MPICH2
 # to have a minimum memory and routine footprint.
-#		# Sometimes build the hellow test
-#		if (-x "examples/hellow" && -x "maint/showsizes") {
-#		    my $cwd = `pwd`;
-#		    chomp $cwd;
-#		    $rc = chdir "examples";
-#		    if ($rc) {
-#			my @pgm = split( /\s+/, 
-#					"../maint/showsizes -mpionly hellow" );
-#			print $OUTFD $UsedNameStart;
-#			$usedname_status = &RunProgram( @pgm );
-#			# Also try the load map (even if showsizes failed)
-#			# This assumes that (a) -M to ld generates a load map
-#			# and (b) -Wl passes args to ld.
-#			@pgm = split( /\s+/,"../bin/mpicc -Wl,-M -o hellow $srcdir/examples/hellow.c" );
-#			$usedname_status = &RunProgram( @pgm );
-#			print $OUTFD $UsedNameEnd;
-#
-#			
-#		    }
-#		    
-#		    $rc = chdir $cwd;
-#		    if (!$rc) {
-#			print STDERR "Could not change to $cwd\n";
-#		    }
-#		}
 
 		# Install the libraries
 		print $OUTFD $MakeInstStart;
 		# Clean the install directory
-		# ????
 		$install_status = &RunProgram( "$makepgm install" );
 		if ($install_status) {
 		    my $cwd = `pwd`;
@@ -595,12 +552,12 @@ sub RunMpichTestSuite {
 	`mkdir "io"`;
     }
     if (! -f "io/Mfile.in") {
-	`cp $mpich1_dir/examples/test/io/*.in io`;
+	`cp $mpich1_dir/io/*.in io`;
     }
 
     # Create the arguments for the configure step
     $nargs = 0;
-    $config[$nargs++] = "$mpich1_dir/examples/test/configure";
+    $config[$nargs++] = "$mpich1_dir/configure";
     $config[$nargs++] = "--prefix=$instdir";
     $config[$nargs++] = "-mpilibname=mpich";
     if (defined($chosenEnable{"romio"})) {
