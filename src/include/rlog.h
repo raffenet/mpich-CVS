@@ -20,14 +20,14 @@ extern "C" {
 #endif
 
 /* definitions */
-#ifndef BOOL
-#define BOOL int
+#ifndef RLOG_BOOL
+#define RLOG_BOOL int
 #endif
-#ifndef TRUE
-#define TRUE 1
+#ifndef RLOG_TRUE
+#define RLOG_TRUE 1
 #endif
-#ifndef FALSE
-#define FALSE 0
+#ifndef RLOG_FALSE
+#define RLOG_FALSE 0
 #endif
 
 #define RLOG_BUFFSIZE           (8*1024*1024)
