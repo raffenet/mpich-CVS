@@ -47,6 +47,12 @@ typedef struct ibu_unex_read_t
     struct ibu_unex_read_t *next;
 } ibu_unex_read_t;
 
+typedef struct ibu_num_written_node_t
+{
+    int num_bytes;
+    struct ibu_num_written_node_t *next;
+} ibu_num_written_node_t;
+
 typedef struct ibu_state_t
 {
     IBU_STATE state;
@@ -65,6 +71,7 @@ typedef struct ibu_state_t
     ibu_buffer read;
     ibu_unex_read_t *unex_list;
     ibu_buffer write;
+    ibu_num_written_node_t *write_list_head, *write_list_tail;
     /* user pointer */
     void *user_ptr;
     /* unexpected queue pointer */
@@ -651,12 +658,7 @@ static int ibui_post_receive(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-typedef struct ibu_num_written_node_t
-{
-    int num_bytes;
-    struct ibu_num_written_node_t *next;
-} ibu_num_written_node_t;
-
+/*
 static ibu_num_written_node_t *g_write_list_head = NULL;
 static ibu_num_written_node_t *g_write_list_tail = NULL;
 
@@ -672,6 +674,25 @@ static int ibui_next_num_written()
     g_write_list_head = g_write_list_head->next;
     if (g_write_list_head == NULL)
 	g_write_list_tail = NULL;
+    num_bytes = p->num_bytes;
+    free(p);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
+    return num_bytes;
+}
+*/
+
+static int ibui_next_num_written(ibu_t ibu)
+{
+    ibu_num_written_node_t *p;
+    int num_bytes;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
+
+    p = ibu->write_list_head;
+    ibu->write_list_head = ibu->write_list_head->next;
+    if (ibu->write_list_head == NULL)
+	ibu->write_list_tail = NULL;
     num_bytes = p->num_bytes;
     free(p);
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
@@ -699,6 +720,16 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	p = malloc(sizeof(ibu_num_written_node_t));
 	p->next = NULL;
 	p->num_bytes = length;
+	if (ibu->write_list_tail)
+	{
+	    ibu->write_list_tail = p;
+	}
+	else
+	{
+	    ibu->write_list_head = p;
+	}
+	ibu->write_list_tail = p;
+	/*
 	if (g_write_list_tail)
 	{
 	    g_write_list_tail->next = p;
@@ -708,6 +739,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    g_write_list_head = p;
 	}
 	g_write_list_tail = p;
+	*/
 	
 	mem_ptr = BlockAlloc(ibu->allocator);
 	memcpy(mem_ptr, buf, length);
@@ -793,6 +825,8 @@ static inline void init_state_struct(ibu_state_t *p)
     /*p->write.iov = NULL;*/
     p->write.iovlen = 0;
     p->write.progress_update = NULL;
+    p->write_list_head = NULL;
+    p->write_list_tail = NULL;
     p->unex_finished_queue = NULL;
 }
 
@@ -1114,7 +1148,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	switch (completion_data.op_type)
 	{
 	case OP_SEND:
-	    num_bytes = ibui_next_num_written();
+	    num_bytes = ibui_next_num_written(ibu);
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    /* put the receive packet back in the pool */
