@@ -6,6 +6,26 @@
 
 #include "mpidimpl.h"
 
+/*
+static const char * get_state_str(int state)
+{
+    switch (state)
+    {
+    case MPIDI_VC_STATE_INACTIVE:
+	return "MPIDI_VC_STATE_INACTIVE";
+    case MPIDI_VC_STATE_ACTIVE:
+	return "MPIDI_VC_STATE_ACTIVE";
+    case MPIDI_VC_STATE_LOCAL_CLOSE:
+	return "MPIDI_VC_STATE_LOCAL_CLOSE";
+    case MPIDI_VC_STATE_REMOTE_CLOSE:
+	return "MPIDI_VC_STATE_REMOTE_CLOSE";
+    case MPIDI_VC_STATE_CLOSE_ACKED:
+	return "MPIDI_VC_STATE_CLOSE_ACKED";
+    }
+    return "unknown";
+}
+*/
+
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
 #undef FCNAME
@@ -37,6 +57,7 @@ int MPID_Finalize()
     {
 	int i;
 	MPIDI_PG_t * pg;
+	MPIDI_VC_t * vc;
 
 	MPIDI_PG_Get_next(&pg);
 	if (pg == NULL)
@@ -51,17 +72,18 @@ int MPID_Finalize()
 	    {
 		continue;
 	    }
-	    
-	    if (pg->vct[i].state == MPIDI_VC_STATE_ACTIVE || pg->vct[i].state == MPIDI_VC_STATE_REMOTE_CLOSE)
+
+	    MPIDI_PG_Get_vcr(pg, i, &vc);
+	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE)
 	    {
 		MPIDI_CH3_Pkt_t upkt;
 		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
 		MPID_Request * sreq;
 		    
 		close_pkt->type = MPIDI_CH3_PKT_CLOSE;
-		close_pkt->ack = (pg->vct[i].state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
+		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
 		
-		mpi_errno = MPIDI_CH3_iStartMsg(&pg->vct[i], close_pkt, sizeof(*close_pkt), &sreq);
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -78,16 +100,28 @@ int MPID_Finalize()
 
 		/* MT: this is not thread safe */
 		MPIDI_Outstanding_close_ops += 1;
+		/*
+		printf("[%d] finalize close(%s) to %d, ops = %d\n", MPIDI_Process.my_pg_rank,
+		    close_pkt->ack ? "TRUE" : "FALSE", i, MPIDI_Outstanding_close_ops);
+		fflush(stdout);
+		*/
 		    
-		if (pg->vct[i].state == MPIDI_VC_STATE_ACTIVE)
+		if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		{ 
-		    pg->vct[i].state = MPIDI_VC_STATE_LOCAL_CLOSE;
+		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		}
 		else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		{
-		    pg->vct[i].state = MPIDI_VC_STATE_CLOSE_ACKED;
+		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 	    }
+	    /*
+	    else
+	    {
+		printf("[%d] finalize not sending a close to %d, vc in state %s\n", MPIDI_Process.my_pg_rank, i, get_state_str(vc->state));
+		fflush(stdout);
+	    }
+	    */
 	}
     }
 
@@ -111,7 +145,7 @@ int MPID_Finalize()
 	}
     }
 
-    
+
     mpi_errno = MPIDI_CH3_Finalize();
     
     MPIDI_Process.my_pg = NULL;
