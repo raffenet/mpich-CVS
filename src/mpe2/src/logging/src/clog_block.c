@@ -19,7 +19,8 @@
 */
 CLOG_BlockData_t* CLOG_BlockData_create( unsigned int block_size )
 {
-    CLOG_BlockData_t* data;
+    CLOG_BlockData_t *data;
+    CLOG_DataUnit_t  *ptr;
     int               data_unit_size;
 
     if ( block_size <= 0 )
@@ -44,6 +45,13 @@ CLOG_BlockData_t* CLOG_BlockData_create( unsigned int block_size )
     data_unit_size = block_size / sizeof(CLOG_DataUnit_t);
     data->tail = data->head + data_unit_size;
     data->ptr  = data->head;
+
+    /* Initialize the CLOG_BlockData_t[] to keep valgrind happy */
+    ptr  = data->head;
+    while ( ptr < data->tail ) {
+        *ptr = 0;
+        ptr++;
+    }
 
     return data;
 }

@@ -188,6 +188,12 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG Buffered Blocks Value" );
 
+    /* Initialize the rest of the buffer[] to zero to keep valgrind happy */
+    while ( buf_ptr <= buf_tail ) {
+        *buf_ptr = 0;
+        buf_ptr++;
+    }
+
     ierr = write( fd, buffer, CLOG_PREAMBLE_SIZE );
     if ( ierr != CLOG_PREAMBLE_SIZE ) {
         fprintf( stderr, __FILE__":CLOG_Preamble_write() - \n"
