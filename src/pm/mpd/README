@@ -190,7 +190,7 @@ Long parameter names may be abbreviated to their first letters by using
 
 A file named .mpd.conf file must be present in the users home directory
   with read and write access only for the user, and must contain at least
-  a line with password=<password>
+  a line with secretword=<secretword>
 
 This version of mpd is (0, 2, 0, 'Aug 2003 release')
 

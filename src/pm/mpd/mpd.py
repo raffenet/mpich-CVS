@@ -910,6 +910,9 @@ def _process_configfile_params():
             g.configParams[splitLine[0]] = splitLine[1]
         else:
             mpd_print(0, 'skipping config file line = :%s:' % (line) )
+    # next check for backward compatibility
+    if 'password' in g.configParams.keys() and 'secretword' not in g.configParams.keys():
+        g.configParams['secretword'] = g.configParams['password']
     if 'secretword' not in g.configParams.keys():
         print 'configFile %s has no secretword' % (configFilename)
 	print 'note: password has been replaced by secretword'
