@@ -45,6 +45,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     p = BlockAlloc(MPID_Process.VCTable_allocator);
     p->ref_count = 1;
     p->table_ptr = (MPIDI_VC**)malloc(sizeof(MPIDI_VC*) * size);
+    memset(p->table_ptr, 0, sizeof(MPIDI_VC*) * size);
 
     *vcrt_ptr = p;
 
