@@ -11,15 +11,20 @@ MPICH 1.2.X distribution from http://www.mcs.anl.gov/mpi/mpich.
 To build MPICH2 with the TCP channel, do the following:
 
     tar xzf mpich2-devsnapshot.tar.gz
-    cd mpich2-<SNAPSHOT-DATE>
+    cd mpich2-<SNAPSHOT_DATE>
     ./configure
     make
 
-You should now have a complete build.  (make install does not work
-yet, so please do not attempt it.)  Example and test programs (both
-source and executables) can be found in ./examples and
-./test/mpi/basic, respectively.  To run any of these programs, you
-will need to start MPD.
+You should now have a complete build of MPICH2.  If you wish to
+install MPICH2, you should build MPICH2 as follows.
+
+    ./configure --prefix=<INSTALL_DIR>
+    make
+    make install
+
+Example and test programs (both source and executables) can be found
+in ./examples and ./test/mpi/basic, respectively.  To run any of these
+programs, you will need to start MPD.
 
    echo "password=<YOUR_MPD_PASSWORD_HERE>" >~/.mpd.conf
    chmod 600 ~/.mpd.conf
