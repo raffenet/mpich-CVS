@@ -708,8 +708,8 @@ level, rather then defining a more complex style.
 
 \item There are some predefined error tests with the form
   \code{MPIR_ERRTEST_xxx}.   This code shows the use of
-  \code{MPIR_ERRTEST_INITIALIZED}.  These predefined tests are defined
-  in the file \file{src/include/mpiimpl.h}.
+  \code{MPIR_ERRTEST_INITIALIZED_ORDIE}.  These predefined tests are defined
+  in the file \file{src/include/mpierrs.h}.
 
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual and
@@ -1736,9 +1736,12 @@ error handler.
 \item If still in the initialization step (e.g., within
 \mpifunc{MPI_Init_thread}), errors invoke a special pre-initialization error
 handler named \mpidfunc{MPIR_Err_preinit}.  This handler may either abort or
-return; by default, it will abort. 
-A return may be prefered for some fault-tolerant applications.
-\fixme{This has not been implemented}
+return; by default, it will abort.  A return may be prefered for some
+fault-tolerant applications.  This routine is presently called from the
+\code{MPIR_ERRTEST_INITIALIZED_ORDIE} macro if MPI has not been properly
+initialized.  In turn, this macro is called at the beginning of each MPI
+routine.
+
 
 \item Check if executing inside a layered routine (i.e., an MPI routine called
   within the implementation of another MPI routine).  If so, return
