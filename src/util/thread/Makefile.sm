@@ -1,0 +1,9 @@
+MPE_THREAD_LIB_NAME=@MPE_THREAD_LIB_NAME@
+lib${MPE_THREAD_LIB_NAME}_a_SOURCES = mpe_thread.c
+INCLUDES = -I../../include -I${top_srcdir}/src/include
+
+distclean-local:
+	-@rm -f mpe_thread.h ../../include/mpe_thread.h
+	-@rm -f mpe_thread.c
+
+install_INCLUDE = ../../include/mpe_thread.h

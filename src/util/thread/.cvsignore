@@ -1,0 +1,12 @@
+*.o
+*.lo
+*.bb
+*.bbg
+*.da
+*.gcov
+Makefile
+Makefile.in
+.deps
+.libs
+configure
+mpe_thread_conf.h.in
