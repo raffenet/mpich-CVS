@@ -138,9 +138,8 @@ End If
 MPI_FINT               = "int"
 MPI_OFFSET             = "__int64"
 EXTRA_STATUS_DECL      = ""
-'HAVE_ROMIO             = "#include \"mpio.h\""
-'HAVE_ROMIO             = "#define NEW_MPIIO"
-HAVE_ROMIO             = ""
+HAVE_ROMIO             = "#include ""mpio.h"""
+'HAVE_ROMIO             = ""
 
 set f = WScript.CreateObject("Scripting.FileSystemObject")
 set fout = f.CreateTextFile("src\include\mpi.h")
@@ -212,6 +211,114 @@ End If
 
 fout.Write(contents)
 fin.Close()
+fout.Close()
+
+
+'
+' Generate mpio.h
+'
+
+set fout = f.CreateTextFile("src\include\mpio.h")
+set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
+
+contents = fin.ReadAll()
+contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;")
+contents = Replace(contents, "@NEEDS_MPI_FINT@", "")
+contents = Replace(contents, "@HAVE_MPI_INFO@", "#define HAVE_MPI_INFO")
+contents = Replace(contents, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
+
+fout.Write(contents)
+fin.Close()
+fout.Close()
+
+'
+' Generate romioconf.h
+'
+
+set fout = f.CreateTextFile("src\mpi\romio\adio\include\romioconf.h")
+
+fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
+fout.WriteLine("/*  $Id$")
+fout.WriteLine(" *")
+fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
+fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
+fout.WriteLine(" */")
+fout.WriteLine("#ifndef ROMIOCONF_H")
+fout.WriteLine("#define ROMIOCONF_H")
+fout.WriteLine("")
+fout.WriteLine("/* Define if `sys_siglist' is declared by <signal.h>.  */")
+fout.WriteLine("#undef SYS_SIGLIST_DECLARED")
+fout.WriteLine("")
+fout.WriteLine("#undef AIO_HANDLE_IN_AIOCB")
+fout.WriteLine("#undef AIO_PRIORITY_DEFAULT")
+fout.WriteLine("#undef AIO_SIGNOTIFY_NONE")
+fout.WriteLine("#undef AIO_SUN")
+fout.WriteLine("#undef FREEBSD")
+fout.WriteLine("#undef HAVE_LONG_LONG_64")
+fout.WriteLine("#undef HAVE_MOUNT_NFS")
+fout.WriteLine("#undef HAVE_MPI_COMBINERS")
+fout.WriteLine("#undef HAVE_MPI_DARRAY_SUBARRAY")
+fout.WriteLine("#define HAVE_MPI_INFO")
+fout.WriteLine("#undef HAVE_MPI_LONG_LONG_INT")
+fout.WriteLine("#undef HAVE_PRAGMA_CRI_DUP")
+fout.WriteLine("#undef HAVE_PRAGMA_HP_SEC_DEF")
+fout.WriteLine("#undef HAVE_PRAGMA_WEAK")
+fout.WriteLine("#undef HAVE_PREAD64")
+fout.WriteLine("#define HAVE_STATUS_SET_BYTES")
+fout.WriteLine("#define HAVE_STRERROR")
+fout.WriteLine("#undef HAVE_SYSERRLIST")
+fout.WriteLine("#undef HAVE_WEAK_SYMBOLS")
+fout.WriteLine("#undef HFS")
+fout.WriteLine("#undef HPUX")
+fout.WriteLine("#undef INT_LT_POINTER")
+fout.WriteLine("#undef IRIX")
+fout.WriteLine("#undef LINUX")
+fout.WriteLine("#define MPICH")
+fout.WriteLine("#undef MPIHP")
+fout.WriteLine("#undef MPILAM")
+fout.WriteLine("#undef MPISGI")
+fout.WriteLine("#undef MPI_OFFSET_IS_INT")
+fout.WriteLine("#undef NEEDS_MPI_TEST")
+fout.WriteLine("#undef NFS")
+fout.WriteLine("#undef NO_AIO")
+fout.WriteLine("#undef NO_FD_IN_AIOCB")
+fout.WriteLine("#undef NO_MPI_SGI_type_is_contig")
+fout.WriteLine("#undef PARAGON")
+fout.WriteLine("#undef PFS")
+fout.WriteLine("#undef PIOFS")
+fout.WriteLine("#undef PRINT_ERR_MSG")
+fout.WriteLine("#undef ROMIO_PVFS")
+fout.WriteLine("#undef ROMIO_TESTFS")
+fout.WriteLine("#undef SFS")
+fout.WriteLine("#undef SOLARIS")
+fout.WriteLine("#undef SPPUX")
+fout.WriteLine("#undef SX4")
+fout.WriteLine("#undef UFS")
+fout.WriteLine("#undef XFS")
+fout.WriteLine("")
+fout.WriteLine("#ifndef ROMIO_NTFS")
+fout.WriteLine("#define ROMIO_NTFS")
+fout.WriteLine("#endif")
+fout.WriteLine("#ifndef HAVE_INT64")
+fout.WriteLine("#define HAVE_INT64 1")
+fout.WriteLine("#endif")
+fout.WriteLine("")
+fout.WriteLine("#ifndef HAS_MPIR_ERR_SETMSG")
+fout.WriteLine("#define HAS_MPIR_ERR_SETMSG")
+fout.WriteLine("#endif")
+fout.WriteLine("#ifndef MPICH")
+fout.WriteLine("#define MPICH")
+fout.WriteLine("#endif")
+fout.WriteLine("#ifndef HAVE_STATUS_SET_BYTES")
+fout.WriteLine("#define HAVE_STATUS_SET_BYTES")
+fout.WriteLine("#endif")
+fout.WriteLine("")
+fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
+fout.WriteLine("#define FORTRANCAPS")
+fout.WriteLine("#endif")
+fout.WriteLine("")
+fout.WriteLine("#endif")
+
 fout.Close()
 
 </script>
