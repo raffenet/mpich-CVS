@@ -1,4 +1,5 @@
 LDADD = -L ../../../lib 
+self_SOURCES = self.c
 DEPADD = ../../../lib/libmpich.a
 simple_SOURCES = simple.c
 sendrecv_SOURCES = sendrecv.c
