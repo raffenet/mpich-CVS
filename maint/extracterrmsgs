@@ -70,7 +70,7 @@ generic is $arg2 and specific is $arg3\r\n";
 	    }
 	    else {
 		# NonStandard arg
-		print "NonStandard arg $arg2 in $filename\n";
+		print STDERR "Warning: NonStandard arg $arg2 in $filename\n";
 	    }
 	    if (!defined($generic_msgs{$arg2})) {
 		if ($arg3 ne "0" && $arg3 ne $arg2) {
@@ -233,7 +233,7 @@ sub CreateErrMsgMapping {
     print "};\n";
     print "#endif\n";
 
-    print "#ifdef MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
+    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
     print "static int class_to_index[] = {\n";
     for ($i=0; $i<=$#mpimsg; $i++) {
 	print "$mpimsg[$i],";

@@ -182,8 +182,10 @@ sub StripComments {
 	else {
 	    $curline .= <$FD>;
 	    if (eof($FD)) {
-		print STDERR "Unterminated comment found!\n";
-		print STDERR "Comment is $curline\n";
+		print STDERR "Unterminated comment found$errsrc!\n";
+		my $line = $curline;
+		if ($line =~ /(.*)\n/) { $line = "$1"; }
+		print STDERR "Comment begins with $line\n";
 		return $curline;
 	    }
 	}

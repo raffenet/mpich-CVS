@@ -24,11 +24,22 @@ sub ProcessFile {
     $filename = $_[0];
     open( FD, "<$filename" ) || die "Could not open $filename";
     while (<FD>) {
+#	if (/\/\*-ALLOW-PRINTF-\*\//) {
+#	    
+#	}
+	$errsrc = " in $filename";
 	$_ = StripComments( FD, $_ );
 	# Check for C++ style comments
 	if (/\/\//) {
 	    print "C++ comment found in $filename:\n";
-	    print $_;
+	    my $line = $_;
+	    if (/(.*)\n/) {
+		$line = "$1\n";
+	    }
+	    else {
+		$line = $_;
+	    }
+	    print $line;
 	    s/\/\/.*//;
 	}
 	&CheckForBadSubs( $_, $filename );
@@ -38,7 +49,7 @@ sub ProcessFile {
 
 #
 # Subroutines that we want to avoid
-@avoidsubs = ( "printf" );
+@avoidsubs = ( "fprintf", "fputs", "puts", "printf" );
 @guardedsubs = ( "alloca", "closedir", "fnmatch", "getloadavg", 
 		 "getmntent", "getpgrp", "memcmp", "mmap", 
 		 "setpgrp", "setvbuf", "strcoll", "strftime",
@@ -52,7 +63,7 @@ sub CheckForBadSubs {
     my $curline = $_[0];
     my $filename = $_[1];
     foreach $subname (@avoidsubs) {
-	if (/$subname\s*\(/) {
+	if (/(?<!\w)$subname\s*\(/) {
 	    print "Warning: found reference to routine $subname in $filename\n";
 	}
     }
@@ -73,7 +84,8 @@ sub CheckForBadSubs {
 	       'MPICH_SINGLE_THREADED', 'CHAR_PTR_IS_ADDRESS', 'FOO',
 	       'STDC_HEADERS', '__cplusplus',
 	       'MPID_[A-Za-z0-9_]*',
-	       'MPICH_[A-Za-z0-9_]*', );
+	       'MPICH_[A-Za-z0-9_]*', 
+	       'MPI_BUILD_PROFILING' );
 @BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
 sub CheckName {
     my $name = $_[0];

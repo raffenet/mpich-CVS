@@ -82,8 +82,10 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
 
     MPID_Comm_thread_lock( comm_ptr );
 
-    MPID_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm_ptr, &intercomm_ptr, array_of_errcodes);
-    //*intercomm = MPID_Comm_ptr_to_MPI_Comm(intercomm_ptr);
+    MPID_Comm_spawn_multiple(count, array_of_commands, array_of_argv, 
+			     array_of_maxprocs, array_of_info, root, 
+			     comm_ptr, &intercomm_ptr, array_of_errcodes);
+    /* *intercomm = MPID_Comm_ptr_to_MPI_Comm(intercomm_ptr); */
 
     MPID_Comm_thread_unlock( comm_ptr );
 

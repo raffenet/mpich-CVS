@@ -62,7 +62,7 @@ extern int free();
 
 /* HEADER_DOUBLES is the number of doubles in a trSPACE header */
 /* We have to be careful about alignment rules here */
-#if defined(POINTER_64_BITS)
+#if SIZEOF_VOID_P > 4
 #define TR_ALIGN_BYTES 8
 #define TR_ALIGN_MASK  0x7
 #define TR_FNAME_LEN   16

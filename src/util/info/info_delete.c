@@ -88,7 +88,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
     curr_ptr = info_ptr->next;
 
     while (curr_ptr) {
-	if (!strcmp(curr_ptr->key, key)) {
+	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
 	    MPIU_Free(curr_ptr->key);   
 	    MPIU_Free(curr_ptr->value);
 	    prev_ptr->next = curr_ptr->next;

@@ -97,7 +97,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
     curr_ptr = info_ptr->next;
 
     while (curr_ptr) {
-	if (!strcmp(curr_ptr->key, key)) {
+	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
 	    /* Key already present; replace value */
 	    MPIU_Free(curr_ptr->value);  
 	    curr_ptr->value = MPIU_Strdup(value);

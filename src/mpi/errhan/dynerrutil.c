@@ -41,6 +41,8 @@ static int  first_free_code  = 0;
    the routine. */
 extern (*MPIR_dnyErr_to_string)( int, char *, int );
 
+int MPIR_Err_get_string( int code, char *msg, int msg_len );
+
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
 
@@ -97,7 +99,7 @@ int MPIR_Err_add_class( const char *msg_string,
     
     if (new_class == 0) {
 	initialized = 1;
-	*MPIR_dnyErr_to_string = MPIR_Err_get_string;
+	MPIR_dnyErr_to_string = MPIR_Err_get_string;
     }
 
     if (msg_string) {

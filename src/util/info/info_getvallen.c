@@ -91,7 +91,7 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
     *flag = 0;
 
     while (curr_ptr) {
-	if (!strcmp(curr_ptr->key, key)) {
+	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
 	    *valuelen = strlen(curr_ptr->value);
 	    *flag = 1;
 	    break;

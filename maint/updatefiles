@@ -32,15 +32,20 @@ if [ -x maint/extracterrmsgs ] ; then
     echo "Extracting the error messages..."
     maint/extracterrmsgs src/mpi/*/*.c src/util/*/*.c > .tmp 2>.err
     # (error here is ok)
+    update_errdefs=yes
     if [ -s .err ] ; then 
        cat .err
-       rm .err
-       echo "Because of errors in extracting error messages, the file"
-       echo "src/mpi/errhan/defmsg.h was not updated."
-    else 
-        if [ -s .tmp ] ; then
-            mv .tmp src/mpi/errhan/defmsg.h
-	fi
+       rm -f .err2
+       grep -v "Warning:" .err > .err2
+       if [ -s .err2 ] ; then
+           echo "Because of errors in extracting error messages, the file"
+           echo "src/mpi/errhan/defmsg.h was not updated."
+           update_errdefs=no
+       fi
+       rm -f .err .err2
+    fi
+    if [ -s .tmp -a "$update_errdefs" = "yes" ] ; then
+        mv .tmp src/mpi/errhan/defmsg.h
     fi
 fi
 # Build simplemake if necessary
