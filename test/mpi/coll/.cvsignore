@@ -5,6 +5,10 @@ Makefile
 *.o
 *.pf
 *.plg
+*.bb
+*.bbg
+*.da
+*.gcov
 bcasttest
 allred
 alltoallv
@@ -21,4 +25,7 @@ coll3
 coll2
 allredmany
 scantst
+longuser
+coll10
+coll11
 

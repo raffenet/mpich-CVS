@@ -1,6 +1,10 @@
 *.o
 *.lo
 *.pf
+*.bb
+*.bbg
+*.da
+*.gcov
 Makefile
 Makefile.in
 defmsg.h

@@ -7,6 +7,10 @@ mpif77.conf
 mpif77
 *.o
 *.lo
+*.bb
+*.bbg
+*.da
+*.gcov
 configure
 config.log
 config.status

@@ -2,5 +2,9 @@
 Debug
 Release
 *.o
+*.bb
+*.bbg
+*.da
+*.gcov
 Makefile
 Makefile.in

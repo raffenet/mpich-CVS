@@ -22,3 +22,7 @@ mpich2
 latex.err
 *.hux
 mpich2pdf*
+*.bb
+*.bbg
+*.da
+*.gcov

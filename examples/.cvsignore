@@ -10,3 +10,7 @@ bcasttest
 allred
 spawntest
 cpi
+*.bb
+*.bbg
+*.da
+*.gcov

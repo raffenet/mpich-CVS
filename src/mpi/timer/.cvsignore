@@ -6,6 +6,10 @@ config.system
 *.o
 *.lo
 *.pf
+*.bb
+*.bbg
+*.da
+*.gcov
 Makefile
 Makefile.in
 timerconf.h.in

@@ -11,3 +11,7 @@ config.log
 config.status
 config.system
 config.cache
+*.bb
+*.bbg
+*.da
+*.gcov

@@ -30,3 +30,7 @@ adi3newpdf*
 latex.err
 adi3new
 *.hux
+*.bb
+*.bbg
+*.da
+*.gcov
