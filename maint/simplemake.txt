@@ -4,10 +4,89 @@ Simplemake is a a program that writes Makefile.in files for use with
 autoconf (configure).  Simplemake is an alternative to automake that
 provides different facilities.
 
--- documentation is incomplete.  This is a placeholder for items as
-they are added. --
+This README is organized as follows:  First, an example, showing a simple
+simplemake input file.  Next, a list of the commands that simplemake
+understands, followed by a more detailed description of these commands.
+Next is a brief description of the command line options to simplemake.
+Finally, a comparision with Automake and a rationale for simplemake.
 
-x. SUBDIRS
+This documentation is incomplete.  This is a placeholder for items as
+they are added.
+
+Example
+--------
+Here is a Makefile.sm that builds a library and a program by default, and
+defines a target for program that is not built by default:
+
+---------------
+libMylib_a_SOURCES = util.c mysrc.c
+hellow_SOURCES = hellow.c
+hellow_LDADD = -L. -lMylib
+goodbye_SOURCES = goodbye.c
+EXTRA_PROGRAMS = goodbye
+---------------
+The resulting Makefile.in looks like
+---------------
+# This Makefile.in created by simplemake.  Do not edit
+
+all: all-redirect
+
+shell       = @SHELL@
+AR          = @AR@
+RANLIB      = @RANLIB@
+srcdir      = @srcdir@
+DEFS        = @DEFS@ -I. -I${srcdir}
+INCLUDES    = 
+LIBS        = @LIBS@
+CC          = @CC@
+CFLAGS      = @CFLAGS@
+C_COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS)
+C_LINK      = $(CC)
+
+VPATH = .:${srcdir}
+.SUFFIXES:
+.SUFFIXES: .o .c 
+.c.o:
+	$(C_COMPILE) -c $<
+clean:
+	-rm -f *.o ${srcdir}/*.o *~ goodbye hellow
+distclean: clean
+maintainerclean:
+	-rm -f Makefile.in
+
+all-redirect: libMylib.a hellow
+libMylib.a: util.o mysrc.o 
+	${AR} cr libMylib.a $?
+	${RANLIB} libMylib.a
+goodbye: goodbye.o 
+	$(C_LINK) -o goodbye goodbye.o    ${LIBS}
+hellow: hellow.o 
+	$(C_LINK) -o hellow hellow.o   -L. -lMylib ${LIBS}
+# Dependencies
+SOURCES =  util.c mysrc.c hellow.c goodbye.c
+TAGS:${HEADERS} ${SOURCES}
+	etags -o /TAGS --append ${HEADERS} ${SOURCES}
+---------------
+Note that this builds the targets in the order in which they are encountered
+in the source file, and that targets for common operations such as 'clean' 
+are created automatically.
+
+Makefile.sm Rules
+-----------------
+lib<name>_a_SOURCES = source file names for library <name>
+lib<name>_a_DIR     = directory in which lib<name> will exist
+<name>_SOURCES      = source file names for program <name>
+<name>_LDADD        = additional files and flags used for 
+                      linking program <name>
+SUBDIRS = names of subsidiary directories
+EXTRA_PROGRAMS = names of programs that should *not* be built by default
+
+Other lines are copied as provided.  Variables (e.g., name = ...) are placed
+before other targets.  
+
+Details
+-------
+SUBDIRS
 The variables SUBDIRS instructs simplemake which subdirectories to
 process.  Normally, this is a list of directories, but in some cases,
 some of the directory names may be created by configure.  That is,
@@ -19,3 +98,66 @@ for each @name@ that appears in a SUBDIRS list.  For example,
 
 SUBDIRS_device_name = mm tcp shmem
 SUBDIRS = util @device_name@ .
+
+
+Commandline Options to Simplemake
+---------------------------------
+ -nocomments
+    Do not include comments in the generated Makefile.in
+ -v
+    Verbose output from simplemake; sometimes useful for debugging
+ -libdir=name=dir
+    Has the effect of libname_a_DIR=dir in each Makefile.sm file.  Dir may
+    contain the special value ROOTDIR; this will cause each directory to refer
+    to a relative path.  For example
+
+        simplemake -libdir=mpich2=ROOTDIR/lib
+ -common=filename
+    Include the contents of filename in every generated Makefile
+ -autoconf=string
+    For Makefile.in's that include targets to rebuild configure, include 
+    'string' as arguments to autoconf.  The special symbol ROOTDIR 
+    (see -libdir) can be used here.
+ -include=list
+    Add list to the include paths used in compiling programs
+ -distrib
+    Build versions of the Makefile.in's that are suitable for distribution.
+    This removes some of the maintenance targets
+ -shared
+    (not implemented)
+    Build shared libraries
+ -vpath=yes
+    Use @VPATH@ from configure instead of the common VPATH format
+ -depend
+    Use gcc (if available) to create dependencies for C files.
+ -nodepend
+    Do not attempt to generate dependencies.
+
+Differences with Automake
+-------------------------
+1.  Targets may use make variables.  For example,
+
+MPI_sources = foo.c bar.c
+libmpich_SOURCES = ${MPI_sources}
+
+simplemake expands the ${MPI_sources} when creating the target dependencies
+for libmpich. 
+
+2.  Generated Makefiles are cleaner.  simplemake only generates the targets
+that it needs.  Make is inscrutable enough as it is without a lot of wierd
+targets and variables (a Makefile debugger would be a gift to humanity).
+
+3. Easier configuration for different source types.  simplemake associates
+a set of rules and definitions with various suffixes; overridding these by
+changing the corresponding entries in the Perl hashes is easy (and can 
+be done thought a commandline argument to simplemake (not yet implemented).
+
+4. Simplemake is very limited in comparison with automake.  As yet, there is
+no automatic support for shared libraries.
+
+5. Target libraries can be in other directories.  A special feature allows
+the path to the directory to be computed relative to the Makefile.sm location.
+
+6. Directories in SUBDIRS don't have to have Makefile.sm files.  This allows
+you to include a package that has a separate build structure.
+
