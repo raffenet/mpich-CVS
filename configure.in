@@ -561,14 +561,13 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
     ac_cv_prog_f77_cross=yes
     ac_cv_prog_cxx_cross=yes
 fi
-AC_PATH_PROG(AR,ar)
-AC_PATH_PROG(RANLIB,ranlib)
-if test -z "$RANLIB" ; then
-    # Some systems do not have any ranlib.  For these, we just use true,
-    # since we will have a ranlib step in building the libraries.
-    RANLIB=true
-fi
+AC_CHECK_PROGS(AR,ar)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_PROG_INSTALL
+# We need the full path to perl since we'll use it as the interpreter for
+# a shell script.
 AC_PATH_PROG(PERL5,perl)
 dnl
 dnl Now that CC is defined, get these values 
