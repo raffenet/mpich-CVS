@@ -230,15 +230,9 @@ PMPI_LOCAL int MPIR_Scatter (
     }
     
     else { /* communicator is heterogeneous */
-    
-        printf("ERROR: MPI_Scatter not implemented for heterogeneous case\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);     
-            
-        if (rank == root) {
-#ifdef UNIMPLEMENTED
+            if (rank == root) {
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
                           &tmp_buf_size); 
-#endif
             tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
@@ -260,7 +254,6 @@ PMPI_LOCAL int MPIR_Scatter (
 
             curr_cnt = nbytes*comm_size;
             
-#ifdef UNIMPLEMENTED
             if (root == 0) {
                 if (recvbuf != MPI_IN_PLACE) {
                     position = 0;
@@ -290,12 +283,9 @@ PMPI_LOCAL int MPIR_Scatter (
                 NMPI_Pack(sendbuf, sendcnt*rank, sendtype, tmp_buf,
                           tmp_buf_size, &position, comm); 
             }
-#endif
         }
         else {
-#ifdef UNIMPLEMENTED
-            NMPI_Pack_size(recvcnt*(size/2), recvtype, comm, &tmp_buf_size);
-#endif
+            NMPI_Pack_size(recvcnt*(comm_size/2), recvtype, comm, &tmp_buf_size);
             tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
@@ -352,11 +342,9 @@ PMPI_LOCAL int MPIR_Scatter (
         
         /* copy local data into recvbuf */
         position = 0;
-#ifdef UNIMPLEMENTED
         if (recvbuf != MPI_IN_PLACE)
             NMPI_Unpack(tmp_buf, tmp_buf_size, &position, recvbuf, recvcnt,
                         recvtype, comm);
-#endif
         MPIU_Free(tmp_buf);
     }
     
@@ -438,12 +426,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
-                /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-                   INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-                   SO IT'S OK */
-#ifdef UNIMPLEMENTED
                 MPI_Type_lb( recvtype, &lb );
-#endif
                 tmp_buf = (void *)((char*)tmp_buf - lb);
 
                 MPID_Comm_thread_lock( comm_ptr );

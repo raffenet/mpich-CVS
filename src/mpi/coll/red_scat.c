@@ -77,9 +77,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
     MPID_Datatype_get_size_macro(datatype, type_size);
     MPID_Datatype_get_extent_macro(datatype, extent);
-#ifdef UNIMPLEMENTED
     MPI_Type_lb( datatype, &lb );
-#endif
     
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -121,7 +119,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
 
-    if (nbytes >= MPIR_REDUCE_SCATTER_SHORT_MSG) {
+    if (nbytes > MPIR_REDUCE_SCATTER_SHORT_MSG) {
         /* for long messages, use (p-1) pairwise exchanges */ 
         
         if (sendbuf != MPI_IN_PLACE) {
@@ -139,9 +137,6 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
         tmp_recvbuf = (void *)((char*)tmp_recvbuf - lb);
         
         for (i=1; i<comm_size; i++) {
@@ -219,9 +214,6 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     else {
         /* for short messages, use recursive doubling. */
 
-        printf("ERROR: MPI_Reduce_scatter not implemented for short messages because it needs derived datatypes\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);     
-        
         /* need to allocate temporary buffer to receive incoming data*/
         tmp_recvbuf = MPIU_Malloc(extent*total_count);
         if (!tmp_recvbuf) {
@@ -229,9 +221,6 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
         tmp_recvbuf = (void *)((char*)tmp_recvbuf - lb);
         
         /* need to allocate another temporary buffer to accumulate
@@ -242,9 +231,6 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             return mpi_errno;
         }        
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
         tmp_results = (void *)((char*)tmp_results - lb);
         
         /* copy sendbuf into tmp_results */
@@ -290,10 +276,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             for (j=my_tree_root; j<my_tree_root+mask; j++)
                 dis[1] += recvcnts[j];
             
-#ifdef UNIMPLEMENTED
             NMPI_Type_indexed(2, blklens, dis, datatype, &sendtype);
             NMPI_Type_commit(&sendtype);
-#endif
             
             /* calculate recvtype */
             blklens[0] = blklens[1] = 0;
@@ -307,10 +291,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             for (j=dst_tree_root; j<dst_tree_root+mask; j++)
                 dis[1] += recvcnts[j];
             
-#ifdef UNIMPLEMENTED
             NMPI_Type_indexed(2, blklens, dis, datatype, &recvtype);
             NMPI_Type_commit(&recvtype);
-#endif
             
             if (dst < comm_size) {
                 /* tmp_results contains data to be sent in each step. Data is
@@ -428,10 +410,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                 }
             }
             
-#ifdef UNIMPLEMENTED
             NMPI_Type_free(&sendtype);
             NMPI_Type_free(&recvtype);
-#endif
             
             mask <<= 1;
             i++;
@@ -513,12 +493,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
         MPI_Type_lb( datatype, &lb );
-#endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
     }
 

@@ -126,12 +126,7 @@ PMPI_LOCAL int MPIR_Allreduce (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
         NMPI_Type_lb( datatype, &lb );
-#endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local data into recvbuf */

@@ -120,12 +120,7 @@ PMPI_LOCAL int MPIR_Exscan (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
     MPI_Type_lb( datatype, &lb );
-#endif
     partial_scan = (void *)((char*)partial_scan - lb);
     
     /* need to allocate temporary buffer to store incoming data*/
@@ -135,12 +130,7 @@ PMPI_LOCAL int MPIR_Exscan (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
     MPI_Type_lb( datatype, &lb );
-#endif
     tmp_buf = (void *)((char*)tmp_buf - lb);
     
     mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,

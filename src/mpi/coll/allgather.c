@@ -203,12 +203,9 @@ PMPI_LOCAL int MPIR_Allgather (
     
     else {
         /* heterogeneous. need to use temp. buffer. */
-        printf("ERROR: MPI_Allgather not implemented for heterogeneous case\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);     
  
-#ifdef UNIMPLEMENTED
-        NMPI_Pack_size(recvcount*size, recvtype, comm, &tmp_buf_size);
-#endif
+        NMPI_Pack_size(recvcount*comm_size, recvtype, comm, &tmp_buf_size);
+
         tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
@@ -224,27 +221,21 @@ PMPI_LOCAL int MPIR_Allgather (
          'position' is incremented. */
 
         position = 0;
-#ifdef UNIMPLEMENTED
         NMPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
                   &position, comm);
-#endif
         nbytes = position*recvcount;
 
         /* pack local data into right location in tmp_buf */
         position = rank * nbytes;
         if (sendbuf != MPI_IN_PLACE) {
-#ifdef UNIMPLEMENTED
             NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf, tmp_buf_size,
                       &position, comm);
-#endif
         }
         else {
             /* if in_place specified, local data is found in recvbuf */
-#ifdef UNIMPLEMENTED
             NMPI_Pack(((char *)recvbuf + recv_extent*rank), recvcount,
                        recvtype, tmp_buf, tmp_buf_size, 
                        &position, comm);
-#endif
         }
 
         curr_cnt = nbytes;
@@ -355,10 +346,8 @@ PMPI_LOCAL int MPIR_Allgather (
         }
         
         position = 0;
-#ifdef UNIMPLEMENTED
         NMPI_Unpack(tmp_buf, tmp_buf_size, &position, recvbuf,
                     recvcount*comm_size, recvtype, comm);
-#endif
         
         MPIU_Free(tmp_buf);
     }
@@ -407,12 +396,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
         MPI_Type_lb( sendtype, &lb );
-#endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
     }
 

@@ -105,13 +105,8 @@ int MPIR_Bcast (
       nbytes = type_size * count;
   }
   else {
-      printf("ERROR: MPI_Bcast not implemented for noncontiguous and heterogeneous cases.\n");
-      NMPI_Abort(MPI_COMM_WORLD, 1);     
-#ifdef UNIMPLEMENTED
       NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
-#else
-      tmp_buf_size = 0;
-#endif
+
       /* calculate the value of nbytes, the size in packed
          representation of the buffer to be broadcasted. We can't
          simply multiply tmp_buf_size by count because tmp_buf_size
@@ -126,10 +121,8 @@ int MPIR_Bcast (
       }
 
       position = 0;
-#ifdef UNIMPLEMENTED
       NMPI_Pack(buffer, 1, datatype, tmp_buf, tmp_buf_size,
                 &position, comm);
-#endif
       MPIU_Free(tmp_buf);
       nbytes = position * count;
   }
@@ -230,10 +223,8 @@ int MPIR_Bcast (
 
           if (rank == root) {
               position = 0;
-#ifdef UNIMPLEMENTED
               NMPI_Pack(buffer, count, datatype, tmp_buf, nbytes,
                         &position, comm);
-#endif
           }
       }
 
@@ -419,10 +410,8 @@ int MPIR_Bcast (
       if (!is_contig || !is_homogeneous) {
           if (rank != root) {
               position = 0;
-#ifdef UNIMPLEMENTED
               NMPI_Unpack(tmp_buf, nbytes, &position, buffer, count,
                           datatype, comm);
-#endif
           }
           MPIU_Free(tmp_buf);
       }

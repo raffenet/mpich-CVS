@@ -206,12 +206,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
     
     else {
         /* heterogeneous. need to use temp. buffer. */
-        printf("ERROR: MPI_Allgatherv not implemented for heterogeneous case\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);     
- 
-#ifdef UNIMPLEMENTED
         NMPI_Pack_size(total_count, recvtype, comm, &tmp_buf_size);
-#endif
         tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
@@ -235,18 +230,14 @@ PMPI_LOCAL int MPIR_Allgatherv (
         position *= nbytes;
 
         if (sendbuf != MPI_IN_PLACE) {
-#ifdef UNIMPLEMENTED
             NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf,
                       tmp_buf_size, &position, comm);
-#endif
         }
         else {
             /* if in_place specified, local data is found in recvbuf */ 
-#ifdef UNIMPLEMENTED
-            NMPI_Pack(((char *)recvbuf + displs[rank]*recv_extent, 
+            NMPI_Pack(((char *)recvbuf + displs[rank]*recv_extent), 
                       recvcounts[rank], recvtype, tmp_buf,
                       tmp_buf_size, &position, comm);
-#endif
         }
 
         curr_cnt = recvcounts[rank]*nbytes;
@@ -369,7 +360,6 @@ PMPI_LOCAL int MPIR_Allgatherv (
         }
         
         position = 0;
-#ifdef UNIMPLEMENTED
         for (j=0; j<comm_size; j++) {
             if ((sendbuf != MPI_IN_PLACE) || (j != rank)) {
                 /* not necessary to unpack if in_place and
@@ -378,7 +368,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
                             ((char *)recvbuf + displs[j]*recv_extent),
                             recvcounts[j], recvtype, comm);
             }
-#endif
+        }
         
         MPIU_Free(tmp_buf);
   }
@@ -462,17 +452,14 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
 #endif
     MPID_Comm_get_ptr( newcomm, newcomm_ptr );
 
-#ifdef UNIMPLEMENTED
     NMPI_Type_indexed(remote_size, recvcounts, displs, recvtype,
                       &newtype);
     NMPI_Type_commit(&newtype);
-#endif
 
     mpi_errno = MPIR_Bcast(recvbuf, 1, newtype, 0, newcomm_ptr);
 
-#ifdef UNIMPLEMENTED
     NMPI_Type_free(&newtype);
-#endif
+
     return mpi_errno;
 }
 

@@ -39,4 +39,8 @@
 #define NMPI_Type_extent PMPI_Type_extent
 #define NMPI_Comm_free PMPI_Comm_free
 #define NMPI_Comm_dup PMPI_Comm_dup
+#define NMPI_Type_lb PMPI_Type_lb
+#define NMPI_Type_indexed PMPI_Type_indexed 
+#define NMPI_Type_commit PMPI_Type_commit
+#define NMPI_Type_free PMPI_Type_free
 #endif /* MPICH_NMPI_H_INCLUDED */

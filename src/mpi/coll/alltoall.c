@@ -122,12 +122,7 @@ PMPI_LOCAL int MPIR_Alltoall(
         }
         
         /* adjust for potential negative lower bound in datatype */
-        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-           SO IT'S OK */
-#ifdef UNIMPLEMENTED
         MPI_Type_lb( sendtype, &lb );
-#endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local sendbuf into tmp_buf at location indexed by rank */

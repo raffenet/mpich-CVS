@@ -129,12 +129,7 @@ int MPIR_Reduce (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-       INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-       SO IT'S OK */
-#ifdef UNIMPLEMENTED
     MPI_Type_lb( datatype, &lb );
-#endif
     buffer = (void *)((char*)buffer - lb);
     
     /* If I'm not the root, then my recvbuf may not be valid, therefore
@@ -281,12 +276,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
-            /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
-               INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
-               SO IT'S OK */
-#ifdef UNIMPLEMENTED
             MPI_Type_lb( datatype, &lb );
-#endif
             tmp_buf = (void *)((char*)tmp_buf - lb);
         }
         

@@ -1520,7 +1520,7 @@ int MPID_Get_processor_name(char *, int *);
 #define MPIR_BCAST_SHORT_MSG          12288
 #define MPIR_BCAST_MIN_PROCS          8
 #define MPIR_ALLTOALL_SHORT_MSG       128
-#define MPIR_REDUCE_SCATTER_SHORT_MSG 0  /* temporarily because the short message algo needs derived datatypes */
+#define MPIR_REDUCE_SCATTER_SHORT_MSG 512  
 #define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
 #define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
 
