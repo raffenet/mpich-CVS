@@ -505,7 +505,8 @@ int MPIDI_CH3U_Request_load_send_iov(
 	MPIDI_DBG_PRINTF((40, FCNAME, "remaining data loaded into IOV"));
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
     }
-    else if (last / *iov_n >= MPIDI_IOV_DENSITY_MIN)
+    else if ((last - sreq->ch3.segment_first) / *iov_n
+	     >= MPIDI_IOV_DENSITY_MIN)
     {
 	MPIDI_DBG_PRINTF((40, FCNAME, "more data loaded into IOV"));
 	sreq->ch3.segment_first = last;
@@ -514,6 +515,8 @@ int MPIDI_CH3U_Request_load_send_iov(
     else
     {
 	MPIDI_msg_sz_t data_sz;
+	
+	MPIDI_DBG_PRINTF((40, FCNAME, "low density.  using SRBuf."));
 	    
 	data_sz = sreq->ch3.segment_size - sreq->ch3.segment_first;
 	if (!MPIDI_Request_get_srbuf_flag(sreq))
@@ -528,10 +531,16 @@ int MPIDI_CH3U_Request_load_send_iov(
 	    }
 	}
 		    
-	last = (data_sz <= sreq->ch3.tmpbuf_sz) ? data_sz :
+	last = (data_sz <= sreq->ch3.tmpbuf_sz) ? sreq->ch3.segment_size :
 	    sreq->ch3.segment_first + sreq->ch3.tmpbuf_sz;
+	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack: first=" MPIDI_MSG_SZ_FMT
+			   ", last=" MPIDI_MSG_SZ_FMT,
+			   sreq->ch3.segment_first, last));
 	MPID_Segment_pack(&sreq->ch3.segment, sreq->ch3.segment_first,
 			  &last, sreq->ch3.tmpbuf);
+	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack: first=" MPIDI_MSG_SZ_FMT
+			   ", last=" MPIDI_MSG_SZ_FMT,
+			   sreq->ch3.segment_first, last));
 	iov[0].MPID_IOV_BUF = sreq->ch3.tmpbuf;
 	iov[0].MPID_IOV_LEN = last - sreq->ch3.segment_first;
 	*iov_n = 1;
@@ -609,7 +618,8 @@ int MPIDI_CH3U_Request_load_recv_iov(
 	    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else if (last == rreq->ch3.segment_size
-		 || last / rreq->ch3.iov_count >= MPIDI_IOV_DENSITY_MIN)
+		 || (last - rreq->ch3.segment_first) / rreq->ch3.iov_count
+		 >= MPIDI_IOV_DENSITY_MIN)
 	{
 	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read data "
 			      "directly into the user buffer and reload IOV"));
@@ -635,7 +645,8 @@ int MPIDI_CH3U_Request_load_recv_iov(
 
 	    rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmpbuf;
 	    rreq->ch3.iov[0].MPID_IOV_LEN = (data_sz <= rreq->ch3.tmpbuf_sz) ?
-		data_sz : rreq->ch3.segment_first + rreq->ch3.tmpbuf_sz;
+		rreq->ch3.segment_size :
+		rreq->ch3.segment_first + rreq->ch3.tmpbuf_sz;
 	    rreq->ch3.iov_count = 1;
 	}
 	
