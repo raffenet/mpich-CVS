@@ -105,27 +105,11 @@ items listed here that are already sufficiently tested.
     (These may now be covered by the John May test)
     These include the routines in the files (entire file if no notes on that
     file):
-    get_posn_sh.c
-    get_view.c (rougly lines 99ff, at Type_contiguous)
-    iotest.c
-    iread_sh.c
-    iwrite_sh.c
     open.c (a few lines, including if(!rank)ADIO_Set_shared_fp
-    rd_atallb.c
-    rd_atalle.c
-    read_at.c (at "convert count and offset to bytes")
-    read_ord.c
-    read_ordb.c
-    read_sh.c (for ADIO_ReadStrided)
-    seek.c (for MPI_SEEK_SET)
-    seek_sh.c (for MPI_SEEK_CUR and MPI_SEEK_END)
-    set_info.c
+    get_view.c (roughly lines 99ff, at Type_contiguous)
     set_view.c (for MPI_DISPLACEMENT_CURRENT)
-    wr_atallb.c
-    write_at.c (at "convert bufocount and offset to bytes")
-    write_ord.c
-    write_ordb.c
-    write_sh.c (ADIOI_WRITE_LOCK and UNLOCK; also ADIO_WriteStrided)
+    set_info.c
+    seek_sh.c (for MPI_SEEK_CUR)
     
 Also, 
 Replace the calls to MPIR_Group_release in Finalize with
@@ -187,3 +171,25 @@ the group code is used.
 36. Add tests for info delete, dup, getvaluelen.  Add enough tests to 
     check insert at beginning, middle, end. -- all done
 37. Add tests for info set that replaces an existing value. -- done
+40. Add tests for all of MPI-IO not already covered.
+    Most of these were be covered by the John May test.
+    These include the routines in the files (entire file if no notes on that
+    file):
+    get_posn_sh.c
+    iotest.c
+    iread_sh.c
+    iwrite_sh.c
+    open.c (a few lines, including if(!rank)ADIO_Set_shared_fp
+    rd_atallb.c
+    rd_atalle.c
+    read_at.c (at "convert count and offset to bytes")
+    read_ord.c
+    read_ordb.c
+    read_sh.c (for ADIO_ReadStrided)
+    seek.c (for MPI_SEEK_SET)
+    seek_sh.c (for MPI_SEEK_END)
+    wr_atallb.c
+    write_at.c (at "convert bufocount and offset to bytes")
+    write_ord.c
+    write_ordb.c
+    write_sh.c (ADIOI_WRITE_LOCK and UNLOCK; also ADIO_WriteStrided)
