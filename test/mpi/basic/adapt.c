@@ -41,6 +41,9 @@
 #define LEFT_PROCESS    0
 #define MIDDLE_PROCESS  1
 #define RIGHT_PROCESS   2
+#define MSG_TAG_01      9901
+#define MSG_TAG_12      9912
+#define MSG_TAG_012     9012
 
 int     g_left_rank       = -1;
 int     g_middle_rank     = -1;
@@ -373,8 +376,8 @@ int main(int argc, char *argv[])
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat01; j++)
 		    {
-			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD);
-			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, MSG_TAG_01, MPI_COMM_WORLD);
+			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, MSG_TAG_01, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args01.sbuff += args01.bufflen;
@@ -412,8 +415,8 @@ int main(int argc, char *argv[])
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat01; j++)
 		    {
-			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, MSG_TAG_01, MPI_COMM_WORLD, &status);
+			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, MSG_TAG_01, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args01.sbuff += args01.bufflen;
@@ -465,13 +468,13 @@ int main(int argc, char *argv[])
 skip_01_trial:
 	    if (g_proc_loc == RIGHT_PROCESS && g_nIproc == 0 && bSavePert)
 	    {
-		MPI_Recv(&tint, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tint, 1, MPI_INT, g_left_rank, 1, MPI_COMM_WORLD, &status);
 		fprintf(out, "%d\t", tint/8);
-		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
 		if (bUseMegaBytes)
 		    tdouble = tdouble / 8.0;
 		fprintf(out, "%f\t", tdouble);
-		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
 		fprintf(out, "%0.9f\t", tdouble);
 		fflush(out);
 	    }
@@ -577,8 +580,8 @@ skip_01_trial:
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat12; j++)
 		    {
-			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD);
-			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, MSG_TAG_12, MPI_COMM_WORLD);
+			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, MSG_TAG_12, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args12.sbuff += args12.bufflen;
@@ -616,8 +619,8 @@ skip_01_trial:
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat12; j++)
 		    {
-			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, MSG_TAG_12, MPI_COMM_WORLD, &status);
+			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, MSG_TAG_12, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args12.sbuff += args12.bufflen;
@@ -668,11 +671,11 @@ skip_01_trial:
 skip_12_trial:
 	    if (g_proc_loc == LEFT_PROCESS && g_nIproc == 0 && bSavePert)
 	    {
-		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, g_middle_rank, 1, MPI_COMM_WORLD, &status);
 		if (bUseMegaBytes)
 		    tdouble = tdouble / 8.0;
 		fprintf(out, "%f\t", tdouble);
-		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, g_middle_rank, 1, MPI_COMM_WORLD, &status);
 		fprintf(out, "%0.9f\t", tdouble);
 		fflush(out);
 	    }
@@ -779,8 +782,8 @@ skip_12_trial:
 			t0 = MPI_Wtime();
 			for (j = 0; j < nrepeat012; j++)
 			{
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
 			    if (bNoCache)
 			    {
 				args012.sbuff += args012.bufflen;
@@ -818,18 +821,18 @@ skip_12_trial:
 
 			/******* use the ii variable here !!! ******/
 
-			for (j = ii; j < nrepeat012; j+=ii)
+			for (j = 0; j < nrepeat012; j+=ii)
 			{
 			    for (k=0; k<ii; k++)
 			    {
-				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
-				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD);
+				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD, &status);
 			    }
 			    /* do the left process second because it does the timing and needs to include time to send to the right process. */
 			    for (k=0; k<ii; k++)
 			    {
-				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
+				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
 			    }
 			    if (bNoCache)
 			    {
@@ -837,19 +840,17 @@ skip_12_trial:
 				/* args012.rbuff += args012.bufflen; */
 			    }
 			}
-			j = ii % nrepeat012;
-			if (j == 0 && nrepeat012 >= ii)
-			    j = ii;
+			j = nrepeat012 % ii;
 			for (k=0; k < j; k++)
 			{
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD, &status);
 			}
 			/* do the left process second because it does the timing and needs to include time to send to the right process. */
 			for (k=0; k < j; k++)
 			{
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
 			}
 			t = (MPI_Wtime() - t0)/(2 * nrepeat012);
 		    }
@@ -878,8 +879,8 @@ skip_12_trial:
 			t0 = MPI_Wtime();
 			for (j = 0; j < nrepeat012; j++)
 			{
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
 			    if (bNoCache)
 			    {
 				args012.sbuff += args012.bufflen;
@@ -1031,8 +1032,8 @@ skip_12_trial:
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -1069,10 +1070,10 @@ skip_12_trial:
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, MSG_TAG_012, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -1106,8 +1107,8 @@ skip_12_trial:
 		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, MSG_TAG_012, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -1189,10 +1190,10 @@ skip_12_trial:
 	    }
 	    if (g_proc_loc != LEFT_PROCESS && g_nIproc == 0)
 	    {
-		MPI_Recv(&index01, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].bits, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].t, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&index01, 1, MPI_INT, g_left_rank, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].bits, 1, MPI_INT, g_left_rank, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].t, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
 	    }
 	    MPI_Barrier(MPI_COMM_WORLD); /* prevent the any source recvs from overlapping */
 	    if (g_proc_loc == MIDDLE_PROCESS && g_nIproc != 0)
