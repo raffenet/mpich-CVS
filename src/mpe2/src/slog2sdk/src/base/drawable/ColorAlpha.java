@@ -29,14 +29,14 @@ public class ColorAlpha extends Color
     public ColorAlpha()
     {
         // {red=255, green=192, blue= 203} is "pink" from jumpshot.colors
-        // Initialize all color to "pink", and "half opaque"
-        super( 255, 192, 203, ColorAlpha.HALF_OPAQUE );
+        // Initialize all color to "pink", and "opaque"
+        super( 255, 192, 203, ColorAlpha.OPAQUE );
         isModifiable  = true;
     }
 
     public ColorAlpha( int red, int green, int blue )
     {
-        super( red, green, blue, ColorAlpha.HALF_OPAQUE );
+        super( red, green, blue, ColorAlpha.OPAQUE );
         isModifiable  = true;
     }
 
