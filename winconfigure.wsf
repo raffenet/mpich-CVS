@@ -1733,7 +1733,12 @@ Sub AddDefinitions( fout, filename )
 					'fout.WriteLine("/* #undef HAVE_LONG_LONG_INT */")
 					fout.WriteLine("#define HAVE_LONG_LONG_INT 1")
 				Case "HAVE_MAX_STRUCT_ALIGNMENT"
-					fout.WriteLine("/* #undef HAVE_MAX_STRUCT_ALIGNMENT */")
+					'fout.WriteLine("/* #undef HAVE_MAX_STRUCT_ALIGNMENT */")
+					If bWin64 Then
+						fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 8")
+					Else
+						fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 4")
+					End If
 				Case "HAVE_NAMEPUB_SERVICE"
 					fout.WriteLine("#define HAVE_NAMEPUB_SERVICE 1")
 				Case "HAVE_NO_FORTRAN_MPI_TYPES_IN_C"
