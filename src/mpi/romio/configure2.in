@@ -209,7 +209,6 @@ case $arg in
      ;;
 esac
 done
-]
 #
 AC_CONFIG_AUX_DIR(../../../confdb)
 dnl PAC_ARG_CACHING
@@ -262,12 +261,18 @@ AC_SUBST(htmldir)
 #
 # check for valid file system
 if test -n "$FILE_SYSTEM" ; then
+   # if multiple filesystems are passed in, they are '+'-delimited
+   # we could set the IFS to tokenize FILE_SYSTEM, but the FILE_SYSTEM env var
+   # is used in multiple places in the build system: get rid of the '+'s so we
+   # can use the 'for x in $FILE_SYSTEM ...' idiom 
+   FILE_SYSTEM=`echo $FILE_SYSTEM|sed -e 's/\+/ /g'`
    for x in $FILE_SYSTEM
    do
       found=no
       for y in $known_filesystems ; do 
           if test $x = $y ; then
 	      found=yes
+	      eval "file_system_`echo $x`=1"
 	      break
 	  fi
       done
