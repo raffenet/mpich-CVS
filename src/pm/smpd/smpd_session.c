@@ -17,6 +17,12 @@
 #ifdef HAVE_STRING_H
 #include <string.h> /* strrchr */
 #endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifndef HAVE_WINDOWS_H
 static int exists(char *filename)
