@@ -1418,19 +1418,23 @@ Datatype TWOINTEGER(MPI_2INTEGER);
 
     # Init is a difficult function because we must allow C to call a 
     # C++ function.  We do this by getting help from the MPI implementation
+    # which invokes the MPIR_Call_op_fn routine, with a pointer to the 
+    # C++ routine to invoke.
     print $OUTFD "
-MPI::Op *MPIR_Cur_op;
+extern \"C\" void MPIR_Op_set_cxx( MPI_Op );
 extern \"C\" 
-void MPIR_Call_op_fn( void *invec, void *outvec, int *len, MPI_Datatype *dtype )
+void MPIR_Call_op_fn( void *invec, void *outvec, int len, MPI_Datatype dtype,
+		     User_function *uop )
 {
-    MPI::Datatype cxxdtype = *dtype;
-    MPIR_Cur_op->Call_user_function( invec, outvec, *len, cxxdtype );
+    MPI::Datatype cxxdtype = dtype;
+    (*uop)( invec, outvec, len, cxxdtype );
 }
 void Op::Init( User_function *f, bool commute )
     {
 	MPI_Op op;
-	MPIX_CALL( MPI_Op_create( MPIR_Call_op_fn, (int) commute, &the_real_op ) );
-	user_function = f;
+	MPIX_CALL( MPI_Op_create( (MPI_User_function)f, 
+				 (int) commute, &the_real_op ) ); 
+	MPIR_Op_set_cxx( the_real_op );
     }\n";
 
     print $OUTFD "
@@ -1791,21 +1795,11 @@ sub Intracomm_methods {
     &Clone_method( $OUTFD, "Intracomm" );
 }
 
-# We add a "Call_user_function" so that we can keep the "user_function"
-# field protected. 
 sub Op_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "
     void Init( User_function *, bool );
-    void Call_user_function( void *invec, void *outvec, int l, Datatype dtype ) { 
-       (user_function)( invec, outvec, l, dtype );
-    }\n";
-}
-sub Op_extradecls {
-    my $OUTFD = $_[0];
-    
-    print $OUTFD "   User_function *user_function;\n";
 }
     
 #

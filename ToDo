@@ -51,6 +51,11 @@ Thread-safety
     Alternate TCP and TCP+shared memory implementation that provides support
     for MPI_THREAD_MULTIPLE 
     Paper on the costs of thread-safety
+
+Documentation
+    Man pages (in Man, LaTeX, and HTML form)
+    User and Installation manuals
+    ADI manual
     
 Miscellaneous Issues
 ====================

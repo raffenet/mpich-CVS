@@ -34,6 +34,15 @@ MPIU_Object_alloc_t MPID_Op_mem = { 0, 0, 0, 0, MPID_OP,
 					    MPID_Op_direct,
 					    MPID_OP_PREALLOC, };
 
+#ifdef HAVE_CXX_BINDING
+void MPIR_Op_set_cxx( MPI_Op op )
+{
+    MPID_Op *op_ptr;
+    
+    MPID_Op_get_ptr( op, op_ptr );
+    op_ptr->language = MPID_LANG_CXX;
+}
+#endif
 #endif
 
 #undef FUNCNAME

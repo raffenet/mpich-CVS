@@ -76,6 +76,9 @@ PMPI_LOCAL int MPIR_Scan (
     MPID_Op *op_ptr;
     MPI_Comm comm;
     MPICH_PerThread_t *p;
+#ifdef HAVE_CXX_BINDING
+    int is_cxx_uop = 0;
+#endif
     
     if (count == 0) return MPI_SUCCESS;
 
@@ -99,12 +102,14 @@ PMPI_LOCAL int MPIR_Scan (
         else
             is_commutative = 1;
 
-#ifdef HAVE_CXX_BINDING        
-        if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
-                                                  MPID_LANG_CXX)) 
-#else
-	if ((op_ptr->language == MPID_LANG_C))
+#ifdef HAVE_CXX_BINDING            
+	if (op_ptr->language == MPID_LANG_CXX) {
+	    uop = (MPI_User_function *) op_ptr->function.c_function;
+	    is_cxx_uop = 1;
+	}
+	else
 #endif
+	if ((op_ptr->language == MPID_LANG_C))
             uop = (MPI_User_function *) op_ptr->function.c_function;
         else
             uop = (MPI_User_function *) op_ptr->function.f77_function;
@@ -165,13 +170,39 @@ PMPI_LOCAL int MPIR_Scan (
             if (mpi_errno) return mpi_errno;
             
             if (rank > dst) {
-                (*uop)(tmp_buf, partial_scan, &count, &datatype);
-                (*uop)(tmp_buf, recvbuf, &count, &datatype);
+#ifdef HAVE_CXX_BINDING
+		if (is_cxx_uop) {
+		    MPIR_Call_op_fn( tmp_buf, partial_scan, 
+				     count, datatype, uop );
+		    MPIR_Call_op_fn( tmp_buf, recvbuf, 
+				     count, datatype, uop );
+		}
+		else 
+#endif
+                {		    
+		    (*uop)(tmp_buf, partial_scan, &count, &datatype);
+		    (*uop)(tmp_buf, recvbuf, &count, &datatype);
+		}
             }
             else {
-                if (is_commutative)
+                if (is_commutative) {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( tmp_buf, partial_scan, 
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(tmp_buf, partial_scan, &count, &datatype);
+		}
                 else {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( partial_scan, tmp_buf,
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(partial_scan, tmp_buf, &count, &datatype);
                     mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                partial_scan,

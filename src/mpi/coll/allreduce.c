@@ -74,6 +74,9 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPID_Op *op_ptr;
     MPI_Comm comm;
     MPICH_PerThread_t *p;
+#ifdef HAVE_CXX_BINDING
+    int is_cxx_uop = 0;
+#endif
     
     if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
@@ -120,11 +123,13 @@ PMPI_LOCAL int MPIR_Allreduce (
             else
                 is_commutative = 1;
 #ifdef HAVE_CXX_BINDING            
-            if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
-                                                      MPID_LANG_CXX)) 
-#else
-            if ((op_ptr->language == MPID_LANG_C))
+            if (op_ptr->language == MPID_LANG_CXX) {
+                uop = (MPI_User_function *) op_ptr->function.c_function;
+		is_cxx_uop = 1;
+	    }
+	    else
 #endif
+            if ((op_ptr->language == MPID_LANG_C))
                 uop = (MPI_User_function *) op_ptr->function.c_function;
             else
                 uop = (MPI_User_function *) op_ptr->function.f77_function;
@@ -178,11 +183,26 @@ PMPI_LOCAL int MPIR_Allreduce (
                 
                 if (is_commutative  || (dst_tree_root < my_tree_root)) {
                     /* op is commutative OR the order is already right */
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( tmp_buf, recvbuf, 
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(tmp_buf, recvbuf, &count, &datatype);
                 }
                 else {
                     /* op is noncommutative and the order is not right */
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( recvbuf, tmp_buf, 
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(recvbuf, tmp_buf, &count, &datatype);
+
                     /* copy result back into recvbuf */
                     mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                recvbuf, count, datatype);

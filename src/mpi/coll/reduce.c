@@ -57,6 +57,9 @@ int MPIR_Reduce (
     MPID_Op *op_ptr;
     MPI_Comm comm;
     MPICH_PerThread_t *p;
+#ifdef HAVE_CXX_BINDING
+    int is_cxx_uop = 0;
+#endif
     
     if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
@@ -79,12 +82,14 @@ int MPIR_Reduce (
         else
             is_commutative = 1;
         
-#ifdef HAVE_CXX_BINDING
-        if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
-                                                  MPID_LANG_CXX)) 
-#else
-        if ((op_ptr->language == MPID_LANG_C))
+#ifdef HAVE_CXX_BINDING            
+            if (op_ptr->language == MPID_LANG_CXX) {
+                uop = (MPI_User_function *) op_ptr->function.c_function;
+		is_cxx_uop = 1;
+	    }
+	    else
 #endif
+        if ((op_ptr->language == MPID_LANG_C))
             uop = (MPI_User_function *) op_ptr->function.c_function;
         else
             uop = (MPI_User_function *) op_ptr->function.f77_function;
@@ -172,9 +177,24 @@ int MPIR_Reduce (
 		if (mpi_errno) return mpi_errno;
 		/* The sender is above us, so the received buffer must be
 		   the second argument (in the noncommutative case). */
-		if (is_commutative)
+		if (is_commutative) {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( buffer, recvbuf, 
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
 		    (*uop)(buffer, recvbuf, &count, &datatype);
+		}
 		else {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			MPIR_Call_op_fn( recvbuf, buffer,
+					 count, datatype, uop );
+		    }
+		    else 
+#endif
 		    (*uop)(recvbuf, buffer, &count, &datatype);
                     mpi_errno = MPIR_Localcopy(buffer, count, datatype,
                                                recvbuf, count, datatype);
