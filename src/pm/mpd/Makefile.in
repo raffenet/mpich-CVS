@@ -40,7 +40,7 @@ mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
 example_OBJECTS	= ${example_SOURCES:.c=.o}
 
 
-all: Makefile ${PROGRAMS}
+all: Makefile ${PROGRAMS} fix_python_shebangs
 
 
 .SUFFIXES:
@@ -48,6 +48,11 @@ all: Makefile ${PROGRAMS}
 
 etags:  ${HEADERS} ${SOURCES}
 	etags ${HEADERS} ${SOURCES}
+
+fix_python_shebangs:
+	-@for pypgm in *.py ; do \
+	    sed -i -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' $$pypgm ; \
+	done
 
 mpdroot: ${mpdroot_OBJECTS}
 	$(C_LINK) -o mpdroot ${mpdroot_OBJECTS} $(LIBS)
@@ -88,39 +93,31 @@ install: all
 	    echo "mkdir -p ${bindir} " ;\
 	    mkdir -p ${bindir} ;\
 	fi   
-	cp -f mpdroot ${bindir}/mpdroot
 	@if [ "`whoami`" = "root" ] ; then \
-	    echo "chmod 4755 ${bindir}/mpdroot" ;\
-	    chmod 4755 ${bindir}/mpdroot ;\
+	    install -m 4755 mpdroot ${bindir}/mpdroot ;\
+        else \
+	    install -m  755 mpdroot ${bindir}/mpdroot ;\
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
-	    cp -f ${srcdir}/$$cmd.py ${bindir}/temp ; \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${bindir}/temp > ${bindir}/$$cmd.py ; \
-	    chmod 755 ${bindir}/$$cmd.py; \
+	    install ${srcdir}/$$cmd.py ${bindir}/$$cmd.py ; \
 	    ( rm -f ${bindir}/$$cmd >/dev/null 2>&1 || exit 0 ) ; \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    cp -f ${srcdir}/$$cmd.py ${bindir}/temp ; \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${bindir}/temp > ${bindir}/$$cmd ; \
-	    chmod 755 ${bindir}/$$cmd; \
+	    install -m 755 ${srcdir}/$$cmd.py ${bindir}/$$cmd ; \
 	done
-	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
-	    cp -f ${srcdir}/$$cmd.py ${bindir}/temp ; \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${bindir}/temp > ${bindir}/$$cmd.py ; \
-	    chmod 755 ${bindir}/$$cmd.py; \
-	done
+	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
+	-@install -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
-	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
 
 
 mpich2-build-install: mpich2-mpdroot install
-	/bin/cp -f mpich2-mpdroot ${bindir}/mpdroot
 	@if [ "`whoami`" = "root" ] ; then \
-	    echo "chmod 4755 ${bindir}/mpdroot" ;\
-	    chmod 4755 ${bindir}/mpdroot ;\
+            install -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
+	else \
+            install -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	fi
 	/bin/rm -f mpich2-mpdroot
 
@@ -132,7 +129,7 @@ mpich2-mpdroot: mpich2-mpdroot.o
 	/bin/rm -f mpich2-mpdroot.o
 
 mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
-	/bin/cp ${srcdir}/mpdroot.c mpich2-mpdroot.c
-	${C_COMPILE} -c -DBINDIR=\"${bindir}/\" mpich2-mpdroot.c
+	install ${srcdir}/mpdroot.c mpich2-mpdroot.c
+	${C_COMPILE} -c mpich2-mpdroot.c
 	/bin/rm -f mpich2-mpdroot.c
 
