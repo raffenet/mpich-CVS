@@ -703,10 +703,7 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "localonly") == 0)
 	    {
-#if 1
-		/* the run_local flag + the rsh_mpiexec flag causes the rsh code to launch the processes locally */
-		smpd_process.mpiexec_run_local = SMPD_TRUE;
-		smpd_process.rsh_mpiexec = SMPD_TRUE;
+		/* check to see if there is a number after the localonly option */
 		if (argc > 2)
 		{
 		    if (isnumber((*argvp)[2]))
@@ -728,6 +725,10 @@ configfile_loop:
 			num_args_to_strip = 2;
 		    }
 		}
+#if 0
+		/* the run_local flag + the rsh_mpiexec flag causes the rsh code to launch the processes locally */
+		smpd_process.mpiexec_run_local = SMPD_TRUE;
+		smpd_process.rsh_mpiexec = SMPD_TRUE;
 		if (smpd_process.mpiexec_inorder_launch == SMPD_FALSE)
 		{
 		    smpd_launch_node_t *temp_node, *ordered_list = NULL;
@@ -743,6 +744,8 @@ configfile_loop:
 		}
 		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
 #else
+		/* Use localroot to implement localonly */
+		smpd_process.local_root = SMPD_TRUE;
 		/* create a host list of one and set nproc to -1 to be replaced by nproc after parsing the block */
 		host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 		if (host_list == NULL)
@@ -1504,13 +1507,15 @@ configfile_loop:
 	}
 	if (env_str != NULL)
 	{
-	    if (smpd_is_affirmative(env_str))
+	    if (smpd_is_affirmative(env_str) || strcmp(env_str, "1") == 0)
 	    {
 #if 1
 		/* This block creates a host list of one host to implement -localonly */
 
 		if (host_list == NULL)
 		{
+		    /* Use localroot to implement localonly */
+		    smpd_process.local_root = SMPD_TRUE;
 		    /* create a host list of one and set nproc to -1 to be replaced by 
 		       nproc after parsing the block */
 		    host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
@@ -1524,6 +1529,10 @@ configfile_loop:
 		    host_list->connected = SMPD_FALSE;
 		    host_list->nproc = -1;
 		    smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
+		}
+		else
+		{
+		    smpd_dbg_printf("host_list not null, not using localonly\n");
 		}
 #else
 		/* This block uses the rsh code to implement -localonly */
@@ -1545,6 +1554,10 @@ configfile_loop:
 		}
 		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
 #endif
+	    }
+	    else
+	    {
+		smpd_dbg_printf("MPIEXEC_LOCALONLY env is not affirmative: '%s'\n", env_str);
 	    }
 	}
 
