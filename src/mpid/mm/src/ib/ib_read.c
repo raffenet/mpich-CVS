@@ -394,11 +394,14 @@ int ib_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ_VEC);
 
+    MPIU_dbg_printf("ib_handle_read_vec: received %d bytes total\n");
+
     num_left = num_read;
     i = car_ptr->data.ib.buf.vec_read.cur_index;
     while (num_left > 0)
     {
 	count = min(car_ptr->data.ib.buf.vec_read.vec[i].MPID_IOV_LEN, (unsigned int)num_left);
+	MPIU_dbg_printf("ib_handle_read_vec: copying %d bytes from index %d\n", count, i);
 	memcpy(car_ptr->data.ib.buf.vec_read.vec[i].MPID_IOV_BUF, mem_ptr, count);
 	mem_ptr = (char*)mem_ptr + count;
 
@@ -546,7 +549,8 @@ int ib_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_READ_SIMPLE);
     MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ_SIMPLE);
-    /*msg_printf("num_read simple: %d\n", num_read);*/
+    
+    MPIU_dbg_printf("num_read simple: %d\n", num_read);
 
     memcpy(buf_ptr->simple.buf, mem_ptr, num_read);
 
