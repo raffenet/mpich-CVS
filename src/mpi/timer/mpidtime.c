@@ -68,7 +68,7 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = ((double) t->tv_sec + 1.0e-9 * (double) t->tv_nsec );
 }
-void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 {
     int nsec, sec;
     
@@ -121,7 +121,7 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = (double) t->tv_sec + .000001 * (double) t->tv_usec;
 }
-void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 {
     int usec, sec;
     
@@ -129,6 +129,7 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
     sec  = t2->tv_sec - t1->tv_sec;
     t3->tv_usec += usec;
     t3->tv_sec += sec;
+    /* Handle carry to the integer seconds field */
     if (t3->tv_usec > 1.0e6) {
 	t3->tv_usec -= 1.0e6;
 	t3->tv_sec++;
