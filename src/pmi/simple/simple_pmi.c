@@ -465,11 +465,14 @@ int PMI_Spawn_multiple(int count,
         snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
 	          maxprocs[spawncnt], cmds[spawncnt] );
     
-        for (i=0,argcnt=0; argvs[spawncnt][i] != NULL; i++)
-        {
-	    snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
-	    strcat(buf,tempbuf);
-	    argcnt++;
+        argcnt = 0;
+        if ((argvs != NULL) && (argvs[spawncnt] != NULL)) {
+            for (i=0; argvs[spawncnt][i] != NULL; i++)
+            {
+                snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
+                strcat(buf,tempbuf);
+                argcnt++;
+            }
         }
         snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
         strcat(buf,tempbuf);
