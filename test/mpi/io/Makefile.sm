@@ -6,3 +6,5 @@ smvar_do_sharedlibs = 0
 
 EXTRA_PROGRAMS = 
 rdwrord_SOURCES = rdwrord.c
+rdwrzero_SOURCES = rdwrzero.c
+getextent_SOURCES = getextent.c
