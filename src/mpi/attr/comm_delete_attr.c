@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "attr.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_delete_attr */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -31,21 +32,22 @@
    MPI_Comm_delete_attr - delete communicator attribute
 
    Arguments:
-+  MPI_Comm comm - communicator
--  int comm_keyval - keyval
++ comm - communicator to which attribute is attached (handle) 
+- keyval - The key value of the deleted attribute (integer) 
 
-   Notes:
-
-.N Fortran
+.N fortran
 
 .N Errors
-.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_PERM_KEY
 @*/
 int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 {
     static const char FCNAME[] = "MPI_Comm_delete_attr";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Attribute *p, **old_p;
+    MPID_Keyval *keyval_ptr;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_DELETE_ATTR);
@@ -55,21 +57,93 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    /* Validate keyval */
+	    if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+						  "**keyval", 0 );
+	    } 
+	    else if (((comm_keyval&&0x3c000000) >> 18) != MPID_COMM) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+						  "**keyvalnotcomm", 0 );
+	    }
+	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+						  "**permattr", 0 );
+	    }
+	    else {
+		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
+	MPID_ELSE_ERROR_CHECKS;
+	{
+	    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+	}
         MPID_END_ERROR_CHECKS;
     }
+#   else    
+    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* Look for attribute.  They are ordered by keyval handle */
+
+    /* The thread lock prevents a valid attr delete on the same communicator
+       but in a different thread from causing problems */
+    MPID_Comm_thread_lock( comm_ptr );
+    old_p = &comm_ptr->attributes;
+    p = comm_ptr->attributes;
+    while (p) {
+	if (p->keyval->handle == keyval_ptr->handle) {
+	    break;
+	}
+	old_p = &p->next;
+	p = p->next;
+    }
+
+    if (p) {
+	/* We found the attribute.  Remove it from the list */
+	*old_p = p->next;
+    }
+    MPID_Comm_thread_unlock( comm_ptr );
+    
+    if (p) {
+	/* Run the delete function, if any, and then free the attribute 
+	   storage */
+	if ( keyval_ptr->delfn.C_CommDeleteFunction ) {
+	    switch (keyval_ptr->language) {
+	    case MPID_LANG_FORTRAN:
+	    case MPID_LANG_FORTRAN90: 
+	    {
+		MPI_Aint invall = (MPI_Aint)p->value;
+		MPI_Fint inval = (int)invall;
+		MPI_Fint fcomm = comm;
+		MPI_Fint fkeyval = comm_keyval;
+		(*keyval_ptr->delfn.F77_DeleteFunction)(&fcomm, 
+				    &fkeyval, &inval,
+				    keyval_ptr->extra_state, &mpi_errno );
+		p->value = (void *)(MPI_Aint)inval;
+	    }
+	    break;
+		
+	    case MPID_LANG_C:
+	    case MPID_LANG_CXX:
+		mpi_errno = (*keyval_ptr->delfn.C_CommDeleteFunction)(comm, 
+						  comm_keyval, p->value,
+						  keyval_ptr->extra_state );
+	    }
+	}
+	MPID_Attr_free(p);
+    }
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
     return MPI_SUCCESS;

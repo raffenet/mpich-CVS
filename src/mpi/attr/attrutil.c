@@ -79,3 +79,4 @@ int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
     }
     return MPI_SUCCESS;
 }
+
