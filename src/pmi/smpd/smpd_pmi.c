@@ -548,7 +548,7 @@ int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     }
     if (strcmp(str, DBS_SUCCESS_STR))
     {
-	pmi_err_printf("PMI_KVS_Put failed: %s\n", str);
+	pmi_err_printf("PMI_KVS_Put failed: '%s'\n", str);
 	return PMI_FAIL;
     }
 
@@ -601,7 +601,7 @@ int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
     }
     if (strcmp(str, DBS_SUCCESS_STR))
     {
-	pmi_err_printf("PMI_KVS_Get failed: %s\n", str);
+	pmi_err_printf("PMI_KVS_Get failed: '%s'\n", str);
 	return PMI_FAIL;
     }
     if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))

@@ -12,6 +12,10 @@ int smpd_handle_stdout_command(smpd_context_t *context)
     char data[SMPD_MAX_STDOUT_LENGTH];
     smpd_command_t *cmd;
     int num_decoded;
+#ifdef HAVE_WINDOWS_H
+    HANDLE hStdout;
+    DWORD num_written;
+#endif
 
     smpd_enter_fn("handle_stdout_command");
 
@@ -25,8 +29,13 @@ int smpd_handle_stdout_command(smpd_context_t *context)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
 	/*printf("[%d]", rank);*/
+#ifdef HAVE_WINDOWS_H
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	WriteFile(hStdout, data, num_decoded, &num_written, NULL);
+#else
 	fwrite(data, 1, num_decoded, stdout);
 	fflush(stdout);
+#endif
     }
     else
     {
@@ -43,6 +52,10 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     char data[SMPD_MAX_STDOUT_LENGTH];
     smpd_command_t *cmd;
     int num_decoded;
+#ifdef HAVE_WINDOWS_H
+    HANDLE hStderr;
+    DWORD num_written;
+#endif
 
     smpd_enter_fn("handle_stderr_command");
 
@@ -56,8 +69,13 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
 	/*fprintf(stderr, "[%d]", rank);*/
+#ifdef HAVE_WINDOWS_H
+	hStderr = GetStdHandle(STD_ERROR_HANDLE);
+	WriteFile(hStderr, data, num_decoded, &num_written, NULL);
+#else
 	fwrite(data, 1, num_decoded, stderr);
 	fflush(stderr);
+#endif
     }
     else
     {

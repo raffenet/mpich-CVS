@@ -479,7 +479,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     else
     {
 	nError = GetLastError();
-	smpd_err_printf("CreateProcess failed, error %d\n", nError);
+	smpd_err_printf("CreateProcess('%s') failed, error %d\n", process->exe, nError);
     }
 
     FreeEnvironmentStrings((TCHAR*)pEnv);
