@@ -61,6 +61,8 @@ was not started with MPI_GREQUEST_START
 **cancelperrecv:Cancellation of persistent receive requests is not supported
 **cancelpersend:Cancellation of persistent send requests is not supported
 **cancelunknown:Attempt to cancel an unknown type of request
+**barriernotimpl:An implementation of MPI_Barrier was not supplied by \
+the device.
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer

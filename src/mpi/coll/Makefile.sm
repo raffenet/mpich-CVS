@@ -1,6 +1,6 @@
 mpi_sources = allgather.c allgatherv.c allreduce.c alltoall.c \
  alltoallv.c barrier.c bcast.c gather.c gatherv.c red_scat.c reduce.c scan.c \
  scatter.c scatterv.c op_create.c op_free.c alltoallw.c exscan.c
-lib${MPILIBNAME}_a_SOURCES = allreduce.c
+lib${MPILIBNAME}_a_SOURCES = allreduce.c barrier.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
