@@ -169,7 +169,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
     if (bUseShm)
     {
 	/* Create the shared memory object */
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
 	pg->id = shm_open(pg->key, O_RDWR | O_CREAT, 0600);
 	if (pg->id == -1)
 	{
@@ -179,7 +179,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    return mpi_errno;
 	}
 	ftruncate(pg->id, nTotalSize);
-#elif defined (HAVE_SHMGET)
+#elif defined (USE_SYSV_SHM)
 	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
 	if (pg->id == -1) 
 	{
@@ -188,7 +188,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
-#elif defined (HAVE_CREATEFILEMAPPING)
+#elif defined (USE_WINDOWS_SHM)
 	pg->id = CreateFileMapping(
 	    INVALID_HANDLE_VALUE,
 	    NULL,
@@ -204,7 +204,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    return mpi_errno;
 	}
 #else
-#error *** No shared memory allocation function specified ***
+#error No shared memory subsystem defined
 #endif
 
 	/* Get the shmem pointer */
@@ -224,7 +224,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 #endif
 	pg->addr = NULL;
 	MPIU_DBG_PRINTF(("[%d] mapping shared memory\n", nRank));
-#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+#ifdef USE_POSIX_SHM
 	pg->addr = mmap(NULL, nTotalSize, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pg->id, 0);
 	if (pg->addr == MAP_FAILED)
 	{
@@ -233,7 +233,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
-#elif defined (HAVE_SHMAT)
+#elif defined (USE_SYSV_SHM)
 	pg->addr = shmat(pg->id, NULL, SHM_RND);
 	if (pg->addr == (void*)-1)
 	{
@@ -242,7 +242,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
-#elif defined(HAVE_MAPVIEWOFFILE)
+#elif defined(USE_WINDOWS_SHM)
 	pg->addr = MapViewOfFileEx(
 	    pg->id,
 	    FILE_MAP_WRITE,
@@ -259,7 +259,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    return mpi_errno;
 	}
 #else
-#error *** No shared memory mapping function specified ***
+#error No shared memory subsystem defined
 #endif
 	MPIU_DBG_PRINTF(("\n[%d] finished mapping shared memory: addr:%x\n", nRank, pg->addr));
 
@@ -295,22 +295,20 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
     
     if (bUseShm)
     {
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
 	close(pg->id);
-	shm_unlink(pg->key);
-#elif defined (HAVE_SHMDT)
+#elif defined (USE_SYSV_SHM)
         shmdt(pg->addr);
-#endif
-#ifdef HAVE_UNMAPVIEWOFFILE
+#elif defined (USE_WINDOWS_SHM)
         UnmapViewOfFile(pg->addr);
         pg->addr = NULL;
-#endif
-#ifdef HAVE_CREATEFILEMAPPING
         CloseHandle(pg->id);
         pg->id = NULL;
+#else
+#error No shared memory subsystem defined
 #endif
 #ifdef HAVE_SHARED_PROCESS_READ
-#ifdef HAVE_WINDOWS_H
+#ifdef USE_WINDOWS_SHM
 	for (i=0; i<pg->size; i++)
 	    CloseHandle(pg->pSharedProcessHandles[i]);
 	MPIU_Free(pg->pSharedProcessHandles);

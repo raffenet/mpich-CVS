@@ -14,7 +14,7 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 static void generate_shm_string(char *str)
 {
-#ifdef HAVE_MAPVIEWOFFILE
+#ifdef USE_WINDOWS_SHM
     UUID guid;
     UuidCreate(&guid);
     sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -22,10 +22,12 @@ static void generate_shm_string(char *str)
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
-#elif defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#elif defined (USE_POSIX_SHM)
     sprintf(str, "/mpich_shm_%d", getpid());
-#else
+#elif defined (USE_SYSV_SHM)
     sprintf(str, "%d", getpid());
+#else
+#error No shared memory subsystem defined
 #endif
 }
 
@@ -109,17 +111,17 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     pg->nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
 #endif
     pg->addr = NULL;
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
     pg->key[0] = '\0';
     pg->id = -1;
-#elif defined (HAVE_SHMGET)
+#elif defined (USE_SYSV_SHM)
     pg->key = -1;
     pg->id = -1;
-#elif defined (HAVE_MAPVIEWOFFILE)
+#elif defined (USE_WINDOWS_SHM)
     pg->key[0] = '\0';
     pg->id = NULL;
 #else
-#error *** No shared memory mapping variables specified ***
+#error No shared memory subsystem defined
 #endif
     pg->nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
     pg->nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
@@ -245,14 +247,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
 	MPIU_Strncpy(pg->key, shmemkey, 100);
-#elif defined (HAVE_SHMGET)
+#elif defined (USE_SYSV_SHM)
 	pg->key = atoi(shmemkey);
-#elif defined (HAVE_MAPVIEWOFFILE)
+#elif defined (USE_WINDOWS_SHM)
 	MPIU_Strncpy(pg->key, shmemkey, MAX_PATH);
 #else
-#error *** No shared memory variables specified ***
+#error No shared memory subsystem defined
 #endif
 
 	mpi_errno = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
@@ -337,7 +339,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	return mpi_errno;
     }
-#if defined (HAVE_SHMCTL) && !(defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP))
+#ifdef USE_POSIX_SHM
+    shm_unlink(pg->key);
+#elif defined (USE_SYSV_SHM)
     shmctl(pg->id, IPC_RMID, NULL);
 #endif
 

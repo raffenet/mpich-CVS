@@ -8,7 +8,7 @@
 
 static void generate_shm_string(char *str)
 {
-#ifdef HAVE_MAPVIEWOFFILE
+#ifdef USE_WINDOWS_SHM
     UUID guid;
     UuidCreate(&guid);
     sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -16,10 +16,12 @@ static void generate_shm_string(char *str)
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
-#elif defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#elif defined (USE_POSIX_SHM)
     sprintf(str, "/mpich_shm_%d", rand());
-#else
+#elif defined (USE_SYSV_SHM)
     sprintf(str, "%d", getpid());
+#else
+#error No shared memory subsystem defined
 #endif
 }
 
@@ -80,7 +82,7 @@ static void generate_shm_string(char *str)
 int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOutput)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifdef HAVE_SHMGET
+#if defined (USE_POSIX_SHM) || defined (USE_SYSV_SHM)
     int i;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
@@ -95,7 +97,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
     }
 
     /* Create the shared memory object */
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
     srand(getpid());
     for (i=0; i<10; i++)
     {
@@ -112,7 +114,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	return mpi_errno;
     }
     ftruncate(pOutput->id, size);
-#elif defined (HAVE_SHMGET)
+#elif defined (USE_SYSV_SHM)
     srand(getpid());
     for (i=0; i<10; i++)
     {
@@ -128,7 +130,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-#elif defined (HAVE_CREATEFILEMAPPING)
+#elif defined (USE_WINDOWS_SHM)
     generate_shm_string(pOutput->key);
     pOutput->id = CreateFileMapping(
 	INVALID_HANDLE_VALUE,
@@ -145,11 +147,11 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	return mpi_errno;
     }
 #else
-#error *** No shared memory allocation function specified ***
+#error No shared memory subsystem defined
 #endif
 
     pOutput->addr = NULL;
-#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+#ifdef USE_POSIX_SHM
     pOutput->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
     if (pOutput->addr == MAP_FAILED)
     {
@@ -158,7 +160,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-#elif defined (HAVE_SHMAT)
+#elif defined (USE_SYSV_SHM)
     pOutput->addr = shmat(pOutput->id, NULL, SHM_RND);
     if (pOutput->addr == (void*)-1)
     {
@@ -168,7 +170,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-#elif defined(HAVE_MAPVIEWOFFILE)
+#elif defined(USE_WINDOWS_SHM)
     pOutput->addr = MapViewOfFileEx(
 	pOutput->id,
 	FILE_MAP_WRITE,
@@ -184,7 +186,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	return -1;
     }
 #else
-#error *** No shared memory mapping function specified ***
+#error No shared memory subsystem defined
 #endif
 
     pOutput->size = size;
@@ -211,7 +213,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 
     /* Create the shared memory object */
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
     pOutput->id = shm_open(pInput->key, O_RDWR | O_CREAT, 0600);
     if (pOutput->id == -1)
     {
@@ -219,8 +221,8 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
-    /*ftruncate(pOutput->id, size);*/
-#elif defined (HAVE_SHMGET)
+    /*ftruncate(pOutput->id, size);*/ /* The sender/creator set the size */
+#elif defined (USE_SYSV_SHM)
     pOutput->id = shmget(pInput->key, pInput->size, SHM_R | SHM_W);
     if (pOutput->id == -1)
     {
@@ -229,7 +231,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
-#elif defined (HAVE_CREATEFILEMAPPING)
+#elif defined (USE_WINDOWS_SHM)
     MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_Attach_to_mem: Creating file mapping of size %d named %s\n", pInput->size, pInput->key));
     pOutput->id = CreateFileMapping(
 	INVALID_HANDLE_VALUE,
@@ -246,11 +248,11 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	return mpi_errno;
     }
 #else
-#error *** No shared memory allocation function specified ***
+#error No shared memory subsystem defined
 #endif
 
     pOutput->addr = NULL;
-#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+#ifdef USE_POSIX_SHM
     pOutput->addr = mmap(NULL, pInput->size, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
     if (pOutput->addr == MAP_FAILED)
     {
@@ -258,7 +260,8 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
-#elif defined (HAVE_SHMAT)
+    shm_unlink(pInput->key);
+#elif defined (USE_SYSV_SHM)
     pOutput->addr = shmat(pOutput->id, NULL, SHM_RND);
     if (pOutput->addr == (void*)-1)
     {
@@ -268,10 +271,8 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
-#if defined (HAVE_SHMCTL) && !(defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP))
     shmctl(pOutput->id, IPC_RMID, NULL);
-#endif
-#elif defined(HAVE_MAPVIEWOFFILE)
+#elif defined(USE_WINDOWS_SHM)
     pOutput->addr = MapViewOfFileEx(
 	pOutput->id,
 	FILE_MAP_WRITE,
@@ -288,7 +289,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	return mpi_errno;
     }
 #else
-#error *** No shared memory mapping function specified ***
+#error No shared memory subsystem defined
 #endif
 
     pOutput->error = MPI_SUCCESS;
@@ -307,18 +308,16 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
-    
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+
+#ifdef USE_POSIX_SHM
     close(p->id);
-    shm_unlink(p->key);
-#elif defined (HAVE_SHMDT)
+#elif defined (USE_SYSV_SHM)
     shmdt(p->addr);
-#endif
-#ifdef HAVE_UNMAPVIEWOFFILE
+#elif defined (USE_WINDOWS_SHM)
     UnmapViewOfFile(p->addr);
-#endif
-#ifdef HAVE_CREATEFILEMAPPING
     CloseHandle(p->id);
+#else
+#error No shared memory subsystem defined
 #endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
