@@ -605,11 +605,16 @@ if ($routine_list ne "") {
 # MPI objects
 # dtypes gives all of the MPI datatypes whose C version are this name
 # with MPI_ in front.  E.g., MPI::CHAR is the same as MPI_CHAR.
+# The size-specific types were added in MPI-2, and are required for
+# C and C++ as well as for Fortran
 @dtypes = ( 'CHAR', 'UNSIGNED_CHAR', 'BYTE', 'SHORT', 'UNSIGNED_SHORT',
 	    'INT', 'UNSIGNED', 'LONG', 'UNSIGNED_LONG', 'FLOAT', 
 	    'DOUBLE', 'LONG_DOUBLE', 'LONG_LONG_INT', 'LONG_LONG', 
 	    'PACKED', 'LB', 'UB', 'FLOAT_INT', 'DOUBLE_INT', 
-	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT' );
+	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT',
+	    'REAL4', 'REAL8', 'REAL16', 'COMPLEX8', 'COMPLEX16',
+	    'COMPLEX32', 'INTEGER1', 'INTEGER2', 'INTEGER4', 
+	    'INTEGER8', 'INTEGER16' );
 
 #
 # Still missing: C++ only types: BOOL, COMPLEX, DOUBLE_COMPLEX, 
