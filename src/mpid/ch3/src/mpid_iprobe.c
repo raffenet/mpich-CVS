@@ -25,6 +25,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset,
     }
     else
     {
+	MPID_Progress_poke();
 	*flag = FALSE;
     }
     
