@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include <limits.h>
 
 MPIDI_Process_t MPIDI_Process;
 
@@ -12,7 +13,7 @@ MPIDI_Process_t MPIDI_Process;
 #define FUNCNAME MPID_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Init(int * argc, char *** argp, int requested, int * provided,
+int MPID_Init(int * argc, char *** argv, int requested, int * provided,
 	      int * has_args, int * has_env)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -54,7 +55,12 @@ int MPID_Init(int * argc, char *** argp, int requested, int * provided,
     MPIR_Process.comm_world->coll_fns = collops;
     MPIR_Process.comm_self->coll_fns = collops;
     
-
+    /*
+     * Set process attributes.  These can be overridden by the channel if
+     * necessary.
+     */
+    MPIR_Process.attrs.tag_ub          = INT_MAX;
+    
     /*
      * Let the channel perform any necessary initialization
      */
