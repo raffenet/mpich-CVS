@@ -763,6 +763,95 @@ extern MPIU_Object_alloc_t MPID_Datatype_mem;
 extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
 extern MPID_Datatype MPID_Datatype_direct[];
 
+/* Reduction and accumulate operations */
+/*E
+  MPID_Op_kind - Enumerates types of MPI_Op types
+
+  Notes:
+  These are needed for implementing 'MPI_Accumulate', since only predefined
+  operations are allowed for that operation.  
+
+  A gap in the enum values was made allow additional predefined operations
+  to be inserted.  This might include future additions to MPI or experimental
+  extensions (such as a Read-Modify-Write operation).
+
+  Module:
+  Collective-DS
+  E*/
+typedef enum { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4, 
+	       MPID_OP_LAND=5, MPID_OP_BAND=6, MPID_OP_LOR=7, MPID_OP_BOR=8,
+	       MPID_OP_LXOR=9, MPID_OP_BXOR=10, MPID_OP_MAXLOC=11, 
+               MPID_OP_MINLOC=12, MPID_OP_REPLACE=13, 
+               MPID_OP_USER_NONCOMMUTE=32, MPID_OP_USER=33 }
+  MPID_Op_kind;
+
+/*S
+  MPID_User_function - Definition of a user function for MPI_Op types.
+
+  Notes:
+  This includes a 'const' to make clear which is the 'in' argument and 
+  which the 'inout' argument, and to indicate that the 'count' and 'datatype'
+  arguments are unchanged (they are addresses in an attempt to allow 
+  interoperation with Fortran).  It includes 'restrict' to emphasize that 
+  no overlapping operations are allowed.
+
+  We need to include a Fortran version, since those arguments will
+  have type 'MPI_Fint *' instead.  We also need to add a test to the
+  test suite for this case; in fact, we need tests for each of the handle
+  types to ensure that the transfered handle works correctly.
+
+  This is part of the collective module because user-defined operations
+  are valid only for the collective computation routines and not for 
+  RMA accumulate.
+
+  Yes, the 'restrict' is in the correct location.  C compilers that 
+  support 'restrict' should be able to generate code that is as good as a
+  Fortran compiler would for these functions.
+
+  We should note on the manual pages for user-defined operations that
+  'restrict' should be used when available, and that a cast may be 
+  required when passing such a function to 'MPI_Op_create'.
+
+  Question:
+  Should each of these function types have an associated typedef?
+
+  Should there be a C++ function here?
+
+  Module:
+  Collective-DS
+  S*/
+typedef union {
+    void (*c_function) ( const void *, void *, 
+			 const int *, const MPI_Datatype * ); 
+    void (*f77_function) ( const void *, void *,
+			  const MPI_Fint *, const MPI_Fint * );
+} MPID_User_function;
+
+/*S
+  MPID_Op - MPI_Op structure
+
+  Notes:
+  All of the predefined functions are commutative.  Only user functions may 
+  be noncummutative, so there are two separate op types for commutative and
+  non-commutative user-defined operations.
+
+  Operations do not require reference counts because there are no nonblocking
+  operations that accept user-defined operations.  Thus, there is no way that
+  a valid program can free an 'MPI_Op' while it is in use.
+
+  Module:
+  Collective-DS
+  S*/
+typedef struct {
+     int                handle;      /* value of MPI_Op for this structure */
+     volatile int       ref_count;
+     MPID_Op_kind       kind;
+     MPID_Lang_t        language;
+     MPID_User_function function;
+  } MPID_Op;
+extern MPID_Op MPID_Op_direct[];
+extern MPIU_Object_alloc_t MPID_Op_mem;
+
 /* Collective operations */
 typedef struct MPID_Collops_struct {
     int ref_count;   /* Supports lazy copies */

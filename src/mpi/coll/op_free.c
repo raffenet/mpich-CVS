@@ -28,32 +28,40 @@
 #define FUNCNAME MPI_Op_free
 
 /*@
-   MPI_Op_free - op_free
+.N MPI_SUCCESS
+  MPI_Op_free - Frees a user-defined combination function handle
+ 
+  Input Parameter:
+. op - operation (handle) 
 
-   Arguments:
-.  MPI_Op *op - operation
+  Notes:
+  'op' is set to 'MPI_OP_NULL' on exit.
 
-   Notes:
+.N NULL
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_PERM_OP
+
+.seealso: MPI_Op_create
 @*/
 int MPI_Op_free(MPI_Op *op)
 {
     static const char FCNAME[] = "MPI_Op_free";
-    int mpi_errno = MPI_SUCCESS;
+    MPID_Op *op_ptr = NULL;
+    int     in_use;
+    int     mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_FREE);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -62,6 +70,35 @@ int MPI_Op_free(MPI_Op *op)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    
+    MPID_Op_get_ptr( *op, op_ptr );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Op_valid_ptr( op_ptr, mpi_errno );
+	    if (!mpi_errno) {
+		if (op_ptr->kind < MPID_OP_USER_NONCOMMUTE) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
+						      "**permop", 0 );
+		}
+	    }
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* ... body of routine ...  */
+    MPIU_Object_release_ref( op_ptr, &in_use);
+    if (!in_use) {
+	MPIU_Handle_obj_free( &MPID_Op_mem, op_ptr );
+    }
+    *op = MPI_OP_NULL;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
     return MPI_SUCCESS;
