@@ -6,6 +6,7 @@ bsend2
 bsend3
 bsend4
 bsendalign 2
+bsendpending 2
 isendself 1
 bsendfrag 2
 errinstatts 2

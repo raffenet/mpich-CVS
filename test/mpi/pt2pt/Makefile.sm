@@ -16,6 +16,7 @@ bsendalign_SOURCES = bsendalign.c
 isendself_SOURCES = isendself.c
 bsend1cxx_SOURCES = bsend1cxx.cxx
 bsendfrag_SOURCES = bsendfrag.c
+bsendpending_SOURCES = bsendpending.c
 errinstatts_SOURCES = errinstatts.c
 errinstatta_SOURCES = errinstatta.c
 errinstatws_SOURCES = errinstatws.c
