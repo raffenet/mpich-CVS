@@ -152,3 +152,43 @@ void MPIR_LOR (
     }
     }
 }
+
+
+int MPIR_LOR_check_dtype ( MPI_Datatype type )
+{
+    switch (type) {
+    case MPI_INT: 
+    case MPI_UNSIGNED: 
+    case MPI_LONG: 
+#if defined(HAVE_LONG_LONG_INT)
+    case MPI_LONG_LONG: 
+#endif
+    case MPI_UNSIGNED_LONG: 
+    case MPI_SHORT: 
+    case MPI_UNSIGNED_SHORT: 
+    case MPI_CHAR: 
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_CHARACTER: 
+#endif
+    case MPI_UNSIGNED_CHAR: 
+    case MPI_FLOAT: 
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_REAL: 
+#endif
+    case MPI_DOUBLE: 
+#ifdef HAVE_FORTRAN_BINDING
+	/* FIXME - This assumes Fortran double precision == C double */
+    case MPI_DOUBLE_PRECISION: 
+#endif
+#if defined(HAVE_LONG_DOUBLE)
+    case MPI_LONG_DOUBLE: 
+#endif
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_LOGICAL: 
+    case MPI_INTEGER: 
+#endif
+        return MPI_SUCCESS;
+    default: 
+        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LOR" );
+    }
+}

@@ -28,6 +28,15 @@ MPI_User_function *MPIR_Op_table[] = { MPIR_MAXF, MPIR_MINF, MPIR_SUM,
                                        MPIR_LXOR, MPIR_BXOR,
                                        MPIR_MINLOC, MPIR_MAXLOC, };
 
+MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
+    MPIR_MAXF_check_dtype, MPIR_MINF_check_dtype,
+    MPIR_SUM_check_dtype,
+    MPIR_PROD_check_dtype, MPIR_LAND_check_dtype,
+    MPIR_BAND_check_dtype, MPIR_LOR_check_dtype, MPIR_BOR_check_dtype,
+    MPIR_LXOR_check_dtype, MPIR_BXOR_check_dtype,
+    MPIR_MINLOC_check_dtype, MPIR_MAXLOC_check_dtype, }; 
+
+
 /* This is the default implementation of allreduce. The algorithm is:
    
    Algorithm: MPI_Allreduce
@@ -397,6 +406,10 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
+            }
+            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+                mpi_errno = 
+                    ( * MPIR_Op_check_dtype_table[op%16 - 1] )(datatype); 
             }
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);

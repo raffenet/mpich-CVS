@@ -269,6 +269,10 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
             }
+            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+                mpi_errno = 
+                    ( * MPIR_Op_check_dtype_table[op%16 - 1] )(datatype); 
+            }
             
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);

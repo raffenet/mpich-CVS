@@ -186,3 +186,30 @@ void MPIR_MAXLOC(
 
 }
 
+
+int MPIR_MAXLOC_check_dtype( MPI_Datatype type )
+{
+    switch (type) {
+    /* first the C types */
+    case MPI_2INT: 
+    case MPI_FLOAT_INT: 
+    case MPI_LONG_INT: 
+    case MPI_SHORT_INT: 
+    case MPI_DOUBLE_INT: 
+#if defined(HAVE_LONG_DOUBLE)
+    case MPI_LONG_DOUBLE_INT: 
+#endif
+    /* now the Fortran types */
+#ifdef HAVE_FORTRAN_BINDING
+#ifndef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
+    case MPI_2INTEGER: 
+    case MPI_2REAL: 
+    case MPI_2DOUBLE_PRECISION: 
+#endif
+#endif
+        return MPI_SUCCESS;
+    default: 
+        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+    }
+}
+

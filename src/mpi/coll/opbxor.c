@@ -118,3 +118,31 @@ void MPIR_BXOR (
     }
 }
 
+
+int MPIR_BXOR_check_dtype ( MPI_Datatype type )
+{
+    switch (type) {
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_LOGICAL: case MPI_INTEGER: 
+#endif
+    case MPI_INT: 
+    case MPI_UNSIGNED: 
+    case MPI_LONG: 
+#if defined(HAVE_LONG_LONG_INT)
+    case MPI_LONG_LONG: 
+#endif
+    case MPI_UNSIGNED_LONG: 
+    case MPI_SHORT: 
+    case MPI_UNSIGNED_SHORT: 
+    case MPI_CHAR: 
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_CHARACTER: 
+#endif
+    case MPI_UNSIGNED_CHAR: 
+    case MPI_BYTE: 
+        return MPI_SUCCESS;
+    default: 
+        return MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BXOR" );
+    }
+}
+

@@ -1479,8 +1479,24 @@ void MPIR_BXOR  ( void *, void *, int *, MPI_Datatype * ) ;
 void MPIR_MAXLOC  ( void *, void *, int *, MPI_Datatype * ) ;
 void MPIR_MINLOC  ( void *, void *, int *, MPI_Datatype * ) ;
 
+int MPIR_MAXF_check_dtype  ( MPI_Datatype ) ;
+int MPIR_MINF_check_dtype ( MPI_Datatype ) ;
+int MPIR_SUM_check_dtype  ( MPI_Datatype ) ;
+int MPIR_PROD_check_dtype  ( MPI_Datatype ) ;
+int MPIR_LAND_check_dtype  ( MPI_Datatype ) ;
+int MPIR_BAND_check_dtype  ( MPI_Datatype ) ;
+int MPIR_LOR_check_dtype  ( MPI_Datatype ) ;
+int MPIR_BOR_check_dtype  ( MPI_Datatype ) ;
+int MPIR_LXOR_check_dtype ( MPI_Datatype ) ;
+int MPIR_BXOR_check_dtype  ( MPI_Datatype ) ;
+int MPIR_MAXLOC_check_dtype  ( MPI_Datatype ) ;
+int MPIR_MINLOC_check_dtype  ( MPI_Datatype ) ;
+
 #define MPIR_PREDEF_OP_COUNT 12
 extern MPI_User_function *MPIR_Op_table[];
+
+typedef int (MPIR_Op_check_dtype_fn) ( MPI_Datatype ); 
+extern MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[];
 
 #ifndef MPIR_MIN
 #define MPIR_MIN(a,b) (((a)>(b))?(b):(a))
