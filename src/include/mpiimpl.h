@@ -712,6 +712,13 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_END_ERROR_CHECKS
 #endif /* HAVE_ERROR_CHECKING */
 
+/* Include definitions from the device which require items defined by this file
+   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
+   the src/include directory in the build tree. */
+#include "mpidpost.h"
+
+/*** ONLY FUNCTION DECLARATIONS BEYOND THIS POINT ***/
+
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
@@ -745,10 +752,5 @@ void MPID_Progress_end();
 int MPID_Progress_test();
 void MPID_Progress_wait();
 void MPID_Progress_poke();
-
-/* Include definitions from the device which require items defined by this file
-   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
-   the src/include directory in the build tree. */
-#include "mpidpost.h"
 
 #endif /* MPIIMPL_INCLUDED */
