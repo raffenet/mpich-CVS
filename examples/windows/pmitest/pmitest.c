@@ -154,6 +154,42 @@ int main( int argc, char * argv[] )
     else
 	printf("PMI_KVS_Get(%s) returned %s\n", key, val);
 
+    /* Test awkward character string put and get */
+    if (rank == 0)
+    {
+	sprintf(key, "foo", rank);
+	sprintf(val, "foo=bar baz=bif name=\"Buzz Bee\" clink=~!@#$%^&*()_+`{}[]|\\;':<>,. clank=a b c");
+
+	rc = PMI_KVS_Put( kvsname, key, val );
+	if (rc != PMI_SUCCESS)
+	{
+	    printf("PMI_KVS_Put failed with rc = %s\n", PMI_Err_str(rc));
+	}
+	rc = PMI_KVS_Commit( kvsname );
+	if (rc != PMI_SUCCESS)
+	{
+	    printf("PMI_KVS_Commit failed with rc = %s\n", PMI_Err_str(rc));
+	}
+    }
+
+    rc = PMI_Barrier();
+    if (rc != PMI_SUCCESS)
+    {
+	printf("PMI_Barrier failed with rc = %s\n", PMI_Err_str(rc));
+    }
+
+    if (rank == size - 1)
+    {
+	sprintf(key, "foo");
+	rc = PMI_KVS_Get( kvsname, key, val, val_maxlen );
+	if (rc != PMI_SUCCESS)
+	{
+	    printf("PMI_KVS_Get(%s) failed with rc = %s\n", key, PMI_Err_str(rc));
+	}
+	else
+	    printf("PMI_KVS_Get(%s) returned %s\n", key, val);
+    }
+
     if ( rank == (size - 1) )
     {
 	key[0] = '\0';
