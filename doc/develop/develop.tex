@@ -2,8 +2,30 @@
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
 \usepackage{../mpiman}   % Definitions for this particular version of the
                          % manual
+\usepackage{tpage}
 
 \begin{document}
+\markright{MPICH2 Developer's Manual}
+\ANLTMTitle{MPICH2 Developer's Manual\\
+Version 0.1\\
+Draft of \today}{\em 
+William Gropp\\
+Ewing Lusk\\
+David Ashton\\
+Rob Ross\\
+Rajeev Thakur\\
+Brian Toonen\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\cleardoublepage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
 
 Here is a basic outline for the document
 
@@ -11,9 +33,13 @@ Here is a basic outline for the document
 
    1a. Directory tree
 
-   1b. Where a developer usually adds/changes
+   1b. Where a developer usually adds/changes files
 
 2. Adding a channel
+
+2a. Adding a socket
+
+2b. Adding an RDMA
 
 3. Adding a device
 
@@ -22,6 +48,8 @@ Here is a basic outline for the document
 5. Adding a module
 
   5a. Collective
+
+  \input collop.tex
 
   5b. Topology
 
@@ -32,9 +60,10 @@ Here is a basic outline for the document
 7. Development aids
 
   7a. Performance
+
       7ai. Logging internal state information
   
-      --with-logging=<format> --enable-timing=<when>
+      \code{--with-logging=<format> --enable-timing=<when>}
 
       where format is rlog, dlog, or lwlog, and when is all, runtime (others?)
 
@@ -42,10 +71,12 @@ Here is a basic outline for the document
 
    7b. Code checks
  
-      7bi. --enable-strict
+      7bi. \code{--enable-strict}
 
       7bii.  updatefiles (using the code style checker)
 
-      7biii. --enable-g=all (includes runtime checks)
+      7biii. \code{--enable-g=all} (includes runtime checks)
+
 9. Troubleshooting
+
 \end{document}
