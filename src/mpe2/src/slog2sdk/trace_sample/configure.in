@@ -9,6 +9,7 @@ dnl
 dnl
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT()
+AC_PREREQ(2.52)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_HEADER([trace_impl.h])
  
@@ -130,16 +131,28 @@ case "$host_os" in
         dnl  Since SUN's JDK assumes a win32 compiler, so force cygwin/gcc
         dnl  to be in MINGW32 mode. 
         CC="gcc -mno-cygwin"
+        LDFLAGS="$LDFLAGS -Wl,--enable-stdcall-fixup"
         LIBSO_PREFIX=""
         ;;
 esac
 AC_SUBST(LIBSO_PREFIX)
 
-dnl set COPTS equal to CFLAGS during configuration
+dnl  set COPTS equal to CFLAGS during configuration
 if test "x$CFLAGS" != "x" ; then
     COPTS="$CFLAGS"
     AC_SUBST(COPTS)
 fi
+
+dnl  intel compiler does not need shared library symbol exported.
+EXPORT_SYMBOLS=yes
+case "$CC" in
+    *icc* )
+        EXPORT_SYMBOLS=no
+        ;;
+    *pgcc )
+        ;;
+esac
+AC_SUBST(EXPORT_SYMBOLS)
 
 AC_DISABLE_STATIC
 AC_LIBTOOL_WIN32_DLL
