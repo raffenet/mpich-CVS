@@ -33,7 +33,7 @@ static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz
 	}
 	else
 	{
-	    (char *) req->ch3.iov[offset].MPID_IOV_BUF += nb;
+	    req->ch3.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)req->ch3.iov[offset].MPID_IOV_BUF + nb);
 	    req->ch3.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ssm.iov_offset = offset;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
@@ -75,6 +75,8 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+	    return mpi_errno;
 	}
 
 	if (nb > 0)
