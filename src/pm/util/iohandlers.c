@@ -97,7 +97,7 @@ int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, char *leader )
  */
 /* ---------------------------------------------------------------------- */
 #include <sys/select.h>
-
+#include <sys/time.h>
 /* handle input for all of the processes in a process table.  Returns
    after a single invocation of select returns, with the number of active
    processes.  */
@@ -257,15 +257,16 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 	envval = getenv( "MPIEXEC_PREFIX_STDOUT" );
 
     if (!envval) {
-	if (useDefault) 
+	if (useDefault) {
 	    if (isErr) 
-		envval = "%d(err)>";
+		envval = "%d(err)> ";
 	    else
-		envval = "%d>";
+		envval = "%d> ";
+	}
     }
     value[0] = 0;
     if (envval) {
-	const char *pin;
+	const char *pin = envval;
 	char *pout = value;
 	char digits[20];
 	int  dlen;
