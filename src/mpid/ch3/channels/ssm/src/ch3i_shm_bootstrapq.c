@@ -71,7 +71,7 @@ int MPIDI_CH3I_mqshm_create(const char *name, const int initialize, int *id)
 #ifdef USE_POSIX_SHM
     sprintf(node->shm_info.name, "/"MPICH_MSG_QUEUE_PREFIX"%s", name);
 #elif defined(USE_SYSV_SHM)
-    sprintf(node->shm_info.name, "/tmp/"MPICH_MQ_PREFIX"%s", name);
+    sprintf(node->shm_info.name, "/tmp/"MPICH_MSG_QUEUE_PREFIX"%s", name);
 #else
     strcpy(node->shm_info.name, name);
 #endif
