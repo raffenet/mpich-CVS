@@ -1384,7 +1384,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     void *mem_ptr;
     char *iter_ptr;
     ibu_t ibu;
-    unsigned int num_bytes;
+    int num_bytes;
     unsigned int offset;
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
@@ -1485,7 +1485,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		while (num_bytes)
 		{
-		    if (ibu->write.iov[ibu->write.index].IBU_IOV_LEN <= num_bytes)
+		    if ((int)ibu->write.iov[ibu->write.index].IBU_IOV_LEN <= num_bytes)
 		    {
 			/*printf("ibu_wait: write.index %d, len %d\n", ibu->write.index, 
 			ibu->write.iov[ibu->write.index].IBU_IOV_LEN);*/
@@ -1567,7 +1567,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		iter_ptr = mem_ptr;
 		while (num_bytes && ibu->read.iovlen > 0)
 		{
-		    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
+		    if ((int)ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
 		    {
 			/* copy the received data */
 			memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, iter_ptr,
@@ -1636,7 +1636,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    else
 	    {
-		if (num_bytes > ibu->read.bufflen)
+		if ((unsigned int)num_bytes > ibu->read.bufflen)
 		{
 		    /* copy the received data */
 		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
