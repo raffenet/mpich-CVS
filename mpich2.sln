@@ -1,29 +1,29 @@
 Microsoft Visual Studio Solution File, Format Version 7.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mm", "src\mpid\mm\mm.vcproj", "{568A79C4-643B-43D9-BC49-2EE5EFAE6815}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpiexec", "src\mpid\mm\src\mpiexec\mpiexec.vcproj", "{B1187586-AC21-4C48-859E-554CA93B700F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpich2", "mpich2.vcproj", "{0FACD81A-FE33-4845-ACF6-A1D50BD35991}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpiexec", "src\mpid\mm\src\mpiexec\mpiexec.vcproj", "{B1187586-AC21-4C48-859E-554CA93B700F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpich2s", "mpich2s.vcproj", "{7FBADF88-70AB-4415-B7DA-248EFA299A86}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmi", "src\pmi\winmpd\pmi.vcproj", "{347759A7-982B-4C35-AB6B-062BBFABCEAB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mm", "src\mpid\mm\mm.vcproj", "{568A79C4-643B-43D9-BC49-2EE5EFAE6815}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rlog", "src\util\logging\rlog\rlog.vcproj", "{3DE857FA-6F20-4214-8D99-811165354D3F}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shm", "SRC\MPID\CH3\CHANNELS\shm\shm.vcproj", "{DA017023-AA09-4B0F-BDC1-F853DE41767F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3shm", "SRC\MPID\CH3\CHANNELS\shm\shm.vcproj", "{DA017023-AA09-4B0F-BDC1-F853DE41767F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3mm", "src\mpid\ch3\channels\mm\ch3mm.vcproj", "{2B25AF63-3E57-455C-85BB-591426ACEF80}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sock", "src\mpid\common\sock\sock.vcproj", "{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3sock", "src\mpid\ch3\channels\sock\ch3sock.vcproj", "{88CF50C7-ECDC-4423-9332-8A0647374428}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3rdma", "src\mpid\ch3\channels\rdma\ch3rdma.vcproj", "{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sock", "src\mpid\common\sock\sock.vcproj", "{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dbg", "src\util\dbg\dbg.vcproj", "{DFFFA925-D59C-4480-8094-1B7E9D12BC02}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpich2s", "mpich2s.vcproj", "{7FBADF88-70AB-4415-B7DA-248EFA299A86}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cxx", "src\binding\cxx\cxx.vcproj", "{A611626E-E8FF-44A7-8105-149AB9CA5D20}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmi", "src\pmi\winmpd\pmi.vcproj", "{347759A7-982B-4C35-AB6B-062BBFABCEAB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rlog", "src\util\logging\rlog\rlog.vcproj", "{3DE857FA-6F20-4214-8D99-811165354D3F}"
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution

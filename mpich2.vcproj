@@ -104,7 +104,7 @@ copy mmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2shmd.lib dbgd.lib shmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2shmd.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -234,7 +234,7 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2shm.lib dbg.lib shm.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2shm.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -298,7 +298,7 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmcd.lib dbgd.lib sockd.lib ch3mmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2mmcd.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -363,7 +363,7 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmc.lib dbg.lib sock.lib ch3mm.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2mmc.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -427,7 +427,7 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2sockd.lib dbgd.lib sockd.lib ch3sockd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2sockd.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -701,7 +701,7 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2rdmad.lib dbgd.lib ch3rdmad.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2rdmad.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -766,7 +766,7 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2rdma.lib dbg.lib ch3rdma.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2rdma.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

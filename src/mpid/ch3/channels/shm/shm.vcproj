@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.00"
-	Name="shm"
+	Name="ch3shm"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -39,7 +39,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\..\lib\shmd.lib"
+				OutputFile="..\..\..\..\..\lib\ch3shmd.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -84,7 +84,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\..\lib\shm.lib"
+				OutputFile="..\..\..\..\..\lib\ch3shm.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

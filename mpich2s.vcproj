@@ -108,7 +108,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2mmcd.lib"
+				CommandLine="lib lib\mpich2mmcd.lib lib\ch3mmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -146,7 +148,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2mmc.lib"
+				CommandLine="lib lib\mpich2mmc.lib lib\ch3mm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -182,7 +186,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2rdmad.lib"
+				CommandLine="lib lib\mpich2rdmad.lib lib\ch3rdmad.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -220,7 +226,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2rdma.lib"
+				CommandLine="lib lib\mpich2rdma.lib lib\ch3rdma.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -240,7 +248,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;HAVE_CXX_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -256,7 +264,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2sockd.lib"
+				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -294,7 +304,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2sock.lib"
+				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -404,7 +416,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2shmd.lib"
+				CommandLine="lib lib\mpich2shmd.lib lib\ch3shmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -442,7 +456,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Combining libraries into mpich2shm.lib"
+				CommandLine="lib lib\mpich2shm.lib lib\ch3shm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
