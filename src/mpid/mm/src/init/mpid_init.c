@@ -51,7 +51,12 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     /*dbg_printf("%d-\n", MPIR_Process.comm_world->local_size);*/
     MPIR_Process.comm_world->remote_size = MPIR_Process.comm_world->local_size;
     /*dbg_printf("+PMI_KVS_Get_my_name:");*/
-    PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);
+    /*PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);*/
+    value_len = PMI_KVS_Get_name_length_max();
+    value = (char*)malloc(value_len * sizeof(char));
+    PMI_KVS_Get_my_name(value);
+    strcpy(MPID_Process.pmi_kvsname, value);
+    free(value);
     /*dbg_printf("%s-\n", MPID_Process.pmi_kvsname);*/
     MPIR_Process.comm_world->mm.pmi_kvsname = MPID_Process.pmi_kvsname;
     /*dbg_printf("+PMI_Barrier");*/
@@ -89,6 +94,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 #endif
 #ifdef WITH_METHOD_TCP
     tcp_init();
+#endif
+#ifdef WITH_METHOD_SOCKET
+    socket_init();
 #endif
 #ifdef WITH_METHOD_VIA
     via_init();
@@ -141,6 +149,14 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     strncat(sCapabilities, "tcp,", 5);
     tcp_get_business_card(value, value_len);
     snprintf(key, key_len, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
+    /*dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);*/
+    PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
+    /*dbg_printf("-\n");*/
+#endif
+#ifdef WITH_METHOD_SOCKET
+    strncat(sCapabilities, "socket,", 7);
+    socket_get_business_card(value, value_len);
+    snprintf(key, key_len, "business_card_socket:%d", MPIR_Process.comm_world->rank);
     /*dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     /*dbg_printf("-\n");*/
