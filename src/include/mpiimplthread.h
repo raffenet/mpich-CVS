@@ -51,10 +51,10 @@
 #define MPID_CS_ENTER()
 #define MPID_CS_EXIT()
 #elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-#define MPID_CS_INITIALIZE()					\
-{								\
-    MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);	\
-    MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);
+#define MPID_CS_INITIALIZE()						\
+{									\
+    MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);		\
+    MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);	\
 }
 #define MPID_CS_FINALIZE()						\
 {									\
