@@ -2153,11 +2153,13 @@ if ($write_mpif) {
     # errors directives that it does not support but does recognize.
     print MPIFFD "\@DLLIMPORT\@\n";
 
-    # Add the common block for the special constants
+    # Add the common blocks for the special constants
+    # (Use two to avoid problems with continuations)
     print MPIFFD "\
-       COMMON /MPIPRIV/ MPI_BOTTOM, MPI_IN_PLACE, MPI_STATUS_IGNORE,          &\n";
-    print MPIFFD "     &      MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE\n";
-    print MPIFFD "       SAVE /MPIPRIV/\n";
+       COMMON /MPIPRIV1/ MPI_BOTTOM, MPI_IN_PLACE, MPI_STATUS_IGNORE\n";
+    print MPIFFD "\
+       COMMON /MPIPRIV2/ MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE\n";
+    print MPIFFD "       SAVE /MPIPRIV1/,/MPIPRIV2/\n";
     # Add the common block for the character parameter ARGVS_NULL (Fortran
     # requires character data in a different common block than 
     # non-character data)

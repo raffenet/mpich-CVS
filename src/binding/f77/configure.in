@@ -1325,10 +1325,14 @@ AC_SUBST(MPIVERSION)
 
 # Some compilers may require special directives to handle the common 
 # block in a library.  In particular, directives are needed for Microsoft 
-# Windows to support dynamic library import.  The following two 
-# directive may be needed:
-#  CMS\$ATTRIBUTES DLLIMPORT::/MPIPRIV/
-#  CDEC\$ATTRIBUTES DLLIMPORT::/MPIPRIV/
+# Windows to support dynamic library import.  The following six
+# directives may be needed:
+#  CMS\$ATTRIBUTES DLLIMPORT::/MPIPRIV1/
+#  CMS\$ATTRIBUTES DLLIMPORT::/MPIPRIV2/
+#  CMS\$ATTRIBUTES DLLIMPORT::/MPIPRIVC/
+#  CDEC\$ATTRIBUTES DLLIMPORT::/MPIPRIV1/
+#  CDEC\$ATTRIBUTES DLLIMPORT::/MPIPRIV2/
+#  CDEC\$ATTRIBUTES DLLIMPORT::/MPIPRIVC/
 # CMS is for the Microsoft compiler,
 # CDEC is (we believe) for the DEC Fortran compiler.  
 # We need to make this a configure-time variable because some compilers (in 
