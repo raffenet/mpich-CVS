@@ -637,6 +637,7 @@ with MPI_Alloc_mem.
 **duphandle %d:unable to duplicate a handle (errno %d)
 **fail:failure
 **fail %d:failure (errno %d)
+**fail %s:failure - %s
 **gethostbyname:gethostbyname failed
 **gethostbyname %d:gethostbyname failed (errno %d)
 **getinfo:getaddrinfo failed
