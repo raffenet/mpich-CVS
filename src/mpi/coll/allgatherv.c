@@ -71,7 +71,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
     int curr_cnt, mask, dst, dst_tree_root, my_tree_root, is_homogeneous,
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
         offset, tmp_mask, tree_root, position, nbytes, total_count,
-        tmp_buf_size; 
+        tmp_buf_size, type_size; 
     void *tmp_buf;
     
     comm = comm_ptr->handle;
@@ -85,11 +85,12 @@ PMPI_LOCAL int MPIR_Allgatherv (
     if (total_count == 0) return MPI_SUCCESS;
     
     MPID_Datatype_get_extent_macro( recvtype, recv_extent );
+    MPID_Datatype_get_size_macro(recvtype, type_size);
     
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
 
-    if (total_count > MPIR_ALLGATHERV_MEDIUM_MSG) {
+    if (total_count*type_size > MPIR_ALLGATHERV_MEDIUM_MSG) {
         /* long message. use ring algorithm. */
 
         /* First, load the "local" version in the recvbuf. */

@@ -54,7 +54,7 @@ MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
    reduce-scatter, followed by an allgather. A recursive-halving
    algorithm (beginning with processes that are distance 1 apart) is
    used for the reduce-scatter, and a recursive doubling 
-   algorithm is used for the gather. The non-power-of-two case is
+   algorithm is used for the allgather. The non-power-of-two case is
    handled by dropping to the nearest lower power-of-two: the first
    few even-numbered processes send their data to their right neighbors
    (rank+1), and the reduce-scatter and allgather happen among the remaining

@@ -26,7 +26,8 @@
    
    Algorithm: MPI_Reduce_scatter
 
-   If the operation is commutative, we use a recursive-halving
+   If the operation is commutative, for short and medium-size
+   messages, we use a recursive-halving
    algorithm in which the first p/2 processes send the second n/2 data
    to their counterparts in the other half and receive the first n/2
    data from them. This procedure continues recursively, halving the
@@ -46,21 +47,24 @@
    there is some imbalance in the amount of work each process does
    because some processes do the work of their neighbors as well.
 
-
-   If the operation is not commutative, we do the following:
-
-   For long messages, we use a pairwise exchange algorithm similar to
+   For commutative operations and very long messages we use 
+   we use a pairwise exchange algorithm similar to
    the one used in MPI_Alltoall. At step i, each process sends n/p
    amount of data to (rank+i) and receives n/p amount of data from 
    (rank-i).
    Cost = (p-1).alpha + n.((p-1)/p).beta + n.((p-1)/p).gamma
 
-   For short messages, we use a recursive doubling algorithm, which
+
+   If the operation is not commutative, we do the following:
+
+   For very short messages, we use a recursive doubling algorithm, which
    takes lgp steps. At step 1, processes exchange (n-n/p) amount of
    data; at step 2, (n-2n/p) amount of data; at step 3, (n-4n/p)
    amount of data, and so forth.
 
    Cost = lgp.alpha + n.(lgp-(p-1)/p).beta + n.(lgp-(p-1)/p).gamma
+
+   For medium and long messages, we use pairwise exchange as above.
 
    Possible improvements: 
 
@@ -152,12 +156,15 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         return MPI_SUCCESS;
     }
 
+    MPID_Datatype_get_size_macro(datatype, type_size);
+    nbytes = total_count * type_size;
+    
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
     MPIR_Nest_incr();
 
-    if (is_commutative) {
-        /* use recursive halving algorithm */
+    if ((is_commutative) && (nbytes < MPIR_REDSCAT_COMMUTATIVE_LONG_MSG)) {
+        /* commutative and short. use recursive halving algorithm */
 
         /* allocate temp. buffer to receive incoming data */
         tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
@@ -389,371 +396,372 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         MPIU_Free(tmp_recvbuf);
     }
     
-    else { /* noncommutative */
+    if ((is_commutative && (nbytes >=
+                               MPIR_REDSCAT_COMMUTATIVE_LONG_MSG)) ||
+        (!is_commutative && (nbytes >=
+                                MPIR_REDSCAT_NONCOMMUTATIVE_SHORT_MSG))) {
 
-        MPID_Datatype_get_size_macro(datatype, type_size);
-        nbytes = total_count * type_size;
-    
-        if (nbytes > MPIR_REDUCE_SCATTER_SHORT_MSG) { 
-            /* for long messages, use (p-1) pairwise exchanges */ 
+        /* commutative and long message, or noncommutative and long message.
+           use (p-1) pairwise exchanges */ 
+        
+        if (sendbuf != MPI_IN_PLACE) {
+            /* copy local data into recvbuf */
+            mpi_errno = MPIR_Localcopy(((char *)sendbuf+disps[rank]*extent),
+                                       recvcnts[rank], datatype, recvbuf,
+                                       recvcnts[rank], datatype);
+            if (mpi_errno) return mpi_errno;
+        }
+        
+        /* allocate temporary buffer to store incoming data */
+        tmp_recvbuf =
+            MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))+1); 
+        if (!tmp_recvbuf) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+            return mpi_errno;
+        }
+        /* adjust for potential negative lower bound in datatype */
+        tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
+        
+        for (i=1; i<comm_size; i++) {
+            src = (rank - i + comm_size) % comm_size;
+            dst = (rank + i) % comm_size;
             
-            if (sendbuf != MPI_IN_PLACE) {
-                /* copy local data into recvbuf */
-                mpi_errno = MPIR_Localcopy(((char *)sendbuf+disps[rank]*extent),
-                                           recvcnts[rank], datatype, recvbuf,
-                                           recvcnts[rank], datatype);
-                if (mpi_errno) return mpi_errno;
-            }
+            /* send the data that dst needs. recv data that this process
+               needs from src into tmp_recvbuf */
+            if (sendbuf != MPI_IN_PLACE) 
+                mpi_errno = MPIC_Sendrecv(((char *)sendbuf+disps[dst]*extent), 
+                                          recvcnts[dst], datatype, dst,
+                                          MPIR_REDUCE_SCATTER_TAG, tmp_recvbuf,
+                                          recvcnts[rank], datatype, src,
+                                          MPIR_REDUCE_SCATTER_TAG, comm,
+                                          MPI_STATUS_IGNORE);
+            else
+                mpi_errno = MPIC_Sendrecv(((char *)recvbuf+disps[dst]*extent), 
+                                          recvcnts[dst], datatype, dst,
+                                          MPIR_REDUCE_SCATTER_TAG, tmp_recvbuf,
+                                          recvcnts[rank], datatype, src,
+                                          MPIR_REDUCE_SCATTER_TAG, comm,
+                                          MPI_STATUS_IGNORE);
             
-            /* allocate temporary buffer to store incoming data */
-            tmp_recvbuf =
-                MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))+1); 
-            if (!tmp_recvbuf) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
-                return mpi_errno;
-            }
-            /* adjust for potential negative lower bound in datatype */
-            tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
+            if (mpi_errno) return mpi_errno;
             
-            for (i=1; i<comm_size; i++) {
-                src = (rank - i + comm_size) % comm_size;
-                dst = (rank + i) % comm_size;
-                
-                /* send the data that dst needs. recv data that this process
-                   needs from src into tmp_recvbuf */
-                if (sendbuf != MPI_IN_PLACE) 
-                    mpi_errno = MPIC_Sendrecv(((char *)sendbuf+disps[dst]*extent), 
-                                              recvcnts[dst], datatype, dst,
-                                              MPIR_REDUCE_SCATTER_TAG, tmp_recvbuf,
-                                              recvcnts[rank], datatype, src,
-                                              MPIR_REDUCE_SCATTER_TAG, comm,
-                                              MPI_STATUS_IGNORE);
-                else
-                    mpi_errno = MPIC_Sendrecv(((char *)recvbuf+disps[dst]*extent), 
-                                              recvcnts[dst], datatype, dst,
-                                              MPIR_REDUCE_SCATTER_TAG, tmp_recvbuf,
-                                              recvcnts[rank], datatype, src,
-                                              MPIR_REDUCE_SCATTER_TAG, comm,
-                                              MPI_STATUS_IGNORE);
-                
-                if (mpi_errno) return mpi_errno;
-                
-                if (is_commutative || (src < rank)) {
-                    if (sendbuf != MPI_IN_PLACE) {
+            if (is_commutative || (src < rank)) {
+                if (sendbuf != MPI_IN_PLACE) {
 #ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)(tmp_recvbuf, 
-                                                           recvbuf, 
-                                                           recvcnts[rank], 
-                                                           datatype, uop );
-                        }
-                        else 
-#endif
-                            (*uop)(tmp_recvbuf, recvbuf, &recvcnts[rank], 
-                                   &datatype); 
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)(tmp_recvbuf, 
+                                                       recvbuf, 
+                                                       recvcnts[rank], 
+                                                       datatype, uop );
                     }
-                    else {
-#ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
-                                        ((char *)recvbuf+disps[rank]*extent), 
-                                         recvcnts[rank], datatype, uop ); 
-                        }
-                        else 
+                    else 
 #endif
-                            (*uop)(tmp_recvbuf, ((char *)recvbuf+disps[rank]*extent), 
-                                   &recvcnts[rank], &datatype); 
-                        /* we can't store the result at the beginning of
-                           recvbuf right here because there is useful data
-                           there that other process/processes need. at the
-                           end, we will copy back the result to the
-                           beginning of recvbuf. */
-                    }
+                        (*uop)(tmp_recvbuf, recvbuf, &recvcnts[rank], 
+                               &datatype); 
                 }
                 else {
-                    if (sendbuf != MPI_IN_PLACE) {
 #ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)( recvbuf, 
-                                                            tmp_recvbuf, 
-                                                            recvcnts[rank], 
-                                                            datatype, uop );
-                        }
-                        else 
-#endif
-                            (*uop)(recvbuf, tmp_recvbuf, &recvcnts[rank], &datatype); 
-                        /* copy result back into recvbuf */
-                        mpi_errno = MPIR_Localcopy(tmp_recvbuf, recvcnts[rank], 
-                                                   datatype, recvbuf,
-                                                   recvcnts[rank], datatype); 
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
+                                                        ((char *)recvbuf+disps[rank]*extent), 
+                                                        recvcnts[rank], datatype, uop ); 
                     }
-                    else {
-#ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)( 
-                                ((char *)recvbuf+disps[rank]*extent),
-                                tmp_recvbuf, recvcnts[rank], datatype, uop );   
-                            
-                        }
-                        else 
+                    else 
 #endif
-                            (*uop)(((char *)recvbuf+disps[rank]*extent),
-                                   tmp_recvbuf, &recvcnts[rank], &datatype);   
-                        /* copy result back into recvbuf */
-                        mpi_errno = MPIR_Localcopy(tmp_recvbuf, recvcnts[rank], 
-                                                   datatype, 
-                                                   ((char *)recvbuf +
-                                                    disps[rank]*extent), 
-                                                   recvcnts[rank], datatype); 
-                    }
-                    if (mpi_errno) return mpi_errno;
+                        (*uop)(tmp_recvbuf, ((char *)recvbuf+disps[rank]*extent), 
+                               &recvcnts[rank], &datatype); 
+                    /* we can't store the result at the beginning of
+                       recvbuf right here because there is useful data
+                       there that other process/processes need. at the
+                       end, we will copy back the result to the
+                       beginning of recvbuf. */
                 }
             }
-            
-            MPIU_Free((char *)tmp_recvbuf+true_lb); 
-            
-            /* if MPI_IN_PLACE, move output data to the beginning of
-               recvbuf. already done for rank 0. */
-            if ((sendbuf == MPI_IN_PLACE) && (rank != 0)) {
-                mpi_errno = MPIR_Localcopy(((char *)recvbuf +
-                                            disps[rank]*extent),  
-                                           recvcnts[rank], datatype, 
-                                           recvbuf, 
-                                           recvcnts[rank], datatype); 
+            else {
+                if (sendbuf != MPI_IN_PLACE) {
+#ifdef HAVE_CXX_BINDING
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)( recvbuf, 
+                                                        tmp_recvbuf, 
+                                                        recvcnts[rank], 
+                                                        datatype, uop );
+                    }
+                    else 
+#endif
+                        (*uop)(recvbuf, tmp_recvbuf, &recvcnts[rank], &datatype); 
+                    /* copy result back into recvbuf */
+                    mpi_errno = MPIR_Localcopy(tmp_recvbuf, recvcnts[rank], 
+                                               datatype, recvbuf,
+                                               recvcnts[rank], datatype); 
+                }
+                else {
+#ifdef HAVE_CXX_BINDING
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)( 
+                            ((char *)recvbuf+disps[rank]*extent),
+                            tmp_recvbuf, recvcnts[rank], datatype, uop );   
+                        
+                    }
+                    else 
+#endif
+                        (*uop)(((char *)recvbuf+disps[rank]*extent),
+                               tmp_recvbuf, &recvcnts[rank], &datatype);   
+                    /* copy result back into recvbuf */
+                    mpi_errno = MPIR_Localcopy(tmp_recvbuf, recvcnts[rank], 
+                                               datatype, 
+                                               ((char *)recvbuf +
+                                                disps[rank]*extent), 
+                                               recvcnts[rank], datatype); 
+                }
                 if (mpi_errno) return mpi_errno;
             }
         }
         
-        else {
-            /* for short messages, use recursive doubling. */
-            
-            /* need to allocate temporary buffer to receive incoming data*/
-            tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
-            if (!tmp_recvbuf) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
-                return mpi_errno;
-            }
-            /* adjust for potential negative lower bound in datatype */
-            tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
-            
-            /* need to allocate another temporary buffer to accumulate
-               results */
-            tmp_results = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
-            if (!tmp_results) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
-                return mpi_errno;
-            }        
-            /* adjust for potential negative lower bound in datatype */
-            tmp_results = (void *)((char*)tmp_results - true_lb);
-            
-            /* copy sendbuf into tmp_results */
-            if (sendbuf != MPI_IN_PLACE)
-                mpi_errno = MPIR_Localcopy(sendbuf, total_count, datatype,
-                                           tmp_results, total_count, datatype);
-            else
-                mpi_errno = MPIR_Localcopy(recvbuf, total_count, datatype,
-                                           tmp_results, total_count, datatype);
-            
+        MPIU_Free((char *)tmp_recvbuf+true_lb); 
+        
+        /* if MPI_IN_PLACE, move output data to the beginning of
+           recvbuf. already done for rank 0. */
+        if ((sendbuf == MPI_IN_PLACE) && (rank != 0)) {
+            mpi_errno = MPIR_Localcopy(((char *)recvbuf +
+                                        disps[rank]*extent),  
+                                       recvcnts[rank], datatype, 
+                                       recvbuf, 
+                                       recvcnts[rank], datatype); 
             if (mpi_errno) return mpi_errno;
+        }
+    }
+    
+    if (!is_commutative && (nbytes <
+                            MPIR_REDSCAT_NONCOMMUTATIVE_SHORT_MSG)) {
+        
+        /* noncommutative and short messages, use recursive doubling. */
+        
+        /* need to allocate temporary buffer to receive incoming data*/
+        tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
+        if (!tmp_recvbuf) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+        /* adjust for potential negative lower bound in datatype */
+        tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
+        
+        /* need to allocate another temporary buffer to accumulate
+           results */
+        tmp_results = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
+        if (!tmp_results) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }        
+        /* adjust for potential negative lower bound in datatype */
+        tmp_results = (void *)((char*)tmp_results - true_lb);
+        
+        /* copy sendbuf into tmp_results */
+        if (sendbuf != MPI_IN_PLACE)
+            mpi_errno = MPIR_Localcopy(sendbuf, total_count, datatype,
+                                       tmp_results, total_count, datatype);
+        else
+            mpi_errno = MPIR_Localcopy(recvbuf, total_count, datatype,
+                                       tmp_results, total_count, datatype);
+        
+        if (mpi_errno) return mpi_errno;
+        
+        mask = 0x1;
+        i = 0;
+        while (mask < comm_size) {
+            dst = rank ^ mask;
             
-            mask = 0x1;
-            i = 0;
-            while (mask < comm_size) {
-                dst = rank ^ mask;
+            dst_tree_root = dst >> i;
+            dst_tree_root <<= i;
+            
+            my_tree_root = rank >> i;
+            my_tree_root <<= i;
+            
+            /* At step 1, processes exchange (n-n/p) amount of
+               data; at step 2, (n-2n/p) amount of data; at step 3, (n-4n/p)
+               amount of data, and so forth. We use derived datatypes for this.
+               
+               At each step, a process does not need to send data
+               indexed from my_tree_root to
+               my_tree_root+mask-1. Similarly, a process won't receive
+               data indexed from dst_tree_root to dst_tree_root+mask-1. */
+            
+            /* calculate sendtype */
+            blklens[0] = blklens[1] = 0;
+            for (j=0; j<my_tree_root; j++)
+                blklens[0] += recvcnts[j];
+            for (j=my_tree_root+mask; j<comm_size; j++)
+                blklens[1] += recvcnts[j];
+            
+            dis[0] = 0;
+            dis[1] = blklens[0];
+            for (j=my_tree_root; (j<my_tree_root+mask) && (j<comm_size); j++)
+                dis[1] += recvcnts[j];
+            
+            NMPI_Type_indexed(2, blklens, dis, datatype, &sendtype);
+            NMPI_Type_commit(&sendtype);
+            
+            /* calculate recvtype */
+            blklens[0] = blklens[1] = 0;
+            for (j=0; j<dst_tree_root; j++)
+                blklens[0] += recvcnts[j];
+            for (j=dst_tree_root+mask; j<comm_size; j++)
+                blklens[1] += recvcnts[j];
+            
+            dis[0] = 0;
+            dis[1] = blklens[0];
+            for (j=dst_tree_root; (j<dst_tree_root+mask) && (j<comm_size); j++)
+                dis[1] += recvcnts[j];
+            
+            NMPI_Type_indexed(2, blklens, dis, datatype, &recvtype);
+            NMPI_Type_commit(&recvtype);
+            
+            received = 0;
+            if (dst < comm_size) {
+                /* tmp_results contains data to be sent in each step. Data is
+                   received in tmp_recvbuf and then accumulated into
+                   tmp_results. accumulation is done later below.   */ 
                 
-                dst_tree_root = dst >> i;
-                dst_tree_root <<= i;
-                
-                my_tree_root = rank >> i;
-                my_tree_root <<= i;
-                
-                /* At step 1, processes exchange (n-n/p) amount of
-                   data; at step 2, (n-2n/p) amount of data; at step 3, (n-4n/p)
-                   amount of data, and so forth. We use derived datatypes for this.
-                   
-                   At each step, a process does not need to send data
-                   indexed from my_tree_root to
-                   my_tree_root+mask-1. Similarly, a process won't receive
-                   data indexed from dst_tree_root to dst_tree_root+mask-1. */
-                
-                /* calculate sendtype */
-                blklens[0] = blklens[1] = 0;
-                for (j=0; j<my_tree_root; j++)
-                    blklens[0] += recvcnts[j];
-                for (j=my_tree_root+mask; j<comm_size; j++)
-                    blklens[1] += recvcnts[j];
-                
-                dis[0] = 0;
-                dis[1] = blklens[0];
-                for (j=my_tree_root; (j<my_tree_root+mask) && (j<comm_size); j++)
-                    dis[1] += recvcnts[j];
-                
-                NMPI_Type_indexed(2, blklens, dis, datatype, &sendtype);
-                NMPI_Type_commit(&sendtype);
-                
-                /* calculate recvtype */
-                blklens[0] = blklens[1] = 0;
-                for (j=0; j<dst_tree_root; j++)
-                    blklens[0] += recvcnts[j];
-                for (j=dst_tree_root+mask; j<comm_size; j++)
-                    blklens[1] += recvcnts[j];
-                
-                dis[0] = 0;
-                dis[1] = blklens[0];
-                for (j=dst_tree_root; (j<dst_tree_root+mask) && (j<comm_size); j++)
-                    dis[1] += recvcnts[j];
-                
-                NMPI_Type_indexed(2, blklens, dis, datatype, &recvtype);
-                NMPI_Type_commit(&recvtype);
-                
-                received = 0;
-                if (dst < comm_size) {
-                    /* tmp_results contains data to be sent in each step. Data is
-                       received in tmp_recvbuf and then accumulated into
-                       tmp_results. accumulation is done later below.   */ 
-                    
-                    mpi_errno = MPIC_Sendrecv(tmp_results, 1, sendtype, dst,
-                                              MPIR_REDUCE_SCATTER_TAG, 
-                                              tmp_recvbuf, 1, recvtype, dst,
-                                              MPIR_REDUCE_SCATTER_TAG, comm,
-                                              MPI_STATUS_IGNORE); 
-                    received = 1;
-                    if (mpi_errno) return mpi_errno;
+                mpi_errno = MPIC_Sendrecv(tmp_results, 1, sendtype, dst,
+                                          MPIR_REDUCE_SCATTER_TAG, 
+                                          tmp_recvbuf, 1, recvtype, dst,
+                                          MPIR_REDUCE_SCATTER_TAG, comm,
+                                          MPI_STATUS_IGNORE); 
+                received = 1;
+                if (mpi_errno) return mpi_errno;
+            }
+            
+            /* if some processes in this process's subtree in this step
+               did not have any destination process to communicate with
+               because of non-power-of-two, we need to send them the
+               result. We use a logarithmic recursive-halfing algorithm
+               for this. */
+            
+            if (dst_tree_root + mask > comm_size) {
+                nprocs_completed = comm_size - my_tree_root - mask;
+                /* nprocs_completed is the number of processes in this
+                   subtree that have all the data. Send data to others
+                   in a tree fashion. First find root of current tree
+                   that is being divided into two. k is the number of
+                   least-significant bits in this process's rank that
+                   must be zeroed out to find the rank of the root */ 
+                j = mask;
+                k = 0;
+                while (j) {
+                    j >>= 1;
+                    k++;
                 }
+                k--;
                 
-                /* if some processes in this process's subtree in this step
-                   did not have any destination process to communicate with
-                   because of non-power-of-two, we need to send them the
-                   result. We use a logarithmic recursive-halfing algorithm
-                   for this. */
-                
-                if (dst_tree_root + mask > comm_size) {
-                    nprocs_completed = comm_size - my_tree_root - mask;
-                    /* nprocs_completed is the number of processes in this
-                       subtree that have all the data. Send data to others
-                       in a tree fashion. First find root of current tree
-                       that is being divided into two. k is the number of
-                       least-significant bits in this process's rank that
-                       must be zeroed out to find the rank of the root */ 
-                    j = mask;
-                    k = 0;
-                    while (j) {
-                        j >>= 1;
-                        k++;
-                    }
-                    k--;
+                tmp_mask = mask >> 1;
+                while (tmp_mask) {
+                    dst = rank ^ tmp_mask;
                     
-                    tmp_mask = mask >> 1;
-                    while (tmp_mask) {
-                        dst = rank ^ tmp_mask;
-                        
-                        tree_root = rank >> k;
-                        tree_root <<= k;
-                        
-                        /* send only if this proc has data and destination
-                           doesn't have data. at any step, multiple processes
-                           can send if they have the data */
-                        if ((dst > rank) && 
-                            (rank < tree_root + nprocs_completed)
-                            && (dst >= tree_root + nprocs_completed)) {
-                            /* send the current result */
-                            mpi_errno = MPIC_Send(tmp_recvbuf, 1, recvtype,
-                                                  dst, MPIR_REDUCE_SCATTER_TAG,
-                                                  comm);  
-                            if (mpi_errno) return mpi_errno;
-                        }
-                        /* recv only if this proc. doesn't have data and sender
-                           has data */
-                        else if ((dst < rank) && 
-                                 (dst < tree_root + nprocs_completed) &&
-                                 (rank >= tree_root + nprocs_completed)) {
-                            mpi_errno = MPIC_Recv(tmp_recvbuf, 1, recvtype, dst,
-                                                  MPIR_REDUCE_SCATTER_TAG,
-                                                  comm, MPI_STATUS_IGNORE); 
-                            received = 1;
-                            if (mpi_errno) return mpi_errno;
-                        }
-                        tmp_mask >>= 1;
-                        k--;
-                    }
-                }
-                
-                /* The following reduction is done here instead of after 
-                   the MPIC_Sendrecv or MPIC_Recv above. This is
-                   because to do it above, in the noncommutative 
-                   case, we would need an extra temp buffer so as not to
-                   overwrite temp_recvbuf, because temp_recvbuf may have
-                   to be communicated to other processes in the
-                   non-power-of-two case. To avoid that extra allocation,
-                   we do the reduce here. */
-                if (received) {
-                    if (is_commutative || (dst_tree_root < my_tree_root)) {
-#ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
-                                                            tmp_results, blklens[0],
-                                                            datatype, uop); 
-                            (*MPIR_Process.cxx_call_op_fn)( 
-                                ((char *)tmp_recvbuf + dis[1]*extent),
-                                ((char *)tmp_results + dis[1]*extent),
-                                blklens[1], datatype, uop ); 
-                        }
-                        else
-#endif
-                        {
-                            (*uop)(tmp_recvbuf, tmp_results, &blklens[0],
-                                   &datatype); 
-                            (*uop)(((char *)tmp_recvbuf + dis[1]*extent),
-                                   ((char *)tmp_results + dis[1]*extent),
-                                   &blklens[1], &datatype); 
-                        }
-                    }
-                    else {
-#ifdef HAVE_CXX_BINDING
-                        if (is_cxx_uop) {
-                            (*MPIR_Process.cxx_call_op_fn)( tmp_results, 
-                                                            tmp_recvbuf, blklens[0],
-                                                            datatype, uop ); 
-                            (*MPIR_Process.cxx_call_op_fn)( 
-                                ((char *)tmp_results + dis[1]*extent),
-                                ((char *)tmp_recvbuf + dis[1]*extent),
-                                blklens[1], datatype, uop ); 
-                        }
-                        else 
-#endif
-                        {
-                            (*uop)(tmp_results, tmp_recvbuf, &blklens[0],
-                                   &datatype); 
-                            (*uop)(((char *)tmp_results + dis[1]*extent),
-                                   ((char *)tmp_recvbuf + dis[1]*extent),
-                                   &blklens[1], &datatype); 
-                        }
-                        /* copy result back into tmp_results */
-                        mpi_errno = MPIR_Localcopy(tmp_recvbuf, 1, recvtype, 
-                                                   tmp_results, 1, recvtype);
+                    tree_root = rank >> k;
+                    tree_root <<= k;
+                    
+                    /* send only if this proc has data and destination
+                       doesn't have data. at any step, multiple processes
+                       can send if they have the data */
+                    if ((dst > rank) && 
+                        (rank < tree_root + nprocs_completed)
+                        && (dst >= tree_root + nprocs_completed)) {
+                        /* send the current result */
+                        mpi_errno = MPIC_Send(tmp_recvbuf, 1, recvtype,
+                                              dst, MPIR_REDUCE_SCATTER_TAG,
+                                              comm);  
                         if (mpi_errno) return mpi_errno;
                     }
+                    /* recv only if this proc. doesn't have data and sender
+                       has data */
+                    else if ((dst < rank) && 
+                             (dst < tree_root + nprocs_completed) &&
+                             (rank >= tree_root + nprocs_completed)) {
+                        mpi_errno = MPIC_Recv(tmp_recvbuf, 1, recvtype, dst,
+                                              MPIR_REDUCE_SCATTER_TAG,
+                                              comm, MPI_STATUS_IGNORE); 
+                        received = 1;
+                        if (mpi_errno) return mpi_errno;
+                    }
+                    tmp_mask >>= 1;
+                    k--;
                 }
-                
-                NMPI_Type_free(&sendtype);
-                NMPI_Type_free(&recvtype);
-                
-                mask <<= 1;
-                i++;
             }
-
-            /* now copy final results from tmp_results to recvbuf */
-            mpi_errno = MPIR_Localcopy(((char *)tmp_results+disps[rank]*extent),
-                                       recvcnts[rank], datatype, recvbuf,
-                                       recvcnts[rank], datatype); 
             
-            if (mpi_errno) return mpi_errno;
+            /* The following reduction is done here instead of after 
+               the MPIC_Sendrecv or MPIC_Recv above. This is
+               because to do it above, in the noncommutative 
+               case, we would need an extra temp buffer so as not to
+               overwrite temp_recvbuf, because temp_recvbuf may have
+               to be communicated to other processes in the
+               non-power-of-two case. To avoid that extra allocation,
+               we do the reduce here. */
+            if (received) {
+                if (is_commutative || (dst_tree_root < my_tree_root)) {
+#ifdef HAVE_CXX_BINDING
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
+                                                        tmp_results, blklens[0],
+                                                        datatype, uop); 
+                        (*MPIR_Process.cxx_call_op_fn)( 
+                            ((char *)tmp_recvbuf + dis[1]*extent),
+                            ((char *)tmp_results + dis[1]*extent),
+                            blklens[1], datatype, uop ); 
+                    }
+                    else
+#endif
+                    {
+                        (*uop)(tmp_recvbuf, tmp_results, &blklens[0],
+                               &datatype); 
+                        (*uop)(((char *)tmp_recvbuf + dis[1]*extent),
+                               ((char *)tmp_results + dis[1]*extent),
+                               &blklens[1], &datatype); 
+                    }
+                }
+                else {
+#ifdef HAVE_CXX_BINDING
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)( tmp_results, 
+                                                        tmp_recvbuf, blklens[0],
+                                                        datatype, uop ); 
+                        (*MPIR_Process.cxx_call_op_fn)( 
+                            ((char *)tmp_results + dis[1]*extent),
+                            ((char *)tmp_recvbuf + dis[1]*extent),
+                            blklens[1], datatype, uop ); 
+                    }
+                    else 
+#endif
+                    {
+                        (*uop)(tmp_results, tmp_recvbuf, &blklens[0],
+                               &datatype); 
+                        (*uop)(((char *)tmp_results + dis[1]*extent),
+                               ((char *)tmp_recvbuf + dis[1]*extent),
+                               &blklens[1], &datatype); 
+                    }
+                    /* copy result back into tmp_results */
+                    mpi_errno = MPIR_Localcopy(tmp_recvbuf, 1, recvtype, 
+                                               tmp_results, 1, recvtype);
+                    if (mpi_errno) return mpi_errno;
+                }
+            }
             
-            MPIU_Free((char *)tmp_recvbuf+true_lb); 
-            MPIU_Free((char *)tmp_results+true_lb); 
+            NMPI_Type_free(&sendtype);
+            NMPI_Type_free(&recvtype);
+            
+            mask <<= 1;
+            i++;
         }
+        
+        /* now copy final results from tmp_results to recvbuf */
+        mpi_errno = MPIR_Localcopy(((char *)tmp_results+disps[rank]*extent),
+                                   recvcnts[rank], datatype, recvbuf,
+                                   recvcnts[rank], datatype); 
+        
+        if (mpi_errno) return mpi_errno;
+        
+        MPIU_Free((char *)tmp_recvbuf+true_lb); 
+        MPIU_Free((char *)tmp_results+true_lb); 
     }    
-
+    
     MPIU_Free(disps);
     
     MPIR_Nest_decr();

@@ -1682,11 +1682,14 @@ void MPIR_WaitForDebugger( void );
    and (b) provide runtime control?  Should these be MPIR_xxx_DEFAULT 
    instead? */
 #define MPIR_BCAST_SHORT_MSG          12288
+#define MPIR_BCAST_LONG_MSG           524288
 #define MPIR_BCAST_MIN_PROCS          8
 #define MPIR_ALLTOALL_SHORT_MSG       128
 #define MPIR_ALLTOALL_MEDIUM_MSG      262144
-#define MPIR_REDUCE_SCATTER_SHORT_MSG 512  
+#define MPIR_REDSCAT_COMMUTATIVE_LONG_MSG 524288
+#define MPIR_REDSCAT_NONCOMMUTATIVE_SHORT_MSG 512
 #define MPIR_ALLGATHERV_MEDIUM_MSG    262144
+#define MPIR_ALLGATHER_LONG_MSG       524288
 #define MPIR_REDUCE_SHORT_MSG         2048
 #define MPIR_ALLREDUCE_SHORT_MSG      2048
 #define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
