@@ -1022,6 +1022,7 @@ int MPIDI_CH3_Progress_poke()
     return mpi_errno;
 }
 
+#if !defined(MPIDI_CH3_Progress_start)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_start
 #undef FCNAME
@@ -1034,7 +1035,9 @@ void MPIDI_CH3_Progress_start()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_START);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_START);
 }
+#endif
 
+#if !defined(MPIDI_CH3_Progress_end)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
@@ -1047,6 +1050,7 @@ void MPIDI_CH3_Progress_end()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_END);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_END);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_init
