@@ -209,17 +209,17 @@ function that allocate local RDMA buffers and register them to the HCA
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibui_update_remote_RDMA_buf(ibu_t ibu, ibu_rdma_buf_t* buf, VAPI_rkey_t rkey)
 {
-    MPIDI_STATE_DECL(MPID_STATE_IBU_UPDATE_REMOTE_RDMA_BUF);
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_UPDATE_REMOTE_RDMA_BUF);
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
     MPIU_DBG_PRINTF(("entering ibui_update_remote_RDMA_buf\n"));
     ibu->remote_RDMA_buf_base = buf;
     ibu->remote_RDMA_buf_hndl.rkey = rkey;
     ibu->remote_RDMA_head = 0;
     ibu->remote_RDMA_limit = IBU_NUM_OF_RDMA_BUFS - 1;
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_UPDATE_REMOTE_RDMA_BUF);
     MPIU_DBG_PRINTF(("ibu_update_RDMA_buf  rkey = %x  buf= %p\n",rkey,buf));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
     return IBU_SUCCESS;
 }
 
@@ -233,8 +233,6 @@ retrun value:
 p - memory hndl of the buffers , NULL if fail.
 
 function that allocate local RDMA buffers and register them to the HCA
-
-
 */
 #undef FUNCNAME
 #define FUNCNAME ibui_RDMA_buf_init
@@ -244,15 +242,15 @@ ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, VAPI_rkey_t* rkey)
 {
     ibu_rdma_buf_t *buf;
     ibu_mem_t mem_handle;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_BUF_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_RDMA_BUF_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_BUF_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_RDMA_BUF_INIT);
     MPIU_DBG_PRINTF(("entering ibui_RDMA_buf_init\n"));
     buf = ibuRDMAAllocInitIB(&mem_handle); 
 
     if (buf == NULL)
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_RDMA_BUF_INIT);
 	return NULL;
     }
 
@@ -261,12 +259,12 @@ ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, VAPI_rkey_t* rkey)
     ibu->local_RDMA_head =  0;
     ibu->local_last_updated_RDMA_limit = IBU_NUM_OF_RDMA_BUFS - 1;
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
     *rkey = ibu->local_RDMA_buf_hndl.rkey;
     MPIU_DBG_PRINTF(("ibui_RDMA_buf_init   rkey = %x  buf= %p\n", *rkey, buf));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
     return buf;
-
 }
+
 #undef FUNCNAME
 #define FUNCNAME ibu_start_qp
 #undef FCNAME
