@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 	 
     if (!mynod) {
 	    if (errs) fprintf(stderr, "Found %d error cases\n", errs);
-	    else printf("no errors.\n");
+	    else printf("No errors.\n");
     }
     free(filename);
     free(cb_config_string);
@@ -515,6 +515,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg,
 		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
 				    mynod, i, buf[i]);
 		    errors++;
+	    }
 	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE)) {
 		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
 				    mynod, i, buf[i], SEEDER(mynod,i,SIZE) );
@@ -555,7 +556,6 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg,
     }
 
     MPI_File_close(&fh);
-#endif 
 
     MPI_Type_free(&newtype);
     free(buf);
