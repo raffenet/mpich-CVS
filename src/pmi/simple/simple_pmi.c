@@ -466,3 +466,103 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 	return( 0 );
     }
 }
+
+#if 0
+#include <errno.h>
+#include <sys/param.h>
+#include <sys/socket.h>
+
+/* sockaddr_in (Internet) */
+#include <netinet/in.h>
+/* TCP_NODELAY */
+#include <netinet/tcp.h>
+
+/* sockaddr_un (Unix) */
+#include <sys/un.h>
+
+/* defs of gethostbyname */
+#include <netdb.h>
+
+/* fcntl, F_GET/SETFL */
+#include <fcntl.h>
+
+/* This is really IP!? */
+#ifndef TCP
+#define TCP 0
+#endif
+
+/* stub for connecting to a specified host/port instead of using a 
+   specified fd inherited from a parent process */
+int PMI_Connect_to_pm( char *hostname, int portnum )
+{
+    struct hostent     *hp;
+    struct sockaddr_in sa;
+    int                fd;
+    int                optval = 1;
+    int                flags;
+    
+    hp = gethostbyname( server_hostname );
+    if (!hp) {
+	return -1;
+    }
+    
+    bzero( &sa, sizeof(sa) );
+    bcopy( hp->h_addr, &sa.sin_addr, hp->h_length);
+    sa.sin_family = hp->h_addrtype;
+    sa.sin_port   = htons( (u_short) portnum );
+    
+    fd = socket( AF_INET, SOCK_STREAM, TCP );
+    if (fd < 0) {
+	return -1;
+    }
+    
+    if (setsockopt( fd, IPPROTO_TCP, TCP_NODELAY, 
+		    (char *)&optval, sizeof(optval) )) {
+	perror( "Error calling setsockopt:" );
+    }
+
+/* If a non-blocking socket, then can use select on write to test for
+   connect would succeed.  Thus, we mark the socket as non-blocking now */
+/* Mark this fd as non-blocking */
+    if (!q_wait) {
+	flags = fcntl( fd, F_GETFL, 0 );
+	if (flags >= 0) {
+	    flags |= O_NDELAY;
+	    fcntl( fd, F_SETFL, flags );
+	}
+    }
+
+    if (is_ready) *is_ready = 1;
+    if (connect( fd, &sa, sizeof(sa) ) < 0) {
+	switch (errno) {
+	case ECONNREFUSED:
+	    /* (close socket, get new socket, try again) */
+	    if (q_wait)
+		close(fd);
+	    return -1;
+	    
+	case EINPROGRESS: /*  (nonblocking) - select for writing. */
+	    if (is_ready) *is_ready = 0;
+	    break;
+	    
+	case EISCONN: /*  (already connected) */
+	    break;
+	    
+	case ETIMEDOUT: /* timed out */
+	    return -1;
+
+	default:
+	    return -1;
+	}
+    }
+    if (fd >= 0 && q_wait) {
+	flags = fcntl( fd, F_GETFL, 0 );
+	if (flags >= 0) {
+	flags |= O_NDELAY;
+	fcntl( fd, F_SETFL, flags );
+	}
+    }
+
+    return fd;
+}
+#endif
