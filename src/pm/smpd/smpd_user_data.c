@@ -807,6 +807,7 @@ int smpd_lock_smpd_data(void)
     }
     if (WaitForSingleObject(smpd_process.hSMPDDataMutex, SMPD_SHORT_TIMEOUT*1000) != WAIT_OBJECT_0)
     {
+	smpd_err_printf("lock_smpd_data failed\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
