@@ -286,7 +286,9 @@ void MPIR_Keyval_set_cxx( int keyval, void (*delfn)(void), void (*copyfn)(void) 
     MPID_Keyval_get_ptr( keyval, keyval_ptr );
     
     keyval_ptr->language	 = MPID_LANG_CXX;
-    MPIR_Process.cxx_call_delfn	 = delfn;
-    MPIR_Process.cxx_call_copyfn = copyfn;
+    MPIR_Process.cxx_call_delfn	 = (int (*)(int, int, void *, void *, 
+					    void (*)(void)))delfn;
+    MPIR_Process.cxx_call_copyfn = (int (*)(int, int, void *, void *, 
+					    void (*)(void)))copyfn;
 }
 #endif
