@@ -1879,7 +1879,7 @@ sub InstallDirs {
     # Add target only at the top
     if (!$doc_attop) { return; }
 
-    print FD "htmldir = @htmldir@\nmandir = @mandir@\n";
+    print FD "htmldir = \@htmldir\@\nmandir = \@mandir\@\n";
 }
 
 #
