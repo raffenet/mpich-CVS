@@ -45,12 +45,14 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
     for (i=0; i<n2; i++) {
 	if (lpids2[i] > maxlpid) maxlpid = lpids2[i];
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (maxlpid >= MAX_LPID32_ARRAY * 32) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**intern",
 				  "**intern %s", 
 				  "Too many processes in intercomm_create" );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     
     /* Compute the max index and zero the pids array */
     maxi = (maxlpid + 31) / 32;
@@ -67,12 +69,14 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
     for (i=0; i<n2; i++) {
 	idx = lpids2[i] / 32;
 	bit = lpids2[i] % 32;
+	/* --BEGIN ERROR HANDLING-- */
 	if (lpidmask[idx] & (1 << bit)) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**dupprocesses", 
 					      "**dupprocesses %d", lpids2[i] );
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
 	/* Add a check on duplicates *within* group 2 */
 	lpidmask[idx] = lpidmask[idx] | (1 << bit);
     }
@@ -247,17 +251,21 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	
 	remote_size  = remote_size;
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!remote_lpids)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	local_lpids =  (int *)MPIU_Malloc( local_size * sizeof(int) );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!local_lpids)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	for (i=0; i<comm_ptr->local_size; i++) {
 	    (void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &local_lpids[i] );
 	}
@@ -304,11 +312,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     DEBUG(printf( "About to get contextid (commsize=%d) on %d\n",
 		  comm_ptr->local_size, comm_ptr->rank ));
     context_id = MPIR_Get_contextid( local_comm );
+    /* --BEGIN ERROR HANDLING-- */
     if (context_id == 0)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     DEBUG(printf( "Got contextid\n" ));
     /* Leaders can now swap context ids and then broadcast the value
        to the local group of processes */
@@ -347,11 +357,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!remote_lpids)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
 	final_context_id = comm_info[1];
@@ -371,11 +383,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* All processes in the local_comm now build the communicator */
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!newcomm_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->attributes   = 0;

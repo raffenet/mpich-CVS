@@ -185,22 +185,26 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
     nedges = index[nnodes-1];
     graph_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof(MPIR_Topology) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!graph_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     graph_ptr->kind = MPI_GRAPH;
     graph_ptr->topo.graph.nnodes = nnodes;
     graph_ptr->topo.graph.nedges = nedges;
     graph_ptr->topo.graph.index = (int *)MPIU_Malloc( nnodes * sizeof(int) );
     graph_ptr->topo.graph.edges = (int *)MPIU_Malloc( nedges * sizeof(int) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!graph_ptr->topo.graph.index || !graph_ptr->topo.graph.edges)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     for (i=0; i<nnodes; i++) 
 	graph_ptr->topo.graph.index[i] = index[i];
     for (i=0; i<nedges; i++) 

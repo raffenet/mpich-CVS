@@ -86,6 +86,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 	/* Eventually, we could remember the location of this key in 
 	   the head using the key/value locations (and a union datatype?) */
     }	
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	/* n is invalid */
@@ -94,6 +95,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 					  n, nkeys );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);

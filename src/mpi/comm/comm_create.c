@@ -100,11 +100,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        so it must be created before we decide if this process is a 
        member of the group */
     new_context_id = MPIR_Get_contextid( comm_ptr->handle );
+    /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	goto fn_fail;
     }
-    
+    /* --END ERROR HANDLING-- */
+
     /* Make sure that the processes for this group are contained within
        the input communicator.  Also identify the mapping from the ranks of 
        the old communicator to the new communicator.
@@ -124,10 +126,12 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/*printf( "group size = %d comm size = %d\n", n, 
 	  comm_ptr->remote_size ); */
 	mapping = (int *)MPIU_Malloc( n * sizeof(int) );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!mapping) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	for (i=0; i<n; i++) {
 	    /* Mapping[i] is the rank in the communicator of the process that
 	       is the ith element of the group */
@@ -144,6 +148,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		    break;
 		}
 	    }
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mapping[i] == -1) {
 		/*printf( "failed for %d entry (pid=%d)\n", i,
 		  group_ptr->lrank_to_lpid[i].lpid); */
@@ -152,14 +157,17 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 						  "**groupnotincomm %d", i );
 		goto fn_fail;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 
 	/* Get the new communicator structure and context id */
 	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!newcomm_ptr) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	MPIU_Object_set_ref( newcomm_ptr, 1 );
 	newcomm_ptr->attributes  = 0;
 	newcomm_ptr->context_id  = new_context_id;

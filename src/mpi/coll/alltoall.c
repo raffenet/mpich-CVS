@@ -537,7 +537,7 @@ int MPIR_Alltoall(
                                    ((char *)recvbuf +
                                     rank*recvcount*recvtype_extent),
                                    recvcount, recvtype);
-	/* --BEGIN ERROR HANDING-- */
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);

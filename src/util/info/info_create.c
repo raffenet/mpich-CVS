@@ -61,11 +61,13 @@ int MPI_Info_create( MPI_Info *info )
 
     /* ... body of routine ...  */
     info_ptr = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!info_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info" );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     *info	    = info_ptr->handle;
     /* (info_ptr)->cookie = MPIR_INFO_COOKIE; */
     info_ptr->key    = 0;

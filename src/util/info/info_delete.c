@@ -94,6 +94,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 	curr_ptr = curr_ptr->next;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (!curr_ptr)
     {
 	/* If curr_ptr is not defined, we never found the key */
@@ -101,6 +102,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 					  "**infonokey %s", key );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* ... end of body of routine ... */
 

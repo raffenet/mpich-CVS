@@ -135,11 +135,13 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* Create the topololgy structure */
     cart_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology ) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!cart_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     cart_ptr->kind          = MPI_CART;
     cart_ptr->topo.cart.nnodes   = newsize;
@@ -147,11 +149,13 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     cart_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims * sizeof(int) );
     cart_ptr->topo.cart.periodic = (int *)MPIU_Malloc( ndims * sizeof(int) );
     cart_ptr->topo.cart.position = (int *)MPIU_Malloc( ndims * sizeof(int) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic || !cart_ptr->topo.cart.position)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     rank   = comm_ptr->rank;
     nranks = newsize;
     for (i=0; i<ndims; i++)

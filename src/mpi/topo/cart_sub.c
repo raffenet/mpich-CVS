@@ -82,6 +82,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     /* Check that the communicator already has a Cartesian topology */
     topo_ptr = MPIR_Topology_get( comm_ptr );
 
+    /* --BEGIN ERROR HANDLING-- */
     if (!topo_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, "**notopology", 0 );
     }
@@ -89,6 +90,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, "**notcarttopo", 0 );
     }
     if (mpi_errno) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     /* Determine the number of remaining dimensions */
     ndims = topo_ptr->topo.cart.ndims;
@@ -120,10 +122,12 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     
     /* Save the topology of this new communicator */
     toponew_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!toponew_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 	
     toponew_ptr->kind		  = MPI_CART;
     toponew_ptr->topo.cart.ndims  = ndims_in_subcomm;
@@ -132,11 +136,13 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 	toponew_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims_in_subcomm * sizeof(int) );
 	toponew_ptr->topo.cart.periodic = (int *)MPIU_Malloc( ndims_in_subcomm * sizeof(int) );
 	toponew_ptr->topo.cart.position = (int *)MPIU_Malloc( ndims_in_subcomm * sizeof(int) );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!toponew_ptr->topo.cart.dims || ! toponew_ptr->topo.cart.periodic ||
 	    !toponew_ptr->topo.cart.position) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     }
     else {
 	toponew_ptr->topo.cart.dims     = 0;
