@@ -1,0 +1,67 @@
+/*
+ *  (C) 2001 by Argonne National Laboratory
+ *      See COPYRIGHT in top-level directory.
+ */
+
+/*
+ *  @author  Anthony Chan
+ */
+
+package viewer.histogram;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JComboBox;
+import javax.swing.JButton;
+
+import base.topology.SummaryState;
+import viewer.common.Const;
+import viewer.common.Parameters;
+// import viewer.common.TopWindow;
+// import viewer.common.PreferenceFrame;
+
+public class SummaryStateComboBox extends JComboBox
+{
+    private JButton          canvas_redraw_btn;
+    // private PreferenceFrame  pref_frame;
+
+    public SummaryStateComboBox()
+    {
+        super();
+        super.setFont( Const.FONT );
+        super.setEditable( false );
+        super.addItem( SummaryState.FIT_MOST_LEGENDS );
+        super.addItem( SummaryState.OVERLAP_INCLUSION );
+        // super.addItem( SummaryState.CUMULATIVE_INCLUSION );
+        super.addItem( SummaryState.OVERLAP_EXCLUSION );
+        super.addItem( SummaryState.CUMULATIVE_EXCLUSION );
+        super.setToolTipText( "Display option for Summary state." );
+        canvas_redraw_btn  = null;
+        // pref_frame         = null;
+    }
+
+    public void init( JButton btn )
+    {
+        canvas_redraw_btn = btn;
+        super.addActionListener( new SummaryModeActionListener() );
+        if ( Parameters.PREVIEW_STATE_DISPLAY.equals(
+             SummaryState.CUMULATIVE_INCLUSION ) )
+            super.setSelectedItem( SummaryState.OVERLAP_INCLUSION );
+        else
+            super.setSelectedItem( Parameters.PREVIEW_STATE_DISPLAY );
+        // pref_frame = (PreferenceFrame) TopWindow.Preference.getWindow();
+    }
+
+    private class SummaryModeActionListener implements ActionListener
+    {
+        public void actionPerformed( ActionEvent evt )
+        {
+            String display_str;
+            display_str = (String) SummaryStateComboBox.this.getSelectedItem();
+            SummaryState.setDisplayType( display_str );
+            // Parameters.PREVIEW_STATE_DISPLAY = display_str;
+            // pref_frame.updateAllFieldsFromParameters();
+            canvas_redraw_btn.doClick();
+        }
+    }
+}
