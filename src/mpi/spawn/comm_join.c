@@ -36,10 +36,10 @@
 #endif
 
 /* Prototypes for local functions */
-static int fd_send(int, void *, int);
-static int fd_recv(int, void *, int);
+int MPIR_fd_send(int, void *, int);
+int MPIR_fd_recv(int, void *, int);
 
-static int fd_send(int fd, void *buffer, int length)
+int MPIR_fd_send(int fd, void *buffer, int length)
 {
     int result, num_bytes;
 
@@ -66,7 +66,7 @@ static int fd_send(int fd, void *buffer, int length)
     return 0;
 }
 
-static int fd_recv(int fd, void *buffer, int length)
+int MPIR_fd_recv(int fd, void *buffer, int length)
 {
     int result, num_bytes;
 
@@ -143,10 +143,10 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     mpi_errno = NMPI_Open_port(MPI_INFO_NULL, local_port);
     MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**openportfailed");
 
-    err = fd_send(fd, local_port, MPI_MAX_PORT_NAME);
+    err = MPIR_fd_send(fd, local_port, MPI_MAX_PORT_NAME);
     MPIU_ERR_CHKANDJUMP1((err != 0), mpi_errno, MPI_ERR_INTERN, "**join_send", "**join_send %d", err);
 
-    err = fd_recv(fd, remote_port, MPI_MAX_PORT_NAME);
+    err = MPIR_fd_recv(fd, remote_port, MPI_MAX_PORT_NAME);
     MPIU_ERR_CHKANDJUMP1((err != 0), mpi_errno, MPI_ERR_INTERN, "**join_recv", "**join_recv %d", err);
 
     MPIU_ERR_CHKANDJUMP2((strcmp(local_port, remote_port) == 0), mpi_errno, MPI_ERR_INTERN, "**join_portname",
