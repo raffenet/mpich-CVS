@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="DOTDOTS..\..\src\include;DOTDOTSinclude"
+				AdditionalIncludeDirectories="DOTDOTS..\..\src\include;DOTDOTS..\..\src\include\win32;DOTDOTSinclude"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -69,7 +69,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="DOTDOTS..\..\src\include;DOTDOTSinclude"
+				AdditionalIncludeDirectories="DOTDOTS..\..\src\include;DOTDOTS..\..\src\include\win32;DOTDOTSinclude"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="0"

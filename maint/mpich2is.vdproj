@@ -33,12 +33,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_0D84EF58BF25465A8581520E7DB03C75"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0E3BEEEB0842458D9AFB50F183A3DE9A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -58,6 +52,12 @@
         "Entry"
         {
         "MsmKey" = "8:_1B4E24C63C564D4B92B7F7E2D41BBAE1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1F1A729909BC48EE9C95BD8243228ABC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -645,26 +645,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_0D84EF58BF25465A8581520E7DB03C75"
-            {
-            "SourcePath" = "8:..\\src\\include\\mpi.h"
-            "TargetName" = "8:mpi.h"
-            "Tag" = "8:"
-            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0E3BEEEB0842458D9AFB50F183A3DE9A"
             {
             "SourcePath" = "8:..\\lib\\mpich2ssmp.lib"
@@ -731,6 +711,26 @@
             "TargetName" = "8:mpich2mpi.dll"
             "Tag" = "8:"
             "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1F1A729909BC48EE9C95BD8243228ABC"
+            {
+            "SourcePath" = "8:..\\src\\include\\win32\\mpi.h"
+            "TargetName" = "8:mpi.h"
+            "Tag" = "8:"
+            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"

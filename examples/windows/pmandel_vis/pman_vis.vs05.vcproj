@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\src\include"
+				AdditionalIncludeDirectories="..\..\..\src\include,..\..\..\src\include\win32"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -129,7 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\src\include"
+				AdditionalIncludeDirectories="..\..\..\src\include,..\..\..\src\include\win32"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="FALSE"
 				RuntimeLibrary="0"
@@ -216,7 +216,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\src\include"
+				AdditionalIncludeDirectories="..\..\..\src\include,..\..\..\src\include\win64"
 				PreprocessorDefinitions="_WINDOWS;_DEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -301,7 +301,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\src\include"
+				AdditionalIncludeDirectories="..\..\..\src\include,..\..\..\src\include\win64"
 				PreprocessorDefinitions="_WINDOWS;NDEBUG;WIN64;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="FALSE"
 				RuntimeLibrary="0"

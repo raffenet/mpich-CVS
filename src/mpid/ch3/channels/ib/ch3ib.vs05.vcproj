@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win32,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win64,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;WIN64;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -170,7 +170,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win32,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -232,7 +232,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win64,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -293,7 +293,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win32,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -355,7 +355,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
+				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\..\include\win64,..\..\..\common\datatype,..\..\..\common\locks,c:\mellanox\include"
 				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG;WIN64;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"

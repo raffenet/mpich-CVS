@@ -22,7 +22,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="FALSE"
 				BasicRuntimeChecks="3"
@@ -98,7 +98,7 @@ copy $(ConfigurationName)\mpich2shmd.lib lib\mpich2shmd.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -169,7 +169,7 @@ copy $(ConfigurationName)\mpich2shm.lib lib\mpich2shm.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -240,7 +240,7 @@ copy $(ConfigurationName)\mpich2ssmd.lib lib\mpich2ssmd.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -310,7 +310,7 @@ copy $(ConfigurationName)\mpich2ssm.lib lib\mpich2ssm.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -386,7 +386,7 @@ copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -463,7 +463,7 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -537,7 +537,7 @@ copy $(ConfigurationName)\mpich2p.lib lib\mpich2p.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -611,7 +611,7 @@ copy $(ConfigurationName)\mpich2ssmpd.lib lib\mpich2ssmpd.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -685,7 +685,7 @@ copy $(ConfigurationName)\mpich2pl.lib lib\mpich2pl.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -756,7 +756,7 @@ copy $(ConfigurationName)\mpich2sshmd.lib lib\mpich2sshmd.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -827,7 +827,7 @@ copy $(ConfigurationName)\mpich2sshmpd.lib lib\mpich2sshmpd.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -897,7 +897,7 @@ copy $(ConfigurationName)\mpich2sshm.lib lib\mpich2sshm.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -973,7 +973,7 @@ copy $(ConfigurationName)\mpich2ibd.lib lib\mpich2ibd.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -1051,7 +1051,7 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -1122,7 +1122,7 @@ copy $(ConfigurationName)\mpich2shmp.lib lib\mpich2shmp.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -1192,7 +1192,7 @@ copy $(ConfigurationName)\mpich2ssmp.lib lib\mpich2ssmp.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -1265,7 +1265,7 @@ copy $(ConfigurationName)\mpich2sshmp.lib lib\mpich2sshmp.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -1339,7 +1339,7 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1410,7 +1410,7 @@ copy $(ConfigurationName)\mpich2essmd.lib lib\mpich2essmd.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -3502,7 +3502,7 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 				RelativePath=".\src\mpi\errhan\errcodes.h">
 			</File>
 			<File
-				RelativePath=".\src\include\mpi.h">
+				RelativePath=".\src\include\win32\mpi.h">
 			</File>
 			<File
 				RelativePath=".\src\mpi\init\mpi_init.h">
@@ -3511,10 +3511,10 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 				RelativePath=".\src\include\mpiallstates.h">
 			</File>
 			<File
-				RelativePath=".\src\include\mpichconf.h">
+				RelativePath=".\src\include\win32\mpichconf.h">
 			</File>
 			<File
-				RelativePath=".\src\include\mpichtimer.h">
+				RelativePath=".\src\include\win32\mpichtimer.h">
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\mpicomm.h">

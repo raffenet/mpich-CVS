@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -171,7 +171,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -237,7 +237,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -300,8 +300,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -367,8 +367,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -435,8 +435,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -504,8 +504,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -570,8 +570,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -638,8 +638,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
-				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -707,8 +707,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -777,8 +777,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
-				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -844,8 +844,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -911,8 +911,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -979,8 +979,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -1048,8 +1048,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -1114,8 +1114,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1181,8 +1181,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1249,8 +1249,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -1318,8 +1318,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
-				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win64,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;WIN64;_CRT_SECURE_NO_DEPRECATE;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -3451,6 +3451,46 @@
 				RelativePath="src\mpi\coll\opland.c"
 				>
 				<FileConfiguration
+					Name="Debug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="ch3sockRelease|Win32"
 					>
 					<Tool
@@ -3460,6 +3500,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win64 (AMD64)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -3471,6 +3543,46 @@
 				RelativePath="src\mpi\coll\oplor.c"
 				>
 				<FileConfiguration
+					Name="Debug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="ch3sockRelease|Win32"
 					>
 					<Tool
@@ -3480,6 +3592,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win64 (AMD64)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -3491,6 +3635,46 @@
 				RelativePath="src\mpi\coll\oplxor.c"
 				>
 				<FileConfiguration
+					Name="Debug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="ch3sockRelease|Win32"
 					>
 					<Tool
@@ -3500,6 +3684,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3shmRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sshmRelease|Win64 (AMD64)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

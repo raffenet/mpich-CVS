@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\include"
+				AdditionalIncludeDirectories="src\include,src\include\win32"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MPI_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -74,7 +74,7 @@ copy $(ConfigurationName)\mpid.lib lib\mpid.lib
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src\include"
+				AdditionalIncludeDirectories="src\include,src\include\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MPI_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -151,7 +151,7 @@ copy $(ConfigurationName)\mpi.lib lib\mpi.lib
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath=".\src\include\mpi.h">
+				RelativePath=".\src\include\win32\mpi.h">
 			</File>
 			<File
 				RelativePath=".\src\include\mpicxx.h">

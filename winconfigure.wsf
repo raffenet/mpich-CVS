@@ -122,11 +122,12 @@
 			helpstring = "apply settings to the Visual Studio 2005 project files"
 			require = "false"
 		/>
-		<unnamed
+<!--		<unnamed
 			name = "--mt"
 			helpstring = "build multithreaded libraries"
 			require = "false"
 		/>
+-->
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -136,6 +137,8 @@ bEcho = false
 If InStr(1, LCase(WScript.FullName), "cscript") > 0 Then
 	bEcho = true
 End If
+' Use cEcho to echo information to the command line only.
+' The output is truncated to 4096 characters.
 Function cEcho(str)
 	If bEcho Then
 		On Error Resume Next
@@ -151,12 +154,13 @@ Function cEcho(str)
 	End If
 End Function
 
-bMultiThreaded = false
+'bMultiThreaded = false
+x64 = False
 bVS2005 = False
 bUseIbRDMA = False
 bUsePinCache = False
 bRemoveFortran = False
-bWin64 = False
+'bWin64 = False
 bUseCycleCounter = False
 bForce = True
 bCleanCode = False
@@ -174,13 +178,13 @@ unhandled_ats = ""
 ' Miscellaneous settings
 '
 MPI_MAX_PROCESSOR_NAME = "128"
-If bWin64 Then
-  MPI_AINT               = "__int64"
-  BSEND_OVERHEAD         = "95"
-Else
-  MPI_AINT               = "int"
-  BSEND_OVERHEAD         = "59"
-End If
+'If bWin64 Then
+  MPI_AINT64               = "__int64"
+  BSEND_OVERHEAD64         = "95"
+'Else
+  MPI_AINT32               = "int"
+  BSEND_OVERHEAD32         = "59"
+'End If
 MPI_FINT               = "int"
 'MPI_OFFSET             = "long long"
 MPI_OFFSET             = "__int64"
@@ -213,14 +217,14 @@ fin.Close()
 argCount = WScript.Arguments.Count
 For arg = 0 To argCount - 1
   argValue = WScript.Arguments(arg)
-  If argValue = "--win64" Then
-    bWin64 = True
-    MPI_AINT = "__int64"
-    BSEND_OVERHEAD = "95"
-    bUseCycleCounter = False
-  ElseIf argValue = "--win32" Then
-    bWin64 = False
-  ElseIf argValue = "--enable-timer-type=x86cycle" Then
+'  If argValue = "--win64" Then
+'    bWin64 = True
+'    MPI_AINT64 = "__int64"
+'    BSEND_OVERHEAD64 = "95"
+'    bUseCycleCounter = False
+'  ElseIf argValue = "--win32" Then
+'    bWin64 = False
+  If argValue = "--enable-timer-type=x86cycle" Then
     bUseCycleCounter = True
   ElseIf argValue = "--enable-timer-type=queryperformancecounter" Then
     bUseCycleCounter = False
@@ -289,8 +293,8 @@ For arg = 0 To argCount - 1
 	WScript.Quit
   ElseIf argValue = "--vs05" Then
     bVS2005 = True
-  ElseIf argValue = "--mt" Then
-    bMultiThreaded = true
+'  ElseIf argValue = "--mt" Then
+'    bMultiThreaded = true
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -300,7 +304,6 @@ Next
 '
 ' datatype sizes
 '
-If bWin64 Then
   len_short           = "02"
   len_int             = "04"
   len_long            = "04"
@@ -317,32 +320,134 @@ If bWin64 Then
   len_2_int           = "08"
   len_long_double_int = "10"
 ' Fortran datatype sizes
-  len_integer         = "08"
+'If bWin64 Then
+  len_integer64         = "08"
+'else
+  len_integer32         = "04"
+'end if
   len_doublecplx      = "10"
   len_2dc             = "20"
-Else
-  len_short           = "02"
-  len_int             = "04"
-  len_long            = "04"
-  len_long_long       = "08"
-  len_float           = "04"
-  len_double          = "08"
-  len_long_double     = "08"
-  len_wchar           = "02"
-  len_wchar_t         = "02"
-  len_float_int       = "08"
-  len_double_int      = "10"
-  len_long_int        = "08"
-  len_short_int       = "08"
-  len_2_int           = "08"
-  len_long_double_int = "10"
-' Fortran datatype sizes
-  len_integer         = "04"
-  len_doublecplx      = "10"
-  len_2dc             = "20"
-End If
+'If bWin64 Then
+'  len_short           = "02"
+'  len_int             = "04"
+'  len_long            = "04"
+'  len_long_long       = "08"
+'  len_float           = "04"
+'  len_double          = "08"
+'  len_long_double     = "08"
+'  len_wchar           = "02"
+'  len_wchar_t         = "02"
+'  len_float_int       = "08"
+'  len_double_int      = "10"
+'  len_long_int        = "08"
+'  len_short_int       = "08"
+'  len_2_int           = "08"
+'  len_long_double_int = "10"
+'' Fortran datatype sizes
+'  len_integer         = "08"
+'  len_doublecplx      = "10"
+'  len_2dc             = "20"
+'Else
+'  len_short           = "02"
+'  len_int             = "04"
+'  len_long            = "04"
+'  len_long_long       = "08"
+'  len_float           = "04"
+'  len_double          = "08"
+'  len_long_double     = "08"
+'  len_wchar           = "02"
+'  len_wchar_t         = "02"
+'  len_float_int       = "08"
+'  len_double_int      = "10"
+'  len_long_int        = "08"
+'  len_short_int       = "08"
+'  len_2_int           = "08"
+'  len_long_double_int = "10"
+'' Fortran datatype sizes
+'  len_integer         = "04"
+'  len_doublecplx      = "10"
+'  len_2dc             = "20"
+'End If
 
-set dtypes = WScript.CreateObject("Scripting.Dictionary")
+
+Function CreateDtypeDictionary(byref types, str, b64)
+	dim regEx, Match, Matches
+	set regEx = New RegExp
+	'set types = WScript.CreateObject("Scripting.Dictionary")
+	' remove all dnl lines to prevent false matches
+	regEx.Pattern = "dnl .*"
+	regEx.IgnoreCase = True
+	regEx.Global = True
+	str = regEx.Replace(str, "")
+	' find the datatype handles
+	regEx.Pattern = "MPI_.*=""?0x4c00.*[0-9a-f][0-9a-f]"
+	regEx.IgnoreCase = False
+	regEx.Global = True
+	Set Matches = regEx.Execute(str)
+	For Each Match in Matches
+		size_str = RegExpFind("\$\{len.*\}", Match.Value)
+		dtype_str = RegExpFind("MPI_[^=]*", Match.Value)
+		dtype_val_str = RegExpFind("0x4c00.*[0-9a-f][0-9a-f]", Match.Value)
+		if size_str <> "" then
+			Select Case size_str
+				Case "${len_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_int)
+				Case "${len_short}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_short)
+				Case "${len_long}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_long)
+				Case "${len_long_long}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_long_long)
+				Case "${len_float_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_float_int)
+				Case "${len_double_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_double_int)
+				Case "${len_long_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_long_int)
+				Case "${len_short_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_short_int)
+				Case "${len_2_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_2_int)
+				Case "${len_long_double_int}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_long_double_int)
+				Case "${len_double}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_double)
+				Case "${len_doublecplx}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_doublecplx)
+				Case "${len_2dc}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_2dc)
+				Case "${len_float}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_float)
+				Case "${len_long_double}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_long_double)
+				Case "${len_integer}"
+					if b64 then
+						dtype_val_str = Replace(dtype_val_str, size_str, len_integer64)
+					else
+						dtype_val_str = Replace(dtype_val_str, size_str, len_integer32)
+					end if
+				Case "${len_wchar_t}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_wchar_t)
+				Case "${len_wchar}"
+					dtype_val_str = Replace(dtype_val_str, size_str, len_wchar)
+				Case Else
+					unmatched_size_strs = unmatched_size_strs & " " & size_str & vbCrLf
+			End Select
+		end if
+		if types.Exists(dtype_str) then
+			if types.Item(dtype_str) <> dtype_val_str then
+				temp_str = dtype_str & " = " & types.Item(dtype_str) & " or " & dtype_val_str
+				MsgBox temp_str
+			end if
+		else
+			types.Add dtype_str, dtype_val_str
+		end if
+	Next
+	if unmatched_size_strs <> "" then
+		MsgBox unmatched_size_strs
+	end if
+	'CreateDtypeDictionary = types
+End Function
 
 '
 ' Create a dictionary of all the datatype handles
@@ -354,76 +459,12 @@ fin.Close()
 set fin = f.OpenTextFile("src\binding\f77\configure.in")
 contents = contents + fin.ReadAll()
 fin.Close()
-dim regEx, Match, Matches
-set regEx = New RegExp
-' remove all dnl lines to prevent false matches
-regEx.Pattern = "dnl .*"
-regEx.IgnoreCase = True
-regEx.Global = True
-contents = regEx.Replace(contents, "")
-' find the datatype handles
-regEx.Pattern = "MPI_.*=""?0x4c00.*[0-9a-f][0-9a-f]"
-regEx.IgnoreCase = False
-regEx.Global = True
-Set Matches = regEx.Execute(contents)
-For Each Match in Matches
-	size_str = RegExpFind("\$\{len.*\}", Match.Value)
-	dtype_str = RegExpFind("MPI_[^=]*", Match.Value)
-	dtype_val_str = RegExpFind("0x4c00.*[0-9a-f][0-9a-f]", Match.Value)
-	if size_str <> "" then
-		Select Case size_str
-			Case "${len_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_int)
-			Case "${len_short}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_short)
-			Case "${len_long}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_long)
-			Case "${len_long_long}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_long_long)
-			Case "${len_float_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_float_int)
-			Case "${len_double_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_double_int)
-			Case "${len_long_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_long_int)
-			Case "${len_short_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_short_int)
-			Case "${len_2_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_2_int)
-			Case "${len_long_double_int}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_long_double_int)
-			Case "${len_double}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_double)
-			Case "${len_doublecplx}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_doublecplx)
-			Case "${len_2dc}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_2dc)
-			Case "${len_float}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_float)
-			Case "${len_long_double}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_long_double)
-			Case "${len_integer}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_integer)
-			Case "${len_wchar_t}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_wchar_t)
-			Case "${len_wchar}"
-				dtype_val_str = Replace(dtype_val_str, size_str, len_wchar)
-			Case Else
-				unmatched_size_strs = unmatched_size_strs & " " & size_str & vbCrLf
-		End Select
-	end if
-	if dtypes.Exists(dtype_str) then
-		if dtypes.Item(dtype_str) <> dtype_val_str then
-			temp_str = dtype_str & " = " & dtypes.Item(dtype_str) & " or " & dtype_val_str
-			MsgBox temp_str
-		end if
-	else
-		dtypes.Add dtype_str, dtype_val_str
-	end if
-Next
-if unmatched_size_strs <> "" then
-	MsgBox unmatched_size_strs
-end if
+'set dtypes = CreateDtypeDictionary(contents, false)
+'set dtypes64 = CreateDtypeDictionary(contents, true)
+set dtypes = WScript.CreateObject("Scripting.Dictionary")
+CreateDtypeDictionary dtypes, contents, false
+set dtypes64 = WScript.CreateObject("Scripting.Dictionary")
+CreateDtypeDictionary dtypes64, contents, false
 
 'mpi_datatype_prefix = "4c00"
 
@@ -759,24 +800,45 @@ else
 	missing_datatypes = missing_datatypes & "MPI_CHARACTER" & vbCrLf
 	MPI_CHARACTER         = "0x" + mpi_datatype_prefix                + "011a"
 end if
+' Win32 versions
 if dtypes.Exists("MPI_INTEGER") then
-	MPI_INTEGER = dtypes.Item("MPI_INTEGER")
+	MPI_INTEGER_W32 = dtypes.Item("MPI_INTEGER")
 else
 	missing_datatypes = missing_datatypes & "MPI_INTEGER" & vbCrLf
-	MPI_INTEGER           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
+	MPI_INTEGER_W32           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
 end if
 if dtypes.Exists("MPI_REAL") then
-	MPI_REAL = dtypes.Item("MPI_REAL")
+	MPI_REAL_W32 = dtypes.Item("MPI_REAL")
 else
 	missing_datatypes = missing_datatypes & "MPI_REAL" & vbCrLf
-	MPI_REAL              = "0x" + mpi_datatype_prefix + len_integer    + "1c"
+	MPI_REAL_W32              = "0x" + mpi_datatype_prefix + len_integer    + "1c"
 end if
 if dtypes.Exists("MPI_LOGICAL") then
-	MPI_LOGICAL = dtypes.Item("MPI_LOGICAL")
+	MPI_LOGICAL_W32 = dtypes.Item("MPI_LOGICAL")
 else
 	missing_datatypes = missing_datatypes & "MPI_LOGICAL" & vbCrLf
-	MPI_LOGICAL           = "0x" + mpi_datatype_prefix + len_integer    + "1d"
+	MPI_LOGICAL_W32           = "0x" + mpi_datatype_prefix + len_integer    + "1d"
 end if
+' Win64 versions
+if dtypes64.Exists("MPI_INTEGER") then
+	MPI_INTEGER_W64 = dtypes64.Item("MPI_INTEGER")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER" & vbCrLf
+	MPI_INTEGER_W64           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
+end if
+if dtypes64.Exists("MPI_REAL") then
+	MPI_REAL_W64 = dtypes64.Item("MPI_REAL")
+else
+	missing_datatypes = missing_datatypes & "MPI_REAL" & vbCrLf
+	MPI_REAL_W64              = "0x" + mpi_datatype_prefix + len_integer    + "1c"
+end if
+if dtypes64.Exists("MPI_LOGICAL") then
+	MPI_LOGICAL_W64 = dtypes64.Item("MPI_LOGICAL")
+else
+	missing_datatypes = missing_datatypes & "MPI_LOGICAL" & vbCrLf
+	MPI_LOGICAL_W64           = "0x" + mpi_datatype_prefix + len_integer    + "1d"
+end if
+' end versions
 if dtypes.Exists("MPI_COMPLEX") then
 	MPI_COMPLEX = dtypes.Item("MPI_COMPLEX")
 else
@@ -871,10 +933,13 @@ End Function
 
 F77_MPI_DOUBLE_COMPLEX    = HexToInt(dtypes.Item("MPI_DOUBLE_COMPLEX"))
 F77_MPI_COMPLEX           = HexToInt(dtypes.Item("MPI_COMPLEX"))
-F77_MPI_LOGICAL           = HexToInt(dtypes.Item("MPI_LOGICAL"))
-F77_MPI_REAL              = HexToInt(dtypes.Item("MPI_REAL"))
+F77_MPI_LOGICAL_W32           = HexToInt(dtypes.Item("MPI_LOGICAL"))
+F77_MPI_LOGICAL_W64           = HexToInt(dtypes64.Item("MPI_LOGICAL"))
+F77_MPI_REAL_W32              = HexToInt(dtypes.Item("MPI_REAL"))
+F77_MPI_REAL_W64              = HexToInt(dtypes64.Item("MPI_REAL"))
 F77_MPI_DOUBLE_PRECISION  = HexToInt(dtypes.Item("MPI_DOUBLE_PRECISION"))
-F77_MPI_INTEGER           = HexToInt(dtypes.Item("MPI_INTEGER"))
+F77_MPI_INTEGER_W32           = HexToInt(dtypes.Item("MPI_INTEGER"))
+F77_MPI_INTEGER_W64           = HexToInt(dtypes64.Item("MPI_INTEGER"))
 F77_MPI_2INTEGER          = HexToInt(dtypes.Item("MPI_2INTEGER"))
 F77_MPI_2COMPLEX          = HexToInt(dtypes.Item("MPI_2COMPLEX"))
 F77_MPI_2DOUBLE_COMPLEX   = HexToInt(dtypes.Item("MPI_2DOUBLE_COMPLEX"))
@@ -927,44 +992,91 @@ foo = foo & "F77_REAL16 = " &               F77_REAL16               & vbCrLf
 WScript.Echo foo
 end if
 
-'
-' Generate mpi.h
-'
-set fout = f.CreateTextFile("src\include\mpi.h")
-set fin = f.OpenTextFile("src\include\mpi.h.in")
-
-contents = fin.ReadAll()
-fin.Close()
-contents = ReplaceAts(contents, false)
-if bAddDllDecoration then
+Function DecorateMPIFuncs(str)
 	' uncomment out the HAVE_EXPORTS_MPI_API block
-	'contents = ReplaceBetweenTags(contents, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
-	contents = Replace(contents, "/* --Insert Additional Definitions Here-- */", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+	'str = ReplaceBetweenTags(str, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+	str = Replace(str, "/* --Insert Additional Definitions Here-- */", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
 	' add dllspec and calling convention to the MPI api
-	first_index = InStr(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES")
-	last_index = InStr(contents, "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+	first_index = InStr(str, "#ifndef MPICH_SUPPRESS_PROTOTYPES")
+	last_index = InStr(str, "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
 	if first_index <> 0 and last_index <> 0 then
-		prototypes = Mid(contents, first_index, last_index - first_index)
+		prototypes = Mid(str, first_index, last_index - first_index)
 		prototypes = Replace(prototypes, "int MPI_", "EXPORT_MPI_API int MPI_CALL MPI_")
 		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
 		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
 		prototypes = Replace(prototypes, "double MPI_Wtime", "EXPORT_MPI_API double MPI_CALL MPI_Wtime")
 		prototypes = Replace(prototypes, "double MPI_Wtick", "EXPORT_MPI_API double MPI_CALL MPI_Wtick")
-		contents = ReplaceBetweenTags(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES", "MPI_Send", "#endif /* MPICH_SUPPRESS_PROTOTYPES */", prototypes & "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+		str = ReplaceBetweenTags(str, "#ifndef MPICH_SUPPRESS_PROTOTYPES", "MPI_Send", "#endif /* MPICH_SUPPRESS_PROTOTYPES */", prototypes & "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
 	end if
 	' add dllspec and calling convention to the PMPI api
-	first_index = InStr(contents, "#if !defined(MPI_BUILD_PROFILING)")
-	last_index = InStr(contents, "#endif  /* MPI_BUILD_PROFILING */")
+	first_index = InStr(str, "#if !defined(MPI_BUILD_PROFILING)")
+	last_index = InStr(str, "#endif  /* MPI_BUILD_PROFILING */")
 	if first_index <> 0 and last_index <> 0 then
-		prototypes = Mid(contents, first_index, last_index - first_index)
+		prototypes = Mid(str, first_index, last_index - first_index)
 		prototypes = Replace(prototypes, "int PMPI_", "EXPORT_MPI_API int MPI_CALL PMPI_")
 		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
 		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
-		contents = ReplaceBetweenTags(contents, "#if", "MPI_BUILD_PROFILING", "#endif  /* MPI_BUILD_PROFILING */", prototypes & "#endif  /* MPI_BUILD_PROFILING */")
+		str = ReplaceBetweenTags(str, "#if", "MPI_BUILD_PROFILING", "#endif  /* MPI_BUILD_PROFILING */", prototypes & "#endif  /* MPI_BUILD_PROFILING */")
 	end if
+	DecorateMPIFuncs = str
+End Function
+
+'
+' Generate mpi.h
+'
+'if bWin64 then
+	if not f.FolderExists("src\include\win64") then
+		f.CreateFolder("src\include\win64")
+	end if
+	cEcho "Creating src\include\win64\mpi.h"
+	set fout32 = f.CreateTextFile("src\include\win64\mpi.h")
+'else
+	if not f.FolderExists("src\include\win32") then
+		f.CreateFolder("src\include\win32")
+	end if
+	cEcho "Creating src\include\win32\mpi.h"
+	set fout64 = f.CreateTextFile("src\include\win32\mpi.h")
+'end if
+set fin = f.OpenTextFile("src\include\mpi.h.in")
+
+contents32 = fin.ReadAll()
+contents64 = contents32
+fin.Close()
+contents32 = ReplaceAts(contents32, false, false)
+contents64 = ReplaceAts(contents64, false, true)
+if bAddDllDecoration then
+	contents32 = DecorateMPIFuncs(contents32)
+	contents64 = DecorateMPIFuncs(contents64)
+'	' uncomment out the HAVE_EXPORTS_MPI_API block
+'	'contents = ReplaceBetweenTags(contents, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+'	contents = Replace(contents, "/* --Insert Additional Definitions Here-- */", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+'	' add dllspec and calling convention to the MPI api
+'	first_index = InStr(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES")
+'	last_index = InStr(contents, "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+'	if first_index <> 0 and last_index <> 0 then
+'		prototypes = Mid(contents, first_index, last_index - first_index)
+'		prototypes = Replace(prototypes, "int MPI_", "EXPORT_MPI_API int MPI_CALL MPI_")
+'		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
+'		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
+'		prototypes = Replace(prototypes, "double MPI_Wtime", "EXPORT_MPI_API double MPI_CALL MPI_Wtime")
+'		prototypes = Replace(prototypes, "double MPI_Wtick", "EXPORT_MPI_API double MPI_CALL MPI_Wtick")
+'		contents = ReplaceBetweenTags(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES", "MPI_Send", "#endif /* MPICH_SUPPRESS_PROTOTYPES */", prototypes & "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+'	end if
+'	' add dllspec and calling convention to the PMPI api
+'	first_index = InStr(contents, "#if !defined(MPI_BUILD_PROFILING)")
+'	last_index = InStr(contents, "#endif  /* MPI_BUILD_PROFILING */")
+'	if first_index <> 0 and last_index <> 0 then
+'		prototypes = Mid(contents, first_index, last_index - first_index)
+'		prototypes = Replace(prototypes, "int PMPI_", "EXPORT_MPI_API int MPI_CALL PMPI_")
+'		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
+'		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
+'		contents = ReplaceBetweenTags(contents, "#if", "MPI_BUILD_PROFILING", "#endif  /* MPI_BUILD_PROFILING */", prototypes & "#endif  /* MPI_BUILD_PROFILING */")
+'	end if
 end if
-fout.Write(contents)
-fout.Close()
+fout32.Write(contents32)
+fout64.Write(contents64)
+fout32.Close()
+fout64.Close()
 
 Function internalFindCFiles(ByRef key, ByRef files, folder)
 	For Each sub_folder in folder.SubFolders
@@ -1000,6 +1112,7 @@ if bAddDllDecoration then
 			new_contents = Replace(new_contents, "MPI_FEXPORT_MPI_API int", "EXPORT_MPI_API MPI_Fint")
 			if new_contents <> contents then
 				'cEcho new_contents
+				cEcho "Modifying file: " & a(i)
 				set fout = f.CreateTextFile(a(i))
 				fout.Write(new_contents)
 				fout.Close()
@@ -1150,6 +1263,7 @@ End Function
 Function CreateStdcallFortranInterface()
 	Dim index, index2, right_str, result, prototype, filename
 	set c_files = CreateObject("Scripting.Dictionary")
+	cEcho "Creating src\binding\f77\fprotos.h"
 	set fprotos = f.CreateTextFile("src\binding\f77\fprotos.h")
 	fprotos.WriteLine( "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */" )
 	fprotos.WriteLine("")
@@ -1194,6 +1308,7 @@ Function CreateStdcallFortranInterface()
 						'cEcho "filename: " & filename
 						'cEcho "prototype: " & prototype
 						'cEcho result
+						cEcho "Creating file: " & filename
 						set file = f.CreateTextFile(filename)
 						file.Write(result)
 						file.Close()
@@ -1212,25 +1327,36 @@ End Function
 ' Generate mpichtimer.h
 '
 
-set fout = f.CreateTextFile("src\include\mpichtimer.h")
+cEcho "Creating src\include\win32\mpichtimer.h"
+set fout = f.CreateTextFile("src\include\win32\mpichtimer.h")
 set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
 
 contents = fin.ReadAll()
-contents = ReplaceAts(contents, false)
+contents = ReplaceAts(contents, false, false)
 fout.Write(contents)
 fin.Close()
 fout.Close()
 
+cEcho "Creating src\include\win64\mpichtimer.h"
+set fout = f.CreateTextFile("src\include\win64\mpichtimer.h")
+set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+
+contents = fin.ReadAll()
+contents = ReplaceAts(contents, false, true)
+fout.Write(contents)
+fin.Close()
+fout.Close()
 
 '
 ' Generate mpio.h
 '
 
+cEcho "Creating src\include\mpio.h"
 set fout = f.CreateTextFile("src\include\mpio.h")
 set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
 
 contents = fin.ReadAll()
-contents = ReplaceAts(contents, false)
+contents = ReplaceAts(contents, false, false)
 if bAddDllDecoration then
 	contents = ReplaceBetweenTags(contents, "/* MPI-IO function prototypes */", "HAVE_PRAGMA_HP_SEC_DEF", "#if defined(__cplusplus)", "#if defined(__cplusplus)")
 end if
@@ -1238,10 +1364,24 @@ fout.Write(contents)
 fin.Close()
 fout.Close()
 
+'cEcho "Creating src\include\win64\mpio.h"
+'set fout = f.CreateTextFile("src\include\win64\mpio.h")
+'set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
+'
+'contents = fin.ReadAll()
+'contents = ReplaceAts(contents, false, true)
+'if bAddDllDecoration then
+'	contents = ReplaceBetweenTags(contents, "/* MPI-IO function prototypes */", "HAVE_PRAGMA_HP_SEC_DEF", "#if defined(__cplusplus)", "#if defined(__cplusplus)")
+'end if
+'fout.Write(contents)
+'fin.Close()
+'fout.Close()
+
 '
 ' Generate romioconf.h
 '
 
+cEcho "Creating src\mpi\romio\adio\include\romioconf.h"
 set fout = f.CreateTextFile("src\mpi\romio\adio\include\romioconf.h")
 
 fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
@@ -1350,9 +1490,10 @@ Function BuildIFaces()
 	If f.FileExists("src\binding\cxx\mpicxx.h.in") Then
 	
 	  set fin = f.OpenTextFile("src\binding\cxx\mpicxx.h.in")
+	  cEcho "Creating src\include\mpicxx.h"
 	  set fout = f.CreateTextFile("src\include\mpicxx.h")
 	  contents = fin.ReadAll()
-	  contents = ReplaceAts(contents, false)
+	  contents = ReplaceAts(contents, false, false)
 	  if bCleanCode then
 		' Comm class
 		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Comm &oldcomm", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
@@ -1371,6 +1512,29 @@ Function BuildIFaces()
 	  fin.Close()
 	  fout.Close()
 	
+'	  set fin = f.OpenTextFile("src\binding\cxx\mpicxx.h.in")
+'	  cEcho "Creating src\include\win64\mpicxx.h"
+'	  set fout = f.CreateTextFile("src\include\win64\mpicxx.h")
+'	  contents = fin.ReadAll()
+'	  contents = ReplaceAts(contents, false, true)
+'	  if bCleanCode then
+'		' Comm class
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Comm &oldcomm", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Comm &comm", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Comm &oldcomm", "}", "int DUP_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+'		' Win class
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Win &oldwin", "}", "int NULL_COPY_FN( const Win &oldwin, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldwin; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Win &win", "}", "int NULL_DELETE_FN( Win &win, int keyval, void * attr, void *ex ) { win; keyval; attr; ex; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Win &oldwin", "}", "int DUP_FN( const Win &oldwin, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldwin; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+'		' Datatype class
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Datatype &oldtype", "}", "int NULL_COPY_FN( const Datatype &oldtype, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldtype; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Datatype &type", "}", "int NULL_DELETE_FN( Datatype &type, int keyval, void * attr, void *ex ) { type; keyval; attr; ex; return 0; }")
+'		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Datatype &oldtype", "}", "int DUP_FN( const Datatype &oldtype, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldtype; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+'	  end if	
+'	  fout.Write(contents)
+'	  fin.Close()
+'	  fout.Close()
+
 	Else
 	
 	  WScript.Echo("Run ""perl buildiface -nosep"" from the src\binding\cxx directory before running winconfigure")
@@ -1395,12 +1559,22 @@ Function BuildIFaces()
 		If f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
 
 			set fin = f.OpenTextFile("src\binding\mcxx\mpimcxx.h.in")
+			cEcho "Creating src\include\mpimcxx.h"
 			set fout = f.CreateTextFile("src\include\mpimcxx.h")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			set fin = f.OpenTextFile("src\binding\mcxx\mpimcxx.h.in")
+'			cEcho "Creating src\include\mpimcxx64.h"
+'			set fout = f.CreateTextFile("src\include\mpimcxx64.h")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
 
 		Else
 	
@@ -1426,9 +1600,19 @@ Function BuildIFaces()
 		If f.FileExists("src\binding\f77\mpif.h.in") Then
 
 			set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
-			set fout = f.CreateTextFile("src\include\mpif.h")
+			cEcho "Creating src\include\win32\mpif.h"
+			set fout = f.CreateTextFile("src\include\win32\mpif.h")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, true)
+			contents = ReplaceAts(contents, true, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+			set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
+			cEcho "Creating src\include\win64\mpif.h"
+			set fout = f.CreateTextFile("src\include\win64\mpif.h")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, true, true)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
@@ -1450,13 +1634,25 @@ Function BuildIFaces()
 		If f.FileExists("src\binding\f77\setbotf.f.in") Then
 
 			set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
+			cEcho "Creating src\binding\f77\setbotf.f"
 			set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, true)
+			contents = ReplaceAts(contents, true, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
 
+'			set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
+'			cEcho "Creating src\binding\f77\setbotf64.f"
+'			set fout = f.CreateTextFile("src\binding\f77\setbotf64.f")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, true, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+			
+		Else
+			cEcho "Skipping file: src\binding\f77\setbotf.f"
 		End If
 
 		'
@@ -1557,6 +1753,7 @@ Function GenerateStatesFiles()
 	If f.FileExists("maint\genstates.in") Then
 
 		set fin = f.OpenTextFile("maint\genstates.in")
+		cEcho "Creating maint\genstates"
 		set fout = f.CreateTextFile("maint\genstates")
 		contents = fin.ReadAll()
 		contents = Replace(contents, "@PERL@", "perl")
@@ -1597,7 +1794,7 @@ Function RegExpFind(pattern, str)
    Next
 End Function
 
-Function ReplaceAts( str, use_f77 )
+Function ReplaceAts( str, use_f77, b64 )
 	Dim regEx, Match, Matches
 	Set regEx = New RegExp
 	regEx.Pattern = "@.*@"
@@ -1679,22 +1876,46 @@ Function ReplaceAts( str, use_f77 )
 					str = Replace(str, "@MPI_CHARACTER@", MPI_CHARACTER)
 				End If
 			Case "@MPI_INTEGER@"
-				If use_f77 Then
-					str = Replace(str, "@MPI_INTEGER@", F77_MPI_INTEGER)
+				If b64 then
+					If use_f77 Then
+						str = Replace(str, "@MPI_INTEGER@", F77_MPI_INTEGER_W64)
+					Else
+						str = Replace(str, "@MPI_INTEGER@", MPI_INTEGER_W64)
+					End If
 				Else
-					str = Replace(str, "@MPI_INTEGER@", MPI_INTEGER)
+					If use_f77 Then
+						str = Replace(str, "@MPI_INTEGER@", F77_MPI_INTEGER_W32)
+					Else
+						str = Replace(str, "@MPI_INTEGER@", MPI_INTEGER_W32)
+					End If
 				End If
 			Case "@MPI_REAL@"
-				If use_f77 Then
-					str = Replace(str, "@MPI_REAL@", F77_MPI_REAL)
+				If b64 Then
+					If use_f77 Then
+						str = Replace(str, "@MPI_REAL@", F77_MPI_REAL_W64)
+					Else
+						str = Replace(str, "@MPI_REAL@", MPI_REAL_W64)
+					End If
 				Else
-					str = Replace(str, "@MPI_REAL@", MPI_REAL)
+					If use_f77 Then
+						str = Replace(str, "@MPI_REAL@", F77_MPI_REAL_W32)
+					Else
+						str = Replace(str, "@MPI_REAL@", MPI_REAL_W32)
+					End If
 				End If
 			Case "@MPI_LOGICAL@"
-				If use_f77 Then
-					str = Replace(str, "@MPI_LOGICAL@", F77_MPI_LOGICAL)
+				If b64 Then
+					If use_f77 Then
+						str = Replace(str, "@MPI_LOGICAL@", F77_MPI_LOGICAL_W64)
+					Else
+						str = Replace(str, "@MPI_LOGICAL@", MPI_LOGICAL_W64)
+					End If
 				Else
-					str = Replace(str, "@MPI_LOGICAL@", MPI_LOGICAL)
+					If use_f77 Then
+						str = Replace(str, "@MPI_LOGICAL@", F77_MPI_LOGICAL_W32)
+					Else
+						str = Replace(str, "@MPI_LOGICAL@", MPI_LOGICAL_W32)
+					End If
 				End If
 			Case "@MPI_COMPLEX@"
 				If use_f77 Then
@@ -1747,9 +1968,17 @@ Function ReplaceAts( str, use_f77 )
 			Case "@MPI_MAX_PROCESSOR_NAME@"
 				str = Replace(str, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
 			Case "@BSEND_OVERHEAD@"
-				str = Replace(str, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
+				if b64 then
+					str = Replace(str, "@BSEND_OVERHEAD@", BSEND_OVERHEAD64)
+				else
+					str = Replace(str, "@BSEND_OVERHEAD@", BSEND_OVERHEAD32)
+				end if
 			Case "@MPI_AINT@"
-				str = Replace(str, "@MPI_AINT@", MPI_AINT)
+				if b64 then
+					str = Replace(str, "@MPI_AINT@", MPI_AINT64)
+				else
+					str = Replace(str, "@MPI_AINT@", MPI_AINT32)
+				end if
 			Case "@MPI_FINT@"
 				str = Replace(str, "@MPI_FINT@", MPI_FINT)
 			Case "@MPI_OFFSET@"
@@ -1862,7 +2091,7 @@ Function ReplaceAts( str, use_f77 )
 	ReplaceAts = str
 End Function
 
-Sub AddDefinitions( fout, filename )
+Sub AddDefinitions( fout, filename, b64 )
 	If f.FileExists( filename ) Then
 		Set f2 = f.OpenTextFile( filename )
 		Dim regEx, Match, Matches
@@ -1909,7 +2138,11 @@ Sub AddDefinitions( fout, filename )
 				Case "SIZEOF_SHORT"
 					fout.WriteLine("#define SIZEOF_SHORT 2")
 				Case "SIZEOF_VOID_P"
-					fout.WriteLine("#define SIZEOF_VOID_P 4")
+					If b64 Then
+						fout.WriteLine("#define SIZEOF_VOID_P 8")
+					Else
+						fout.WriteLine("#define SIZEOF_VOID_P 4")
+					End If
 				Case "SIZEOF_WCHAR_T"
 					fout.WriteLine("#define SIZEOF_WCHAR_T 2")
 				Case "HAVE_GETCWD"
@@ -2253,7 +2486,7 @@ Sub AddDefinitions( fout, filename )
 				Case "SIZEOF_F77_REAL"
 					fout.WriteLine("#define SIZEOF_F77_REAL 4")
 				Case "SIZEOF_VOIDP"
-					If bWin64 Then
+					If b64 Then
 						fout.WriteLine("#define SIZEOF_VOIDP 8")
 					Else
 						fout.WriteLine("#define SIZEOF_VOIDP 4")
@@ -2369,23 +2602,38 @@ Sub AddDefinitions( fout, filename )
 				Case "HAVE_STDDEF_H"
 					fout.WriteLine("#define HAVE_STDDEF_H 1")
 				Case "MPICH_THREAD_LEVEL"
-					If bMultiThreaded Then
-						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_MULTIPLE")
-					Else
-						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
-					End If
+					fout.WriteLine("#ifdef MPICH_MULTITHREADED")
+					fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_MULTIPLE")
+					fout.WriteLine("#else")
+					fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
+					fout.WriteLine("#endif")
+'					If bMultiThreaded Then
+'						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_MULTIPLE")
+'					Else
+'						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
+'					End If
 				Case "USE_THREAD_IMPL"
-					If bMultiThreaded Then
-						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
-					Else
-						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
-					End If
+					fout.WriteLine("#ifdef MPICH_MULTITHREADED")
+					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
+					fout.WriteLine("#else")
+					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
+					fout.WriteLine("#endif")
+'					If bMultiThreaded Then
+'						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
+'					Else
+'						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
+'					End If
 				Case "USE_THREAD_PKG"
-					If bMultiThreaded Then
-						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
-					Else
-						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
-					End If
+					fout.WriteLine("#ifdef MPICH_MULTITHREADED")
+					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
+					fout.WriteLine("#else")
+					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
+					fout.WriteLine("#endif")
+'					If bMultiThreaded Then
+'						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
+'					Else
+'						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
+'					End If
 				Case "_REENTRANT"
 					fout.WriteLine("/* #undef _REENTRANT */")
 				Case "_THREAD_SAFE"
@@ -2496,9 +2744,22 @@ If Not bRemoveFortran Then
 	'
 	' mpi_fortconf.h
 	'
-	Set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
+	cEcho "Creating src\include\win32\mpi_fortconf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpi_fortconf.h")
 	Call WriteHeader(fout, "mpi_fort")
-	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in")
+	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", false)
+	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+	fout.WriteLine("#define HAVE_WINDOWS_H")
+	fout.WriteLine("#endif")
+	fout.WriteLine("")
+	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+	Call WriteFooter(fout)
+	fout.Close()
+	cEcho "Creating src\include\win64\mpi_fortconf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpi_fortconf.h")
+	Call WriteHeader(fout, "mpi_fort")
+	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", true)
 	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
 	fout.WriteLine("#define HAVE_WINDOWS_H")
 	fout.WriteLine("#endif")
@@ -2511,22 +2772,65 @@ If Not bRemoveFortran Then
 	'
 	' mpi_fortimpl.h
 	'
-	Set fin = f.OpenTextFile("src\binding\f77\mpi_fortimpl.h")
-	contents = fin.ReadAll()
-	fin.Close()
-	contents = Replace(contents, "#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )", "#define MPIR_FROM_FLOG(a) ( (a) != 0 ? 1 : 0 )")
-	Set fout = f.CreateTextFile("src\binding\f77\mpi_fortimpl.h")
-	fout.Write(contents)
-	fout.Close()
+	'Set fin = f.OpenTextFile("src\binding\f77\mpi_fortimpl.h")
+	'contents = fin.ReadAll()
+	'fin.Close()
+	'contents = Replace(contents, "#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )", "#define MPIR_FROM_FLOG(a) ( (a) != 0 ? 1 : 0 )")
+	'cEcho "Creating src\binding\f77\mpi_fortimpl.h"
+	'Set fout = f.CreateTextFile("src\binding\f77\mpi_fortimpl.h")
+	'fout.Write(contents)
+	'fout.Close()
 
 End If
 
 '
 ' mpichconf.h
 '
-Set fout = f.CreateTextFile("src\include\mpichconf.h")
+cEcho "Creating src\include\win32\mpichconf.h"
+Set fout = f.CreateTextFile("src\include\win32\mpichconf.h")
 Call WriteHeader(fout, "mpich")
-Call AddDefinitions(fout, "src\include\mpichconf.h.in")
+Call AddDefinitions(fout, "src\include\mpichconf.h.in", false)
+fout.WriteLine("#define HAVE_PROCESS_H")
+fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+fout.WriteLine("#define HAVE_WINDOWS_H")
+fout.WriteLine("#endif")
+fout.WriteLine("#define HAVE_WINDOWS_SOCKET")
+fout.WriteLine("#define HAVE_WINSOCK2_H")
+fout.WriteLine("#define HAVE_WIN32_SLEEP")
+fout.WriteLine("#define HAVE_NT_LOCKS")
+fout.WriteLine("#define HAVE_MAPVIEWOFFILE")
+fout.WriteLine("#define HAVE_CREATEFILEMAPPING")
+fout.WriteLine("#define HAVE_INTERLOCKEDEXCHANGE")
+fout.WriteLine("#define HAVE_BOOL")
+fout.WriteLine("#define HAVE_CRTDBG_H")
+fout.WriteLine("")
+fout.WriteLine("#define snprintf _snprintf")
+fout.WriteLine("#define vsnprintf _vsnprintf")
+fout.WriteLine("#define inline __inline")
+fout.WriteLine("")
+fout.WriteLine("#define WITH_SOCK_TYPE SOCK_IOCP")
+fout.WriteLine("")
+fout.WriteLine("/* Define if building mpich in development mode */")
+fout.WriteLine("#define MPICH_DEV_BUILD")
+fout.WriteLine("/*#define MPICH_DBG_OUTPUT*/")
+fout.WriteLine("")
+fout.WriteLine("/*#define MPICH_MPI_FROM_PMPI*/")
+fout.WriteLine("#define USE_PROCESS_LOCKS 1")
+fout.WriteLine("#define USE_THREAD_PACKAGE")
+fout.WriteLine("#define USE_WINTHREADS")
+fout.WriteLine("#ifndef HAVE_INT64")
+fout.WriteLine("#define HAVE_INT64 1")
+fout.WriteLine("#define HAVE_PTRTOLONG")
+fout.WriteLine("#define HAVE_PTRTOINT")
+fout.WriteLine("#define HAVE_LONGTOPTR")
+fout.WriteLine("#define HAVE_INTTOPTR")
+fout.WriteLine("#endif")
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\mpichconf.h"
+Set fout = f.CreateTextFile("src\include\win64\mpichconf.h")
+Call WriteHeader(fout, "mpich")
+Call AddDefinitions(fout, "src\include\mpichconf.h.in", true)
 fout.WriteLine("#define HAVE_PROCESS_H")
 fout.WriteLine("#ifndef HAVE_WINDOWS_H")
 fout.WriteLine("#define HAVE_WINDOWS_H")
@@ -2568,9 +2872,19 @@ fout.Close()
 '
 ' mpidi_ch3_conf.h
 '
-Set fout = f.CreateTextFile("src\mpid\ch3\include\mpidi_ch3_conf.h")
+cEcho "Creating src\include\win32\mpidi_ch3_conf.h"
+Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3_conf.h")
 Call WriteHeader(fout, "mpidi_ch3_")
-Call AddDefinitions(fout, "src\mpid\ch3\include\mpidi_ch3_conf.h.in")
+Call AddDefinitions(fout, "src\mpid\ch3\include\mpidi_ch3_conf.h.in", false)
+fout.WriteLine("#define EWOULDBLOCK EAGAIN")
+fout.WriteLine("#define HAVE_WINTHREADS")
+fout.WriteLine("#define MPICH_CPU_TICK_TYPE USE_WIN_X86_CYCLE_ASM")
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\mpidi_ch3_conf.h"
+Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3_conf.h")
+Call WriteHeader(fout, "mpidi_ch3_")
+Call AddDefinitions(fout, "src\mpid\ch3\include\mpidi_ch3_conf.h.in", true)
 fout.WriteLine("#define EWOULDBLOCK EAGAIN")
 fout.WriteLine("#define HAVE_WINTHREADS")
 fout.WriteLine("#define MPICH_CPU_TICK_TYPE USE_WIN_X86_CYCLE_ASM")
@@ -2580,36 +2894,67 @@ fout.Close()
 '
 ' timerconf.h
 '
-Set fout = f.CreateTextFile("src\mpi\timer\timerconf.h")
+cEcho "Creating src\include\win32\timerconf.h"
+Set fout = f.CreateTextFile("src\include\win32\timerconf.h")
 Call WriteHeader(fout, "timer")
-Call AddDefinitions(fout, "src\mpi\timer\timerconf.h.in")
+Call AddDefinitions(fout, "src\mpi\timer\timerconf.h.in", false)
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\timerconf.h"
+Set fout = f.CreateTextFile("src\include\win64\timerconf.h")
+Call WriteHeader(fout, "timer")
+Call AddDefinitions(fout, "src\mpi\timer\timerconf.h.in", true)
 Call WriteFooter(fout)
 fout.Close()
 
 '
 ' mpid_locksconf.h
 '
-Set fout = f.CreateTextFile("src\mpid\common\locks\mpid_locksconf.h")
+cEcho "Creating src\include\win32\mpid_locksconf.h"
+Set fout = f.CreateTextFile("src\include\win32\mpid_locksconf.h")
 Call WriteHeader(fout, "mpid_locks")
-Call AddDefinitions(fout, "src\mpid\common\locks\mpid_locksconf.h.in")
+Call AddDefinitions(fout, "src\mpid\common\locks\mpid_locksconf.h.in", false)
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\mpid_locksconf.h"
+Set fout = f.CreateTextFile("src\include\win64\mpid_locksconf.h")
+Call WriteHeader(fout, "mpid_locks")
+Call AddDefinitions(fout, "src\mpid\common\locks\mpid_locksconf.h.in", true)
 Call WriteFooter(fout)
 fout.Close()
 
 '
 ' mpidu_sock_conf.h
 '
-Set fout = f.CreateTextFile("src\mpid\common\sock\mpidu_sock_conf.h")
+cEcho "Creating src\include\win32\mpidu_sock_conf.h"
+Set fout = f.CreateTextFile("src\include\win32\mpidu_sock_conf.h")
 Call WriteHeader(fout, "mpidu_sock_")
-Call AddDefinitions(fout, "src\mpid\common\sock\mpidu_sock_conf.h.in")
+Call AddDefinitions(fout, "src\mpid\common\sock\mpidu_sock_conf.h.in", false)
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\mpidu_sock_conf.h"
+Set fout = f.CreateTextFile("src\include\win64\mpidu_sock_conf.h")
+Call WriteHeader(fout, "mpidu_sock_")
+Call AddDefinitions(fout, "src\mpid\common\sock\mpidu_sock_conf.h.in", true)
 Call WriteFooter(fout)
 fout.Close()
 
 '
 ' pmiconf.h
 '
-Set fout = f.CreateTextFile("src\pmi\smpd\pmiconf.h")
+cEcho "Creating src\include\win32\pmiconf.h"
+Set fout = f.CreateTextFile("src\include\win32\pmiconf.h")
 Call WriteHeader(fout, "pmi")
-Call AddDefinitions(fout, "src\pmi\smpd\pmiconf.h.in")
+Call AddDefinitions(fout, "src\pmi\smpd\pmiconf.h.in", false)
+fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+fout.WriteLine("#define HAVE_WINDOWS_H")
+fout.WriteLine("#endif")
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\pmiconf.h"
+Set fout = f.CreateTextFile("src\include\win64\pmiconf.h")
+Call WriteHeader(fout, "pmi")
+Call AddDefinitions(fout, "src\pmi\smpd\pmiconf.h.in", true)
 fout.WriteLine("#ifndef HAVE_WINDOWS_H")
 fout.WriteLine("#define HAVE_WINDOWS_H")
 fout.WriteLine("#endif")
@@ -2620,21 +2965,32 @@ fout.Close()
 ' mpidi_ch3i_rdma_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_rdma_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_rdma_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_rdma_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h.in", false)
 	fout.WriteLine("#define USE_BUSY_LOCKS")
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_rdma_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_rdma_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_rdma_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\rdma\include\mpidi_ch3i_rdma_conf.h.in", true)
+	fout.WriteLine("#define USE_BUSY_LOCKS")
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_rdma_conf.h"
 End If
 
 '
 ' mpidi_ch3i_shm_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_shm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_shm_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_shm_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in", false)
 	fout.WriteLine("#define USE_BUSY_LOCKS")
 	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
 	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
@@ -2642,54 +2998,115 @@ If f.FileExists("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in") Th
 	fout.WriteLine("#define USE_SHM_RDMA_GET")
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_shm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_shm_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_shm_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in", true)
+	fout.WriteLine("#define USE_BUSY_LOCKS")
+	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
+	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("#define USE_RDMA_GET")
+	fout.WriteLine("#define USE_SHM_RDMA_GET")
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_shm_conf.h"
 End If
 
 '
 ' mpidi_ch3i_sock_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_sock_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_sock_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_sock_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in", false)
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_sock_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_sock_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_sock_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in", true)
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_sock_conf.h"
 End If
 
 '
 ' mpidi_ch3i_ssm_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_ssm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_ssm_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_ssm_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", false)
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_ssm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_ssm_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_ssm_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", true)
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_ssm_conf.h"
 End If
 
 '
 ' mpidi_ch3i_sshm_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_sshm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_sshm_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_sshm_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in", false)
 	fout.WriteLine("#define HAVE_MASM_AND_X86")
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_sshm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_sshm_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_sshm_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in", true)
+	fout.WriteLine("#define HAVE_MASM_AND_X86")
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_sshm_conf.h"
 End If
 
 '
 ' mpidi_ch3i_ib_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h")
+	cEcho "Creating src\include\win32\mpidi_ch3i_ib_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_ib_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_ib_")
-	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", false)
 	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
-	If bWin64 then
-		fout.WriteLine("#define __ia64__")
+	fout.WriteLine("#define __i386__")
+	If bUseIbRDMA Then
+		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	Else
+		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+	End If
+	If bUsePinCache Then
+		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
 	else
-		fout.WriteLine("#define __i386__")
+		fout.WriteLine("#define USE_NO_PIN_CACHE")
+	End If
+	fout.WriteLine("#define USE_RDMA_GET")
+	Call WriteFooter(fout)
+	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_ib_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_ib_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_ib_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", true)
+	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	If x64 then
+		fout.WriteLine("#define __x64__")
+	else
+		fout.WriteLine("#define __ia64__")
 	End If
 	If bUseIbRDMA Then
 		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
@@ -2704,6 +3121,8 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	fout.WriteLine("#define USE_RDMA_GET")
 	Call WriteFooter(fout)
 	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_ib_conf.h"
 End If
 
 If f.FolderExists("src\mpe2") Then
@@ -2712,9 +3131,10 @@ If f.FolderExists("src\mpe2") Then
 	' mpe_logging_conf.h
 	'
 	If f.FileExists("src\mpe2\src\logging\mpe_logging_conf.h.in") Then
-		Set fout = f.CreateTextFile("src\mpe2\src\logging\include\mpe_logging_conf.h")
+		cEcho "Creating src\include\win32\mpe_logging_conf.h"
+		Set fout = f.CreateTextFile("src\include\win32\mpe_logging_conf.h")
 		Call WriteHeader(fout, "mpe_logging_")
-		Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in")
+		Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in", false)
 		fout.WriteLine("#define HAVE_IO_H 1")
 		fout.WriteLine("#define HAVE_WINDOWS_H 1")
 		fout.WriteLine("#define read _read")
@@ -2727,6 +3147,24 @@ If f.FolderExists("src\mpe2") Then
 		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
 		Call WriteFooter(fout)
 		fout.Close()
+		cEcho "Creating src\include\win64\mpe_logging_conf.h"
+		Set fout = f.CreateTextFile("src\include\win64\mpe_logging_conf.h")
+		Call WriteHeader(fout, "mpe_logging_")
+		Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in", true)
+		fout.WriteLine("#define HAVE_IO_H 1")
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		fout.WriteLine("#define read _read")
+		fout.WriteLine("#define write _write")
+		fout.WriteLine("#define open _open")
+		fout.WriteLine("#define close _close")
+		fout.WriteLine("#define mktemp _mktemp")
+		fout.WriteLine("#define lseek _lseek")
+		fout.WriteLine("#define snprintf _snprintf")
+		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		Call WriteFooter(fout)
+		fout.Close()
+	Else
+		cEcho "Skipping file: mpe_logging_conf.h"
 	End If
 
 	'/src/misc/mpe_misc_conf.h.in
@@ -2735,12 +3173,22 @@ If f.FolderExists("src\mpe2") Then
 	' mpe_wrappers_conf.h
 	'
 	If f.FileExists("src\mpe2\src\wrappers\mpe_wrappers_conf.h.in") Then
-		Set fout = f.CreateTextFile("src\mpe2\include\mpe_wrappers_conf.h")
+		cEcho "Creating src\include\win32\mpe_wrappers_conf.h"
+		Set fout = f.CreateTextFile("src\include\win32\mpe_wrappers_conf.h")
 		Call WriteHeader(fout, "mpe_wrappers_")
-		Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in")
+		Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in", false)
 		fout.WriteLine("#define HAVE_WINDOWS_H 1")
 		Call WriteFooter(fout)
 		fout.Close()
+		cEcho "Creating src\include\win64\mpe_wrappers_conf.h"
+		Set fout = f.CreateTextFile("src\include\win64\mpe_wrappers_conf.h")
+		Call WriteHeader(fout, "mpe_wrappers_")
+		Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in", true)
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		Call WriteFooter(fout)
+		fout.Close()
+	Else
+		cEcho "Skipping file: mpe_wrappers_conf.h"
 	End If
 
 	'/src/slog2sdk/trace_rlog/trace_impl.h.in
@@ -2750,9 +3198,10 @@ If f.FolderExists("src\mpe2") Then
 	' mpe_conf.h
 	'
 	If f.FileExists("src\mpe2\mpe_conf.h.in") Then
-		Set fout = f.CreateTextFile("src\mpe2\include\mpe_conf.h")
+		cEcho "Creating src\include\win32\mpe_conf.h"
+		Set fout = f.CreateTextFile("src\include\win32\mpe_conf.h")
 		Call WriteHeader(fout, "mpe_")
-		Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in")
+		Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in", false)
 		fout.WriteLine("#define HAVE_IO_H 1")
 		fout.WriteLine("#define HAVE_WINDOWS_H 1")
 		fout.WriteLine("#define read _read")
@@ -2765,6 +3214,24 @@ If f.FolderExists("src\mpe2") Then
 		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
 		Call WriteFooter(fout)
 		fout.Close()
+		cEcho "Creating src\include\win64\mpe_conf.h"
+		Set fout = f.CreateTextFile("src\include\win64\mpe_conf.h")
+		Call WriteHeader(fout, "mpe_")
+		Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in", true)
+		fout.WriteLine("#define HAVE_IO_H 1")
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		fout.WriteLine("#define read _read")
+		fout.WriteLine("#define write _write")
+		fout.WriteLine("#define open _open")
+		fout.WriteLine("#define close _close")
+		fout.WriteLine("#define mktemp _mktemp")
+		fout.WriteLine("#define lseek _lseek")
+		fout.WriteLine("#define snprintf _snprintf")
+		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		Call WriteFooter(fout)
+		fout.Close()
+	Else
+		cEcho "Skipping file: mpe_conf.h"
 	End If
 
 End If
@@ -2773,45 +3240,77 @@ End If
 ' mpe_thread.h
 '
 If f.FileExists("src\util\thread\mpe_thread.h.in") Then
-	Set fout = f.CreateTextFile("src\include\mpe_thread.h")
+	cEcho "Creating src\include\win32\mpe_thread.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpe_thread.h")
 	Set fin = f.OpenTextFile("src\util\thread\mpe_thread.h.in")
 	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
+	contents = ReplaceAts(contents, false, false)
 	fout.Write(contents)
 	fin.Close()
 	fout.Close()
+	cEcho "Creating src\include\win64\mpe_thread.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpe_thread.h")
+	Set fin = f.OpenTextFile("src\util\thread\mpe_thread.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false, true)
+	fout.Write(contents)
+	fin.Close()
+	fout.Close()
+Else
+	cEcho "Skipping file: mpe_thread.h"
 End If
 
 '
 ' mpe_thread_conf.h
 '
 If f.FileExists("src\util\thread\mpe_thread_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\include\mpe_thread_conf.h")
+	cEcho "Creating src\include\win32\mpe_thread_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpe_thread_conf.h")
 	Call WriteHeader(fout, "mpe_thread_")
-	Call AddDefinitions(fout, "src\util\thread\mpe_thread_conf.h.in")
+	Call AddDefinitions(fout, "src\util\thread\mpe_thread_conf.h.in", false)
 	Call WriteFooter(fout)
 	fout.Close()
+	cEcho "Creating src\include\win64\mpe_thread_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpe_thread_conf.h")
+	Call WriteHeader(fout, "mpe_thread_")
+	Call AddDefinitions(fout, "src\util\thread\mpe_thread_conf.h.in", true)
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpe_thread_conf.h"
 End If
 
 '
 ' mpid_thread.h
 '
 If f.FileExists("src\mpid\common\thread\mpid_thread.h.in") Then
-	Set fout = f.CreateTextFile("src\include\mpid_thread.h")
+	cEcho "Creating src\include\win32\mpid_thread.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpid_thread.h")
 	Set fin = f.OpenTextFile("src\mpid\common\thread\mpid_thread.h.in")
 	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
+	contents = ReplaceAts(contents, false, false)
 	fout.Write(contents)
 	fin.Close()
 	fout.Close()
+	cEcho "Creating src\include\win64\mpid_thread.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpid_thread.h")
+	Set fin = f.OpenTextFile("src\mpid\common\thread\mpid_thread.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false, true)
+	fout.Write(contents)
+	fin.Close()
+	fout.Close()
+Else
+	cEcho "Skipping file: mpid_thread.h"
 End If
 
 '
 ' trace_impl.h
 '
+cEcho "Creating src\util\logging\rlog\trace_impl.h"
 Set fout = f.CreateTextFile("src\util\logging\rlog\trace_impl.h")
 Call WriteHeader(fout, "trace_impl")
-'Call AddDefinitions(fout, "src\util\logging\rlog\trace_impl.h.in")
+'Call AddDefinitions(fout, "src\util\logging\rlog\trace_impl.h.in", false)
 fout.WriteLine("#define HAVE_CTYPE_H")
 fout.WriteLine("#define HAVE_STDLIB_H")
 fout.WriteLine("#define HAVE_STRING_H")
@@ -2825,14 +3324,27 @@ Function ConfigureTestDir
 	'
 	If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
 		'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
-		Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
+		cEcho "Creating src\include\win32\mpitestconf.h"
+		Set fout = f.CreateTextFile("src\include\win32\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
 		Call WriteHeader(fout, "mpitest")
-		Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
+		Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in", false)
 		fout.WriteLine("#ifndef HAVE_WINDOWS_H")
 		fout.WriteLine("#define HAVE_WINDOWS_H")
 		fout.WriteLine("#endif")
 		Call WriteFooter(fout)
 		fout.Close()
+		'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+		cEcho "Creating src\include\win64\mpitestconf.h"
+		Set fout = f.CreateTextFile("src\include\win64\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
+		Call WriteHeader(fout, "mpitest")
+		Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in", true)
+		fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+		fout.WriteLine("#define HAVE_WINDOWS_H")
+		fout.WriteLine("#endif")
+		Call WriteFooter(fout)
+		fout.Close()
+	Else
+		cEcho "Skipping file: mpitestconf.h"
 	End If
 
 	If Not bRemoveFortran Then
@@ -2840,65 +3352,125 @@ Function ConfigureTestDir
 		' attraints.h
 		'
 		If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
+			cEcho "Creating test\mpi\f77\attr\attraints.h"
 			Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			cEcho "Creating test\mpi\f77\attr\attraints64.h"
+'			Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints64.h")
+'			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+		Else
+			cEcho "Skipping file: attraints.h"
 		End If
 
 		'
 		' typeaints.h
 		'
 		If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
+			cEcho "Creating test\mpi\f77\datatype\typeaints.h"
 			Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			cEcho "Creating test\mpi\f77\datatype\typeaints64.h"
+'			Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints64.h")
+'			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+		Else
+			cEcho "Skipping file: typeaints.h"
 		End If
 
 		'
 		' iooffset.h
 		'
 		If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
+			cEcho "Creating test\mpi\f77\io\iooffset.h"
 			Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			cEcho "Creating test\mpi\f77\io\iooffset64.h"
+'			Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset64.h")
+'			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+		Else
+			cEcho "Skipping file: iooffset.h"
 		End If
 
 		'
 		' iodisp.h
 		'
 		If f.FileExists("test\mpi\f77\io\iodisp.h.in") Then
+			cEcho "Creating test\mpi\f77\io\iodisp.h"
 			Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			cEcho "Creating test\mpi\f77\io\iodisp64.h"
+'			Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp64.h")
+'			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+		Else
+			cEcho "Skipping file: iodisp.h"
 		End If
 
 		'
 		' addsize.h
 		'
 		If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
+			cEcho "Creating test\mpi\f77\rma\addsize.h"
 			Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
 			contents = fin.ReadAll()
-			contents = ReplaceAts(contents, false)
+			contents = ReplaceAts(contents, false, false)
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+
+'			cEcho "Creating test\mpi\f77\rma\addsize64.h"
+'			Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize64.h")
+'			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
+'			contents = fin.ReadAll()
+'			contents = ReplaceAts(contents, false, true)
+'			fout.Write(contents)
+'			fin.Close()
+'			fout.Close()
+		Else
+			cEcho "Skipping file: addsize.h"
 		End If
 
 	End If
@@ -2912,7 +3484,7 @@ ConfigureTestDir()
 '
 'Set fout = f.CreateTextFile("src\include\fooconf.h")
 'Call WriteHeader(fout, "foo")
-'Call AddDefinitions(fout, "src\include\fooconf.h.in")
+'Call AddDefinitions(fout, "src\include\fooconf.h.in", false)
 'fout.WriteLine("foo specific stuff")
 'Call WriteFooter(fout)
 'fout.Close()
@@ -2929,6 +3501,7 @@ Function GenerateMPICC()
 	If Not f.FolderExists("bin") Then
 		f.CreateFolder("bin")
 	End If
+	cEcho "Creating bin\mpicc.wsf"
 	Set fout = f.CreateTextFile("bin\mpicc.wsf")
 	fout.WriteLine(vbLessThan & "package" & vbGreaterThan)
 	fout.WriteLine(vbLessThan & "job id=""mpicc""" & vbGreaterThan)
@@ -3090,6 +3663,7 @@ If bRemoveFortran Then
 	contents = regEx.Replace(contents, ";$1")
 	regEx.Pattern = "(.*[P]?MPI_Status_f2c)"
 	contents = regEx.Replace(contents, ";$1")
+	cEcho "Creating mpich2.def"
 	Set fout = f.CreateTextFile( "mpich2.def" )
 	fout.Write(contents)
 	fout.Close()
@@ -3138,8 +3712,10 @@ If bRemoveFortran Then
 	regEx.Pattern = ".*= [gs]?fortRelease\|Win32[\r\n]*"
 	contents = regEx.Replace(contents, "")
 	if bVS2005 then
+		cEcho "Creating mpich2.vs05.sln"
 	    Set fout = f.CreateTextFile( "mpich2.vs05.sln" )
 	else
+		cEcho "Creating mpich2.sln"
 	    Set fout = f.CreateTextFile( "mpich2.sln" )
 	end if
 	fout.Write(contents)
@@ -3171,8 +3747,10 @@ If bRemoveFortran Then
 	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
 	if bVS2005 then
+		cEcho "Creating mpich2.vs05.vcproj"
 	    Set fout = f.CreateTextFile( "mpich2.vs05.vcproj" )
 	else
+		cEcho "Creating mpich2.vcproj"
 	    Set fout = f.CreateTextFile( "mpich2.vcproj" )
 	end if
 	fout.Write(contents)
@@ -3201,8 +3779,10 @@ If bRemoveFortran Then
 	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
 	if bVS2005 then
+		cEcho "Creating mpich2s.vs05.vcproj"
 	    Set fout = f.CreateTextFile( "mpich2s.vs05.vcproj" )
 	else
+		cEcho "Creating mpich2s.vcproj"
 	    Set fout = f.CreateTextFile( "mpich2s.vcproj" )
 	end if
 	fout.Write(contents)

@@ -30,3 +30,5 @@ mpitest.h
 mpitestconf.h
 Makefile.in
 Makefile
+win32
+win64

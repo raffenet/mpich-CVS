@@ -22,7 +22,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\..\mpe2\src\slog2sdk\src\logformat\trace,..\..\..\..\include,c:\j2sdk1.4.2_06\include,c:\j2sdk1.4.2_06\include\win32"
+				AdditionalIncludeDirectories="..\..\..\..\mpe2\src\slog2sdk\src\logformat\trace,..\..\..\..\include,..\..\..\..\include\win32,c:\j2sdk1.4.2_06\include,c:\j2sdk1.4.2_06\include\win32"
 				PreprocessorDefinitions="USE_WINCONF_H;WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -87,7 +87,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\mpe2\src\slog2sdk\src\logformat\trace,..\..\..\..\include,c:\j2sdk1.4.2_06\include,c:\j2sdk1.4.2_06\include\win32"
+				AdditionalIncludeDirectories="..\..\..\..\mpe2\src\slog2sdk\src\logformat\trace,..\..\..\..\include,.\..\..\..\include\win32,c:\j2sdk1.4.2_06\include,c:\j2sdk1.4.2_06\include\win32"
 				PreprocessorDefinitions="USE_WINCONF_H;WIN32;_DEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
