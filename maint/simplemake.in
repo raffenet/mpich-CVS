@@ -968,6 +968,10 @@ sub DefaultRules {
 	# current configure, and the path to get to that configure.
 	# We also allow this step to fail; for example, the 
 	# config.status may already have been removed.
+	# Further, to make the clean step cleaner, we test for the 
+	# config.status file before trying to run it (using a simple
+	# test -x config.status && ... works, but still generates noise
+	# about ignoring a failing step.
 
 	$ignore_step = "-";
 	if ($topdir ne ".") {
@@ -976,7 +980,7 @@ sub DefaultRules {
 	}
 	$relcurdir = $curdir;
 	$relcurdir =~ s/^$last_config_dir//;
-	print FD "\t${ignore_step}test -x config.status && CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
+	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
     }
     # Clean targets
     &TargetClean;
