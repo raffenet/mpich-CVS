@@ -41,9 +41,15 @@
  *  Standardized error checking macros.  These provide the correct tests for
  *  common tests.  These set err with the encoded error value.
  */
-#define MPIR_ERRTEST_INITIALIZED(err) \
-  if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 ); }
+#define MPIR_ERRTEST_INITIALIZED(err)                  \
+  if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {  \
+      err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				 MPIR_ERR_RECOVERABLE, \
+				 FCNAME, __LINE__,     \
+				 MPI_ERR_OTHER,        \
+				 "**initialized", 0 ); \
+  }
+
 #define MPIR_ERRTEST_SEND_TAG(tag,err) \
   if ((tag) < 0 || (tag) > MPIR_Process.attrs.tag_ub) {\
       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TAG, "**tag", "**tag %d", tag);}
@@ -62,31 +68,77 @@
   if ((rank) < MPI_ANY_SOURCE || (rank) >= (comm_ptr)->remote_size) {\
       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, "**rank", \
                                   "**rank %d %d", rank, (comm_ptr)->remote_size );}
-#define MPIR_ERRTEST_COUNT(count,err) \
-    if ((count) < 0) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COUNT, "**countneg", \
-                                    "**countneg %d", count );}
-#define MPIR_ERRTEST_DISP(disp,err) \
-    if ((disp) < 0) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DISP, "**rmadisp", 0 );}
-#define MPIR_ERRTEST_ALIAS(ptr1,ptr2,err) \
-    if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**bufalias", 0 );}
-#define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
-   if (!(arg)) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**nullptr", \
-                                   "**nullptr %s", arg_name ); } 
-#define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
-   if ((arg) < 0) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**argneg", \
-                                   "**argneg %s %d", arg_name, arg ); }
-#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err) \
-   if ((arg) <= 0) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**argnonpos", \
-                                   "**argnonpos %s %d", arg_name, arg ); }
-#define MPIR_ERRTEST_DATATYPE_NULL(arg,arg_name,err) \
-   if ((arg) == MPI_DATATYPE_NULL) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", "**dtypenull %s", arg_name ); }
+
+#define MPIR_ERRTEST_COUNT(count,err)                    \
+    if ((count) < 0) {                                   \
+        err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				   MPIR_ERR_RECOVERABLE, \
+				   FCNAME, __LINE__,     \
+				   MPI_ERR_COUNT,        \
+				   "**countneg",         \
+				   "**countneg %d",      \
+				   count );              \
+    }
+
+#define MPIR_ERRTEST_DISP(disp,err)                      \
+    if ((disp) < 0) {                                    \
+        err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				   MPIR_ERR_RECOVERABLE, \
+				   FCNAME, __LINE__,     \
+				   MPI_ERR_DISP,         \
+				   "**rmadisp", 0 );     \
+    }
+
+#define MPIR_ERRTEST_ALIAS(ptr1,ptr2,err)			\
+    if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {		\
+        err = MPIR_Err_create_code(MPI_SUCCESS,			\
+				   MPIR_ERR_RECOVERABLE,	\
+				   FCNAME, __LINE__,		\
+				   MPI_ERR_BUFFER,		\
+				   "**bufalias", 0 );		\
+    }
+
+#define MPIR_ERRTEST_ARGNULL(arg,arg_name,err)          \
+   if (!(arg)) {                                        \
+       err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				  MPIR_ERR_RECOVERABLE, \
+				  FCNAME, __LINE__,     \
+				  MPI_ERR_ARG,          \
+				  "**nullptr",          \
+				  "**nullptr %s",       \
+				  arg_name );           \
+   } 
+
+#define MPIR_ERRTEST_ARGNEG(arg,arg_name,err)                         \
+   if ((arg) < 0) {                                                   \
+       err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,  \
+				  FCNAME, __LINE__, MPI_ERR_ARG,      \
+				  "**argneg",                         \
+                                  "**argneg %s %d", arg_name, arg );  \
+   }
+
+#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err)        \
+   if ((arg) <= 0) {                                    \
+       err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				  MPIR_ERR_RECOVERABLE, \
+				  FCNAME, __LINE__,     \
+				  MPI_ERR_ARG,          \
+				  "**argnonpos",        \
+				  "**argnonpos %s %d",  \
+				  arg_name, arg );      \
+   }
+
+#define MPIR_ERRTEST_DATATYPE_NULL(arg,arg_name,err)    \
+   if ((arg) == MPI_DATATYPE_NULL) {                    \
+       err = MPIR_Err_create_code(MPI_SUCCESS,          \
+				  MPIR_ERR_RECOVERABLE, \
+				  FCNAME, __LINE__,     \
+				  MPI_ERR_TYPE,         \
+				  "**dtypenull",        \
+				  "**dtypenull %s",     \
+				  arg_name );           \
+   }
+
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
@@ -108,17 +160,26 @@
     if ((comm_ptr)->comm_kind != MPID_INTRACOMM) {\
        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,"**commnotintra",0);}
 
-#define MPIR_ERRTEST_DATATYPE(count, datatype,err)									\
-{															\
-    if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE || (HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&		\
-	datatype != MPI_DATATYPE_NULL))											\
-    {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtype", 0 );	\
-    }															\
-    if (count > 0 && datatype == MPI_DATATYPE_NULL)									\
-    {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", 0 );	\
-    }															\
+#define MPIR_ERRTEST_DATATYPE(count, datatype, err)	       \
+{							       \
+    if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE ||      \
+	(HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&   \
+	datatype != MPI_DATATYPE_NULL))			       \
+    {							       \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,          \
+					 MPIR_ERR_RECOVERABLE, \
+					 FCNAME, __LINE__,     \
+					 MPI_ERR_TYPE,         \
+					 "**dtype", 0 );       \
+    }							       \
+    if (count > 0 && datatype == MPI_DATATYPE_NULL)	       \
+    {							       \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,          \
+					 MPIR_ERR_RECOVERABLE, \
+					 FCNAME, __LINE__,     \
+					 MPI_ERR_TYPE,         \
+					 "**dtypenull", 0 );   \
+    }							       \
 }
 
 #define MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf,count,err) \
@@ -143,18 +204,24 @@
  * datatypes, should it take a dtypeptr argument (valid only if not
  * builtin)?
  */
-#define MPIR_ERRTEST_USERBUFFER(buf,count,dtype,err)									\
-    if (count > 0 && buf == 0) {											\
-        int ferr = 0;													\
-        if (HANDLE_GET_KIND(dtype) == HANDLE_KIND_BUILTIN) { ferr=1; }							\
-        else {														\
-            MPID_Datatype *errdtypeptr;											\
-            MPID_Datatype_get_ptr(dtype,errdtypeptr);									\
-            if (errdtypeptr && errdtypeptr->true_lb == 0) { ferr=1; }							\
-        }														\
-        if (ferr) {													\
-            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**bufnull", 0 );}	\
+#define MPIR_ERRTEST_USERBUFFER(buf,count,dtype,err)			\
+    if (count > 0 && buf == 0) {					\
+        int ferr = 0;							\
+        if (HANDLE_GET_KIND(dtype) == HANDLE_KIND_BUILTIN) { ferr=1; }	\
+        else {								\
+            MPID_Datatype *errdtypeptr;					\
+            MPID_Datatype_get_ptr(dtype,errdtypeptr);			\
+            if (errdtypeptr && errdtypeptr->true_lb == 0) { ferr=1; }	\
+        }								\
+        if (ferr) {							\
+            err = MPIR_Err_create_code(MPI_SUCCESS,			\
+				       MPIR_ERR_RECOVERABLE,		\
+				       FCNAME, __LINE__,		\
+				       MPI_ERR_BUFFER,			\
+				       "**bufnull", 0 );		\
+	}								\
     }
+
 /* The following are placeholders.  We haven't decided yet whether these
    should take a handle or pointer, or if they should take a handle and return 
    a pointer if the handle is valid.  These need to be rationalized with the
@@ -208,34 +275,45 @@
 
 #define MPIR_ERRTEST_REQUEST(request,err)
 
-#define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_) if (errhandler_ == MPI_ERRHANDLER_NULL) {\
-    MPIU_ERR_SETANDSTMT(err_,MPI_ERR_ARG,,"**errhandlernull");\
-}else { MPIR_ERRTEST_VALID_HANDLE(errhandler_,MPID_ERRHANDLER,err_,MPI_ERR_ARG,"**errhandler");}
+#define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_)			\
+    if (errhandler_ == MPI_ERRHANDLER_NULL) {				\
+        MPIU_ERR_SETANDSTMT(err_,MPI_ERR_ARG,,"**errhandlernull");	\
+    }									\
+    else {								\
+        MPIR_ERRTEST_VALID_HANDLE(errhandler_,MPID_ERRHANDLER,		\
+				  err_,MPI_ERR_ARG,"**errhandler");	\
+    }
 
-#define MPIR_ERRTEST_INFO(info_,err_) if (info_ != MPI_INFO_NULL) {\
-    MPIR_ERRTEST_VALID_HANDLE(info_,MPID_INFO,err_,MPI_ERR_ARG,"**info");}
+#define MPIR_ERRTEST_INFO(info_,err_)				\
+    if (info_ != MPI_INFO_NULL) {				\
+        MPIR_ERRTEST_VALID_HANDLE(info_, MPID_INFO,err_,	\
+				  MPI_ERR_ARG, "**info");	\
+    }
 
-#define MPIR_ERRTEST_KEYVAL(keyval_, object_, objectdesc_, err_)					\
-{													\
-    if ((keyval_) == MPI_KEYVAL_INVALID)								\
-    {													\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyvalinvalid");					\
-    }													\
-    else if (HANDLE_GET_MPI_KIND(keyval_) != MPID_KEYVAL)						\
-    { 													\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyval");						\
-    }													\
-    else if ((((keyval_) & 0x03c00000) >> 22) != (object_))						\
-    { 													\
-	MPIU_ERR_SETANDSTMT1(err_, MPI_ERR_KEYVAL,, "**keyvalobj", "**keyvalobj %s", (objectdesc_));	\
-    }													\
+#define MPIR_ERRTEST_KEYVAL(keyval_, object_, objectdesc_, err_)	\
+{									\
+    if ((keyval_) == MPI_KEYVAL_INVALID)				\
+    {									\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyvalinvalid");	\
+    }									\
+    else if (HANDLE_GET_MPI_KIND(keyval_) != MPID_KEYVAL)		\
+    {									\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyval");		\
+    }									\
+    else if ((((keyval_) & 0x03c00000) >> 22) != (object_))		\
+    {									\
+	MPIU_ERR_SETANDSTMT1(err_, MPI_ERR_KEYVAL,, "**keyvalobj",	\
+			     "**keyvalobj %s", (objectdesc_));		\
+    }                                                                   \
 }
-#define MPIR_ERRTEST_KEYVAL_PERM(keyval_, err_)			       						\
-{														\
-    if (HANDLE_GET_MPI_KIND(keyval_) == MPID_KEYVAL && HANDLE_GET_KIND(keyval_) == HANDLE_KIND_BUILTIN)		\
-    {														\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**permattr");						\
-    }														\
+
+#define MPIR_ERRTEST_KEYVAL_PERM(keyval_, err_)				\
+{									\
+    if (HANDLE_GET_MPI_KIND(keyval_) == MPID_KEYVAL &&			\
+	HANDLE_GET_KIND(keyval_) == HANDLE_KIND_BUILTIN)		\
+    {									\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**permattr");	\
+    }                                                                   \
 }
 
 /* Special MPI error "class/code" for out of memory */
@@ -330,12 +408,16 @@
  * additional error checking
  */
 #ifdef HAVE_ERROR_CHECKING
-#define MPIR_ERRTEST_INITIALIZED_ORRETURN()											\
-{																\
-    if (MPIR_Process.initialized != MPICH_WITHIN_MPI)										\
-    {																\
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 );	\
-    }																\
+#define MPIR_ERRTEST_INITIALIZED_ORRETURN()			\
+{								\
+    if (MPIR_Process.initialized != MPICH_WITHIN_MPI)		\
+    {								\
+	return MPIR_Err_create_code(MPI_SUCCESS,		\
+				    MPIR_ERR_RECOVERABLE,	\
+				    FCNAME, __LINE__,		\
+				    MPI_ERR_OTHER,		\
+				    "**initialized", 0 );	\
+    }                                                           \
 }
 #else
 #define MPIR_ERRTEST_INITIALIZED_ORRETURN(err_) {return MPI_ERR_OTHER;}
