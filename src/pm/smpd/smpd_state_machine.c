@@ -1912,6 +1912,7 @@ int smpd_state_writing_no_cred_request(smpd_context_t *context, sock_event_t *ev
 int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event_ptr)
 {
     int result;
+    smpd_command_t *cmd_ptr;
 
     smpd_enter_fn("smpd_state_reading_cred_request");
     if (event_ptr->error != SOCK_SUCCESS)
@@ -1924,23 +1925,6 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
     context->read_state = SMPD_IDLE;
     if (strcmp(context->cred_request, SMPD_CRED_REQUEST) == 0)
     {
-#if 0
-	if (parent_sock != SOCK_INVALID_SOCK)
-	{
-	    result = smpd_get_credentials_from_parent(parent_set, parent_sock);
-	    if (result != SMPD_SUCCESS)
-	    {
-		smpd_err_printf("unable to get the user credentials from the parent.\n");
-		smpd_exit_fn("smpd_state_reading_cred_request");
-		return result;
-	    }
-	}
-	else
-	{
-	    fprintf(stderr, "User credentials needed to launch processes:\n");
-	    smpd_get_account_and_password(context->account, context->password);
-	}
-#else
 #ifdef HAVE_WINDOWS_H
 	if (smpd_process.UserAccount[0] == '\0')
 	{
@@ -1948,7 +1932,34 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
 		(!smpd_get_cached_password(context->account, context->password) &&
 		!smpd_read_password_from_registry(context->account, context->password)))
 	    {
-		if (smpd_process.credentials_prompt)
+		if (smpd_process.id > 0 && smpd_process.parent_context && smpd_process.parent_context->sock != SOCK_INVALID_SOCK)
+		{
+		    result = smpd_create_command("cred_request", smpd_process.id, 0, SMPD_TRUE, &cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create a command structure for the cred_request command.\n");
+			smpd_exit_fn("smpd_state_reading_cred_request");
+			return result;
+		    }
+		    result = smpd_add_command_arg(cmd_ptr, "host", context->connect_to->host);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add host=%s to the cred_request command.\n", context->connect_to->host);
+			smpd_exit_fn("smpd_state_reading_cred_request");
+			return result;
+		    }
+		    cmd_ptr->context = context;
+		    result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the cred_request command.\n");
+			smpd_exit_fn("smpd_state_reading_cred_request");
+			return result;
+		    }
+		    smpd_exit_fn("smpd_state_reading_cred_request");
+		    return SMPD_SUCCESS;
+		}
+		if (smpd_process.id == 0 && smpd_process.credentials_prompt)
 		{
 		    fprintf(stderr, "User credentials needed to launch processes:\n");
 		    smpd_get_account_and_password(context->account, context->password);
@@ -1976,6 +1987,33 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
 #else
 	if (smpd_process.UserAccount[0] == '\0')
 	{
+	    if (smpd_process.id > 0 && smpd_process.parent_context && smpd_process.parent_context->sock != SOCK_INVALID_SOCK)
+	    {
+		result = smpd_create_command("cred_request", smpd_process.id, 0, SMPD_TRUE, &cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to create a command structure for the cred_request command.\n");
+		    smpd_exit_fn("smpd_state_reading_cred_request");
+		    return result;
+		}
+		result = smpd_add_command_arg(cmd_ptr, "host", context->connect_to->host);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add host=%s to the cred_request command.\n", context->connect_to->host);
+		    smpd_exit_fn("smpd_state_reading_cred_request");
+		    return result;
+		}
+		cmd_ptr->context = context;
+		result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a write of the cred_request command.\n");
+		    smpd_exit_fn("smpd_state_reading_cred_request");
+		    return result;
+		}
+		smpd_exit_fn("smpd_state_reading_cred_request");
+		return SMPD_SUCCESS;
+	    }
 	    if (smpd_process.credentials_prompt)
 	    {
 		fprintf(stderr, "User credentials needed to launch processes:\n");
@@ -1993,13 +2031,9 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
 	    strcpy(context->password, smpd_process.UserPassword);
 	}
 #endif
-#endif
 	if (strcmp(context->account, "invalid account") == 0)
 	{
 	    smpd_err_printf("Attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");
-	    /* FIXME */
-	    /* This should probably post a close of the sock and continue to SMPD_EXIT? */
-	    /* For now, just bail out. */
 	    strcpy(context->cred_request, "no");
 	    context->write_state = SMPD_WRITING_CRED_ACK_NO;
 	    context->read_state = SMPD_IDLE;

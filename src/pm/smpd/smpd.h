@@ -217,6 +217,7 @@ typedef struct smpd_command_t
     int src, dest, tag;
     int wait;
     int stdin_read_offset;
+    struct smpd_context_t *context;
     struct smpd_command_t *next;
     int freed; /* debugging to see if freed more than once */
 } smpd_command_t;

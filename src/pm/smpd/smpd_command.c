@@ -192,6 +192,7 @@ int smpd_init_command(smpd_command_t *cmd)
     cmd->state = SMPD_CMD_INVALID;
     cmd->stdin_read_offset = 0;
     cmd->freed = 0;
+    cmd->context = NULL;
 
     smpd_exit_fn("smpd_init_command");
     return SMPD_SUCCESS;

@@ -562,6 +562,35 @@ int smpd_handle_result(smpd_context_t *context)
 		    /* print the result of the stat command */
 		    printf("%s\n", str);
 		}
+		else if (strcmp(iter->cmd_str, "cred_request") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			if (smpd_get_string_arg(context->read_cmd.cmd, "account", smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH) &&
+			    smpd_get_string_arg(context->read_cmd.cmd, "password", smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH))
+			{
+			    smpd_dbg_printf("cred_request succeeded, account: '%s'\n", smpd_process.UserAccount);
+			    strcpy(iter->context->cred_request, "yes");
+			    iter->context->read_state = SMPD_IDLE;
+			    iter->context->write_state = SMPD_WRITING_CRED_ACK_YES;
+			    result = sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			    ret_val = result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+			}
+			else
+			{
+			    smpd_err_printf("invalid cred_request result returned, no account and password specified: '%s'\n", context->read_cmd.cmd);
+			    ret_val = SMPD_FAIL;
+			}
+		    }
+		    else
+		    {
+			strcpy(iter->context->cred_request, "no");
+			iter->context->read_state = SMPD_IDLE;
+			iter->context->write_state = SMPD_WRITING_CRED_ACK_NO;
+			result = sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			ret_val = result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+		    }
+		}
 		else
 		{
 		    smpd_err_printf("result returned for unhandled command:\n command: '%s'\n result: '%s'\n", iter->cmd, str);
@@ -2035,12 +2064,197 @@ int smpd_handle_delete_command(smpd_context_t *context)
 int smpd_handle_cred_request_command(smpd_context_t *context)
 {
     int result;
-    smpd_command_t *cmd;
+    smpd_command_t *cmd, *temp_cmd;
 
     smpd_enter_fn("smpd_handle_cred_request_command");
 
     cmd = &context->read_cmd;
 
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a cred_request command.\n");
+	smpd_exit_fn("smpd_handle_cred_request_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a cred_request command.\n");
+	smpd_exit_fn("smpd_handle_cred_request_command");
+	return SMPD_FAIL;
+    }
+
+#ifdef HAVE_WINDOWS_H
+    if (smpd_process.UserAccount[0] == '\0')
+    {
+	if (smpd_process.logon || 
+	    (!smpd_get_cached_password(smpd_process.UserAccount, smpd_process.UserPassword) &&
+	    !smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword)))
+	{
+	    if (smpd_process.credentials_prompt)
+	    {
+		fprintf(stderr, "User credentials needed to launch processes:\n");
+		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the account parameter to the result command.\n");
+		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    return result;
+		}
+		result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the password parameter to the result command.\n");
+		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    return result;
+		}
+		result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the result parameter to the result command.\n");
+		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    return result;
+		}
+	    }
+	    else
+	    {
+		result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the result parameter to the result command.\n");
+		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    return result;
+		}
+	    }
+	}
+	else
+	{
+	    result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the account parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the password parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	}
+    }
+    else
+    {
+	result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the account parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the password parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+    }
+#else
+    if (smpd_process.UserAccount[0] == '\0')
+    {
+	if (smpd_process.credentials_prompt)
+	{
+	    fprintf(stderr, "User credentials needed to launch processes:\n");
+	    smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
+	    smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
+	    result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the account parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the password parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	}
+	else
+	{
+	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result parameter to the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	}
+    }
+    else
+    {
+	result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the account parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the password parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result parameter to the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+    }
+#endif
+    /* send result back */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
     smpd_exit_fn("smpd_handle_cred_request_command");
     return result;
 }
