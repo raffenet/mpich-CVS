@@ -76,7 +76,7 @@ else
     # We don't delete the file in the event that we are copying the
     # file over itself (we SHOULD check for that separately, by checking 
     # that directories are distinct)
-    #if [ -f $dest ] ; then $Show /bin/rm -f $dest ; fi
+    #if [ -f $dest ] ; then $Show rm -f $dest ; fi
     $Show $CP $1 $dest
     rc=$?
     if [ $rc != 0 ] ; then
@@ -84,7 +84,7 @@ else
         errs=`expr $errs + 1`
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
-	echo "/bin/rm -f $dest" >> $UNINSTALLFILE
+	echo "rm -f $dest" >> $UNINSTALLFILE
     fi
     $Show chmod $mode $dest
     rc=$?
@@ -199,7 +199,7 @@ if test "$WANT_INSTALL" = "1"; then
     mv $exampledir/.romiotmp $exampledir/Makefile
     
     #
-    echo "/bin/rm -f $UNINSTALLFILE" >> $UNINSTALLFILE
+    echo "rm -f $UNINSTALLFILE" >> $UNINSTALLFILE
     # Add the directory removes to the UNINSTALL file
     for dir in $dirlist ; do
         echo "if [ -d $dir ] ; then rmdir $dir ; fi" >> $UNINSTALLFILE

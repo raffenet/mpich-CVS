@@ -117,8 +117,8 @@ AC_SUBST(MAKE)
  
 CPRP=cp
 MKDIR=mkdir
-RM="/bin/rm -f"
-MV="/bin/mv -f"
+RM="rm -f"
+MV="mv -f"
 AC_SUBST(RM)
 
 # Check if --without-java is specified

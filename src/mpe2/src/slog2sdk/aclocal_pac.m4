@@ -25,18 +25,18 @@ AC_MSG_CHECKING(for current directory name)
 $1=$PWD
 if test "${$1}" != "" -a -d "${$1}" ; then 
     if test -r ${$1}/.foo$$ ; then
-        /bin/rm -f ${$1}/.foo$$
-	/bin/rm -f .foo$$
+        rm -f ${$1}/.foo$$
+	rm -f .foo$$
     fi
     if test -r ${$1}/.foo$$ -o -r .foo$$ ; then
 	$1=
     else
 	echo "test" > ${$1}/.foo$$
 	if test ! -r .foo$$ ; then
-            /bin/rm -f ${$1}/.foo$$
+            rm -f ${$1}/.foo$$
 	    $1=
         else
- 	    /bin/rm -f ${$1}/.foo$$
+ 	    rm -f ${$1}/.foo$$
 	fi
     fi
 fi
@@ -84,9 +84,9 @@ export CONFIG_FILES
 ./config.status
 CONFIG_FILES=""
 for pac_file in $1 ; do 
-    /bin/rm -f .pactmp
+    rm -f .pactmp
     sed -e '1d' $pac_file > .pactmp
-    /bin/rm -f $pac_file
+    rm -f $pac_file
     mv .pactmp $pac_file
     ifelse($2,,,chmod $2 $pac_file)
 done
@@ -111,7 +111,7 @@ dnl determines that it is an improperly built gnumake, it adds
 dnl --no-print-directorytries to the symbol MAKE.
 define(PAC_MAKE_IS_GNUMAKE,[
 AC_MSG_CHECKING(gnumake)
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
 ALL:
@@ -131,7 +131,7 @@ if test "$str" != "success" ; then
 else
     AC_MSG_RESULT(no)
 fi
-/bin/rm -f conftest
+rm -f conftest
 str=""
 ])dnl
 dnl
@@ -139,7 +139,7 @@ dnl PAC_MAKE_IS_BSD44([true text])
 dnl
 define(PAC_MAKE_IS_BSD44,[
 AC_MSG_CHECKING(BSD 4.4 make)
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 ALL:
 	@echo "success"
@@ -148,7 +148,7 @@ cat > conftest1 <<.
 include conftest
 .
 str=`$MAKE -f conftest1 2>&1`
-/bin/rm -f conftest conftest1
+rm -f conftest conftest1
 if test "$str" != "success" ; then
     AC_MSG_RESULT(Found BSD 4.4 so-called make)
     echo "The BSD 4.4 make is INCOMPATIBLE with all other makes."
@@ -165,7 +165,7 @@ dnl PAC_MAKE_IS_OSF([true text])
 dnl
 define(PAC_MAKE_IS_OSF,[
 AC_MSG_CHECKING(OSF V3 make)
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
 ALL:
@@ -173,7 +173,7 @@ ALL:
 	@echo "success"
 .
 str=`$MAKE -f conftest 2>&1`
-/bin/rm -f conftest 
+rm -f conftest 
 if test "$str" != "success" ; then
     AC_MSG_RESULT(Found OSF V3 make)
     echo "The OSF V3 make does not allow comments in target code."

@@ -186,8 +186,8 @@ AC_SUBST(JPATH_START)
 AC_SUBST(JPATH_FINAL)
 
 CPRP=cp
-RM="/bin/rm -f"
-MV="/bin/mv -f"
+RM="rm -f"
+MV="mv -f"
 MKDIR=mkdir
 
 AC_SUBST(RM)
