@@ -12,6 +12,7 @@ int main( int argc, char *argv[] )
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int dest = 0, src = 0, tag = 1;
+    int s1, s2, s3;
     char *buf, *bbuf;
     char msg1[7], msg3[17];
     double msg2[2];
@@ -23,7 +24,12 @@ int main( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    bufsize = 3 * MPI_BSEND_OVERHEAD + 7 + 17 + 2*sizeof(double);
+    /* According to the standard, we must use the PACK_SIZE length of each
+       message in the computation of the message buffer size */
+    MPI_Pack_size( 7, MPI_CHAR, comm, &s1 );
+    MPI_Pack_size( 2, MPI_DOUBLE, comm, &s2 );
+    MPI_Pack_size( 17, MPI_CHAR, comm, &s3 );
+    bufsize = 3 * MPI_BSEND_OVERHEAD + s1 + s2 + s3;
     buf = (char *)malloc( bufsize );
     MPI_Buffer_attach( buf, bufsize );
 
