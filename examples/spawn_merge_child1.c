@@ -34,9 +34,6 @@ int main( int argc, char *argv[] )
         err = MPI_Send("bye", 4, MPI_CHAR, 1, 0, intercomm2); 
     }
 
-    MPI_Barrier(intercomm2);
-    sleep(5);
-
     MPI_Finalize();
     return 0;
 }

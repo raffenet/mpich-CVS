@@ -21,9 +21,6 @@ int main( int argc, char *argv[] )
                          &intercomm, errcodes);  
     if (err) printf("Error in MPI_Comm_spawn\n");
 
-/*    printf("Parent out of MPI_Comm_spawn\n");
-    fflush(stdout);
-*/    
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 3) {

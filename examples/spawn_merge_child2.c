@@ -10,9 +10,6 @@ int main( int argc, char *argv[] )
 
     MPI_Init(&argc, &argv);
 
-/*    printf("Child out of MPI_Init\n");
-    fflush(stdout);
-*/
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     MPI_Comm_get_parent(&intercomm);
@@ -24,10 +21,6 @@ int main( int argc, char *argv[] )
         printf("Child 2 received from parent (first child): %s\n", str);
         fflush(stdout);
     }
-
-    MPI_Barrier(intercomm);
-
-    sleep(5);
 
     MPI_Finalize();
     return 0;

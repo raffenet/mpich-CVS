@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include "mpi.h"
-/* unistd is needed for sleep */
-#include <unistd.h>
 
 int main( int argc, char *argv[] )
 {
@@ -28,10 +26,6 @@ int main( int argc, char *argv[] )
                          MPI_INFO_NULL, 1, MPI_COMM_WORLD,
                          &intercomm1, errcodes);  
     if (err) printf("Error in MPI_Comm_spawn\n");
-
-/*    printf("Parent out of MPI_Comm_spawn\n");
-    fflush(stdout);
-*/    
 
     if (rank1 == 0) {
         printf("Parents and children merging to form new intracommunicator...\n");
@@ -60,13 +54,6 @@ int main( int argc, char *argv[] )
         err = MPI_Send("bye", 4, MPI_CHAR, 1, 0, intercomm2); 
     }
 
-    MPI_Barrier(intercomm2);
-
-    if (rank1 == 0) {
-        printf("Sleeping for 5 sec; ignore errors after this\n");
-        fflush(stdout);
-    }
-    sleep(5);
     MPI_Finalize();
 
     return 0;
