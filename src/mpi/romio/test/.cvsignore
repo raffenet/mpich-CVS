@@ -1,4 +1,5 @@
 Makefile
+runtests
 misc.c
 fmisc.f
 large_file.c
