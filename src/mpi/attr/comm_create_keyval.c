@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "attr.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_create_keyval */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,13 +29,15 @@
 #define FUNCNAME MPI_Comm_create_keyval
 
 /*@
-   MPI_Comm_create_keyval - short description
+   MPI_Comm_create_keyval - Create a new attribute key 
 
-   Arguments:
+   Input Parameters:
 +  MPI_Comm_copy_attr_function *comm_copy_attr_fn - copy function
 .  MPI_Comm_delete_attr_function *comm_delete_attr_fn - delete function
-.  int *comm_keyval - keyval
 -  void *extra_state - extra state
+
+   Output Parameters:
+.  int *comm_keyval - keyval
 
    Notes:
 
@@ -43,20 +46,22 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, MPI_Comm_delete_attr_function *comm_delete_attr_fn, int *comm_keyval, void *extra_state)
+int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, 
+			   MPI_Comm_delete_attr_function *comm_delete_attr_fn, 
+			   int *comm_keyval, void *extra_state)
 {
     static const char FCNAME[] = "MPI_Comm_create_keyval";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Keyval *keyval_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -65,6 +70,26 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, MPI_C
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    keyval_ptr = (MPID_Keyval *)MPIU_Handle_obj_alloc( &MPID_Keyval_mem );
+    if (!keyval_ptr) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    }
+    /* Initialize the attribute dup function */
+    if (!MPIR_Process.comm_attr_dup) {
+	MPIR_Process.comm_attr_dup = MPIR_Comm_attr_dup;
+    }
+
+    *comm_keyval		 = keyval_ptr->handle;
+    keyval_ptr->language         = MPID_LANG_C;
+    keyval_ptr->kind	         = MPID_COMM;
+    keyval_ptr->extra_state      = extra_state;
+    keyval_ptr->copyfn.C_CommCopyFunction  = comm_copy_attr_fn;
+    keyval_ptr->delfn.C_CommDeleteFunction = comm_delete_attr_fn;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
     return MPI_SUCCESS;
