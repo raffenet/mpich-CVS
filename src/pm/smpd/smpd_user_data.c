@@ -80,17 +80,24 @@ static smpd_data_t * smpd_parse_smpd_file()
 		buffer[len] = '\0';
 		while (iter)
 		{
-		    iter = smpd_get_string(iter, name, SMPD_MAX_NAME_LENGTH, &num_chars);
+		    result = MPIU_Str_get_string(&iter, name, SMPD_MAX_NAME_LENGTH);
+		    if (result != MPIU_STR_SUCCESS)
+		    {
+		    }
 		    equal_str[0] = '\0';
-		    iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
+		    result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
 		    while (iter && equal_str[0] != '=')
 		    {
 			strcpy(name, equal_str);
-			iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
+			result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
+			if (result != MPIU_STR_SUCCESS)
+			{
+			}
 		    }
-		    iter = smpd_get_string(iter, data, SMPD_MAX_VALUE_LENGTH, &num_chars);
+		    data[0] = '\0';
+		    result = MPIU_Str_get_string(&iter, data, SMPD_MAX_VALUE_LENGTH);
 		    /*smpd_dbg_printf("parsed <%s> <%s> <%s>\n", name, equal_str, data);*/
-		    if (num_chars > 0)
+		    if (result == MPIU_STR_SUCCESS)
 		    {
 			node = (smpd_data_t*)malloc(sizeof(smpd_data_t));
 			strcpy(node->name, name);
@@ -260,7 +267,7 @@ int smpd_delete_smpd_data(const char *key)
 	    {
 		str = buffer;
 		maxlen = 1024;
-		if (smpd_add_string_arg(&str, &maxlen, list->name, list->value) == SMPD_SUCCESS)
+		if (MPIU_Str_add_string_arg(&str, &maxlen, list->name, list->value) == MPIU_STR_SUCCESS)
 		{
 		    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
 		    fprintf(fout, "%s\n", buffer);
@@ -390,7 +397,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	{
 	    str = buffer;
 	    maxlen = 1024;
-	    if (smpd_add_string_arg(&str, &maxlen, node->name, node->value) == SMPD_SUCCESS)
+	    if (MPIU_Str_add_string_arg(&str, &maxlen, node->name, node->value) == MPIU_STR_SUCCESS)
 	    {
 		buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
 		smpd_dbg_printf("writing '%s' to .smpd file\n", buffer);
@@ -403,7 +410,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
     {
 	str = buffer;
 	maxlen = 1024;
-	if (smpd_add_string_arg(&str, &maxlen, key, value) == SMPD_SUCCESS)
+	if (MPIU_Str_add_string_arg(&str, &maxlen, key, value) == MPIU_STR_SUCCESS)
 	{
 	    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
 	    smpd_dbg_printf("writing '%s' to .smpd file\n", buffer);
@@ -590,7 +597,6 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    list = list->next;
 	    if (strcmp(key, node->name) == 0)
 	    {
-		/*smpd_get_string(node->value, value, value_len, &num_bytes);*/
 		strcpy(value, node->value);
 		smpd_dbg_printf("smpd data: %s=%s\n", key, value);
 		found = 1;

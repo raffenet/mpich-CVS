@@ -21,13 +21,13 @@ int smpd_handle_barrier_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no name in the barrier command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_barrier_command");
 	return SMPD_FAIL;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "value", value, 100))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "value", value, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no count in the barrier command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_barrier_command");
@@ -40,7 +40,7 @@ int smpd_handle_barrier_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_barrier_command");
 	return SMPD_FAIL;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the barrier command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_barrier_command");

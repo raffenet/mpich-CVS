@@ -186,6 +186,9 @@
 			<File
 				RelativePath="mpiexec.h">
 			</File>
+			<File
+				RelativePath=".\smpd.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

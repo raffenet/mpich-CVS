@@ -19,7 +19,7 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     smpd_enter_fn("handle_stdin_command");
 
     cmd = &context->read_cmd;
-    if (smpd_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &nd);
 	num_decoded = nd;
@@ -126,12 +126,12 @@ int smpd_handle_stdout_command(smpd_context_t *context)
     smpd_enter_fn("handle_stdout_command");
 
     cmd = &context->read_cmd;
-    if (!smpd_get_int_arg(cmd->cmd, "rank", &rank))
+    if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
     {
 	rank = -1;
 	smpd_err_printf("no rank in the stdout command: '%s'\n", cmd->cmd);
     }
-    if (smpd_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
 	/*printf("[%d]", rank);*/
@@ -166,12 +166,12 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     smpd_enter_fn("handle_stderr_command");
 
     cmd = &context->read_cmd;
-    if (!smpd_get_int_arg(cmd->cmd, "rank", &rank))
+    if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
     {
 	rank = -1;
 	smpd_err_printf("no rank in the stderr command: '%s'\n", cmd->cmd);
     }
-    if (smpd_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
 	/*fprintf(stderr, "[%d]", rank);*/
@@ -330,7 +330,7 @@ int smpd_handle_result(smpd_context_t *context)
 
     smpd_enter_fn("handle_result");
 
-    if (context->type != SMPD_CONTEXT_PMI && smpd_get_string_arg(context->read_cmd.cmd, "ctx_key", ctx_key, 100))
+    if (context->type != SMPD_CONTEXT_PMI && MPIU_Str_get_string_arg(context->read_cmd.cmd, "ctx_key", ctx_key, 100) == MPIU_STR_SUCCESS)
     {
 	process_id = atoi(ctx_key);
 	smpd_dbg_printf("forwarding the dbs result command to the pmi context %d.\n", process_id);
@@ -357,7 +357,7 @@ int smpd_handle_result(smpd_context_t *context)
 	return result;
     }
 
-    if (!smpd_get_int_arg(context->read_cmd.cmd, "cmd_tag", &match_tag))
+    if (MPIU_Str_get_int_arg(context->read_cmd.cmd, "cmd_tag", &match_tag) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("result command received without a cmd_tag field: '%s'\n", context->read_cmd.cmd);
 	smpd_exit_fn("smpd_handle_result");
@@ -370,7 +370,7 @@ int smpd_handle_result(smpd_context_t *context)
 	if (iter->tag == match_tag)
 	{
 	    ret_val = SMPD_SUCCESS;
-	    if (smpd_get_string_arg(context->read_cmd.cmd, "result", str, SMPD_MAX_CMD_LENGTH))
+	    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "result", str, SMPD_MAX_CMD_LENGTH) == MPIU_STR_SUCCESS)
 	    {
 		if (strcmp(iter->cmd_str, "connect") == 0)
 		{
@@ -407,7 +407,7 @@ int smpd_handle_result(smpd_context_t *context)
 			if (!smpd_process.stdin_redirecting)
 			{
 			    rank = 0;
-			    smpd_get_int_arg(iter->cmd, "i", &rank);
+			    MPIU_Str_get_int_arg(iter->cmd, "i", &rank);
 			    if (rank == 0)
 			    {
 				smpd_dbg_printf("root process launched, starting stdin redirection.\n");
@@ -478,7 +478,7 @@ int smpd_handle_result(smpd_context_t *context)
 		    else
 		    {
 			smpd_process.nproc_exited++;
-			if (smpd_get_string_arg(context->read_cmd.cmd, "error", err_msg, SMPD_MAX_ERROR_LEN))
+			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "error", err_msg, SMPD_MAX_ERROR_LEN) == MPIU_STR_SUCCESS)
 			{
 			    smpd_err_printf("launch failed: %s\n", err_msg);
 			}
@@ -493,7 +493,7 @@ int smpd_handle_result(smpd_context_t *context)
 		{
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
-			if (smpd_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN))
+			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 			{
 			    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", smpd_process.kvs_name);
 			    ret_val = smpd_launch_processes();
@@ -572,7 +572,7 @@ int smpd_handle_result(smpd_context_t *context)
 		    {
 			/* print the result of the get command */
 			char value[SMPD_MAX_VALUE_LENGTH];
-			if (smpd_get_string_arg(context->read_cmd.cmd, "value", value, SMPD_MAX_VALUE_LENGTH))
+			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "value", value, SMPD_MAX_VALUE_LENGTH) == MPIU_STR_SUCCESS)
 			{
 			    printf("%s\n", value);
 			}
@@ -600,8 +600,8 @@ int smpd_handle_result(smpd_context_t *context)
 		{
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
-			if (smpd_get_string_arg(context->read_cmd.cmd, "account", smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH) &&
-			    smpd_get_string_arg(context->read_cmd.cmd, "password", smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH))
+			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "account", smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH) == MPIU_STR_SUCCESS &&
+			    MPIU_Str_get_string_arg(context->read_cmd.cmd, "password", smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH) == MPIU_STR_SUCCESS)
 			{
 			    smpd_dbg_printf("cred_request succeeded, account: '%s'\n", smpd_process.UserAccount);
 			    strcpy(iter->context->account, smpd_process.UserAccount);
@@ -694,21 +694,21 @@ static int get_name_key_value(char *str, char *name, char *key, char *value)
 
     if (name != NULL)
     {
-	if (!smpd_get_string_arg(str, "name", name, SMPD_MAX_DBS_NAME_LEN))
+	if (MPIU_Str_get_string_arg(str, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
 	{
 	    return SMPD_FAIL;
 	}
     }
     if (key != NULL)
     {
-	if (!smpd_get_string_arg(str, "key", key, SMPD_MAX_DBS_KEY_LEN))
+	if (MPIU_Str_get_string_arg(str, "key", key, SMPD_MAX_DBS_KEY_LEN) != MPIU_STR_SUCCESS)
 	{
 	    return SMPD_FAIL;
 	}
     }
     if (value != NULL)
     {
-	if (!smpd_get_string_arg(str, "value", value, SMPD_MAX_DBS_VALUE_LEN))
+	if (MPIU_Str_get_string_arg(str, "value", value, SMPD_MAX_DBS_VALUE_LEN) != MPIU_STR_SUCCESS)
 	{
 	    return SMPD_FAIL;
 	}
@@ -752,7 +752,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
-    if (!smpd_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_dbs_command");
@@ -824,7 +824,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbcreate") == 0)
     {
-	if (smpd_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN))
+	if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 	{
 	    result = smpd_dbs_create_name_in(name);
 	}
@@ -1041,7 +1041,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     cmd = &context->read_cmd;
 
     /* parse the command */
-    if (smpd_get_int_arg(cmd->cmd, "i", &iproc) == SMPD_FALSE)
+    if (MPIU_Str_get_int_arg(cmd->cmd, "i", &iproc) != MPIU_STR_SUCCESS)
 	iproc = 0;
     result = smpd_create_process_struct(iproc, &process);
     if (result != SMPD_SUCCESS)
@@ -1051,18 +1051,18 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
-    if (smpd_get_string_arg(cmd->cmd, "c", process->exe, SMPD_MAX_EXE_LENGTH) == SMPD_FALSE)
+    if (MPIU_Str_get_string_arg(cmd->cmd, "c", process->exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("launch command received with no executable: '%s'\n", cmd->cmd);
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    smpd_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
-    smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_DIR_LENGTH);
-    smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_PATH_LENGTH);
-    smpd_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
-    smpd_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
-    smpd_get_int_arg(cmd->cmd, "n", &process->nproc);
+    MPIU_Str_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
+    MPIU_Str_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_DIR_LENGTH);
+    MPIU_Str_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_PATH_LENGTH);
+    MPIU_Str_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    MPIU_Str_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
+    MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
     /* parse the -m drive mapping options */
 
     /* launch the process */
@@ -1431,14 +1431,14 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	smpd_exit_fn("handle_connect_command");
 	return SMPD_SUCCESS;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("connect command does not have a target host argument, discarding: \"%s\"\n", cmd->cmd);
 	/* return failure result */
 	smpd_exit_fn("handle_connect_command");
 	return SMPD_SUCCESS;
     }
-    if (!smpd_get_int_arg(cmd->cmd, "id", &dest_id))
+    if (MPIU_Str_get_int_arg(cmd->cmd, "id", &dest_id) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("connect command does not have a target id argument, discarding: \"%s\"\n", cmd->cmd);
 	/* return failure result */
@@ -1676,7 +1676,7 @@ int smpd_handle_stat_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "param", param, 1024))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "param", param, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("stat command missing param parameter\n");
 	smpd_exit_fn("smpd_handle_validate_command");
@@ -1796,7 +1796,7 @@ int smpd_handle_abort_command(smpd_context_t *context)
 
     smpd_enter_fn("smpd_handle_abort_command");
 
-    if (smpd_get_string_arg(context->read_cmd.cmd, "error", error_str, 2048))
+    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "error", error_str, 2048) == MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("abort: %s\n", error_str);
     }
@@ -1820,13 +1820,13 @@ int smpd_handle_validate_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "account", fullaccount, SMPD_MAX_ACCOUNT_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "account", fullaccount, SMPD_MAX_ACCOUNT_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("validate command missing account parameter\n");
 	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "password", password, SMPD_MAX_PASSWORD_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "password", password, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("validate command missing password parameter\n");
 	smpd_exit_fn("smpd_handle_validate_command");
@@ -1953,7 +1953,7 @@ int smpd_handle_get_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("get command missing key parameter\n");
 	smpd_exit_fn("smpd_handle_get_command");
@@ -2038,13 +2038,13 @@ int smpd_handle_set_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing key parameter\n");
 	smpd_exit_fn("smpd_handle_set_command");
 	return SMPD_FAIL;
     }
-    if (!smpd_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_VALUE_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_VALUE_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing value parameter\n");
 	smpd_exit_fn("smpd_handle_set_command");
@@ -2110,7 +2110,7 @@ int smpd_handle_delete_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing key parameter\n");
 	smpd_exit_fn("smpd_handle_delete_command");
@@ -2175,7 +2175,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
 
-    if (!smpd_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no host parameter in the cred_request command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_cred_request_command");
@@ -2425,6 +2425,11 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     int result;
     smpd_command_t *cmd, *temp_cmd;
     char ctx_key[100];
+    int ncmds, *maxprocs, *nkeyvals, npreput, i, j;
+    smpd_launch_node_t node;
+    char key[100], val[1024];
+    char *iter1, *iter2;
+    char maxprocs_str[1024], nkeyvals_str[1024], keyvals_str[1024];
 
     smpd_enter_fn("smpd_handle_spawn_command");
 
@@ -2448,19 +2453,129 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
-    if (!smpd_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100))
+    if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the spawn command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the ctx_key to the result command for spawn command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
+
+    /* parse the spawn command */
+    if (MPIU_Str_get_int_arg(cmd->cmd, "ncmds", &ncmds) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the ncmds parameter from the spawn command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    printf("ncmds = %d\n", ncmds);fflush(stdout);
+    for (i=0; i<ncmds; i++)
+    {
+	sprintf(key, "cmd%d", i);
+	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	printf("%s = %s\n", key, node.exe);fflush(stdout);
+	sprintf(key, "argv%d", i);
+	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	printf("%s = %s\n", key, node.args);fflush(stdout);
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "maxprocs", maxprocs_str, 1024) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the maxrpocs parameter from the spawn command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "nkeyvals", nkeyvals_str, 1024) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the nkeyvals parameter from the spawn command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    maxprocs = (int*)malloc(ncmds * sizeof(int));
+    nkeyvals = (int*)malloc(ncmds * sizeof(int));
+    iter1 = maxprocs_str;
+    iter2 = nkeyvals_str;
+    for (i=0; i<ncmds; i++)
+    {
+	result = MPIU_Str_get_string(&iter1, key, 100);
+	if (result != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %dth string from the maxprocs parameter to the spawn command '%s'.\n", i, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	maxprocs[i] = atoi(key);
+	printf("maxprocs[%d] = %d\n", i, maxprocs[i]);fflush(stdout);
+	result = MPIU_Str_get_string(&iter2, key, 100);
+	if (result != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %dth string from the nkeyvals parameter to the spawn command '%s'.\n", i, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	nkeyvals[i] = atoi(key);
+	printf("nkeyvals[%d] = %d\n", i, nkeyvals[i]);fflush(stdout);
+    }
+    for (i=0; i<ncmds; i++)
+    {
+	sprintf(key, "keyvals%d", i);
+	if (MPIU_Str_get_string_arg(cmd->cmd, key, keyvals_str, 1024) == MPIU_STR_SUCCESS)
+	{
+	    printf("%s = '%s'\n", key, keyvals_str);fflush(stdout);
+	    for (j=0; j<nkeyvals[i]; j++)
+	    {
+		sprintf(key, "%d", j);
+		if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
+		{
+		    smpd_err_printf("unable to get the %sth key from the keyval string '%s'.\n", key, keyvals_str);
+		    smpd_exit_fn("smpd_handle_spawn_command");
+		    return SMPD_FAIL;
+		}
+		printf("key %d = %s\n", j, val);fflush(stdout);
+	    }
+	}
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    printf("npreput = %d\n", npreput);fflush(stdout);
+    if (MPIU_Str_get_string_arg(cmd->cmd, "preput", keyvals_str, 1024) == MPIU_STR_SUCCESS)
+    {
+	printf("preput = '%s'\n", keyvals_str);fflush(stdout);
+	for (j=0; j<npreput; j++)
+	{
+	    sprintf(key, "%d", j);
+	    if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
+	    {
+		smpd_err_printf("unable to get the %sth key from the preput keyval string '%s'.\n", key, keyvals_str);
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return SMPD_FAIL;
+	    }
+	    printf("key %d = %s\n", j, val);fflush(stdout);
+	}
+    }
+    free(maxprocs);
+    free(nkeyvals);
+
+    /* do the spawn stuff */
 
     /* add the result */
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
@@ -2481,6 +2596,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
+    printf("I am a loser and I cannot believe the world really exists.\n");fflush(stdout);
+    ExitProcess(0);
     smpd_exit_fn("smpd_handle_spawn_command");
     return result;
 }
@@ -2573,11 +2690,11 @@ int smpd_handle_command(smpd_context_t *context)
     {
 	int exitcode, iproc;
 
-	if (!smpd_get_int_arg(cmd->cmd, "code", &exitcode))
+	if (MPIU_Str_get_int_arg(cmd->cmd, "code", &exitcode) != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
 	}
-	if (!smpd_get_int_arg(cmd->cmd, "rank", &iproc))
+	if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &iproc) != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
 	}

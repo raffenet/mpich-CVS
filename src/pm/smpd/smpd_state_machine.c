@@ -526,11 +526,11 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	    }
 	    smpd_init_command(cmd_ptr);
 	    strcpy(cmd_ptr->cmd, context->read_cmd.cmd);
-	    if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
+	    if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src) != MPIU_STR_SUCCESS)
 	    {
 		smpd_add_command_int_arg(cmd_ptr, "src", 0);
 	    }
-	    if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
+	    if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest) != MPIU_STR_SUCCESS)
 	    {
 		smpd_add_command_int_arg(cmd_ptr, "dest", 1);
 	    }
@@ -543,7 +543,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	    {
 		if (strcmp(cmd_ptr->cmd_str, "connect") == 0)
 		{
-		    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
+		    if (MPIU_Str_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag) != MPIU_STR_SUCCESS)
 		    {
 			smpd_dbg_printf("adding tag %d to connect command.\n", smpd_process.cur_tag);
 			smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
@@ -555,7 +555,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 		if (strcmp(cmd_ptr->cmd_str, "set") == 0 || strcmp(cmd_ptr->cmd_str, "delete") == 0 ||
 		    strcmp(cmd_ptr->cmd_str, "stat") == 0 || strcmp(cmd_ptr->cmd_str, "get") == 0)
 		{
-		    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
+		    if (MPIU_Str_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag) != MPIU_STR_SUCCESS)
 		    {
 			smpd_dbg_printf("adding tag %d to %s command.\n", smpd_process.cur_tag, cmd_ptr->cmd_str);
 			smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);

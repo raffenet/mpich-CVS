@@ -411,7 +411,7 @@ int smpd_interpret_session_header(char *str)
     smpd_dbg_printf("interpreting session header: \"%s\"\n", str);
 
     /* get my id */
-    if (smpd_get_string_arg(str, "id", temp_str, 100))
+    if (MPIU_Str_get_string_arg(str, "id", temp_str, 100) == MPIU_STR_SUCCESS)
     {
 	smpd_dbg_printf(" id = %s\n", temp_str);
 	smpd_process.id = atoi(temp_str);
@@ -423,7 +423,7 @@ int smpd_interpret_session_header(char *str)
     }
 
     /* get my parent's id */
-    if (smpd_get_string_arg(str, "parent", temp_str, 100))
+    if (MPIU_Str_get_string_arg(str, "parent", temp_str, 100) == MPIU_STR_SUCCESS)
     {
 	smpd_dbg_printf(" parent = %s\n", temp_str);
 	smpd_process.parent_id = atoi(temp_str);
@@ -435,7 +435,7 @@ int smpd_interpret_session_header(char *str)
     }
 
     /* get my level */
-    if (smpd_get_string_arg(str, "level", temp_str, 100))
+    if (MPIU_Str_get_string_arg(str, "level", temp_str, 100) == MPIU_STR_SUCCESS)
     {
 	smpd_dbg_printf(" level = %s\n", temp_str);
 	smpd_process.level = atoi(temp_str);

@@ -201,7 +201,7 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     smpd_enter_fn("smpd_parse_command");
 
     /* get the source */
-    if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
+    if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no src flag in the command.\n");
 	smpd_exit_fn("smpd_parse_command");
@@ -215,7 +215,7 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     }
 
     /* get the destination */
-    if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
+    if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no dest flag in the command.\n");
 	smpd_exit_fn("smpd_parse_command");
@@ -229,7 +229,7 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     }
 
     /* get the command string */
-    if (!smpd_get_string_arg(cmd_ptr->cmd, "cmd", cmd_ptr->cmd_str, SMPD_MAX_CMD_STR_LENGTH))
+    if (MPIU_Str_get_string_arg(cmd_ptr->cmd, "cmd", cmd_ptr->cmd_str, SMPD_MAX_CMD_STR_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no cmd string in the command.\n");
 	smpd_exit_fn("smpd_parse_command");
@@ -237,7 +237,7 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     }
 
     /* get the tag */
-    smpd_get_int_arg(cmd_ptr->cmd, "tag", &cmd_ptr->tag);
+    MPIU_Str_get_int_arg(cmd_ptr->cmd, "tag", &cmd_ptr->tag);
 
     smpd_exit_fn("smpd_parse_command");
     return SMPD_SUCCESS;
@@ -275,32 +275,32 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
 
     str = cmd_ptr->cmd;
     len = SMPD_MAX_CMD_LENGTH;
-    result = smpd_add_string_arg(&str, &len, "cmd", cmd);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_string_arg(&str, &len, "cmd", cmd);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create the command.\n");
 	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "src", src);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "src", src);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the src to the command.\n");
 	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "dest", dest);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "dest", dest);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the dest to the command.\n");
 	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "tag", cmd_ptr->tag);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "tag", cmd_ptr->tag);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the command.\n");
 	smpd_free_command(cmd_ptr);
@@ -469,8 +469,8 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
 	}
     }
 
-    result = smpd_add_string_arg(&str, &len, param, value);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_string_arg(&str, &len, param, value);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the command parameter: %s=%s\n", param, value);
 	return SMPD_FAIL;
@@ -511,8 +511,8 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
 	}
     }
 
-    result = smpd_add_int_arg(&str, &len, param, value);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, param, value);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the command parameter: %s=%d\n", param, value);
 	return SMPD_FAIL;

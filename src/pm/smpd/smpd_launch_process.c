@@ -425,16 +425,19 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char str[8192], sock_str[20];
     BOOL bSuccess = TRUE;
     char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
-    const char *args;
+    char *args;
     char temp_exe[SMPD_MAX_EXE_LENGTH];
-    int num_chars;
 
     smpd_enter_fn("smpd_launch_process");
 
     /* resolve the executable name */
     if (process->path[0] != '\0')
     {
-	args = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
+	args = process->exe;
+	result = MPIU_Str_get_string(&args, temp_exe, SMPD_MAX_EXE_LENGTH);
+	if (result != MPIU_STR_SUCCESS)
+	{
+	}
 	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
 	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
 	{
@@ -1133,7 +1136,11 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     /* resolve the executable name */
     if (process->path[0] != '\0')
     {
-	temp_str = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
+	temp_str = process->exe;
+	result = MPIU_Str_get_string(&temp_str, temp_exe, SMPD_MAX_EXE_LENGTH);
+	if (result != MPIU_STR_SUCCESS)
+	{
+	}
 	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
 	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
 	{
@@ -1165,13 +1172,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     total = 0;
     /*str_iter = process->exe;*/
     str_iter = actual_exe;
-    while (str_iter)
+    while (str_iter && i<1024)
     {
-	str_iter = smpd_get_string(str_iter, &args[total],
-				   SMPD_MAX_EXE_LENGTH - total, &num_chars);
+	result = MPIU_Str_get_string(&str_iter, &args[total],
+				   SMPD_MAX_EXE_LENGTH - total);
 	argv[i] = &args[total];
 	i++;
-	total += num_chars+1; /* move over the null termination */
+	total += strlen(&args[total])+1; /* move over the null termination */
     }
     argv[i] = NULL;
 

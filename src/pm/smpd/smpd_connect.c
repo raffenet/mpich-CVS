@@ -564,22 +564,22 @@ int smpd_generate_session_header(char *str, int session_id)
     len = SMPD_MAX_SESSION_HEADER_LENGTH;
 
     /* add header fields */
-    result = smpd_add_int_arg(&str, &len, "id", session_id);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "id", session_id);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session id failed.\n");
 	smpd_exit_fn("smpd_generate_session_header");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "parent", smpd_process.id);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "parent", smpd_process.id);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding parent id failed.\n");
 	smpd_exit_fn("smpd_generate_session_header");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "level", smpd_process.level + 1);
-    if (result != SMPD_SUCCESS)
+    result = MPIU_Str_add_int_arg(&str, &len, "level", smpd_process.level + 1);
+    if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session level failed.\n");
 	smpd_exit_fn("smpd_generate_session_header");

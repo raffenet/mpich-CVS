@@ -870,7 +870,7 @@ int iPMI_Barrier()
     }
 
     /* interpret the result */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_Barrier failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -935,7 +935,7 @@ int iPMI_KVS_Create(char * kvsname)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Create failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -945,7 +945,7 @@ int iPMI_KVS_Create(char * kvsname)
 	pmi_err_printf("PMI_KVS_Create failed: %s\n", str);
 	return PMI_FAIL;
     }
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "name", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "name", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Create failed: no kvs name in the dbcreate result command.\n");
 	return PMI_FAIL;
@@ -977,7 +977,7 @@ int iPMI_KVS_Destroy(const char * kvsname)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Destroy failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -1018,7 +1018,7 @@ int iPMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Put failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -1071,7 +1071,7 @@ int iPMI_KVS_Get(const char *kvsname, const char *key, char *value)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Get failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -1081,7 +1081,7 @@ int iPMI_KVS_Get(const char *kvsname, const char *key, char *value)
 	pmi_err_printf("PMI_KVS_Get failed: '%s'\n", str);
 	return PMI_FAIL;
     }
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Get failed: no value in the result command for the get: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -1112,7 +1112,7 @@ int iPMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_first failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -1122,7 +1122,7 @@ int iPMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
 	pmi_err_printf("PMI_KVS_Iter_first failed: %s\n", str);
 	return PMI_FAIL;
     }
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_first failed: no key in the result command for the pmi iter_first: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -1134,7 +1134,7 @@ int iPMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
 	return PMI_SUCCESS;
     }
     strcpy(key, str);
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_first failed: no value in the result command for the pmi iter_first: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -1165,7 +1165,7 @@ int iPMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
     }
 
     /* parse the result of the command */
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_next failed: no result string in the result command.\n");
 	return PMI_FAIL;
@@ -1175,7 +1175,7 @@ int iPMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
 	pmi_err_printf("PMI_KVS_Iter_next failed: %s\n", str);
 	return PMI_FAIL;
     }
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_next failed: no key in the result command for the pmi iter_next: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -1187,7 +1187,7 @@ int iPMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
 	return PMI_SUCCESS;
     }
     strcpy(key, str);
-    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Iter_next failed: no value in the result command for the pmi iter_next: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -1214,7 +1214,6 @@ int iPMI_Spawn_multiple(int count,
     char key[100];
     char *iter, *iter2;
     int i, j, maxlen, maxlen2;
-    int num_chars;
 
     if (pmi_process.init_finalized == PMI_FINALIZED || count < 1 || cmds == NULL || maxprocs == NULL || preput_keyval_size < 0)
 	return PMI_FAIL;
@@ -1256,16 +1255,17 @@ int iPMI_Spawn_multiple(int count,
 	}
 	if (argvs)
 	{
+	    printf("argvs is not NULL.\n");fflush(stdout);
 	    buffer[0] = '\0';
 	    iter = buffer;
 	    maxlen = SMPD_MAX_CMD_LENGTH;
 	    if (argvs[i] != NULL)
 	    {
+		printf("argvs[%d] is not NULL.\n", i);fflush(stdout);
 		for (j=0; argvs[i][j] != NULL; j++)
 		{
-		    num_chars = smpd_add_string(iter, maxlen, argvs[i][j]);
-		    maxlen -= num_chars;
-		    iter += num_chars;
+		    printf("adding argv[%d][%d] = %s\n", i, j, argvs[i][j]);fflush(stdout);
+		    result = MPIU_Str_add_string(&iter, &maxlen, argvs[i][j]);
 		}
 	    }
 	    sprintf(key, "argv%d", i);
@@ -1325,11 +1325,17 @@ int iPMI_Spawn_multiple(int count,
 		keyval_buf[0] = '\0';
 		iter2 = keyval_buf;
 		maxlen2 = SMPD_MAX_CMD_LENGTH;
-		smpd_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		}
 		iter2--;
 		*iter2 = '\0'; /* remove the trailing space */
 		sprintf(key, "%d", j);
-		smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
+		result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		}
 	    }
 	    sprintf(key, "keyvals%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
@@ -1357,11 +1363,17 @@ int iPMI_Spawn_multiple(int count,
 	    keyval_buf[0] = '\0';
 	    iter2 = keyval_buf;
 	    maxlen2 = SMPD_MAX_CMD_LENGTH;
-	    smpd_add_string_arg(&iter2, &maxlen2, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
+	    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
+	    if (result != MPIU_STR_SUCCESS)
+	    {
+	    }
 	    iter2--;
 	    *iter2 = '\0'; /* remove the trailing space */
 	    sprintf(key, "%d", i);
-	    smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	    result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	    if (result != MPIU_STR_SUCCESS)
+	    {
+	    }
 	}
 	result = smpd_add_command_arg(cmd_ptr, "preput", buffer);
 	if (result != SMPD_SUCCESS)

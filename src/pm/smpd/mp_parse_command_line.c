@@ -666,13 +666,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile;
-    char exe[SMPD_MAX_EXE_LENGTH];
+    char exe[SMPD_MAX_EXE_LENGTH], *exe_iter;
     char exe_path[SMPD_MAX_EXE_LENGTH], *namepart;
     smpd_launch_node_t *launch_node, *launch_node_iter;
-    int total;
+    int exe_len_remaining;
     char path[SMPD_MAX_PATH_LENGTH];
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
     FILE *fin_config;
+    int result;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -1363,6 +1364,8 @@ configfile_loop:
 	    return SMPD_FAIL;
 	}
 
+	exe_iter = exe;
+	exe_len_remaining = SMPD_MAX_EXE_LENGTH;
 	if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/' &&
 	    !(strlen((*argvp)[1]) > 3 && (*argvp)[1][1] == ':' && (*argvp)[1][2] == '\\') )
 	{
@@ -1382,21 +1385,27 @@ configfile_loop:
 		{
 		    strncpy(path, exe_path, SMPD_MAX_PATH_LENGTH);
 		}
-		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, namepart);
+		result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, namepart);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		}
 	    }
 	    else
 	    {
-		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+		result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, (*argvp)[1]);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		}
 	    }
 	}
 	else
 	{
 	    /* an absolute path was specified */
-	    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+	    result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, (*argvp)[1]);
 	}
 	for (i=2; i<argc; i++)
 	{
-	    total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
+	    result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, (*argvp)[i]);
 	}
 	/* remove the trailing space */
 	exe[strlen(exe)-1] = '\0';

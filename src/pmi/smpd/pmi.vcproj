@@ -116,6 +116,9 @@
 			<File
 				RelativePath="..\..\include\pmi.h">
 			</File>
+			<File
+				RelativePath="..\..\pm\smpd\smpd.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
