@@ -464,6 +464,7 @@ def _do_mpdrun(msg):
             for host in msg['host_spec_pool']:
                 if mpd_same_ips(host,g.myHost):
                     found = 1
+                    handled_one__any_ = 1
                     break
         if not found:
             break
