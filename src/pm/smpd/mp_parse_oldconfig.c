@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <io.h>
 #include "mpiexec.h"
 #include "smpd.h"
 
@@ -231,7 +232,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 {
     FILE *fin, *fout;
     char buffer[1024] = "";
-    char temp_filename[256];
+    char temp_filename[256] = "tmpXXXXXX";
 
     smpd_enter_fn("mp_parse_mpich1_configfile");
 
@@ -254,7 +255,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
     while (fgets(buffer, 1024, fin))
     {
 	/* Check for the name of the executable */
-	if (strnicmp(buffer, "exe ", 4) == 0)
+	if (strncmp(buffer, "exe ", 4) == 0)
 	{
 	    char *pChar = &buffer[4];
 	    while (isspace(*pChar))
@@ -274,7 +275,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 	else
 	{
 	    /* Check for program arguments */
-	    if (strnicmp(buffer, "args ", 5) == 0)
+	    if (strncmp(buffer, "args ", 5) == 0)
 	    {
 		char *pChar = &buffer[5];
 		while (isspace(*pChar))
@@ -291,7 +292,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 	    else
 	    {
 		/* Check for environment variables */
-		if (strnicmp(buffer, "env ", 4) == 0)
+		if (strncmp(buffer, "env ", 4) == 0)
 		{
 		    char *pChar = &buffer[4];
 		    while (isspace(*pChar))
@@ -312,7 +313,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 		}
 		else
 		{
-		    if (strnicmp(buffer, "map ", 4) == 0)
+		    if (strncmp(buffer, "map ", 4) == 0)
 		    {
 			char *pszMap;
 			pszMap = &buffer[strlen(buffer)-1];
@@ -335,7 +336,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 		    }
 		    else
 		    {
-			if (strnicmp(buffer, "dir ", 4) == 0)
+			if (strncmp(buffer, "dir ", 4) == 0)
 			{
 			    char *pChar = &buffer[4];
 			    while (isspace(*pChar))
@@ -351,7 +352,7 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 			else
 			{
 			    /* Check for hosts */
-			    if (strnicmp(buffer, "hosts", 5) == 0)
+			    if (strncmp(buffer, "hosts", 5) == 0)
 			    {
 				HostNode *node, dummy;
 				g_nHosts = 0;
@@ -370,15 +371,12 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 				g_pHosts = dummy.next;
 				
 				fclose(fin);
-				tmpnam(temp_filename);
-				if (temp_filename[0] == '\\')
+				if (mktemp(temp_filename) == NULL)
 				{
-				    strncpy(configfilename, &temp_filename[1], length);
+				    smpd_exit_fn("mp_parse_mpich1_configfile");
+				    return SMPD_FAIL;
 				}
-				else
-				{
-				    strncpy(configfilename, temp_filename, length);
-				}
+				strncpy(configfilename, temp_filename, length);
 				fout = fopen(configfilename, "w");
 				/*printf("printing output to <%s>\n", configfilename);*/
 				print_configfile(fout);
@@ -394,15 +392,12 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 	}
     }
     fclose(fin);
-    tmpnam(temp_filename);
-    if (temp_filename[0] == '\\')
+    if (mktemp(temp_filename) == NULL)
     {
-	strncpy(configfilename, &temp_filename[1], length);
+	smpd_exit_fn("mp_parse_mpich1_configfile");
+	return SMPD_FAIL;
     }
-    else
-    {
-	strncpy(configfilename, temp_filename, length);
-    }
+    strncpy(configfilename, temp_filename, length);
     /*printf("printing output to <%s>\n", configfilename);*/
     fout = fopen(configfilename, "w");
     print_configfile(fout);
