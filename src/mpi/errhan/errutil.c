@@ -1,5 +1,4 @@
 #include "mpiimpl.h"
-#include <stdio.h>
 
 /* void for now until error handlers are defined */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
@@ -13,11 +12,13 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	switch (comm_ptr->errhandler->language) {
 	case MPID_LANG_C:
 	case MPID_LANG_CXX:
-	    (*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( &comm_ptr->id, &errcode );
+	    (*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( 
+		&comm_ptr->id, &errcode );
 	    break;
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
-	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( (MPI_Fint *)&comm_ptr->id, &errcode );
+	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( 
+		(MPI_Fint *)&comm_ptr->id, &errcode );
 	    break;
 	}
     }
@@ -40,17 +41,19 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 	switch (win_ptr->errhandler->language) {
 	case MPID_LANG_C:
 	case MPID_LANG_CXX:
-	    (*win_ptr->errhandler->errfn.C_Comm_Handler_function)( &win_ptr->id, &errcode );
+	    (*win_ptr->errhandler->errfn.C_Comm_Handler_function)( 
+		&win_ptr->id, &errcode );
 	    break;
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
-	    (*win_ptr->errhandler->errfn.F77_Handler_function)( (MPI_Fint *)&win_ptr->id, &errcode );
+	    (*win_ptr->errhandler->errfn.F77_Handler_function)( 
+		(MPI_Fint *)&win_ptr->id, &errcode );
 	    break;
 	}
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d\n", errcode );
+	printf( "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
@@ -67,17 +70,19 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 	switch (file_ptr->errhandler->language) {
 	case MPID_LANG_C:
 	case MPID_LANG_CXX:
-	    (*file_ptr->errhandler->errfn.C_Comm_Handler_function)( &file_ptr->id, &errcode );
+	    (*file_ptr->errhandler->errfn.C_Comm_Handler_function)( 
+		&file_ptr->id, &errcode );
 	    break;
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
-	    (*file_ptr->errhandler->errfn.F77_Handler_function)( (MPI_Fint *)&file_ptr->id, &errcode );
+	    (*file_ptr->errhandler->errfn.F77_Handler_function)( 
+		(MPI_Fint *)&file_ptr->id, &errcode );
 	    break;
 	}
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d\n", errcode );
+	printf( "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;

@@ -40,26 +40,27 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	if (kind & DATALOOP_FINAL_MASK) {
 	    /* This is a simple datatype, such as a vector of 
 	       simple elements or a contiguous block loop */
-	    int      i, nbytes, stride, count;
+	    int      i, nbytes, stride, count, elmsize;
 	    char     *sbuf; /* temporary for loops that update src buf */
 	    MPI_Aint *offset_array;
 	    int      *nbytes_array;
-	    switch (kind & ~DATALOOP_FINAL_MASK) {
+	    switch (kind & DATALOOP_KIND_MASK) {
 	    case MPID_CONTIG:
 		nbytes = curstackelm->loopinfo.loop_params.c_t.count;
 		memcpy( dest_buf, src_buf, nbytes );
 		dest_buf += nbytes;
 		break;
 	    case MPID_VECTOR:
-		count  = curstackelm->loopinfo.loop_params.v_t.count;
-		nbytes = curstackelm->loopinfo.loop_params.v_t.blocksize;
-		stride = curstackelm->loopinfo.loop_params.v_t.stride;
+		elmsize   = curstackelm->loopinfo.kind >> DATALOOP_ELMSIZE_SHIFT;
+		count     = curstackelm->loopinfo.loop_params.v_t.count;
+		nbytes    = curstackelm->loopinfo.loop_params.v_t.blocksize;
+		stride    = curstackelm->loopinfo.loop_params.v_t.stride;
 		sbuf      = src_buf;
-		if ((nbytes & 0x3) == 0) {
-		    VEC_COPY(sbuf,dest_buf,stride>>2,int32_t,nbytes>>2,count);
+		if (elmsize == 4) {
+		    VEC_COPY(sbuf,dest_buf,stride,int32_t,nbytes,count);
 		}
-		else if ((nbytes & 0x1) == 0) {
-		    VEC_COPY(sbuf,dest_buf,stride>>1,int16_t,nbytes>>1,count);
+		else if (elmsize == 2) {
+		    VEC_COPY(sbuf,dest_buf,stride,int16_t,nbytes,count);
 		}
 		else {
 		    for (i=0; i<count; i++) {
@@ -111,13 +112,13 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    if (kind == MPID_STRUCT) {
 		/* Get the next struct type and push it */
 		stackelm[cur_sp+1].loopinfo = 
-		    (curstackelm->loopinfo.loop_params.s_t.datatype[curstackelm->curcount]);
+		    (curstackelm->loopinfo.loop_params.s_t.dataloop[curstackelm->curcount]);
 	    }
 	    else {
 		/* Optimization: We don't need to copy a stack element twice */
 		if (valid_sp <= cur_sp) {
 		    stackelm[cur_sp+1].loopinfo = 
-			*curstackelm->loopinfo.loop_params.cm_t.datatype;
+			*curstackelm->loopinfo.loop_params.cm_t.dataloop;
 		    valid_sp = cur_sp + 1;
 		}
 	    }

@@ -48,7 +48,7 @@ MPID_Datatype *MPID_Datatype_Get_ptr_indirect( int handle )
 }
 
 /* This routine is called by finalize when MPI exits */
-static int MPIU_Datatype_finalize( void *extra )
+static int MPID_Datatype_finalize( void *extra )
 {
     (void)MPIU_Handle_free( (void *(*)[])MPID_Datatype_indirect, 
 			    MPID_Datatype_indirect_size );
@@ -67,7 +67,7 @@ static int MPIU_Datatype_finalize( void *extra )
   would never be any possibility of a process exiting while holding a lock.
   However, for simplicity, this uses a common per-process lock.
  */
-MPID_Datatype *MPIU_Datatype_create( void )
+MPID_Datatype *MPID_Datatype_create( void )
 {
     MPID_Datatype *ptr;
 
@@ -86,9 +86,9 @@ MPID_Datatype *MPIU_Datatype_create( void )
     if (!initialized) {
 	/* Setup the first block.  This is done here so that short MPI
 	   jobs do not need to include any of the Datatype code if no
-	   Datatype-using routines are used */
+	   Derived-Datatype-using routines are used */
 	/* Tell finalize to free up any memory that we allocate */
-	MPIR_Add_finalize( MPIU_Datatype_finalize, 0 );
+	MPIR_Add_finalize( MPID_Datatype_finalize, 0 );
 
 	initialized = 1;
 	ptr   = MPIU_Handle_direct_init( MPID_Datatype_direct, MPID_DATATYPE_PREALLOC,
@@ -115,7 +115,7 @@ MPID_Datatype *MPIU_Datatype_create( void )
 }   
 
 /* Free an comm structure */
-void MPIU_Datatype_free( MPID_Datatype *datatype_ptr )
+void MPID_Datatype_free( MPID_Datatype *datatype_ptr )
 {
     /* Lock because updating avail list */
     MPID_Allocation_lock();
@@ -129,7 +129,7 @@ void MPIU_Datatype_free( MPID_Datatype *datatype_ptr )
 
 /* return just this entry to the avail list.  Should this be called remove 
    instead of delete since all it does is deallocate that value? */
-void MPIU_Datatype_destroy( MPID_Datatype *datatype_ptr )
+void MPID_Datatype_destroy( MPID_Datatype *datatype_ptr )
 {
     /* Lock */
     MPID_Allocation_lock();

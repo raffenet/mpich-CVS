@@ -48,7 +48,7 @@ int MPI_Win_free(MPI_Win *win)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_FREE);
     /* Get handles to MPI objects. */
-    MPID_Win_get_ptr( win, win_ptr );
+    MPID_Win_get_ptr( *win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;

@@ -45,7 +45,8 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm, MPI_Win *win)
+int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
+		   MPI_Comm comm, MPI_Win *win)
 {
     static const char FCNAME[] = "MPI_Win_create";
     int mpi_errno = MPI_SUCCESS;
@@ -55,7 +56,6 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, MPI_
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE);
     /* Get handles to MPI objects. */
-    MPID_Win_get_ptr( win, win_ptr );
     MPID_Comm_get_ptr( comm, comm_ptr );
     MPID_Info_get_ptr( info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -67,7 +67,6 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, MPI_
                             "**initialized", 0 );
             }
             /* Validate win_ptr */
-            MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */

@@ -8,47 +8,47 @@
  */
 
 /*S
-  MPID_Dataloop_contig - Description of a contiguous datatype
+  MPID_Dataloop_contig - Description of a contiguous dataloop
 
   Fields:
 + count - Number of elements
-- datatype - datatype that this datatype consists of
+- dataloop - dataloop that this dataloop consists of
 
   Module:
   Datatype
   S*/
 typedef struct {
     int     count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
 } MPID_Dataloop_contig;
 
 /*S
-  MPID_Dataloop_vector - Description of a vector or strided datatype
+  MPID_Dataloop_vector - Description of a vector or strided dataloop
 
   Fields:
 + count - Number of elements
-. blocksize - Number of datatypes in each element
+. blocksize - Number of dataloops in each element
 . stride - Stride (in bytes) between each block
-- datatype - Datatype of each element
+- dataloop - Dataloop of each element
 
   Module:
   Datatype
   S*/
 typedef struct { 
     int     count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
     int     blocksize;
     int     stride;
 } MPID_Dataloop_vector;
 
 /*S
-  MPID_Dataloop_blockindexed - Description of a block-indexed datatype
+  MPID_Dataloop_blockindexed - Description of a block-indexed dataloop
 
   Fields:
 + count - Number of blocks
 . blocksize - Number of elements in each block
 . offset - Array of offsets (in bytes) to each block
-- datatype - Datatype of each element
+- dataloop - Dataloop of each element
 
   Module:
   Datatype
@@ -56,19 +56,19 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
     int      blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_blockindexed;
 
 /*S
-  MPID_Dataloop_indexed - Description of an indexed datatype
+  MPID_Dataloop_indexed - Description of an indexed dataloop
 
   Fields:
 + count - Number of blocks
 . blocksize - Array giving the number of elements in each block
 . offset - Array of offsets (in bytes) to each block
-- datatype - Datatype of each element
+- dataloop - Dataloop of each element
 
   Module:
   Datatype
@@ -76,19 +76,19 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
     int      *blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_indexed;
 
 /*S
-  MPID_Dataloop_struct - Description of a structure datatype
+  MPID_Dataloop_struct - Description of a structure dataloop
 
   Fields:
 + count - Number of blocks
 . blocksize - Array giving the number of elements in each block
 . offset - Array of offsets (in bytes) to each block
-- datatype - Array of datatypes describing the elements of each block
+- dataloop - Array of dataloops describing the elements of each block
 
   Module:
   Datatype
@@ -96,7 +96,7 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
     int      *blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_struct;
@@ -109,11 +109,11 @@ typedef struct {
 */
 typedef struct {
     int      count;
-    struct MPID_Dataloop_st *datatype;
+    struct MPID_Dataloop_st *dataloop;
 } MPID_Dataloop_common;
 
 /*S
-  MPID_Dataloop - Description of the structure used to hold a datatype
+  MPID_Dataloop - Description of the structure used to hold a dataloop
   description
 
   Fields:
@@ -131,11 +131,11 @@ typedef struct {
 .ve
   The dataloop type is one of 'MPID_CONTIG', 'MPID_VECTOR', 
   'MPID_BLOCKINDEXED', 'MPID_INDEXED', or 'MPID_STRUCT'.  
-. loop_parms - A union containing the 5 datatype structures, e.g., 
+. loop_parms - A union containing the 5 dataloop structures, e.g., 
   'MPID_Dataloop_contig', 'MPID_Dataloop_vector', etc.  A sixth element in
   this union, 'count', allows quick access to the shared 'count' field in the
-  five datatype structure.
-. extent - The extent of the datatype
+  five dataloop structure.
+. extent - The extent of the dataloop
 - id     - id for the corresponding 'MPI_Datatype'.
 
   Module:
@@ -146,7 +146,7 @@ typedef struct MPID_Dataloop_st {
     int kind;                  /* Contains both the loop type 
 				  (contig, vector, blockindexed, indexed,
 				  or struct) and a bit that indicates 
-				  whether the datatype is a leaf type. */
+				  whether the dataloop is a leaf type. */
     union {
 	int                        count;
 	MPID_Dataloop_contig       c_t;
@@ -164,22 +164,22 @@ typedef struct MPID_Dataloop_st {
 
 #define DATALOOP_FINAL_MASK 0x00000008
 #define DATALOOP_KIND_MASK  0x00000007
+#define DATALOOP_ELMSIZE_SHIFT 4
 #define MPID_CONTIG 0x1
 #define MPID_VECTOR 0x2
 #define MPID_BLOCKINDEXED 0x3
 #define MPID_INDEXED 0x4
 #define MPID_STRUCT 0x5
 #define MPID_MAX_DATATYPE_DEPTH 8
-
 /*S
   MPID_Dataloop_stackelm - Structure for an element of the stack used
-  to process datatypes
+  to process dataloops
 
   Fields:
 + curcount - Current loop count value (between 0 and 
              loopinfo.loop_params.count-1) 
-. curoffset - Offset for relative offsets in datatypes 
-- loopinfo  - Loop-based description of the datatype
+. curoffset - Offset for relative offsets in dataloops 
+- loopinfo  - Loop-based description of the dataloop
 
 S*/
 typedef struct {
@@ -188,3 +188,4 @@ typedef struct {
     MPID_Dataloop loopinfo;
 } MPID_Dataloop_stackelm;
 
+void MPID_Segment_pack( MPID_Dataloop *, char *, char * );

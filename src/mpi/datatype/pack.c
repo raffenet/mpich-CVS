@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "dataloop.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Pack */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -46,7 +47,8 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int outcount, int *position, MPI_Comm comm)
+int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, 
+	     int outcount, int *position, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Pack";
     int mpi_errno = MPI_SUCCESS;
@@ -66,7 +68,7 @@ int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int 
                             "**initialized", 0 );
             }
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+/*             MPID_Comm_valid_ptr( comm_ptr, mpi_errno ); */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
@@ -78,6 +80,11 @@ int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    /* This is a temporary call */
+    MPID_Segment_pack( datatype_ptr->opt_loopinfo, inbuf, outbuf );
+
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
     return MPI_SUCCESS;
 }

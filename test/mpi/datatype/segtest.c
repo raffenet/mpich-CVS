@@ -41,7 +41,7 @@ MPID_Dataloop *MPID_Dataloop_init_contig( int count )
     ct = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop ) );
     ct->kind                     = MPID_CONTIG | DATALOOP_FINAL_MASK;
     ct->loop_params.c_t.count    = count;
-    ct->loop_params.c_t.datatype = 0;
+    ct->loop_params.c_t.dataloop = 0;
     ct->extent                   = count;
     ct->id                       = 0;
 
@@ -61,7 +61,7 @@ MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize,
     v->loop_params.v_t.count     = count;
     v->loop_params.v_t.blocksize = blocksize;
     v->loop_params.v_t.stride    = stride;
-    v->loop_params.v_t.datatype  = 0;
+    v->loop_params.v_t.dataloop  = 0;
     v->extent                    = (count-1)*stride + blocksize;
     v->id                        = 0;
 
@@ -89,7 +89,7 @@ MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize,
 	if (offset[i] + blocksize > extent) 
 	    extent = offset[i] + blocksize;
     }
-    bi->loop_params.bi_t.datatype  = 0;
+    bi->loop_params.bi_t.dataloop  = 0;
     bi->extent                     = extent;
     bi->id                         = 0;
 
@@ -118,7 +118,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 	if (offset[i] + blocksize[i] > extent) 
 	    extent = offset[i] + blocksize[i];
     }
-    it->loop_params.i_t.datatype  = 0;
+    it->loop_params.i_t.dataloop  = 0;
     it->extent                    = extent;
     it->id                        = 0;
 
@@ -128,6 +128,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 int main( int argc, char **argv )
 {
     MPID_Dataloop *vecloop;
+    MPI_Datatype vectype;
     int count=200, blocksize=4, stride = 7*4;
     char *src_buf, *dest_buf;
     int  i,j,k;
@@ -135,7 +136,9 @@ int main( int argc, char **argv )
 
     MPI_Init( &argc, &argv );
     
-    vecloop = MPID_Dataloop_init_vector( count, blocksize, stride );
+/*    vecloop = MPID_Dataloop_init_vector( count, blocksize, stride ); */
+
+    MPI_Type_vector( count, 1, 7, MPI_INT, &vectype );
 
     /* Initialize the data */
     src_buf = (char *)MPIU_Malloc( (count - 1) * stride + blocksize );
@@ -150,8 +153,12 @@ int main( int argc, char **argv )
 	dest_buf[i] = -i;
     }
     r1 = MPI_Wtime();
-    for (i=0; i<100; i++) 
-	MPID_Segment_pack( vecloop, src_buf, dest_buf );
+    for (i=0; i<100; i++) {
+	int position = 0;
+	/*MPID_Segment_pack( vecloop, src_buf, dest_buf );*/
+	MPI_Pack( src_buf, count, vectype, dest_buf, count*blocksize, 
+		  &position, MPI_COMM_WORLD );
+    }
     r2 = MPI_Wtime();
     printf( "Timer for vector pack is %e\n", (r2-r1)/100 );
     for (i=0; i<count*blocksize; i++) {

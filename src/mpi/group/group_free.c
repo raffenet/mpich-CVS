@@ -48,7 +48,7 @@ int MPI_Group_free(MPI_Group *group)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_FREE);
     /* Get handles to MPI objects. */
-    MPID_Group_get_ptr( group, group_ptr );
+    MPID_Group_get_ptr( *group, group_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;

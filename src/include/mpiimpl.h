@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #endif
 
+#include <stdio.h>
 /* 
    Include the implementation definitions (e.g., error reporting, thread
    portability)
@@ -104,9 +105,9 @@ void *MPIU_trstrdup( const char *, int, const char * );
 void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
 void *MPIU_trrealloc ( void *, int, int, const char * );
 void MPIU_TrSetMaxMem ( int );
-/* void MPIU_trdump ( FILE * );
+void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
-void MPIU_trdumpGrouped ( FILE * ); */
+void MPIU_trdumpGrouped ( FILE * );
 
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
@@ -211,31 +212,34 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
 #define MPID_Get_ptr(kind,a,ptr) \
-     switch (HANDLE_GET_KIND(a)) {\
-         case HANDLE_KIND_INVALID: ptr=0; break;\
-         case HANDLE_KIND_BUILTIN: ptr=0;break;\
-         case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
-         case HANDLE_KIND_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
+   switch (HANDLE_GET_KIND(a)) {\
+      case HANDLE_KIND_INVALID: ptr=0; break;\
+      case HANDLE_KIND_BUILTIN: ptr=0;break;\
+      case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
+      case HANDLE_KIND_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
      }
 #define MPID_Comm_get_ptr(a,ptr) MPID_Get_ptr(Comm,a,ptr)
-#define MPID_Group_get_ptr(a,ptr)
+#define MPID_Group_get_ptr(a,ptr) MPID_Get_ptr(Group,a,ptr)
 #define MPID_Datatype_get_ptr(a,ptr) MPID_Get_ptr(Datatype,a,ptr)
-#define MPID_File_get_ptr(a,ptr)
-#define MPID_Errhandler_get_ptr(a,ptr)
-#define MPID_Op_get_ptr(a,ptr)
+#define MPID_File_get_ptr(a,ptr) MPID_Get_ptr(File,a,ptr)
+#define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
+#define MPID_Op_get_ptr(a,ptr) MPID_Get_ptr(Op,a,ptr)
 #define MPID_Info_get_ptr(a,ptr) MPID_Get_ptr(Info,a,ptr)
-#define MPID_Win_get_ptr(a,ptr)
+#define MPID_Win_get_ptr(a,ptr) MPID_Get_ptr(Win,a,ptr)
 
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) \
   {if (!(ptr)) { err = MPIR_Err_create_code( MPI_ERR_OTHER, "**nullptr" ); } }
+
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 #define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
 #define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr(Group,ptr,err)
 #define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr(Win,ptr,err)
+#define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr(Op,ptr,err)
+#define MPID_Errhandler_valid_ptr(ptr,err) MPID_Valid_ptr(Errhandler,ptr,err)
 #define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
 
 /* Info */
@@ -272,7 +276,7 @@ typedef struct MPID_List_elm {
     struct MPID_List_elm *next;
     void   *item;
     /* other, device-specific information */
-}MPID_List;
+} MPID_List;
 
 typedef union {
   int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
@@ -319,6 +323,10 @@ typedef struct {
 				    process number */
   /* other, device-specific information */
 } MPID_Group;
+/* Preallocated group objects */
+extern MPID_Group MPID_Group_direct[];
+/* Function to access indirect objects */
+extern MPID_Group *MPID_Group_Get_ptr_indirect( int handle );
 
 /* Communicators */
 typedef struct { 
@@ -351,8 +359,14 @@ extern MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle );
 /* Windows */
 typedef struct {
     int           id;             /* value of MPI_Win for this structure */
+    volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 } MPID_Win;
+/* Preallocated win objects */
+extern MPID_Win MPID_Win_direct[];
+/* Function to access indirect objects */
+extern MPID_Win *MPID_Win_Get_ptr_indirect( int handle );
 
 /* Datatypes */
 
@@ -362,14 +376,14 @@ typedef struct MPID_Datatype_st {
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
     int           is_perm;       /* True if datatype is a predefined type */
-    struct MPID_Dataloop_st *opt_loopinfo;  /* "optimized" loopinfo.  Filled in at 
-				    create
+    struct MPID_Dataloop_st *opt_loopinfo;  /* "optimized" loopinfo.  
+				    Filled in at create
                                     time; not touched by MPI calls.  This will
                                     be for the homogeneous case until further
                                     notice */
 
     int           size;          /* Q: maybe this should be in the dataloop? */
-    MPI_Aint      extent;        /* MPI-2 allows a type to created by
+    MPI_Aint      extent;        /* MPI-2 allows a type to be created by
                                     resizing (the extent of) an existing 
                                     type */
     int           true_lb;       /* lb of datatype if no LB in effect */
@@ -377,6 +391,8 @@ typedef struct MPID_Datatype_st {
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
     int loopsize; /* size of loops for this datatype in bytes; derived value */
+    int           combiner;      /* MPI call that was used to create this
+				    datatype */
     struct MPID_Dataloop_st *loopinfo; /* Original loopinfo, used when 
 					  creating and when getting contents */
     int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
@@ -412,8 +428,13 @@ extern MPID_Datatype *MPID_Datatype_Get_ptr_indirect( int handle );
 
 typedef struct {
     int           id;             /* value of MPI_File for this structure */
+    volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
 } MPID_File;
+/* Preallocated file objects */
+extern MPID_File MPID_File_direct[];
+/* Function to access indirect objects */
+extern MPID_File *MPID_File_Get_ptr_indirect( int handle );
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
