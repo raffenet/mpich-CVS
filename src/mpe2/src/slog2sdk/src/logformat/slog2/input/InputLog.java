@@ -84,7 +84,10 @@ public class InputLog
             return null;
     }
 
-    public String getCompatibleHeader()
+    /*
+       isSLOG2() has to be called before getCompatibleHeader() or initialize()
+    */
+    public boolean isSLOG2()
     {
         try {
             rand_file.seek( 0 );
@@ -96,6 +99,11 @@ public class InputLog
             System.exit( 1 );
         }
 
+        return filehdr != null && filehdr.isSLOG2();
+    }
+
+    public String getCompatibleHeader()
+    {
         return filehdr.getCompatibleVersionMessage();
     }
 

@@ -40,6 +40,14 @@ public class PrintSerially
         parseCmdLineArgs( args );
 
         slog_ins   = new InputLog( in_filename );
+        if ( slog_ins == null ) {
+            System.err.println( "Null input logfile!" );
+            System.exit( 1 );
+        }
+        if ( ! slog_ins.isSLOG2() ) {
+            System.err.println( in_filename + " is NOT SLOG-2 file!." );
+            System.exit( 1 );
+        }
         if ( (err_msg = slog_ins.getCompatibleHeader()) != null ) {
             System.err.print( err_msg );
             InputLog.stdoutConfirmation();
