@@ -131,7 +131,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
     }
-    
+
     /* Initialize MPI_COMM_SELF object */
     comm = MPIR_Process.comm_self;
     comm->rank = 0;
@@ -145,7 +145,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* Initialize Progress Engine */
     rc = MPIDI_CH3I_Progress_init();
     assert(rc == MPI_SUCCESS);
-    
+
     /* Allocate space for pmi keys and values */
     key_max_sz = PMI_KVS_Get_key_length_max()+1;
     key = MPIU_Malloc(key_max_sz);
@@ -156,9 +156,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
     /* initialize the shared memory */
     shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) * pg_size; 
-
-    /* UNDER NO CIRCUMSTANCES USE C++ COMMENTS IN C FILES !!! */
-    /* + MPID_SHMEM_PER_PROCESS; */
 
     if (pg_size > 1)
     {
@@ -244,13 +241,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #else
     /* figure out how many processors are available and set the spin count accordingly */
 #endif
-    
-    /* put the "not in MPI_Finalized" flag */
-    /*
-    MPIU_Snprintf(key, key_max_sz, "P-%d.finalized", pg_rank);
-    MPIU_Strncpy(val, "false", val_max_sz);
-    PMI_KVS_Put(pg->kvs_name, key, val);
-    */
 
     rc = PMI_KVS_Commit(pg->kvs_name);
     assert(rc == 0);
