@@ -28,7 +28,6 @@ void eh( MPI_Comm *comm, int *err, ... )
 }
 int main( int argc, char *argv[] )
 {
-    int err;
     MPI_Comm      comm;
     MPI_Errhandler newerr;
 

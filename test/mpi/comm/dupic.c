@@ -15,7 +15,7 @@ int main( int argc, char *argv[] )
     MPI_Request rreq[2];
     int count;
     int indicies[2];
-    int flag, r1buf, r2buf, s1buf, s2buf;
+    int r1buf, r2buf, s1buf, s2buf;
     int rank, isLeft;
 
     MTest_Init( &argc, &argv );

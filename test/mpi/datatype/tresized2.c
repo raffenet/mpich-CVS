@@ -35,7 +35,7 @@ int main( int argc, char *argv[] )
        that is, there is a int-sized pad at the beginning of the type, 
        and the extent is still 3 ints.  Note, however, that the INT
        is still at displacement 0, so the effective pattern i*/
-    MPI_Type_create_resized( MPI_INT, -sizeof(int), 3 * sizeof(int), &newtype ); 
+    MPI_Type_create_resized( MPI_INT, -(int)sizeof(int), 3 * sizeof(int), &newtype ); 
     MPI_Type_commit( &newtype );
     for (count = 1; count < 65000; count = count * 2) {
 	buf = (int *)malloc( count * 3 * sizeof(int) );

@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int buf[10];
     MPI_Aint a1, a2;
 

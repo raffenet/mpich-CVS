@@ -17,7 +17,6 @@ int main( int argc, char **argv )
     int errs = 0;
     int i, j, err;
     MPI_Comm newcomm1, newcomm2[200];
-    MPI_Status status;
 
     MTest_Init( &argc, &argv );
 
