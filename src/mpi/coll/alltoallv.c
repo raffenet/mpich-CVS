@@ -127,7 +127,7 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
     static const char FCNAME[] = "MPI_Alltoallv";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLTOALLV);
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLTOALLV);
 

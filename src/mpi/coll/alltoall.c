@@ -286,7 +286,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
     static const char FCNAME[] = "MPI_Alltoall";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLTOALL);
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLTOALL);
 

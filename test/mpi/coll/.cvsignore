@@ -3,7 +3,7 @@ Makefile
 *.o
 *.pf
 bcasttest
-allreduce
+allred
 alltoallv
 coll8
 coll13
