@@ -24,11 +24,11 @@
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
     assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
-    sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->shm.pkt + nb; \
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
-    sreq->shm.iov_offset = 0; \
+    sreq->ch.iov_offset = 0; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
@@ -98,7 +98,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		"send delayed, request enqueued"));
 	    create_request(sreq, pkt, pkt_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-	    vc->shm.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{

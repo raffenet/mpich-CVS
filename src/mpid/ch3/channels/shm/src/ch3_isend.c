@@ -20,11 +20,11 @@
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND); \
 	return mpi_errno; \
     } \
-    sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->shm.pkt + nb; \
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
-    sreq->shm.iov_offset = 0; \
+    sreq->ch.iov_offset = 0; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 
@@ -90,12 +90,12 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
 	    update_request(sreq, pkt, pkt_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-	    vc->shm.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{
 	    /* Connection just failed. Mark the request complete and return an error. */
-	    vc->shm.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    /* TODO: Create an appropriate error message based on the value of errno */
 	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    /* MT -CH3U_Request_complete() performs write barrier */

@@ -27,12 +27,12 @@
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV); \
 	    return mpi_errno; \
 	} \
-	sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->shm.pkt; \
+	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
     } \
     sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
-    sreq->shm.iov_offset = offset; \
+    sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
@@ -107,7 +107,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
 		    update_request(sreq, iov, n_iov, offset, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->shm.send_active = sreq;
+		    vc->ch.send_active = sreq;
 		    break;
 		}
 	    }
@@ -129,12 +129,12 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 	    update_request(sreq, iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->shm.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{
 	    /* Connection just failed.  Mark the request complete and return an error. */
-	    vc->shm.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    /* TODO: Create an appropriate error message based on the value of errno */
 	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    /* MT - CH3U_Request_complete performs write barrier */

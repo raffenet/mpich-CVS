@@ -28,14 +28,14 @@
     /*for (i = 0; i < count; i++) { sreq->dev.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \
-	/* memcpy(&sreq->shm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
+	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
 	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
-	sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->shm.pkt; \
+	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
     } \
     sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
-    sreq->shm.iov_offset = offset; \
+    sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
@@ -135,7 +135,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		    MPIU_DBG_PRINTF(("ch3_istartmsgv: shm_writev did not complete the send, allocating request\n"));
 		    create_request(sreq, iov, n_iov, offset, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->shm.send_active = sreq;
+		    vc->ch.send_active = sreq;
 		    break;
 		}
 	    }
@@ -145,7 +145,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	    MPIU_DBG_PRINTF(("ch3_istartmsgv: this should be an error because the sendQ is empty but shm_writev() returned 0 bytes.\n"));
 	    create_request(sreq, iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->shm.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{

@@ -23,8 +23,8 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 
     MPIDI_DBG_PRINTF((71, FCNAME, "entering"));
 
-    req->shm.iov_offset = 0;
-    vc->shm.send_active = req;
+    req->ch.iov_offset = 0;
+    vc->ch.send_active = req;
     mpi_errno = (req->dev.iov_count == 1) ?
 	MPIDI_CH3I_SHM_write(vc, req->dev.iov->MPID_IOV_BUF, req->dev.iov->MPID_IOV_LEN, &nb) :
 	MPIDI_CH3I_SHM_writev(vc, req->dev.iov, req->dev.iov_count, &nb);
@@ -42,7 +42,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    /* Write operation complete */
 	    MPIDI_CA_t ca = req->dev.ca;
 	    
-	    vc->shm.send_active = NULL;
+	    vc->ch.send_active = NULL;
 	    
 	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
@@ -51,18 +51,18 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
-		vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 		/* mark data transfer as complete and decrment CC */
 		req->dev.iov_count = 0;
 		MPIDI_CH3U_Request_complete(req);
 	    }
 	    else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
 	    {
-		MPIDI_CH3_Pkt_t * pkt = &req->shm.pkt;
+		MPIDI_CH3_Pkt_t * pkt = &req->ch.pkt;
 		
 		if (pkt->type < MPIDI_CH3_PKT_END_CH3)
 		{
-		    vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
+		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 		}
 		else
 		{
@@ -81,7 +81,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		    MPIDI_DBG_PRINTF((71, FCNAME, "request (assumed) complete, dequeuing req and posting next send"));
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
-		vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }
 	    else
 	    {
@@ -90,7 +90,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	}
 	else
 	{
-	    assert(req->shm.iov_offset < req->dev.iov_count);
+	    assert(req->ch.iov_offset < req->dev.iov_count);
 	}
     }
     else if (nb == 0)
@@ -101,7 +101,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     else
     {
 	/* Connection just failed.  Mark the request complete and return an error. */
-	vc->shm.state = MPIDI_CH3I_VC_STATE_FAILED;
+	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	/* TODO: Create an appropriate error message based on the value of errno */
 	req->status.MPI_ERROR = MPI_ERR_INTERN;
 	/* MT - CH3U_Request_complete performs write barrier */

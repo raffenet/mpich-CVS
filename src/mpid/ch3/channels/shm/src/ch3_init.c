@@ -143,23 +143,23 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].shm.pg = pg;
-	vc_table[p].shm.pg_rank = p;
-	vc_table[p].shm.sendq_head = NULL;
-	vc_table[p].shm.sendq_tail = NULL;
-	vc_table[p].shm.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
-	vc_table[p].shm.state = MPIDI_CH3I_VC_STATE_IDLE;
-	vc_table[p].shm.shm_reading_pkt = TRUE;
-	vc_table[p].shm.shm_state = 0;
-	vc_table[p].shm.recv_active = NULL;
-	vc_table[p].shm.send_active = NULL;
+	vc_table[p].ch.pg = pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_IDLE;
+	vc_table[p].ch.shm_reading_pkt = TRUE;
+	vc_table[p].ch.shm_state = 0;
+	vc_table[p].ch.recv_active = NULL;
+	vc_table[p].ch.send_active = NULL;
 #ifdef USE_SHM_UNEX
-	vc_table[p].shm.unex_finished_next = NULL;
-	vc_table[p].shm.unex_list = NULL;
+	vc_table[p].ch.unex_finished_next = NULL;
+	vc_table[p].ch.unex_list = NULL;
 #endif
-	vc_table[p].shm.shm = NULL;
-	vc_table[p].shm.read_shmq = NULL;
-	vc_table[p].shm.write_shmq = NULL;
+	vc_table[p].ch.shm = NULL;
+	vc_table[p].ch.read_shmq = NULL;
+	vc_table[p].ch.write_shmq = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -345,26 +345,26 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	if (i == pg_rank)
 	{
-	    vc_table[i].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
+	    vc_table[i].ch.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
 	    for (j=0; j<pg_size; j++)
 	    {
-		vc_table[i].shm.shm[j].head_index = 0;
-		vc_table[i].shm.shm[j].tail_index = 0;
+		vc_table[i].ch.shm[j].head_index = 0;
+		vc_table[i].ch.shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
-		    vc_table[i].shm.shm[j].packet[k].offset = 0;
-		    vc_table[i].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc_table[i].ch.shm[j].packet[k].offset = 0;
+		    vc_table[i].ch.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }
 	}
 	else
 	{
-	    /*vc_table[i].shm.shm += pg_rank;*/
-	    vc_table[i].shm.shm = NULL;
-	    vc_table[i].shm.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i)) + pg_rank;
-	    vc_table[i].shm.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * pg_rank)) + i;
+	    /*vc_table[i].ch.shm += pg_rank;*/
+	    vc_table[i].ch.shm = NULL;
+	    vc_table[i].ch.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i)) + pg_rank;
+	    vc_table[i].ch.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * pg_rank)) + i;
 	    /* post a read of the first packet header */
-	    vc_table[i].shm.shm_reading_pkt = TRUE;
+	    vc_table[i].ch.shm_reading_pkt = TRUE;
 	}
     }
 
