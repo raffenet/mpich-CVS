@@ -398,7 +398,8 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		/* register this process in the PMI group */
 		/* FIXME: Adds to group 0 only */
 		PMIServAddtoGroup( 0, i, pid, ps->fdPMI );
-		PMIServSetupEntry( ps->fdPMI, 0, &ps->pmientry );
+		PMIServSetupEntry( ps->fdPMI, 0, ps->nProcesses, i, 
+				   &ps->pmientry );
 		close( pmi_pipe[1] );
 	    }
 

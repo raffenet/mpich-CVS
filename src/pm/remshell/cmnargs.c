@@ -114,6 +114,11 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 		mpiexec_usage( "Missing argument to -path\n" );		    
 	else if (argv[i][0] != '-') {
 	    exename = argv[i];
+
+	    /* if the executable name is relative to the current
+	       directory, convert it to an absolute name.  FIXME */
+	    /* wd = getwd( curdir ) */
+
 	    /* Skip arguments until we hit either the end of the args
 	       or a : */
 	    i++;
@@ -135,6 +140,7 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 		ps->fdStdin = ps->fdStdout = ps->fdStderr = -1;
 		ps->fdPMI   = -1;
 		ps->state   = UNINITIALIZED;
+		/* */
 		ps->exename = exename;
 		if (indexOfFirstArg > 0) {
 		    ps->args  = (const char **)(argv + indexOfFirstArg);

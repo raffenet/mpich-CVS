@@ -24,14 +24,14 @@
 
 char PMIU_print_id[PMIU_IDSIZE];
 
-int PMI_fd;
-int PMI_size;
-int PMI_rank;
+int PMI_fd = -1;
+int PMI_size = 1;
+int PMI_rank = 0;
 
 /* Set PMI_initialized to 1 for regular initialized and 2 for 
    the singleton init case (no MPI_Init) */
 #define SINGLETON_INIT 2
-int PMI_initialized;
+int PMI_initialized = 0;
 
 int PMI_kvsname_max;
 int PMI_keylen_max;
@@ -48,6 +48,7 @@ static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *ke
 int PMI_Init( int *spawned )
 {
     char *p;
+    int notset = 1;
 
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
@@ -71,6 +72,10 @@ int PMI_Init( int *spawned )
 	/* FIXME: If PMI_PORT specified but either no valid value of
 	   fd is -1, give an error return */
 	if (PMI_fd < 0) return -1;
+
+	/* We should first handshake to get size, rank, debug. */
+	PMI_Set_from_port( PMI_fd );
+	notset = 0;
     }
 #endif
     else {
@@ -92,22 +97,26 @@ int PMI_Init( int *spawned )
 	return( 0 );
     }
 
-    if ( ( p = getenv( "PMI_SIZE" ) ) )
-	PMI_size = atoi( p );
-    else 
-	PMI_size = 1;
-
-    if ( ( p = getenv( "PMI_RANK" ) ) ) {
-	PMI_rank = atoi( p );
-	snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+    /* If size, rank, and debug not set from a communication port,
+       use the environment */
+    if (notset) {
+	if ( ( p = getenv( "PMI_SIZE" ) ) )
+	    PMI_size = atoi( p );
+	else 
+	    PMI_size = 1;
+	
+	if ( ( p = getenv( "PMI_RANK" ) ) ) {
+	    PMI_rank = atoi( p );
+	    snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+	}
+	else 
+	    PMI_rank = 0;
+	
+	if ( ( p = getenv( "PMI_DEBUG" ) ) )
+	    PMI_debug = atoi( p );
+	else 
+	    PMI_debug = 0;
     }
-    else 
-	PMI_rank = 0;
-
-    if ( ( p = getenv( "PMI_DEBUG" ) ) )
-	PMI_debug = atoi( p );
-    else 
-	PMI_debug = 0;
 	
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
 
@@ -549,9 +558,11 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	perror( "Error calling setsockopt:" );
     }
 
-    / * If a non-blocking socket, then can use select on write to test for
+    /* If a non-blocking socket, then can use select on write to test for
 	connect would succeed.  Thus, we mark the socket as non-blocking now */
+#ifdef FOO
     /* Mark this fd as non-blocking */
+		    /* Do we want to do this? */
     if (!q_wait) {
 	flags = fcntl( fd, F_GETFL, 0 );
 	if (flags >= 0) {
@@ -559,7 +570,7 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	    fcntl( fd, F_SETFL, flags );
 	}
     }
-
+#endif
     if (connect( fd, &sa, sizeof(sa) ) < 0) {
 	switch (errno) {
 	case ECONNREFUSED:
@@ -582,14 +593,77 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	    return -1;
 	}
     }
+#ifdef FOO
+    /* Do we want to make the fd nonblocking ? */
     if (fd >= 0 && q_wait) {
 	flags = fcntl( fd, F_GETFL, 0 );
 	if (flags >= 0) {
-	flags |= O_NDELAY;
-	fcntl( fd, F_SETFL, flags );
+	    flags |= O_NDELAY;
+	    fcntl( fd, F_SETFL, flags );
 	}
     }
+#endif
 
     return fd;
+}
+
+int PMI_Set_from_port( int fd )
+{
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+
+    /* We start by sending a startup message to the server */
+
+    /* Handshake and initialize from a port */
+    PMIU_writeline( fd, "cmd=initack\n" );
+
+    /* cmd=initack */
+    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf );
+    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+    if ( strcmp( cmd, "initack" ) ) {
+	PMIU_printf( 1, "got unexpected input %s\n", buf );
+	return -1;
+    }
+    
+    /* Read, in order, size, rank, and debug.  Eventually, we'll want 
+       the handshake to include a version number */
+
+    /* size */
+    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf );
+    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+    if ( strcmp(cmd,"set")) {
+	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	return -1;
+    }
+    /* cmd=set size=n */
+    PMIU_getval( "size", cmd, PMIU_MAXLINE );
+    PMI_size = atoi(cmd);
+
+    /* rank */
+    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf );
+    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+    if ( strcmp(cmd,"set")) {
+	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	return -1;
+    }
+    /* cmd=set rank=n */
+    PMIU_getval( "rank", cmd, PMIU_MAXLINE );
+    PMI_rank = atoi(cmd);
+
+    /* debug flag */
+    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf );
+    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+    if ( strcmp(cmd,"set")) {
+	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	return -1;
+    }
+    /* cmd=set debug=n */
+    PMIU_getval( "debug", cmd, PMIU_MAXLINE );
+    PMI_debug = atoi(cmd);
+
+    return 0;
 }
 #endif

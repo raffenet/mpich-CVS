@@ -107,6 +107,7 @@ static void fPMI_Handle_get_my_kvsname( PMI_Process * );
 static void fPMI_Handle_init( PMI_Process * );
 static void fPMI_Handle_get_maxes( PMI_Process * );
 static void fPMI_Handle_getbyidx( PMI_Process * );
+static void fPMI_Handle_init_port( PMI_Process * );
 
 
 /* 
@@ -161,6 +162,9 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	else if ( strncmp( cmd, "getbyidx", MAXPMICMD ) == 0 ) {
 	    fPMI_Handle_getbyidx( pentry );
 	}
+	else if ( strncmp( cmd, "initack", MAXPMICMD ) == 0) {
+	    fPMI_Handle_init_port( pentry );
+	}
 	else {
 	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
 	}
@@ -204,19 +208,24 @@ int PMIServInit( int nprocs )
  */
 int PMIServInitEntry( PMI_Process *pmientry )
 {
-    pmientry->fd    = -1;
-    pmientry->group = -1;
-    pmientry->kvs   = -1;
+    pmientry->fd         = -1;
+    pmientry->group      = -1;
+    pmientry->kvs        = -1;
+    pmientry->nProcesses = 1;
+    pmientry->rank       = 0;
 }
 
 /*
  * Setup an entry for a created process
  */
-int PMIServSetupEntry( int pmifd, int pmigroup, PMI_Process *pmientry )
+int PMIServSetupEntry( int pmifd, int pmigroup, int np, int rank, 
+		       PMI_Process *pmientry )
 {
-    pmientry->fd    = pmifd;
-    pmientry->group = pmigroup;
-    pmientry->kvs   = pmi.kvsid;   /* Use current kvsid */
+    pmientry->fd         = pmifd;
+    pmientry->group      = pmigroup;
+    pmientry->kvs        = pmi.kvsid;   /* Use current kvsid */
+    pmientry->nProcesses = np;
+    pmientry->rank       = rank;
 }
 
 /*
@@ -494,5 +503,21 @@ static void fPMI_Handle_getbyidx( PMI_Process *pentry )
 	snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
 		  "reason=kvs_%s_not_found\n", kvsname );
     }
+    PMIU_writeline( pentry->fd, outbuf );
+}
+
+static void fPMI_Handle_init_port( PMI_Process *pentry )
+{
+    char outbuf[PMIU_MAXLINE];
+
+    if (pmidebug) {
+	DBG_PRINTF( "Entering fPMI_Handle_init to start connection\n" );
+    }
+
+    snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", pentry->nProcesses );
+    PMIU_writeline( pentry->fd, outbuf );
+    snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", pentry->rank );
+    PMIU_writeline( pentry->fd, outbuf );
+    snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
 }
