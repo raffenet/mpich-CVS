@@ -184,20 +184,25 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     }
     /* --END ERROR HANDLING-- */
 
-    /* strip off prefix if there is one */
+    /* strip off prefix if there is one, but only skip prefixes
+     * if they are greater than length one to allow for windows
+     * drive specifications (e.g. c:\...) */
+
     tmp = strchr(filename, ':');
-    /* Only skip prefixes greater than length one to allow for windows drive specification (c:\...)*/
-    /*if (tmp) filename = tmp + 1;*/
-    if (tmp > filename + 1)
+    if (tmp > filename + 1) {
 	filename = tmp + 1;
+    }
 
 /* use default values for disp, etype, filetype */    
 
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, fsops, amode, 0,
 		    MPI_BYTE, MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
 
-    if (error_code != MPI_SUCCESS)
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS) {
         MPI_Comm_free(&dupcomm);
+    }
+    /* --END ERROR HANDLING-- */
 
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't

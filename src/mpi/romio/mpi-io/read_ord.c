@@ -79,9 +79,12 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
     MPI_Recv(NULL, 0, MPI_BYTE, source, 0, fh->comm, MPI_STATUS_IGNORE);
 
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
+    /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {
 	return MPIO_Err_return_file(fh, error_code);
     }
+    /* --END ERROR HANDLING-- */
+
     MPI_Send(NULL, 0, MPI_BYTE, dest, 0, fh->comm);
 
     ADIO_ReadStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
