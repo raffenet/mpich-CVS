@@ -9,6 +9,8 @@
 
 #include "sock.h"
 
+/*#define MPID_USE_SEQUENCE_NUMBERS*/
+
 typedef struct MPIDI_Process_group_s
 {
     volatile int ref_count;
