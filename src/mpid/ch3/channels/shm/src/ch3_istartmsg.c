@@ -13,7 +13,14 @@
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
-    assert(sreq != NULL); \
+    /*assert(sreq != NULL);*/ \
+    if (sreq == NULL) \
+    { \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
+	MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG); \
+	return mpi_errno; \
+    } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
     assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
@@ -40,6 +47,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
@@ -57,15 +65,19 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
        data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
-	int error;
 	int nb;
 	
 	/* MT - need some signalling to lock down our right to use the
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	error = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
-	assert(error == MPI_SUCCESS);
+	mpi_errno = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	    return mpi_errno;
+	}
 
 	if (nb == pkt_sz)
 	{
