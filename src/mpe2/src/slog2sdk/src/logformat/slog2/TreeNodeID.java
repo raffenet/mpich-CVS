@@ -75,14 +75,19 @@ public class TreeNodeID implements Comparable
         return ( this.depth == nodeID.depth && this.xpos == nodeID.xpos );
     }
 
-    // Define the "natural ordering" imposed by Comparable used in SortedMap
+    /*
+       Define the "natural ordering" imposed by Comparable used in SortedMap
+       The ordering here needs to be consistent with DrawOrderComparator
+       which is first increasing startime order then decreasing endtime
+    */
     public int compareTo( final TreeNodeID ID )
     {
         if ( this.depth == ID.depth )
             if ( this.xpos == ID.xpos )
                 return 0;
             else
-                return ( this.xpos > ID.xpos ? -1 : 1 ); // decreasing endtime
+                return ( this.xpos < ID.xpos ? -1 : 1 ); // increasing starttime
+             // return ( this.xpos > ID.xpos ? -1 : 1 ); // decreasing endtime
         else
             return ( this.depth > ID.depth ? -1 : 1 );
     }

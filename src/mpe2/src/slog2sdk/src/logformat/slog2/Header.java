@@ -103,18 +103,14 @@ public class Header
     }
 
     // For SLOG-2 Input API
-    public boolean isVersionCompatible()
+    public String getCompatibleVersionMessage()
     {
         if ( version_ID.compareTo( Const.version_ID ) == 0 ) 
-            return true;
-        else {
-            System.err.println( "Incompatible Version IDs detected! "
-                              + "the logfile's is version "
-                              + version_ID + ", "
-                              + "but the program is version "
-                              + Const.version_ID );
-            return false;
-        }
+            return null;
+        else
+            return ( "Incompatible Version IDs detected! \n"
+                   + "the logfile's is version " + version_ID + ", "
+                   + "but the program is version " + Const.version_ID + "\n" );
     }
 
     public void setTreeLeafByteSize( int in_bytesize )

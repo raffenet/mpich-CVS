@@ -18,7 +18,13 @@ import java.util.Collections;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
-import base.drawable.*;
+import base.drawable.DrawOrderComparator;
+import base.drawable.TimeBoundingBox;
+import base.drawable.Topology;
+import base.drawable.Category;
+import base.drawable.Drawable;
+import base.drawable.Primitive;
+import base.drawable.Shadow;
 
 public class BufForShadows extends BufForObjects
 {
@@ -26,7 +32,7 @@ public class BufForShadows extends BufForObjects
                                             + 4  /* buf4nestable.size() */
                                             + 4  /* buf4nestless.size() */ ;
     private static final DrawOrderComparator DRAWING_ORDER
-                                            = new DrawOrderComparator();
+                                             = new DrawOrderComparator();
 
     private Map               buf4shadows;   // For Output API
     private Map               shadowdefs_map;
@@ -159,32 +165,32 @@ public class BufForShadows extends BufForObjects
         return Nrobjs;
     }
 
-    // Iterator of Nestable Drawables in Decreasing Endtime order
-    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
-    {
-        // if ( ! isOutputBuf )
-        return new IteratorOfBackDrawables( buf4nestable, tframe );
-    }
-
-    // Iterator of Nestless Drawables in Decreasing Endtime order
-    public Iterator nestlessBackIterator( final TimeBoundingBox tframe )
-    {
-        // if ( ! isOutputBuf )
-        return new IteratorOfBackDrawables( buf4nestless, tframe );
-    }
-
-    // Iterator of Nestable Drawables in Increasing Endtime order
+    // Iterator of Nestable Drawables in Increasing StartTime order
     public Iterator nestableForeIterator( final TimeBoundingBox tframe )
     {
         // if ( ! isOutputBuf )
         return new IteratorOfForeDrawables( buf4nestable, tframe );
     }
 
-    // Iterator of Nestless Drawables in Increasing Endtime order
+    // Iterator of Nestless Drawables in Increasing StartTime order
     public Iterator nestlessForeIterator( final TimeBoundingBox tframe )
     {
         // if ( ! isOutputBuf )
         return new IteratorOfForeDrawables( buf4nestless, tframe );
+    }
+
+    // Iterator of Nestable Drawables in Decreasing StartTime order
+    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
+    {
+        // if ( ! isOutputBuf )
+        return new IteratorOfBackDrawables( buf4nestable, tframe );
+    }
+
+    // Iterator of Nestless Drawables in Decreasing StartTime order
+    public Iterator nestlessBackIterator( final TimeBoundingBox tframe )
+    {
+        // if ( ! isOutputBuf )
+        return new IteratorOfBackDrawables( buf4nestless, tframe );
     }
 
     public LineIDMap getIdentityLineIDMap()
@@ -310,7 +316,7 @@ public class BufForShadows extends BufForObjects
         if ( isOutputBuf )
             sobjs_itr = buf4shadows.values().iterator();
         else
-            sobjs_itr = new BackItrOfDobjs( this );
+            sobjs_itr = new ForeItrOfDobjs( this );
         for ( idx = 1; sobjs_itr.hasNext(); idx++ )
             rep.append( idx + ": " + sobjs_itr.next() + "\n" );
 
@@ -318,7 +324,11 @@ public class BufForShadows extends BufForObjects
     }
 
 
-    private class BackItrOfDobjs implements Iterator
+    /*
+       Iterators to return Shadow
+       in Increasing StartTime Order(1st) and then Decreasing EndTime Order(2nd)
+    */
+    private class ForeItrOfDobjs implements Iterator
     {
         private TimeBoundingBox  timeframe;
         private Iterator         nestable_itr;
@@ -327,12 +337,12 @@ public class BufForShadows extends BufForObjects
         private Drawable         nestless_dobj;
         private Drawable         next_drawable;
 
-        public BackItrOfDobjs( final TimeBoundingBox  tframe )
+        public ForeItrOfDobjs( final TimeBoundingBox  tframe )
         {
             timeframe      = tframe;
-            nestable_itr   = new IteratorOfBackDrawables( buf4nestable,
+            nestable_itr   = new IteratorOfForeDrawables( buf4nestable,
                                                           tframe );
-            nestless_itr   = new IteratorOfBackDrawables( buf4nestless,
+            nestless_itr   = new IteratorOfForeDrawables( buf4nestless,
                                                           tframe );
             nestable_dobj  = null;
             nestless_dobj  = null;
@@ -341,6 +351,8 @@ public class BufForShadows extends BufForObjects
 
         public boolean hasNext()
         {
+            double nestable_starttime, nestless_starttime;
+
             if ( nestable_dobj == null ) {
                 if ( nestable_itr.hasNext() )
                     nestable_dobj = (Drawable) nestable_itr.next();
@@ -352,16 +364,32 @@ public class BufForShadows extends BufForObjects
             }
 
             if ( nestable_dobj != null && nestless_dobj != null ) {
-                if ( nestable_dobj.getLatestTime()
-                   < nestless_dobj.getLatestTime() ) {
-                    next_drawable = nestless_dobj;
-                    nestless_dobj = null;
-                    return true;
+                nestable_starttime = nestable_dobj.getEarliestTime();
+                nestless_starttime = nestless_dobj.getEarliestTime();
+                if ( nestable_starttime == nestless_starttime ) {
+                    if ( nestable_dobj.getLatestTime()
+                       < nestless_dobj.getLatestTime() ) {
+                        next_drawable = nestless_dobj;
+                        nestless_dobj = null;
+                        return true;
+                    }
+                    else {
+                        next_drawable = nestable_dobj;
+                        nestable_dobj = null;
+                        return true;
+                    }
                 }
-                else {
-                    next_drawable = nestable_dobj;
-                    nestable_dobj = null;
-                    return true;
+                else { /* Significant Order */
+                    if ( nestable_starttime < nestless_starttime ) {
+                        next_drawable = nestable_dobj;
+                        nestable_dobj = null;
+                        return true;
+                    }
+                    else {
+                        next_drawable = nestless_dobj;
+                        nestless_dobj = null;
+                        return true;
+                    }
                 }
             }
 
@@ -386,5 +414,5 @@ public class BufForShadows extends BufForObjects
         }
 
         public void remove() {}
-    }   // private class BackItrOfDobjs
+    }   // private class ForeItrOfDobjs
 }

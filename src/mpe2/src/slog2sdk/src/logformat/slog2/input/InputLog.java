@@ -43,11 +43,51 @@ public class InputLog
             System.exit( 1 );
         }
 
-        readHeader();
-
-        buffer    = new byte[ filehdr.getMaxBufferByteSize() ];
+        buffer    = null;
         bary_ins  = null;
         data_ins  = null;
+    }
+
+    public String getCompatibleHeader()
+    {
+        try {
+            rand_file.seek( 0 );
+            filehdr   = new Header( rand_file );
+        } catch ( IOException ioerr ) {
+            System.err.println( "InputLog: Non-recoverable IOException! "
+                              + "Exiting ..." );
+            ioerr.printStackTrace();
+            System.exit( 1 );
+        }
+
+        return filehdr.getCompatibleVersionMessage();
+    }
+
+    public static void stdoutConfirmation()
+    {
+        byte[] str_bytes = new byte[ 10 ];
+        System.out.print( "Do you still want the program to continue ? "
+                        + "y/yes to continue : " );
+        try {
+            System.in.read( str_bytes );
+        } catch ( IOException ioerr ) {
+            System.err.println( "InputLog: Non-recoverable IOException! "
+                              + "Exiting ..." );
+            ioerr.printStackTrace();
+            System.exit( 1 );
+        }
+        String in_str = ( new String( str_bytes ) ).trim();
+        if ( in_str.equals( "y" ) || in_str.equals( "yes" ) )
+            System.out.println( "Program continues...." );
+        else {
+            System.out.println( "Program is terminating!..." );
+            System.exit( 1 );
+        }
+    }
+
+    public void initialize()
+    {
+        buffer    = new byte[ filehdr.getMaxBufferByteSize() ];
 
         readTreeDir();
         readCategoryMap();
@@ -69,6 +109,7 @@ public class InputLog
         return filehdr.getMaxTreeDepth();
     }
 
+/*
     private void readHeader()
     {
         try {
@@ -102,6 +143,7 @@ public class InputLog
             }
         }
     }
+*/
 
     /*
        The returned String of readFilePart() is the error message.

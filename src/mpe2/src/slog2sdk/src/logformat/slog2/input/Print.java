@@ -11,6 +11,7 @@ package logformat.slog2.input;
 
 import base.drawable.*;
 import logformat.slog2.*;
+import logformat.slog2.input.InputLog;
 
 public class Print
 {
@@ -22,15 +23,21 @@ public class Print
 
     public static final void main( String[] args )
     {
-        logformat.slog2.input.InputLog      slog_ins;
-        CategoryMap                         objdefs;
-        TreeTrunk                           treetrunk;
-        TreeNode                            treeroot;
-        TimeBoundingBox                     timebounds;
+        InputLog         slog_ins;
+        CategoryMap      objdefs;
+        TreeTrunk        treetrunk;
+        TreeNode         treeroot;
+        TimeBoundingBox  timebounds;
+        String            err_msg;
 
         parseCmdLineArgs( args );
 
-        slog_ins   = new logformat.slog2.input.InputLog( in_filename );
+        slog_ins   = new InputLog( in_filename );
+        if ( (err_msg = slog_ins.getCompatibleHeader()) != null ) {
+            System.err.print( err_msg );
+            InputLog.stdoutConfirmation();
+        }
+        slog_ins.initialize();
         System.out.println( slog_ins );
 
         treetrunk  = new TreeTrunk( slog_ins );

@@ -21,9 +21,8 @@ RM           = @RM@
 TARGET1 = $(libbuild_dir)/slog2print.jar
 TARGET2 = $(libbuild_dir)/slog2navigator.jar
 PACKAGE = logformat.slog2.input
-SRC     = TreeNode.java InputLog.java \
+SRC     = IteratorOfGroupObjects.java TreeNode.java InputLog.java \
           BufStub.java TreeFloor.java \
-          CmptrOfFinalTime.java \
           TreeFloorList.java TreeTrunk.java \
           Print.java Navigator.java
 

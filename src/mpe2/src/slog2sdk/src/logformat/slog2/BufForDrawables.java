@@ -14,9 +14,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Collections;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Primitive;
@@ -27,6 +29,8 @@ public class BufForDrawables extends BufForObjects
     private static final int  INIT_BYTESIZE = BufForObjects.BYTESIZE
                                             + 4  /* buf4nestable.size() */
                                             + 4  /* buf4nestless.size() */ ;
+    private static final DrawOrderComparator DRAWING_ORDER
+                                             = new DrawOrderComparator();
 
     private static final byte PRIMITIVE_ID  = 0;
     private static final byte COMPOSITE_ID  = 1;
@@ -114,28 +118,28 @@ public class BufForDrawables extends BufForObjects
         return count;
     }
 
-    // Iterator of Nestable Drawables in Decreasing Endtime order
-    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
-    {
-        return new IteratorOfBackDrawables( buf4nestable, tframe );
-    }
-
-    // Iterator of Nestless Drawables in Decreasing Endtime order
-    public Iterator nestlessBackIterator( final TimeBoundingBox tframe )
-    {
-        return new IteratorOfBackDrawables( buf4nestless, tframe );
-    }
-
-    // Iterator of Nestable Drawables in Increasing Endtime order
+    // Iterator of Nestable Drawables in Increasing StartTime order
     public Iterator nestableForeIterator( final TimeBoundingBox tframe )
     {
         return new IteratorOfForeDrawables( buf4nestable, tframe );
     }
     
-    // Iterator of Nestless Drawables in Increasing Endtime order
+    // Iterator of Nestless Drawables in Increasing StartTime order
     public Iterator nestlessForeIterator( final TimeBoundingBox tframe )
     {
         return new IteratorOfForeDrawables( buf4nestless, tframe );
+    }
+
+    // Iterator of Nestable Drawables in Decreasing StartTime order
+    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
+    {
+        return new IteratorOfBackDrawables( buf4nestable, tframe );
+    }
+
+    // Iterator of Nestless Drawables in Decreasing StartTime order
+    public Iterator nestlessBackIterator( final TimeBoundingBox tframe )
+    {
+        return new IteratorOfBackDrawables( buf4nestless, tframe );
     }
 
     public LineIDMap getIdentityLineIDMap()
@@ -155,14 +159,16 @@ public class BufForDrawables extends BufForObjects
 
         super.writeObject( outs );   // BufForObjects.writeObject( outs )
 
-        // Save the Lists in reverse order, i.e. decreasing endtime order
+        // Save the Lists in Increasing Starttime order
+        Collections.sort( buf4nestable, DRAWING_ORDER );
+        Collections.sort( buf4nestless, DRAWING_ORDER );
 
         // assume buf4nestless contains only primitives, e.g. arrow/event
         Nobjs  = buf4nestless.size();
         outs.writeInt( Nobjs );
-        dobjs_itr = buf4nestless.listIterator( Nobjs );
-        while ( dobjs_itr.hasPrevious() ) {
-            dobj = (Drawable) dobjs_itr.previous();
+        dobjs_itr = buf4nestless.listIterator( 0 );
+        while ( dobjs_itr.hasNext() ) {
+            dobj = (Drawable) dobjs_itr.next();
             if ( dobj instanceof Composite ) {
                 outs.writeByte( (int) COMPOSITE_ID );
                 ( (Composite) dobj ).writeObject( outs );
@@ -176,9 +182,9 @@ public class BufForDrawables extends BufForObjects
         // assume buf4nestable contains both primitives and composites.
         Nobjs  = buf4nestable.size();
         outs.writeInt( Nobjs );
-        dobjs_itr = buf4nestable.listIterator( Nobjs );
-        while ( dobjs_itr.hasPrevious() ) {
-            dobj = (Drawable) dobjs_itr.previous();
+        dobjs_itr = buf4nestable.listIterator( 0 );
+        while ( dobjs_itr.hasNext() ) {
+            dobj = (Drawable) dobjs_itr.next();
             if ( dobj instanceof Composite ) {
                 outs.writeByte( (int) COMPOSITE_ID );
                 ( (Composite) dobj ).writeObject( outs );
@@ -191,72 +197,6 @@ public class BufForDrawables extends BufForObjects
 
         haveObjectsBeenSaved = true;
     }
-
-/*
-    public BufForDrawables( MixedDataInput ins )
-    throws java.io.IOException
-    {
-        this( false );
-        this.readObject( ins );
-    }
-
-    public void readObject( MixedDataInput ins )
-    throws java.io.IOException
-    {
-        Primitive  prime;
-        Composite  cmplx;
-        byte       dobj_type;
-        int        Nobjs, idx;
-
-        super.readObject( ins );   // BufForObjects.readObject( ins )
-
-        // assume buf4nestless contains only primitives, e.g. arrow/event
-        Nobjs = ins.readInt();
-        buf4nestless = new ArrayList( Nobjs );
-        for ( idx = 0; idx < Nobjs; idx++ ) {
-            dobj_type = ins.readByte();
-            switch ( dobj_type ) {
-                case PRIMITIVE_ID:
-                    prime = new Primitive( ins );
-                    buf4nestless.add( prime );
-                    total_bytesize += ( prime.getByteSize() + 1 );
-                    break;
-                case COMPOSITE_ID:
-                    cmplx = new Composite( ins );
-                    buf4nestless.add( cmplx );
-                    total_bytesize += ( cmplx.getByteSize() + 1 );
-                    break;
-                default:
-                    System.err.println( "BufForDrawables: Error! "
-                                      + "Unknown drawable type = "
-                                      + dobj_type );
-            }
-        }
-
-        // assume buf4nestable contains both primitives and composites.
-        Nobjs = ins.readInt();
-        buf4nestable = new ArrayList( Nobjs );
-        for ( idx = 0; idx < Nobjs; idx++ ) {
-            dobj_type = ins.readByte();
-            switch ( dobj_type ) {
-                case PRIMITIVE_ID:
-                    prime = new Primitive( ins );
-                    buf4nestable.add( prime );
-                    total_bytesize += ( prime.getByteSize() + 1 );
-                    break;
-                case COMPOSITE_ID:
-                    cmplx = new Composite( ins );
-                    buf4nestable.add( cmplx );
-                    total_bytesize += ( cmplx.getByteSize() + 1 );
-                    break;
-                default:
-                    System.err.println( "BufForDrawables: Error! "
-                                      + "Unknown drawable type = "
-                                      + dobj_type );
-            }
-        }
-    }
-*/
 
     public BufForDrawables( MixedDataInput ins, final Map categorymap )
     throws java.io.IOException
@@ -336,7 +276,7 @@ public class BufForDrawables extends BufForObjects
         rep.append( super.toString() /* BufForObjects */ );
         rep.append( " }\n" );
 
-        dobjs_itr = new BackItrOfDobjs( this );
+        dobjs_itr = new ForeItrOfDobjs( this );
         for ( idx = 1; dobjs_itr.hasNext(); idx++ )
             rep.append( idx + ": " + dobjs_itr.next() + "\n" );
 
@@ -345,8 +285,11 @@ public class BufForDrawables extends BufForObjects
 
 
 
-    /* Various Iterators to return Drawables (Primitive/Composite) */
-    private class BackItrOfDobjs implements Iterator
+    /*
+       Iterators to return Drawables (Primitive/Composite)
+       in Increasing StartTime Order(1st) and then Decreasing EndTime Order(2nd)
+    */
+    private class ForeItrOfDobjs implements Iterator
     {
         private TimeBoundingBox  timeframe;
         private Iterator         nestable_itr;
@@ -355,12 +298,12 @@ public class BufForDrawables extends BufForObjects
         private Drawable         nestless_dobj;
         private Drawable         next_drawable;
 
-        public BackItrOfDobjs( final TimeBoundingBox  tframe )
+        public ForeItrOfDobjs( final TimeBoundingBox  tframe )
         {
             timeframe      = tframe;
-            nestable_itr   = new IteratorOfBackDrawables( buf4nestable,
+            nestable_itr   = new IteratorOfForeDrawables( buf4nestable,
                                                           tframe );
-            nestless_itr   = new IteratorOfBackDrawables( buf4nestless,
+            nestless_itr   = new IteratorOfForeDrawables( buf4nestless,
                                                           tframe );
             nestable_dobj  = null;
             nestless_dobj  = null;
@@ -369,6 +312,8 @@ public class BufForDrawables extends BufForObjects
 
         public boolean hasNext()
         {
+            double nestable_starttime, nestless_starttime;
+
             if ( nestable_dobj == null ) {
                 if ( nestable_itr.hasNext() )
                     nestable_dobj = (Drawable) nestable_itr.next();
@@ -380,16 +325,32 @@ public class BufForDrawables extends BufForObjects
             }
 
             if ( nestable_dobj != null && nestless_dobj != null ) {
-                if ( nestable_dobj.getLatestTime()
-                   < nestless_dobj.getLatestTime() ) {
-                    next_drawable = nestless_dobj;
-                    nestless_dobj = null;
-                    return true;
+                nestable_starttime = nestable_dobj.getEarliestTime();
+                nestless_starttime = nestless_dobj.getEarliestTime();
+                if ( nestable_starttime == nestless_starttime ) {
+                    if ( nestable_dobj.getLatestTime()
+                       < nestless_dobj.getLatestTime() ) {
+                        next_drawable = nestless_dobj;
+                        nestless_dobj = null;
+                        return true;
+                    }
+                    else {
+                        next_drawable = nestable_dobj;
+                        nestable_dobj = null;
+                        return true;
+                    }
                 }
-                else {
-                    next_drawable = nestable_dobj;
-                    nestable_dobj = null;
-                    return true;
+                else { /* Significant Order */
+                    if ( nestable_starttime < nestless_starttime ) {
+                        next_drawable = nestable_dobj;
+                        nestable_dobj = null;
+                        return true;
+                    }
+                    else {
+                        next_drawable = nestless_dobj;
+                        nestless_dobj = null;
+                        return true;
+                    }
                 }
             }
 
@@ -414,6 +375,6 @@ public class BufForDrawables extends BufForObjects
         }
 
         public void remove() {}
-    }   // private class BackItrOfDobjs
+    }   // private class ForeItrOfDobjs
 
 }

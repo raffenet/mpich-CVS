@@ -15,11 +15,13 @@ import java.io.BufferedReader;
 
 import base.drawable.*;
 import logformat.slog2.*;
+import logformat.slog2.input.InputLog;
 
 public class Navigator
 {
-    private static boolean            printAll   = false;
-    private static boolean            isVerbose  = false;
+    private static boolean            printAll          = false;
+    private static boolean            changedPrintAll   = false;
+    private static boolean            isVerbose         = false;
 
     private static InputStreamReader  sys_insrdr
                                       = new InputStreamReader( System.in );
@@ -31,15 +33,21 @@ public class Navigator
 
     public static final void main( String[] args )
     {
-        logformat.slog2.input.InputLog slog_ins;
-        CategoryMap                    objdefs;
-        TreeTrunk                      treetrunk;
-        TreeNode                       treeroot;
-        TimeBoundingBox                timeframe_root, timeframe_old, timeframe;
+        InputLog          slog_ins;
+        CategoryMap       objdefs;
+        TreeTrunk         treetrunk;
+        TreeNode          treeroot;
+        TimeBoundingBox   timeframe_root, timeframe_old, timeframe;
+        String            err_msg;
 
         parseCmdLineArgs( args );
 
-        slog_ins   = new logformat.slog2.input.InputLog( in_filename );
+        slog_ins   = new InputLog( in_filename );
+        if ( (err_msg = slog_ins.getCompatibleHeader()) != null ) {
+            System.err.print( err_msg );
+            InputLog.stdoutConfirmation();
+        }
+        slog_ins.initialize();
         // System.out.println( slog_ins );
 
         // Initialize the TreeTrunk
@@ -71,38 +79,45 @@ public class Navigator
                 != null ) {
             System.out.println( "TimeWindow = " + timeframe
                               + " @ d = " + depth );
-            if ( treetrunk.updateTimeWindow( timeframe_old, timeframe ) ) {
+            if ( changedPrintAll 
+               ||   treetrunk.updateTimeWindow( timeframe_old, timeframe )
+                  > TreeTrunk.TIMEBOX_EQUAL ) {
                 if ( printAll )
+                    //System.out.println( treetrunk.toFloorString( timeframe ) );
                     System.out.println( treetrunk.toString( timeframe ) );
+                    // System.out.println( treetrunk.toString() );
                 else
                     System.out.println( treetrunk.toStubString() );
                 timeframe_old = timeframe;
+                changedPrintAll = false;
             }
         }
 
         slog_ins.close();
     }
 
-    private static String format_msg = "[d=I]  [[ts=D] [tf=D]]  "
-                                     + "[zi[=D]] [zo[=D]] [sf[=F]] [sb[=F]]";
+    private static String format_msg = "[s|a] [d=I] [[ts=D] [tf=D]] "
+                                     + "[-[=D]] [+[=D]] [<[=F]] [>[=F]]";
 
     private static String input_msg = "Interactive Input Options: \n"
                                     + "\t Specification of the Time Frame : \n"
                                     + "\t \t " + format_msg + "\n"
+                                    + "\t [s|a], print details              "
+                                    + " s for stub, a for all drawables.\n"
                                     + "\t [d=I], depth=Integer              "
                                     + " Needed only when program starts.\n"
                                     + "\t [ts=D], timeframe_start=Double    "
                                     + " Specify Start of TimeFrame.\n"
                                     + "\t [tf=D], timeframe_final=Double    "
                                     + " Specify Final of TimeFrame.\n"
-                                    + "\t [zi[=D]], zoom-in[=Double]        "
-                                    + " Specify Center of Zoom-In Frame.\n"
-                                    + "\t [zi[=D]], zoom-out[=Double]       "
+                                    + "\t [-[=D]], zoom-out[=Double]        "
                                     + " Specify Center of Zoom-Out Frame.\n"
-                                    + "\t [sf[=F]], scroll-forward[=Frames] "
-                                    + " Specify Frames to Scroll Forward.\n"
-                                    + "\t [sb[=F]], scroll-backward[=Frames]"
-                                    + " Specify Frames to Scroll Backward.\n";
+                                    + "\t [+[=D]], zoom-in[=Double]         "
+                                    + " Specify Center of Zoom-In Frame.\n"
+                                    + "\t [<[=F]], scroll-backward[=Frames] "
+                                    + " Specify Frames to Scroll Backward.\n"
+                                    + "\t [>[=F]], scroll-forward[=Frames]  "
+                                    + " Specify Frames to Scroll Forward.\n";
 
     private static double zoom_ftr = 2.0d;
 
@@ -136,8 +151,8 @@ public class Navigator
                         err_msg.append( "\n time_frame_final = " + str );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "zi=" ) ) {
-                        str = argv[ idx ].trim().substring( 3 );
+                    else if ( argv[ idx ].startsWith( "+=" ) ) {
+                        str = argv[ idx ].trim().substring( 2 );
                         double zoom_ctr = Double.parseDouble( str );
                         double ctr_span = timeframe_old.getDuration() / 2.0d
                                         / zoom_ftr;
@@ -146,8 +161,8 @@ public class Navigator
                         err_msg.append( "\n zoom_in_center = " + str );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "zo=" ) ) {
-                        str = argv[ idx ].trim().substring( 3 );
+                    else if ( argv[ idx ].startsWith( "-=" ) ) {
+                        str = argv[ idx ].trim().substring( 2 );
                         double zoom_ctr = Double.parseDouble( str );
                         double ctr_span = timeframe_old.getDuration() / 2.0d
                                         * zoom_ftr;
@@ -156,8 +171,8 @@ public class Navigator
                         err_msg.append( "\n zoom_out_center = " + str );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "sf=" ) ) {
-                        str = argv[ idx ].trim().substring( 3 );
+                    else if ( argv[ idx ].startsWith( ">=" ) ) {
+                        str = argv[ idx ].trim().substring( 2 );
                         double Nwins = Double.parseDouble( str );
                         double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( Nwins * win_span
@@ -168,8 +183,8 @@ public class Navigator
                                       + " frames" );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "sb=" ) ) {
-                        str = argv[ idx ].trim().substring( 3 );
+                    else if ( argv[ idx ].startsWith( "<=" ) ) {
+                        str = argv[ idx ].trim().substring( 2 );
                         double Nwins = Double.parseDouble( str );
                         double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( - Nwins * win_span
@@ -190,7 +205,7 @@ public class Navigator
                     }
                 }   // if ( argv[ idx ].indexOf( '=' ) != -1 )
                 else {   // if ( argv[ idx ].indexOf( '=' ) == -1 )
-                    if ( argv[ idx ].startsWith( "zi" ) ) {
+                    if ( argv[ idx ].startsWith( "+" ) ) {
                         double zoom_ctr = ( timeframe_old.getEarliestTime()
                                           + timeframe_old.getLatestTime() )
                                           / 2.0d;
@@ -201,7 +216,7 @@ public class Navigator
                         err_msg.append( "\n zoom_in_center = " + zoom_ctr );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "zo" ) ) {
+                    else if ( argv[ idx ].startsWith( "-" ) ) {
                         double zoom_ctr = ( timeframe_old.getEarliestTime()
                                           + timeframe_old.getLatestTime() )
                                           / 2.0d;
@@ -212,7 +227,7 @@ public class Navigator
                         err_msg.append( "\n zoom_out_center = " + zoom_ctr );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "sf" ) ) {
+                    else if ( argv[ idx ].startsWith( ">" ) ) {
                         double Nwins = 1.0d;
                         double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( Nwins * win_span
@@ -223,7 +238,7 @@ public class Navigator
                                       + " frames" );
                         idx++;
                     }
-                    else if ( argv[ idx ].startsWith( "sb" ) ) {
+                    else if ( argv[ idx ].startsWith( "<" ) ) {
                         double Nwins = 1.0d;
                         double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( - Nwins * win_span
@@ -232,6 +247,18 @@ public class Navigator
                                  + timeframe.getEarliestTime() );
                         err_msg.append( "\n scroll_forward = " + Nwins
                                       + " frames" );
+                        idx++;
+                    }
+                    else if ( argv[ idx ].startsWith( "s" ) ) {
+                        printAll = false;
+                        changedPrintAll = true;
+                        err_msg.append( "\n print_details = " + printAll );
+                        idx++;
+                    }
+                    else if ( argv[ idx ].startsWith( "a" ) ) {
+                        printAll = true;
+                        changedPrintAll = true;
+                        err_msg.append( "\n print_details = " + printAll );
                         idx++;
                     }
                     else {

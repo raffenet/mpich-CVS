@@ -17,27 +17,27 @@ import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 
 /*
-   Iterator of Drawables in a given List in Decreasing Endtime order.
+   Iterator of Drawables in a given List in Decreasing StartTime order.
    The drawable returned by next() overlaps with the timeframe specified.
  */
 public class IteratorOfBackDrawables implements Iterator
 {
-    private Iterator         drawables_itr;
+    private ListIterator     drawables_itr;
     private TimeBoundingBox  timeframe;
     private Drawable         next_drawable;
 
     public IteratorOfBackDrawables(       List             dobjs_list,
                                     final TimeBoundingBox  tframe )
     {
-        drawables_itr  = dobjs_list.iterator();
+        drawables_itr  = dobjs_list.listIterator( dobjs_list.size() );
         timeframe      = tframe;
         next_drawable  = null;
     }
 
     public boolean hasNext()
     {
-        while ( drawables_itr.hasNext() ) {
-            next_drawable = (Drawable) drawables_itr.next();
+        while ( drawables_itr.hasPrevious() ) {
+            next_drawable = (Drawable) drawables_itr.previous();
             if ( next_drawable.overlaps( timeframe ) )
                 return true;
         }

@@ -11,7 +11,7 @@ package logformat.slog2;
 
 public class Const
 {
-           static final String  version_ID     = "SLOG 2.0.0";
+           static final String  version_ID     = "SLOG 2.0.1";
            static final byte    INVALID_byte   = Byte.MIN_VALUE;
            static final short   INVALID_short  = Short.MIN_VALUE;
            static final int     INVALID_int    = Integer.MIN_VALUE;
@@ -26,4 +26,12 @@ public class Const
 
     public static final short   NUM_LEAFS      = 2;
     public static final int     LEAF_BYTESIZE  = 65536;
+
+    public static final String  VERSION_HISTORY =
+                                  "Version SLOG 2.0.0 employs "
+                                + "decreasing endtime ordering.\n"
+                                + "Version SLOG 2.0.1 employs "
+                                + "increasing starttime ordering.\n"
+                                + "Using 2.0.1 viewer for 2.0.0 logfile "
+                                + "messes up state nesting stack!\n";
 }

@@ -52,33 +52,37 @@ public class TreeNode extends BufForDrawables
     }
 
     public Iterator iteratorOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean isBackItr, boolean isNestable )
+                                         boolean isForeItr, boolean isNestable )
     {
-        if (  isBackItr &&  isNestable )
-            return super.nestableBackIterator( tframe );
-        else if (  isBackItr && !isNestable )
-            return super.nestlessBackIterator( tframe );
-        else if ( !isBackItr &&  isNestable )
-            return super.nestableForeIterator( tframe );
-        else if ( !isBackItr && !isNestable )
-            return super.nestlessForeIterator( tframe );
-        else
-            return null;
+        if ( isForeItr ) {
+            if ( isNestable )
+                return super.nestableForeIterator( tframe );
+            else
+                return super.nestlessForeIterator( tframe );
+        }
+        else {
+            if ( isNestable )
+                return super.nestableBackIterator( tframe );
+            else
+                return super.nestlessBackIterator( tframe );
+        }
     }
 
     public Iterator iteratorOfShadows( final TimeBoundingBox  tframe,
-                                       boolean isBackItr, boolean isNestable )
+                                       boolean isForeItr, boolean isNestable )
     {
-        if (  isBackItr &&  isNestable )
-            return new BackItrOfNestableShadows( tframe );
-        else if (  isBackItr && !isNestable )
-            return new BackItrOfNestlessShadows( tframe );
-        else if ( !isBackItr &&  isNestable )
-            return new ForeItrOfNestableShadows( tframe );
-        else if ( !isBackItr && !isNestable )
-            return new ForeItrOfNestlessShadows( tframe );
-        else
-            return null;
+        if ( isForeItr ) {
+            if ( isNestable )
+                return new ForeItrOfNestableShadows( tframe );
+            else
+                return new ForeItrOfNestlessShadows( tframe );
+        }
+        else {
+            if ( isNestable )
+                return new BackItrOfNestableShadows( tframe );
+            else
+                return new BackItrOfNestlessShadows( tframe );
+        }
     }
 
     public void writeObject( MixedDataOutput outs )

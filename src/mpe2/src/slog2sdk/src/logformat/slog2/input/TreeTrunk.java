@@ -21,15 +21,20 @@ import logformat.slog2.*;
 */
 public class TreeTrunk extends TreeFloorList
 {
-    private        static boolean          isDebugging = false;
-    private        static TimeBoundingBox  timeframe_root;
-    private               short            depth_root;  // depth of treeroot
-    private               short            depth_init;  // depth initialized
-    private               short            iZoom_level;
+    public  final static int              TIMEBOX_DISJOINTED = -1;
+    public  final static int              TIMEBOX_EQUAL      = 0;
+    public  final static int              TIMEBOX_SCROLLING  = 1;
+    public  final static int              TIMEBOX_ZOOMING    = 2;
 
-    private               double           duration_root;
-    private               double           tZoomFactor;
-    private               double           logZoomFactor;
+    private       static boolean          isDebugging = false;
+    private       static TimeBoundingBox  timeframe_root;
+    private              short            depth_root;  // depth of treeroot
+    private              short            depth_init;  // depth initialized
+    private              short            iZoom_level;
+
+    private              double           duration_root;
+    private              double           tZoomFactor;
+    private              double           logZoomFactor;
     
 
     private InputLog          slog_ins;
@@ -89,7 +94,7 @@ public class TreeTrunk extends TreeFloorList
 
     /*
       growChildren() is NOT to be called by anyone
-      except growInTreeWindow() or {contract,enlarge,scroll}TimeWindowTo()
+      except growInTreeWindow() or {zoom,scroll}TimeWindowTo()
       Assumption:  treenode.overlaps( time_win ) == true;
     */
     private void growChildren( final TreeNode treenode, short in_depth,
@@ -234,6 +239,8 @@ public class TreeTrunk extends TreeFloorList
             }
         // }
         // return super.getLowestDepth();
+        if ( isDebugging )
+            debug_println( super.toStubString() );
     }
 
 
@@ -279,16 +286,21 @@ public class TreeTrunk extends TreeFloorList
             }
         }
         // return super.getLowestDepth();
+        if ( isDebugging )
+            debug_println( super.toStubString() );
     }
 
     // Float.MIN_VALUE is way to small, set TOLERANCE to 1%
     // private static final double TOLERANCE = 5 * Float.MIN_VALUE;
     private static final double TOLERANCE = 0.01f;
 
-    //  This function returns the lowest-depth of the tree after the update
-    //  if there is any error, -1 is returned.
-    public boolean updateTimeWindow( final TimeBoundingBox  time_win_old,
-                                     final TimeBoundingBox  time_win_new )
+    //  This function returns
+    //       TIMEBOX_DISJOINTED  if time_win_new is disjoint from tree_rootj.
+    //       TIMEBOX_EQUAL       if time_win_new == time_win_old
+    //       TIMEBOX_SCROLLING   if it is scrolling.
+    //       TIMEBOX_ZOOMING     if it is zooming.
+    public int updateTimeWindow( final TimeBoundingBox  time_win_old,
+                                 final TimeBoundingBox  time_win_new )
     {
         // Error Checking
         /*
@@ -308,18 +320,16 @@ public class TreeTrunk extends TreeFloorList
             if ( ! time_win_old.equals( time_win_new ) ) {
                 time_ratio = time_win_new.getDuration()
                            / time_win_old.getDuration();
-                if ( Math.abs( time_ratio - 1.0d ) <= TOLERANCE )
+                if ( Math.abs( time_ratio - 1.0d ) <= TOLERANCE ) {
                     scrollTimeWindowTo( time_win_new );
-                else
+                    return TIMEBOX_SCROLLING;
+                }
+                else {
                     zoomTimeWindowTo( time_win_new );
-                    /*
-                    if ( time_ratio > 1.0d )
-                        enlargeTimeWindowTo( time_win_new );
-                    else
-                        contractTimeWindowTo( time_win_new );
-                    */
+                    return TIMEBOX_ZOOMING;
+                }
             }   
-            return true;
+            return TIMEBOX_EQUAL;
         }
         else {  // if ( timeframe_root.disjoints( time_win_new ) )
             //  Don't update the TimeWindow, emit a warning message and return
@@ -329,7 +339,7 @@ public class TreeTrunk extends TreeFloorList
                          + "\t TimeWin@TreeRoot = " + timeframe_root + "\n"
                          + "\t TimeWin_old      = " + time_win_old   + "\n"
                          + "\t TimeWin_new      = " + time_win_new   + "\n" );
-            return false;
+            return TIMEBOX_DISJOINTED;
         }
     }
 
