@@ -4,7 +4,7 @@
 #include <unistd.h>
 #define MAX_DIRNAME_SIZE 256 
 
-int main( int argc, char *argv[])
+int main( int argc, char *argv[], char *envp[] )
 {
     int  i, myid, numprocs;
     int  namelen;
@@ -27,6 +27,12 @@ int main( int argc, char *argv[])
 
     getcwd( curr_wd, MAX_DIRNAME_SIZE ); 
     fprintf( stdout, "[%d] current working directory=%s\n", i, curr_wd );
+
+#ifdef PRINTENV
+    /* may produce lots of output, but here if you need it */
+    for ( i = 0; envp[i]; i++ )
+	fprintf( stdout, "[%d] envp[%d]=%s\n", myid, i, envp[i] );
+#endif
 
     MPI_Finalize( );
 }
