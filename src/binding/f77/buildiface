@@ -619,12 +619,13 @@ sub print_args {
 	    # FORT_END_LEN and FORT_MIXED_LEN contain the necessary comman
 	    # if they are prsent at all.
 	    if ($prototype_only) {
-		print $OUTFD "char * FORT_MIXED_LEN(), ";
+		print $OUTFD "char * FORT_MIXED_LEN_DECL, ";
+		$last_args .= "FORT_END_LEN_DECL ";
 	    }
 	    else {
 		print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
+		$last_args .= "FORT_END_LEN(d$count) ";
 	    }
-	    $last_args .= "FORT_END_LEN(d$count) ";
 	}
 	elsif ($parm =~/\[/) {
 	    # Argument type is array, so we need to 
