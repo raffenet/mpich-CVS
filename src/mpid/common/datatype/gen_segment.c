@@ -390,9 +390,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else {
 		partial_flag = 0; /* handling everything left for this type */
 	    }
-	    if (vectorfn &&
-		cur_elmp->orig_block == cur_elmp->curblock &&
-		(cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_VECTOR)
+	    if (vectorfn
+		&& (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_VECTOR
+		&& cur_elmp->curcount > 1
+		&& cur_elmp->orig_block == cur_elmp->curblock)
 	    {
 		piecefn_indicated_exit = vectorfn(&myblocks,
 						  cur_elmp->curcount,
@@ -449,37 +450,53 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    /* Update the stack elements.  Either we're done with the count,
 	     * in which case it is time to pop off, or we need to reset the
 	     * block value (because we just handled an entire block).
-	     *
-	     * Note that this will get more complicated as I add the ability
-	     * to handle more of the partial processing cases. ???
 	     */
-	    cur_elmp->curcount--;
-	    if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
-	    else {
-		/* didn't finish with the type. */
-		int count_index;
+	    if (myblocks > cur_elmp->curblock)
+	    {
+		/* This can only happen in the case of a vector, so we don't
+		 * test for that for performance reasons.
+		 */
 
-		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
-		    /* DLOOP_KIND_CONTIG -- there is always only one block, so we never hit this code */
-		    case DLOOP_KIND_INDEXED:
-			count_index = cur_elmp->orig_count - cur_elmp->curcount;
-
-			cur_elmp->orig_block = DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
-			cur_elmp->curblock   = cur_elmp->orig_block;
-			cur_elmp->curoffset  = cur_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
-			break;
-		    case DLOOP_KIND_VECTOR:
-			cur_elmp->curblock = cur_elmp->orig_block;
-			cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
-			    cur_elmp->loop_p->loop_params.v_t.stride;
-			break;
-		    case DLOOP_KIND_BLOCKINDEXED:
-			assert(0);
-			break;
+		/* recall that we only handle more than one contiguous block if
+		 * we are at the beginning of a block.  this simplifies the
+		 * calculations here.
+		 */
+		cur_elmp->curcount -= myblocks / cur_elmp->orig_block;
+		if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+		else {
+		    /* if we didn't finish the entire type, we need to update the block and offset */
+		    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->orig_block);
+		    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
+			cur_elmp->loop_p->loop_params.v_t.stride;
 		}
 	    }
+	    else {
+		cur_elmp->curcount--;
+		if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+		else {
+		    /* didn't finish with the type. */
+		    int count_index;
 
-		
+		    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
+			/* DLOOP_KIND_CONTIG -- there is always only one block, so we never hit this code */
+			case DLOOP_KIND_INDEXED:
+			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
+
+			    cur_elmp->orig_block = DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
+			    cur_elmp->curblock   = cur_elmp->orig_block;
+			    cur_elmp->curoffset  = cur_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
+			    break;
+			case DLOOP_KIND_VECTOR:
+			    cur_elmp->curblock = cur_elmp->orig_block;
+			    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
+				cur_elmp->loop_p->loop_params.v_t.stride;
+			    break;
+			case DLOOP_KIND_BLOCKINDEXED:
+			    assert(0);
+			    break;
+		    }
+		}
+	    }
 	    if (piecefn_indicated_exit) {
 		/* The piece function indicated that we should quit processing */
 		DLOOP_SEGMENT_SAVE_LOCAL_VALUES;

@@ -41,6 +41,62 @@ struct MPID_Segment_piece_params {
     } u;
 };
 
+#define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count)			\
+do {										\
+    type * l_src = (type *)src, * l_dest = (type *)dest;                    	\
+    int i, j;									\
+    const int l_stride = stride;						\
+    if (nelms == 1) {								\
+        for (i=count;i!=0;i--) {						\
+            *l_dest++ = *l_src;							\
+            l_src = (type *) ((char *) l_src + l_stride);			\
+        }									\
+    }										\
+    else {									\
+        for (i=count; i!=0; i--) {						\
+            for (j=0; j<nelms; j++) {						\
+                *l_dest++ = l_src[j];						\
+	    }									\
+            l_src = (type *) ((char *) l_src + l_stride);			\
+        }									\
+    }                                                                           \
+    dest = (char *) l_dest;                                                     \
+    src  = (char *) l_src;                                                      \
+} while (0)
+
+#define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)			\
+do {										\
+    type * l_src = (type *)src, * l_dest = (type *)dest;                    	\
+    int i, j;									\
+    const int l_stride = stride;						\
+    if (nelms == 1) {								\
+        for (i=count;i!=0;i--) {						\
+            *l_dest = *l_src++;							\
+            l_dest = (type *) ((char *) l_dest + l_stride);			\
+        }									\
+    }										\
+    else {									\
+        for (i=count; i!=0; i--) {						\
+            for (j=0; j<nelms; j++) {						\
+                l_dest[j] = *l_src++;						\
+	    }									\
+            l_dest = (type *) ((char *) l_dest + l_stride);			\
+        }									\
+    }                                                                           \
+    dest = (char *) l_dest;                                                     \
+    src  = (char *) l_src;                                                      \
+} while (0)
+
+
+static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
+					   int count,
+					   int blksz,
+					   DLOOP_Offset stride,
+					   int basic_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
+
 static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 					   int el_size,
 					   DLOOP_Offset rel_off,
@@ -49,6 +105,24 @@ static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 
 static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
 					     int el_size,
+					     DLOOP_Offset rel_off,
+					     void *bufp,
+					     void *v_paramp);
+
+static int MPID_Segment_vector_pack_to_buf(int *blocks_p,
+					   int count,
+					   int blksz,
+					   DLOOP_Offset stride,
+					   int basic_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
+
+static int MPID_Segment_vector_unpack_to_buf(int *blocks_p,
+					     int count,
+					     int blksz,
+					     DLOOP_Offset stride,
+					     int basic_size,
 					     DLOOP_Offset rel_off,
 					     void *bufp,
 					     void *v_paramp);
@@ -93,7 +167,7 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 			    first,
 			    lastp,
 			    MPID_Segment_contig_pack_to_buf, 
-			    NULL,
+			    MPID_Segment_vector_pack_to_buf,
 			    &pack_params);
     return;
 }
@@ -118,7 +192,7 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			    first,
 			    lastp, 
 			    MPID_Segment_contig_pack_to_iov, 
-			    NULL,
+			    MPID_Segment_vector_pack_to_iov,
 			    &packvec_params);
 
     /* last value already handled by MPID_Segment_manipulate */
@@ -140,9 +214,65 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			    first,
 			    lastp, 
 			    MPID_Segment_contig_unpack_to_buf,
-			    NULL,
+			    MPID_Segment_vector_unpack_to_buf,
 			    &unpack_params);
     return;
+}
+
+/* MPID_Segment_vector_pack_to_iov
+ *
+ * Note: this is only called when the starting position is at the beginning
+ * of a whole block in a vector type.
+ */
+static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
+					   int count,
+					   int blksz,
+					   DLOOP_Offset stride,
+					   int basic_size,
+					   DLOOP_Offset rel_off, /* offset into buffer */
+					   void *bufp, /* start of buffer */
+					   void *v_paramp)
+{
+    int i, size, blocks_left;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    blocks_left = *blocks_p;
+
+    for (i=0; i < count && blocks_left > 0; i++) {
+	if (blocks_left > blksz) {
+	    size = blksz * basic_size;
+	    blocks_left -= blksz;
+	}
+	else {
+	    /* last pass */
+	    size = blocks_left * basic_size;
+	    blocks_left = 0;
+	}
+
+	if (paramp->u.pack_vector.index > 0 && ((char *) bufp + rel_off) ==
+	    (((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
+	     paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
+	{
+	    /* add this size to the last vector rather than using up another one */
+	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
+	}
+	else {
+	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
+	    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
+	    paramp->u.pack_vector.index++;
+	    /* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
+	    if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) {
+		/* TODO: FIX SO THAT WE CONTINUE TO DO AGGREGATION ON LAST VECTOR */
+		*blocks_p -= blocks_left;
+		return 1;
+	    }
+	}
+
+	rel_off += stride;
+
+    }
+    assert(blocks_left == 0);
+    return 0;
 }
 
 
@@ -199,6 +329,49 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
     return;
 }
 
+/* MPID_Segment_vector_unpack_to_buf
+ *
+ * Note: this is only called when the starting position is at the beginning
+ * of a whole block in a vector type.
+ */
+static int MPID_Segment_vector_unpack_to_buf(int *blocks_p,
+					     int count,
+					     int blksz,
+					     DLOOP_Offset stride,
+					     int basic_size,
+					     DLOOP_Offset rel_off, /* offset into buffer */
+					     void *bufp, /* start of buffer */
+					     void *v_paramp)
+{
+    int i, blocks_left, whole_count;
+    char *cbufp = (char *) bufp + rel_off;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    whole_count = *blocks_p / blksz;
+    blocks_left = *blocks_p % blksz;
+
+    if (basic_size == 4) {
+	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, stride, int32_t, blksz, whole_count);
+	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int32_t, blocks_left, 1);
+    }
+    else if (basic_size == 2) {
+	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, stride, int16_t, blksz, whole_count);
+	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int16_t, blocks_left, 1);
+    }
+    else {
+	for (i=0; i < whole_count; i++) {
+	    memcpy(cbufp, paramp->u.unpack.unpack_buffer, blksz * basic_size);
+	    paramp->u.unpack.unpack_buffer += blksz * basic_size;
+	    cbufp += stride;
+	}
+	if (blocks_left) {
+	    memcpy(paramp->u.unpack.unpack_buffer, cbufp, blocks_left * basic_size);
+	    paramp->u.unpack.unpack_buffer += blocks_left * basic_size;
+	}
+    }
+    return 0;
+}
+
 /* MPID_Segment_contig_unpack_to_buf
  */
 static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
@@ -221,6 +394,51 @@ static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
     paramp->u.unpack.unpack_buffer += size;
     return 0;
 }
+
+
+/* MPID_Segment_vector_pack_to_buf
+ *
+ * Note: this is only called when the starting position is at the beginning
+ * of a whole block in a vector type.
+ */
+static int MPID_Segment_vector_pack_to_buf(int *blocks_p,
+					   int count,
+					   int blksz,
+					   DLOOP_Offset stride,
+					   int basic_size,
+					   DLOOP_Offset rel_off, /* offset into buffer */
+					   void *bufp, /* start of buffer */
+					   void *v_paramp)
+{
+    int i, blocks_left, whole_count;
+    char *cbufp = (char *) bufp + rel_off;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    whole_count = *blocks_p / blksz;
+    blocks_left = *blocks_p % blksz;
+
+    if (basic_size == 4) {
+	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, stride, int32_t, blksz, whole_count);
+	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int32_t, blocks_left, 1);
+    }
+    else if (basic_size == 2) {
+	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, stride, int16_t, blksz, whole_count);
+	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int16_t, blocks_left, 1);
+    }
+    else {
+	for (i=0; i < whole_count; i++) {
+	    memcpy(paramp->u.pack.pack_buffer, cbufp, blksz * basic_size);
+	    paramp->u.pack.pack_buffer += blksz * basic_size;
+	    cbufp += stride;
+	}
+	if (blocks_left) {
+	    memcpy(paramp->u.pack.pack_buffer, cbufp, blocks_left * basic_size);
+	    paramp->u.pack.pack_buffer += blocks_left * basic_size;
+	}
+    }
+    return 0;
+}
+
 
 /* MPID_Segment_contig_pack_to_buf
  */
@@ -254,6 +472,12 @@ static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
     paramp->u.pack.pack_buffer += size;
     return 0;
 }
+
+
+
+
+
+
 
 
 
