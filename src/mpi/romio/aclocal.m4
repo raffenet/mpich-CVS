@@ -189,8 +189,8 @@ dnl
 dnl
 dnl Check whether to use -n, \c, or newline-tab to separate
 dnl checking messages from result messages.
-dnl from MPICH
-define(AC_PROG_ECHO_N,
+dnl from MPICH; taken from autoconf 2.12.
+define([AC_PROG_ECHO_N],
 ac_echo_n=yes
 [if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
   if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
@@ -202,17 +202,21 @@ ac_echo_n=yes
 else
   ac_n= ac_c='\c' ac_t=
 fi
-# lam reports this does not work on openbsd.  comment it out because it doesn't
-# really do much for us.
-#ac_echo_test=`echo foo 1>&1`
-#if test -z "$ac_echo_test" ; then
-#     print_error "Your sh shell does not handle the output redirection"
-#     print_error "1>&1 correctly.  Configure will work around this problem,"
-#     print_error "but you should report the problem to your vendor."
-#fi
+dnl lam reports this does not work on openbsd.  comment it out because it doesn't
+dnl really do much for us.
+dnl ac_echo_test=`echo foo 1>&1`
+dnl if test -z "$ac_echo_test" ; then
+dnl     print_error "Your sh shell does not handle the output redirection"
+dnl     print_error "1>&1 correctly.  Configure will work around this problem,"
+dnl     print_error "but you should report the problem to your vendor."
+dnl fi
 ])dnl
 dnl AC_MSG_CHECKING(FEATURE-DESCRIPTION)
-define(AC_FD_MSG,1)dnl
+dnl 
+dnl Define these only for autoconf version 1.  If FD_MSG defined, then 
+dnl we probably already have what we need
+ifdef([AC_FD_MSG],[define(PAC_ALREADY_HAVE_FDMSG,1)],[
+define(AC_FD_MSG,1)
 define(AC_MSG_CHECKING,[dnl
 if test -z "$ac_echo_n" ; then
 AC_PROG_ECHO_N
@@ -221,11 +225,12 @@ if test -z "$ac_echo_test" -a AC_FD_MSG = 1 ; then
 echo $ac_n "checking $1""... $ac_c"
 else
 echo $ac_n "checking $1""... $ac_c" 1>&AC_FD_MSG
-fi])dnl
+fi])])dnl
 dnl
 dnl AC_MSG(msg)
 dnl generates "msg..." (no newline)
-define(AC_MSG,[dnl
+ifdef([PAC_ALREADY_HAVE_FDMSG],,[
+define([AC_MSG],[dnl
 if test -z "$ac_echo_n" ; then
 AC_PROG_ECHO_N
 fi
@@ -233,19 +238,21 @@ if test -z "$ac_echo_test" -a AC_FD_MSG = 1 ; then
 echo $ac_n "$1""... $ac_c"
 else
 echo $ac_n "$1""... $ac_c" 1>&AC_FD_MSG
-fi])dnl
+fi])])dnl
 dnl
 dnl AC_CHECKING(FEATURE-DESCRIPTION)
-define(AC_CHECKING,dnl
-[echo "checking $1" 1>&AC_FD_MSG])dnl
+ifdef([PAC_ALREADY_HAVE_FDMSG],,[
+define([AC_CHECKING],dnl
+[echo "checking $1" 1>&AC_FD_MSG])])dnl
 dnl
 dnl AC_MSG_RESULT(RESULT-DESCRIPTION)
-define(AC_MSG_RESULT,dnl
+ifdef([PAC_ALREADY_HAVE_FDMSG],,[
+define([AC_MSG_RESULT],dnl
 if test -z "$ac_echo_test" -a AC_FD_MSG = 1 ; then
 [echo "$ac_t""$1"]
 else
 [echo "$ac_t""$1" 1>&AC_FD_MSG]
-fi)dnl
+fi)])dnl
 dnl
 define(PAC_GET_SPECIAL_SYSTEM_INFO,[
 #
@@ -1029,7 +1036,7 @@ dnl
 dnl
 dnl AC_TRY_LINK(INCLUDES, FUNCTION-BODY,
 dnl             ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND])
-define(AC_TRY_LINK,
+define([AC_TRY_LINK],
 if test -z "$ac_ext" ; then 
     ac_ext=c
 fi
@@ -1180,7 +1187,7 @@ if test "$pac_cv_c_inline" = "no" ; then
     AC_DEFINE(inline,,[Define if inline is not supported])
 fi
 ])dnl
-define(AC_MSG_WARN,[AC_MSG_RESULT([Warning: $1])])
+define([AC_MSG_WARN],[AC_MSG_RESULT([Warning: $1])])
 dnl
 dnl PAC_CHECK_HEADER(HEADER-FILE, ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND],
 dnl PRE-REQ-HEADERS )
