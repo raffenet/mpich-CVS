@@ -15,11 +15,12 @@
 #define MP_MAX_ENV_LENGTH    1024
 #define MP_MAX_NAME_LENGTH    256
 #define MP_MAX_VALUE_LENGTH  1024
+#define MP_MAX_FILENAME      1024
 
 typedef struct mp_host_node_t
 {
     char host[MP_MAX_HOST_LENGTH];
-    char ip_str[MP_MAX_HOST_LENGTH];
+    /*char ip_str[MP_MAX_HOST_LENGTH];*/
     int nproc;
     struct mp_host_node_t *next;
 } mp_host_node_t;
@@ -52,6 +53,7 @@ typedef struct mp_process_t
     int do_console;
     char console_host[SMPD_MAX_HOST_LENGTH];
     mp_host_node_t *host_list;
+    mp_launch_node_t *launch_list;
     int credentials_prompt;
     int do_multi_color_output;
     int no_mpi;
@@ -80,7 +82,6 @@ int mp_exit_fn(char *fcname);
 #define mp_enter_fn   smpd_enter_fn
 #define mp_exit_fn    smpd_exit_fn
 #endif
-int mp_parse_command_args(int *argc, char **argv[]);
 void mp_get_account_and_password(char *account, char *password);
 int mp_console(char *host);
 int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
@@ -88,5 +89,7 @@ int mp_connect_tree(mp_host_node_t *node);
 int mp_connect_next(int *parent_ptr, int *id_ptr);
 int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t *session_context);
 int handle_written(smpd_context_t *context, int num_written, int error);
+int mp_parse_command_args(int *argcp, char **argvp[]);
+void mp_print_options(void);
 
 #endif

@@ -71,6 +71,8 @@ int smpd_init_printf(void)
 	smpd_process.dbg_state |= SMPD_DBG_STATE_STDOUT;
     if (strstr(envstr, "log"))
 	smpd_process.dbg_state |= SMPD_DBG_STATE_LOGFILE;
+    if (strstr(envstr, "rank"))
+	smpd_process.dbg_state |= SMPD_DBG_STATE_PREPEND_RANK;
 
 #ifdef HAVE_WINDOWS_H
     if (!bInitialized)
@@ -106,8 +108,11 @@ int smpd_err_printf(char *str, ...)
     {
 	/* use stdout instead of stderr so that ordering will be consistent with dbg messages */
 
-	/* prepend output with the process tree node id */
-	fprintf(stdout, "[%d]ERROR:", smpd_process.id);
+	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	{
+	    /* prepend output with the process tree node id */
+	    fprintf(stdout, "[%d]ERROR:", smpd_process.id);
+	}
 
 	/* print the formatted string */
 	format_str = str;
@@ -117,8 +122,15 @@ int smpd_err_printf(char *str, ...)
     }
     if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
     {
-	/* prepend output with the process tree node id */
-	fprintf(smpd_process.dbg_fout, "[%d]ERROR:", smpd_process.id);
+	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	{
+	    /* prepend output with the process tree node id */
+	    fprintf(smpd_process.dbg_fout, "[%d]ERROR:", smpd_process.id);
+	}
+	else
+	{
+	    fprintf(smpd_process.dbg_fout, "ERROR:");
+	}
 
 	/* print the formatted string */
 	format_str = str;
@@ -157,8 +169,11 @@ int smpd_dbg_printf(char *str, ...)
 
     if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
     {
-	/* prepend output with the tree node id */
-	printf("[%d]", smpd_process.id);
+	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	{
+	    /* prepend output with the tree node id */
+	    printf("[%d]", smpd_process.id);
+	}
 
 	/* print the formatted string */
 	format_str = str;
@@ -168,8 +183,11 @@ int smpd_dbg_printf(char *str, ...)
     }
     if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
     {
-	/* prepend output with the process tree node id */
-	fprintf(smpd_process.dbg_fout, "[%d]:", smpd_process.id);
+	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	{
+	    /* prepend output with the process tree node id */
+	    fprintf(smpd_process.dbg_fout, "[%d]:", smpd_process.id);
+	}
 
 	/* print the formatted string */
 	format_str = str;

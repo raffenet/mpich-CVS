@@ -36,6 +36,11 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     smpd_enter_fn("smpd_parse_command_args");
 
+    if (smpd_get_opt(argcp, argvp, "-d"))
+    {
+	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK;
+    }
+
 #ifdef HAVE_WINDOWS_H
     if (smpd_get_opt(argcp, argvp, "-mgr"))
     {

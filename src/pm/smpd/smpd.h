@@ -59,6 +59,7 @@
 #define SMPD_DBG_STATE_STDOUT             0x1
 #define SMPD_DBG_STATE_ERROUT             0x2
 #define SMPD_DBG_STATE_LOGFILE            0x4
+#define SMPD_DBG_STATE_PREPEND_RANK       0x8
 
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"
