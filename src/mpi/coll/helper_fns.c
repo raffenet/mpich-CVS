@@ -64,7 +64,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
                           context_id, status, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_RECV);
+	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
 	return mpi_errno;
     }
     if (request_ptr) {
@@ -74,7 +74,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         mpi_errno = request_ptr->status.MPI_ERROR;
         MPID_Request_release(request_ptr);
     }
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_RECV);
+    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
     return mpi_errno;
 }
 
@@ -98,14 +98,14 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                            comm_ptr, context_id, &recv_req_ptr);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
     mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag, 
                            comm_ptr, context_id, &send_req_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
 
@@ -118,7 +118,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
     MPID_Request_release(recv_req_ptr);
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
+    MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
     return mpi_errno;
 }
 
@@ -196,12 +196,12 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
                           context_id, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_IRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
 	return mpi_errno;
     }
 
     *request = request_ptr->handle;
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_IRECV);
+    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
     return mpi_errno;
 }
