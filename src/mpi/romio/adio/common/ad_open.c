@@ -142,7 +142,6 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     fd->agg_comm = MPI_COMM_NULL;
     fd->is_open = 0;
     fd->io_worker = 0;
-    fd->worker_rank = 0;
     if (fd->hints->deferred_open && 
 		    ADIOI_Uses_generic_read(fd) &&
 		    ADIOI_Uses_generic_write(fd) ) {
@@ -156,7 +155,6 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm_rank(fd->agg_comm, &agg_rank);
 		    if (agg_rank == 0) {
 			    fd->io_worker = 1;
-			    fd->worker_rank = rank;
 		    }
 	    } else {
 		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
@@ -166,7 +164,6 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     } else {
 	    if (rank == 0) {
 		    fd->io_worker = 1;
-		    fd->worker_rank = rank;
 	    }
     }
 
