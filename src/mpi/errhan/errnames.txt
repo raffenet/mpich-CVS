@@ -123,7 +123,11 @@ be in the range 0 to %d
 **bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total\
  buffer size is %d
 **bsendnobuf:No buffer to detach. 
+**inttoosmall:An address does not fit into a Fortran INTEGER.  Use \
+ MPI_Get_address instead
+#
 #---- The messages below this line haven't been used yet.
+#
 **buffer:Invalid buffer pointer
 **bufalias:Buffers must not be aliased
 **bufalias %s %s:Buffer parameters %s and %s must not be aliased 
