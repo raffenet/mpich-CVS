@@ -104,11 +104,11 @@ __attribute__ ((unused))
 typedef struct MPIDI_CH3I_SHM_Packet_t
 {
     volatile int avail;
-    char pad_avail[28]; /* keep the avail flag on a separate cache line */
+    char pad_avail[60]; /* keep the avail flag on a separate cache line */
     int num_bytes;
     char *cur_pos;
     /* insert stuff here to align data? */
-    char pad_data[24]; /* align the data to 32 bytes */
+    char pad_data[56]; /* cache align the data */
     char data[MPIDI_CH3I_PACKET_SIZE];
     /* insert stuff here to pad the packet up to an aligned boundary? */
 } MPIDI_CH3I_SHM_Packet_t;
@@ -118,7 +118,7 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
     int head_index;
     int tail_index;
     /* insert stuff here to align the packets? */
-    char pad[24]; /* align the data to 32 bytes */
+    char pad[56]; /* cache align the data */
     MPIDI_CH3I_SHM_Packet_t packet[MPIDI_CH3I_NUM_PACKETS];
 } MPIDI_CH3I_SHM_Queue_t;
 
