@@ -197,7 +197,11 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 				   p->value, &new_value, &flag,
 				   (void (*)(void)) copyfn.C_CopyFunction );
 		if (mpi_errno != 0) {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+					 MPIR_ERR_RECOVERABLE, 
+					 FCNAME, __LINE__, 
+					 MPI_ERR_OTHER, 
+					 "**user", "**usercopy %d", mpi_errno);
 		}
 	    }
 	    break;
