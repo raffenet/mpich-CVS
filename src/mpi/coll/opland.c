@@ -98,6 +98,7 @@ void MPIR_LAND (
     }
     case MPI_FLOAT: 
 #ifdef HAVE_FORTRAN_BINDING
+	/* FIXME: This assume C float = Fortran real */
     case MPI_REAL: 
 #endif
     {
@@ -109,6 +110,7 @@ void MPIR_LAND (
     }
     case MPI_DOUBLE: 
 #ifdef HAVE_FORTRAN_BINDING
+	/* FIXME: This assume C double = Fortran double precision */
     case MPI_DOUBLE_PRECISION: 
 #endif
     {
@@ -118,6 +120,78 @@ void MPIR_LAND (
             a[i] = MPIR_LLAND(a[i],b[i]);
         break;
     }
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1: {
+        MPIR_INTEGER1_CTYPE * restrict a = (MPIR_INTEGER1_CTYPE *)inoutvec; 
+        MPIR_INTEGER1_CTYPE * restrict b = (MPIR_INTEGER1_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2: {
+        MPIR_INTEGER2_CTYPE * restrict a = (MPIR_INTEGER2_CTYPE *)inoutvec; 
+        MPIR_INTEGER2_CTYPE * restrict b = (MPIR_INTEGER2_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4: {
+        MPIR_INTEGER4_CTYPE * restrict a = (MPIR_INTEGER4_CTYPE *)inoutvec; 
+        MPIR_INTEGER4_CTYPE * restrict b = (MPIR_INTEGER4_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8: {
+        MPIR_INTEGER8_CTYPE * restrict a = (MPIR_INTEGER8_CTYPE *)inoutvec; 
+        MPIR_INTEGER8_CTYPE * restrict b = (MPIR_INTEGER8_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16: {
+        MPIR_INTEGER16_CTYPE * restrict a = (MPIR_INTEGER16_CTYPE *)inoutvec; 
+        MPIR_INTEGER16_CTYPE * restrict b = (MPIR_INTEGER16_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL4_CTYPE
+    case MPI_REAL4: {
+        MPIR_REAL4_CTYPE * restrict a = (MPIR_REAL4_CTYPE *)inoutvec; 
+        MPIR_REAL4_CTYPE * restrict b = (MPIR_REAL4_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL8_CTYPE
+    case MPI_REAL8: {
+        MPIR_REAL8_CTYPE * restrict a = (MPIR_REAL8_CTYPE *)inoutvec; 
+        MPIR_REAL8_CTYPE * restrict b = (MPIR_REAL8_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL16_CTYPE
+    case MPI_REAL16: {
+        MPIR_REAL16_CTYPE * restrict a = (MPIR_REAL16_CTYPE *)inoutvec; 
+        MPIR_REAL16_CTYPE * restrict b = (MPIR_REAL16_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLAND(a[i],b[i]);
+        break;
+    }
+#endif
 #if defined(HAVE_LONG_DOUBLE)
     case MPI_LONG_DOUBLE: {
         long double * restrict a = (long double *)inoutvec; 
@@ -189,6 +263,31 @@ int MPIR_LAND_check_dtype ( MPI_Datatype type )
 #ifdef HAVE_FORTRAN_BINDING
     case MPI_LOGICAL: 
     case MPI_INTEGER: 
+#endif
+/* The length type can be provided without Fortran, so we do so */
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1:
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2:
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4:
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8:
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16:
+#endif
+#ifdef MPIR_REAL4_CTYPE
+    case MPI_REAL4:
+#endif
+#ifdef MPIR_REAL8_CTYPE
+    case MPI_REAL8:
+#endif
+#ifdef MPIR_REAL16_CTYPE
+    case MPI_REAL16:
 #endif
         return MPI_SUCCESS;
     default: 

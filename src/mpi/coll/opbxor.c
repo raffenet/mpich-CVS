@@ -33,6 +33,51 @@ void MPIR_BXOR (
         break;
     }
 #endif
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1: {
+        MPIR_INTEGER1_CTYPE * restrict a = (MPIR_INTEGER1_CTYPE *)inoutvec; 
+        MPIR_INTEGER1_CTYPE * restrict b = (MPIR_INTEGER1_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LBXOR(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2: {
+        MPIR_INTEGER2_CTYPE * restrict a = (MPIR_INTEGER2_CTYPE *)inoutvec; 
+        MPIR_INTEGER2_CTYPE * restrict b = (MPIR_INTEGER2_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LBXOR(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4: {
+        MPIR_INTEGER4_CTYPE * restrict a = (MPIR_INTEGER4_CTYPE *)inoutvec; 
+        MPIR_INTEGER4_CTYPE * restrict b = (MPIR_INTEGER4_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LBXOR(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8: {
+        MPIR_INTEGER8_CTYPE * restrict a = (MPIR_INTEGER8_CTYPE *)inoutvec; 
+        MPIR_INTEGER8_CTYPE * restrict b = (MPIR_INTEGER8_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LBXOR(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16: {
+        MPIR_INTEGER16_CTYPE * restrict a = (MPIR_INTEGER16_CTYPE *)inoutvec; 
+        MPIR_INTEGER16_CTYPE * restrict b = (MPIR_INTEGER16_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LBXOR(a[i],b[i]);
+        break;
+    }
+#endif
     case MPI_INT: {
         int * restrict a = (int *)inoutvec; 
         int * restrict b = (int *)invec;
@@ -145,6 +190,22 @@ int MPIR_BXOR_check_dtype ( MPI_Datatype type )
 #endif
     case MPI_UNSIGNED_CHAR: 
     case MPI_BYTE: 
+/* The length type can be provided without Fortran, so we do so */
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1:
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2:
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4:
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8:
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16:
+#endif
         return MPI_SUCCESS;
     default: 
         return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BXOR" );

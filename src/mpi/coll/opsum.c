@@ -51,6 +51,78 @@ void MPIR_SUM (
         break;
     }
 #endif
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1: {
+        MPIR_INTEGER1_CTYPE * restrict a = (MPIR_INTEGER1_CTYPE *)inoutvec; 
+        MPIR_INTEGER1_CTYPE * restrict b = (MPIR_INTEGER1_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2: {
+        MPIR_INTEGER2_CTYPE * restrict a = (MPIR_INTEGER2_CTYPE *)inoutvec; 
+        MPIR_INTEGER2_CTYPE * restrict b = (MPIR_INTEGER2_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4: {
+        MPIR_INTEGER4_CTYPE * restrict a = (MPIR_INTEGER4_CTYPE *)inoutvec; 
+        MPIR_INTEGER4_CTYPE * restrict b = (MPIR_INTEGER4_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8: {
+        MPIR_INTEGER8_CTYPE * restrict a = (MPIR_INTEGER8_CTYPE *)inoutvec; 
+        MPIR_INTEGER8_CTYPE * restrict b = (MPIR_INTEGER8_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16: {
+        MPIR_INTEGER16_CTYPE * restrict a = (MPIR_INTEGER16_CTYPE *)inoutvec; 
+        MPIR_INTEGER16_CTYPE * restrict b = (MPIR_INTEGER16_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL4_CTYPE
+    case MPI_REAL4: {
+        MPIR_REAL4_CTYPE * restrict a = (MPIR_REAL4_CTYPE *)inoutvec; 
+        MPIR_REAL4_CTYPE * restrict b = (MPIR_REAL4_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL8_CTYPE
+    case MPI_REAL8: {
+        MPIR_REAL8_CTYPE * restrict a = (MPIR_REAL8_CTYPE *)inoutvec; 
+        MPIR_REAL8_CTYPE * restrict b = (MPIR_REAL8_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
+#ifdef MPIR_REAL16_CTYPE
+    case MPI_REAL16: {
+        MPIR_REAL16_CTYPE * restrict a = (MPIR_REAL16_CTYPE *)inoutvec; 
+        MPIR_REAL16_CTYPE * restrict b = (MPIR_REAL16_CTYPE *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LSUM(a[i],b[i]);
+        break;
+    }
+#endif
     case MPI_UNSIGNED: {
         unsigned * restrict a = (unsigned *)inoutvec; 
         unsigned * restrict b = (unsigned *)invec;
@@ -165,6 +237,7 @@ void MPIR_SUM (
         }
         break;
     }
+	/* FIXME: Need complex8, 16, and 32 */
 #endif
 	/* --BEGIN ERROR HANDLING-- */
     default: {
@@ -214,6 +287,34 @@ int MPIR_SUM_check_dtype ( MPI_Datatype type )
 #ifdef HAVE_FORTRAN_BINDING
     case MPI_COMPLEX: 
     case MPI_DOUBLE_COMPLEX: 
+#endif
+/* The length type can be provided without Fortran, so we do so */
+#ifdef MPIR_INTEGER1_CTYPE
+    case MPI_INTEGER1:
+#endif
+#ifdef MPIR_INTEGER2_CTYPE
+    case MPI_INTEGER2:
+#endif
+#ifdef MPIR_INTEGER4_CTYPE
+    case MPI_INTEGER4:
+#endif
+#ifdef MPIR_INTEGER8_CTYPE
+    case MPI_INTEGER8:
+#endif
+#ifdef MPIR_INTEGER16_CTYPE
+    case MPI_INTEGER16:
+#endif
+#ifdef MPIR_REAL4_CTYPE
+    case MPI_REAL4:
+    case MPI_COMPLEX8:
+#endif
+#ifdef MPIR_REAL8_CTYPE
+    case MPI_REAL8:
+    case MPI_COMPLEX16:
+#endif
+#ifdef MPIR_REAL16_CTYPE
+    case MPI_REAL16:
+    case MPI_COMPLEX32:
 #endif
         return MPI_SUCCESS;
     default: 
