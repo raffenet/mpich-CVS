@@ -11,12 +11,13 @@
 #include "dlog.h"
 
 /* structures, global variables */
+#define MPID_MAX_COLOR_STR 40
 typedef struct MPID_Timer_state
 {
     int in_id, out_id;
     int num_calls;
     unsigned long color;
-    char color_str[40];
+    char color_str[MPID_MAX_COLOR_STR];
     char *name;
 } MPID_Timer_state;
 
