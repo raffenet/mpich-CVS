@@ -109,7 +109,7 @@ typedef int SMPD_BOOL;
 #define vsnprintf _vsnprintf
 #define smpd_get_last_error GetLastError
 #else
-#define smpd_get_last_error errno
+#define smpd_get_last_error() errno
 #endif
 
 typedef enum smpd_state_t
