@@ -54,13 +54,15 @@ fortran_tests: $(FTESTS)
 fperf: ${srcdir}/fperf.f
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
 
-fcoll_test: ${srcdir}/fcoll_test.f
+# Some of the Fortran tests must be derived, so their code will be in the
+# LOCAL directory
+fcoll_test: fcoll_test.f
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
 
-fmisc: ${srcdir}/fmisc.f
+fmisc: fmisc.f
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
 
-pfcoll_test: ${srcdir}/pfcoll_test.f	
+pfcoll_test: pfcoll_test.f	
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
 
 #
