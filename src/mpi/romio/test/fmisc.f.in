@@ -7,7 +7,8 @@
 !     Fortran equivalent of misc.c
 !     tests various miscellaneous functions.
 
-      integer buf(1024), amode, flag, fh, status(MPI_STATUS_SIZE)
+      integer buf(1024), amode, fh, status(MPI_STATUS_SIZE)
+      logical flag
       integer ierr, newtype, i, group
       integer etype, filetype, mynod, argc, iargc
       integer errs, toterrs
@@ -68,20 +69,20 @@
       end if
 
       call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
-      if (flag .ne. 0) then
+      if (flag .ne. .FALSE.) then
          errs = errs + 1
-         print *, 'atomicity is ', flag, ', should be 0'
+         print *, 'atomicity is ', flag, ', should be .FALSE.'
       end if
       if (mynod .eq. 0 .and. verbose) then
          print *, ' setting atomic mode'
       end if
-      call MPI_FILE_SET_ATOMICITY(fh, 1, ierr)
+      call MPI_FILE_SET_ATOMICITY(fh, .TRUE., ierr)
       call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
-      if (flag .ne. 1) then
+      if (flag .ne. .TRUE.) then
          errs = errs + 1
-         print *, 'atomicity is ', flag, ', should be 1'
+         print *, 'atomicity is ', flag, ', should be .TRUE.'
       end if
-      call MPI_FILE_SET_ATOMICITY(fh, 0, ierr)
+      call MPI_FILE_SET_ATOMICITY(fh, .FALSE., ierr)
       if (mynod .eq. 0 .and. verbose) then
          print *, ' reverting back to nonatomic mode'
       end if
