@@ -1888,6 +1888,13 @@ int smpd_kill_all_processes(void)
 
     smpd_enter_fn(FCNAME);
 
+    if (smpd_process.local_root)
+    {
+	/* the mpiexec process should not kill the smpd manager that it created for the -localroot option */
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+
     if (smpd_process.rsh_mpiexec)
     {
 	int i;
