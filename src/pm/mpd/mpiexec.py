@@ -69,7 +69,7 @@ def get_next_argset():
             # next line: prepend an _ to avoid problems with -n as arg to echo
             shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % line)
             for line in shOut.fromchild:
-                argset.append(line[1:].strip())
+                argset.append(line[1:].strip())    # 1: strips off the leading _
     else:
         if argvCopy:
             colonPos = argvCopy.index(':')
