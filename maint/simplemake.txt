@@ -162,6 +162,11 @@ Commandline Options to Simplemake
  -nodepend
     Do not attempt to generate dependencies.
 
+Special Directory Names
+-----------------------
+topsrc_dir - directory containing the configure responsible for this Makefile
+master_topsrc_dir - directory containing the master (top level) configure.
+
 Differences with Automake
 -------------------------
 1.  Targets may use make variables.  For example,
