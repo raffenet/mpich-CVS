@@ -88,4 +88,4 @@ AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include)
 
 dnl Generate the Makefiles from Makefile.in
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile TraceInput/Makefile)

@@ -1,0 +1,2 @@
+libTraceInput_so_SOURCES = logformat_trace_InputLog.c trace_input.c
+INCLUDES = -I../../../../include -I${master_top_srcdir}/src/include

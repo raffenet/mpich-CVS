@@ -319,7 +319,7 @@ if test "$logging_name" = "rlog" ; then
     logging_subdirs="rlog"
 fi
 dnl use_logging_variable="USE_LOGGING_`echo $logging_name | tr a-z A-Z`"
-dnl AC_DEFINE("$use_logging_variable",,[define to choose logging library])
+dnl AC_DEFINE_UNQUOTED($use_logging_variable,,[define to choose logging library])
 if test "$logging_name" = "dlog" ; then
 AC_DEFINE(USE_LOGGING_DLOG,,[define to choose the dlog logging library])
 fi

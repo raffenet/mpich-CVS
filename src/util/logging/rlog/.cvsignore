@@ -10,6 +10,7 @@ config.log
 config.status
 config.cache
 config.system
-dlogconf.*
-mergedlogs
-printdlog
+rlogconf.*
+printrlog
+printirlog
+irlog2rlog

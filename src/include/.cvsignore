@@ -15,3 +15,4 @@ mm_via_rdma_pre.h
 mpid_ch3_conf.h.in
 mpid_ch3_tcp_conf.h.in
 dlogconf.h
+rlogconf.h
