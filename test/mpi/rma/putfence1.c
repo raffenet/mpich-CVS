@@ -51,7 +51,9 @@ int main( int argc, char *argv[] )
 				   recvtype.count, recvtype.datatype, win );
 		    if (err) {
 			errs++;
-			MTestPrintError( err );
+			if (errs < 10) {
+			    MTestPrintError( err );
+			}
 		    }
 		    MPI_Win_fence( 0, win );
 		    MTestFreeDatatype( &sendtype );
@@ -62,7 +64,13 @@ int main( int argc, char *argv[] )
 		       transfering data, as a send/recv pair */
 		    err = MTestCheckRecv( 0, &recvtype );
 		    if (err) {
-			errs += errs;
+			if (errs < 10) {
+			    printf( "Data in target buffer did not match for destination datatype %s\n", 
+				    MTestGetDatatypeName( &recvtype) );
+			    recvtype.printErrors = 1;
+			    (void)MTestCheckRecv( 0, &recvtype );
+			}
+			errs += err;
 		    }
 		}
 		else {

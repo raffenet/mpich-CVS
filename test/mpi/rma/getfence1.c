@@ -57,12 +57,14 @@ int main( int argc, char *argv[] )
 				   sendtype.count, sendtype.datatype, win );
 		    if (err) {
 			errs++;
-			MTestPrintError( err );
+			if (errs < 10) {
+			    MTestPrintError( err );
+			}
 		    }
 		    MPI_Win_fence( 0, win );
 		    err = MTestCheckRecv( 0, &recvtype );
 		    if (err) {
-			errs += errs;
+			errs += err;
 		    }
 		}
 		else {
