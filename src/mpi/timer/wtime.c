@@ -43,10 +43,10 @@
 @*/
 double MPI_Wtime( void )
 {
-    double t1;
+    double d;
     MPID_Time_t t;
 
     MPID_Wtime( &t );
-    MPID_Wtime_todouble( &t, &t1 );
-    return t1;
+    MPID_Wtime_todouble( &t, &d );
+    return d;
 }

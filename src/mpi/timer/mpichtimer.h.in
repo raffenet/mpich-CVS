@@ -84,23 +84,20 @@ void MPID_Wtime_init(void);
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 /* This is a new version of the cycle counter, based on the read time stamp
    (rdtsc) instruction */
-#define MPID_Wtime_init()
 /* There may be a better way to read the two 32 bit values into a single
    long long, but this should work */
-#define MPID_Wtime(var_ptr) { unsigned int ttth, tttl; long long tttt; \
-    __asm__ __volatile__  ( "rdtsc ; movl %%edx,%0 ; movl %%eax,%1" \
-                            : "=r" (ttth), "=r" (tttl) :: \
-                            "eax", "edx" ); \
-    tttt = ttth; tttt << 32 ; tttt |= tttl; \
-    *(var_ptr) = tttt; }
-#define MPIDM_Wtime_todouble(var, t) *var = (double)*t
-
-#elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE_2
-#define MPID_Wtime_init()
-#define MPID_Wtime(var) {long long t1;\
-  __asm__ volatile (".byte 0x0f, 0x31" : "=A" (t1));\
-   *(var) = t1;}
-#define MPIDM_Wtime_todouble(var, t) *var = (double)*t
+#define MPID_Wtime(var_ptr) \
+{ \
+    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" \
+                            : "=m" (*((char *) (var_ptr))), \
+                              "=m" (*(((char *) (var_ptr))+4)) \
+                            :: "eax", "ebx", "ecx", "edx" ); \
+}
+extern double g_timer_frequency;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)*t / g_timer_frequency
+#if 0
+#define MPIDM_Wtime_todouble(t, d) *d = (double)*t
+#endif
 
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #define MPID_Wtime_init()
@@ -108,10 +105,13 @@ void MPID_Wtime_init(void);
 
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
 #define MPID_Wtime(var) QueryPerformanceCounter(var)
-/*
 extern double g_timer_frequency;
-#define MPIDM_Wtime_todouble( var, t ) *t = (double)var->QuadPart / g_timer_frequency */ /* convert to seconds */
-#define MPIDM_Wtime_todouble( var, t ) *t = (double)var->QuadPart /* don't convert to seconds */
+#define MPIDM_Wtime_todouble( t, d ) \
+  *d = (double)t->QuadPart / g_timer_frequency /* convert to seconds */
+#if 0
+#define MPIDM_Wtime_todouble( t, d ) \
+  *d = (double)t->QuadPart /* don't convert to seconds */
+#endif
 
 #endif
 
