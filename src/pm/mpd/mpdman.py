@@ -248,7 +248,7 @@ def mpdman():
         if errmsg:
             pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
-            pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
+            pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % (reason,clientPgm)
             mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         try:
@@ -268,7 +268,7 @@ def mpdman():
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             pmiSocket = mpd_get_inet_socket_and_connect(myHost,pmiPort)
             reason = quote(str(errmsg))
-            pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
+            pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % (reason,clientPgm)
             mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         exit(0)
@@ -767,7 +767,7 @@ def mpdman():
                         mpd_send_one_msg_noprint(conSocket,msgToSend)
                 elif msg['cmd'] == 'execution_problem':
                     msgToSend = { 'cmd' : 'execution_problem', 'src' : myId, 'jobid' : jobid,
-                                  'rank' : myRank, 'exec' : clientPgm,
+                                  'rank' : myRank, 'exec' : msg['exec'],
                                   'reason' : msg['reason']  }
                     mpd_send_one_msg(rhsSocket,msgToSend)
                     if conSocket:
@@ -815,7 +815,7 @@ def mpdman():
                 # execution_problem is sent BEFORE client actually starts
                 if parsedMsg['cmd'] == 'execution_problem':
                     msgToSend = { 'cmd' : 'execution_problem', 'src' : myId, 'jobid' : jobid,
-                                  'rank' : myRank, 'exec' : clientPgm,
+                                  'rank' : myRank, 'exec' : parsedMsg['exec'],
                                   'reason' : parsedMsg['reason']  }
                     mpd_send_one_msg(rhsSocket,msgToSend)
                     if conSocket:
@@ -962,8 +962,8 @@ def mpdman():
                                       'args'         : spawnArgs,
                                       'envvars'      : spawnEnvvars,
                                       'limits'       : spawnLimits,
-                                      'singinitpid'  : singinitPID,
-                                      'singinitport' : singinitPORT,
+                                      'singinitpid'  : 0,
+                                      'singinitport' : 0,
                                     }
                         if lineLabels:
                             msgToSend['line_labels'] = str(lineLabels),
