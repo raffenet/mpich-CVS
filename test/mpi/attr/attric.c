@@ -72,6 +72,7 @@ int test_communicators( void )
 	    
     */
     MPI_Aint value;
+    int      isLeft;
 
     MPI_Comm_rank( MPI_COMM_WORLD, &world_rank );
     MPI_Comm_size( MPI_COMM_WORLD, &world_size );
@@ -81,7 +82,7 @@ int test_communicators( void )
     }
 #endif
 
-    while (MTestGetIntercomm( &comm, 2 )) {
+    while (MTestGetIntercomm( &comm, &isLeft, 2 )) {
 
 	if (comm == MPI_COMM_NULL) continue;
 

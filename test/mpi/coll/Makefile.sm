@@ -1,6 +1,7 @@
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
+	 -I${srcdir}/../include
 EXTERNAL_LIBS = m
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
@@ -29,4 +30,5 @@ coll12_SOURCES = coll12.c
 scatterv_SOURCES = scatterv.c
 scattern_SOURCES = scattern.c
 rerr_SOURCES = rerr.c
-
+icbcast_SOURCES = icbcast.c
+icbcast_LDADD = ../util/mtest.o

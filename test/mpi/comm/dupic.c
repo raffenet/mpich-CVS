@@ -16,11 +16,11 @@ int main( int argc, char *argv[] )
     int count;
     int indicies[2];
     int flag, r1buf, r2buf, s1buf, s2buf;
-    int rank;
+    int rank, isLeft;
 
     MTest_Init( &argc, &argv );
     
-    while (MTestGetIntercomm( &comm, 2 )) {
+    while (MTestGetIntercomm( &comm, &isLeft, 2 )) {
 	if (comm == MPI_COMM_NULL) continue;
 
 	MPI_Comm_dup( comm, &dupcomm );

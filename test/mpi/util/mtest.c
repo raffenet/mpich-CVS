@@ -306,7 +306,11 @@ const char *MTestGetIntracommName( void )
     return intraCommName;
 }
 
-int MTestGetIntercomm( MPI_Comm *comm, int min_size )
+/* 
+ * Return an intercomm; set isLeftGroup to 1 if the calling process is 
+ * a member of the "left" group.
+ */
+int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 {
     int size, rank, remsize;
     int done=0;
@@ -335,6 +339,7 @@ int MTestGetIntercomm( MPI_Comm *comm, int min_size )
 		       designated local leaders */
 		    rleader = -1;
 		}
+		*isLeftGroup = rank < size/2;
 		MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader, 12345,
 				      comm );
 		MPI_Comm_free( &mcomm );
@@ -378,7 +383,8 @@ int MTestGetComm( MPI_Comm *comm, int min_size )
 	}
     }
     if (getinter) {
-	idx = MTestGetIntercomm( comm, min_size );
+	int isLeft;
+	idx = MTestGetIntercomm( comm, &isLeft, min_size );
 	if (idx == 0) {
 	    getinter = 0;
 	}
