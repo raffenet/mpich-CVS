@@ -55,6 +55,12 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 	MPID_Process.comm_parent = (MPID_Comm *)0;
     }
 
+    /* single threaded for now? */
+    if (provided != NULL)
+    {
+	*provided = MPI_THREAD_SINGLE;
+    }
+
     mm_car_init();
     mm_vcutil_init();
 
@@ -114,6 +120,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     sprintf(key, "businesscard:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);
+
+    PMI_KVS_Commit(MPID_Process.pmi_kvsname);
+    PMI_Barrier();
 
     return MPI_SUCCESS;
 }

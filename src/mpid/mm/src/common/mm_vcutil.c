@@ -134,7 +134,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
 #ifdef MPICH_DEV_BUILD
-    vc_ptr->pmi_kvsname[0] = '\0';
+    vc_ptr->pmi_kvsname = NULL;
     vc_ptr->rank = -1;
     vc_ptr->read_next_ptr = NULL;
     vc_ptr->write_next_ptr = NULL;
@@ -186,17 +186,18 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 }
 
 /*@
-mm_vc_connect_alloc - allocate a new vc and post a connect to its method
+   mm_vc_connect_alloc - allocate a new vc and post a connect to its method
 
-  Parameters:
-  +  char *kvs_name - kvs name
-  -  int rank - rank in the kvs database
-  
-    Notes:
+   Parameters:
++  MPID_Comm *comm_ptr - communicator
+-  int rank - rank
+
+   Notes:
 @*/
-MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
+MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 {
     MPIDI_VC *vc_ptr;
+    char *kvs_name;
     char key[100];
     char *value;
     int value_len;
@@ -205,6 +206,8 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
     char *temp;
 #endif
     
+    kvs_name = comm_ptr->mm.pmi_kvsname;
+
     value_len = PMI_KVS_Get_value_length_max();
     value = (char*)malloc(value_len);
     
@@ -227,7 +230,7 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
 	    /* allocate a vc for this method */
 	    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
 	    tcp_post_connect(vc_ptr, value);
@@ -251,7 +254,7 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
 	    /* allocate a vc for this method */
 	    vc_ptr = mm_vc_alloc(MM_SHM_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
 	    shm_post_connect(vc_ptr, value);
@@ -275,7 +278,7 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
 	    /* allocate a vc for this method */
 	    vc_ptr = mm_vc_alloc(MM_VIA_RDMA_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
 	    via_rdma_post_connect(vc_ptr, value);
@@ -303,7 +306,7 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
 	    /* allocate a vc for this method */
 	    vc_ptr = mm_vc_alloc(MM_VIA_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
 	    via_post_connect(vc_ptr, value);
@@ -327,7 +330,7 @@ MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank)
 	    /* allocate a vc for this method */
 	    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    strcpy(vc_ptr->pmi_kvsname, kvs_name);
+	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
 	    tcp_post_connect(vc_ptr, value);

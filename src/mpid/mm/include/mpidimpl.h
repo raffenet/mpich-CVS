@@ -167,7 +167,7 @@ MPID_Request * mm_request_alloc();
     MPIDI_VC * mm_get_vc(MPID_Comm *comm_ptr, int rank);
     MPIDI_VC * mm_vc_get(int rank);
     MPIDI_VC * mm_vc_alloc(MM_METHOD method);
-    MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank);
+    MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank);
            int mm_vc_free(MPIDI_VC *ptr);
 
 /* buffer */

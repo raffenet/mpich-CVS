@@ -40,7 +40,7 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
     if (vc_ptr == NULL)
     {
 	/* allocate and connect a virtual connection */
-	comm_ptr->vcr[rank] = vc_ptr = mm_vc_connect_alloc(comm_ptr->mm.pmi_kvsname, rank);
+	comm_ptr->vcr[rank] = vc_ptr = mm_vc_connect_alloc(comm_ptr, rank);
 	/* post a read on the newly connected vc for a packet */
 	mm_post_read_pkt(vc_ptr);
     }

@@ -22,7 +22,6 @@ MPID_Request * mm_request_alloc()
     if (p == NULL)
 	return p;
 #ifdef MPICH_DEV_BUILD
-    memset(p, 0, sizeof(MPID_Request));
     p->cc_ptr = &p->cc;
 #endif
     p->mm.rcar[0].freeme = FALSE;

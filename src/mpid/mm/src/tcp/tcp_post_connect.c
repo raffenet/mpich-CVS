@@ -43,6 +43,15 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     }
     port = atoi(token);
 
+    if (beasy_create(&vc_ptr->data.tcp.bfd, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_post_connect: beasy_create failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MPID_Thread_unlock(vc_ptr->lock);
+	return -1;
+    }
+
     if (beasy_connect(vc_ptr->data.tcp.bfd, host, port) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
@@ -52,7 +61,8 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	return -1;
     }
 
-    if (beasy_send(vc_ptr->data.tcp.bfd, (void*)&vc_ptr->rank, sizeof(int)) == SOCKET_ERROR)
+    /* what do i send the other side? what context? what rank */
+    if (beasy_send(vc_ptr->data.tcp.bfd, (void*)&MPIR_Process.comm_world->rank, sizeof(int)) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
