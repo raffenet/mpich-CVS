@@ -48,6 +48,11 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->comm = comm;       /* dup'ed in MPI_File_open */
     fd->filename = strdup(filename);
     fd->file_system = file_system;
+
+    /* TODO: VERIFY THAT WE DON'T NEED TO ALLOCATE THESE, THEN DON'T. */
+    fd->fns = (ADIOI_Fns *) ADIOI_Malloc(sizeof(ADIOI_Fns));
+    *fd->fns = *ops;
+
     fd->disp = disp;
     fd->split_coll_count = 0;
     fd->shared_fp_fd = ADIO_FILE_NULL;

@@ -97,7 +97,7 @@ if ((fh->file_system == ADIO_PIOFS) ||					\
  * error codes for common cases in romio/adio/
  */
 #define MPIO_ERR_CREATE_CODE_ERRNO(myname, myerrno, error_code_p) \
-*(error_code_p) = MPIO_Err_code_create(MPI_SUCCESS,		  \
+*(error_code_p) = MPIO_Err_create_code(MPI_SUCCESS,		  \
 				       MPIR_ERR_RECOVERABLE,	  \
 				       myname, __LINE__,	  \
 				       MPI_ERR_IO,		  \
@@ -107,7 +107,7 @@ if ((fh->file_system == ADIO_PIOFS) ||					\
 				       strerror(myerrno));
 
 #define MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname, key, error_code_p)	      \
-*(error_code_p) = MPIO_Err_code_create(MPI_SUCCESS,			      \
+*(error_code_p) = MPIO_Err_create_code(MPI_SUCCESS,			      \
 				       MPIR_ERR_RECOVERABLE,		      \
 				       myname, __LINE__,		      \
                                        MPI_ERR_NOT_SAME,                      \
