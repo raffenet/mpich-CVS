@@ -175,7 +175,7 @@ int smpd_init_printf(void)
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEX_NAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
 #endif
@@ -247,7 +247,7 @@ int smpd_err_printf(char *str, ...)
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEX_NAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
@@ -321,7 +321,7 @@ int smpd_dbg_printf(char *str, ...)
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEX_NAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
