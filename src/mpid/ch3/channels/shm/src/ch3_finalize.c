@@ -58,8 +58,8 @@ int MPIDI_CH3_Finalize()
     assert(rc == 0);
     if (rc)
     {
-	mpi_errno = MPIR_Err_create_code(
-	    MPI_ERR_OTHER, "**ch3|shm|pmi_finalize", "**ch3|shm|pmi_finalize %d", rc );
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
+	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
