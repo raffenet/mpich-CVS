@@ -352,7 +352,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    DLOOP_Offset tmp_last = first;
 
 	    /* use manipulate function with a NULL piecefn to advance stream offset */
-	    PREPEND_PREFIX(Segment_manipulate)(segp, stream_off, &tmp_last, NULL, NULL, NULL, NULL);
+	    PREPEND_PREFIX(Segment_manipulate)(segp,
+					       stream_off,
+					       &tmp_last,
+					       NULL,
+					       NULL,
+					       NULL,
+					       NULL,
+					       sizefn);
 	    
 	    /* verify that we're in the right location */
 	    if (tmp_last != first) assert(0);
