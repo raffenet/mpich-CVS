@@ -136,7 +136,7 @@ typedef struct {
   this union, 'count', allows quick access to the shared 'count' field in the
   five dataloop structure.
 . extent - The extent of the dataloop
-- id     - id for the corresponding 'MPI_Datatype'.
+- handle     - handle for the corresponding 'MPI_Datatype'.
 
   Module:
   Datatype
@@ -157,7 +157,7 @@ typedef struct MPID_Dataloop_st {
 	MPID_Dataloop_common       cm_t;
     } loop_params;
     MPI_Aint extent;
-    int id;                       /* Having the id here allows us to find the
+    int handle;                       /* Having the id here allows us to find the
 				     full datatype structure from the 
 				     Dataloop description */
 } MPID_Dataloop;

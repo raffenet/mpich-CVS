@@ -132,7 +132,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
 	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
 	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
-	new_ptr->opt_loopinfo->id			 = new_ptr->id;
+	new_ptr->opt_loopinfo->handle			 = new_ptr->handle;
     }
     else {
 	new_ptr->size = old_ptr->size * count * blocklength;
@@ -156,10 +156,10 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
 	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
 	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
-	new_ptr->opt_loopinfo->id			 = new_ptr->id;
+	new_ptr->opt_loopinfo->handle			 = new_ptr->handle;
     }
 
-    *newtype = new_ptr->id;
+    *newtype = new_ptr->handle;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
