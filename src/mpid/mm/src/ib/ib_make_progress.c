@@ -55,7 +55,7 @@ int ib_make_progress()
     if (completion_data.status != IB_COMP_ST_SUCCESS)
     {
 	err_printf("error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
-	    completion_data.status, iba_errstr(status));
+	    completion_data.status, iba_errstr(completion_data.status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return -1;
     }
