@@ -281,7 +281,7 @@ sub CheckForBadSubs {
 	if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
 	    # Check for level
 	    $routineLevel = $avoidsubs{$subname};
-	    if ($routineLevel >= $avoidLevel) next;
+	    if ($routineLevel >= $avoidLevel) { next; }
 	    $msg = "Warning: found $subname in $filename";
 	    if (defined($warningmsgs{$msg})) { 
 		$warningmsgs{$msg} = $warningmsgs{$msg} + 1;
