@@ -50,7 +50,7 @@ int MPID_Type_indexed(int count,
     struct MPID_Dataloop *dlp;
     MPI_Aint *aptr;
 
-    MPI_Aint min_lb = 0, max_ub = 0, eff_disp, el_extent, el_size;
+    MPI_Aint min_lb = 0, max_ub = 0, eff_disp, el_extent = 0, el_size = 0;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
@@ -125,7 +125,6 @@ int MPID_Type_indexed(int count,
 	 *
 	 * We'll need to do a conversion in here too.
 	 *
-	 * TODO: PADDING???
 	 */
 	new_loopsize = sizeof(struct MPID_Dataloop) + count * (sizeof(MPI_Aint) + sizeof(int));
 

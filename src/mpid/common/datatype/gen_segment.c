@@ -49,7 +49,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Handle handle, 
 				 struct DLOOP_Segment *segp)
 {
-    int i, elmsize, depth = 0;
+    int i, elmsize = 0, depth = 0;
     struct DLOOP_Dataloop_stackelm *elmp;
     struct DLOOP_Dataloop *dlp = 0;
     
@@ -78,6 +78,18 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	segp->builtin_loop.loop_params.c_t.dataloop = 0;
 	segp->builtin_loop.el_size = elmsize;
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
+
+	dlp = &segp->builtin_loop;
+	depth = 1;
+    }
+    else if (count == 0) {
+	/* only use the builtin, call it 0 ints */
+	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK | (elmsize << DLOOP_ELMSIZE_SHIFT);
+	segp->builtin_loop.handle = MPI_INT;
+	segp->builtin_loop.loop_params.c_t.count = 0;
+	segp->builtin_loop.loop_params.c_t.dataloop = 0;
+	segp->builtin_loop.el_size = 0;
+	segp->builtin_loop.el_extent = 0;
 
 	dlp = &segp->builtin_loop;
 	depth = 1;
@@ -347,6 +359,9 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
 	    int partial_flag, piecefn_indicated_exit;
 	    DLOOP_Offset myblocks, basic_size;
+
+	    /* check for count of zero regions; pop immediately if we see one */
+	    if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 
 	    /* process data region */
 
