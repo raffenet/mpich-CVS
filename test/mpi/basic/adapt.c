@@ -43,6 +43,8 @@
 #define RIGHT_PROCESS   2
 
 int     g_left_rank       = -1;
+int     g_middle_rank     = -1;
+int     g_right_rank      = -1;
 int     g_proc_loc        = -1;
 int 	g_NSAMP           = 250;
 double	g_STOPTM          = 0.1;
@@ -220,9 +222,9 @@ int main(int argc, char *argv[])
 
     if ((g_nIproc == 0) && printopt)
     {
-	printf("Latency01_ : %0.9f\n", latency01);
-	printf("Latency_12 : %0.9f\n", latency12);
-	printf("Latency012 : %0.9f\n", latency012);
+	printf("Latency%d%d_ : %0.9f\n", g_left_rank, g_middle_rank, latency01);
+	printf("Latency_%d%d : %0.9f\n", g_middle_rank, g_right_rank, latency12);
+	printf("Latency%d%d%d : %0.9f\n", g_left_rank, g_middle_rank, g_right_rank, latency012);
 	fflush(stdout);
 	printf("Now starting main loop\n");
 	fflush(stdout);
@@ -1291,6 +1293,8 @@ int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012)
 	    break;
 	}
 	g_left_rank = 2;
+	g_middle_rank = 0;
+	g_right_rank = 1;
 	break;
     case 1:
 	switch (g_nIproc)
@@ -1324,6 +1328,8 @@ int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012)
 	    break;
 	}
 	g_left_rank = 0;
+	g_middle_rank = 1;
+	g_right_rank = 2;
 	break;
     case 2:
 	switch (g_nIproc)
@@ -1357,6 +1363,8 @@ int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012)
 	    break;
 	}
 	g_left_rank = 1;
+	g_middle_rank = 2;
+	g_right_rank = 0;
 	break;
     }
 
