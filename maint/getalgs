@@ -1,0 +1,22 @@
+#! /usr/bin/perl
+# 
+# INCOMPLETE: Sketch of a program to extract the collective algorithms
+# from the source files
+#
+while (<>) {
+    if (/Algorithm:\s*([\w_\d]*)/) {
+	$name = $1;
+	print "Algorithm for $name:\n";
+	while (<>) {
+	    if (/End [Aa]lgorithm:\s*([\w_\d]*)/) {
+		$endname = $1;
+		if ($name ne $endname) {
+		    print STDERR "Algorithm started with $name but ended with $endname\n";
+		}
+		last;
+	    }
+	    # This should eventually handle the formatting modifications
+	    print $_;
+	}
+    }
+}
