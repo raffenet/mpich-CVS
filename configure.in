@@ -17,8 +17,27 @@ dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
 dnl --with-capability
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
+dnl
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
 CFLAGS="$CFLAGS -O -Wall -Wstrict-prototypes -Wmissing-prototypes")
+dnl
+AC_ARG_ENABLE(error-checking,[--enable-error-checking=level - Control the
+amount of error checking.  level may be no (no error checking), runtime
+(error checking controlable at runtime through environment variables, or
+all (error checking always enabled)],,enable_error_checking=all)
+dnl
+dnl Process any enable or with values
+dnl error-checking
+case "$enable_error_checking" in 
+    no)
+    ;;
+    all|yes|runtime)
+    AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$enable_error_checking,[define to enable error checking])
+    ;;
+    *)
+    AC_MSG_WARN([Unknown value $enable_error_checking for enable-error-checking])
+    ;;
+esac
 dnl
 dnl
 dnl The recommended order for items in a configure.in file is

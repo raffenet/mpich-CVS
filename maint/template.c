@@ -63,6 +63,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
+            }
             if (a < 0) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
                             "**negarg", "**negarg %s %d", "a", a );

@@ -54,10 +54,7 @@ int MPI_Init( int *argc, char ***argv )
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
-            if (a < 0) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**negarg", "**negarg %s %d", "a", a );
-            } 
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
                 return MPIR_Return( 0, mpi_errno );
