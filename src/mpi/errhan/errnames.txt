@@ -259,7 +259,7 @@ Fortran integer (value is %ld)
 **filename:Invalid file name
 **filename %s:Invalid file name %s
 **filenamelong:Pathname too long
-**filenamelong %s %d %d:Pathname %s too long (%d characters, maximum is %d)
+**filenamelong %s %d:Pathname %s too long (%d characters)
 **filenamedir:Invalid or missing directory
 **filenamedir %s:Invalid or missing directory %s
 **conversion:An error occurred in a user-defined data conversion function
@@ -574,6 +574,9 @@ with MPI_Alloc_mem.
 **bootqmsg %d %d:invalid bootstrap queue message size (%d bytes > %d)
 **ca:invalid completion action
 **ca %d:invalid completion action (%d)
+**ca_guids: FIXME MISSING TEXT
+**noca: FIXME MISSING TEXT
+**ca_guids %s: FIXME MISSING TEXT %s
 **conn_still_active:connection closed while still active
 **handle_written:unable to handle written data
 **init_vcrdup:failed to duplicate the virtual connection reference
