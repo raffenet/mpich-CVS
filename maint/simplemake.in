@@ -1234,6 +1234,7 @@ sub TargetClean {
 	print FD "\t-rm -f $distcleanfiles$newline";
     }
     if ($maint_targets) {
+	# Should maintainerclean also perform a distclean?
 	print FD "maintainerclean:";
 	if (defined($usertargets{"maintainerclean-local"})) {
 	    print FD " maintainerclean-local";
@@ -1275,7 +1276,10 @@ sub LibraryBuild {
 	$sourcefile =~ /(.*)\.([^\.]*)/;
 	$obj = "$1.$memext";
 	$ext = $2;
-	if (!defined($extrules{"$ext:o"})) { 
+	# The special case for an extension of h handles the case where the
+	# .h files are derived, and hence have special rules for creating
+	# them
+	if (!defined($extrules{"$ext:o"} && $ext ne "h")) { 
 	    print STDERR "Unknown extension $ext for $sourcefile\n";
 	}
 	if ($dolib_member) {
@@ -1331,7 +1335,10 @@ sub TargetProfileLibraries {
 		$obj =~ s/\.$ext/\.pf/g;
 	    }
 	    else {
-		print "Unknown extension $ext for $sourcefile\n";
+		# Be silent on .h files
+		if ($ext ne "h") {
+		    print "Unknown extension $ext for $sourcefile\n";
+		}
 	    }
 	    &print_make_line( FD, "$obj " );
         }
@@ -1690,6 +1697,8 @@ sub ReadAutoconf {
 	if (/^\s*AC_OUTPUT\(/) {
 	    # First, read past all continued lines
 	    $line = "";
+	    # Remove any M4 dnl line
+	    s/\sdnl\s.*//;
 	    while (/\\\s*$/) {
 		#chomp;    # remove trailing EOL (\n on Unix, \r\n on DOS)
 		s/[\r\n]*$//; # David added
@@ -1697,6 +1706,8 @@ sub ReadAutoconf {
 		chop($_); # remove the backslash
 		$line .= $_;
 		$_ = <FDCONF>;
+		# Remove any M4 dnl line
+		s/\sdnl\s.*//;
 	    }
 	    $line .= $_; 
 	    #chomp( $line );
