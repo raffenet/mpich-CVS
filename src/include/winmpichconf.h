@@ -224,8 +224,9 @@
 /* #undef HAVE_THR_CREATE */
 
 /* Define if using gcc on a system with an Intel Pentium class chip */
-//#define HAVE_GCC_AND_PENTIUM_ASM 1
+/*#define HAVE_GCC_AND_PENTIUM_ASM 1*/
 
+#define HAVE_PROCESS_H
 #define HAVE_WINDOWS_H
 #define HAVE_WINDOWS_SOCKET
 #define HAVE_WINSOCK2_H
@@ -244,14 +245,16 @@
 #define WITH_SOCK_TYPE SOCK_IOCP
 
 /* Define to use socket functions instead of bsocket functions */
-//#define NO_BSOCKETS
+/*#define NO_BSOCKETS*/
 /* Define if building mpich in development mode */
 #define MPICH_DEV_BUILD
 
-//#define MPICH_MPI_FROM_PMPI
+/*#define MPICH_MPI_FROM_PMPI*/
 
 #define MPICH_ERROR_MSG_LEVEL MPICH_ERROR_MSG_ALL
 #define MPIR_MAX_ERROR_CLASS_INDEX 1
 #define MPICH_MACROS_ARE_FUNCTIONS
 
 #define USE_PROCESS_LOCKS 1
+
+/*#define MPICH_DBG_OUTPUT*/

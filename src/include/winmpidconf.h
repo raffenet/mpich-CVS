@@ -215,11 +215,11 @@
 /* #undef HAVE_THR_CREATE */
 
 /* Define if using gcc on a system with an Intel Pentium class chip */
-//#define HAVE_GCC_AND_PENTIUM_ASM 1
+/*#define HAVE_GCC_AND_PENTIUM_ASM 1*/
 
 
 /* define to enable timing collection */
-//#define HAVE_TIMING MPID_TIMING_KIND_ALL
+/*#define HAVE_TIMING MPID_TIMING_KIND_ALL*/
 
 #define HAVE_WINDOWS_H
 #define HAVE_WINDOWS_SOCKET
@@ -231,11 +231,11 @@
 #define HAVE_INTERLOCKEDEXCHANGE
 #define HAVE_BOOL
 
-//#define WITH_METHOD_SHM
+/*#define WITH_METHOD_SHM*/
 #define WITH_METHOD_TCP
 #define WITH_METHOD_SOCKET
 #define WITH_METHOD_IB
-//#define WITH_METHOD_VIA
-//#define WITH_METHOD_VIA_RDMA
+/*#define WITH_METHOD_VIA*/
+/*#define WITH_METHOD_VIA_RDMA*/
 
 #endif
