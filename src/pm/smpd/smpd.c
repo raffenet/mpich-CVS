@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 	    strcmp(response, "Y\n") == 0 || strcmp(response, "y\n") == 0)
 	{
 	    FILE *fout;
-	    umask(00700);
+	    umask(0077);
 	    fout = fopen(smpd_filename, "w");
 	    if (fout == NULL)
 	    {
