@@ -257,24 +257,24 @@ sub RunMPIProgram {
 		    $err_count ++;
 		}
 	    }
-	    if ($found_noerror == 0) {
-		print STDERR "Program $programname exited without No Errors\n";
-	    }
-	    $rc = close ( MPIOUT );
-	    if ($rc == 0) {
-		# Only generate a message if we think that the program
-		# passed the test.
-		if (!$found_error) {
-		    $run_status = $?;
-		    $signal_num = $run_status & 127;
-		    if ($run_status > 255) { $run_status >>= 8; }
-		    print STDERR "Program $programname exited with non-zero status $run_status\n";
-		    if ($signal_num != 0) {
-			print STDERR "Program $programname exited with signal $signal_num\n";
-		    }
-		    $found_error = 1;
-		    $err_count ++;
+	}
+	if ($found_noerror == 0) {
+	    print STDERR "Program $programname exited without No Errors\n";
+	}
+	$rc = close ( MPIOUT );
+	if ($rc == 0) {
+	    # Only generate a message if we think that the program
+	    # passed the test.
+	    if (!$found_error) {
+		$run_status = $?;
+		$signal_num = $run_status & 127;
+		if ($run_status > 255) { $run_status >>= 8; }
+		print STDERR "Program $programname exited with non-zero status $run_status\n";
+		if ($signal_num != 0) {
+		    print STDERR "Program $programname exited with signal $signal_num\n";
 		}
+		$found_error = 1;
+		$err_count ++;
 	    }
 	}
     }
@@ -418,7 +418,7 @@ sub RunTestFailed {
     $output =~ s/>/\&gt;/g;
     if ($xmloutput) {
 	print XMLOUT "<STATUS>fail</STATUS>$newline";
-	print XMLOUT "<TESTDIFF>$output</TESTDIFF>$newline";
+	print XMLOUT "<TESTDIFF>$newline$output</TESTDIFF>$newline";
     }
 }
 # ----------------------------------------------------------------------------
