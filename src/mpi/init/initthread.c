@@ -76,12 +76,6 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif
 #endif
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-    {
-	MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);
-    }
-#   endif
-
 #   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)
     {
 	MPID_Thread_self(&MPIR_Process.master_thread);
