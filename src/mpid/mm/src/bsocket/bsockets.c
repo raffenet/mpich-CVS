@@ -105,7 +105,7 @@ static void log_warning(char *str, ...)
     char pszStr[4096];
     va_list list;
 
-    // Write to a temporary string
+    /* Write to a temporary string */
     va_start(list, str);
     vsprintf(pszStr, str, list);
     va_end(list);
@@ -144,7 +144,7 @@ static void log_warning(char *str, ...)
 @*/
 unsigned int bget_fd(int bfd)
 {
-    //dbg_printf("bget_fd\n");
+    /*dbg_printf("bget_fd\n");*/
     return (unsigned int)(((BFD_Buffer*)bfd)->real_fd);
 }
 
@@ -160,7 +160,7 @@ unsigned int bget_fd(int bfd)
 void bset(int bfd, bfd_set *s)
 {
     int i;
-    //dbg_printf("bset\n");
+    /*dbg_printf("bset\n");*/
     FD_SET( bget_fd(bfd), & (s) -> set );
     for (i=0; i<s->n; i++)
     {
@@ -185,7 +185,7 @@ void bclr(int bfd, bfd_set *s)
     int i;
     BFD_Buffer* p;
 
-    //dbg_printf("bclr\n");
+    /*dbg_printf("bclr\n");*/
 
     FD_CLR( bget_fd(bfd), & (s) -> set );
 
@@ -295,7 +295,7 @@ int bsocket(int family, int type, int protocol)
     BFD_Buffer *pbfd;
     
     DBG_MSG("Enter bsocket\n");
-    //dbg_printf("bsocket\n");
+    /*dbg_printf("bsocket\n");*/
     
     pbfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
     if (pbfd == 0) 
@@ -332,7 +332,7 @@ int bbind(int bfd, const struct sockaddr *servaddr,
 	  socklen_t servaddr_len)
 {
     DBG_MSG("Enter bbind\n");
-    //dbg_printf("bbind\n");
+    /*dbg_printf("bbind\n");*/
     
     return bind(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
 }
@@ -348,7 +348,7 @@ Parameters:
 @*/
 int blisten(int bfd, int backlog)
 {
-    //dbg_printf("blisten\n");
+    /*dbg_printf("blisten\n");*/
     return listen(((BFD_Buffer*)bfd)->real_fd, backlog);
 }
 
@@ -367,7 +367,7 @@ bsetsockopt - setsockopt
 int bsetsockopt(int bfd, int level, int optname, const void *optval,		    
 		socklen_t optlen)
 {
-    //dbg_printf("bsetsockopt\n");
+    /*dbg_printf("bsetsockopt\n");*/
     return setsockopt(((BFD_Buffer*)bfd)->real_fd, level, optname, optval, optlen);
 }
 
@@ -387,7 +387,7 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     BFD_Buffer 	       *new_bfd;
     
     DBG_MSG("Enter baccept\n");
-    //dbg_printf("baccept\n");
+    /*dbg_printf("baccept\n");*/
     
     conn_fd = accept(((BFD_Buffer*)bfd)->real_fd, cliaddr, clilen);
     if (conn_fd == SOCKET_ERROR) 
@@ -423,7 +423,7 @@ bconnect - connect
 int bconnect(int bfd, const struct sockaddr *servaddr,		    
 	     socklen_t servaddr_len)
 {
-    //dbg_printf("bconnect\n");
+    /*dbg_printf("bconnect\n");*/
     return connect(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
 }
 
@@ -448,7 +448,7 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     int            i;
 
     DBG_MSG("Enter bselect\n");
-    //dbg_printf("bselect\n");
+    /*dbg_printf("bselect\n");*/
     
     if (readbfds)
     {
@@ -514,7 +514,7 @@ bwrite - write
 @*/
 int bwrite(int bfd, char *ubuf, int len)
 {
-    //dbg_printf("bwrite\n");
+    /*dbg_printf("bwrite\n");*/
     return write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
 }
 
@@ -560,7 +560,7 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
     return dwNumSent;
 #else
     int nWritten;
-    //dbg_printf("bwritev\n");
+    /*bg_printf("bwritev\n");*/
     nWritten = writev(((BFD_Buffer*)bfd)->real_fd, pIOVec, n);
     return nWritten;
 #endif
@@ -586,7 +586,7 @@ int bread(int bfd, char *ubuf, int len)
     BFD_Buffer *pbfd;
     
     DBG_MSG("Enter bread\n");
-    //dbg_printf("bread\n");
+    /*dbg_printf("bread\n");*/
     
     pbfd = (BFD_Buffer*)bfd;
 
@@ -717,7 +717,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     int iVector;
 
     DBG_MSG("Enter breadv\n");
-    //dbg_printf("breadv\n");
+    /*dbg_printf("breadv\n");*/
     
     pbfd = (BFD_Buffer*)bfd;
     
@@ -854,7 +854,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 int bclose(int bfd)
 {
     DBG_MSG("Enter bclose\n");
-    //dbg_printf("bclose\n");
+    /*dbg_printf("bclose\n");*/
 
     close(((BFD_Buffer*)bfd)->real_fd);
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
@@ -875,7 +875,7 @@ bgetsockname -
 @*/
 int bgetsockname(int bfd, struct sockaddr *name, int *namelen)
 {
-    //dbg_printf("bgetsockname\n");
+    /*dbg_printf("bgetsockname\n");*/
     return getsockname(((BFD_Buffer*)bfd)->real_fd, name, namelen);
 }
 
@@ -894,7 +894,7 @@ int bmake_nonblocking(int bfd)
     int      rc;
     
     DBG_MSG("Enter make_nonblocking\n");
-    //dbg_printf("bmake_nonblocking\n");
+    /*dbg_printf("bmake_nonblocking\n");*/
     
 #ifdef HAVE_WINDOWS_SOCKET
     rc = ioctlsocket(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
@@ -919,7 +919,7 @@ int bmake_blocking(int bfd)
     int      rc;
     
     DBG_MSG("Enter make_blocking\n");
-    //dbg_printf("bmake_blocking\n");
+    /*dbg_printf("bmake_blocking\n");*/
     
 #ifdef HAVE_WINDOWS_SOCKET
     rc = ioctlsocket(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
@@ -945,7 +945,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     int optval = 1;
     struct linger linger;
 
-    //dbg_printf("beasy_create\n");
+    /*dbg_printf("beasy_create\n");*/
 
     /* Create a new bsocket */
     *bfd = bsocket(AF_INET, SOCK_STREAM, 0);
@@ -1267,7 +1267,7 @@ int beasy_receive(int bfd, char *buffer, int len)
     bfd_set readfds;
     int total = len;
 
-    //dbg_printf("beasy_receive\n");
+    /*dbg_printf("beasy_receive\n");*/
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
@@ -1336,7 +1336,7 @@ int beasy_receive_some(int bfd, char *buffer, int len)
     int num_received;
     bfd_set readfds;
 
-    //dbg_printf("beasy_receive_some\n");
+    /*dbg_printf("beasy_receive_some\n");*/
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
@@ -1396,7 +1396,7 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
     struct timeval tv;
     int total = len;
 
-    //dbg_printf("beasy_receive_timeout\n");
+    /*dbg_printf("beasy_receive_timeout\n");*/
     
     /*
     num_received = bread(bfd, buffer, len);
@@ -1501,7 +1501,7 @@ int beasy_send(int bfd, char *buffer, int length)
     bfd_set writefds;
     int total = length;
 
-    //dbg_printf("beasy_send\n");
+    /*dbg_printf("beasy_send\n");*/
     
     num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
     if (num_written == SOCKET_ERROR)
@@ -1555,7 +1555,7 @@ int beasy_send(int bfd, char *buffer, int length)
 
 int beasy_getlasterror()
 {
-    //dbg_printf("beasy_getlasterror\n");
+    /*dbg_printf("beasy_getlasterror\n");*/
 #ifdef HAVE_WINSOCK2_H
     return WSAGetLastError();
 #else
@@ -1586,7 +1586,7 @@ int beasy_error_to_string(int error, char *str, int length)
     LocalFree(str);
     strtok(str, "\r\n"); /* remove any CR/LF characters from the output */
 #else
-    //dbg_printf("beasy_error_to_string\n");
+    /*dbg_printf("beasy_error_to_string\n");*/
     strncpy(str, strerror(error), length);
 #endif
     return 0;

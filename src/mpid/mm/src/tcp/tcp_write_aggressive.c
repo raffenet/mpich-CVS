@@ -242,7 +242,6 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
 	{
 	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    //mm_cq_enqueue(car_ptr);
 	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
 	    {
 		/* if this is the last car written and it has a next car pointer,

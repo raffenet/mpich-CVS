@@ -997,7 +997,7 @@ int prof_init(int rank, int size)
     }
     init_state_strings();
 
-    strcpy(g_prof_filename, "mpid_prof");
+    strncpy(g_prof_filename, "mpid_prof", 256);
     
     MPE_Start_log();
 
