@@ -169,27 +169,7 @@ int MPID_Type_vector(int count,
 				   old_dtp->extent,
 				   new_dtp->lb,
 				   new_dtp->ub);
-#if 0
-	if (eff_stride >= 0 && old_dtp->extent >= 0) {
-	    /* easiest case -- stride and extent are non-negative */
-	    new_dtp->lb      = old_dtp->lb;
-	    new_dtp->ub      = old_dtp->ub + old_dtp->extent * (blocklength-1) + eff_stride * (count-1);
-	}
-	else if (eff_stride < 0 && old_dtp->extent >= 0) {
-	    /* negative stride, non-negative extent */
-	    new_dtp->lb      = old_dtp->lb + eff_stride * (count-1);
-	    new_dtp->ub      = old_dtp->ub + old_dtp->extent * (blocklength-1);
-	}
-	else if (eff_stride > 0 && old_dtp->extent < 0) {
-	    /* non-negative stride, negative extent (ub < lb) */
-	    new_dtp->lb      = old_dtp->lb + old_dtp->extent * (blocklength-1);
-	    new_dtp->ub      = old_dtp->ub + eff_stride * (count-1);
-	}
-	else /* eff_stride < 0 && old_dtp->extent < 0 */ {
-	    new_dtp->lb      = old_dtp->lb + old_dtp->extent * (blocklength-1) + eff_stride * (count-1);
-	    new_dtp->ub      = old_dtp->ub;
-	}
-#endif
+
 	new_dtp->true_lb     = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
 	new_dtp->true_ub     = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
 	new_dtp->extent      = new_dtp->ub - new_dtp->lb;

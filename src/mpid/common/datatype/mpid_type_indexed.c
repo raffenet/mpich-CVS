@@ -173,16 +173,6 @@ int MPID_Type_indexed(int count,
 				  el_extent,
 				  min_lb,
 				  max_ub);
-#if 0
-	if (el_extent >= 0) {
-	    min_lb = el_lb + eff_disp;
-	    max_ub = el_ub + eff_disp + ((MPI_Aint) blocklength_array[0] - 1) * el_extent;
-	}
-	else /* el_extent < 0 */ {
-	    min_lb = el_lb + eff_disp + ((MPI_Aint) blocklength_array[0] - 1) * el_extent;;
-	    max_ub = el_ub + eff_disp;
-	}
-#endif
 	
 	/* find smallest lb, largest ub */
 	for (i=1; i < count; i++) {
@@ -203,16 +193,6 @@ int MPID_Type_indexed(int count,
 				      el_extent,
 				      tmp_lb,
 				      tmp_ub);
-#if 0
-	    if (el_extent >= 0) {
-		tmp_lb = el_lb + eff_disp;
-		tmp_ub = el_ub + eff_disp + ((MPI_Aint) blocklength_array[i] - 1) * el_extent;
-	    }
-	    else /* el_extent < 0 */ {
-		tmp_lb = el_lb + eff_disp + ((MPI_Aint) blocklength_array[i] - 1) * el_extent;;
-		tmp_ub = el_ub + eff_disp;
-	    }
-#endif
 
 	    if (tmp_lb < min_lb) min_lb = tmp_lb;
 	    if (tmp_ub > max_ub) max_ub = tmp_ub;
