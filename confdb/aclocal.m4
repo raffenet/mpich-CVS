@@ -32,11 +32,13 @@ for dir in $1 ; do
     saveIFS="$IFS"
     IFS="/"
     curdir=""
+	set -x 
     for subdir in $dir ; do
 	curdir="${curdir}$subdir"
-	if test ! -d $curdir ; then mkdir $curdir ; fi
+	if test ! -d "$curdir" ; then mkdir $curdir ; fi
         curdir="${curdir}/"
     done
+    set x
     IFS="$saveIFS"
 done
 AC_OUTPUT_SUBDIRS($1)
