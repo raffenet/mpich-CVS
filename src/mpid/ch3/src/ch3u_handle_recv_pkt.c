@@ -302,8 +302,6 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	{
 	    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &pkt->rndv_send;
 	    MPID_Request * rreq;
-	    MPIDI_msg_sz_t dt_sz;
-	    int dt_contig;
 		    
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv send (data) pkt"));
 	    MPID_Request_get_ptr(rs_pkt->receiver_req_id, rreq);
