@@ -850,7 +850,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 }
 */
 
-#if 0
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -972,8 +971,8 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     //return IBU_SUCCESS;
     return total;
 }
-#endif
 
+#if 0
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -1054,6 +1053,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     //return IBU_SUCCESS;
     return total;
 }
+#endif
 
 static inline void init_state_struct(ibu_state_t *p)
 {
@@ -1509,6 +1509,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    &completion_data);
 	if (status == IBA_CQ_EMPTY)
 	{
+	    printf("empty");fflush(stdout);
 	    /* ibu_wait polls until there is something in the queue */
 	    /* or the timeout has expired */
 	    if (millisecond_timeout == 0)
