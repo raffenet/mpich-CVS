@@ -911,8 +911,8 @@ typedef struct MPID_Collops_struct {
                                MPID_Comm *);
     int (*Alltoallv) (void*, int *, int *, MPI_Datatype, void*, int *, 
                      int *, MPI_Datatype, MPID_Comm *);
-    int (*Alltoallw) (void*, int *, int *, MPI_Datatype, void*, int *, 
-                     int *, MPI_Datatype, MPID_Comm *);
+    int (*Alltoallw) (void*, int *, int *, MPI_Datatype *, void*, int *, 
+                     int *, MPI_Datatype *, MPID_Comm *);
     int (*Reduce) (void*, void*, int, MPI_Datatype, MPI_Op, int, 
                    MPID_Comm *);
     int (*Allreduce) (void*, void*, int, MPI_Datatype, MPI_Op, 
@@ -1267,7 +1267,7 @@ int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIR_BCAST_SHORT_MSG 16384
 #define MPIR_BCAST_MIN_PROCS 8
 #define MPIR_ALLTOALL_SHORT_MSG 1024
-#define MPIR_REDUCE_SCATTER_SHORT_MSG 1024
+#define MPIR_REDUCE_SCATTER_SHORT_MSG 0  /* temporarily because the short message algo needs derived datatypes */
 
 /* Tags for point to point operations which implement collective operations */
 #define MPIR_BARRIER_TAG               1
@@ -1293,6 +1293,8 @@ int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIR_USER_SCAN_TAG            21
 #define MPIR_USER_SCANA_TAG           22
 #define MPIR_LOCALCOPY_TAG            23
+#define MPIR_EXSCAN_TAG               24
+#define MPIR_ALLTOALLW_TAG            25
 
 /* These functions are used in the implementation of collective
    operations. They are wrappers around MPID send/recv functions. They do
