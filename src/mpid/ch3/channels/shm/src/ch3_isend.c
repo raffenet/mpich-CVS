@@ -40,6 +40,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_s
     
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
+	int error;
 	int nb;
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -48,7 +49,8 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_s
 	   also try to write */
 	
 	MPIU_DBG_PRINTF(("shm_write(%d bytes)\n", pkt_sz));
-	nb = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz);
+	error = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
+	assert(error == MPI_SUCCESS);
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	

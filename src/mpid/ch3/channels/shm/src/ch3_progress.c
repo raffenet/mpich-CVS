@@ -38,7 +38,8 @@ int MPIDI_CH3_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	wait_result = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &error);
+	error = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result, &error);
+	assert(error == MPI_SUCCESS);
 	switch (wait_result)
 	{
 	case SHM_WAIT_TIMEOUT:
@@ -318,6 +319,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void handle_written(MPIDI_VC * vc)
 {
+    int error;
     int nb;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
@@ -336,7 +338,8 @@ static inline void handle_written(MPIDI_VC * vc)
 	*/
 	assert(req->shm.iov_offset < req->ch3.iov_count);
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling shm_writev"));*/
-	nb = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
+	error = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset, &nb);
+	assert(error == MPI_SUCCESS);
 	MPIDI_DBG_PRINTF((60, FCNAME, "shm_writev returned %d", nb));
 
 	if (nb > 0)

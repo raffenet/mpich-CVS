@@ -26,7 +26,7 @@ typedef int SHM_STATE;
 #define FUNCNAME MPIDI_CH3I_SHM_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
+int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
 {
     int total = 0;
     int length;
@@ -43,9 +43,10 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
 
 	if (vc->shm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_USED)
 	{
+	    *num_bytes_ptr = total;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
-	    return total;
+	    return MPI_SUCCESS;
 	}
 	length = min(len, MPIDI_CH3I_PACKET_SIZE);
 	vc->shm.write_shmq->packet[index].num_bytes = length;
@@ -60,9 +61,10 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
 	    (vc->shm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
     }
 
+    *num_bytes_ptr = total;
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
-    return total;
+    return MPI_SUCCESS;
 }
 
 #ifdef USE_SHM_WRITE_FOR_SHM_WRITEV
@@ -106,7 +108,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
     int i;
     unsigned int total = 0;
@@ -123,9 +125,10 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
     index = vc->shm.write_shmq->tail_index;
     if (vc->shm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_USED)
     {
+	*num_bytes_ptr = 0;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-	return 0;
+	return MPI_SUCCESS;
     }
 
 #ifdef USE_IOV_LEN_2_SHORTCUT
@@ -147,9 +150,10 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	vc->shm.write_shmq->tail_index =
 	    (vc->shm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
 	/*printf("shm_writev - %d bytes\n", vc->shm.write_shmq->packet[index].num_bytes);fflush(stdout);*/
+	*num_bytes_ptr = total;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-	return total;
+	return MPI_SUCCESS;
     }
 #endif
 
@@ -185,9 +189,10 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		    (vc->shm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		if (vc->shm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_USED)
 		{
+		    *num_bytes_ptr = total;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-		    return total;
+		    return MPI_SUCCESS;
 		}
 		num_bytes = min(cur_avail, MPIDI_CH3I_PACKET_SIZE);
 		vc->shm.write_shmq->packet[index].num_bytes = num_bytes;
@@ -214,9 +219,10 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		(vc->shm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
 	    if (vc->shm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_USED)
 	    {
+		*num_bytes_ptr = total;
 		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-		return total;
+		return MPI_SUCCESS;
 	    }
 	    dest_pos = vc->shm.write_shmq->packet[index].data;
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE;
@@ -230,10 +236,11 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	vc->shm.write_shmq->tail_index = 
 	    (vc->shm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
     }
-    
+
+    *num_bytes_ptr = total;
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-    return total;
+    return MPI_SUCCESS;
 }
 
 #endif /* USE_SHM_WRITE_FOR_SHM_WRITEV */
@@ -396,7 +403,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 #define FUNCNAME MPIDI_CH3I_SHM_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, int *error_ptr)
+int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out, int *error_ptr)
 {
     void *mem_ptr;
     char *iter_ptr;
@@ -409,6 +416,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 #ifdef USE_SHM_UNEX
     MPIDI_VC *temp_vc_ptr;
 #endif
+    BOOL bSetPacket;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
@@ -429,8 +437,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    MPIDI_CH3I_Process.unex_finished_list = MPIDI_CH3I_Process.unex_finished_list->shm.unex_finished_next;
 	    temp_vc_ptr->shm.unex_finished_next = NULL;
 
+	    *shm_out = SHM_WAIT_READ;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-	    return SHM_WAIT_READ;
+	    return MPI_SUCCESS;
 	}
 #endif /* USE_SHM_UNEX */
 
@@ -447,6 +456,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    /* if the packet at the head index is available, the queue is empty */
 	    if (vc->shm.shm[i].packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE)
 		continue;
+	    MPID_READ_BARRIER(); /* no loads after this line can occur before the avail flag has been read */
 
 	    working = TRUE;
 
@@ -460,12 +470,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		/*assert(num_bytes > sizeof(packet));*/
 		pkt_ptr->cur_pos += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
-		if (pkt_ptr->num_bytes == 0)
-		{
-		    pkt_ptr->cur_pos = pkt_ptr->data;
-		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
-		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
-		}
+		bSetPacket = pkt_ptr->num_bytes == 0 ? TRUE : FALSE;
 		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
 		{
 		    /*printf("handling packet\n");fflush(stdout);*/
@@ -480,6 +485,13 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		{
 		    MPIDI_err_printf("MPIDI_CH3I_SHM_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
 		    recv_vc_ptr->shm.shm_reading_pkt = TRUE;
+		}
+		if (bSetPacket)
+		{
+		    pkt_ptr->cur_pos = pkt_ptr->data;
+		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
+		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
 		/*
 		if (millisecond_timeout == 0)
@@ -540,6 +552,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		{
 		    /* put the shm buffer back in the queue */
 		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
+		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
@@ -558,8 +571,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
 		    *error_ptr = 0;
+		    *shm_out = SHM_WAIT_READ;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-		    return SHM_WAIT_READ;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    else
@@ -588,6 +602,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    recv_vc_ptr->shm.read.bufflen -= num_bytes;
 		    /* put the shm buffer back in the queue */
 		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
+		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
@@ -597,21 +612,23 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
 		    *error_ptr = 0;
+		    *shm_out = SHM_WAIT_READ;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-		    return SHM_WAIT_READ;
+		    return MPI_SUCCESS;
 		}
 	    }
 	}
 
 	if (millisecond_timeout == 0 && !working)
 	{
+	    *shm_out = SHM_WAIT_TIMEOUT;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-	    return SHM_WAIT_TIMEOUT;
+	    return MPI_SUCCESS;
 	}
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-    return SHM_WAIT_TIMEOUT;
+    return MPI_SUCCESS;
 }
 
 /* non-blocking functions */

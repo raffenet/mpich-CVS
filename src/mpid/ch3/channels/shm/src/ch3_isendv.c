@@ -50,6 +50,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
+	int error;
 	int nb;
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -60,10 +61,11 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	/* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
 	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	
-	nb = (n_iov > 1) ?
-	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov) :
-	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
-	
+	error = (n_iov > 1) ?
+	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb) :
+	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
+	assert(error == MPI_SUCCESS);
+
 	if (nb > 0)
 	{
 	    int offset = 0;

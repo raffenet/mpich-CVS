@@ -57,14 +57,16 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt
        data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
+	int error;
 	int nb;
 	
 	/* MT - need some signalling to lock down our right to use the
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	nb = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz);
-	
+	error = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
+	assert(error == MPI_SUCCESS);
+
 	if (nb == pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "data sent immediately"));
