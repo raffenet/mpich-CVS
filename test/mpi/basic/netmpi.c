@@ -500,7 +500,7 @@ int DetermineLatencyReps(ArgStruct *p)
 {
     MPI_Status status;
     double t0, duration = 0;
-    int reps = 1;
+    int reps = 1, prev_reps = 0;
     int i;
 
     /* prime the send/receive pipes */
@@ -511,18 +511,19 @@ int DetermineLatencyReps(ArgStruct *p)
     /* test how long it takes to send n messages 
      * where n = 1, 2, 4, 8, 16, 32, ...
      */
-    while ( (duration < 0.1) ||
-	    (duration < 0.3 && reps < 1000))
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    while ( (duration < 1) ||
+	    (duration < 3 && reps < 1000))
     {
 	t0 = When();
-	t0 = When();
-	t0 = When();
-	t0 = When();
-	for (i=0; i<reps; i++)
+	for (i=0; i<reps-prev_reps; i++)
 	{
 	    Sync(p);
 	}
-	duration = When() - t0;
+	duration += When() - t0;
+	prev_reps = reps;
 	reps = reps * 2;
 
 	/* use duration from the root only */
