@@ -113,7 +113,7 @@ int MPI_File_write_all(MPI_File fh, void *buf, int count,
 	    error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
 			    "**ioamodeseq", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
-#elif  PRINT_ERR_MSG
+#elif  defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_all: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

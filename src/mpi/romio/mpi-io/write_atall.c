@@ -69,7 +69,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
 	    error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
 			    "**iobadoffset", 0);
 	    return MPIR_Err_return_file(fh, myname, error_code);
-#elif  PRINT_ERR_MSG
+#elif  defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_at_all: Invalid offset argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
