@@ -591,6 +591,12 @@ def mpdman():
                     else:
                         if rhsSocket:
                             mpd_send_one_msg(rhsSocket,msg)
+                elif msg['cmd'] == 'job_aborted_early':
+                    if conSocket:
+                        msgToSend = { 'cmd' : 'job_aborted_early', 'jobid' : msg['jobid'],
+                                      'rank' : msg['rank'], 
+                                      'exit_status' : msg['exit_status'] }
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
                 else:
                     mpd_print(1, "unrecognized msg from spawned child :%s:" % msg )
             elif readySocket == pmiSocket:
