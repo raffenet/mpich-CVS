@@ -2650,7 +2650,7 @@ sub TargetDependenciesDynamic {
     print FD "# Dependencies$newline";
     # This definition follows the cone for COMPILE_C
     if ($has_sources) {
-	print FD "MAKE_DEPEND_C = \@MAKE_DEPEND_C\@ \$(INCLUDES) \$(CPPFLAGS)$newline";
+	print FD "MAKE_DEPEND_C = \@MAKE_DEPEND_C\@ \$(DEFS) \$(INCLUDES) \$(CPPFLAGS)$newline";
 	print FD "dependencies: .deps/timestamp$newline";
     }
     else {
