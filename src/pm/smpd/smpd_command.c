@@ -446,13 +446,6 @@ int smpd_free_context(smpd_context_t *context)
 
         smpd_dbg_printf("freeing %s context.\n", smpd_get_context_str(context));
 
-	if (context->type == SMPD_CONTEXT_FREED)
-	{
-	    smpd_err_printf("context already freed.\n");
-	    smpd_exit_fn("smpd_free_context");
-	    return SMPD_FAIL;
-	}
-
 	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
