@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     {
         cmd = BINDIR "/mpdrun.py";
     }
-    if (strncmp(pgmname,"mpiexec",7) == 0)
+    else if (strncmp(pgmname,"mpiexec",7) == 0)
     {
         cmd = BINDIR "/mpdrun.py";
     }
