@@ -75,19 +75,44 @@ static const char * crypt_error(int error)
 }
 #endif
 
+static int smpd_encrypt_data_plaintext(char *input, int input_length, char *output, int output_length)
+{
+    smpd_enter_fn("smpd_encrypt_data_plaintext");
+    if (output_length < input_length + 2)
+    {
+	smpd_err_printf("encryption output buffer too small.\n");
+	smpd_exit_fn("smpd_encrypt_data_plaintext");
+	return SMPD_FAIL;
+    }
+    *output = SMPD_PLAINTEXT_PREFIX;
+    output++;
+    output_length--;
+    memcpy(output, input, input_length);
+    output[input_length] = '\0';
+    smpd_exit_fn("smpd_encrypt_data_plaintext");
+    return SMPD_SUCCESS;
+}
+
 int smpd_encrypt_data(char *input, int input_length, char *output, int output_length)
 {
 #ifdef HAVE_WINDOWS_H
     HCRYPTPROV hCryptProv = 0;
     HCRYPTKEY hKey = 0;
     HCRYPTHASH hHash = 0;
-    CHAR szPassword[512] = "";
+    CHAR szPassword[SMPD_MAX_PASSWORD_LENGTH] = "";
     DWORD dwLength;
     char *buffer = NULL;
     int length, result;
     int ret_val = SMPD_SUCCESS;
 
     smpd_enter_fn("smpd_encrypt_data");
+
+    if (smpd_process.plaintext)
+    {
+	ret_val = smpd_encrypt_data_plaintext(input, input_length, output, output_length);
+	smpd_exit_fn("smpd_encrypt_data");
+	return ret_val;
+    }
 
     /* Acquire a cryptographic provider context handle. */
     if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, 0))
@@ -111,8 +136,8 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
     }
 
     /* Hash the password string. */
-    MPIU_Snprintf(szPassword, 512, "%s %s", smpd_process.encrypt_prefix, smpd_process.passphrase);
-    strcpy(szPassword, smpd_process.passphrase);
+    /*MPIU_Snprintf(szPassword, SMPD_MAX_PASSWORD_LENGTH, "%s %s", smpd_process.encrypt_prefix, smpd_process.passphrase);*/
+    MPIU_Strncpy(szPassword, smpd_process.passphrase, SMPD_MAX_PASSWORD_LENGTH);
     /*smpd_dbg_printf("phrase to generate the encryption key: '%s'\n", szPassword);*/
     dwLength = (DWORD)strlen(szPassword);
     if (!CryptHashData(hHash, (BYTE *)szPassword, dwLength, 0)) 
@@ -122,7 +147,7 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
 	goto fn_cleanup;
     }
 
-    /* Create a session key based on the hash of the password. */
+    /* Create a session key based on the hash of the smpd password. */
     if (!CryptDeriveKey(hCryptProv, CALG_RC2, hHash, CRYPT_EXPORTABLE, &hKey)) 
     {
 	smpd_err_printf("Error during CryptDeriveKey\n");
@@ -130,7 +155,7 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
 	goto fn_cleanup;
     }
 
-    /* Encrypt and encode data here: */
+    /* Allocate a temporary buffer to work on */
     buffer = (char*)MPIU_Malloc(input_length * 2);
     if (buffer == NULL)
     {
@@ -138,6 +163,7 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
 	ret_val = SMPD_FAIL;
 	goto fn_cleanup;
     }
+    /* copy the input data to the temporary buffer and encrypt in-place */
     memcpy(buffer, input, input_length);
     dwLength = input_length;
     if (!CryptEncrypt(hKey, 0, TRUE, 0, buffer, &dwLength, input_length*2))
@@ -147,6 +173,10 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
 	goto fn_cleanup;
     }
 
+    /* encode the binary encrypted blob to the output text buffer */
+    *output = SMPD_ENCRYPTED_PREFIX;
+    output++;
+    output_length--;
     result = smpd_encode_buffer(output, output_length, buffer, dwLength, &length);
     if (result != SMPD_SUCCESS)
     {
@@ -182,11 +212,39 @@ fn_cleanup:
 
     smpd_exit_fn("smpd_encrypt_data");
     return ret_val;
+
 #else
-    memcpy(output, input, input_length);
-    output[input_length] = '\0';
-    return SMPD_SUCCESS;
+    int ret_val = SMPD_SUCCESS;
+    smpd_enter_fn("smpd_encrypt_data");
+    ret_val = smpd_encrypt_data_plaintext(input, input_length, output, output_length);
+    smpd_exit_fn("smpd_encrypt_data");
+    return ret_val;
 #endif
+}
+
+static int smpd_decrypt_data_plaintext(char *input, int input_length, char *output, int *output_length)
+{
+    smpd_enter_fn("smpd_decrypt_data_plaintext");
+    /* check the prefix character to make sure the data is plaintext */
+    if (*input != SMPD_PLAINTEXT_PREFIX)
+    {
+	smpd_err_printf("decryption module not available, please try again with -plaintext.\n");
+	smpd_exit_fn("smpd_decrypt_data_plaintext");
+	return SMPD_FAIL;
+    }
+    /* skip over the prefix character */
+    input++;
+    input_length--;
+    if (*output_length < input_length)
+    {
+	smpd_err_printf("decryption output buffer too small.\n");
+	smpd_exit_fn("smpd_decrypt_data_plaintext");
+	return SMPD_FAIL;
+    }
+    memcpy(output, input, input_length);
+    *output_length = input_length;
+    smpd_exit_fn("smpd_decrypt_data_plaintext");
+    return SMPD_SUCCESS;
 }
 
 int smpd_decrypt_data(char *input, int input_length, char *output, int *output_length)
@@ -195,13 +253,20 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
     HCRYPTPROV hCryptProv = 0;
     HCRYPTKEY hKey = 0;
     HCRYPTHASH hHash = 0;
-    CHAR szPassword[512] = "";
+    CHAR szPassword[SMPD_MAX_PASSWORD_LENGTH] = "";
     DWORD dwLength;
     char *buffer = NULL;
     int length, result;
     int ret_val = SMPD_SUCCESS;
 
     smpd_enter_fn("smpd_decrypt_data");
+
+    if (*input == SMPD_PLAINTEXT_PREFIX)
+    {
+	ret_val = smpd_decrypt_data_plaintext(input, input_length, output, output_length);
+	smpd_exit_fn("smpd_decrypt_data");
+	return ret_val;
+    }
 
     /* Acquire a cryptographic provider context handle. */
     if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, 0))
@@ -225,8 +290,8 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
     }
 
     /* Hash the password string. */
-    MPIU_Snprintf(szPassword, 512, "%s %s", smpd_process.encrypt_prefix, smpd_process.passphrase);
-    strcpy(szPassword, smpd_process.passphrase);
+    /*MPIU_Snprintf(szPassword, SMPD_MAX_PASSWORD_LENGTH, "%s %s", smpd_process.encrypt_prefix, smpd_process.passphrase);*/
+    MPIU_Strncpy(szPassword, smpd_process.passphrase, SMPD_MAX_PASSWORD_LENGTH);
     /*smpd_dbg_printf("phrase to generate the decryption key: '%s'\n", szPassword);*/
     dwLength = (DWORD)strlen(szPassword);
     if (!CryptHashData(hHash, (BYTE *)szPassword, dwLength, 0)) 
@@ -236,7 +301,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 	goto fn_cleanup;
     }
 
-    /* Create a session key based on the hash of the password. */
+    /* Create a session key based on the hash of the smpd password. */
     if (!CryptDeriveKey(hCryptProv, CALG_RC2, hHash, CRYPT_EXPORTABLE, &hKey)) 
     {
 	smpd_err_printf("Error during CryptDeriveKey\n");
@@ -244,7 +309,11 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 	goto fn_cleanup;
     }
 
-    /* Decrypt and decode data here: */
+    /* skip over the prefix character */
+    input++;
+    input_length--;
+
+    /* Allocate a temporary buffer to work on */
     buffer = (char*)MPIU_Malloc(input_length);
     if (buffer == NULL)
     {
@@ -253,6 +322,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 	goto fn_cleanup;
     }
 
+    /* decode the data back to it's binary encrypted format */
     /*smpd_dbg_printf("encoded encrypted password: '%s'\n", input);*/
     result = smpd_decode_buffer(input, buffer, input_length, &length);
     if (result != SMPD_SUCCESS)
@@ -262,6 +332,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 	goto fn_cleanup;
     }
 
+    /* decrypt the data blob back to plaintext */
     dwLength = length;
     if (!CryptDecrypt(hKey, 0, TRUE, 0, buffer, &dwLength))
     {
@@ -275,6 +346,8 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 	ret_val = SMPD_FAIL;
 	goto fn_cleanup;
     }
+
+    /* copy the plaintext to the output buffer */
     memcpy(output, buffer, dwLength);
     *output_length = dwLength;
 
@@ -305,8 +378,10 @@ fn_cleanup:
     smpd_exit_fn("smpd_decrypt_data");
     return ret_val;
 #else
-    memcpy(output, input, input_length);
-    *output_length = input_length;
-    return SMPD_SUCCESS;
+    int ret_val = SMPD_SUCCESS;
+    smpd_enter_fn("smpd_decrypt_data");
+    ret_val = smpd_decrypt_data_plaintext(input, input_length, output, output_length);
+    smpd_exit_fn("smpd_decrypt_data");
+    return ret_val;
 #endif
 }

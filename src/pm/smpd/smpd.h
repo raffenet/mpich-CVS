@@ -119,6 +119,8 @@ typedef int SMPD_BOOL;
 #define SMPD_DATA_MUTEX_NAME              "SMPD_DATA_MUTEX"
 #define SMPD_DYNAMIC_HOSTS_KEY            "dynamic_hosts"
 #define SMPD_PATH_SPEC                    "{SMPD_PATH}"
+#define SMPD_PLAINTEXT_PREFIX             'y'
+#define SMPD_ENCRYPTED_PREFIX             'x'
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -563,6 +565,7 @@ typedef struct smpd_global_t
     SMPD_BOOL use_pmi_server;
     char *mpiexec_argv0;
     char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];
+    SMPD_BOOL plaintext;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

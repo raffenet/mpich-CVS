@@ -160,7 +160,8 @@ smpd_global_t smpd_process =
       MPIDU_SOCK_INVALID_SOCK, /* timeout_sock     */
       SMPD_TRUE,        /* use_pmi_server          */
       NULL,             /* mpiexec_argv0           */
-      "dummy"           /* encrypt_prefix          */
+      "dummy",          /* encrypt_prefix          */
+      SMPD_FALSE        /* plaintext               */
     };
 
 int smpd_post_abort_command(char *fmt, ...)

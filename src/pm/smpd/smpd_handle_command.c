@@ -1034,16 +1034,22 @@ int smpd_handle_result(smpd_context_t *context)
 		{
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
+			/* FIXME: decrypt the password */
 			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "account", smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH) == MPIU_STR_SUCCESS &&
-			    MPIU_Str_get_string_arg(context->read_cmd.cmd, "password", smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH) == MPIU_STR_SUCCESS)
+			    MPIU_Str_get_string_arg(context->read_cmd.cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/, SMPD_MAX_PASSWORD_LENGTH) == MPIU_STR_SUCCESS)
 			{
+			    int length = SMPD_MAX_PASSWORD_LENGTH;
 			    smpd_dbg_printf("cred_request succeeded, account: '%s'\n", smpd_process.UserAccount);
-			    strcpy(iter->context->account, smpd_process.UserAccount);
-			    strcpy(iter->context->password, smpd_process.UserPassword);
-			    strcpy(iter->context->cred_request, "yes");
-			    iter->context->read_state = SMPD_IDLE;
-			    iter->context->write_state = SMPD_WRITING_CRED_ACK_YES;
-			    result = MPIDU_Sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			    result = smpd_decrypt_data(context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH, smpd_process.UserPassword, &length);
+			    if (result == SMPD_SUCCESS)
+			    {
+				strcpy(iter->context->account, smpd_process.UserAccount);
+				strcpy(iter->context->password, smpd_process.UserPassword);
+				strcpy(iter->context->cred_request, "yes");
+				iter->context->read_state = SMPD_IDLE;
+				iter->context->write_state = SMPD_WRITING_CRED_ACK_YES;
+				result = MPIDU_Sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			    }
 			    ret_val = result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 			}
 			else
@@ -2762,8 +2768,9 @@ int smpd_handle_validate_command(smpd_context_t *context)
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
     char fullaccount[SMPD_MAX_ACCOUNT_LENGTH]="", domain[SMPD_MAX_ACCOUNT_LENGTH];
-    char account[SMPD_MAX_ACCOUNT_LENGTH]="", password[SMPD_MAX_PASSWORD_LENGTH]="";
+    char account[SMPD_MAX_ACCOUNT_LENGTH]="", password[SMPD_MAX_PASSWORD_LENGTH]="", encrypted_password[SMPD_MAX_PASSWORD_LENGTH]="";
     char result_str[100];
+    int length;
 #ifdef HAVE_WINDOWS_H
     HANDLE hUser;
 #endif
@@ -2778,9 +2785,18 @@ int smpd_handle_validate_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
-    if (MPIU_Str_get_string_arg(cmd->cmd, "password", password, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
+    /* FIXME: decrypt the password */
+    if (MPIU_Str_get_string_arg(cmd->cmd, "password", encrypted_password, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("validate command missing password parameter\n");
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
+    length = SMPD_MAX_PASSWORD_LENGTH;
+    result = smpd_decrypt_data(encrypted_password, SMPD_MAX_PASSWORD_LENGTH, password, &length);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to decrypt the password\n");
 	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
@@ -3212,7 +3228,15 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		    smpd_exit_fn("smpd_handle_cred_request_command");
 		    return result;
 		}
-		result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+		/* FIXME: encrypt the password */
+		result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to encrypt the password parameter to the result command.\n");
+		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    return result;
+		}
+		result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the password parameter to the result command.\n");
@@ -3247,7 +3271,15 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		smpd_exit_fn("smpd_handle_cred_request_command");
 		return result;
 	    }
-	    result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	    /* FIXME: encrypt the password */
+	    result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the password parameter to the result command.\n");
@@ -3272,7 +3304,15 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_cred_request_command");
 	    return result;
 	}
-	result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	/* FIXME: encrypt the password */
+	result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the password parameter to the result command.\n");
@@ -3301,7 +3341,15 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		smpd_exit_fn("smpd_handle_cred_request_command");
 		return result;
 	    }
-	    result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	    /* FIXME: encrypt the password */
+	    result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
+		smpd_exit_fn("smpd_handle_cred_request_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the password parameter to the result command.\n");
@@ -3336,7 +3384,15 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_cred_request_command");
 	    return result;
 	}
-	result = smpd_add_command_arg(temp_cmd, "password", smpd_process.UserPassword);
+	/* FIXME: encrypt the password */
+	result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
+	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    return result;
+	}
+	result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the password parameter to the result command.\n");

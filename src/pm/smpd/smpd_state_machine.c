@@ -34,7 +34,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 		smpd_dbg_printf("forwarding stdin: '%s'\n", str);
 		if (send(hWrite, str, len, 0) == SOCKET_ERROR)
 		{
-		    smpd_err_printf("unable to forward stdin, WriteFile failed, error %d\n", GetLastError());
+		    smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
 		    return;
 		}
 	    }
@@ -2025,9 +2025,10 @@ int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *eve
 	smpd_exit_fn("smpd_state_reading_password");
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
+
     /* decrypt the password */
     length = SMPD_MAX_PASSWORD_LENGTH;
-    result = smpd_decrypt_data(context->encrypted_password, (int)strlen(context->encrypted_password), decrypted, &length);
+    result = smpd_decrypt_data(context->encrypted_password+1, (int)strlen(context->encrypted_password+1), decrypted, &length);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to decrypt the password\n");
@@ -2044,7 +2045,7 @@ int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *eve
 	smpd_exit_fn("smpd_state_reading_password");
 	return SMPD_FAIL;
     }
-    /* skip over the prefix */
+    /* skip over the entropy prefix */
     iter = decrypted;
     while (*iter != ' ' && *iter != '\0')
 	iter++;
@@ -2118,12 +2119,14 @@ int smpd_state_writing_account(smpd_context_t *context, MPIDU_Sock_event_t *even
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("wrote account: '%s'\n", context->account);
+
     /* encrypt the password and a prefix to introduce variability to the encrypted blob */
     /* The prefix used is the challenge response string */
     if (context->encrypted_password[0] == '\0')
     {
+	context->encrypted_password[0] = SMPD_ENCRYPTED_PREFIX;
 	MPIU_Snprintf(buffer, SMPD_MAX_PASSWORD_LENGTH, "%s %s", smpd_process.encrypt_prefix, context->password);
-	result = smpd_encrypt_data(buffer, (int)strlen(buffer), context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	result = smpd_encrypt_data(buffer, (int)strlen(buffer), context->encrypted_password+1, SMPD_MAX_PASSWORD_LENGTH-1);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to encrypt the user password.\n");
@@ -2900,7 +2903,15 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		smpd_exit_fn("smpd_state_writing_session_header");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_add_command_arg(cmd_ptr, "password", smpd_process.UserPassword);
+	    /* FIXME: encrypt the password */
+	    result = smpd_encrypt_data(smpd_process.UserPassword, strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to encrypt the password for the validate command.\n");
+		smpd_exit_fn("smpd_state_writing_session_header");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "password", context->encrypted_password);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the password to the validate command.\n");
