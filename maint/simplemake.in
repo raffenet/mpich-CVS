@@ -1509,6 +1509,15 @@ sub TargetClean {
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
     print FD "\t-rm -f *.o \${srcdir}/*.o $programnames$newline";
+    # Add Windows names of executables
+    if ($programnames ne "") {
+	print FD "\t-rm -f";
+	foreach $name (split(/\s+/,$programnames)) {
+	    print FD " $name.exe";
+	}
+	print FD "$newline";
+    }
+
     #if ($do_sharedlibs) {
         # Output this in all cases to clear any old files.  
 	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
