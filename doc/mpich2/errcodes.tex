@@ -17,7 +17,7 @@ non-null but invalid handle.   To handle all of these cases, we predefine an
 extended set of error codes.  Only the error classes are defined in
 \file{mpi.h}; the others are defined in \file{mpiimpl.h} (Question: is this
 the correct place, or should there be a separate file?).  The additional error
-codes all have the form of \code{MPIi_ERR_<class>_<subcase>}.  For example,
+codes all have the form of \code{MPIi_ERR_<class>_<subclass>}.  For example,
 the code for a null communicator is \mpiconst{MPIi_ERR_COMM_NULL}.
 
 Many of these descriptions list the optional arguments.  These can be provided
@@ -28,17 +28,18 @@ code (see \mpidfunc{MPID_Err_create_code}).
 \item[\mpiconst{MPI_ERR_BUFFER}]Invalid buffer pointer
     \begin{description}
     \item[\mpidconst{MPIi_ERR_BUFFER_NULL}]Null buffer pointer
-    \item[\mpidconst{MPIi_ERR_BUFFER_EXISTS}]Buffer already attached with
-      \mpifunc{MPI_BUFFER_ATTACH}. 
     \item[\mpidconst{MPIi_ERR_BUFFER_NOSPACE}]Insufficient space in Bsend
       buffer (optional args: requested and avaliable length (int))
     \item[\mpidconst{MPIi_ERR_BUFFER_ALIAS}]Buffers must not be aliased
       (optional args: names of two arguments (string))
     \item[\mpidconst{MPIi_ERR_BUFFER_SIZE}]Invalid buffer size (optional arg:
       size (int))
+    \item[\mpidconst{MPIi_ERR_BUFFER_BSEND_EXISTS}]Buffer already attached with
+      \mpifunc{MPI_BUFFER_ATTACH}. 
     \item[\mpidconst{MPIi_ERR_BUFFER_BSEND_SMALL}]Buffer size is smaller than
       \mpiconst{MPI_BSEND_OVERHEAD} (optional argument: size, value of
       \code{MPI_BSEND_OVERHEAD} (int)) 
+    \item[\mpidconst{MPIi_ERR_BUFFER_BSEND_NONE}]No buffer to detach.
     \end{description}
 \item[\mpiconst{MPI_ERR_COUNT}]Invalid count (optional argument value (int))
     \begin{description}
@@ -57,6 +58,11 @@ code (see \mpidfunc{MPID_Err_create_code}).
     \item[\mpidconst{MPIi_ERR_TYPE_PERM_CONTENTS]}]Cannot get contents of a
       permanent or basic data type (optional argument: name (string))
     \item[\mpidconst{MPIi_ERR_TYPE_NAME}]Cannot set name in data type
+    \item[\mpidconst{MPIi_ERR_TYPE_NOMATCH}]Type signatures do not
+    match in communication (see \cite{gro:mpi-datatypes:pvmmpi00})
+    \item[\mpidconst{MPIi_ERR_TYPE_WRONG_COMM}]Pack buffer not packed
+    for this communicator.  
+\cite{})
     \end{description}
 \item[\mpiconst{MPI_ERR_TAG}]Invalid tag (optional argument: value (int) )
 %    \begin{description}
@@ -72,6 +78,9 @@ code (see \mpidfunc{MPID_Err_create_code}).
     \item[\mpidconst{MPIi_ERR_COMM_LOCAL_NULL}]Local communicator must not be
       \mpiconst{MPI_COMM_NULL}
     \end{description}
+    Note that while C++ defines separate Cartesian and Graph
+    communicators, errors involving improper choice of those is under
+    \mpiconst{MPI_ERR_TOPOLOGY}. 
 \item[\mpiconst{MPI_ERR_RANK}]Invalid rank (optional argument: value (int))
     \begin{description}
     \item[\mpidconst{MPIi_ERR_RANK_ARRAY}]Invalid rank in rank array (optional
@@ -164,7 +173,6 @@ code (see \mpidfunc{MPID_Err_create_code}).
       nonnegative (optional argument: value (int))
     \item[\mpidconst{MPIi_ERR_ARG_INFO_NKEY}]n is invalid (optional arguments:
       n, number of keys in info (int))
-   
     \end{description}
 \item[\mpiconst{MPI_ERR_UNKNOWN}]Unknown error.  Note that this should
   \emph{never} be used.
@@ -393,6 +401,10 @@ that is not consistent (string))
 \item[\mpiconst{MPI_ERR_WIN}]Invalid \mpiconst{MPI_Win}
     \begin{description}
     \item[\mpidconst{MPIi_ERR_WIN_NULL}]Null \mpiconst{MPI_Win}
+    \item[\mpidconst{MPIi_ERR_WIN_NAME}]Cannot set window object name
+    \item[\mpidconst{MPIi_ERR_WIN_INVALID_WINDOW}]Attempt to use
+    passive target access with a window not allocated with
+    \mpifunc{MPI_Alloc_mem}. 
     \end{description}
 \item[\mpiconst{MPI_ERR_BASE}]Invalid base address in \mpiconst{MPI_Free_mem}
 %    \begin{description}
