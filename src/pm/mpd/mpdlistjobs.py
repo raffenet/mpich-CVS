@@ -50,6 +50,12 @@ def mpdlistjobs():
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
     msgToSend = { 'cmd' : 'mpdlistjobs' }
     mpd_send_one_msg(conSocket,msgToSend)
+    msg = mpd_recv_one_msg(conSocket)
+    if msg['cmd'] != 'local_mpdid':     # get full id of local mpd for filters later
+        mpd_raise('did not recv local_mpdid msg from local mpd; instead, recvd: %s' % msg)
+    else:
+        if len(sjobid) == 1:
+            sjobid.append(msg['id'])
     while 1:
         msg = mpd_recv_one_msg(conSocket)
         if not msg.has_key('cmd'):

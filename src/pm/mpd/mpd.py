@@ -214,6 +214,8 @@ def _handle_console_input():
         mpd_send_one_msg(g.rhsSocket, msg)
         # do not send an ack to console now; will send ringtest info later
     elif msg['cmd'] == 'mpdlistjobs':
+        msgToSend = { 'cmd'  : 'local_mpdid', 'id' : g.myId }
+        mpd_send_one_msg(g.conSocket,msgToSend)
         for jobid in g.activeJobs.keys():
             for pid in g.activeJobs[jobid]:
                 msgToSend = { 'cmd' : 'mpdlistjobs_info',
