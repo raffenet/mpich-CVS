@@ -616,8 +616,10 @@ int MPIDU_Sock_init()
 	{
 	    g_min_port = g_max_port = 0;
 	}
+	/*
 	printf("using min_port = %d, max_port = %d\n", g_min_port, g_max_port);
 	fflush(stdout);
+	*/
     }
 
     g_StateAllocator = BlockAllocInit(sizeof(sock_state_t), 1000, 500, malloc, free);
@@ -657,6 +659,52 @@ int MPIDU_Sock_finalize()
     return MPI_SUCCESS;
 }
 
+typedef struct sock_host_name_t
+{
+    char host[256];
+    struct sock_host_name_t *next;
+} sock_host_name_t;
+
+static int already_used_or_add(char *host, sock_host_name_t **list)
+{
+    sock_host_name_t *iter;
+
+    /* check if the host already has been used */
+    iter = *list;
+    while (iter)
+    {
+	if (strcmp(iter->host, host) == 0)
+	{
+	    return 1;
+	}
+	iter = iter->next;
+    }
+
+    /* the host has not been used so add a node for it */
+    iter = (sock_host_name_t*)malloc(sizeof(sock_host_name_t));
+    if (!iter)
+    {
+	/* if out of memory then treat it as not found */
+	return 0;
+    }
+    strcpy(iter->host, host);
+    iter->next = *list;
+    *list = iter;
+
+    return 0;
+}
+
+static void free_host_list(sock_host_name_t *list)
+{
+    sock_host_name_t *iter;
+    while (list)
+    {
+	iter = list;
+	list = list->next;
+	free(iter);
+    }
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_hostname_to_host_description
 #undef FCNAME
@@ -671,6 +719,7 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
 #endif
     ADDRINFO *res, *iter, hint;
     char host[256];
+    sock_host_name_t *used_list = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
@@ -703,13 +752,16 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
     {
 	if (iter->ai_canonname)
 	{
-	    /*printf("adding canonname: %s\n", iter->ai_canonname);*/
-	    mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->ai_canonname);
-	    if (mpi_errno)
+	    if (!already_used_or_add(iter->ai_canonname, &used_list))
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-		return mpi_errno;
+		/*printf("adding canonname: %s\n", iter->ai_canonname);*/
+		mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->ai_canonname);
+		if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+		    return mpi_errno;
+		}
 	    }
 	}
 	else
@@ -720,13 +772,16 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
 	    case PF_INET6:
 		if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, 0) == 0)
 		{
-		    /*printf("adding nameinfo: %s\n", host);*/
-		    mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
-		    if (mpi_errno)
+		    if (!already_used_or_add(host, &used_list))
 		    {
-			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-			return mpi_errno;
+			/*printf("adding nameinfo: %s\n", host);*/
+			mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
+			if (mpi_errno)
+			{
+			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+			    return mpi_errno;
+			}
 		    }
 		}
 		break;
@@ -744,13 +799,16 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
 	case PF_INET6:
 	    if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, NI_NUMERICHOST) == 0)
 	    {
-		/*printf("adding nameinfo: %s\n", host);*/
-		mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
-		if (mpi_errno)
+		if (!already_used_or_add(host, &used_list))
 		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-		    return mpi_errno;
+		    /*printf("adding nameinfo: %s\n", host);*/
+		    mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
+		    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+			return mpi_errno;
+		    }
 		}
 	    }
 	    break;
@@ -758,7 +816,11 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
 	iter = iter->ai_next;
     }
     if (res)
+    {
 	freeaddrinfo(res);
+    }
+
+    free_host_list(used_list);
 
 #if 0
     h = gethostbyname(hostname);
@@ -1871,6 +1933,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    {
 			/* socket closed */
 			MPIU_DBG_PRINTF(("sock_wait readv returning %d bytes and EOF\n", sock->read.total));
+			/*printf("sock_wait readv returning %d bytes and EOF\n", sock->read.total);*/
 			out->op_type = MPIDU_SOCK_OP_READ;
 			out->num_bytes = sock->read.total;
 			out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
@@ -1940,6 +2003,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    {
 				out->op_type = MPIDU_SOCK_OP_READ;
 				out->num_bytes = sock->read.total;
+				/*printf("sock_wait returning %d bytes and socket closed\n", sock->read.total);*/
 				out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
@@ -2012,6 +2076,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    {
 				out->op_type = MPIDU_SOCK_OP_READ;
 				out->num_bytes = sock->read.total;
+				/*printf("sock_wait returning %d bytes and socket closed\n", sock->read.total);*/
 				out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
@@ -2077,9 +2142,10 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			if (num_bytes == 0)
 			{
 			    /* socket closed */
-			    MPIU_DBG_PRINTF(("sock_wait wreadv returning %d bytes and EOF\n", sock->write.total));
+			    MPIU_DBG_PRINTF(("sock_wait writev returning %d bytes and EOF\n", sock->write.total));
 			    out->op_type = MPIDU_SOCK_OP_WRITE;
 			    out->num_bytes = sock->write.total;
+			    /*printf("sock_wait writev returning %d bytes and EOF\n", sock->write.total);*/
 			    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
@@ -2154,6 +2220,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				{
 				    out->op_type = MPIDU_SOCK_OP_WRITE;
 				    out->num_bytes = sock->write.total;
+				    /*printf("sock_wait returning %d bytes and socket closed\n", sock->write.total);*/
 				    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
@@ -2231,6 +2298,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				{
 				    out->op_type = MPIDU_SOCK_OP_WRITE;
 				    out->num_bytes = sock->write.total;
+				    /*printf("sock_wait returning %d bytes and socket closed\n", sock->write.total);*/
 				    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
@@ -2278,6 +2346,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    MPIU_DBG_PRINTF(("EOF with posted read on sock %d\n", sock->sock));
 			    out->op_type = MPIDU_SOCK_OP_READ;
 			    out->num_bytes = sock->read.total;
+			    /*printf("sock_wait returning %d bytes and EOF\n", sock->read.total);*/
 			    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 			    out->user_ptr = sock->user_ptr;
 			    sock->state ^= SOCKI_READING;
@@ -2290,6 +2359,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    MPIU_DBG_PRINTF(("EOF with posted write on sock %d\n", sock->sock));
 			    out->op_type = MPIDU_SOCK_OP_WRITE;
 			    out->num_bytes = sock->write.total;
+			    /*printf("sock_wait returning %d bytes and EOF\n", sock->write.total);*/
 			    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 			    out->user_ptr = sock->user_ptr;
 			    sock->state ^= SOCKI_WRITING;
@@ -2691,7 +2761,7 @@ int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set)
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
-    ret_val = (int)set;
+    ret_val = PtrToInt(set);/*(int)set;*/
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
     return ret_val;
 }
