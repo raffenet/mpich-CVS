@@ -193,6 +193,9 @@
 				RelativePath=".\src\ch3_abort.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_alloc_mem.c">
+			</File>
+			<File
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
@@ -205,7 +208,16 @@
 				RelativePath=".\src\ch3_comm_spawn_multiple.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_end_epoch.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_end_pt_epoch.c">
+			</File>
+			<File
 				RelativePath="src\ch3_finalize.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_free_mem.c">
 			</File>
 			<File
 				RelativePath="src\ch3_init.c">
@@ -242,6 +254,18 @@
 			</File>
 			<File
 				RelativePath="src\ch3_shm_memory.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_start_epoch.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_start_pt_epoch.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_win_create.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_win_free.c">
 			</File>
 			<File
 				RelativePath="src\ch3i_bootstrapq.c">
