@@ -106,7 +106,7 @@ install: all
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${bindir}/temp > ${bindir}/$$cmd ; \
 	    chmod 755 ${bindir}/$$cmd; \
 	done
-	-@for cmd in mpdman mpdlib mpiexec mpirun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
+	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
 	    cp -f ${srcdir}/$$cmd.py ${bindir}/temp ; \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${bindir}/temp > ${bindir}/$$cmd.py ; \
 	    chmod 755 ${bindir}/$$cmd.py; \
