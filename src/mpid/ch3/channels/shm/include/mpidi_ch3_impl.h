@@ -67,6 +67,12 @@ __attribute__ ((unused))
 }
 #endif
 
+#ifdef HAVE_GCC_AND_PETIUM_ASM
+#define WRITE_BARRIER()
+#else
+#define WRITE_BARRIER()
+#endif
+
 /* This value is defined in sys/param.h under Linux but in netdb.h 
    under Solaris */
 #ifndef MAXHOSTNAMELEN
