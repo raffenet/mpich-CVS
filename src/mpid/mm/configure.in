@@ -436,6 +436,7 @@ AC_OUTPUT(Makefile \
 	  src/init/Makefile \
           src/mm/Makefile \
 	  src/spawn/Makefile \
+          src/pt2pt/Makefile \
 )
 
 
