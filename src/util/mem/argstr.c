@@ -33,6 +33,23 @@ static int encode_buffer(char *dest, int dest_length, const char *src, int src_l
     int num_used;
     int n = 0;
     char ch;
+    if (src_length == 0)
+    {
+	if (dest_length > 2)
+	{
+	    *dest = '\"';
+	    dest++;
+	    *dest = '\"';
+	    dest++;
+	    *dest = '\0';
+	    *num_encoded = 0;
+	    return MPIU_STR_SUCCESS;
+	}
+	else
+	{
+	    return MPIU_STR_TRUNCATED;
+	}
+    }
     while (src_length && dest_length)
     {
 	ch = *src;
@@ -68,8 +85,10 @@ static int decode_buffer(const char *str, char *dest, int length, int *num_decod
 	    return MPIU_STR_SUCCESS;
 	return MPIU_STR_TRUNCATED;
     }
+    if (*str == MPIU_STR_QUOTE_CHAR)
+	str++;
     hex[2] = '\0';
-    while (*str != '\0' && *str != ' ' && length)
+    while (*str != '\0' && *str != ' ' && *str != MPIU_STR_QUOTE_CHAR && length)
     {
 	hex[0] = *str;
 	str++;
@@ -85,7 +104,7 @@ static int decode_buffer(const char *str, char *dest, int length, int *num_decod
     *num_decoded = n;
     if (length == 0)
     {
-	if (*str != '\0' && *str != ' ')
+	if (*str != '\0' && *str != ' ' && *str != MPIU_STR_QUOTE_CHAR)
 	    return MPIU_STR_TRUNCATED;
     }
     return MPIU_STR_SUCCESS;
@@ -536,7 +555,14 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
     }
     else
     {
-	num_chars = snprintf(str, maxlen, "%s ", val);
+	if (*val == '\0')
+	{
+	    num_chars = snprintf(str, maxlen, "\"\"");
+	}
+	else
+	{
+	    num_chars = snprintf(str, maxlen, "%s ", val);
+	}
 	if (num_chars == maxlen)
 	{
 	    *str = '\0';
@@ -633,7 +659,14 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     }
     else
     {
-	num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s", val);
+	if (*val == '\0')
+	{
+	    num_chars = snprintf(*str_ptr, *maxlen_ptr, "\"\"");
+	}
+	else
+	{
+	    num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s", val);
+	}
     }
     *str_ptr = *str_ptr + num_chars;
     *maxlen_ptr = *maxlen_ptr - num_chars;
