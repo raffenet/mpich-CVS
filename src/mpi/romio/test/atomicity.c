@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 /* set atomicity to true */
     err = MPI_File_set_atomicity(fh, 1);
     if (err != MPI_SUCCESS) {
-	fprintf(stderr, "Atomic mode not supported on this file system.\n");
+	fprintf(stderr, "Atomic mode not supported on this file system.\n");fflush(stderr);
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
