@@ -1,0 +1,114 @@
+#! /usr/bin/perl
+# 
+# Convert the schedule file to a spreadsheet
+# Microsoft Project can read in files with the form
+#ID\tUnique_ID\tTask_Name\tDuration\tType\tOutline_Level\tBaseline_Duration\tPredecessors\tStart_Date\tFinish_Date\tEarly_Start\tEarly_Finish\tLate_Start\tLate_Finish\tFree_Slack\tTotal_Slack\tLeveling_Delay\tPercent_Complete\tActual_Start\tActual_Finish\tBaseline_Start\tBaseline_Finish\tConstraint_Type\tConstraint_Date\tStop\tResume\tCreated
+# We might get away with a subset of these
+
+# and all fields tab separated.  Powerpoint appears to ignore durations
+# and takes only dates.  This is called the "Task export map"
+
+#
+# Skip header
+while (<>) {
+    if (/-------------------------/) { last; }
+}
+
+#
+# Phase 1:  Read the file and assign id's to each function.  We need the
+# Ids to compute the dependencies.
+# Store the information by routine:
+#   nametoid{routine} = id
+#   nametotime{routine} = avg
+#   nametodepend{routine} = dependstring
+%nametoid = ();
+%nametotime = ();
+%nametodepend = ();
+%nametoowner = ();
+@idtoname = ();
+$id = 1;
+while (<>) {
+    s/[\r\n]*$//;
+    if (/^\s*BEGIN\s*(\w*)/) {
+	$prefix = "$1:";
+    }
+    elsif (/^\s*END\s*(\w*)/) {
+	if ($prefix != "$1:") { 
+	    print STDERR "Warning: Found END $1 while processing $prefix\n";
+	}
+	$prefix = ""
+    }
+    elsif (/^.*,.*,.*,.*,.*,.*/) { 
+	($routine,$min,$max,$avg,$priority,$name,$depend,$actual,$finished) = 
+	    split(/,/);
+	# Validate data (check for typos)
+	if ($min ne "" && $min =~ /([\.0-9]*)/ && $1 ne $min) {
+	    print STDERR "$routine: min value ($min) not valid\n";
+	}
+	if ($max ne "" && $max =~ /([\.0-9]*)/ && $1 ne $max) {
+	    print STDERR "$routine: max value ($max) not valid\n";
+	}
+	if ($avg ne "" && $avg =~ /([\.0-9]*)/ && $1 ne $avg) {
+	    print STDERR "$routine: avg value ($avg) not valid\n";
+	}
+	if ($priority ne "" && $priority =~ /([\.0-9]*)/ && $1 ne $priority) {
+	    print STDERR "$routine: priority value ($priority) not valid\n";
+	}
+	#print "$routine:$min:$max:$avg:$priority:$name:$depend:$actual\n";
+	# Add any prefix to the routine
+	$routine = "$prefix$routine";
+	#print "$routine\t$min\t$max\t$avg\t$priority\t$name\t$depend\n";
+	# eventually convert depend into id's for each routine.
+	$nametoid{$routine} = $id;
+	if ($actual eq "") { 
+	    if ($avg eq "") { $avg = 1; }
+	    $nametotime{$routine} = $avg;
+	}
+	else {
+	    if ($actual eq "done") { $actual = 1; }
+	    $nametotime{$routine} = $actual;
+	    $nametofinished{$routine} = $finished;
+	}	    
+	$nametodepend{$routine} = $depend;
+	$nametoowner{$routine} = $name;
+	$idtoname[$id] = $routine;
+	$id ++;
+    }
+    elsif (/^([^,]*),/) {	
+	#print "$1\n";
+	#print "$id\t$id\t$1\t\r\n";
+	$routine = $1;
+	# Add any prefix to the routine
+	$routine = "$prefix$routine";
+        $nametotime{$routine} = 1;
+	$nametoid{$routine} = $id;
+	$idtoname[$id] = $routine;
+	$id ++;
+    }
+}
+
+sub convert_depend {
+    $depend = $_[0];
+    $dependlist= "";
+    # Look in depend for strings
+    @names = split(/\s\s*/,$depend);
+    foreach $name (@names) {
+	if (defined($nametoid{$name})) {
+	    $dependlist .= "$nametoid{$name},";
+	}
+    }
+    chop $dependlist;
+    return $dependlist;
+}
+
+print "ID\tUnique_ID\tTask_name\tDuration\tPredecessors\tResource_Names\r\n";
+for ($i = 1; $i <$id; $i++) {
+    $routine = $idtoname[$i];
+    $avg     = $nametotime{$routine};
+    $depend  = $nametodepend{$routine};
+    $dependlist = convert_depend( $depend );
+    $owner   = $nametoowner{$routine};
+    $nl = "\r\n";
+    $nl = "\n";
+    print "$i\t$i\t$routine\t$avg\t\"$dependlist\"\t\"$owner\"$nl";
+}
