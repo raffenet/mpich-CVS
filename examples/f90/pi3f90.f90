@@ -19,8 +19,7 @@
 !****************************************************************************
 program main
 
-! use mpi
- include 'mpif.h'
+ use mpi
 
  double precision  PI25DT
  parameter        (PI25DT = 3.141592653589793238462643d0)
