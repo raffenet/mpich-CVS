@@ -1112,7 +1112,9 @@ dnl
 dnl
 dnl Set the libraries to use in building programs
 if test "$enable_weak_symbols" != "yes" ; then
-    LIBS="-lmpich -lpmpich -lmpich $LIBS"
+    # Ugh.  We don't have the dependencies between the libraries right 
+    # yet.  We *should* only need -lmpich -lpmpich .  
+    LIBS="-lmpich -lpmpich -lmpich -lpmpich $LIBS"
 else
     LIBS="-lmpich $LIBS"
 fi
