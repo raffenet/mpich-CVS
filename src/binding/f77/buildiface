@@ -1,0 +1,661 @@
+#! /usr/bin/perl
+#
+# This file builds candidate interface files from the descriptions in 
+# mpi.h
+#
+# Here are the steps:
+# 1) Find the prototypes in mpi.h.in (Look for *Begin Prototypes*)
+# 2) For exah function, match the name and args:
+#    int MPI_xxxx( ... )
+# 3) Create a new file with the name lc(xxxx)f.c (lowercase of name), 
+#    containing 
+#    Copyright
+#    Profiling block indicator
+#    Fortran name version of function, with MPI objects replaced by 
+#    MPI_Fint etc. as appropriate
+#    
+#
+# Setup global variables
+$buildfiles = 1;
+$build_prototypes = 1;
+$print_line_len = 0;
+$debug = 0;
+@arg_addresses = ();
+
+#feature variables
+$do_logical = 1;
+$do_fint    = 1;
+$do_weak    = 1;
+$do_subdecls = 1;
+
+# Process arguments
+#
+# Args
+# -feature={logical,fint,subdecls,weak}, separated by :, value given 
+# by =on or =off, eg
+# -feature=logical=on:fint=off
+# The feature names mean:
+#    logical - Fortran logicals are converted to/from C
+#    fint    - Fortran integers and C ints are different size (not implemented)
+#    subdecls - Declarations for PC-Fortran compilers added
+#    weak    - Use weak symbols 
+foreach $_ (@ARGV) {
+    if (/-noprototypes/) { $build_prototypes = 0; }
+    elsif (/-feature=(.*)/) {
+	foreach $feature (split(/:/,$1)) {
+	    # Feature values are foo=on,off
+	    ($name,$value) = split(/=/,$feature);
+	    if ($value eq "on") { $value = 1; } else { $value = 0; }
+	    $do_$name = $value;
+	}
+    }
+    else {
+	print STDERR "Unrecognized argument $_\n";
+    }
+}
+
+%tof77 = ( 'MPI_Datatype' => 'MPI_Fint *',
+	   'MPI_Comm' => 'MPI_Fint *',
+	   'MPI_File' => 'MPI_Fint *',
+	   'MPI_Win' => 'MPI_Fint *',
+	   'MPI_Request' => 'MPI_Fint *',
+	   'MPI_Group' => 'MPI_Fint *',
+	   'MPI_Op' => 'MPI_Fint *',
+	   'MPI_Info' => 'MPI_Fint *',
+	   'MPI_Errhandler' => 'MPI_Fint *',
+	   'int' => 'MPI_Fint *',
+	   'int [][3]' => 'MPI_Fint *',
+	   'MPI_Datatype *' => 'MPI_Fint *',
+	   'MPI_Comm *', 'MPI_Fint *',
+	   'MPI_File *', 'MPI_Fint *',
+	   'MPI_Win *', 'MPI_Fint *', 
+	   'MPI_Group *', 'MPI_Fint *',
+	   'MPI_Request *' => 'MPI_Fint *',
+	   'int *' => 'MPI_Fint *',
+	   'MPI_Op *' => 'MPI_Fint *',
+	   'MPI_Status *' => 'MPI_Fint *',
+	   'MPI_Info *' => 'MPI_Fint *',
+	   'MPI_Errhandler *' => 'MPI_Fint *',
+	   );
+
+# name_map maps the filenames.  Most filenames are created automatically
+# from the routine name, but some names have too many characters (15, 
+# including the extension(.o) is a limit for ar in some systems).
+%name_map = ( 'add_error_class' => 'adderrclass',
+	      'add_error_code' => 'adderrcode',
+	      'add_error_string' => 'adderrstring',
+	      'buffer_attach' => 'bufattach',
+	      'buffer_detach' => 'bufdetach',
+	      'comm_call_errhandler' => 'commcallerr',
+	      'comm_create_errhandler' => 'commcreerr',
+	      'comm_create_keyval' => 'commnewkey',
+	      'comm_delete_attr' => 'commdelattr',
+	      'comm_disconnect' => 'commdisc',
+	      'comm_free_keyval' => 'commfreekey',
+	      'comm_get_errhandler' => 'commgeterr',
+	      'comm_get_name' => 'commgetnam',
+	      'comm_get_parent' => 'commparent',
+	      'comm_remote_group' => 'commrgroup',
+	      'comm_remote_size' => 'commrsize',
+	      'comm_set_errhandler' => 'commseterr',
+	      'comm_spawn_multiple' => 'spawnmult',
+	      'comm_test_inter' => 'commtestic',
+	      'errhandler_create' => 'errhcreate',
+	      'errhandler_free' => 'errhfree',
+	      'errhandler_get' => 'errhget',
+	      'errhandler_set' => 'errhset',
+	      'file_call_errhandler' => 'filecallerr',
+	      'file_create_errhandler' => 'filecreerr',
+	      'file_get_errhandler' => 'filegeterr',
+	      'file_set_errhandler' => 'fileseterr',
+	      'get_processor_name' => 'getpname',
+	      'graph_neighbors_count' => 'grfnbcount',
+	      'graph_neighbors' => 'grfnbrs',
+	      'grequest_complete' => 'greqcomplete',
+	      'grequest_start' => 'greqstart',
+	      'group_difference' => 'groupdiff',
+	      'group_intersection' => 'groupinter',
+	      'group_range_excl' => 'grouprexcl',
+	      'group_range_incl' => 'grouprincl',
+	      'group_translate_ranks' => 'grouptranks',
+	      'info_get_nkeys' => 'infognk',
+	      'info_get_nthkey' => 'infognthk',
+	      'info_get_valuelen' => 'infovallen',
+	      'intercomm_create' => 'iccreate',
+	      'intercomm_merge' => 'icmerge',
+	      'is_thread_main' => 'isthrmain',
+	      'pack_external_size' => 'packesize',
+	      'reduce_scatter' => 'redscat',
+	      'request_get_status' => 'reqgetstat',
+	      'sendrecv_replace' => 'sndrcvrpl',
+	      'status_set_cancelled' => 'statgetcl',
+	      'status_set_elements' => 'statsetel',
+	      'test_cancelled' => 'testcancel',
+	      'type_contiguous' => 'typecontig',
+	      'type_create_darray' => 'typedarray',
+	      'type_create_hindexed' => 'typechind',
+	      'type_create_hvector' => 'typechvec',
+	      'type_create_indexed_block' => 'typecindb',
+	      'type_create_keyval' => 'typenewkey',
+	      'type_create_resized' => 'typecresize', 
+	      'type_create_struct' => 'typecstruct',
+	      'type_create_subarray' => 'typecsubarr',
+	      'type_delete_attr' => 'typedelattr',
+	      'type_free_keyval' => 'typefreekey',
+	      'type_get_contents' => 'typegetcnts',
+	      'type_get_envelope' => 'typegetenv',
+	      'type_get_extent' => 'typeextent',
+	      'type_get_name' => 'typegname',
+	      'type_get_true_extent' => 'typegtext',
+	      'type_set_attr' => 'typesetattr',
+	      'type_set_name' => 'typesetname',
+	      'unpack_external' => 'unpackext',
+	      'unpublish_name' => 'unpubname',
+	      'win_call_errhandler' => 'wincallerr',
+	      'win_create_errhandler' => 'wincreerr',
+	      'win_create_keyval' => 'winnewkey',
+	      'win_delete_attr' => 'windelattr',
+	      'win_free_keyval' => 'winfreekey',
+	      'win_get_errhandler' => 'wingeterr',
+	      'win_set_errhandler' => 'winseterr',
+);
+
+#
+# Special routines have very different calling seqences in C and Fortran
+%special_routines = ( 'Init' => 1, 'Init_thread' => 1 );
+
+#
+# Most routines can be processed automatically.  However, some
+# require some special processing.  For example, those routines with
+# LOGICAL arguments need some special handling.  To detect this, there
+# are two entries in a %special_args hash: the routine name, and the routine
+# name -arg#.  E.g., for MPI_Test, the hash has keys
+# "Test" and "Test-2".  The value for "Test-2" is "out:logical"; this 
+# indicates that the variable is an out variable with logical type.
+# Processing types (the second field after the :) are
+#    logical: convert to/from Fortran and C representations of logical
+#    index:   convert to/from Fortran (1-based) and C (0-based) origins
+#    array:   handle arrays of items that may have different lengths
+#             in C and Fortran because the integer types have 
+#             different sizes
+#    addnull: Add a null character to a *copy* of the input string,
+#             after trimming any blanks.
+#    blankpad: Add blanks and remove nulls.  Use a copy of the string
+#             for the call to the C routine.
+#
+%special_args = ( 
+    'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array', 
+    'Cart_create-5' => 'in:logical', 
+    'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array',
+    'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
+    'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
+    'Initialized' => '1', 'Initialized-1' => 'out:logical',
+    'Iprobe' => '4', 'Iprobe-4' => 'out:logical',
+    'Test_cancelled' => '2', 'Test_cancelled-2' => 'out:logical',
+    'Test' => '2', 'Test-2' => 'out:logical',
+    'Testall' => '3', 'Testall-3' => 'out:logical',
+    'Testany' => '3:4', 'Testany-4' => 'out:logical',
+    'Testany-3' => 'out:index',
+    'Testsome' => '4', 'Testsome-4' => 'out:index_array',
+    'Waitany' => '3', 'Waitany-3' => 'out:index',
+    'Waitsome' => '4', 'Waitsome-4' => 'out:index_array'
+    );
+
+if ($build_prototypes) {
+    open( PROTOFD, ">fproto.h" ) || die "Cannot open fproto.h\n";
+    print PROTOFD "\
+/* -*- Mode: C; c-basic-offset:4 ; -*- */\
+/*  \
+ *  (C) 2001 by Argonne National Laboratory.\
+ *      See COPYRIGHT in top-level directory.\
+ *\
+ * This file is automatically generated by buildiface\
+ * DO NOT EDIT\
+ */\
+/* Prototypes for Fortran Interface Functions */\n";
+}
+
+open( FD, "<../../include/mpi.h.in" ) || die "Cannot open mpi.h.in\n";
+
+# Skip to prototypes
+while (<FD>) {
+    if ( /\/\*\s*Begin Prototypes/ ) { last; }
+}
+
+# Read each one
+while (<FD>) {
+    if (/\/\*\s*End Prototypes/ ) { last; }
+    if (/^int\s*MPI_([A-Z][a-z0-9_]*)\s*\((.*)/) {
+	$routine_name = $1;
+	$args = $2;
+	while (! ($args =~ /;/)) {
+	    $args .= <FD>;
+	}
+	$args =~ s/\)\s*;//g;
+	$args =~ s/[\r\n]*//g;
+	$lcname = lc($routine_name);
+	# Eventually, we'll create a new file here.  
+	# For C++, we may create similar files by looking up 
+	# the corresponding routines.
+	if (defined($special_routines{$routine_name})) {
+	    print "Skiping $routine_name\n" if $debug;
+	}
+	else {
+	    if ($buildfiles) {
+		if (defined($name_map{$lcname})) {
+		    $filename = $name_map{$lcname} . "f.c";
+		}
+		else {
+		    $filename = $lcname . "f.c";
+		}
+		open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
+		# Add the name to the list of files"
+		@files[$#files+1] = $filename;
+	    }
+	    else {
+		$OUTFD = STDOUT;
+	    }
+	    &print_header( $routine_name, $lcname );
+	    if ($do_subdecls) {
+		print $OUTFD "FORTRAN_API void FORT_CALL";
+	    }
+	    else {
+		print $OUTFD "void ";
+	    }
+	    print $OUTFD "mpi_${lcname}_ ";
+	    # Print args not only prints the arguments but fills the
+	    # array @arg_addresses to indicate the number of dereference
+	    # operations are needed to recover the original value (since
+	    # all Fortran parameters are passed either by value-result or
+	    # by reference, many value parameters in the C calls are 
+	    # replaced by reference parameters in the Fortran interface.
+	    &print_args( $OUTFD, $args );
+
+	    &print_attr;
+	    print $OUTFD "{\n";
+	    &print_special_decls( $routine_name );
+	    print $OUTFD "    *ierr = MPI_$routine_name";
+	    &print_call_args( $args );
+	    # Print any post call processing
+	    &print_post_call( $routine_name, $args );
+	    print $OUTFD "}\n";
+	    if ($buildfiles) {
+		close ($OUTFD);
+	    }
+	    if ($build_prototypes) {
+		print PROTOFD "FORTRAN_API void FORT_CALL mpi_${lcname}_ ";
+		&print_args( PROTOFD, $args );
+		print PROTOFD ";\n";
+	    }
+	}
+    }
+}
+
+#
+# This block can be used to create the Makefile
+open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
+&print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
+for ($i=0; $i<=$#files; $i++) {
+    $name = $files[$i];
+    &print_line( MAKEFD, "$name ", 80, "\\\n\t", 8 );
+}
+&print_endline( MAKEFD );
+
+print MAKEFD "lib\${MPILIBMAME}_a_SOURCES = \${mpi_sources}\
+\
+profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
+INCLUDES = -I../../../include -I\${top_srcdir}/src/include\
+maint-clean:\
+\trm -f \${mpi_sources} fproto.h\n";
+
+close( MAKEFD );
+
+#
+# ------------------------------------------------------------------------
+# Procedures
+# print_line( FD, line, count, continue, continuelen )
+# Print line to FD; if line size > count, output continue string and
+# continue.  Use print_endline to finish a line
+sub print_line {
+    my $FD = $_[0];
+    my $line = $_[1];
+    my $count = $_[2];
+    my $continue = $_[3];
+    my $continue_len = $_[4];
+    
+    $linelen = length( $line );
+    #print "linelen = $linelen, print_line_len = $print_line_len\n";
+    if ($print_line_len + $linelen > $count) {
+	print $FD $continue;
+	$print_line_len = $continue_len;
+    }
+    print $FD $line;
+    $print_line_len += $linelen;
+}
+sub print_endline {
+    my $FD = $_[0];
+    print $FD "\n";
+    $print_line_len = 0;
+}
+
+# Print the header of the file, containing the definitions etc.
+sub print_header {
+    my $routine_name = $_[0];
+    my $lcname = $_[1];
+    print $OUTFD "\
+/* -*- Mode: C; c-basic-offset:4 ; -*- */\
+/*  \
+ *  (C) 2001 by Argonne National Laboratory.\
+ *      See COPYRIGHT in top-level directory.\
+ *\
+ * This file is automatically generated by buildiface\
+ * DO NOT EDIT\
+ */\
+#include \"mpi_fortimpl.h\"\n\n";
+
+&print_profiling_block( $routine_name, $lcname );
+}
+
+#
+# Print the (ugly) profiling name definition block.
+sub print_profiling_block {
+    my $routine_name = $_[0];
+    my $lcname = $_[1];
+    my $ucname = uc($lcname);
+
+    print $OUTFD "\
+/* Begin MPI profiling block */\
+#if defined(HAVE_WEAK_SYMBOLS)\
+#if defined(HAVE_PRAGMA_WEAK)\
+
+#if defined(F77_NAME_UPPER)\
+#pragma weak MPI_$ucname = PMPI_$ucname\
+#elif defined(F77_NAME_LOWER_2USCORE)\
+#pragma weak mpi_${lcname}__ = pmpi_${lcname}__\
+#elif !defined(F77_NAME_LOWER_USCORE)\
+#pragma weak mpi_$lcname = pmpi_$lcname\
+#else\
+#pragma weak mpi_${lcname}_ = pmpi_${lcname}_\
+#endif\
+\
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)\
+#if defined(F77_NAME_UPPER)\
+#pragma _HP_SECONDARY_DEF PMPI_$ucname  MPI_$ucname\
+#elif defined(F77_NAME_LOWER_2USCORE)\
+#pragma _HP_SECONDARY_DEF pmpi_${lcname}__  MPI_${ucname}__\
+#elif !defined(F77_NAME_LOWER_USCORE)\
+#pragma _HP_SECONDARY_DEF pmpi_$lcname  mpi_$ucname\
+#else\
+#pragma _HP_SECONDARY_DEF pmpi_${lcname}_  mpi_${ucname}_\
+#endif\
+\
+#elif defined(HAVE_PRAGMA_CRI_DUP)\
+#if defined(F77_NAME_UPPER)\
+#pragma _CRI duplicate MPI_$ucname as PMPI_$ucname\
+#elif defined(F77_NAME_LOWER_2USCORE)\
+#pragma _CRI duplicate mpi_${lcname}__ as pmpi_${lcname}__\
+#elif !defined(F77_NAME_LOWER_USCORE)\
+#pragma _CRI duplicate mpi_${lcname} as pmpi_${lcname}\
+#else\
+#pragma _CRI duplicate mpi_${lcname}_ as pmpi_${lcname}_\
+#endif\
+#endif /* HAVE_PRAGMA_WEAK */\
+#endif /* HAVE_WEAK_SYMBOLS */\
+/* End MPI profiling block */\n\n";
+}
+
+# Print the arguments for the routine DEFINITION.
+sub print_args { 
+    my @parms = split(/\s*,\s*/, $_[1] );
+    my $OUTFD = $_[0];
+    my $count = 1;
+    my $last_args = "";
+
+    # Clear the @arg_addresses array.
+    $#arg_addresses = 0;
+
+    print $OUTFD "( ";
+    foreach $parm (@parms) {
+	# Match type to replacement
+	print "parm = :$parm:\n" if $debug;
+	if ($parm =~ /char\s*\*/) {
+	    # char's go out at char *v FORT_MIXED_LEN(d) 
+	    # and FORT_END_LEN(d) at the end
+	    print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
+	    $last_args .= "FORT_END_LEN(d$count), ";
+	}
+	else {
+	    $nstar_before = ($parm =~ /\*/);
+	    $nstar_after = $nstar_before;
+	    print "Nstar = $nstar\n" if $debug;
+	    if (defined($tof77{$parm})) {
+		$parm = $tof77{$parm};
+		$nstar_after = ($parm =~ /\*/);
+	    }
+	    print $OUTFD "${parm}v$count, ";
+	    $star_count = 0;
+	    if ($nstar_before != $nstar_after) {
+		$star_count = 1;
+	    }
+	    $arg_addresses[$count] = $star_count;
+	}
+	$count++;
+    }
+    # Add the new error return code
+    print $OUTFD "${last_args}MPI_Fint *ierr )\n";
+}
+
+# Print the arguments for the routine CALL.  
+# Handle the special arguments
+sub print_call_args {
+    my @parms = split(/\s*,\s*/, $_[0] );
+    my $count = 1;
+    my $first = 1;
+    print $OUTFD "( ";
+    foreach $parm (@parms) {
+	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
+
+	if (defined($special_args{"${routine_name}-$count"})) {
+	    # We must handle this argument specially
+	    &print_special_call_arg( $routine_name, $count );
+	}
+	else {
+	    # Convert to/from object type as required.  
+	    # Since MPICH objects are ints, we don't need to do 
+	    # anything unless MPI_Fint and int are different.
+	    if ($arg_addresses[$count] > 0) {
+		print $OUTFD "*";
+	    }
+	    print $OUTFD "v$count";
+	}
+	$count++;
+    }
+    print $OUTFD " );\n";
+}
+
+# Print the option function attribute; this supports GCC, particularly 
+# the __atribute__ weak option.
+sub print_attr {
+    print $OUTFD "FUNC_ATTRIBUTES\n";
+}
+
+#
+# Special processing
+# Logical variables
+sub logical_ftoc {
+}
+sub logical_in_decl {
+    my $count = $_[0];
+    if ($do_logical) {
+	print $OUTFD "    int l$count;\n";
+    }
+}
+sub logical_in_arg {
+    my $count = $_[0];
+    if ($do_logical) {
+	print $OUTFD "l$count";
+    }
+    else {
+	print $OUTFD "v$count";
+    }
+}
+# logical_ctof( cvar, fvar )
+sub logical_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+    if ($do_logical) {
+	print $OUTFD "    *$outvar = MPIR_TO_FLOG($coutvar);\n";
+    }
+}
+sub logical_out_decl {
+    my $count = $_[0];
+    if ($do_logical) {
+	print $OUTFD "    int l$count;\n";
+    }
+}
+sub logical_out_arg {
+    my $count = $_[0];
+    if ($do_logical) {
+	print $OUTFD "\&l$count";
+    }
+    else {
+	print $OUTFD "v$count";
+    }
+}
+#
+# Logical variables, but for an array.  
+# Array args can use the global $Array_size and $Array_typedef if necessary
+sub logical_array_ftoc {
+    print $OUTFD "\
+    for (li=0; li<$Array_size; li++) {
+        l$count[li] = MPIR_FROM_FLOG(v$count[li]);
+    }
+";
+}
+sub logical_array_in_decl {
+    my $count = $_[0];
+    print $OUTFD "int *v$count = (int *)malloc($Array_size * sizeof(int));\n";
+}
+sub logical_array_in_arg {
+    my $count = $_[0];
+    print $OUTFD "l$count";
+}
+
+sub logical_array_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+    print $OUTFD "\
+    for (li=0; li<$Array_size; li++) {
+        $outvar[li] = MPIR_TO_FLOG($outval[li]);
+    }
+";
+}
+sub logical_array_out_decl {
+}
+sub logical_array_out_arg {
+}
+# 
+# Index variables.
+# Index variables are not optional, since the values of the variable
+# are changed.
+sub index_ftoc {
+}
+sub index_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+    print $OUTFD "    *$outvar = (MPI_Fint)$coutvar;\n";
+    print $OUTFD "    if ($coutvar >= 0) *$outvar = *$outvar + 1;\n";
+}
+sub index_out_decl {
+    my $count = $_[0];
+    print $OUTFD "    int l$count;\n";
+}
+sub index_out_arg {
+    my $count = $_[0];
+    print $OUTFD " \&l$count";
+}
+#
+# Index variables, but for an array.  
+# Array args can use the global $Array_size and $Array_typedef if necessary
+sub index_array_ftoc {
+}
+sub index_array_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+    print $OUTFD "\
+    for (li=0; li<$Array_size; li++) {
+        if ($outvar[li] >= 0) $outval[li] += 1;
+    }
+"
+}
+sub index_array_out_decl {
+}
+sub index_array_out_arg {
+}
+
+# This is the routine that handles the post-call processing
+sub print_post_call {
+    my $routine_name = $_[0];
+    my $args = $_[1];
+    if (!defined($special_args{$routine_name})) { return; }
+    # Erg.  Special processing
+    foreach $count (split(/:/,$special_args{$routine_name})) {
+	$rule = $special_args{"${routine_name}-$count"};
+	($direction,$method) = split(/:/,$rule);
+	print STDERR "$routine_name: dir = $direction, method = $method\n";
+	if ($direction eq "out") {
+	    $processing_routine = "${method}_ctof";
+	    &$processing_routine( "l$count", "v$count" );
+	}
+    }
+}
+
+# Blankpad strings
+sub blankpad_out_decl {
+}
+sub blankpad_out_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
+sub blankpad_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+    
+    # find the null character.  Replace with blanks from there to the
+    # end of the string.  The declared lenght is given by a variable
+    # whose name is derived from outvar
+    $strlen = $outvar;
+    $strlen =~ s/^v/d/;
+    print $OUTFD "\
+    {char *p = $outvar;
+        while (*p) p++;
+        while ((p-$outvar) < $strlen) { *p++ = ' '; }
+    }
+";
+}
+
+# This routine handles the special arguments in the *call*
+sub print_special_call_arg {
+    my $routine_name = $_[0];
+    my $count = $_[1];
+
+    $rule = $special_args{"${routine_name}-$count"};
+    ($direction,$method) = split(/:/,$rule);
+
+    $processing_routine = "${method}_${direction}_arg";
+    &$processing_routine( $count );
+}
+
+# This routine prints any declarations that are needed 
+sub print_special_decls {
+    my $routine_name = $_[0];
+
+    if (defined($special_args{$routine_name})) {
+	foreach $count (split(/:/,$special_args{$routine_name})) {
+	    $rule = $special_args{"${routine_name}-$count"};
+	    ($direction,$method) = split(/:/,$rule);
+	    $processing_routine = "${method}_${direction}_decl";
+	    &$processing_routine( $count );
+	}
+    }
+}
