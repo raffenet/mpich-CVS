@@ -4,11 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/*
-#include <winsock2.h>
-#include <windows.h>
-*/
-#include "ibimpl.h"
+#include "mpidimpl.h"
 #include "ibu.h"
 #include "iba.h"
 #include "psc_iba.h"
@@ -81,7 +77,7 @@ typedef struct IBU_Global {
 		  char err_msg[IBU_ERROR_MSG_LENGTH];
 } IBU_Global;
 
-extern IBU_Global IBU_Process;
+IBU_Global IBU_Process;
 
 #define DEFAULT_NUM_RETRIES 10
 
@@ -525,21 +521,21 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 
     /*MPIU_dbg_printf("modifyQP(INIT)\n");*/
     status = modifyQP(p, IB_QP_STATE_INIT);
-    if (status != IB_SUCCESS)
+    if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
 	return NULL;
     }
     /*MPIU_dbg_printf("modifyQP(RTR)\n");*/
     status = modifyQP(p, IB_QP_STATE_RTR);
-    if (status != IB_SUCCESS)
+    if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
 	return NULL;
     }
     /*MPIU_dbg_printf("modifyQP(RTS)\n");*/
     status = modifyQP(p, IB_QP_STATE_RTS);
-    if (status != IB_SUCCESS)
+    if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
 	return NULL;
@@ -764,7 +760,7 @@ int ibu_init()
 	return status;
     }
     /* get a completion queue domain handle */
-    status = ib_cqd_create_us(IB_Process.hca_handle, &IB_Process.cqd_handle);
+    status = ib_cqd_create_us(IBU_Process.hca_handle, &IBU_Process.cqd_handle);
 #if 0 /* for some reason this function fails when it really is ok */
     if (status != IBU_SUCCESS)
     {
@@ -916,7 +912,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     for (;;) 
     {
 	status = ib_completion_poll_us(
-	    IB_Process.hca_handle,
+	    IBU_Process.hca_handle,
 	    set,
 	    &completion_data);
 	if (status == IBA_CQ_EMPTY)
