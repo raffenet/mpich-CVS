@@ -2,8 +2,8 @@ F77INCLUDES = -I.
 smvar_do_sharedlibs = 0
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 
-baseattr_SOURCES = baseattr.f
-baseattrwin_SOURCES = baseattrwin.f
+baseattrf_SOURCES = baseattrf.f
+baseattrwinf_SOURCES = baseattrwinf.f
 commattrf_SOURCES = commattrf.f
 commattrf_LDADD = ../util/mtestf.o
 commattrf_DEPADD = ../util/mtestf.o
