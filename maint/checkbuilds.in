@@ -1,9 +1,10 @@
-#! /bin/sh
+#! @PERL@
 #
 # Configure and build mpich2 with some of the options
 #
-srcdir=/home/gropp/projects/mpich2
-instdir=/sandbox/gropp/mpi2-inst
+$srcdir=/home/gropp/projects/mpich2
+$instdir=/sandbox/gropp/mpi2-inst
+
 
 $srcdir/configure --prefix=$instdir --enable-g=all --enable-strict --enable-timing
 make

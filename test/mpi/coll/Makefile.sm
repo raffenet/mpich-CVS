@@ -1,41 +1,26 @@
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
 EXTERNAL_LIBS = m
+LDADD = -L ../../../lib
 #
 bcasttest_SOURCES = bcasttest.c
-bcasttest_LDADD = -L ../../../lib
 allred_SOURCES = allred.c
-allred_LDADD = -L ../../../lib -lm
+allred_LDADD = -lm
 coll8_SOURCES = coll8.c
-coll8_LDADD = -L ../../../lib
 coll13_SOURCES = coll13.c
-coll13_LDADD = -L ../../../lib
 alltoallv_SOURCES = alltoallv.c
-alltoallv_LDADD = -L ../../../lib
 redscat_SOURCES = redscat.c
-redscat_LDADD = -L ../../../lib
 coll9_SOURCES = coll9.c
-coll9_LDADD = -L ../../../lib
 coll7_SOURCES = coll7.c
-coll7_LDADD = -L ../../../lib
 coll6_SOURCES = coll6.c
-coll6_LDADD = -L ../../../lib
 coll5_SOURCES = coll5.c
-coll5_LDADD = -L ../../../lib
 coll4_SOURCES = coll4.c
-coll4_LDADD = -L ../../../lib
 coll3_SOURCES = coll3.c
-coll3_LDADD = -L ../../../lib
 coll2_SOURCES = coll2.c
-coll2_LDADD = -L ../../../lib
 allredmany_SOURCES = allredmany.c
-allredmany_LDADD = -L ../../../lib
 scantst_SOURCES = scantst.c
-scantst_LDADD = -L ../../../lib
 longuser_SOURCES = longuser.c
-longuser_LDADD = -L ../../../lib
 coll10_SOURCES = coll10.c
-coll10_LDADD = -L ../../../lib
 coll11_SOURCES = coll11.c
-coll11_LDADD = -L ../../../lib
+
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include

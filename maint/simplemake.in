@@ -22,13 +22,27 @@ $root_tags = 1;      # set to 1 to create a tags file in the root dir
 $local_tags = 0;     # set to 1 to create a tags file in the local dir
 $do_libmember = 0;   # set to 1 to generate library member rules in makefiles
 $do_docs = 1;        # set to 1 to generate documentation
+
 $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib 
                      # relative to the rootdir
+#
+# The following two symbols are defined for future use in generating
+# the dependency information for programs that are created.  This
+# allows us to ensure that test programs are rebuilt if we rebuild the 
+# libraries
+$project_libs = "";  # name of the libraries that are created by
+                     # this project
+$project_libdir = "";# name of the directory (may contain ROOTDIR) in which
+                     # the libraries are created                    
+
+
 $make_depend = "gcc -MM";  # Set to command to create dependency list
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
 $autoconf = "autoconf"; # Name of autoconf program to use
 $autoconf_version = ""; # Require a specific version
+#
+$quietmake = "@";       # set to "" for echo commands, @ to suppress them
 #
 # Defaults for building MPICH
 $doc_heading = "MPI";
@@ -72,9 +86,10 @@ $quiet = 0;
 	      'c:s' => '$(C_COMPILE) -S $<',
 	      'f:s' => '$(F77_COMPILE) -S $<',
 # Program from source rules
-	      'c:' => '$(C_COMPILE) -o $* $< $(LIBS)',
-	      'f:' => '$(F77_COMPILE) -o $* $< $(LIBS)',
-	      'f90:' => '$(F90_COMPILE) -o $* $< $(LIBS)',
+	      'c:' => '$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
+	      'f:' => '$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
+	      'f90:' => '$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
+              'cxx:' => '(CXX_COMPILE) -o $< $(LDFLAGS) $(LIBS)',
 # LaTeX definitions
 	      'tex:dvi' => 'latex $<',
 	      'dvi:ps' => 'dvips $<',
@@ -132,10 +147,10 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
 	   );
 #
 # Rules to build programs (.o:)
-%progrules = ( 'c' => '$(C_LINK)',
-	       'cxx' => '$(CXX_LINK)',
-	       'cpp' => '$(CXX_LINK)',
-	       'f'   => '$(F77_LINK)',
+%progrules = ( 'c' => '$(C_LINK) $(LDFLAGS)',
+	       'cxx' => '$(CXX_LINK) $(LDFLAGS)',
+	       'cpp' => '$(CXX_LINK) $(LDFLAGS)',
+	       'f'   => '$(F77_LINK) $(LDFLAGS)',
 	      );
 %progdefs = ( 'c' =>   'C_LINK      = $(CC)',
 	      'cxx' => 'CXX_LINK    = $(CXX)',
@@ -151,10 +166,10 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
 	       'cpp' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
 	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@',
 	     );
-%shlibrules = ( 'c' => '$(C_LINK_SHL)',
-	       'cxx' => '$(CXX_LINK_SHL)',
-	       'cpp' => '$(CXX_LINK_SHL)',
-	       'f'   => '$(F77_LINK_SHL)',
+%shlibrules = ( 'c' => '$(C_LINK_SHL) $(LDFLAGS)',
+	       'cxx' => '$(CXX_LINK_SHL) $(LDFLAGS)',
+	       'cpp' => '$(CXX_LINK_SHL) $(LDFLAGS)',
+	       'f'   => '$(F77_LINK_SHL) $(LDFLAGS)',
 	      );
 #
 # Directories needed.  These are the prefix etc.  Many are needed only
@@ -315,6 +330,8 @@ foreach $_ (@ARGV) {
     elsif (/-debug/) {
 	$debug = 1;
     }
+    elsif (/-quietmake/) { $quietmake = "@"; }
+    elsif (/-noquietmake/) { $quietmake = ""; }
     elsif (/-quiet/) { $quiet = 1; }
     elsif (/-docheading=(.$)/) { $doc_heading = $1; }
     elsif (/-docdestdir=(.*)/) { $globaldocdir = $1; }	   
@@ -513,6 +530,9 @@ sub ReadMfile {
 	}
 	elsif (/^(\w*)_LDADD\s*=\s*(.*)\s*$/) {
 	    $pgm_ldadd{$1} = $2;
+	}
+	elsif (/^LDADD\s*=\s*(.*)\s*$/) {
+	    $ldadd_all = $1;
 	}
 	elsif (/^(\w*)\s*=\s*(.*)\s*$/) {
 	    $other_vars .= "$origline";
@@ -733,6 +753,7 @@ sub DefaultRules {
     }
 
     # Definitions for each possible program type seen
+    $any_prog_def = 0;
     foreach $ext (keys(%ext_seen)) {
 	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
@@ -741,11 +762,17 @@ sub DefaultRules {
 	}
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}$newline";
+	    $any_prog_def = 1;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
 	    $extkey = "$ext:lo";
 	    print FD "$extdef{$extkey}$newline";
 	}
+    }
+    if ($any_prog_def) {
+	# These are special definitions that are shared by all 
+	# pgmlink types
+	print FD "LDFLAGS     = \@LDFLAGS\@ $ldadd_all$newline";
     }
     print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
@@ -988,6 +1015,7 @@ sub ClearVars {
     $found_sharedlib  = 0;
     %programs = ();
     %pgm_ldadd = ();
+    $ldadd_all = "";
     # Variables
     %makevars = ();
     # Information about program targets
@@ -1195,13 +1223,13 @@ sub TargetAll {
 	    }
 	    elsif ($dir =~ /@([^@]*)@/) {
 		# May be a replaced variable
-		print FD "\tfor dir in $dir - ; do\\$newline";
+		print FD "\t${quietmake}for dir in $dir - ; do\\$newline";
 		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
 		print FD "\t\tif ( cd \$\$dir && \${MAKE} all ) ; then : ; else exit 1; fi\\$newline";
 		print FD "\tdone$newline";
 	    }
 	    else {
-		print FD "\t(cd $dir && \${MAKE} all )$newline";
+		print FD "\t${quietmake}(cd $dir && \${MAKE} all )$newline";
 	    }
 	    # If subdirs has no dot but there are local targets, add an 
 	    # implicit dot to the end.
@@ -1472,12 +1500,15 @@ sub TargetPrograms {
 	    $pgmobjs .= "$obj ";
         }
 	# Add dependencies on libraries if requested
+	$debug_lib_dependencies = 0;
 	if ($convert_Ldir_to_relative) {
+	    print STDERR "Checking for relative dirs\n" if $debug_lib_dependencies;
 	    # convert -L dir -lname into dir/libname.a
 	    $libdep=$pgm_ldadd{$pgm};
 	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
 	    $libdir = $1;
 	    $libname = $2;
+	    print STDERR "Checking $libdir and $libname\n" if $debug_lib_dependencies;
 	    if (defined($libdir) && defined($libname) && 
 		$libdir ne "" && $libname ne "" && 
 		!defined($external_libraries{$libname})) { 
@@ -1771,9 +1802,6 @@ sub TargetInstall {
 #       for shared library support.
 #   Handling files to be installed (e.g., automake's sbin_PROGRAMS = ...)
 #      (automake understands <dir>_PROGRAMS and <dir>_LIBRARIES)
-#   LDADD (automake has target_LDADD; we want a general LD_ADD as well)
-#       Partially done - Remaining question is where to insert LDADD value
-#       (e.g., before or after LIBS?)
 #   target_LDFLAGS and general LDFLAGS
 #   INCLUDES (automake variable that we've adopted) needs better control.
 #   Support for .F and .F90 extensions (Fortran with preprocessor)
@@ -1819,6 +1847,7 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     name_SOURCES = source files for program \"name\"\
     name_LDADD   = extra linker flags for building program \"name\"\
 \
+    LDADD = extra linker flags to add to all programs\
     simplemake also allows all usual Makefile commands, including variable\
     assignment and targets.\n";
 }

@@ -125,6 +125,7 @@ sub ProcessFile {
 		 "setpgrp", "setvbuf", "strcoll", "strftime",
 		 "utime", "vfork", "vprintf", "wait3" );
 %bettersubs = ( "strcpy" => "MPIU_Strncpy",
+	        "strncpy" => "MPIU_Strncpy",
 		"strcmp" => "strncmp",
 		"strcat" => "strncat",
 		"sprintf" => "snprintf" );
