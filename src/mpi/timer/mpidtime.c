@@ -1,6 +1,7 @@
 
 #include "timerconf.h"
 #include "mpichtimer.h"
+#include "mpiimpl.h"
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
 void MPID_Wtime( MPID_Time_t *timeval )
@@ -79,6 +80,10 @@ void MPID_Wtime_init()
     QueryPerformanceFrequency(&n);
     MPIR_Process.timer_frequency = (double)n.QuadPart;
 }
+double MPID_Wtick()
+{
+    return MPIR_Process.timer_frequency;
+}
 void MPID_Wtime( MPID_Time_t *timeval )
 {
     QueryPerformanceCounter(timeval);
@@ -90,7 +95,7 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 {
     LARGE_INTEGER n;
-    n = *t2 - *t1;
+    n.QuadPart = t2->QuadPart - t1->QuadPart;
     *diff = (double)n.QuadPart / MPIR_Process.timer_frequency;
 }
 #endif
