@@ -152,6 +152,10 @@ def _mpd():
             g.pulse_ctr = 0
         for readySocket in inReadySockets:
             if readySocket not in g.activeSockets.keys():  # deleted on another iteration ?
+                print 'unexpected readySocket %d, console=%d' % (readysocket.fileno(), g.conSocket.fileno()) 
+                if readySocket in SocketsToSelect:
+                    del SocketsToSelect[readySocket]
+                    readySocket.close()
                 continue
             if readySocket == g.mySocket:
                 _handle_new_connection()
