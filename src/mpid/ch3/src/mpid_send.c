@@ -190,6 +190,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 
 	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
+	/* MT: RACE CONDITION with handling recv of CTS!!! */
 	sreq->partner_request = rts_sreq;
 
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization

@@ -62,7 +62,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	goto fn_exit;
     }
 
-    /* MT - thread safety? message could arrive while populating req */
     rreq->comm = comm;
     MPIR_Comm_add_ref(comm);
     rreq->ch3.user_buf = buf;
@@ -78,9 +77,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 
 	vc = comm->vcr[rreq->ch3.match.rank];
 	
-	/* MT - this check needs to be thread safe */
-	/* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are assuming that for simple sends and receives the request's
-	   internal completion counter will always be used. */
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    int recv_pending;

@@ -324,7 +324,13 @@ int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info, con
 
   Input Parameters:
 + vc - virtual connection over which the packet was received
-- pkt - pointer to the 
+- pkt - pointer to the CH3 packet
+
+  NOTE:
+  Multiple threads may note simultaneously call this routine with the same virtual connection.  This constraint eliminates the
+  need to lock the VC and thus improves performance.  If simultaneous upcalls for a single VC are a possible, then the calling
+  routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
+  if the channel has made guarantees about ordering.
 E*/
 void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 
@@ -341,7 +347,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq);
 
 
 /*E
-  MPIDI_CH3U_Handle_recv_pkt- Process a send request for which all of the data described the request's IOV has been completely
+  MPIDI_CH3U_Handle_send_req- Process a send request for which all of the data described the request's IOV has been completely
   buffered and/or sent.
 
   Input Parameters:
@@ -379,15 +385,17 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 /*
  * Channel utility prototypes
  */
-void MPIDI_CH3U_Recvq_complete(MPID_Request * req);
 MPID_Request * MPIDI_CH3U_Recvq_FU(int, int, int);
 MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
 int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
 MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match);
 MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * found);
+
+void MPIDI_CH3U_Request_complete(MPID_Request * req);
 void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_complete);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * complete);
+
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);

@@ -24,7 +24,6 @@ void MPID_Cancel_recv(MPID_Request * rreq)
 	MPIDI_DBG_PRINTF((15, FCNAME, "request 0x%08x cancelled", rreq->handle));
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
-	/* MT - MPID_Request_set_completed() used as a write barrier */
 	MPID_Request_set_completed(rreq);
 	MPID_Request_release(rreq);
     }

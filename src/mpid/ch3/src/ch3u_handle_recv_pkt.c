@@ -22,9 +22,8 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found);
 /*
  * MPIDI_CH3U_Handle_recv_pkt()
  *
- * NOTE: This routine must be reentrant.  Routines like MPIDI_CH3_iRead() are allowed to perform additional up-calls if they
- * complete the requested work immediately. *** Care must be take to avoid deep recursion.  With some thread packages, exceeding
- * the stack space allocated to a thread can result in overwriting the stack of another thread. ***
+ * NOTE: Multiple threads may NOT simultaneously call this routine with the same VC.  This constraint eliminates the need to
+ * lock the VC.  If simultaneous upcalls are a possible, the calling routine for serializing the calls.
  */
 void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
@@ -64,9 +63,6 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received (potentially) out-of-order send pkt"));
 	    MPIDI_DBG_PRINTF((30, FCNAME, "rank=%d, tag=%d, context=%d seqnum=%d",
 			      send_pkt->match.rank, send_pkt->match.tag, send_pkt->match.context_id, send_pkt->seqnum));
-	    
-	    /* MT - Need to lock VC !!! */
-	    
 	    MPIDI_DBG_PRINTF((30, FCNAME, "vc - seqnum_send=%d seqnum_recv=%d reorder_msg_queue=0x%08lx",
 			      vc->seqnum_send, vc->seqnum_recv, (unsigned long) vc->msg_reorder_queue));
 	    

@@ -9,11 +9,11 @@
 /*
  * MPIDI_CH3U_Handle_recv_req()
  *
- * NOTE: This routine must be reentrant.  Routines like MPIDI_CH3_iRead() are
- * allowed to perform additional up-calls if they complete the requested work
- * immediately. *** Care must be take to avoid deep recursion.  With some
- * thread packages, exceeding the stack space allocated to a thread can result
- * in overwriting the stack of another thread. ***
+ * NOTE: This routine must be reentrant.  Routines like MPIDI_CH3_iRead() are allowed to perform additional up-calls if they
+ * complete the requested work immediately.
+ *
+ * *** Care must be take to avoid deep recursion.  With some thread packages, exceeding the stack space allocated to a thread can
+ * *** result in overwriting the stack of another thread.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
