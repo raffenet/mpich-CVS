@@ -545,6 +545,14 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         }
 
         *request = MPID_Request_create();
+        if (*request == NULL) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
+            return mpi_errno;
+	    /* --END ERROR HANDLING-- */
+        }
+
         MPIU_Object_set_ref(*request, 2);
         (*request)->kind = MPID_REQUEST_SEND;
 	    
@@ -628,6 +636,14 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
        response comes from the target, it will contain the request
        handle. */  
     req = MPID_Request_create();
+    if (req == NULL) {
+        /* --BEGIN ERROR HANDLING-- */
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
+        return mpi_errno;
+        /* --END ERROR HANDLING-- */
+    }
+
     *request = req;
 
     MPIU_Object_set_ref(req, 2);

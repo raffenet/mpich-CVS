@@ -535,6 +535,13 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         iovcnt = 1;
 
         request = MPID_Request_create();
+        if (request == NULL) {
+            /* --BEGIN ERROR HANDLING-- */
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+            /* --END ERROR HANDLING-- */
+        }
+
         MPIU_Object_set_ref(request, 2);
         request->kind = MPID_REQUEST_SEND;
 	    
@@ -652,6 +659,13 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
        response comes from the target, it will contain the request
        handle. */  
     rreq = MPID_Request_create();
+    if (rreq == NULL) {
+        /* --BEGIN ERROR HANDLING-- */
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+        /* --END ERROR HANDLING-- */
+    }
+
     MPIU_Object_set_ref(rreq, 2);
 
     rreq->dev.user_buf = rma_op->origin_addr;

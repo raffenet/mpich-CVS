@@ -476,7 +476,20 @@ int MPIR_Alltoall(
            destinations */
 
         reqarray = (MPI_Request *) MPIU_Malloc(2*comm_size*sizeof(MPI_Request));
+        /* --BEGIN ERROR HANDLING-- */
+        if (!reqarray) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
+
         starray = (MPI_Status *) MPIU_Malloc(2*comm_size*sizeof(MPI_Status));
+        /* --BEGIN ERROR HANDLING-- */
+        if (!starray) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
 
         /* do the communication -- post all sends and receives: */
         for ( i=0; i<comm_size; i++ ) { 
