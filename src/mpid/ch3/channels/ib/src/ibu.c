@@ -777,6 +777,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	mem_ptr = ibuBlockAlloc(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
+	    MPIU_DBG_PRINTF(("ibuBlockAlloc returned NULL\n"));
 	    return total;
 	}
 	memcpy(mem_ptr, buf, length);
@@ -831,7 +832,8 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
-    return IBU_SUCCESS;
+    return total;
+    /*return IBU_SUCCESS;*/
 }
 
 /*
