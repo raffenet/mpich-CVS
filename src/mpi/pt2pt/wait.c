@@ -54,9 +54,8 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}

@@ -55,9 +55,9 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
+	    if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}
@@ -66,6 +66,8 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TEST);
+
+    /* ... body of routine ...  */
 
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -81,16 +83,14 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     *flag = MPIR_Test(request_ptr);
-    if (status != NULL)
-    {
-	*status = request_ptr->status;
+    if (*flag) {
+	/* Not quite right - set only on receive or generalized requests */
+	if (status != NULL) {
+	    *status = request_ptr->status;
+	}
     }
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST);
-	return MPI_SUCCESS;
-    }
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST);
     return MPI_SUCCESS;

@@ -71,6 +71,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
     
+    /* ... body of routine ...  */
+
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
@@ -126,6 +128,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	}
     }
     
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
