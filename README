@@ -145,7 +145,6 @@ To shut MPD down, run
 
 What compiles but doesn't work
 ------------------------------
-
 We don't guarantee that *anything* works yet.  However, we have run MPICH2
 against both the MPICH-1 test suite and an updated and correct version of the
 Intel test suite.  MPICH2 passes most of these tests, including most error
@@ -154,10 +153,12 @@ are:
 
 MPI_Get_elements for partial types
 
+MPI_FILE_NULL is improperly defined for use with ROMIO in both mpi.h and
+mpif.h.  It should not be used.
+
 
 Testing Status
 --------------
-
 We run regular tests of the MPI-1 functions on a variety of platforms.  We are
 using both the MPICH-1 test suite and the Intel test suite (with corrections).
 The current status is available at
@@ -166,7 +167,6 @@ http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-status/index.htm.
 
 VPATH Builds
 ------------
-
 MPICH2 supports building MPICH in a different directory tree than the one where
 the MPICH2 source is installed.  This often allows faster building, as the
 sources can be placed in a shared filesystem and the builds done in a local
@@ -188,7 +188,6 @@ build is done in /tmp/me/mpich2, and the installed version goes into
 
 Optional Features
 -----------------
-
 There are many features built into MPICH2.  If you are exploring MPICH2 as part
 of a development project the following configure options are important:
 
