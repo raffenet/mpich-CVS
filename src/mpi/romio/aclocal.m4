@@ -59,6 +59,7 @@ Turning off Fortran (-nof77 being assumed])
     if test -n "$FORTRANNAMES" ; then
         WDEF="-D$FORTRANNAMES"
     fi
+    rm -f confftest.f confftest.o
     ])dnl
 dnl
 define(PAC_GET_SPECIAL_SYSTEM_INFO,[
