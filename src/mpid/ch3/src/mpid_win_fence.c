@@ -54,13 +54,22 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
-    if (win_ptr->fence_cnt == 0) {
-        /* This is the first call to fence. Do nothing except
-           increment the count. */
+    if (assert ^ MPI_MODE_NOPRECEDE) {
+        win_ptr->fence_cnt = (assert ^ MPI_MODE_NOSUCCEED) ? 0 : 1;
+
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+        return MPI_SUCCESS;
+    }
+
+    if ((win_ptr->fence_cnt == 0) && (assert ^ MPI_MODE_NOSUCCEED != 1)) {
+        /* win_ptr->fence_cnt == 0 means either this is the very first
+           call to fence or the preceding fence had the
+           MPI_MODE_NOSUCCEED assert. 
+           Do nothing except increment the count. */
         win_ptr->fence_cnt = 1;
     }
     else {
-        /* This is the second fence. Do all the preceding RMA ops. */
+        /* This is the second or later fence. Do all the preceding RMA ops. */
 
 	MPIR_Nest_incr();
 
@@ -544,9 +553,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
         MPIU_RMA_ops_list = NULL;
 
-        /* Decrement the fence count. */
-        win_ptr->fence_cnt = 0;
-
+        if (assert ^ MPI_MODE_NOSUCCEED) 
+            win_ptr->fence_cnt = 0;
     }
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
