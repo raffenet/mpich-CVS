@@ -580,6 +580,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	{
 	    MPIDI_CH3_Pkt_cancel_send_req_t * req_pkt = &pkt->cancel_send_req;
 	    MPID_Request * rreq;
+	    int ack;
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &upkt.cancel_send_resp;
 	    MPID_Request * resp_sreq;
@@ -596,16 +597,17 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		    MPIU_Free(rreq->dev.tmpbuf);
 		}
 		MPID_Request_release(rreq);
-		resp_pkt->ack = TRUE;
+		ack = TRUE;
 	    }
 	    else
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "unable to cancel message"));
-		resp_pkt->ack = FALSE;
+		ack = FALSE;
 	    }
 	    
 	    MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CANCEL_SEND_RESP);
 	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
+	    resp_pkt->ack = ack;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
