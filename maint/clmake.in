@@ -1,0 +1,75 @@
+#! @PERL@
+# -*- Mode: perl; -*-
+#
+$debug = 0;
+# Define the known commands, along with known make noise (results of
+# echo)
+@commands = ( "pgcc", "gcc", "icc", "rm", "mv", "ar", "ranlib", "perl", "for", 
+	      "if", "make", "[A-Za-z0-9_\/-]*\/mpicc",
+	      "cleaning", "/bin/rm", "sleep", "g77", "f77", "f90", "pgCC",
+	      "pgf77", "CC", "g\\+\\+", "c\\+\\+",
+	      "compiling ROMIO in", );
+# Read lines.  Categorize lines as commands and output.  This
+# script suppresses commands that generate no extra output.
+# The approach is to read a line and then read the next line.
+# While the line is a command and the next line is not, output the
+# line.
+$cmdline = "";
+while (! eof(STDIN)) {
+    if ($cmdline eq "") {
+	# Get the next command line
+	print "Read line ... \n" if $debug;
+	$cmdline = <>;
+	# Get any continuation lines
+	while ($cmdline =~ /\\$/) {
+	    print "Read continuation line ... \n" if $debug;
+	    $cmdline .= <>;
+	}
+    }
+    if ($nextline eq "") {
+	print "Read line ... \n" if $debug;
+	$nextline = <>;
+	while ($nextline =~ /\\$/) {
+	    print "Read line continuatoin ... \n" if $debug;
+	    $nextline .= <>;
+	}
+    }
+    
+    # Now, is $nextline a command or not?
+    $is_command = 0;
+    foreach $cmdname (@commands) {
+	if ($nextline =~ /^\s*$cmdname/) {
+	    $is_command = 1;
+	    last;
+	}
+    }
+    if (!$is_command) {
+	# Simplify the command line
+	$cmdline =~ s/-I[^\s]*\s+//g;
+	$cmdline =~ s/-ansi//g;
+	$cmdline =~ s/-W[^\s]*\s+//g;
+	$cmdline =~ s/-DHAVE_CONFIG_H//g;
+	$cmdline =~ s/-DGCC_WALL//g;
+	print $cmdline;
+	
+	# Now, keep looking for a cmdline
+	while (!$is_command) {
+	    print $nextline;
+	    print "Read line ... \n" if $debug;
+	    $nextline = <>;
+	    while ($nextline =~ /\\$/) {
+		print "Read line continuation ... \n" if $debug;
+		$nextline .= <>;
+	    }
+	    foreach $cmdname (@commands) {
+		if ($nextline =~ /^\s*$cmdname/) {
+		    $is_command = 1;
+		    last;
+		}
+	    }
+	}
+    }
+    $cmdline = $nextline;
+    $nextline = "";
+}
+
