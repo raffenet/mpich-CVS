@@ -103,7 +103,7 @@ all: $(LIBNAME)
 	    $(MAKE) $(SHLIBNAME).la ;\
 	fi
 
-.SUFFIXES: $(SUFFIXES) .p .lo
+.SUFFIXES: $(SUFFIXES) .p .lo .man .html .latex .txt 
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -138,14 +138,15 @@ clean:
 
 # MPICH2 documentation targets
 master_top_srcdir = @master_top_srcdir@
+DOCTEXT = @DOCTEXT@
 .c.man:
-	doctext  -mpath ../../../../man/man3 -ext 3 -heading MPI \
+	$(DOCTEXT) -mpath ../../../../man/man3 -ext 3 -heading MPI \
 		-quotefmt ${master_top_srcdir}/maint/docnotes $<
 .c.latex:
-	doctext -latex -mpath ../../../../doc/refman  -heading MPI \
+	$(DOCTEXT) -latex -mpath ../../../../doc/refman  -heading MPI \
 		-quotefmt ${master_top_srcdir}/maint/docnotes $<
 .c.html:
-	doctext -html -mpath ../../../../www/www3  -heading MPI \
+	$(DOCTEXT) -html -mpath ../../../../www/www3  -heading MPI \
 		-quotefmt ${master_top_srcdir}/maint/docnotes $<
 mandoc: ${mpi_sources:.c=.man}
 latexdoc: ${mpi_sources:.c=.latex}
