@@ -246,6 +246,10 @@ AU_DEFUN([ac_cv_prog_g90],
 # af77 is the Apogee F77 compiler for Intergraph hardware running CLIX.
 # epcf90 is the "Edinburgh Portable Compiler" F90.
 # fort is the Compaq Fortran 90 (now 95) compiler for Tru64 and Linux/Alpha.
+# pathf90 is the Pathscale Fortran 90 compiler
+# ifort is another name for the Inten f90 compiler
+# efc - An older Intel compiler (?)
+# ifc - An older Intel compiler
 AC_DEFUN([AC_PROG_F90],
 [# This is the fortran90 version of f90 language support
 AC_LANG_PUSH(Fortran 90)dnl
@@ -254,7 +258,7 @@ AC_ARG_VAR([F90FLAGS], [Fortran 90 compiler flags])dnl
 _AC_ARG_VAR_LDFLAGS()dnl
 AC_CHECK_TOOLS(F90,
       [m4_default([$1],
-                  [f90 xlf90 pgf90 epcf90 f95 fort xlf95 lf95 g95])])
+                  [f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 fc ifc efc])])
 
 # once we find the compiler, confirm the extension 
 AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])

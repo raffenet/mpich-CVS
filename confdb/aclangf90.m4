@@ -181,7 +181,11 @@ AU_DEFUN([ac_cv_prog_g90],
 # lf95 is the Lahey-Fujitsu compiler.
 # fl32 is the Microsoft Fortran "PowerStation" compiler.
 # epcf90 is the "Edinburgh Portable Compiler" F90.
+# pathf90 is the Pathscale Fortran 90 compiler
 # fort is the Compaq Fortran 90 (now 95) compiler for Tru64 and Linux/Alpha.
+# ifort is another name for the Inten f90 compiler
+# efc - An older Intel compiler (?)
+# ifc - An older Intel compiler
 AC_DEFUN([AC_PROG_F90],
 [# This is the aclangf90 version of f90 language support
 AC_LANG_PUSH(Fortran 90)dnl
@@ -190,7 +194,7 @@ AC_ARG_VAR([F90FLAGS], [Fortran 90 compiler flags])dnl
 _AC_ARG_VAR_LDFLAGS()dnl
 AC_CHECK_TOOLS(F90,
       [m4_default([$1],
-                  [f95 f90 pgf90 epcf90 fort xlf95 xlf90 xlf lf95 g95 fc])])
+                  [f95 f90 pgf90 ifort epcf90 fort xlf95 xlf90 xlf lf95 pathf90 g95 fc ifc efc])])
 
 # Once we find the compiler, confirm the extension 
 AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])

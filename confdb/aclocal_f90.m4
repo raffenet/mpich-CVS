@@ -303,14 +303,26 @@ dnl
 dnl Note: This checks for f95 before f90, since F95 is the more recent
 dnl revision of Fortran 90.  efc is the Intel Fortran 77/90/95 compiler
 dnl The compilers are:
-dnl ifc - Intel 
 dnl xlf90 - IBM 
 dnl pgf90 - Portland group
 dnl f90/f95 - Miscellaneous compilers, including NAG, Solaris, IRIX
-dnl efc - An older Intel compiler (?)
+# It is believed that under HP-UX `fort77' is the name of the native
+# compiler.  On some Cray systems, fort77 is a native compiler.
+# frt is the Fujitsu F77 compiler.
+# pgf77 and pgf90 are the Portland Group F77 and F90 compilers.
+# xlf/xlf90/xlf95 are IBM (AIX) F77/F90/F95 compilers.
+# lf95 is the Lahey-Fujitsu compiler.
+# fl32 is the Microsoft Fortran "PowerStation" compiler.
+# af77 is the Apogee F77 compiler for Intergraph hardware running CLIX.
+# epcf90 is the "Edinburgh Portable Compiler" F90.
+# fort is the Compaq Fortran 90 (now 95) compiler for Tru64 and Linux/Alpha.
+# pathf90 is the Pathscale Fortran 90 compiler
+# ifort is another name for the Inten f90 compiler
+# efc - An older Intel compiler (?)
+# ifc - An older Intel compiler
 AC_DEFUN(PAC_PROG_F90,[
 if test -z "$F90" ; then
-    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90 ifc efc)
+    AC_CHECK_PROGS(F90,f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 fc ifc efc)
     test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
 fi
 if test -n "$F90" ; then
