@@ -9,6 +9,7 @@
 #include "ad_pvfs2.h"
 #include "ad_pvfs2_common.h"
 
+/* open_status is helpful for bcasting values around */
 struct open_status_s {
     int error;
     PVFS_object_ref object_ref;
@@ -97,6 +98,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 {
     int rank, ret;
     PVFS_fs_id cur_fs;
+    static char myname[] = "ADIOI_PVFS2_OPEN";
     char pvfs_path[PVFS_NAME_MAX] = {0};
 
     ADIOI_PVFS2_fs *pvfs2_fs;
@@ -111,25 +113,25 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     int lens[2] = {1, sizeof(PVFS_object_ref)};
     MPI_Aint offsets[2];
     
-    pvfs2_fs = (ADIOI_PVFS2_fs *)ADIOI_Malloc(sizeof(ADIOI_PVFS2_fs));
+    pvfs2_fs = (ADIOI_PVFS2_fs *) ADIOI_Malloc(sizeof(ADIOI_PVFS2_fs));
+
+    /* --BEGIN ERROR HANDLING-- */
     if (pvfs2_fs == NULL) {
-	/* graceful way to handle out of memory? */
-	ADIOI_PVFS2_pvfs_error_convert(0, error_code);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_UNKNOWN,
+					   "Error allocating memory", 0);
 	return;
     }
+    /* --END ERROR HANDLING-- */
 
     MPI_Comm_rank(fd->comm, &rank);
-
-    MPI_Address(&o_status.error, &offsets[0]);
-    MPI_Address(&o_status.object_ref, &offsets[1]);
-
-    MPI_Type_struct(2, lens, offsets, types, &open_status_type);
-    MPI_Type_commit(&open_status_type);
 
     ADIOI_PVFS2_Init(error_code);
     if (*error_code != MPI_SUCCESS)
     {
-	ADIOI_PVFS2_pvfs_error_convert(0, error_code);
+	/* ADIOI_PVFS2_INIT handles creating error codes on its own */
 	return;
     }
 
@@ -158,31 +160,54 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
      *
      * Since ADIO_Open will close the file and call ADIOI_PVFS2_Open again (but
      * w/o EXCL), we can bail out right here and return early */
-    if ( (fd->access_mode & MPI_MODE_EXCL)  ) {
-	if (o_status.error == 0) {
+    if ((fd->access_mode & MPI_MODE_EXCL)) {
+	if (o_status.error == 0)
+	{
 	    *error_code = MPI_SUCCESS;
 	    fd->fs_ptr = pvfs2_fs;
-	} else {
+	}
+	else
+	{
+	    /* --BEGIN ERROR HANDLING-- */
 	    ADIOI_Free(pvfs2_fs);
-	    ADIOI_PVFS2_pvfs_error_convert(o_status.error, error_code);
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE,
+					       myname, __LINE__,
+					       ADIOI_PVFS2_error_convert(o_status.error),
+					       "Unknown error", 0);
+	    /* TODO: FIX STRING */
+	    /* --END ERROR HANDLING-- */
 	} 
 	MPI_Type_free(&open_status_type);
 	return;
     } 
 
-    /* broadcast status and (if successful) valid object reference */
-    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 0, fd->comm);
+    /* broadcast status and (possibly valid) object reference */
+    MPI_Address(&o_status.error, &offsets[0]);
+    MPI_Address(&o_status.object_ref, &offsets[1]);
 
-    if (o_status.error != 0 ) { 
+    MPI_Type_struct(2, lens, offsets, types, &open_status_type);
+    MPI_Type_commit(&open_status_type);
+
+    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 0, fd->comm);
+    MPI_Type_free(&open_status_type);
+
+    /* --BEGIN ERROR HANDLING-- */
+    if (o_status.error != 0)
+    { 
 	ADIOI_Free(pvfs2_fs);
-	ADIOI_PVFS2_pvfs_error_convert(o_status.error, error_code);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   ADIOI_PVFS2_error_convert(o_status.error),
+					   "Unknown error", 0);
+	/* TODO: FIX STRING */
 	return;
     }
+    /* --END ERROR HANDLING-- */
 
     pvfs2_fs->object_ref = o_status.object_ref;
     fd->fs_ptr = pvfs2_fs;
-
-    MPI_Type_free(&open_status_type);
 
     *error_code = MPI_SUCCESS;
     return;

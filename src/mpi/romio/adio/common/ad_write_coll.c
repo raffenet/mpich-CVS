@@ -34,7 +34,8 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
                          int *send_buf_idx, int *curr_to_proc,
                          int *done_to_proc, int *hole, int iter, 
                          MPI_Aint buftype_extent, int *buf_idx, int *error_code);
-static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node                           *flat_buf, char **send_buf, ADIO_Offset 
+static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
+                           *flat_buf, char **send_buf, ADIO_Offset 
                            *offset_list, int *len_list, int *send_size, 
                            MPI_Request *requests, int *sent_to_proc, 
                            int nprocs, int myrank, 
@@ -593,7 +594,8 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     if (nprocs_recv) {
 	if (*hole) {
 	    ADIO_ReadContig(fd, write_buf, size, MPI_BYTE, 
-                         ADIO_EXPLICIT_OFFSET, off, &status, &err);
+			    ADIO_EXPLICIT_OFFSET, off, &status, &err);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (err != MPI_SUCCESS) {
 		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 						   MPIR_ERR_RECOVERABLE, myname,
@@ -601,6 +603,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 						   "**ioRMWrdwr", 0);
 		return;
 	    } 
+	    /* --END ERROR HANDLING-- */
 	}
     }
 
@@ -609,7 +612,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 
     if (fd->atomicity) {
         /* bug fix from Wei-keng Liao and Kenin Coloma */
-        requests = (MPI_Request *) 	
+        requests = (MPI_Request *)
 	    ADIOI_Malloc((nprocs_send+1)*sizeof(MPI_Request)); 
         send_req = requests;
     }

@@ -40,8 +40,15 @@ void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code)
     } else {
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     }
-    if (ret < 0)
-	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
+    /* --BEGIN ERROR HANDLING-- */
+    if (ret != 0) {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   ADIOI_PVFS2_error_convert(ret),
+					   "Error in PVFS_sys_flush", 0);
+    }
+    /* --END ERROR HANDLING-- */
 }
 
 /* 

@@ -8,7 +8,8 @@
 
 #include "ad_pvfs2.h"
 
-int ADIOI_PVFS2_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+int ADIOI_PVFS2_ReadDone(ADIO_Request *request, ADIO_Status *status,
+			 int *error_code)  
 {
      if (*request != ADIO_REQUEST_NULL) {
 #ifdef HAVE_STATUS_SET_BYTES
@@ -24,7 +25,8 @@ int ADIOI_PVFS2_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_
 }
 
 
-int ADIOI_PVFS2_WriteDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+int ADIOI_PVFS2_WriteDone(ADIO_Request *request, ADIO_Status *status,
+			  int *error_code)  
 {
     return ADIOI_PVFS2_ReadDone(request, status, error_code);
 } 

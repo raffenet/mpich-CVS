@@ -106,7 +106,10 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_UFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_ARG,
+					   "Unknown flag passed to ADIOI_UFS_FCNTL", 0);
     }
 }

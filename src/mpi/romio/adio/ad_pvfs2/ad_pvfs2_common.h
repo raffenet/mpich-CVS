@@ -31,6 +31,6 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials);
 void ADIOI_PVFS2_End(int *error_code);
 int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval, 
 	void *attribute_val, void *extra_state);
-int ADIOI_PVFS2_pvfs_error_convert(int pvfs_error, int *mpi_error);
+int ADIOI_PVFS2_error_convert(int pvfs_error);
 
 #endif
