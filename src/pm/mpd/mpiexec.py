@@ -169,6 +169,7 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
     wdir   = gWDIR
     wpath  = gPath
     nProcs = gNProcs
+    lEnv   = {}
     cmdAndArgs = []
     argidx = 0    # can not use range here
     while argidx < len(argset):
@@ -176,16 +177,23 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
             break                       # since now at executable
         if argset[argidx] == '-n' or argset[argidx] == '-np':
             nProcs = int(argset[argidx+1])
+            argidx += 2
         elif argset[argidx] == '-host':
             host = argset[argidx+1]
+            argidx += 2
         elif argset[argidx] == '-wdir':
             wdir = argset[argidx+1]
+            argidx += 2
         elif argset[argidx] == '-path':
             wpath = argset[argidx+1]
+            argidx += 2
+        elif argset[argidx] == '-env':
+            (var,val) = argset[argidx+1].split('=')
+            lEnv[var] = val
+            argidx += 2
         else:
             print 'unsupported or unrecognized option: %s' % argset[argidx]
             usage()
-        argidx += 2  # currently, all args have subargs
     while argidx < len(argset):
         cmdAndArgs.append(argset[argidx])
         argidx += 1
@@ -228,6 +236,11 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
         xmlPROCSPEC.appendChild(xmlENVVAR)
         xmlENVVAR.setAttribute('name',  '%s' % (envvar))
         xmlENVVAR.setAttribute('value', '%s' % (gEnv[envvar]))
+    for envvar in lEnv.keys():
+        xmlENVVAR = xmlDOC.createElement('env')
+        xmlPROCSPEC.appendChild(xmlENVVAR)
+        xmlENVVAR.setAttribute('name',  '%s' % (envvar))
+        xmlENVVAR.setAttribute('value', '%s' % (lEnv[envvar]))
     xmlENVVAR = xmlDOC.createElement('env')
     xmlPROCSPEC.appendChild(xmlENVVAR)
     xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
