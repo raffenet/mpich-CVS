@@ -114,6 +114,8 @@ char * smpd_get_context_str(smpd_context_t *context)
 	return "pmi";
     case SMPD_CONTEXT_TIMEOUT:
 	return "timeout";
+    case SMPD_CONTEXT_MPIEXEC_ABORT:
+	return "SMPD_CONTEXT_MPIEXEC_ABORT";
     case SMPD_CONTEXT_UNDETERMINED:
 	return "undetermined";
     case SMPD_CONTEXT_FREED:
