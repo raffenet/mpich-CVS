@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 /*D
-PMI return code definitions
+PMI_ - return code definitions
 Module:
 PMI
 D*/
