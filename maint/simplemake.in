@@ -18,8 +18,12 @@ $autoconf_args = ""; # Extra arguments for autoconf
 $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
 $root_tags = 1;
 $local_tags = 0;
+$fixup_for_timestamps = 1; # make is broken
+$Sleep = "sleep 1";
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
                               # for file.sm to file .
+$debug = 0;
+
 %libdir = ();
 #
 # Not yet good enough.  These are ext->o *ONLY*.
@@ -79,14 +83,16 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 # We must build the srcdir and top_srcdir specially because autoconf
 # insists on replacing this text.  The rest we had to do to allow the
 # maint/configure to work under Cygwin
-$srcdir_name =               'srcdir      =@' . "srcdir"      . '@';
-$topsrcdir_name =            'top_srcdir  =@' . "top_srcdir"  . '@';
-$prefix_name =               'prefix      =@' . "prefix"      . '@'; 
-$exec_prefix_name =          'exec_prefix =@' . "exec_prefix" . '@';
-$bindir_name =               'bindir      =@' . "bindir"      . '@';
-$sbindir_name =              'sbindir     =@' . "sbindir"     . '@';
-$libdir_name =               'libdir      =@' . "libdir"      . '@';
-$includedir_name =           'includedir  =@' . "includedir"  . '@';
+$srcdir_name =               'srcdir      = @' . "srcdir"      . '@';
+$master_topsrcdir_name =     
+               'master_top_srcdir  = @' . "master_top_srcdir"  . '@';
+$topsrcdir_name =            'top_srcdir  = @' . "top_srcdir"  . '@';
+$prefix_name =               'prefix      = @' . "prefix"      . '@'; 
+$exec_prefix_name =          'exec_prefix = @' . "exec_prefix" . '@';
+$bindir_name =               'bindir      = @' . "bindir"      . '@';
+$sbindir_name =              'sbindir     = @' . "sbindir"     . '@';
+$libdir_name =               'libdir      = @' . "libdir"      . '@';
+$includedir_name =           'includedir  = @' . "includedir"  . '@';
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
 	     'prefix'     => $prefix_name,
@@ -95,6 +101,7 @@ $includedir_name =           'includedir  =@' . "includedir"  . '@';
 	     'sbindir'    => $sbindir_name,
 	     'libdir'     => $libdir_name,
 	     'includedir' => $includedir_name,
+	     'master_top_srcdir' => $master_topsrcdir_name,
 	    );
 # etc.
 #
@@ -287,7 +294,9 @@ sub ReadMfile {
 	else {
 	    $other_text .= "$origline";
 	    # Look for special autoconf directory names
-	    &LookForAutoconfDirs( $_ );
+	    if (!/^\s*#/) {
+	        &LookForAutoconfDirs( $_ );
+	    }
 	}
     $origline = "";
     }
@@ -707,6 +716,7 @@ sub LookForAutoconfDirs {
 	print "Found $varname in line\n" if $debug;
 	# Look for varname in the known names; add to dirs_seen
 	if (defined($dirdefs{$varname})) {
+	    print "Adding $varname to dirs_seen\n" if $debug;
 	    $dirs_seen{$varname} = $varname;
 	}
     }
@@ -853,6 +863,10 @@ sub TargetLibraries {
         if ($ranliblib) { 
 	    print FD "\t\${RANLIB} ${libloc}lib$lib.a\n"; 
 	}
+	# To handle timestamp problems with recursive makes, add a delay
+	if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
+	     print FD "\t$Sleep\n"; 
+        }
 
 #        if ($doprofilelib) {
 #            print FD "$libdir{P$lib}P$lib.a:";
