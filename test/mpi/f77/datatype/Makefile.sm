@@ -3,9 +3,12 @@ LDADD = -L../../../../lib ../util/mtestf.o
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
+F77HEADERS = typeaints.h
+
 typenamef_SOURCES  = typenamef.f
 typesnamef_SOURCES = typesnamef.f
 typecntsf_SOURCES  = typecntsf.f
+typesubf_SOURCES   = typesubf.f
 typem2f_SOURCES    = typem2f.f
 gaddressf_SOURCES  = gaddressf.f
 packef_SOURCES     = packef.f
