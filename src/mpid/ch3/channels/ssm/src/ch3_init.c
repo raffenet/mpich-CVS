@@ -251,12 +251,15 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 	return mpi_errno;
     }
+    gethostname(pg->shm_hostname, 256);
+    /*
     MPIU_Strncpy(pg->shm_hostname, val, 256);
     if (strtok(pg->shm_hostname, ":") == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_strtok_host", "**init_strtok_host %s", val);
 	return mpi_errno;
     }
+    */
 
 #   if defined(DEBUG)
     {
