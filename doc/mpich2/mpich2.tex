@@ -5720,6 +5720,60 @@ keyval used to store the topology attributes.  We also need a
 topology (the common type is a subset of the other two that provides access
 only to the topology type).
 
+\subsubsection{Proposed Interface}
+The device may implement \code{MPID_Cart_map} and/or \code{MPID_Graph_map} .
+These are very similar to the MPI routines of the same names, and can be used
+to communication information on the topology of the underlying interconnect
+and process layout to the MPI routines.  If the device does implement these
+routines, it must define the corresponding C preprocessor value to indicate
+that the routine is available.  If the device does not provide the routine,
+then the MPICH implementation will provide a simple default.  Note that 
+the \code{MPID_Cart_map} and \code{MPID_Graph_map} routines are sufficient for
+implementing the MPI topology routines, as described in the MPI-1 standard.
+
+The specifics are
+
+Use
+\begin{verbatim}
+    #define MPID_HAVE_CART_MAP 
+\end{verbatim}
+if the device provides \code{MPID_Cart_map}.  The binding for this routine is
+\begin{verbatim}
+int MPID_Cart_map( MPID_Comm *comm_ptr, int dims, const int dims[], 
+                   const int periods[], int *newrank )
+\end{verbatim}
+Use 
+\begin{verbatim}
+#define MPID_HAVE_GRAPH_MAP
+\end{verbatim}
+if the device provides \code{MPID_Graph_map}.  The binding for this routine is
+\begin{verbatim}
+int MPID_Graph_map( MPID_Comm *comm_ptr, int nnodes, const int index[], 
+                    const int edges[], int *newrank )
+\end{verbatim}
+Use
+\begin{verbatim}
+#define MPID_HAVE_DIMS_CREATE
+\end{verbatim}
+if the device provides \code{MPID_Dims_create}.  The binding for this routine
+is 
+\begin{verbatim}
+int MPID_Dims_create( int nnodes, int ndims, int *dims )
+\end{verbatim}
+
+These routines should return valid MPI error codes (not classes!) if an error
+is detected.  They \emph{may} assume that the input communicator and output
+pointer are valid (checked in the calling routine). 
+
+These routines should perform any initialization that they require on the
+first call.  If they allocate resources (e.g., malloc memory), they must
+register a finalize handler to clean up on exit. 
+
+It is the long-term goal of the MPICH group to provide sample implementations
+of these for several important classes of machine interconnects.  However,
+until that time, these routines provide a way for a device implementor to
+communicate topology information to the MPI routines. 
+
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 Access the topology description and return the number of dimensions of
 Cartesian topology (if defined) from the \mpids{MPID_Topo_cart_t}{ndims}
