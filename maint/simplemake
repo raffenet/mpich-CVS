@@ -87,6 +87,15 @@ foreach $_ (@ARGV) {
     elsif (/-include=(.*)$/) {
 	$include_list = $1;
     }
+    elsif (/-distrib/) {
+	# Turn off the maintenance targets in the distribution version
+	$maint_targets = 0;
+    }
+    elsif (/-vpath=?(.*)/) {
+	$val = $1;
+	if ($val eq "no") { vpath_config = 0; } 
+	else { vpath_config = 1; }
+    }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
@@ -179,6 +188,8 @@ sub ReadMfile {
 	    $other_vars .= "$origline";
 	    # Save all variable names
 	    $makevars{$1} = $2;
+	    # Look for special autoconf directory names
+	    &LookForAutoconfDirs( $_ );
 	}
 	elsif (/^([^:\s]*)\s*:(.*)$/) {
 	    # Remember user-defined targets.
@@ -186,9 +197,13 @@ sub ReadMfile {
 	    $other_text .= "$origline";
 	    # We could copy lines until we saw a blank line
 	    if ($1 eq ".SUFFIXES") { $ExplicitSuffixes .= $2; }
+	    # Look for special autoconf directory names
+	    &LookForAutoconfDirs( $_ );
 	}
 	else {
 	    $other_text .= "$origline";
+	    # Look for special autoconf directory names
+	    &LookForAutoconfDirs( $_ );
 	}
     $origline = "";
     }
@@ -491,6 +506,20 @@ sub GetLibLoc {
     $libloc;
 }
 
+#
+# Look for autoconf directory variables that are used 
+sub LookForAutoconfDirs {
+    $line = $_[0];
+    # Look for \$\{\w*\} and \$\(\w*\) 
+    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)\$/) {
+	$varname = $1;
+	$line = $2;
+	# Look for varname in the known names; add to dirs_seen
+	if (defined($dirdefs{$varname})) {
+	    $dirs_seen{$varname} = $varname;
+	}
+    }
+}
 #
 # ===========================================================================
 # The "all" target.
