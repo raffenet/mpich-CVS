@@ -169,15 +169,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     char hostname[256];
     char *queue_name;
     MPIDI_CH3I_BootstrapQ queue;
-    MPIDI_CH3I_Shmem_queue_info shm_info/*, shm_remote_info*/;
-    /*int num_bytes;*/
+    MPIDI_CH3I_Shmem_queue_info shm_info;
     int i;
-
-#if 0
-    /* for now always return false until the sock stuff works */
-    *flag = FALSE;
-    return MPI_SUCCESS;
-#endif
 
     hostname[0] = '\0';
     MPIU_Strncpy(hostname, business_card, 256);

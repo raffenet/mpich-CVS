@@ -140,9 +140,6 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-#ifdef HAVE_SHMCTL
-    shmctl(pOutput->id, IPC_RMID, NULL);
-#endif
 #elif defined(HAVE_MAPVIEWOFFILE)
     pOutput->addr = MapViewOfFileEx(
 	pOutput->id,
