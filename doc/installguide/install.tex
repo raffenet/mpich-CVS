@@ -318,6 +318,12 @@ to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
 \texttt{mpich2-1.0/src/pm/mpd/README}.
 
+In case of persistent difficulties getting the ring of mpd's up and
+running on the machines you want, please see Appendix~\ref{app:mpd}.
+There we discuss the mpd's in more detail, together with some programs
+for testing the configuration of your systems to make sure that they
+allow the mpd's to run.
+
 \item
 Test the ring you have just created:
 \begin{verbatim}
@@ -436,6 +442,41 @@ Now that MPICH2 has been installed, the users have to be informed of how
 to use it.  Part of this is covered in the \emph{User's Guide}.  Other
 things users need to know are covered here.  (E.g. whether they need to
 run their own mpd rings or use a system-wide one run by root.)
+
+
+\section{Migrating from MPICH1}
+\label{sec:migrating}
+
+MPICH2 is an all-new rewrite of MPICH1.  Although the basic steps for
+installation have remained the same (\texttt{configure}, \texttt{make},
+\texttt{make install}), a number of things have changed.  In this
+section we attempt to point out what you may be used to in MPICH1 that
+are now different in MPICH2.
+
+\subsection{Configure Options}
+\label{sec:configure-options}
+
+The arguments to \texttt{configure} are different in MPICH1 and MPICH2;
+the \texttt{Installer's Guide} discusses \texttt{configure}.  In
+particular, the newer \texttt{configure} in MPICH2 does not support the
+\verb+-cc=<compiler-name>+ (or \texttt{-fc}, \texttt{-c++}, or
+\texttt{-f90}) options.  Instead, many of the items that could be
+specified in the command line to configure in MPICH1 must now be set by
+defining an environment variable.  E.g., while MPICH1 allowed
+\begin{verbatim}
+    ./configure -cc=pgcc
+\end{verbatim}
+MPICH2 requires
+\begin{verbatim}
+    setenv CC pgcc
+\end{verbatim}
+(or \verb+export CC=pgcc+ for \texttt{ksh} or \verb+CC=pgcc ; export CC+
+for strict \texttt{sh}) before \texttt{./configure}.  Basically, every
+option to the MPICH-1 configure that does not start with
+\texttt{--enable} or \texttt{--with} is not available as a configure
+option in MPICH2.  Instead, environment variables must be used.  This is
+consistent (and required) for use of version 2 GNU \texttt{autoconf}.
+
 
 \section{Installing and Managing Process Managers}
 \label{sec:process-managers}
@@ -870,6 +911,213 @@ Only gcc is currently supported
             requires that the Makefile.in files are also created
             to support dependencies (see maint/updatefiles)
 \end{verbatim}
+
+\appendix
+
+
+\section{Troubleshooting the mpd's}
+\label{app:mpd}
+
+
+
+\subsection{Getting Started with mpd}
+\label{sec:getting-started}
+
+\texttt{mpd} stands for multi-purpose daemon.  We sometimes use the term
+mpd to refer to the mpd daemon and other helper programs that
+collectively form a process management system for executing
+parallel jobs, including mpich jobs.  The mpd daemon must
+run on each host where you wish to execute parallel programs.
+The mpd daemons form a ring to facilitate rapid startup.
+Therefore, each host must be configured in such a way that the
+mpd's can connect to each other and pass messages via sockets.
+Sometimes this configuration can be a bit tricky to get right.
+In this section, we will walk slowly through a series of steps
+that will help to ensure success in running mpd's on a large cluster.
+
+\begin{enumerate}
+\item Install mpich2, and thus mpd.
+
+\item Make sure the mpich2 bin directory is in your path.
+Below, we will refer to it as \texttt{MPDDIR}.
+
+\item At a shell prompt (\$ below), type:
+\begin{verbatim}
+    $ mpd &
+\end{verbatim}
+If the executable is not found, make sure that you have
+\texttt{MPDDIR} in your path and that mpd is in that dir.
+
+If you get something like:
+\begin{verbatim}
+    configuration file /home/you/.mpd.conf not found
+    A file named .mpd.conf file must be present in the users home
+    directory (/etc/mpd.conf if root) with read and write access
+    only for the user, and must contain at least a line with:
+    secretword=<secretword>
+\end{verbatim}
+then create a file named \texttt{.mpd.conf} (note the leading dot) in your
+homdedir using an editor.  That file must contain a line
+secretword=<secretword> where you replace <secretword> with some string
+you like.  Then make sure the file has mode 600 (\texttt{chmod 600 .mpd.conf}).
+
+Then, try mpd again.
+
+% $   Comment to end fake math mode
+
+If mpd still fails to start, you may have a configuration problem that
+\texttt{mpdcheck} will be able to help you with (see
+Section~\ref{sec:mpdcheck}).
+
+To stop the mpd:
+\begin{verbatim}
+   $ mpdallexit
+\end{verbatim}
+
+
+\item Now, run mpdtrace:
+\begin{verbatim}
+    $ mpdtrace -l
+\end{verbatim}
+
+This should print something like:
+\begin{verbatim}
+    yourhost_1234
+\end{verbatim}
+where the 1234 is a port number that mpd is using to listen for
+connections from other mpds.
+
+\item Try to run a parallel (non-mpi) job:
+\begin{verbatim}
+    $ mpiexec -n 2 hostname    
+\end{verbatim}
+We assume \texttt{}hostname is in your path.
+
+\item Try to run a parallel mpi job:
+\begin{verbatim}
+  $ mpiexec -n 2 /MPI_EXAMPLES_DIR/cpi    
+\end{verbatim}
+
+\end{enumerate}
+
+
+\subsection{mpdcheck}
+\label{sec:mpdcheck}
+
+\texttt{mpdcheck} is a program that tries to verify that your set of
+machines is configured properly to support a ring of mpd's.
+So, before trying to start a whole set of mpd's on a collection of
+machines with \texttt{mpdboot}, we have found that it is typically a
+very good idea to run a few tests with \texttt{mpdcheck} that help to ensure
+later success.
+
+\begin{enumerate}
+\item \verb+ \$ mpdcheck -h +
+
+This prints a fairly long help message but gives you some
+idea about what mpdcheck might do for you and an
+explanation of some of the runs we will do here.
+
+\item \$ mpdcheck
+
+With no args, mpdcheck tries to determine if there seem to
+be configuration problems with the current machine that
+would cause issues when mpd's on multiple hosts try to
+connect and communicate.  The goal here is to get no
+output.  Output indicates potential problems.  If you find
+the messages too short/cryptic, you can use the \texttt{-l} option
+(long messages) and get better info.
+
+\item Create an \texttt{mpd.hosts} file using an editor.  For now, just
+    list the local machine's name on one line and the name of
+    another machine in your cluster on the next line.  (Later,
+    we will list all machines in the cluster.)  Now, try:
+\begin{verbatim}
+    $ mpdcheck -f mpd.hosts
+\end{verbatim}
+    If this produces no error output, try:
+\begin{verbatim}
+    $ mpdcheck -f mpd.hosts -ssh
+\end{verbatim}
+These tests will try to verify that the localhost can
+discover the other host, and with the \texttt{-ssh} option try to
+run some \texttt{ssh} tests between the 2 machines to make sure
+that those kinds of things work also.
+
+\item If all above went fine, you can probably skip this step.
+But, it might help to be safe.  On your two machines in
+the \texttt{mpd.hosts} file (call them m1 and m2), try the following:
+
+Do this on m1 and read the output for host and port:
+\begin{verbatim}
+    $ mpdcheck -s
+\end{verbatim}
+Do this on m2:
+\begin{verbatim}
+    $ mpdcheck -c host port
+\end{verbatim}
+where you use the host and port printed by \texttt{mpdcheck} on m1.
+
+\item Try running a pair of mpd's on the two machines.  First, on both
+  machines:
+\begin{verbatim}
+    $ mpdallexit
+\end{verbatim}
+just to make sure you have no old mpd's running.
+
+Run mpd on m1 and use the -e option to cause mpd to echo
+the port it is using:
+\begin{verbatim}
+    $ mpd -e &        
+\end{verbatim}
+    Then, run mpd on m2 and cause it to enter the ring at m1:
+\begin{verbatim}
+    $ mpd -h m1 -p the_echoed_port_at_m1 &
+    $ mpdtrace
+\end{verbatim}
+The \texttt{mpdtrace} should show both mpds in the ring.  If so,
+you should be able to run a parallel job:
+\begin{verbatim}
+    $ mpiexec -n 2 hostname        
+\end{verbatim}
+and see both hostnames printed.
+\end{enumerate}
+
+
+\subsection{mpdboot}
+\label{sec:mpdboot}
+
+You are now ready to try to use \texttt{mpdboot} to start mpd's on a
+set of machines.  To keep it simple, try using just the two
+hosts listed in your existing \texttt{mpd.hosts} file from above.
+
+\begin{enumerate}
+
+\item  \verb+$ mpdallexit +
+Next, boot a single mpd on the local machine.
+\begin{verbatim}
+    $ mpdboot -n 1
+    $ mpdtrace -l
+\end{verbatim}
+
+\item \verb+ $ mpdallexit +
+\begin{verbatim}
+    $ mpdboot -n 2    
+\end{verbatim}
+See if mpd's are running on both machines.
+\begin{verbatim}
+    $ mpdtrace -l
+    $ mpiexec -n 2 hostname
+\end{verbatim}
+
+\end{enumerate}
+
+If \texttt{mpdboot} works on the two machines, it will probably work on
+all of them.  But, there could be configuration problems on one machine,
+for example.  An easy way to check, is to gradually add them to
+\texttt{mpd.hosts} and try an \texttt{mpdboot} with a \texttt{-n} arg
+that uses them all each time.
+
 
 \end{document}
 
