@@ -358,7 +358,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
-					DLOOP_Offset (sizefn) (DLOOP_Type el_type),
+					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
 					void *pieceparams);
 
 #endif
