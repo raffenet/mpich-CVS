@@ -273,6 +273,7 @@ namespace MandelViewer
 			this.points_comboBox.Size = new System.Drawing.Size(400, 21);
 			this.points_comboBox.TabIndex = 5;
 			this.points_comboBox.Text = "points";
+			this.points_comboBox.DropDown += new System.EventHandler(this.points_comboBox_DropDown);
 			this.points_comboBox.SelectedValueChanged += new System.EventHandler(this.points_comboBox_SelectedValueChanged);
 			// 
 			// go_stop_button
@@ -715,6 +716,30 @@ namespace MandelViewer
 				rBox = new Rectangle(0, 0, 0, 0);
 				outputBox.Invalidate();
 			}
+		}
+
+		private void points_comboBox_DropDown(object sender, System.EventArgs e)
+		{
+			ComboBox senderComboBox = (ComboBox)sender;
+			int width = senderComboBox.DropDownWidth;
+			Graphics g = senderComboBox.CreateGraphics();
+			Font font = senderComboBox.Font;
+			int vertScrollBarWidth = 0;
+
+			if (senderComboBox.Items.Count>senderComboBox.MaxDropDownItems)
+				vertScrollBarWidth = SystemInformation.VerticalScrollBarWidth;
+
+			int newWidth;
+			foreach (string s in ((ComboBox)sender).Items)
+			{
+				newWidth = (int) g.MeasureString(s, font).Width 
+					+ vertScrollBarWidth;
+				if (width < newWidth )
+				{
+					width = newWidth;
+				}
+			}
+			senderComboBox.DropDownWidth = width;		
 		}
 	}
 
