@@ -130,7 +130,7 @@ int sock_create_set(sock_set_t * sock_set)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_CREATE_SET);
     
-    set = MPIU_Malloc(sizeof(sock_set));
+    set = MPIU_Malloc(sizeof(struct sock_set));
     if (sock_set == NULL) return SOCK_FAIL;
     set->poll_arr_sz = 0;
     set->poll_n_elem = -1;
