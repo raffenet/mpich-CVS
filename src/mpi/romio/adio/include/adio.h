@@ -387,6 +387,13 @@ void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype,
 MPI_File MPIO_File_create(int size);
 ADIO_File MPIO_File_resolve(MPI_File mpi_fh);
 void MPIO_File_free(MPI_File *mpi_fh);
+MPI_File MPIO_File_f2c(MPI_Fint fh);
+MPI_Fint MPIO_File_c2f(MPI_File fh);
+int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
+			 int line, int error_class, const char generic_msg[],
+			 const char specific_msg[], ... );
+int MPIO_Err_return_file(MPI_File mpi_fh, int error_code);
+int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code);
 
 #include "adioi.h"
 #include "adioi_fs_proto.h"

@@ -9,7 +9,7 @@ CFLAGS      = -DHAVE_MPI_INFO_SRC @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 
 @VPATH@
 
-MPIO_OBJECTS = mpio_file.o
+MPIO_OBJECTS = mpio_file.o mpio_err.o
 
 all: $(LIBNAME)
 

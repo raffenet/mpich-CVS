@@ -46,7 +46,7 @@ int MPI_File_write_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
     return error_code;
 }
 
-int ADIOI_File_write_all_end(MPI_File mpi_fh,
+int MPIOI_File_write_all_end(MPI_File mpi_fh,
 			     void *buf,
 			     char *myname,
 			     MPI_Status *status)
