@@ -25,7 +25,11 @@
 \def\onespace{\hskip .5em}
 {\catcode`\ =13
 \gdef\makespaceactive{\catcode`\ =13\let =\onespace}}
+\ifx\texofpdfstring\relax
 \def\mpifunc#1{\code{#1}\index{#1}}
+\else
+\def\mpifunc#1{\texorpdfstring{\code{#1}}{#1}\index{#1}}
+\fi
 % We may want to separate the MPI and MPID index entries
 \def\mpidfunc#1{\code{#1}\index{#1}}
 % ditto for constants

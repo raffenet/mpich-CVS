@@ -26,7 +26,7 @@ SHELL = /bin/sh
 	    -e s/@newsection@/relax/g \
 	template.orig > template.tex
 	-latex template </dev/null 2>&1 >/dev/null
-	-bibtex template
+	-bibtex template </dev/null 
 	latex template
 	mv template.dvi $*.dvi
 
@@ -38,9 +38,9 @@ MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
 	-latex mpich2 </dev/null 2>&1 >/dev/null
-	-bibtex mpich2
+	-bibtex mpich2 </dev/null
 	-rm -f tmp.idx tmp.ind
-	cat mpich2.idx | ./fixupindex > tmp.idx
+	cat mpich2.idx | perl ./fixupindex > tmp.idx
 	@makeindex tmp
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
@@ -81,8 +81,8 @@ pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
 	-latex template </dev/null 2>&1 >/dev/null
-	-bibtex template
-	latex template
+	-bibtex template </dev/null
+	latex template 
 	mv template.dvi pt2ptdesc.dvi
 
 colldesc.dvi: colldesc.tex Makefile template.orig
@@ -97,7 +97,7 @@ colldesc.dvi: colldesc.tex Makefile template.orig
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
 	-latex template </dev/null 2>&1 >/dev/null
-	-bibtex template
+	-bibtex template </dev/null
 	latex template
 	mv template.dvi colldesc.dvi
 
@@ -113,7 +113,7 @@ mmca.dvi: mmca.tex Makefile template.orig
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
 	-latex template </dev/null 2>&1 >/dev/null
-	-bibtex template
+	-bibtex template </dev/null
 	latex template
 	mv template.dvi mmca.dvi
 
@@ -129,9 +129,9 @@ mpich2pdf.dvi: $(MPICH2FILES)
 	    -e '/usepackage{.*url}/d' \
 		mpich2.tex > mpich2pdf.tex
 	-latex mpich2pdf </dev/null 2>&1 >/dev/null
-	-bibtex mpich2pdf
+	-bibtex mpich2pdf </dev/null
 	-rm -f tmp.idx tmp.ind
-	cat mpich2pdf.idx | ./fixupindex > tmp.idx
+	cat mpich2pdf.idx | perl ./fixupindex > tmp.idx
 	makeindex tmp
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \

@@ -4,9 +4,10 @@
 % This document should be used with the ADI3 document
 \documentclass{article}
 \usepackage{psfig}
-\usepackage{/home/gropp/data/share/refman}
-\usepackage{/home/gropp/bin/share/tex/fileinclude}
-\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{../adi3/refman}
+\usepackage{fileinclude}
+%\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{../adi3/tpage}
 \usepackage{/home/gropp/BOOKS/Beowulf/tex/url}
 \usepackage{epsf}
 \usepackage{mpidoc}
@@ -717,7 +718,7 @@ int MPI_Foo( MPI_Comm comm, int a )
 % have their own drawbacks; placing the brace with the controlling
 % clause emphasizes the connection.
 
-Header (``\texttt{.h}''} files follow similar rules, including the copyright
+Header (``\texttt{.h}'') files follow similar rules, including the copyright
 block.  Header files that will be used \emph{only} with C++ compilers should
 also include the comment
 \begin{verbatim}
