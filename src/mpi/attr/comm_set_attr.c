@@ -73,7 +73,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
-	    else if (((comm_keyval&0x3c00000) >> 22) != MPID_COMM) {
+	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
 						  "**keyvalnotcomm", 0 );
 	    }

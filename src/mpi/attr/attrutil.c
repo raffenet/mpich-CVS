@@ -120,9 +120,11 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
     p = comm_ptr->attributes;
     while (p) {
 	/* Run the attribute delete function first */
+/* Why is this here?
 	mpi_errno = MPIR_Comm_call_attr_delete( comm_ptr->handle, p );
 	if (mpi_errno) 
 	    return mpi_errno;
+*/
 
 	/* Now call the attribute copy function (if any) */
 	copyfn   = p->keyval->copyfn;
