@@ -55,6 +55,7 @@ typedef enum SOCK_OP
 #define SOCK_IOV             WSABUF
 #define SOCK_IOV_LEN         len
 #define SOCK_IOV_BUF         buf
+#define SOCK_IOV_MAXLEN      16
 #define SOCK_INFINITE        INFINITE
 #define SOCK_INVALID_SOCKET  INVALID_SOCKET
 
@@ -70,6 +71,7 @@ typedef struct sock_state_t * sock_t;
 #define SOCK_IOV             struct iovec
 #define SOCK_IOV_LEN         iov_len
 #define SOCK_IOV_BUF         iov_base
+#define SOCK_IOV_MAXLEN      16
 #define SOCK_INFINITE        -1
 #define SOCK_INVALID_SOCKET  -1
 
