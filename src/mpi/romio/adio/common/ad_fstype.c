@@ -119,9 +119,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     else {
 	/* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
 	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
-#ifdef ROMIO_PVFS
+# ifdef ROMIO_PVFS
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
-#endif
+# endif
 	else *fstype = ADIO_UFS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
@@ -131,11 +131,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
-#if (__FreeBSD_version>300004)
+# if (__FreeBSD_version>300004)
 	if ( !strncmp("nfs",fsbuf.f_fstypename,3) ) *fstype = ADIO_NFS;
-#else
+# else
 	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
-#endif
+# endif
 	else *fstype = ADIO_UFS;
     }
 #elif defined(PARAGON)
@@ -173,11 +173,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #else
     /* on other systems, make NFS the default */
     free(dir);
-#ifdef ROMIO_NTFS
-	*fstype = ADIO_NTFS;
-#else
+# ifdef ROMIO_NTFS
+    *fstype = ADIO_NTFS;
+# else
     *fstype = ADIO_NFS;   
-#endif
+# endif
     *error_code = MPI_SUCCESS;
 #endif
 }
@@ -314,150 +314,150 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     /* verify that we support this file system type and set ops pointer */
     if (file_system == ADIO_PFS) {
 #ifndef PFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PFS,
 				    myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_PFS_operations;
 #endif
     }
     if (file_system == ADIO_PIOFS) {
 #ifndef PIOFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PIOFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PIOFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_PIOFS_operations;
 #endif
     }
     if (file_system == ADIO_UFS) {
 #ifndef UFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the UFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_UFS_operations;
 #endif
     }
     if (file_system == ADIO_NFS) {
 #ifndef NFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code =  ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_NFS_operations;
 #endif
     }
     if (file_system == ADIO_HFS) {
 #ifndef HFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the HFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_HFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_HFS_operations;
 #endif
     }
     if (file_system == ADIO_XFS) {
 #ifndef XFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the XFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_XFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_XFS_operations;
 #endif
     }
     if (file_system == ADIO_SFS) {
 #ifndef SFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the SFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_SFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_SFS_operations;
 #endif
     }
     if (file_system == ADIO_PVFS) {
 #ifndef ROMIO_PVFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PVFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_PVFS_operations;
 #endif
     }
     if (file_system == ADIO_NTFS) {
 #ifndef ROMIO_NTFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NTFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_NTFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_NTFS_operations;
 #endif
     }
     if (file_system == ADIO_TESTFS) {
 #ifndef ROMIO_TESTFS
-#ifdef PRINT_ERR_MSG
+# ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the TESTFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+# else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_TESTFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
-#endif
+# endif
 #else
 	*ops = &ADIO_TESTFS_operations;
 #endif
@@ -466,7 +466,3 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     *fstype = file_system;
     return;
 }
-
-
-
-
