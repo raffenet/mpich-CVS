@@ -31,7 +31,10 @@ int MPID_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 {
     int mpi_errno;
 
+    MM_ENTER_FUNC(MPID_SEND);
+
     mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr, mode, request_pptr);
 
+    MM_EXIT_FUNC(MPID_SEND);
     return mpi_errno;
 }

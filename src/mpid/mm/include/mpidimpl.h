@@ -205,7 +205,7 @@ MPID_Request * mm_request_alloc();
            int mm_cq_wait();
            int mm_cq_enqueue(MM_Car *car_ptr);
 	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
-	   int mm_post_unex_rndv(MM_Car *unex_head_car_ptr);
+	   int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr);
 	   int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr);
 	   int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr);
 

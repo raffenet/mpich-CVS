@@ -98,6 +98,11 @@ int tcp_accept_connection()
 	}
 	if (remote_rank > MPIR_Process.comm_world->rank)
 	{
+	    if (vc_ptr->data.tcp.bfd == TCP_Process.max_bfd)
+	    {
+		/* somehow figure out a new max bfd */
+		/*err_printf("Error: tcp_accept_connection: max_bfd is invalid.\n");*/
+	    }
 	    /* close the old socket and keep the new */
 	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
 	    {
