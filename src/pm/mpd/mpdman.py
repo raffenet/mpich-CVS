@@ -807,7 +807,15 @@ def mpdman():
                     ## in which case adding 2 to numWithIO will cause the pgm to hang.
                     numWithIO += 2
                     nprocs  = int(parsedMsg['nprocs'])
-                    hosts   = { (0,nprocs-1) : '_any_' }
+                    pmiInfo = {}
+                    for i in range(0,int(parsedMsg['info_num'])):
+                        info_key = parsedMsg['info_key_%d' % i]
+                        info_val = parsedMsg['info_val_%d' % i]
+                        pmiInfo[info_key] = info_val
+                    if pmiInfo.has_key('host'):
+                        hosts = { (0,nprocs-1) : pmiInfo['host'] }
+                    else:
+                        hosts   = { (0,nprocs-1) : '_any_' }
                     execs   = { (0,nprocs-1) : parsedMsg['execname'] }
                     users   = { (0,nprocs-1) : mpd_get_my_username() }
                     cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
