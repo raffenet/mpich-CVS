@@ -81,10 +81,6 @@ int test_communicators( void )
     int flag, world_rank, world_size, rank, size, n, key_1, key_3;
     int color, key, result;
     int errs = 0;
-    /*      integer n, ,
-	    .        key_2
-	    
-    */
     MPI::Aint value;
 
     world_rank = MPI::COMM_WORLD.Get_rank();
@@ -212,12 +208,14 @@ int test_communicators( void )
 	}
 
 	flag = dup_comm.Get_attr( key_3, (void **)&vvalue );
-	value = (int)vvalue;
 	if (flag) {
 	    errs++;
 	    cout << "dup_comm key_3 found!\n";
 	    MPI::COMM_WORLD.Abort( 3008 );
 	}
+	// Some C++ compilers (e.g., Solaris) refuse to 
+	// accept a straight cast to an int.
+	// value = (MPI::Aint)vvalue;
 	MPI::Comm::Free_keyval( key_1 );
 	MPI::Comm::Free_keyval( key_3 );
     }
