@@ -439,6 +439,36 @@ starting point for further instrumentation when debugging new features
 or applications.  As such it is expected that users will want to modify
 the ADIO implementation in order to get the specific output they desire.
 
+\subsection{ROMIO and {\tt MPI\_FILE\_SYNC}}
+
+The MPI-2 specification notes that a call to {\tt MPI\_FILE\_SYNC} ``causes
+all previous writes to {\tt fh} by the calling process to be transferred to
+the storage device.''  Likewise, calls to {\tt MPI\_FILE\_CLOSE} have this
+same semantic.  Further, ``if all processes have made updates to the storage
+device, then all such updates become visible to subsequent reads of {\tt fh}
+by the calling process.''
+
+The intended use of {\tt MPI\_FILE\_SYNC} is to allow all processes in the
+communicator used to open the file to see changes made to the file by each
+other (the second part of the specification).  The definition of ``storage
+device'' in the specification is vague, and it isn't necessarily the case that
+calling {\tt MPI\_FILE\_SYNC} will force data out to permanent storage.
+
+Since users often use {\tt MPI\_FILE\_SYNC} to attempt to force data out to
+permanent storage (i.e. disk), the ROMIO implementation of this call enforces
+stronger semantics for most underlying file systems by calling the appropriate
+file sync operation when {\tt MPI\_FILE\_SYNC} is called (e.g. {\tt fsync}).
+However, it is still unwise to assume that the data has all made it to disk
+because some file systems (e.g. NFS) may not force data to disk when a client
+system makes a sync call.
+
+For performance reasons we do \emph{not} make this same file system call at
+{\tt MPI\_FILE\_CLOSE} time.  At close time ROMIO ensures any data has been
+written out to the ``storage device'' (file system) as defined in the
+standard, but does not try to push the data beyond this and into physical
+storage. Users should call {\tt MPI\_FILE\_SYNC} before the close if they wish
+to encourage the underlying file system to push data to permanent storage.
+
 %
 % INSTALLATION INSTRUCTIONS
 %
