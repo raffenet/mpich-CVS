@@ -470,13 +470,27 @@ $libs"
     # -YCFRL=1 causes Absoft f90 to work with g77 and similar (f2c-based) 
     # Fortran compilers
     #
-trial_FLAGS="000
+    # Problem:  The Intel efc compiler hangs when presented with -N109 .
+    # The only real fix for this is to detect this compiler and exclude
+    # the test.  We may want to reorganize these tests so that if we
+    # can compile code without special options, we never look for them.
+    # 
+    using_intel_efc="no"
+    pac_test_msg=`$F77 -V 2>&1 | grep 'Intel(R) Fortran Itanium'`
+    if test "$pac_test_msg" != "" ; then
+	using_intel_efc="yes"
+    fi
+    if test "$using_intel_efc" = "yes" ; then
+        trial_FLAGS="000"
+    else
+        trial_FLAGS="000
 -N109
 -f
 -YEXT_NAMES=UCS
 -YEXT_NAMES=LCS
 -YCFRL=1
 +U77"
+    fi
     # Discard options that are not available:
     save_IFS="$IFS"
     IFS=" 

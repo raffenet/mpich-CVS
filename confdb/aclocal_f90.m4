@@ -210,10 +210,10 @@ fi # is not cross compiling
 dnl
 dnl
 dnl Note: This checks for f95 before f90, since F95 is the more recent
-dnl revision of Fortran 90.
+dnl revision of Fortran 90.  efc is the Intel Fortran 77/90/95 compiler
 AC_DEFUN(PAC_PROG_F90,[
 if test -z "$F90" ; then
-    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90)
+    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90 efc)
     test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
 fi
 if test -n "$F90" ; then
@@ -223,6 +223,17 @@ dnl Cache these so we don't need to change in and out of f90 mode
 ac_f90ext=$pac_cv_f90_ext
 ac_f90compile='${F90-f90} -c $F90FLAGS conftest.$ac_f90ext 1>&AC_FD_CC'
 ac_f90link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 1>&AC_FD_CC'
+# Check for problems with Intel efc compiler
+cat > conftest.$ac_f90ext <<EOF
+        program main
+        end
+EOF
+pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 2>&1 | grep 'bfd assertion fail'`
+if test -n "$pac_msg" ; then
+    pac_msg=`$F90 -o conftest $F90FLAGS $LDFLAGS conftest.$ac_f90ext -i_dynamic $LIBS 2>&1 | grep 'bfd assertion fail'`
+    if test -z "$pac_msg" ; then LDFLAGS="-i_dynamic" ; fi
+    # There should really be f90linker flags rather than generic ldflags.
+fi
 ])
 dnl Internal routine for testing F90
 dnl PAC_PROG_F90_WORKS()
