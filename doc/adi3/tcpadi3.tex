@@ -77,6 +77,8 @@ transfers.
 It is \emph{not} a goal to provide an optimally fast implementation. This is
 intended to be a relatively simple but reasonably efficient implementation.
 
+%------------------------------------------------------------------------------
+
 \section{Outline of the Implementation Structure}
 \label{sec:impl-outline}
 
@@ -98,7 +100,7 @@ indicate that they belong to
 this interface; a complete description of the CH3 routines is presented in
 Appendix~\ref{app:ch3}. 
 
-Communication:
+\paragraph{Communication:}
 
 The MPID layer communicates by sending messages consisting of a message header
 (called a packet header to distinguish it from an MPI message), possibly
@@ -116,11 +118,12 @@ dozen kinds of
       flow control (for eager messages) and error-checking features such as
       datatype signatures.
     \item[rndv\_req\_to\_send.]MPI envelope and send request id.
-    \item[rndv\_OK\_to\_send.]Send and receive request id
+    \item[rndv\_clr\_to\_send.]Send and receive request id
     \item[put.]Address and length, followed immediately by data
-    \item[rndv\_send.]Send and receive request id, followed immediately by data
-    \item[cancel\_send.]Send request id to cancel
-    \item[cancel\_send\_ack.]Send request id and true/false for was cancelled
+    \item[rndv\_send.]send and receive request id, followed immediately by data
+    \item[cancel\_send\_req.]Send request id to cancel
+    \item[cancel\_send\_resp.]Send request id and true/false (ack/nak) for was
+	 cancelled
     \item[flow\_cntl\_update.]Flow control for eager messages and rendezvous
       requests.  This is separate from any low-level flow control, though it
       may be coordinated with it.  For example, we may include knowledge about
@@ -136,12 +139,12 @@ dozen kinds of
   destination. 
 \end{description}
 
-Queues and Connections:
+\paragraph{Queues and Connections:}
 
 (Need some discussion of these, since the requests move between queues and the 
 read/write operations are ordered on a connection.)
 
-CH3 routine brief summary:
+\paragraph{CH3 routine brief summary:}
 
 (I don't think that these are right yet, but we need to start somewhere.)
 Details in Appendix~\ref{app:ch3}.
@@ -393,10 +396,10 @@ find-or-post or find-or-allocate (FOA) operations.
 
 
 \begin{description}
-\item[CH3U\_Find\_or\_post.]Find a request in the unexpected message
+\item[CH3U\_Request\_FUOAP.]Find a request in the unexpected message
 queue; if one is 
 not found, create a request and add it to the posted receive queue.
-\item[CH3U\_Find\_or\_post\_unexp.]Like \code{CH3U\_Find\_or\_post},
+\item[CH3U\_Request\_FPOAU.]Like \code{CH3U\_Request\_FUOAP},
 but first checks the posted receive queue, and if not found, adds to
 the unexpected message queue.  This routine is called by a message
 handler while the previous routine is called by one of the MPI receive
@@ -415,11 +418,11 @@ flow control code.
 
 Bindings:
 \begin{verbatim}
-    request = CH3U_Find_or_post( tag, context_id, source, &found )
-    request = CH3U_Find_or_post_unexp( msg_match, &found )
-    void CH3U_DeQueue_unexp( int req_id )
-    void CH3U_DeQueue_posted( int req_id )
-    void CH3U_Request_change_state( state )
+    request = CH3U_Request_FUOAP( source, tag, context_id, &found )
+    request = CH3U_Request_FPOAU( msg_match, &found )
+    void CH3U_DeQueue_unexp( int handle )
+    void CH3U_DeQueue_posted( int handle )
+    void CH3U_Request_change_state( MPID_Request * req, state )
     void *CH3U_AllocateStorageFromEagerBuffer( int )
 \end{verbatim}
 
@@ -531,7 +534,7 @@ Both \code{MPID_Irecv} and \code{MPID_Recv} use similar code.
 MPID_Irecv( )
 {
     CH3_Progress_poke
-    request = MPID_CH3U_Find_or_post( tag, context_id, source, &found )
+    request = MPID_CH3U_Request_FPOAU( source, tag, context_id, &found )
     if (found)  {
         /* Message was found in unexpected list.  Eager data is stored
            in the request */
@@ -543,13 +546,13 @@ MPID_Irecv( )
         else {
             # rendezvous
             create packet on stack
-            fill in as rndv_ok_to_send
+            fill in as rndv_clr_to_send
             CH3_iSend( request, packet )
             }
     }
     else {
         fill in request
-        CH3U_Request_change_state( waiting for match )
+        CH3U_Request_change_state( request, waiting for match )
     }
 }
 \end{verbatim}
@@ -698,7 +701,7 @@ code?  What are the performance implications?
 Action invoked by the receiver of an eagerly sent message.  The data for the
 message is immediately behind the message header (eagersend packet).
 \begin{verbatim}
-    request = MPID_CH3U_Find_or_post_unexp( &packet->msg_match, &found )
+    request = MPID_CH3U_Request_FPOAU( &packet->msg_match, &found )
     if (found) {
         /* Message was already posted */
         CH3_iRead( request )
@@ -727,7 +730,7 @@ adds to function call overhead.
 \subsection{RndvReqToSend}
 Action invoked by the reciever of a rendezvous message.
 \begin{verbatim}
-    request = MPID_CH3U_Find_or_post_unexp( &packet->msg_match, &found )
+    request = MPID_CH3U_Request_FPOAU( &packet->msg_match, &found )
     if (found) {
         if (dest buffer is contiguous)
             create rndv-ok-to-put packet on stack
@@ -749,7 +752,7 @@ Action invoked by the reciever of a rendezvous message.
 Question: it may be possible to reuse the incoming packet as the
 outgoing packet, thus saving some stores to the packet structure.
 
-\subsection{RndvOkToSend}
+\subsection{RndvClrToSend}
 Action invoked by the sender of a rendezvous message on receipt of an
 acknowledgement from the receiver.
 \begin{verbatim}
@@ -909,7 +912,7 @@ instruction.  Otherwise, the code shown here must be expanded to test
 two 32-bit fields.  
 
 \begin{verbatim}
-MPID_CH3U_Find_or_post( int tag, int source, int context_id, int *found )
+MPID_CH3U_Request_FPOAU( int source, int tag, int context_id, int *found )
    /* Look in unexpected queue for a match */
    MPID_Message_match m.match = {tag, source, context_id};
    if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE) {
@@ -951,11 +954,11 @@ use wildcards for the tag or source.
 The next routine is always called in response to receiving a message packet,
 and hence simply passes the part of the packet that contains the tag, context,
 and source values directly to the routine.  It is essentially the same as 
-\code{MPID_CH3U_Find_or_post}, except that it checks first in the posted
+\code{MPID_CH3U_Request_FPOAU}, except that it checks first in the posted
 receive queue and, if the data is not found, adds to the unexpected receive
 queue.  The wildcard match testing is slightly different as well.
 \begin{verbatim}
-MPID_CH3U_Find_or_post_unexp( MPID_Message_match *, int *found )
+MPID_CH3U_Request_FUOAP( MPID_Message_match *, int *found )
    /* Look in posted queue for a match */
    for (r = posted_queue->head; r; r = r->next ) {
        if (r->match == (m & r->mask)) {
@@ -978,9 +981,9 @@ Cancel operations require that requests be removed for the queues.
 
 This routine is required for cancelling sends.
 \begin{verbatim}
-MPID_CH3U_DeQueue_unexp( int req_id )
+MPID_CH3U_DeQueue_unexp( int handle )
     for (r = unexpected->head; r; r = r->next) {
-        if (r->handle == req_id) {
+        if (r->handle == handle) {
              remove r from list and return it
         }
     return null
@@ -989,9 +992,9 @@ MPID_CH3U_DeQueue_unexp( int req_id )
 
 This routine is required for cancelling receives
 \begin{verbatim}
-MPID_CH3U_DeQueue_posted( int req_id )
+MPID_CH3U_DeQueue_posted( int handle )
     for (r = posted->head; r; r = r->next) {
-        if (r->handle == req_id) {
+        if (r->handle == handle) {
              remove r from list and return it
         }
     return null
@@ -1116,7 +1119,7 @@ typedef struct {
     struct pollfd *activefds;
     MPID_Request  *unexpected_recv;    /* List of receives */
     MPID_Request  *posted_recv;        /* List of posted receives */
-    } MPID_Device;
+    } MPIDI_Process;
 \end{verbatim}
 The receive lists are held on the device to simplify handling of wildcard
 receives.  
@@ -1133,44 +1136,65 @@ typedef struct {
     MPID_Request *active_receive; /* Active receive, if any */
     int lpid;      /* Local process id for the partner of this connection
                       (used to implement group routines) */
-    } MPID_VC;
+    } MPIDI_VC;
 \end{verbatim}
 The pending sends have a head and a tail pointer because it is a queue and we
 want the operations of insert and delete on this queue to be fast.
 
-\subsection{new\_request}
-Return a new request.  
-
+<<<<<<< tcpadi3.tex
+\subsection{Requests}
+\code{CH3_Request_create} returns a new request allocated from the
+request pool.  The initial implementation uses the \code{MPIU_Handle}
+module to manage this pool.  As a result, the \code{id} field in the
+request structure automatically contains an integer handle for the
+request object that may be used as the \code{MPI_Request} handle.
 \begin{verbatim}
-CH3_request_create() 
-    request = request_avail;
-    request_avail = request->next;
-    return request
+CH3_Request_create() 
+{
+    request = MPIU_Handle_obj_alloc(&MPID_Request_mem);
+    request->ref_count = 1;
+    return request;
+}
 \end{verbatim}
-This routine should be thread safe in a multithreaded environment, preferably
-without using locks (e.g., use compare-and-swap to update
-\code{request_avail}).  
+This routine requires that \code{MPIU_Handle_obj_alloc} be thread safe in a
+multithreaded environment, preferably without using locks.
 
 Question: What should this routine do if it cannot allocate a new
 request?  Is that a fatal error?  What about the fault-tolerant case?
 Should the code look something like
 \begin{verbatim}
 CH3_request_create()
-    request = request_avail;
+{
+    request = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (!request) {
        int limit = 200;
        do { 
           CH3_Progress( 0 );
-          request = request_avail;
+	  request = MPIU_Handle_obj_alloc(&MPID_Request_mem);
        }
        while (!request && limit--) {
        if (!request) { 
 	   MPID_Abort( ) // Give up
     }
-    request_avail = request->next;
-    return request
+    request->ref_count = 1;
+    return request;
 }    
 \end{verbatim}
+
+\code{CH3_Request_destroy} releases the resources used by an existing request
+back to the request pool.  
+\begin{verbatim}
+CH3_Request_destroy( MPID_Request * request ) 
+{
+    request->ref_count -= 1;
+    if (request->ref_count == 0)
+    { 
+        MPIU_Handle_obj_free(&MPID_Request_mem, request);
+    }
+}
+\end{verbatim}
+This routine requires that \code{MPIU_Handle_obj_free} be thread safe in a
+multithreaded environment, preferably without using locks.
 
 \subsection{iStartMsg}
 \code{CH3_iStartMsg} is called to send a message.  It returns a
@@ -1292,6 +1316,11 @@ then calls \code{CH3_iWrite} to continue writing the data (note that
 the request is left on the active list in case some other thread want
 to start sending data on this connection).
 
+IMPLEMENTATION NOTE: The final case may result in deep recursion for
+large messages.  This problem must be solved eventually.  For now, we
+simply verify that the call stack does not get too deep and hope for
+the best.
+
 \subsection{Progress}
 \label{sec:progress}
 The progress routine may be implemented on single-threaded systems as
@@ -1316,7 +1345,8 @@ CH3_Progress( int isblocking )
                     switch on packet headr
                         call fcn associated with pkt type
                         (These are MPID functions, not TCP functions, 
-                        since pkts are in MPID layer.  Call them MPID_CH3_xxx) 
+                         since pkts are in MPID layer.  Call them
+                         MPID_CH3U_xxx) 
                     end switch
                 case reading data to known address:
                      read more data.
