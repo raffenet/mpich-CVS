@@ -149,7 +149,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
                         pg = pg->next;
                         if (pg == NULL)
 			{
-                            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pglookup", "**pglookup %s", conn->pg_id);
                             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
                             return mpi_errno;
                         }
