@@ -22,7 +22,9 @@ void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     req->ib.iov_offset = 0;
 
     MPIU_dbg_printf("ch3_iwrite\n");
-    MPIDI_CH3I_IB_post_write(vc, req);
+    /*MPIDI_CH3I_IB_post_write(vc, req);*/
+    vc->ib.send_active = req;
+    ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
 }
