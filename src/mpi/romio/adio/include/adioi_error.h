@@ -21,3 +21,12 @@
     error_code = MPIR_Err_setmsg(MPI_ERR_FILE, MPIR_ERR_FILE_CORRUPT, myname, (char *) 0, (char *) 0); \
     return ADIOI_Error(MPI_FILE_NULL, error_code, myname); } }
 #endif
+
+
+/* TODO: handle the independent io case more gracefully  */
+#define ADIOI_TEST_DEFERRED(fh, myname)\
+    if(! (fh)->is_open ) {\
+	    fprintf(stderr,\
+		"%s: Independent IO attempted after hinting no_indep_rw\n", \
+		(myname));\
+	    MPI_Abort((fh)->comm, 99); }
