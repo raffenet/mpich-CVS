@@ -72,6 +72,10 @@ NEC (as well as us) have looked at datatype optimizations.
 The LAPI-based implementation uses remote-memory-access.
 
 \section{Requirements}
+The focus of the first two ADI designs was on the point-to-point message
+passing.  
+The third version of the abstract device interface is intended to provide
+support for more of MPI.  
 This section lists requirements that we address in the ADI-3 design.
 
 \subsection{General Capabilities}
@@ -149,28 +153,6 @@ This section lists requirements that we address in the ADI-3 design.
   ready-send. 
 \end{enumerate}
 
-\subsection{Control and Customization}
-MPI attributes on communicators (both MPI\_COMM\_WORLD and specific
-communicators) provide a clean way to pass information to the ADI without
-introducing a new API.  Such attributes could control debugging, packet sizes
-(payloads), flow-control thresholds, and the like.
-
-Question: where are the keyvals defined?  Since these might be
-device-specific, how are they added to \file{mpi.h} (see signals below)?  
-
-For MPI-3: an \code{info} on communicator creation would be better than an
-attribute. 
-
-When an attribute is change, the ADI needs to be notified.  The ADI also needs
-to make its own changes (e.g., to use the attribute to report data back to the
-user).
-
-\begin{description}
-\item[AttrSet()]
-\item[AttrGet()]
-\item[AttrChanged()]
-\end{description}
-
 \subsection{Device-Specific Issues}
 How are device-specific parameters set and communicated to the device?  How
 are parameters made available to an interrogator?
@@ -187,19 +169,6 @@ are parameters made available to an interrogator?
 \item Support MIMD as well as SPMD
 \item Spin wait control
 \item Sends must pipeline transfers when appropriate (multibuffer)
-\end{enumerate}
-
-\subsubsection{VIA}
-\begin{enumerate}
-\item Support pinning of memory locations, both on request (e.g., for
-  MPI\_Send\_init), and adaptively (i.e., recognize a loop of requests).
-\end{enumerate}
-
-
-\section{Technology Issues}
-
-\subsection{Shared Memory}
-\begin{enumerate}
 \item Memory synchronization and ordering.  We want to make this as
   light-weight as possible, issuing assembler instructions when possible
 \item Lock-free code: there quite a bit of literature on lock-free systems.
@@ -211,10 +180,18 @@ are parameters made available to an interrogator?
   LL/SC is fairness (these algorithms aren't wait-free, just lock-free).
 \end{enumerate}
 
-\section{Design}
+\subsubsection{VIA}
+\begin{enumerate}
+\item Support pinning of memory locations, both on request (e.g., for
+  MPI\_Send\_init), and adaptively (i.e., recognize a loop of requests).
+\end{enumerate}
 
-This section contains ideas.  As we evaluate them, we will keep the reasons
-why design choices were made.
+
+\section{Design}
+\label{sec:design}
+
+%This section contains ideas.  As we evaluate them, we will keep the reasons
+%why design choices were made.
 
 There are two major goals of the ADI that are in tension.  One is to provide
 an easy-to-port interface; the other is to provide a general, highly capable
@@ -272,7 +249,7 @@ methods.
 
 The operations on a Request are
 \begin{description}
-\item[Request RequestAlloc]
+\item[Request RequestAlloc()]
 \item[RequestFree( Request * )]
 \end{description}
 
@@ -284,7 +261,7 @@ definition (adding fields to the structure) if necessary.
 
 The operations on a Communicator are
 \begin{description}
-\item[Comm CommAlloc]
+\item[Comm CommAlloc()]
 \item[CommFree( Comm * )]
 \end{description}
 
@@ -308,7 +285,7 @@ structures containing details about the datatype).
 
 The operations on a Datatype are
 \begin{description}
-\item[Datatype DatatypeAlloc]
+\item[Datatype DatatypeAlloc()]
 \item[DatatypeFree( Datatype * )]
 \item[DatatypeCommit( Datatype )]
 \end{description}
@@ -317,7 +294,7 @@ The operations on a Datatype are
 
 The operations on a Window are
 \begin{description}
-\item[Window WindowAlloc]
+\item[Window WindowAlloc()]
 \item[WindowFree(Window *)]
 \end{description}
 
@@ -330,6 +307,42 @@ The operations on a File are
 \item[FileFree(File *)]
 \end{description}
 
+\subsubsection{Info}
+The \code{MPI\_Info} object is used by several classes of MPI-2 routines to
+provide for customization.  Thus, the \code{Info} object must be understood by
+the device, and it makes sense to put it on the same footing as the other MPI
+opaque objects.  Most if not all devices will choose to use the generic
+\code{Info} support included with ADI-3.
+
+The operations on an Info are
+\begin{description}
+\item[Info InfoAlloc()]
+\item[InfoFree(Info *)]
+\item[InfoSet( const char *key, const char *value )]
+\item[InfoGet( const char *key, char **value )]
+\end{description}
+
+\subsection{Control and Customization}
+MPI attributes on communicators (both MPI\_COMM\_WORLD and specific
+communicators) provide a clean way to pass information to the ADI without
+introducing a new API.  Such attributes could control debugging, packet sizes
+(payloads), flow-control thresholds, and the like.
+
+Question: where are the keyvals defined?  Since these might be
+device-specific, how are they added to \file{mpi.h} (see signals below)?  
+
+For MPI-3: an \code{info} on communicator creation would be better than an
+attribute. 
+
+When an attribute is change, the ADI needs to be notified.  The ADI also needs
+to make its own changes (e.g., to use the attribute to report data back to the
+user).
+
+\begin{description}
+\item[AttrSet()]
+\item[AttrGet()]
+\item[AttrChanged()]
+\end{description}
 
 \subsection{Job Startup/Rundown API}
 
@@ -349,30 +362,72 @@ In some cases, we may want to use different code depending on whether services
 such as stdin/out/err forwarding are provided.  A query interface is provided
 to discover these capabilities.
 
+One effort to define a job management interface is PSCHED \cite{psched01};
+however, this interface addresses the needs of third-party scheduling policy
+services, and does not include any services for submitting jobs into a job
+management system.
+
 \begin{description}
-\item[{ProcessCreate(const char *argv[], int nproc, ??, ProcessId\_t *id)}]
-\item[{ProcessSignal(const ProcessId\_t id[], int nproc, int sig)}]
-\item[{ProcessKill(const ProcessId\_t id[], int nproc)}]
-\item[ProcessControlQuery(const char *name, char **value)]Queries include
+\item[ProcessCreate](const char *argv[], const char *env[], 
+                     int nproc, Info info,
+    ProcessGroupId\_t *id)\\
+\code{argv} includes the command name as \code{argv[0]}.  The returned value
+    is a \code{ProcessGroupId\_t} which contains everything about the created
+    processes. 
+    \code{env} is of the form \code{name=value} for each environment variable.
+    Both \code{argv} and \code{env} are terminated by a null string.
+\item[ProcessSignal](const ProcessGroupId\_t id[], int sig)\\
+\item[ProcessKill](const ProcessGroupId\_t id[], int nproc)\\
+\item[ProcessControlQuery](const char *name, char **value)\\
+      Queries include
       \begin{description}
       \item[signals]Can signals be delivered?
       \item[stdio]Are stdin/out/err handled?
       \item[env]Is the environment propagated?
       \item[cmdlineargs]Are the command-line arguments propagated?
       \end{description}
+\item[ProcessFree](ProcessGroupId\_t *id)\\
+\item[ProcessGroupCreate](const ProcessGroupId\_t in, const int ranks[], int
+  nranks, ProcessGroupId\_t *out )\\
+  Create a process group from an existing group by selecting particular
+  members.
 \end{description}
+Question: signal is Unix-specific.  Do we want that?  What about enviroment
+variables? 
+
+Question: What info keys do we predefine?
+
+Question: Should \code{ProcessCreate} be non-blocking?  
+
+A sample \code{ProcessGroupId\_t} might look something like
+\begin{verbatim}
+    typedef struct {
+        HostName name;   /* Not just an IP address */
+        int      pid;
+        int      rcode;  /* Return code if it has exited */
+    } ProcessInfo;
+    typedef struct {
+        int n_processes;
+        ProcessInfo *pinfo;
+    } *ProcessGroupId_t;
+\end{verbatim}
 
 The second step, connecting the created processes, requires passing
 information between the created processes and the creating processes.  We
-provide a simple query interface for this
-
+provide a simple query interface for this:
 \begin{description}
-\item[QuerySet(const char *name, const char *value)]
-\item[QueryGet(const char *name, char **result)]
+\item[QuerySet](const char *name, const char *value)\\
+\item[QueryGet](const char *name, const char **result)\\
+\item[QueryFree](const char **result)\\
 \end{description}
 
 Implementations of this can range from looking at environment variables to
 contacting a distributed data server.
+
+Note that in a single-threaded environment, \code{QueryGet} can simply return
+a pointer to the internal storage; \code{QueryFree} is then a no-op.  In a
+multi-threaded environment, it may be necessary to allocate and free
+thread-specific storage.
 
 \questions
 How are services such as connection signaling, stdin/out/err/command routing
@@ -380,6 +435,8 @@ handled?   My current preference is to make minimal requirements on the job
 startup/rundown system, and allow all other services to be performed via a
 separate user process or processes.  However, the API should allow a capable
 job manager (e.g., one capable of delivering signals) to do so.
+
+Should \code{mpiexec} be built using these operations? (Yes?)
 
 \subsection{Queue-based ADI}
 The building blocks for this approach are queue operations combined with
@@ -447,8 +504,8 @@ Bsend because SGI has a 16K request limitation.
 Topology information is part of the communicator structure.
 Information on the physical topology is made available with the functions
 \begin{description}
-\item[TopoDepth]
-\item[TopoId(int depth)]
+\item[int TopoDepth()]
+\item[int TopoId(int depth)]
 \end{description}
 
 Question: Should all extensions to the communicator be through the attribute
@@ -508,12 +565,26 @@ method (in Globus terms) can translate between our data-structures and ones
 that the device prefers.  In most cases, these \emph{transfer functions}
 should be no-ops.
 
-\section{The ??? device (replaces channel)}
+\section{The RMQ device}
+The Remote Memory Queue device replaces the channel device as the simple,
+low-level device that is easy to implement.   These operations include:
+\begin{description}
+\item[INIT-RMQ]
+\item[SEND-ENVELOPE]
+\item[SEND-DATA]
+\end{description}
+
+All other ADI-3 operations are provided by generic implementations built from
+these simple operations.  Each class of ADI-3 operations, such as datatype
+handling or collectiver oeprations, is provided by code in a separate
+directory, as shown in Figure~\ref{fig:mpid-dirs}.
 
 \begin{figure}
 \centerline{\epsfbox{mpiddir.eps}}
 \caption{A possible organization of the mpid directory}
+\label{fig:mpid-dirs}
 \end{figure}
+
 \subsubsection{Packet Types}
 This enumerates all of the packet types supported in the queue oriented
 device.  For each type, there is a rationale for that type.  Some are
@@ -758,6 +829,14 @@ required on systems with 64-bit pointers)\\
 Easy to extend (just malloc)&Easy to preallocate\\
 \end{tabular}
 \end{center}
+Note that in both cases, thread-safe allocation requires a fairly simple
+operation such as compare and swap; fetch and increment is not sufficient
+because the objects are not allocated in a stack-like fashion.
+
+A third choice is to used both representations:  all objects are allocated
+from an array, providing the advantages of an index-based representation, but
+the objects themselves are represented by a pointer to the object, making
+direct access faster.
 
 \bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
 \bibliographystyle{plain}
