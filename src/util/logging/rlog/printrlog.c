@@ -5,7 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 /* Allow the printf's that describe the contents of the file.  Error 
-   messages use the MPIU_Error_printf routines */
+   messages use the printf routines */
 /* style: allow:printf:9 sig:0 */
 
 #include "rlog.h"
@@ -97,11 +97,11 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-	MPIU_Usage_printf("printrlog rlogfile [EVENTS | STATES | ARROWS | HEADER | COMM | ALL | SUMMARY ]\n");
-	MPIU_Usage_printf("printrlog rlogfile find endtime\n");
-	MPIU_Usage_printf("printrlog rlogfile validate\n");
-	MPIU_Usage_printf("printrlog rlogfile order\n");
-	MPIU_Usage_printf("printrlog rlogfile arroworder\n");
+	printf("printrlog rlogfile [EVENTS | STATES | ARROWS | HEADER | COMM | ALL | SUMMARY ]\n");
+	printf("printrlog rlogfile find endtime\n");
+	printf("printrlog rlogfile validate\n");
+	printf("printrlog rlogfile order\n");
+	printf("printrlog rlogfile arroworder\n");
 	return -1;
     }
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     pInput = RLOG_CreateInputStruct(argv[1]);
     if (pInput == NULL)
     {
-	MPIU_Error_printf("Error opening '%s'\n", argv[1]);
+	printf("Error opening '%s'\n", argv[1]);
 	return -1;
     }
 
@@ -169,13 +169,13 @@ int main(int argc, char *argv[])
 	    printf("num arrows: %d\n", num_arrows);
 	    RLOG_GetNextArrow(pInput, &lastarrow);
 	    if (lastarrow.start_time > lastarrow.end_time)
-		MPIU_Error_printf("start > end: %g > %g\n", lastarrow.start_time, lastarrow.end_time);
+		printf("start > end: %g > %g\n", lastarrow.start_time, lastarrow.end_time);
 	    while (RLOG_GetNextArrow(pInput, &arrow) == 0)
 	    {
 		if (arrow.start_time > arrow.end_time)
-		    MPIU_Error_printf("start > end: %g > %g\n", arrow.start_time, arrow.end_time);
+		    printf("start > end: %g > %g\n", arrow.start_time, arrow.end_time);
 		if (arrow.end_time < lastarrow.end_time)
-		    MPIU_Error_printf("arrows out of order: %d < %d\n", arrow.end_time, lastarrow.end_time);
+		    printf("arrows out of order: %d < %d\n", arrow.end_time, lastarrow.end_time);
 		lastarrow = arrow;
 	    }
 	}
@@ -192,20 +192,20 @@ int main(int argc, char *argv[])
 	    RLOG_GetNextArrow(pInput, &lastarrow);
 	    if (lastarrow.start_time > lastarrow.end_time)
 	    {
-		MPIU_Error_printf("Error, arrows endtime before starttime: %g < %g\n", lastarrow.end_time, lastarrow.start_time);
+		printf("Error, arrows endtime before starttime: %g < %g\n", lastarrow.end_time, lastarrow.start_time);
 		PrintArrow(&arrow);
 	    }
 	    while (RLOG_GetNextArrow(pInput, &arrow) == 0)
 	    {
 		if (lastarrow.end_time > arrow.end_time)
 		{
-		    MPIU_Error_printf("Error, arrows out of order: %g > %g\n", lastarrow.end_time, arrow.end_time);
+		    printf("Error, arrows out of order: %g > %g\n", lastarrow.end_time, arrow.end_time);
 		    PrintArrow(&lastarrow);
 		    PrintArrow(&arrow);
 		}
 		if (arrow.start_time > arrow.end_time)
 		{
-		    MPIU_Error_printf("Error, arrows endtime before starttime: %g < %g\n", arrow.end_time, arrow.start_time);
+		    printf("Error, arrows endtime before starttime: %g < %g\n", arrow.end_time, arrow.start_time);
 		    PrintArrow(&arrow);
 		}
 		lastarrow = arrow;
@@ -221,26 +221,26 @@ int main(int argc, char *argv[])
 		{
 		    if (event.end_time < event.start_time)
 		    {
-			MPIU_Error_printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
+			printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
 		    }
 		    lastevent = event;
 		    while (RLOG_GetNextEvent(pInput, j, i, &event) == 0)
 		    {
 			if (lastevent.start_time > event.start_time)
 			{
-			    MPIU_Error_printf("Error, events out of order: %g > %g\n", lastevent.start_time, event.start_time);
+			    printf("Error, events out of order: %g > %g\n", lastevent.start_time, event.start_time);
 			    PrintEvent(&lastevent);
 			    PrintEvent(&event);
 			}
 			else if (lastevent.end_time > event.start_time)
 			{
-			    MPIU_Error_printf("Error, starttime before previous endtime: %g > %g\n", lastevent.end_time, event.start_time);
+			    printf("Error, starttime before previous endtime: %g > %g\n", lastevent.end_time, event.start_time);
 			    PrintEvent(&lastevent);
 			    PrintEvent(&event);
 			}
 			if (event.end_time < event.start_time)
 			{
-			    MPIU_Error_printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
+			    printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
 			    PrintEvent(&event);
 			}
 			lastevent = event;
@@ -267,13 +267,13 @@ int main(int argc, char *argv[])
 	{
 	    if (lastevent.start_time > event.start_time)
 	    {
-		MPIU_Error_printf("Error, events out of order: %g > %g\n", lastevent.start_time, event.start_time);
+		printf("Error, events out of order: %g > %g\n", lastevent.start_time, event.start_time);
 		PrintEvent(&lastevent);
 		PrintEvent(&event);
 	    }
 	    if (event.end_time < event.start_time)
 	    {
-		MPIU_Error_printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
+		printf("Error, event endtime before starttime: %g < %g\n", event.end_time, event.start_time);
 		PrintEvent(&event);
 	    }
 	    lastevent = event;
@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
 
     if (RLOG_GetFileHeader(pInput, &header))
     {
-	MPIU_Error_printf("unable to read the file header\n");
+	printf("unable to read the file header\n");
 	RLOG_CloseInputStruct(&pInput);
 	return -1;
     }
