@@ -1011,7 +1011,8 @@ if test -n "$mpi_sgi"; then
    PAC_TEST_MPI_HAVE_OFFSET_KIND
 fi
 #
-# check if darray and subarray constructors are defined in the MPI implementation
+# check if darray and subarray constructors are defined in the MPI 
+# implementation 
 if test $WITHIN_KNOWN_MPI_IMPL = no -o $FROM_MPICH2 != no ; then
    PAC_MPI_DARRAY_SUBARRAY
 else
