@@ -259,7 +259,11 @@ public class ModelTime extends DefaultBoundedRangeModel
 
     /*
        time2pixel() and pixel2time() are local to this object.
-       They have nothing to do the ones in RulerTime.java
+       They have nothing to do the ones in ScrollableObject
+       (i.e. RulerTime/CanvasTime).  In general, no one but
+       this object and possibly ScrollbarTime needs to access
+       the following time2pixel() and pixel2time() because the
+       ratio to flip between pixel and time is related to scrollbar.
     */
     private int time2pixel( double time_coord )
     {
@@ -428,6 +432,25 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.setScrollBarIncrements();
     }
 
+    public void zoomInRapidly( double tZoom_init, double tZoom_extent )
+    {
+        double tZoom_center;
+
+        iZoom_level += 1;
+        tZoomScale  *= tZoomFactor;
+        if (    tView_init  < tZoom_focus
+             && tZoom_focus < tView_init + tView_extent )
+            tZoom_center = tZoom_focus;
+        else
+            tZoom_center = tView_init + tView_extent / 2.0;
+        this.setTimeViewExtent( tView_extent / tZoomFactor );
+        this.setTimeViewPosition( tZoom_center - tView_extent / 2.0 );
+
+        iViewPerTime = iView_width / tView_extent;
+        this.updatePixelCoords();
+        this.setScrollBarIncrements();
+    }
+
     public void zoomHome()
     {
         iZoom_level = 0;
@@ -449,16 +472,17 @@ public class ModelTime extends DefaultBoundedRangeModel
         for ( int i = listeners.length - 2; i >= 0; i -=2 ) {
             if (  listeners[i] == ChangeListener.class
                && listeners[i+1].getClass().getName().equals(listenerClass) ) {
-                Debug.println( "ModelTime: fireStateChanged()'s "
-                             + "listeners[" + (i+1) + "] = "
-                             + listeners[i+1].getClass().getName() );
+                if ( Debug.isActive() )
+                    Debug.println( "ModelTime: fireStateChanged()'s "
+                                 + "listeners[" + (i+1) + "] = "
+                                 + listeners[i+1].getClass().getName() );
                 if (changeEvent == null) {
                     changeEvent = new ChangeEvent(this);
                 }
                 ((ChangeListener)listeners[i+1]).stateChanged(changeEvent);
             }
 
-            if (  listeners[i] == ChangeListener.class )
+            if ( Debug.isActive() && listeners[i] == ChangeListener.class )
                 Debug.println( "ModelTime: fireStateChanged()'s "
                              + "ChangeListeners[" + (i+1) + "] = "
                              + listeners[i+1].getClass().getName() );
@@ -468,16 +492,21 @@ public class ModelTime extends DefaultBoundedRangeModel
 
     public void adjustmentValueChanged( AdjustmentEvent evt )
     {
-        Debug.println( "ModelTime: AdjustmentValueChanged()'s START: " );
-        Debug.println( "adj_evt = " + evt );
+        if ( Debug.isActive() ) {
+            Debug.println( "ModelTime: AdjustmentValueChanged()'s START: " );
+            Debug.println( "adj_evt = " + evt );
+        }
 
-        Debug.println( "ModelTime(before) = " + this.toString() );
-        updateTimeCoords();
-        Debug.println( "ModelTime(after) = " + this.toString() );
+        if ( Debug.isActive() )
+            Debug.println( "ModelTime(before) = " + this.toString() );
+        this.updateTimeCoords();
+        if ( Debug.isActive() )
+            Debug.println( "ModelTime(after) = " + this.toString() );
 
         // notify all TimeListeners of changes from Adjustment Listener
-        fireTimeChanged();
-        Debug.println( "ModelTime: AdjustmentValueChanged()'s END: " );
+        this.fireTimeChanged();
+        if ( Debug.isActive() )
+            Debug.println( "ModelTime: AdjustmentValueChanged()'s END: " );
     }
 
     private static final  double  MATH_LOG_10 = Math.log( 10.0 );
@@ -507,8 +536,9 @@ public class ModelTime extends DefaultBoundedRangeModel
         else
             incre_mant = 1.0;
 
-        Debug.println( "ModelTime.getRulerIncrement(" + t_incre + ") = "
-                     + incre_mant * incre_ftr );
+        if ( Debug.isActive() )
+            Debug.println( "ModelTime.getRulerIncrement(" + t_incre + ") = "
+                         + incre_mant * incre_ftr );
         return incre_mant * incre_ftr;
     }
     

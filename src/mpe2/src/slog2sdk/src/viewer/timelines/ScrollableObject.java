@@ -16,7 +16,7 @@ import javax.swing.*;
 import base.drawable.TimeBoundingBox;
 
 public abstract class ScrollableObject extends JComponent
-                                       implements ScrollableImage
+                                       implements ScrollableView
 {
     //  The least number of images for this class to work is "3"
     private   static final int   NumImages = 3;
@@ -214,8 +214,9 @@ public abstract class ScrollableObject extends JComponent
     //  Given a graphic context, create an offscreen image of specified size.
     private Image createImage( Dimension image_sz )
     {
-        Debug.println( "ScrollableObject: createImage()'s image_sz = "
-                     + image_sz );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: createImage()'s image_sz = "
+                         + image_sz );
 
         if ( image_sz.width > 0 && image_sz.height > 0 )
             return super.createImage( image_sz.width, image_sz.height );
@@ -229,10 +230,12 @@ public abstract class ScrollableObject extends JComponent
         double cur_tView_extent = model.getTimeViewExtent();
         double cur_tView_final  = cur_tView_init + cur_tView_extent;
 
-        Debug.println( "ScrollableObject: getNumImagesMoved()'s START: " );
-        Debug.println( "cur_tView_init  = " + cur_tView_init + ",  "
-                     + "cur_tView_final = " + cur_tView_final );
-        Debug.println( "tImages[ cur ] = " + tImages[ cur_img_idx ] );
+        if ( Debug.isActive() ) {
+            Debug.println( "ScrollableObject: getNumImagesMoved()'s START: " );
+            Debug.println( "cur_tView_init  = " + cur_tView_init + ",  "
+                         + "cur_tView_final = " + cur_tView_final );
+            Debug.println( "tImages[ cur ] = " + tImages[ cur_img_idx ] );
+        }
 
         double view_init_in_imgs, view_final_in_imgs;
         int Nimages_moved_fwd, Nimages_moved_back, Nimages_moved;
@@ -240,8 +243,9 @@ public abstract class ScrollableObject extends JComponent
 
         // compute the beginning image index in the image buffer
         tImages_init = tImages_all.getEarliestTime();
-        Debug.println( "ScrollableObject: getNumImagesMoved() "
-                     + "tImages_init = " + tImages_init );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: getNumImagesMoved() "
+                         + "tImages_init = " + tImages_init );
 
         // the integer part of view_init_in_imgs is the image order of 
         // the image where cur_tView_init is in.  Nimages_moved_fwd is 
@@ -264,9 +268,11 @@ public abstract class ScrollableObject extends JComponent
         if ( Nimages_moved_back < 0 )
             Nimages_moved = Nimages_moved_back;
 
-        Debug.println( "ScrollableObject: getNumImagesMoved() "
-                     + "Nmages_moved = " + Nimages_moved );
-        Debug.println( "ScrollableObject: getNumImagesMoved()'s END: " );
+        if ( Debug.isActive() ) {
+            Debug.println( "ScrollableObject: getNumImagesMoved() "
+                         + "Nmages_moved = " + Nimages_moved );
+            Debug.println( "ScrollableObject: getNumImagesMoved()'s END: " );
+        }
 
         return Nimages_moved;
     }
@@ -274,7 +280,8 @@ public abstract class ScrollableObject extends JComponent
     // scrollable_image interface when the view is zoomed in or out.
     public void checkToZoomView()
     {
-        Debug.println( "ScrollableObject: checkToZoomView()'s START: " );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: checkToZoomView()'s START: " );
         double cur_tView_extent = model.getTimeViewExtent();
         if ( cur_tView_extent * NumViewsPerImage != tImage_extent ) {
             setImagesInitTimeBounds();
@@ -286,7 +293,8 @@ public abstract class ScrollableObject extends JComponent
                                  tImages[ img_idx ] );
             finalizeAllOffImages( tImages_all );
         }
-        Debug.println( "ScrollableObject: checkToZoomView()'s END: " );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: checkToZoomView()'s END: " );
     }
 
     // scrollable_image interface when the view is scrolled by the scrollbar.
@@ -298,7 +306,8 @@ public abstract class ScrollableObject extends JComponent
         int start_idx;
         int idx;
 
-        Debug.println( "ScrollableObject: checkToScrollView()'s START: " );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: checkToScrollView()'s START: " );
         //  Using the old cur_img_idx as the center of images to locate
         //  the images needed to be redrawn
         img_mv_dir = 0;
@@ -316,10 +325,11 @@ public abstract class ScrollableObject extends JComponent
                 for ( idx = 1; idx <= Math.abs( Nimages_moved ); idx++ ) {
                     img_idx = getValidImageIndex( start_idx
                                                 + img_mv_dir * idx );
-                    Debug.println( "ScrollableObject: checkToScrollView() "
-                                 + "cur_img_idx = " + cur_img_idx + ", "
-                                 + "start_idx = " + start_idx + ", "
-                                 + "img_idx = " + img_idx );
+                    if ( Debug.isActive() )
+                        Debug.println( "ScrollableObject: checkToScrollView() "
+                                     + "cur_img_idx = " + cur_img_idx + ", "
+                                     + "start_idx = " + start_idx + ", "
+                                     + "img_idx = " + img_idx );
 
                     // synchronize tImages_all with tImages[]
                     // remove unneeded tImage[ img_idx ] from tImages_all
@@ -374,10 +384,12 @@ public abstract class ScrollableObject extends JComponent
                 cur_img_idx = getValidImageIndex( cur_img_idx + Nimages_moved );
             }
             else {  // Math.abs( Nimages_moved ) > NumImages
-                Debug.println( "****************************************" );
-                Debug.println( "ScrollableObject: checkToScrollView() "
-                             + "| Nimages_moved( " + Nimages_moved + " ) | >= "
-                             + "NumImages( " + NumImages + " )" );
+                if ( Debug.isActive() ) {
+                    Debug.println( "****************************************" );
+                    Debug.println( "ScrollableObject: checkToScrollView() "
+                                 + "| Nimages_moved( " + Nimages_moved
+                                 + " ) | >= NumImages( " + NumImages + " )" );
+                }
                 setImagesInitTimeBounds();
 
                 initializeAllOffImages( tImages_all );
@@ -388,7 +400,8 @@ public abstract class ScrollableObject extends JComponent
                 finalizeAllOffImages( tImages_all );
             } 
         }   // Endof if ( Nimages_moved != 0 )
-        Debug.println( "ScrollableObject: checkToScrollView()'s END: " );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: checkToScrollView()'s END: " );
     }
 
     protected int time2pixel( double time_coord )
@@ -407,9 +420,10 @@ public abstract class ScrollableObject extends JComponent
     // buffer measured from the far left of the buffer.
     public int getXaxisViewPosition()
     {
-        Debug.println( "ScrollableObject: getViewPosition() : "
-                     + "model.getTimeViewPosition()="
-                     + model.getTimeViewPosition() );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: getViewPosition() : "
+                         + "model.getTimeViewPosition()="
+                         + model.getTimeViewPosition() );
         return time2pixel( model.getTimeViewPosition() );
     }
 
@@ -433,18 +447,19 @@ public abstract class ScrollableObject extends JComponent
 
     public void paintComponent( Graphics g )
     {
-        // requestFocus();
+        requestFocus();
 
-        Debug.println( "ScrollableObject : paintComponent()'s START : " );
-        // Rectangle clipRect = g.getClipBounds();
-        Debug.println( "ScrollableObject : paintComponent() "
-                     + "g.getClipBounds() = " + g.getClipBounds() );
-        Debug.println( "ScrollableObject : paintComponent() "
-                     + "this = " + this );
-        if ( src_vport != null )
-            Debug.println( "ScrollableObject: paintComponent() "
-                         + "src_vport.getViewPosition() = "
-                         + src_vport.getViewPosition() );
+        if ( Debug.isActive() ) {
+            Debug.println( "ScrollableObject : paintComponent()'s START : " );
+            Debug.println( "ScrollableObject : paintComponent() "
+                         + "g.getClipBounds() = " + g.getClipBounds() );
+            Debug.println( "ScrollableObject : paintComponent() "
+                         + "this = " + this );
+            if ( src_vport != null )
+                Debug.println( "ScrollableObject: paintComponent() "
+                             + "src_vport.getViewPosition() = "
+                             + src_vport.getViewPosition() );
+        }
         /*
         //  These statements are moved to componentResized()
         // if ( offscreenImage == null ) {
@@ -488,16 +503,18 @@ public abstract class ScrollableObject extends JComponent
                 // viewport_move_direction = -1 * image_move_direction
                 side_offset = side_bit * vport_mv_dir * side_idx;
                 img_idx = getValidImageIndex( cur_img_idx + side_offset );
-                Debug.println( "ScrollableObject: paintComponent() "
-                             + "side_offset = " + side_offset + ",  "
-                             + "img_idx = " + img_idx );
+                if ( Debug.isActive() )
+                    Debug.println( "ScrollableObject: paintComponent() "
+                                 + "side_offset = " + side_offset + ",  "
+                                 + "img_idx = " + img_idx );
                 screen_img_pos = ( half_NumImages + side_offset ) * img_width;
                 if ( offscreenImages[ img_idx ] != null )
                     g.drawImage( offscreenImages[ img_idx ],
                                  screen_img_pos, 0, this );
             }
         }
-        Debug.println( "ScrollableObject : paintComponent()'s END : " );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject : paintComponent()'s END : " );
     }
 
     public abstract int getJComponentHeight();
@@ -515,15 +532,18 @@ public abstract class ScrollableObject extends JComponent
            because image size cannot be determined before the object
            is created
         */
-        Debug.println( "ScrollableObject: componentResized()'s START: " );
-        Debug.println( "incoming viewport = " + viewport );
+        if ( Debug.isActive() ) {
+            Debug.println( "ScrollableObject: componentResized()'s START: " );
+            Debug.println( "incoming viewport = " + viewport );
+        }
 
         src_vport = viewport;
         if ( src_vport != null ) {
             visible_size = src_vport.getExtentSize();
-            Debug.println( "ScrollableObject: componentResized()'s "
-                         + "src_vport.getViewPosition() = "
-                         + src_vport.getViewPosition() );
+            if ( Debug.isActive() )
+                Debug.println( "ScrollableObject: componentResized()'s "
+                             + "src_vport.getViewPosition() = "
+                             + src_vport.getViewPosition() );
         }
         else
             visible_size = getVisibleRect().getSize();
@@ -569,8 +589,9 @@ public abstract class ScrollableObject extends JComponent
             img_idx = getNearPastImageIndex( img_idx );
         }
         finalizeAllOffImages( tImages_all );
-
-        Debug.println( "ScrollableObject: componentResized()'s END: " );
+ 
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: componentResized()'s END: " );
     }
 
     /*
@@ -591,22 +612,41 @@ public abstract class ScrollableObject extends JComponent
     */
     public Dimension getPreferredSize()
     {
-        Debug.println( "ScrollableObject: pref_size = " + component_size );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: pref_size = " + component_size );
         return component_size;
     }
 
     public Dimension getSize()
     {
-        Debug.println( "ScrollableObject: size = " + component_size );
+        if ( Debug.isActive() )
+            Debug.println( "ScrollableObject: size = " + component_size );
         return component_size;
     }
 
-/*
-    public void componentMoved( ComponentEvent evt ) {}
-    public void componentHidden( ComponentEvent evt ) {}
-    public void componentShown( ComponentEvent evt )
+    public abstract InfoDialog
+    getPropertyAt( final Point            view_click,
+                   final TimeBoundingBox  vport_times );
+
+    /*
+    protected Point getGlobalClickPoint( final Point local_click )
     {
-        Debug.println( "ScrollableObject : comp_evt = " + evt.paramString() );
+        Point origin       = this.getLocationOnScreen();
+        return   new Point( origin.x + local_click.x,
+                            origin.y + local_click.y );
     }
-*/
+    */
+
+    protected InfoDialog getTimePropertyAt( final Point  local_click )
+    {
+        /* System.out.println( "\nshowPropertyAt() " + local_click ); */
+        CoordPixelImage coord_xform;
+        coord_xform = new CoordPixelImage( this, 0,
+                                           this.getTimeBoundsOfImages() );
+        InfoDialogForTime time_dialog;
+        time_dialog = new InfoDialogForTime( 
+                          (Frame) SwingUtilities.windowForComponent( this ),
+                          coord_xform.convertPixelToTime( local_click.x ) );
+        return time_dialog;
+    }
 }

@@ -27,6 +27,7 @@ public class ActionVportUp implements ActionListener
     {
         scrollbar.setValue( scrollbar.getValue()
                           - scrollbar.getHeight() / 2 );
-        Debug.displayLine( "Action for Up Viewport button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Up Viewport button" );
     }
 }

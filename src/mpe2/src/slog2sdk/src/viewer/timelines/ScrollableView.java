@@ -17,7 +17,7 @@ import javax.swing.JViewport;
    to be used by the viewport.
 */
 
-public interface ScrollableImage
+public interface ScrollableView
 {
     public void checkToZoomView();
 

@@ -9,13 +9,13 @@
 
 package viewer.timelines;
 
-public class Debug
+public class Profile
 {
     private static Diagnosis msg = new Diagnosis();
 
     public static void initTextArea()
     {
-        msg.initTextArea( "Debugging Output" );
+        msg.initTextArea( "Profiling Output" );
     }
 
     public static void setActive( boolean is_active )

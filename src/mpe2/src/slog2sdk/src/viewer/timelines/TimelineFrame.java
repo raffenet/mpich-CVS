@@ -31,7 +31,7 @@ public class TimelineFrame extends JFrame
         TopWindow.Timeline.disposeAll();
         TopWindow.Timeline.setWindow( this );
 
-        top_panel = new TimelinePanel( this, slog_ins, view_ID );
+        top_panel = new TimelinePanel( slog_ins, view_ID );
         setContentPane( top_panel );
 
         addWindowListener( new WindowAdapter() {
@@ -65,7 +65,7 @@ public class TimelineFrame extends JFrame
         checkVersion();
         parseCmdLineArgs( args );
 
-        // Debug.initTextArea();
+        // Debug.setActive( true ); Debug.initTextArea();
 
         System.out.print( "Reading the SLOG-2 file ...... " );
         in_slog_ins  = new InputLog( in_filename );

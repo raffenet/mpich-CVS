@@ -20,16 +20,18 @@ RM           = @RM@
 
 TARGET    = $(libbuild_dir)/timeline_view.jar
 PACKAGE   = viewer.timelines
-SRC       = Debug.java \
+SRC       = Diagnosis.java Debug.java Profile.java \
             YaxisTreeNode.java IntegerArrayComparator.java YaxisMaps.java \
             named_vector.java YaxisTree.java \
             TimeEvent.java TimeListener.java \
             ModelTime.java ScrollbarTime.java \
             ModelTimePanel.java TreeTrunkPanel.java \
-            ScrollableImage.java ScrollableObject.java \
+            InfoDialog.java InfoDialogForTime.java \
+            InfoDialogForDuration.java InfoDialogForDrawable.java \
+            ScrollableView.java ScrollableObject.java \
             ViewportTime.java ViewportTimeYaxis.java \
             RulerTime.java ViewportTimePanel.java \
-            CoordPixelImage.java DrawableInfoDialog.java CanvasTime.java \
+            CoordPixelImage.java CanvasTime.java \
             ActionVportUp.java ActionVportDown.java \
             ActionTimelineMark.java ActionTimelineMove.java \
             ActionTimelineDelete.java \

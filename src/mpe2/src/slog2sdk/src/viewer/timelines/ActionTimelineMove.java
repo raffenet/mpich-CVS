@@ -34,7 +34,9 @@ public class ActionTimelineMove implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Move Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Move Timeline button" );
+
         Enumeration[]     enum_paths;
         Enumeration       paths;
         boolean[]         isBufferedPathExpanded;
@@ -75,8 +77,10 @@ public class ActionTimelineMove implements ActionListener
         for ( idx = 0; idx < child_paths.length; idx++ ) {
             enum_paths[ idx ] = tree.getExpandedDescendants(
                                 child_paths[ idx ] );
-            Debug.println( "action_timeline_move(): emum_paths[" + idx + "] = "
-                         + enum_paths[ idx ] );
+            if ( Debug.isActive() )
+                Debug.println( "action_timeline_move(): "
+                             + "emum_paths[" + idx + "] = "
+                             + enum_paths[ idx ] );
             if ( tree.isExpanded( child_paths[ idx ] ) ) {
                 isBufferedPathExpanded[ idx ] = true;
                 tree.collapsePath( child_paths[ idx ] );
@@ -89,12 +93,15 @@ public class ActionTimelineMove implements ActionListener
         for ( idx = 0; idx < child_paths.length; idx++ ) {
             child = (MutableTreeNode) child_paths[ idx ].getLastPathComponent();
             tree_model.removeNodeFromParent( child );
-            Debug.displayLine( "\tCut " + child );
+            if ( Debug.isActive() )
+                Debug.println( "\tCut " + child );
         }
 
         // Add the marked timelines to the insertion point
         parent_path = selected_path.getParentPath();
-        Debug.println( "action_timeline_move(): parent_path = " + parent_path );
+        if ( Debug.isActive() )
+            Debug.println( "action_timeline_move(): parent_path = "
+                         + parent_path );
         parent   = (MutableTreeNode) parent_path.getLastPathComponent();
         selected = (MutableTreeNode) selected_path.getLastPathComponent();
         insertion_idx = ( (DefaultMutableTreeNode) parent ).getIndex( selected )
@@ -102,7 +109,9 @@ public class ActionTimelineMove implements ActionListener
         for ( idx = 0; idx < child_paths.length; idx++ ) {
             child = (MutableTreeNode) child_paths[ idx ].getLastPathComponent();
             tree_model.insertNodeInto( child, parent, insertion_idx + idx );
-            Debug.displayLine( "\tPaste " + child + " next to " + selected );
+            if ( Debug.isActive() )
+                Debug.println( "\tPaste " + child
+                             + " next to " + selected );
             // Restore the expansion pattern of marked timelines
             prefix_path = parent_path.pathByAddingChild( child );
             if ( isBufferedPathExpanded[ idx ] )
@@ -111,9 +120,11 @@ public class ActionTimelineMove implements ActionListener
                 paths = enum_paths[ idx ];
                 while ( paths.hasMoreElements() ) {
                     old_path = (TreePath) paths.nextElement();
-                    Debug.print( "action_timeline_move(): " + old_path );
+                    if ( Debug.isActive() )
+                        Debug.print( "action_timeline_move(): " + old_path );
                     new_path = this.getReplacedPath( prefix_path, old_path );
-                    Debug.println( " is restored as " + new_path );
+                    if ( Debug.isActive() )
+                        Debug.println( " is restored as " + new_path );
                     tree.expandPath( new_path );
                 }
             }

@@ -15,28 +15,35 @@ import base.drawable.CoordPixelXform;
 public class CoordPixelImage implements CoordPixelXform
 {
     private ScrollableObject  img_obj;
+    private int               row_hgt;
+    private int               row_half_hgt;
+
     private TimeBoundingBox   img_endtimes;
     private double            img_starttime;
     private double            img_finaltime;
-    private int               row_hgt;
-
-    private int               row_half_hgt;
     private int               ipix_start;
     private int               ipix_final;
     private int               ipix_width;
 
+    public CoordPixelImage( ScrollableObject image_object, int row_height )
+    {
+        img_obj        = image_object;
+        row_hgt        = row_height;
+        row_half_hgt   = row_height / 2 + 1;
+    }
+
     public CoordPixelImage( ScrollableObject image_object, int row_height,
                             final TimeBoundingBox  image_timebounds )
     {
-        img_obj        = image_object;
+        this( image_object, row_height );
+        this.resetTimeBounds( image_timebounds );
+    }
 
+    public void resetTimeBounds( final TimeBoundingBox  image_timebounds )
+    {
         img_endtimes   = image_timebounds;
         img_starttime  = image_timebounds.getEarliestTime();
         img_finaltime  = image_timebounds.getLatestTime();
-
-        row_hgt        = row_height;
-        row_half_hgt   = row_height / 2 + 1;
-
         ipix_start     = img_obj.time2pixel( img_starttime );
         ipix_final     = img_obj.time2pixel( img_finaltime );
         ipix_width     = ipix_final - ipix_start + 1;

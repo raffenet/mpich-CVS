@@ -152,10 +152,12 @@ public class YaxisTree extends JTree
         // Update the tree's Maximum allowed Level
         max_level = tree_root.getLastLeaf().getLevel();
 
-        Debug.println( "tree_root(" + tree_root + ").level="
-                     + tree_root.getLevel() );
-        Debug.println( "last_leaf(" + tree_root.getLastLeaf() + ").level="
-                     + max_level );
+        if ( Debug.isActive() ) {
+            Debug.println( "tree_root(" + tree_root + ").level="
+                         + tree_root.getLevel() );
+            Debug.println( "last_leaf(" + tree_root.getLastLeaf() + ").level="
+                         + max_level );
+        }
 
         // Initialize the leveled_paths[] sizes
         leveled_paths = new ArrayList[ max_level + 1 ];

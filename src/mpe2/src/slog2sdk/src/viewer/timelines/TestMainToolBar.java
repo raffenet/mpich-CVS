@@ -67,7 +67,6 @@ public class TestMainToolBar extends JToolBar
         URL url = null;
 
         url = getClass().getResource( filename );
-        // Debug.println( "getURL: url = " + url );
 
         return url;
     }

@@ -58,8 +58,6 @@ public class TestMainPanel extends JPanel
                         UIManager.get( "ScrollBar.minimumThumbSize" );
         sb_minThumbSz.width = 1;
         UIManager.put( "ScrollBar.minimumThumbSize", sb_minThumbSz );
-        // Debug.println( "getTopLevelAncestor() = " + getTopLevelAncestor() );
-        // Debug.println( "creator_superclass is " + creator_superclass + "." );
 
         time_model    = new ModelTime( 0.0, 1000.0 ); 
         // time_model    = new ModelTime( 0.89, 1024.5 ); 
@@ -146,13 +144,14 @@ public class TestMainPanel extends JPanel
     public void init()
     {
         // time_scrollbar.init();
-
-        Debug.println( "MainPanel.init(): time_model = "
-                     + time_model );
-        Debug.println( "MainPanel.init(): time_scrollbar = "
-                     + time_scrollbar );
-        Debug.println( "MainPanel.init(): time_ruler = "
-                     + time_ruler );
+        if ( Debug.isActive() ) {
+            Debug.println( "MainPanel.init(): time_model = "
+                         + time_model );
+            Debug.println( "MainPanel.init(): time_scrollbar = "
+                         + time_scrollbar );
+            Debug.println( "MainPanel.init(): time_ruler = "
+                         + time_ruler );
+        }
         System.out.println( "time_display_panel = " + time_display_panel );
         System.out.println( "time_panel_big.insets = "
                           + time_canvas_panel.getInsets() );

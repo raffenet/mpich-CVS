@@ -32,7 +32,9 @@ public class ActionPptyRefresh implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Refresh button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Refresh button" );
+
         pptys_frame = (PreferenceFrame) TopWindow.Preference.getWindow();
         if ( pptys_frame != null )
             pptys_frame.updateAllParameters();

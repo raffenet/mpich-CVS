@@ -27,6 +27,7 @@ public class ActionVportForward implements ActionListener
     {
         scrollbar.setValue( scrollbar.getValue()
                           + scrollbar.getBlockIncrement() / 2 );
-        Debug.displayLine( "Action for Forward Viewport button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Forward Viewport button" );
     }
 }

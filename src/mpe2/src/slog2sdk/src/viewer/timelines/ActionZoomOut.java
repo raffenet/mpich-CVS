@@ -41,7 +41,8 @@ public class ActionZoomOut implements ActionListener
             toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
         }
 
-        Debug.displayLine( "Action for Zoom Out button. ZoomLevel = "
+        if ( Debug.isActive() )
+            Debug.println( "Action for Zoom Out button. ZoomLevel = "
                          + zoomlevel );
     }
 }

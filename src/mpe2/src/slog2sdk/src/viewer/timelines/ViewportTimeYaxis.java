@@ -20,9 +20,9 @@ public class ViewportTimeYaxis extends ViewportTime
     private Point                     view_pt;
     private ComponentEvent            resize_evt;
 
-    public ViewportTimeYaxis()
+    public ViewportTimeYaxis( final ModelTime time_model )
     {
-        super();
+        super( time_model );
         view_pt    = new Point( 0, 0 );
         resize_evt = new ComponentEvent( this,
                                          ComponentEvent.COMPONENT_RESIZED );
@@ -30,8 +30,10 @@ public class ViewportTimeYaxis extends ViewportTime
 
     public void adjustmentValueChanged( AdjustmentEvent evt )
     {
-        Debug.println( "ViewportTimeYaxis: adjChanged()'s START: " );
-        Debug.println( "adj_evt = " + evt );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTimeYaxis: adjChanged()'s START: " );
+            Debug.println( "adj_evt = " + evt );
+        }
         view_pt.x  = super.getXaxisViewPosition();
         view_pt.y  = evt.getValue();
         super.setYaxisViewPosition( view_pt.y );
@@ -44,7 +46,8 @@ public class ViewportTimeYaxis extends ViewportTime
                -- JViewport.setViewPosition() may have invoked super.repaint()
             */
         super.repaint();
-        Debug.println( "ViewportTimeYaxis: adjChanged()'s END: " );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTimeYaxis: adjChanged()'s END: " );
     }
 
     public void fireComponentResized()

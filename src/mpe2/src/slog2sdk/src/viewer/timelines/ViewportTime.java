@@ -9,40 +9,69 @@
 
 package viewer.timelines;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+import base.drawable.TimeBoundingBox;
+
 public class ViewportTime extends JViewport
                           implements TimeListener,
-                                     ComponentListener
+                                     ComponentListener,
+                                     MouseInputListener
 //                                     HierarchyBoundsListener
 {
-    private Point                     view_pt;
-    // view_img is both a Component and ScrollableImage object
-    private ScrollableImage           view_img    = null;
+    private static final Color   ZOOM_LINE_COLOR = Color.red;
+    private static final Color   ZOOM_AREA_COLOR = new Color(255,255,  0,64);
+    private static final Color   INFO_LINE_COLOR = Color.green;
+    private static final Color   INFO_AREA_COLOR = new Color(132,112,255,96);
 
-    public ViewportTime()
+    private Point                     view_pt;
+    // view_img is both a Component and ScrollableView object
+    private ScrollableView            view_img      = null;
+    private ModelTime                 time_model    = null;
+
+    private TimeBoundingBox           vport_timebox = null;
+    private CoordPixelImage           coord_xform   = null;
+
+    private TimeBoundingBox           zoom_timebox  = null;
+    private TimeBoundingBox           info_timebox  = null;
+    private List                      info_dialogs;
+
+    private InfoDialogActionListener  info_action_listener;
+    private InfoDialogWindowListener  info_window_listener;
+
+    public ViewportTime( final ModelTime in_model )
     {
-        view_pt = new Point( 0, 0 );
+        time_model  = in_model;
+        view_pt     = new Point( 0, 0 );
         /*
-            For resizing of the viewport => resizing of the ScrollableImage
+            For resizing of the viewport => resizing of the ScrollableView
         */
         addComponentListener( this );
         /*
             HierarchyBoundsListener is for the case when this class
             is moved but NOT resized.  That it checks for situation
-            to reinitialize the size of ScrollableImage when the 
+            to reinitialize the size of ScrollableView when the 
             scrollable image's size is reset for some obscure reason.
 
-            However, defining getPreferredSize() of ScrollableImage
+            However, defining getPreferredSize() of ScrollableView
             seems to make HierarchyBoundsListener of this class
             unnecessary.
         */
         // addHierarchyBoundsListener( this );
 
         // setDebugGraphicsOptions( DebugGraphics.LOG_OPTION );
+        vport_timebox       = new TimeBoundingBox();
+
+        zoom_timebox        = new TimeBoundingBox();
+        double init_time    = time_model.getTimeZoomFocus();
+        zoom_timebox.setEarliestTime( init_time );
+        zoom_timebox.setLatestTime( init_time );
     }
 
     public void setView( Component view )
@@ -58,14 +87,25 @@ public class ViewportTime extends JViewport
         Dimension pref_sz = view.getPreferredSize();
         if ( pref_sz != null )
             setPreferredSize( pref_sz );
-        view_img = (ScrollableImage) view;
+        view_img     = (ScrollableView) view;
+
+        coord_xform  = new CoordPixelImage( (ScrollableObject) view_img, 0 );
+        super.addMouseListener( this );
+        super.addMouseMotionListener( this );
+
+        info_dialogs = new ArrayList();
+        info_action_listener = new InfoDialogActionListener( this,
+                                                             info_dialogs );
+        info_window_listener = new InfoDialogWindowListener( this,
+                                                             info_dialogs );
     }
 
     //  For Debugging Profiling
     public Dimension getMinimumSize()
     {
         Dimension min_sz = super.getMinimumSize();
-        Debug.println( "ViewportTime: min_size = " + min_sz );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTime: min_size = " + min_sz );
         return min_sz;
     }
 
@@ -73,7 +113,8 @@ public class ViewportTime extends JViewport
     public Dimension getMaximumSize()
     {
         Dimension max_sz = super.getMaximumSize();
-        Debug.println( "ViewportTime: max_size = " + max_sz );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTime: max_size = " + max_sz );
         return max_sz;
     }
 
@@ -81,7 +122,8 @@ public class ViewportTime extends JViewport
     public Dimension getPreferredSize()
     {
         Dimension pref_sz = super.getPreferredSize();
-        Debug.println( "ViewportTime: pref_size = " + pref_sz );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTime: pref_size = " + pref_sz );
         return pref_sz;
     }
 
@@ -103,14 +145,17 @@ public class ViewportTime extends JViewport
     */
     public void timeChanged( TimeEvent evt )
     {
-        Debug.println( "ViewportTime: timeChanged()'s START: " );
-        Debug.println( "time_evt = " + evt );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: timeChanged()'s START: " );
+            Debug.println( "time_evt = " + evt );
+        }
         if ( view_img != null ) {
             // view_img.checkToXXXXView() assumes constant image size
             view_img.checkToZoomView();
             view_img.checkToScrollView();
-            Debug.println( "ViewportTime:timeChanged()'s view_img = "
-                         + view_img );
+            if ( Debug.isActive() )
+                Debug.println( "ViewportTime:timeChanged()'s view_img = "
+                             + view_img );
             view_pt.x = view_img.getXaxisViewPosition();
             super.setViewPosition( view_pt );
             /*
@@ -120,20 +165,26 @@ public class ViewportTime extends JViewport
                   ( (Component) view_img ).repaint();
                -- JViewport.setViewPosition() may have invoked super.repaint()
             */
-            super.repaint();
-
-            Debug.println( "ViewportTime: view_img.getXaxisViewPosition() = "
-                         + view_pt.x );
-            Debug.println( "ViewportTime: [after] getViewPosition() = "
-                         + super.getViewPosition() );
+            this.repaint();
         }
-        Debug.println( "ViewportTime: timeChanged()'s END: " );
+        if ( Debug.isActive() ) {
+            if ( view_img != null ) {
+                Debug.println( "ViewportTime: "
+                             + "view_img.getXaxisViewPosition() = "
+                             + view_pt.x );
+                Debug.println( "ViewportTime: [after] getViewPosition() = "
+                             + super.getViewPosition() );
+            }
+            Debug.println( "ViewportTime: timeChanged()'s END: " );
+        }
     }
 
     public void componentResized( ComponentEvent evt )
     {
-        Debug.println( "ViewportTime: componentResized()'s START: " );
-        Debug.println( "comp_evt = " + evt );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: componentResized()'s START: " );
+            Debug.println( "comp_evt = " + evt );
+        }
         if ( view_img != null ) {
             /*
                Instead of informing the view by ComponentEvent, i.e.
@@ -158,8 +209,9 @@ public class ViewportTime extends JViewport
                window size.
             */
             this.setPreferredSize( getSize() );
-            Debug.println( "ViewportTime: componentResized()'s view_img = "
-                         + view_img );
+            if ( Debug.isActive() )
+                Debug.println( "ViewportTime: componentResized()'s view_img = "
+                             + view_img );
             view_pt.x = view_img.getXaxisViewPosition();
             super.setViewPosition( view_pt );
             /*
@@ -169,50 +221,134 @@ public class ViewportTime extends JViewport
                   ( (Component) view_img ).repaint();
                -- JViewport.setViewPosition() may have invoked super.repaint()
             */
-            super.repaint();
+            this.repaint();
 
-            Debug.println( "ViewportTime: view_img.getXaxisViewPosition() = "
-                         + view_pt.x );
-            Debug.println( "ViewportTime: [after] getViewPosition() = "
-                         + super.getViewPosition() );
         }
-        Debug.println( "comp_evt = " + evt );
-        Debug.println( "ViewportTime: componentResized()'s END: " );
+        if ( Debug.isActive() ) {
+            if ( view_img != null ) {
+                Debug.println( "ViewportTime: "
+                             + "view_img.getXaxisViewPosition() = "
+                             + view_pt.x );
+                Debug.println( "ViewportTime: [after] getViewPosition() = "
+                             + super.getViewPosition() );
+            }
+            Debug.println( "ViewportTime: componentResized()'s END: " );
+        }
     }
 
 
     public void componentMoved( ComponentEvent evt ) 
     {
-        Debug.println( "ViewportTime: componentMoved()'s START: " );
-        Debug.println( "comp_evt = " + evt );
-        Debug.println( "ViewportTime: componentMoved()'s END: " );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: componentMoved()'s START: " );
+            Debug.println( "comp_evt = " + evt );
+            Debug.println( "ViewportTime: componentMoved()'s END: " );
+        }
     }
 
     public void componentHidden( ComponentEvent evt ) 
     {
-        Debug.println( "ViewportTime: componentHidden()'s START: " );
-        Debug.println( "comp_evt = " + evt );
-        Debug.println( "ViewportTime: componentHidden()'s END: " );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: componentHidden()'s START: " );
+            Debug.println( "comp_evt = " + evt );
+            Debug.println( "ViewportTime: componentHidden()'s END: " );
+        }
     }
 
     public void componentShown( ComponentEvent evt ) 
     {
-        Debug.println( "ViewportTime: componentShown()'s START: " );
-        Debug.println( "comp_evt = " + evt );
-        Debug.println( "ViewportTime: componentShown()'s END: " );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: componentShown()'s START: " );
+            Debug.println( "comp_evt = " + evt );
+            Debug.println( "ViewportTime: componentShown()'s END: " );
+        }
     }
 
-/*
-    //  This is for Debugging Profiling
-    public void paintComponent( Graphics g )
+    private void drawShadyTimeBoundingBox( Graphics g,
+                                           final TimeBoundingBox timebox,
+                                           Color line_color, Color area_color )
     {
-        Debug.println( "ViewportTime: paintComponent()'s START: " );
-        super.paintComponent( g );
+        double      line_time;
+        int         x1_pos, x2_pos;
+
+        if ( vport_timebox.overlaps( timebox ) ) {
+            line_time = timebox.getEarliestTime();
+            if ( coord_xform.contains( line_time ) ) {
+                x1_pos = coord_xform.convertTimeToPixel( line_time );
+                g.setColor( line_color );
+                g.drawLine( x1_pos, 0, x1_pos, this.getHeight() );
+            }
+            else
+                x1_pos = 0;
+
+            line_time = timebox.getLatestTime();
+            if ( coord_xform.contains( line_time ) ) {
+                x2_pos = coord_xform.convertTimeToPixel( line_time );
+                g.setColor( line_color );
+                g.drawLine( x2_pos, 0, x2_pos, this.getHeight() );
+            }
+            else
+                x2_pos = this.getWidth();
+
+            if ( x2_pos > x1_pos ) {
+                g.setColor( area_color );
+                g.fillRect( x1_pos+1, 0, x2_pos-x1_pos-1, this.getHeight() );
+            }
+        }
+    }
+
+    //  This is for Debugging Profiling
+    public void paint( Graphics g )
+    {
+        Iterator    itr;
+        InfoDialog  info_popup;
+        double      popup_time;
+        int         x_pos;
+
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTime: paint()'s START: " );
+
         //  "( (Component) view_img ).repaint()" may have been invoked
         //  in JComponent's paint() method's paintChildren() ?!
-        Debug.println( "ViewportTime: paintComponent()'s END: " );
+        super.paint( g );
+
+        /*  Initialization  */
+        vport_timebox.setEarliestTime( time_model.getTimeViewPosition() );
+        vport_timebox.setLatestFromEarliest( time_model.getTimeViewExtent() );
+        coord_xform.resetTimeBounds( vport_timebox );
+
+        /*  Draw zoom boundary  */
+        this.drawShadyTimeBoundingBox( g, zoom_timebox,
+                                       ZOOM_LINE_COLOR, ZOOM_AREA_COLOR );
+
+        if ( info_timebox != null )
+            this.drawShadyTimeBoundingBox( g, info_timebox,
+                                           INFO_LINE_COLOR, INFO_AREA_COLOR );
+
+        /*  Draw the InfoDialog marker  */
+        itr = info_dialogs.iterator();
+        while ( itr.hasNext() ) {
+            info_popup = (InfoDialog) itr.next();
+            if ( info_popup instanceof InfoDialogForDuration ) {
+                InfoDialogForDuration  popup;
+                popup = (InfoDialogForDuration) info_popup;
+                this.drawShadyTimeBoundingBox( g, popup.getTimeBoundingBox(),
+                                               INFO_LINE_COLOR,
+                                               INFO_AREA_COLOR );
+            }
+            else {
+                popup_time = info_popup.getClickedTime();
+                if ( coord_xform.contains( popup_time ) ) {
+                    x_pos = coord_xform.convertTimeToPixel( popup_time );
+                    g.setColor( INFO_LINE_COLOR );
+                    g.drawLine( x_pos, 0, x_pos, this.getHeight() );
+                }
+            }
+        }
+
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTime: paint()'s END: " );
     }
-*/
 
 
     /*
@@ -221,30 +357,37 @@ public class ViewportTime extends JViewport
 /*
     public void ancestorMoved( HierarchyEvent evt )
     {
-        Debug.println( "ViewportTime: ancestorMoved()'s START: " );
-        Debug.println( "hrk_evt = " + evt );
-        Debug.println( "ViewportTime: ancestorMoved()'s END: " );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: ancestorMoved()'s START: " );
+            Debug.println( "hrk_evt = " + evt );
+            Debug.println( "ViewportTime: ancestorMoved()'s END: " );
+        }
     }
 
     public void ancestorResized( HierarchyEvent evt )
     {
-        Debug.println( "ViewportTime: ancestorResized()'s START: " );
-        Debug.println( "hrk_evt = " + evt );
+        if ( Debug.isActive() ) {
+            Debug.println( "ViewportTime: ancestorResized()'s START: " );
+            Debug.println( "hrk_evt = " + evt );
+            if ( view_img != null ) {
+                Debug.println( "ViewportTime: "
+                             + "view_img.getXaxisViewPosition() = "
+                             + view_pt.x );
+                Debug.println( "ViewportTime: [before] getViewPosition() = "
+                             + super.getViewPosition() );
+                Debug.println( "ViewportTime: ancestorMoved()'s this = "
+                             + this );
+            }
+        }
         if ( view_img != null ) {
-            Debug.println( "ViewportTime: view_img.getXaxisViewPosition() = "
-                         + view_pt.x );
-            Debug.println( "ViewportTime: [before] getViewPosition() = "
-                         + super.getViewPosition() );
-            Debug.println( "ViewportTime: ancestorMoved()'s this = "
-                         + this );
-            //  ScrollableImage.setJComponentSize(),
+            //  ScrollableView.setJComponentSize(),
             //  JViewport.setPreferredSize() and JViewport.setViewPosition()
             //  need to be called when the topmost container in the
             //  containment hierarchy is
             //  resized but this class is moved but NOT resized.  In 
             //  this scenario, the resizing of topmost container seems 
             //  to reset the location of scrollable to (0,0) as well as 
-            //  the size of the ScrollableImage to the visible size of 
+            //  the size of the ScrollableView to the visible size of 
             //  the JViewport.
 
             //  view_img.setJComponentSize();
@@ -259,14 +402,195 @@ public class ViewportTime extends JViewport
             // -- JViewport.setViewPosition() may have invoked super.repaint()
 
             super.repaint();
-            Debug.println( "ViewportTime: view_img.getXaxisViewPosition() = "
-                         + view_pt.x );
-            Debug.println( "ViewportTime: [after] getViewPosition() = "
-                         + super.getViewPosition() );
-            Debug.println( "ViewportTime: ancestorMoved()'s this = "
-                         + this );
         }
-        Debug.println( "ViewportTime: ancestorResized()'s END: " );
+        if ( Debug.isActive() ) {
+            if ( view_img != null ) {
+                Debug.println( "ViewportTime: "
+                             + "view_img.getXaxisViewPosition() = "
+                             + view_pt.x );
+                Debug.println( "ViewportTime: [after] getViewPosition() = "
+                             + super.getViewPosition() );
+                Debug.println( "ViewportTime: ancestorMoved()'s this = "
+                             + this );
+            }
+            Debug.println( "ViewportTime: ancestorResized()'s END: " );
+        }
     }
 */
+
+    /*  Interface to fulfill MouseInputListener()  */
+
+        public void mouseEntered( MouseEvent mouse_evt ) {}
+        public void mouseExited( MouseEvent mouse_evt ) {}
+        public void mouseClicked( MouseEvent mouse_evt ) {}
+        public void mouseMoved( MouseEvent mouse_evt ) {}
+
+        /* 
+            mouse_press_time is a temporary variable among
+            mousePressed(), mouseDragged() & mouseReleased()
+        */
+        private double                    mouse_pressed_time;
+
+        public void mousePressed( MouseEvent mouse_evt )
+        {
+            double click_time;
+            vport_timebox.setEarliestTime( time_model.getTimeViewPosition() );
+            vport_timebox.setLatestFromEarliest(
+                          time_model.getTimeViewExtent() );
+            coord_xform.resetTimeBounds( vport_timebox );
+            Point vport_click = mouse_evt.getPoint();
+            click_time = coord_xform.convertPixelToTime( vport_click.x );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                zoom_timebox.setEarliestTime( click_time );
+                zoom_timebox.setLatestTime( click_time );
+                this.repaint();
+            }
+            else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
+                info_timebox = new TimeBoundingBox();
+                info_timebox.setEarliestTime( click_time );
+                info_timebox.setLatestTime( click_time );
+                this.repaint();
+            }
+            mouse_pressed_time = click_time;
+        }
+
+        public void mouseDragged( MouseEvent mouse_evt )
+        {
+            double click_time, focus_time;
+            Point vport_click = mouse_evt.getPoint();
+            click_time = coord_xform.convertPixelToTime( vport_click.x );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( click_time > mouse_pressed_time )
+                    zoom_timebox.setLatestTime( click_time );
+                else
+                    zoom_timebox.setEarliestTime( click_time );
+                focus_time = ( zoom_timebox.getEarliestTime()
+                             + zoom_timebox.getLatestTime() ) / 2.0d;
+                time_model.setTimeZoomFocus( focus_time );
+                this.repaint();
+            }
+            else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
+                if ( click_time > mouse_pressed_time )
+                    info_timebox.setLatestTime( click_time );
+                else
+                    info_timebox.setEarliestTime( click_time );
+                this.repaint();
+            }
+        }
+
+        public void mouseReleased( MouseEvent mouse_evt )
+        {
+            ScrollableObject  scrollable;
+            InfoDialog        info_popup;
+            Point             vport_click, view_click, global_click;
+            double            click_time, focus_time;
+
+            vport_click = mouse_evt.getPoint();
+            click_time = coord_xform.convertPixelToTime( vport_click.x );
+            if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
+                if ( click_time > mouse_pressed_time )
+                    zoom_timebox.setLatestTime( click_time );
+                else
+                    zoom_timebox.setEarliestTime( click_time );
+                focus_time = ( zoom_timebox.getEarliestTime()
+                             + zoom_timebox.getLatestTime() ) / 2.0d;
+                time_model.setTimeZoomFocus( focus_time );
+                this.repaint();
+                if ( zoom_timebox.getLength() > 0.0d ) {
+                    time_model.zoomInRapidly( zoom_timebox.getEarliestTime(),
+                                              zoom_timebox.getLength() );
+                    zoom_timebox.setEarliestTime( focus_time );
+                    zoom_timebox.setLatestTime( focus_time );
+                    this.repaint();
+                }
+            }
+            else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
+                if ( click_time > mouse_pressed_time )
+                    info_timebox.setLatestTime( click_time );
+                else
+                    info_timebox.setEarliestTime( click_time );
+                if ( info_timebox.getLength() == 0.0d ) {
+                    scrollable = (ScrollableObject) view_img;
+                    view_click = SwingUtilities.convertPoint( this,
+                                                              vport_click,
+                                                              scrollable );
+                    info_popup = scrollable.getPropertyAt( view_click,
+                                                           vport_timebox );
+                }
+                else {
+                    Frame  frame;
+                    frame = (Frame) SwingUtilities.windowForComponent( this );
+                    info_popup = new InfoDialogForDuration( frame,
+                                                            info_timebox );
+                }
+                global_click = new Point( vport_click );
+                SwingUtilities.convertPointToScreen( global_click, this );
+                info_popup.setVisibleAtLocation( global_click );
+                info_popup.getCloseButton().addActionListener( 
+                                            info_action_listener );
+                info_popup.addWindowListener( info_window_listener );
+                info_dialogs.add( info_popup );
+                info_timebox = null;  // remove to avoid redundant drawing
+                this.repaint();
+            }
+        }
+
+
+
+    private class InfoDialogActionListener implements ActionListener
+    {
+        private ViewportTime  viewport;
+        private List          info_dialogs;
+
+        public InfoDialogActionListener( ViewportTime vport, List dialogs )
+        {
+            viewport      = vport;
+            info_dialogs  = dialogs;
+        }
+        
+        public void actionPerformed( ActionEvent evt )
+        {
+            InfoDialog  info_popup;
+            Object      evt_src = evt.getSource();
+            Iterator itr = info_dialogs.iterator();
+            while ( itr.hasNext() ) {
+                info_popup = (InfoDialog) itr.next();
+                if ( evt_src == info_popup.getCloseButton() ) {
+                    info_dialogs.remove( info_popup );
+                    info_popup.dispose();
+                    viewport.repaint();
+                    break;
+                }
+            }
+        }
+    }
+
+    private class InfoDialogWindowListener extends WindowAdapter
+    {
+        private ViewportTime  viewport;
+        private List          info_dialogs;
+
+        public InfoDialogWindowListener( ViewportTime vport, List dialogs )
+        {
+            viewport      = vport;
+            info_dialogs  = dialogs;
+        }
+
+        public void windowClosing( WindowEvent evt )
+        {
+            InfoDialog  info_popup;
+            Object      evt_src = evt.getSource();
+            Iterator itr = info_dialogs.iterator();
+            while ( itr.hasNext() ) {
+                info_popup = (InfoDialog) itr.next();
+                if ( evt_src == info_popup ) {
+                    info_dialogs.remove( info_popup );
+                    info_popup.dispose();
+                    viewport.repaint();
+                    break;
+                }
+            }
+        }
+    }
+
 }

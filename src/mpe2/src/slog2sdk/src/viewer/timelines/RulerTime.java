@@ -41,15 +41,17 @@ public class RulerTime extends ScrollableObject
     public Dimension getMinimumSize()
     {
         //  the width below is arbitary
-        Debug.println( "RulerTime: min_size = "
-                     + "(0," + VIEW_HEIGHT + ")" );
+        if ( Debug.isActive() )
+            Debug.println( "RulerTime: min_size = "
+                         + "(0," + VIEW_HEIGHT + ")" );
         return new Dimension( 0, VIEW_HEIGHT );
     }
 
     public Dimension getMaximumSize()
     {
-        Debug.println( "RulerTime: max_size = "
-                     + "(" + Short.MAX_VALUE + "," + VIEW_HEIGHT + ")" );
+        if ( Debug.isActive() )
+            Debug.println( "RulerTime: max_size = "
+                         + "(" + Short.MAX_VALUE + "," + VIEW_HEIGHT + ")" );
         return new Dimension( Short.MAX_VALUE, VIEW_HEIGHT );
     }
 
@@ -68,8 +70,9 @@ public class RulerTime extends ScrollableObject
     protected void drawOneOffImage(       Image            offImage,
                                    final TimeBoundingBox  timebounds )
     {
-        Debug.println( "RulerTime: drawOneOffImage()'s offImage = "
-                     + offImage );
+        if ( Debug.isActive() )
+            Debug.println( "RulerTime: drawOneOffImage()'s offImage = "
+                         + offImage );
         if ( offImage != null ) {
             // int offImage_width = visible_size.width * NumViewsPerImage;
             int offImage_width   = offImage.getWidth( this );
@@ -95,7 +98,8 @@ public class RulerTime extends ScrollableObject
             int    i_X, i_X_0;
             String text = null;
 
-            Debug.print( "RulerTime.drawOffImage at : " );
+            if ( Debug.isActive() )
+                Debug.print( "RulerTime.drawOffImage at : " );
             double t_init = timebounds.getEarliestTime();
             i_X_0 = super.time2pixel( t_init );
             tInitMark  = ModelTime.getRulerFirstMark( t_init, tIncrement );
@@ -108,12 +112,20 @@ public class RulerTime extends ScrollableObject
                 offGraphics.drawLine( i_X, 1, i_X, TICKMARK_HEIGHT );
                 text = fmt.format( time );
                 offGraphics.drawString( text, i_X - 3, I_FONT_BASELINE );
-                Debug.print( time + ":" + i_X + ", " ); 
+                if ( Debug.isActive() )
+                    Debug.print( time + ":" + i_X + ", " ); 
             }
-            Debug.println( "|" );
+            if ( Debug.isActive() )
+                Debug.println( "|" );
 
             offGraphics.dispose();
         }
     }
 
+    /*   Empty content to fulfill ScrollableObject's requirement  */
+    public InfoDialog getPropertyAt( final Point            view_click,
+                                     final TimeBoundingBox  vport_times )
+    {
+        return super.getTimePropertyAt( view_click );
+    }
 }

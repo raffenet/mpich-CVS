@@ -85,7 +85,8 @@ public class YaxisList extends JList
         node_path   = evt.getPath();
         node        = (TreeNode) node_path.getLastPathComponent();
         childCount  = node.getChildCount();
-        Debug.println( "treeWillCollapsed(): node_path = " + node_path );
+        if ( Debug.isActive() )
+            Debug.println( "treeWillCollapsed(): node_path = " + node_path );
 
         // Count all the descendant nodes( included expanded ones ) 
         //     JTree.getExpandedDescendants( node ) has to be called 
@@ -93,15 +94,17 @@ public class YaxisList extends JList
         paths = tree_view.getExpandedDescendants( node_path );
         while ( paths != null && paths.hasMoreElements() ) {
             child = ( (TreePath) paths.nextElement() ).getLastPathComponent();
-            Debug.println( "treeWillCollapsed(): " + child + "'s level = "
-                         + ( (DefaultMutableTreeNode) child ).getLevel() );
+            if ( Debug.isActive() )
+                Debug.println( "treeWillCollapsed(): " + child + "'s level = "
+                             + ( (DefaultMutableTreeNode) child ).getLevel() );
             // for some strange reason, getExpandedDescendants() returns
             // parent_path in the argument as one of the enumeration.  
             // Doing a check to avoid double counting.
             if ( ! child.equals( node ) )
                 childCount += ( (TreeNode) child ).getChildCount();
             else
-                Debug.println( "treeWillCollapsed(): child = parent " );
+                if ( Debug.isActive() )
+                    Debug.println( "treeWillCollapsed(): child = parent " );
         }
 
         row         = tree_view.getRowForPath( node_path );
@@ -147,7 +150,9 @@ public class YaxisList extends JList
 
         // Update the expanded node first
         row_idx = tree_view.getRowForPath( node_path );
-        Debug.println( "treeExpanded(): " + node_path + " at row " + row_idx );
+        if ( Debug.isActive() )
+            Debug.println( "treeExpanded(): " + node_path
+                         + " at row " + row_idx );
         if ( row_idx >= 0 && row_idx < list_data.size() )
             list_data.set( row_idx, tree_view.getNamedVtr( node_path ) );
         else
@@ -156,11 +161,13 @@ public class YaxisList extends JList
         while ( children.hasMoreElements() ) {
             child = children.nextElement();
             child_path = node_path.pathByAddingChild( child );
-            Debug.println( "treeExpanded(): " + child_path + "'s level = " 
-                         + ( (DefaultMutableTreeNode) child ).getLevel() );
             row_idx = tree_view.getRowForPath( child_path );
-            Debug.println( "treeExpanded(): " + child_path + " at row = "
-                         + row_idx);
+            if ( Debug.isActive() ) {
+                Debug.println( "treeExpanded(): " + child_path + "'s level = " 
+                             + ( (DefaultMutableTreeNode) child ).getLevel() );
+                Debug.println( "treeExpanded(): " + child_path + " at row = "
+                             + row_idx);
+            }
             if ( row_idx >= 0 && row_idx < list_data.size() )
                 list_data.add( row_idx, tree_view.getNamedVtr( child_path ) );
             else
@@ -178,7 +185,8 @@ public class YaxisList extends JList
     // TreeModelListener
     public void treeNodesChanged( TreeModelEvent evt )
     {
-        Debug.println( "treeNodesChanged(): evt = " + evt );
+        if ( Debug.isActive() )
+            Debug.println( "treeNodesChanged(): evt = " + evt );
     }
 
     public void treeNodesInserted( TreeModelEvent evt )
@@ -196,8 +204,9 @@ public class YaxisList extends JList
         for ( idx = 0; idx < children.length; idx++ ) {
             child_path = parent_path.pathByAddingChild( children[ idx ] );
             row_idx = tree_view.getRowForPath( child_path );
-            Debug.println( "treeNodesInserted(): " + child_path + " at row "
-                         + row_idx );
+            if ( Debug.isActive() )
+                Debug.println( "treeNodesInserted(): " + child_path
+                             + " at row " + row_idx );
             if ( row_idx >= 0 )
                 list_data.add( row_idx, tree_view.getNamedVtr( child_path ) );
             else
@@ -220,16 +229,18 @@ public class YaxisList extends JList
         children       = evt.getChildren();
 
         parent_row = tree_view.getRowForPath( parent_path );
-        Debug.println( "treeNodesRemoved(): parent " + parent_path + " at row "
-                     + parent_row );
+        if ( Debug.isActive() )
+            Debug.println( "treeNodesRemoved(): parent " + parent_path
+                         + " at row " + parent_row );
         child_row = parent_row + 1;
         for ( int idx = 0; idx < children.length; idx++ ) {
             while ( child_row < list_data.size() ) {
                 list_elem = (named_vector) list_data.get( child_row );
                 if ( list_elem.isNameEqualTo( children[ idx ].toString() ) ) {
                     list_data.remove( child_row );
-                    Debug.println( "treeNodesRemoved(): child removed at row "
-                                 + child_row );
+                    if ( Debug.isActive() )
+                        Debug.println( "treeNodesRemoved(): at row "
+                                     + child_row );
                     break;
                 }
                 else
@@ -244,6 +255,7 @@ public class YaxisList extends JList
 
     public void treeStructureChanged( TreeModelEvent evt )
     {
-        Debug.println( "treeStructureChanged(): evt = " + evt );
+        if ( Debug.isActive() )
+            Debug.println( "treeStructureChanged(): evt = " + evt );
     }
 }

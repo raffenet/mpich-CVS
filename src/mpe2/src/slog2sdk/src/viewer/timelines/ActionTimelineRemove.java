@@ -28,7 +28,9 @@ public class ActionTimelineRemove implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Remove Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Remove Timeline button" );
+
         TreePath []  paths = tree.getSelectionPaths();
         /*
         for ( int idx = 0; idx < paths.length; idx++ )

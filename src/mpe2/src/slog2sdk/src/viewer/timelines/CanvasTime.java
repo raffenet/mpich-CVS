@@ -33,11 +33,13 @@ public class CanvasTime extends ScrollableObject
 {
     private static final int   MIN_VISIBLE_ROW_COUNT = 2;
 
-    private Component          root_window;
     private TreeTrunk          treetrunk;
     private YaxisMaps          y_maps;
     private YaxisTree          tree_view;
     private BoundedRangeModel  y_model;
+    private String[]           y_colnames;
+
+    private Frame              root_window;
     private TimeBoundingBox    timeframe4imgs;   // TimeFrame for images[]
 
     private ChangeListener     change_listener;
@@ -49,23 +51,23 @@ public class CanvasTime extends ScrollableObject
     private Map                map_line2row;
     private DrawnBoxSet        drawn_boxes;
 
-    private Date               init_time, final_time;
+    private Date               zero_time, init_time, final_time;
 
 
-    public CanvasTime( Component parent,
-                       ModelTime time_model, TreeTrunk treebody,
-                       BoundedRangeModel yaxis_model, YaxisMaps in_maps )
+    public CanvasTime( ModelTime time_model, TreeTrunk treebody,
+                       BoundedRangeModel yaxis_model, YaxisMaps yaxis_maps,
+                       String[] yaxis_colnames )
     {
         super( time_model );
 
         TreeNode   treeroot;
         short      depth_max, depth_init;
 
-        root_window     = parent;
         treetrunk       = treebody;
-        y_maps          = in_maps;
+        y_maps          = yaxis_maps;
         tree_view       = y_maps.getTreeView();
         y_model         = yaxis_model;
+        y_colnames      = yaxis_colnames;
         treeroot        = treetrunk.getTreeRoot();
         depth_max       = treeroot.getTreeNodeID().depth;
         nesting_stacks  = new NestingStacks( tree_view );
@@ -81,14 +83,9 @@ public class CanvasTime extends ScrollableObject
         treetrunk.growInTreeWindow( treeroot, depth_init,
                                     new TimeBoundingBox( treeroot ) );
 
+        root_window     = null;
         change_event    = null;
         change_listener = null;
-
-        CanvasMouseListener mouse_listener;
-        mouse_listener = new CanvasMouseListener( (Frame) root_window,
-                                                  this, time_model );
-        addMouseListener( mouse_listener );
-        addMouseMotionListener( mouse_listener );
     }
 
     public void addChangeListener( ChangeListener listener )
@@ -102,15 +99,18 @@ public class CanvasTime extends ScrollableObject
         int  min_view_height = MIN_VISIBLE_ROW_COUNT
                              * Parameters.Y_AXIS_ROW_HEIGHT;
         //  the width below is arbitary
-        Debug.println( "CanvasTime: min_size = "
-                     + "(0," + min_view_height + ")" );
+        if ( Debug.isActive() )
+            Debug.println( "CanvasTime: min_size = "
+                         + "(0," + min_view_height + ")" );
         return new Dimension( 0, min_view_height );
     }
 
     public Dimension getMaximumSize()
     {
-        Debug.println( "CanvasTime: max_size = "
-                     + "(" + Short.MAX_VALUE + "," + Short.MAX_VALUE + ")" );
+        if ( Debug.isActive() )
+            Debug.println( "CanvasTime: max_size = "
+                         + "(" + Short.MAX_VALUE
+                         + "," + Short.MAX_VALUE + ")" );
         return new Dimension( Short.MAX_VALUE, Short.MAX_VALUE );
     }
 
@@ -132,7 +132,11 @@ public class CanvasTime extends ScrollableObject
 
     protected void initializeAllOffImages( final TimeBoundingBox imgs_times )
     {
-        init_time = new Date();
+        if ( Profile.isActive() )
+            zero_time = new Date();
+
+        if ( root_window == null )
+            root_window  = (Frame) SwingUtilities.windowForComponent( this );
         // Read the SLOG-2 TreeNodes within TimeFrame into memory
         Routines.setAllCursorsToWait( root_window );
         if ( timeframe4imgs == null )
@@ -141,6 +145,9 @@ public class CanvasTime extends ScrollableObject
         num_rows         = tree_view.getRowCount();
         row_height       = tree_view.getRowHeight();
         nesting_stacks.initialize();
+
+        if ( Profile.isActive() )
+            init_time = new Date();
 
         map_line2row = y_maps.getMapOfLineIDToRowID();
         if ( map_line2row == null ) {
@@ -164,17 +171,22 @@ public class CanvasTime extends ScrollableObject
         this.fireChangeEvent();  // to update TreeTrunkPanel.
         Routines.setAllCursorsToNormal( root_window );
 
-        final_time = new Date();
-        System.out.println( "drawOffImages: time = "
-                          + (final_time.getTime()-init_time.getTime())
-                          + " msec.");
+        if ( Profile.isActive() )
+            final_time = new Date();
+        if ( Profile.isActive() )
+            Profile.println( "CanvasTime.finalize(): init. time = "
+                           + (init_time.getTime() - zero_time.getTime())
+                           + " msec.,   total time = "
+                           + (final_time.getTime() - zero_time.getTime())
+                           + " msec." );
     }
 
     protected void drawOneOffImage(       Image            offImage,
                                     final TimeBoundingBox  timebounds )
     {
-        Debug.println( "CanvasTime: drawOneOffImage()'s offImage = "
-                     + offImage );
+        if ( Debug.isActive() )
+            Debug.println( "CanvasTime: drawOneOffImage()'s offImage = "
+                         + offImage );
         if ( offImage != null ) {
             // int offImage_width = visible_size.width * NumViewsPerImage;
             int        offImage_width  = offImage.getWidth( this );
@@ -202,19 +214,19 @@ public class CanvasTime extends ScrollableObject
                                           RenderingHints.VALUE_ANTIALIAS_OFF );
 
             // Draw the center TimeLines.
-            offGraphics.setColor( Color.red );
+            offGraphics.setColor( Color.cyan );
             for ( irow = 0 ; irow < num_rows ; irow++ ) {
                 //  Select only non-expanded row
                 if ( ! tree_view.isExpanded( irow ) ) {
                     i_Y = coord_xform.convertRowToPixel( (float) irow );
                     offGraphics.drawLine( 0, i_Y, offImage_width-1, i_Y );
                 }
-                else {
-                    i_Y = coord_xform.convertRowToPixel( (float) irow );
-                    offGraphics.drawLine( 0, i_Y-row_height/2,
-                                          0, i_Y+row_height/2 );
-                }
-                 
+            }
+
+            // Draw the image separator when in Debug or Profile mode
+            if ( Debug.isActive() || Profile.isActive() ) {
+                offGraphics.setColor( Color.gray );
+                offGraphics.drawLine( 0, 0, 0, this.getHeight() );
             }
 
             nesting_stacks.reset();
@@ -237,7 +249,7 @@ public class CanvasTime extends ScrollableObject
                 N_nestable_drawn +=
                 sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
                                    drawn_boxes, nesting_stacks );
-                N_nestable++;
+                N_nestable += sobj.getNumOfPrimitives();
             }
             
             // Draw Nestable Drawables
@@ -247,7 +259,7 @@ public class CanvasTime extends ScrollableObject
                 N_nestable_drawn +=
                 dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
                                    drawn_boxes, nesting_stacks );
-                N_nestable++;
+                N_nestable += dobj.getNumOfPrimitives();
             }
 
             // Set AntiAliasing from Parameters for all slanted lines
@@ -262,7 +274,7 @@ public class CanvasTime extends ScrollableObject
                 N_nestless_drawn +=
                 sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
                                    drawn_boxes, nesting_stacks );
-                N_nestless++;
+                N_nestless += sobj.getNumOfPrimitives();
             }
 
             // Draw Nestless Drawables
@@ -272,167 +284,118 @@ public class CanvasTime extends ScrollableObject
                 N_nestless_drawn +=
                 dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
                                    drawn_boxes, nesting_stacks );
-                N_nestless++;
+                N_nestless += dobj.getNumOfPrimitives();
             }
 
-            System.out.println( "CanvasTime.drawOneOffImage(): N_nestable = "
-                              + N_nestable_drawn + "/" + N_nestable
-                              + ",  N_nestless = "
-                              + N_nestless_drawn + "/" + N_nestless );
+            if ( Profile.isActive() )
+                Profile.println( "CanvasTime.drawOneOffImage(): "
+                               + "R_NestAble = "
+                               + N_nestable_drawn + "/" + N_nestable + ",  "
+                               + "R_NestLess = "
+                               + N_nestless_drawn + "/" + N_nestless );
 
             // System.out.println( treetrunk.toStubString() );
             offGraphics.dispose();
         }
     }
 
-    private class CanvasMouseListener extends MouseInputAdapter
+    public InfoDialog getPropertyAt( final Point            local_click,
+                                     final TimeBoundingBox  vport_timeframe )
     {
-        private Frame              root_window;
-        private ScrollableObject   scrollable;
-        private ModelTime          time_model;
 
-        public CanvasMouseListener( final Frame             in_root_window,
-                                    final ScrollableObject  in_scrollable,
-                                    final ModelTime         in_model )
-        {
-            root_window  = in_root_window;
-            scrollable   = in_scrollable;
-            time_model   = in_model;
+        /* System.out.println( "\nshowPropertyAt() " + local_click ); */
+        CoordPixelImage coord_xform;
+        coord_xform = new CoordPixelImage( this, row_height, 
+                                           super.getTimeBoundsOfImages() );
+        double clicked_time = coord_xform.convertPixelToTime( local_click.x );
+
+        // Determine the timeframe of the current view by vport_timeframe
+        // System.out.println( "CurrView's timeframe = " + vport_timeframe );
+
+        Map map_line2treeleaf = y_maps.getMapOfLineIDToTreeLeaf();
+
+        Map map_line2row = y_maps.getMapOfLineIDToRowID();
+        if ( map_line2row == null ) {
+            if ( ! y_maps.update() )
+                Dialogs.error( TopWindow.Timeline.getWindow(),
+                               "Error in updating YaxisMaps!" );
+            map_line2row = y_maps.getMapOfLineIDToRowID();
         }
 
-        private Point getGlobalClickPoint( final Point local_click )
-        {
-            Point origin       = scrollable.getLocationOnScreen();
-            return   new Point( origin.x + local_click.x,
-                                origin.y + local_click.y );
-        }
+        Iterator sobjs;
+        Shadow   sobj;
+        Iterator dobjs;
+        Drawable dobj;
+        Drawable clicked_dobj;
 
-        public void mouseClicked( MouseEvent mevt )
-        {
-            if ( SwingUtilities.isRightMouseButton( mevt ) )
-                this.rightMouseClicked( mevt );
-            else if ( SwingUtilities.isLeftMouseButton( mevt ) )
-                this.leftMouseClicked( mevt );
-        }
-
-        private void rightMouseClicked( MouseEvent mevt )
-        {
-            DrawableInfoDialog  dobj_dialog;
-            Point               local_click, global_click;
-
-            local_click = mevt.getPoint();
-            // System.out.println( "\nrightMouseClicked at " + local_click );
-            CoordPixelImage coord_xform;
-            coord_xform = new CoordPixelImage( scrollable, row_height, 
-                                        scrollable.getTimeBoundsOfImages() );
-
-            // Determine the timeframe of the current view
-            TimeBoundingBox timeframe = new TimeBoundingBox();
-            timeframe.setEarliestTime( time_model.getTimeViewPosition() );
-            timeframe.setLatestFromEarliest( time_model.getTimeViewExtent() );
-            // System.out.println( "CurrView's timeframe = " + timeframe );
-
-            Map map_line2row = y_maps.getMapOfLineIDToRowID();
-            if ( map_line2row == null ) {
-                if ( ! y_maps.update() )
-                    Dialogs.error( TopWindow.Timeline.getWindow(),
-                                   "Error in updating YaxisMaps!" );
-                map_line2row = y_maps.getMapOfLineIDToRowID();
-            }
-
-            Iterator sobjs;
-            Shadow   sobj;
-            Iterator dobjs;
-            Drawable dobj;
-            Drawable clicked_dobj;
-
-            // Search Nestless Drawables
-            dobjs = treetrunk.iteratorOfDrawables( timeframe, false, false );
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
-                if ( clicked_dobj != null ) {
-                    global_click = getGlobalClickPoint( local_click );
-                    dobj_dialog  = new DrawableInfoDialog( root_window,
-                                                           clicked_dobj );
-                    dobj_dialog.setVisibleAtLocation( global_click );
-                    return;
-                }
-            }
-
-            // Search Nestless Shadows
-            sobjs = treetrunk.iteratorOfLowestFloorShadows( timeframe,
-                                                            false, false );
-            while ( sobjs.hasNext() ) {
-                sobj = (Shadow) sobjs.next();
-                clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
-                if ( clicked_dobj != null ) {
-                    global_click = getGlobalClickPoint( local_click );
-                    dobj_dialog  = new DrawableInfoDialog( root_window,
-                                                           clicked_dobj );
-                    dobj_dialog.setVisibleAtLocation( global_click );
-                    return;
-                }
-            }
-
-            // Search Nestable Drawables
-            dobjs = treetrunk.iteratorOfDrawables( timeframe, false, true );
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
-                if ( clicked_dobj != null ) {
-                    global_click = getGlobalClickPoint( local_click );
-                    dobj_dialog  = new DrawableInfoDialog( root_window,
-                                                           clicked_dobj );
-                    dobj_dialog.setVisibleAtLocation( global_click );
-                    return;
-                }
-            }
-            
-            // Search Nestable Shadows
-            sobjs = treetrunk.iteratorOfLowestFloorShadows( timeframe,
-                                                            false, true );
-            while ( sobjs.hasNext() ) {
-                sobj = (Shadow) sobjs.next();
-                clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
-                if ( clicked_dobj != null ) {
-                    global_click = getGlobalClickPoint( local_click );
-                    dobj_dialog  = new DrawableInfoDialog( root_window,
-                                                           clicked_dobj );
-                    dobj_dialog.setVisibleAtLocation( global_click );
-                    return;
-                }
+        // Search Nestless Drawables
+        dobjs = treetrunk.iteratorOfDrawables( vport_timeframe,
+                                               false, false );
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
+                                                      map_line2row,
+                                                      local_click );
+            if ( clicked_dobj != null ) {
+                return  new InfoDialogForDrawable( root_window,
+                                                   clicked_time,
+                                                   y_colnames,
+                                                   map_line2treeleaf,
+                                                   clicked_dobj );
             }
         }
 
-        private void leftMouseClicked( MouseEvent mevt )
-        {
-            Point               local_click;
-            double              clicked_time;
-
-            local_click = mevt.getPoint();
-            CoordPixelImage coord_xform;
-            coord_xform = new CoordPixelImage( scrollable, row_height,
-                                        scrollable.getTimeBoundsOfImages() );
-            clicked_time = coord_xform.convertPixelToTime( local_click.x );
-            time_model.setTimeZoomFocus( clicked_time );    
-            // System.out.println( "\nleftMouseClicked at " + local_click
-            //                   + ".  i.e at time " + clicked_time );
+        // Search Nestless Shadows
+        sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
+                                                        false, false );
+        while ( sobjs.hasNext() ) {
+            sobj = (Shadow) sobjs.next();
+            clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
+                                                      map_line2row,
+                                                      local_click );
+            if ( clicked_dobj != null ) {
+                return  new InfoDialogForDrawable( root_window,
+                                                   clicked_time,
+                                                   y_colnames,
+                                                   map_line2treeleaf,
+                                                   clicked_dobj );
+            }
         }
 
-        /*
-        public void mouseReleased( MouseEvent mevt )
-        {
-            System.out.println( "mouseReleased at " + mevt.getPoint() );
+        // Search Nestable Drawables
+        dobjs = treetrunk.iteratorOfDrawables( vport_timeframe,
+                                               false, true );
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
+                                                      map_line2row,
+                                                      local_click );
+            if ( clicked_dobj != null ) {
+                return  new InfoDialogForDrawable( root_window,
+                                                   clicked_time,
+                                                   y_colnames,
+                                                   map_line2treeleaf,
+                                                   clicked_dobj );
+            }
         }
-        */
+        
+        // Search Nestable Shadows
+        sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
+                                                        false, true );
+        while ( sobjs.hasNext() ) {
+            sobj = (Shadow) sobjs.next();
+            clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
+                                                      map_line2row,
+                                                      local_click );
+            if ( clicked_dobj != null ) {
+                return  new InfoDialogForDrawable( root_window,
+                                                   clicked_time,
+                                                   y_colnames,
+                                                   map_line2treeleaf,
+                                                   clicked_dobj );
+            }
+        }
+
+        return super.getTimePropertyAt( local_click );
     }
 }

@@ -27,6 +27,7 @@ public class ActionVportDown implements ActionListener
     {
         scrollbar.setValue( scrollbar.getValue()
                           + scrollbar.getHeight() / 2 );
-        Debug.displayLine( "Action for Down Viewport button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Down Viewport button" );
     }
 }

@@ -18,7 +18,6 @@ import java.net.URL;
 
 public class TimelineToolBar extends JToolBar
 {
-    private boolean                 isApplet;
     private ViewportTimeYaxis       canvas_vport;
     private JScrollBar              y_scrollbar;
     private YaxisTree               y_tree;
@@ -55,14 +54,12 @@ public class TimelineToolBar extends JToolBar
 
     private String                  img_path = "/images/";
 
-    public TimelineToolBar( boolean in_isApplet, 
-                            ViewportTimeYaxis in_canvas_vport,
+    public TimelineToolBar( ViewportTimeYaxis in_canvas_vport,
                             JScrollBar in_y_scrollbar,
                             YaxisTree in_y_tree, YaxisMaps in_y_maps,
                             ScrollbarTime in_t_scrollbar, ModelTime in_t_model )
     {
         super();
-        isApplet         = in_isApplet;
         canvas_vport     = in_canvas_vport;
         y_scrollbar      = in_y_scrollbar;
         y_tree           = in_y_tree;
@@ -82,7 +79,6 @@ public class TimelineToolBar extends JToolBar
         URL url = null;
 
         url = getClass().getResource( filename );
-        // Debug.println( "getURL: url = " + url );
 
         return url;
     }
@@ -350,7 +346,6 @@ public class TimelineToolBar extends JToolBar
 
         refresh_btn.setEnabled( true );
         print_btn.setEnabled( true );
-        if ( isApplet )
-            stop_btn.setEnabled( false );
+        stop_btn.setEnabled( true );
     }
 }

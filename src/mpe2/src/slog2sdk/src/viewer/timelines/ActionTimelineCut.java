@@ -25,6 +25,7 @@ public class ActionTimelineCut implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Cut Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Cut Timeline button" );
     }
 }

@@ -27,6 +27,7 @@ public class ActionVportBackward implements ActionListener
     {
         scrollbar.setValue( scrollbar.getValue()
                           - scrollbar.getBlockIncrement() / 2 );
-        Debug.displayLine( "Action for Backward Viewport button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Backward Viewport button" );
     }
 }

@@ -28,7 +28,8 @@ public class ActionYaxisTreeCollapse implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Collapse Tree button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Collapse Tree button" );
 
         tree_view.collapseLevel();
         toolbar.commit_btn.doClick();

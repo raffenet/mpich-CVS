@@ -33,7 +33,9 @@ public class ActionTimelineMark implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Mark Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Mark Timeline button" );
+
         TreePath[]        selected_paths;
         MutableTreeNode   node;
 
@@ -46,10 +48,14 @@ public class ActionTimelineMark implements ActionListener
         selected_paths = tree.getSelectionPaths();
         for ( int idx = 0; idx < selected_paths.length; idx++ ) {
             node = (MutableTreeNode) selected_paths[idx].getLastPathComponent();
-            if ( tree.isExpanded( selected_paths[ idx ] ) )
-                Debug.displayLine( "\tselected an expanded node " + node );
-            else
-                Debug.displayLine( "\tselected a collapsed node " + node );
+            if ( tree.isExpanded( selected_paths[ idx ] ) ) {
+                if ( Debug.isActive() )
+                    Debug.println( "\tselected an expanded node " + node );
+            }
+            else {
+                if ( Debug.isActive() )
+                    Debug.println( "\tselected a collapsed node " + node );
+            }
         }
         tree.renewCutAndPasteBuffer();
         if ( tree.isCutAndPasteBufferUniformlyLeveled( selected_paths ) )

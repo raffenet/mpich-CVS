@@ -34,7 +34,8 @@ public class ActionYaxisTreeCommit implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Commit YaxisTree button, Redraw!" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Commit YaxisTree button, Redraw!" );
 
         if ( ! y_maps.update() )
             Dialogs.error( TopWindow.Timeline.getWindow(),

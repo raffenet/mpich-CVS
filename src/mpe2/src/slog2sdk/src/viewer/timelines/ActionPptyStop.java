@@ -27,7 +27,8 @@ public class ActionPptyStop implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Stop Property button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Stop Property button" );
         TopWindow.Timeline.disposeAll();
     }
 }

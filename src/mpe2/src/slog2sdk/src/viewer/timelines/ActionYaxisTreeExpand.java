@@ -28,7 +28,8 @@ public class ActionYaxisTreeExpand implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Expand Tree button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Expand Tree button" );
 
         tree_view.expandLevel();
         toolbar.commit_btn.doClick();

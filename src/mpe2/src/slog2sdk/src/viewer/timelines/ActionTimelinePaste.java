@@ -25,6 +25,7 @@ public class ActionTimelinePaste implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Paste Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Paste Timeline button" );
     }
 }

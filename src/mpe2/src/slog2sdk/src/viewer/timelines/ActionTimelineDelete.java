@@ -33,7 +33,9 @@ public class ActionTimelineDelete implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Delete Timeline button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Delete Timeline button" );
+
         TreePath[]        child_paths;
         MutableTreeNode   child;
         int               idx;
@@ -53,7 +55,8 @@ public class ActionTimelineDelete implements ActionListener
         // Collapse any marked timelines which are expanded
         for ( idx = 0; idx < child_paths.length; idx++ ) {
             if ( tree.isExpanded( child_paths[ idx ] ) ) {
-                Debug.displayLine( "\tCollapse " + child_paths[ idx ] );
+                if ( Debug.isActive() )
+                    Debug.println( "\tCollapse " + child_paths[ idx ] );
                 tree.collapsePath( child_paths[ idx ] );
             }
         }
@@ -62,7 +65,8 @@ public class ActionTimelineDelete implements ActionListener
         for ( idx = 0; idx < child_paths.length; idx++ ) {
             child = (MutableTreeNode) child_paths[ idx ].getLastPathComponent();
             tree_model.removeNodeFromParent( child );
-            Debug.displayLine( "\tCut " + child );
+            if ( Debug.isActive() )
+                Debug.println( "\tCut " + child );
         }
 
         // Clear up the marked timelines in the buffer

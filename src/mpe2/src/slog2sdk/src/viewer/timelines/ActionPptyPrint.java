@@ -25,6 +25,7 @@ public class ActionPptyPrint implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        Debug.displayLine( "Action for Print Property button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Print Property button" );
     }
 }

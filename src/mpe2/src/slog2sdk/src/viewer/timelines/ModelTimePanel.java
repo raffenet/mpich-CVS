@@ -80,14 +80,16 @@ public class ModelTimePanel extends JPanel
     */
     public void timeChanged( TimeEvent evt )
     {
-        Debug.println( "ModelTimePanel: timeChanged()'s START: " );
+        if ( Debug.isActive() )
+            Debug.println( "ModelTimePanel: timeChanged()'s START: " );
         fld_tGlobal_min.setDouble( model.getTimeGlobalMinimum() );
         fld_tView_init.setDouble( model.getTimeViewPosition() );
         fld_tZoom_focus.setDouble( model.getTimeZoomFocus() );
         fld_tView_final.setDouble( model.getTimeViewPosition()
                                  + model.getTimeViewExtent() );
         fld_tGlobal_max.setDouble( model.getTimeGlobalMaximum() );
-        Debug.println( "ModelTimePanel: timeChanged()'s END: " );
+        if ( Debug.isActive() )
+            Debug.println( "ModelTimePanel: timeChanged()'s END: " );
     }
 
     public void actionPerformed( ActionEvent evt )

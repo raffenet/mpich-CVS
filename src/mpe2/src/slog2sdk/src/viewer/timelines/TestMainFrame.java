@@ -52,8 +52,8 @@ public class TestMainFrame extends JFrame
         TestMainFrame      frame;
 
         checkVersion();
-        // Debug.initTextArea();
-        Debug.initTextArea();
+        // Debug.setActive( true ); Debug.initTextArea();
+        Debug.setActive( true ); Debug.initTextArea();
 
         frame     = new TestMainFrame();
         // frame.setSize( new Dimension( 460, 100 ) );

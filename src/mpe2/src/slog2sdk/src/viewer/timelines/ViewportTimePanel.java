@@ -94,7 +94,8 @@ public class ViewportTimePanel extends JPanel
         if ( viewport != null ) {
             Dimension min_size, max_size;
             Insets    insets = this.getInsets();
-            Debug.println( "ViewportTimePanel(): this.insets = " + insets );
+            if ( Debug.isActive() )
+                Debug.println( "ViewportTimePanel(): this.insets = " + insets );
             min_size  = Routines.correctSize( viewport.getMinimumSize(),
                                               insets );
             super.setMinimumSize( min_size );
@@ -108,7 +109,8 @@ public class ViewportTimePanel extends JPanel
     public Dimension getMinimumSize()
     {
         Dimension min_size = super.getMinimumSize();
-        Debug.println( "ViewportTimePanel(): min_size = " + min_size );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTimePanel(): min_size = " + min_size );
         return min_size;
     }
 
@@ -117,7 +119,8 @@ public class ViewportTimePanel extends JPanel
     public Dimension getMaximumSize()
     {
         Dimension max_size = super.getMaximumSize();
-        Debug.println( "ViewportTimePanel(): max_size = " + max_size );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTimePanel(): max_size = " + max_size );
         return max_size;
     }
 
@@ -125,7 +128,8 @@ public class ViewportTimePanel extends JPanel
     public Dimension getPreferredSize()
     {
         Dimension pref_size = super.getPreferredSize();
-        Debug.println( "ViewportTimePanel(): pref_size = " + pref_size );
+        if ( Debug.isActive() )
+            Debug.println( "ViewportTimePanel(): pref_size = " + pref_size );
         return pref_size;
     }
 }

@@ -24,8 +24,6 @@ import viewer.common.Const;
 
 public class TimelinePanel extends JPanel
 {
-    private Component               root_window;
-    private boolean                 isApplet;
     private InputLog                slog_ins;
     private TreeTrunk               treetrunk;
     private TreeNode                treeroot;
@@ -53,14 +51,10 @@ public class TimelinePanel extends JPanel
 
 
 
-    public TimelinePanel( Component parent,
-                          final InputLog in_slog, int view_ID )
+    public TimelinePanel( final InputLog in_slog, int view_ID )
     {
         super();
-        root_window  = parent;
         slog_ins     = in_slog;
-        isApplet     = root_window.getClass().getSuperclass().getName()
-                       .equals( "javax.swing.JApplet" );
 
         /*
         System.out.println( "ScrollBar.MinThumbSize = "
@@ -71,14 +65,12 @@ public class TimelinePanel extends JPanel
         Dimension sb_minThumbSz = (Dimension)
                                   UIManager.get( "ScrollBar.minimumThumbSize" );        sb_minThumbSz.width = 4;
         UIManager.put( "ScrollBar.minimumThumbSize", sb_minThumbSz );
-        // Debug.println( "getTopLevelAncestor() = " + getTopLevelAncestor() );
-        // Debug.println( "root_window_superclass is "
-        //              + root_window_superclass + "." );
 
 
         /* Initialize the YaxisMaps through the initialization of YaxisTree */
         LineIDMapList lineIDmaps = slog_ins.getLineIDMapList();
         LineIDMap     lineIDmap  = (LineIDMap) lineIDmaps.get( view_ID );
+        String[]      y_colnames  = lineIDmap.getColumnLabels();
         y_maps      = new YaxisMaps( lineIDmap );
         y_tree      = new YaxisTree( y_maps.getTreeRoot() );
         y_maps.setTreeView( y_tree );   
@@ -117,7 +109,7 @@ public class TimelinePanel extends JPanel
 
                 /* The Time Ruler */
                 time_ruler        = new RulerTime( time_model );
-                time_ruler_vport  = new ViewportTime();
+                time_ruler_vport  = new ViewportTime( time_model );
                 time_ruler_vport.setView( time_ruler );
                 time_ruler_panel  = new ViewportTimePanel( time_ruler_vport );
                 time_ruler_panel.setBorderTitle( " Time (seconds) ",
@@ -151,10 +143,10 @@ public class TimelinePanel extends JPanel
                      new Dimension( 100, ruler_panel_height ) );
 
                 /* The TimeLine Canvas */
-                time_canvas       = new CanvasTime( root_window,
-                                                    time_model, treetrunk,
-                                                    y_model, y_maps );
-                time_canvas_vport = new ViewportTimeYaxis();
+                time_canvas       = new CanvasTime( time_model, treetrunk,
+                                                    y_model, y_maps,
+                                                    y_colnames );
+                time_canvas_vport = new ViewportTimeYaxis( time_model );
                 time_canvas_vport.setView( time_canvas );
                 time_canvas_panel = new ViewportTimePanel( time_canvas_vport );
                 time_canvas_panel.setBorderTitle( " TimeLines ",
@@ -204,7 +196,6 @@ public class TimelinePanel extends JPanel
                 /* YaxisTree's Column Labels */
                 int       left_bottom_height = ruler_panel_height
                                              + canvas_panel_insets.bottom;
-                String[]  y_colnames  = lineIDmap.getColumnLabels();
                 JTextArea y_colarea   = new JTextArea();
                 // y_colarea.setFont( Const.FONT );
                 StringBuffer text_space  = new StringBuffer( " " );
@@ -253,7 +244,7 @@ public class TimelinePanel extends JPanel
         this.add( splitter, BorderLayout.CENTER );
 
             /* The ToolBar for various user controls */
-            toolbar = new TimelineToolBar( isApplet, time_canvas_vport,
+            toolbar = new TimelineToolBar( time_canvas_vport,
                                            y_scrollbar, y_tree, y_maps,
                                            time_scrollbar, time_model );
 
@@ -273,12 +264,14 @@ public class TimelinePanel extends JPanel
         // Initialize toolbar after creation of YaxisTree view
         toolbar.init();
 
-        Debug.println( "TimelinePanel.init(): time_model = "
-                     + time_model );
-        Debug.println( "TimelinePanel.init(): time_scrollbar = "
-                     + time_scrollbar );
-        Debug.println( "TimelinePanel.init(): time_ruler = "
-                     + time_ruler );
+        if ( Debug.isActive() ) {
+            Debug.println( "TimelinePanel.init(): time_model = "
+                         + time_model );
+            Debug.println( "TimelinePanel.init(): time_scrollbar = "
+                         + time_scrollbar );
+            Debug.println( "TimelinePanel.init(): time_ruler = "
+                         + time_ruler );
+        }
     }
 
 }

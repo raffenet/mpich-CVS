@@ -41,6 +41,7 @@ public class ActionZoomHome implements ActionListener
             toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
         }
 
-        Debug.displayLine( "Action for Zoom Home button" );
+        if ( Debug.isActive() )
+            Debug.println( "Action for Zoom Home button" );
     }
 }
