@@ -12,16 +12,16 @@ if [ ! -d $srcdir ] ; then
         srcdir=
     fi
 fi
-outdir=/home/gropp/projects/mpich2-tests
+outdir=/home/MPI/nightly
 if [ ! -d $outdir ] ; then
-    if [ -d /homes/gropp/projects/mpich2-tests ] ; then
-        outdir=/homes/gropp/projects/mpich2-tests
+    if [ -d /homes/MPI/nightly ] ; then
+        outdir=/homes/MPI/nightly
     else
         # We'll check for it later, after the args
         outdir=
     fi
 fi
-if [ -z "$tmpdir" ] ; then tmpdir=/sandbox/gropp ; fi
+if [ -z "$tmpdir" ] ; then tmpdir=/sandbox/$LOGNAME ; fi
 if [ -z "$rundir" ] ; then rundir=$tmpdir/cb/mpich2 ; fi
 if [ -z "$mpichtestdir" ] ; then mpichtestdir=$tmpdir/cb/mpitest ; fi
 if [ -z "$mpicxxtestdir" ] ; then mpicxxtestdir=$tmpdir/cb/mpicxxtest ; fi
