@@ -1,8 +1,10 @@
 #! /bin/sh
 #
 # Create simple schedule web pages
+# Switch to 4 columns because our print drivers no longer properly resize 
+# the page, leading to having some text chopped of.
 rm -f .m1 .m2 .m3 mpich2-1pgrs.html
-cat schedule | maint/schdtox -html=6 -mpi1 > .m2
+cat schedule | maint/schdtox -html=4 -mpi1 > .m2
 cat >>.m1 <<EOF
 <HTML>
 <HEAD>
@@ -19,7 +21,7 @@ cat .m1 .m2 .m3 > mpich2-1pgrs.html
 rm -f .m1 .m2 .m3
 #
 rm -f .m1 .m2 .m3 mpich2-pgrs.html
-cat schedule | maint/schdtox -html=6 > .m2
+cat schedule | maint/schdtox -html=4 > .m2
 cat >>.m1 <<EOF
 <HTML>
 <HEAD>
