@@ -36,15 +36,10 @@ typedef long PointerInt;
 #if defined(HAVE_STDLIB_H) || defined(STDC_HEADERS)
 #include <stdlib.h>
 #else
-#ifdef __STDC__
-extern void 	*calloc(/*size_t, size_t*/);
-extern void	free(/*void * */);
-extern void	*malloc(/*size_t*/);
-#else
-extern char *malloc();
-extern char *calloc();
-extern int free();
-#endif
+/* We should test to see if these will work */
+extern void *malloc( size_t );
+extern void *calloc( size_t, size_t );
+extern int free( void *);
 #endif
 
 /*D
@@ -165,7 +160,10 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
 	nsize += (TR_ALIGN_BYTES - (nsize & TR_ALIGN_MASK));
     if ((allocated + (long)nsize > TRMaxMemAllow) && TRMaxMemAllow) {
 	/* Return a null when memory would be exhausted */
-	fprintf( stderr, "Exceeded allowed memory! \n" );
+	/* This is only called when additional debugging is enabled,
+	   so the fact that this does not go through the regular error 
+	   message system is not a problem. */
+	MPIU_Error_printf( "Exceeded allowed memory! \n" );
 	return 0;
     }
 
