@@ -15,7 +15,7 @@
   /* no problems */
 #define MPE_LOG_LOCKED_OUT        1
 #define MPE_Log_LOCKED_OUT        MPE_LOG_LOCKED_OUT
-  /* logs are are being worked on, cannot insert any new entries */
+  /* logs are being worked on, cannot insert any new entries */
 #define MPE_LOG_NO_MEMORY         2
 #define MPE_Log_NO_MEMORY         MPE_LOG_NO_MEMORY
   /* could not allocate memory for logging data */

@@ -149,13 +149,6 @@ typedef struct {
 #define CLOG_RECLEN_TIMESHIFT  ( sizeof(CLOG_Time_t) )
 
 /*
-   size to guarantee enough room in each block for the longest record + trailer
-   i.e    sizeof(CLOG_Rec_Header) + sizeof(CLOG_Rec_StateDef)
-        + sizeof(CLOG_Rec_Header)    {CLOG_Rec_Endblock}
-*/
-#define CLOG_RECLEN_MAX        ( 18 * sizeof(CLOG_Time_t) ) /* in bytes */
-
-/*
    Total number of CLOG_REC_XXX listed below,
    starting from 0 to CLOG_REC_NUM, excluding CLOG_REC_UNDEF
 */
@@ -175,6 +168,11 @@ typedef struct {
 #define CLOG_REC_COMMEVT      9     /* communicator construction/destruction  */
 #define CLOG_REC_SRCLOC      10     /* identifier of location in source */
 #define CLOG_REC_TIMESHIFT   11     /* time shift calculated for this process */
+
+/* special event & state type for CLOG internal state, CLOG_Buffer_write2disk */
+#define CLOG_STATEID_BUFFERWRITE      -1
+#define CLOG_EVT_BUFFERWRITE_START -1001
+#define CLOG_EVT_BUFFERWRITE_FINAL -1002
 
 /* special event type for message type events */
 #define CLOG_EVT_SENDMSG   -101
@@ -234,5 +232,6 @@ void CLOG_Rec_swap_bytes_first( CLOG_Rec_Header_t *hdr );
 void CLOG_Rec_print( CLOG_Rec_Header_t *hdr, FILE *stream );
 void CLOG_Rec_sizes_init( void );
 int CLOG_Rec_size( unsigned int rectype );
+int CLOG_Rec_size_max( void );
 
 #endif  /* of _CLOG_RECORD */

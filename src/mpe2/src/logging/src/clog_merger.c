@@ -36,6 +36,8 @@
 
 #define CLOG_RANK_NULL   -1
 
+static int clog_merger_minblocksize;
+
 CLOG_Merger_t* CLOG_Merger_create( unsigned int block_size )
 {
     CLOG_Merger_t  *merger;
@@ -175,6 +177,11 @@ void CLOG_Merger_init(       CLOG_Merger_t    *merger,
         }
         CLOG_Preamble_write( preamble, CLOG_BOOL_TRUE, merger->out_fd );
     }
+
+    /*
+       Initialize the CLOG_Merger's minimum block size: CLOG_REC_ENDBLOCK
+    */
+    clog_merger_minblocksize = CLOG_Rec_size( CLOG_REC_ENDBLOCK );
 }
                                                                                 
 /* Finalize the CLOG_Merger_t */
@@ -206,6 +213,25 @@ void CLOG_Merger_flush( CLOG_Merger_t *merger )
 }
 
 /*
+    clog_merger_minblocksize is defined in CLOG_Merger_init()
+*/
+int CLOG_Merger_reserved_block_size( unsigned int rectype )
+{
+    if ( rectype < CLOG_REC_NUM )
+        return CLOG_Rec_size( rectype ) + clog_merger_minblocksize;
+    else {
+        fprintf( stderr, __FILE__":CLOG_Merger_reserved_block_size() - Warning!"
+                         "\t""Unknown record type %d\n", rectype );
+        fflush( stderr );
+        /*
+           size to guarantee enough room in each block for the longest record
+           + trailer(endblock rec) + internal record(CLOG_Buffer_write2disk)
+        */
+        return CLOG_Rec_size_max() +  clog_merger_minblocksize;
+    }
+}
+
+/*
    Save the CLOG record marked by CLOG_Rec_Header_t to the output file.
 */
 void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
@@ -216,12 +242,6 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
 
     sorted_blk = merger->sorted_blk;
 
-    /* CLOG_Rec_print( hdr, stdout ); */
-    /* Save the CLOG record into the sorted buffer */
-    reclen = CLOG_Rec_size( hdr->rectype );
-    memcpy( sorted_blk->ptr, hdr, reclen );
-    sorted_blk->ptr += reclen;
-
 
     /*
         If the sorted_blk is full, send sorted_blk to the process's parent
@@ -229,7 +249,8 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
         be the root.  Then write the sorted_blk to the merged logfile,
         reinitialize the sorted_blk.
     */
-    if ( sorted_blk->ptr + CLOG_RECLEN_MAX >= sorted_blk->tail ) {
+    if (    sorted_blk->ptr + CLOG_Merger_reserved_block_size( hdr->rectype )
+         >= sorted_blk->tail ) {
         sorted_hdr = (CLOG_Rec_Header_t *) sorted_blk->ptr;
         sorted_hdr->timestamp  = hdr->timestamp;  /* use prev record's time */
         sorted_hdr->rectype    = CLOG_REC_ENDBLOCK;
@@ -247,6 +268,12 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
         }
         sorted_blk->ptr = sorted_blk->head;
     }
+
+    /* CLOG_Rec_print( hdr, stdout ); */
+    /* Save the CLOG record into the sorted buffer */
+    reclen = CLOG_Rec_size( hdr->rectype );
+    memcpy( sorted_blk->ptr, hdr, reclen );
+    sorted_blk->ptr += reclen;
 }
 
 

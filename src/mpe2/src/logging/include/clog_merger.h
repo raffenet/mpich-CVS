@@ -46,6 +46,8 @@ void CLOG_Merger_flush( CLOG_Merger_t *merger );
 
 void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr );
 
+int CLOG_Merger_reserved_block_size( unsigned int rectype );
+
 void CLOG_Merger_refill_sideblock( CLOG_BlockData_t  *blockdata,
                                    int block_mpi_rank, int block_size );
 

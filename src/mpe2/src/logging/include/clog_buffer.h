@@ -82,11 +82,15 @@ void CLOG_Buffer_localIO_read( CLOG_Buffer_t *buffer );
 
 void CLOG_Buffer_localIO_finalize( CLOG_Buffer_t *buffer );
 
+int CLOG_Buffer_reserved_block_size( unsigned int rectype );
+
 
 
 void CLOG_Buffer_save_endlog( CLOG_Buffer_t *buffer );
 
 void CLOG_Buffer_save_endblock( CLOG_Buffer_t *buffer );
+
+void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer, int rectype );
 
 void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer, int rectype );
 
@@ -101,6 +105,8 @@ void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer, int etype,
 
 void CLOG_Buffer_save_constdef( CLOG_Buffer_t *buffer,
                                 int etype, int value, const char *name );
+
+void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer, int etype );
 
 void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer, int etype );
 

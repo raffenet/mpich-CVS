@@ -417,6 +417,7 @@ void CLOG_Rec_print( CLOG_Rec_Header_t *hdr, FILE *stream )
 }
 
 static int clog_reclens[ CLOG_REC_NUM ];
+static int clog_reclen_max;
 
 /*
     Pre-compute the record size or disk footprint of a complete record,
@@ -424,28 +425,65 @@ static int clog_reclens[ CLOG_REC_NUM ];
 */
 void CLOG_Rec_sizes_init( void )
 {
+    clog_reclen_max                    = 0;
+
     clog_reclens[ CLOG_REC_ENDLOG ]    = CLOG_RECLEN_HEADER;
+    if ( clog_reclens[ CLOG_REC_ENDLOG ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_ENDLOG ];
+
     clog_reclens[ CLOG_REC_ENDBLOCK ]  = CLOG_RECLEN_HEADER;
+    if ( clog_reclens[ CLOG_REC_ENDBLOCK ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_ENDBLOCK ];
+
     clog_reclens[ CLOG_REC_STATEDEF ]  = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_STATEDEF;
+    if ( clog_reclens[ CLOG_REC_STATEDEF ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_STATEDEF ];
+
     clog_reclens[ CLOG_REC_EVENTDEF ]  = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_EVENTDEF;
+    if ( clog_reclens[ CLOG_REC_EVENTDEF ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_EVENTDEF ];
+
     clog_reclens[ CLOG_REC_CONSTDEF ]  = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_CONSTDEF;
+    if ( clog_reclens[ CLOG_REC_CONSTDEF ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_CONSTDEF ];
+
     clog_reclens[ CLOG_REC_BAREEVT ]   = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_BAREEVT;
+    if ( clog_reclens[ CLOG_REC_BAREEVT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_BAREEVT ];
+
     clog_reclens[ CLOG_REC_CARGOEVT ]  = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_CARGOEVT;
+    if ( clog_reclens[ CLOG_REC_CARGOEVT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_CARGOEVT ];
+
     clog_reclens[ CLOG_REC_MSGEVT ]    = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_MSGEVT;
+    if ( clog_reclens[ CLOG_REC_MSGEVT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_MSGEVT ];
+
     clog_reclens[ CLOG_REC_COLLEVT ]   = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_COLLEVT;
+    if ( clog_reclens[ CLOG_REC_COLLEVT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_COLLEVT ];
+
     clog_reclens[ CLOG_REC_COMMEVT ]   = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_COMMEVT;
+    if ( clog_reclens[ CLOG_REC_COMMEVT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_COMMEVT ];
+
     clog_reclens[ CLOG_REC_SRCLOC ]    = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_SRCLOC;
+    if ( clog_reclens[ CLOG_REC_SRCLOC ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_SRCLOC ];
+
     clog_reclens[ CLOG_REC_TIMESHIFT ] = CLOG_RECLEN_HEADER
                                        + CLOG_RECLEN_TIMESHIFT;
+    if ( clog_reclens[ CLOG_REC_TIMESHIFT ] > clog_reclen_max )
+        clog_reclen_max  = clog_reclens[ CLOG_REC_TIMESHIFT ];
 }
 
 /*
@@ -466,4 +504,9 @@ int CLOG_Rec_size( unsigned int rectype )
         */
         return clog_reclens[ CLOG_REC_ENDLOG ];
     }
+}
+
+int CLOG_Rec_size_max( void )
+{
+    return clog_reclen_max;
 }

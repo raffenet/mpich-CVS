@@ -86,6 +86,16 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
        adjust events happened afterward.
     */
     CLOG_Buffer_init_timeshift( stream->buffer );
+
+    /* Adding the CLOG_Buffer_write2disk's state definition */
+    if ( stream->buffer->local_mpi_rank == 0 ) {
+        CLOG_Buffer_save_statedef( stream->buffer,
+                                   CLOG_STATEID_BUFFERWRITE,
+                                   CLOG_EVT_BUFFERWRITE_START,
+                                   CLOG_EVT_BUFFERWRITE_FINAL,
+                                   "maroon", "CLOG_Buffer_write2disk",
+                                   NULL );
+    }
 }
 
 void CLOG_Local_finalize( CLOG_Stream_t *stream )

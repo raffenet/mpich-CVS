@@ -38,6 +38,8 @@
 
 #define CLOG_NULL_FILE       -5
 
+static int clog_buffer_minblocksize;
+
 CLOG_Buffer_t* CLOG_Buffer_create( void )
 {
     CLOG_Buffer_t *buffer;
@@ -174,6 +176,13 @@ void CLOG_Buffer_init( CLOG_Buffer_t *buffer, const char *local_tmpfile_name )
         }
     }
     buffer->status          = CLOG_INIT_AND_ON;
+
+    /*
+       Initialize the CLOG_Buffer's minimum block size:
+       CLOG_REC_ENDBLOCK + CLOG_REC_BAREEVT for CLOG_Buffer_write2disk
+    */
+    clog_buffer_minblocksize = CLOG_Rec_size( CLOG_REC_ENDBLOCK )
+                             + CLOG_Rec_size( CLOG_REC_BAREEVT );
 }
 
 /*
@@ -234,15 +243,28 @@ void CLOG_Buffer_localIO_write( CLOG_Buffer_t *buffer )
 void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
 {
     if ( buffer->curr_block->next != NULL ) {
+        CLOG_Buffer_save_endblock( buffer );
+
         buffer->curr_block = buffer->curr_block->next;
         buffer->num_used_blocks++;
+        CLOG_Block_reset( buffer->curr_block );
     }
     else {
+        /*
+           Assume space has already been reserved for CLOG_Buffer_write2disk,
+           So save the state CLOG_Buffer_write2disk without checking.
+           Can't check anyway, circular logic.
+        */
+        CLOG_Buffer_save_bareevt_0chk( buffer, CLOG_EVT_BUFFERWRITE_START );
+        CLOG_Buffer_save_endblock( buffer );
+
         if ( buffer->local_fd == CLOG_NULL_FILE )
             CLOG_Buffer_localIO_init4write( buffer );
         CLOG_Buffer_localIO_write( buffer );
+        CLOG_Block_reset( buffer->curr_block );
+
+        CLOG_Buffer_save_bareevt( buffer, CLOG_EVT_BUFFERWRITE_FINAL );
     }
-    CLOG_Block_reset( buffer->curr_block );
 }
 
 void CLOG_Buffer_localIO_flush( CLOG_Buffer_t *buffer )
@@ -469,6 +491,25 @@ void CLOG_Buffer_localIO_finalize( CLOG_Buffer_t *buffer )
     }
 }
 
+/*
+    clog_buffer_minblocksize is defined in CLOG_Buffer_init()
+*/
+int CLOG_Buffer_reserved_block_size( unsigned int rectype )
+{
+    if ( rectype < CLOG_REC_NUM )
+        return CLOG_Rec_size( rectype ) + clog_buffer_minblocksize;
+    else {
+        fprintf( stderr, __FILE__":CLOG_Buffer_reserved_block_size() - Warning!"
+                         "\t""Unknown record type %d\n", rectype );
+        fflush( stderr );
+        /*
+           size to guarantee enough room in each block for the longest record
+           + trailer(endblock rec) + internal record(CLOG_Buffer_write2disk)
+        */
+        return CLOG_Rec_size_max() +  clog_buffer_minblocksize;
+    }
+}
+
 
 
 
@@ -514,14 +555,27 @@ void CLOG_Buffer_save_endblock( CLOG_Buffer_t *buffer )
     }
 }
 
+void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer, int rectype )
+{
+    CLOG_BlockData_t   *blkdata;
+    CLOG_Rec_Header_t  *hdr;
+
+    blkdata          = buffer->curr_block->data;
+    hdr              = (CLOG_Rec_Header_t *) blkdata->ptr;
+    hdr->timestamp   = CLOG_Timer_get();
+    hdr->rectype     = rectype;
+    hdr->procID      = buffer->local_mpi_rank;
+    blkdata->ptr     = hdr->rest;  /* advance to next available space */
+}
+
 void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer, int rectype )
 {
     CLOG_BlockData_t   *blkdata;
     CLOG_Rec_Header_t  *hdr;
 
     blkdata          = buffer->curr_block->data;
-    if ( blkdata->ptr + CLOG_RECLEN_MAX >= blkdata->tail ) {
-        CLOG_Buffer_save_endblock( buffer );
+    if (    blkdata->ptr + CLOG_Buffer_reserved_block_size( rectype )
+         >= blkdata->tail ) {
         CLOG_Buffer_advance_block( buffer );
         blkdata      = buffer->curr_block->data;
     }
@@ -647,6 +701,26 @@ void CLOG_Buffer_save_constdef( CLOG_Buffer_t *buffer,
     }
     else if ( buffer->status == CLOG_UNINIT ) {
         fprintf( stderr, __FILE__":CLOG_Buffer_save_constdef() - \n"
+                         "\t""CLOG is used before being initialized.\n" );
+        fflush( stderr );
+        CLOG_Util_abort( 1 );
+    }
+}
+
+void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer, int etype )
+{
+    CLOG_BlockData_t     *blkdata;
+    CLOG_Rec_BareEvt_t   *bareevt;
+
+    if ( buffer->status == CLOG_INIT_AND_ON ) {
+        CLOG_Buffer_save_header_0chk( buffer, CLOG_REC_BAREEVT );
+        blkdata               = buffer->curr_block->data;
+        bareevt               = (CLOG_Rec_BareEvt_t *) blkdata->ptr;
+        bareevt->etype        = etype;
+        blkdata->ptr          = bareevt->end;
+    }
+    else if ( buffer->status == CLOG_UNINIT ) {
+        fprintf( stderr, __FILE__":CLOG_Buffer_save_bareevt_0chk() - \n"
                          "\t""CLOG is used before being initialized.\n" );
         fflush( stderr );
         CLOG_Util_abort( 1 );
