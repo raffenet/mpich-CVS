@@ -1,9 +1,15 @@
-
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
-  
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
  */
+
 #include "mpiimpl.h"
 #include "dataloop.h"
+
+/* Maximum depth of any dataloop stack */
+#define MAX_DATALOOP_STK 16
 
 /*
   Simple pack routine, using a dataloop description.
@@ -34,21 +40,29 @@
   dest=(char *)dest_t;}
 #endif
 /* This version should be used when the entire loop fits into the destination
-   buffer.  This minimizes the amount of extra processing 
+   buffer.  This minimizes the amount of extra processing.
+
+   To avoid copying the loopinfo in the case that there is a only a single
+   loopinfo (e.g., the stack never has a depth greater than one), we keep
+   a separate curloopinfo and only save the data in loopinfo if we push the
+   value onto the stack.  This should help reduce the overhead of this routine
+   for small counts.
+
+   ***THE UPDATE OF CURLOOPINFO MAY NOT BE CORRECT YET.  
 */
 void MPID_Segment_pack( MPID_Dataloop *loopinfo, 
 			char * restrict src_buf, char * restrict dest_buf )
 {
     int cur_sp = 0, valid_sp = 0;
-    MPID_Dataloop_stackelm stackelm[16], * restrict curstackelm;
+    MPID_Dataloop_stackelm stackelm[MAX_DATALOOP_STK], * restrict curstackelm;
+    MPID_Dataloop *curloopinfo = loopinfo;
     int kind;
 
     curstackelm = &stackelm[0];
-    curstackelm->loopinfo = *loopinfo;
     curstackelm->curcount = 0;
 
     do {
-	kind = curstackelm->loopinfo.kind;
+	kind = curloopinfo->kind;
 	if (kind & DATALOOP_FINAL_MASK) {
 	    /* This is a simple datatype, such as a vector of 
 	       simple elements or a contiguous block loop */
@@ -58,15 +72,15 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    int      *nbytes_array;
 	    switch (kind & DATALOOP_KIND_MASK) {
 	    case MPID_CONTIG:
-		nbytes = curstackelm->loopinfo.loop_params.c_t.count;
+		nbytes = curloopinfo->loop_params.c_t.count;
 		memcpy( dest_buf, src_buf, nbytes );
 		dest_buf += nbytes;
 		break;
 	    case MPID_VECTOR:
-		elmsize   = curstackelm->loopinfo.kind >> DATALOOP_ELMSIZE_SHIFT;
-		count     = curstackelm->loopinfo.loop_params.v_t.count;
-		nbytes    = curstackelm->loopinfo.loop_params.v_t.blocksize;
-		stride    = curstackelm->loopinfo.loop_params.v_t.stride;
+		elmsize   = curloopinfo->kind >> DATALOOP_ELMSIZE_SHIFT;
+		count     = curloopinfo->loop_params.v_t.count;
+		nbytes    = curloopinfo->loop_params.v_t.blocksize;
+		stride    = curloopinfo->loop_params.v_t.stride;
 		if (elmsize == 4) {
 		    VEC_COPY(src_buf,dest_buf,stride,int32_t,nbytes,count);
 		}
@@ -82,21 +96,21 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 		    }
 		}
 		/* final sbuf update is extent */
-		src_buf += curstackelm->loopinfo.extent;
+		src_buf += curloopinfo->extent;
 		break;
 	    case MPID_BLOCKINDEXED:
-		count     = curstackelm->loopinfo.loop_params.bi_t.count;
-		nbytes    = curstackelm->loopinfo.loop_params.bi_t.blocksize;
-		offset_array = curstackelm->loopinfo.loop_params.bi_t.offset;
+		count     = curloopinfo->loop_params.bi_t.count;
+		nbytes    = curloopinfo->loop_params.bi_t.blocksize;
+		offset_array = curloopinfo->loop_params.bi_t.offset;
 		for (i=0; i<count; i++) {
 		    memcpy( dest_buf, src_buf + offset_array[i], nbytes );
 		    dest_buf += nbytes;
 		}
 		break;
 	    case MPID_INDEXED:
-		count     = curstackelm->loopinfo.loop_params.i_t.count;
-		nbytes_array = curstackelm->loopinfo.loop_params.i_t.blocksize;
-		offset_array = curstackelm->loopinfo.loop_params.i_t.offset;
+		count     = curloopinfo->loop_params.i_t.count;
+		nbytes_array = curloopinfo->loop_params.i_t.blocksize;
+		offset_array = curloopinfo->loop_params.i_t.offset;
 		for (i=0; i<count; i++) {
 		    nbytes = nbytes_array[i];
 		    memcpy( dest_buf, src_buf + offset_array[i], nbytes );
@@ -108,14 +122,16 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 		   STRUCT is the same as INDEXED */
 		break;
 	    }
-	    src_buf += curstackelm->loopinfo.extent;
+	    src_buf += curloopinfo->extent;
 	    cur_sp--;
 	    curstackelm--;
+	    curloopinfo = &curstackelm->loopinfo;
 	} else if (curstackelm->curcount ==
-		   curstackelm->loopinfo.loop_params.count) {
+		   curloopinfo->loop_params.count) {
 	    /* We are done with this datatype */
 	    cur_sp--;
 	    curstackelm--;
+	    curloopinfo = &curstackelm->loopinfo;
 	}
 	else {
 	    /* We need to push a datatype.  Two cases: struct or other.
@@ -124,13 +140,14 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    if (kind == MPID_STRUCT) {
 		/* Get the next struct type and push it */
 		stackelm[cur_sp+1].loopinfo = 
-		    (curstackelm->loopinfo.loop_params.s_t.dataloop[curstackelm->curcount]);
+		    (curloopinfo->loop_params.s_t.dataloop[curstackelm->curcount]);
 	    }
 	    else {
 		/* Optimization: We don't need to copy a stack element twice */
 		if (valid_sp <= cur_sp) {
+		    stackelm[cur_sp].loopinfo = *curloopinfo;
 		    stackelm[cur_sp+1].loopinfo = 
-			*curstackelm->loopinfo.loop_params.cm_t.dataloop;
+			*curloopinfo->loop_params.cm_t.dataloop;
 		    valid_sp = cur_sp + 1;
 		}
 	    }
@@ -138,6 +155,14 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    cur_sp++;
 	    curstackelm++;
 	    curstackelm->curcount = 0;
+	    curloopinfo = &curstacklem->loopinfo;
 	}
-    } while (cur_sp >= 0);
+	if (cur_sp < 0) break; /* Exit from loop */
+	/* Otherwise, prepare for the next iteration */
+	curloopinfo = &curstackelm->loopinfo;
+    } /* No while since the test is within the loop */
 }
+
+
+
+
