@@ -176,9 +176,9 @@ LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 # Handle the case of a profile switch
 if [ -n "$profConf" ] ; then
     if [ -s "$libdir/lib$profConf.a" -o -s "$libdir/lib$profConf.so" ] ; then
-	mpilibs=-l$profConf $mpilibs"
+	mpilibs="-l$profConf $mpilibs"
     elif [ -s "$sysconfdir/$profConf.conf" ] ; then
-	. "$sysconfdir/$profConf.conf
+	. $sysconfdir/$profConf.conf
 	if [ -n "$PROFILE_INCPATHS" ] ; then
 	    CFLAGS="$PROFILE_INCPATHS $CFLAGS"
         fi
