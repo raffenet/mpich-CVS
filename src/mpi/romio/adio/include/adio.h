@@ -289,13 +289,10 @@ typedef struct {
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1
 
-/* PFS file-pointer modes */
+/* PFS file-pointer modes (removed most of them because they are unused) */
 #ifndef M_ASYNC 
 #define M_UNIX                    0
 /*#define M_LOG                     1  redefined in malloc.h on SGI! */
-#define M_SYNC                    2
-#define M_RECORD                  3
-#define M_GLOBAL                  4
 #define M_ASYNC                   5
 #endif
 

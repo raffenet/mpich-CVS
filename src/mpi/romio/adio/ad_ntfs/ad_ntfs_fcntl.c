@@ -117,7 +117,13 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_NTFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_code_create(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_IO,
+					   "Unknown flag passed to ADIOI_NTFS_Fcntl", 0);
+	return;
+	/* --END ERROR HANDLING-- */
     }
 }

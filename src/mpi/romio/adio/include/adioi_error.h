@@ -5,6 +5,11 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include <string.h> /* for strerror() */
+
+/* MPIO_CHECK_XXX macros are used to clean up error checking and
+ * handling in many of the romio/mpi-io/ source files.
+ */
 #define MPIO_CHECK_FILE_HANDLE(fh, myname, error_code)          \
 if ((fh <= (MPI_File) 0) ||					\
     ((fh)->cookie != ADIOI_FILE_COOKIE)) {			\
@@ -87,6 +92,28 @@ if ((fh->file_system == ADIO_PIOFS) ||					\
 				      "**iosharedunsupported", 0);	\
     return MPIO_Err_return_file(fh, error_code);			\
 }
+
+/* MPIO_ERR_CREATE_CODE_XXX macros are used to clean up creation of
+ * error codes for common cases in romio/adio/
+ */
+#define MPIO_ERR_CREATE_CODE_ERRNO(myname, myerrno, error_code_p) \
+*(error_code_p) = MPIO_Err_code_create(MPI_SUCCESS,		  \
+				       MPIR_ERR_RECOVERABLE,	  \
+				       myname, __LINE__,	  \
+				       MPI_ERR_IO,		  \
+				       "Syscall I/O error",	  \
+				       "Error from %s: %s",	  \
+				       myname,                    \
+				       strerror(myerrno));
+
+#define MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname, key, error_code_p)	      \
+*(error_code_p) = MPIO_Err_code_create(MPI_SUCCESS,			      \
+				       MPIR_ERR_RECOVERABLE,		      \
+				       myname, __LINE__,		      \
+                                       MPI_ERR_NOT_SAME,                      \
+				       "Value for info key not same across processes",  \
+				       "Value for info key %s not same across processes",\
+				       key);
 
 
 /* TODO: handle the independent io case more gracefully  */

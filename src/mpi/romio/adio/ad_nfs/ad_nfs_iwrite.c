@@ -16,7 +16,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
 #ifdef NO_AIO
     ADIO_Status status;
 #else
-    int err=-1;
+    int aio_errno = 0;
 #endif
     static char myname[] = "ADIOI_NFS_IWRITECONTIG";
 
@@ -44,17 +44,16 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
 
 #else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    err = ADIOI_NFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
+    aio_errno = ADIOI_NFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-    if (err == -1) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__, MPI_ERR_IO,
-					   "**io",
-					   "**io %s", strerror(errno));
+    if (aio_errno != 0) {
+	/* --BEGIN ERROR HANDLING-- */
+	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
+	/* --END ERROR HANDLING-- */
     }
     else *error_code = MPI_SUCCESS;
 #endif
@@ -98,8 +97,11 @@ void ADIOI_NFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 
 
 /* This function is for implementation convenience. It is not user-visible.
-   It takes care of the differences in the interface for nonblocking I/O
-   on various Unix machines! If wr==1 write, wr==0 read. */
+ * It takes care of the differences in the interface for nonblocking I/O
+ * on various Unix machines! If wr==1 write, wr==0 read.
+ *
+ * Returns 0 on success, -errno on failure.
+ */
 
 int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
@@ -172,14 +174,12 @@ int error_code, this_errno;
 		    }
 		}
                 else {
-                    FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-                    MPI_Abort(MPI_COMM_WORLD, 1);
+		    return -this_errno;
                 }
 	    }
 	}
         else {
-            FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    return -this_errno;
         }
     }
 
@@ -243,14 +243,12 @@ int error_code, this_errno;
 		    }
 		}
                 else {
-                    FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-                    MPI_Abort(MPI_COMM_WORLD, 1);
+		    return -this_errno;
                 }
             }
 	}
         else {
-            FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    return -this_errno;
         }
     }
 
@@ -330,19 +328,17 @@ int error_code, this_errno;
 		    }
 		}
 		else {
-		    FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-		    MPI_Abort(MPI_COMM_WORLD, 1);
+		    return -this_errno;
 		}
 	    }
         }
 	else {
-	    FPRINTF(stderr, "Unknown errno %d in ADIOI_NFS_aio\n", this_errno);
-	    MPI_Abort(MPI_COMM_WORLD, 1);
+	    return -this_errno;
 	}
     }
 
     *((struct aiocb **) handle) = aiocbp;
 #endif
 
-    return err;
+    return ((err == 0) ? 0 : -this_errno);
 }

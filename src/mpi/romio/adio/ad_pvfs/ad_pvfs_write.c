@@ -88,10 +88,15 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 #endif
     /* if hint set to DISABLE or AUTOMATIC, don't use listio */
 
+    /* --BEGIN ERROR HANDLING-- */
     if (fd->atomicity) {
-	FPRINTF(stderr, "ROMIO cannot guarantee atomicity of noncontiguous accesses in atomic mode, as PVFS doesn't support file locking. Use nonatomic mode and its associated semantics.\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_INTERN,
+					   "Atomic mode set in PVFS I/O function", 0);
+	return;
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
@@ -431,15 +436,15 @@ void ADIOI_PVFS_WriteStridedListIO(ADIO_File fd, void *buf, int count,
 /* PFS file pointer modes are not relevant here, because PFS does
    not support strided accesses. */
 
-    if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	FPRINTF(stderr, "ADIOI_PVFS_WriteStrided: only M_ASYNC and M_UNIX iomodes are valid\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
+    /* --BEGIN ERROR HANDLING-- */
     if (fd->atomicity) {
-	FPRINTF(stderr, "ROMIO cannot guarantee atomicity of noncontiguous accesses in atomic mode, as PVFS doesn't support file locking. Use nonatomic mode and its associated semantics.\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_INTERN,
+					   "Atomic mode set in PVFS I/O function", 0);
+	return;
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);

@@ -87,22 +87,31 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
-	*error_code = MPI_ERR_UNKNOWN;
+	fd->atomicity = 0;
+	/* --BEGIN ERROR HANDLING-- */
+	if (fcntl_struct->atomicity != 0) {
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE,
+					       myname, __LINE__,
+					       MPI_ERR_UNSUPPORTED_OPERATION,
+					       "PVFS does not support atomic mode",
+					       0);
+	    return;
+	}
+	/* --END ERROR HANDLING-- */
 	break;
 
+    case ADIO_FCNTL_SET_IOMODE:
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_PVFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_ARG,
+					   "Unknown flag",
+					   0);
+	return;  
+	/* --END ERROR HANDLING-- */
     }
 }

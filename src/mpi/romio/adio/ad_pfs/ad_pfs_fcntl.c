@@ -72,16 +72,22 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
 	if (err == -1) {
+	    /* --BEGIN ERROR HANDLING-- */
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					       MPIR_ERR_RECOVERABLE, myname,
 					       __LINE__, MPI_ERR_IO, "**io",
 					       "**io %s", strerror(errno));
+	    /* --END ERROR HANDLING-- */
 	}
 	else *error_code = MPI_SUCCESS;
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_PFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPI_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "Unknown flag", 0);
+	return;
+	/* --END ERROR HANDLING-- */
     }
 }
