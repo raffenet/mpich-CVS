@@ -530,6 +530,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->connect_return_id = -1;
     context->connect_return_tag = -1;
     context->connect_to = NULL;
+    context->spawn_context = NULL;
     context->cred_request[0] = '\0';
     context->password[0] = '\0';
     context->port_str[0] = '\0';

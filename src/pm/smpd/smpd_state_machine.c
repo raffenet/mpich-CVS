@@ -2461,6 +2461,25 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		return result;
 	    }
 
+	    if (context->spawn_context)
+	    {
+		result = smpd_add_command_int_arg(cmd_ptr, "npreput", context->spawn_context->npreput);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
+		    smpd_exit_fn("smpd_state_writing_session_header");
+		    return result;
+		}
+
+		result = smpd_add_command_int_arg(cmd_ptr, "preput", context->spawn_context->preput);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
+		    smpd_exit_fn("smpd_state_writing_session_header");
+		    return result;
+		}
+	    }
+
 	    /* post a write of the command */
 	    result = smpd_post_write_command(context, cmd_ptr);
 	    if (result != SMPD_SUCCESS)

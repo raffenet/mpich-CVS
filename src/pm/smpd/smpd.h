@@ -261,6 +261,8 @@ typedef struct smpd_host_node_t
     struct smpd_host_node_t *next;
 } smpd_host_node_t;
 
+struct smpd_spawn_context_t;
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
@@ -276,6 +278,7 @@ typedef struct smpd_context_t
     smpd_command_t *write_list;
     smpd_command_t *wait_list;
     smpd_host_node_t *connect_to;
+    struct smpd_spawn_context_t *spawn_context;
     char pszCrypt[SMPD_AUTHENTICATION_STR_LEN];
     char pszChallengeResponse[SMPD_AUTHENTICATION_STR_LEN];
     char port_str[SMPD_MAX_PORT_STR_LENGTH];
@@ -342,6 +345,17 @@ typedef struct smpd_launch_node_t
     int nproc;
     struct smpd_launch_node_t *next, *prev;
 } smpd_launch_node_t;
+
+typedef struct smpd_spawn_context_t
+{
+    smpd_context_t *context;
+    smpd_launch_node_t *launch_list;
+    smpd_command_t *result_cmd;
+    char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    int npreput;
+    char preput[SMPD_MAX_CMD_LENGTH];
+    int num_outstanding_launch_cmds;
+} smpd_spawn_context_t;
 
 typedef struct smpd_env_node_t
 {

@@ -192,7 +192,7 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
-int smpd_launch_processes()
+int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, smpd_spawn_context_t *spawn_context)
 {
     int result;
     smpd_command_t *cmd_ptr;
@@ -202,7 +202,7 @@ int smpd_launch_processes()
 
     /* launch the processes */
     smpd_dbg_printf("launching the processes.\n");
-    launch_node_ptr = smpd_process.launch_list;
+    launch_node_ptr = /*smpd_process.*/launch_list;
     while (launch_node_ptr)
     {
 	/* create the launch command */
@@ -269,10 +269,10 @@ int smpd_launch_processes()
 	    smpd_err_printf("unable to add the nproc field to the launch command: %d\n", launch_node_ptr->nproc);
 	    goto launch_failure;
 	}
-	result = smpd_add_command_arg(cmd_ptr, "k", smpd_process.kvs_name);
+	result = smpd_add_command_arg(cmd_ptr, "k", /*smpd_process.*/kvs_name);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", smpd_process.kvs_name);
+	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", /*smpd_process.*/kvs_name);
 	    goto launch_failure;
 	}
 	map_iter = launch_node_ptr->map_list;
@@ -299,6 +299,8 @@ int smpd_launch_processes()
 
 	/* increment the number of launched processes */
 	smpd_process.nproc++;
+	if (spawn_context)
+	    spawn_context->num_outstanding_launch_cmds++;
 
 	/* move to the next node */
 	launch_node_ptr = launch_node_ptr->next;
@@ -404,73 +406,84 @@ int smpd_handle_result(smpd_context_t *context)
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
 			smpd_dbg_printf("successfully launched: '%s'\n", iter->cmd);
-			if (!smpd_process.stdin_redirecting)
+			if (context->spawn_context)
 			{
-			    rank = 0;
-			    MPIU_Str_get_int_arg(iter->cmd, "i", &rank);
-			    if (rank == 0)
+			    context->spawn_context->num_outstanding_launch_cmds--;
+			    if (context->spawn_context->num_outstanding_launch_cmds == 0)
 			    {
-				smpd_dbg_printf("root process launched, starting stdin redirection.\n");
-				/* get a handle to stdin */
-#ifdef HAVE_WINDOWS_H
-				result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
-				if (result)
+				/* send the spawn result command */
+			    }
+			}
+			else
+			{
+			    if (!smpd_process.stdin_redirecting)
+			    {
+				rank = 0;
+				MPIU_Str_get_int_arg(iter->cmd, "i", &rank);
+				if (rank == 0)
 				{
-				    smpd_err_printf("Unable to make a local socket loop to forward stdin.\n");
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
-				}
+				    smpd_dbg_printf("root process launched, starting stdin redirection.\n");
+				    /* get a handle to stdin */
+#ifdef HAVE_WINDOWS_H
+				    result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
+				    if (result)
+				    {
+					smpd_err_printf("Unable to make a local socket loop to forward stdin.\n");
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
 #else
-				stdin_fd = fileno(stdin);
+				    stdin_fd = fileno(stdin);
 #endif
 
-				/* convert the native handle to a sock */
-				result = MPIDU_Sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
-				if (result != MPI_SUCCESS)
-				{
-				    smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
-				}
-				/* create a context for reading from stdin */
-				result = smpd_create_context(SMPD_CONTEXT_MPIEXEC_STDIN, smpd_process.set, insock, -1, &context_in);
-				if (result != SMPD_SUCCESS)
-				{
-				    smpd_err_printf("unable to create a context for stdin.\n");
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
-				}
-				MPIDU_Sock_set_user_ptr(insock, context_in);
+				    /* convert the native handle to a sock */
+				    result = MPIDU_Sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
+				    if (result != MPI_SUCCESS)
+				    {
+					smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
+				    /* create a context for reading from stdin */
+				    result = smpd_create_context(SMPD_CONTEXT_MPIEXEC_STDIN, smpd_process.set, insock, -1, &context_in);
+				    if (result != SMPD_SUCCESS)
+				    {
+					smpd_err_printf("unable to create a context for stdin.\n");
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
+				    MPIDU_Sock_set_user_ptr(insock, context_in);
 
 #ifdef HAVE_WINDOWS_H
-				/* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
-				   stdin to a sock */
-				smpd_process.hCloseStdinThreadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-				if (smpd_process.hCloseStdinThreadEvent == NULL)
-				{
-				    smpd_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
-				}
-				smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
-				if (smpd_process.hStdinThread == NULL)
-				{
-				    smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
-				}
+				    /* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
+				    stdin to a sock */
+				    smpd_process.hCloseStdinThreadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+				    if (smpd_process.hCloseStdinThreadEvent == NULL)
+				    {
+					smpd_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
+				    smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+				    if (smpd_process.hStdinThread == NULL)
+				    {
+					smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
 #endif
-				/* set this variable first before posting the first read to avoid a race condition? */
-				smpd_process.stdin_redirecting = SMPD_TRUE;
-				/* post a read for a user command from stdin */
-				context_in->read_state = SMPD_READING_STDIN;
-				result = MPIDU_Sock_post_read(insock, context_in->read_cmd.cmd, 1, 1, NULL);
-				if (result != MPI_SUCCESS)
-				{
-				    smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
-					get_sock_error_string(result));
-				    smpd_exit_fn("smpd_handle_result");
-				    return SMPD_FAIL;
+				    /* set this variable first before posting the first read to avoid a race condition? */
+				    smpd_process.stdin_redirecting = SMPD_TRUE;
+				    /* post a read for a user command from stdin */
+				    context_in->read_state = SMPD_READING_STDIN;
+				    result = MPIDU_Sock_post_read(insock, context_in->read_cmd.cmd, 1, 1, NULL);
+				    if (result != MPI_SUCCESS)
+				    {
+					smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
+					    get_sock_error_string(result));
+					smpd_exit_fn("smpd_handle_result");
+					return SMPD_FAIL;
+				    }
 				}
 			    }
 			}
@@ -493,15 +506,31 @@ int smpd_handle_result(smpd_context_t *context)
 		{
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
-			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
+			if (context->spawn_context)
 			{
-			    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", smpd_process.kvs_name);
-			    ret_val = smpd_launch_processes();
+			    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", context->spawn_context->kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
+			    {
+				smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", context->spawn_context->kvs_name);
+				ret_val = smpd_launch_processes(context->spawn_context->launch_list, context->spawn_context->kvs_name, context->spawn_context);
+			    }
+			    else
+			    {
+				smpd_err_printf("invalid start_dbs result returned, no kvs_name specified: '%s'\n", context->read_cmd.cmd);
+				ret_val = SMPD_FAIL;
+			    }
 			}
 			else
 			{
-			    smpd_err_printf("invalid start_dbs result returned, no kvs_name specified: '%s'\n", context->read_cmd.cmd);
-			    ret_val = SMPD_FAIL;
+			    if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "kvs_name", smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
+			    {
+				smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s'\n", smpd_process.kvs_name);
+				ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, NULL);
+			    }
+			    else
+			    {
+				smpd_err_printf("invalid start_dbs result returned, no kvs_name specified: '%s'\n", context->read_cmd.cmd);
+				ret_val = SMPD_FAIL;
+			    }
 			}
 		    }
 		    else
@@ -1588,9 +1617,9 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	result = smpd_add_command_arg(temp_cmd, "kvs_name", "0");
 	if (result != SMPD_SUCCESS)
 	{
-	smpd_err_printf("unable to add the kvs_name string to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_start_dbs_command");
-	return SMPD_FAIL;
+	    smpd_err_printf("unable to add the kvs_name string to the result command for dbs command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("handle_start_dbs_command");
+	    return SMPD_FAIL;
 	}
 	*/
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
@@ -1636,14 +1665,14 @@ int smpd_handle_print_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a 'print' command for the left context.\n");
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn("smpd_handle_print_command");
 	    return SMPD_FAIL;
 	}
 	result = smpd_post_write_command(smpd_process.left_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write for the 'print' command to the left context.\n");
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn("smpd_handle_print_command");
 	    return SMPD_FAIL;
 	}
     }
@@ -1653,14 +1682,14 @@ int smpd_handle_print_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a 'print' command for the right context.\n");
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn("smpd_handle_print_command");
 	    return SMPD_FAIL;
 	}
 	result = smpd_post_write_command(smpd_process.right_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write for the 'print' command to the right context.\n");
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn("smpd_handle_print_command");
 	    return SMPD_FAIL;
 	}
     }
@@ -2431,16 +2460,16 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     int result;
     smpd_command_t *cmd, *temp_cmd;
     char ctx_key[100];
-    int ncmds, *maxprocs, *nkeyvals, npreput, i, j;
+    int ncmds, *maxprocs, *nkeyvals, i, j/*, npreput*/;
     smpd_launch_node_t node;
     char key[100], val[1024];
     char *iter1, *iter2;
     char maxprocs_str[1024], nkeyvals_str[1024], keyvals_str[1024];
-    smpd_launch_node_t *launch_list, *launch_iter, *launch_temp;
+    smpd_launch_node_t *launch_list, *launch_iter/*, *launch_temp*/;
     PMI_keyval_t *info;
     char key_temp[SMPD_MAX_NAME_LENGTH], val_temp[SMPD_MAX_VALUE_LENGTH];
     int cur_iproc;
-    smpd_host_node_t *host_node_ptr, *host_list;
+    smpd_host_node_t *host_iter, *host_list;
     int nproc;
 
     smpd_enter_fn("smpd_handle_spawn_command");
@@ -2484,13 +2513,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
-
     /* parse the spawn command */
 
 
     if (MPIU_Str_get_int_arg(cmd->cmd, "ncmds", &ncmds) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the ncmds parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
@@ -2498,17 +2527,29 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     if (MPIU_Str_get_string_arg(cmd->cmd, "maxprocs", maxprocs_str, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the maxrpocs parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "nkeyvals", nkeyvals_str, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the nkeyvals parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
     maxprocs = (int*)malloc(ncmds * sizeof(int));
+    if (maxprocs == NULL)
+    {
+	smpd_err_printf("unable to allocate the maxprocs array.\n");
+	goto spawn_failed;
+    }
     nkeyvals = (int*)malloc(ncmds * sizeof(int));
+    if (nkeyvals == NULL)
+    {
+	smpd_err_printf("unable to allocate the nkeyvals array.\n");
+	goto spawn_failed;
+    }
     iter1 = maxprocs_str;
     iter2 = nkeyvals_str;
     for (i=0; i<ncmds; i++)
@@ -2517,6 +2558,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	if (result != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the %dth string from the maxprocs parameter to the spawn command '%s'.\n", i, cmd->cmd);
+	    goto spawn_failed;
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
@@ -2526,6 +2568,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	if (result != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the %dth string from the nkeyvals parameter to the spawn command '%s'.\n", i, cmd->cmd);
+	    goto spawn_failed;
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
@@ -2555,6 +2598,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    if (info == NULL)
 	    {
 		smpd_err_printf("unable to allocate memory for the info keyvals (cmd %d, num_infos %d).\n", i, nkeyvals[i]);
+		goto spawn_failed;
 		smpd_exit_fn("smpd_handle_spawn_command");
 		return SMPD_FAIL;
 	    }
@@ -2574,6 +2618,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
 		{
 		    smpd_err_printf("unable to get the %sth key from the keyval string '%s'.\n", key, keyvals_str);
+		    goto spawn_failed;
 		    smpd_exit_fn("smpd_handle_spawn_command");
 		    return SMPD_FAIL;
 		}
@@ -2585,6 +2630,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		if (result != MPIU_STR_SUCCESS)
 		{
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    goto spawn_failed;
 		    smpd_exit_fn("smpd_handle_spawn_command");
 		    return SMPD_FAIL;
 		}
@@ -2592,6 +2638,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		if (result != MPIU_STR_SUCCESS)
 		{
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    goto spawn_failed;
 		    smpd_exit_fn("smpd_handle_spawn_command");
 		    return SMPD_FAIL;
 		}
@@ -2599,6 +2646,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		if (result != MPIU_STR_SUCCESS)
 		{
 		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    goto spawn_failed;
 		    smpd_exit_fn("smpd_handle_spawn_command");
 		    return SMPD_FAIL;
 		}
@@ -2611,6 +2659,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    goto spawn_failed;
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
@@ -2619,6 +2668,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    goto spawn_failed;
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
@@ -2660,6 +2710,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    if (launch_iter == NULL)
 	    {
 		smpd_err_printf("unable to allocate a launch node structure for the %dth command.\n", cur_iproc);
+		goto spawn_failed;
 		smpd_exit_fn("smpd_handle_spawn_command");
 		return SMPD_FAIL;
 	    }
@@ -2691,10 +2742,44 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     }
     info = NULL;
 
+    /* create a spawn context to save parameters, state, etc. */
+    context->spawn_context = (smpd_spawn_context_t*)malloc(sizeof(smpd_spawn_context_t));
+    if (context->spawn_context == NULL)
+    {
+	smpd_err_printf("unable to create a spawn context.\n");
+	goto spawn_failed;
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return result;
+    }
+    context->spawn_context->context = context;
+    context->spawn_context->kvs_name[0] = '\0';
+    context->spawn_context->launch_list = NULL;
+    context->spawn_context->npreput = -1;
+    context->spawn_context->num_outstanding_launch_cmds = -1;
+    context->spawn_context->preput[0] = '\0';
+    context->spawn_context->result_cmd = NULL;
+
     /* Get the keyval pairs to be put in the process group keyval space before the processes are launched. */
+    if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &context->spawn_context->npreput) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    /*printf("npreput = %d\n", context->spawn_context->npreput);fflush(stdout);*/
+    if (context->spawn_context->npreput > 0 && MPIU_Str_get_string_arg(cmd->cmd, "preput", context->spawn_context->preput, SMPD_MAX_CMD_LENGTH) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unablet to get the preput parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+#if 0
     if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
+	goto spawn_failed;
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
@@ -2708,12 +2793,14 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
 	    {
 		smpd_err_printf("unable to get the %sth key from the preput keyval string '%s'.\n", key, keyvals_str);
+		goto spawn_failed;
 		smpd_exit_fn("smpd_handle_spawn_command");
 		return SMPD_FAIL;
 	    }
 	    /*printf("key %d = %s\n", j, val);fflush(stdout);*/
 	}
     }
+#endif
     free(maxprocs);
     free(nkeyvals);
 
@@ -2729,7 +2816,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	launch_iter = launch_iter->next;
     }
 
-    /* create the host list */
+    /* create the host list and add nproc to the launch list */
     host_list = NULL;
     launch_iter = launch_list;
     while (launch_iter)
@@ -2744,20 +2831,114 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     smpd_create_cliques(launch_list);
 
     /* connect up the new smpd hosts */
+    context = smpd_process.left_context;
+    /* save the launch list to be used after the new hosts are connected */
+    context->spawn_context->launch_list = launch_list;
+    context->spawn_context->num_outstanding_launch_cmds = nproc; /* this assumes all launch commands will be successfully posted. */
+    host_iter = smpd_process.host_list;
+    while (host_iter)
+    {
+	if (!host_iter->connected)
+	{
+	    context->connect_to = host_iter;
+
+	    /* create a connect command to be sent to the parent */
+	    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a connect command.\n");
+		goto spawn_failed;
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return result;
+	    }
+	    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
+		goto spawn_failed;
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return result;
+	    }
+	    result = smpd_add_command_int_arg(cmd, "id", context->connect_to->id);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
+		goto spawn_failed;
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return result;
+	    }
+
+	    /* post a write of the command */
+	    result = smpd_post_write_command(context, cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the connect command.\n");
+		goto spawn_failed;
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return result;
+	    }
+
+	    context->spawn_context->result_cmd = temp_cmd;
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_SUCCESS;
+	}
+	host_iter = host_iter->next;
+    }
+
     /* create the new kvs space */
+    /* create the start_dbs command to be sent to the first host */
+    result = smpd_create_command("start_dbs", 0, 1, SMPD_TRUE, &cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a start_dbs command.\n");
+	goto spawn_failed;
+	smpd_exit_fn("smpd_state_reading_cmd");
+	return result;
+    }
+
+    result = smpd_add_command_int_arg(cmd, "npreput", context->spawn_context->npreput);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+
+    result = smpd_add_command_arg(cmd, "preput", context->spawn_context->preput);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the preput keyvals to the start_dbs command for a spawn command.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+
+    /* post a write of the command */
+    result = smpd_post_write_command(context, cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the start_dbs command.\n");
+	goto spawn_failed;
+	smpd_exit_fn("smpd_state_reading_cmd");
+	return result;
+    }
+
+    context->spawn_context->result_cmd = temp_cmd;
+    smpd_exit_fn("smpd_handle_spawn_command");
+    return SMPD_SUCCESS;
     /* send the launch commands */
 
+/*
     printf("host tree:\n");
-    host_node_ptr = smpd_process.host_list;
-    if (!host_node_ptr)
+    host_iter = smpd_process.host_list;
+    if (!host_iter)
 	printf("<none>\n");
-    while (host_node_ptr)
+    while (host_iter)
     {
 	printf(" host: %s, parent: %d, id: %d, connected: %s\n",
-	    host_node_ptr->host,
-	    host_node_ptr->parent, host_node_ptr->id,
-	    host_node_ptr->connected ? "yes" : "no");
-	host_node_ptr = host_node_ptr->next;
+	    host_iter->host,
+	    host_iter->parent, host_iter->id,
+	    host_iter->connected ? "yes" : "no");
+	host_iter = host_iter->next;
     }
 
     printf("launch nodes:\n");
@@ -2781,11 +2962,9 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	free(launch_temp);
     }
     fflush(stdout);
+*/
 
-
-    /* return the result */
-
-
+spawn_failed:
     /* add the result */
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
     if (result != SMPD_SUCCESS)
