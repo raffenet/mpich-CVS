@@ -972,7 +972,7 @@ def mpdman():
                     except:
                         pass
                     exit(0)
-                if msg.has_key('sigtype'):
+                if msg['cmd'] == 'signal_to_handle'  and  msg.has_key('sigtype'):
                     if msg['sigtype'].isdigit():
                         signum = int(msg['sigtype'])
                     else:
@@ -988,7 +988,7 @@ def mpdman():
             else:
                 mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
     mpd_print(0000, "out of loop")
-    # may want to want to wait for waitPids here
+    # may want to wait for waitPids here
 
 def in_stdinRcvrs(myRank,stdinGoesToWho):
     s1 = stdinGoesToWho.split(',')
