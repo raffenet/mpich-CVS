@@ -100,7 +100,7 @@ dist-with-version:
 # No documentation is included.
 snap:
 	@echo "Cutting a snapshot of the MPICH2 distribution"
-	version="snap-`date "+%Y%m%d%H%M`"
+	version=snap-`date "+%Y%m%d%H%M"`
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
 	( cd tmpdir && \
