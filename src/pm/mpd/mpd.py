@@ -786,7 +786,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_MPD_LISTEN_PORT'] = str(g.myPort)
             environ['MPDMAN_MPD_CONF_SECRETWORD'] = g.configParams['secretword']
             environ['MPDMAN_CONHOST'] = msg['conhost']
-	    if msg['conifhn']:
+	    if msg.has_key('conifhn')  and  msg['conifhn']:
                 environ['MPDMAN_CONIP'] = msg['conifhn']
 	    else:
                 environ['MPDMAN_CONIP'] = g.myIP
