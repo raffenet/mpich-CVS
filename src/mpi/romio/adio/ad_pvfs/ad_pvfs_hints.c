@@ -13,7 +13,7 @@ void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
     char *value;
     int flag, tmp_val, str_factor=-1, str_unit=-1, start_iodev=-1; 
 
-    if ((fd->info) != MPI_INFO_NULL) {
+    if ((fd->info) == MPI_INFO_NULL) {
 	/* This must be part of the open call. can set striping parameters 
            if necessary. */ 
 	MPI_Info_create(&(fd->info));
