@@ -94,13 +94,29 @@ public class InfoBox extends TimeBoundingBox
                 type = (Category) categorymap.get( new Integer( type_idx ) );
                 if ( type != null ) {
                     type.setUsed( true );  // set Category.hasBeenUsed to TRUE
-                    return true;
                 }
+                else { // For Output: TraceTOslog2 when type isn't there
+                    type = new Category( type_idx,
+                                         "UnknownType-" + type_idx,
+                                         Topology.STATE,
+                                         ColorAlpha.getNextDefaultColor(),
+                                         1 );
+                    categorymap.put( new Integer( type.getIndex() ), type );
+                    type.setUsed( true );
+                }
+                return true;
             }
         }
         else {
             // For Output: ClogToSlog2
-            type.setUsed( true );
+            if ( ! type.isUsed() ) {
+                categorymap.put( new Integer( type.getIndex() ), type );
+                type.setUsed( true );
+                if ( type.getName() == null ) {
+                    type.setName( "UnknownType-" + type.getIndex() );
+                    type.setColor( ColorAlpha.getNextDefaultColor() );
+                }
+            }
             return true;
         }
         return false;

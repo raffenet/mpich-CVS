@@ -16,8 +16,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Arrays;
 
-public class ColorAlpha extends Color
+public class ColorAlpha extends Color implements Comparable
 {
     public static final int         BYTESIZE         = 5;
 
@@ -84,6 +85,91 @@ public class ColorAlpha extends Color
              + "," + getAlpha() + "," + isModifiable + ")";
     }
 
+    public int getLengthSq()
+    {
+        return super.getRed() * super.getRed()
+             + super.getGreen() * super.getGreen()
+             + super.getBlue() * super.getBlue();
+    }
+
+    public boolean equals( final ColorAlpha clr )
+    {
+        return    ( super.getRed()   == clr.getRed() )
+               && ( super.getGreen() == clr.getGreen() )
+               && ( super.getBlue()  == clr.getBlue() );
+    }
+
+    public int compareTo( Object obj )
+    {
+        ColorAlpha clr = (ColorAlpha) obj;
+        if ( ! this.equals( clr ) )
+            // return this.getLengthSq() - clr.getLengthSq();
+            return clr.getLengthSq() - this.getLengthSq();
+        else
+            return 0;
+    }
+
+    private static ColorAlpha colors[];
+    private static int        next_color_index;
+
+    /*
+       possible RGB values are based on 6x6x6 Color Cube defined in 
+       http://world.std.com/~wij/color/index.html
+    */
+    private static void initDefaultColors()
+    {
+        ColorAlpha  color;
+        int         ired, igreen, iblue;
+        int         vals_length, colors_length, idx;
+        int         vals[] = { 0x0, 0x33, 0x66, 0x99, 0xCC, 0xFF };
+
+        vals_length    = vals.length;
+        colors_length  = vals_length * vals_length * vals_length;
+        colors         = new ColorAlpha[ colors_length ];
+        idx = 0;
+        for ( ired = 0; ired < vals_length; ired++ ) {
+            for ( igreen = 0; igreen < vals_length; igreen++ ) {
+                for ( iblue = 0; iblue < vals_length; iblue++ ) {
+                    colors[ idx ] = new ColorAlpha( vals[ ired ],
+                                                    vals[ igreen ],
+                                                    vals[ iblue ] );
+                    idx++;
+                }
+            }
+        }
+
+        /*
+           Sort the colors[] into accending natural order,
+           This sorting guarantees the nearest neighbor colors in colors[]
+           are always distinguishable, or are contrasting to each other.
+        */
+        Arrays.sort( colors );
+    
+        // Initialize the next available color index, to avoid white;
+        next_color_index = 1;
+    }
+
+    public static ColorAlpha getNextDefaultColor()
+    {
+        int returning_color_index;
+
+        if ( colors == null )
+            ColorAlpha.initDefaultColors();
+
+        // "%(colors.lenth-1)" ignores the last color in colors[], black.
+        returning_color_index = next_color_index % ( colors.length - 1 );
+        next_color_index++;
+        return colors[ returning_color_index ];
+    }
+
+    
+
+    public static final void main( String[] args )
+    {
+        for ( int idx = 0; idx < 500; idx++ )
+            System.out.println( ColorAlpha.getNextDefaultColor() );
+    }
+/*
     public static final void main( String[] args )
     {
         final String filename    = "tmp_color.dat";
@@ -121,4 +207,5 @@ public class ColorAlpha extends Color
                               + " has been read from " + filename );
         }
     }
+*/
 }
