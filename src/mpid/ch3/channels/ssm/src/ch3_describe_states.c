@@ -361,7 +361,27 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDU_YIELD,
 		       "MPIDU_Yield",
 		       get_random_color_str());
-    return Sock_describe_timer_states();
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_MQSHM_CREATE,
+		       "MPIDI_CH3I_mqshm_create",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_MQSHM_CLOSE,
+		       "MPIDI_CH3I_mqshm_close",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_MQSHM_UNLINK,
+		       "MPIDI_CH3I_mqshm_unlink",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND,
+		       "MPIDI_MPIDI_CH3I_mqshm_send",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE,
+		       "MPIDI_CH3I_mqshm_receive",
+		       get_random_color_str());
+return Sock_describe_timer_states();
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
