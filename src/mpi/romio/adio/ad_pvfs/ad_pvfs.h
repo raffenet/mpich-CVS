@@ -14,7 +14,7 @@
 #define ROMIOCONG_H_INCLUDED
 #endif
 #ifdef ROMIO_PVFS_NEEDS_INT64_DEFINITION
-typedef long long int int64_t
+typedef long long int int64_t;
 #endif
 
 #include <unistd.h>
