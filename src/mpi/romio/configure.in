@@ -70,6 +70,11 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
+# Error handlers (not used with MPICH2, which provides its own routines)
+MPIO_EXTRA_OBJECTS="get_errh.o set_errh.o"
+MPIO_EXTRA_TMP_POBJECTS="get_errh.p set_errh.p"
+MPIO_EXTRA_REAL_POBJECTS="_get_errh.o _set_errh.o"
+#
 have_aio=no
 #
 known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
@@ -1229,6 +1234,16 @@ else
 	fi
     fi
 fi
+if test "$FROM_MPICH" != no ; then
+    # use the error handlers from MPICH2
+    MPIO_EXTRA_OBJECTS=
+    MPIO_EXTRA_TMP_POBJECTS=
+    MPIO_EXTRA_REAL_POBJECTS=
+fi
+AC_SUBST(MPIO_EXTRA_OBJECTS)
+AC_SUBST(MPIO_EXTRA_TMP_POBJECTS)
+AC_SUBST(MPIO_EXTRA_REAL_POBJECTS)
+
 #
 if test $NOF77 = 1 ; then
    F77=":"
