@@ -2298,7 +2298,6 @@ fi
    fi
    MPIRUN=mpirun
 fi
-CFLAGS="$CFLAGS $DEFS"
 
 ROMIO_HOME_TRIAL=$PWD
 if test "${ROMIO_HOME_TRIAL}" != "" -a -d "${ROMIO_HOME_TRIAL}" ; then 
@@ -2495,7 +2494,7 @@ if test $MPI = "mpich" ; then
       TEST_F77=$MPICH_HOME/bin/mpif77
    fi     
 # Check to see if the compiler accepts prototypes
-  
+   
 if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
@@ -2561,6 +2560,8 @@ fi
 if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
+#
+CFLAGS="$CFLAGS $DEFS"
 #
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
