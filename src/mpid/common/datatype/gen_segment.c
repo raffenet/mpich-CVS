@@ -27,8 +27,8 @@
  *   to segment functionality
  */
 
-static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
-static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp);
+static inline DLOOP_Count DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
+static inline DLOOP_Offset DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp);
 static inline void DLOOP_Stackelm_load(struct DLOOP_Dataloop_stackelm *elmp,
 				       struct DLOOP_Dataloop *dlp,
 				       int branch_flag);
@@ -891,7 +891,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
  * before this is called!
  *
  */
-static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
+static inline DLOOP_Count DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
 {
     struct DLOOP_Dataloop *dlp = elmp->loop_p;
        
@@ -934,7 +934,7 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
  * (all the time for indexed) at the moment.
  *
  */
-static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
+static inline DLOOP_Offset DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 {
     struct DLOOP_Dataloop *dlp = elmp->loop_p;
        
