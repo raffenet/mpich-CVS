@@ -1758,17 +1758,17 @@ sub build_specials {
     print $OUTFD "}\n";
 
     print $OUTFD "int Init_thread";
-    $args = "int";
+    # The two args are needed to tell print_args that one is the output
+    $args = "int,int";
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{
     int provided;
-    MPI_Init_thread( 0, 0, v1, &provided );\n";
+    MPI_Init_thread( 0, 0, v2, &provided );\n";
     &printCoverageInitialize( $OUTFD );
     print $OUTFD "\
     return provided;
 }\n";
-
     #
     # The following may not be quite right because they don't include
     # any attributes that we may include with the definitions.  However,
@@ -1799,8 +1799,9 @@ sub build_specials {
     print $OUTFD "\
 	MPI_Initialized( &flag );\n";
      &printCoverageEnd( $OUTFD, "Initialized", 0 );
+    # Microsoft C++ compiler complains about using an explicit cast to bool (!)
     print $OUTFD "\
-	return (flag == 1);
+	return (flag != 0);
     }\n";
 
     print $OUTFD "void Compute_dims( int nnodes, int ndims, int dims[] )
@@ -2105,13 +2106,13 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
 
     # MPI-2 base routines
     &PrintWrapper( $OUTFD, "bool", "Is_finalized", "void",
-                   "int flag;", "Finalized", "&flag", "(flag == 1)" );
+                   "int flag;", "Finalized", "&flag", "(flag != 0)" );
 
     &PrintWrapper( $OUTFD, "int", "Query_thread", "void", 
                    "int provided;", "Query_thread", "&provided", 
                    "provided" );
     &PrintWrapper( $OUTFD, "bool", "Is_thread_main", "void",
-                   "int flag;", "Is_thread_main", "&flag", "(flag == 1)" );
+                   "int flag;", "Is_thread_main", "&flag", "(flag != 0)" );
     &PrintWrapper( $OUTFD, "void", "Get_version", "int &v, int&sv",
                   "", "", "&v,&sv", "" );
 
@@ -2920,6 +2921,7 @@ sub ReturnTypeDecl {
 
     # If there is a return type, declare it here
     $finalcast = "";
+    $finalop   = "";
     if ($return_parm_pos > 0) {
 	if ($return_type =~ /MPI_/ && !($return_type =~ /MPI_Offset/) 
 	    && !($return_type =~ /MPI_Aint/)) {
@@ -2928,6 +2930,15 @@ sub ReturnTypeDecl {
 	}
 	else {
 	    print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+	    if ($real_return_type eq "bool") {
+		# Unfortunately, at least one C++ compiler (Microsoft's)
+		# generates wanring messages EVEN WHEN AN EXPLICIT CAST
+		# IS USED (!).  To avoid these messages, we 
+		# cause the generated code to explicitly compute a
+		# boolean value (sigh)
+#		$finalcast = "(bool)";
+		$finalop   = "!= 0"
+	    }
 	}
     }
 }
@@ -2935,7 +2946,7 @@ sub ReturnTypeDecl {
 sub PrintReturnType {
     my $OUTFD = $_[0];
     if ($return_parm_pos > 0) {
-	print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
+	print $OUTFD "$indent    return ${finalcast}v$return_parm_pos${finalop};\n";
     }
 }
 
