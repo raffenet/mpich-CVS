@@ -426,9 +426,13 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    MPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
-    shutting_down = TRUE;
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPIR_Nest_incr();
+    {
+	NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
+	shutting_down = TRUE;
+	NMPI_Barrier(MPI_COMM_WORLD);
+    }
+    MPIR_Nest_decr();
     
     /* Shut down the listener */
     rc = sock_post_close(listener_conn->sock);
