@@ -54,6 +54,10 @@ int MPI_Free_mem(void *base)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FREE_MEM);
     return MPI_SUCCESS;
+
+    /* There should never be any fn_fail case; this suppresses warnings from
+       compilers that object to unused labels */
+#if 0 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
 #ifdef HAVE_ERROR_CHECKING
@@ -64,4 +68,5 @@ fn_fail:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FREE_MEM);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
+#endif
 }

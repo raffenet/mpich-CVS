@@ -68,7 +68,10 @@ int MPI_Pcontrol(const int level, ...)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     MPID_CS_EXIT();
     return mpi_errno;
-    
+
+    /* There should never be any fn_fail case; this suppresses warnings from
+       compilers that object to unused labels */
+#if 0 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
@@ -80,4 +83,5 @@ int MPI_Pcontrol(const int level, ...)
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+#endif
 }
