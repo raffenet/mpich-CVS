@@ -252,6 +252,8 @@ if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_ca
     ac_cv_env_FC_value=$FC
     ac_cv_env_F77_set=${F77+set}
     ac_cv_env_F77_value=$F77
+    ac_cv_env_F90_set=${F90+set}
+    ac_cv_env_F90_value=$F90
     ac_cv_env_FFLAGS_set=${FFLAGS+set}
     ac_cv_env_FFLAGS_value=$FFLAGS
     ac_cv_env_CXX_set=${CXX+set}
@@ -281,6 +283,7 @@ export CPPFLAGS
 export CPP
 export FC
 export F77
+export F90
 export CXX
 export FFLAGS
 export CCFLAGS
