@@ -613,9 +613,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                         goto fn_exit;
                     }
 
-                    req->ch3.iov[0].MPID_IOV_BUF = req->ch3.dtype_info;
+                    req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
                     req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                    req->ch3.iov[1].MPID_IOV_BUF = req->ch3.dataloop;
+                    req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
                     req->ch3.iov[1].MPID_IOV_LEN = put_pkt->dataloop_size;
                     req->ch3.iov_count = 2;
                     req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
@@ -689,9 +689,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                     goto fn_exit;
                 }
                 
-                req->ch3.iov[0].MPID_IOV_BUF = req->ch3.dtype_info;
+                req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
                 req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                req->ch3.iov[1].MPID_IOV_BUF = req->ch3.dataloop;
+                req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
                 req->ch3.iov[1].MPID_IOV_LEN = accum_pkt->dataloop_size;
                 req->ch3.iov_count = 2;
                 req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
@@ -767,9 +767,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                     goto fn_exit;
                 }
 
-                req->ch3.iov[0].MPID_IOV_BUF = req->ch3.dtype_info;
+                req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
                 req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                req->ch3.iov[1].MPID_IOV_BUF = req->ch3.dataloop;
+                req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
                 req->ch3.iov[1].MPID_IOV_LEN = get_pkt->dataloop_size;
                 req->ch3.iov_count = 2;
                 

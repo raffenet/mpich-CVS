@@ -345,7 +345,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             iovcnt = 2;
         }
         else {  /* derived datatype on target */
-            iov[1].MPID_IOV_BUF = dtype_info;
+            iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
             iov[2].MPID_IOV_LEN = target_dtp->loopsize;
@@ -368,7 +368,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         if (!target_dt_derived)  /* basic datatype on target */
             iovcnt = 1;
         else {  /* derived datatype on target */
-            iov[1].MPID_IOV_BUF = dtype_info;
+            iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
             iov[2].MPID_IOV_LEN = target_dtp->loopsize;
@@ -511,11 +511,11 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
         get_pkt->dataloop_size = dtp->loopsize;
 
-        iov[0].MPID_IOV_BUF = (void*) get_pkt;
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)get_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*get_pkt);
-        iov[1].MPID_IOV_BUF = dtype_info;
+        iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
         iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
-        iov[2].MPID_IOV_BUF = *dataloop;
+        iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)*dataloop;
         iov[2].MPID_IOV_LEN = dtp->loopsize;
         
         mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 3, &req);
