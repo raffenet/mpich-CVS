@@ -11,15 +11,12 @@ int main( int argc, char * argv[] )
     char *args[5];
     MPI_Comm newintercomm;
     int errcodes[MAX_SPAWNED];
-    char *kvsname, executable[128];
+    char executable[128];
 
     MPI_Init( 0, 0 );
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    printf( "spawner %d of %d is alive\n", rank, size );  fflush(stdout);
-    kvsname = (char *) malloc(PMI_KVS_Get_name_length_max( ) );
-    PMI_KVS_Get_my_name( kvsname );
-    printf( "spawner %d of %d, kvsname=:%s:\n", rank, size, kvsname );  fflush(stdout);
+    printf( "spawner %d of %d is alive\n", rank, size ); 
 
     if ( argc > 1 ) {
 	maxprocs = atoi( argv[1] );
