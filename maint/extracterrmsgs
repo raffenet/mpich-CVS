@@ -154,7 +154,10 @@ sub CreateErrMsgMapping {
 		# it into a \n (newline), but we may want to avoid 
 		# multiline messages
 		$repl =~ s/\\\s*$//;
-		$repl .= <FD>;
+		$inline = <FD>;
+		$inline =~ s/^\s*//;   # remove leading spaces
+		$repl .= $inline;
+		$repl =~ s/[\r\n]*$//g; # remove newlines
 	    }
 	    $namehasformat = ($name =~ /%/);
 	    $replhasformat = ($repl =~ /%/);
