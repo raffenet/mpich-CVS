@@ -1,3 +1,6 @@
+#ifndef MPICHTIMER_H
+#define MPICHTIMER_H
+
 /* Include the appropriate files */
 #define USE_GETHRTIME 1
 #define USE_CLOCK_GETTIME 2
@@ -41,5 +44,7 @@ void MPID_Wtime_todouble( MPID_Time_t *, double * );
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #endif
 #if MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+
+#endif
 
 #endif
