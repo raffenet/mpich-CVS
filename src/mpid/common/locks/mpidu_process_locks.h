@@ -267,7 +267,8 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_COMPARE_SWAP);
 #ifdef HAVE_NT_LOCKS
     /**original_val = InterlockedCompareExchange(dest, new_val, compare_val);*/
-    *original_val = (void*)InterlockedCompareExchange((LONG*)dest, (LONG)new_val, (LONG)compare_val);
+    /**original_val = (void*)InterlockedCompareExchange((LONG*)dest, (LONG)new_val, (LONG)compare_val);*/
+    *original_val = (void*)InterlockedCompareExchangePointer(dest, new_val, compare_val);
 #elif defined(HAVE_COMPARE_AND_SWAP)
     if (compare_and_swap((volatile long *)dest, (long)compare_val, (long)new_val))
         *original_val = new_val;
