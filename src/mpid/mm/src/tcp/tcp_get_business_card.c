@@ -7,19 +7,10 @@
 
 #define MAX_NUM_NICS 10
 
-typedef struct myhostent
-{
-    char *h_name;
-    char **h_aliases;
-    int h_addrtype;
-    int h_length;
-    char **h_addr_list;
-} myhostent;
-
 static int GetLocalIPs(unsigned int *pIP, int max)
 {
     char hostname[100], **hlist;
-    myhostent *h = NULL;
+    struct hostent *h = NULL;
     int n = 0;
     
     if (gethostname(hostname, 100) == SOCKET_ERROR)
@@ -27,7 +18,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 	return 0;
     }
     
-    h = (struct myhostent *)gethostbyname(hostname);
+    h = gethostbyname(hostname);
     if (h == NULL)
     {
 	return 0;
@@ -38,14 +29,14 @@ static int GetLocalIPs(unsigned int *pIP, int max)
     {
 	pIP[n] = *(unsigned int*)(*hlist);
 
-	{	
+	/*{	
 	unsigned int a, b, c, d;
 	a = ((unsigned char *)(&pIP[n]))[0];
 	b = ((unsigned char *)(&pIP[n]))[1];
 	c = ((unsigned char *)(&pIP[n]))[2];
 	d = ((unsigned char *)(&pIP[n]))[3];
 	printf("ip: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
-	}
+	}*/
 
 	hlist++;
 	n++;

@@ -13,6 +13,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
 
 int tcp_init(void);
 int tcp_get_business_card(char *value, int length);
