@@ -38,7 +38,7 @@ CFLAGS        = $(MPE_CFLAGS) $(C_INCS)
 FFLAGS        = $(MPE_FFLAGS) $(F_INCS)
 CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS)
 FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS)
-EXECS         = cpilog srtest
+EXECS         = cpilog cpilog_pack srtest
 
 
 .c.o:
@@ -47,8 +47,9 @@ EXECS         = cpilog srtest
 	$(MPI_F77) $(FFLAGS) -c $<
 
 default: $(EXECS)
-	-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) fpilog ; \
+	     $(MAKE) fpilog_pack ; \
 	 fi
 
 cpi_log: cpi.o
