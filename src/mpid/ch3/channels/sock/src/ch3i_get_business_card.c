@@ -108,7 +108,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 	struct ifconf			ifconf;
 	int				rc;
 
-	buf_ptr = (char *) malloc(buf_len);
+	buf_ptr = (char *) MPIU_Malloc(buf_len);
 	if (buf_ptr == NULL)
 	    return 0;
 	
@@ -132,7 +132,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 	    buf_len_prev = ifconf.ifc_len;
 	}
 	
-	free(buf_ptr);
+	MPIU_Free(buf_ptr);
 	buf_len += NUM_IFREQS * sizeof(struct ifreq);
     }
 	
@@ -181,7 +181,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 #	endif
     }
 
-    free(buf_ptr);
+    MPIU_Free(buf_ptr);
     close(fd);
 
     return n;
