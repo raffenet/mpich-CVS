@@ -1444,7 +1444,7 @@ void Op::Init( User_function *f, bool commute )
     {
 	MPIX_CALL( MPI_Op_create( (MPI_User_function *)f, 
 				 (int) commute, &the_real_op ) ); 
-	MPIR_Op_set_cxx( the_real_op, (void (*)(void)) MPIR_Call_op_fn );
+	MPIR_Op_set_cxx( the_real_op, (extern \"C\" void (*)(void)) MPIR_Call_op_fn );
     }\n";
 
     # Keyval and attribute routines
@@ -1480,8 +1480,8 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
 				       (MPI_Comm_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn, 
-			         (void (*)(void)) MPIR_Call_copyfn );
+    MPIR_Keyval_set_cxx( keyval, (extern \"C\" void (*)(void)) MPIR_Call_delfn, 
+			         (extern \"C\" void (*)(void)) MPIR_Call_copyfn );
     return keyval;
 }
 ";

@@ -142,9 +142,17 @@ foreach $_ (@ARGV) {
 		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
                   'MPI_Datatype' => '(MPI_Datatype)(ARG)',
                   'MPI_Datatype *' => '(MPI_Datatype *)(ARG)',
+		  'MPI_Status *' => '(MPI_Status *)(ARG)',
+		  'MPI_Info *' => '(MPI_Info *)(ARG)',
+		  'MPI_Info' => '(MPI_Info)(Arg)',
 		  'int [][3]' => '(int (*)[3])(ARG)'
 );
 
+##
+## For implementations other than MPICH2, we'll need to consider using
+## MPI_C2f_<name> and MPI_F2c_<name>, as in 
+## 'MPI_Info' => 'MPI_F2c_info(ARG)'
+##
 # name_map maps the filenames.  Most filenames are created automatically
 # from the routine name, but some names have too many characters (15, 
 # including the extension(.o) is a limit for ar in some systems).
