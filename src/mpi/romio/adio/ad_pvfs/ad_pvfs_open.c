@@ -9,7 +9,7 @@
 
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {
-    int perm, amode, old_mask, err, flag;
+    int perm, amode, old_mask, flag;
     char *value;
     struct pvfs_stat pstat = {-1,-1,-1,0,0};
 

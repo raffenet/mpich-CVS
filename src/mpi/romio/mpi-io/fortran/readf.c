@@ -6,6 +6,7 @@
  */
 
 #include "mpio.h"
+#include "adio.h"
 
 
 #if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)

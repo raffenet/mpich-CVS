@@ -33,8 +33,7 @@ Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                 [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
                 [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
                 [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
-                [-longlongsize=LONGLONGSIZE] [-f90nag] [-noprofile] 
-                [-disable-weak-symbols]
+                [-longlongsize=LONGLONGSIZE] [-f90nag] [-disable-weak-symbols]
 
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
@@ -110,9 +109,6 @@ is allowed, configure chooses to use it just in case) but can fail (some
 local directory, they can fail (destroying the library in the process) if
 the temporary directory (usually '/tmp') does not have enough space.
 
-The option -noprofile prevents the compilation of the profiling interface
-of MPI-IO.
-
 The option -disable-weak-symbols disables the use of weak symbols, even if 
 available, for building the profiling interface.
 "
@@ -125,10 +121,9 @@ if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
 fi
 #
-rm -f include/*.h
+# rm -f include/*.h
 #
 NOF77=0
-NOPROFILE=0
 ARCH=""
 arch_IRIX=""
 MPI=""
@@ -165,8 +160,10 @@ ROMIO_LIBLIST=""
 ROMIO_TCFLAGS=""
 ROMIO_TCPPFLAGS=""
 ROMIO_TFFLAGS=""
+NOPROFILE=0
 MPIRUN=""
 FORTRAN_TEST=""
+MAKE=${MAKE:-"make"}
 # foll. needed for f77 test programs
 F77GETARG="call getarg(i,str)"
 F77IARGC="iargc()"
@@ -791,7 +788,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_netbsd" ; 
        CFLAGS="$CFLAGS -D__LINUX"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -D__NO_AIO"
+        CFLAGS="$CFLAGS -g -Wall -D__NO_AIO"
     else 
         CFLAGS="$CFLAGS -O -D__NO_AIO"
     fi

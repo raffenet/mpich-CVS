@@ -73,14 +73,15 @@
 #define MPI_Type_create_subarray PMPI_Type_create_subarray
 #define MPI_Type_create_darray PMPI_Type_create_darray
 
+#ifndef MPI_File_f2c
 #define MPI_File_f2c PMPI_File_f2c
 #define MPI_File_c2f PMPI_File_c2f
+#endif
 
 #define MPIO_Test PMPIO_Test
 #define MPIO_Wait PMPIO_Wait
 #define MPIO_Request_f2c PMPIO_Request_f2c
 #define MPIO_Request_c2f PMPIO_Request_c2f
-
 
 #ifdef __MPI_INFO_SRC  /* only in info source directory */
 

@@ -19,6 +19,7 @@
 #include "mpi.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpipr.h"
 
 void *ADIOI_Malloc(size_t size, int lineno, char *fname)
 {

@@ -98,6 +98,20 @@ int MPI_Info_free(MPI_Info *info);
 MPI_Fint MPI_Info_c2f(MPI_Info info);
 MPI_Info MPI_Info_f2c(MPI_Fint info);
 
+int PMPI_Info_create(MPI_Info *info);
+int PMPI_Info_set(MPI_Info info, char *key, char *value);
+int PMPI_Info_delete(MPI_Info info, char *key);
+int PMPI_Info_get(MPI_Info info, char *key, int valuelen, 
+                         char *value, int *flag);
+int PMPI_Info_get_valuelen(MPI_Info info, char *key, int *valuelen, int *flag);
+int PMPI_Info_get_nkeys(MPI_Info info, int *nkeys);
+int PMPI_Info_get_nthkey(MPI_Info info, int n, char *key);
+int PMPI_Info_dup(MPI_Info info, MPI_Info *newinfo);
+int PMPI_Info_free(MPI_Info *info);
+
+MPI_Fint PMPI_Info_c2f(MPI_Info info);
+MPI_Info PMPI_Info_f2c(MPI_Fint info);
+
 #endif
 
 typedef struct ADIOI_Fns_struct ADIOI_Fns;
@@ -302,4 +316,5 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 #include "adioi.h"
 #include "adioi_fs_proto.h"
 
+#include "mpipr.h"
 #endif
