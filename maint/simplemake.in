@@ -492,7 +492,7 @@ sub ReadMfile {
 	}
 	elsif (/^optinstall_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
-	    $optinstall_files{$1} = $2;
+	    $optinstall_files{$1} .= "$2 ";
 	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
@@ -633,7 +633,7 @@ sub WriteMfile {
     if ($do_sharedlibs) {
 	&TargetSharedLibraries( \%libraries );
 	if (defined($optinstall_files{'SHLIB'})) {
-	    foreach $libspec (split(/\s\s*/,$optinstall_files{'SHLIB'})) {
+	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
 		$libspec =~ /(.*)\/([^\/]*)/;
 		$libdir = $1;
 		$libname = $2;
@@ -986,7 +986,7 @@ sub DefaultRules {
 sub FindSrcTypes {
     $source = $_[0];
     $files = "";
-    foreach $sym (split(/\s\s*/,$source)) {
+    foreach $sym (split(/\s+/,$source)) {
 	print STDERR "Is $sym a make variable?\n" if $debug;
 	$vsym = $sym;
 	if ($vsym =~ /\$[\{\(]?([A-Za-z0-9_]*)[\}\)]?/) {
@@ -1000,7 +1000,7 @@ sub FindSrcTypes {
 	    $files .= " $sym";
 	}
     }
-    foreach $file (split(/\s\s*/,$files)) {
+    foreach $file (split(/\s+/,$files)) {
 	($name,$ext) = split('\.',$file);
 	if (defined($ext) && $ext ne "") {
 	    $ext_seen{$ext} = 1;
@@ -1014,7 +1014,7 @@ sub FindSrcTypes {
 # variables (e.g., ${Foo_sources}).
 sub SaveSrcNames {
     $source = $_[0];
-    foreach $file (split(/\s\s*/,$source)) {
+    foreach $file (split(/\s+/,$source)) {
 	($name,$ext) = split( '\.',$file);
 	if (defined($ext)) {
 	    if (defined($extrules{"$ext:o"})) {
@@ -1034,7 +1034,7 @@ sub SaveSrcNames {
 sub FindPgmSrcType {
     $pgm = $_[0];
     $pgmsrc = $_[1];
-    foreach $file (split(/\s\s*/,$pgmsrc)) {
+    foreach $file (split(/\s+/,$pgmsrc)) {
 	($name,$ext) = split('\.',$file);
 	if ($name eq $pgm) {
 	    $pgmlinktypes{$ext} = 1;
@@ -1149,7 +1149,7 @@ sub ProcessFile {
 	    if (defined( $makevars{$var_name} )) {
 		# Concatenate the value of the variable name to the list
 		# of directories
-		@actdirs = ( @actdirs, split( / /, $makevars{$var_name} ) );
+		@actdirs = ( @actdirs, split( /\s+/, $makevars{$var_name} ) );
 	    }
 	}
 	else {
@@ -1454,7 +1454,7 @@ sub LibraryBuild {
     if (!$dolib_member) {
 	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
     }
-    foreach $sourcefile (split(/\s\s*/,$sourcefiles)) {
+    foreach $sourcefile (split(/\s+/,$sourcefiles)) {
 	$sourcefile =~ /(.*)\.([^\.]*)/;
 	$obj = "$1.$memext";
 	$ext = $2;
@@ -1507,7 +1507,7 @@ sub TargetProfileLibraries {
 	$sourcefiles = &ExpandMakeVars($libraries{$lib});
 #	&LibraryBuild( $proflib_name, $libloc, $sourcefiles, "a", "pf" );
 	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
-        foreach $sourcefile (split(/\s\s*/,$sourcefiles)) {
+        foreach $sourcefile (split(/\s+/,$sourcefiles)) {
 	    $found_source_files = 1;
             $obj = $sourcefile;
             # Convert to object file
@@ -1601,7 +1601,7 @@ sub TargetPrograms {
     foreach $pgm (keys(%programs)) {
 	&print_make_line( FD,  "$pgm: " );
 	$pgmobjs = "";
-	foreach $sourcefile (split(/\s\s*/,$programs{$pgm})) {
+	foreach $sourcefile (split(/\s+/,$programs{$pgm})) {
             $obj = $sourcefile;
             # Convert to object file
 	    $ext = $sourcefile;
@@ -1612,7 +1612,7 @@ sub TargetPrograms {
 		$pgmobjs .= "$obj ";
 	    }
 	    else {
-		if (ext ne "h") {
+		if ($ext ne "h") {
 		    print "Unknown extension $ext for $sourcefile\n";
 		}
 	    }
@@ -1892,10 +1892,12 @@ sub TargetInstall {
 	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
-	foreach $file ($optinstall_files{$kind}) {
-	    $destfile = $file;
-	    $destfile =~ s/.*\///;
-	    print FD "\tif [ -s $file ] ; then \$(INSTALL_PROGRAM) $file \${$dir}/$destfile ; fi$newline";
+	foreach $filelist ($optinstall_files{$kind}) {
+	    foreach $file (split( /\s+/, $filelist)) {
+		$destfile = $file;
+		$destfile =~ s/.*\///;
+		print FD "\tif [ -s $file ] ; then \$(INSTALL_PROGRAM) $file \${$dir}/$destfile ; fi$newline";
+	    }
 	}
     }
     foreach $extradir (@install_subdirs) {
@@ -2047,7 +2049,7 @@ sub TargetDependencies {
     print FD "# Dependencies$newline";
     # Libraries first
     foreach $lib (keys(%libraries)) {
-        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+        foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
             $obj = $sourcefile;
             # Get extension
 	    $ext = $sourcefile;
@@ -2060,7 +2062,7 @@ sub TargetDependencies {
     }
     # Programs
     foreach $pgm (keys(%programs)) {
-	foreach $sourcefile (split(/\s\s*/,$programs{$pgm})) {
+	foreach $sourcefile (split(/\s+/,$programs{$pgm})) {
             $obj = $sourcefile;
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
@@ -2100,7 +2102,7 @@ sub ReadAutoconf {
 	    #print $line;
 	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
 	    $files = $1;
-	    @autoconf_files = split(/\s\s*/,$files);
+	    @autoconf_files = split(/\s+/,$files);
 	    # Create a hash by directory
 	    $lcurdir = $curdir;
 	    $lcurdir =~ s/\/$//;
