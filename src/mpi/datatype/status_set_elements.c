@@ -47,22 +47,24 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
 {
     static const char FCNAME[] = "MPI_Status_set_elements";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
+    int size;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
     /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPID_Datatype *datatype_ptr = NULL;
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+
+	    MPIR_ERRTEST_COUNT(count,mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(status,"status",mpi_errno);
             /* Validate datatype_ptr */
+	    MPID_Datatype_get_ptr( datatype, datatype_ptr );
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -71,6 +73,10 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_Datatype_get_size_macro(datatype, size);
+    /* FIXME: The device may want something else here */
+    status->count = count * size;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
     return MPI_SUCCESS;
