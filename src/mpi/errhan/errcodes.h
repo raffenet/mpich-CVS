@@ -8,6 +8,9 @@
 #ifndef ERRCODES_INCLUDED
 #define ERRCODES_INCLUDED
 
+/* Routine to return the error message for an error code.  Null on failure */
+const char *MPIR_Err_get_string( int );
+
 /* 
    This file contains the definitions of the error code fields
    

@@ -40,7 +40,7 @@ volatile static int ready = 0;
 #endif
 
 /* Forward reference */
-int MPIR_Err_get_string( int code, char *msg, int *msg_len );
+const char *MPIR_Err_get_dynerr_string( int code );
 
 /* Each user_code_msgs is allowed to have a single related instance message,
    so no separate counter is required for allocating user_instance_msgs */
@@ -86,7 +86,7 @@ static void MPIR_Init_err_dyncodes( )
     }
     /* Set the routine to provides access to the dynamically created
        error strings */
-    MPIR_Process.errcode_to_string = MPIR_Err_get_string;
+    MPIR_Process.errcode_to_string = MPIR_Err_get_dynerr_string;
 
 #if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
     /* Release the other threads */
@@ -94,7 +94,7 @@ static void MPIR_Init_err_dyncodes( )
 #endif
 }
 
-int MPIR_Err_get_string( int code, char *msg, int *msg_len );
+const char *MPIR_Err_get_dynerr_string( int code );
 
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
@@ -245,22 +245,17 @@ void MPIR_Err_delete_class( int class )
 }
 
 /*+
-  MPIR_Err_get_string - Get the message string that corresponds to an error
-  class or code
+  MPIR_Err_get_dynerr_string - Get the message string that corresponds to a
+  dynamically created error class or code
 
   Input Parameter:
 + code - An error class or code.  If a code, it must have been created by 
   'MPIR_Err_create_code'.
 
-  Output Parameter:
-+ msg - A null-terminated text string of length (including the null) of no
-  more than 'msg_len'.  
-- msg_len - Length of 'msg'.
-
   Return value:
-  Zero on success.  Non-zero returns indicate either (a) 'msg_len' is too
-  small for the message or (b) the value of 'code' is neither a valid 
-  error class or code.
+  A poiner to a null-terminated text string with the corresponding error 
+  message.  A null return indicates an error; usually the value of 'code' is 
+  neither a valid error class or code.
 
   Notes:
   This routine is used to implement 'MPI_ERROR_STRING'.
@@ -268,16 +263,9 @@ void MPIR_Err_delete_class( int class )
   Module:
   Error 
 
-  Question:
-  What values should be used for the error returns?  Should they be
-  valid error codes?
-
-  How do we get a good value for 'MPI_MAX_ERROR_STRING' for 'mpi.h'?
-  See 'errgetmsg' for one idea.
-
   @*/
-int MPIR_Err_get_string( int code, char *msg, int *msg_len )
+const char *MPIR_Err_get_dynerr_string( int code )
 {
-    return MPI_SUCCESS;
+    return "unknown";
 }
 

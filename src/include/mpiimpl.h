@@ -1018,7 +1018,7 @@ typedef struct MPICH_PerProcess_t {
     int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
     /* Routine to get the messages corresponding to dynamically created
        error messages */
-    int (*errcode_to_string)( int, char *, int * );
+    const char *(*errcode_to_string)( int );
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 

@@ -68,14 +68,12 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     else {
 	/* No communicator, so errors are fatal */
 	/* Try to print the associated message */
-#ifdef FIXME
-	char *p = MPIR_Error_get_string( errcode );
+	const char *p = MPIR_Err_get_string( errcode );
 	
-	if (!p) {
-	    fprintf( stderr, "Fatal error %s in %s\n", p, fcname );
+	if (p) {
+	    fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
 	}
 	else
-#endif
 	{
 	    fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
 	}
@@ -254,6 +252,37 @@ const char *MPIR_Err_get_generic_string( int class )
 #else 
     return "Error message texts are not available";
 #endif
+}
+
+const char *MPIR_Err_get_string( int errorcode )
+{
+    const char *p;
+
+    /* Convert the code to a string.  The cases are:
+       simple class.  Find the corresponding string.
+       <not done>
+       if (user code) { go to code that extracts user error messages }
+       else {
+           is specific message code set and available?  if so, use it
+	   else use generic code (lookup index in table of messages)
+       }
+     */
+    if (errorcode & ERROR_DYN_MASK) {
+	/* This is a dynamically created error code (e.g., with
+	   MPI_Err_add_class) */
+	p = MPIR_Process.errcode_to_string( errorcode );
+    }
+    else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
+	/* code is a raw error class.  Convert the class to an index */
+	p = MPIR_Err_get_generic_string( errorcode );
+    }
+    else {
+	/* error code encods a message.  For now, just mask it off
+	   and return the class message */
+	/* FIXME */
+	p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
+    }
+    return p;
 }
 
 /* 

@@ -50,6 +50,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
     static const char FCNAME[] = "MPI_Error_string";
     int mpi_errno = MPI_SUCCESS;
+    const char *p;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERROR_STRING);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_STRING);
@@ -68,35 +69,14 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Convert the code to a string.  The cases are:
-       simple class.  Find the corresponding string.
-       <not done>
-       if (user code) { go to code that extracts user error messages }
-       else {
-           is specific message code set and available?  if so, use it
-	   else use generic code (lookup index in table of messages)
-       }
-     */
-    if (errorcode & ERROR_DYN_MASK) {
-	/* This is a dynamically created error code (e.g., with
-	   MPI_Err_add_class) */
-	mpi_errno = 
-	    MPIR_Process.errcode_to_string( errorcode, string, resultlen );
-    }
-    else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
-	/* code is a raw error class.  Convert the class to an index */
-	const char *p = MPIR_Err_get_generic_string( errorcode );
-	*resultlen = strlen( p );
-	strcpy( string, p );
-    }
-    else {
-	/* error code encods a message.  For now, just mask it off
-	   and return the class message */
-	/* FIXME */
-	const char *p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
-	*resultlen = strlen( p );
-	strcpy( string, p );
-    }
+    /* The assumption here is that the string remains valid until
+       after the strncpy.  We could lock around the error message
+       routines if necessary, but providing a pointer to the string
+       simplifies the creation of error messages for the MPI_ERRORS_FATAL
+       error handler */
+    p = MPIR_Err_get_string( errorcode );
+    *resultlen = strlen( p );
+    MPIU_Strncpy( string, p, MPI_MAX_ERROR_STRING );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
