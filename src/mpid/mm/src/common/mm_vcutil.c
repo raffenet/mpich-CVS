@@ -151,12 +151,14 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->merge_with_unexpected = packer_merge_with_unexpected;
 	vc_ptr->post_write = packer_post_write;
 	vc_ptr->reset_car = packer_reset_car;
+	vc_ptr->post_read_pkt = NULL;
 	break;
     case MM_UNPACKER_METHOD:
 	vc_ptr->post_read = unpacker_post_read;
 	vc_ptr->merge_with_unexpected = unpacker_merge_with_unexpected;
 	vc_ptr->post_write = unpacker_post_write;
 	vc_ptr->reset_car = unpacker_reset_car;
+	vc_ptr->post_read_pkt = NULL;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:

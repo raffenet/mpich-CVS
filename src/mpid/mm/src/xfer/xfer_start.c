@@ -65,6 +65,13 @@ int xfer_start(MPID_Request *request_ptr)
 	    /* post the recv */
 	    mm_post_recv(pRequest->mm.rcar);
 	}
+	/* check if this is a packer car */
+	/* packer cars are not matched */
+	if (pRequest->mm.rcar[0].type & MM_PACKER_CAR)
+	{
+	    packer_post_read(MPID_Process.packer_vc_ptr, &pRequest->mm.rcar[0]);
+	}
+	
 	pCar = pRequest->mm.write_list;
 	while (pCar)
 	{
@@ -82,6 +89,9 @@ int xfer_start(MPID_Request *request_ptr)
 		/* enqueue the send */
 		mm_post_send(pCar);
 	    }
+	    if (pCar->type & MM_UNPACKER_CAR)
+		pCar->vc_ptr->post_write(pCar->vc_ptr, pCar);
+
 	    pCar = pCar->opnext_ptr;
 	}
 	pRequest = pRequest->mm.next_ptr;

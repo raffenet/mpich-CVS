@@ -97,7 +97,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     MPID_Segment_init((void*)buf, count, dtype, &pRequest->mm.segment);
 
     /* setup the read car for packing the mpi buffer to be sent */
-    pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR | MM_PACKER_CAR;
+    pRequest->mm.rcar[0].type = MM_READ_CAR | MM_PACKER_CAR;
     pRequest->mm.rcar[0].request_ptr = pRequest;
     pRequest->mm.rcar[0].buf_ptr = &pRequest->mm.buf;
     pRequest->mm.rcar[0].vc_ptr = MPID_Process.packer_vc_ptr;

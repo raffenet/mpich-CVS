@@ -75,6 +75,28 @@ typedef enum {
 } MPID_Packet_type;
 
 /* Communication agent request type */
+enum MM_CAR_TYPE_BITS
+{
+MM_NULL_CAR_BIT,
+MM_HEAD_CAR_BIT,
+MM_READ_CAR_BIT,
+MM_WRITE_CAR_BIT,
+MM_PACKER_CAR_BIT,
+MM_UNPACKER_CAR_BIT,
+MM_UNEX_HEAD_CAR_BIT,
+MM_UNEX_CAR_BIT
+};
+
+typedef int MM_CAR_TYPE;
+#define MM_NULL_CAR      (0x0)
+#define MM_HEAD_CAR      (0x1 << MM_HEAD_CAR_BIT)
+#define MM_READ_CAR      (0x1 << MM_READ_CAR_BIT)
+#define MM_WRITE_CAR     (0x1 << MM_WRITE_CAR_BIT)
+#define MM_PACKER_CAR    (0x1 << MM_PACKER_CAR_BIT)
+#define MM_UNPACKER_CAR  (0x1 << MM_UNPACKER_CAR_BIT)
+//#define MM_UNEX_HEAD_CAR (0x1 << MM_UNEX_HEAD_CAR_BIT)
+//#define MM_UNEX_CAR      (0x1 << MM_UNEX_CAR_BIT)
+/*
 typedef int MM_CAR_TYPE;
 #define MM_NULL_CAR      0x00
 #define MM_HEAD_CAR      0x01
@@ -84,6 +106,7 @@ typedef int MM_CAR_TYPE;
 #define MM_UNPACKER_CAR  0x10
 #define MM_UNEX_HEAD_CAR 0x20
 #define MM_UNEX_CAR      0x40
+*/
 
 /* packet definitions */
 typedef struct MPID_Packet
@@ -155,6 +178,59 @@ typedef struct MM_Car_msg_header
     MM_Segment_buffer buf;
 } MM_Car_msg_header;
 
+typedef struct MM_Car_data_unpacker
+{
+    union mm_car_data_unpacker_buf
+    {
+	struct car_unpacker_tmp
+	{
+	    int num_read_local;
+	    int num_read_copy;
+	    int num_read;
+	    int num_written;
+	} tmp;
+	/* unpacker method never reads
+	struct car_unpacker_vec_read
+	{
+	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    int vec_size;
+	    int total_num_read;
+	    int cur_num_read;
+	    int cur_index;
+	    int num_read_at_cur_index;
+	} vec_read;
+	*/
+	struct car_unpacker_vec_write
+	{
+	    int num_read_copy;
+	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    int vec_size;
+	    int total_num_written;
+	    int cur_num_written;
+	    int cur_index;
+	    int num_written_at_cur_index;
+	} vec_write;
+#ifdef WITH_METHOD_SHM
+	struct car_unpacker_shm
+	{
+	    int num_read;
+	} shm;
+#endif
+#ifdef WITH_METHOD_VIA
+	struct car_unpacker_via
+	{
+	    int num_read;
+	} via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+	struct car_unpacker_via_rdma
+	{
+	    int num_read;
+	} via_rdma;
+#endif
+    } buf;
+} MM_Car_data_unpacker;
+
 typedef union MM_Car_data 
 {
     struct car_packer_data
@@ -162,11 +238,7 @@ typedef union MM_Car_data
 	int first;
 	int last;
     } packer;
-    struct car_unpacker_data
-    {
-	int first;
-	int last;
-    } unpacker;
+    MM_Car_data_unpacker unpacker;
 #ifdef WITH_METHOD_SHM
     MM_Car_data_shm shm;
 #endif

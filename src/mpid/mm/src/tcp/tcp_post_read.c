@@ -35,11 +35,15 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 	car_ptr = car_ptr->next_ptr;
 	
 	/* read the data eagerly for now */
+	/*
 	while (car_ptr)
 	{
 	    tcp_post_read(car_ptr->vc_ptr, car_ptr);
 	    car_ptr = car_ptr->next_ptr;
 	}
+	*/
+	if (car_ptr)
+	    tcp_post_read(car_ptr->vc_ptr, car_ptr);
     }
 
     return MPI_SUCCESS;
@@ -53,7 +57,7 @@ int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
     car_ptr = &vc_ptr->pkt_car;
     buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
     
-    car_ptr->type = MM_UNEX_HEAD_CAR | MM_READ_CAR;
+    car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
     car_ptr->src = vc_ptr->rank;
     car_ptr->dest = -1;
     car_ptr->vc_ptr = vc_ptr;

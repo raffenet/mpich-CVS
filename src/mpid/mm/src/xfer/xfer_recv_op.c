@@ -129,7 +129,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /* setup a write car for unpacking */
     pRequest->mm.write_list = &pRequest->mm.wcar[0];
     pCar = pRequest->mm.wcar;
-    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
+    pCar->type = MM_WRITE_CAR | MM_UNPACKER_CAR;
     pCar->request_ptr = pRequest;
     pCar->buf_ptr = &pRequest->mm.buf;
     pCar->vc_ptr = MPID_Process.unpacker_vc_ptr;

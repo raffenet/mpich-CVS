@@ -148,7 +148,8 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    }
 	}
 	
-	/* update vector */
+	/* update vectors */
+	buf_ptr->vec.num_read += num_read;
 	car_ptr->data.tcp.buf.vec_read.cur_num_read += num_read;
 	car_ptr->data.tcp.buf.vec_read.total_num_read += num_read;
 	if (car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size)

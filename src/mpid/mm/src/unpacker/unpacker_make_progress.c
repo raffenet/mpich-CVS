@@ -5,6 +5,18 @@
  */
 #include "mpidimpl.h"
 
+#ifdef WITH_METHOD_SHM
+int unpacker_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+#ifdef WITH_METHOD_VIA
+int unpacker_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+
 /*@
    unpacker_make_progress - make progress
 
@@ -12,88 +24,121 @@
 @*/
 int unpacker_make_progress()
 {
-    int i;
-    MM_Car *car_ptr, *car_tmp_ptr;
+    MM_Car *car_ptr, *car_next_ptr;
     MM_Segment_buffer *buf_ptr;
-    BOOL finished;
+    MPIDI_VC *vc_ptr;
 
-    if (MPID_Process.unpacker_vc_ptr->readq_head == NULL &&
-	MPID_Process.unpacker_vc_ptr->writeq_head == NULL)
+    if (MPID_Process.unpacker_vc_ptr->writeq_head == NULL)
     {
-	/* shortcut out if the queues are empty */
+	/* shortcut out if the queue is empty */
 	return MPI_SUCCESS;
     }
 
-    for (i=0; i<2; i++)
+    vc_ptr = MPID_Process.unpacker_vc_ptr;
+    car_ptr = MPID_Process.unpacker_vc_ptr->writeq_head;
+    
+    while (car_ptr)
     {
-	if (i==0)
-	    car_ptr = MPID_Process.unpacker_vc_ptr->readq_head;
-	else
-	    car_ptr = MPID_Process.unpacker_vc_ptr->writeq_head;
-	
-	while (car_ptr)
+	car_next_ptr = car_ptr->qnext_ptr;
+	buf_ptr = car_ptr->buf_ptr;
+	switch (buf_ptr->type)
 	{
-	    finished = FALSE;
-	    buf_ptr = car_ptr->buf_ptr;
-	    switch (buf_ptr->type)
-	    {
-	    case MM_NULL_BUFFER:
-		err_printf("error, cannot unpack from a null buffer\n");
-		break;
-	    case MM_TMP_BUFFER:
-		MPID_Segment_unpack(
-		    &car_ptr->request_ptr->mm.segment, /* unpack the segment in the request */
-		    car_ptr->request_ptr->mm.buf.tmp.cur_buf, /* unpack from the read buffer */
-		    &car_ptr->data.unpacker.first, /* first and last are kept in the car */
-		    &car_ptr->data.unpacker.last);
-		/* update first and last */
-		/* update min_num_written */
-		break;
-	    case MM_VEC_BUFFER:
-		MPID_Segment_unpack_vector(
-		    &car_ptr->request_ptr->mm.segment,
-		    car_ptr->data.unpacker.first,
-		    &car_ptr->data.unpacker.last,
-		    car_ptr->request_ptr->mm.buf.vec.vec,
-		    &car_ptr->request_ptr->mm.buf.vec.vec_size);
-		/* write the data */
-		/* update first and last */
-		/* update min_num_written */
-		finished = TRUE;
-		break;
 #ifdef WITH_METHOD_SHM
-	    case MM_SHM_BUFFER:
-		break;
+	case MM_SHM_BUFFER:
+	    unpacker_write_shm(vc_ptr, car_ptr, buf_ptr);
+	    break;
 #endif
 #ifdef WITH_METHOD_VIA
-	    case MM_VIA_BUFFER:
-		break;
+	case MM_VIA_BUFFER:
+	    unpacker_write_via(vc_ptr, car_ptr, buf_ptr);
+	    break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-	    case MM_VIA_RDMA_BUFFER:
-		break;
+	case MM_VIA_RDMA_BUFFER:
+	    unpacker_write_via_rdma(vc_ptr, car_ptr, buf_ptr);
+	    break;
 #endif
+	case MM_VEC_BUFFER:
+	    unpacker_write_vec(vc_ptr, car_ptr, buf_ptr);
+	    break;
+	case MM_TMP_BUFFER:
+	    unpacker_write_tmp(vc_ptr, car_ptr, buf_ptr);
+	    break;
 #ifdef WITH_METHOD_NEW
-	    case MM_NEW_METHOD_BUFFER:
-		break;
+	case MM_NEW_METHOD_BUFFER:
+	    unpacker_write_new(vc_ptr, car_ptr, buf_ptr);
+	    break;
 #endif
-	    default:
-		err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.buf.type);
-		break;
-	    }
-	    if (finished)
-	    {
-		car_tmp_ptr = car_ptr;
-		car_ptr = car_ptr->qnext_ptr;
-		unpacker_car_dequeue(MPID_Process.unpacker_vc_ptr, car_tmp_ptr);
-		mm_cq_enqueue(car_tmp_ptr);
-	    }
-	    else
-	    {
-		car_ptr = car_ptr->qnext_ptr;
-	    }
+	case MM_NULL_BUFFER:
+	    err_printf("error, cannot unpack from a null buffer\n");
+	    break;
+	default:
+	    err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.buf.type);
+	    break;
+	}
+	car_ptr = car_next_ptr;
+    }
+    
+    return MPI_SUCCESS;
+}
+
+#ifdef WITH_METHOD_SHM
+int unpacker_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_VIA
+int unpacker_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_VIA_RDMA
+int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    return MPI_SUCCESS;
+}
+#endif
+
+int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    int num_written;
+    
+    /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
+
+    if (car_ptr->data.unpacker.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
+    {
+	/* update num_read_copy and num_written */
+	num_written = buf_ptr->vec.num_read - car_ptr->data.unpacker.buf.vec_write.num_read_copy;
+	car_ptr->data.unpacker.buf.vec_write.num_read_copy = buf_ptr->vec.num_read;
+
+	/* update vector */
+	car_ptr->data.unpacker.buf.vec_write.cur_num_written += num_written;
+	car_ptr->data.unpacker.buf.vec_write.total_num_written += num_written;
+	if (car_ptr->data.unpacker.buf.vec_write.cur_num_written == buf_ptr->vec.buf_size)
+	{
+	    /* reset this car */
+	    car_ptr->data.unpacker.buf.vec_write.num_read_copy = 0;
+	    car_ptr->data.unpacker.buf.vec_write.cur_num_written = 0;
+	    /* signal that we have finished writing the current vector */
+	    mm_dec_atomic(&(buf_ptr->vec.num_cars_outstanding));
 	}
     }
+    
+    /* if the entire mpi segment has been written, enqueue the car in the completion queue */
+    if (car_ptr->data.unpacker.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
+    {
+	unpacker_car_dequeue(car_ptr->vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+    }
 
+    return MPI_SUCCESS;
+}
+
+int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
     return MPI_SUCCESS;
 }

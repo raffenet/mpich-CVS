@@ -43,8 +43,8 @@ int packer_make_progress()
 	    case MM_TMP_BUFFER:
 		MPID_Segment_pack(
 		    &car_ptr->request_ptr->mm.segment,       /* pack the segment in the request */
-		    car_ptr->data.unpacker.first,            /* first and last are kept in the car */
-		    &car_ptr->data.unpacker.last,
+		    car_ptr->data.packer.first,            /* first and last are kept in the car */
+		    &car_ptr->data.packer.last,
 		    car_ptr->request_ptr->mm.buf.tmp.buf[car_ptr->request_ptr->mm.buf.tmp.cur_buf] /* pack into the current buffer */
 		    );
 		break;

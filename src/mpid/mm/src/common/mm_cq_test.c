@@ -52,56 +52,71 @@ int mm_cq_test()
     {
 	complete = TRUE;
 
-	if (car_ptr->type & MM_UNEX_HEAD_CAR)
+	if (car_ptr->type & MM_READ_CAR)
 	{
-	    /* find in posted_q */
-	    found = FALSE;
-	    MPID_Thread_lock(MPID_Process.qlock);
-	    trailer_ptr = iter_ptr = MPID_Process.posted_q_head;
-	    while (iter_ptr)
+	    if (car_ptr->type & MM_HEAD_CAR)
 	    {
-		if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
-		    (iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
-		    (iter_ptr->src == car_ptr->src))
+		/* find in posted_q */
+		found = FALSE;
+		MPID_Thread_lock(MPID_Process.qlock);
+		trailer_ptr = iter_ptr = MPID_Process.posted_q_head;
+		while (iter_ptr)
 		{
-		    if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
+		    if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
+			(iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
+			(iter_ptr->src == car_ptr->src))
 		    {
-			err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
-			return -1;
+			if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
+			{
+			    err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
+			    return -1;
+			}
+			/* dequeue the car from the posted_q */
+			if (trailer_ptr == iter_ptr)
+			{
+			    MPID_Process.posted_q_head = iter_ptr->qnext_ptr;
+			    if (MPID_Process.posted_q_head == NULL)
+				MPID_Process.posted_q_tail = NULL;
+			}
+			else
+			{
+			    trailer_ptr->qnext_ptr = iter_ptr->qnext_ptr;
+			    if (MPID_Process.posted_q_tail == iter_ptr)
+				MPID_Process.posted_q_tail = trailer_ptr;
+			}
+			MPID_Thread_unlock(MPID_Process.qlock);
+			/* merge the unex car with the posted car using the method in the vc */
+			iter_ptr->vc_ptr->merge_with_unexpected(iter_ptr, car_ptr);
+			found = TRUE;
+			complete = FALSE;
+			break;
 		    }
-		    /* dequeue the car from the posted_q */
-		    if (trailer_ptr == iter_ptr)
-		    {
-			MPID_Process.posted_q_head = iter_ptr->qnext_ptr;
-			if (MPID_Process.posted_q_head == NULL)
-			    MPID_Process.posted_q_tail = NULL;
-		    }
-		    else
-		    {
-			trailer_ptr->qnext_ptr = iter_ptr->qnext_ptr;
-			if (MPID_Process.posted_q_tail == iter_ptr)
-			    MPID_Process.posted_q_tail = trailer_ptr;
-		    }
-		    MPID_Thread_unlock(MPID_Process.qlock);
-		    /* merge the unex car with the posted car using the method in the vc */
-		    iter_ptr->vc_ptr->merge_with_unexpected(iter_ptr, car_ptr);
-		    found = TRUE;
-		    complete = FALSE;
-		    break;
+		    if (trailer_ptr != iter_ptr)
+			trailer_ptr = trailer_ptr->qnext_ptr;
+		    iter_ptr = iter_ptr->qnext_ptr;
 		}
-		if (trailer_ptr != iter_ptr)
-		    trailer_ptr = trailer_ptr->qnext_ptr;
-		iter_ptr = iter_ptr->qnext_ptr;
+		
+		/* else allocate a temp buffer, place in the unex_q, and post a read */
+		if (!found)
+		{
+		    if (car_ptr->msg_header.pkt.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
+			mm_post_unex_rndv(car_ptr);
+		    else
+			mm_create_post_unex(car_ptr);
+		    complete = FALSE;
+		}
 	    }
-
-	    /* else allocate a temp buffer, place in the unex_q, and post a read */
-	    if (!found)
+	    else
 	    {
-		if (car_ptr->msg_header.pkt.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
-		    mm_post_unex_rndv(car_ptr);
+		if (car_ptr->next_ptr)
+		{
+		    car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr->next_ptr);
+		}
 		else
-		    mm_create_post_unex(car_ptr);
-		complete = FALSE;
+		{
+		    if (car_ptr->vc_ptr->post_read_pkt)
+			car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
+		}
 	    }
 	}
 
@@ -165,7 +180,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr = &request_ptr->mm.rcar[0];
     car_ptr->msg_header.pkt = unex_head_car_ptr->msg_header.pkt;
 
-    car_ptr->type = MM_UNEX_HEAD_CAR | MM_READ_CAR;
+    car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
     car_ptr->src = unex_head_car_ptr->msg_header.pkt.src;
     car_ptr->request_ptr = request_ptr;
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
@@ -179,7 +194,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr = car_ptr->next_ptr;
     
     /* allocate a temporary buffer to hold the unexpected data */
-    car_ptr->type = MM_READ_CAR | MM_UNEX_CAR;
+    car_ptr->type = MM_READ_CAR;
     car_ptr->src = unex_head_car_ptr->src;
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
     car_ptr->request_ptr = request_ptr;

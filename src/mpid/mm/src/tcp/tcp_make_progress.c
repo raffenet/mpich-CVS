@@ -144,7 +144,7 @@ int tcp_make_progress()
     bfd_set readset, writeset;
     
     tv.tv_sec = 0;
-    tv.tv_usec = 0;
+    tv.tv_usec = 1;
     
     readset = TCP_Process.readset;
     writeset = TCP_Process.writeset;
