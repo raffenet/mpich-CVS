@@ -31,6 +31,7 @@
  */
 
 static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
+static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp);
 
 /*
  * NOT USING OPTIMIZED DATALOOPS YET (SINCE THEY DON'T EXIST <SMILE>)
@@ -126,8 +127,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	 */
 	elmp->curcount   = dlp->loop_params.count;
 	elmp->orig_count = elmp->curcount;
-	elmp->curoffset  = 0; /* TODO: FIX!!! */
-	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE blocksize CALL! */
+	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE Stackelm CALLS! */
+	elmp->curoffset  = DLOOP_Stackelm_offset(elmp); /* NOTE: ONLY MATTERS FOR THE TOPMOST LOOP */
 	elmp->curblock   = DLOOP_Stackelm_blocksize(elmp);
 	elmp->orig_block = elmp->curblock;
 
@@ -216,7 +217,7 @@ do { \
     cur_elmp->curcount   = cur_elmp->orig_count; \
     cur_elmp->orig_block = DLOOP_Stackelm_blocksize(cur_elmp); \
     cur_elmp->curblock   = cur_elmp->orig_block; \
-    cur_elmp->curoffset  = 0; \
+    cur_elmp->curoffset  = DLOOP_Stackelm_offset(cur_elmp); \
 } while (0)
 
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
@@ -500,11 +501,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    assert(0);
+		    next_elmp->curoffset = cur_elmp->curoffset; /* ??? */
 		    break;
 		default:
 		    assert(0);
 	    } /* end of switch */
+
+	    /* TODO: HANDLE NON-ZERO OFFSETS IN NEXT_ELMP HERE? */
+
 	    next_elmp->curcount = next_elmp->orig_count;
 	    next_elmp->curblock = next_elmp->orig_block;
 
@@ -558,7 +562,44 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
     }
 }
 
-
+/* DLOOP_Stackelm_offset - returns offset (displacement) for stackelm based
+ * on current count in stackelm
+ *
+ * NOTE:
+ * count and loop_p members of stackelm MUST be correct before this is 
+ * called.
+ *
+ * also, this really is only good at init time for vectors and contigs 
+ * (all the time for indexed) at the moment.
+ *
+ */
+static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
+{
+    struct DLOOP_Dataloop *dlp = elmp->loop_p;
+    int datatype_index;
+       
+    switch(dlp->kind & DLOOP_KIND_MASK) {
+    case DLOOP_KIND_VECTOR:
+    case DLOOP_KIND_CONTIG:
+	return 0;
+        break;
+    case DLOOP_KIND_BLOCKINDEXED:
+        datatype_index = elmp->loop_p->loop_params.count - elmp->curcount;
+        return dlp->loop_params.bi_t.offset_array[datatype_index];
+        break;
+    case DLOOP_KIND_INDEXED:
+        datatype_index = elmp->loop_p->loop_params.count - elmp->curcount;
+        return dlp->loop_params.i_t.offset_array[datatype_index];
+        break;
+    case DLOOP_KIND_STRUCT:
+        datatype_index = elmp->loop_p->loop_params.count - elmp->curcount;
+        return dlp->loop_params.s_t.offset_array[datatype_index];
+        break;
+    default:
+	assert(0);
+        break;
+    }
+}
 
 /* 
  * Local variables:
