@@ -59,9 +59,6 @@ typedef struct
 #define BFD_ISSET(bfd, set)     FD_ISSET( bget_fd(bfd), set )
 */
 
-#ifndef MAX
-#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
 #define BFD_MAX(a,b) (((bget_fd(a)) > (bget_fd(b))) ? (a) : (b))
 
 /* bsockets.c */
