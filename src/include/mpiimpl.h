@@ -1150,17 +1150,11 @@ extern int MPID_THREAD_LEVEL;
     MPID_Thread_unlock(&MPIR_Process.common_lock);}
 #endif
 
-/* Include definitions from the device which require items defined by this file
-   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
-   the src/include directory in the build tree. */
-#include "mpidpost.h"
-
 #ifndef HAVE_DEV_COMM_HOOK
 #define MPID_Dev_comm_create_hook( a )
 #define MPID_Dev_comm_destroy_hook( a )
 #endif
 
-/*** ONLY FUNCTION DECLARATIONS BEYOND THIS POINT ***/
 
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
@@ -1218,41 +1212,30 @@ int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
 int MPID_Win_free(MPID_Win **); 
 
 
-#if !defined(MPID_Progress_start)
 void MPID_Progress_start(void);
-#endif
-#if !defined(MPID_Progress_end)
 void MPID_Progress_end(void);
-#endif
-#if !defined(MPID_Progress_test)
 int MPID_Progress_test(void);
-#endif
-#if !defined(MPID_Progress_wait)
 void MPID_Progress_wait(void);
-#endif
-#if !defined(MPID_Progress_poke)
 void MPID_Progress_poke(void);
-#endif
 
-#if !defined(MPID_Request_create)
 MPID_Request * MPID_Request_create(void);
-#endif
-
-#if !defined(MPID_Request_set_completed)
 void MPID_Request_set_completed(MPID_Request *);
-#endif
-
-#if !defined(MPID_Request_release)
 void MPID_Request_release(MPID_Request *);
-#endif
 
-#if !defined(MPID_Errhandler_free)
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
-#endif
 
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
 int MPID_VCRT_Release(MPID_VCRT vcrt);
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
+
+int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
+int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
+int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
+
+/* Include definitions from the device which require items defined by this file
+   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
+   the src/include directory in the build tree. */
+#include "mpidpost.h"
 
 #endif /* MPIIMPL_INCLUDED */
