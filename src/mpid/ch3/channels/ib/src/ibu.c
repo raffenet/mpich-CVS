@@ -1054,6 +1054,9 @@ int ibu_init()
 	return status;
     }
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
+    printf("infiniband:\n mtu: %d\n msg_size: %d\n",
+	IBU_Process.attr_p->port_static_info_p->mtu,
+	IBU_Process.attr_p->port_static_info_p->msg_size);fflush(stdout);
 
     /* non infiniband initialization */
     g_StateAllocator = ibuBlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
