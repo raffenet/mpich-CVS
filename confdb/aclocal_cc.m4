@@ -802,3 +802,98 @@ elif test "$pac_cv_func_crypt_defined" = "no" ; then
     AC_DEFINE(NEED_CRYPT_PROTOTYPE)
 fi
 ])dnl
+dnl/*D
+dnl PAC_ARG_STRICT - Add --enable-strict to configure.  
+dnl
+dnl Synopsis:
+dnl PAC_ARG_STRICT
+dnl 
+dnl Output effects:
+dnl Adds '--enable-strict' to the command line.  If this is enabled, then
+dnl if no compiler has been set, set 'CC' to 'gcc'.
+dnl If the compiler is 'gcc', 'CFLAGS' is set to include
+dnl.vb
+dnl	-O -Wall -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL
+dnl.ve
+dnl 
+dnl This only works where 'gcc' is available.
+dnl In addition, it exports the variable 'enable_strict_done'. This
+dnl ensures that subsidiary 'configure's do not add the above flags to
+dnl 'CFLAGS' once the top level 'configure' sees '--enable-strict'.  To ensure
+dnl this, 'CFLAGS' is also exported.
+dnl
+dnl Not yet available: options when using other compilers.  However, 
+dnl here are some possible choices
+dnl Solaris cc
+dnl  -fd -v -Xc
+dnl
+dnlD*/
+AC_DEFUN(PAC_ARG_STRICT,[
+AC_ARG_ENABLE(strict,
+[--enable-strict  - Turn on strict compilation testing when using gcc])
+export enable_strict_done
+export CFLAGS
+if test "$enable_strict" = "yes" -a "$enable_strict_done" != "yes" ; then
+    enable_strict_done="yes"
+    if test -z "CC" ; then
+        AC_CHECK_PROGS(CC,gcc)
+        if test "$CC" = "gcc" ; then 
+            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
+    	fi
+    fi
+fi
+])
+dnl/*D
+dnl PAC_ARG_CC_G - Add debugging flags for the C compiler
+dnl
+dnl Synopsis:
+dnl PAC_ARG_CC_G
+dnl
+dnl Output Effect:
+dnl Adds '-g' to 'CFLAGS' and exports 'CFLAGS'.  Sets and exports the 
+dnl variable 'enable_g_simple' so that subsidiary 'configure's will not
+dnl add another '-g'.
+dnl
+dnl Notes:
+dnl '--enable-g' should be used for all internal debugging modes if possible.
+dnl Use the 'enable_val' that 'enable_g' is set to to pass particular values,
+dnl and ignore any values that are not recognized (some other 'configure' 
+dnl may have used them.  Of course, if you need extra values, you must
+dnl add code to extract values from 'enable_g'.
+dnl
+dnl For example, to look for a particular keyword, you could use
+dnl.vb
+dnl SaveIFS="$IFS"
+dnl IFS=","
+dnl for key in $enable_g ; do
+dnl     case $key in 
+dnl         mem) # add code for memory debugging 
+dnl         ;;
+dnl         *)   # ignore all other values
+dnl         ;;
+dnl     esac
+dnl done
+dnl IFS="$SaveIFS"
+dnl.ve
+dnl
+dnlD*/
+AC_DEFUN(PAC_ARG_CC_G,[
+AC_ARG_ENABLE(g,
+[--enable-g  - Turn on debugging of the package (typically adds -g to CFLAGS)])
+export CFLAGS
+export enable_g_simple
+if test -n "$enable_g" -a "$enable_g" != "no" -a \
+   "$enable_g_simple" != "done" ; then
+    enable_g_simple="done"
+    if test "$enable_g" = "g" -o "$enable_g" = "yes" ; then
+        CFLAGS="$CFLAGS -g"
+    fi
+fi
+])
+dnl
+dnl Simple version for both options
+dnl
+AC_DEFUN(PAC_ARG_CC_COMMON,[
+PAC_ARG_CC_G
+PAC_ARG_STRICT
+])
