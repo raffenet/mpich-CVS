@@ -176,7 +176,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 	    user_code_msgs[errcode] = (const char *)str;
 	}
 	else {
-	    /* FIXME (gropp): Unallocated error code? */
+	    /* FIXME : Unallocated error code? */
 	    MPIU_Free( str );
 	}
     }
@@ -188,7 +188,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 	    user_class_msgs[errclass] = (const char *)str;
 	}
 	else {
-	    /* FIXME (gropp): Unallocated error code? */
+	    /* FIXME : Unallocated error code? */
 	    MPIU_Free( str );
 	}
     }
@@ -313,7 +313,7 @@ void MPIR_Err_delete_code( int code )
 {
     if (not_initialized)
 	MPIR_Init_err_dyncodes();
-    /* FIXME (gropp): mark as free */
+    /* FIXME : mark as free */
 }
 
 /*+
@@ -329,10 +329,10 @@ void MPIR_Err_delete_class( int class )
 {
     if (not_initialized)
 	MPIR_Init_err_dyncodes();
-    /* FIXME (gropp): mark as free */
+    /* FIXME : mark as free */
 }
 
-/* FIXME (gropp): For the delete code/class, at least delete if at the top of the
+/* FIXME : For the delete code/class, at least delete if at the top of the
    list; slightly better is to keep minvalue of freed and count; whenever
    the minvalue + number = current top; reset.  This allows modular 
    alloc/dealloc to recover codes and classes independent of the order in

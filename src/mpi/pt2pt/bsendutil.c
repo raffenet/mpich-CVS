@@ -65,7 +65,7 @@ typedef struct BsendMsg_t {
 } BsendMsg_t;
 
 /* BsendData describes a bsend request */
-/* FIXME (gropp): ANY CHANGE TO BsendData_t must also be made in mpich2/configure.in,
+/* FIXME : ANY CHANGE TO BsendData_t must also be made in mpich2/configure.in,
    which computes the size of MPI_BSEND_OVERHEAD.  We should put this in 
    a separate file that both the configure and this file can include */
 typedef struct BsendData {
@@ -289,7 +289,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    /* --END ERROR HANDLING-- */
 	    /* If the error is "request not available", put this on the
 	       pending list */
-	    /* FIXME (gropp): Add request to pending list NOT YET DONE */
+	    /* FIXME : Add request to pending list NOT YET DONE */
 	    if (mpi_errno == -1) /* -1 is a temporary place holder for request-not-available */
 	    /*if (MPIR_ERR_GET_CLASS(mpi_errno) == MPI_ERR_NO_MEM, MPI_ERR_OTHER, ???)*/
 	    {
@@ -298,7 +298,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		p->msg.comm_ptr  = comm_ptr;
 		p->msg.dest      = dest;
 		
-		/* FIXME (gropp): Still need to add to pending list */
+		/* FIXME : Still need to add to pending list */
 		
 		/* ibsend has a problem.  
 		   Use a generalized request here? */
@@ -489,7 +489,7 @@ static void MPIR_Bsend_check_active( void )
 }
 
 /* 
- * FIXME (gropp): For each pending item (that is, items that we couldn't even start sending),
+ * FIXME : For each pending item (that is, items that we couldn't even start sending),
  * try to get them going.  
  */
 static void MPIR_Bsend_retry_pending( void )

@@ -141,7 +141,7 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 	    nc = nf[1];
 	    if (isdigit(nc)) {
 		/* Get the field width */
-		/* FIXME (gropp): Assumes ASCII */
+		/* FIXME : Assumes ASCII */
 		width = nc - '0';
 		p = nf + 2;
 		while (*p && isdigit(*p)) {

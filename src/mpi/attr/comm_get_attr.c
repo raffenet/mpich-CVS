@@ -105,7 +105,7 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 #endif
 	*flag = 1;
 
-	/* FIXME (gropp): We could initialize some of these here; only tag_ub is 
+	/* FIXME : We could initialize some of these here; only tag_ub is 
 	 used in the error checking. */
 	/* 
 	 * The C versions of the attributes return the address of a 

@@ -21,7 +21,7 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
 				      sizeof(MPID_Comm), MPID_Comm_direct,
                                       MPID_COMM_PREALLOC};
 
-/* FIXME (gropp):
+/* FIXME :
    Reusing context ids can lead to a race condition if (as is desirable)
    MPI_Comm_free does not include a barrier.  Consider the following:
    Process A frees the communicator.
@@ -45,7 +45,7 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
    See MPIR_Comm_copy for a function to produce a copy of part of a
    communicator 
 */
-/*  FIXME (gropp): comm_create can't use this because the context id must be
+/*  FIXME : comm_create can't use this because the context id must be
    created separately from the communicator (creating the context
    is collective over oldcomm_ptr, but this routine may be called only
    by a subset of processes in the new communicator)
@@ -86,7 +86,7 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 
 /* Create a local intra communicator from the local group of the 
    specified intercomm. */
-/* FIXME (gropp): 
+/* FIXME : 
    For the context id, use the intercomm's context id + 2.  (?)
  */
 int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
@@ -133,7 +133,7 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     /* This is an internal communicator, so ignore */
     localcomm_ptr->errhandler = 0;
     
-    /* FIXME (gropp) : No local functions for the collectives */
+    /* FIXME  : No local functions for the collectives */
     localcomm_ptr->coll_fns = 0;
 
     /* We do *not* inherit any name */
@@ -272,12 +272,12 @@ void MPIR_Free_contextid( int context_id )
    Even better is to separate the local and remote context ids.  Then
    each group of processes can manage their context ids separately.
 */
-/* FIXME (gropp): This approach for intercomm context will not work for MPI-2
+/* FIXME : This approach for intercomm context will not work for MPI-2
 */
 int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 {
     int context_id, remote_context_id, final_context_id;
-    int tag = 31567; /* FIXME (gropp) - we need an internal tag or 
+    int tag = 31567; /* FIXME  - we need an internal tag or 
 		        communication channel.  Can we use a different
 		        context instead?.  Or can we use the tag 
 		        provided in the intercomm routine? (not on a dup, 
@@ -301,7 +301,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
 
-	/* FIXME (gropp): We need to do something with the context ids.  For 
+	/* FIXME : We need to do something with the context ids.  For 
 	   MPI1, we can just take the min of the two context ids and
 	   use that value.  For MPI2, we'll need to have separate
 	   send and receive context ids */
@@ -317,7 +317,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
     NMPI_Bcast( &final_context_id, 1, MPI_INT, 
 		0, comm_ptr->local_comm->handle );
     MPIR_Nest_decr();
-    /* FIXME (gropp): If we did not choose this context, free it.  We won't do this
+    /* FIXME : If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
        are not subsets of MPI_COMM_WORLD) */
     if (final_context_id != context_id) {
@@ -329,7 +329,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 #else
 int MPIR_Get_contextid( MPI_Comm comm )
 {
-    /* FIXME (gropp): Not yet implemented.  See the MPICH 2 document for the 
+    /* FIXME : Not yet implemented.  See the MPICH 2 document for the 
        thread-safe algorithm. */
     return 0;
 }

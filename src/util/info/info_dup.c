@@ -76,7 +76,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
        and release the allocation lock.  If that is ever a problem, we
        may want to add an "allocate n elements" routine and execute this
        it two steps: count and then allocate */
-    /* FIXME (gropp): multithreaded */
+    /* FIXME : multithreaded */
     curr_new        = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
     curr_new->key   = 0;
     curr_new->value = 0;

@@ -130,7 +130,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 		"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
 #endif
 	    *newcomm = MPI_COMM_NULL;
-	    /* FIXME (gropp): free newcomm (better yet, consider running 
+	    /* FIXME : free newcomm (better yet, consider running 
 	     attribute dup functions before generating the new communicator) */
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

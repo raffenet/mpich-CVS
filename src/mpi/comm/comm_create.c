@@ -135,8 +135,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	for (i=0; i<n; i++) {
 	    /* Mapping[i] is the rank in the communicator of the process that
 	       is the ith element of the group */
-	    /* FIXME (gropp): BUBBLE SORT */
-	    /* FIXME (gropp): NEEDS COMM_WORLD SPECIALIZATION */
+	    /* FIXME : BUBBLE SORT */
+	    /* FIXME : NEEDS COMM_WORLD SPECIALIZATION */
 	    mapping[i] = -1;
 	    for (j=0; j<comm_ptr->remote_size; j++) {
 		int comm_lpid;

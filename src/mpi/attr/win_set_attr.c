@@ -125,7 +125,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    if (mpi_errno)
 	    {
 		MPID_Common_thread_unlock( );
-		/* FIXME (gropp): communicator of window? */
+		/* FIXME : communicator of window? */
 		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
