@@ -66,7 +66,21 @@ if (defined($ENV{"VERBOSE"})) {
 # Process arguments and override any defaults
 #---------------------------------------------------------------------------
 foreach $_ (@ARGV) {
-    if (/-mpiexec=(.*)/) { $mpiexec = $1; }
+    if (/-mpiexec=(.*)/) { 
+	# Check that mpiexec is executable
+	if ( -x $1 ) { 
+	    $mpiexec = $1; 
+	}
+	else {
+	    print STDERR "$mpiexec does not exist or is not executable\n";
+	    if (-x "../bin/mpiexec") {
+		$bindir = `(cd .. && pwd)`;
+		chop $bindir;
+		$mpiexec = $bindir . "/bin/mpiexec";
+		print STDERR "Using $mpiexec instead\n";
+	    }
+	}
+    }
     elsif (/-np=(.*)/)   { $np_default = $1; }
     elsif (/-maxnp=(.*)/) { $np_max = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
@@ -76,7 +90,9 @@ foreach $_ (@ARGV) {
     elsif (/-xmlfile=(.*)/) {
 	$xmlfile   = $1;
 	if (! ($xmlfile =~ /^\//)) {
-	    $xmlfullfile = `pwd` . "/" . $xmlfile ;
+	    $thisdir = `pwd`;
+	    chop $thisdir;
+	    $xmlfullfile = $thisdir . "/" . $xmlfile ;
 	}
 	else {
 	    $xmlfullfile = $xmlfile;
@@ -281,7 +297,7 @@ sub RunMPIProgram {
 	&$InitForTest();
     }
     open ( MPIOUT, "$mpiexec $np_arg $np ./$programname 2>&1 |" ) ||
-	 die "Could not run $programname\n";
+	 die "Could not run ./$programname\n";
     if ($ResultTest ne "") {
 	# Read and process the output
 	($found_error, $inline) = &$ResultTest( MPIOUT, $programname );
@@ -385,7 +401,7 @@ sub TestStatus {
 	# This test *requires* non-zero return codes
 	$found_error = 1;
 	$err_count ++;
-	$inline .= "mpiexec returned a zero status but the program returned a nonzero status\n";
+	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     return ($found_error,$inline);
 }
@@ -424,7 +440,7 @@ sub TestTimeout {
 	# This test *requires* non-zero return codes
 	$found_error = 1;
 	$err_count ++;
-	$inline .= "mpiexec returned a zero status but the program returned a nonzero status\n";
+	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     #
     # Here should go a check of the processes
