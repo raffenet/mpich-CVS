@@ -18,7 +18,7 @@ import base.drawable.DrawnBox;
 
 public class State
 {
-    protected static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
+    private static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
 
     public static void setBorderStyle( final StateBorder state_border )
     {
