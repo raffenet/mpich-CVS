@@ -18,6 +18,7 @@ typedef struct TCP_PerProcess {
                bfd_set writeset;
 	    MPIDI_VC * read_list;
 	    MPIDI_VC * write_list;
+	           int max_bfd;
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

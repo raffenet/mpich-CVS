@@ -7,6 +7,7 @@
 
 int tcp_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    tcp_car_enqueue(vc_ptr, car_ptr);
     return MPI_SUCCESS;
 }
 

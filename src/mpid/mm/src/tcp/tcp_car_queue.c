@@ -22,6 +22,8 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
 	if (vc_ptr->writeq_head == NULL)
 	{
+	    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
+	    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
 	    vc_ptr->write_next_ptr = TCP_Process.write_list;
 	    TCP_Process.write_list = vc_ptr;
 	}
@@ -34,12 +36,6 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     }
     if (car_ptr->type & MM_READ_CAR)
     {
-	/* If the read queue for this vc is empty then enqueue this vc in the process active read list */
-	if (vc_ptr->readq_head == NULL)
-	{
-	    vc_ptr->read_next_ptr = TCP_Process.read_list;
-	    TCP_Process.read_list = vc_ptr;
-	}
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
 	    vc_ptr->readq_tail->mnext_ptr = car_ptr;
@@ -56,6 +52,7 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
+    BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
     if (vc_ptr == TCP_Process.write_list)
     {
 	TCP_Process.write_list = vc_ptr->write_next_ptr;
@@ -70,27 +67,6 @@ static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 	    return MPI_SUCCESS;
 	}
 	iter_ptr = iter_ptr->write_next_ptr;
-    }
-    return MPI_ERR_ARG;
-}
-
-static int tcp_vc_dequeue_read(MPIDI_VC *vc_ptr)
-{
-    MPIDI_VC *iter_ptr;
-    if (vc_ptr == TCP_Process.read_list)
-    {
-	TCP_Process.read_list = vc_ptr->read_next_ptr;
-	return MPI_SUCCESS;
-    }
-    iter_ptr = TCP_Process.read_list;
-    while (iter_ptr->read_next_ptr)
-    {
-	if (iter_ptr->read_next_ptr == vc_ptr)
-	{
-	    iter_ptr->read_next_ptr = vc_ptr->read_next_ptr;
-	    return MPI_SUCCESS;
-	}
-	iter_ptr = iter_ptr->read_next_ptr;
     }
     return MPI_ERR_ARG;
 }
@@ -158,9 +134,6 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    }
 	    iter_ptr = iter_ptr->mnext_ptr;
 	}
-	/* If the read queue becomes empty, remove the vc from the process active vc read list */
-	if (vc_ptr->readq_head == NULL)
-	    tcp_vc_dequeue_read(car_ptr->vc_ptr);
     }
 
     car_ptr->mnext_ptr = NULL;

@@ -42,6 +42,7 @@ int tcp_init()
     BFD_ZERO(&TCP_Process.writeset);
     BFD_ZERO(&TCP_Process.readset);
     BFD_SET(TCP_Process.listener, &TCP_Process.readset);
+    TCP_Process.max_bfd = 0;
 
     return MPI_SUCCESS;
 }
