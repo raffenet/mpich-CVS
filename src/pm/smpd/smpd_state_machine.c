@@ -69,8 +69,6 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_MPIEXEC_LAUNCHING";
     case SMPD_MPIEXEC_EXIT_WAITING:
 	return "SMPD_MPIEXEC_EXIT_WAITING";
-    case SMPD_MPIEXEC_CLOSING:
-	return "SMPD_MPIEXEC_CLOSING";
     case SMPD_MPIEXEC_CONNECTING_SMPD:
 	return "SMPD_MPIEXEC_CONNECTING_SMPD";
     case SMPD_CONNECTING:
@@ -1958,8 +1956,6 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    case SMPD_SMPD_LISTENING:
 	    case SMPD_MGR_LISTENING:
 		smpd_process.listener_context = NULL;
-		break;
-	    case SMPD_MPIEXEC_CLOSING:
 		break;
 	    case SMPD_EXITING:
 		if (smpd_process.listener_context)
