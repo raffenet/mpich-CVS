@@ -41,7 +41,7 @@ Input Parameters:
 Notes:
 This routine may block until the message is received.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

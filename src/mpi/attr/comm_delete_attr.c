@@ -35,7 +35,7 @@
 + comm - communicator to which attribute is attached (handle) 
 - keyval - The key value of the deleted attribute (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_ERR_COMM

@@ -43,7 +43,7 @@ Output Parameter:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if 
   calling process does not belong to grid (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

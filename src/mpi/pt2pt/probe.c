@@ -38,7 +38,7 @@ Input Parameters:
 Output Parameter:
 . status - status object (Status) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -18,7 +18,6 @@ lib${MPILIBNAME}_a_SOURCES = bsend.c bsend_init.c bsendutil.c \
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 #
-# This is a test for the document generation
 doc_HTML_SOURCES  = ${mpi_sources}
 doc_MAN_SOURCES   = ${mpi_sources}
 doc_LATEX_SOURCES = ${mpi_sources}

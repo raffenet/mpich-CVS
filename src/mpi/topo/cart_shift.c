@@ -45,7 +45,7 @@ Notes:
 The 'direction' argument is in the range '[0,n-1]' for an n-dimensional 
 Cartesian mesh.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

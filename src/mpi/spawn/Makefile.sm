@@ -5,3 +5,7 @@ lib${MPILIBNAME}_a_SOURCES = close_port.c comm_connect.c \
  comm_spawn_multiple.c open_port.c comm_accept.c comm_spawn.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+#
+doc_HTML_SOURCES = ${mpi_sources}
+doc_MAN_SOURCES = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}

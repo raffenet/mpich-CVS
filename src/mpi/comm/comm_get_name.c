@@ -38,7 +38,7 @@
   be an array of size at least 'MPI_MAX_NAME_STRING'.
 - resultlen - Number of characters in name
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

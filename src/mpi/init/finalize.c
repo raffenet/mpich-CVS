@@ -92,11 +92,10 @@ PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
    it is best not to perform much more than a 'return rc' after calling
    'MPI_Finalize'.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Finalize( void )
 {

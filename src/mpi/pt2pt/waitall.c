@@ -40,7 +40,7 @@ Input Parameters:
 
 Output Parameter:
 . array_of_statuses - array of status objects (array of Statuses).  May be
-  'MPI_STATUSES_NULL'
+  'MPI_STATUSES_IGNORE'
 
 Notes:
 
@@ -57,7 +57,7 @@ program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

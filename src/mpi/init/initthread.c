@@ -117,7 +117,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     /* Call any and all MPID_Init type functions */
     MPID_Wtime_init();
-    /*MPIU_Timer_pre_init();*/
+    /* MPIU_Timer_pre_init(); */
     mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);
@@ -167,7 +167,6 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {

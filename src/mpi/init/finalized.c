@@ -38,7 +38,6 @@ Output Argument:
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Finalized( int * flag )
 {

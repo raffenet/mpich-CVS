@@ -45,7 +45,7 @@
   the exact format is implementation defined.  This name may or may not
   be the same as might be returned by 'gethostname', 'uname', or 'sysinfo'.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

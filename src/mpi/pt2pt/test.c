@@ -39,7 +39,7 @@ Output Parameter:
 
 .N waitstatus
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

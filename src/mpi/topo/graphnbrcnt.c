@@ -39,7 +39,7 @@ Input Parameters:
 Output Parameter:
 . nneighbors - number of neighbors of specified process (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -41,7 +41,7 @@ Input Parameters:
 Output Parameter:
 . comm_out - Created intracommunicator
 
-.N fortran
+.N Fortran
 
 Algorithm:
 .vb

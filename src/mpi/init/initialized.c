@@ -39,7 +39,6 @@ Output Argument:
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Initialized( int *flag )
 {

@@ -69,7 +69,7 @@ This could be read as applying only to the various Bsend routines.  This
 implementation takes the position that this applies to 'MPI_BUFFER_DETACH'
 as well.
 
-.N fortran
+.N Fortran
 
     The Fortran binding for this routine is different.  Because Fortran 
     does not have pointers, it is impossible to provide a way to use the

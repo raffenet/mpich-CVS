@@ -45,7 +45,7 @@ Notes:
 The 'count' argument indicates the maximum length of a message; the actual 
 number can be determined with 'MPI_Get_count'.  
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

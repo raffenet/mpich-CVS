@@ -32,17 +32,22 @@
 #define FUNCNAME MPI_Testall
 
 /*@
-    MPI_Waitall - Waits for all given communications to complete
+    MPI_Testall - Tests for the completion of all previously initiated
+    communications
 
 Input Parameters:
 + count - lists length (integer) 
 - array_of_requests - array of requests (array of handles) 
 
-Output Parameter:
-. array_of_statuses - array of status objects (array of Status).  May be
-  'MPI_STATUSES_NULL'
+Output Parameters:
++ flag - (logical) 
+- array_of_statuses - array of status objects (array of Status).  May be
+ 'MPI_STATUSES_IGNORE'.
 
 Notes:
+  'flag' is true only if all requests have completed.  Otherwise, flag is
+  false and neither the 'array_of_requests' nor the 'array_of_statuses' is
+  modified.
 
 If one or more of the requests completes with an error, MPI_ERR_IN_STATUS is
 returned.  An error value will be present is elements of array_of_status
@@ -57,13 +62,13 @@ program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_IN_STATUS
 .N MPI_ERR_REQUEST
 .N MPI_ERR_ARG
-.N MPI_ERR_IN_STATUS
 @*/
 int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {

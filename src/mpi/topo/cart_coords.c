@@ -41,7 +41,7 @@ Output Parameter:
 . coords - integer array (of size 'ndims') containing the Cartesian 
   coordinates of specified process (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

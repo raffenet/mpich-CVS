@@ -38,7 +38,7 @@ Input Parameters:
 . tag - message tag (integer) 
 - comm - communicator (handle) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -46,7 +46,7 @@ Output Parameters:
 + recvbuf - initial address of receive buffer (choice) 
 - status - status object (Status).  This refers to the receive operation.
   
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

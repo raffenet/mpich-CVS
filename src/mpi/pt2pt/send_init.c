@@ -40,7 +40,7 @@ Input Parameters:
 Output Parameter:
 . request - communication request (handle) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -39,7 +39,7 @@ Output Parameter:
 + flag - (logical) 
 - status - status object (Status) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

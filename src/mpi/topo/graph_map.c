@@ -40,7 +40,7 @@ Output Parameter:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if the 
 calling process does not belong to graph (integer) 
  
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

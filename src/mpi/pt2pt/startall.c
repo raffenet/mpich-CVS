@@ -46,7 +46,7 @@ Input Parameters:
    defined by the MPI standard.  If well defined error reporting and behavior
    are required, multiple calls to MPI_Start() should be used instead.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -475,6 +475,8 @@ sub ReadMfile {
 	    # Lowercase the type
 	    $docsrc{lc($1)} = $2;
 	    $globaldockind{lc($1)} = 1;
+	    # Add any autoconf dir in $doc_namedefs
+	    &LookForAutoconfDirs( $doc_namedefs );
 	}
 	elsif (/^doc_([\w-]*)_DIR\s*=\s*(.*)\s*$/) {
 	    # Lowercase the type

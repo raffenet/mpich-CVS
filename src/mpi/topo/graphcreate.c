@@ -49,7 +49,7 @@ neigbors of the calling process.
 Algorithm:
 We ignore the 'reorder' info currently.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

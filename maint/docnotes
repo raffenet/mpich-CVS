@@ -1,5 +1,44 @@
-This file contains definitions of the MPI error CLASSES for inclusion in the
-man pages.  Use .N err name
+This file contains the named document blocks for use in generating the 
+documentation.  This is divided into several main blocks:
+   Fortran
+   Misc MPI (e.g., status null)
+   Error classes
+
+
+/*N Fortran
+Notes for Fortran:
+All MPI routines in Fortran (except for 'MPI_WTIME' and 'MPI_WTICK') have 
+an additional argument 'ierr' at the end of the argument list.  'ierr'
+is an integer and has the same meaning as the return value of the routine 
+in C.  In Fortran, MPI routines are subroutines, and are invoked with the 
+'call' statement.  
+
+All MPI objects (e.g., 'MPI_Datatype', 'MPI_Comm') are of type 'INTEGER'
+in Fortran.  
+N*/
+
+/*N collops
+Notes on collective operations:
+
+The reduction functions ('MPI_Op') do not return an error value.  As a result,
+if the functions detect an error, all they can do is either call 'MPI_Abort'
+or silently skip the problem.  Thus, if you change the error handler from
+'MPI_ERRORS_ARE_FATAL' to something else, for example, 'MPI_ERRORS_RETURN', 
+then no error may be indicated.
+
+The reason for this is the performance problems in ensuring that 
+all collective routines return the same error value.
+N*/
+
+/*N waitstatus
+ Note on status for send operations:
+ For send operations, the only use of status is for MPI_Test_cancelled or
+ in the case that there is an error, in which case the MPI_ERROR field of
+ status will be set.  
+N*/
+
+This part of the file contains definitions of the MPI error CLASSES for
+inclusion in the man pages.  Use .N err name
 
 /*N Errors
 Errors:

@@ -48,7 +48,7 @@ advised that cancelling a send, while a local operation (as defined by the MPI
 standard), is likely to be expensive (usually generating one or more internal
 messages). 
 
-.N fortran
+.N Fortran
 
 .N NULL
 

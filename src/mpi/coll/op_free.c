@@ -28,7 +28,6 @@
 #define FUNCNAME MPI_Op_free
 
 /*@
-.N MPI_SUCCESS
   MPI_Op_free - Frees a user-defined combination function handle
  
   Input Parameter:
@@ -39,7 +38,7 @@
 
 .N NULL
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

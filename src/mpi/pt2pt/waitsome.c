@@ -43,7 +43,7 @@ Output Parameters:
 . array_of_indices - array of indices of operations that 
 completed (array of integers) 
 - array_of_statuses - array of status objects for 
-    operations that completed (array of Status).  May be 'MPI_STATUSES_NULL'.
+    operations that completed (array of Status).  May be 'MPI_STATUSES_IGNORE'.
 
 Notes:
   The array of indicies are in the range '0' to 'incount - 1' for C and 
@@ -58,7 +58,7 @@ program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

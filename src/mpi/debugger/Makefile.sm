@@ -4,8 +4,6 @@ lib${MPILIBNAME}_a_SOURCES = dbginit.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
-# This is a test for the document generation
-doc_HTML_SOURCES  = 
-doc_MAN_SOURCES   = 
-doc_LATEX_SOURCES =
-
+doc_HTML_SOURCES = ${mpi_sources}
+doc_MAN_SOURCES = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}

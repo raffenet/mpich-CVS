@@ -6,3 +6,7 @@ lib${MPILIBNAME}_a_SOURCES = get.c put.c win_create.c win_fence.c win_free.c \
  accumulate.c alloc_mem.c free_mem.c win_get_group.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+#
+doc_HTML_SOURCES = ${mpi_sources}
+doc_MAN_SOURCES = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}

@@ -363,7 +363,7 @@ Input Arguments:
 Output Argument:
 . recvbuf - starting address of receive buffer (choice) 
 
-.N fortran
+.N Fortran
 
 .N collops
 

@@ -53,7 +53,7 @@ program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -43,7 +43,7 @@ Output Parameters:
 + buf - initial address of send and receive buffer (choice) 
 - status - status object (Status) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -37,7 +37,7 @@ Input Parameter:
 Output Parameter:
 . flag - (logical) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

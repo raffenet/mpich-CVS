@@ -36,7 +36,7 @@ Input Argument:
 Output Argument:
 . rank - rank of the calling process in group of  'comm'  (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

@@ -44,7 +44,6 @@
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Query_thread( int *provided )
 {

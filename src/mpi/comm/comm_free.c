@@ -53,7 +53,7 @@ disallows freeing a null communicator.  The text from the standard is:
  returns a reference to it in the handle.
 .ve
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

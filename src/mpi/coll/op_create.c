@@ -69,7 +69,7 @@ void MPIR_Op_set_cxx( MPI_Op op )
   'MPI_Reduce', 'MPI_Allreduce', 'MPI_Scan', or 'MPI_Reduce_scatter') is also
   passed to the user-specified routine.
 
-.N fortran
+.N Fortran
 
 .N collops
 

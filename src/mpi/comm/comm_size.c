@@ -39,7 +39,7 @@ Output Argument:
 Notes:
    'MPI_COMM_NULL' is `not` a valid argument to this function.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

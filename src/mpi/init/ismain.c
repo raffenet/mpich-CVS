@@ -40,7 +40,6 @@
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
 int MPI_Is_thread_main( int *flag )
 {

@@ -1,4 +1,9 @@
-lib${MPILIBNAME}_a_SOURCES = abort.c init.c initialized.c initthread.c \
- ismain.c finalize.c finalized.c querythread.c describe_mpi_states.c
+mpi_sources = abort.c init.c initialized.c initthread.c \
+ ismain.c finalize.c finalized.c querythread.c
+lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} describe_mpi_states.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+#
+doc_HTML_SOURCES = ${mpi_sources}
+doc_MAN_SOURCES = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}

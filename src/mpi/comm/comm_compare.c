@@ -52,7 +52,7 @@ exception is explicitly stated in the text that defines the function.
 $(5.4.1. Communicator Accessors)
 where there is no text in 'MPI_COMM_COMPARE' allowing a null handle.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

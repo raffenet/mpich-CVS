@@ -41,7 +41,7 @@ Output Parameters:
 . neighbors - ranks of processes that are neighbors to specified process
  (array of integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

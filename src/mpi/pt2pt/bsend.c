@@ -68,7 +68,7 @@ force the messages to be delivered by
 (The 'MPI_Buffer_detach' will not complete until all buffered messages are 
 delivered.)
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

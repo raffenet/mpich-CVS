@@ -57,7 +57,7 @@ The 'MPI_BSEND_OVERHEAD' gives the maximum amount of space that may be used in
 the buffer for use by the BSEND routines in using the buffer.  This value 
 is in 'mpi.h' (for C) and 'mpif.h' (for Fortran).
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

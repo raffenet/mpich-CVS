@@ -46,7 +46,7 @@ created with 'MPI_Irecv' or 'MPI_Isend' and friends.  Like active persistent
 requests, once freed, the request can no longer be used with test/wait routines
 to determine completion.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
