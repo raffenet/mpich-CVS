@@ -81,9 +81,9 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	break;
 
     case ADIO_FCNTL_GET_FSIZE:
-	fcntl_struct->fsize = pvfs_lseek(fd->fd_sys, 0, SEEK_END);
+	fcntl_struct->fsize = pvfs_lseek64(fd->fd_sys, 0, SEEK_END);
 	if (fd->fp_sys_posn != -1) 
-	     pvfs_lseek(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
+	     pvfs_lseek64(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
 #ifdef PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
@@ -106,7 +106,7 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
            preallocation is needed.
            read/write in sizes of no more than ADIOI_PREALLOC_BUFSZ */
 
-	curr_fsize = pvfs_lseek(fd->fd_sys, 0, SEEK_END);
+	curr_fsize = pvfs_lseek64(fd->fd_sys, 0, SEEK_END);
 	alloc_size = fcntl_struct->diskspace;
 
 	size = ADIOI_MIN(curr_fsize, alloc_size);
@@ -150,7 +150,7 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	}
 	ADIOI_Free(buf);
 	if (fd->fp_sys_posn != -1) 
-	    pvfs_lseek(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
+	    pvfs_lseek64(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
 	*error_code = MPI_SUCCESS;
 	break;
 

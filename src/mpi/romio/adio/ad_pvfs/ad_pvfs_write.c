@@ -22,14 +22,14 @@ void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int count,
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	if (fd->fp_sys_posn != offset)
-	    pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
+	    pvfs_lseek64(fd->fd_sys, offset, SEEK_SET);
 	err = pvfs_write(fd->fd_sys, buf, len);
 	fd->fp_sys_posn = offset + err;
 	/* individual file pointer not updated */        
     }
     else { /* write from curr. location of ind. file pointer */
 	if (fd->fp_sys_posn != fd->fp_ind)
-	    pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
+	    pvfs_lseek64(fd->fd_sys, fd->fp_ind, SEEK_SET);
 	err = pvfs_write(fd->fd_sys, buf, len);
 	fd->fp_ind += err;
 	fd->fp_sys_posn = fd->fp_ind;
@@ -121,9 +121,9 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 
 	if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	    off = fd->disp + etype_size * offset;
-	    pvfs_lseek(fd->fd_sys, off, SEEK_SET);
+	    pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
 	}
-	else off = pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
+	else off = pvfs_lseek64(fd->fd_sys, fd->fp_ind, SEEK_SET);
 
 	k = 0;
 	for (j=0; j<count; j++) 
@@ -231,7 +231,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 #ifdef PROFILE
 		    MPE_Log_event(11, 0, "start seek");
 #endif
-		    pvfs_lseek(fd->fd_sys, off, SEEK_SET);
+		    pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
 #ifdef PROFILE
 		    MPE_Log_event(12, 0, "end seek");
 		    MPE_Log_event(5, 0, "start write");
@@ -280,7 +280,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 #ifdef PROFILE
 		    MPE_Log_event(11, 0, "start seek");
 #endif
-		    pvfs_lseek(fd->fd_sys, off, SEEK_SET);
+		    pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
 #ifdef PROFILE
 		    MPE_Log_event(12, 0, "end seek");
 		    MPE_Log_event(5, 0, "start write");

@@ -69,7 +69,7 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 #ifdef PROFILE
     MPE_Log_event(11, 0, "start seek");
 #endif
-    err = pvfs_lseek(fd->fd_sys, off, SEEK_SET);
+    err = pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
 #ifdef PROFILE
     MPE_Log_event(12, 0, "end seek");
 #endif
