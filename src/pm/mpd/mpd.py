@@ -25,9 +25,10 @@ Long parameter names may be abbreviated to their first letters by using
 --echo causes the mpd echo its listener port by which other mpds may connect
 --daemon causes mpd to run backgrounded, with no controlling tty
 --bulletproof says to turn bulletproofing on (experimental)
---idmyhost specifies an alternate hostname for the host this mpd is running on
+--idmyhost specifies an alternate hostname for the host this mpd is running on;
+  e.g. may be used to specify the alias for an interface other than default
 --listenport specifies a port for this mpd to listen on; by default it will
-  acquire one from the system.
+  acquire one from the system
 
 A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
@@ -129,7 +130,7 @@ def _mpd_init():
     _add_active_socket(g.mySocket,
                        'my (%s) listener socket' % g.myId, # name
                        '_handle_new_connection',           # handler
-                       '',0)                               # host,port
+                       '',0,0)                             # host,ip,port
     g.nextJobInt = 1
     g.activeJobs = {}
     
@@ -162,7 +163,7 @@ def _mpd_init():
         _add_active_socket(g.conListenSocket,
                            'my (%s) console listen socket' % g.myId,  # name
                            'handled-inline',                          # handler
-                           g.conListenName,0)                         # host,port
+                           g.conListenName,0,0)               # host,ip,port
         
     g.generation = 0  # will chg when enter the ring
     if g.entryHost:
@@ -204,9 +205,9 @@ def _mpd():
             g.pulse_ctr = 0
         for readySocket in inReadySockets:
             if readySocket not in g.activeSockets.keys():  # deleted on another iteration ?
-		# printLine = 'unexpected readySocket %d' % (readySocket.fileno())
-		# if g.conSocket > 0:
-		    # printLine += ', console fd=%d' % (g.conSocket.fileno())
+                # printLine = 'unexpected readySocket %d' % (readySocket.fileno())
+                # if g.conSocket > 0:
+                    # printLine += ', console fd=%d' % (g.conSocket.fileno())
                 # print printLine
                 if readySocket in socketsToSelect:
                     readySocket.close()
@@ -256,7 +257,7 @@ def _handle_console_connection():
         _add_active_socket(g.conSocket,
                            'my (%s) console socket' % g.myId,  # name
                            '_handle_console_input',            # handler
-                           g.conSocket,0)                      # host,port
+                           g.conSocket,0,0)                 # host,ip,port
         g.activeSockets[g.conSocket].realUsername = splitLine[1]
     else:
         return  ## postpone it; hope the other one frees up soon
@@ -285,7 +286,7 @@ def _handle_console_input():
     if msg['cmd'] == 'mpdrun':
         # permit anyone to run but use THEIR own username
         #   thus, override any username specified by the user
-	if g.activeSockets[g.conSocket].realUsername != 'root':
+        if g.activeSockets[g.conSocket].realUsername != 'root':
             msg['username'] = g.activeSockets[g.conSocket].realUsername
             msg['users'] = { (0,msg['nprocs']-1) : g.activeSockets[g.conSocket].realUsername }
         #
@@ -302,11 +303,15 @@ def _handle_console_input():
         msgToSend = { 'cmd' : 'mpd_version_response', 'mpd_version' : mpd_version }
         mpd_send_one_msg(g.conSocket,msgToSend)
     elif msg['cmd'] == 'mpdtrace':
-        msgToSend = { 'cmd'  : 'mpdtrace_info',
-                      'dest' : g.myId,
-                      'id'   : g.myId,
-                      'lhs'  : '%s_%d' % (g.lhsHost,g.lhsPort),
-                      'rhs'  : '%s_%d' % (g.rhsHost,g.rhsPort) }
+        msgToSend = { 'cmd'     : 'mpdtrace_info',
+                      'dest'    : g.myId,
+                      'id'      : g.myId,
+                      'lhshost' : '%s' % (g.lhsHost),
+                      'lhsport' : '%s' % (g.lhsPort),
+                      'lhsip'   : '%s' % (g.lhsIP),
+                      'rhshost' : '%s' % (g.rhsHost),
+                      'rhsport' : '%s' % (g.rhsPort),
+                      'rhsip'   : '%s' % (g.rhsIP) }
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         msgToSend = { 'cmd'  : 'mpdtrace_trailer',
                       'dest' : g.myId }
@@ -358,7 +363,7 @@ def _handle_console_input():
     elif msg['cmd'] == 'mpdkilljob':
         # permit anyone to kill but use THEIR own username
         #   thus, override any username specified by the user
-	if g.activeSockets[g.conSocket].realUsername != 'root':
+        if g.activeSockets[g.conSocket].realUsername != 'root':
             msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
@@ -369,7 +374,7 @@ def _handle_console_input():
     elif msg['cmd'] == 'mpdsigjob':
         # permit anyone to sig but use THEIR own username
         #   thus, override any username specified by the user
-	if g.activeSockets[g.conSocket].realUsername != 'root':
+        if g.activeSockets[g.conSocket].realUsername != 'root':
             msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
@@ -429,11 +434,15 @@ def _handle_lhs_input():
         if msg['dest'] == g.myId:
             mpd_send_one_msg(g.conSocket,msg)
         else:
-            msgToSend = { 'cmd'  : 'mpdtrace_info',
-                          'dest' : msg['dest'],
-                          'id'   : g.myId,
-                          'lhs'  : '%s_%d' % (g.lhsHost,g.lhsPort),
-                          'rhs'  : '%s_%d' % (g.rhsHost,g.rhsPort) }
+            msgToSend = { 'cmd'     : 'mpdtrace_info',
+                          'dest'    : msg['dest'],
+                          'id'      : g.myId,
+                          'lhshost' : '%s' % (g.lhsHost),
+                          'lhsport' : '%s' % (g.lhsPort),
+                          'lhsip'   : '%s' % (g.lhsIP),
+                          'rhshost' : '%s' % (g.rhsHost),
+                          'rhsport' : '%s' % (g.rhsPort),
+                          'rhsip'   : '%s' % (g.rhsIP) }
             mpd_send_one_msg(g.rhsSocket, msgToSend)
             mpd_send_one_msg(g.rhsSocket, msg)
     elif msg['cmd'] == 'mpdlistjobs_info':
@@ -475,8 +484,9 @@ def _handle_lhs_input():
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['dest'] == g.myId:
             g.exiting = 1
-            mpd_send_one_msg(g.lhsSocket, { 'cmd' : 'mpdexiting',
+            mpd_send_one_msg(g.lhsSocket, { 'cmd'     : 'mpdexiting',
                                             'rhshost' : g.rhsHost,
+                                            'rhsip'   : g.rhsIP,
                                             'rhsport' : g.rhsPort })
     elif msg['cmd'] == 'mpdringtest':
         if msg['src'] != g.myId:
@@ -490,10 +500,10 @@ def _handle_lhs_input():
                 if g.conSocket:    # may have closed it if user did ^C at console
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
     elif msg['cmd'] == 'mpdsigjob':
-	forwarded = 0
+        forwarded = 0
         if msg['handled']  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
-	    forwarded = 1
+            forwarded = 1
         handledHere = 0
         for jobid in g.activeJobs.keys():
             sjobid = jobid.split('  ')  # jobnum and mpdid
@@ -512,14 +522,14 @@ def _handle_lhs_input():
         if not forwarded  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['src'] == g.myId:
-	    if g.conSocket:
+            if g.conSocket:
                 mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack',
                                                'handled' : msg['handled'] } )
     elif msg['cmd'] == 'mpdkilljob':
-	forwarded = 0
+        forwarded = 0
         if msg['handled'] and msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
-	    forwarded = 1
+            forwarded = 1
         handledHere = 0
         for jobid in g.activeJobs.keys():
             sjobid = jobid.split('  ')  # jobnum and mpdid
@@ -543,7 +553,7 @@ def _handle_lhs_input():
         if not forwarded  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['src'] == g.myId:
-	    if g.conSocket:
+            if g.conSocket:
                 mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack',
                                                'handled' : msg['handled'] } )
     elif msg['cmd'] == 'abortjob':
@@ -624,9 +634,11 @@ def _do_mpdrun(msg):
         msg['nstarted_on_this_loop'] += 1
         if currRank == 0:
             manLhsHost = 'dummy_host'
+            manLhsIP   = '0.0.0.0'
             manLhsPort = 0
         else:
             manLhsHost = msg['lhshost']
+            manLhsIP   = msg['lhsip']
             manLhsPort = msg['lhsport']
         (tempSocket,tempPort) = mpd_get_inet_listen_socket('',0)
         if not tempSocket:
@@ -643,11 +655,14 @@ def _do_mpdrun(msg):
                                                'reason' : 'failed_to_get_socketpair'})
             return
         msg['lhshost'] = g.myHost
+        msg['lhsip']   = g.myIP
         msg['lhsport'] = tempPort
         if currRank == 0:
             msg['host0'] = g.myHost
+            msg['ip0']   = g.myIP
             msg['port0'] = tempPort
         manHost0 = msg['host0']
+        manIP0   = msg['ip0']
         manPort0 = msg['port0']
         users = msg['users']
         for ranks in users.keys():
@@ -710,6 +725,7 @@ def _do_mpdrun(msg):
             toManSocket.close()
             setpgrp()
             environ['MPDMAN_MYHOST'] = g.myHost
+            environ['MPDMAN_MYIP'] = g.myIP
             environ['MPDMAN_JOBID'] = jobid
             environ['MPDMAN_CLI_PGM'] = pgm
             environ['MPDMAN_CLI_PATH'] = pathForExec
@@ -722,11 +738,14 @@ def _do_mpdrun(msg):
             environ['MPDMAN_MPD_LISTEN_PORT'] = str(g.myPort)
             environ['MPDMAN_MPD_CONF_SECRETWORD'] = g.configParams['secretword']
             environ['MPDMAN_CONHOST'] = msg['conhost']
+            environ['MPDMAN_CONIP']   = msg['conip']
             environ['MPDMAN_CONPORT'] = str(msg['conport'])
             environ['MPDMAN_RANK'] = str(currRank)
             environ['MPDMAN_LHSHOST'] = manLhsHost
+            environ['MPDMAN_LHSIP']   = manLhsIP
             environ['MPDMAN_LHSPORT'] = str(manLhsPort)
             environ['MPDMAN_HOST0'] = manHost0
+            environ['MPDMAN_IP0']   = manIP0
             environ['MPDMAN_PORT0'] = str(manPort0)
             environ['MPDMAN_MY_LISTEN_PORT'] = str(tempPort)
             environ['MPDMAN_MY_LISTEN_FD'] = str(tempSocket.fileno())
@@ -756,8 +775,8 @@ def _do_mpdrun(msg):
                 setgroups(mpd_get_groups_for_username(username))
                 setregid(gid,gid)
                 setreuid(uid,uid)
-	    import atexit    # need to use full name of _exithandlers
-	    atexit._exithandlers = []    # un-register handlers in atexit module
+            import atexit    # need to use full name of _exithandlers
+            atexit._exithandlers = []    # un-register handlers in atexit module
             # import profile
             # print 'profiling the manager'
             # profile.run('mpdman()')
@@ -773,7 +792,7 @@ def _do_mpdrun(msg):
                                             'clipid' : -1,    # until reported by man
                                             'socktoman' : toManSocket }
             _add_active_socket(toManSocket,'man_msgs','_handle_man_msgs',
-                               'localhost',tempPort)
+                               'localhost',0,tempPort)
     msg['ringsize'] += 1
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
     mpd_send_one_msg(g.rhsSocket,msg)  # forward it on around
@@ -814,9 +833,10 @@ def _handle_rhs_input():
             g.rhsSocket.close()
         # connect to new rhs
         g.rhsHost = msg['rhshost']
+        g.rhsIP   = msg['rhsip']
         g.rhsPort = int(msg['rhsport'])
         mpd_print(0000,"TRYING TO CONN TO %s %s" % (g.rhsHost,g.rhsPort))
-        if g.rhsHost == g.myHost  and  g.rhsPort == g.myPort:
+        if g.rhsIP == g.myIP  and  g.rhsPort == g.myPort:
             if g.lhsSocket:
                 if g.activeSockets.has_key(g.lhsSocket):
                     del g.activeSockets[g.lhsSocket]
@@ -824,13 +844,15 @@ def _handle_rhs_input():
             _create_ring_of_one_mpd()
             mpd_print(0000,"DID CONN TO MYSELF %s %s" % (g.rhsHost,g.rhsPort))
             return
-        g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsHost,g.rhsPort)
+        g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsIP,g.rhsPort)
         if not g.rhsSocket:
             mpd_print(1,'_handle_rhs_input failed to obtain rhs socket')
             return
-        _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
+        _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',
+                           g.rhsHost,g.rhsIP,g.rhsPort)
         msgToSend = { 'cmd' : 'request_to_enter_as_lhs',
                       'host' : g.myHost,
+                      'ip'   : g.myIP,
                       'port' : g.myPort }
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         msg = mpd_recv_one_msg(g.rhsSocket)
@@ -841,8 +863,9 @@ def _handle_rhs_input():
         response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
         msgToSend = { 'cmd' : 'challenge_response',
                       'response' : response,
-                      'host' : g.myHost,
-                      'port' : g.myPort }
+                      'host'     : g.myHost,
+                      'ip'       : g.myIP,
+                      'port'     : g.myPort }
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         msg = mpd_recv_one_msg(g.rhsSocket)
         if (not msg) or  \
@@ -881,7 +904,7 @@ def _handle_new_connection():
         mpd_send_one_msg(newConnSocket,msgToSend)
         _add_active_socket(newConnSocket,'rhs_being_challenged',
                            '_handle_rhs_challenge_response',
-                           msg['host'],msg['port'])
+                           msg['host'],msg['ip'],msg['port'])
     elif msg['cmd'] == 'request_to_enter_as_lhs':
         randNumStr = '%04d' % (randrange(1,randHiRange))  # 0001-(hi-1), inclusive
         g.correctChallengeResponse[newConnSocket] = \
@@ -891,7 +914,7 @@ def _handle_new_connection():
         mpd_send_one_msg(newConnSocket,msgToSend)
         _add_active_socket(newConnSocket,'lhs_being_challenged',
                            '_handle_lhs_challenge_response',
-                           msg['host'],msg['port'])
+                           msg['host'],msg['ip'],msg['port'])
     elif msg['cmd'] == 'ping':
         msgToSend = { 'cmd' : 'ping_ack' }
         mpd_send_one_msg(newConnSocket,msgToSend)
@@ -907,8 +930,8 @@ def _handle_lhs_challenge_response(responseSocket):
        (not msg.has_key('host'))  or  (not msg.has_key('port'))  or  \
        (msg['response'] != g.correctChallengeResponse[responseSocket]):
         mpd_print(1, 'INVALID msg for lhs response msg=:%s: from host=%s port=%d' % \
-                  (msg,g.activeSockets[responseSocket].rhsHost,
-                   g.activeSockets[responseSocket].rhsPort) )
+                  (msg,g.activeSockets[responseSocket].host,
+                   g.activeSockets[responseSocket].port) )
         msgToSend = { 'cmd' : 'invalid_response' }
         mpd_send_one_msg(responseSocket,msgToSend)
         del g.correctChallengeResponse[responseSocket]
@@ -922,8 +945,10 @@ def _handle_lhs_challenge_response(responseSocket):
             g.lhsSocket.close()
         g.lhsSocket = responseSocket
         g.lhsHost = msg['host']
+        g.lhsIP = msg['ip']
         g.lhsPort = int(msg['port'])
-        _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
+        _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',
+                           g.lhsHost,g.lhsIP,g.lhsPort)
 
 def _handle_rhs_challenge_response(responseSocket):
     msg = mpd_recv_one_msg(responseSocket)
@@ -931,8 +956,8 @@ def _handle_rhs_challenge_response(responseSocket):
        (not msg.has_key('cmd'))   or  (not msg.has_key('response'))  or  \
        (not msg.has_key('host'))  or  (not msg.has_key('port')):
         mpd_print(1, 'INVALID msg for rhs response msg=:%s: from host=%s port=%d' % \
-                  (msg,g.activeSockets[responseSocket].rhsHost,
-                   g.activeSockets[responseSocket].rhsPort) )
+                  (msg,g.activeSockets[responseSocket].host,
+                   g.activeSockets[responseSocket].port) )
         msgToSend = { 'cmd' : 'invalid_response' }
         mpd_send_one_msg(responseSocket,msgToSend)
         del g.correctChallengeResponse[responseSocket]
@@ -940,8 +965,8 @@ def _handle_rhs_challenge_response(responseSocket):
         responseSocket.close()
     elif msg['response'] != g.correctChallengeResponse[responseSocket]:
         mpd_print(1, 'INVALID response in rhs response msg=:%s: from host=%s port=%d' % \
-                  (msg,g.activeSockets[responseSocket].rhsHost,
-                   g.activeSockets[responseSocket].rhsPort) )
+                  (msg,g.activeSockets[responseSocket].host,
+                   g.activeSockets[responseSocket].port) )
         msgToSend = { 'cmd' : 'invalid_response' }
         mpd_send_one_msg(responseSocket,msgToSend)
         del g.correctChallengeResponse[responseSocket]
@@ -955,29 +980,32 @@ def _handle_rhs_challenge_response(responseSocket):
     else:
         msgToSend = { 'cmd' : 'OK_to_enter_as_rhs',
                       'rhshost' : g.rhsHost,
+                      'rhsip'   : g.rhsIP,
                       'rhsport' : g.rhsPort }
         mpd_send_one_msg(responseSocket,msgToSend)
         del g.activeSockets[g.rhsSocket]
         g.rhsSocket.close()
         g.rhsSocket = responseSocket
         g.rhsHost = msg['host']
+        g.rhsIP   = msg['ip']
         g.rhsPort = int(msg['port'])
-        _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
+        _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',
+                           g.rhsHost,g.rhsIP,g.rhsPort)
 
 def _handle_man_msgs(manSocket):
     msg = mpd_recv_one_msg(manSocket)
     if not msg:
         for jobid in g.activeJobs.keys():
-	    deleted = 0
-	    for manPid in g.activeJobs[jobid]:
-		if manSocket == g.activeJobs[jobid][manPid]['socktoman']:
+            deleted = 0
+            for manPid in g.activeJobs[jobid]:
+                if manSocket == g.activeJobs[jobid][manPid]['socktoman']:
                     del g.activeJobs[jobid][manPid]
-		    if len(g.activeJobs[jobid]) == 0:
-		        del g.activeJobs[jobid]
-		    deleted = 1
+                    if len(g.activeJobs[jobid]) == 0:
+                        del g.activeJobs[jobid]
+                    deleted = 1
                     break
-	    if deleted:
-	        break
+            if deleted:
+                break
         del g.activeSockets[manSocket]
         manSocket.close()
         return
@@ -1009,17 +1037,19 @@ def _handle_man_msgs(manSocket):
         msgToSend = { 'cmd' : 'invalid_request' }
         mpd_send_one_msg(manSocket,msgToSend)
 
-def _add_active_socket(socket,name,handler,host,port):
+def _add_active_socket(socket,name,handler,host,ip,port):
     g.activeSockets[socket] = _ActiveSockInfo()
     g.activeSockets[socket].name    = name
     g.activeSockets[socket].handler = handler
-    g.activeSockets[socket].rhsHost = host
-    g.activeSockets[socket].rhsPort = port
+    g.activeSockets[socket].host = host
+    g.activeSockets[socket].ip   = ip
+    g.activeSockets[socket].port = port
 
 def _enter_existing_ring():
     # connect to lhs
     g.lhsHost = g.entryHost
-    g.lhsPort  = g.entryPort
+    g.lhsIP   = g.entryIP
+    g.lhsPort = g.entryPort
     inRing = 0
     numEnterTries = 0
     while not inRing  and  numEnterTries < 8:
@@ -1028,16 +1058,18 @@ def _enter_existing_ring():
         numConnTries = 0
         while not connected  and  numConnTries < 8:
             numConnTries += 1
-            g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
+            g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsIP,g.lhsPort)
             if g.lhsSocket:
                 connected = 1
             else:
                 sleep(random())
         if not connected:
             continue
-        _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
+        _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',
+                           g.lhsHost,g.lhsIP,g.lhsPort)
         msgToSend = { 'cmd' : 'request_to_enter_as_rhs',
                       'host' : g.myHost,
+                      'ip'   : g.myIP,
                       'port' : g.myPort,
                       'mpd_version' : mpd_version }
         mpd_send_one_msg(g.lhsSocket,msgToSend)
@@ -1057,15 +1089,18 @@ def _enter_existing_ring():
             sleep(random())
     if not inRing:
         msgToSend = { 'cmd' : 'challenge_response',
-                      'host' : g.myHost, 'port' : g.myPort,
+                      'host' : g.myHost,
+                      'ip'   : g.myIP,
+                      'port' : g.myPort,
                       'response' : 'bad_generation', 'gen' : g.generation }
         mpd_send_one_msg(g.lhsSocket,msgToSend)
-        mpd_raise('Failed to enter ring at %s; my gen=%d other gen=%d ' % \
-                  (g.lhsHost,g.lhsPort,g.generation,g.generationFromMsg) ) 
+        mpd_raise('Failed to enter ring at %s %s %d; my gen=%d other gen=%d ' % \
+                  (g.lhsHost,g.lhsIP,g.lhsPort,g.generation,g.generationFromMsg) ) 
     response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
                   'host' : g.myHost,
+                  'ip'   : g.myIP,
                   'port' : g.myPort }
     mpd_send_one_msg(g.lhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.lhsSocket)
@@ -1076,14 +1111,17 @@ def _enter_existing_ring():
     if (not msg.has_key('rhshost'))  or (not msg.has_key('rhsport')):
         mpd_raise('invalid OK msg: %s' % (msg) )
     g.rhsHost = msg['rhshost']
+    g.rhsIP   = msg['rhsip']
     g.rhsPort = int(msg['rhsport'])
     # connect to rhs
-    g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsHost,g.rhsPort)
+    g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsIP,g.rhsPort)
     if not g.rhsSocket:
         mpd_raise('unable to obtain socket for rhs in ring')
-    _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
+    _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',
+                       g.rhsHost,g.rhsIP,g.rhsPort)
     msgToSend = { 'cmd' : 'request_to_enter_as_lhs',
                   'host' : g.myHost,
+                  'ip'   : g.myIP,
                   'port' : g.myPort }
     mpd_send_one_msg(g.rhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.rhsSocket)
@@ -1094,8 +1132,9 @@ def _enter_existing_ring():
     response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
-                  'host' : g.myHost,
-                  'port' : g.myPort }
+                  'host'     : g.myHost,
+                  'ip'       : g.myIP,
+                  'port'     : g.myPort }
     mpd_send_one_msg(g.rhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.rhsSocket)
     if (not msg) or  \
@@ -1108,14 +1147,18 @@ def _create_ring_of_one_mpd():
     # use a temp port and socket to avoid accidentally 
     #   accepting/handling connections by others
     (tempSocket,tempPort) = mpd_get_inet_listen_socket('',0)
-    g.lhsSocket = mpd_get_inet_socket_and_connect(g.myHost,tempPort)
+    g.lhsSocket = mpd_get_inet_socket_and_connect(g.myIP,tempPort)
     g.lhsHost = g.myHost
+    g.lhsIP   = g.myIP
     g.lhsPort = g.myPort
-    _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
+    _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',
+                       g.lhsHost,g.lhsIP,g.lhsPort)
     (g.rhsSocket,addr) = tempSocket.accept()
     g.rhsHost = g.myHost
+    g.rhsIP   = g.myIP
     g.rhsPort = g.myPort
-    _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
+    _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',
+                       g.rhsHost,g.rhsIP,g.rhsPort)
     tempSocket.close()
     g.generation += 1
 
@@ -1131,8 +1174,8 @@ def _process_configfile_params():
     if not mode:
         # mpd_raise('%s: config file not found' % (configFilename) )
         print 'configuration file %s not found' % (configFilename)
-	print 'A file named .mpd.conf file must be present in the users home'
-	print 'directory (/etc/mpd.conf if root) with read and write access'
+        print 'A file named .mpd.conf file must be present in the users home'
+        print 'directory (/etc/mpd.conf if root) with read and write access'
         print 'only for the user, and must contain at least a line with:'
         print 'secretword=<secretword>'
         exit(0)
@@ -1157,8 +1200,8 @@ def _process_configfile_params():
         g.configParams['secretword'] = g.configParams['password']
     if 'secretword' not in g.configParams.keys():
         print 'configFile %s has no secretword' % (configFilename)
-	print 'note: password has been replaced by secretword'
-	exit(0)
+        print 'note: password has been replaced by secretword'
+        exit(0)
 
 def _process_cmdline_args():
     g.entryHost    = ''
@@ -1186,6 +1229,7 @@ def _process_cmdline_args():
     for opt in opts:
         if   opt[0] == '-h'  or  opt[0] == '--host':
             g.entryHost = opt[1]
+            g.entryIP = gethostbyname_ex(g.entryHost)[2][0]
         elif opt[0] == '-p'  or  opt[0] == '--port':
             g.entryPort = int(opt[1])
         elif opt[0] == '-i'  or  opt[0] == '--idmyhost':
@@ -1214,8 +1258,8 @@ def sigchld_handler(signum,frame):
     while not done:
         try:
             (pid,status) = waitpid(-1,WNOHANG)
-	    if pid == 0:    # no existing child process is finished
-	        done = 1
+            if pid == 0:    # no existing child process is finished
+                done = 1
         except:    # no more child processes to be waited for
             done = 1
 

@@ -213,6 +213,7 @@ def mpdrun():
 
     msgToSend = { 'cmd' : 'mpdrun',
                   'conhost'  : gethostname(),
+                  'conip'    : gethostbyname_ex(gethostname())[2][0],
                   'conport'  : listenPort,
                   'spawned'  : 0,
                   'nstarted' : 0,
@@ -263,7 +264,10 @@ def mpdrun():
                 print '    remaining specified hosts:'
                 for host in msg['remaining_hosts'].values():
                     if host != '_any_':
-                        print '        %s' % (host)
+                        try:
+                            print '        %s' % (gethostbyaddr(host)[0])
+                        except:
+                            print '        %s' % (host)
             elif  msg['reason'] == 'invalid_username':
                 print 'mpdrun: invalid username %s at host %s' % \
                       (msg['username'],msg['host'])

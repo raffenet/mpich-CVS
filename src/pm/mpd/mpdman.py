@@ -44,6 +44,7 @@ def mpdman():
     signal(SIGCHLD,sigchld_handler)
 
     myHost = environ['MPDMAN_MYHOST']
+    myIP   = environ['MPDMAN_MYIP']
     myRank = int(environ['MPDMAN_RANK'])
     myId = myHost + '_mpdman_' + str(myRank)
     spawned = int(environ['MPDMAN_SPAWNED'])
@@ -66,10 +67,13 @@ def mpdman():
     mpdConfPasswd = environ['MPDMAN_MPD_CONF_SECRETWORD']
     environ['MPDMAN_MPD_CONF_SECRETWORD'] = ''  ## do NOT pass it on to clients
     conHost = environ['MPDMAN_CONHOST']
+    conIP   = environ['MPDMAN_CONIP']
     conPort = int(environ['MPDMAN_CONPORT'])
     lhsHost = environ['MPDMAN_LHSHOST']
+    lhsIP   = environ['MPDMAN_LHSIP']
     lhsPort = int(environ['MPDMAN_LHSPORT'])
     host0 = environ['MPDMAN_HOST0']        # only used by right-most man
+    ip0   = environ['MPDMAN_IP0']        # only used by right-most man
     port0 = int(environ['MPDMAN_PORT0'])   # only used by right-most man
     myPort = int(environ['MPDMAN_MY_LISTEN_PORT'])
     mpd_print(0000, "lhost=%s lport=%d h0=%s p0=%d" % (lhsHost,lhsPort,host0,port0) )
@@ -118,7 +122,7 @@ def mpdman():
     pmiSocket = 0   # obtained later
 
     if nprocs == 1:  # one-man ring
-        lhsSocket = mpd_get_inet_socket_and_connect(host0,port0)  # to myself
+        lhsSocket = mpd_get_inet_socket_and_connect(ip0,port0)  # to myself
         (rhsSocket,rhsAddr) = listenSocket.accept()
     else:
         if myRank == 0:
@@ -130,10 +134,10 @@ def mpdman():
                 else:
                     (rhsSocket,rhsAddr) = (tempSocket,tempAddr)
         else:
-            lhsSocket = mpd_get_inet_socket_and_connect(lhsHost,lhsPort)
+            lhsSocket = mpd_get_inet_socket_and_connect(lhsIP,lhsPort)
             mpd_send_one_msg(lhsSocket, { 'cmd' : 'i_am_rhs' } )
             if myRank == (nprocs-1):              # right-most man
-                rhsSocket = mpd_get_inet_socket_and_connect(host0,port0)
+                rhsSocket = mpd_get_inet_socket_and_connect(ip0,port0)
                 mpd_send_one_msg(rhsSocket, { 'cmd' : 'i_am_lhs' } )
             else:
                 (rhsSocket,rhsAddr) = listenSocket.accept()
@@ -142,7 +146,7 @@ def mpdman():
     socketsToSelect[rhsSocket] = 1
 
     if myRank == 0:
-        conSocket = mpd_get_inet_socket_and_connect(conHost,conPort)  # for cntl msgs
+        conSocket = mpd_get_inet_socket_and_connect(conIP,conPort)  # for cntl msgs
         socketsToSelect[conSocket] = 1
         if spawned:
             msgToSend = { 'cmd' : 'spawned_child_is_up',
@@ -176,11 +180,11 @@ def mpdman():
             mpd_send_one_msg(rhsSocket,msg)
         ## NOTE: if you spawn a non-MPI job, it may not send this msg
         ## in which case the pgm will hang
-        stdoutToConSocket = mpd_get_inet_socket_and_connect(conHost,conPort)
+        stdoutToConSocket = mpd_get_inet_socket_and_connect(conIP,conPort)
         if spawned:
             msgToSend = { 'cmd' : 'child_in_stdout_tree', 'from_rank' : myRank }
             mpd_send_one_msg(stdoutToConSocket,msgToSend)
-        stderrToConSocket = mpd_get_inet_socket_and_connect(conHost,conPort)
+        stderrToConSocket = mpd_get_inet_socket_and_connect(conIP,conPort)
         if spawned:
             msgToSend = { 'cmd' : 'child_in_stderr_tree', 'from_rank' : myRank }
             mpd_send_one_msg(stderrToConSocket,msgToSend)
@@ -326,6 +330,7 @@ def mpdman():
         msgToSend = { 'cmd' : 'info_from_parent_in_tree',
                       'to_rank' : str(lchild),
                       'parent_host' : myHost,
+                      'parent_ip'   : myIP,
                       'parent_port' : myPort }
         mpd_send_one_msg(rhsSocket,msgToSend)
     if rchild >= 0:
@@ -333,6 +338,7 @@ def mpdman():
         msgToSend = { 'cmd' : 'info_from_parent_in_tree',
                       'to_rank' : str(rchild),
                       'parent_host' : myHost,
+                      'parent_ip'   : myIP,
                       'parent_port' : myPort }
         mpd_send_one_msg(rhsSocket,msgToSend)
     if myRank == 0:
@@ -474,13 +480,14 @@ def mpdman():
                 elif msg['cmd'] == 'info_from_parent_in_tree':
                     if int(msg['to_rank']) == myRank:
                         parentHost = msg['parent_host']
+                        parentIP   = msg['parent_ip']
                         parentPort = msg['parent_port']
                         parentStdoutSocket = \
-                            mpd_get_inet_socket_and_connect(parentHost,parentPort)
+                            mpd_get_inet_socket_and_connect(parentIP,parentPort)
                         msgToSend = { 'cmd' : 'child_in_stdout_tree', 'from_rank' : myRank }
                         mpd_send_one_msg(parentStdoutSocket,msgToSend)
                         parentStderrSocket = \
-                            mpd_get_inet_socket_and_connect(parentHost,parentPort)
+                            mpd_get_inet_socket_and_connect(parentIP,parentPort)
                         msgToSend = { 'cmd' : 'child_in_stderr_tree', 'from_rank' : myRank }
                         mpd_send_one_msg(parentStderrSocket,msgToSend)
                     else:
