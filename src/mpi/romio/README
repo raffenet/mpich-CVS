@@ -1,6 +1,6 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version 1.2.5, Jan 2002
+                      Version <DATE>, <UNRELEASED>
 
 Major Changes in this version:
 ------------------------------
@@ -78,6 +78,9 @@ Major Changes in this version:
    D271   D272      D273     . . .                        . . .
    ...
 
+Major Changes in Version 1.2.5:
+------------------------------
+
 * Initial support for MPICH-2
 
 * fix for a bug in which ROMIO would get confused for some permutations
@@ -87,6 +90,8 @@ Major Changes in this version:
 
 * fixed an issue with the Fortran bindings that would cause them to fail
    when some compilers tried to build them.
+
+* Initial support for deferred opens
 
 Major Changes in Version 1.2.4:
 ------------------------------
