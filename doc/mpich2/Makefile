@@ -31,8 +31,9 @@ SHELL = /bin/sh
 	mv template.dvi $*.dvi
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
-mpich2.ps: mpich2.tex errcodes.tex pt2ptdesc.tex \
-	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps
+mpich2.dvi: mpich2.tex errcodes.tex pt2ptdesc.tex \
+	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps \
+	sendrecv.eps
 	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2
@@ -50,7 +51,6 @@ mpich2.ps: mpich2.tex errcodes.tex pt2ptdesc.tex \
 		tmp.ind > mpich2.ind ; \
 	latex mpich2
 	latex mpich2
-	dvips mpich2
 
 errcodes.dvi: errcodes.tex
 	sed -e s/@dummy@/errcodes.tex/ \
