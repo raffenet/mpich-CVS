@@ -1,3 +1,11 @@
+/* -*- Mode: C++; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2004 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ */
+/* style: c++ header */
+/* style: allow:printf:1 sig:0 */
 //
 // Include for the simple coverage analysis
 //
