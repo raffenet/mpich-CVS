@@ -248,20 +248,30 @@
 #define MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
            __LINE__, class_, gmsg_, smsg_, arg1_ ); stmt_ ;}
+#define MPIU_ERR_SETANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
+           __LINE__, class_, gmsg_, smsg_, arg1_, arg2_ ); stmt_ ;}
 #define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
            __LINE__, class_, msg_, 0 ); stmt_ ;}
 #define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
            __LINE__, class_, gmsg_, smsg_, arg1_ ); stmt_ ;}
+#define MPIU_ERR_SETFATALANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
+           __LINE__, class_, gmsg_, smsg_, arg1_, arg2_ ); stmt_ ;}
 #else
 #define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
      {if (!err_){err_=class_;} stmt_;}
 #define MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
      {if(!err_){err_=class_;}stmt_;}
+#define MPIU_ERR_SETANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
+     {if(!err_){err_=class_;}stmt_;}
 #define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
      {if(!err_){err_=class_;} stmt_;}
 #define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+     {if(!err_){err_=class_;}stmt_;}
+#define MPIU_ERR_SETFATALANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
      {if(!err_){err_=class_;}stmt_;}
 #endif
 
@@ -280,6 +290,13 @@
     {if (cond_) { MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_); }}
 #define MPIU_ERR_CHKANDJUMP1(cond_,err_,class_,gmsg_,smsg_,arg1_) \
      MPIU_ERR_CHKANDSTMT1(cond_,err_,class_,goto fn_fail,gmsg_,smsg_,arg1_)
+
+#define MPIU_ERR_SETANDJUMP2(err_,class_,gmsg_,smsg_,arg1_,arg2_) \
+     MPIU_ERR_SETANDSTMT2(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_)
+#define MPIU_ERR_CHKANDSTMT2(cond_,err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
+    {if (cond_) { MPIU_ERR_SETANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_); }}
+#define MPIU_ERR_CHKANDJUMP2(cond_,err_,class_,gmsg_,smsg_,arg1_,arg2_) \
+     MPIU_ERR_CHKANDSTMT2(cond_,err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_)
 /* --END ERROR MACROS-- */
 
 /* 
