@@ -81,7 +81,7 @@ typedef struct IBU_Global {
 		  char err_msg[IBU_ERROR_MSG_LENGTH];
 } IBU_Global;
 
-IBU_Global IBU_Process;
+extern IBU_Global IBU_Process;
 
 #define DEFAULT_NUM_RETRIES 10
 

@@ -7,7 +7,6 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#include "ibu.h"
 #include "ib_types.h"
 #include "ib_defs.h" 
 #include "blockallocator.h"
