@@ -40,6 +40,14 @@
 % Configure option and related topics
 \def\cfgindex#1{\index{#1}}
 
+% 
+% These provide environments to describe the implementation of each routine
+%
+\newenvironment{adi3}{\begin{quote}\textbf{ADI3:}\\}{\end{quote}}
+\newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
+\newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
+
+
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
 Draft of \today}{\em 
@@ -113,6 +121,26 @@ no runtime control) or
 There must be a configure option,
 \code{--disable-error-checking}\cfgindex{--disable-error-checking},  
 that prevents \code{HAVE_ERROR_CHECKING} from being defined.
+
+\subsubsection{Choosing Error Handlers and Classes}
+Error handlers should be chosen using the following decision tree:
+\begin{enumerate}
+\item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
+  \code{MPI_Win}, use the error handler from that object.  (Question: do we
+  have a common way to extract the error handler?  It isn't part of the
+  communicator/file/win structures yet.)
+\item If the error relates to a request, and the request refers to a valid
+  communicator, use that communicator's error handler (e.g., \code{MPI_Wait}).
+\item Otherwise, for everything except MPI-IO, use the error handler attached
+  to \mpifunc{MPI_COMM_WORLD}  
+  (see Section 7.2 in the MPI-1 Standard:: ``MPI calls that are not related to
+  any communicator are considered to be attached to the communicator
+  \code{MPI_COMM_WORLD}.'' ).
+\item For MPI-IO, the default error handler is attached to
+  \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
+  file error handler can be changed by specifying \code{MPI_FILE_NULL} as the
+  \code{fh} argument to \code{MPI_FILE_SET_ERRHANDLER}''). 
+\end{enumerate}
 
 \subsection{Error handling and Fault Tolerance}
 In order to support fault tolerance, errors should be handled as
@@ -305,7 +333,7 @@ the MPI Standard.
 
 \paragraph{Info}
 
-Effor values defined for info:
+Error values defined for info:
 \mpiconst{MPI_ERR_INFO_KEY}
 \mpiconst{MPI_ERR_INFO_VALUE}
 \mpiconst{MPI_ERR_INFO_NOKEY}
@@ -348,17 +376,49 @@ the ``current'' state of info are operating on it.
 \paragraph{MPI-1 Attribute Functions}
 The following five functions are deprecated.
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
+Calls \mpifunc{MPI_COMM_DELETE_ATTR}.
+
 \subsubsection{\mpifunc{MPI_ATTR_GET}}
+Calls \mpifunc{MPI_COMM_GET_ATTR}.
+
 \subsubsection{\mpifunc{MPI_ATTR_PUT}}
+Calls \mpifunc{MPI_COMM_SET_ATTR}.
+
 \subsubsection{\mpifunc{MPI_KEYVAL_CREATE}}
+Calls \mpifunc{MPI_COMM_CREATE_KEYVAL}.
+
 \subsubsection{\mpifunc{MPI_KEYVAL_FREE}}
+Calls \mpifunc{MPI_COMM_FREE_KEYVAL}.
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_KEYVAL}}
-\subsubsection{\mpifunc{MPI_COMM_FREE_KEYVAL}}
-\subsubsection{\mpifunc{MPI_COMM_NULL_COPY_FN}}
-%\subsubsection{\mpifunc{MPI_COMM_DUP_FN}}
+This should use a common MPID routine to create keyvals.
 
+\subsubsection{\mpifunc{MPI_COMM_FREE_KEYVAL}}
+Ditto to free keyvals.
+
+\subsubsection{\mpifunc{MPI_COMM_NULL_COPY_FN}}
+
+%\subsubsection{\mpifunc{MPI_COMM_DUP_FN}}
+\subsubsection{\mpifunc{MPI_COMM_GET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
+\subsubsection{\mpifunc{MPI_COMM_SET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
+\subsubsection{\mpifunc{MPI_COMM_DELETE_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
+\subsubsection{\mpifunc{MPI_TYPE_SET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
 \subsubsection{\mpifunc{MPI_TYPE_DELETE_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_TYPE_FREE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
 %\subsubsection{\mpifunc{MPI_TYPE_DUP_FN}}
@@ -366,6 +426,15 @@ The following five functions are deprecated.
 \subsubsection{\mpifunc{MPI_WIN_CREATE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_WIN_FREE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_WIN_SET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
+\subsubsection{\mpifunc{MPI_WIN_GET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\end{adi3}
+\subsubsection{\mpifunc{MPI_WIN_DELETE_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\end{adi3}
+
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
@@ -388,20 +457,22 @@ choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
 \subsubsection{\mpifunc{MPI_ADDRESS}}
-(Deprecated)
+Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
 \subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
-(Deprecated)
+Deprecated.  However, we can't easily use \code{MPI_TYPE_CREATE_HINDEXED}
+because that could (if \code{MPI_Aint} is longer than \code{int}) making a
+copy of an array argument.
+
 \subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
-(Deprecated)
+Deprecated.  Use \mpifunc{MPI_TYPE_CREATE_HVECTOR}.
+
 \subsubsection{\mpifunc{MPI_TYPE_STRUCT}}
-(Deprecated)
+Deprecated.  For reasons similar to \code{MPI_TYPE_HINDEXED}, we do not want
+to call the new function.
 
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
-
-\subsubsection{\mpifunc{MPI_TYPE_COMMIT}}
-
 
 \subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
 
@@ -424,6 +495,8 @@ choice for implementing operatoins that involve datatypes, such as
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_STRUCT}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_SUBARRAY}}
+
+\subsubsection{\mpifunc{MPI_TYPE_COMMIT}}
 
 \subsubsection{\mpifunc{MPI_TYPE_FREE}}
 This first calls \mpidfunc{MPID_Datatype_incr} with an increment of $-1$.  If
@@ -678,11 +751,6 @@ there be a \code{local_size} field in the communicator?
 \subsubsection{\mpifunc{MPI_COMM_CLONE}}
 This is a special C++ function.
 
-\subsubsection{\mpifunc{MPI_COMM_CALL_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_COMM_CREATE_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_COMM_GET_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_COMM_SET_ERRHANDLER}}
-
 \subsubsection{\mpifunc{MPI_COMM_GET_NAME}}
 Return a copy of the \code{name} field.
 
@@ -698,6 +766,14 @@ Questions that remain:  Handling of persistent requests.  The ADI
 contains memory registration.  Is anything else needed for persistent
 requests? 
 
+\subsubsection{\mpifunc{MPI_PROBE}}
+\begin{adi3}\mpidfunc{MPID_Request_probe}
+\begin{mmadi}
+\begin{core}
+\end{core}
+\end{mmadi}
+\end{adi3}
+
 \paragraph{Buffered send}
 The buffered send should first use \mpidfunc{MPID_tBsend} to attempt
 and send the message before implementing the buffer-copying strategy.
@@ -712,37 +788,126 @@ necessary by \code{MPI_Start}?
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
 
 \subsubsection{\mpifunc{MPI_CANCEL}}
+\begin{adi3}\mpidfunc{MPID_Request_cancel}
+\begin{mmadi}??
+\begin{core}\mpidfunc{MPID_Rhcv}
+\end{core}
+\end{mmadi}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_GET_COUNT}}
+How does this get the value?
 Question: Does this belong with datatypes?
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
+How does this get the value?
 Question: Does this belong with datatypes?
-\subsubsection{\mpifunc{MPI_PROBE}}
+
 \subsubsection{\mpifunc{MPI_IPROBE}}
+\begin{adi3}\mpidfunc{MPID_Request_iprobe}
+\begin{mmadi}
+\begin{core}
+\end{core}
+\end{mmadi}
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_IBSEND}}
+
 \subsubsection{\mpifunc{MPI_IRECV}}
+\begin{adi3}\mpidfunc{MPID_Irecv}
+\begin{mmadi}\mpidfunc{MPID_Request_recv_FOA}\\
+\mpidfunc{MPID_Segment}\\
+\mpidfunc{MPID_Stream_irecv}
+\begin{core}
+This should ensure that any polling call is made.
+\end{core}
+\end{mmadi}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_IRSEND}}
+Is this the same as \code{MPI_ISEND}, but with the ready mode set?  Or is
+there a separate routine that exploits the ready nature of the operation?
+Special note: we should be able to report an error when a ready send is not
+matched by a posted receive.
 \subsubsection{\mpifunc{MPI_ISEND}}
+\begin{adi3}\mpidfunc{MPID_Isend}
+\begin{mmadi}\mpidfunc{MPID_Request_send_FOA}\\
+\mpidfunc{MPID_Segment}\\
+\mpidfunc{MPID_Stream_isend}
+\begin{core}
+\mpidfunc{MPID_Rhcv}
+\end{core}
+\end{mmadi}
+\end{adi3}
 \subsubsection{\mpifunc{MPI_ISSEND}}
+Same as \code{MPI_ISEND}, but with the synchronous mode set.
+
 \subsubsection{\mpifunc{MPI_RECV}}
+This can simply be \code{MPI_IRECV} followed by an \code{MPI_WAIT}.  However,
+we might want to let the partner (matching sender) know that this is blocking
+a thread or process.  
+
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
+\begin{adi3}
+\begin{mmadi}
+\begin{core}
+\end{core}
+\end{mmadi}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_REQUEST_GET_STATUS}}
+Extract the status data from the request.
+This requires either an \mpidfunc{MPID_Request_get_status} or clearly defined
+status elements in the \mpidfunc{MPID_Request}.
+
 \subsubsection{\mpifunc{MPI_REQUEST_FREE}}
+\begin{adi3}\mpidfunc{MPID_Request_free}
+\begin{mmadi}
+\begin{core}
+\end{core}
+\end{mmadi}
+\end{adi3}
+Who handles persistent or user-defined requests?
+
 \subsubsection{\mpifunc{MPI_RSEND}}
 \subsubsection{\mpifunc{MPI_RSEND_INIT}}
 \subsubsection{\mpifunc{MPI_SEND}}
 \subsubsection{\mpifunc{MPI_SENDRECV}}
+Question: If the source and destination are the same, is there anything
+special that we want to do?  Note that this routine matches communication from
+any point-to-point operation, not just other sendrecv calls.
+
 \subsubsection{\mpifunc{MPI_SENDRECV_REPLACE}}
+Question: Should this use the segment code to bound the memory buffer that
+must be allocated for the replacement?
+
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
 \subsubsection{\mpifunc{MPI_SSEND}}
 \subsubsection{\mpifunc{MPI_SSEND_INIT}}
+
 \subsubsection{\mpifunc{MPI_START}}
+This just calls \mpifunc{MPI_STARTALL} with a single request.  Note that
+errors must indicate that the error occurred in \code{MPI_START}, not
+\code{MPI_STARTALL}.  
+
 \subsubsection{\mpifunc{MPI_STARTALL}}
+Do we want startall to allow for some scheduling of the operations?  For
+example, it could start the ``furthest away'' first.  It could also batch
+operations (see the paper on improving TCP performance).
+
 \subsubsection{\mpifunc{MPI_STATUS_SET_CANCELLED}}
+Where are the values defined for indicating cancelled message?
+
 \subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
+Where are the values defined for the count field(s) in the status?
+
 \subsubsection{\mpifunc{MPI_TEST}}
 \subsubsection{\mpifunc{MPI_TESTALL}}
 \subsubsection{\mpifunc{MPI_TESTANY}}
 \subsubsection{\mpifunc{MPI_TESTSOME}}
+
 \subsubsection{\mpifunc{MPI_TEST_CANCELLED}}
+Does this use the status field in a request to test for a cancelled message?
+
 \subsubsection{\mpifunc{MPI_WAIT}}
 \subsubsection{\mpifunc{MPI_WAITALL}}
 \subsubsection{\mpifunc{MPI_WAITANY}}
@@ -947,18 +1112,24 @@ could have \code{MPIi_Topo_init}.
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 \subsubsection{\mpifunc{MPI_CART_CREATE}}
+This routine argues for a corresponding MPID routine, along with one for dims
+create. 
 \subsubsection{\mpifunc{MPI_CART_GET}}
 \subsubsection{\mpifunc{MPI_CART_MAP}}
 \subsubsection{\mpifunc{MPI_CART_RANK}}
 \subsubsection{\mpifunc{MPI_CART_SHIFT}}
 \subsubsection{\mpifunc{MPI_CART_SUB}}
 \subsubsection{\mpifunc{MPI_DIMS_CREATE}}
+
 \subsubsection{\mpifunc{MPI_GRAPHDIMS_GET}}
+
 \subsubsection{\mpifunc{MPI_GRAPH_CREATE}}
+This should eventually have an MPID routine, but not in ADI-3.
 \subsubsection{\mpifunc{MPI_GRAPH_GET}}
 \subsubsection{\mpifunc{MPI_GRAPH_MAP}}
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS}}
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS_COUNT}}
+
 \subsubsection{\mpifunc{MPI_TOPO_TEST}}
 
 \subsection{RMA}
@@ -1058,6 +1229,8 @@ whether all windows are in shared memory.
 \subsubsection{\mpifunc{MPI_WIN_FREE}}
 
 \subsubsection{\mpifunc{MPI_WIN_GET_GROUP}}
+Access the group of the related communicator (Question: does this increment the
+reference count for the group?)
 
 \subsubsection{\mpifunc{MPI_WIN_GET_NAME }}
 \subsubsection{\mpifunc{MPI_WIN_SET_NAME }}
@@ -1092,20 +1265,32 @@ for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?
 
 \subsubsection{\mpifunc{MPI_ABORT}}
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
-\subsubsection{\mpifunc{MPI_QUERY_THREAD}}
-\subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
-\subsubsection{\mpifunc{MPI_FINALIZED}}
-\subsubsection{\mpifunc{MPI_INIT}}
 
+\subsubsection{\mpifunc{MPI_QUERY_THREAD}}
+This returns the level of thread support provided.  Should there be an
+\mpidfunc{MPID_THREAD_PROVIDED} variable?
+
+\subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
+This needs a thread-private variable that is set only by the thread that calls
+\mpifunc{MPI_INIT_THREAD}.
+
+\subsubsection{\mpifunc{MPI_FINALIZED}}
+See \code{MPI_INITIALIZED}
+
+\subsubsection{\mpifunc{MPI_INIT}}
+Call \mpifunc{MPI_INIT_THREAD} with \code{MPI_THREAD_MULTIPLE} as the
+requested level of thread support.
+
+\subsubsection{\mpifunc{MPI_INITIALIZED}}
 As part of the error checking code, each routine should check the
 state of the \code{is_initialized} flag.  Should there be an 
 \begin{verbatim}
     enum { MPICH_PRE_INIT=0, MPICH_IS_INITIALIZED=1,
            MPICH_IS_FINALIZED=2 } MPIR_Initialized;
 \end{verbatim}
+variable?  This can be used by the \mpifunc{MPI_INITIALIZE} and
+\mpifunc{MPI_FINALIZED} calls.
 
-
-\subsubsection{\mpifunc{MPI_INITIALIZED}}
 \subsubsection{\mpifunc{MPI_FINALIZE}}
 The MPI-2 standard requires that \code{MPI_Finalize} first delete the
 attributes associated with \mpiconst{MPI_COMM_SELF}, even before
@@ -1119,22 +1304,23 @@ This section has not been written.  A big question is how or if the BNR
 interface to a parallel process manager is used in the implementation
 of the MPICH routines.  
 
-\subsubsection{\mpifunc{MPI_CLOSE_PORT}}
 \subsubsection{\mpifunc{MPI_COMM_CONNECT}}
 \subsubsection{\mpifunc{MPI_COMM_DISCONNECT}}
 \subsubsection{\mpifunc{MPI_COMM_GET_PARENT}}
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
+Question:  Should this be a special case of spawn multiple?
 \subsubsection{\mpifunc{MPI_COMM_SPAWN_MULTIPLE}}
 
 \subsubsection{\mpifunc{MPI_LOOKUP_NAME}}
 Question:  Do we want to define an API or a wire protocol for the name
-service.  
+service?
 
 \subsubsection{\mpifunc{MPI_PUBLISH_NAME}}
 \subsubsection{\mpifunc{MPI_UNPUBLISH_NAME}}
 
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
+\subsubsection{\mpifunc{MPI_CLOSE_PORT}}
 
 \subsection{User-Defined Requests}
 
@@ -1150,6 +1336,9 @@ to call for query, cancel, and free); these need to be associated with
 the request.  
 
 \subsubsection{\mpifunc{MPI_GREQUEST_START}}
+Where are the typedefs for the query, free, and cancel function defined? 
+Are this in mpi.h?  Where are they stored for the generalized request?
+
 \subsubsection{\mpifunc{MPI_GREQUEST_COMPLETE}}
 
 (Need to describe the user-request handling)
@@ -1157,13 +1346,17 @@ the request.
 \subsection{Error Handlers}
 
 
-\subsubsection{\mpifunc{MPI_ERRHANDLER_CREATE}}
-
 \subsubsection{\mpifunc{MPI_ERRHANDLER_FREE}}
+\mpidfunc{MPID_Errhandler_free}?
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_CREATE}}
+Deprecated.  Call \mpifunc{MPI_COMM_CREATE_ERRHANDLER}.
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_GET}}
+Deprecated.  Call \mpifunc{MPI_COMM_GET_ERRHANDLER}.
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_SET}}
+Deprectated.  Call \mpifunc{MPI_COMM_SET_ERRHANDLER}.
 
 \subsubsection{\mpifunc{MPI_ERROR_CLASS}}
 
@@ -1175,10 +1368,18 @@ the request.
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_STRING}}
 
+\subsubsection{\mpifunc{MPI_COMM_CALL_ERRHANDLER}}
+All error handler calls use the common error handler structure
+\mpidfunc{MPID_Errhandler} structure.  
+\subsubsection{\mpifunc{MPI_COMM_CREATE_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_COMM_GET_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_COMM_SET_ERRHANDLER}}
+
 \subsubsection{\mpifunc{MPI_WIN_CREATE_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_WIN_CALL_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_WIN_GET_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_WIN_SET_ERRHANDLER}}
+
 
 \subsection{Handle Transfers}
 These provide for the conversion of handles to and from the C and
@@ -1737,16 +1938,16 @@ proceed without waiting for all of the pieces to be in place.
 \item ADI Implementation
     \begin{enumerate}
     \item Multi-method ADI for shared memory, VIA, and TCP/UDP
-	\begin{enumerate}
-	\item Design and implement general datatype point-to-point
-	\item Design and implement general datatype collective
+        \begin{enumerate}
+        \item Design and implement general datatype point-to-point
+        \item Design and implement general datatype collective
         (layered on ADI segment and stream interfaces)
-  	\item Design and implement RMA
-	\item Design and implement Dynamic and connect with BNR
-	\end{enumerate}
+        \item Design and implement RMA
+        \item Design and implement Dynamic and connect with BNR
+        \end{enumerate}
     \item ADI on \code{MPID_CORE}
         \begin{enumerate}
-	\item Implement all ADI-3 modules on top of the core.  Refine
+        \item Implement all ADI-3 modules on top of the core.  Refine
         the design of the core during this process.   
         \end{enumerate}
     \item Implement common ADI services.  These are modules that are
@@ -1754,15 +1955,15 @@ proceed without waiting for all of the pieces to be in place.
     interprocess communication but will be common for most ADI
     implementations, including both the core and the multi-method
     implementation. 
-	\begin{enumerate}
-	\item Error handling
-	\item Attributes
-	\item Topology
-	\item Datatype
-	\item Group
-	\item Timer
-	\item Utility
-	\end{enumerate}
+        \begin{enumerate}
+        \item Error handling
+        \item Attributes
+        \item Topology
+        \item Datatype
+        \item Group
+        \item Timer
+        \item Utility
+        \end{enumerate}
     \end{enumerate}
 \item MPICH Implementation on ADI
     \begin{enumerate}
