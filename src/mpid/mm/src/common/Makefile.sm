@@ -1,5 +1,4 @@
 lib${MPILIBNAME}_a_SOURCES = mm_choose_buffer.c mm_get_vc.c mm_vcutil.c \
- mm_packer_read.c mm_packer_write.c mm_unpacker_write.c \
  mm_buffer_util.c mm_post_recv.c mm_post_send.c mm_cq_test.c mm_cq_wait.c \
  mm_cq_enqueue.c mm_reset_cars.c
 INCLUDES = -I../../include -I${top_srcdir}/include -I../../../../include -I${master_top_srcdir}/src/include
