@@ -51,7 +51,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 {
     int size, rank;
     int twon_within, n2, remaining, gap, partner;
-    MPID_Request request_ptr;
+    MPID_Request *request_ptr;
 
     size = comm_ptr->remote_size;
     rank = comm_ptr->rank;
@@ -127,7 +127,6 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	    MPIR_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
 	}
-	MPID_Recv( );
     }
 
     MPID_Comm_thread_unlock( comm_ptr );
