@@ -184,4 +184,26 @@ if test "$ac_cv_cxx_namespaces" = yes; then
   AC_DEFINE(HAVE_NAMESPACES,,[define if the compiler implements namespaces])
 fi
 ])
-
+dnl
+dnl Some compilers support namespaces but don't know about std
+dnl
+AC_DEFUN([AC_CXX_NAMESPACE_STD],
+[AC_REQUIRE([AC_CXX_NAMESPACES])
+AC_CACHE_CHECK(whether the compiler implements namespaces,
+ac_cv_cxx_namespaces,
+[ac_cv_cxx_namespace_std=no
+if test "$ac_cv_cxx_namespaces" = yes ; then 
+   AC_LANG_SAVE
+   AC_LANG_CPLUSPLUS
+   AC_TRY_COMPILE([
+#include <iostream>
+using namespace std;],
+                [cout << "message\n";],
+ ac_cv_cxx_namespace_std=yes, ac_cv_cxx_namespace_std=no)
+   AC_LANG_RESTORE
+fi
+])
+if test "$ac_cv_cxx_namespace_std" = yes; then
+  AC_DEFINE(HAVE_NAMESPACE_STD,,[define if the compiler implements namespace std])
+fi
+])
