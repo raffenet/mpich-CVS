@@ -26,7 +26,8 @@ typedef struct _MTestDatatype {
 			       (used by the CheckBuf routines) */
     /* The following is optional data that is used by some of
        the derived datatypes */
-    int  stride, blksize, *index;
+    int  stride, nelm, blksize, *index;
+    /* stride, nelm, and blksize are in bytes */
     void *(*InitBuf)( struct _MTestDatatype * );
     void *(*FreeBuf)( struct _MTestDatatype * );
     int   (*CheckBuf)( struct _MTestDatatype * );
@@ -37,6 +38,7 @@ int MTestGetDatatypes( MTestDatatype *, MTestDatatype *, int );
 void MTestResetDatatypes( void );
 void MTestFreeDatatype( MTestDatatype * );
 const char *MTestGetDatatypeName( MTestDatatype * );
+int MTestGetDatatypeIndex( void );
 
 int MTestGetIntracomm( MPI_Comm *, int );
 int MTestGetIntracommGeneral( MPI_Comm *, int, int );

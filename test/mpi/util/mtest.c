@@ -124,9 +124,39 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 static void *MTestTypeVectorInit( MTestDatatype *mtype )
 {
     MPI_Aint size;
+
     if (mtype->count > 0) {
+	unsigned char *p;
+	int  i, j, k, nc, totsize;
+
 	MPI_Type_extent( mtype->datatype, &size );
-	mtype->buf = (void *) malloc( mtype->count * size );
+	totsize	   = mtype->count * size;
+	mtype->buf = (void *) malloc( totsize );
+	p	   = (unsigned char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    fprintf( stderr, "Out of memory in type buffer init\n" );
+	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	}
+
+	/* First, set to -1 */
+	for (i=0; i<totsize; i++) p[i] = 0xff;
+
+	/* Now, set the actual elements to the successive values.
+	   To do this, we need to run 3 loops */
+	nc = 0;
+	/* count is usually one for a vector type */
+	for (k=0; k<mtype->count; k++) {
+	    /* For each element (block) */
+	    for (i=0; i<mtype->nelm; i++) {
+		/* For each value */
+		for (j=0; j<mtype->blksize; j++) {
+		    p[j] = (0xff ^ (nc & 0xff));
+		    nc++;
+		}
+		p += mtype->stride;
+	    }
+	}
     }
     else {
 	mtype->buf = 0;
@@ -155,11 +185,13 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 {
     sendtype->InitBuf	  = 0;
     sendtype->FreeBuf	  = 0;
+    sendtype->CheckBuf    = 0;
     sendtype->datatype	  = 0;
     sendtype->isBasic	  = 0;
     sendtype->printErrors = 0;
     recvtype->InitBuf	  = 0;
     recvtype->FreeBuf	  = 0;
+    recvtype->CheckBuf    = 0;
     recvtype->datatype	  = 0;
     recvtype->isBasic	  = 0;
     recvtype->printErrors = 0;
@@ -205,8 +237,12 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	break;
     case 5:
 	/* vector send type and contiguous receive type */
-	sendtype->stride = 3;
-	MPI_Type_vector( recvtype->count, 1, sendtype->stride, MPI_INT, 
+	/* These sizes are in bytes (see the VectorInit code) */
+	sendtype->stride   = 3 * sizeof(int);
+	sendtype->blksize  = sizeof(int);
+	sendtype->nelm     = recvtype->count;
+
+	MPI_Type_vector( recvtype->count, 1, 3, MPI_INT, 
 			 &sendtype->datatype );
         MPI_Type_commit( &sendtype->datatype );
 	MPI_Type_set_name( sendtype->datatype, "int-vector" );
@@ -217,6 +253,8 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->InitBuf  = MTestTypeContigInit;
 	sendtype->FreeBuf  = MTestTypeVectorFree;
 	recvtype->FreeBuf  = MTestTypeContigFree;
+	sendtype->CheckBuf = 0;
+	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
     default:
 	datatype_index = -1;
@@ -250,6 +288,10 @@ void MTestResetDatatypes( void )
 {
     datatype_index = 0;
 }
+int MTestGetDatatypeIndex( void )
+{
+    return datatype_index;
+}
 
 void MTestFreeDatatype( MTestDatatype *mtype )
 {
@@ -279,13 +321,17 @@ int MTestCheckRecv( MPI_Status *status, MTestDatatype *recvtype )
     return errs;
 }
 
+/* This next routine uses a circular buffer of static name arrays just to
+   simplify the use of the routine */
 const char *MTestGetDatatypeName( MTestDatatype *dtype )
 {
-    static char name[MPI_MAX_OBJECT_NAME];
+    static char name[4][MPI_MAX_OBJECT_NAME];
+    static int sp=0;
     int rlen;
 
-    MPI_Type_get_name( dtype->datatype, name, &rlen );
-    return (const char *)name;
+    if (sp >= 4) sp = 0;
+    MPI_Type_get_name( dtype->datatype, name[sp], &rlen );
+    return (const char *)name[sp++];
 }
 /* ----------------------------------------------------------------------- */
 
