@@ -14,9 +14,9 @@ paper.dvi: paper.tex
 .dvi.pdf:
 	(unset TEXMF ; dvipdfm $* )
 .tex.dvi:
-	-latex $*
+	-latex $* </dev/null 2>&1 >/dev/null
 	-bibtex $*
-	-latex $*
+	-latex $* </dev/null 2>&1 >/dev/null
 	-latex $*
 
 ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
@@ -30,7 +30,7 @@ adi3man.dvi: $(ADI3FILES)
 	-cp adi3man.tex adi3man/adi3man.tex
 	(cd adi3man ; \
 	../manextract ../adi3.[ch] > /dev/null ;\
-	latex adi3man < /dev/null ;\
+	latex adi3man < /dev/null 2>&1 >/dev/null ;\
 	bibtex adi3man ;\
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
@@ -40,6 +40,7 @@ adi3man.dvi: $(ADI3FILES)
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
+	rm -f tmp.idx tmp.ind ; \
 	bibtex adi3man ;\
 	latex adi3man < /dev/null )
 	mv adi3man/adi3man.dvi .
@@ -98,7 +99,7 @@ adi3new.ps: $(ADI3NEWFILES)
 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;\
 	../manextract ../adi3.[ch] > /dev/null )
-	latex adi3new < /dev/null
+	latex adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
@@ -108,6 +109,7 @@ adi3new.ps: $(ADI3NEWFILES)
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3new.ind 
+	rm -f tmp.ind tmp.idx
 	-bibtex adi3new 
 	latex adi3new < /dev/null
 	dvips adi3new
@@ -125,7 +127,7 @@ adi3new.pdf: $(ADI3NEWFILES)
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
 	    -e '/usepackage{.*url}/d' \
 		adi3new.tex > adi3newpdf.tex
-	latex adi3newpdf < /dev/null
+	latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	-bibtex adi3newpdf
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
@@ -135,6 +137,7 @@ adi3new.pdf: $(ADI3NEWFILES)
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3newpdf.ind 
+	-rm -f tmp.ind tmp.idx
 	-bibtex adi3newpdf 
 	latex adi3newpdf < /dev/null
 	dvipdfm adi3newpdf
@@ -149,7 +152,7 @@ adi3new/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
 
 core.dvi: core.tex adi3.c adi3.h
 	touch core-list.ind
-	-latex core
+	-latex core </dev/null 2>&1 >/dev/null
 	-latex core
 
 tcpadi3.pdf: tcpadi3.tex
@@ -190,7 +193,9 @@ install-web-old: adi3man.ps adi3man.pdf
 
 clean:
 	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
-	rm -f *.ilg adi3man.ind adi3new.ind *.blg *.toc
+	rm -f *.ilg adi3man.ind adi3new.ind *.blg *.toc *.out 
+	rm -f adi3newpdf.idx adi3newpdf.ind adi3new.idx 
+distclean: clean
 	rm -f adi3man/*.tex
 	rm -f adi3new.ps tcpadi3.ps
 

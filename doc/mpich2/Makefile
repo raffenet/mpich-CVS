@@ -25,7 +25,7 @@ SHELL = /bin/sh
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/relax/g \
 	template.orig > template.tex
-	latex template
+	latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi $*.dvi
@@ -37,11 +37,11 @@ MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 
 mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
-	latex mpich2
+	latex mpich2 </dev/null 2>&1 >/dev/null
 	-bibtex mpich2
 	-rm -f tmp.idx tmp.ind
 	cat mpich2.idx | ./fixupindex > tmp.idx
-	makeindex tmp ;\
+	@makeindex tmp ;\
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
@@ -51,8 +51,9 @@ mpich2.dvi: $(MPICH2FILES)
 	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' \
 		tmp.ind > mpich2.ind ; \
+	latex mpich2 </dev/null 2>&1 >/dev/null
 	latex mpich2
-	latex mpich2
+	rm -f tmp.ind tmp.idx
 
 errcodes.dvi: errcodes.tex
 	sed -e s/@dummy@/errcodes.tex/ \
@@ -79,7 +80,7 @@ pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template
+	latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi pt2ptdesc.dvi
@@ -95,7 +96,7 @@ colldesc.dvi: colldesc.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template
+	latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi colldesc.dvi
@@ -111,7 +112,7 @@ mmca.dvi: mmca.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template
+	latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi mmca.dvi
@@ -127,11 +128,11 @@ mpich2pdf.dvi: $(MPICH2FILES)
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
 	    -e '/usepackage{.*url}/d' \
 		mpich2.tex > mpich2pdf.tex
-	latex mpich2pdf
+	latex mpich2pdf </dev/null 2>&1 >/dev/null
 	-bibtex mpich2pdf
 	-rm -f tmp.idx tmp.ind
 	cat mpich2pdf.idx | ./fixupindex > tmp.idx
-	makeindex tmp ;\
+	@makeindex tmp ;\
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
@@ -141,7 +142,7 @@ mpich2pdf.dvi: $(MPICH2FILES)
 	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' \
 		tmp.ind > mpich2pdf.ind ; \
-	latex mpich2pdf
+	latex mpich2pdf </dev/null 2>&1 >/dev/null
 	latex mpich2pdf
 
 mpich2.pdf: mpich2pdf.dvi
@@ -166,10 +167,13 @@ install-web: mpich2.ps mpich2.pdf mpich2/mpich2.htm
 	rm -f .foo
 
 clean:
-	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc errcodes.ps \
+	rm -f *.log *.aux *.dvi *.bbl *.blg *.ilg *~ *.toc *.out 
+	rm -f mpich2.ind mpich2.idx
+distclean: clean
+	rm -f mpich2.ps errcodes.ps \
 		pt2ptdesc.ps handle.eps indirect.eps intercomm.eps \
 		scanpattern.eps sendrecv.eps agent.ps mpich2-arch.eps \
-		ca-nomenclature.eps vc-sm.eps send-sm.eps mmca.ps
+		ca-nomenclature.eps vc-sm.eps send-sm.eps mmca.ps 
 
 # Handle older fig2dev programs
 .fig.eps:
