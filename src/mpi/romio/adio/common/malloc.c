@@ -24,12 +24,12 @@
 #include "mpipr.h"
 
 #define FPRINTF fprintf
-void *ADIOI_Malloc(size_t size, int lineno, char *fname);
-void *ADIOI_Calloc(size_t nelem, size_t elsize, int lineno, char *fname);
-void *ADIOI_Realloc(void *ptr, size_t size, int lineno, char *fname);
-void ADIOI_Free(void *ptr, int lineno, char *fname);
+void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname);
+void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname);
+void *ADIOI_Realloc_fn(void *ptr, size_t size, int lineno, char *fname);
+void ADIOI_Free_fn(void *ptr, int lineno, char *fname);
 
-void *ADIOI_Malloc(size_t size, int lineno, char *fname)
+void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname)
 {
     void *new;
 
@@ -47,7 +47,7 @@ void *ADIOI_Malloc(size_t size, int lineno, char *fname)
 }
 
 
-void *ADIOI_Calloc(size_t nelem, size_t elsize, int lineno, char *fname)
+void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname)
 {
     void *new;
 
@@ -61,7 +61,7 @@ void *ADIOI_Calloc(size_t nelem, size_t elsize, int lineno, char *fname)
 }
 
 
-void *ADIOI_Realloc(void *ptr, size_t size, int lineno, char *fname)
+void *ADIOI_Realloc_fn(void *ptr, size_t size, int lineno, char *fname)
 {
     void *new;
 
@@ -74,7 +74,7 @@ void *ADIOI_Realloc(void *ptr, size_t size, int lineno, char *fname)
 }
 
 
-void ADIOI_Free(void *ptr, int lineno, char *fname)
+void ADIOI_Free_fn(void *ptr, int lineno, char *fname)
 {
     if (!ptr) {
 	FPRINTF(stderr, "Attempt to free null pointer in file %s, line %d\n", fname, lineno);

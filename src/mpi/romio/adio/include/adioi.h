@@ -275,10 +275,10 @@ void ADIOI_Complete_async(int *error_code);
 void ADIOI_Del_req_from_list(ADIO_Request *request);
 struct ADIOI_RequestD *ADIOI_Malloc_request(void);
 void ADIOI_Free_request(ADIOI_Req_node *node);
-void *ADIOI_Malloc(size_t size, int lineno, char *fname);
-void *ADIOI_Calloc(size_t nelem, size_t elsize, int lineno, char *fname);
-void *ADIOI_Realloc(void *ptr, size_t size, int lineno, char *fname);
-void ADIOI_Free(void *ptr, int lineno, char *fname);
+void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname);
+void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname);
+void *ADIOI_Realloc_fn(void *ptr, size_t size, int lineno, char *fname);
+void ADIOI_Free_fn(void *ptr, int lineno, char *fname);
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag);
 void ADIOI_Get_position(ADIO_File fd, ADIO_Offset *offset);
 void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset);
@@ -389,10 +389,10 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
 int ADIOI_Set_lock(FDTYPE fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
 int ADIOI_Set_lock64(FDTYPE fd_sys, int cmd, int type, ADIO_Offset offset, int whence, ADIO_Offset len);
 
-#define ADIOI_Malloc(a) ADIOI_Malloc(a,__LINE__,__FILE__)
-#define ADIOI_Calloc(a,b) ADIOI_Calloc(a,b,__LINE__,__FILE__)
-#define ADIOI_Realloc(a,b) ADIOI_Realloc(a,b,__LINE__,__FILE__)
-#define ADIOI_Free(a) ADIOI_Free(a,__LINE__,__FILE__)
+#define ADIOI_Malloc(a) ADIOI_Malloc_fn(a,__LINE__,__FILE__)
+#define ADIOI_Calloc(a,b) ADIOI_Calloc_fn(a,b,__LINE__,__FILE__)
+#define ADIOI_Realloc(a,b) ADIOI_Realloc_fn(a,b,__LINE__,__FILE__)
+#define ADIOI_Free(a) ADIOI_Free_fn(a,__LINE__,__FILE__)
 
 #define FPRINTF fprintf
 
