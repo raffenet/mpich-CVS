@@ -870,6 +870,7 @@ int smpd_handle_read(smpd_context_t *context)
 	smpd_dbg_printf("*******************\n******************\n**************\n");
 	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
 	buffer[num_encoded] = '\0';
+	smpd_dbg_printf("*******************\n******************\n**************\n");
 	smpd_dbg_printf("encoded %d characters: %d '%s'\n", num_encoded, strlen(buffer), buffer);
 
 	/* create an output command */
