@@ -15,8 +15,6 @@
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
-char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type);
-
 /* MPID_Segment_piece_params
  *
  * This structure is used to pass function-specific parameters into our 
@@ -937,7 +935,7 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 	       (unsigned) bufp,
 	       (unsigned) paramp->u.pack.pack_buffer,
 	       (int) el_size,
-	       MPIDI_Datatype_builtin_to_string(el_type),
+	       MPIDU_Datatype_builtin_to_string(el_type),
 	       (int) count,
 	       (int) *blocks_p);
 #endif

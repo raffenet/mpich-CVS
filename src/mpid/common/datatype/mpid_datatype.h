@@ -502,5 +502,9 @@ void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
 MPI_Aint MPID_Datatype_size_external32(MPI_Datatype type);
 MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type);
 
+/* debugging helper functions */
+char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type);
+char *MPIDU_Datatype_combiner_to_string(int combiner);
+
 /* end of file */
 #endif

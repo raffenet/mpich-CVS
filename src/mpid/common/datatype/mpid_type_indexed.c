@@ -315,6 +315,8 @@ void MPID_Dataloop_create_indexed(int count,
 	return;
     }
 
+    /* note: could look for a blockindexed or a vector here... */
+
     /* otherwise storing as an indexed dataloop */
 
     new_loop_sz = sizeof(struct MPID_Dataloop) + 

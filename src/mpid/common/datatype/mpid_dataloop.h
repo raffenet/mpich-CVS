@@ -105,4 +105,17 @@ void MPID_Dataloop_create_indexed(int count,
 				  int *dlsz_p,
 				  int *dldepth_p,
 				  int flags);
+void MPID_Dataloop_create_struct(int count,
+				 int *blklen_array,
+				 MPI_Aint *disp_array,
+				 MPI_Datatype *oldtype_array,
+				 MPID_Dataloop **dlp_p,
+				 int *dlsz_p,
+				 int *dldepth_p,
+				 int flags);
+
+/* flags for MPID_Dataloop_create_xxx calls */
+#define MPID_DATALOOP_HOMOGENEOUS 1
+#define MPID_DATALOOP_ALL_BYTES   2
+
 #endif

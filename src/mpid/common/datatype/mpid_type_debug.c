@@ -11,8 +11,7 @@
 #include <assert.h>
 #include <limits.h>
 
-static char *MPIDI_combiner_to_string(int combiner);
-char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type);
+char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type);
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
@@ -136,7 +135,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
     MPI_Aint extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
-	string = MPIDI_Datatype_builtin_to_string(type);
+	string = MPIDU_Datatype_builtin_to_string(type);
 	if (type == MPI_LB) sticky_lb = 1;
 	else sticky_lb = 0;
 	if (type == MPI_UB) sticky_ub = 1;
@@ -146,7 +145,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 	MPID_Datatype *type_ptr;
 
 	MPID_Datatype_get_ptr(type, type_ptr);
-	string = MPIDI_combiner_to_string(type_ptr->contents->combiner);
+	string = MPIDU_Datatype_combiner_to_string(type_ptr->contents->combiner);
 	sticky_lb = type_ptr->has_sticky_lb;
 	sticky_ub = type_ptr->has_sticky_ub;
     }
@@ -187,7 +186,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 }
 
 /* longest string is 21 characters */
-char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type)
+char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
 {
     static char t_char[]             = "MPI_CHAR";
     static char t_uchar[]            = "MPI_UNSIGNED_CHAR";
@@ -272,13 +271,14 @@ char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type)
     return NULL;
 }
 
-/* MPIDI_combiner_to_string(combiner)
+/* MPIDU_Datatype_combiner_to_string(combiner)
  *
  * Converts a numeric combiner into a pointer to a string used for printing.
  *
  * longest string is 16 characters.
  */
-static char *MPIDI_combiner_to_string(int combiner)
+#define HAVE_MPI2_COMBINERS
+char *MPIDU_Datatype_combiner_to_string(int combiner)
 {
     static char c_named[]    = "named";
     static char c_contig[]   = "contig";
@@ -359,7 +359,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
 	MPIU_dbg_printf("%stype: %s\n",
 			MPIDI_Datatype_depth_spacing(depth),
-			MPIDI_Datatype_builtin_to_string(type));
+			MPIDU_Datatype_builtin_to_string(type));
 	return;
     }
 
@@ -375,7 +375,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 
     MPIU_dbg_printf("%scombiner: %s\n",
 		    MPIDI_Datatype_depth_spacing(depth),
-		    MPIDI_combiner_to_string(cp->combiner));
+		    MPIDU_Datatype_combiner_to_string(cp->combiner));
 
     switch (cp->combiner) {
 	case MPI_COMBINER_NAMED:
