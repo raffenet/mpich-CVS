@@ -13,6 +13,7 @@ def mpdsigjob():
         print 'usage: mpdsigjob  sigtype  jobnum  [mpdid]  # as obtained from mpdlistjobs'
         print '   or: mpdsigjob  sigtype  -a jobalias      # as obtained from mpdlistjobs'
         print '    mpdid is mpd contacted by mpdrun to start the job (defaults to here)'
+        print 'Delivers a Unix signal to all the application processes in the job'
         exit(-1)
     username = mpd_get_my_username()
     if environ.has_key('UNIX_SOCKET'):

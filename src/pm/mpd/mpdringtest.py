@@ -12,6 +12,7 @@ def mpdringtest():
     mpd_set_my_id('mpdringtest')
     if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help' ) :
         print 'usage: mpdringtest [number of loops]'
+        print 'Times a single message going around the ring of mpds [num] times (default once)' 
         exit(-1)
     if len(argv) < 2: 
 	numLoops = 1

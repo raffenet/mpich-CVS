@@ -860,7 +860,7 @@ def usage():
     print '  them can have a unix socket which a console program can connect to'
     print 'echo says to echo the listener port for the mpd; useful in scripts'
     print 'daemon causes mpd to run backgrounded, with no controlling tty'
-    print 'bulletproof says to turn bulletproofing on'
+    print 'bulletproof says to turn bulletproofing on (experimental)'
     
     exit(-1)
 

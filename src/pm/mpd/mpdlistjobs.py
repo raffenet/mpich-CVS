@@ -21,7 +21,9 @@ def mpdlistjobs():
             if argv[aidx] == '-h'  or  argv[aidx] == '--help':
                 print 'usage: mpdlistjobs [-u | --user username] [-a | --alias jobalias] ',
                 print '[-j | --jobid jobid]'
-                print '  only use one of jobalias or jobid'
+                print '  (only use one of jobalias or jobid)'
+                print 'lists jobs being run by an mpd ring, all by default, or filtered'
+                print 'by user, mpd job id, or alias assigned when the job was submitted'
                 exit(-1)
             if argv[aidx] == '-u' or argv[aidx] == '--user':
                 uname = argv[aidx+1]

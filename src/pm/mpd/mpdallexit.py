@@ -13,6 +13,7 @@ def mpdallexit():
     mpd_set_my_id('mpdallexit_')
     if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help') :
         print 'usage: mpdallexit (no args)'
+        print 'causes all mpds in the ring to exit'
         exit(-1)
     consoleName = '/tmp/mpd2.console_' + mpd_get_my_username()
     conSocket = socket(AF_UNIX, SOCK_STREAM)             # note: UNIX socket

@@ -55,8 +55,10 @@ def mpdcleanup():
 	        system(cmd)
 
 def mpdcleanup_usage():
-    print 'mpdcleanup', '[-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] or'
-    print 'mpdcleanup', '[--file=<hostsfile>] [--rsh=<rshcmd>] [-user=<user>] [-clean=<cleancmd>]'
+    print 'usage: mpdcleanup', '[-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] or'
+    print '   or: mpdcleanup', '[--file=<hostsfile>] [--rsh=<rshcmd>] [-user=<user>] [-clean=<cleancmd>]'
+    print 'Removes the Unix socket on local (the default) and remote machines'
+    print 'This is useful in case the mpd crashed badly and did not remove it, which it normally does'
     exit(0)
 
 

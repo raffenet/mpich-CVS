@@ -12,7 +12,8 @@ def mpdtrace():
     mpd_set_my_id('mpdtrace_')
     if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help') :
         print 'usage: mpdtrace [-l]'
-        print '    The -l option shows full hostnames and listening ports'
+        print 'Lists the (short) hostname of each of the mpds in the ring'
+        print 'The -l (ell) option shows full hostnames and listening ports'
         exit(-1)
     username = mpd_get_my_username()
     if environ.has_key('UNIX_SOCKET'):
