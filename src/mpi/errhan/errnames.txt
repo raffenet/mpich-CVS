@@ -25,7 +25,7 @@
 **fileexist %s:File %s exists
 **keyvalnotcomm:Keyval was not defined for communicators
 **keyvalnotwin:Keyval was not defined for window objects
-**keyvalnotfile:Keyval was not defined for files
+**keyvalnotdatatype:Keyval was not defined for datatype
 **keyvalinvalid:Attribute key was MPI_KEYVAL_INVALID
 **permattr:Cannot set permanent attribute
 **keyval:Invalid keyval

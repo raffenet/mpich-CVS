@@ -100,7 +100,7 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
        but in a different thread from causing problems */
     MPID_Comm_thread_lock( comm_ptr );
     old_p = &comm_ptr->attributes;
-    p = comm_ptr->attributes;
+    p     = comm_ptr->attributes;
     while (p) {
 	if (p->keyval->handle == keyval_ptr->handle) {
 	    break;
@@ -116,39 +116,8 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
     if (p) {
 	/* Run the delete function, if any, and then free the attribute 
 	   storage */
-	if ( keyval_ptr->delfn.C_CommDeleteFunction ) {
-	    switch (keyval_ptr->language) {
-#ifdef HAVE_FORTRAN_BINDING
-	    case MPID_LANG_FORTRAN:
-	    case MPID_LANG_FORTRAN90: 
-	    {
-		MPI_Aint invall = (MPI_Aint)p->value;
-		MPI_Fint inval = (int)invall;
-		MPI_Fint fcomm = comm;
-		MPI_Fint fkeyval = comm_keyval;
-		(*keyval_ptr->delfn.F77_DeleteFunction)(&fcomm, 
-				    &fkeyval, &inval,
-				    keyval_ptr->extra_state, &mpi_errno );
-		p->value = (void *)(MPI_Aint)inval;
-	    }
-	    break;
-#endif		
-	    case MPID_LANG_C:
-		mpi_errno = (*keyval_ptr->delfn.C_CommDeleteFunction)(comm, 
-						  comm_keyval, p->value,
-						  keyval_ptr->extra_state );
-		break;
-		
-#ifdef HAVE_CXX_BINDING
-	    case MPID_LANG_CXX:
-		mpi_errno = (*MPIR_Process.cxx_call_delfn)( (int)comm, 
-				     comm_keyval, p->value,
-				     keyval_ptr->extra_state, 
-		(void (*)(void)) keyval_ptr->delfn.C_CommDeleteFunction );
-		break;
-#endif
-	    }
-	}
+	mpi_errno = MPIR_Call_attr_delete( comm, p );
+
 	if (!mpi_errno) {
 	    /* We found the attribute.  Remove it from the list */
 	    *old_p = p->next;

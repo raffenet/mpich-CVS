@@ -140,12 +140,12 @@ int MPI_Finalize( void )
 
     /* Remove the attributes, executing the attribute delete routine.
        Do this only if the attribute functions are defined. */ 
-    if (MPIR_Process.comm_attr_free && MPIR_Process.comm_world->attributes) {
-        mpi_errno = MPIR_Process.comm_attr_free(MPIR_Process.comm_world,
+    if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
+        mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
                                          MPIR_Process.comm_world->attributes);
     }
-    if (MPIR_Process.comm_attr_free && MPIR_Process.comm_self->attributes) {
-        mpi_errno = MPIR_Process.comm_attr_free(MPIR_Process.comm_self,
+    if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
+        mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
                                          MPIR_Process.comm_self->attributes);
     }
 

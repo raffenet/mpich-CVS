@@ -78,8 +78,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     /* Set the functions used to duplicate attributes.  These are 
        when the first corresponding keyval is created */
-    MPIR_Process.comm_attr_dup = 0;
-    MPIR_Process.type_attr_dup = 0;
+    MPIR_Process.attr_dup  = 0;
+    MPIR_Process.attr_free = 0;
 
 #ifdef HAVE_CXX_BINDING
     /* Set the functions used to call functions in the C++ binding 

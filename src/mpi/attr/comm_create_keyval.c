@@ -79,9 +79,9 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
     /* Initialize the attribute dup function */
-    if (!MPIR_Process.comm_attr_dup) {
-	MPIR_Process.comm_attr_dup  = MPIR_Comm_attr_dup_list;
-	MPIR_Process.comm_attr_free = MPIR_Comm_attr_delete_list;
+    if (!MPIR_Process.attr_dup) {
+	MPIR_Process.attr_dup  = MPIR_Attr_dup_list;
+	MPIR_Process.attr_free = MPIR_Attr_delete_list;
     }
 
     /* The handle encodes the keyval kind.  Modify it to have the correct
@@ -93,8 +93,8 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     keyval_ptr->language         = MPID_LANG_C;
     keyval_ptr->kind	         = MPID_COMM;
     keyval_ptr->extra_state      = extra_state;
-    keyval_ptr->copyfn.C_CommCopyFunction  = comm_copy_attr_fn;
-    keyval_ptr->delfn.C_CommDeleteFunction = comm_delete_attr_fn;
+    keyval_ptr->copyfn.C_CopyFunction  = comm_copy_attr_fn;
+    keyval_ptr->delfn.C_DeleteFunction = comm_delete_attr_fn;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);

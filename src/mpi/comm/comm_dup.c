@@ -85,12 +85,13 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     /* This accesses the attribute dup function through the perprocess
        structure to prevent comm_dup from forcing the linking of the
        attribute functions.  The actual function is (by default)
-       MPIR_Comm_attr_dup_list 
+       MPIR_Attr_dup_list 
     */
-    if (MPIR_Process.comm_attr_dup) {
+    if (MPIR_Process.attr_dup) {
 	newcomm_ptr->attributes = 0;
-	mpi_errno = MPIR_Process.comm_attr_dup( comm_ptr, 
-						&newcomm_ptr->attributes );
+	mpi_errno = MPIR_Process.attr_dup( comm_ptr->handle, 
+					   comm_ptr->attributes, 
+					   &newcomm_ptr->attributes );
 	if (mpi_errno) {
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    *newcomm = MPI_COMM_NULL;

@@ -343,8 +343,8 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
     MPIU_Object_release_ref( comm_ptr, &inuse);
     if (!inuse) {
 	/* Remove the attributes, executing the attribute delete routine.  Do this only if the attribute functions are defined. */
-	if (MPIR_Process.comm_attr_free && comm_ptr->attributes) {
-	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, comm_ptr->attributes );
+	if (MPIR_Process.attr_free && comm_ptr->attributes) {
+	    mpi_errno = MPIR_Process.attr_free( comm_ptr, comm_ptr->attributes );
 	}
 
 	if (mpi_errno == MPI_SUCCESS) {

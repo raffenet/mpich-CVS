@@ -114,7 +114,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	if (p->keyval->handle == keyval_ptr->handle) {
 	    /* If found, call the delete function before replacing the 
 	       attribute */
-	    mpi_errno = MPIR_Comm_call_attr_delete( comm, p );
+	    mpi_errno = MPIR_Call_attr_delete( comm, p );
 	    if (mpi_errno) {
 		MPID_Comm_thread_unlock( comm_ptr );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);

@@ -35,9 +35,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
 #else
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
@@ -51,9 +48,10 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#endif
+
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
-#endif
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
@@ -71,25 +69,36 @@
 /* 
    Include the implementation definitions (e.g., error reporting, thread
    portability)
-   More detailed documentation is containing in the MPICH2 and ADI3 manuals.
+   More detailed documentation is contained in the MPICH2 and ADI3 manuals.
  */
 /* ... to do ... */
 
 /* Basic typedefs */
 #ifndef HAVE_INT16_T 
-/* FIXME (short may not be correct) */
+#ifdef INT16_T
+typedef INT16_T int16_t;
+#else
 typedef short int16_t;
 #endif
+#endif
+
 #ifndef HAVE_INT32_T
-/* FIXME (int may not be correct) */
+#ifdef INT32_T
+typedef INT32_T int32_t;
+#else
 typedef int int32_t;
 #endif
+#endif
+
 #ifndef HAVE_INT64_T
 #ifdef HAVE_WINDOWS_H
 typedef __int64 int64_t;
 #else
-/* FIXME (long long may not be correct) */
+#ifdef INT64_T
+typedef INT64_T int64_t;
+#else
 typedef long long int64_t;
+#endif
 #endif
 #endif
 
@@ -511,27 +520,25 @@ extern MPID_Errhandler MPID_Errhandler_builtin[];
 extern MPID_Errhandler MPID_Errhandler_direct[];
 
 /* Keyvals and attributes */
+/* Because Comm, Datatype, and File handles are all ints, and because
+   attributes are otherwise identical between the three types, we
+   only store generic copy and delete functions.  This allows us to use
+   common code for the attribute set, delete, and dup functions */
 typedef union MPID_Copy_function {
-  int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
+  int  (*C_CopyFunction)( int, int, void *, void *, void *, int * );
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
                               MPI_Fint *, MPI_Fint *, MPI_Fint * );
   void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
                               MPI_Aint *, MPI_Fint *, MPI_Fint * );
-  int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
-  int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
-                              void *, void *, void *, int * );
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
 typedef union MPID_Delete_function {
-  int  (*C_CommDeleteFunction)  ( MPI_Comm, int, void *, void * );
+  int  (*C_DeleteFunction)  ( int, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
                               MPI_Fint * );
   void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
                               MPI_Fint * );
-  int  (*C_FileDeleteFunction)  ( MPI_File, int, void *, void * );
-  int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
-  
 } MPID_Delete_function;
 
 typedef struct MPID_Keyval {
@@ -982,11 +989,8 @@ typedef struct MPICH_PerProcess_t {
     /* Communicator context ids.  Special data is needed for thread-safety */
     int context_id_mask[32];
     /* Attribute dup functions.  Here for lazy initialization */
-    int (*comm_attr_dup)( MPID_Comm *, MPID_Attribute **new_attr );
-    int (*comm_attr_free)( MPID_Comm *, MPID_Attribute *attr_p );
-    int (*type_attr_dup)( struct MPID_Datatype *, MPID_Attribute **new_attr );
-    int (*type_attr_free)( struct MPID_Datatype *, MPID_Attribute *attr_p );
-    int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
+    int (*attr_dup)( int, MPID_Attribute *, MPID_Attribute ** );
+    int (*attr_free)( int, MPID_Attribute * );
     /* There is no win_attr_dup function because there can be no MPI_Win_dup
        function */
     /* Routine to get the messages corresponding to dynamically created
