@@ -77,7 +77,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
         {
 	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(status,"status", mpi_errno);
+	    /* Status may be MPI_STATUS_IGNORE, so we don't test that one */
 	    if (mpi_errno) {
 		goto fn_exit;
             }
@@ -89,7 +89,9 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     /* If this is a null request handle, then return an empty status */
     if (*request == MPI_REQUEST_NULL)
     {
-	MPIR_Status_set_empty(status);
+	if (status) {
+	    MPIR_Status_set_empty(status);
+	}
 	*flag = TRUE;
 	goto fn_exit;
     }
