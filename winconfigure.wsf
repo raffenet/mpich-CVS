@@ -128,6 +128,18 @@ MPI_2DOUBLE_PRECISION = "0x" + mpi_datatype_prefix + len_doublecplx + "29"
 MPI_2COMPLEX          = "0x" + mpi_datatype_prefix + len_doublecplx + "2a"
 MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "2b"
 
+F77_COMPLEX8          = MPI_COMPLEX
+F77_COMPLEX16         = MPI_DOUBLE_COMPLEX
+F77_COMPLEX32         = MPI_2DOUBLE_COMPLEX
+F77_INTEGER1          = "" '"0x" + mpi_datatype_prefix + "01"
+F77_INTEGER2          = "" '"0x" + mpi_datatype_prefix + "02"
+F77_INTEGER4          = "" '"0x" + mpi_datatype_prefix + "04"
+F77_INTEGER8          = "" '"0x" + mpi_datatype_prefix + "08"
+F77_INTEGER16         = "" '"0x" + mpi_datatype_prefix + "10"
+F77_REAL4             = "" '"0x" + mpi_datatype_prefix + "04"
+F77_REAL8             = "" '"0x" + mpi_datatype_prefix + "08"
+F77_REAL16            = "" '"0x" + mpi_datatype_prefix + "10"
+
 '
 ' Miscellaneous settings
 '
@@ -354,6 +366,11 @@ Else
   
 End IF
 
+
+'
+' Generate mpif.h
+'
+
 If Not f.FileExists("src\binding\f77\mpif.h.in") Then
 
   Set WshShell = CreateObject("WScript.Shell")
@@ -369,19 +386,20 @@ If f.FileExists("src\binding\f77\mpif.h.in") Then
   set fout = f.CreateTextFile("src\include\mpif.h")
   contents = fin.ReadAll()
 ' Add the replacements for mpif.h here
-'  contents = Replace(contents, "@ADDRESS_KIND@", "foo")
+  contents = Replace(contents, "@ADDRESS_KIND@", "4")
+  contents = Replace(contents, "@OFFSET_KIND@", "4")
   contents = Replace(contents, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
-'  contents = Replace(contents, "@F77_COMPLEX16@", "foo")
-'  contents = Replace(contents, "@F77_COMPLEX32@", "foo")
-'  contents = Replace(contents, "@F77_COMPLEX8@", "foo")
-'  contents = Replace(contents, "@F77_INTEGER1@", "foo")
-'  contents = Replace(contents, "@F77_INTEGER2@", "foo")
-'  contents = Replace(contents, "@F77_INTEGER4@", "foo")
-'  contents = Replace(contents, "@F77_INTEGER8@", "foo")
-'  contents = Replace(contents, "@F77_INTEGER16@", "foo")
-'  contents = Replace(contents, "@F77_REAL4@", "foo")
-'  contents = Replace(contents, "@F77_REAL8@", "foo")
-'  contents = Replace(contents, "@F77_REAL16@", "foo")
+  contents = Replace(contents, "@F77_COMPLEX16@", F77_COMPLEX16)
+  contents = Replace(contents, "@F77_COMPLEX32@", F77_COMPLEX32)
+  contents = Replace(contents, "@F77_COMPLEX8@", F77_COMPLEX8)
+  contents = Replace(contents, "@F77_INTEGER1@", F77_INTEGER1)
+  contents = Replace(contents, "@F77_INTEGER2@", F77_INTEGER2)
+  contents = Replace(contents, "@F77_INTEGER4@", F77_INTEGER4)
+  contents = Replace(contents, "@F77_INTEGER8@", F77_INTEGER8)
+  contents = Replace(contents, "@F77_INTEGER16@", F77_INTEGER16)
+  contents = Replace(contents, "@F77_REAL4@", F77_REAL4)
+  contents = Replace(contents, "@F77_REAL8@", F77_REAL8)
+  contents = Replace(contents, "@F77_REAL16@", F77_REAL16)
   contents = Replace(contents, "@MPI_2COMPLEX@", MPI_2COMPLEX)
   contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", MPI_2DOUBLE_COMPLEX)
   contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", MPI_2DOUBLE_PRECISION)
@@ -397,9 +415,8 @@ If f.FileExists("src\binding\f77\mpif.h.in") Then
   contents = Replace(contents, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
   contents = Replace(contents, "@MPI_PACKED@", MPI_PACKED)
   contents = Replace(contents, "@MPI_REAL@", MPI_REAL)
-'  contents = Replace(contents, "@MPI_STATUS_SIZE@", "foo")
+  contents = Replace(contents, "@MPI_STATUS_SIZE@", "5")
   contents = Replace(contents, "@MPI_UB@", MPI_UB)
-'  contents = Replace(contents, "@OFFSET_KIND@", "foo")
   fout.Write(contents)
   fin.Close()
   fout.Close()
@@ -409,7 +426,6 @@ Else
   WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
   
 End IF
-
 
 </script>
 </job>
