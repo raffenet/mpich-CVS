@@ -56,6 +56,8 @@ typedef int MPID_Thread_id_t;
 typedef int MPID_Thread_lock_t;
 #define MPID_GetPerThread(p) p = &MPIR_Thread
 #else /* Assumes pthreads for simplicity */
+/* Eventually replace this with an include of a header file with the 
+   correct definitions for the specified thread package. */
 #if defined HAVE_PTHREAD_CREATE
 #include <pthread.h>
 typedef pthread_key_t MPID_Thread_key_t;
@@ -96,6 +98,7 @@ typedef pthread_mutex_t MPID_Thread_lock_t;
 #define MPIU_Strdup(a)    strdup(a)
 #else
 #define MPIU_Strdup(a)    ?????
+#error 'No Strdup available - need to provide one'
 #endif
 #endif
 void MPIU_trinit ( int );
@@ -577,9 +580,6 @@ typedef struct {
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
-#ifdef HAVE_QUERYPERFORMANCECOUNTER
-    double            timer_frequency;  /* High performance counter frequency */
-#endif
     char              bnr_dbname[100];
     MPI_Comm          comm_parent;
     OpenPortNode_t    *port_list;
