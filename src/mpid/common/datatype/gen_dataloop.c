@@ -94,7 +94,7 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
 				   int size)
 {
-    int ptrdiff;
+    DLOOP_Offset ptrdiff;
 
     /* copy region first */
     memcpy(dest, src, size);
@@ -104,13 +104,13 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
     ptrdiff = (char *)dest - (char *)src;
 
     /* traverse structure updating pointers */
-    DLOOP_Dataloop_update(dest, ptrdiff);
+    PREPEND_PREFIX(Dataloop_update)(dest, ptrdiff);
 
     return;
 }
 
 /*@
-  DLOOP_Dataloop_update - update pointers after a copy operation
+  Dataloop_update - update pointers after a copy operation
 
   Input Parameters:
 + dataloop - pointer to loop to update
@@ -119,8 +119,8 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
   This function is used to recursively update all the pointers in a
   dataloop tree.
 @*/
-void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-			   DLOOP_Offset ptrdiff)
+void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
+				     DLOOP_Offset ptrdiff)
 {
     /* OPT: only declare these variables down in the Struct case */
     int i;
@@ -141,7 +141,8 @@ void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.cm_t.dataloop = (struct DLOOP_Dataloop *) 
 		((char *) dataloop->loop_params.cm_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.cm_t.dataloop, ptrdiff);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.cm_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_BLOCKINDEXED:
@@ -150,7 +151,8 @@ void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.bi_t.dataloop, ptrdiff);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.bi_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_INDEXED:
@@ -161,7 +163,8 @@ void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.i_t.dataloop, ptrdiff);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.i_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_STRUCT:
@@ -179,11 +182,14 @@ void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 		    ((char *) looparray[i] + ptrdiff);
 	    }
 
+	    if (dataloop->kind | DLOOP_FINAL_MASK) break;
+
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-		DLOOP_Dataloop_update(looparray[i], ptrdiff);
+		PREPEND_PREFIX(Dataloop_update)(looparray[i], ptrdiff);
 	    }
 	    break;
 	default:
+	    assert(0);
 	    break;
     }
     return;
@@ -250,6 +256,7 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 	    }
 	    break;
 	default:
+	    assert(0);
 	    break;
     }
     return;
