@@ -165,7 +165,7 @@ static int ibui_post_ack_write(ibu_t ibu);
 /* utility allocator functions */
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p));
+static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, ib_mr_handle_t *hp, uint32_t *lp, uint32_t *rp), void (* free_fn)(void *p));
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
@@ -198,14 +198,14 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     return p;
 }
 
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p))
+static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, ib_mr_handle_t *hp, uint32_t *lp, uint32_t *rp), void (* free_fn)(void *p))
 {
     ibuBlockAllocator p;
     void **ppVoid;
     int i;
-    VAPI_mr_hndl_t handle;
-    VAPI_lkey_t lkey;
-    VAPI_rkey_t rkey;
+    ib_mr_handle_t handle;
+    uint32_t lkey;
+    uint32_t rkey;
     ibmem_t *mem_ptr;
     void *pVoid;
 
@@ -503,9 +503,7 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the
-       global variable s_mr_handle */
-    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+    p->allocator = ibuBlockAllocInitIB(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
 				     IBU_PACKET_COUNT,
 				     ib_malloc_register, ib_free_deregister);
 
@@ -1231,6 +1229,7 @@ int ibu_init()
     uintn_t num_guids;
     size_t ca_size;
     void *ca_attr_ptr;
+    uint32_t rkey;
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
@@ -1266,9 +1265,7 @@ int ibu_init()
 	return status;
     }
 
-    IBU_Process.ack_mem_ptr = ib_malloc_register(4096);
-    IBU_Process.ack_mr_handle = s_mr_handle;
-    IBU_Process.ack_lkey = s_lkey;
+    IBU_Process.ack_mem_ptr = ib_malloc_register(4096, &IBU_Process.ack_mr_handle, &IBU_Process.ack_lkey, &rkey);
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
