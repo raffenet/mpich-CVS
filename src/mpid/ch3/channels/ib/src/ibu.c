@@ -509,10 +509,16 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     ib_uint32_t status;
     ibu_t p;
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_QP);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_QP);
 
     p = (ibu_t)malloc(sizeof(ibu_state_t));
     if (p == NULL)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
+    }
 
     p->dlid = dlid;
     p->allocator = BlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
@@ -527,6 +533,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("createQP failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
 
@@ -535,6 +542,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
     /*MPIU_dbg_printf("modifyQP(RTR)\n");*/
@@ -542,6 +550,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
     /*MPIU_dbg_printf("modifyQP(RTS)\n");*/
@@ -549,6 +558,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
 
@@ -557,7 +567,8 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     {
 	ibui_post_receive(p);
     }
-
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
     return p;
 }
 
@@ -851,7 +862,7 @@ int ibu_destroy_set(ibu_set_t set)
     return status;
 }
 
-int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
+static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
 
@@ -866,7 +877,7 @@ int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
     return IBU_SUCCESS;
 }
 
-int ibui_read_unex(ibu_t ibu)
+static int ibui_read_unex(ibu_t ibu)
 {
     ibu_unex_read_t *temp;
 
@@ -959,7 +970,6 @@ int ibui_readv_unex(ibu_t ibu)
 	    ibu->state &= ~IBU_READING;
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
 	}
 	/* make the user upcall */
@@ -1276,20 +1286,24 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
 
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
 {
+#ifdef MPICH_DBG_OUTPUT
     char str[1024] = "ibu_post_readv: ";
     char *s;
     int i;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READV);
+#ifdef MPICH_DBG_OUTPUT
     s = &str[16];
     for (i=0; i<n; i++)
     {
 	s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
     }
     MPIU_dbg_printf("%s\n", str);
-    /*MPIU_dbg_printf("ibu_post_readv\n");*/
+#endif
     ibu->read.total = 0;
+    /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->read.iov = iov;*/
     memcpy(ibu->read.iov, iov, sizeof(IBU_IOV) * n);
     ibu->read.iovlen = n;
@@ -1330,6 +1344,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
     MPIU_dbg_printf("ibu_post_writev\n");
     ibu->write.total = 0;
+    /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->write.iov = iov;*/
     memcpy(ibu->write.iov, iov, sizeof(IBU_IOV) * n);
     ibu->write.iovlen = n;
@@ -1360,59 +1375,3 @@ int ibu_get_lid()
 {
     return IBU_Process.lid;
 }
-
-#if 0
-int ibu_easy_receive(ibu_t ibu, void *buf, int len, int *num_read)
-{
-    int error;
-    int n;
-    int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_EASY_RECEIVE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_EASY_RECEIVE);
-
-    while (len)
-    {
-	error = ibu_read(ibu, buf, len, &n);
-	if (error != IBU_SUCCESS)
-	{
-	    *num_read = total;
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_EASY_RECEIVE);
-	    return error;
-	}
-	total += n;
-	buf = (char*)buf + n;
-	len -= n;
-    }
-
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_EASY_RECEIVE);
-    return IBU_SUCCESS;
-}
-
-int ibu_easy_send(ibu_t ibu, void *buf, int len, int *num_written)
-{
-    int error;
-    int n;
-    int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_EASY_SEND);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_EASY_SEND);
-
-    while (len)
-    {
-	error = ibui_write(ibu, buf, len, &n);
-	if (error != IBU_SUCCESS)
-	{
-	    *num_written = total;
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_EASY_SEND);
-	    return error;
-	}
-	total += n;
-	buf = (char*)buf + n;
-	len -= n;
-    }
-
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_EASY_SEND);
-    return IBU_SUCCESS;
-}
-#endif

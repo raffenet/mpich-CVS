@@ -23,36 +23,20 @@ extern "C" {
 
 /* definitions */
 
-#define IBU_UNIX    1
-#define IBU_WINDOWS 2
-
 typedef enum IBU_OP
 {
     IBU_OP_TIMEOUT,
     IBU_OP_READ,
     IBU_OP_WRITE,
-/*
-    IBU_OP_ACCEPT,
-    IBU_OP_CONNECT,
-*/
     IBU_OP_CLOSE
 } IBU_OP;
-/*
-#define IBU_OP_READ    1
-#define IBU_OP_WRITE   2
-#define IBU_OP_ACCEPT  3
-#define IBU_OP_CONNECT 4
-#define IBU_OP_CLOSE   5
-#define IBU_OP_TIMEOUT 6
-*/
+
 #define IBU_IOV_LIMIT   16
 
 /* insert error codes here */
 #define IBU_SUCCESS           0
 #define IBU_FAIL              -1
 #define IBU_ERR_TIMEOUT       1001
-#define IBU_ERR_CONN_REFUSED  1002
-#define IBU_ERR_OS_SPECIFIC   1003
 
 
 
@@ -119,11 +103,6 @@ int ibu_destroy_set(ibu_set_t set);
 
 int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);
 
-/*
-int ibu_listen(ibu_set_t set, void *user_ptr, int *port, ibu_t *listener);
-int ibu_post_connect(ibu_set_t set, void *user_ptr, char *host, int port, ibu_t *connected);
-int ibu_post_close(ibu_t ibu);
-*/
 ibu_t ibu_create_qp(ibu_set_t set, int dlid);
 int ibu_post_read(ibu_t ibu, void *buf, int len, int (*read_progress_update)(int, void*));
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*read_progress_update)(int, void*));
@@ -131,21 +110,6 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
 int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
 
 int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);
-
-/*
-int ibu_accept(ibu_set_t set, void *user_ptr, ibu_t listener, ibu_t *accepted);
-int ibu_read(ibu_t ibu, void *buf, int len, int *num_read);
-int ibu_readv(ibu_t ibu, IBU_IOV *iov, int n, int *num_read);
-int ibu_write(ibu_t ibu, void *buf, int len, int *num_written);
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_written);
-*/
-
-/* extended functions */
-/*
-int ibu_easy_receive(ibu_t ibu, void *buf, int len, int *num_read);
-int ibu_easy_send(ibu_t ibu, void *buf, int len, int *num_written);
-int ibu_getid(ibu_t ibu);
-*/
 
 #ifdef __cplusplus
 }

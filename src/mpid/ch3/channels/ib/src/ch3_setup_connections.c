@@ -17,6 +17,9 @@ int MPIDI_CH3I_Setup_connections()
     int rc;
     int i, dlid;
     MPIDI_VC *vc;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
 
     key_max_sz = PMI_KVS_Get_key_length_max();
     key = MPIU_Malloc(key_max_sz);
@@ -64,5 +67,6 @@ int MPIDI_CH3I_Setup_connections()
     MPIU_Free(val);
     MPIU_Free(key);
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
     return 0;
 }

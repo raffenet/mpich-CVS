@@ -202,9 +202,9 @@ static inline void post_queued_send(MPIDI_VC * vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void handle_read(MPIDI_VC *vc, int nb)
 {
-    MPIDI_STATE_DECL(MPID_STATE_HANDLE_POLLIN);
+    MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_POLLIN);
+    MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
     
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     while (vc->ib.recv_active != NULL)
@@ -307,7 +307,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 
-    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_POLLIN);
+    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
 }
 
 #undef FUNCNAME
@@ -410,7 +410,6 @@ static inline void make_progress(int is_blocking)
     ibu_wait_t out;
     int rc;
     MPIDI_STATE_DECL(MPID_STATE_MAKE_PROGRESS);
-    MPIDI_STATE_DECL(MPID_STATE_POLL);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MAKE_PROGRESS);
 
