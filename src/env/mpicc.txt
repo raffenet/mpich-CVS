@@ -90,7 +90,7 @@ is a convenient way to build simple programs.
  you could create the file 'myprof.conf' with the lines
 
 .vb
-    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof'
+    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
     PRFILE_INCPATHS="-I/usr/local/myprof/include"
 .ve
  and place it in the sysconfdir directory (this directory is set at
