@@ -269,7 +269,6 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.tmp.num_written);
 	    /* remove from write queue and insert in completion queue */
 	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    //mm_cq_enqueue(car_ptr);
 	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
 	    {
 		/* if this is the last car written and it has a next car pointer,
