@@ -1,4 +1,0 @@
-Before making this document, TEXINPUTS must include the sowing
-package's share directory.  For example, TEXINPUTS might be set to
-".:/usr/local/sowing-1.1.6/share:".  The latest sowing package can be
-obtained from ftp://ftp.mcs.anl.gov/pub/sowing.
