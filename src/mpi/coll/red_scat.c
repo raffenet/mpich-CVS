@@ -165,9 +165,15 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             if (is_commutative || (src < rank)) {
                 if (sendbuf != MPI_IN_PLACE)
                     (*uop)(tmp_recvbuf, recvbuf, &recvcnts[rank], &datatype); 
-                else
+                else {
                     (*uop)(tmp_recvbuf, ((char *)recvbuf+displs[rank]*extent), 
                            &recvcnts[rank], &datatype); 
+                    /* we can't store the result at the beginning of
+                       recvbuf right here because there is useful data
+                       there that other process/processes need. at the
+                       end, we will copy back the result to the
+                       beginning of recvbuf. */
+                }
             }
             else {
                 if (sendbuf != MPI_IN_PLACE) {
@@ -192,6 +198,17 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         }
         
         MPIU_Free((char *)tmp_recvbuf+lb); 
+
+        /* if MPI_IN_PLACE, move output data to the beginning of
+           recvbuf. already done for rank 0. */
+        if ((sendbuf == MPI_IN_PLACE) && (rank != 0)) {
+            mpi_errno = MPIR_Localcopy(((char *)recvbuf +
+                                        displs[rank]*extent),  
+                                       recvcnts[rank], datatype, 
+                                       recvbuf, 
+                                       recvcnts[rank], datatype); 
+            if (mpi_errno) return mpi_errno;
+        }
     }
     
     else {
@@ -416,15 +433,9 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         }
 
         /* now copy final results from tmp_results to recvbuf */
-        if (sendbuf != MPI_IN_PLACE)
-            mpi_errno = MPIR_Localcopy(((char *)tmp_results+displs[rank]*extent),
-                                       recvcnts[rank], datatype, recvbuf,
-                                       recvcnts[rank], datatype); 
-        else
-            mpi_errno = MPIR_Localcopy(((char *)tmp_results+displs[rank]*extent),
-                                       recvcnts[rank], datatype, 
-                                       ((char *)recvbuf+displs[rank]*extent),
-                                       recvcnts[rank], datatype); 
+        mpi_errno = MPIR_Localcopy(((char *)tmp_results+displs[rank]*extent),
+                                   recvcnts[rank], datatype, recvbuf,
+                                   recvcnts[rank], datatype); 
 
         if (mpi_errno) return mpi_errno;
         
