@@ -126,3 +126,12 @@ AC_DEFUN(PAC_F90_MODULE,[
 PAC_F90_MODULE_EXT
 PAC_F90_MODULE_INCFLAG
 ])
+AC_DEFUN(PAC_F90_EXT,[
+AC_CACHE_CHECK([whether Fortran 90 accepts f90 suffix],
+pac_cv_f90_ext_f90,[
+save_ac_f90ext=$ac_f90ext
+ac_f90ext="f90"
+PAC_TRY_F90_COMPILE(,,pac_cv_f90_ext_f90="yes",pac_cv_f90_ext_f90="no")
+ac_f90ext=$save_ac_f90ext
+])
+])

@@ -4,3 +4,7 @@ pac.log
 pac.aux
 acconfig.h
 Makefile
+configure.in
+configure
+config.log
+config.status

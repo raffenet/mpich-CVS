@@ -177,7 +177,7 @@ dnl
 AC_DEFUN(PAC_PROG_MAKE_VPATH,[
 AC_SUBST(VPATH)
 AC_CACHE_CHECK([for virtual path format],
-pac_prog_make_vpath,[
+pac_cv_prog_make_vpath,[
 rm -rf conftest*
 mkdir conftestdir
 cat >conftestdir/a.c <<EOF
@@ -191,8 +191,7 @@ VPATH=.:conftestdir
 EOF
 ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
 if test -n "$ac_out" ; then 
-    pac_prog_make_vpath="VPATH"
-    VPATH='VPATH=.:$(srcdir)'
+    pac_cv_prog_make_vpath="VPATH"
 else
     rm -f conftest
     cat > conftest <<EOF
@@ -203,14 +202,18 @@ all: a.o
 EOF
     ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
     if test -n "$ac_out" ; then 
-        pac_prog_make_vpath=".PATH"
-        VPATH='.PATH: . $(srcdir)'
+        pac_cv_prog_make_vpath=".PATH"
     else
-	pac_prog_make_vpath="neither VPATH nor .PATH works"
+	pac_cv_prog_make_vpath="neither VPATH nor .PATH works"
     fi
 fi
 rm -rf conftest*
 ])
+if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
+    VPATH='VPATH=.:${srcdir}'
+elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
+    VPATH='.PATH: . ${srcdir}'
+fi
 ])dnl
 dnl
 dnl/*D
