@@ -14,7 +14,7 @@
 */
 int main( int argc, char *argv[] )
 {
-    MPI_Group g1, g2, g4, g5, g45;
+    MPI_Group g1, g2, g4, g5, g45, selfgroup;
     int ranks[16], size, rank, myrank, range[1][3];
     int errs = 0;
     int i, rin[3], rout[3], result;
@@ -64,6 +64,16 @@ int main( int argc, char *argv[] )
 			 i, rout[i], ranks[i] );
 		errs++;
 	    }
+	}
+	
+	/* Translate the process of the self group against another group */
+	MPI_Comm_group( MPI_COMM_SELF, &selfgroup );
+	rin[0] = 0;
+	MPI_Group_translate_ranks( selfgroup, 1, rin, g1, rout );
+	if (rout[0] != myrank) {
+	    fprintf( stderr, "translated of self is %d should be %d\n", 
+			 rout[0], myrank );
+	    errs++;
 	}
 	
 	/* Add tests for additional group operations */
