@@ -2,6 +2,7 @@ configure
 simplemake
 checkbuilds
 getstates
+showsizes
 config.log
 config.cache
 config.status
