@@ -72,26 +72,6 @@
 #else
 #define MPID_READ_WRITE_BARRIER()
 #endif
-
-#elif defined(HAVE___ASM_AND_PENTIUM_ASM)
-#ifdef HAVE___ASM_AND_X86_SFENCE
-/*#define MPID_WRITE_BARRIER() __asm sfence */
-#define MPID_WRITE_BARRIER()
-#else
-#define MPID_WRITE_BARRIER()
-#endif
-#ifdef HAVE___ASM_AND_X86_LFENCE
-#define MPID_READ_BARRIER() __asm __emit 0x0f __asm __emit 0xae __asm __emit 0xe8
-#else
-#define MPID_READ_BARRIER()
-#endif
-#ifdef HAVE___ASM_AND_X86_MFENCE
-/*#define MPID_READ_WRITE_BARRIER() __asm __emit 0x0f __asm __emit 0xae __asm __emit 0xf0*/
-#define MPID_READ_WRITE_BARRIER()
-#else
-#define MPID_READ_WRITE_BARRIER()
-#endif
-
 #else
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
@@ -174,7 +154,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */						     \
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=0x%08x req=0x%08x", \
 	              (unsigned long) vc, req->handle));		     \
-    req->dev.next = vc->ch.sendq_tail;					     \
+    req->dev.next = vc->ch.sendq_head;					     \
     if (vc->ch.sendq_tail == NULL)					     \
     {									     \
 	vc->ch.sendq_tail = req;					     \
