@@ -5,6 +5,8 @@ Makefile.in
 Makefile
 mpidu_socki_conf.h.in
 mpidu_socki_conf.h
+sockpollconf.h.in
+sockpollconf.h
 localdefs
 *.o
 *.lo
