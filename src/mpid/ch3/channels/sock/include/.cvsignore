@@ -1,8 +1,2 @@
-Makefile
-Makefile.in
-*.o
-*.lo
-*.bb
-*.bbg
-*.da
-*.gcov
+mpidi_ch3i_sock_conf.h.in
+mpidi_ch3i_sock_conf.h
