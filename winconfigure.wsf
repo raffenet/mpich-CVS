@@ -1482,6 +1482,7 @@ Function BuildIFaces()
 
 		Set WshShell = CreateObject("WScript.Shell")
 		WshShell.CurrentDirectory = "src\binding\cxx"
+		cEcho WshShell.CurrentDirectory & ">perl buildiface -nosep"
 		WshShell.Run "perl buildiface -nosep", 0, true
 		WshShell.CurrentDirectory = "..\..\.."
 	
@@ -1551,6 +1552,7 @@ Function BuildIFaces()
 	
 			Set WshShell = CreateObject("WScript.Shell")
 			WshShell.CurrentDirectory = "src\binding\mcxx"
+			cEcho WshShell.CurrentDirectory & ">perl buildiface -nosep"
 			WshShell.Run "perl buildiface -nosep", 0, true
 			WhShell.CurrentDirectory = "..\..\.."
 	
@@ -1592,6 +1594,7 @@ Function BuildIFaces()
 
 			Set WshShell = CreateObject("WScript.Shell")
 			WshShell.CurrentDirectory = "src\binding\f77"
+			cEcho WshShell.CurrentDirectory & ">perl buildiface"
 			WshShell.Run "perl buildiface", 0, true
 			WshShell.CurrentDirectory = "..\..\.."
 
@@ -1662,6 +1665,7 @@ Function BuildIFaces()
 
 			Set WshShell = CreateObject("WScript.Shell")
 			WshShell.CurrentDirectory = "src\binding\f90"
+			cEcho WshShell.CurrentDirectory & ">perl buildiface"
 			WshShell.Run "perl buildiface", 0, true
 			WshShell.CurrentDirectory = "..\..\.."
 
@@ -1690,6 +1694,7 @@ BuildIFaces()
 Function RunCmd(cmd_line)
 	Dim results(2)
 	Set WshShell = CreateObject("WScript.Shell")
+	cEcho WshShell.CurrentDirectory & ">" & cmd_line
 	Set oExec = WshShell.Exec(cmd_line)
 	cmd_output = ""
     err_output = ""
@@ -1761,6 +1766,7 @@ Function GenerateStatesFiles()
 		fin.Close()
 		fout.Close()
 		Set WshShell = CreateObject("WScript.Shell")
+		cEcho WshShell.CurrentDirectory & ">perl maint\genstates"
 		WshShell.Run "perl maint\genstates", 0, true
 
 	Else
