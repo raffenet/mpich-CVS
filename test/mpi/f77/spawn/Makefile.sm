@@ -5,6 +5,7 @@ smvar_do_sharedlibs = 0
 namepubf_SOURCES = namepubf.f
 spawnf_SOURCES = spawnf.f
 spawnargvf_SOURCES = spawnargvf.f
+spawnmultf_SOURCES = spawnmultf.f
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
