@@ -20,9 +20,6 @@
 #if defined(HAVE_DIRECT_H) || defined(HAVE_WINDOWS_H)
 #include <direct.h>
 #endif
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
 
 void mp_print_options(void)
 {
@@ -186,16 +183,8 @@ void timeout_thread(void *p)
     smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
     ExitProcess(-1);
 }
-#elif defined(HAVE_PTHREAD_H)
-static int g_timeout = 0;
-static pthread_t g_hTimeoutThread = 0;
-void * timeout_thread(void *p)
-{
-    sleep(g_timeout);
-    smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
-    exit(-1);
-    return NULL;
-}
+#else
+static int g_timeout = -1;
 #endif
 
 int mp_parse_command_args(int *argcp, char **argvp[])
@@ -915,15 +904,20 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-#if defined(HAVE_WINDOWS_H) || defined(HAVE_PTHREAD_H)
+#ifdef HAVE_WINDOWS_H
 		g_timeout = atoi((*argvp)[2]);
 		if (g_timeout > 0 && g_hTimeoutThread == NULL)
 		{
-#ifdef HAVE_WINDOWS_H
 		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+		}
 #else
-		    pthread_create(&g_hTimeoutThread, NULL, timeout_thread, NULL);
-#endif
+		if (g_timeout == -1)
+		{
+		    g_timeout = atoi((*argvp)[2]);
+		    if (g_timeout > 0)
+			alarm(g_timeout);
+		    else
+			g_timeout = -1;
 		}
 #endif
 		num_args_to_strip = 2;
@@ -935,7 +929,7 @@ configfile_loop:
 	    strip_args(argcp, argvp, num_args_to_strip);
 	}
 
-#if defined(HAVE_WINDOWS_H) || defined(HAVE_PTHREAD_H)
+#ifdef HAVE_WINDOWS_H
 	if (g_hTimeoutThread == NULL)
 	{
 	    char *p = getenv("MPIEXEC_TIMEOUT");
@@ -944,11 +938,20 @@ configfile_loop:
 		g_timeout = atoi(p);
 		if (g_timeout > 0)
 		{
-#ifdef HAVE_WINDOWS_H
 		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+		}
+	    }
+	}
 #else
-		    pthread_create(&g_hTimeoutThread, NULL, timeout_thread, NULL);
-#endif
+	if (g_timeout == -1)
+	{
+	    char *p = getenv("MPIEXEC_TIMEOUT");
+	    if (p)
+	    {
+		g_timeout = atoi(p);
+		if (g_timeout > 0)
+		{
+		    alarm(g_timeout);
 		}
 	    }
 	}
