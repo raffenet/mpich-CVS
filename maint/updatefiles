@@ -480,11 +480,13 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 #  		    else
 		        # Using an explicit acIncDirFlag will force
 		        # a consistent choice of autoconf
-		        (cd $dir && autoheader $acIncDirFlag . && \
+		        # Only use autoheader if AC_CONFIG_HEADER is
+	 		# present
+			if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
+		        (cd $dir && autoheader $acIncDirFlag . )
+			fi
+			(cd $dir && \
 			autoconf $acIncDirFlag . && rm -rf autom4te.cache )
-#		        (cd $dir && \
-#		         autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
-#		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
 #		     fi
 #		fi
 	            if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
@@ -503,8 +505,10 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    # choice of autoconf is made by systems that 
 		    # support 2.1x and 2.57+
 		    echo $dir
-		    (cd $dir && autoheader $acIncDirFlag . && \
-		    autoconf $acIncDirFlag . )
+ 		    if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
+		        (cd $dir && autoheader $acIncDirFlag . )
+		    fi
+		    (cd $dir && autoconf $acIncDirFlag . )
 		    continue
 	    fi
 	    # First, check for a configure target in Makefile.in
@@ -530,8 +534,10 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    # now)
 		    if egrep 'AC_ARG|AC_CHECK_FUNCS' $dir/configure.in >/dev/null 2>&1 ; then
 		        echo "Trying simple autoheader/autoconf in $dir"
-		        (cd $dir && autoheader $acIncDirFlag . && \
-			autoconf $acIncDirFlag . )
+			if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
+		            (cd $dir && autoheader $acIncDirFlag . )
+			fi
+			(cd $dir && autoconf $acIncDirFlag . )
 		    else
 		        # Try autoconf-1.7; accepts failures gracefully
 		        echo "Trying simple autoconf using 1.7 in $dir"
