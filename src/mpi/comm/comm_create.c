@@ -58,7 +58,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPRI_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
