@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "smpd.h"
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
