@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include "mpiimpl.h"
 #include "namepub.h"
 
@@ -102,10 +103,46 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     /* Now, open the file and write out the port name */
     fp = fopen( filename, "w" );
     if (!fp) {
+	char *reason;
+	char rbuf[50];
+	/* Generate a better error message */
+	/* Check for errno = 
+ 	     EACCES (access denied to file or a dir),
+	     ENAMETOOLONG (name too long)
+	     ENOENT (no such directory)
+	     ENOTDIR (a name in the path that should have been a directory
+	              wasn't)
+	     ELOOP (too many symbolic links in path)
+             ENOMEM (insufficient kernel memory available)
+	   There are a few others that aren't covered here
+	*/
+#ifdef HAVE_STRERROR
+	reason = strerror( errno );
+#else
+	/* FIXME: This should use internationalization calls */
+	switch (errno) {
+	case EACCES:
+	    reason = "Access denied to some element of the path";
+	    break;
+	case ENAMETOOLONG:
+	    reason = "File name is too long";
+	    break;
+	case ENOENT:
+	    reason = "A directory specified in the path does not exist";
+	    break;
+	case ENOTDIR:
+	    reason = "A name specified in the path exists, but is not a directory and is used where a directory is required";
+	    break;
+	case ENOMEM:
+	    reason "Insufficient kernel memory available";
+	default:
+	    MPIU_Snprintf( rstr, sizeof(rstr), "errno = %d", errno );
+	}
+#endif
 	err = MPIR_Err_create_code( 
 	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-	    MPI_ERR_OTHER, "**namepublish",
-	    "**namepublish %s", service_name );
+	    MPI_ERR_OTHER, "**namepubfile",
+	    "**namepubfile %s %s %s", service_name, filename, reason );
 	return err;
     }
     /* Should also add date? */
