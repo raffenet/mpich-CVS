@@ -320,52 +320,52 @@ sub AddTestCall {
 	    }
 	    elsif ($type eq "p")
 	    {
-		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
+		print TESTFD "    char s$narg\[\] = \"pointer$narg\";\n";
 		$args[$#args+1] = "s$narg";
 	    }
 	    elsif ($type eq "C")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_COMM_WORLD;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "I")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_INFO_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "D")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_INT;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "F")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_FILE_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "W")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_WIN_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "G")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_GROUP_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "O")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_SUM;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "R")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_REQUEST_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "E")
 	    {
-		print TESTFD "    int i$narg = $narg;\n";
+		print TESTFD "    int i$narg = MPI_ERRORS_RETURN;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    else
