@@ -20,6 +20,7 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
+#undef MPIO_BUILD_PROFILING
 #endif
 
 /* status object not filled currently */
@@ -60,6 +61,8 @@ int MPI_File_read_all(MPI_File mpi_fh, void *buf, int count,
 }
 
 /* Note: MPIOI_File_read_all also used by MPI_File_read_at_all */
+/* prevent multiple definitions of this routine */
+#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
 int MPIOI_File_read_all(MPI_File mpi_fh,
 			MPI_Offset offset,
 			int file_ptr_type,
@@ -100,3 +103,4 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
 			 offset, status, &error_code);
     return error_code;
 }
+#endif

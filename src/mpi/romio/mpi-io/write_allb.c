@@ -22,6 +22,7 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
+#undef MPIO_BUILD_PROFILING
 #endif
 
 /*@
@@ -49,6 +50,8 @@ int MPI_File_write_all_begin(MPI_File mpi_fh, void *buf, int count,
     return error_code;
 }
 
+/* prevent multiple definitions of this routine */
+#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
 int MPIOI_File_write_all_begin(MPI_File mpi_fh,
 			       MPI_Offset offset,
 			       int file_ptr_type,
@@ -97,3 +100,4 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
 			  offset, &fh->split_status, &error_code);
     return error_code;
 }
+#endif

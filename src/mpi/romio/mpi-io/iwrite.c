@@ -22,6 +22,7 @@
 /* Include mapping from MPI->PMPI */
 #define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
+#undef MPIO_BUILD_PROFILING
 #endif
 
 /*@
@@ -90,6 +91,8 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
 
 
 #ifndef HAVE_MPI_GREQUEST
+/* prevent multiple definitions of this routine */
+#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
 int MPIOI_File_iwrite(MPI_File mpi_fh,
 		      MPI_Offset offset,
 		      int file_ptr_type,
@@ -188,4 +191,5 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
 
     return error_code;
 }
+#endif
 #endif
