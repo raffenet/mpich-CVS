@@ -192,8 +192,11 @@ dnl
 dnl For each file 'foo.c', this creates a file 'foo.dep' and creates a file
 dnl 'Depends' that contains all of the '*.dep' files.
 dnl
-dnl For your convenience, the autoconf variable 'C_DO_DEPENDS' contains 
-dnl this code (you must have `dependsrule` in directory '???dir')
+dnl For your convenience, the autoconf variable 'C_DO_DEPENDS' names a file 
+dnl that may contain this code (you must have `dependsrule` or 
+dnl `dependsrule.in` in the same directory as the other auxillery configure 
+dnl scripts (set with dnl 'AC_CONFIG_AUX_DIR').  If you use `dependsrule.in`,
+dnl you must have `dependsrule` in 'AC_OUTPUT' before this `Makefile`.
 dnl 
 dnlD*/
 dnl 
@@ -201,9 +204,10 @@ dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
 dnl includes, such as /usr/xxxx and /opt/xxxx
 dnl
 AC_DEFUN(PAC_C_DEPENDS,[
-AC_SUBST(C_DEPEND_OPT)
-AC_SUBST(C_DEPEND_OUT)
-AC_SUBST(C_DEPEND_MV)
+AC_SUBST(C_DEPEND_OPT)AM_IGNORE(C_DEPEND_OPT)
+AC_SUBST(C_DEPEND_OUT)AM_IGNORE(C_DEPEND_OUT)
+AC_SUBST(C_DEPEND_MV)AM_IGNORE(C_DEPEND_MV)
+AC_SUBST(C_DEPEND_PREFIX)AM_IGNORE(C_DEPEND_PREFIX)
 AC_SUBST_FILE(C_DO_DEPENDS) 
 dnl set the value of the variable to a 
 dnl file that contains the dependency code, such as
@@ -273,12 +277,12 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
     fi
     copt=""
 done
-    if test -f $CONFIG_AUX_DIR/dependsrule ; then
+    if test -f $CONFIG_AUX_DIR/dependsrule -o \
+	    -f $CONFIG_AUX_DIR/dependsrule.in; then
 	C_DO_DEPENDS="$CONFIG_AUX_DIR/dependsrule"
     else 
 	C_DO_DEPENDS="/dev/null"
     fi
-    AC_SUBST(C_DEPEND_PREFIX)
     if test "X$copt" = "X" ; then
         C_DEPEND_PREFIX="true"
     else
