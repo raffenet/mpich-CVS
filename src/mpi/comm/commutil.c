@@ -40,7 +40,7 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
-    (*newcomm_ptr)->ref_count = 1;
+    MPIU_Object_set_ref( *newcomm_ptr, 1 );
 
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
        use the appropriate algorithm to get a new context id */
@@ -162,7 +162,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
-    newcomm_ptr->ref_count = 1;
+    MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->context_id = new_context_id;
 
     /* Duplicate the VCRT references */

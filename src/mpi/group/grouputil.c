@@ -32,7 +32,7 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
-    (*new_group_ptr)->ref_count = 1;
+    MPIU_Object_set_ref( *new_group_ptr, 1 );
     (*new_group_ptr)->lrank_to_lpid = 
 	(MPID_Group_pmap_t *)MPIU_Malloc( nproc * sizeof(MPID_Group_pmap_t) );
     if (!(*new_group_ptr)->lrank_to_lpid) {

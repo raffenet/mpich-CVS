@@ -89,7 +89,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 	return MPI_ERR_NOMEM;
     }
     lrequest_ptr->kind                 = MPID_UREQUEST;
-    lrequest_ptr->ref_count            = 2;
+    MPIU_Object_set_ref( lrequest_ptr, 2 );
     lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
     lrequest_ptr->cc                   = 1;
     lrequest_ptr->comm                 = NULL;

@@ -155,7 +155,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
-	newcomm_ptr->ref_count = 1;
+	MPIU_Object_set_ref( newcomm_ptr, 1 );
 	newcomm_ptr->context_id = new_context_id;
 	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
 	newcomm_ptr->rank        = group_ptr->rank;

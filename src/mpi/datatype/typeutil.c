@@ -84,7 +84,7 @@ void MPIR_Datatype_init( void )
 		dptr->handle	   = mpi_dtypes[i];
 		dptr->is_permanent = 1;
 		dptr->is_contig	   = 1;
-		dptr->ref_count	   = 1;
+		MPIU_Object_set_ref( dptr, 1 );
 		MPID_Datatype_get_size_macro(mpi_dtypes[i], dptr->size);
 		dptr->extent	   = dptr->size;
 		dptr->ub	   = dptr->size;

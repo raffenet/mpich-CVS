@@ -89,7 +89,7 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     keyval_ptr->handle           = (keyval_ptr->handle & ~(0x03c00000)) |
 	(MPID_COMM << 22);
     *comm_keyval		 = keyval_ptr->handle;
-    keyval_ptr->ref_count        = 1;
+    MPIU_Object_set_ref(keyval_ptr,1);
     keyval_ptr->language         = MPID_LANG_C;
     keyval_ptr->kind	         = MPID_COMM;
     keyval_ptr->extra_state      = extra_state;
