@@ -2404,6 +2404,8 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef USE_STDARG */")
 				Case "HAVE_MPI_WTIME"
 					fout.WriteLine("#define HAVE_MPI_WTIME 1")
+				Case "STDCALL"
+					fout.WriteLine("/* #undef STDCALL */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
