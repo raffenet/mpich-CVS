@@ -42,6 +42,11 @@
  a common pointer extension.  See Section 4.11 (Memory Allocation) in the
  MPI-2 standard for more information and examples.
 
+   Also note that while 'baseptr' is a 'void *' type, this is 
+   simply to allow easy use of any pointer object for this parameter.  
+   In fact, this argument is really a 'void **' type, that is, a 
+   pointer to a pointer. 
+
 .N Fortran
 
 .N Errors
@@ -54,6 +59,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 {
     static const char FCNAME[] = "MPI_Alloc_mem";
     int mpi_errno = MPI_SUCCESS;
+    void *ap;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLOC_MEM);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ALLOC_MEM);
@@ -79,11 +85,12 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* FIXME: This should be MPID_Mem_alloc */
-    baseptr = MPIU_Malloc(size);
-    if (!baseptr) {
+    ap = MPIU_Malloc(size);
+    if (!ap) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**allocmem", 0 );
         return mpi_errno;
     }
+    *(void **)baseptr = ap;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
     return MPI_SUCCESS;
