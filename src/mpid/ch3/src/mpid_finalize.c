@@ -17,6 +17,8 @@ int MPID_Finalize()
     
     mpi_errno = MPIDI_CH3_Finalize();
     
+    MPIU_Free(MPIDI_Process.processor_name);
+    
     MPIDI_dbg_printf(10, FCNAME, "exiting");
     return mpi_errno;
 }
