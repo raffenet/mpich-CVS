@@ -3,8 +3,11 @@
 % channel device implementation of ADI3  
 
 \documentclass{article}
-\usepackage{/usr/local/sowing-1.1.6/share/refman}
-\usepackage{/usr/local/src/sowing-1.1.6/docs/doctext/tpage}
+%\usepackage{/usr/local/sowing-1.1.6/share/refman}
+%\usepackage{/usr/local/src/sowing-1.1.6/docs/doctext/tpage}
+%\usepackage{refman}
+%\usepackage{tpage}
+\usepackage{code}
 \usepackage{url} 
 \usepackage{epsf}
 \usepackage{psfig}
@@ -21,8 +24,8 @@
 %\def_{\texttt{\char`\_}}
 %\catcode`\_=11
 %\def\code#1{\texttt{#1}}
-\def\code{\begingroup\makeustext\eatcode}
-\def\eatcode#1{\texttt{#1}\endgroup}
+%\def\code{\begingroup\makeustext\eatcode}
+%\def\eatcode#1{\texttt{#1}\endgroup}
 \let\file=\code
 
 \begin{document}
@@ -131,7 +134,7 @@ dozen kinds of
     \item[rndv\_send.]send and receive request id, followed immediately by data
     \item[cancel\_send\_req.]Send request id to cancel
     \item[cancel\_send\_resp.]Send request id and true/false (ack/nak) for was
-	 cancelled
+         cancelled
     \item[flow\_cntl\_update.]Flow control for eager messages and rendezvous
       requests.  This is separate from any low-level flow control, though it
       may be coordinated with it.  For example, we may include knowledge about
@@ -554,7 +557,7 @@ the CH3 device, packing and unpacking may be done incrementally.  The
 routines such as \code{CH3\_iWrite} and \code{CH3\_iRead} are used for
 transfering these incrementally packed buffers.
 
-\section{Pseudo-code for some of the \code{MPID\_} routines}
+\section{Pseudo-code for some of the \protect\code{MPID\_} routines}
 This section outlines the pseudocode for some of the major MPID
 routines.
 Note that many of these operations only begin a communication.  The
@@ -1126,7 +1129,7 @@ the debugger interface provides for both a receive and send queue
 interface; the debugger can get a list of the pending send and receive
 operations, along with the unexpected messages.
 
-\section{Implementing \code{mpiexec}}
+\section{Implementing \protect\code{mpiexec}}
 \label{sec:mpiexec}
 
 (This is a temporary spot for these remarks, since they may apply to more than
@@ -1313,11 +1316,11 @@ CH3_request_create()
        int limit = 200;
        do { 
           CH3_Progress( 0 );
-	  request = MPIU_Handle_obj_alloc(&MPID_Request_mem);
+          request = MPIU_Handle_obj_alloc(&MPID_Request_mem);
        }
        while (!request && limit--) {
        if (!request) { 
-	   MPID_Abort( ) // Give up
+           MPID_Abort( ) // Give up
     }
     request->ref_count = 1;
     return request;

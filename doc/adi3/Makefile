@@ -118,6 +118,7 @@ clean:
 	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
 	rm -f *.ilg adi3man.ind adi3new.ind *.blg *.toc
 	rm -f adi3man/*.tex
+	rm -f adi3new.ps tcpadi3.ps
 
 #
 # The following are helpers for assembling the reference manual
