@@ -18,8 +18,9 @@ public class YCoordMap
     private int[]      map_elems;      /* of length num_rows * num_columns */
     private Method[]   methods;
 
-    public YCoordMap( int Nrows, int Ncolumns, String title,
-                      String[] col_names, int[] ielems, int[] methodIDs )
+    public YCoordMap( int Nrows, int Ncolumns,
+                      String title, String[] col_names,
+                      int[] ielems, int[] methodIDs )
     {
         num_rows     = Nrows;
         num_columns  = Ncolumns;

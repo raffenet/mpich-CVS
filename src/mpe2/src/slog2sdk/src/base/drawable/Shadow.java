@@ -132,10 +132,11 @@ public class Shadow extends Primitive
         Coord[] shade_vtxs = super.getVertices();
 
         if ( prime_vtxs.length != shade_vtxs.length ) {
-            System.err.println( "Shadow.mergeWithPrimitive(): ERROR! "
-                              + "Incompatible Topology between "
-                              + "Shadow and Primitive." );
-            System.exit( 1 );
+            String err_msg = "Shadow.mergeWithPrimitive(): ERROR! "
+                           + "Incompatible Topology between "
+                           + "Shadow and Primitive.";
+            throw new IllegalArgumentException( err_msg );
+            // System.exit( 1 );
         }
 
         // do a Time Average over the total number of real drawables
@@ -175,10 +176,11 @@ public class Shadow extends Primitive
         Coord[] shade_vtxs = super.getVertices();
 
         if ( sobj_vtxs.length != shade_vtxs.length ) {
-            System.err.println( "Shadow.mergeWithShadow(): ERROR! "
-                              + "Incompatible Topology between "
-                              + "the 2 Shadows." );
-            System.exit( 1 );
+            String err_msg = "Shadow.mergeWithShadow(): ERROR! "
+                           + "Incompatible Topology between "
+                           + "the 2 Shadows.";
+            throw new IllegalArgumentException( err_msg );
+            // System.exit( 1 );
         }
 
         double old_duration, new_duration;

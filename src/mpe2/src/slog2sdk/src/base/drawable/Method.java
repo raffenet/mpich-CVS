@@ -27,6 +27,11 @@ public class Method
         index  = in_index;
     }
 
+    public int getMethodIndex()
+    {
+        return index;
+    }
+
     public boolean equals( final Method a_method )
     {
         return this.index == a_method.index;

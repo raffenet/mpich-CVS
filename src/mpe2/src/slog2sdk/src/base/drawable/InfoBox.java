@@ -129,6 +129,16 @@ public class InfoBox extends TimeBoundingBox
         return false;
     }
 
+    // For SLOG-2 Pipe Input API, undo what resolveCategory() has done.
+    // So resolveCategory() can be used on the InfoBox (or Drawable) again.
+    public void releaseCategory()
+    {
+        if ( type != null ) {
+            type.setUsed( false );
+            type  = null;
+        }
+    }
+
     public Category getCategory()
     {
         return type;

@@ -18,8 +18,6 @@ public interface InputAPI
 
     public Topology   getNextTopology();
 
-    public Category   getShadowCategoryForTopology( final Topology topo );
-
     public Category   getNextCategory();
 
     public Primitive  getNextPrimitive();
