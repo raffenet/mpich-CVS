@@ -84,8 +84,7 @@ typedef struct ibu_state_t
     ib_qp_handle_t qp_handle;
     ibuBlockAllocator allocator;
 
-    IB_mtu_t mtu_size;
-    IB_lid_t dlid;
+    ib_net16_t dlid;
     ib_mr_handle_t mr_handle;
     uint32_t dest_qp_num;
 
@@ -477,7 +476,6 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
     p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
-    p->mtu_size = 3; /* 3 = 2048 */
     /* save the lkey for posting sends and receives */
     p->lkey = s_lkey;
 
