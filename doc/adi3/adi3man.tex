@@ -448,6 +448,32 @@ Still to do.  This section needs to cover:
 \item Testing codes for device-specific functions.
 \end{enumerate}
 
+\section{Motivation}
+Why is the ADI so complex?  Consider the following scenarios:
+\begin{enumerate}
+\item \code{MPI_Irsend( MPI_BOTTOM, 1, my_indexed_datatype, ... )}
+where the datatype describes 50MB of data, each entry of which is a
+structure.
+\item \code{MPI_Accumulate( MPI_BOTTOM, 1, my_indexed_datatype, ..., 
+   my_vector_type, ..., MPI_MAXLOC )}, where \code{my_vector_type} is
+a vector datatype of structures, and the amount of data is 50MB, and
+the access is passive target (the target process makes no MPI calls,
+but the operation must complete).
+\item 
+\end{enumerate}
+
+Any of these may be implemented using the MPID CORE interface.
+However, that interface may not provide the best efficiency.  Consider
+the case of a simple send and receive of contiguous data.  In a system
+providing cache-coherent shared-memory hardware, it may be possible to
+implement this by having the sender directly manipulate the queues of
+the receiver, including delivering the data.  The MPID CORE
+implementation cannot express that approach, so a more powerful (but
+more specific and thus less general) interface is also provided.  Of
+course, for maximum flexibility, an implementor can bypass the ADI and
+implement the MPI routines directly, perhaps taking advantage of the
+parameter checking code in the MPICH2 implementation.
+
 % Add manual entries to the table of contents
 \mancontentstrue
 

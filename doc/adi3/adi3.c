@@ -686,6 +686,9 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
  * requests described here apply only to the common requests used in 
  * MPI_Isend, MPI_Irecv, etc.  The implementation of the MPI functions
  * such as MPI_Waitsome will handle these different kinds of requests.
+ *
+ * Actually, this isn't quite true.  Now that we have MPID_Irecv etc., 
+ * MPID_Waitsome will be presented with all kinds of requests.
  */
 
 /*@
@@ -1016,6 +1019,14 @@ int MPID_Mem_free( void *ptr )
  * containing the data to 
  * be transfered must not be modified until the operation has (locally) 
  * completed (as marked by the appropriate flag).
+ *
+ * I am unconvinced that we want to define 'MPID_Isend', 'MPID_Irecv', etc.,
+ * as part of the ADI, because of the complexities in handling general 
+ * datatypes.  Further, this doesn't offer much of an abstraction, since an 
+ * implementor can simply replace that part of the code in the MPI version
+ * of the routine.  We may instead want to define either some routines for
+ * simpler datatypes (e.g., contiguous, strided, or Unix-style iovec blocks), 
+ * or enhance or change the stream interface.
  T*/
 
 /*@
@@ -2065,9 +2076,13 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   Output Parameter:
 + provided - Provided level of thread support.  May be less than the 
   requested level of support.
-- parent_group - MPID group of parent.  This is null for all MPI-1 uses and 
+. parent_group - MPID group of parent.  This is null for all MPI-1 uses and 
   for processes that are `not` started with 'MPI_Comm_spawn' or 
   'MPI_Comm_spawn_multiple'.
+. has_args - Set to true if 'argc_p' and 'argv_p' contain the command
+  line arguments.  See below.
+- has_env  - Set to true if the environment of the process has been 
+  set as the user expects.  See below.
 
   Return value:
   Returns '0' on success and an MPI error code on failure.  Failure can happen
@@ -2086,6 +2101,31 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   'MPID_Request') may be in shared memory; others (e.g., 'MPID_Datatype') 
    may be allocated from an block of array values.  
 
+  The arguments 'has_args' and 'has_env' indicates whether the process was
+  started with command-line arguments or environment variables.  In some
+  cases, only the ``root'' process is started with these values; in others, 
+  the startup environment ensures that each process receives the 
+  command-line arguments and environment variables that the user expects. 
+  While the MPI standard makes no requirements that command line arguments or 
+  environment variables are provided to all processes, most users expect a
+  common environment.  These variables allow an MPI implementation (that is
+  based on ADI-3) to provide both of these.
+
+  Question: The values here are boolean.  They could be more specific.  For 
+  example, the value could indicate the rank in 'MPI_COMM_WORLD' of a 
+  process that has the values; the value 'MPI_ANY_SOURCE' (or a '-1') could
+  indicate that the value is available on all processes (including this one).
+  We may want this since otherwise the processes may need to determine whether
+  any process needs the command line.  Another option would be to use positive 
+  values in the same way that the 'color' argument is used in 'MPI_Comm_split';
+  a negative value indicates the member of the processes with that color that 
+  has the values of the command line arguments (or environment).  This allows
+  for non-SPMD programs.
+
+  Question: Setting the environment requires a 'setenv' function.  Some
+  systems may not have this.  In that case, the documentation must make 
+  clear that the environment may not be propagated to the generated processes.
+
   Module:
   MPID_CORE
 
@@ -2095,7 +2135,11 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   Do we require that all processes get the same argument lists (in the
   case where the user `wants` or expects that they get the same arguments)?
   Return the same argument lists?  
-  Can we fix the Fortran command-line   arguments?
+  Can we fix the Fortran command-line arguments?  That is, can we arrange for
+  'iargc' and 'getarg' (and the POSIX equivalents) to return the correct 
+  values?  See, for example, the Absoft implementations of 'getarg'.  
+  We could also contact PGI about the Portland Group compilers, and of 
+  course the 'g77' source code is available.
   Does each process have the same values for the environment variables 
   when this routine returns?
 
@@ -2132,10 +2176,14 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   causes problems for 'gdb', so we''d like to be able to leave 'SIGTRAP' 
   unchanged in some cases.
 
+  Another environment variable should control whether fault-tolerance is 
+  desired.  If fault-tolerance is selected, then some collective operations 
+  will need to use different algorithms and most fatal errors detected by the 
+  MPI implementation should abort only the affected process, not all processes.
   @*/
 int MPID_Thread_init( int *argc_p, char *(*argv_p)[], 
 		      int requested, int *provided,
-		      MPID_Group **parent_group )
+		      MPID_Group **parent_group, int *has_args, int *has_env )
 {
 }
 

@@ -502,6 +502,15 @@ typedef struct {
   case, we use the default routines.  The advantage of this, besides the
   reduction in space used by communicators, is that a small MPI application
   need not load all of the collective routines.
+
+  Do we want to make the context id available to other tools?  For example,
+  having a global context id makes message matching for tools like Jumpshot 
+  `much` easier.  In fact, the ADI could provide a function to provide a 
+  unique context id, which most implementations would implement directly from 
+  the given id.  Note that this is a unique, not a globally unique, id, since 
+  the value needs only be unique relative to the processes that can share in 
+  communication.  In other words, only the tuple (source/destination, 
+  context_id) must identify a unique communicator at each MPI process.
   S*/
 typedef struct { 
     volatile int ref_count;
