@@ -175,9 +175,11 @@ typedef void (MPI_Comm_errhandler_fn)(MPI_Comm *, int *, ...);
 typedef void (MPI_File_errhandler_fn)(MPI_File *, int *, ...);
 typedef void (MPI_Win_errhandler_fn)(MPI_Win *, int *, ...);
 
-#define MPI_ERRORS_ARE_FATAL ((MPI_Errhandler)1)
-#define MPI_ERRORS_RETURN    ((MPI_Errhandler)2)
-#define MPIR_ERRORS_WARN     ((MPI_Errhandler)3)
+/* Built in (0x1 in 30-31), errhandler (0x5 in bits 26-29, allkind (0
+   in 22-25), index in the low bits */
+#define MPI_ERRORS_ARE_FATAL ((MPI_Errhandler)0x54000000)
+#define MPI_ERRORS_RETURN    ((MPI_Errhandler)0x54000001)
+      /* #define MPIR_ERRORS_WARN     ((MPI_Errhandler)0x54000002) */
 typedef int MPI_Errhandler;
 
 /* Make the C names for the null functions all upper-case.  Note that 
