@@ -42,6 +42,10 @@ while ($file = readdir(DIR)) {
 closedir( DIR );
 
 # &CreateMakefile( "filelist", $outdir );
+if ($makeTemplate ne "" &&
+    -s "$indir/$makeTemplate") {
+    &ConvertMakefile( $indir, $outdir, $makeTemplate );
+}
 
 exit 0;
 
@@ -87,5 +91,31 @@ sub ConvertToF90 {
 # in the filelist.
 # CreateMakefile( "filelist", $outdir )
 sub CreateMakefile {
-    
+    my $filelist = $_[0];
+    my $outdir   = $_[1];
+}
+
+#
+# Take an existing makefile and perform the following transformations:
+# .f -> .f90, .F -> .F90
+# Others as necessary
+# ConvertMakefile( indir, outdir, filename )
+# By providing the filename, we can accept Makefile, Makefile.in, Makefile.am,
+# Makefile.sm, or even nonstandard names such as buildscript
+sub ConvertMakefile {
+    my ($indir, $outdir, $filename) = @_;
+    open( INF, "<$indir/$filename" ) || die "Cannot open $indir/$filename\n";
+    open( OUTF, ">$outdir/$filename" ) || die "Cannot open $outdir/$filename\n";
+    while (<INF>) {
+	s/\.f/.f90/g;
+	s/\.F/.F90/g;
+	s/f77/f90/g;
+	s/F77/F90/g;
+	# Eventually need some way to update directory paths (particularly
+	# relative ones) and add F90 compile rules when not present.
+	print OUTF $_;
+    }
+
+    close( INF );
+    close( OUTF );
 }

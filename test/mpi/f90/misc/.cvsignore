@@ -2,3 +2,4 @@ Makefile.in
 Makefile
 sizeof
 *.o
+f77tof90

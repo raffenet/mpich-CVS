@@ -131,6 +131,9 @@ EOF
     fi
     rm -f conftest*
 fi
+# Find perl; used to create the F90 examples from F77 examples
+AC_PATH_PROG(PERL,perl)
+AC_SUBST(PERL)
 AC_SUBST(otherlangs)
 AC_SUBST(CC)
 AC_SUBST(FC)
@@ -143,6 +146,7 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
+AC_OUTPUT_COMMANDS([chmod a+x f90/misc/f77tof90])
 AC_OUTPUT(Makefile \
           basic/Makefile \
 	  attr/Makefile \
@@ -165,6 +169,8 @@ AC_OUTPUT(Makefile \
 	  f77/coll/Makefile \
 	  f77/rma/Makefile \
 	  f90/Makefile \
+	  f90/misc/Makefile \
+	  f90/misc/f77tof90 \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/coll/Makefile \
