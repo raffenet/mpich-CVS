@@ -2420,6 +2420,71 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_spawn_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    char ctx_key[100];
+
+    smpd_enter_fn("smpd_handle_spawn_command");
+
+    cmd = &context->read_cmd;
+    smpd_process.exit_on_done = SMPD_TRUE;
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a spawn command.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a spawn command.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+    /* copy the ctx_key for pmi control channel lookup */
+    if (!smpd_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100))
+    {
+	smpd_err_printf("no ctx_key in the spawn command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the ctx_key to the result command for spawn command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+
+    /* add the result */
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a spawn command.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to spawn command: \"%s\"\n", temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_spawn_command");
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -2653,6 +2718,12 @@ int smpd_handle_command(smpd_context_t *context)
 	}
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_CLOSE;
+    }
+    else if (strcmp(cmd->cmd_str, "spawn") == 0)
+    {
+	result = smpd_handle_spawn_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
     }
     else
     {
