@@ -12,7 +12,7 @@ extern "C" {
 
 /* config header file */
 //#include "mpichconf.h"
-#include "mpidi_ch3_conf.h"
+#include "mpidi_ch3i_ib_conf.h"
 #include "iba.h"
 #include "psc_iba.h"
 
@@ -63,9 +63,6 @@ typedef enum IBU_OP
 #define IBU_INFINITE        INFINITE
 #define IBU_INVALID_QP      0
 
-typedef ib_cq_handle_t ibu_set_t;
-typedef struct ibu_state_t * ibu_t;
-
 /* definitions/structures specific to Unix */
 #elif defined(IBU_TYPE_UNIX)
 
@@ -79,13 +76,12 @@ typedef struct ibu_state_t * ibu_t;
 #define IBU_INFINITE        -1
 #define IBU_INVALID_QP      0
 
-typedef ib_cq_handle_t ibu_set_t;
-typedef int ibu_t;
-
 #else
 #error Error: IBU_TYPE not defined
 #endif
 
+typedef ib_cq_handle_t ibu_set_t;
+typedef struct ibu_state_t * ibu_t;
 
 
 /* common structures */
