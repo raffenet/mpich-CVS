@@ -524,7 +524,7 @@ int PMI_Spawn_multiple(int count,
             }
         }
         MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
-        strcat(buf,tempbuf);
+        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
     
 /*        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
         strcat(buf,tempbuf);
@@ -757,7 +757,7 @@ int PMI_Set_from_port( int fd, int id )
     }
     /* Handshake and initialize from a port */
 
-    sprintf( buf, "cmd=initack pmiid=%d\n", id );
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
     err = PMIU_writeline( fd, buf );
     if (err) {
 	PMIU_printf( 1, "Error in writeline initack\n" );

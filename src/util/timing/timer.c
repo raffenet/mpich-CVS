@@ -274,12 +274,14 @@ int MPIU_Timer_finalize(void)
 /* This section of code is for the RLOG logging library */
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
 
-static char random_color_str[40];
+#define MAX_RANDOM_COLOR_STR 40
+static char random_color_str[MAX_RANDOM_COLOR_STR];
 static char *get_random_color_str()
 {
     unsigned char r,g,b;
     random_color(&r, &g, &b);
-    sprintf(random_color_str, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    MPIU_Snprintf(random_color_str, MAX_RANDOM_COLOR_STR, 
+		  "%3d %3d %3d", (int)r, (int)g, (int)b);
     return random_color_str;
 }
 

@@ -78,7 +78,7 @@ int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, char *leader )
     iosdata->outleader = 1;
     if (*leader) {
 	iosdata->leaderlen = strlen( leader );
-	strncpy( iosdata->leader, leader, MAXLEADER );
+	MPIU_Strncpy( iosdata->leader, leader, MAXLEADER );
     }
     else 
 	iosdata->leaderlen = 0;
@@ -266,9 +266,10 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
     }
     value[0] = 0;
     if (envval) {
+#define MAX_DIGITS 20	
 	const char *pin = envval;
 	char *pout = value;
-	char digits[20];
+	char digits[MAX_DIGITS];
 	int  dlen;
 	int  lenleft = maxlen-1;
 	/* Convert %d and %w to the given values */
@@ -279,10 +280,10 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 		switch (*pin) {
 		case '%': *pout++ = '%'; lenleft--; break;
 		case 'd': 
-		    sprintf( digits, "%d", rank );
+		    MPIU_Snprintf( digits, MAX_DIGITS, "%d", rank );
 		    dlen = strlen( digits );
 		    if (dlen < lenleft) {
-			strcat( pout, digits );
+			MPIU_Strnapp( pout, digits, maxlen );
 			pout += dlen;
 			lenleft -= dlen;
 		    }
@@ -295,7 +296,7 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 		    sprintf( digits, "%d", world );
 		    dlen = strlen(digits);
 		    if (dlen < lenleft) {
-			strcat( pout, digits );
+			MPIU_Strnapp( pout, digits, maxlen );
 			pout += dlen;
 			lenleft -= dlen;
 		    }

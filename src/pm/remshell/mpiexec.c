@@ -267,12 +267,14 @@ Usage: mpiexec -n <numprocs> -soft <softness> -host <hostname> \n\
 /* stdin/out/err are redirected so that we can explicitly manage them.     */
 /* Process are also started without waiting for any handshake.             */
 /* ----------------------------------------------------------------------- */
+#define MAX_ID_STR 10
+#define MAX_PORT_STR 1024
 int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 {
     int i;
     int pid;
-    char port_as_string[1024];
-    char id_as_string[10];
+    char port_as_string[MAX_PORT_STR];
+    char id_as_string[MAX_ID_STR];
 
     /* All processes use the same connection port back to the master 
        process */
@@ -328,7 +330,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    myargv[rshNargs++] = ";";
 	    myargv[rshNargs++] = "setenv";
 	    myargv[rshNargs++] = "PMI_ID";
-	    sprintf( id_as_string, "%d", i );
+	    MPIU_Snprintf( id_as_string, MAX_ID_STR, "%d", i );
 	    myargv[rshNargs++] = id_as_string;
 	    myargv[rshNargs++] = ";";
 	}

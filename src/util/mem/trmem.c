@@ -156,8 +156,9 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
 
     if (TRdebugLevel > 0) {
 	char buf[256];
-	sprintf( buf, "Invalid MALLOC arena detected at line %d in %s\n", 
-		 lineno, fname );
+	MPIU_Snprintf( buf, 256, 
+		       "Invalid MALLOC arena detected at line %d in %s\n", 
+		       lineno, fname );
 	if (MPIU_trvalid( buf )) return 0;
     }
 
@@ -189,7 +190,7 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     head->id       = TRid;
     head->lineno   = lineno;
     if ((l = (int)strlen( fname )) > TR_FNAME_LEN-1 ) fname += (l - (TR_FNAME_LEN-1));
-    strncpy( head->fname, fname, (TR_FNAME_LEN-1) );
+    MPIU_Strncpy( head->fname, fname, (TR_FNAME_LEN-1) );
     head->fname[TR_FNAME_LEN-1]= 0;
     head->cookie   = COOKIE_VALUE;
     nend           = (unsigned long *)(new + nsize);
@@ -282,7 +283,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     *nend		   = ALREADY_FREED;
     head->freed_lineno = line;
     if ((l = (int)strlen( file )) > TR_FNAME_LEN-1 ) file += (l - (TR_FNAME_LEN-1));
-    strncpy( head->freed_fname, file, (TR_FNAME_LEN-1) );
+    MPIU_Strncpy( head->freed_fname, file, (TR_FNAME_LEN-1) );
 
     allocated -= head->size;
     frags     --;

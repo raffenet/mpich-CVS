@@ -701,7 +701,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 int MPIU_Str_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *flag, int val)
 {
     char val_str[12];
-    sprintf(val_str, "%d", val);
+    MPIU_Snprintf(val_str, 12, "%d", val);
     return MPIU_Str_add_string_arg(str_ptr, maxlen_ptr, flag, val_str);
 }
 
