@@ -124,8 +124,8 @@ int MPID_Type_indexed(int count,
 	/* fill in remainder of new datatype */
 	new_dtp->size           = total_count * oldsize;
 	new_dtp->extent         = max_disp - min_disp; /* in bytes */
-	new_dtp->has_mpi1_ub    = 0;
-	new_dtp->has_mpi1_lb    = 0;
+	new_dtp->has_sticky_ub  = 0;
+	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
 	new_dtp->true_lb        = 0;
 	new_dtp->alignsize      = oldsize;
@@ -164,8 +164,8 @@ int MPID_Type_indexed(int count,
     else /* user-defined base type */ {
 	new_dtp->size           = total_count * old_dtp->size; /* in bytes */
 	new_dtp->extent         = max_disp - min_disp; /* in bytes */
-	new_dtp->has_mpi1_ub    = old_dtp->has_mpi1_ub;
-	new_dtp->has_mpi1_lb    = old_dtp->has_mpi1_lb;
+	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
+	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 	new_dtp->true_lb        = old_dtp->true_lb; /* ??? */
 	new_dtp->alignsize      = old_dtp->alignsize;

@@ -821,8 +821,8 @@ typedef struct MPID_Datatype {
                                     datatype */
     struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
                                           creating and when getting contents */
-    int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
-    int           has_mpi1_lb;
+    int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
+    int           has_sticky_lb;
     int           is_permanent;  /* True if datatype is a predefined type */
     int           is_committed;  /* */
 

@@ -64,8 +64,8 @@ int MPID_Type_vector(int count,
     new_dtp->name[0]      = 0;
 
     /* The remaining parameters are filled in based on whether oldtype is 
-     * a builtin or not: loopinfo, loopsize, size, extent, has_mpi1_ub,
-     * has_mpi1_lb, loopinfo_depth, true_lb, alignsize, n_elements, 
+     * a builtin or not: loopinfo, loopsize, size, extent, has_sticky_ub,
+     * has_sticky_lb, loopinfo_depth, true_lb, alignsize, n_elements, 
      * element_size.
      *
      * Plus of course the loopinfo itself must still be filled in.
@@ -81,8 +81,8 @@ int MPID_Type_vector(int count,
 	/* fill in remainder of new datatype */
 	new_dtp->size           = oldsize * count * blocklength;
 	new_dtp->extent         = ((count-1) * stride + blocklength) * oldsize;
-	new_dtp->has_mpi1_ub    = 0;
-	new_dtp->has_mpi1_lb    = 0;
+	new_dtp->has_sticky_ub  = 0;
+	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
 	new_dtp->true_lb        = 0;
 	new_dtp->alignsize      = oldsize;
@@ -125,8 +125,8 @@ int MPID_Type_vector(int count,
 	/* fill in datatype */
 	new_dtp->size           = old_dtp->size * count * blocklength;
 	new_dtp->extent         = ((count - 1) * stride + blocklength) * old_dtp->extent; /* ??? */
-	new_dtp->has_mpi1_ub    = old_dtp->has_mpi1_ub;
-	new_dtp->has_mpi1_lb    = old_dtp->has_mpi1_lb;
+	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
+	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 	new_dtp->true_lb        = old_dtp->true_lb; /* ??? */
 	new_dtp->alignsize      = old_dtp->alignsize;

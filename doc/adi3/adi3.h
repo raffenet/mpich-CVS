@@ -540,7 +540,7 @@ typedef struct dataloop_ {
   efficiency was outweighed by the added complexity of the implementation.
 
   A number of fields contain only boolean inforation ('is_contig', 
-  'has_mpi1_ub', 'has_mpi1_lb', 'is_permanent', 'is_committed').  These 
+  'has_sticky_ub', 'has_sticky_lb', 'is_permanent', 'is_committed').  These 
   could be combined and stored in a single bit vector.  
 
   'MPI_Type_dup' could be implemented with a shallow copy, where most of the
@@ -584,8 +584,8 @@ typedef struct {
 
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
-    int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
-    int           has_mpi1_lb;
+    int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
+    int           has_sticky_lb;
     int           is_permanent;  /* e.g., MPI_DOUBLE*/
     int           is_committed;  /* See MPID_Datatype_commit */
 

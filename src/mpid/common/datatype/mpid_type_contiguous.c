@@ -21,7 +21,7 @@
 . newtype - handle of new vector datatype
 
   Return Value:
-  0 on success, -1 on failure.
+  MPI_SUCCESS on success, -1 on failure.
 
   This routine calls MPID_Dataloop_create_struct() to create the loops for this
   new datatype.  It calls MPID_Datatype_new() to allocate space for the new
@@ -61,11 +61,12 @@ int MPID_Type_contiguous(int count,
 
 	new_dtp->size           = count * oldsize;
 	new_dtp->extent         = count * oldsize;
-	new_dtp->has_mpi1_ub    = 0;
-	new_dtp->has_mpi1_lb    = 0;
+	new_dtp->has_sticky_ub  = 0;
+	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
 	new_dtp->true_lb        = 0;
-	new_dtp->alignsize      = oldsize;
+	new_dtp->true_ub        = count * oldsize;
+	new_dtp->alignsize      = oldsize; /* ??? */
 	new_dtp->n_elements     = count;
 	new_dtp->is_contig      = 1;
 
@@ -83,8 +84,8 @@ int MPID_Type_contiguous(int count,
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.c_t.count      = count;
 	dlp->loop_params.c_t.u.handle   = oldtype;
-	dlp->el_extent                  = oldsize;
-	dlp->el_size                    = oldsize;
+	dlp->el_size                    = new_dtp->size;
+	dlp->el_extent                  = new_dtp->extent;
     }
     else /* user-defined base type */ {
 	int new_loopsize;
@@ -97,10 +98,11 @@ int MPID_Type_contiguous(int count,
 	/* fill in datatype */
 	new_dtp->size           = count * old_dtp->size;
 	new_dtp->extent         = count * old_dtp->extent;
-	new_dtp->has_mpi1_ub    = old_dtp->has_mpi1_ub; /* ??? */
-	new_dtp->has_mpi1_lb    = old_dtp->has_mpi1_lb; /* ??? */
+	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
+	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 	new_dtp->true_lb        = old_dtp->true_lb; /* ??? */
+	new_dtp->true_ub        = old_dtp->true_ub; /* WRONG */
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = count * old_dtp->n_elements; /* ??? */
 	new_dtp->is_contig      = old_dtp->is_contig; /* ??? */
@@ -121,8 +123,8 @@ int MPID_Type_contiguous(int count,
 	/* NOTE: new_dtp->handle is filled in by MPIU_Handle_obj_alloc() */
 	dlp->handle                = new_dtp->handle;
 	dlp->loop_params.c_t.count = count;
-	dlp->el_extent             = old_dtp->extent;
-	dlp->el_size               = old_dtp->size;
+	dlp->el_extent             = old_dtp->extent; /* WRONG */
+	dlp->el_size               = old_dtp->size; /* WRONG */
 
 	/* copy in old dataloop */
 	curpos = (char *) dlp; /* NEED TO PAD? */
@@ -135,3 +137,11 @@ int MPID_Type_contiguous(int count,
     *newtype = new_dtp->handle;
     return MPI_SUCCESS;
 }
+
+
+
+
+
+
+
+

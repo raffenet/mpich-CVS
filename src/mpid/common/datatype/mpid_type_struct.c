@@ -171,12 +171,12 @@ int MPID_Type_struct(int count,
 	/* deal with the LB and/or UB */
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	if (has_lb) {
-	    new_dtp->has_mpi1_lb = 1;
-	    new_dtp->lb          = lb_disp;
+	    new_dtp->has_sticky_lb = 1;
+	    new_dtp->lb            = lb_disp;
 	}
 	if (has_ub) {
-	    new_dtp->has_mpi1_ub = 1;
-	    new_dtp->ub          = ub_disp;
+	    new_dtp->has_sticky_ub = 1;
+	    new_dtp->ub            = ub_disp;
 	}
 
 	return mpi_errno;
