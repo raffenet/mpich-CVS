@@ -451,6 +451,9 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	}
 
 	if (mpi_errno == MPI_SUCCESS) {
+	    /* Notify the device that the communicator is about to be destroyed */
+	    MPID_Dev_comm_destroy_hook(comm_ptr);
+	    
 	    /* Free the VCRT */
 	    MPID_VCRT_Release(comm_ptr->vcrt);
 	
