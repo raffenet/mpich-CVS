@@ -20,6 +20,9 @@
 #if defined(HAVE_DIRECT_H) || defined(HAVE_WINDOWS_H)
 #include <direct.h>
 #endif
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 
 void mp_print_options(void)
 {
