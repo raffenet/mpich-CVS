@@ -1418,7 +1418,7 @@ static int root_smpd(void *p)
 	return PMI_FAIL;
     }
     smpd_process.set = set;
-    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_getsetid(set));
+    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_get_sock_set_id(set));
     result = MPIDU_Sock_listen(set, NULL, &pmi_process.root_port, &listener); 
     if (result != MPI_SUCCESS)
     {
