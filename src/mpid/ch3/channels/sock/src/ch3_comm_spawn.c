@@ -94,8 +94,8 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
 /* Note: The use of PMI_Spawn_multiple in this way is because it is
    currently implemented that way in MPD. It is only temporary. */
         rc = PMI_Spawn_multiple(1, &command, &argv, &maxprocs,
-                                kvsname, array_of_errcodes,
-                                &same_domain, (void*) kvsnamelen);
+                                (const void *) kvsname, array_of_errcodes,
+                                &same_domain, (const void *) kvsnamelen);
 	assert(rc == 0);
 
         rc = NMPI_Bcast(kvsname, kvsnamelen, MPI_CHAR, root, comm->handle);
