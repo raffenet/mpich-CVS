@@ -11,7 +11,8 @@
 #endif
 #ifdef __LINUX
 #include <sys/vfs.h>
-#include <linux/nfs_fs.h>
+/* #include <linux/nfs_fs.h> this file is broken in newer versions of linux */
+#define NFS_SUPER_MAGIC 0x6969
 #endif
 #ifdef __FREEBSD
 #include <sys/param.h>
