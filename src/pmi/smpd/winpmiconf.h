@@ -8,4 +8,8 @@
 #ifndef WINPMICONF_H
 #define WINPMICONF_H
 
+#ifndef HAVE_WINDOWS_H
+#define HAVE_WINDOWS_H
+#endif
+
 #endif

@@ -31,7 +31,7 @@
 #endif
 
 #include "pmi.h"
-#include "sock.h"
+#include "mpidu_sock.h"
 #include "smpd.h"
 
 #define PMI_SUCCESS     0
@@ -52,6 +52,7 @@ int iPMI_Finalize( void );               /* finalize PMI for this process group 
 int iPMI_Get_size( int *size );          /* get size of process group */
 int iPMI_Get_rank( int *rank );          /* get rank in process group */
 int iPMI_Get_id( char *id_str );         /* get a string to uniquely identify the process group */
+int iPMI_Get_kvs_domain_id( char *id_str );     /* get a string to uniquely identify the kvs domain */
 int iPMI_Get_id_length_max( void );      /* get the maximum length the id string can be. Must return >= 40 */
 int iPMI_Barrier( void );                /* barrier across processes in process group */
 int iPMI_Get_clique_size( int *size );   /* get the number of processes on my node */
@@ -99,6 +100,7 @@ typedef struct ipmi_functions_t
     int (*PMI_Get_size)( int * );
     int (*PMI_Get_rank)( int * );
     int (*PMI_Get_id)( char * );
+    int (*PMI_Get_kvs_domain_id)( char * );
     int (*PMI_Get_id_length_max)( void );
     int (*PMI_Barrier)( void );
     int (*PMI_Get_clique_size)( int * );

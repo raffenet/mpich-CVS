@@ -21,37 +21,55 @@
 
 typedef struct pmi_process_t
 {
+    int rpmi;
+#ifdef HAVE_WINDOWS_H
+    HANDLE hRootThread;
+    HANDLE hRootThreadReadyEvent;
+#else
+    int root_pid;
+#endif
+    char root_host[100];
+    int root_port;
     int local_kvs;
     char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
-    sock_t sock;
-    sock_set_t set;
+    MPIDU_Sock_t sock;
+    MPIDU_Sock_set_t set;
     int iproc;
     int nproc;
     int init_finalized;
     int smpd_id;
-    SOCK_NATIVE_FD smpd_fd;
+    MPIDU_SOCK_NATIVE_FD smpd_fd;
     int smpd_key;
     smpd_context_t *context;
     int clique_size;
     int *clique_ranks;
 } pmi_process_t;
 
+int root_smpd(void *p);
+
 /* global variables */
-pmi_process_t pmi_process =
+static pmi_process_t pmi_process =
 {
-    PMI_FALSE,          /* local_kvs      */
-    "",                 /* kvs_name       */
-    SOCK_INVALID_SOCK,  /* sock           */
-    SOCK_INVALID_SET,   /* set            */
-    -1,                 /* iproc          */
-    -1,                 /* nproc          */
-    PMI_FINALIZED,      /* init_finalized */
-    -1,                 /* smpd_id        */
-    0,                  /* smpd_fd        */
-    0,                  /* smpd_key       */
-    NULL,               /* context        */
-    0,                  /* clique_size    */
-    NULL                /* clique_ranks   */
+    PMI_FALSE,           /* rpmi           */
+#ifdef HAVE_WINDOWS_H
+    NULL,                /* root thread    */
+    NULL,                /* hRootThreadReadyEvent */
+#endif
+    "",                  /* root host      */
+    0,                   /* root port      */
+    PMI_FALSE,           /* local_kvs      */
+    "",                  /* kvs_name       */
+    MPIDU_SOCK_INVALID_SOCK,  /* sock           */
+    MPIDU_SOCK_INVALID_SET,   /* set            */
+    -1,                  /* iproc          */
+    -1,                  /* nproc          */
+    PMI_FINALIZED,       /* init_finalized */
+    -1,                  /* smpd_id        */
+    0,                   /* smpd_fd        */
+    0,                   /* smpd_key       */
+    NULL,                /* context        */
+    0,                   /* clique_size    */
+    NULL                 /* clique_ranks   */
 };
 
 static int pmi_err_printf(char *str, ...)
@@ -69,16 +87,39 @@ static int pmi_err_printf(char *str, ...)
     return n;
 }
 
+static int pmi_mpi_err_printf(int mpi_errno, char *fmt, ... )
+{
+    int n;
+    va_list list;
+
+    /* convert the error code to a string */
+    printf("mpi_errno: %d\n", mpi_errno);
+
+    printf("[%d] ", pmi_process.iproc);
+    va_start(list, fmt);
+    n = vprintf(fmt, list);
+    va_end(list);
+
+    fflush(stdout);
+
+    MPIR_Err_return_comm(NULL, "", mpi_errno);
+
+    return n;
+}
+
 static int pmi_create_post_command(const char *command, const char *name, const char *key, const char *value)
 {
     int result;
     smpd_command_t *cmd_ptr;
     int dest = 1;
 
-    if (strcmp(command, "done") == 0)
+    if (!pmi_process.rpmi)
     {
-	/* done commands go to the immediate smpd, not the root */
-	dest = pmi_process.smpd_id;
+	if (strcmp(command, "done") == 0)
+	{
+	    /* done commands go to the immediate smpd, not the root */
+	    dest = pmi_process.smpd_id;
+	}
     }
 
     result = smpd_create_command((char*)command, pmi_process.smpd_id, dest, SMPD_TRUE, &cmd_ptr);
@@ -127,7 +168,7 @@ static int pmi_create_post_command(const char *command, const char *name, const 
     /* post the write of the command */
     /*
     printf("posting write of dbs command to %s context, sock %d: '%s'\n",
-	smpd_get_context_str(pmi_process.context), sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
+	smpd_get_context_str(pmi_process.context), MPIDU_Sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
     fflush(stdout);
     */
     result = smpd_post_write_command(pmi_process.context, cmd_ptr);
@@ -261,6 +302,266 @@ static int parse_clique(const char *str_orig)
     return PMI_SUCCESS;
 }
 
+static int rPMI_Init(int *spawned)
+{
+    char *p;
+    int result;
+
+    /* initialize to defaults */
+    smpd_process.id = 1;
+    pmi_process.smpd_id = 1;
+    pmi_process.rpmi = PMI_TRUE;
+    pmi_process.iproc = 0;
+    pmi_process.nproc = 1;
+
+    p = getenv("PMI_ROOT_HOST");
+    if (p == NULL)
+    {
+	pmi_err_printf("unable to initialize the rPMI library: no PMI_ROOT_HOST specified.\n");
+	return PMI_FAIL;
+    }
+    strncpy(pmi_process.root_host, p, 100);
+
+    p = getenv("PMI_ROOT_PORT");
+    if (p == NULL)
+    {
+	/* set to default port? */
+	pmi_err_printf("unable to initialize the rPMI library: no PMI_ROOT_PORT specified.\n");
+	return PMI_FAIL;
+    }
+    pmi_process.root_port = atoi(p);
+    if (pmi_process.root_port < 1)
+    {
+	pmi_err_printf("invalid root port specified: %s\n", p);
+	return PMI_FAIL;
+    }
+    smpd_process.port = pmi_process.root_port;
+    strcpy(smpd_process.host, pmi_process.root_host);
+
+    p = getenv("PMI_SPAWN");
+    *spawned = (p != NULL) ? 1 : 0;
+
+    p = getenv("PMI_KVS");
+    if (p != NULL)
+    {
+	/* use specified kvs name */
+	strncpy(pmi_process.kvs_name, p, PMI_MAX_KVS_NAME_LENGTH);
+	strncpy(smpd_process.kvs_name, p, PMI_MAX_KVS_NAME_LENGTH);
+    }
+    else
+    {
+	/* use default kvs name */
+	strncpy(pmi_process.kvs_name, "default_mpich_kvs_name", PMI_MAX_KVS_NAME_LENGTH);
+	strncpy(smpd_process.kvs_name, "default_mpich_kvs_name", PMI_MAX_KVS_NAME_LENGTH);
+    }
+
+    p = getenv("PMI_RANK");
+    if (p != NULL)
+    {
+	pmi_process.iproc = atoi(p);
+	if (pmi_process.iproc < 0)
+	{
+	    pmi_err_printf("invalid rank %d\n", pmi_process.iproc);
+	    return PMI_FAIL;
+	}
+    }
+
+    p = getenv("PMI_SIZE");
+    if (p != NULL)
+    {
+	pmi_process.nproc = atoi(p);
+	if (pmi_process.nproc < 1)
+	{
+	    pmi_err_printf("invalid size %d\n", pmi_process.nproc);
+	    return PMI_FAIL;
+	}
+    }
+    smpd_process.nproc = pmi_process.nproc;
+#ifdef SINGLE_PROCESS_OPTIMIZATION
+/* leave this code #ifdef'd out so we can test rPMI stuff with one process */
+    if (pmi_process.nproc == 1)
+    {
+	pmi_process.local_kvs = PMI_TRUE;
+	result = smpd_dbs_init();
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to initialize the local dbs engine.\n");
+	    return PMI_FAIL;
+	}
+	result = smpd_dbs_create(pmi_process.kvs_name);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to create the process group kvs\n");
+	    return PMI_FAIL;
+	}
+	pmi_process.init_finalized = PMI_INITIALIZED;
+	return PMI_SUCCESS;
+    }
+#endif
+
+    p = getenv("PMI_CLIQUE");
+    if (p != NULL)
+    {
+	parse_clique(p);
+    }
+
+    /*
+    printf("PMI_ROOT_HOST=%s PMI_ROOT_PORT=%s PMI_RANK=%s PMI_SIZE=%s PMI_KVS=%s PMI_CLIQUE=%s\n",
+	getenv("PMI_ROOT_HOST"), getenv("PMI_ROOT_PORT"), getenv("PMI_RANK"), getenv("PMI_SIZE"),
+	getenv("PMI_KVS"), getenv("PMI_CLIQUE"));
+    fflush(stdout);
+    */
+
+    if (pmi_process.iproc == 0)
+    {
+#ifdef HAVE_WINDOWS_H
+	pmi_process.hRootThreadReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (pmi_process.hRootThreadReadyEvent == NULL)
+	{
+	    pmi_err_printf("unable to create the root listener synchronization event, error: %d\n", GetLastError());
+	    return PMI_FAIL;
+	}
+	pmi_process.hRootThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)root_smpd, NULL, 0, NULL);
+	if (pmi_process.hRootThread == NULL)
+	{
+	    pmi_err_printf("unable to create the root listener thread: error %d\n", GetLastError());
+	    return PMI_FAIL;
+	}
+	if (WaitForSingleObject(pmi_process.hRootThreadReadyEvent, 60000) != WAIT_OBJECT_0)
+	{
+	    pmi_err_printf("the root process thread failed to initialize.\n");
+	    return PMI_FAIL;
+	}
+#else
+	result = fork();
+	if (result == -1)
+	{
+	    pmi_err_printf("unable to fork the root listener, errno %d\n", errno);
+	    return PMI_FAIL;
+	}
+	if (result == 0)
+	{
+	    root_smpd(NULL);
+	    exit(0);
+	}
+	pmi_process.root_pid = result;
+#endif
+    }
+    else
+    {
+	/* set the non-root ids to iproc + 1 to aid in sorting debugging output */
+	smpd_process.id = pmi_process.iproc + 1;
+	pmi_process.smpd_id = smpd_process.id;
+    }
+
+    /* connect to the root */
+
+    result = MPIDU_Sock_create_set(&pmi_process.set);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: unable to create a sock set, error: %d\n", result);
+	return PMI_FAIL;
+    }
+
+    /*printf("posting a connect to %s:%d\n", pmi_process.root_host, pmi_process.root_port);*/
+    result = MPIDU_Sock_post_connect(pmi_process.set, NULL, pmi_process.root_host, pmi_process.root_port, &pmi_process.sock);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: unable to post a connect to the root, error: %d\n", result);
+	return PMI_FAIL;
+    }
+
+    result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, pmi_process.sock, smpd_process.id, &pmi_process.context);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to create a context to connect to the root with.\n");
+	return PMI_FAIL;
+    }
+    pmi_process.context->state = SMPD_CONNECTING_PMI;
+
+    result = MPIDU_Sock_set_user_ptr(pmi_process.sock, pmi_process.context);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "unable to set the connect sock user pointer.\n");
+	return PMI_FAIL;
+    }
+
+    result = smpd_enter_at_state(pmi_process.set, SMPD_CONNECTING_PMI);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "PMI_Init failed: unable to connect to the root.\n");
+	return PMI_FAIL;
+    }
+
+    pmi_process.init_finalized = PMI_INITIALIZED;
+
+    return PMI_SUCCESS;
+}
+
+static int rPMI_Finalize()
+{
+    int result;
+#ifndef HAVE_WINDOWS_H
+    int status;
+#endif
+
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_SUCCESS;
+
+    if (pmi_process.local_kvs)
+    {
+	smpd_dbs_finalize();
+	pmi_process.init_finalized = PMI_FINALIZED;
+	return PMI_SUCCESS;
+    }
+
+    if (pmi_process.iproc == 0)
+    {
+	/* the root process tells the root to exit when all the pmi contexts have exited */
+	result = pmi_create_post_command("exit_on_done", NULL, NULL, NULL);
+	if (result != PMI_SUCCESS)
+	{
+	    pmi_err_printf("exit_on_done command failed.\n");
+	    return PMI_FAIL;
+	}
+	/*printf("exit_on_done command returned successfully.\n");fflush(stdout);*/
+    }
+
+    /*printf("entering finalize pmi_barrier.\n");fflush(stdout);*/
+    PMI_Barrier();
+    /*printf("after finalize pmi_barrier, posting done command.\n");fflush(stdout);*/
+
+    /* post a done command to close the pmi context */
+    result = pmi_create_post_command("done", NULL, NULL, NULL);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("failed.\n");
+	return PMI_FAIL;
+    }
+
+    if (pmi_process.iproc == 0)
+    {
+#ifdef HAVE_WINDOWS_H
+	WaitForSingleObject(pmi_process.hRootThread, INFINITE);
+#else
+	waitpid(pmi_process.root_pid, &status, WUNTRACED);
+#endif
+    }
+
+    if (pmi_process.sock != MPIDU_SOCK_INVALID_SOCK)
+    {
+	result = MPIDU_Sock_finalize();
+	if (result != MPI_SUCCESS)
+	{
+	    pmi_err_printf("MPIDU_Sock_finalize failed, error: %d\n", result);
+	}
+    }
+
+    pmi_process.init_finalized = PMI_FINALIZED;
+
+    return PMI_SUCCESS;
+}
+
 int iPMI_Init(int *spawned)
 {
     char *p;
@@ -272,10 +573,10 @@ int iPMI_Init(int *spawned)
 
     /* initialize to defaults */
 
-    result = sock_init();
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_init();
+    if (result != MPI_SUCCESS)
     {
-	pmi_err_printf("sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
+	pmi_err_printf("MPIDU_Sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
 	return PMI_FAIL;
     }
 
@@ -284,6 +585,12 @@ int iPMI_Init(int *spawned)
     {
 	pmi_err_printf("unable to initialize the smpd global process structure.\n");
 	return PMI_FAIL;
+    }
+
+    p = getenv("PMI_ROOT_HOST");
+    if (p != NULL)
+    {
+	return rPMI_Init(spawned);
     }
 
     pmi_process.iproc = 0;
@@ -354,8 +661,8 @@ int iPMI_Init(int *spawned)
     p = getenv("PMI_SMPD_FD");
     if (p != NULL)
     {
-	result = sock_create_set(&pmi_process.set);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_create_set(&pmi_process.set);
+	if (result != MPI_SUCCESS)
 	{
 	    pmi_err_printf("PMI_Init failed: unable to create a sock set, error:\n%s\n",
 		get_sock_error_string(result));
@@ -365,12 +672,12 @@ int iPMI_Init(int *spawned)
 #ifdef HAVE_WINDOWS_H
 	pmi_process.smpd_fd = smpd_decode_handle(p);
 #else
-	pmi_process.smpd_fd = (SOCK_NATIVE_FD)atoi(p);
+	pmi_process.smpd_fd = (MPIDU_SOCK_NATIVE_FD)atoi(p);
 #endif
-	result = sock_native_to_sock(pmi_process.set, pmi_process.smpd_fd, NULL, &pmi_process.sock);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_native_to_sock(pmi_process.set, pmi_process.smpd_fd, NULL, &pmi_process.sock);
+	if (result != MPI_SUCCESS)
 	{
-	    pmi_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	    pmi_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
 	    return PMI_FAIL;
 	}
 	result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, pmi_process.sock, pmi_process.smpd_id, &pmi_process.context);
@@ -411,6 +718,11 @@ int iPMI_Finalize()
     fflush(stdout);
     */
 
+    if (pmi_process.rpmi)
+    {
+	return rPMI_Finalize();
+    }
+
     if (pmi_process.local_kvs)
     {
 	smpd_dbs_finalize();
@@ -428,12 +740,12 @@ int iPMI_Finalize()
 	return PMI_FAIL;
     }
 
-    if (pmi_process.sock != SOCK_INVALID_SOCK)
+    if (pmi_process.sock != MPIDU_SOCK_INVALID_SOCK)
     {
-	result = sock_finalize();
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_finalize();
+	if (result != MPI_SUCCESS)
 	{
-	    pmi_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
+	    pmi_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
     }
 
@@ -464,6 +776,9 @@ int iPMI_Get_rank(int *rank)
 
 int iPMI_Get_clique_size( int *size )
 {
+    if (pmi_process.init_finalized == PMI_FINALIZED || size == NULL)
+	return PMI_FAIL;
+
     if (pmi_process.clique_size == 0)
 	*size = 1;
     else
@@ -474,6 +789,10 @@ int iPMI_Get_clique_size( int *size )
 int iPMI_Get_clique_ranks( int *ranks )
 {
     int i;
+
+    if (pmi_process.init_finalized == PMI_FINALIZED || ranks == NULL)
+	return PMI_FAIL;
+
     if (pmi_process.clique_size == 0)
     {
 	*ranks = 0;
@@ -508,6 +827,16 @@ int iPMI_Get_id_length_max()
 {
     /*return 40;*/
     return iPMI_KVS_Get_name_length_max();
+}
+
+int iPMI_Get_kvs_domain_id(char *id_str)
+{
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_FAIL;
+
+    id_str[0] = '1';
+    id_str[1] = '\0';
+    return PMI_SUCCESS;
 }
 
 int iPMI_Barrier()
@@ -880,6 +1209,14 @@ int iPMI_Spawn_multiple(int count,
     int i, j, maxlen, maxlen2;
     int num_chars;
 
+    if (pmi_process.init_finalized == PMI_FINALIZED || count < 1 || cmds == NULL || maxprocs == NULL || preput_keyval_size < 0)
+	return PMI_FAIL;
+
+    if (pmi_process.local_kvs)
+    {
+	return PMI_FAIL;
+    }
+
     result = smpd_create_command("spawn", pmi_process.smpd_id, dest, SMPD_TRUE, &cmd_ptr);
     if (result != SMPD_SUCCESS)
     {
@@ -1024,6 +1361,7 @@ int iPMI_Spawn_multiple(int count,
 	}
     }	
 
+    printf("spawn command: <%s>\n", cmd_ptr->cmd);
 
     /* post the write of the command */
     /*
@@ -1058,5 +1396,73 @@ int iPMI_Spawn_multiple(int count,
 
 int iPMI_Args_to_keyval(int *argcp, char ***argvp, PMI_keyval_t *keyvalp, int *size)
 {
+    return PMI_SUCCESS;
+}
+
+static int root_smpd(void *p)
+{
+    int result;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t listener;
+
+    smpd_process.id = 1;
+    smpd_process.root_smpd = SMPD_FALSE;
+
+    result = MPIDU_Sock_create_set(&set);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "MPIDU_Sock_create_set failed.\n");
+	return PMI_FAIL;
+    }
+    smpd_process.set = set;
+    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_getsetid(set));
+    result = MPIDU_Sock_listen(set, NULL, &pmi_process.root_port, &listener); 
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "MPIDU_Sock_listen failed.\n");
+	return PMI_FAIL;
+    }
+    smpd_dbg_printf("smpd listening on port %d\n", pmi_process.root_port);
+
+    result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to create a context for the smpd listener.\n");
+	return PMI_FAIL;
+    }
+    result = MPIDU_Sock_set_user_ptr(listener, smpd_process.listener_context);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "MPIDU_Sock_set_user_ptr failed.\n");
+	return PMI_FAIL;
+    }
+    smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
+
+    smpd_dbs_init();
+    smpd_process.have_dbs = SMPD_TRUE;
+    result = smpd_dbs_create_name_in(smpd_process.kvs_name);
+    if (result != SMPD_DBS_SUCCESS)
+    {
+	pmi_err_printf("unable to create a kvs database: name = <%s>.\n", smpd_process.kvs_name);
+	return PMI_FAIL;
+    }
+
+#ifdef HAVE_WINDOWS_H
+    SetEvent(pmi_process.hRootThreadReadyEvent);
+#endif
+
+    result = smpd_enter_at_state(set, SMPD_SMPD_LISTENING);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("state machine failed.\n");
+	return PMI_FAIL;
+    }
+
+    result = MPIDU_Sock_destroy_set(set);
+    if (result != MPI_SUCCESS)
+    {
+	pmi_mpi_err_printf(result, "unable to destroy the set.\n");
+    }
+
     return PMI_SUCCESS;
 }
