@@ -11,3 +11,4 @@ dims1_SOURCES = dims1.c
 graphmap1_SOURCES = graphmap1.c
 topotest_SOURCES = topotest.c
 topodup_SOURCES = topodup.c
+graphcr_SOURCES = graphcr.c
