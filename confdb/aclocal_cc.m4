@@ -68,8 +68,8 @@ if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
          AC_MSG_CHECKING([whether routines compiled with $1 can be linked with ones compiled  without $1])       
-         /bin/rm -f conftest.out
-         /bin/rm -f conftest.bas
+         rm -f conftest.out
+         rm -f conftest.bas
          if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
             if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
                if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then

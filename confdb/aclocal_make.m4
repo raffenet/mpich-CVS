@@ -68,7 +68,7 @@ if test "$str" != "success" ; then
 else
     pac_cv_prog_make_echos_dir="no"
 fi
-/bin/rm -f conftest
+rm -f conftest
 str=""
 ])
     if test "$pac_cv_prog_make_echos_dir" = "yes using --no-print-directory" ; then
@@ -99,7 +99,7 @@ dnl
 AC_DEFUN(PAC_PROG_MAKE_INCLUDE,[
 AC_CACHE_CHECK([whether make supports include],pac_cv_prog_make_include,[
 AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 ALL:
 	@echo "success"
@@ -108,7 +108,7 @@ cat > conftest1 <<.
 include conftest
 .
 pac_str=`$MAKE -f conftest1 2>&1`
-/bin/rm -f conftest conftest1
+rm -f conftest conftest1
 if test "$pac_str" != "success" ; then
     pac_cv_prog_make_include="no"
 else
@@ -144,7 +144,7 @@ AC_DEFUN(PAC_PROG_MAKE_ALLOWS_COMMENTS,[
 AC_CACHE_CHECK([whether make allows comments in actions],
 pac_cv_prog_make_allows_comments,[
 AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
 ALL:
@@ -152,7 +152,7 @@ ALL:
 	@echo "success"
 .
 pac_str=`$MAKE -f conftest 2>&1`
-/bin/rm -f conftest 
+rm -f conftest 
 if test "$pac_str" != "success" ; then
     pac_cv_prog_make_allows_comments="no"
 else
@@ -258,14 +258,14 @@ AC_DEFUN(PAC_PROG_MAKE_SET_CFLAGS,[
 AC_CACHE_CHECK([whether make sets CFLAGS],
 pac_cv_prog_make_set_cflags,[
 AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
-/bin/rm -f conftest
+rm -f conftest
 cat > conftest <<EOF
 SHELL=/bin/sh
 ALL:
 	@echo X[\$]{CFLAGS}X
 EOF
 pac_str=`$MAKE -f conftest 2>&1`
-/bin/rm -f conftest 
+rm -f conftest 
 if test "$pac_str" = "XX" ; then
     pac_cv_prog_make_set_cflags="no"
 else
