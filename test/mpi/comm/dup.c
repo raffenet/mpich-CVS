@@ -1,0 +1,46 @@
+#include "mpi.h"
+#include <stdio.h>
+#include "mpitest.h"
+
+int main( int argc, char **argv )
+{
+    int errs = 0;
+    int i, j, rank, size, wrank, wsize, dest, a, b;
+    MPI_Comm newcomm;
+    MPI_Status status;
+
+    MTest_Init( &argc, &argv );
+
+    /* Can we run comm dup at all? */
+    MPI_Comm_dup( MPI_COMM_WORLD, &newcomm );
+
+    /* Check basic properties */
+    MPI_Comm_size( MPI_COMM_WORLD, &wsize );
+    MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
+    MPI_Comm_size( newcomm, &size );
+    MPI_Comm_rank( newcomm, &rank );
+    
+    if (size != wsize || rank != wrank) {
+	errs++;
+	fprintf( stderr, "Size (%d) or rank (%d) wrong\n", size, rank );
+	fflush( stderr );
+    }
+
+    /* Can we communicate with this new communicator? */
+    dest = MPI_PROC_NULL;
+    if (rank == 0) {
+	dest = size - 1;
+	MPI_Sendrecv( &a, 1, MPI_INT, dest, 0,
+		      &b, 1, MPI_INT, dest, 0, newcomm, &status );
+    }
+    else if (rank == size-1) { 
+	dest = 0;
+	MPI_Sendrecv( &a, 1, MPI_INT, dest, 0,
+		      &b, 1, MPI_INT, dest, 0, newcomm, &status );
+    }
+
+
+    MPI_Comm_free( &newcomm );
+
+    MTest_Finalize( errs );
+}

@@ -1,0 +1,3 @@
+dup_LDADD = ../util/mtest.o -L ../../../lib
+dup_SOURCES=dup.c
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include -I${top_srcdir}/test/mpi/include
