@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sock", "src\mpid\common\soc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3sock", "src\mpid\ch3\channels\sock\ch3sock.vcproj", "{88CF50C7-ECDC-4423-9332-8A0647374428}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3rdma", "src\mpid\ch3\channels\rdma\ch3rdma.vcproj", "{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ConfigName.0 = ch3mmDebug
@@ -188,6 +190,30 @@ Global
 		{88CF50C7-ECDC-4423-9332-8A0647374428}.Release.ActiveCfg = ch3sockRelease|Win32
 		{88CF50C7-ECDC-4423-9332-8A0647374428}.shmDebug.ActiveCfg = ch3sockRelease|Win32
 		{88CF50C7-ECDC-4423-9332-8A0647374428}.shmRelease.ActiveCfg = ch3sockDebug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmDebug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmDebug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmPDebug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmPDebug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmRelease.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3mmRelease.Build.0 = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockDebug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockDebug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockPRelease.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockPRelease.Build.0 = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockRelease.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.ch3sockRelease.Build.0 = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.Debug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.Debug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.mmDebug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.mmDebug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.mmRelease.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.mmRelease.Build.0 = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.Release.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.Release.Build.0 = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.shmDebug.ActiveCfg = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.shmDebug.Build.0 = Debug|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.shmRelease.ActiveCfg = Release|Win32
+		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0C}.shmRelease.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
