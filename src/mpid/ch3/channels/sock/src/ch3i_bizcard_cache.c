@@ -26,7 +26,10 @@ int MPIDI_CH3I_Add_to_bizcard_cache(char *pg_id, int pg_size, int rank, char *bi
 {
     int mpi_errno=MPI_SUCCESS, i, max_bizcard_len, pgid_len;
     MPIDI_CH3I_Bizcard_cache_t* curr_ptr;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ADD_TO_BIZCARD_CACHE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ADD_TO_BIZCARD_CACHE);
+
     curr_ptr = MPIDI_CH3I_Bizcard_cache_head;
 
     /* --BEGIN ERROR HANDLING-- */
@@ -125,6 +128,7 @@ int MPIDI_CH3I_Add_to_bizcard_cache(char *pg_id, int pg_size, int rank, char *bi
     MPIU_Strncpy(curr_ptr->bizcards[rank], bizcard, max_bizcard_len);
 
   fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ADD_TO_BIZCARD_CACHE);
     return mpi_errno;
 }
 
@@ -138,6 +142,9 @@ int MPIDI_CH3I_Lookup_bizcard_cache(char *pg_id, int rank, char *bizcard, int le
 {
     int mpi_errno=MPI_SUCCESS;
     MPIDI_CH3I_Bizcard_cache_t* curr_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_LOOKUP_BIZCARD_CACHE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_LOOKUP_BIZCARD_CACHE);
 
     *found = 0;
     curr_ptr = MPIDI_CH3I_Bizcard_cache_head;
@@ -161,6 +168,7 @@ int MPIDI_CH3I_Lookup_bizcard_cache(char *pg_id, int rank, char *bizcard, int le
     }
 
  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_LOOKUP_BIZCARD_CACHE);
     return mpi_errno;
 }
 
@@ -168,6 +176,9 @@ int MPIDI_CH3I_Bizcard_cache_free(void)
 {
     MPIDI_CH3I_Bizcard_cache_t *curr_ptr, *prev_ptr;
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BIZCARD_CACHE_FREE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BIZCARD_CACHE_FREE);
 
     curr_ptr = MPIDI_CH3I_Bizcard_cache_head;
 
@@ -184,5 +195,6 @@ int MPIDI_CH3I_Bizcard_cache_free(void)
     }
     
     MPIDI_CH3I_Bizcard_cache_head = NULL;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BIZCARD_CACHE_FREE);
     return MPI_SUCCESS;
 }
