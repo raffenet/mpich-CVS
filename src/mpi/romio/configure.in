@@ -1400,7 +1400,7 @@ if test $FROM_MPICH = 1 ; then
    dnl CFLAGS="$CFLAGS -DHAVE_STATUS_SET_BYTES"
    AC_DEFINE(HAVE_STATUS_SET_BYTES)
 fi
-if test "$FROM_MPICH2" = "yes" ; theh
+if test "$FROM_MPICH2" = "yes" ; then
    dnl this is really a dummy to ensure that the romioconf.h.in file is the
    dnl same for configure.in and configure2.in
    AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])

@@ -4777,7 +4777,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\
 }
 
 fi
-if test "$FROM_MPICH2" = "yes" ; theh
+if test "$FROM_MPICH2" = "yes" ; then
          
 {
 test -n "$verbose" && \
