@@ -372,12 +372,12 @@ MPI_File_get_position_shared,,,,,,,done,1/07/02,
 MPI_File_get_size,,,,,,,done,1/07/02,
 MPI_File_get_type_extent,,,,,,,done,1/07/02,
 MPI_File_get_view,,,,,,,done,1/07/02,
-MPI_File_iread,,,,,,,done,1/07/02,Still uses MPIO_Request
-MPI_File_iread_at,,,,,,,done,1/07/02,Still uses MPIO_Request
-MPI_File_iread_shared,,,,,,,done,1/07/02,Still uses MPIO_Request
-MPI_File_iwrite,,,,,,,done,1/07/02,Still uses MPIO_Request
-MPI_File_iwrite_at,,,,,,,done,1/07/02,Still uses MPIO_Request
-MPI_File_iwrite_shared,,,,,,,done,1/07/02,Still uses MPIO_Request
+MPI_File_iread,,,,,,,done,1/07/02,
+MPI_File_iread_at,,,,,,,done,1/07/02,
+MPI_File_iread_shared,,,,,,,done,1/07/02,
+MPI_File_iwrite,,,,,,,done,1/07/02,
+MPI_File_iwrite_at,,,,,,,done,1/07/02,
+MPI_File_iwrite_shared,,,,,,,done,1/07/02,
 MPI_File_open,,,,,,,done,1/07/02,
 MPI_File_preallocate,,,,,,,done,1/07/02,
 MPI_File_read,,,,,,,done,1/07/02,
