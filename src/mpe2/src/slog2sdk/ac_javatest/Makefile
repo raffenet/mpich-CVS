@@ -1,6 +1,6 @@
 
-JAVA_HOME = /pkgs/lang/java/jdk117_v3
-# JAVA_HOME = /pkgs/lang/java/jdk1.3.1
+# JAVA_HOME = /pkgs/lang/java/jdk117_v3
+JAVA_HOME = /pkgs/lang/java/jdk1.3.1
 SHELL     = /bin/sh
 JC        = $(JAVA_HOME)/bin/javac
 JVM       = $(JAVA_HOME)/bin/java
