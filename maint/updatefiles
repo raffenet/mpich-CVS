@@ -438,7 +438,7 @@ if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
 	    #
 	    # Check for known problems
 	    fixEndEOFBug=no
-	    if [ $dir = "./src/binding/f77" -a \
+	    if [ \( $dir = "./src/binding/f77" -o $dir = "./test/mpi" \) -a \
 		$use_patched_autoonf = no ] ; then
 		# We need a *patched*, version 2.13 form of autoconf
 		# Version 2.62 breaks the Fortran 90 extensions
