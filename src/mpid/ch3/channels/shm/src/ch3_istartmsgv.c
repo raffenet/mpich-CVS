@@ -10,18 +10,15 @@
 #undef create_request
 #define create_request(sreq, iov, count, offset, nb) \
 { \
-    int i; \
+    /*int i;*/ \
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
     assert(sreq != NULL); \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
-    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */ \
-    for (i = 0; i < count; i++) \
-    { \
-	sreq->ch3.iov[i] = iov[i]; \
-    } \
+    memcpy(sreq->ch3.iov, iov, count * sizeof(MPID_IOV)); \
+    /*for (i = 0; i < count; i++) { sreq->ch3.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \
 	/* memcpy(&sreq->shm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
