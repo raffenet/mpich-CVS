@@ -391,9 +391,16 @@ The \term{communication method} (or more simply the ``method'') is a layer of
 software that implements this multi-method interface for a particular
 networking model, device or interface such as TCP, VIA or shared memory.
 
-\begin{verbatim}
+\begin{discussion}
+  One might be tempted to think of a method as an object; however, we impose
+  the limitation that only one instance of a particular method may exist in any
+  given process.  This implies that all data associated with the method can be
+  internally associated with that method and no pointer to the method is
+  required by the method functions in order to access the data.
+\end{discussion}
 
-int method::init()
+\begin{verbatim}
+MPID_Method * MPID_Method_%M_init()
 
 int method::finalize()
 
@@ -417,6 +424,12 @@ bool method::poll([IN] int quanta)
 
 \begin{cmt}[BRT]
 Should we put the function table in a \LaTeX table or leave it as is?
+\end{cmt}
+
+\begin{cmt}[BRT]
+  Do we want to say anything about initialization here?  In general we are
+  deferring the discussion on initialization until the next subsection, but
+  should we at least introduce the routines?
 \end{cmt}
 
 Since several methods of communication are likely to be at the disposal of a
@@ -451,26 +464,23 @@ process using the method in question.  If the processes are capable of
 communicating using that method, \code{match_description} extracts the contact
 information from the description string and stores it for later use.
 
-\begin{cmt}[BRT]
-  Where does the contact information get stored?  In the VC?  What if multiple
-  methods match?  Does only the last method get to store its contact
-  information?
-\end{cmt}
+The method selection policy is implemented by code{MPID_VC_get_method}.  This
+function determines the order in which the \code{method::match_description}
+functions are called and thus ultimately the priority of the methods.  We will
+discuss the \code{MPID_VC_get_method} function more when we talk about virtual
+connections.
 
-\begin{cmt}[ROB]
-  The binding code (whatever that is) has a preferred ordering for attempting
-  to match methods (or can it?).  The first match wins, so there is never an
-  issue.  maybe :).  dynamic loading of methods would make this more difficult.
-\end{cmt}
-
-The selection of a communication method is performed by the
-\code{MPID_VC_get_method} function, part of the virtual connection object.  A
-virtual connection... \todo{finish this paragraph}
-
-Once a communication method of has been selected, requests for communication
-operations can be made.  \todo{finish this paragraph}
-
-\todo{describe communication functions...}
+Now that we have defined an interface supporting the selection of a method, we
+must introduce an interface for communicating messages using that method.  We
+have decided on a non-blocking interface that permits send and receive
+operations to be posted to the method, allowing the method to complete those
+operations as resources permit without halting the progress of the calling
+routine.  Send and receive operations are posted by calling the
+\code{method::post_send} and \code{method::post_recv} functions respectively.
+As these are non-blocking functions, they are primarily responsible for
+recording the requested operation, although they are permitted to initiate the
+operation if the state of the method and connection permit doing so
+immediately.
 
 Once requests have been posted, we need a mechanism to make progress on them.
 One option is to have one or more threads responsible for sending and receiving
@@ -544,6 +554,15 @@ satisfied and need to be deallocated.  We eliminated this argument when we
 realized that the count was inexact in the face of multiple application threads
 and asynchronous completion of requests.
 \end{discussion}
+
+As operations complete, the method provides feedback using the status object
+and completion counter supplied when the operation was posted.  The error field
+in \code{status} object is used to communicate any errors that occurred while
+performing the operation.  For receive operations, the \code{status} object
+will also contain information about the envelope of the message and the amount
+of data received.  After the status object is updated, the completion counter,
+\code{completion_cntr}, is decremented to indicate that the operation has
+completed.
 
 %----------
 
@@ -643,7 +662,9 @@ communication performance and method workload.  By having a separate component
 and a well defined interface, optimizations can more easily evolve over time.
 
 \begin{verbatim}
-int MPID_PE_register_method(MPID_Method * method)
+init MPID_PE_init()
+
+init MPID_PE_finalize()
 
 void MPID_PE_poll_blocking_init()
 
@@ -652,20 +673,10 @@ void MPID_PE_poll_blocking_start()
 void MPID_PE_poll_nonblocking()
 \end{verbatim}
 
-The registration function, \code{MPIE_PE_register_method}, is called by each
-method at library initialization time.  The purpose of this call is to register
-the method with the progress engine, thus insuring that the progress engine
-gives the method sufficient opportunities to make progress throughout the
-execution.  In the simplified environment we have presented thus far, all
-oppportunities for making progress are driven by the progress engine.  Later,
-as we introduce more complex environments and performance enhancements, we will
-find it necessary to augment the information supplied to
-\code{MPID_PE_register_method}.
-
-\todo Talk about information needed from method.  Most of the information needed from the the method is for optimizations such as ``skip polling'' and ``adaptive skip polling''.
-
-\Q What information is needed in this section outside of the poll function
-pointer?  Does the rest belong in a later section?
+\todo Describe \code{MPID_PE_init}.  This section should talk about how the
+progress engine finds the methods and calls various method accessor functions
+to gather information.  This information is used to decide who should be
+polled.
 
 Progress is be made by calling one of two sets of functions: blocking and
 nonblocking.  The nonblocking set consists of a single function
@@ -678,19 +689,8 @@ blocking polling function.
 \todo [BRT] rewrite the above paragraph and elaborate on the need for a pair
 of blocking functions.  how much do we want to talk about asynchronous 
 
-\todo talk about policy for deciding when to quit polling and return from
-blocking and non-blocking routines.
-
-\Q [BRT] Should we be defining policy here, or just pointing out options?  I
-feel like we have some ideas but not a well defined policy we know will work in
-all situations.  
-
-\todo talk about fairness issues - making sure that the first method doesn't
-receive an unfair amount of polling cycles just because it is the first method
-in a list
-
-\todo talk about the fact that the calling routines do not pass any information
-to the progress engine about what they are waiting for; that we believe that
+\todo talk about the progress engine not needing any information about the
+operations that the calling routines are waiting for; we believe that
 prioritizing progress oppportunities based on knowledge about the requests that
 we are blocking on would incur more overhead that it would provide benefit
 
@@ -1052,12 +1052,28 @@ shared memory method.
 
 special blocking send/recv optimizations?
 
-adaptive polling and such
+\paragraph{Progress Engine} adaptive polling and such
 \begin{itemize}
 \item methods have elements that hold progress information
 \item progress engine looks at these elements when making decisions
+\item uses knowledge of outstanding request counts, recent traffic, etc. to
+  prioritize methods and compute polling schedules
+\item does not need to know which specific MPI requests are being waited
+  on, only that one or more is outstanding for a particular method
 \end{itemize}
   
+\todo Talk about information needed from method.  Most of the information
+needed from the the method is for optimizations such as ``skip polling'' and
+``adaptive skip polling''.  Discuss the need for high-performance and the use
+of method data to convey information rather than accessor functions.
+
+\todo talk about policy for deciding when to quit polling and return from
+blocking and non-blocking routines.
+
+\todo talk about fairness issues - making sure that the first method doesn't
+receive an unfair amount of polling cycles just because it is the first method
+in a list
+
 \todo Add discussion about need for \code{method:poll_sync()}.  This routine
 can be used to reset internal method state so that \code{method::poll} only
 returns true if any completions have occurred since the last call to
