@@ -219,7 +219,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
-# if (__FreeBSD_version>300004)
+# if ROMIO_HAVE_STATFS_F_FSTYPENAME
 	if ( !strncmp("nfs",fsbuf.f_fstypename,3) ) *fstype = ADIO_NFS;
 # else
 	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;

@@ -723,6 +723,19 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        dnl CFLAGS="$CFLAGS -DFREEBSD"
        AC_DEFINE(FREEBSD)
        PAC_HAVE_MOUNT_NFS
+       if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
+       		AC_MSG_CHECKING(struct statfs.f_fstypename)
+		AC_TRY_COMPILE([
+			#include <sys/param.h>
+			#include <string.h>],[
+			struct statfs f;
+			memset(&f, 0, sizeof(f));
+			strncmp("nfs", f.f_fstypename, 3);]
+		AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 1)
+		AC_MSG_RESULT([yes]),
+		AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 0);
+		AC_MSG_RESULT([no])
+       fi
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
