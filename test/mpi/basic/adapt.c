@@ -171,17 +171,23 @@ int main(int argc, char *argv[])
     {
     case 0:
 	latency01 = TestLatency(&args01);
+	/*printf("[0] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	RecvTime(&args01, &latency12, &nzero);
+	/*printf("[0] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	break;
     case 1:
 	latency01 = TestLatency(&args01);
+	/*printf("[1] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	SendTime(&args12, &latency01, &nzero);
 	latency12 = TestLatency(&args12);
+	/*printf("[1] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	SendTime(&args01, &latency12, &nzero);
 	break;
     case 2:
 	RecvTime(&args12, &latency01, &nzero);
+	/*printf("[2] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	latency12 = TestLatency(&args12);
+	/*printf("[2] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	break;
     }
 
@@ -462,9 +468,9 @@ int Setup(ArgStruct *p01, ArgStruct *p12)
 	p12->tr = TRUE;
 	break;
     case 2:
-	p01->nbor = 1;
+	p01->nbor = -1;
 	p01->tr = FALSE;
-	p12->nbor = -1;
+	p12->nbor = 1;
 	p12->tr = FALSE;
 	break;
     default:
@@ -536,10 +542,11 @@ double TestLatency(ArgStruct *p)
 {
     double latency, t0;
     int i;
+    MPI_Status status;
 
     /* calculate the latency between rank 0 and rank 1 */
     p->latency_reps = DetermineLatencyReps(p);
-    if (p->latency_reps < 1024 && p->tr == 0)
+    if (p->latency_reps < 1024 && p->tr)
     {
 	printf("Using %d reps to determine latency\n", p->latency_reps);
 	fflush(stdout);
@@ -557,13 +564,13 @@ double TestLatency(ArgStruct *p)
     {
 	if (p->tr)
 	{
-	    SendData(p);
-	    RecvData(p);
+	    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+	    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
 	}
 	else
 	{
-	    RecvData(p);
-	    SendData(p);
+	    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
 	}
     }
     latency = (When() - t0)/(2 * p->latency_reps);
