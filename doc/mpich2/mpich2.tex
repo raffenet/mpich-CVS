@@ -2269,6 +2269,13 @@ memory.  Very roughly, it is similar to the following code:
 \code{MPID_CHKPMEM_MALLOC_ORJUMP( pointer, type, nbytes, name, errcode, label
   )} --- Like \code{MPID_CHKPMEM_MALLOC}, but the label that the code jumps to
   is provided as the last argument.
+\code{MPID_CHKPMEM_MALLOC_ORSTMT( pointer, type, nbytes, name,
+  errcode, statement )} --- This is the most general form, where the
+  action taken on error (after setting the error code) is the
+  statement.  The macros \code{MPID_CHKPMEM_MALLOC} and
+  \code{MPID_CHKPMEM_MALLOC_ORJUMP} are implemented in terms of this
+  macro.  The others are provided to encourage uniform handling of
+  memory allocation.
 
 \code{MPID_CHKPMEM_COMMIT} --- Transfer responsibility for freeing any memory
 on error to someone else.
@@ -3588,14 +3595,14 @@ reads is \file{testlist}, and may contain both test names and
 directory names.  
 \item Testing that enables memory tracing is simple and
 organized so that it can be run regularly.
-\item Should have short duration, so that the testing program can
+\item Testing should have short duration, so that the testing program can
 signal failure because a program has not completed within the given
 time.
 \item All tests should have positive output.  Not all MPI
 implementations are reliable at indicating a non-zero return code or at
-flushing output.  A requirement for an output of \code{ No Errors} is
+flushing output.  A requirement for an output of ``\code{ No Errors}'' is
 necessary. 
-\item The only output on success should be \code{ No Errors}.
+\item The only output on success should be ``\code{ No Errors}''.
 \item Verbose output can be enabled with the environment variable
   \code{MPITEST_VERBOSE}.  This makes 
   it easy to rerun tests that have failed with more output.
