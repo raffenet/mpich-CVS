@@ -110,7 +110,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 
     if (fh->access_mode & MPI_MODE_WRONLY) {
 #ifdef MPICH2
-	error_code=  MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
+	error_code=  MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ACCESS, 
 	    "**ioneedrd", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
