@@ -188,12 +188,16 @@ void MPID_Dataloop_create_contiguous(int count,
     else {
 	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
+#if 0
 	if (old_dtp->loopinfo->kind & DLOOP_KIND_CONTIG) {
 	    /* will just copy contig and multiply count */
 	    apply_contig_coalescing = 1;
 	    new_loop_sz             = old_dtp->loopsize;
 	    new_loop_depth          = old_dtp->loopinfo_depth;
 	}
+#else
+	if (0) {}
+#endif
 	else {
 	    /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 	    new_loop_sz    = sizeof(struct MPID_Dataloop) + old_dtp->loopsize;
