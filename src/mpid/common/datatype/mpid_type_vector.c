@@ -185,7 +185,7 @@ int MPID_Type_vector(int count,
 	new_dtp->loopsize = new_loopsize;
 
 	/* fill in top part of dataloop */
-	dlp->kind                       = DLOOP_KIND_VECTOR | (old_dtp->size << DLOOP_ELMSIZE_SHIFT); /* WRONG I THINK */
+	dlp->kind                       = DLOOP_KIND_VECTOR | (old_dtp->size << DLOOP_ELMSIZE_SHIFT);
 	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;

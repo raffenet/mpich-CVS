@@ -130,7 +130,7 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
     int i;
     struct DLOOP_Dataloop **looparray;
 
-    switch(dataloop->kind) {
+    switch(dataloop->kind & DLOOP_KIND_MASK) {
 	case DLOOP_KIND_CONTIG:
 	case DLOOP_KIND_VECTOR:
 	    /*
@@ -208,7 +208,7 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 
     DLOOP_dbg_printf("loc=%x, treedepth=%d, kind=%d, el_extent=%d\n",
 		     (int) dataloop, depth, dataloop->kind, dataloop->el_extent);
-    switch(dataloop->kind) {
+    switch(dataloop->kind & DLOOP_KIND_MASK) {
 	case DLOOP_KIND_CONTIG:
 	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n", 
 			     dataloop->loop_params.c_t.count, 
