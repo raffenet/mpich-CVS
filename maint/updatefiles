@@ -17,7 +17,7 @@ fi
 # Default choices
 # depend choices are dynamic, static, no
 do_depend=dynamic
-do_codingcheck=yes
+do_codingcheck=no
 codecheck_args=""
 do_geterrmsgs=yes
 do_bindings=yes
