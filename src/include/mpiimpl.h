@@ -369,7 +369,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
-#define MPID_Op_get_ptr(a,ptr)         MPID_Get_ptr(Op,a,ptr)
+#define MPID_Op_get_ptr(a,ptr)         MPID_Getb_ptr(Op,a,0x000000ff,ptr)
 #define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
