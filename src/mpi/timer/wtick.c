@@ -29,12 +29,13 @@
 #define FUNCNAME MPI_Wtick
 
 /*@
-  MPI_Wtick - Returns the frequency of Wtime
+  MPI_Wtick - Returns the resolution of MPI_Wtime
 
   Return value:
-  Time in frequency of the values returned by MPI_Wtime
+  Time in seconds of resolution of MPI_Wtime
 
-  Notes:
+  Notes for Fortran:
+  This is a function, declared as 'DOUBLE PRECISION MPI_WTICK()' in Fortran.
 
 .see also: MPI_Wtime, MPI_Comm_get_attr, MPI_Attr_get
 @*/
