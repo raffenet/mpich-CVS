@@ -1464,13 +1464,16 @@ sub LibraryBuild {
 	if (!defined($extrules{"$ext:o"} && $ext ne "h")) { 
 	    print STDERR "Unknown extension $ext for $sourcefile\n";
 	}
+	
 	if ($dolib_member) {
 	    &print_make_line( FD, "${libloc}lib$libname.$libext($obj): $obj" );
 	    &print_make_endline( FD );
 	    print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
 	}
 	else {
-	    &print_make_line( FD, "$obj " );
+	    if ($ext ne "h") {
+		&print_make_line( FD, "$obj " );
+	    }
 	}
     }
     if (!$dolib_member) {
