@@ -452,6 +452,7 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
     {
 	_tprintf(TEXT("Service Principal Name =\n%s\n"), pspn[i]);
     }
+    fflush(stdout);
     /* Write the SPNs to the service account or computer account. */
     dwStatus = DsWriteAccountSpn(
             hDs,                    /* Handle to the directory. */
@@ -556,6 +557,7 @@ SMPD_BOOL smpd_remove_scp()
     SMPD_BOOL result = SMPD_TRUE;
     char spn[SMPD_MAX_NAME_LENGTH] = "";
     WCHAR wspn[SMPD_MAX_NAME_LENGTH] = L"";
+    WCHAR* pwspn[1];
 
     /* FIXME: Insert code here to remove the information created by ScpCreate */
 
@@ -614,8 +616,8 @@ SMPD_BOOL smpd_remove_scp()
     }
     mbstowcs(wspn, spn, SMPD_MAX_NAME_LENGTH);
 
-    /* This file in its current state must be compiled for UNICODE so cast the wchar** to a tchar** here to satisfy the compiler */
-    dwStatus = SpnRegister(pwszComputerName, (TCHAR**)&wspn, 1, DS_SPN_DELETE_SPN_OP);
+    pwspn[0] = wspn;
+    dwStatus = SpnRegister(pwszComputerName, pwspn, 1, DS_SPN_DELETE_SPN_OP);
     if (dwStatus != NO_ERROR)
     {
 	ReportError(TEXT("SpnRegister failed"), dwStatus);
