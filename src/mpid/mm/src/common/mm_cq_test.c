@@ -63,7 +63,7 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	qcar_ptr = find_in_queue(&MPID_Process.posted_q_head, &MPID_Process.posted_q_tail, car_ptr);
 	if (qcar_ptr)
 	{
-	    /* merge the car with the posted car using the method in the vc */
+	    /* merge the received header car with the posted car */
 	    car_ptr->vc_ptr->merge_with_posted(car_ptr, qcar_ptr);
 	}
 	else

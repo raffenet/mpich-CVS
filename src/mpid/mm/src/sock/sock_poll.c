@@ -17,6 +17,8 @@ int progress_update(int num_bytes, void *user_ptr)
 /* function prototypes */
 int sock_init()
 {
+    printf("sock interface not implemented for poll yet.\nExiting.\n");
+    exit(-1);
     return 0;
 }
 int sock_finalize()

@@ -30,8 +30,8 @@ int socket_post_read_pkt(MPIDI_VC *vc_ptr)
     }
 #endif
     /* possibly insert state to indicate a header is being read? */
-    vc_ptr->data.socket.state |= SOCKET_READING_HEADER;
-    vc_ptr->data.socket.state &= ~SOCKET_READING_DATA;
+    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READING_HEADER);
+    SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_READING_DATA);
     MPIU_dbg_printf("socket state: 0x%x\n", vc_ptr->data.socket.state);
     sock_post_read(vc_ptr->data.socket.sock, &vc_ptr->pkt_car.msg_header.pkt, sizeof(MPID_Packet), NULL);
 

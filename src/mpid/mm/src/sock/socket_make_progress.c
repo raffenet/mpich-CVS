@@ -22,6 +22,8 @@ int socket_handle_accept()
     /* Create a temporary VC structure for reading the connect packet */
     /* We can't get the real VC because we don't know the remote rank and context yet */
     vc_ptr = mm_vc_alloc(MM_SOCKET_METHOD);
+
+    /* Change the state */
     SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);
     SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_READING_CONNECT_PKT);
 
@@ -73,7 +75,9 @@ int socket_make_progress()
     {
 	if (SOCKET_Process.out.error != SOCK_ERR_TIMEOUT)
 	{
-	    err_printf("socket_make_progress: sock_wait failed, error %d, out.error %d\n", error, SOCKET_Process.out.error);
+	    socket_format_sock_error(SOCKET_Process.out.error);
+	    err_printf("socket_make_progress: sock_wait failed, error %d, out.error %d - %s\n", error, 
+		SOCKET_Process.out.error, SOCKET_Process.err_msg);
 	}
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_MAKE_PROGRESS);
 	return MPI_SUCCESS;

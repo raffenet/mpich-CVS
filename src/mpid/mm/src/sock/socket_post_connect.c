@@ -5,11 +5,136 @@
  */
 #include "socketimpl.h"
 
+static unsigned int GetIP(char *pszIP)
+{
+    unsigned int nIP;
+    unsigned int a,b,c,d;
+    if (pszIP == NULL)
+	return 0;
+    sscanf(pszIP, "%u.%u.%u.%u", &a, &b, &c, &d);
+    /*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
+    nIP = (d << 24) | (c << 16) | (b << 8) | a;
+    return nIP;
+}
+
+static unsigned int GetMask(char *pszMask)
+{
+    int i, nBits;
+    unsigned int nMask = 0;
+    unsigned int a,b,c,d;
+
+    if (pszMask == NULL)
+	return 0;
+
+    if (strstr(pszMask, "."))
+    {
+	sscanf(pszMask, "%u.%u.%u.%u", &a, &b, &c, &d);
+	/*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
+	nMask = (d << 24) | (c << 16) | (b << 8) | a;
+    }
+    else
+    {
+	nBits = atoi(pszMask);
+	for (i=0; i<nBits; i++)
+	{
+	    nMask = nMask << 1;
+	    nMask = nMask | 0x1;
+	}
+    }
+    /*
+    unsigned int a, b, c, d;
+    a = ((unsigned char *)(&nMask))[0];
+    b = ((unsigned char *)(&nMask))[1];
+    c = ((unsigned char *)(&nMask))[2];
+    d = ((unsigned char *)(&nMask))[3];
+    printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
+    */
+    return nMask;
+}
+
+static int GetHostAndPort(char *host, int *port, char *business_card)
+{
+    char pszNetMask[50];
+    char *pEnv, *token;
+    unsigned int nNicNet, nNicMask;
+    char *temp, *pszHost, *pszIP, *pszPort;
+    unsigned int ip;
+
+    pEnv = getenv("MPICH_NETMASK");
+    if (pEnv != NULL)
+    {
+	strcpy(pszNetMask, pEnv);
+	token = strtok(pszNetMask, "/");
+	if (token != NULL)
+	{
+	    token = strtok(NULL, "\n");
+	    if (token != NULL)
+	    {
+		nNicNet = GetIP(pszNetMask);
+		nNicMask = GetMask(token);
+
+		/* parse each line of the business card and match the ip address with the network mask */
+		temp = strdup(business_card);
+		token = strtok(temp, ":\r\n");
+		while (token)
+		{
+		    pszHost = token;
+		    pszIP = strtok(NULL, ":\r\n");
+		    pszPort = strtok(NULL, ":\r\n");
+		    ip = GetIP(pszIP);
+		    /*msg_printf("masking '%s'\n", pszIP);*/
+		    if ((ip & nNicMask) == nNicNet)
+		    {
+			/* the current ip address matches the requested network so return these values */
+			strcpy(host, pszIP); /*pszHost);*/
+			*port = atoi(pszPort);
+			free(temp);
+			return MPI_SUCCESS;
+		    }
+		    token = strtok(NULL, ":\r\n");
+		}
+		free(temp);
+	    }
+	}
+    }
+
+    temp = strdup(business_card);
+    /* move to the host part */
+    token = strtok(temp, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	err_printf("socket_post_connect:GetHostAndPort: invalid business card\n");
+	return -1;
+    }
+    /*strcpy(host, token);*/
+    /* move to the ip part */
+    token = strtok(NULL, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	err_printf("socket_post_connect:GetHostAndPort: invalid business card\n");
+	return -1;
+    }
+    strcpy(host, token); /* use the ip string instead of the hostname, it's more reliable */
+    /* move to the port part */
+    token = strtok(NULL, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	err_printf("socket_post_connect:GetHostAndPort: invalid business card\n");
+	return -1;
+    }
+    *port = atoi(token);
+    free(temp);
+
+    return MPI_SUCCESS;
+}
+
 int socket_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 {
     char host[100];
     int port;
-    char *token;
     int error;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_POST_CONNECT);
 
@@ -32,24 +157,14 @@ int socket_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	return -1;
     }
 
-    strcpy(host, business_card);
-    token = strtok(host, ":");
-    if (token == NULL)
+    if (GetHostAndPort(host, &port, business_card) != MPI_SUCCESS)
     {
-	err_printf("socket_post_connect: invalid business card\n");
+	err_printf("socket_post_connect: unable to parse the host and port from the business card\n");
 	MPID_Thread_unlock(vc_ptr->lock);
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_CONNECT);
 	return -1;
     }
-    token = strtok(NULL, ":");
-    if (token == NULL)
-    {
-	err_printf("socket_post_connect: invalid business card\n");
-	MPID_Thread_unlock(vc_ptr->lock);
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_CONNECT);
-	return -1;
-    }
-    port = atoi(token);
+    /*msg_printf("GetHostAndPort returned %s:%d\n", host, port);*/
 
     SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);
     SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_POSTING_CONNECT);
@@ -77,9 +192,11 @@ int socket_handle_connect(MPIDI_VC *vc_ptr)
 
     MPIU_dbg_printf("socket_handle_connect - %d\n", sock_getid(vc_ptr->data.socket.sock));
 
+    /* Change the state */
     SOCKET_CLR_BIT(vc_ptr->data.socket.connect_state, SOCKET_POSTING_CONNECT);
     SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_CONNECT_PKT);
 
+    /* post a write of the connection stuff - context, rank */
     MPIU_dbg_printf("sock_post_write(%d:MPID_Connect_pkt,%d)\n", sock_getid(vc_ptr->data.socket.sock), MPIR_Process.comm_world->rank);
     vc_ptr->pkt_car.msg_header.pkt.u.connect.rank = MPIR_Process.comm_world->rank;
     vc_ptr->pkt_car.msg_header.pkt.u.connect.context = MPIR_Process.comm_world->context_id;
@@ -104,6 +221,7 @@ int socket_handle_written_ack(MPIDI_VC *vc_ptr, int num_written)
 
     MPIU_dbg_printf("socket_handle_written_ack(%d ???) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_written);
 
+    /* Change the state */
     SOCKET_CLR_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
     SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);
 
@@ -133,6 +251,7 @@ int socket_handle_written_connect_pkt(MPIDI_VC *vc_ptr, int num_written)
 
     MPIU_dbg_printf("socket_handle_written_connect_pkt(%d) - %d bytes of %d\n", sock_getid(vc_ptr->data.socket.sock), num_written, sizeof(MPID_Connect_pkt));
 
+    /* Change the state */
     SOCKET_CLR_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_CONNECT_PKT);
     SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_READING_ACK);
 

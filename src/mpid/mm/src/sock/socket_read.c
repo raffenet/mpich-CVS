@@ -74,6 +74,9 @@ int socket_read_data(MPIDI_VC *vc_ptr)
 	return MPI_SUCCESS;
     }
 
+    SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_READING_HEADER);
+    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READING_DATA);
+
     car_ptr = vc_ptr->readq_head;
     buf_ptr = car_ptr->buf_ptr;
 

@@ -25,7 +25,7 @@ static void order_methods_from_environment()
 	return;
     for (i=0; i<strlen(order); i++)
 	order[i] = toupper(order[i]);
-    order = strtok(order, ":");
+    order = strtok(order, ":,");
 
     MPID_Process.num_ordered_methods = 0;
 
@@ -79,7 +79,7 @@ static void order_methods_from_environment()
 	    MPID_Process.num_ordered_methods++;
 	}
 #endif
-	order =  strtok(NULL, ":");
+	order =  strtok(NULL, ":,");
     }
 
     free(orig);

@@ -25,9 +25,16 @@ int socket_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 	mm_dec_cc(posted_car_ptr->request_ptr);
 	posted_car_ptr = posted_car_ptr->next_ptr;
 	
-	/* start reading the eager data */
 	if (posted_car_ptr)
+	{
+	    /* start reading the eager data */
 	    socket_car_head_enqueue(posted_car_ptr->vc_ptr, posted_car_ptr);
+	}
+	else
+	{
+	    /* post a read for the next header packet */
+	    socket_post_read_pkt(posted_car_ptr->vc_ptr);
+	}
     } 
     else if (pkt_car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
     {
