@@ -1,0 +1,4 @@
+SUBDIRS_pm_name = file
+# ldap pmiext
+SUBDIRS = @nameserv_name@ .
+
