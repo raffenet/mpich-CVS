@@ -47,7 +47,7 @@ clean:
 	@rm -f *.o *.lo
 
 tags: TAGS
-SOURCES = ${AC_OBJECTS:.o=.c}
+SOURCES = ${AD_OBJECTS:.o=.c}
 HEADERS = 
 TAGS:${HEADERS} ${SOURCES}
 	here=`cd ../../../../.. && pwd` ; cd ${srcdir} && etags -o $$here/TAGS --append ${HEADERS} ${SOURCES}
