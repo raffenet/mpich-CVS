@@ -23,7 +23,7 @@ static char MTEST_Descrip[] = "Simple intercomm allreduce test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *sendbuf = 0, *recvbuf = 0;
     int leftGroup, i, count, rank, rsize;
     MPI::Intercomm comm;
@@ -47,10 +47,6 @@ int main( int argc, char *argv[] )
 	    }
 	    for (i=0; i<count; i++) recvbuf[i] = 0;
 	    comm.Allreduce( sendbuf, recvbuf, count, datatype, MPI::SUM );
-	    if (err) {
-		errs++;
-		MTestPrintError( err );
-	    }
 	    /* In each process should be the sum of the values from the
 	       other process */
 	    rsize = comm.Get_remote_size();

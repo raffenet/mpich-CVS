@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Simple intercomm gatherv test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *buf = 0;
     int *recvcounts;
     int *recvdispls;
@@ -44,10 +44,6 @@ int main( int argc, char *argv[] )
 		comm.Gatherv( NULL, 0, datatype,
 				  buf, recvcounts, recvdispls, datatype, 
 				 (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Test that no other process in this group received the 
 		   broadcast */
 		if (rank != 0) {
@@ -74,10 +70,6 @@ int main( int argc, char *argv[] )
 		buf = new int [count];
 		for (i=0; i<count; i++) buf[i] = rank * count + i;
 		comm.Gatherv( buf, count, datatype, NULL, 0, 0, datatype, 0 );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 	    }
 	    delete [] buf;
 	    delete [] recvcounts;

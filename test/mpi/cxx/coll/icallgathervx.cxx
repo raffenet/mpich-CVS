@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Simple intercomm allgatherv test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *rbuf = 0, *sbuf = 0;
     int *recvcounts, *recvdispls;
     int leftGroup, i, count, rank, rsize;
@@ -47,10 +47,6 @@ int main( int argc, char *argv[] )
 	    }
 	    comm.Allgatherv( sbuf, count, datatype,
 			     rbuf, recvcounts, recvdispls, datatype );
-	    if (err) {
-		errs++;
-		MTestPrintError( err );
-	    }
 	    if (leftGroup) {
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
@@ -71,10 +67,6 @@ int main( int argc, char *argv[] )
 	    if (leftGroup) {
 		comm.Allgatherv( sbuf, 0, datatype,
 				 rbuf, recvcounts, recvdispls, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
 			errs++;
@@ -88,10 +80,6 @@ int main( int argc, char *argv[] )
                 }
 		comm.Allgatherv( sbuf, count, datatype,
 				 rbuf, recvcounts, recvdispls, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -1) {
 			errs++;

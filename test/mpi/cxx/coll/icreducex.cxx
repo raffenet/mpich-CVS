@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Simple intercomm reduce test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *sendbuf = 0, *recvbuf=0;
     int leftGroup, i, count, rank;
     MPI::Intercomm comm;
@@ -34,10 +34,6 @@ int main( int argc, char *argv[] )
 		rank = comm.Get_rank();
 		comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM,
 			     (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Test that no other process in this group received the 
 		   broadcast, and that we got the right answers */
 		if (rank == 0) {
@@ -61,10 +57,6 @@ int main( int argc, char *argv[] )
 		/* In the right group */
 		for (i=0; i<count; i++) sendbuf[i] = i;
 		comm.Reduce( sendbuf, recvbuf, count, datatype, MPI::SUM, 0 );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Check that we have received no data */
 		for (i=0; i<count; i++) {
 		    if (recvbuf[i] != -1) {

@@ -23,7 +23,7 @@ static char MTEST_Descrip[] = "Simple intercomm alltoall test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *sendbuf = 0, *recvbuf = 0;
     int leftGroup, i, j, idx, count, rank, rsize;
     MPI::Intercomm comm;
@@ -49,10 +49,6 @@ int main( int argc, char *argv[] )
 		    }
 		}
 		comm.Alltoall( sendbuf, count, datatype, NULL, 0, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 	    }
 	    else {
 		int rank, size;
@@ -62,10 +58,6 @@ int main( int argc, char *argv[] )
 
 		/* In the right group */
 		comm.Alltoall( NULL, 0, datatype, recvbuf, count, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Check that we have received the correct data */
 		idx = 0;
 		for (j=0; j<rsize; j++) {

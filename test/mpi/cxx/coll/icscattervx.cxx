@@ -23,7 +23,7 @@ static char MTEST_Descrip[] = "Simple intercomm scatterv test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *buf = 0;
     int *sendcounts;
     int *senddispls;
@@ -59,10 +59,6 @@ int main( int argc, char *argv[] )
 		comm.Scatterv( buf, sendcounts, senddispls, datatype, 
 			       NULL, 0, datatype,
 			       (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Test that no other process in this group received the 
 		   scatter */
 		if (rank != 0) {
@@ -86,10 +82,6 @@ int main( int argc, char *argv[] )
 		for (i=0; i<count; i++) buf[i] = -1;
 		comm.Scatterv( NULL, 0, 0, datatype, 
 			       buf, count, datatype, 0 );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Check that we have received the correct data */
 		for (i=0; i<count; i++) {
 		    if (buf[i] != i + rank * count) {

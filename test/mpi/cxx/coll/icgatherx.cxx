@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Simple intercomm gather test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *buf = 0;
     int leftGroup, i, count, rank;
     MPI::Intercomm comm;
@@ -35,10 +35,6 @@ int main( int argc, char *argv[] )
 		comm.Gather( NULL, 0, datatype,
 			     buf, count, datatype, 
 			     (rank == 0) ? MPI::ROOT : MPI::PROC_NULL );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		/* Test that no other process in this group received the 
 		   broadcast */
 		if (rank != 0) {
@@ -65,10 +61,6 @@ int main( int argc, char *argv[] )
 		buf = new int [ count ];
 		for (i=0; i<count; i++) buf[i] = rank * count + i;
 		comm.Gather( buf, count, datatype, NULL, 0, datatype, 0 );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 	    }
 	    delete [] buf;
 	}

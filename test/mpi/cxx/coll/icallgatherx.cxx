@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Simple intercomm allgather test";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int *rbuf = 0, *sbuf = 0;
     int leftGroup, i, count, rank, rsize;
     MPI::Intercomm comm;
@@ -39,10 +39,6 @@ int main( int argc, char *argv[] )
 		for (i=0; i<count; i++)       sbuf[i] = -(i + rank*count);
 	    }
 	    comm.Allgather( sbuf, count, datatype, rbuf, count, datatype );
-	    if (err) {
-		errs++;
- 		MTestPrintError( err );
-	    }
 	    if (leftGroup) {
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
@@ -62,10 +58,6 @@ int main( int argc, char *argv[] )
 	    for (i=0; i<count*rsize; i++) rbuf[i] = -1;
 	    if (leftGroup) {
 		comm.Allgather( sbuf, 0, datatype, rbuf, count, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -i) {
 			errs++;
@@ -74,10 +66,6 @@ int main( int argc, char *argv[] )
 	    }
 	    else {
 		comm.Allgather( sbuf, count, datatype, rbuf, 0, datatype );
-		if (err) {
-		    errs++;
-		    MTestPrintError( err );
-		}
 		for (i=0; i<count*rsize; i++) {
 		    if (rbuf[i] != -1) {
 			errs++;

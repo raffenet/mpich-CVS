@@ -16,7 +16,7 @@ static char MTEST_Descrip[] = "Simple intercomm barrier test";
    remote group enter the barrier */
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int leftGroup;
     MPI::Intercomm comm;
     MPI::Datatype datatype;
