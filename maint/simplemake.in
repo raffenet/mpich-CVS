@@ -2278,7 +2278,7 @@ sub TargetInstall {
     print FD "uninstall:$newline";
     foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
-	foreach $file ($install_files{$kind}) {
+	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
 	    print FD "\t-rm -f \${$dir}/$destfile$newline";
