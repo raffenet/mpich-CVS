@@ -21,7 +21,18 @@ import base.io.MixedDataOutput;
 
 public class Category
 {
-    public static final Comparator INDEX_ORDER  = new IndexOrder();
+    public static final Comparator INDEX_ORDER
+                                   = new IndexOrder();
+    public static final Comparator PREVIEW_ORDER
+                                   = new PreviewOrder();
+    public static final Comparator CASE_INSENSITIVE_ORDER
+                                   = new CaseInsensitiveOrder();
+    public static final Comparator CASE_SENSITIVE_ORDER
+                                   = new CaseSensitiveOrder();
+    public static final Comparator CASE_INSENSITIVE_TOPO_ORDER
+                                   = new CaseInsensitiveTopologyOrder();
+    public static final Comparator CASE_SENSITIVE_TOPO_ORDER
+                                   = new CaseSensitiveTopologyOrder();
 
     private int          index;
     private String       name;
@@ -334,6 +345,83 @@ public class Category
             Category type1 = (Category) o1;
             Category type2 = (Category) o2;
             return type1.index - type2.index;
+        }
+    }
+
+    /*
+       This comparator gives preference over Preview drawable
+       All Preview object's category indexes are negative as defined in
+       logformat/clogTOdrawable/InputLog.java & logformat/trace/InputLog.java.
+    */
+    public static class PreviewOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1  = (Category) o1;
+            Category type2  = (Category) o2;
+            int      pview1 = ( type1.index < 0 ? 0 : 1 );
+            int      pview2 = ( type2.index < 0 ? 0 : 1 );
+            return pview1 - pview2;
+        }
+    }
+
+    public static class CaseSensitiveOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1      = (Category) o1;
+            Category type2      = (Category) o2;
+            int      pview_diff = PREVIEW_ORDER.compare( type1, type2 );
+            if ( pview_diff != 0 )
+                return pview_diff;
+            else
+                return type1.name.compareTo( type2.name );
+        }
+    }
+
+    public static class CaseInsensitiveOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1      = (Category) o1;
+            Category type2      = (Category) o2;
+            int      pview_diff = PREVIEW_ORDER.compare( type1, type2 );
+            if ( pview_diff != 0 )
+                return pview_diff;
+            else
+                return type1.name.compareToIgnoreCase( type2.name );
+        }
+    }
+
+    public static class CaseSensitiveTopologyOrder implements Comparator
+    {
+        private static final Comparator  TOPO_ORDER = Topology.PREFER_ORDER;
+
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1     = (Category) o1;
+            Category type2     = (Category) o2;
+            int      topo_diff = TOPO_ORDER.compare( type1.topo, type2.topo );
+            if ( topo_diff != 0 )
+                return topo_diff;
+            else
+                return CASE_SENSITIVE_ORDER.compare( type1, type2 );
+        }
+    }
+
+    public static class CaseInsensitiveTopologyOrder implements Comparator
+    {
+        private static final Comparator  TOPO_ORDER = Topology.PREFER_ORDER;
+
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1     = (Category) o1;
+            Category type2     = (Category) o2;
+            int      topo_diff = TOPO_ORDER.compare( type1.topo, type2.topo );
+            if ( topo_diff != 0 )
+                return topo_diff;
+            else
+                return CASE_INSENSITIVE_ORDER.compare( type1, type2 );
         }
     }
 }

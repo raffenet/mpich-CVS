@@ -9,19 +9,22 @@
 
 package base.drawable;
 
+import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
 //  A place holder for "shape".  It is meant to be extended
 public class Topology
 {
-    public static final  int       EVENT_ID  = 0;
-    public static final  int       STATE_ID  = 1;
-    public static final  int       ARROW_ID  = 2;
+    public static final  Comparator  PREFER_ORDER = new PreferOrder();
 
-    public static final  Topology  EVENT     = new Topology( EVENT_ID );
-    public static final  Topology  STATE     = new Topology( STATE_ID );
-    public static final  Topology  ARROW     = new Topology( ARROW_ID );
+    public static final  int         EVENT_ID  = 0;
+    public static final  int         STATE_ID  = 1;
+    public static final  int         ARROW_ID  = 2;
+
+    public static final  Topology    EVENT     = new Topology( EVENT_ID );
+    public static final  Topology    STATE     = new Topology( STATE_ID );
+    public static final  Topology    ARROW     = new Topology( ARROW_ID );
 
     private int        index;
 
@@ -98,6 +101,17 @@ public class Topology
                 return "Arrow";
             default :
                 return "Unknown";
+        }
+    }
+
+    public static class PreferOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Topology topo1 = (Topology) o1;
+            Topology topo2 = (Topology) o2;
+            return topo2.index - topo1.index;
+            // intentionally reversed, so arrow < state < event
         }
     }
 }
