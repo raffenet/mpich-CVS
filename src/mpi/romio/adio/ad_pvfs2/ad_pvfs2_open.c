@@ -44,11 +44,11 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
     memset(&resp_create, 0, sizeof(resp_create));
 
     ret = PVFS_sys_lookup(fs_id, pvfs_name,
-	    pvfs2_fs->credentials, &resp_lookup, PVFS2_LOOKUP_LINK_FOLLOW);
+	    &(pvfs2_fs->credentials), &resp_lookup, PVFS2_LOOKUP_LINK_FOLLOW);
     if ( (ret < 0) ) { /* XXX: check what the error was */
 	if (access_mode & MPI_MODE_CREATE)  {
 	    ret = PVFS_sys_getparent(fs_id, pvfs_name,
-		    pvfs2_fs->credentials, &resp_getparent); 
+		    &(pvfs2_fs->credentials), &resp_getparent); 
 	    if (ret < 0) {
 		fprintf(stderr, "pvfs_sys_getparent returns with %d\n", ret);
 		o_status->error = ret;
@@ -56,11 +56,11 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	    } 
 	    ret = PVFS_sys_create(resp_getparent.basename, 
 		    resp_getparent.parent_ref, attribs, 
-		    pvfs2_fs->credentials, NULL, &resp_create); 
+		    &(pvfs2_fs->credentials), NULL, &resp_create); 
 
 	    if (ret < 0) { /* XXX: should only do this for EEXISTS */
 		ret = PVFS_sys_lookup(fs_id, pvfs_name,
-			pvfs2_fs->credentials, &resp_lookup, 
+			&(pvfs2_fs->credentials), &resp_lookup, 
 			PVFS2_LOOKUP_LINK_FOLLOW);
 		if ( ret < 0 ) {
 		    o_status->error = ret;

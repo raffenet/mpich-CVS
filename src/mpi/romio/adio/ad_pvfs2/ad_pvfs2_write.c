@@ -39,7 +39,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	ret = PVFS_sys_write(pvfs_fs->object_ref, file_req, offset,  buf, 
-		mem_req, pvfs_fs->credentials, &resp_io);
+		mem_req, &(pvfs_fs->credentials), &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
 	    goto error_write;
@@ -47,7 +47,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 	fd->fp_sys_posn = offset + (int) resp_io.total_completed;
     } else {
 	ret = PVFS_sys_write(pvfs_fs->object_ref, file_req, fd->fp_ind, buf, 
-		mem_req, pvfs_fs->credentials, &resp_io);
+		mem_req, &(pvfs_fs->credentials), &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
 	    goto error_write;
@@ -207,7 +207,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    if (err_flag < 0) break;
 		    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 
 			    file_offsets, PVFS_BOTTOM, mem_req, 
-			    pvfs_fs->credentials, &resp_io);
+			    &(pvfs_fs->credentials), &resp_io);
 		  
 		    /* in the case of error or the last read list call, 
 		     * leave here */
@@ -386,7 +386,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	     * file, so we should not pass in an offset if we are using
 	     * hindexed for the file type */
 	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
-		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
+		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
 
@@ -428,7 +428,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
 	    /* as above, use 0 for 'offset' when using hindexed file type*/
 	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
-		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
+		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
         }
@@ -782,7 +782,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
 	    /* offset will be expressed in memory and file datatypes */
 	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
-		    PVFS_BOTTOM, mem_req, pvfs_fs->credentials, &resp_io);
+		    PVFS_BOTTOM, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    size_wrote += new_buffer_write;
 	    start_k = k;
 	    start_j = j;

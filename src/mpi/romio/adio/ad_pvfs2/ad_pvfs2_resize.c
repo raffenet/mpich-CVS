@@ -32,7 +32,7 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 
     if (rank == fd->hints->ranklist[0]) {
 	ret = PVFS_sys_truncate(pvfs_fs->object_ref, 
-		size, pvfs_fs->credentials);
+		size, &(pvfs_fs->credentials));
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     } else  {
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);

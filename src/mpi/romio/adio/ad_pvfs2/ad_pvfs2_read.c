@@ -40,7 +40,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	ret = PVFS_sys_read(pvfs_fs->object_ref, file_req, offset, buf, 
-		mem_req, pvfs_fs->credentials, &resp_io);
+		mem_req, &(pvfs_fs->credentials), &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);
 	    goto error_read;
@@ -48,7 +48,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 	fd->fp_sys_posn = offset + (int)resp_io.total_completed;
     } else { 
 	ret = PVFS_sys_read(pvfs_fs->object_ref, file_req, fd->fp_ind, buf, 
-		mem_req, pvfs_fs->credentials, &resp_io);
+		mem_req, &(pvfs_fs->credentials), &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);
 	    goto error_read;
