@@ -151,7 +151,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    }
 	    else
 	    {
-		sreq->ref_count = 0;
+		MPIU_Object_set_ref(sreq, 0);
 		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
 	    }

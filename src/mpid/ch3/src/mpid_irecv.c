@@ -32,7 +32,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	rreq = MPIDI_CH3_Request_create();
 	if (rreq != NULL)
 	{
-	    rreq->ref_count = 1;
+	    MPIU_Object_set_ref(rreq, 1);
 	    rreq->cc = 0;
 	    rreq->kind = MPID_REQUEST_RECV;
 	    MPIR_Status_set_procnull(&rreq->status);
@@ -163,7 +163,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	    
 	    /* no other thread can possibly be waiting on rreq, so it is safe to reset ref_count and cc */
 	    rreq->cc = 0;
-	    rreq->ref_count = 1;
+	    MPIU_Object_set_ref(rreq, 1);
 	}
 	else
 	{

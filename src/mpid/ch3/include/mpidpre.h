@@ -214,6 +214,7 @@ MPIDI_CA_t;
 
 typedef struct MPIDI_VC
 {
+    int handle;  /* not used; exists so that we may use the MPIU_Object routines for reference counting */
     volatile int ref_count;
     int lpid;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)

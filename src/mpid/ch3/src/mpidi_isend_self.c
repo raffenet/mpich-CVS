@@ -35,7 +35,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     rreq = MPIDI_CH3U_Request_FDP_or_AEU(&match, &found);
     if (rreq == NULL)
     {
-	sreq->ref_count = 0;
+	MPIU_Object_set_ref(sreq, 0);
 	MPIDI_CH3_Request_destroy(sreq);
 	sreq = NULL;
 	mpi_errno = MPIR_ERR_MEMALLOCFAILED;
@@ -62,7 +62,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	MPID_Request_set_complete(rreq);
 	MPID_Request_release(rreq);
 	/* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
-	sreq->ref_count = 1;
+	MPIU_Object_set_ref(sreq, 1);
 	sreq->cc = 0;
     }
     else
@@ -84,7 +84,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    rreq->status.count = 0;
 	    
 	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
-	    sreq->ref_count = 1;
+	    MPIU_Object_set_ref(sreq, 1);
 	    sreq->cc = 0;
 	}
 	    

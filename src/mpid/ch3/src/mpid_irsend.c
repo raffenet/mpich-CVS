@@ -48,7 +48,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     
     if (rank == MPI_PROC_NULL)
     {
-	sreq->ref_count = 1;
+	MPIU_Object_set_ref(sreq, 1);
 	sreq->cc = 0;
 	goto fn_exit;
     }
@@ -124,7 +124,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	}
 	else
 	{
-	    sreq->ref_count = 0;
+	    MPIU_Object_set_ref(sreq, 0);
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
 	}

@@ -48,7 +48,7 @@ extern MPIDI_Process_t MPIDI_Process;
 
 #define MPIDI_CH3U_VC_init(_vc, _lpid)		\
 {						\
-    (_vc)->ref_count = 0;			\
+    MPIU_Object_set_ref((_vc), 0);		\
     (_vc)->lpid = (_lpid);			\
     MPIDI_CH3U_VC_init_seqnum_send(_vc);	\
     MPIDI_CH3U_VC_init_seqnum_recv(_vc);	\
@@ -84,7 +84,7 @@ extern MPIDI_Process_t MPIDI_Process;
  */
 #define MPIDI_CH3U_Request_create(_req)				\
 {								\
-    (_req)->ref_count = 1;					\
+    MPIU_Object_set_ref((_req), 1);				\
     (_req)->cc = 1;						\
     (_req)->cc_ptr = &(_req)->cc;				\
     (_req)->status.MPI_SOURCE = MPI_UNDEFINED;			\
@@ -126,7 +126,7 @@ extern MPIDI_Process_t MPIDI_Process;
 	_FAIL;									\
     }										\
     										\
-    (_sreq)->ref_count = 2;							\
+    MPIU_Object_set_ref((_sreq), 2);						\
     (_sreq)->kind = MPID_REQUEST_SEND;						\
     (_sreq)->comm = comm;							\
     (_sreq)->ch3.match.rank = rank;						\
@@ -147,7 +147,7 @@ extern MPIDI_Process_t MPIDI_Process;
 	_FAIL;									\
     }										\
 										\
-    (_sreq)->ref_count = 1;							\
+    MPIU_Object_set_ref((_sreq), 1);						\
     (_sreq)->kind = MPID_PREQUEST_SEND;						\
     (_sreq)->comm = comm;							\
     (_sreq)->ch3.match.rank = rank;						\

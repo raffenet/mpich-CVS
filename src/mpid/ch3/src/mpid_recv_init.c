@@ -28,7 +28,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 	goto fn_exit;
     }
     
-    rreq->ref_count = 1;
+    MPIU_Object_set_ref(rreq, 1);
     rreq->kind = MPID_PREQUEST_RECV;
     rreq->comm = comm;
     rreq->ch3.match.rank = rank;

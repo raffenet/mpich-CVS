@@ -152,7 +152,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 
 	    /* no other thread can possibly be waiting on rreq, so it is safe to reset ref_count and cc */
 	    rreq->cc = 0;
-	    rreq->ref_count = 1;
+	    MPIU_Object_set_ref(rreq, 1);
 	}
 	else
 	{
