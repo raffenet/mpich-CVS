@@ -59,10 +59,7 @@ ibuBlockAllocator g_workAllocator = NULL;
 #endif
 
 typedef int IBU_STATE;
-#define IBU_ACCEPTING  0x0001
-#define IBU_ACCEPTED   0x0002
-#define IBU_CONNECTING 0x0004
-#define IBU_READING    0x0008
+#define IBU_READING    0x0001
 #define IBU_WRITING    0x0010
 
 typedef struct ibu_buffer_t
@@ -1790,7 +1787,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 #define FUNCNAME ibu_set_vc_ptr
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)*/
 int ibu_set_vc_ptr(ibu_t ibu, void *vc_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
@@ -1879,74 +1875,6 @@ int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n)
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_READV);
     return IBU_SUCCESS;
 }
-
-#if 0
-#undef FUNCNAME
-#define FUNCNAME ibu_post_write
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_write(ibu_t ibu, void *buf, int len)
-{
-    int num_bytes;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
-    MPIU_DBG_PRINTF(("entering ibu_post_write\n"));
-    /*
-    ibu->write.total = 0;
-    ibu->write.buffer = buf;
-    ibu->write.bufflen = len;
-    ibu->write.use_iov = FALSE;
-    ibu->state |= IBU_WRITING;
-    ibu->pending_operations++;
-    */
-    ibu->state |= IBU_WRITING;
-
-    num_bytes = ibui_post_write(ibu, buf, len, wfn);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
-    MPIDI_DBG_PRINTF((60, FCNAME, "returning %d\n", num_bytes));
-    return num_bytes;
-}
-#endif
-
-#if 0
-#undef FUNCNAME
-#define FUNCNAME ibu_post_writev
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_writev(ibu_t ibu, MPID_IOV *iov, int n)
-{
-    int num_bytes;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
-    MPIU_DBG_PRINTF(("entering ibu_post_writev\n"));
-    /* This isn't necessary if we require the iov to be valid for the duration of the operation */
-    /*ibu->write.iov = iov;*/
-    /*
-    memcpy(ibu->write.iov, iov, sizeof(MPID_IOV) * n);
-    ibu->write.iovlen = n;
-    ibu->write.index = 0;
-    ibu->write.use_iov = TRUE;
-    */
-    ibu->state |= IBU_WRITING;
-    /*
-    {
-	char str[1024], *s = str;
-	int i;
-	s += sprintf(s, "ibu_post_writev(");
-	for (i=0; i<n; i++)
-	    s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
-	sprintf(s, ")\n");
-	MPIU_DBG_PRINTF(("%s", str));
-    }
-    */
-    num_bytes = ibui_post_writev(ibu, iov, n, wfn);
-    MPIU_DBG_PRINTF(("exiting ibu_post_writev\n"));
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
-    return IBU_SUCCESS;
-}
-#endif
 
 /* extended functions */
 
