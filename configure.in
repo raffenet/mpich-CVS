@@ -1119,6 +1119,12 @@ if test "$enable_weak_symbols" != "yes" ; then
 else
     LIBS="-lmpich $LIBS"
 fi
+
+# not sure where these should go, but they are left untreated in the mpicc file
+dnl
+dnl default settings for compiler and linker flags 
+AC_SUBST(MPI_CFLAGS)
+AC_SUBST(MPI_LDFLAGS)
 dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
