@@ -523,8 +523,10 @@ sub RunTestPassed {
 }
 sub RunTestFailed {
     my $output = $_[0];
-    $output =~ s/</\&lt;/g;
-    $output =~ s/>/\&gt;/g;
+    $output =~ s/</\*AMP\*lt;/g;
+    $output =~ s/>/\*AMP\*gt;/g;
+    $output =~ s/&/\*AMP\*amp;/g;
+    $output =~ s/\*AMP\*/&/g;
     if ($xmloutput) {
 	print XMLOUT "<STATUS>fail</STATUS>$newline";
 	print XMLOUT "<TESTDIFF>$newline$output</TESTDIFF>$newline";
