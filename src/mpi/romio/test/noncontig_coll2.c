@@ -243,7 +243,7 @@ void default_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
 	}
 	/* chop off that last comma */
 	dest[strlen(dest) - 1] = '\0';
-	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+	MPI_Bcast(dest, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 void reverse_str(int mynod, int len, ADIO_cb_name_array array, char *dest) 
 {
@@ -257,7 +257,7 @@ void reverse_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
 	    }
 	}
 	dest[strlen(dest) - 1] = '\0';
-	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+	MPI_Bcast(dest, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
 void reverse_alternating_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
@@ -278,7 +278,7 @@ void reverse_alternating_str(int mynod, int len, ADIO_cb_name_array array, char 
 	    }
     }
 	dest[strlen(dest) - 1] = '\0';
-    MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(dest, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
 void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
@@ -297,7 +297,7 @@ void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest
 	    }
 	}
 	dest[strlen(dest) - 1] = '\0';
-	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+	MPI_Bcast(dest, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
 int main(int argc, char **argv)
@@ -356,6 +356,7 @@ int main(int argc, char **argv)
 		    /* +1: space for either a , or \0 if last */
 		    cb_config_len += strlen(array->names[i]) + 1;
 	    }
+	    ++cb_config_len;
     }
     MPI_Bcast(&cb_config_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if ( (cb_config_string = malloc(cb_config_len)) == NULL ) {
