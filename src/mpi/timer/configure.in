@@ -148,7 +148,12 @@ case "$timer_type" in
     ;;
 
     clock_gettime)
-    AC_CHECK_FUNCS(clock_gettime clock_getres)
+    missing_function=no
+    AC_CHECK_FUNC(clock_gettime,,[missing_function=yes])
+    AC_CHECK_FUNC(clock_getres,,[missing_function=yes])
+    if test "$missing_function" = yes ; then
+        AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available])
+    fi
     MPID_TIMER_TYPE="struct timespec"
     # FreeBSD 4.3 incorrectly puts the header into sys/time.h; 
     # time.h is required (see pages 45 and 46 in the POSIX standard).
