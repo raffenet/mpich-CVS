@@ -105,7 +105,6 @@ dnl the moment to allow ROMIO to be separatedly distributed.
 dnl scripts.
 AC_CONFIG_AUX_DIR(confdb)
 
-rm -f config.log
 #
 # Check that an arch was set
 # If it wasn't set, try to guess using "util/tarch"
@@ -1001,11 +1000,11 @@ EOF
     if eval $ac_link2 ; then
         AC_MSG_RESULT(yes)
     else
-      echo "$ac_link2" >>config.log
-      echo "Failed program was" >>config.log
-      cat conftest1.c >>config.log
-      cat conftest2.c >>config.log
-      if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+      echo "$ac_link2" 1>&AC_FD_CC
+      echo "Failed program was" 1>&AC_FD_CC
+      cat conftest1.c 1>&AC_FD_CC
+      cat conftest2.c 1>&AC_FD_CC
+      if test -s conftest.out ; then cat conftest.out 1>&AC_FD_CC ; fi
       AC_MSG_RESULT(no)
       has_pragma_weak=0
     fi
