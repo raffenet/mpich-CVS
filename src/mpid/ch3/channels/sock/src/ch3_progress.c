@@ -31,8 +31,8 @@ typedef struct MPIDI_CH3I_conn_info
     MPIDI_VC * vc;
     sock_t sock;
     enum conn_state state;
-    void * send_active;
-    void * recv_active;
+    MPID_Request * send_active;
+    MPID_Request * recv_active;
     MPIDI_CH3_Pkt_t pkt;
 } MPIDI_CH3I_conn_info_t;
 
@@ -84,11 +84,89 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    
 	    case SOCK_OP_READ:
 	    {
+		MPIDI_CH3I_conn_info_t * info = (MPIDI_CH3I_conn_info_t *) event.user_ptr;
+		
+		if (info->recv_active)
+		{
+		}
+		else /* incoming packet header */
+		{
+		    
+		}
 
 		break;
 	    }
 	    
 	    case SOCK_OP_WRITE:
+	    {
+		MPIDI_CH3I_conn_info_t * info = (MPIDI_CH3I_conn_info_t *) event.user_ptr;
+
+		if (event.error != SOCK_SUCCESS)
+		{
+		    /* XXX: this is not right */
+		    info->state = CONN_STATE_FAILED;
+		    if (info->vc != NULL)
+		    { 
+			info->vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
+			/* MPIDI_CH3U_VC_propagate_error(info->vc, MPI_ERR_UNKNOWN); */
+		    }
+		    break;
+		}
+		
+		if (info->send_active)
+		{
+		    MPID_Request * sreq = info->send_active;
+		    
+		    info->send_active = FALSE;
+		    MPIDI_CH3U_Handle_send_req(info->vc, sreq);
+		    if (info->send_active == FALSE)
+		    { 
+			/* post send of next request on the send queue */
+			info->send_active = MPIDI_CH3I_SendQ_head(info->vc); /* MT */
+			if (info->send_active != NULL)
+			{
+			    sock_post_write(info->sock, info->send_active->ch3.iov, info->send_active->ch3.iov_count, NULL);
+			}
+		    }
+		}
+		else /* finished writing internal packet header */
+		{
+		    if (info->state == CONN_STATE_OPEN_CSEND)
+		    {
+			/* finished sending open request packet */
+			/* post receive for open response packet */
+			info->state = CONN_STATE_OPEN_CRECV;
+			sock_post_read(info->sock, &info->pkt, sizeof(info->pkt), NULL);
+		    }
+		    else if (info->state == CONN_STATE_OPEN_LSEND)
+		    {
+			/* finished sending open response packet */
+			if (info->pkt.sc_open_resp.ack == TRUE)
+			{ 
+			    /* post receive for packet header */
+			    info->state = CONN_STATE_CONNECTED;
+			    sock_post_read(info->sock, &info->pkt, sizeof(info->pkt), NULL);
+			    
+			    /* post send of next request on the send queue */
+			    info->send_active = MPIDI_CH3I_SendQ_head(info->vc); /* MT */
+			    if (info->send_active != NULL)
+			    {
+				sock_post_write(info->sock, info->send_active->ch3.iov, info->send_active->ch3.iov_count, NULL);
+			    }
+			}
+			else
+			{
+			    /* head-to-head connections - close this connection */
+			    info->state = CONN_STATE_CLOSING;
+			    rc = sock_post_close(info->sock);
+			    assert(rc == SOCK_SUCCESS);
+			}
+		    }
+		}
+
+		break;
+	    }
+	    
 	    case SOCK_OP_ACCEPT:
 	    {
 		MPIDI_CH3I_conn_info_t * info;
@@ -97,13 +175,19 @@ int MPIDI_CH3_Progress(int is_blocking)
 		if (info != NULL)
 		{ 
 		    rc = sock_accept(listener_info->sock, sock_set, info, &info->sock);
+		    if (rc == SOCK_SUCCESS)
+		    { 
+			info->vc = NULL;
+			info->state = CONN_STATE_OPEN_LRECV;
+			info->send_active = NULL;
+			info->recv_active = NULL;
 
-		    info->vc = NULL;
-		    info->state = CONN_STATE_OPEN_LRECV;
-		    info->send_active = NULL;
-		    info->recv_active = NULL;
-
-		    rc = sock_post_read(info->sock, &info->pkt, sizeof(info->pkt), NULL);
+			sock_post_read(info->sock, &info->pkt, sizeof(info->pkt), NULL);
+		    }
+		    else
+		    {
+			conn_info_destroy(info);
+		    }
 		}
 		else
 		{
