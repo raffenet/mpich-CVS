@@ -15,7 +15,8 @@ import javax.swing.JFrame;
 
 public abstract class TopWindow
 {
-    private static Dimension     Screen_Size = null;
+    public  static TopControl    Control      = null;
+    private static Dimension     Screen_Size  = null;
 
     private JFrame  root;
 
@@ -51,6 +52,10 @@ public abstract class TopWindow
 
         if ( Screen_Size == null )
             Screen_Size = Routines.getScreenSize();
+
+        JFrame control_frame    = First.getWindow();
+        if ( Control == null && control_frame != null )
+            Control = (TopControl) control_frame;
 
         Rectangle bounds = new Rectangle();
         JFrame legend_frame   = Legend.getWindow();
@@ -91,6 +96,8 @@ public abstract class TopWindow
     {
         public void disposeAll()
         {
+            // to invoke Control.setEditPreferenceButtonEnabled( true );
+            setVisible( false );
             dispose();
         }
     };
@@ -100,6 +107,8 @@ public abstract class TopWindow
     {
         public void disposeAll()
         {
+            // to invoke Control.setViewTimelineButtonEnabled( true );
+            setVisible( false );
             dispose();
         }
     };
@@ -109,6 +118,8 @@ public abstract class TopWindow
     {
         public void disposeAll()
         {
+            // to invoke Control.setViewLegendButtonEnabled( true );
+            setVisible( false );
             Timeline.disposeAll();
             dispose();
         }

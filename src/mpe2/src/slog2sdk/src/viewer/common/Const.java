@@ -53,6 +53,7 @@ public class Const
             = new Alias( Color.white, "white" );
 
     public  static final String  IMG_PATH = "/images/";
+    public  static final String  DOC_PATH = "/html/";
 
     public static Alias  parseAntiAliasing( String str_rep )
     {

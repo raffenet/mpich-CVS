@@ -68,7 +68,7 @@ public class Parameters
     public  static       int          SEARCH_ARROW_LENGTH      = 20;
     public  static       int          SEARCH_FRAME_THICKNESS   = 3;
     public  static       boolean      SEARCHED_OBJECT_ON_TOP   = false;
-    public  static       boolean      LEFTCLICK_INSTANT_ZOOM   = false;
+    public  static       boolean      LEFTCLICK_INSTANT_ZOOM   = true;
 
     public static final void initSetupFile()
     {

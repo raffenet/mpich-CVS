@@ -90,9 +90,15 @@ public class PreferenceFrame extends JFrame
 
         addWindowListener( new WindowAdapter() {
             public void windowClosing( WindowEvent e ) {
-                setVisible( false );
+                PreferenceFrame.this.setVisible( false );
             }
         } );
+    }
+
+    public void setVisible( boolean val )
+    {
+        super.setVisible( val );
+        TopWindow.Control.setEditPreferenceButtonEnabled( !val );
     }
 
     public void updateAllParameters()
@@ -111,7 +117,7 @@ public class PreferenceFrame extends JFrame
             Parameters.writeToSetupFile( this );
         }
         else if ( evt.getSource() == this.close_btn ) {
-            setVisible( false );
+            PreferenceFrame.this.setVisible( false );
         }
     }
 }
