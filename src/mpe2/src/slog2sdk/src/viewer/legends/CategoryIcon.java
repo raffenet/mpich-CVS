@@ -53,6 +53,13 @@ public class CategoryIcon implements Icon
         color_shown = (Color) color_orig;
     }
 
+    public CategoryIcon( Topology shape, Color color )
+    {
+        topo        = shape;
+        color_orig  = new ColorAlpha( color, ColorAlpha.OPAQUE );
+        color_shown = color;
+    }
+
     public void setDisplayedColor( Color new_color )
     {
         color_shown = new_color;
