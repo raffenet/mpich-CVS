@@ -90,6 +90,7 @@ def _mpd_init():
     g.conListenSocket = 0
     g.conSocket       = 0
     g.allExiting      = 0
+    g.exiting         = 0    # for mpdexit
     if g.allowConsole:
         g.conListenName = '/tmp/mpd2.console_' + mpd_get_my_username()
         consoleAlreadyExists = 0
@@ -169,6 +170,9 @@ def _mpd():
                 if g.allExiting:          # got mpdallexit command
                     done = 1
                     break                # out of for loop, then out of while
+                if g.exiting:            # got mpdexit cmd
+                    done = 1
+                    break                # out of for loop, then out of while
             elif readySocket == g.rhsSocket:
                 _handle_rhs_input()    # ignoring rc=1 which means we re-entered ring
             elif readySocket == g.conSocket:
@@ -243,6 +247,11 @@ def _handle_console_input():
         g.allExiting = 1
         mpd_send_one_msg(g.rhsSocket, {'cmd' : 'mpdallexit', 'src' : g.myId} )
         mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdallexit_ack'} )
+    elif msg['cmd'] == 'mpdexit':
+        if msg['mpdid'] == 'localmpd':
+            msg['mpdid'] = g.myId
+        mpd_send_one_msg(g.rhsSocket, {'cmd' : 'mpdexit', 'src' : g.myId, 'done' : 0,
+                                       'dest' : msg['mpdid']} )
     elif msg['cmd'] == 'mpdringtest':
         msg['src'] = g.myId
         mpd_send_one_msg(g.rhsSocket, msg)
@@ -361,6 +370,22 @@ def _handle_lhs_input():
         g.allExiting = 1
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket, msg)
+    elif msg['cmd'] == 'mpdexit':
+        if msg['dest'] == g.myId:
+            msg['done'] = 1    # do this first
+        if msg['src'] == g.myId:    # may be src and dest
+            if g.conSocket:
+                if msg['done']:
+                    mpd_send_one_msg(g.conSocket,{'cmd' : 'mpdexit_ack'})
+                else:
+                    mpd_send_one_msg(g.conSocket,{'cmd' : 'mpdexit_failed'})
+        else:
+            mpd_send_one_msg(g.rhsSocket,msg)
+        if msg['dest'] == g.myId:
+            g.exiting = 1
+            mpd_send_one_msg(g.lhsSocket, { 'cmd' : 'mpdexiting',
+                                            'rhshost' : g.rhsHost,
+                                            'rhsport' : g.rhsPort })
     elif msg['cmd'] == 'mpdringtest':
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket, msg)
@@ -646,6 +671,46 @@ def _handle_rhs_input():
         return 1
     if msg['cmd'] == 'pulse_ack':
         g.pulse_ctr = 0
+    elif msg['cmd'] == 'mpdexiting':    # for mpdexit
+        if g.rhsSocket:
+            if g.activeSockets.has_key(g.rhsSocket):
+                del g.activeSockets[g.rhsSocket]
+            g.rhsSocket.close()
+        # connect to new rhs
+        g.rhsHost = msg['rhshost']
+        g.rhsPort = int(msg['rhsport'])
+        mpd_print(0000,"TRYING TO CONN TO %s %s" % (g.rhsHost,g.rhsPort))
+        if g.rhsHost == g.myHost  and  g.rhsPort == g.myPort:
+            if g.lhsSocket:
+                if g.activeSockets.has_key(g.lhsSocket):
+                    del g.activeSockets[g.lhsSocket]
+                g.lhsSocket.close()
+            _create_ring_of_one_mpd()
+            mpd_print(0000,"DID CONN TO MYSELF %s %s" % (g.rhsHost,g.rhsPort))
+            return
+        g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsHost,g.rhsPort)
+        _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
+        msgToSend = { 'cmd' : 'request_to_enter_as_lhs',
+                      'host' : g.myHost,
+                      'port' : g.myPort }
+        mpd_send_one_msg(g.rhsSocket,msgToSend)
+        msg = mpd_recv_one_msg(g.rhsSocket)
+        if (not msg) or  \
+           (not msg.has_key('cmd')) or  \
+           (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')):
+            mpd_raise('failed to recv challenge from rhs; msg=:%s:' % (msg) )
+        response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
+        msgToSend = { 'cmd' : 'challenge_response',
+                      'response' : response,
+                      'host' : g.myHost,
+                      'port' : g.myPort }
+        mpd_send_one_msg(g.rhsSocket,msgToSend)
+        msg = mpd_recv_one_msg(g.rhsSocket)
+        if (not msg) or  \
+           (not msg.has_key('cmd')) or  \
+           (msg['cmd'] != 'OK_to_enter_as_lhs'):
+            mpd_raise('NOT OK to enter ring; msg=:%s:' % (msg) )
+        mpd_print(0000,"GOT CONN TO %s %s" % (g.rhsHost,g.rhsPort))
     else:
         mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
     return 0

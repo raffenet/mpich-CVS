@@ -27,9 +27,9 @@ OBJECTS   = ${mpdroot_OBJECTS} ${example_OBJECTS}
 HEADERS   = mpdconf.h mpdroot.h
 
 CMDS_ROOT     =  mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob
-CMDS_NO_ROOT  =  mpdallexit mpdcleanup mpdhelp mpdboot mpd
+CMDS_NO_ROOT  =  mpdexit mpdallexit mpdcleanup mpdhelp mpdboot mpd
 PYTHON_SOURCE =  mpiexec.py mpdrun.py mpdtrace.py mpdringtest.py mpdlistjobs.py mpdkilljob.py \
-                 mpdsigjob.py mpdallexit.py mpdcleanup.py mpdhelp.py mpdboot.py \
+                 mpdsigjob.py mpdexit.py mpdallexit.py mpdcleanup.py mpdhelp.py mpdboot.py \
 		 mpd.py mpdman.py mpdlib.py
 
 mpdroot_SOURCES  = mpdroot.c
