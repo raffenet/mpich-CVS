@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "trmem.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -620,7 +621,7 @@ may be block not allocated with MPIU_trmalloc or MALLOC\n",
     Returns:
     Pointer to copy of the input string.
  +*/
-void *MPIU_trstrdup( const char *str, int lineno, const char *fname )
+void *MPIU_trstrdup( const char *str, int lineno, const char fname[] )
 {
     void *p;
     unsigned len = (unsigned)strlen( str ) + 1;
@@ -651,13 +652,13 @@ void *MPIU_trstrdup( const char *str, int lineno, const char *fname )
   We do this by first recursively sorting halves of the list and then
   merging them.  
  */
-/* Forward refs for these local routines */
-TRSPACE *MPIU_trImerge ( TRSPACE *, TRSPACE * );
-TRSPACE *MPIU_trIsort  ( TRSPACE *, int );
-void MPIU_trSortBlocks ( void );
+/* Forward refs for these local (hence static) routines */
+static TRSPACE *MPIU_trImerge ( TRSPACE *, TRSPACE * );
+static TRSPACE *MPIU_trIsort  ( TRSPACE *, int );
+static void MPIU_trSortBlocks ( void );
  
 /* Merge two lists, returning the head of the merged list */
-TRSPACE *MPIU_trImerge( TRSPACE *l1, TRSPACE *l2 )
+static TRSPACE *MPIU_trImerge( TRSPACE *l1, TRSPACE *l2 )
 {
     TRSPACE *head = 0, *tail = 0;
     int     sign;
@@ -683,7 +684,7 @@ TRSPACE *MPIU_trImerge( TRSPACE *l1, TRSPACE *l2 )
     return head;
 }
 /* Sort head with n elements, returning the head */
-TRSPACE *MPIU_trIsort( TRSPACE *head, int n )
+static TRSPACE *MPIU_trIsort( TRSPACE *head, int n )
 {
     TRSPACE *p, *l1, *l2;
     int     m, i;
@@ -702,7 +703,7 @@ TRSPACE *MPIU_trIsort( TRSPACE *head, int n )
     return MPIU_trImerge( l1, l2 );
 }
 
-void MPIU_trSortBlocks( void )
+static void MPIU_trSortBlocks( void )
 {
     TRSPACE *head;
     int     cnt;
