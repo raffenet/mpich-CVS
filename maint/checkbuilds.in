@@ -580,7 +580,7 @@ if ($outfile ne "") {
     #autoflush $OUTFD 1;
     if ($is_xml) {
 	print $OUTFD "<?xml version='1.0' ?>\n";
-	print $OUTFD "<?xml-stylesheet href="build.xsl" type="text/xsl" ?>\n";
+	print $OUTFD "<?xml-stylesheet href=\"build.xsl\" type=\"text/xsl\" ?>\n";
 	print $OUTFD "<MPICH2BUILD>\n";
     }
 }
