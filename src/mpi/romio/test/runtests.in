@@ -179,6 +179,8 @@ testfiles="$testfiles atomicity.out"
 MakeExe atomicity
 \rm -f $FILENAME*
 echo '**** Testing atomicity.c ****'
+# Atomicity test recommends at least 8 processes (separate processors 
+# even better)
 $mpirun -np 4 ./atomicity -fname $FILENAME "$@" >> atomicity.out 2>&1
 CheckOutput atomicity
 CleanExe atomicity
