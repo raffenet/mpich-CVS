@@ -667,6 +667,24 @@ int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[],
     return( rc );
 }
 
+/******************************** Name Publishing functions *************************/
+
+int PMI_Publish_name( const char service_name[], const char port[] )
+{
+    printf("PMI_Publish_name called for service name %s, port %s\n", service_name, port);
+}
+
+int PMI_Unpublish_name( const char service_name[] )
+{
+    printf("PMI_Unpublish_name called for service name %s\n", service_name);
+}
+
+int PMI_Lookup_name( const char service_name[], char port[] )
+{
+    printf("PMI_Lookup_name called for service name %s\n", service_name);
+}
+
+
 /******************************** Process Creation functions *************************/
 
 int PMI_Spawn_multiple(int count,
