@@ -7,14 +7,34 @@
 
 #include "ad_pvfs.h"
 
+/* ADIOI_PVFS_Resize()
+ *
+ * Assumptions:
+ * - called collectively (as defined in the MPI-2 standard)
+ *
+ * Approach:
+ * - Process 0 does the pvfs_ftruncate64(), so only one message goes out
+ *   to the file system
+ * - Process 0 Bcasts its return value to the rest of the processes
+ * - When other processes receive value, they know the
+ *   pvfs_ftruncate64() has completed.
+ */
 void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-    int err;
+    int err, rank, procs;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_RESIZE";
 #endif
-    
-    err = pvfs_ftruncate64(fd->fd_sys, size);
+    MPI_Comm_rank(fd->comm, &rank);
+    if (rank == 0) {
+    	err = pvfs_ftruncate64(fd->fd_sys, size);
+    }
+
+    MPI_Comm_size(fd->comm, &procs);
+    if (procs > 1) {
+    	MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm);
+    }
+
 #ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
