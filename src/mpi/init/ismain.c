@@ -48,6 +48,16 @@ int MPI_Is_thread_main( int *flag )
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IS_THREAD_MAIN);
 
     MPIR_ERRTEST_INITIALIZED_ORRETURN();
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
@@ -77,7 +87,8 @@ int MPI_Is_thread_main( int *flag )
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_is_thread_main",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+	    MPI_ERR_OTHER, "**mpi_is_thread_main",
 	    "**mpi_is_thread_main %p", flag);
     }
 #   endif
