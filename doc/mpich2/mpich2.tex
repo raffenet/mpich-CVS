@@ -437,9 +437,9 @@ be at least 32 bits, leaving us enough room for the size of these longer
 types). 
 
 Comment [BRT]: If we can assume that all basic types are of the size
-2^N, the we can simply store N, eliminating the need for more than a
+$2^N$, the we can simply store $N$, eliminating the need for more than a
 few bits of storage.  I'm not sure if this is a reasonable
-assumption...
+assumption.  Note from Bill: Under Linux, \code{long double} is 12 bytes.
 
 For predefined Groups and Communicators we simply use the remaining bits
 to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
