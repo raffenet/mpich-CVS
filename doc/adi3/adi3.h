@@ -949,7 +949,7 @@ typedef { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND,
 typedef struct {
     int          id;      /* Value of MPI_Request for this structure */
     volatile int ref_count;
-    volatile int complete; /* Set to zero when the request is completed */
+    volatile int busy;    /* Set to zero when the request is completed */
     MPID_Request_kind kind; /* Kind of request */
     /* The various types of requests may define subclasses for each 
        kind.  In particular, the user and persistent requests need

@@ -701,6 +701,44 @@ void MPID_Dev_comm_attr_set_hook( MPID_Comm *comm, int keyval, void *attr_val,
 {
 }
 
+/*@
+    MPID_Dev_xxx_create_hook - Inform the device about the creation of xxx
+
+    Input Parameter:
+.   obj - Pointer to the object that has been created
+
+    Notes:
+    This is a pseudo routine.  The device may define routines of this
+    for for each MPID object (e.g., 'MPID_Comm', 'MPID_Datatype', 
+    'MPID_File', etc.).  The 'xxx' is replaced with the name of the
+    object; e.g., 'comm', 'datatype', 'file', etc.
+
+    This may be defined as an empty macro.
+
+    See also 'MPID_Dev_xxx_destroy_hook'
+  @*/
+void MPID_Dev_xxx_create_hook( MPID_xxx *obj )
+{}
+
+/*@
+    MPID_Dev_xxx_destroy_hook - Inform the device about the destruction of xxx
+
+    Input Parameter:
+.   obj - Pointer to the object that has been created
+
+    Notes:
+    This is a pseudo routine.  The device may define routines of this
+    for for each MPID object (e.g., 'MPID_Comm', 'MPID_Datatype', 
+    'MPID_File', etc.).  The 'xxx' is replaced with the name of the
+    object; e.g., 'comm', 'datatype', 'file', etc.
+
+    This may be defined as an empty macro.
+
+    See also 'MPID_Dev_xxx_create_hook'
+  @*/
+void MPID_Dev_xxx_create_hook( MPID_xxx *obj )
+{}
+
 /*
  * Communicator locks for thread safety (?)
  * For example, in the MPI_THREAD_MULTIPLE mode, we must ensure that
@@ -911,14 +949,14 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
 }
 
 /*@
-   MPID_Request_iprobe - Look for a matching request in the receive queue 
+   MPID_Iprobe - Look for a matching request in the receive queue 
    but do not remove or return it
 
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
 . rank - rank to match (or 'MPI_ANY_SOURCE')
 . comm - communicator to match.
-- context_id - context id of communicator to match
+- context_offset - context id offset of communicator to match
 
   Output Parameter:
 . status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
@@ -928,15 +966,13 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   True if a matching request was found, false otherwise.
 
   Notes:
-  This is used to implement 'MPI_Iprobe'.
-
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
   message.  
   (See the 
   discussion of probe in Section 8.7.2 (Clarifications) of the MPI-2 standard.)
 
-  Providing the 'context_id' is necessary at this level to support the 
+  Providing the 'context_offset' is necessary at this level to support the 
   way in which the MPICH implementation uses context ids in the implementation
   of other operations.  The communicator is present to allow the device 
   to use message-queues attached to particular communicators or connections
@@ -946,35 +982,32 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   Request
 
   @*/
-int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm, 
-			 MPI_Status *status )
+int MPID_Iprobe( int tag, int rank, MPID_Comm *comm, int context_offset, 
+		 MPI_Status *status )
 {
 }
 
 /*@
-   MPID_Request_probe - Block until a matching request is found
-   return it
+   MPID_Probe - Block until a matching request is found and return information 
+   about it
 
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
 . rank - rank to match (or 'MPI_ANY_SOURCE')
 . comm - communicator to match.
-- context_id - context id of communicator to match
+- context_offset - context id offset of communicator to match
 
   Output Parameter:
-. status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
-  value is true).
+. status - 'MPI_Status' set as defined by 'MPI_Probe'
 
   Notes:
-  This is used to implement 'MPI_Probe'.
-
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
   message.  
   (See the 
   discussion of probe in Section 8.7.2 Clarifications of the MPI-2 standard.)
 
-  Providing the 'context_id' is necessary at this level to support the 
+  Providing the 'context_offset' is necessary at this level to support the 
   way in which the MPICH implementation uses context ids in the implementation
   of other operations.  The communicator is present to allow the device 
   to use message-queues attached to particular communicators or connections
@@ -988,13 +1021,13 @@ int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm,
   Request
 
   @*/
-void MPID_Request_probe( int tag, int rank, MPID_Comm *comm, 
-			  MPI_Status *status )
+void MPID_Request_probe( int tag, int rank, MPID_Comm *comm, int context_offset
+                         MPI_Status *status )
 {
 }
 
 /*@
-  MPID_Request_cancel_send - Cancel the indicated send request
+  MPID_Cancel_send - Cancel the indicated send request
 
   Input Parameter:
 . request - Send request to cancel
@@ -1003,15 +1036,37 @@ void MPID_Request_probe( int tag, int rank, MPID_Comm *comm,
   Cancel is a tricky operation, particularly for sends.  Read the
   discussion in the MPI-1 and MPI-2 documents carefully.  This call
   only requests that the request be cancelled; a subsequent wait 
-  or test must first succeed.
+  or test must first succeed (i.e., the request 'busy' flag must be
+  cleared).
 
   Module:
   Request
 
-  Question:
-  What MPID calls should be used to perform the wait or test mentioned above?
   @*/
-void MPID_Request_cancel_send( MPID_Request *request )
+void MPID_Cancel_send( MPID_Request *request )
+{
+}
+
+/*@
+  MPID_Cancel_recv - Cancel the indicated recv request
+
+  Input Parameter:
+. request - Receive request to cancel
+
+  Notes:
+  This cancels a pending receive request.  In many cases, this is implemented
+  by simply removing the request from a pending receive request queue.  
+  However, some ADI implementations may maintain these queues in special 
+  places, such as within a NIC (Network Interface Card).
+  This call only requests that the request be cancelled; a subsequent wait 
+  or test must first succeed (i.e., the request 'busy' flag must be
+  cleared).
+
+  Module:
+  Request
+
+  @*/
+void MPID_Cancel_send( MPID_Request *request )
 {
 }
 
@@ -1058,7 +1113,9 @@ void MPID_Request_ready( MPID_Request *request )
 . request - request to free
 
   Notes:
-  This routine may only be used for requests created with 'MPID_Request_new' or  one of the find-or-allocate routines.
+  This routine is called to free a request whose reference count has reached
+  zero or that has completed and is non-persistent, point-to-point 
+  communication request.
 
   Module:
   Request
@@ -1604,20 +1661,103 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
  */
 
 /*@
+  MPID_Send - MPID entry point for MPI_Send
+
+  Notes:
+  The only difference between this and 'MPI_Send' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, a context id offset is provided in addition to the 
+  communicator, and a request may be returned.  The context offset is 
+  added to the context of the communicator
+  to get the context it used by the message.
+  A request is returned only if the ADI implementation was unable to 
+  complete the send of the message.  In that case, the usual 'MPI_Wait'
+  logic should be used to complete the request.  This approach is used to 
+  allow a simple implementation of the ADI.  The ADI is free to always 
+  complete the message and never return a request.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Ssend - MPID entry point for MPI_Ssend
+
+  Notes:
+  The only difference between this and 'MPI_Ssend' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, a context id offset is provided in addition to the 
+  communicator, and a request may be returned.  The context offset is 
+  added to the context of the communicator
+  to get the context it used by the message.
+  A request is returned only if the ADI implementation was unable to 
+  complete the send of the message.  In that case, the usual 'MPI_Wait'
+  logic should be used to complete the request.  This approach is used to 
+  allow a simple implementation of the ADI.  The ADI is free to always 
+  complete the message and never return a request.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Rsend - MPID entry point for MPI_Rsend
+
+  Notes:
+  The only difference between this and 'MPI_Rsend' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, a context id offset is provided in addition to the 
+  communicator, and a request may be returned.  The context offset is 
+  added to the context of the communicator
+  to get the context it used by the message.
+  A request is returned only if the ADI implementation was unable to 
+  complete the send of the message.  In that case, the usual 'MPI_Wait'
+  logic should be used to complete the request.  This approach is used to 
+  allow a simple implementation of the ADI.  The ADI is free to always 
+  complete the message and never return a request.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
+		MPID_Request **request )
+{
+}
+
+/*@
   MPID_Isend - MPID entry point for MPI_Isend
 
   Notes:
   The only difference between this and 'MPI_Isend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
   have been made, the MPI opaque objects have been replaced by
-  MPID objects, and a context id is provided in addition to the communicator.
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
 
   Module:
   Communication
 
   @*/
 int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_id,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1629,14 +1769,16 @@ int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
   The only difference between this and 'MPI_Issend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
   have been made, the MPI opaque objects have been replaced by
-  MPID objects, and a context id is provided in addition to the communicator.
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
 
   Module:
   Communication
 
   @*/
 int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_id,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1648,14 +1790,16 @@ int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
   The only difference between this and 'MPI_Irsend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
   have been made, the MPI opaque objects have been replaced by
-  MPID objects, and a context id is provided in addition to the communicator.
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
 
   Module:
   Communication
 
   @*/
 int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_id,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
@@ -1667,18 +1811,137 @@ int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
   The only difference between this and 'MPI_Irecv' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
   have been made, the MPI opaque objects have been replaced by
-  MPID objects, and a context id is provided in addition to the communicator.
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
 
   Module:
   Communication
 
   @*/
 int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_id,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
 }
 
+/*@
+  MPID_Recv - MPID entry point for MPI_Recv
+
+  Notes:
+  The only difference between this and 'MPI_Recv' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, a context id offset is provided in addition to the 
+  communicator, and a request may be returned.  The context offset is added 
+  to the context of the communicator to get the context it used by the message.
+  As in 'MPID_Send', the request is returned only if the operation did not
+  complete.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_offset,
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Send_init - MPID entry point for MPI_Send_init
+
+  Notes:
+  The only difference between this and 'MPI_Send_init' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
+		    int tag, int rank, MPID_Comm *comm, int context_offset,
+		    MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Ssend_init - MPID entry point for MPI_Ssend_init
+
+  Notes:
+  The only difference between this and 'MPI_Ssend_init' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
+		     int tag, int rank, MPID_Comm *comm, int context_offset,
+		     MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Rsend_init - MPID entry point for MPI_Rsend_init
+
+  Notes:
+  The only difference between this and 'MPI_Rsend_init' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
+		     int tag, int rank, MPID_Comm *comm, int context_offset,
+		     MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Recv_init - MPID entry point for MPI_Recv_init
+
+  Notes:
+  The only difference between this and 'MPI_Recv_init' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Recv_init( void *buf, int count, MPID_Datatype *datatype,
+		    int tag, int rank, MPID_Comm *comm, int context_offset,
+		    MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Startall - MPID entry point for MPI_Startall
+
+  Notes:
+  The only difference between this and 'MPI_Startall' is that the basic
+  error checks (e.g., count) have been made, and the MPI opaque objects
+  have been replaced by pointers to MPID objects
+  @*/
+int MPID_Startall( int count, MPID_Request requests[] )
+{}
 
 /* @
   MPID_Waitsome - MPID entry point for MPI_Waitsome
@@ -1737,20 +2000,95 @@ int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
   calling process.  An ADI implementation is free to have this routine
   always return 'MPID_WOULD_BLOCK', but is encouraged not to.
 
-  Question:
+  To allow the MPI implementation to avoid trying this routine when it
+  is not implemented by the ADI, the C preprocessor constant 'MPID_HAS_TBSEND'
+  should be defined if this routine has a nontrivial implementation.
+
+  Module:
+  Communication
+  @*/
+int MPID_tBsend( const void *buf, int count, MPID_Datatype *datatype,
+		 int tag, int rank, MPID_Comm *comm, int context_offset )
+{
+}
+
+/* Previous discussion of tBsend included this:
+
   Should there be a compile-time capability for this?  E.g., an
   'MPID_HAS_TBSEND' or should the device just do
 .vb
   #define MPID_tBsend( a, b, c, d, e, f, g ) MPID_WOULD_BLOCK
 .ve
 
+*/
+
+
+/* Progress Engine */
+/*@
+  MPID_Progress_start - Begin a block of operations that check busy flags
+  in requests.
+
+  Notes:
+  This routine is used to inform the progress engine that a block of code will
+  examine the 'busy' value of some 'MPID_Request' objects and then call
+  one of 'MPID_Progress_end', 'MPID_Progress_wait', or 'MPID_Progress_test'.
+  
+  This routine is needed to properly implement blocking tests when 
+  multithreaded progress engines are used.  In a single-threaded implementation
+  of the ADI, this may be defined as an empty macro.
+
   Module:
   Communication
   @*/
-int MPID_tBsend( const void *buf, int count, MPID_Datatype *datatype,
-		 int tag, int rank, MPID_Comm *comm, int context_id )
-{
-}
+void MPID_Progress_start( void )
+{}
+
+/*@
+   MPID_Progress_end - End a block of operations begun with MPID_Progress_start
+
+   Notes: 
+   This instructs the progress engine to end the block begun with 
+   'MPID_Progress_start'.  The progress engine is not required to check for
+   any pending communication.
+
+   The purpose of this call is to release any locks initiated by 
+   'MPID_Progess_start'.  It is typically used when checks of the 
+   relevant request 'busy' flags found a completed request.  In a single
+   threaded ADI implementation, this may be defined as an empty macro.
+   @*/
+void MPID_Progress_end( void )
+{}
+
+/*@ MPID_Progress_wait - Wait for some communication since 
+    'MPID_Progress_start' 
+
+    Notes:
+    This instructs the progress engine to wait until some communication event
+    happens since 'MPID_Progress_start' was called.  This call blocks the 
+    calling thread (only, not the process).  Before returning, it releases
+    the block begun with 'MPID_Progress_start'.
+
+ @*/
+void MPID_Progress_wait( void )
+{}
+
+/*@
+  MPID_Progress_test - Check for communication since 'MPID_Progress_start'
+
+  Return value:
+  The number of communication actions since 'MPID_Progress_start'.
+
+  Notes:
+  Like 'MPID_Progress_end' and 'MPID_Progress_wait', this completes the block
+  begun with 'MPID_Progress_start'.  Unlike 'MPID_Progress_wait', it is a
+  nonblocking call.  It returns the number of communication events, which
+  is only indicates the maximum number of separate requests that were
+  completed.  The only restriction is that if the 'busy' status of any 
+  request changed between 'MPID_Progress_start' and  'MPID_Progress_test',
+  the return value must be at least one.
+  @*/
+int MPID_Progress_test( void )
+{}
 
 /*TSGOverview.tex 
  * Section 3: Communication Buffer management
@@ -2500,13 +2838,13 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   to decide which methods to initialize (but note that they must not
   `depend` on using command-line arguments).
 
-  This call also initializes all MPID datastructures.  Some of these (e.g.,
-  'MPID_Request') may be in shared memory; others (e.g., 'MPID_Datatype') 
-   may be allocated from an block of array values.  
+  This call also initializes all MPID data needed by the device.  This
+  includes the 'MPID_Request's and any other data structures used by 
+  the device.
 
   The arguments 'has_args' and 'has_env' indicates whether the process was
   started with command-line arguments or environment variables.  In some
-  cases, only the ``root'' process is started with these values; in others, 
+  cases, only the root process is started with these values; in others, 
   the startup environment ensures that each process receives the 
   command-line arguments and environment variables that the user expects. 
   While the MPI standard makes no requirements that command line arguments or 
@@ -2702,6 +3040,7 @@ int MPID_Finalize( void )
 {
 }
 
+/*
 ? Information on data representations for heterogeneous code.
 
 ? We probably need both compile-time and run-time information on whether
@@ -2711,6 +3050,7 @@ value might be "not yet heterogeneous").
 ? Information on "good" message break points? (e.g., short/eager/rendezous)?
 ? This is useful for the "generic" implementations of Isend etc., based on
 ? MPID_Put_contig and MPID_Rhcv.
+*/
 
 /*T
  * Section : Service Routines

@@ -53,6 +53,40 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 	tohtml -default adi3man.tex
 	tohtml -default adi3man.tex
 
+adi3new.ps: adi3new.tex adi3.c adi3.h Makefile
+	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
+	-rm -f adi3man/*.tex adi3man/tmp.*
+	(cd adi3man ; \
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
+	${MAKE} lists
+	-cp adi3new.tex adi3man/adi3new.tex
+	(cd adi3man ; \
+	../manextract ../adi3.[ch] > /dev/null ;\
+	latex adi3new < /dev/null ;\
+	bibtex adi3new ;\
+	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
+	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
+	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
+		adi3new.idx > tmp.idx ; \
+	makeindex tmp ;\
+	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
+	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3new.ind ; \
+	bibtex adi3new ;\
+	latex adi3new < /dev/null ;\
+	dvips adi3new )
+	rm -f adi3new.ps
+	mv adi3man/adi3new.ps .
+	mv adi3man/adi3new.dvi .
+
+# This isn't ready yet.  We'd like to use doctext to generate the 
+# HTML for the 
+adi3man/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
+	-rm -rf adi3man
+	tohtml -default adi3new.tex
+	tohtml -default adi3new.tex
+
 core.dvi: core.tex adi3.c adi3.h
 	touch core-list.ind
 	-latex core

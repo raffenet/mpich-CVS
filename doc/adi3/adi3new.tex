@@ -1,0 +1,128 @@
+% 
+%   This is a latex file that generates a reference manual for 
+%   ADI-3 
+%
+\documentclass{article}
+\usepackage{/home/gropp/data/share/refman}
+\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{url} 
+\usepackage{epsf}
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
+\newread\testfile
+
+\newcommand{\mpich}{\texttt{mpich}}
+\newcommand{\Mpich}{\texttt{Mpich}}
+
+%
+% For now, let findex be the same as index.  This will allow us to
+% more easily separate function and nonfunction index entries later.
+\let\findex=\index
+%
+% Modify the way titles are handled for no breaks between pages
+\def\mantitle#1#2#3{\pagerule\nobreak
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
+\index{#1}}
+
+\makeindex
+
+\begin{document}
+
+\markright{ADI-3 Reference Manual}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{{\tt #1}}
+%\let\url=\code
+\def\makeussubscript{\catcode`\_=8}
+\def\makeustext{\catcode`\_=11}
+%\tpageoneskip
+\ANLTMTitle{MPICH Abstract Device Interface\\
+Version 3.1\\
+Reference Manual\\\ \\Draft of \today}{\em 
+William Gropp\\
+Ewing Lusk\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+%
+% The first section is the design
+\input design.tex
+
+\appendix
+
+\section{Data Structures}
+\input adi3man/MPID_Request_kind.tex
+\input adi3man/MPID_Request.tex
+\input adi3man/MPID_Comm.tex
+
+\section{Basic Point-to-Point}
+\input adi3man/MPID_Send.tex
+\input adi3man/MPID_Ssend.tex
+\input adi3man/MPID_Rsend.tex
+\input adi3man/MPID_Isend.tex
+\input adi3man/MPID_Issend.tex
+\input adi3man/MPID_Irsend.tex
+\input adi3man/MPID_tBsend.tex
+\input adi3man/MPID_Recv.tex
+\input adi3man/MPID_Irecv.tex
+\input adi3man/MPID_Request_free.tex
+\input adi3man/MPID_Cancel_send.tex
+\input adi3man/MPID_Cancel_recv.tex
+\input adi3man/MPID_Iprobe.tex
+\input adi3man/MPID_Probe.tex
+
+\section{Persistent Point-to-Point}
+\input adi3man/MPID_Send_init.tex
+\input adi3man/MPID_Ssend_init.tex
+\input adi3man/MPID_Rsend_init.tex
+\input adi3man/MPID_Recv_init.tex
+\input adi3man/MPID_Startall.tex
+
+\section{Progress Engine}
+\input adi3man/MPID_Progress_start.tex
+\input adi3man/MPID_Progress_end.tex
+\input adi3man/MPID_Progress_test.tex
+\input adi3man/MPID_Progress_wait.tex
+\input adi3man/MPID_Progress_poke.tex
+
+\section{Starting and stopping}
+\input adi3man/MPID_Init.tex
+\input adi3man/MPID_Finalize.tex
+\input adi3man/MPID_Abort.tex
+
+\section{RMA}
+(not yet defined)
+%\input adi3man/MPID_Win_put.tex
+%\input adi3man/MPID_Win_get.tex
+%\input adi3man/MPID_Win_accumulate.tex
+%\input adi3man/MPID_Win_do.tex
+%\input adi3man/MPID_Win_fence.tex
+%\input adi3man/MPID_Win_begin.tex
+%\input adi3man/MPID_Win_end.tex
+%\input adi3man/MPID_Win_local_lock.tex
+%\input adi3man/MPID_Win_local_unlock.tex
+
+\section{Dynamic Processes}
+(not yet designed)
+
+\section{Collective Communication}
+(not yet designed)
+
+\section{Device Hooks}
+\input adi3man/MPID_Dev_xxx_create_hook.tex
+\input adi3man/MPID_Dev_xxx_destroy_hook.tex
