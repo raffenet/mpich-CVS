@@ -68,6 +68,8 @@ int ib_make_progress()
     {
     case OP_SEND:
 	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
+	/* put the send packet back in the pool */
+	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	break;
     case OP_RECEIVE:
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);
