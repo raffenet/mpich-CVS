@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+#   (C) 2001 by Argonne National Laboratory.
+#       See COPYRIGHT in top-level directory.
+#
 
 from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex

@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+#   (C) 2001 by Argonne National Laboratory.
+#       See COPYRIGHT in top-level directory.
+#
 
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from os     import environ, getuid, close

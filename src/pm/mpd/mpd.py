@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+#   (C) 2001 by Argonne National Laboratory.
+#       See COPYRIGHT in top-level directory.
+#
 
 from sys       import stdout, argv, settrace, exit
 from os        import environ, getpid, fork, execvpe, setpgrp, waitpid, kill, chdir, \
