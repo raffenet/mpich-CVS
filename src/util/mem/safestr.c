@@ -58,7 +58,8 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
     /* Get to the end of dest */
     i = n;
     while (i-- > 0 && *d_ptr++) ;
-    
+    /* The last ++ moved us past the null */
+    d_ptr--;
     /* Append */
     while (i-- > 0 && *s_ptr) {
 	*d_ptr++ = *s_ptr++;
