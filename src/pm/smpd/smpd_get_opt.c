@@ -15,12 +15,12 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 
     while (SMPD_TRUE)
     {
-	// Find the name
+	/* Find the name */
 	pszFirst = strstr(str, flag);
 	if (pszFirst == NULL)
 	    return SMPD_FALSE;
 
-	// Check to see if we have matched a sub-string
+	/* Check to see if we have matched a sub-string */
 	if (bFirst)
 	{
 	    bFirst = SMPD_FALSE;
@@ -39,20 +39,20 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 	    }
 	}
 
-	// Skip over any white space after the name
+	/* Skip over any white space after the name */
 	pszDelimLoc = &pszFirst[strlen(flag)];
 	while (isspace(*pszDelimLoc))
 	    pszDelimLoc++;
 
-	// Find the deliminator
+	/* Find the deliminator */
 	if (strncmp(pszDelimLoc, pszDelim, strlen(pszDelim)) != 0)
 	{
-	    //str = &pszDelimLoc[strlen(pszDelim)];
+	    /*str = &pszDelimLoc[strlen(pszDelim)]; */
 	    str = pszDelimLoc;
 	    continue;
 	}
 	
-	// Skip over the deliminator and any white space
+	/* Skip over the deliminator and any white space */
 	pszFirst = &pszDelimLoc[strlen(pszDelim)];
 	while (isspace(*pszFirst))
 	    pszFirst++;
@@ -69,7 +69,7 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 	}
 	else
 	{
-	    // Find the next deliminator
+	    /* Find the next deliminator */
 	    pszLast = strstr(pszFirst, pszDelim);
 	    if (pszLast == NULL)
 	    {
@@ -77,7 +77,7 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 		break;
 	    }
 	    
-	    // Back up over any white space and name preceding the second deliminator
+	    /* Back up over any white space and name preceding the second deliminator */
 	    pszLast--;
 	    while (pszLast > pszFirst && isspace(*pszLast))
 		pszLast--;
@@ -86,7 +86,7 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 	    while (pszLast > pszFirst && isspace(*pszLast))
 		pszLast--;
 	    
-	    // Copy the data between first and last
+	    /* Copy the data between first and last */
 	    pszLast++;
 	    strncpy(val, pszFirst, pszLast-pszFirst);
 	    val[pszLast-pszFirst] = '\0';

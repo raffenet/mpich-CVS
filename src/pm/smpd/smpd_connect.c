@@ -95,6 +95,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_se
     context->host[0] = '\0';
     context->id = id;
     context->write_list = NULL;
+    context->wait_list = NULL;
     smpd_init_command(&context->read_cmd);
     context->next = NULL;
     context->set = set;

@@ -32,6 +32,8 @@ int mp_connect_next(int *parent_ptr, int *id_ptr)
     }
     mask = bit - 1;
     parent = bit | (id & mask);
+
+    return SMPD_SUCCESS;
 }
 
 int mp_parse_command_args(int *argcp, char **argvp[])

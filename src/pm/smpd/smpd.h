@@ -97,7 +97,8 @@ typedef struct smpd_command_t
     char cmd[SMPD_MAX_CMD_STR_LENGTH];
     SOCK_IOV iov[2];
     int length;
-    int src, dest;
+    int src, dest, tag;
+    int wait;
     struct smpd_command_t *next;
 } smpd_command_t;
 
@@ -110,6 +111,7 @@ typedef struct smpd_context_t
     sock_t sock;
     smpd_command_t read_cmd;
     smpd_command_t *write_list;
+    smpd_command_t *wait_list;
     struct smpd_context_t *next;
 } smpd_context_t;
 

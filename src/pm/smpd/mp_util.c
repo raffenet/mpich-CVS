@@ -90,7 +90,7 @@ int handle_command(smpd_context_t *context)
     mp_enter_fn("handle_command");
 
     cmd = &context->read_cmd;
-    
+
     mp_dbg_printf("handle_command:\n");
     mp_dbg_printf(" src  = %d\n", cmd->src);
     mp_dbg_printf(" dest = %d\n", cmd->dest);
@@ -128,7 +128,7 @@ int handle_command(smpd_context_t *context)
     }
     if ((strcmp(cmd->cmd_str, "closed") == 0) || (strcmp(cmd->cmd_str, "down") == 0))
     {
-	mp_dbg_printf("handling %s command, posting close of the sock.\n", cmd->cmd_str);
+	mp_dbg_printf("handling '%s' command, posting close of the sock.\n", cmd->cmd_str);
 	result = sock_post_close(context->sock);
 	if (result != SOCK_SUCCESS)
 	{

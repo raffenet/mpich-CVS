@@ -113,8 +113,10 @@ int smpd_init_command(smpd_command_t *cmd)
     cmd->cmd[0] = '\0';
     cmd->dest = -1;
     cmd->src = -1;
+    cmd->tag = -1;
     cmd->next = NULL;
     cmd->length = 0;
+    cmd->wait = SMPD_FALSE;
     cmd->state = SMPD_CMD_INVALID;
 
     smpd_exit_fn("smpd_init_command");
