@@ -15,15 +15,30 @@ For example:
 MPI_Init, 1, 3, 2, 1, Peter
 MPI_Finalize, 2, 4, 3, 1, Peter, MPI_Init
 
-Completed routines are marked as ,,,,your name,dependencies,actual time e.g.,
+Completed routines are marked as 
 
-MPI_Comm_rank,1,1,2,2,Bill,,.1
+routine,,,,your name,dependencies,actual time,date-done
+
+e.g.,
+
+MPI_Comm_rank,1,1,2,2,Bill,,.1,2/15/02
 
 If you don't know the time, use done:
-MPI_Comm_rank,1,1,2,2,Bill,,done
+MPI_Comm_rank,1,1,2,2,Bill,,done,
 
 Dependencies should list routines, separated by blanks.
 
+For blocks of routines with different versions, surround them as a block 
+with 
+BEGIN blockname
+....
+END blockname
+
+For example,
+BEGIN forker
+PMI_Init,,,,,Rusty,,done
+...
+END forker
 This file is read by an automated tool; don't use commas except in this
 header and within a schedule line.  
 
@@ -50,26 +65,26 @@ Point-to-Point Communication
 
 MPI_Send,,,,,Brian,,done
 MPI_Recv,,,,,Brian,,done
-MPI_Get_count,
-MPI_Bsend,
+MPI_Get_count,,,,,Bill,,done
+MPI_Bsend,,,,,,MPI_Buffer_attach,
 MPI_Ssend,
 MPI_Rsend,
 MPI_Buffer_attach,
-MPI_Buffer_detach,
+MPI_Buffer_detach,,,,,,MPI_Buffer_attach,
 MPI_Isend,
-MPI_Ibsend,
+MPI_Ibsend,,,,,,MPI_Buffer_attach
 MPI_Issend,
 MPI_Irsend,
 MPI_Irecv,
 MPI_Wait,,,,,Brian,,done
-MPI_Test,
+MPI_Test,,,,,,MPI_Grequest_start,
 MPI_Request_free,
-MPI_Waitany,
-MPI_Testany,
-MPI_Waitall,
-MPI_Testall,
-MPI_Waitsome,
-MPI_Testsome,
+MPI_Waitany,,,,,,MPI_Grequest_start,
+MPI_Testany,,,,,,MPI_Grequest_start,
+MPI_Waitall,,,,,,MPI_Grequest_start,
+MPI_Testall,,,,,,MPI_Grequest_start,
+MPI_Waitsome,,,,,,MPI_Grequest_start,
+MPI_Testsome,,,,,,MPI_Grequest_start,
 MPI_Iprobe,
 MPI_Probe,
 MPI_Cancel,
@@ -86,22 +101,22 @@ MPI_Sendrecv_replace,
 
 Datatypes
 
-MPI_Type_contiguous,1,1,2,Rob,
-MPI_Type_vector,1,1,2,Rob,
-MPI_Type_hvector,1,1,2,Rob,
-MPI_Type_indexed,1,1,2,Rob,
-MPI_Type_hindexed,1,1,2,Rob,
-MPI_Type_struct,1,1,2,Rob,
-MPI_Address,1,1,1,2,Bill,
-MPI_Type_extent,1,1,2,Rob,
-MPI_Type_size,1,1,2,Rob,
-MPI_Type_lb,1,1,2,Rob,
-MPI_Type_ub,1,1,2,Rob,
-MPI_Type_commit,1,1,2,Rob,
-MPI_Type_free,1,1,2,Rob,
+MPI_Type_contiguous,1,1,2,1,Rob,
+MPI_Type_vector,1,1,2,1,Rob,
+MPI_Type_hvector,1,1,2,1,Rob,
+MPI_Type_indexed,1,1,2,1,Rob,
+MPI_Type_hindexed,1,1,2,1,Rob,
+MPI_Type_struct,1,1,2,1,Rob,
+MPI_Address,1,1,1,2,Bill,,.1,
+MPI_Type_extent,1,1,2,1,Rob,
+MPI_Type_size,1,1,2,1,Rob,
+MPI_Type_lb,1,1,2,1,Rob,
+MPI_Type_ub,1,1,2,1,Rob,
+MPI_Type_commit,1,1,2,1,Rob,
+MPI_Type_free,1,1,2,1,Rob,
 MPI_Get_elements,
-MPI_Pack,1,1,2,Rob,
-MPI_Unpack,1,1,2,Rob,
+MPI_Pack,1,1,2,1,Rob,
+MPI_Unpack,1,1,2,1,Rob,
 MPI_Pack_size,
 
 Collective Communication
@@ -138,15 +153,15 @@ MPI_Group_excl,
 MPI_Group_range_incl,
 MPI_Group_range_excl,
 MPI_Group_free,
-MPI_Comm_size,
-MPI_Comm_rank,done,,,,Bill
+MPI_Comm_size,,,,,Bill,,.1,
+MPI_Comm_rank,,,,,Bill,,.1,
 MPI_Comm_compare,
 MPI_Comm_dup,
 MPI_Comm_create,
 MPI_Comm_split,
 MPI_Comm_free,
 MPI_Comm_test_inter,
-MPI_Comm_remote_size,done,,,,Bill
+MPI_Comm_remote_size,,,,,Bill,,.1,
 MPI_Comm_remote_group,
 MPI_Intercomm_create,
 MPI_Intercomm_merge,
@@ -177,18 +192,18 @@ MPI_Graph_map,
 
 Environmental Inquiry
 
-MPI_Get_processor_name,
+MPI_Get_processor_name,1,1,1,2,Bill,
 MPI_Errhandler_create,1,1,1,2,Bill
 MPI_Errhandler_set,1,1,1,2,Bill,MPI_Errhandler_create
 MPI_Errhandler_get,1,1,1,2,Bill,MPI_Errhandler_create
 MPI_Errhandler_free,1,1,1,2,Bill,MPI_Errhandler_create
-MPI_Error_string,
-MPI_Error_class,
-MPI_Wtime,1,1,1,1,Bill,MPID_Wtime
-MPI_Wtick,1,1,1,1,Bill,MPID_Wtick
+MPI_Error_string,1,3,2,2,Bill,
+MPI_Error_class,1,3,2,2,Bill,
+MPI_Wtime,1,1,1,1,Bill,MPID_Wtime,done,.2
+MPI_Wtick,1,1,1,1,Bill,MPID_Wtick,done,.2
 MPI_Init,
 MPI_Finalize,
-MPI_Initialized,1,1,1,3,
+MPI_Initialized,1,1,1,3,Bill,,done,.1
 MPI_Abort,
 
 Profiling
@@ -216,22 +231,22 @@ MPI_File_create_errhandler,1,1,1,2,Bill,
 MPI_File MPI_File_f2c
 MPI_File_get_errhandler,1,1,1,2,Bill,MPI_File_create_errhandler
 MPI_File_set_errhandler,1,1,1,2,Bill,MPI_File_create_errhandler
-MPI_Finalized,
+MPI_Finalized,.2,.2,.2,2,Bill,,done,.2
 MPI_Free_mem,
-MPI_Get_address,1,1,1,2,Bill,
-MPI_FMPI_Group_c2f
-MPI_Group MPI_Group_f2c
-MPI_FMPI_Info_c2f
-MPI_Info_create,1,1,1,2,Bill
-MPI_Info_delete,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_dup,1,1,1,2,Bill,MPI_Info_create
+MPI_Get_address,1,1,1,2,Bill,,.1
+MPI_Group_c2f,
+MPI_Group_f2c,
+MPI_Info_c2f,
+MPI_Info_create,1,1,1,2,Bill,,.5
+MPI_Info_delete,1,1,1,2,Bill,MPI_Info_create,.2
+MPI_Info_dup,1,1,1,2,Bill,MPI_Info_create,.2
 MPI_Info_f2c,
-MPI_Info_free,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_get,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_get_nkeys,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_get_nthkey,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_get_valuelen,1,1,1,2,Bill,MPI_Info_create
-MPI_Info_set,1,1,1,2,Bill,MPI_Info_create
+MPI_Info_free,1,1,1,2,Bill,MPI_Info_create,.1
+MPI_Info_get,1,1,1,2,Bill,MPI_Info_create,.1
+MPI_Info_get_nkeys,1,1,1,2,Bill,MPI_Info_create,.1
+MPI_Info_get_nthkey,1,1,1,2,Bill,MPI_Info_create,.1
+MPI_Info_get_valuelen,1,1,1,2,Bill,MPI_Info_create,.1
+MPI_Info_set,1,1,1,2,Bill,MPI_Info_create,.1
 MPI_Op_c2f,
 MPI_Op_f2c,
 MPI_Pack_external,
@@ -250,8 +265,8 @@ MPI_Type_create_resized,
 MPI_Type_create_struct,
 MPI_Type_create_subarray,
 MPI_Type_f2c,
-MPI_Type_get_extent,1,1,2,Rob,
-MPI_Type_get_true_extent,1,1,2,Rob,
+MPI_Type_get_extent,1,1,2,1,Rob,
+MPI_Type_get_true_extent,1,1,2,1,Rob,
 MPI_Unpack_external,
 MPI_Win_c2f,
 MPI_Win_create_errhandler,1,1,1,2,Bill,
@@ -302,23 +317,23 @@ MPI_Exscan,
 
 Extended Interfaces
 
-MPI_Add_error_class,
-MPI_Add_error_code,
-MPI_Add_error_string,
-MPI_Comm_call_errhandler,
+MPI_Add_error_class,1,3,2,2,Bill,
+MPI_Add_error_code,1,3,2,2,Bill,
+MPI_Add_error_string,1,3,2,2,Bill,MPI_Add_error_code and MPI_Add_error_class
+MPI_Comm_call_errhandler,1,1,1,2,Bill,MPI_Comm_create_errhandler
 MPI_Comm_create_keyval,
 MPI_Comm_delete_attr,
 MPI_Comm_free_keyval,
 MPI_Comm_get_attr,
-MPI_Comm_get_name,
+MPI_Comm_get_name,1,1,1,3,Bill,
 MPI_Comm_set_attr,
-MPI_Comm_set_name,
-MPI_File_call_errhandler,
+MPI_Comm_set_name,1,1,1,3,Bill,
+MPI_File_call_errhandler,1,1,1,2,Bill,MPI_File_create_errhandler
 MPI_Grequest_complete,
 MPI_Grequest_start,
 MPI_Init_thread,
-MPI_Is_thread_main,
-MPI_Query_thread,
+MPI_Is_thread_main,.2,.2,.2,2,Bill,,.2
+MPI_Query_thread,.2,.2,.2,2,Bill,,done,.2
 MPI_Status_set_cancelled,
 MPI_Status_set_elements,
 MPI_Type_create_keyval,
@@ -328,17 +343,17 @@ MPI_Type_free_keyval,
 MPI_Type_get_attr,
 MPI_Type_get_contents,
 MPI_Type_get_envelope,
-MPI_Type_get_name,
+MPI_Type_get_name,1,1,1,3,Bill,
 MPI_Type_set_attr,
-MPI_Type_set_name,
-MPI_Win_call_errhandler,
+MPI_Type_set_name,1,1,1,3,Bill,
+MPI_Win_call_errhandler,1,1,1,2,Bill,MPI_Win_create_errhandler
 MPI_Win_create_keyval,
 MPI_Win_delete_attr,
 MPI_Win_free_keyval,
 MPI_Win_get_attr,
-MPI_Win_get_name,
+MPI_Win_get_name,1,1,1,3,Bill,
 MPI_Win_set_attr,
-MPI_Win_set_name,
+MPI_Win_set_name,1,1,1,3,Bill,
 
 I/O
 
@@ -454,7 +469,7 @@ MPID_Abort,,,,,Brian
 
 RMA
 
-Initially for the CH3 TCP channel device, no asynchronous agent, no passive target:
+Initially for the CH3 TCP channel device; no asynchronous agent; no passive target:
 
 MPID_Win_create,2,4,3,1,Rajeev,
 MPID_Win_free,1,3,2,1,Rajeev,
@@ -545,6 +560,8 @@ MPIDI_CH3_iStartRead,
 
 MPID functions - multi-method device
 
+BEGIN mmdevice
+
 Basic Point-to-Point
 
 MPID_Send,
@@ -627,6 +644,8 @@ Device Hooks
 
 MPID_Dev_xxx_create_hook,
 MPID_Dev_xxx_destroy_hook,
+
+END mmdevice
 
 -------------------------------------------------
 
@@ -730,73 +749,85 @@ via_post_write,
 
 PMI functions - Forker implementation
 
-PMI_Init,done,,,,Rusty
-PMI_Get_size,done,,,,Rusty
-PMI_Get_rank,done,,,,Rusty
-PMI_Barrier,done,,,,Rusty
-PMI_Finalize,done,,,,Rusty
+BEGIN forker
 
-PMI_KVS_Get_my_name,done,,,,Rusty
-PMI_KVS_Get_name_length_max,done,,,,Rusty
-PMI_KVS_Get_key_length_max,done,,,,Rusty
-PMI_KVS_Get_value_length_max,done,,,,Rusty
-PMI_KVS_Create,done,,,,Rusty
-PMI_KVS_Destroy,done,,,,Rusty
-PMI_KVS_Put,done,,,,Rusty
-PMI_KVS_Commit,done,,,,Rusty
-PMI_KVS_Get,done,,,,Rusty
-PMI_KVS_iter_first,done,,,,Rusty
-PMI_KVS_iter_next,done,,,,Rusty
+PMI_Init,,,,,Rusty,,done
+PMI_Get_size,,,,,Rusty,,done
+PMI_Get_rank,,,,,Rusty,,done
+PMI_Barrier,,,,,Rusty,,done
+PMI_Finalize,,,,,Rusty,,done
+
+PMI_KVS_Get_my_name,,,,,Rusty,,done
+PMI_KVS_Get_name_length_max,,,,,Rusty,,done
+PMI_KVS_Get_key_length_max,,,,,Rusty,,done
+PMI_KVS_Get_value_length_max,,,,,Rusty,,done
+PMI_KVS_Create,,,,,Rusty,,done
+PMI_KVS_Destroy,,,,,Rusty,,done
+PMI_KVS_Put,,,,,Rusty,,done
+PMI_KVS_Commit,,,,,Rusty,,done
+PMI_KVS_Get,,,,,Rusty,,done
+PMI_KVS_iter_first,,,,,Rusty,,done
+PMI_KVS_iter_next,,,,,Rusty,,done
 
 PMI_Spawn_multiple,2,6,4,2,Rusty,other PMI fcns
-PMI_Args_to_info,1,3,2,Rusty
+PMI_Args_to_info,1,3,2,2,Rusty
 
+END forker
 -------------------------------------------------
 
 PMI functions - MPD implementation (Python MPD or C MPD?)
 
-PMI_Init
-PMI_Get_size
-PMI_Get_rank
-PMI_Barrier
-PMI_Finalize
+BEGIN MPD
 
-PMI_KVS_Get_my_name
-PMI_KVS_Get_name_length_max
-PMI_KVS_Get_key_length_max
-PMI_KVS_Get_value_length_max
-PMI_KVS_Create
-PMI_KVS_Destroy
-PMI_KVS_Put
-PMI_KVS_Commit
-PMI_KVS_Get
-PMI_KVS_iter_first
-PMI_KVS_iter_next
+PMI_Init,
+PMI_Get_size,
+PMI_Get_rank,
+PMI_Barrier,
+PMI_Finalize,
 
-PMI_Spawn_multiple
-PMI_Args_to_info
+PMI_KVS_Get_my_name,
+PMI_KVS_Get_name_length_max,
+PMI_KVS_Get_key_length_max,
+PMI_KVS_Get_value_length_max,
+PMI_KVS_Create,
+PMI_KVS_Destroy,
+PMI_KVS_Put,
+PMI_KVS_Commit,
+PMI_KVS_Get,
+PMI_KVS_iter_first,
+PMI_KVS_iter_next,
+
+PMI_Spawn_multiple,
+PMI_Args_to_info,
+
+END MPD
 
 -------------------------------------------------
 
 PMI functions - winmpd implementation
 
-PMI_Init,done,,,,David
-PMI_Get_size,done,,,,David
-PMI_Get_rank,done,,,,David
-PMI_Barrier,done,,,,David
-PMI_Finalize,done,,,,David
+BEGIN winmpd
 
-PMI_KVS_Get_my_name,done,,,,David
-PMI_KVS_Get_name_length_max,done,,,,David
-PMI_KVS_Get_key_length_max,done,,,,David
-PMI_KVS_Get_value_length_max,done,,,,David
-PMI_KVS_Create,done,,,,David
-PMI_KVS_Destroy,done,,,,David
-PMI_KVS_Put,done,,,,David
-PMI_KVS_Commit,done,,,,David
-PMI_KVS_Get,done,,,,David
-PMI_KVS_iter_first,done,,,,David
-PMI_KVS_iter_next,done,,,,David
+PMI_Init,,,,,David,,done
+PMI_Get_size,,,,,David,,done
+PMI_Get_rank,,,,,David,,done
+PMI_Barrier,,,,,David,,done
+PMI_Finalize,,,,,David,,done
 
-PMI_Spawn_multiple,done,,,,David
+PMI_KVS_Get_my_name,,,,,David,,done
+PMI_KVS_Get_name_length_max,,,,,David,,done
+PMI_KVS_Get_key_length_max,,,,,David,,done
+PMI_KVS_Get_value_length_max,,,,,David,,done
+PMI_KVS_Create,,,,,David,,done
+PMI_KVS_Destroy,,,,,David,,done
+PMI_KVS_Put,,,,,David,,done
+PMI_KVS_Commit,,,,,David,,done
+PMI_KVS_Get,,,,,David,,done
+PMI_KVS_iter_first,,,,,David,,done
+PMI_KVS_iter_next,,,,,David,,done
+
+PMI_Spawn_multiple,,,,,David,,done
 PMI_Args_to_info,done,,,David
+
+END winmpd
+
