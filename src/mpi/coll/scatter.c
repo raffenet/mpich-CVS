@@ -55,14 +55,13 @@ PMPI_LOCAL int MPIR_Scatter (
 	MPID_Comm *comm_ptr )
 {
     MPI_Status status;
-    MPI_Aint   extent;
+    MPI_Aint   extent=0;
     int        rank, comm_size, is_homogeneous, sendtype_size;
     int curr_cnt, relative_rank, nbytes, send_subtree_cnt;
-    int mask, recvtype_size, src, dst, position, tmp_buf_size;
+    int mask, recvtype_size=0, src, dst, position, tmp_buf_size;
     void *tmp_buf=NULL;
     int        mpi_errno = MPI_SUCCESS;
-    MPI_Comm comm, newcomm;
-    MPI_Group group;
+    MPI_Comm comm;
     
     if (recvcnt == 0) return MPI_SUCCESS;
 
@@ -378,10 +377,8 @@ PMPI_LOCAL int MPIR_Scatter_inter (
 
     int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
     int i, nbytes, sendtype_size, recvtype_size;
-    MPI_Comm newcomm;
-    MPI_Group group;
     MPI_Status status;
-    MPI_Aint extent, lb=0;
+    MPI_Aint extent, true_extent, true_lb;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
@@ -421,16 +418,17 @@ PMPI_LOCAL int MPIR_Scatter_inter (
             rank = comm_ptr->rank;
             
             if (rank == 0) {
-                MPID_Datatype_get_extent_macro(recvtype, extent);
-                tmp_buf = MPIU_Malloc(extent*recvcnt*local_size);
+                mpi_errno = NMPI_Type_get_true_extent(recvtype, &true_lb,
+                                                      &true_extent);  
+                if (mpi_errno) return mpi_errno;
+
+                tmp_buf = MPIU_Malloc(true_extent*recvcnt*local_size);
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
-		/* FIXME: Should this be true_lb? */
-                NMPI_Type_lb( recvtype, &lb );
-                tmp_buf = (void *)((char*)tmp_buf - lb);
+                tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
                 MPID_Comm_thread_lock( comm_ptr );
                 mpi_errno = MPIC_Recv(tmp_buf, recvcnt*local_size,
@@ -440,18 +438,18 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                 if (mpi_errno) return mpi_errno;
             }
             
-            /* all processes in remote group form new intracommunicator */
-#ifdef UNIMPLEMENTED
-            NMPI_Comm_group(comm, &group);
-            MPID_Comm_return_intra(group, &newcomm);
-#endif
-            MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+            /* Get the local intracommunicator */
+            if (!comm_ptr->local_comm)
+                MPIR_Setup_intercomm_localcomm( comm_ptr );
+            
+            newcomm_ptr = comm_ptr->local_comm;
+            
             /* now do the usual scatter on this intracommunicator */
             mpi_errno = MPIR_Scatter(tmp_buf, recvcnt, recvtype,
                                      recvbuf, recvcnt, recvtype, 0,
                                      newcomm_ptr); 
             if (rank == 0) 
-                MPIU_Free(tmp_buf+lb);
+                MPIU_Free(tmp_buf+true_lb);
         }
     }
     else {

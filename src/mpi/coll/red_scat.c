@@ -53,7 +53,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPID_Comm *comm_ptr )
 {
     int   rank, comm_size, i;
-    MPI_Aint extent, lb=0; 
+    MPI_Aint extent, true_extent, true_lb; 
     int  *displs;
     void *tmp_recvbuf, *tmp_results;
     int   mpi_errno = MPI_SUCCESS;
@@ -77,8 +77,10 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
     MPID_Datatype_get_size_macro(datatype, type_size);
     MPID_Datatype_get_extent_macro(datatype, extent);
-    /* FIXME: should this be true_lb? */
-    NMPI_Type_lb( datatype, &lb );
+
+    mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                          &true_extent);  
+    if (mpi_errno) return mpi_errno;
     
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -132,13 +134,13 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         }
         
         /* allocate temporary buffer to store incoming data */
-        tmp_recvbuf = MPIU_Malloc(extent*recvcnts[rank]);
+        tmp_recvbuf = MPIU_Malloc(true_extent*recvcnts[rank]);
         if (!tmp_recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        tmp_recvbuf = (void *)((char*)tmp_recvbuf - lb);
+        tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
         
         for (i=1; i<comm_size; i++) {
             src = (rank - i + comm_size) % comm_size;
@@ -198,7 +200,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             }
         }
         
-        MPIU_Free((char *)tmp_recvbuf+lb); 
+        MPIU_Free((char *)tmp_recvbuf+true_lb); 
 
         /* if MPI_IN_PLACE, move output data to the beginning of
            recvbuf. already done for rank 0. */
@@ -216,23 +218,23 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         /* for short messages, use recursive doubling. */
 
         /* need to allocate temporary buffer to receive incoming data*/
-        tmp_recvbuf = MPIU_Malloc(extent*total_count);
+        tmp_recvbuf = MPIU_Malloc(true_extent*total_count);
         if (!tmp_recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        tmp_recvbuf = (void *)((char*)tmp_recvbuf - lb);
+        tmp_recvbuf = (void *)((char*)tmp_recvbuf - true_lb);
         
         /* need to allocate another temporary buffer to accumulate
            results */
-        tmp_results = MPIU_Malloc(extent*total_count);
+        tmp_results = MPIU_Malloc(true_extent*total_count);
         if (!tmp_results) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }        
         /* adjust for potential negative lower bound in datatype */
-        tmp_results = (void *)((char*)tmp_results - lb);
+        tmp_results = (void *)((char*)tmp_results - true_lb);
         
         /* copy sendbuf into tmp_results */
         if (sendbuf != MPI_IN_PLACE)
@@ -425,8 +427,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
         if (mpi_errno) return mpi_errno;
         
-        MPIU_Free((char *)tmp_recvbuf+lb); 
-        MPIU_Free((char *)tmp_results+lb); 
+        MPIU_Free((char *)tmp_recvbuf+true_lb); 
+        MPIU_Free((char *)tmp_results+true_lb); 
     }
     
     MPIU_Free(displs);
@@ -456,16 +458,12 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 */
     
     int rank, mpi_errno, inleftgroup, root, local_size, total_count, i;
-    MPI_Comm newcomm;
-    MPI_Group group;
-    MPI_Aint extent, lb=0;
+    MPI_Aint true_extent, true_lb;
     void *tmp_buf=NULL;
     int *displs=NULL;
     MPID_Comm *newcomm_ptr = NULL;
-    MPI_Comm comm;
 
     rank = comm_ptr->rank;
-    comm = comm_ptr->handle;
     local_size = comm_ptr->local_size;
 
     total_count = 0;
@@ -487,17 +485,17 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
             total_count += recvcnts[i];
         }
 
-        MPID_Datatype_get_extent_macro(datatype, extent);
+        mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                              &true_extent);  
+        if (mpi_errno) return mpi_errno;
 
-        tmp_buf = MPIU_Malloc(extent*total_count);
+        tmp_buf = MPIU_Malloc(true_extent*total_count);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-	/* FIXME: should this be true_lb? */
-        NMPI_Type_lb( datatype, &lb );
-        tmp_buf = (void *)((char*)tmp_buf - lb);
+        tmp_buf = (void *)((char*)tmp_buf - true_lb);
     }
 
     /* first do a reduce from right group to rank 0 in left group,
@@ -532,12 +530,11 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
         if (mpi_errno) return mpi_errno;
     }
 
+    /* Get the local intracommunicator */
+    if (!comm_ptr->local_comm)
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
 
-#ifdef UNIMPLEMENTED
-    NMPI_Comm_group(comm, &group);
-    MPID_Comm_return_intra(group, &newcomm);
-#endif
-    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+    newcomm_ptr = comm_ptr->local_comm;
 
     mpi_errno = MPIR_Scatterv(tmp_buf, recvcnts, displs, datatype, recvbuf,
                               recvcnts[rank], datatype, 0, newcomm_ptr);
@@ -545,7 +542,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
     
     if (rank == 0) {
         MPIU_Free(displs);
-        MPIU_Free((char*)tmp_buf+lb);
+        MPIU_Free((char*)tmp_buf+true_lb);
     }
 
     return mpi_errno;

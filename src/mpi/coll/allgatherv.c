@@ -402,14 +402,11 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
 */
 
     int remote_size, mpi_errno, inleftgroup, root, rank;
-    MPI_Comm comm, newcomm;
-    MPI_Group group;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Datatype newtype;
 
     remote_size = comm_ptr->remote_size;
     rank = comm_ptr->rank;
-    comm = comm_ptr->handle;
 
     /* first do an intercommunicator gatherv from left to right group,
        then from right to left group */
@@ -448,11 +445,11 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
     /* now do an intracommunicator broadcast within each group. we use
        a derived datatype to handle the displacements */
 
-#ifdef UNIMPLEMENTED
-    NMPI_Comm_group(comm, &group);
-    MPID_Comm_return_intra(group, &newcomm);
-#endif
-    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+    /* Get the local intracommunicator */
+    if (!comm_ptr->local_comm)
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+    newcomm_ptr = comm_ptr->local_comm;
 
     NMPI_Type_indexed(remote_size, recvcounts, displs, recvtype,
                       &newtype);

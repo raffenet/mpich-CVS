@@ -26,19 +26,38 @@
    
    Algorithm: MPI_Alltoall
 
-   For long messages, we use a pairwise exchange algorithm, which
-   takes p-1 steps. At step i, each process receives from (rank-i) and
-   sends to (rank+i).
-   Cost = (p-1).alpha + n.beta
+   We use four algorithms for alltoall. For very short messages, we use
+   a recursive doubling algorithm that takes lgp steps. At each step
+   pairs of processes exchange all the data they have (received) so
+   far. A lot more data is communicated than each process needs, but
+   for very short messages (typically 256 bytes or less), this
+   algorithm is still better because of the lower latency.
+
+   Cost = lgp.alpha + n.p.beta
+
    where n is the total amount of data a process needs to send to all
    other processes.
 
-   For short messages, we use a recursive doubling algorithm, which
-   takes lgp steps. At each step pairs of processes exchange all the
-   data they have received so far. A lot more data is communicated
-   than in pairwise exchange, but for short messages it is still
-   better because of the lower latency requirement.
-   Cost = lgp.alpha + n.p.beta
+   For medium size messages (typically 256 bytes -- 256 Kbytes), we
+   use an algorithm that posts all irecvs and isends and then does a
+   waitall. We scatter the order of sources and destinations among the
+   processes, so that all processes don't try to send/recv to/from the
+   same process at the same time.
+
+   For long messages, we use a pairwise exchange algorithm, which
+   takes p-1 steps. For a power-of-two number of processes, we
+   calculate the pairs by using an exclusive-or algorithm:
+           for (i=1; i<comm_size; i++)
+               dest = rank ^ i;
+   This algorithm doesn't work if the number of processes is not a power of
+   two. For a non-power-of-two number of processes, we create pairs by
+   having each process receive from (rank-i) and send to (rank+i) at
+   step i.
+
+   Cost = (p-1).alpha + n.beta
+
+   where n is the total amount of data a process needs to send to all
+   other processes.
 
    Possible improvements: 
 
@@ -56,7 +75,8 @@ PMPI_LOCAL int MPIR_Alltoall(
     MPID_Comm *comm_ptr )
 {
     int          comm_size, i, j, k, p, pof2;
-    MPI_Aint     sendtype_extent, recvtype_extent, sendbuf_extent, lb=0;
+    MPI_Aint     sendtype_extent, recvtype_extent;
+    MPI_Aint sendtype_true_extent, sendbuf_true_extent, sendtype_true_lb;
     int          mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     int src, dst, rank, nbytes, curr_cnt, dst_tree_root, my_tree_root;
@@ -72,9 +92,14 @@ PMPI_LOCAL int MPIR_Alltoall(
     rank = comm_ptr->rank;
     
     /* Get extent of send and recv types */
-    MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
     MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
-    
+    MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
+
+    /* get true extent of sendtype */
+    mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
+                                          &sendtype_true_extent);  
+    if (mpi_errno) return mpi_errno;
+
     MPID_Datatype_get_size_macro(sendtype, sendtype_size);
     nbytes = sendtype_size * sendcount * comm_size;
     
@@ -89,22 +114,20 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* need to allocate temporary buffer of size
            sendbuf_extent*comm_size */
         
-        sendbuf_extent = sendcount * comm_size * sendtype_extent; 
-        tmp_buf = MPIU_Malloc(sendbuf_extent*comm_size);
+        sendbuf_true_extent = sendcount * comm_size * sendtype_true_extent; 
+        tmp_buf = MPIU_Malloc(sendbuf_true_extent*comm_size);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         
         /* adjust for potential negative lower bound in datatype */
-	/* FIXME: should this be true_lb ? */
-        NMPI_Type_lb( sendtype, &lb );
-        tmp_buf = (void *)((char*)tmp_buf - lb);
+        tmp_buf = (void *)((char*)tmp_buf - sendtype_true_lb);
         
         /* copy local sendbuf into tmp_buf at location indexed by rank */
         curr_cnt = sendcount*comm_size;
         mpi_errno = MPIR_Localcopy(sendbuf, curr_cnt, sendtype,
-                                   ((char *)tmp_buf + rank*sendbuf_extent),
+                                   ((char *)tmp_buf + rank*sendbuf_true_extent),
                                    curr_cnt, sendtype);
         if (mpi_errno) return mpi_errno;
         
@@ -121,11 +144,11 @@ PMPI_LOCAL int MPIR_Alltoall(
             
             if (dst < comm_size) {
                 mpi_errno = MPIC_Sendrecv(((char *)tmp_buf +
-                                           my_tree_root*sendbuf_extent),
+                                           my_tree_root*sendbuf_true_extent),
                                           curr_cnt, sendtype,
                                           dst, MPIR_ALLTOALL_TAG, 
                                           ((char *)tmp_buf +
-                                           dst_tree_root*sendbuf_extent),
+                                           dst_tree_root*sendbuf_true_extent),
                                           sendcount*comm_size*mask,
                                           sendtype, dst, MPIR_ALLTOALL_TAG, 
                                           comm, &status);
@@ -174,7 +197,7 @@ PMPI_LOCAL int MPIR_Alltoall(
                         && (dst >= tree_root + nprocs_completed)) {
                         /* send the data received in this step above */
                         mpi_errno = MPIC_Send(((char *)tmp_buf +
-                                               dst_tree_root*sendbuf_extent),
+                                               dst_tree_root*sendbuf_true_extent),
                                               last_recv_cnt, sendtype,
                                               dst, MPIR_ALLTOALL_TAG,
                                               comm);  
@@ -186,7 +209,7 @@ PMPI_LOCAL int MPIR_Alltoall(
                              (dst < tree_root + nprocs_completed) &&
                              (rank >= tree_root + nprocs_completed)) {
                         mpi_errno = MPIC_Recv(((char *)tmp_buf +
-                                               dst_tree_root*sendbuf_extent),
+                                               dst_tree_root*sendbuf_true_extent),
                                               sendcount*comm_size*mask, 
                                               sendtype,   
                                               dst, MPIR_ALLTOALL_TAG,
@@ -207,15 +230,16 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* now copy everyone's contribution from tmp_buf to recvbuf */
         for (p=0; p<comm_size; p++) {
             mpi_errno = MPIR_Localcopy(((char *)tmp_buf +
-                                        (p*comm_size+rank)*sendcount*sendtype_extent),
-                                       sendcount, sendtype, 
-                                       ((char*)recvbuf +
-                                        p*recvcount*recvtype_extent), 
-                                       recvcount, recvtype);
+                                        p*sendbuf_true_extent +
+                                        rank*sendcount*sendtype_extent),
+                                        sendcount, sendtype, 
+                                        ((char*)recvbuf +
+                                         p*recvcount*recvtype_extent), 
+                                        recvcount, recvtype);
             if (mpi_errno) return mpi_errno;
         }
         
-        MPIU_Free((char *)tmp_buf+lb); 
+        MPIU_Free((char *)tmp_buf+sendtype_true_lb); 
     }
 
     else if ((nbytes > MPIR_ALLTOALL_SHORT_MSG) && 

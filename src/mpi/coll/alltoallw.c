@@ -25,17 +25,18 @@
    
    Algorithm: MPI_Alltoallw
 
-   For both short and long messages, we use the same pairwise exchange
-   algorithm used in MPI_Alltoall for long messages. We don't use the
-   recursive doubling algorithm for short messages because a process
-   doesn't know any other process's sendcounts or recvcounts arrays.
-   Cost = (p-1).alpha + n.beta
-   where n is the total amount of data a process needs to send to all
-   other processes.
+   Since each process sends/receives different amounts of data to
+   every other process, we don't know the total message size for all
+   processes without additional communication. Therefore we simply use
+   the "middle of the road" isend/irecv algorithm that works
+   reasonably well in all cases.
+
+   We post all irecvs and isends and then do a waitall. We scatter the
+   order of sources and destinations among the processes, so that all
+   processes don't try to send/recv to/from the same process at the
+   same time. 
 
    Possible improvements: 
-   We could speculatively use a recursive doubling algorithm assuming
-   a short message size and then switch to pairwise exchange if necessary.
 
    End Algorithm: MPI_Alltoallw
 */
@@ -55,7 +56,7 @@ PMPI_LOCAL int MPIR_Alltoallw (
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status *starray;
     MPI_Request *reqarray;
-    int src, dst, rank;
+    int dst, rank;
     MPI_Comm comm;
     
     comm = comm_ptr->handle;
@@ -148,6 +149,8 @@ PMPI_LOCAL int MPIR_Alltoallw_inter (
    receives from src = (rank - i + max_size) % max_size if src <
    remote_size, and sends to dst = (rank + i) % max_size if dst <
    remote_size. 
+
+   FIXME: change algorithm to match intracommunicator alltoallv
 */
 
     int local_size, remote_size, max_size, i;

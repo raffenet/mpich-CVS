@@ -52,7 +52,7 @@ int MPIR_Reduce (
     int        mask, relrank, source, lroot;
     int        mpi_errno = MPI_SUCCESS;
     MPI_User_function *uop;
-    MPI_Aint   lb=0, m_extent; 
+    MPI_Aint   true_lb, true_extent; 
     void       *buffer;
     MPID_Op *op_ptr;
     MPI_Comm comm;
@@ -122,27 +122,27 @@ int MPIR_Reduce (
        need is a "squeeze" operation that removes the skips.
     */
     /* Make a temporary buffer */
-    MPID_Datatype_get_extent_macro(datatype, m_extent);
-    
-    buffer = MPIU_Malloc(m_extent * count);
+
+    mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb, &true_extent);  
+    if (mpi_errno) return mpi_errno;
+
+    buffer = MPIU_Malloc(true_extent * count);
     if (!buffer) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    /* FIXME: should this be true_lb? */
-    NMPI_Type_lb( datatype, &lb );
-    buffer = (void *)((char*)buffer - lb);
+    buffer = (void *)((char*)buffer - true_lb);
     
     /* If I'm not the root, then my recvbuf may not be valid, therefore
        I have to allocate a temporary one */
     if (rank != root) {
-        recvbuf = MPIU_Malloc(m_extent * count);
+        recvbuf = MPIU_Malloc(true_extent * count);
         if (!recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
-        recvbuf = (void *)((char*)recvbuf - lb);
+        recvbuf = (void *)((char*)recvbuf - true_lb);
     }
 
     if ((rank != root) || (sendbuf != MPI_IN_PLACE)) {
@@ -194,7 +194,7 @@ int MPIR_Reduce (
 	mask <<= 1;
     }
 
-    MPIU_Free( (char *)buffer + lb );
+    MPIU_Free( (char *)buffer + true_lb );
 
     if (!is_commutative && (root != 0)) {
         if (rank == 0) {
@@ -210,7 +210,7 @@ int MPIR_Reduce (
     
     /* Free the temporarily allocated recvbuf */
     if (rank != root)
-        MPIU_Free( (char *)recvbuf + lb );
+        MPIU_Free( (char *)recvbuf + true_lb );
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
@@ -239,12 +239,8 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 */
 
     int rank, mpi_errno;
-    MPI_Comm newcomm;
-#ifdef UNIMPLEMENTED
-    MPI_Group group;
-#endif
     MPI_Status status;
-    MPI_Aint extent, lb=0;
+    MPI_Aint true_extent, true_lb;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
@@ -273,26 +269,25 @@ PMPI_LOCAL int MPIR_Reduce_inter (
         rank = comm_ptr->rank;
         
         if (rank == 0) {
-            MPID_Datatype_get_extent_macro(datatype, extent);
-            tmp_buf = MPIU_Malloc(extent*count);
+            mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                                  &true_extent);  
+            if (mpi_errno) return mpi_errno;
+
+            tmp_buf = MPIU_Malloc(true_extent*count);
             if (!tmp_buf) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
-	    /* FIXME: should this be true_lb? */
-            NMPI_Type_lb( datatype, &lb );
-            tmp_buf = (void *)((char*)tmp_buf - lb);
+            tmp_buf = (void *)((char*)tmp_buf - true_lb);
         }
         
-        /* all processes in remote group form new intracommunicator */
-#ifdef UNIMPLEMENTED
-        NMPI_Comm_group(comm, &group);
-        MPID_Comm_return_intra(group, &newcomm);
-#else
-	newcomm = 0;
-#endif
-        MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+        /* Get the local intracommunicator */
+        if (!comm_ptr->local_comm)
+            MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+        newcomm_ptr = comm_ptr->local_comm;
+        
         /* now do a local reduce on this intracommunicator */
         mpi_errno = MPIR_Reduce(sendbuf, tmp_buf, count, datatype,
                                 op, 0, newcomm_ptr);
@@ -303,7 +298,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                                   MPIR_REDUCE_TAG, comm); 
             MPID_Comm_thread_unlock( comm_ptr ); 
             if (mpi_errno) return mpi_errno;
-            MPIU_Free((char*)tmp_buf+lb);
+            MPIU_Free((char*)tmp_buf+true_lb);
         }
     }
     

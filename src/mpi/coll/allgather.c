@@ -376,38 +376,35 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
     int rank, local_size, remote_size, mpi_errno, inleftgroup, root;
     MPI_Comm newcomm;
-    MPI_Group group;
-    MPI_Aint extent, lb=0;
+    MPI_Aint true_extent, true_lb;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
-    MPI_Comm comm;
 
     local_size = comm_ptr->local_size; 
     remote_size = comm_ptr->remote_size;
     rank = comm_ptr->rank;
-    comm = comm_ptr->handle;
 
     if (rank == 0) {
         /* In each group, rank 0 allocates temp. buffer for local
            gather */
-        MPID_Datatype_get_extent_macro(sendtype, extent);
-        tmp_buf = MPIU_Malloc(extent*sendcount*local_size);
+        mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
+                                              &true_extent);  
+        if (mpi_errno) return mpi_errno;
+        tmp_buf = MPIU_Malloc(true_extent*sendcount*local_size);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-	/* FIXME: Should this be true_lb? */
-        mpi_errno = NMPI_Type_lb( sendtype, &lb );
-	if (mpi_errno) return mpi_errno;
-        tmp_buf = (void *)((char*)tmp_buf - lb);
+        tmp_buf = (void *)((char*)tmp_buf - true_lb);
     }
 
-#ifdef UNIMPLEMENTED
-    NMPI_Comm_group(comm, &group);
-    MPID_Comm_return_intra(group, &newcomm);
-#endif
-    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+    /* Get the local intracommunicator */
+    if (!comm_ptr->local_comm)
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+    newcomm_ptr = comm_ptr->local_comm;
+    newcomm = newcomm_ptr->handle;
 
     mpi_errno = MPIR_Gather(sendbuf, sendcount, sendtype, tmp_buf, sendcount,
                             sendtype, 0, newcomm_ptr);
@@ -444,7 +441,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
     }
     
     if (rank == 0)
-        MPIU_Free((char*)tmp_buf+lb);
+        MPIU_Free((char*)tmp_buf+true_lb);
 
     return mpi_errno;
 }

@@ -1642,4 +1642,6 @@ int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
                    MPI_Datatype recvtype, int root, MPID_Comm
                    *comm_ptr );
 
+int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
+
 #endif /* MPIIMPL_INCLUDED */

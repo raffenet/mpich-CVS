@@ -438,13 +438,11 @@ PMPI_LOCAL int MPIR_Bcast_inter (
     intracommunicator broadcast.
 */
     int rank, mpi_errno;
-    MPI_Comm newcomm;
-#ifdef UNIMPLEMENTED
-    MPI_Group group;
-#endif
     MPI_Status status;
     MPID_Comm *newcomm_ptr = NULL;
-    MPI_Comm comm = 0;
+    MPI_Comm comm;
+
+    comm = comm_ptr->handle;
 
     if (root == MPI_PROC_NULL) {
         /* local processes other than root do nothing */
@@ -469,15 +467,12 @@ PMPI_LOCAL int MPIR_Bcast_inter (
             if (mpi_errno) return mpi_errno;
         }
         
-        /* all processes in remote group form new intracommunicator */
-        comm = comm_ptr->handle;
-#ifdef UNIMPLEMENTED
-        NMPI_Comm_group(comm, &group);
-        MPID_Comm_return_intra(group, &newcomm);
-#else
-	newcomm = 0;
-#endif
-        MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+        /* Get the local intracommunicator */
+        if (!comm_ptr->local_comm)
+            MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+        newcomm_ptr = comm_ptr->local_comm;
+
         /* now do the usual broadcast on this intracommunicator
            with rank 0 as root. */
         mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, newcomm_ptr);

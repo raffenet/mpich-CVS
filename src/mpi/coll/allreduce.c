@@ -59,7 +59,7 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPI_Status status;
     int mask, dst, dst_tree_root, my_tree_root, nprocs_completed, k, i,
         j, tmp_mask, tree_root, is_commutative; 
-    MPI_Aint extent, lb=0;
+    MPI_Aint true_extent, true_lb;
     void *tmp_buf;
     MPI_User_function *uop;
     MPID_Op *op_ptr;
@@ -122,21 +122,16 @@ PMPI_LOCAL int MPIR_Allreduce (
         }
         
         /* need to allocate temporary buffer to store incoming data*/
-        MPID_Datatype_get_extent_macro(datatype, extent);
-        tmp_buf = MPIU_Malloc(count*extent);
+        mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                              &true_extent); 
+	if (mpi_errno) return mpi_errno;
+        tmp_buf = MPIU_Malloc(count*true_extent);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-	MPIR_Nest_incr();
-	/* FIXME: This must be the true lb, not any artificial LB.
-	   is MPI_Type_true_extent ready? */
-        mpi_errno = NMPI_Type_lb( datatype, &lb );
-	if (mpi_errno) return mpi_errno;
-	MPIR_Nest_decr();
-
-        tmp_buf = (void *)((char*)tmp_buf - lb);
+        tmp_buf = (void *)((char*)tmp_buf - true_lb);
         
         /* copy local data into recvbuf */
         if (sendbuf != MPI_IN_PLACE) {
@@ -245,7 +240,7 @@ PMPI_LOCAL int MPIR_Allreduce (
             i++;
         }
         
-        MPIU_Free((char *)tmp_buf+lb); 
+        MPIU_Free((char *)tmp_buf+true_lb); 
         
         /* Unlock for collective operation */
         MPID_Comm_thread_unlock( comm_ptr );
@@ -275,15 +270,9 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
 */
 
     int rank, mpi_errno, inleftgroup, root;
-    MPI_Comm newcomm;
-#ifdef UNIMPLEMENTED
-    MPI_Group group;
-#endif
     MPID_Comm *newcomm_ptr = NULL;
-    MPI_Comm comm;
 
     rank = comm_ptr->rank;
-    comm = comm_ptr->handle;
 
     /* first do a reduce from right group to rank 0 in left group,
        then from left group to rank 0 in right group*/
@@ -319,13 +308,11 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
         if (mpi_errno) return mpi_errno;
     }
 
-#ifdef UNIMPLEMENTED
-    NMPI_Comm_group(comm, &group);
-    MPID_Comm_return_intra(group, &newcomm);
-#else
-    newcomm = 0;
-#endif
-    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+    /* Get the local intracommunicator */
+    if (!comm_ptr->local_comm)
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+    newcomm_ptr = comm_ptr->local_comm;
 
     mpi_errno = MPIR_Bcast(recvbuf, count, datatype, 0, newcomm_ptr);
     if (mpi_errno) return mpi_errno;

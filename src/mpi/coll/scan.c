@@ -70,7 +70,7 @@ PMPI_LOCAL int MPIR_Scan (
     int        rank, comm_size;
     int        mpi_errno = MPI_SUCCESS;
     int mask, dst, is_commutative; 
-    MPI_Aint extent, lb=0;
+    MPI_Aint true_extent, true_lb;
     void *partial_scan, *tmp_buf;
     MPI_User_function *uop;
     MPID_Op *op_ptr;
@@ -111,27 +111,26 @@ PMPI_LOCAL int MPIR_Scan (
     }
     
     /* need to allocate temporary buffer to store partial scan*/
-    MPID_Datatype_get_extent_macro(datatype, extent);
-    partial_scan = MPIU_Malloc(extent*count);
+    mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                          &true_extent);  
+    if (mpi_errno) return mpi_errno;
+
+    partial_scan = MPIU_Malloc(true_extent*count);
     if (!partial_scan) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    /* FIXME: should his be true_lb ? */
-    NMPI_Type_lb( datatype, &lb );
-    partial_scan = (void *)((char*)partial_scan - lb);
+    partial_scan = (void *)((char*)partial_scan - true_lb);
     
     /* need to allocate temporary buffer to store incoming data*/
-    tmp_buf = MPIU_Malloc(extent*count);
+    tmp_buf = MPIU_Malloc(true_extent*count);
     if (!tmp_buf) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    /* FIXME: should this be true_lb? */
-    NMPI_Type_lb( datatype, &lb );
-    tmp_buf = (void *)((char*)tmp_buf - lb);
+    tmp_buf = (void *)((char*)tmp_buf - true_lb);
     
     /* Since this is an inclusive scan, copy local contribution into
        recvbuf. */
@@ -184,8 +183,8 @@ PMPI_LOCAL int MPIR_Scan (
         mask <<= 1;
     }
     
-    MPIU_Free((char *)partial_scan+lb); 
-    MPIU_Free((char *)tmp_buf+lb); 
+    MPIU_Free((char *)partial_scan+true_lb); 
+    MPIU_Free((char *)tmp_buf+true_lb); 
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

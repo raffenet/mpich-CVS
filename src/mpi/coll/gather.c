@@ -58,7 +58,7 @@ int MPIR_Gather (
     int mask, sendtype_size, src, dst, position, tmp_buf_size;
     void *tmp_buf=NULL;
     MPI_Status status;
-    MPI_Aint   extent;            /* Datatype extent */
+    MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
     
     if (sendcnt == 0) return MPI_SUCCESS;
@@ -320,10 +320,8 @@ PMPI_LOCAL int MPIR_Gather_inter (
 
     int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
     int i, nbytes, sendtype_size, recvtype_size;
-    MPI_Comm newcomm;
-    MPI_Group group;
     MPI_Status status;
-    MPI_Aint extent, lb=0;
+    MPI_Aint extent, true_extent, true_lb;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
@@ -366,24 +364,24 @@ PMPI_LOCAL int MPIR_Gather_inter (
             rank = comm_ptr->rank;
             
             if (rank == 0) {
-                MPID_Datatype_get_extent_macro(sendtype, extent);
-                tmp_buf = MPIU_Malloc(extent*sendcnt*local_size);
+                mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
+                                                      &true_extent);  
+                if (mpi_errno) return mpi_errno;
+                tmp_buf = MPIU_Malloc(true_extent*sendcnt*local_size);
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
-		/* FIXME: should this be true_lb? */
-                NMPI_Type_lb( sendtype, &lb );
-                tmp_buf = (void *)((char*)tmp_buf - lb);
+                tmp_buf = (void *)((char*)tmp_buf - true_lb);
             }
             
             /* all processes in remote group form new intracommunicator */
-#ifdef UNIMPLEMENTED
-            NMPI_Comm_group(comm, &group);
-            MPID_Comm_return_intra(group, &newcomm);
-#endif
-            MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+            if (!comm_ptr->local_comm)
+                MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+            newcomm_ptr = comm_ptr->local_comm;
+
             /* now do the a local gather on this intracommunicator */
             mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
                                     tmp_buf, sendcnt, sendtype, 0,
@@ -395,7 +393,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
                                       MPIR_GATHER_TAG, comm); 
                 MPID_Comm_thread_unlock( comm_ptr ); 
                 if (mpi_errno) return mpi_errno;
-                MPIU_Free(tmp_buf+lb);
+                MPIU_Free(tmp_buf+true_lb);
             }
         }
     }

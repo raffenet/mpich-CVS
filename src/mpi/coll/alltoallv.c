@@ -25,17 +25,18 @@
    
    Algorithm: MPI_Alltoallv
 
-   For both short and long messages, we use the same pairwise exchange
-   algorithm used in MPI_Alltoall for long messages. We don't use the
-   recursive doubling algorithm for short messages because a process
-   doesn't know any other process's sendcounts or recvcounts arrays.
-   Cost = (p-1).alpha + n.beta
-   where n is the total amount of data a process needs to send to all
-   other processes.
+   Since each process sends/receives different amounts of data to
+   every other process, we don't know the total message size for all
+   processes without additional communication. Therefore we simply use
+   the "middle of the road" isend/irecv algorithm that works
+   reasonably well in all cases.
+
+   We post all irecvs and isends and then do a waitall. We scatter the
+   order of sources and destinations among the processes, so that all
+   processes don't try to send/recv to/from the same process at the
+   same time. 
 
    Possible improvements: 
-   We could speculatively use a recursive doubling algorithm assuming
-   a short message size and then switch to pairwise exchange if necessary.
 
    End Algorithm: MPI_Alltoallv
 */
@@ -103,30 +104,6 @@ PMPI_LOCAL int MPIR_Alltoallv (
     
     MPIU_Free(reqarray);
     MPIU_Free(starray);
-
-
-#ifdef FOO
-    /* Use pairwise exchange algorithm. */
-    
-    /* Make local copy first */
-    mpi_errno = MPIR_Localcopy(((char *)sendbuf+sdispls[rank]*send_extent), 
-                               sendcnts[rank], sendtype, 
-                               ((char *)recvbuf+rdispls[rank]*recv_extent), 
-                               recvcnts[rank], recvtype);
-    if (mpi_errno) return mpi_errno;
-    /* Do the pairwise exchange. */
-    for (i=1; i<comm_size; i++) {
-        src = (rank - i + comm_size) % comm_size;
-        dst = (rank + i) % comm_size;
-        mpi_errno = MPIC_Sendrecv(((char *)sendbuf+sdispls[dst]*send_extent), 
-                                  sendcnts[dst], sendtype, dst,
-                                  MPIR_ALLTOALLV_TAG, 
-                                  ((char *)recvbuf+rdispls[src]*recv_extent), 
-                                  recvcnts[src], recvtype, src,
-                                  MPIR_ALLTOALLV_TAG, comm, &status);
-        if (mpi_errno) return mpi_errno;
-    }
-#endif
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
@@ -155,6 +132,9 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
    receives from src = (rank - i + max_size) % max_size if src <
    remote_size, and sends to dst = (rank + i) % max_size if dst <
    remote_size. 
+
+   FIXME: change algorithm to match intracommunicator alltoallv
+
 */
 
     int local_size, remote_size, max_size, i;
