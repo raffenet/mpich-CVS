@@ -2626,6 +2626,9 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		</Filter>
+		<File
+			RelativePath="src\mpi\errhan\errnames.txt">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -151,6 +151,9 @@
 				RelativePath=".\mpichinfo.h">
 			</File>
 			<File
+				RelativePath="..\..\include\pmi.h">
+			</File>
+			<File
 				RelativePath=".\pmiimpl.h">
 			</File>
 			<File
