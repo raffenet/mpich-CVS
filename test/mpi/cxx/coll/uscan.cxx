@@ -7,13 +7,21 @@
 #include "mpi.h"
 #include "mpitestcxx.h"
 #include <iostream>
-
+static int RealCount = -1;
+static int uopErrs = 0;
 void uop( const void *invec, void *inoutvec, int count, 
 	  const MPI::Datatype &datatype )
 {
     int i;
     int *cin = (int*)invec, *cout = (int*)inoutvec;
 
+    if (count != RealCount) {
+	uopErrs++;
+	if (uopErrs < 2) {
+	    std::cerr << "Wrong count, got " << count << " expected " << RealCount 
+		 << std::endl;
+	}
+    }
     for (i=0; i<count; i++) {
 	cout[i] = cin[i] + cout[i];
     }
@@ -30,7 +38,8 @@ int main( int argc, char **argv )
 
     sumop.Init( uop, true );
     size = comm.Get_size();
-    
+    rank = comm.Get_rank();
+
     for (count = 1; count < 66000; count = count * 2) {
 	int *vin, *vout;
 	vin  = new int[count];
@@ -40,12 +49,14 @@ int main( int argc, char **argv )
 	    vin[i]  = i;
 	    vout[i] = -1;
 	}
+	RealCount = count;
 	comm.Scan( vin, vout, count, MPI::INT, sumop );
 	for (i=0; i<count; i++) {
 	    if (vout[i] != i * (rank+1)) {
 		errs++;
 		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << std::endl;
+		    std::cerr << "vout[" << i << "] = " << vout[i] << 
+			" expected " << i * (rank + 1) << std::endl;
 	    }
 	}
 	
@@ -54,7 +65,7 @@ int main( int argc, char **argv )
     }
     
     sumop.Free();
-    MTest_Finalize( errs );
+    MTest_Finalize( errs + uopErrs );
     MPI::Finalize();
     return 0;
 }

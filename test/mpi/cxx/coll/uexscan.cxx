@@ -30,6 +30,7 @@ int main( int argc, char **argv )
 
     sumop.Init( uop, true );
     size = comm.Get_size();
+    rank = comm.Get_rank();
     
     for (count = 1; count < 66000; count = count * 2) {
 	int *vin, *vout;
