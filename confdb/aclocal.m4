@@ -21,6 +21,7 @@ ifdef([AC_PREPROC_IFELSE],[
 builtin(include,fortran90.m4)],
 [builtin(include,aclocal_f90.m4)])
 ])
+buildin(include,aclocal_csharp.m4)
 builtin(include,aclocal_make.m4)
 builtin(include,aclocal_mpi.m4)
 builtin(include,aclocal_web.m4)
