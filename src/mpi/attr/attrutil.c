@@ -46,8 +46,69 @@ void MPID_Attr_free(MPID_Attribute *attr_ptr)
     MPIU_Handle_obj_free(&MPID_Attr_mem, attr_ptr);
 }
 
+/*
+  This function deletes a single attribute.
+  It is called by both the function to delete a list and attribute set/put 
+  val.  Return the return code from the delete function; 0 if there is no
+  delete function.
+*/
+int MPIR_Comm_call_attr_delete( MPI_Comm comm, MPID_Attribute *attr_p )
+{
+    MPID_Delete_function delfn;
+    MPID_Lang_t          language;
+    int                  mpi_errno=0;
+    
+    delfn    = attr_p->keyval->delfn;
+    language = attr_p->keyval->language;
+    switch (language) {
+    case MPID_LANG_C: 
+#ifdef HAVE_CXX_BINDING
+    case MPID_LANG_CXX: 
+#endif
+	if (delfn.C_CommDeleteFunction) {
+	    mpi_errno = delfn.C_CommDeleteFunction( comm, 
+						    attr_p->keyval->handle, 
+						    attr_p->value, 
+						    attr_p->keyval->extra_state );
+	}
+	break;
+#ifdef HAVE_FORTRAN_BINDING
+    case MPID_LANG_FORTRAN: 
+	{
+	    MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
+	    if (delfn.F77_DeleteFunction) {
+		fcomm   = (MPI_Fint) (comm);
+		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
+		fvalue  = (MPI_Fint) (attr_p->value);
+		fextra  = (MPI_Fint) (attr_p->keyval->extra_state );
+		delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
+					  &fextra, &ierr );
+		if (ierr) mpi_errno = (int)ierr;
+	    }
+	}
+	break;
+    case MPID_LANG_FORTRAN90: 
+	{
+	    MPI_Fint fcomm, fkeyval, ierr;
+	    MPI_Aint fvalue, fextra;
+	    if (delfn.F90_DeleteFunction) {
+		fcomm   = (MPI_Fint) (comm);
+		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
+		fvalue  = (MPI_Aint) (attr_p->value);
+		fextra  = (MPI_Aint) (attr_p->keyval->extra_state );
+		delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
+					  &fextra, &ierr );
+		if (ierr) mpi_errno = (int)ierr;
+	    }
+	}
+	break;
+#endif
+    }
+    return mpi_errno;
+}
+
 /* Routine to duplicate an attribute list */
-int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
+int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 {
     MPID_Attribute     *p, *new_p, **next_new_attr_ptr = new_attr;
     MPID_Copy_function copyfn;
@@ -58,10 +119,14 @@ int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 
     p = comm_ptr->attributes;
     while (p) {
-	/* Call the copy function here */
+	/* Run the attribute delete function first */
+	mpi_errno = MPIR_Comm_call_attr_delete( comm_ptr->handle, p );
+	if (mpi_errno) 
+	    return mpi_errno;
+
+	/* Now call the attribute copy function (if any) */
 	copyfn   = p->keyval->copyfn;
 	language = p->keyval->language;
-	/* Run the copy function if present */
 	flag = 0;
 	switch (language) {
 	case MPID_LANG_C: 
@@ -84,8 +149,8 @@ int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
 		    fvalue  = (MPI_Fint) (p->value);
 		    fextra  = (MPI_Fint) (p->keyval->extra_state );
-		    delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fextra,
-					      &fvalue, &fnew, &flag, &ierr );
+		    copyfn.F77_CopyFunction( &fcomm, &fkeyval, &fextra,
+					     &fvalue, &fnew, &flag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
 		}
@@ -100,8 +165,8 @@ int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
 		    fvalue  = (MPI_Aint) (p->value);
 		    fextra  = (MPI_Aint) (p->keyval->extra_state );
-		    delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fextra,
-					      &fvalue, &fnew, &fflag, &ierr );
+		    copyfn.F90_CopyFunction( &fcomm, &fkeyval, &fextra,
+					     &fvalue, &fnew, &fflag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
 		}
@@ -141,11 +206,9 @@ int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 }
 
 /* Routine to delete an attribute list */
-int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
+int MPIR_Comm_attr_delete_list( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 {
     MPID_Attribute *p, *new_p;
-    MPID_Delete_function delfn;
-    MPID_Lang_t          language;
     int mpi_errno = MPI_SUCCESS;
 
     p = attr;
@@ -167,53 +230,8 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 	   corresponding keyval */
 	/* Still to do: capture any error returns but continue to 
 	   process attributes */
-	delfn    = p->keyval->delfn;
-	language = p->keyval->language;
-	switch (language) {
-	case MPID_LANG_C: 
-#ifdef HAVE_CXX_BINDING
-	case MPID_LANG_CXX: 
-#endif
-	    if (delfn.C_CommDeleteFunction) {
-		mpi_errno = delfn.C_CommDeleteFunction( comm_ptr->handle, 
-						p->keyval->handle, 
-						p->value, 
-						p->keyval->extra_state );
-	    }
-	    break;
-#ifdef HAVE_FORTRAN_BINDING
-	case MPID_LANG_FORTRAN: 
-	    {
-		MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
-		if (delfn.F77_DeleteFunction) {
-		    fcomm   = (MPI_Fint) (comm_ptr->handle);
-		    fkeyval = (MPI_Fint) (p->keyval->handle);
-		    fvalue  = (MPI_Fint) (p->value);
-		    fextra  = (MPI_Fint) (p->keyval->extra_state );
-		    delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
-					      &fextra, &ierr );
-		    if (ierr) mpi_errno = (int)ierr;
-		}
-	    }
-	    break;
-	case MPID_LANG_FORTRAN90: 
-	    {
-		MPI_Fint fcomm, fkeyval, ierr;
-		MPI_Aint fvalue, fextra;
-		if (delfn.F90_DeleteFunction) {
-		    fcomm   = (MPI_Fint) (comm_ptr->handle);
-		    fkeyval = (MPI_Fint) (p->keyval->handle);
-		    fvalue  = (MPI_Aint) (p->value);
-		    fextra  = (MPI_Aint) (p->keyval->extra_state );
-		    delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
-					      &fextra, &ierr );
-		    if (ierr) mpi_errno = (int)ierr;
-		}
-	    }
-	    break;
-#endif
-	}
-
+	mpi_errno = MPIR_Comm_call_attr_delete( comm_ptr->handle, p );
+	
 	MPIU_Handle_obj_free( &MPID_Attr_mem, p );
 	
 	p = new_p;

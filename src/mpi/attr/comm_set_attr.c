@@ -65,7 +65,11 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
-	    if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
+	    if (comm_keyval == MPI_KEYVAL_INVALID) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
+						  "**keyvalinvalid", 0 );
+	    }
+	    else if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
@@ -80,18 +84,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    else {
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
-
-		/* Sanity check */
-		if (comm_keyval != keyval_ptr->handle) {
-		    printf( "PANIC: keyval space corrupted! (%x != %x)\n",
-			    comm_keyval, keyval_ptr->handle );
 		}
-	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
-        }
+	}
 	MPID_ELSE_ERROR_CHECKS;
 	{
 	    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
@@ -103,8 +101,10 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Look for attribute.  They are ordered by keyval handle */
-
+    /* Look for attribute.  They are ordered by keyval handle.  This uses 
+       a simple linear list algorithm because few applications use more than a 
+       handful of attributes */
+    
     /* The thread lock prevents a valid attr delete on the same communicator
        but in a different thread from causing problems */
     MPID_Comm_thread_lock( comm_ptr );
@@ -112,6 +112,14 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     p = comm_ptr->attributes;
     while (p) {
 	if (p->keyval->handle == keyval_ptr->handle) {
+	    /* If found, call the delete function before replacing the 
+	       attribute */
+	    mpi_errno = MPIR_Comm_call_attr_delete( comm, p );
+	    if (mpi_errno) {
+		MPID_Comm_thread_unlock( comm_ptr );
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    }
 	    p->value = attribute_val;
 	    break;
 	}
@@ -148,6 +156,11 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	new_p->next	     = 0;
 	*old_p		     = new_p;
     }
+    
+    /* Here is where we could add a hook for the device to detect attribute
+       value changes, using something like
+       MPID_Dev_comm_attr_hook( comm_ptr, keyval, attribute_val );
+    */
     MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */
 
