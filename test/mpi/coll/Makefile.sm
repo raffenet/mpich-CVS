@@ -36,3 +36,7 @@ icbcast_SOURCES = icbcast.c
 icbcast_LDADD = ../util/mtest.o
 bcast2_LDADD = ../util/mtest.o
 alltoall1_LDADD = ../util/mtest.o
+opland_SOURCES = opland.c
+opland_LDADD = ../util/mtest.o
+oplor_SOURCES = oplor.c
+oplor_LDADD = ../util/mtest.o

@@ -17,6 +17,14 @@ CC=$top_build_dir/bin/mpicc
 FC=$top_build_dir/bin/mpif77
 CXX=$top_build_dir/bin/mpicxx
 #
+AC_C_LONG_DOUBLE
+AC_MSG_CHECKING([whether long long available])
+AC_TRY_COMPILE(,[long long a;],pac_cv_have_long_long=yes,pac_cv_have_long_long=no)
+AC_MSG_RESULT($pac_cv_have_long_long)
+if test "$pac_cv_have_long_long" ; then 
+    AC_DEFINE(HAVE_LONG_LONG,1,[Define if compiler supports long long])
+fi
+#
 # Define functionality that we support
 AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 # Clear the CPPFLAGS, since the MPI configure will have added many items

@@ -3,4 +3,5 @@ dup 2
 dupic 4
 commname 4
 ic1 4
+icgroup 8
 ctxalloc 2

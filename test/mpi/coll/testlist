@@ -19,3 +19,7 @@ scantst 4
 scattern 4
 scatterv 4
 icbcast 4
+# the opxxx tests look at optional types, and are included for MPICH2 testing.
+# MPI implementations may instead signal errors for these types
+opland 4
+oplor 4

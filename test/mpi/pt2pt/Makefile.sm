@@ -19,3 +19,4 @@ errinstatta_SOURCES = errinstatta.c
 errinstatws_SOURCES = errinstatws.c
 errinstatwa_SOURCES = errinstatwa.c
 icsend_SOURCES = icsend.c
+rqstatus_SOURCES = rqstatus.c
