@@ -126,7 +126,6 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
     else
     {
 	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
-	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
@@ -135,7 +134,6 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 	    goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
-	/* --END ERROR HANDLING-- */
     }
 
     n_inactive = 0;
