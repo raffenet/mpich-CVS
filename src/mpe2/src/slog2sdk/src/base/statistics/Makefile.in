@@ -20,7 +20,7 @@ RM           = @RM@
 
 TARGET    =
 PACKAGE   = base.statistics
-SRC       = TimeAveBox.java BufForTimeAveBoxes.java
+SRC       = DrawOrderComparator.java TimeAveBox.java BufForTimeAveBoxes.java
 
 OBJ       = $(SRC:.java=.class)
 
