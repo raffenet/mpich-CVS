@@ -2215,86 +2215,217 @@ third-party software, and it works on any platform.
 % void *malloc(size_t)
 
 \subsubsection{Multiple Memory Allocation}
+
 In some routines, there may be multiple memory allocations (e.g.,
 \code{MPI_Type_create_struct}).  If an error is 
 detected after some of these (either an out-of-memory error or some other
 error), it can be difficult to recover all of the allocated memory before
-returning.  To simplify this case, we define a simple, stack-based system that
-remembers the allocated memory and provides a simple way to ensure that all
-allocations are freed before an error return.
+returning.  
+To simplify this case, we define some simple macros that ensure that all
+allocated memory can be recovered when an error is detected.  
+In addition, these macros handle the generation of an MPI-style error code
+describing the failure.
 
-% Question: Should there be a memory allocator that remembers allocations within
-% a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
-% all memory allocated within the routine)?  
+In fact, there are really two different situations where memory is allocated.
+In one case the memory is persistent (e.g.,
+memory added to an object and returned to the user, such as the
+\code{MPI_Type_create_struct} example) and local (e.g., temporary
+arrays that could be created with \code{alloca} on systems that support
+\code{alloca}).  In both of these cases we wish to recover all allocated
+memory when an error occurs.  In addition, in the local case, we also want
+to recover all memory when the routine exits.
 
-The definition is 
+These considerations lead to the following goals: 
+
+\begin{enumerate}
+\item All memory allocations are checked; failure causes an error return (i.e.,
+set \code{mpi_errno} and go to \code{fn_fail}). 
+\item If multiple memory allocations have been made and a failure occurs (in a
+memory routine or not), all allocated memory is freed unless it is known
+to be ok (e.g., memory attached to an MPI object that is still valid need not
+be freed, but, for example, if an error is detected in creating an MPI
+Datatype, any memory allocated so far must be freed) 
+\item Code uniformity and conciseness --- we'd like all errors to be handled
+  the same way, and the block of code to be small (ideally one line). 
+\end{enumerate}
+
+In the case of persistent memory, we define the following macros:
+
+\code{MPID_CHKPMEM_DECL(n)} --- declaration used within any routine that uses
+the persistent memory routines.  The value of n is the max number of 
+items that will be allocated
+
+\code{MPID_CHKPMEM_MALLOC( pointer, type, nbytes, name, errcode ) } ---
+Allocate \code{nbytes} of memory and set \code{pointer} to point to that
+memory.  Very roughly, it is similar to the following code:
 \begin{verbatim}
-#define MAX_MEM_STACK 16
-typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
+ pointer = (type)MPID_Malloc( nbytes ); 
+ if (!pointer) { message about name; goto fn_fail; }
 \end{verbatim}
-defined in \file{mpiimpl.h} 
-and a memory allocation macro that updated a routine-local version of a
-local instance (for thread-safety) of \code{MPIU_Mem_stack} 
-with every allocation.  Then on an error, we could easily free any allocated
-memory.  The memory allocator could be something like
+
+\code{MPID_CHKPMEM_MALLOC_ORJUMP( pointer, type, nbytes, name, errcode, label
+  )} --- Like \code{MPID_CHKPMEM_MALLOC}, but the label that the code jumps to
+  is provided as the last argument.
+
+\code{MPID_CHKPMEM_COMMIT} --- Transfer responsibility for freeing any memory
+on error to someone else.
+
+\code{MPID_CHKPMEM_REAP} --- Free any memory not committed.  This is used only
+during error processing.  See the example.
+
+
+In the case of local memory, we define the following macros:
+
+The macros to declare and allocate memory are the same, but with the names
+\code{MPID_CHKLMEM_DECL} and \code{MPID_CHKLMEM_MALLOC}. 
+
+%MPID_CHKLMEM_DECL(n)
+%MPID_CHKLMEM_MALLOC(pointer,type,nbytes,name, errcode)
+
+\code{MPID_CHKLMEM_FREEALL} --- Free all local memory.
+
+For example, in a code that must allocate two arrays for use only within the 
+routine, the code might look something like this:
 \begin{verbatim}
-#define MALLOC_STK(n,a) {\
-               if (memstack.n_alloc >= MAX_MEM_STACK) {\
-                   abort(implerror);}\
-               a=MPIU_Malloc(n);\
-               memstack.ptrs[memstack.n_alloc++] = a;}
-#define MALLOC_STK_FREE     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
-               MPIU_Free(memstack.ptrs[i]);}}
-#define MALLOC_STK_DECL MPIU_Mem_stack memstack = { 0, { 0 } }
+   ... other declarations
+   int mpi_errno = MPI_SUCCESS;
+   char *p1;  
+   struct foo *p2;
+   MPID_CHKLMEM_DECL(2);
+
+   ... code
+
+   MPID_CHKLMEM_MALLOC(p1,(char *),37,"p1",mpi_errno);
+   ... code
+   MPID_CHKLMEM_MALLOC(p2,(struct foo *),sizeof(struct foo),"p2",mpi_errno);
+
+   ... use p1, p2
+   MPID_CHKLMEM_FREEALL;
+   ...
+
+   /* Common block for all error exit processing */
+   fn_fail:
+   MPID_CHKLMEM_FREEALL;
+   ...
 \end{verbatim}
+On systems that support \code{alloca}, these macros may simply use
+\code{alloca} for the memory allocation.
 
-% Comment [BRT]: _memstack needs to be allocated in thread specific
-% storage in order for the MPI implementation to be thread safe.
-%Note that the \code{memstack} is allocated with the macro
-%\code{MALLOC_STK_DECL}; by allocating a stack within a routine's
-%execution, this ensures that the memory stack is local to both the
-%routine and (in the multithreaded case) the thread executing the routine.
-
-To ensure that the usuage is thread-safe, the \code{memstack} should be
-declared within the routine.  A typical use might be
+For memory that may be returned from the routine (what we called permanent
+memory), slightly different code is needed:
 \begin{verbatim}
-    MALLOC_STK_DECL;
-    ...
-    MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
-    if (!new->dataloops) {
-        MALLOC_STK_FREE;
-        return MPIR_Err_return_comm( ... );
-    }
-    MALLOC_STK(m,new->other);
-    if (!new->other) {
-        MALLOC_STK_FREE;
-        return MPIR_Err_return_comm( ... );
-    }
-    ...
-    if (count < 0) {
-        MALLOC_STK_FREE; 
-        return MPIR_Err_return_comm( ... );
-    }
-\end{verbatim}
-% [BRT] The statement 'memstack.n_alloc = 0;' should be an init macro to allow
-% for future implementation changes.  A finalize macro might be useful as well,
-% although it would be a nop in the implementation described above.
-% [WDG] it was but I decided that it was better to place it within the
-% declaration.  This is slightly more limiting, but probably adequate
-% for our purposes.
+   ... other declarations
+   int mpi_errno = MPI_SUCCESS;
+   char *p1;  
+   struct foo *p2;
+   MPID_CHKPMEM_DECL(2);
 
-The following proposal has not been implemented.
-A macro \code{MALLOC_AND_TEST} could test the return value from
-\code{MPIU_Malloc}, and if null, execute the \code{MALLOC_STK_FREE}
-macro, create an MPI-style error code, and invoke the correct error
-handler.  This would require a few support routines, including a
-general version of \code{MPIR_Err_return} that took a handle
-\emph{value} (not pointer) and used the handle-kind bits within it to
-determine the proper error handler.  In addition, this macro would
-need to execute the appropriate function-exit macro (i.e., the
-\code{MPID_MPI_FUN_EXIT(}\emph{statename}\code{)}. Creating the
-appropriate error code may also need some easy way to get information
-on the parameters that were passed to the routine.
+   ... code
+
+   MPID_CHKPMEM_MALLOC(p1,(char *),37,"p1",mpi_errno);
+   ... code
+   MPID_CHKPMEM_MALLOC(p2,(struct foo *),sizeof(struct foo),"p2",mpi_errno);
+
+   ... attach p1, p2 to the object that is being returned, e.g., 
+   newobj->info1 = p1;
+   newobj->info2 = p2;
+   MPID_CHKPMEM_COMMIT;
+   ...
+
+   /* Common block for all error exit processing */
+   fn_fail:
+   MPID_CHKPMEM_REAP;
+   ...
+\end{verbatim}
+In this example, the \code{MPID_CHKPMEM_COMMIT} is used when the allocated
+memory is attached to the object \code{newobj} that this routine is returning
+to the caller.  
+
+Both the local and permanent versions may be used within the same routine.
+They are also thread-safe (as long as the memory allocator \code{MPIU_Malloc}
+and memory free routine \code{MPIU_Free} are thread-safe).
+
+% --- Old version
+% In some routines, there may be multiple memory allocations (e.g.,
+% \code{MPI_Type_create_struct}).  If an error is 
+% detected after some of these (either an out-of-memory error or some other
+% error), it can be difficult to recover all of the allocated memory before
+% returning.  To simplify this case, we define a simple, stack-based system that
+% remembers the allocated memory and provides a simple way to ensure that all
+% allocations are freed before an error return.
+
+% % Question: Should there be a memory allocator that remembers allocations within
+% % a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
+% % all memory allocated within the routine)?  
+
+% The definition is 
+% \begin{verbatim}
+% #define MAX_MEM_STACK 16
+% typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
+% \end{verbatim}
+% defined in \file{mpiimpl.h} 
+% and a memory allocation macro that updated a routine-local version of a
+% local instance (for thread-safety) of \code{MPIU_Mem_stack} 
+% with every allocation.  Then on an error, we could easily free any allocated
+% memory.  The memory allocator could be something like
+% \begin{verbatim}
+% #define MALLOC_STK(n,a) {\
+%                if (memstack.n_alloc >= MAX_MEM_STACK) {\
+%                    abort(implerror);}\
+%                a=MPIU_Malloc(n);\
+%                memstack.ptrs[memstack.n_alloc++] = a;}
+% #define MALLOC_STK_FREE     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
+%                MPIU_Free(memstack.ptrs[i]);}}
+% #define MALLOC_STK_DECL MPIU_Mem_stack memstack = { 0, { 0 } }
+% \end{verbatim}
+
+% % Comment [BRT]: _memstack needs to be allocated in thread specific
+% % storage in order for the MPI implementation to be thread safe.
+% %Note that the \code{memstack} is allocated with the macro
+% %\code{MALLOC_STK_DECL}; by allocating a stack within a routine's
+% %execution, this ensures that the memory stack is local to both the
+% %routine and (in the multithreaded case) the thread executing the routine.
+
+% To ensure that the usuage is thread-safe, the \code{memstack} should be
+% declared within the routine.  A typical use might be
+% \begin{verbatim}
+%     MALLOC_STK_DECL;
+%     ...
+%     MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
+%     if (!new->dataloops) {
+%         MALLOC_STK_FREE;
+%         return MPIR_Err_return_comm( ... );
+%     }
+%     MALLOC_STK(m,new->other);
+%     if (!new->other) {
+%         MALLOC_STK_FREE;
+%         return MPIR_Err_return_comm( ... );
+%     }
+%     ...
+%     if (count < 0) {
+%         MALLOC_STK_FREE; 
+%         return MPIR_Err_return_comm( ... );
+%     }
+% \end{verbatim}
+% % [BRT] The statement 'memstack.n_alloc = 0;' should be an init macro to allow
+% % for future implementation changes.  A finalize macro might be useful as well,
+% % although it would be a nop in the implementation described above.
+% % [WDG] it was but I decided that it was better to place it within the
+% % declaration.  This is slightly more limiting, but probably adequate
+% % for our purposes.
+
+% The following proposal has not been implemented.
+% A macro \code{MALLOC_AND_TEST} could test the return value from
+% \code{MPIU_Malloc}, and if null, execute the \code{MALLOC_STK_FREE}
+% macro, create an MPI-style error code, and invoke the correct error
+% handler.  This would require a few support routines, including a
+% general version of \code{MPIR_Err_return} that took a handle
+% \emph{value} (not pointer) and used the handle-kind bits within it to
+% determine the proper error handler.  In addition, this macro would
+% need to execute the appropriate function-exit macro (i.e., the
+% \code{MPID_MPI_FUN_EXIT(}\emph{statename}\code{)}. Creating the
+% appropriate error code may also need some easy way to get information
+% on the parameters that were passed to the routine.
 
 \subsubsection{Testing for Memory Errors}
 The \file{util/mem/trmem.c} (TRacing MEMory package) provides both tests for
@@ -9514,7 +9645,7 @@ around each object access, an object may be updated by one thread while being
 moved by another.  The approach taken here avoids that problem; locks are only
 needed to allocate and free an object, and careful assembly language coding
 could eliminate those locks in favor of atomic update operations, as
-described in Section~\ref{sec;optimizing-handle-alloc}.
+described in Section~\ref{sec:optimizing-handle-alloc}.
 
 \subsection{Error checks}
 
