@@ -14,12 +14,13 @@ MPICH 1.2.X distribution from http://www.mcs.anl.gov/mpi/mpich.
 If you have difficulties with this release of MPICH2, please send
 mail to mpich2-maint@mcs.anl.gov.
 
-Currently the only communication layer fully supported in MPICH2 is the
-"TCP channel device", although others are in preparation, as you can see
-from the code here.  Also, this device currently supports only homogenous
-environments.  
+The default communication layer supported in MPICH2 is the "sock channel
+device".  This channel device communicates using TCP on both Unix and
+Windows platforms.  At present, this device only supports homogenous
+environments.  (Those interested in building MPICH2 on a Windows
+platform should see README.windows.)
 
-To build MPICH2 with the TCP channel device, do the following:
+To build MPICH2 with the sock channel device, do the following:
 
     tar xzf mpich2.tar.gz
     cd mpich2-<VERSION>
@@ -45,6 +46,11 @@ build it in, you should build MPICH2 as follows.
 
 Then the necessary executables will be in <INSTALL_DIR>/bin, and you
 should add it to your PATH.
+
+In addition to the sock channel, we now have a shared memory channel
+which uses system V shared memory for communication on SMP style
+systems.  To build the shm channel, add --with-device=ch3:shm to the
+configure command line.
 
 Example and test programs (both source and executables) can be found in
 ./examples and ./test/mpi/basic, respectively.  To run any of these
@@ -89,35 +95,30 @@ To shut MPD down, run
 
 What compiles but doesn't work
 ------------------------------
-We don't guarantee that *anything* works yet.  However, we have run MPICH2 
-against both the MPICH-1 test suite and an updated and correct version of the 
-Intel test suite.  MPICH2 passes most of these tests, including most error 
-handling.  Among the routines that compile but that are known not to work yet
-are: 
+We don't guarantee that *anything* works yet.  However, we have run
+MPICH2 against both the MPICH-1 test suite and an updated and correct
+version of the Intel test suite.  MPICH2 passes most of these tests,
+including most error handling.  Among the routines that compile but that
+are known not to work yet are:
 
 MPI_Get_elements for partial types
 
-
-Other known issues:
-The various free routines do not yet free all internal objects, so memory
-leaks are certain.  However, most MPI programs should not have any problems.
-
 Testing Status
 --------------
-We run regular tests of the MPI-1 functions.  We are using both the MPICH-1
-test suite and the Intel test suite (with corrections). 
-The current status is available at 
-http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests .  
+We run regular tests of the MPI-1 functions on a variety of platforms.
+We are using both the MPICH-1 test suite and the Intel test suite (with
+corrections).  The current status is available at
+http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-status/index.htm.
 
 VPATH Builds
 ------------
-MPICH2 supports building MPICH in a different directory tree than the one
-where the MPICH2 source is installed.  This often allows faster building, as
-the sources can be placed in a shared filesystem and the builds done in a
-local (and hence usually much faster) filesystem.  To make this clear,
-the following example assumes that the sources are placed in 
-/usr/me/mpich2-10-25-02, the build is done in /tmp/me/mpich2, and the 
-installed version goes into /usr/local/mpich2-test:
+MPICH2 supports building MPICH in a different directory tree than the
+one where the MPICH2 source is installed.  This often allows faster
+building, as the sources can be placed in a shared filesystem and the
+builds done in a local (and hence usually much faster) filesystem.  To
+make this clear, the following example assumes that the sources are
+placed in /usr/me/mpich2-10-25-02, the build is done in /tmp/me/mpich2,
+and the installed version goes into /usr/local/mpich2-test:
 
     cd /usr/me
     tar xzf mpich2-<VERSION>.tar.gz
@@ -129,16 +130,8 @@ installed version goes into /usr/local/mpich2-test:
     make
     make install
 
-Release Notes
--------------
-Most of the testing to date has been in a GNU environment under Linux, albeit
-with many of gcc's warning options turned on.  Other environments with 
-stricter compilers may find compilation problems.  Testing has been thorough
-in the GNU/Linux environment, with both the MPICH1 and Intel (corrected)
-test suites showing few problems.  See
-http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests for the current
-status.
-
+Optional Features
+-----------------
 There are many features built into MPICH2.  If you are exploring MPICH2 as
 part of a development project the following configure options are important:
 
