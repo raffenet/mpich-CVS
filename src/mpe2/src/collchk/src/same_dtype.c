@@ -4,16 +4,17 @@
 */
 #include "collchk.h" 
 
-void CollChk_h(int a, int n, int b, int m, int *hash_val, int *hash_cnt)
+void CollChk_hash_add(unsigned int alpha, unsigned int n,
+                      unsigned int beta, unsigned int m,
+                      unsigned int *hash_val, unsigned int *hash_cnt)
 {
-    unsigned int x, y, t1, t2;
-    x  = b;
-    y  = a;
-    t1 = x>>(sizeof(int)-n);
-    t2 = x<<n;
-    x  = t1 | t2;
+    unsigned int t1, t2, cirleft;
+    // Doing circular left shift of beta and save it in x
+    t1 = beta >> (sizeof(unsigned int)-n);
+    t2 = beta << n;
+    cirleft  = t1 | t2;
     
-    *hash_val = y^x;
+    *hash_val = alpha^cirleft;
     *hash_cnt = n+m;
 }
 
@@ -23,56 +24,42 @@ int CollChk_get_val(MPI_Datatype dt)
     switch (dt) {
         case MPI_CHAR :
             return 1;
-            break;
         case MPI_SIGNED_CHAR :
             return 2;
-            break;
         case MPI_UNSIGNED_CHAR :
             return 3;
-            break;
         case MPI_SHORT :
             return 4;
-            break;
         case MPI_UNSIGNED_SHORT :
             return 5;
-            break;
         case MPI_INT :
             return 6;
-            break;
         case MPI_LONG :
             return 7;
-            break;
         case MPI_UNSIGNED_LONG :
             return 8;
-            break;
         case MPI_FLOAT :
             return 9;
-            break;
         case MPI_DOUBLE :
             return 10;
-            break;
         case MPI_LONG_DOUBLE :
             return 11;
-            break;
         case MPI_WCHAR :
             return 12;
-            break;
         case MPI_BYTE :
             return 13;
-            break;
         case MPI_LONG_LONG_INT :
             return 14;
-            break;
         default :
             return 0;
-            break;
     }
 }
 
 
-int CollChk_get_cnt(int n, int *ints, int combiner)
+int CollChk_get_cnt(int idx, int *ints, int combiner)
 {
-    int ret=0, i;
+    int ii, tot_cnt;
+    int dim_A, dim_B;
     
     switch(combiner) {
         case MPI_COMBINER_DUP : 
@@ -87,79 +74,98 @@ int CollChk_get_cnt(int n, int *ints, int combiner)
         case MPI_COMBINER_HVECTOR :
         case MPI_COMBINER_HVECTOR_INTEGER :
         case MPI_COMBINER_INDEXED_BLOCK :
-            return ints[1];
+            return ints[0]*ints[1];
         case MPI_COMBINER_INDEXED :
         case MPI_COMBINER_HINDEXED :
         case MPI_COMBINER_HINDEXED_INTEGER :
-            for (i=1; i>=ints[0]; i++) {
-                ret += ints[i];
+            tot_cnt = 0;
+            for ( ii = ints[0]; ii > 0; ii-- ) {
+                 tot_cnt += ints[ ii ];
             }
-            break;
-        case MPI_COMBINER_STRUCT_INTEGER :
+            return tot_cnt;
         case MPI_COMBINER_STRUCT :
-            return ints[n+1];
+        case MPI_COMBINER_STRUCT_INTEGER :
+            return ints[idx+1];
         case MPI_COMBINER_SUBARRAY :
-            for (i=(ints[0]+1); i>=(2*ints[0]); i++) {
-                ret += ints[i];
+            dim_A   = ints[ 0 ] + 1;
+            dim_B   = 2 * ints[ 0 ];
+            tot_cnt = 0;
+            for ( ii=dim_A; ii<=dim_B; ii++ ) {
+                tot_cnt += ints[ ii ];
             }
-            break;
+            return tot_cnt;
         case MPI_COMBINER_DARRAY :
-            for (i=3; i>=(ints[2]+2); i++) {
-                ret += ints[i];
+            tot_cnt = 0;
+            for ( ii=3; ii<=ints[2]+2; ii++ ) {
+                tot_cnt += ints[ ii ];
             }
-            break;
+            return tot_cnt;
     }
-    return ret;
+    return tot_cnt;
 }
 
 
-void CollChk_hash_dtype(MPI_Datatype dt, int cnt, int *hash_val, int *hash_cnt) {
+void CollChk_hash_dtype(MPI_Datatype dt, int cnt,
+                        unsigned int *hash_val, unsigned int *hash_cnt) {
     int nints, nadds, ntypes, combiner;
-    int i, next_val, next_cnt;
     int *ints; 
-    int done = 0;
     MPI_Aint *adds; 
     MPI_Datatype *types;
+    unsigned int curr_val, curr_cnt;
+    unsigned int next_val, next_cnt;
+    int type_cnt;
+    int ii;
     
-    while(!done) {
-        MPI_Type_get_envelope(dt, &nints, &nadds, &ntypes, &combiner);
-        if (combiner != MPI_COMBINER_NAMED) {
-            ints = NULL;
-            if ( nints > 0 )
-                ints = (int *) (malloc(nints * sizeof(int))); 
-            adds = NULL;
-            if ( nadds > 0 )
-                adds = (MPI_Aint *) (malloc(nadds * sizeof(MPI_Aint))); 
-            types = NULL;
-            if ( ntypes > 0 )
-                types = (MPI_Datatype *) malloc(ntypes * sizeof(MPI_Datatype));
+    /*  Don't know if this makes sense or not */
+    if ( cnt <= 0 ) {
+        *hash_val = 0;
+        *hash_cnt = 0;
+        return;
+    }
 
-            MPI_Type_get_contents(dt, nints, nadds, ntypes, ints, adds, types);
-            CollChk_hash_dtype(types[0], CollChk_get_cnt(0, ints, combiner),
-                               hash_val, hash_cnt);
+    MPI_Type_get_envelope(dt, &nints, &nadds, &ntypes, &combiner);
+    if (combiner != MPI_COMBINER_NAMED) {
+        ints = NULL;
+        if ( nints > 0 )
+            ints = (int *) (malloc(nints * sizeof(int))); 
+        adds = NULL;
+        if ( nadds > 0 )
+            adds = (MPI_Aint *) (malloc(nadds * sizeof(MPI_Aint))); 
+        types = NULL;
+        if ( ntypes > 0 )
+            types = (MPI_Datatype *) malloc(ntypes * sizeof(MPI_Datatype));
 
-            for(i=1; i<ntypes; i++) {
-                CollChk_hash_dtype(types[i],
-                                   CollChk_get_cnt(i, ints, combiner),
-                                   &next_val, &next_cnt);
-                CollChk_h(*hash_val, *hash_cnt, next_val, next_cnt,
-                          hash_val, hash_cnt);
-            }
+        MPI_Type_get_contents(dt, nints, nadds, ntypes, ints, adds, types);
+        type_cnt = CollChk_get_cnt(0, ints, combiner);
+        CollChk_hash_dtype(types[0], type_cnt, &curr_val, &curr_cnt);
 
-            if ( ints != NULL )
-                free( ints );
-            if ( adds != NULL )
-                free( adds );
-            if ( types != NULL )
-                free( types );
-        }
-        else {
-            *hash_val = CollChk_get_val(dt);
-            *hash_cnt = cnt;
-            done = 1;
+        /*
+            ntypes > 1 only for MPI_COMBINER_STRUCT(_INTEGER)
+        */
+        for( ii=1; ii < ntypes; ii++) {
+            type_cnt = CollChk_get_cnt(ii, ints, combiner); 
+            CollChk_hash_dtype(types[ii], type_cnt, &next_val, &next_cnt);
+            CollChk_hash_add(curr_val, curr_cnt, next_val, next_cnt,
+                             &curr_val, &curr_cnt);
         }
 
-        cnt--;
+        if ( ints != NULL )
+            free( ints );
+        if ( adds != NULL )
+            free( adds );
+        if ( types != NULL )
+            free( types );
+    }
+    else {
+        curr_val = CollChk_get_val(dt);
+        curr_cnt = 1;
+    }
+
+    *hash_val = curr_val;
+    *hash_cnt = curr_cnt;
+    for ( ii=1; ii < cnt; ii++ ) {
+        CollChk_hash_add(*hash_val, *hash_cnt, curr_val, curr_cnt,
+                         hash_val, hash_cnt);
     }
 }
 
@@ -319,7 +325,7 @@ int CollChk_same_dtype_vector2(MPI_Comm comm, int *cnts,
         if(    (curr.hash_val != buff[i].hash_val)
             || (curr.hash_cnt != buff[i].hash_cnt) ) {
             sprintf(err_str, "The Data Type Signature on process %d "
-                             "is not consistant with process %d", i, r);
+                             "is not consistent with process %d", i, r);
             ok = 0;
             break;
         }
