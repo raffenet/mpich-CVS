@@ -606,10 +606,15 @@ if test $with_mpe != no ; then
 	test "x$prefix" = xNONE && prefix=$ac_default_prefix
 	test "x$exec_prefix" = xNONE && exec_prefix=$prefix
 	eval actualbindir=$bindir
-	MPI_CC=$actualbindir/mpicc
-	MPI_F77=$actualbindir/mpif77
-	eval actuallibdir=$libdir
+	# MPI_CC and MPIF77 must use the local (build) bin dir, not
+	# the installatoin bin dir
+	#MPI_CC=$actualbindir/mpicc
+	#MPI_F77=$actualbindir/mpif77
+	#eval actuallibdir=$libdir
 	#MPI_LIBS="-L$actuallibdir -lmpich -lpmpich"
+	buildbindir=`pwd`/bin
+	MPI_CC=$buildbindir/mpicc
+	MPI_F77=$buildbindir/mpif77
 	prefix=$savePrefix
 	exec_prefix=$saveExecprefix
 	# NOTE: You must append LIBS to MPI_LIBS before invoking the mpe
