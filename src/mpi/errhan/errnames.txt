@@ -559,6 +559,7 @@ with MPI_Alloc_mem.
 **shmctl %d %d:failed to mark the sysv segment %d for removal, error %d
 **ftok:failed to create a sysv key from a file name
 **ftok %s %d %d:failed to create a sysv key from the file '%s' and id %d, error %d
+**mqp_failure:failed to make progress on the shared memory bootstrap message queue
 
 #
 # CH3:shm
