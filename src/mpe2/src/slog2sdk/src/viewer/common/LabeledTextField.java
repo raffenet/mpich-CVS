@@ -11,6 +11,7 @@ package viewer.common;
 
 import java.text.NumberFormat;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.awt.Font;
 import java.awt.Dimension;
 import java.awt.Component;
@@ -143,10 +144,18 @@ public class LabeledTextField extends JPanel
 
     public short getShort()
     {
+        String  short_str = null;
         if ( self_listener != null )
-            return Short.parseShort( self_listener.getLastUpdatedText() );
+            short_str = self_listener.getLastUpdatedText();
         else
-            return Short.parseShort( fld.getText() );
+            short_str = fld.getText();
+
+        try {
+            return fmt.parse( short_str ).shortValue();
+        } catch ( ParseException perr ) {
+            perr.printStackTrace();
+            return Short.MIN_VALUE;
+        }
     }
 
     public void setInteger( int ival )
@@ -157,12 +166,16 @@ public class LabeledTextField extends JPanel
 
     public int getInteger()
     {
+        String  int_str = null;
+        if ( self_listener != null )
+            int_str = self_listener.getLastUpdatedText();
+        else
+            int_str = fld.getText();
+
         try {
-            if ( self_listener != null )
-                return Integer.parseInt( self_listener.getLastUpdatedText() );
-            else
-                return Integer.parseInt( fld.getText() );
-        } catch ( NumberFormatException err ) {
+            return fmt.parse( int_str ).intValue();
+        } catch ( ParseException perr ) {
+            perr.printStackTrace();
             return Integer.MIN_VALUE;
         }
     }
@@ -174,10 +187,18 @@ public class LabeledTextField extends JPanel
 
     public float getFloat()
     {
+        String  float_str = null;
         if ( self_listener != null )
-            return Float.parseFloat( self_listener.getLastUpdatedText() );
+            float_str = self_listener.getLastUpdatedText();
         else
-            return Float.parseFloat( fld.getText() );
+            float_str = fld.getText();
+
+        try {
+            return fmt.parse( float_str ).floatValue();
+        } catch ( ParseException perr ) {
+            perr.printStackTrace();
+            return Float.MIN_VALUE;
+        }
     }
 
     public void setDouble( double dval )
@@ -187,12 +208,16 @@ public class LabeledTextField extends JPanel
 
     public double getDouble()
     {
+        String  double_str = null;
+        if ( self_listener != null )
+            double_str = self_listener.getLastUpdatedText();
+        else
+            double_str = fld.getText();
+
         try {
-            if ( self_listener != null )
-                return Double.parseDouble( self_listener.getLastUpdatedText() );
-            else
-                return Double.parseDouble( fld.getText() );
-        } catch ( NumberFormatException err ) {
+            return fmt.parse( double_str ).doubleValue();
+        } catch ( ParseException perr ) {
+            perr.printStackTrace();
             return Double.MIN_VALUE;
         }
     }
