@@ -204,7 +204,7 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 
 	p = p->next;
     }
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /* Routine to delete an attribute list */

@@ -109,12 +109,10 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 	p = p->next;
     }
 
-    if (p) {
-	/* We found the attribute.  Remove it from the list */
-	*old_p = p->next;
-    }
-    MPID_Comm_thread_unlock( comm_ptr );
-    
+    /* We can't unlock yet, because we must not free the attribute until
+       we know whether the delete function has returned with a 0 status
+       code */
+
     if (p) {
 	/* Run the delete function, if any, and then free the attribute 
 	   storage */
@@ -144,10 +142,18 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 						  keyval_ptr->extra_state );
 	    }
 	}
-	MPID_Attr_free(p);
+	if (!mpi_errno) {
+	    /* We found the attribute.  Remove it from the list */
+	    *old_p = p->next;
+	    MPID_Attr_free(p);
+	}
     }
+
+    MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
+    if (mpi_errno) 
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     return MPI_SUCCESS;
 }
