@@ -540,7 +540,7 @@ is necessary is for root to be the one who runs the install step.
 
 You may add the following configure options, 
 \texttt{--with-pm=smpd --with-pmi=smpd}, 
-to build and install the smpd process manager. The sprocess manager, smpd, 
+to build and install the smpd process manager. The process manager, smpd, 
 will be installed to the bin sub-directory of the installation directory 
 of your choice specified by the \texttt{--prefix} option.
 
@@ -705,7 +705,7 @@ includes discussion of Java-related problems.
 \label{sec:winbin}
 
 The Windows binary distribution uses the Microsoft Installer.  Download and 
-execute mpich2.msi to install the binary distribution.  The default 
+execute mpich2-1.x.xxx.msi to install the binary distribution.  The default 
 installation path is \texttt{C:$\backslash$Program Files$\backslash$MPICH2}. 
 You must have administrator privileges to install mpich2.msi.  The installer 
 installs a Windows service to launch MPICH applications and only administrators
@@ -723,7 +723,7 @@ dlls that implement MPICH2 are copied to the Windows system32 directory.
 
 You can install MPICH in unattended mode by executing 
 \begin{verbatim}
-    msiexec /q /I mpich2.msi
+    msiexec /q /I mpich2-1.x.xxx.msi
 \end{verbatim}
 
 The smpd process manager for Windows runs as a service that can launch jobs 
@@ -739,19 +739,22 @@ Stop the Windows \texttt{smpd} service.
 Install the \texttt{smpd} service.
 \item[\texttt{smpd -remove}]\mbox{}\\
 Remove the \texttt{smpd} service.
+\item[\texttt{smpd -register_spn}]mbox\\
+Register the Service Principal Name with the domain controller.
+This command enables passwordless authentication using kerberos.  It must be 
+run on each node individualy by a domain administrator.
 \end{description}
 
 \subsection{Source distribution}
 \label{sec:winsrc}
 
-If you want to use a channel other than the default socket channel you need 
-to download the mpich2 source distribution and build an alternate channel.  
-You must have MS Developer Studio .NET 2003 or later, perl and optionally 
+In order to build MPICH2 from the source distribution under Windows, 
+you must have MS Developer Studio .NET 2003 or later, perl and optionally 
 Intel Fortran 8 or later.
 
 \begin{itemize}
 \item
-Download mpich2.tar.gz and unzip it.
+Download mpich2-1.x.tar.gz and unzip it.
 \item
 Bring up a Visual Studio Command prompt with the compiler environment 
 variables set.
@@ -787,16 +790,18 @@ available options.
 \item
     build the sfortRelease mpich2 solution
 \item
-    build the channel of your choice.  The options are shm, ssm, sshm, ib.  
+    build the channel of your choice.  The options are shm, ssm, sshm, ib, essm and mt.  
 The shm channel is for small numbers of processes that will run on a single 
 machine using shared memory.  The shm channel should not be used for more 
 than about 8 processes.  The sshm (scalable shared memory) is for use with 
 more than 8 processes.  The ssm (sock shared memory) channel is for clusters 
 of smp nodes.  This channel should not be used if you plan to over-subscribe 
 the CPU's.  If you plan on launching more processes than you have processors 
-you should use the default sock channel.  The ssm channel uses a polling 
-progress engine that can perform poorly when multiple processes compete for 
-individual processors.  The ib channel is for clusters with Infiniband
+you should use the default sock channel or the essm channel.  The ssm channel 
+uses a polling progress engine that can perform poorly when multiple processes 
+compete for individual processors.  The essm channel is derived from the ssm channel
+with the addition of OS event objects to avoid spinning in the progress engine.  The mt
+channel is the multi-threaded socket channel.  The ib channel is for clusters with Infiniband
 interconnects from Mellanox.
 
 \end{itemize}

@@ -634,10 +634,9 @@ equivalent)
 \item[\texttt{-noprompt}]\mbox{}\\
   prevent \texttt{mpiexec} from prompting for user credentials.  Instead errors will
 be printed and \texttt{mpiexec} will exit.
-% This may be implemented.
-%\item[\texttt{-localroot}]\mbox{}\\
-%  launch the root process without smpd if the host is local.
-%  (This allows the root process to create windows and be debugged.)
+\item[\texttt{-localroot}]\mbox{}\\
+  launch the root process directly from mpiexec if the host is local.
+  (This allows the root process to create windows and be debugged.)
 \item[\texttt{-port port}]
 \item[\texttt{-p port}]\mbox{}\\
   specify the port that \texttt{smpd} is listening on.
@@ -646,8 +645,8 @@ be printed and \texttt{mpiexec} will exit.
 \item[\texttt{-smpdfile filename}]\mbox{}\\
   specify the file where the smpd options are stored including the 
 passphrase. (unix only option)
-\item[\texttt{-soft Fortran90\_triple}]\mbox{}\\
-  acceptable number of processes to launch up to maxprocs
+%\item[\texttt{-soft Fortran90\_triple}]\mbox{}\\
+%  acceptable number of processes to launch up to maxprocs
 \item[\texttt{-path search\_path}]\mbox{}\\
   search path for executable, ; separated
 % This will probably not be implemented.
@@ -667,12 +666,12 @@ Windows specific options:
 \item[\texttt{-pwdfile filename}]\mbox{}\\
   read the account and password from the file specified
   put the account on the first line and the password on the second
-\item[\texttt{-nomapping}]\mbox{}\\
-  don't try to map the current directory on the remote nodes
+%\item[\texttt{-nomapping}]\mbox{}\\
+%  don't try to map the current directory on the remote nodes
 \item[\texttt{-nopopup\_debug}]\mbox{}\\
   disable the system popup dialog if the process crashes
-\item[\texttt{-dbg}]\mbox{}\\
-  catch unhandled exceptions
+%\item[\texttt{-dbg}]\mbox{}\\
+%  catch unhandled exceptions
 \item[\texttt{-priority class[:level]}]\mbox{}\\
   set the process startup priority class and optionally level.\mbox{}\\
   class = 0,1,2,3,4   = idle, below, normal, above, high\mbox{}\\
@@ -684,6 +683,12 @@ Windows specific options:
   delete the encrypted credentials from the Windows registry.
 \item[\texttt{-validate [-host hostname]}]\mbox{}\\
   validate the encrypted credentials for the current or specified host.
+\item[\texttt{-delegate}]\mbox{}\\
+  use passwordless delegation to launch processes.
+\item[\texttt{-impersonate}]\mbox{}\\
+  use passwordless authentication to launch processes.
+\item[\texttt{-plaintext}]\mbox{}\\
+  don't encrypt the data on the wire.
 \end{description}
 
 
@@ -916,7 +921,7 @@ MPICH2 are copied to the Windows system32 directory.
 \label{sec:wincompile}
 
 The libraries in the \texttt{lib} directory were compiled with MS Visual C++ .NET 2003
-and Intel Fortran 8.0 with the default MPICH2 socket channel.  These 
+and Intel Fortran 8.1 with the default MPICH2 socket channel.  These 
 compilers and any others that can link with the MS .lib files can be used to
 create user applications.  gcc and g77 for cygwin can be used with the 
 libmpich*.a libraries.
@@ -930,12 +935,11 @@ to the include path and
     C:\Program Files\MPICH2\lib
 \end{verbatim}
 to
-the library path.  Add \texttt{cxx.lib} and \texttt{mpich2.lib} to the
+the library path.  Add \texttt{cxx.lib} and \texttt{mpi.lib} to the
 Release target link command.  Add \texttt{cxxd.lib} and
-\texttt{mpich2d.lib} to the Debug target.
+\texttt{mpid.lib} to the Debug target.
 
-Intel Fortran 8 users add \texttt{fmpich2d.lib} to the link command in
-addition to the libraries mentioned above.
+Intel Fortran 8 users add \texttt{fmpich2d.lib} and \texttt{mpich2d.lib} to the link command.
 
 Cygwin users use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
 
