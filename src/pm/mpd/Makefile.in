@@ -96,12 +96,6 @@ install: all
 	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
 	fi
 	@echo "copying python files/links into " ${bindir}
-	-@for cmd in ${CMDS_ROOT} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
-	    ( rm -f ${bindir}/$$cmd >/dev/null 2>&1 || exit 0 ) ; \
-	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
-	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
 	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
@@ -111,6 +105,9 @@ install: all
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
 	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	done
+	-@for cmd in ${CMDS_ROOT} ; do \
+	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 	-@${INSTALL} -m 755 ${srcdir}/mpdgdbdrv.py ${bindir}/mpdgdbdrv.py
