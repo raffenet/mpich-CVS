@@ -41,7 +41,11 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    
 	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
-		MPIDI_CH3I_SendQ_dequeue(vc);
+		/* FIXME: MT: the queuing code is not thread safe */
+		if (MPIDI_CH3I_SendQ_head(vc) == req)
+		{
+		    MPIDI_CH3I_SendQ_dequeue(vc);
+		}
 		vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
 		/* mark data transfer as complete and decrment CC */
 		req->ch3.iov_count = 0;
@@ -64,13 +68,16 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    {
 		MPIDI_DBG_PRINTF((71, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		MPIDI_CH3U_Handle_send_req(vc, req);
-		if (vc->shm.send_active == NULL)
+		/* FIXME: MT: the queuing code is not thread safe */
+		if (req->ch3.iov_count == 0)
 		{
-		    /* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
-		       device has completed the current request.  As a result, the current request is dequeded and next request
-		       in the queue is processed. */
+		    /* NOTE: This code assumes that if the iov_count is zero, then the device has completed the current request.
+		       As a result, the current request is dequeded and next request in the queue is processed. */
 		    MPIDI_DBG_PRINTF((71, FCNAME, "request (assumed) complete, dequeuing req and posting next send"));
-		    MPIDI_CH3I_SendQ_dequeue(vc);
+		    if (MPIDI_CH3I_SendQ_head(vc) == req)
+		    {
+			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
 		    vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
 		}
 	    }

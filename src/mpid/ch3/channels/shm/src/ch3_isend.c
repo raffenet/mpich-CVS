@@ -57,21 +57,18 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	if (nb == pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 	    MPIDI_CH3U_Handle_send_req(vc, sreq);
 	    if (sreq->ch3.iov_count != 0)
 	    {
 		/* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
 		   request may still be active (see MPI_Ssend()) */
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		vc->shm.send_active = sreq;
 	    }
 	    else
 	    {
-		if (MPIDI_CH3I_SendQ_head(vc) == sreq)
-		{
-		    MPIDI_CH3I_SendQ_dequeue(vc);
-		    /* vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc); ??? */
-		}
+		/* FIXME: MT: this is not quite right since the queue interface is not thread safe */
+		vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }    
 	}
 	else if (nb < pkt_sz)
