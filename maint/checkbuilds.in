@@ -951,6 +951,8 @@ sub RunMPD {
 }
 sub StopMPD {
     `$instdir/bin/mpdallexit`;
+    # Are these kill's obsolete (do they apply only to the commented out
+    # code above for running the demon in the background?)
     kill 2, $pid;
     kill 3, $pid;
     kill 9, $pid;
