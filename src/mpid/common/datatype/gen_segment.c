@@ -102,23 +102,48 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     else {
 	/* default: need to use builtin to handle contig; must check loop depth first */
 	DLOOP_Dataloop *tmploop;
+	DLOOP_Offset type_size, type_extent;
 	
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
 	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
-	DLOOP_Handle_get_size_macro(handle, segp->builtin_loop.el_size);
-	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
+	DLOOP_Handle_get_size_macro(handle, type_size);
+	DLOOP_Handle_get_extent_macro(handle, type_extent);
 
 	tmploop = segp->builtin_loop.loop_params.c_t.dataloop;
-	if (depth == 1 && (tmploop->kind & DLOOP_KIND_CONTIG)) {
+	if (depth == 1 && ((tmploop->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG))
+	{
 	    /* optimization: coalesce counts and use just the builtin */
-	    segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	    segp->builtin_loop.loop_params.c_t.count = count * tmploop->loop_params.c_t.count;
+	    /* note: contig might have been resized! */
+	    if (type_size == type_extent)
+	    {
+		/* use a contig */
+		segp->builtin_loop.kind                     = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+		segp->builtin_loop.loop_params.c_t.count    = count * tmploop->loop_params.c_t.count;
+		segp->builtin_loop.loop_params.c_t.dataloop = NULL;
+		segp->builtin_loop.el_size                  = type_size;
+		segp->builtin_loop.el_extent                = type_extent;
+	    }
+	    else
+	    {
+		/* use a vector, with extent of original type becoming the stride */
+		segp->builtin_loop.kind                      = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
+		segp->builtin_loop.loop_params.v_t.count     = count;
+		segp->builtin_loop.loop_params.v_t.blocksize = tmploop->loop_params.c_t.count;
+		segp->builtin_loop.loop_params.v_t.stride    = type_extent;
+		segp->builtin_loop.loop_params.v_t.dataloop  = NULL;
+		segp->builtin_loop.el_size                   = tmploop->el_size;
+		segp->builtin_loop.el_extent                 = tmploop->el_extent;
+	    }
 	}
-	else {
+	else
+	{
+	    /* general case */
 	    segp->builtin_loop.kind = DLOOP_KIND_CONTIG;
 	    segp->builtin_loop.loop_params.c_t.count = count;
+	    segp->builtin_loop.el_size = type_size;
+	    segp->builtin_loop.el_extent = type_extent;
 
 	    depth++; /* we're adding to the depth with the builtin */
 	}
@@ -383,7 +408,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
+		    myblocks = cur_elmp->curblock;
+		    break;
          	case DLOOP_KIND_BLOCKINDEXED:
+		    assert(0);
+		    break;
 		case DLOOP_KIND_INDEXED:
 		    myblocks = cur_elmp->curblock;
 		    break;
@@ -642,6 +671,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->curcount  = next_elmp->orig_count;
 		    next_elmp->curblock  = next_elmp->orig_block;
 		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_BLOCKINDEXED_OFFSET(next_elmp, 0);
+		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    next_elmp->curcount  = next_elmp->orig_count;
