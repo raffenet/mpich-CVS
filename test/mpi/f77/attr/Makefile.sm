@@ -1,27 +1,18 @@
 F77INCLUDES = -I.
 smvar_do_sharedlibs = 0
-DEPADD = ../../../../lib/lib${MPILIBNAME}.a
+LDADD = -L../../../../lib ../util/mtestf.o 
+DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 
-baseattrf_SOURCES = baseattrf.f
+baseattrf_SOURCES    = baseattrf.f
 baseattrwinf_SOURCES = baseattrwinf.f
-commattrf_SOURCES = commattrf.f
-commattrf_LDADD = ../util/mtestf.o
-commattrf_DEPADD = ../util/mtestf.o
-commattr2f_SOURCES = commattr2f.f
-commattr2f_LDADD = ../util/mtestf.o
-commattr2f_DEPADD = ../util/mtestf.o
-winattrf_SOURCES = winattrf.f
-winattrf_LDADD = ../util/mtestf.o
-winattrf_DEPADD = ../util/mtestf.o
-winattr2f_SOURCES = winattr2f.f
-winattr2f_LDADD = ../util/mtestf.o
-winattr2f_DEPADD = ../util/mtestf.o
-typeattrf_SOURCES = typeattrf.f
-typeattrf_LDADD = ../util/mtestf.o
-typeattrf_DEPADD = ../util/mtestf.o
-typeattr2f_SOURCES = typeattr2f.f
-typeattr2f_LDADD = ../util/mtestf.o
-typeattr2f_DEPADD = ../util/mtestf.o
+commattrf_SOURCES    = commattrf.f
+commattr2f_SOURCES   = commattr2f.f
+commattr3f_SOURCES   = commattr3f.f
+winattrf_SOURCES     = winattrf.f
+winattr2f_SOURCES    = winattr2f.f
+typeattrf_SOURCES    = typeattrf.f
+typeattr2f_SOURCES   = typeattr2f.f
+typeattr3f_SOURCES   = typeattr3f.f
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
