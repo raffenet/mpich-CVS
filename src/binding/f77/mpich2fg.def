@@ -700,3 +700,9 @@ EXPORTS
 ;	mpi_wtick__=pmpi_wtick__
 ;	pmpi_wtime__
 ;	mpi_wtime__=pmpi_wtime__
+        pmpi_dup_fn__
+        mpi_dup_fn__=pmpi_dup_fn__
+        pmpi_null_delete_fn__
+        mpi_null_delete_fn__=pmpi_null_delete_fn__
+        pmpi_null_copy_fn__
+        mpi_null_copy_fn__=pmpi_null_copy_fn__
