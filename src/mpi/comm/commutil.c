@@ -34,18 +34,21 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
 int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 {   
     int mpi_errno, new_context_id;
+    MPID_Comm *newptr;
 
-    *newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    if (!*newcomm_ptr) {
+    newptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    if (!newptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
-    MPIU_Object_set_ref( *newcomm_ptr, 1 );
+    *newcomm_ptr = newptr;
+    MPIU_Object_set_ref( newptr, 1 );
 
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
        use the appropriate algorithm to get a new context id */
-    (*newcomm_ptr)->context_id = new_context_id = 
+    newptr->context_id = new_context_id = 
 	MPIR_Get_contextid( oldcomm_ptr->handle );
+    newptr->attributes = 0;
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
 	return mpi_errno;
@@ -96,6 +99,8 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
 
     /* We do *not* inherit any name */
     localcomm_ptr->name[0] = 0;
+
+    localcomm_ptr->attributes = 0;
 
     intercomm_ptr->local_comm = localcomm_ptr;
     return 0;
@@ -200,24 +205,28 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 	MPIC_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
-    }
-    /*printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout);*/
-    if (remote_context_id < 0) { 
-	/* FIXME: there is a problem with the receive buffer not being set */
-	printf( "PANIC: Internal error in Sendrecv used to get intercomm context\n" );fflush( stdout);
-	remote_context_id = context_id;
-    }
-    /* printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout); */
+	/*printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout);*/
+	if (remote_context_id < 0) { 
+	    /* FIXME: there is a problem with the receive buffer not being set */
+	    printf( "PANIC: Internal error in Sendrecv used to get intercomm context\n" );fflush( stdout);
+	    remote_context_id = context_id;
+	}
+	/* printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout); */
 
-    /* We need to do something with the context ids.  For 
-       MPI1, we can just take the min of the two context ids and
-       use that value.  For MPI2, we'll need to have separate
-       send and receive context ids - FIXME */
-    if (remote_context_id < context_id)
-	final_context_id = remote_context_id;
-    else 
-	final_context_id = context_id;
+	/* We need to do something with the context ids.  For 
+	   MPI1, we can just take the min of the two context ids and
+	   use that value.  For MPI2, we'll need to have separate
+	   send and receive context ids - FIXME */
+	if (remote_context_id < context_id)
+	    final_context_id = remote_context_id;
+	else 
+	    final_context_id = context_id;
+    }
 
+    /* Make sure that all of the local processes now have this
+       id */
+    NMPI_Bcast( &final_context_id, 1, MPI_INT, 
+		0, comm_ptr->local_comm->handle );
     /* If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
        are not subsets of MPI_COMM_WORLD) - FIXME */
@@ -296,6 +305,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 	MPID_VCRT_Add_ref( comm_ptr->local_vcrt );
 	newcomm_ptr->local_vcrt = comm_ptr->local_vcrt;
 	newcomm_ptr->local_vcr  = comm_ptr->local_vcr;
+	newcomm_ptr->local_comm = 0;
     }
 
     /* Set the sizes and ranks */
@@ -319,6 +329,8 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* We do *not* inherit any name */
     newcomm_ptr->name[0] = 0;
 
+    /* Start with no attributes on this communicator */
+    newcomm_ptr->attributes = 0;
     *outcomm_ptr = newcomm_ptr;
     return MPI_SUCCESS;
 }
