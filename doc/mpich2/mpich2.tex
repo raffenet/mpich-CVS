@@ -6937,6 +6937,15 @@ routines could read a \file{.mpichrc} file and remember parameter
 values in a table, looking them up when requested (this is closest to
 the PETSc options database).
 
+\subsection{Coding Practices}
+Setting the Emacs style in each file is awkward.
+One alternative is to explicitly set the variables for the style we prefer
+(e.g., set the indent explicitly).  The problem with this is that it depends
+on the Emacs version; each release of Emacs seems to use a different set of
+variables.  Of course, the next version might use a different style format,
+but with some luck that may not change.
+
+
 \subsection{Other Subsystems}
 Question: What about Fortran and C++?  These are required for full MPI support
 (unlike MPE or the performance tests), but have many unique requirements
