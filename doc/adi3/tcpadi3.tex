@@ -43,16 +43,90 @@ MPID_Isend( )
 {
 
 }
+\end{verbatim}
 
+\begin{verbatim}
 MPID_Irecv( )
 {
 
 }
+\end{verbatim}
 
+\begin{verbatim}
 MPID_Wait( )
 {
 
 }
+\end{verbatim}
+
+\section{Pseudo-code for Message Handlers}
+These are the routines that are called by the progress engine on receiving a
+message packet.  All of these assume that the entire packet header has been 
+read but that any following data may not yet have been read.
+
+\subsection{EagerSend}
+\begin{verbatim}
+    FOA( tag, source, contextid, &request )
+    if (found) {
+        TransferDataToDest
+    }
+    else {
+        AllocateStorageFromEagerBuffer
+        TransferDataToDest
+    }
+\end{verbatim}
+
+\subsection{RndvReqToSend}
+\begin{verbatim}
+    FOA( tag, source, contextid, &request )
+    if (found) {
+        if (dest buffer is contiguous)
+            Send RndvOkToPut to source
+        else
+            Send RndvOkToSend to source
+    }
+\end{verbatim}
+
+\subsection{RndvOkToSend}
+\begin{verbatim}
+    Find matching request (from id)
+    Send RndvData to dest
+\end{verbatim}
+
+\subsection{Put}
+\begin{verbatim}
+    Read Address from packet
+    TransferDataToDest (contiguous)
+\end{verbatim}
+
+\subsection{RndvData}
+\begin{verbatim}
+    Find matching request (from id)
+    Find memory location
+    TransferDatatoDest
+    When done, if more data needed, send RndvOkToSend to source
+\end{verbatim}
+
+\subsection{CancelSend}
+\begin{verbatim}
+    Find matching request (from id)
+    If (found and alread matched) {
+        Send CancelSendAck(failed)
+    }
+    else {
+        Remove and discard request
+        Send CancelSendAck(succeeded)
+    }
+ \end{verbatim}
+
+\subsection{CancelSendAck}
+\begin{verbatim}
+   Set request to indicate whether cancel succeeded
+\end{verbatim}
+
+\subsection{FlowControlUpdate}
+\begin{verbatim}
+   (Not yet defined)
 \end{verbatim}
 
 \section{Summary}

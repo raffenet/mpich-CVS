@@ -715,8 +715,8 @@ void MPID_Dev_comm_attr_set_hook( MPID_Comm *comm, int keyval, void *attr_val,
 
     This may be defined as an empty macro.
 
-    The exact parameter list may depend on the object.  These have not yet been
-    defined.
+    The exact parameter list may depend on the object.  These parameter lists
+    have not yet been defined.
 
     See also 'MPID_Dev_xxx_destroy_hook'
   @*/
