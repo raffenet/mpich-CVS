@@ -186,8 +186,8 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	break;
 
     case ADIO_FCNTL_SET_ATOMICITY:
-	//fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
-	//*error_code = MPI_SUCCESS;
+	/* fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1; */
+	/* *error_code = MPI_SUCCESS; */
 	fd->atomicity = 0;
 	*error_code = MPI_ERR_UNSUPPORTED_OPERATION;
 	break;
