@@ -860,7 +860,8 @@ fin.Close()
 contents = ReplaceAts(contents, false)
 if bAddDllDecoration then
 	' uncomment out the HAVE_EXPORTS_MPI_API block
-	contents = ReplaceBetweenTags(contents, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+	'contents = ReplaceBetweenTags(contents, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+	contents = Replace(contents, "/* --Insert Additional Definitions Here-- */", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
 	' add dllspec and calling convention to the MPI api
 	first_index = InStr(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES")
 	last_index = InStr(contents, "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
