@@ -26,7 +26,9 @@
 #ifdef __SX4
 #include <sys/stat.h>
 #endif
-
+#ifdef __PVFS
+#include "pvfs_config.h"
+#endif
 
 void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 {
@@ -82,6 +84,9 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
     else {
 	/* printf("%d\n", fsbuf.f_type);*/
 	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
+#ifdef __PVFS
+	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
+#endif
 	else *fstype = ADIO_UFS;
 	*error_code = MPI_SUCCESS;
     }
