@@ -239,7 +239,7 @@ int smpd_handle_result(smpd_context_t *context)
 		    else
 		    {
 			smpd_err_printf("connect failed: %s\n", str);
-			ret_val = SMPD_FAIL;
+			ret_val = SMPD_ABORT;
 		    }
 		}
 		else if (strcmp(iter->cmd_str, "launch") == 0)
@@ -258,7 +258,7 @@ int smpd_handle_result(smpd_context_t *context)
 			{
 			    smpd_err_printf("launch failed: %s\n", str);
 			}
-			ret_val = SMPD_FAIL;
+			ret_val = SMPD_ABORT;
 		    }
 		}
 		else if (strcmp(iter->cmd_str, "start_dbs") == 0)
@@ -279,7 +279,7 @@ int smpd_handle_result(smpd_context_t *context)
 		    else
 		    {
 			smpd_err_printf("start_dbs failed: %s\n", str);
-			ret_val = SMPD_FAIL;
+			ret_val = SMPD_ABORT;
 		    }
 		}
 		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
