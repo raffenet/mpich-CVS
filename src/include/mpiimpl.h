@@ -892,33 +892,33 @@ typedef struct MPID_Collops_struct {
     int ref_count;   /* Supports lazy copies */
     /* Contains pointers to the functions for the MPI collectives */
     int (*Barrier) (MPID_Comm *);
-    int (*Bcast) (void*, int, MPID_Datatype *, int, MPID_Comm * );
-    int (*Gather) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+    int (*Bcast) (void*, int, MPI_Datatype, int, MPID_Comm * );
+    int (*Gather) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
                    int, MPID_Comm *); 
-    int (*Gatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-                    MPID_Datatype *, int, MPID_Comm *); 
-    int (*Scatter) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+    int (*Gatherv) (void*, int, MPI_Datatype, void*, int *, int *, 
+                    MPI_Datatype, int, MPID_Comm *); 
+    int (*Scatter) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
                     int, MPID_Comm *);
-    int (*Scatterv) (void*, int *, int *, MPID_Datatype *, void*, int, 
-                    MPID_Datatype *, int, MPID_Comm *);
-    int (*Allgather) (void*, int, MPID_Datatype *, void*, int, 
-                      MPID_Datatype *, MPID_Comm *);
-    int (*Allgatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-                       MPID_Datatype *, MPID_Comm *);
-    int (*Alltoall) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+    int (*Scatterv) (void*, int *, int *, MPI_Datatype, void*, int, 
+                    MPI_Datatype, int, MPID_Comm *);
+    int (*Allgather) (void*, int, MPI_Datatype, void*, int, 
+                      MPI_Datatype, MPID_Comm *);
+    int (*Allgatherv) (void*, int, MPI_Datatype, void*, int *, int *, 
+                       MPI_Datatype, MPID_Comm *);
+    int (*Alltoall) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
                                MPID_Comm *);
-    int (*Alltoallv) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-                     int *, MPID_Datatype *, MPID_Comm *);
-    int (*Alltoallw) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-                     int *, MPID_Datatype *, MPID_Comm *);
-    int (*Reduce) (void*, void*, int, MPID_Datatype *, MPI_Op, int, 
+    int (*Alltoallv) (void*, int *, int *, MPI_Datatype, void*, int *, 
+                     int *, MPI_Datatype, MPID_Comm *);
+    int (*Alltoallw) (void*, int *, int *, MPI_Datatype, void*, int *, 
+                     int *, MPI_Datatype, MPID_Comm *);
+    int (*Reduce) (void*, void*, int, MPI_Datatype, MPI_Op, int, 
                    MPID_Comm *);
-    int (*Allreduce) (void*, void*, int, MPID_Datatype *, MPI_Op, 
+    int (*Allreduce) (void*, void*, int, MPI_Datatype, MPI_Op, 
                       MPID_Comm *);
-    int (*Reduce_scatter) (void*, void*, int *, MPID_Datatype *, MPI_Op, 
+    int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPI_Op, 
                            MPID_Comm *);
-    int (*Scan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
-    int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
+    int (*Scan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
+    int (*Exscan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
     
 } MPID_Collops;
 
@@ -1086,6 +1086,9 @@ extern int MPID_THREAD_LEVEL;
 #define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
    if (!arg) {\
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**nullptr", "**nullptr %s", arg_name ); } 
+#define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
+  if ((root) <= MPI_PROC_NULL || (root) >= (comm_ptr)->local_size) {\
+      err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}
 
 
 /* The following are placeholders.  We haven't decided yet whether these
@@ -1248,5 +1251,36 @@ int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
    the src/include directory in the build tree. */
 #include "mpidpost.h"
+
+/* thresholds to switch between long and short vector algorithms for
+   collective operations */ 
+#define MPIR_BCAST_SHORT_MSG 2048
+#define MPIR_BCAST_MIN_PROCS 8
+#define MPIR_ALLTOALL_SHORT_MSG 1024
+#define MPIR_REDUCE_SCATTER_SHORT_MSG 1024
+
+/* Tags for point to point operations which implement collective operations */
+#define MPIR_BARRIER_TAG               1
+#define MPIR_BCAST_TAG                 2
+#define MPIR_GATHER_TAG                3
+#define MPIR_GATHERV_TAG               4
+#define MPIR_SCATTER_TAG               5
+#define MPIR_SCATTERV_TAG              6
+#define MPIR_ALLGATHER_TAG             7
+#define MPIR_ALLGATHERV_TAG            8
+#define MPIR_ALLTOALL_TAG              9
+#define MPIR_ALLTOALLV_TAG            10
+#define MPIR_REDUCE_TAG               11
+#define MPIR_USER_REDUCE_TAG          12
+#define MPIR_USER_REDUCEA_TAG         13
+#define MPIR_ALLREDUCE_TAG            14
+#define MPIR_USER_ALLREDUCE_TAG       15
+#define MPIR_USER_ALLREDUCEA_TAG      16
+#define MPIR_REDUCE_SCATTER_TAG       17
+#define MPIR_USER_REDUCE_SCATTER_TAG  18
+#define MPIR_USER_REDUCE_SCATTERA_TAG 19
+#define MPIR_SCAN_TAG                 20
+#define MPIR_USER_SCAN_TAG            21
+#define MPIR_USER_SCANA_TAG           22
 
 #endif /* MPIIMPL_INCLUDED */
