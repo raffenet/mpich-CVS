@@ -100,6 +100,7 @@ while (<>) {
     if (/^\s*rm /) { next; }
 
     if (/WARNING 84.*not used for resolving any symbol/) { next; }
+    if (/Info: File not optimized/) { next; }
 
     if ($no_lib_steps) {
 	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { 
