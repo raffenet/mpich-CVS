@@ -1,11 +1,11 @@
 
 
-			  MPICH2 Release 0.9x
+			  MPICH2 Release 0.97
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is intended to become a portable, high-performance
-implementation of the entire MPI-2 standard.  This release has many
+implementation of the entire MPI-2 standard.  This release has most
 MPI-2 features but is not quite complete (see below for the status of MPI-2 
 features in MPICH2).  It also currently supports only a few communication
 methods. 
@@ -16,8 +16,9 @@ by outside users.  If you have problems, please report them to
 mpich2-maint@mcs.anl.gov; we are interested in incorporating user
 experiences as quickly as possible.  The web site 
 http://www.mcs.anl.gov/mpi/mpich2 will also have information on 
-bug fixes and new releases.  This release does not include user or 
-installation manuals.
+bug fixes and new releases.  This README should be enough to get you
+started; more extensive intstallation and user guides are in progress.
+
 
 Getting Started
 ===============
@@ -45,7 +46,7 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-0.96
+      cd mpich2-0.97
 
     If your tar doesn't accept the z option, use
 
@@ -108,13 +109,15 @@ later, in the section "Alternative configurations".
     duplicate this directory on your other machines if it is not
     in a shared file system such as NFS.
 
-8.  MPICH2, unlike MPICH, uses an external process manager for
-    scalable startup of large MPI jobs.  The default process manager is
-    called MPD, which is a ring of daemons on the machines where you
-    will run your MPI programs.  In the next few steps, you will get his
-    ring up and tested.  More details on interacting with MPD can be
-    found in the README file in mpich2/src/pm/mpd, but the instructions
-    given here should be enough to get you started.
+8.  MPICH2, unlike MPICH, uses an external process manager for scalable
+    startup of large MPI jobs.  The default process manager is called
+    MPD, which is a ring of daemons on the machines where you will run
+    your MPI programs.  In the next few steps, you will get his ring up
+    and tested.  More details on interacting with MPD can be found in
+    the README file in mpich2/src/pm/mpd, such as how to list running
+    jobs, kill, suspend, or otherwise signal them, and how to use the
+    mpigdb debugger.  The instructions given here should be enough to
+    get you started.  
 
     Begin by placing in your home directory a file named .mpd.conf,
     containing the line 
@@ -176,8 +179,8 @@ later, in the section "Alternative configurations".
     hand" as follows:
 
        mpd &                # starts the local daemon
-       mpdtrace -l          # makes the local daemon print its port
-       hostname             # remind yourself of this host's name
+       mpdtrace -l          # makes the local daemon print its host
+                            # and port in the form <host>_<port>
 
     Then log into each of the other machines, put the install/bin
     directory in your path, and do:
@@ -236,18 +239,35 @@ later, in the section "Alternative configurations".
 
     As with mpdrun (which is used internally by mpiexec), the number of
     processes need not match the number of hosts.  The cpi example will
-    tell you which hosts it is running on.
+    tell you which hosts it is running on.  By default, the processes
+    are launched one after the other on the hosts in the mpd ring, so it
+    is not necessary to specify hosts when running a job with mpiexec.
 
     There are many options for mpiexec, by which multiple executables
-    can be run, separate command-line arguments and environment
-    variables can be passed to different processes, and working
-    directories and search paths for executables can be specified.  Do
+    can be run, hosts can be specified (as long as they are in the mpd
+    ring), separate command-line arguments and environment variables can
+    be passed to different processes, and working directories and search
+    paths for executables can be specified.  Do
 
       mpiexec --help
 
     for details. A typical example is:
 
       mpiexec -n 1 master : -n 19 slave
+
+    or
+
+      mpiexec -n 1 -host mymachine : -n 19 slave
+
+    to ensure that the process with rank 0 runs on your workstation.
+
+    The arguments between ':'s in this syntax are called "argument
+    sets", since they apply to a set of processes.  There is an extra
+    argument set for arguments that apply to all the processes,
+    introduced by the -default argument.  For example, to get rank
+    labels on standard output, use
+
+      mpiexec -default -l : -n 3 cpi
 
     The mpirun command from the original MPICH is still available,
     although it does not support as many options as mpiexec.  You might
@@ -312,7 +332,7 @@ manager is still under development.
 
 Alternative channels and devices
 --------------------------------
-NOTE: The 0.96 release does not support any alternative channels
+NOTE: The 0.97 release does not support any alternative channels.
 
 The communication mechanisms in MPICH2 are called "devices", paired with
 specific "channels".  The most thoroughly tested device is the "ch3"
@@ -442,7 +462,16 @@ MPICH2 includes all of MPI-1 and the following parts of MPI-2:
 MPI-I/O, except for the external data representations (e.g., MPICH2 includes
     all of ROMIO)
 
-Active target RMA is functional, including for derived datatypes at the target
+The active target remote memory access (one-sided) routines are working
+(MPI_Put, MPI_Get, and the related rountines.  The passive-target
+routines (MPI_Win_Lock, MPI_Win_Unlock) are working according to the MPI
+standard, but may not perform as expected, since they will not complete
+until an MPI call is made at the target.
+
+Some of the dynamic process routines (MPI_Comm_spawn, MPI_Comm_connect,
+MPI_Comm_accept) are working, but some restrictions apply (See the
+RELEASE_NOTES file in the top-level directory).  MPI_Comm_join is not
+implemented. 
 
 Name publishing is supported on shared file systems (other name publishers
 are under development)
