@@ -18,6 +18,7 @@ _alpha_
 _freebsd_
 _netbsd_
 _LINUX_
+_LINUX_ALPHA_
 _CRAY_
 _nfs_
 _ufs_

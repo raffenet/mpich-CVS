@@ -51,7 +51,7 @@ where
                   cross-compiling for a different architecture.
                   Valid values are sun4, solaris, solaris86, rs6000,
                   paragon, hpux, sppux, IRIX, IRIX32, IRIXN32, IRIX64, SX4, 
-                  alpha, freebsd, and LINUX.  (case-sensitive)
+                  alpha, freebsd, LINUX, and LINUX_ALPHA.  (case-sensitive)
    MPI_IMPL     = the MPI implementation with which ROMIO will be used
                   Valid values are mpich, sgi, hp. (case-sensitive)
                   Valid implementations are MPICH 1.1.1 or higher,
@@ -547,7 +547,7 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     fi
 fi
 #
-if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_netbsd" ; then
+if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" ; then
     CC=${CC:-gcc}
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" ; then
        F77=${FC:-f77}
