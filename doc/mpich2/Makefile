@@ -13,6 +13,16 @@ SHELL = /bin/sh
 
 mpich2.ps: mpich2.tex 
 	latex mpich2
+	-rm -f tmp.idx tmp.ind
+	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
+	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
+	    -e 's/MPI_\([A-Za-z0-9]*\)/\1_MPI/g' \
+		mpich2.idx > tmp.idx ; \
+	makeindex tmp ;\
+	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9]*\)_MPI/MPI_\1/g' \
+	    -e 's/_/\\texttt{\\char`\\_}/g' \
+		tmp.ind > mpich2.ind ; \
 	latex mpich2
 	dvips mpich2
 
