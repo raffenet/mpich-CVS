@@ -556,7 +556,7 @@ int FindMaxRecursion(RecursionStruct *pLevel, int rank)
 	}
 	pLevel = pLevel->next;
     }
-    return nMax;
+    return nMax+1; /* return nMax + 1 because the recursion levels begin with zero */
 }
 
 void RemoveLevel(int rank)
