@@ -166,7 +166,7 @@ CFLAGS      = @CFLAGS@
 C_COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
 	    'f:o'   => 'FC          = @FC@
 FFLAGS      = @FFLAGS@
-F77_COMPILE = $(FC) $(FFLAGS)',
+F77_COMPILE = $(FC) $(FFLAGS) $(F77INCLUDES)',
 	    'cxx:o' => 'CXX         = @CXX@
 CXXFLAGS    = @CXXFLAGS@
 CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
@@ -180,7 +180,7 @@ CSHARP_COMPILE = $(CSHARP) $(DEFS) $(INCLUDES) $(CSFLAGS) $(CPPFLAGS)',
 AS_COMPILE  = $(AS)',
 	    'f90:o'   => 'F90          = @F90@
 F90FLAGS    = @F90FLAGS@
-F90_COMPILE = $(F90) $(F90FLAGS)',
+F90_COMPILE = $(F90) $(F90FLAGS) $(F90INCLUDES)',
 # Similarly, but for shared-library versions
 	    'c:lo'   => 'CC_SHL      = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
