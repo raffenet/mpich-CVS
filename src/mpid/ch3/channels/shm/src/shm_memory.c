@@ -109,7 +109,7 @@ static BOOL g_bGetMemSyncCalled = FALSE;
     Set the global variables pg->addr, pg->size, pg->id
     Ensure that pg->addr is the same across all processes that share memory.
 @*/
-void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc)
+void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
     struct ShmemRankAndAddressStruct
     {
@@ -122,6 +122,9 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
 #ifdef HAVE_SHARED_PROCESS_READ
     BOOL bFirst = TRUE;
 #endif
+#ifdef HAVE_WINDOWS_H
+    SYSTEM_INFO sysInfo;
+#endif
     unsigned long nPageSize = 65536;
 #if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
     HANDLE hSyncEvent1, hSyncEvent2;
@@ -130,7 +133,6 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     
     /* Setup and check parameters */
 #ifdef HAVE_WINDOWS_H
-    SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     nPageSize = sysInfo.dwAllocationGranularity;
     MPIU_DBG_PRINTF(("[%d] nPageSize: %d\n", nRank, nPageSize));
@@ -156,8 +158,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
         return NULL;
     }
     
-    //if (MPIDI_bUseShm)
-    if (TRUE)
+    if (bUseShm)
     {
         /* Create the shared memory object */
 #ifdef HAVE_SHMGET
@@ -368,14 +369,13 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
 
    Notes:
 @*/
-void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg)
+void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
     
-    //if (MPIDI_bUseShm)
-    if (TRUE)
+    if (bUseShm)
     {
 #ifdef HAVE_SHMDT
         shmdt(pg->addr);

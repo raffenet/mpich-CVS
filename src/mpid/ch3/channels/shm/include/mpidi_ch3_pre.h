@@ -10,7 +10,7 @@
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
 
-#define MPICH_DBG_OUTPUT
+/*#define MPICH_DBG_OUTPUT*/
 
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
@@ -44,7 +44,7 @@ MPIDI_CH3I_Process_group_t;
 #define MPIDI_CH3_PKT_DEFS
 #define MPIDI_CH3_PKT_DECL
 
-typedef enum
+typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
     MPIDI_CH3I_VC_STATE_CONNECTED,
