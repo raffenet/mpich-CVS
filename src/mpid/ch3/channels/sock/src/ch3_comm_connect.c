@@ -214,7 +214,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
         /* fill in all the fields of tmp_comm. */ 
 
-        tmp_comm->context_id = 4000;  /* FIXME - we probably need a
+        tmp_comm->context_id = 4095;  /* FIXME - we probably need a
                                          unique context_id. */  
         tmp_comm->remote_size = 1;
         
