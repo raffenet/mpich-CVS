@@ -164,6 +164,7 @@ int smpd_handle_result(smpd_context_t *context)
 {
     int result, ret_val;
     char str[1024];
+    char err_msg[SMPD_MAX_ERROR_LEN];
     smpd_command_t *iter, *trailer;
     int match_tag;
     char ctx_key[100];
@@ -175,11 +176,6 @@ int smpd_handle_result(smpd_context_t *context)
 
     if (context->type != SMPD_CONTEXT_PMI && smpd_get_string_arg(context->read_cmd.cmd, "ctx_key", ctx_key, 100))
     {
-	/*
-	printf("forwarding dbs result from %s context\n", smpd_get_context_str(context));
-	fflush(stdout);
-	*/
-
 	process_id = atoi(ctx_key);
 	smpd_dbg_printf("forwarding the dbs result command to the pmi context %d.\n", process_id);
 	pmi_context = NULL;
@@ -195,20 +191,10 @@ int smpd_handle_result(smpd_context_t *context)
 	}
 	if (pmi_context == NULL)
 	{
-	    /*
-	    printf("dbs result key does not exist: %d\n", process_id);
-	    fflush(stdout);
-	    */
-
 	    smpd_err_printf("received dbs result for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
 	    smpd_exit_fn("smpd_handle_result");
 	    return SMPD_SUCCESS;
 	}
-
-	/*
-	printf("forwarding dbs result to %s context.\n", smpd_get_context_str(pmi_context));
-	fflush(stdout);
-	*/
 
 	result = smpd_forward_command(context, pmi_context);
 	smpd_exit_fn("smpd_handle_result");
@@ -264,7 +250,14 @@ int smpd_handle_result(smpd_context_t *context)
 		    }
 		    else
 		    {
-			smpd_err_printf("launch failed: %s\n", str);
+			if (smpd_get_string_arg(context->read_cmd.cmd, "error", err_msg, SMPD_MAX_ERROR_LEN))
+			{
+			    smpd_err_printf("launch failed: %s\n", err_msg);
+			}
+			else
+			{
+			    smpd_err_printf("launch failed: %s\n", str);
+			}
 			ret_val = SMPD_FAIL;
 		    }
 		}
@@ -758,6 +751,17 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	    smpd_free_process_struct(process);
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
+	}
+	if (process->err_msg[0] != '\0')
+	{
+	    result = smpd_add_command_arg(temp_cmd, "error", process->err_msg);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the error field to the result command in response to launch command: '%s'\n", cmd->cmd);
+		smpd_free_process_struct(process);
+		smpd_exit_fn("handle_launch_command");
+		return SMPD_FAIL;
+	    }
 	}
 
 	/* send the result back */
