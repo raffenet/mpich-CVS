@@ -1836,15 +1836,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    recv_vc_ptr = ibu->vc_ptr;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
-		/*mpi_errno =*/ MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
-		/*
+		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming packet");
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    return IBU_SUCCESS;
 		}
-		*/
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
 		    MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));

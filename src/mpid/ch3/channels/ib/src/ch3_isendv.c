@@ -152,7 +152,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
 	    /* MT - CH3U_Request_complete performs write barrier */
 	    MPIDI_CH3U_Request_complete(sreq);
-	    mpi_errno = MPI_SUCCESS;
 	}
     }
     else

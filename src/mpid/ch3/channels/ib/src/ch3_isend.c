@@ -107,6 +107,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	}
 	else
 	{
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    sreq->status.MPI_ERROR = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
 	    MPIDI_CH3U_Request_complete(sreq);
 	    mpi_errno = MPI_SUCCESS;
