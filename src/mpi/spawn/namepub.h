@@ -17,6 +17,7 @@ int MPID_NS_Lookup( MPID_NS_Handle, const MPID_Info *,
 int MPID_NS_Unpublish( MPID_NS_Handle, const MPID_Info *, 
                        const char service_name[] );
 int MPID_NS_Free( MPID_NS_Handle * );
-extern MPID_NS_Handle *MPIR_Namepub;
+
+extern MPID_NS_Handle MPIR_Namepub;
 
 #endif

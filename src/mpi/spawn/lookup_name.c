@@ -23,6 +23,12 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Lookup_name PMPI_Lookup_name
 
+/* One of these routines needs to define the global handle.  Since
+   Most routines will use lookup (if they use any of the name publishing
+   interface at all), we place this in MPI_Lookup_name. 
+*/
+PMPI_LOCAL MPID_NS_Handle MPIR_Namepub = 0;
+
 #endif
 
 #undef FUNCNAME
@@ -59,8 +65,9 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate info_ptr */
-            MPID_Info_valid_ptr( info_ptr, mpi_errno );
+            /* Validate info_ptr (only if not null) */
+	    if (info_ptr) 
+		MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    /* Validate character pointers */
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
@@ -75,13 +82,13 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 
 #ifdef HAVE_NAMEPUB_SERVICE
     if (!MPIR_Namepub) {
-	mpi_errno = MPID_NS_Create( info, &MPIR_Namepub );
+	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
     }
     if (!mpi_errno) 
-	mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info, 
+	mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr, 
 				    (const char *)service_name, port_name );
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    if (!mpi_errno)
+    if (mpi_errno)
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     return MPI_SUCCESS;
 #else

@@ -58,8 +58,9 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate info_ptr */
-            MPID_Info_valid_ptr( info_ptr, mpi_errno );
+            /* Validate info_ptr (only if not null) */
+	    if (info_ptr) 
+		MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
             if (mpi_errno) {
@@ -79,7 +80,7 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 	mpi_errno = MPID_NS_Unpublish( MPIR_Namepub, info_ptr, 
 				       (const char *)service_name );
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
-    if (!mpi_errno)
+    if (mpi_errno)
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     return MPI_SUCCESS;
 #else

@@ -28,19 +28,20 @@ typedef struct MPID_NS_Handle *MPID_NS_Handle;
    publishing.  */
 #undef FUNCNAME
 #define FUNCNAME MPID_NS_Create
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 {
-    int  i;
+    static const char FCNAME[] = "MPID_NS_Create";
+    int        i;
     const char *dirname;
+    int        err;
+
     *handle_ptr = (MPID_NS_Handle)MPIU_Malloc( sizeof(struct MPID_NS_Handle) );
     if (!*handle_ptr) {
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return err;
     }
-    handle_ptr->nactive = 0;
-    handle_ptr->mypid   = getpid();
+    (*handle_ptr)->nactive = 0;
+    (*handle_ptr)->mypid   = getpid();
 
     /* Get the dirname.  Currently, use HOME, but could use 
        an info value of NAMEPUB_CONTACT */
@@ -48,21 +49,24 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     if (!dirname) {
 	dirname = ".";
     }
-    MPIU_Strcpy( handle_ptr->dirname, dirname, MAXPATHLEN );
-    MPIU_Strapp( handle_ptr->dirname, "/.mpinamepub/", MAXPATHLEN );
+    MPIU_Strncpy( (*handle_ptr)->dirname, dirname, MAXPATHLEN );
+    MPIU_Strnapp( (*handle_ptr)->dirname, "/.mpinamepub/", MAXPATHLEN );
 
     /* Make the directory if necessary */
+    /* FIXME: Determine if the directory exists before trying to create it */
+    if (1) {
+	mkdir( (*handle_ptr)->dirname );
+    }
     
     return 0;
 }
 
 #undef FUNCNAME
 #define FUNCNAME MPID_NS_Publish
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr, 
                      const char service_name[], const char port[] )
 {
+    static const char FCNAME[] = "MPID_NS_Publish";
     FILE *fp;
     char filename[MAXPATHLEN];
     int  err;
@@ -70,12 +74,12 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     /* Determine file and directory name.  The file name is from
        the service name */
     MPIU_Strncpy( filename, handle->dirname, MAXPATHLEN );
-    MPIU_Strapp( filename, service_name, MAXPATHLEN );
+    MPIU_Strnapp( filename, service_name, MAXPATHLEN );
 
     /* Add the file name to the known files now, in case there is 
        a failure during open or writing */
-    if (handle.nactive < MPID_MAX_NAMEPUB) {
-	handle.filenames[handle.nactive++] = MPIU_Strdup( filename );
+    if (handle->nactive < MPID_MAX_NAMEPUB) {
+	handle->filenames[handle->nactive++] = MPIU_Strdup( filename );
     }
     else {
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
@@ -92,7 +96,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	return err;
     }
     /* Should also add date? */
-    fprintf( fp, "%s\n%d\n", port, handle.mypid );
+    fprintf( fp, "%s\n%d\n", port, handle->mypid );
     fclose( fp );
 
     return 0;
@@ -100,21 +104,40 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 
 #undef FUNCNAME
 #define FUNCNAME MPID_NS_Lookup
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
                     const char service_name[], char port[] )
 {
+    static const char FCNAME[] = "MPID_NS_Lookup";
+    FILE *fp;
+    char filename[MAXPATHLEN];
+    
+    /* Determine file and directory name.  The file name is from
+       the service name */
+    MPIU_Strncpy( filename, handle->dirname, MAXPATHLEN );
+    MPIU_Strnapp( filename, service_name, MAXPATHLEN );
+
+    fp = fopen( filename, "r" );
+    if (!fp) {
+	/* printf( "No file for service name %s\n", service_name ); */
+	port[0] = 0;
+	return MPI_ERR_NAME;
+    }
+    else {
+	/* The first line is the name, the second is the
+	   process that published. We just read the name */
+	fscanf( fp, "%s", port );
+	/* printf( "Read %s from %s\n", port, filename ); */
+    }
+    fclose( fp );
     return 0;
 }
 
 #undef FUNCNAME
 #define FUNCNAME MPID_NS_Unpublish
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr, 
                        const char service_name[] )
 {
+    static const char FCNAME[] = "MPID_NS_Unpublish";
     char filename[MAXPATHLEN];
     int  err;
     int  i;
@@ -123,7 +146,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     /* Determine file and directory name.  The file name is from
        the service name */
     MPIU_Strncpy( filename, handle->dirname, MAXPATHLEN );
-    MPIU_Strapp( filename, service_name, MAXPATHLEN );
+    MPIU_Strnapp( filename, service_name, MAXPATHLEN );
 
     /* Find the filename from the list of published files */
     for (i=0; i<handle->nactive; i++) {
@@ -151,10 +174,9 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 
 #undef FUNCNAME
 #define FUNCNAME MPID_NS_Free
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_NS_Free( MPID_NS_Handle *handle_ptr )
 {
+    static const char FCNAME[] = "MPID_NS_Free";
     int i;
     MPID_NS_Handle handle = *handle_ptr;
     
