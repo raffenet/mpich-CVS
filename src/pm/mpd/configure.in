@@ -34,7 +34,7 @@ AC_PROG_LN_S
 
 
 dnl Find Python
-for pypgm in python python2.3 python2 python2.2 ; do \
+for pypgm in python2.3 python2 python2.2 python ; do \
     AC_CHECK_PROGS(PYTHON, $pypgm)
     dnl check python version
     AC_CACHE_CHECK([python version],
