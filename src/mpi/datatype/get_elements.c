@@ -27,6 +27,73 @@
  * in the case where we don't have weak symbols.
  */
 
+/* MPIR_Type_get_reduction_type_elements()
+ *
+ * As per section 4.9.3 of the MPI 1.1 specification, these types are to be
+ * treated as structs of the constituent types.  So we have to do something
+ * special to handle them correctly in here.
+ */
+PMPI_LOCAL int MPIR_Type_get_reduction_type_elements(int *bytes_p,
+						     MPI_Datatype datatype)
+{
+    int elements, type1_sz, type2_sz;
+
+    switch (datatype) {
+#ifdef HAVE_FORTRAN_BINDING
+	case MPI_2REAL:
+ 	    type1_sz = MPID_Datatype_get_basic_size(MPI_REAL);
+	    elements = *bytes_p / type1_sz;
+	    break;
+	case MPI_2DOUBLE_PRECISION:
+ 	    type1_sz = MPID_Datatype_get_basic_size(MPI_DOUBLE_PRECISION);
+	    elements = *bytes_p / type1_sz;
+	    break;
+	case MPI_2INTEGER:
+ 	    type1_sz = MPID_Datatype_get_basic_size(MPI_INTEGER);
+	    elements = *bytes_p / type1_sz;
+	    break;
+	case MPI_2INT:
+ 	    type1_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = *bytes_p / type1_sz;
+	    break;
+#endif
+	case MPI_FLOAT_INT:
+	    type1_sz = MPID_Datatype_get_basic_size(MPI_FLOAT);
+	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
+	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
+	    break;
+	case MPI_DOUBLE_INT:
+	    type1_sz = MPID_Datatype_get_basic_size(MPI_DOUBLE);
+	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
+	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
+	    break;
+	case MPI_LONG_INT:
+	    type1_sz = MPID_Datatype_get_basic_size(MPI_LONG);
+	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
+	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
+	    break;
+	case MPI_SHORT_INT:
+	    type1_sz = MPID_Datatype_get_basic_size(MPI_SHORT);
+	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
+	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
+	    break;
+	case MPI_LONG_DOUBLE_INT:
+	    type1_sz = MPID_Datatype_get_basic_size(MPI_LONG_DOUBLE);
+	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
+	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
+	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
+	    break;
+	default:
+	    assert(0);
+    }
+    return elements;
+}
+
+
 /* MPIR_Type_get_elements
  *
  * This is called only when we encounter a type with a -1 as its element size,
@@ -208,37 +275,68 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 
     /* ... body of routine ...  */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	type_size = MPID_Datatype_get_basic_size(datatype);
-	type_elements = 1;
-	type_element_size = type_size;
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN ||
+	(datatype_ptr->element_size != -1 && datatype_ptr->size > 0))
+    {
+	/* either we have a basic or we have something with a
+	 * reasonable element type.
+	 */
+	int bytes = status->count;
+
+	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+	    datatype = datatype_ptr->eltype;
+	}
+
+	/* handle all the two-part types as a special case */
+	switch (datatype) {
+#ifdef HAVE_FORTRAN_BINDING
+	    case MPI_2REAL:
+	    case MPI_2DOUBLE_PRECISION:
+	    case MPI_2INTEGER:
+	    case MPI_2INT:
+#endif
+	    case MPI_FLOAT_INT:
+	    case MPI_DOUBLE_INT:
+	    case MPI_LONG_INT:
+	    case MPI_SHORT_INT:
+	    case MPI_LONG_DOUBLE_INT:
+		*elements = MPIR_Type_get_reduction_type_elements(&bytes,
+								  datatype);
+		break;
+	    default:
+		type_size = MPID_Datatype_get_basic_size(datatype);
+		*elements = bytes / type_size;
+		break;
+	}
+
     }
-    else /* derived type */ {
+    else /* derived type with weird element type or weird size */ {
 	type_size = datatype_ptr->size;
 	type_elements = datatype_ptr->n_elements;
 	type_element_size = datatype_ptr->element_size;
-    }
-
-    if (type_size > 0) {
 	*elements = status->count / type_element_size;
-    }
-    else if (type_size == 0) {
-	if (status->count > 0)
-	    (*elements) = MPI_UNDEFINED;
-	else {
-	    /* This is ambiguous.  However, discussions on MPI Forum
-	       reached a consensus that this is the correct return 
-	       value
-	    */
-	    (*elements) = 0;
+
+	if (type_size == 0)
+	{
+	    if (status->count > 0)
+		(*elements) = MPI_UNDEFINED;
+	    else {
+		/* This is ambiguous.  However, discussions on MPI Forum
+		   reached a consensus that this is the correct return 
+		   value
+		*/
+		(*elements) = 0;
+	    }
+	}
+	else
+	{
+	    assert(type_size == -1);
+	    
+	    byte_count = status->count;
+	    *elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
 	}
     }
-    else {
-	assert(type_size == -1);
 
-	byte_count = status->count;
-	*elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
-    }
 
     /* ... end of body of routine ... */
 
