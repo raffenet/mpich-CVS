@@ -109,7 +109,7 @@ void MPIR_LOR (
     }
     case MPI_DOUBLE: 
 #ifdef HAVE_FORTRAN_BINDING
-	/* FIXME - This assumes Fortran double precision == C double */
+	/* FIXME (gropp): This assumes Fortran double precision == C double */
     case MPI_DOUBLE_PRECISION: 
 #endif
     {
@@ -182,7 +182,7 @@ int MPIR_LOR_check_dtype ( MPI_Datatype type )
 #endif
     case MPI_DOUBLE: 
 #ifdef HAVE_FORTRAN_BINDING
-	/* FIXME - This assumes Fortran double precision == C double */
+	/* FIXME (gropp): This assumes Fortran double precision == C double */
     case MPI_DOUBLE_PRECISION: 
 #endif
 #if defined(HAVE_LONG_DOUBLE)
