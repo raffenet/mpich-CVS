@@ -209,6 +209,9 @@ extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
  * MPIDI_CH3_WIN_DECL (additions to MPID_Win)
  */
 #define MPIDI_CH3_WIN_DECL									\
-MPIDI_CH3I_Shmem_block_request_result *shm_structs;
+MPIDI_CH3I_Shmem_block_request_result *shm_structs;						\
+MPID_Group *epoch_grp_ptr;									\
+int *epoch_grp_ranks_in_win;
+
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

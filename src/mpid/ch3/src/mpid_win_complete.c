@@ -347,6 +347,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     
     }
 
+    /* free the group stored in window */
+    MPIR_Group_release(win_ptr->start_group_ptr);
+    win_ptr->start_group_ptr = NULL; 
+
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
 }

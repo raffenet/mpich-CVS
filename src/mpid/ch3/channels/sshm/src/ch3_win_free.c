@@ -24,6 +24,10 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
 
     MPIR_Nest_incr();
 
+    MPID_Comm_get_ptr( (*win_ptr)->comm, comm_ptr );
+    comm_size = comm_ptr->local_size;
+    rank = comm_ptr->rank;
+
     mpi_errno = NMPI_Barrier((*win_ptr)->comm);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -49,10 +53,6 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
     MPIU_Free((*win_ptr)->all_win_handles);
     MPIU_Free((*win_ptr)->pt_rma_puts_accs);
     
-    MPID_Comm_get_ptr( (*win_ptr)->comm, comm_ptr );
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
-
     for (i=0; i<comm_size; i++) {
         if (i != rank) {
             mpi_errno = MPIDI_CH3I_SHM_Release_mem( &((*win_ptr)->shm_structs[i]) );

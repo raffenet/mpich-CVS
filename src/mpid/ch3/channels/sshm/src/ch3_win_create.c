@@ -181,7 +181,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
         (*win_ptr)->shm_structs = NULL;
     }
     else {   /* all in shared memory. can be optimized */
-        MPIDI_Use_optimized_rma = 0;
+        MPIDI_Use_optimized_rma = 1;
 
         /* allocate memory for the shm_structs */
         (*win_ptr)->shm_structs = (MPIDI_CH3I_Shmem_block_request_result *) 
@@ -219,7 +219,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
 
 
         /* each process now attaches to the shared memory segments of other processes, so that 
-           direct RDMA is possible. We use the addr field in the shmem struct to store the 
+           direct RMA is possible. We use the addr field in the shmem struct to store the 
            newly mapped addresses. */
 
         for (i=0; i<comm_size; i++) {
@@ -236,6 +236,9 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
             }
         }
     }
+
+    (*win_ptr)->epoch_grp_ptr = NULL;
+    (*win_ptr)->epoch_grp_ranks_in_win = NULL;
         
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_WIN_CREATE);
