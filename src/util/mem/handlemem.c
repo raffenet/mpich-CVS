@@ -222,7 +222,7 @@ void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
 	MPIR_Add_finalize( MPIU_Handle_finalize, objmem );
 
 	objmem->initialized = 1;
-	ptr   = MPIU_Handle_direct_init( MPID_Info_direct, objmem->direct_size,
+	ptr   = MPIU_Handle_direct_init( objmem->direct, objmem->direct_size,
 					 objsize, objkind );
 	if (ptr)
 	    objmem->avail = ptr->next;
