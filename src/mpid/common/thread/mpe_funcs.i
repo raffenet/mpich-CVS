@@ -51,7 +51,7 @@
 #define MPID_Thread_mutex_lock(mutex_)		\
 {						\
     int err__;					\
-    MPE_Thread_mutex_lock((mutex_), &err_);	\
+    MPE_Thread_mutex_lock((mutex_), &err__);	\
     MPIU_Assert(err__ == MPE_THREAD_SUCCESS);	\
 }
 #endif
