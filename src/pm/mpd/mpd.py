@@ -309,6 +309,7 @@ def _handle_lhs_input():
                                   'jobid' : jobid,
                                   'username' : g.activeJobs[jobid][pid]['username'],
                                   'host' : g.myHost,
+                                  'pid'  : str(pid),
                                   'pgm' : g.activeJobs[jobid][pid]['pgm'],
                                   'rank' : g.activeJobs[jobid][pid]['rank'] }
                     mpd_send_one_msg(g.rhsSocket, msgToSend)
