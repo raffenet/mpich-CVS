@@ -26,7 +26,7 @@ typedef struct tagADSERRMSG
  
 #define ADDADSERROR(x)   x, _T(#x)
  
-ADSERRMSG adsErr[] = 
+static ADSERRMSG adsErr[] = 
 {
     ADDADSERROR(E_ADS_BAD_PATHNAME),
     ADDADSERROR(E_ADS_INVALID_DOMAIN_OBJECT),
@@ -92,7 +92,7 @@ static LPCTSTR GetErrorMessage( HRESULT hr )
                              (LPTSTR) &lpBuffer, 0, NULL);
         if ( !bRet )
         {
-            _stprintf(s, _T("Error %ld"), hr);
+            _sntprintf(s, 1024, _T("Error %ld"), hr);
         }
  
         if ( lpBuffer )
@@ -103,7 +103,7 @@ static LPCTSTR GetErrorMessage( HRESULT hr )
     }
     else /* Non Win32 Error */
     {
-        _stprintf(s, _T("%X"), hr );
+        _sntprintf(s, 1024, _T("%X"), hr );
         return s;
     }
  
@@ -221,7 +221,7 @@ static DWORD ScpCreate(
     dnsname.CaseIgnoreString    = szServer;
     classname.dwType            = ADSTYPE_CASE_IGNORE_STRING;
     classname.CaseIgnoreString  = szClass;
-    _stprintf(szPort, TEXT("%d"), usPort);
+    _sntprintf(szPort, 6, TEXT("%d"), usPort);
     binding.dwType              = ADSTYPE_CASE_IGNORE_STRING;
     binding.CaseIgnoreString    = szPort;
     nametype.dwType             = ADSTYPE_CASE_IGNORE_STRING;
@@ -256,7 +256,7 @@ static DWORD ScpCreate(
     dwAttr = sizeof(ScpAttribs)/sizeof(ADS_ATTR_INFO);  
 
     /* Complete the action. */
-    _stprintf(szRelativeDistinguishedName, TEXT("cn=%s"), TEXT(SMPD_SERVICE_NAME));
+    _sntprintf(szRelativeDistinguishedName, MAX_PATH, TEXT("cn=%s"), TEXT(SMPD_SERVICE_NAME));
     /* Delete the previous object if it exists */
     pComp->DeleteDSObject(szRelativeDistinguishedName);
     /* Create a new object */
@@ -621,7 +621,7 @@ DWORD smpd_scp_update(USHORT usPort)
     }
 
     /* Get the current port and DNS name of the host server. */
-    _stprintf(szPort,TEXT("%d"), usPort);
+    _sntprintf(szPort, 8, TEXT("%d"), usPort);
     dwLen = sizeof(szServer);
     if (!GetComputerNameEx(ComputerNameDnsFullyQualified,szServer,&dwLen))
     {
