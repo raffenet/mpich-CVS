@@ -44,6 +44,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops -= 1;
+		    /*printf("[%d] handle ops = %d\n", MPIDI_Process.my_pg_rank, MPIDI_Outstanding_close_ops);fflush(stdout);*/
 	    
 		    if (MPIDI_Outstanding_close_ops == 0)
 		    {
