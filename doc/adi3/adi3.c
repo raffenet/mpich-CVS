@@ -2020,7 +2020,7 @@ int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
   Module:
   Communication
   @*/
-int MPID_tBsend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_tBsend( const void *buf, int count, MPI_Datatype datatype,
 		 int dest, int tag, MPID_Comm *comm, int context_offset )
 {
 }
