@@ -67,7 +67,7 @@ int MPIDI_CH3I_Setup_connections()
 	vc->ib.ibu = ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
 	if (vc->ib.ibu == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mem", 0);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    return mpi_errno;
 	}
 	/* set the user pointer to be a pointer to the VC */
