@@ -1,3 +1,7 @@
+!  
+!  (C) 2004 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
 C Thanks to 
 C William R. Magro
 C for this test
