@@ -169,10 +169,10 @@ def mpd_recv_one_msg(sock):
             pickledMsg = sock.recv(pickledLen)  # socket.error: (104, 'Connection reset by peer')
             msg = loads(pickledMsg)
     except StandardError, errmsg:    # any built-in exceptions
-        mpd_print_tb(1, 'mpd_recv_one_msg: errmsg=:%s:' % (errmsg) )
+        mpd_print_tb(0, 'mpd_recv_one_msg: errmsg=:%s:' % (errmsg) )
         msg = {}
     except:
-        mpd_print_tb(1, 'mpd_recv_one_msg failed on sock %s' % sock)
+        mpd_print_tb(0, 'mpd_recv_one_msg failed on sock %s' % sock)
         msg = {}
     return msg
 
