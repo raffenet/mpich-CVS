@@ -325,6 +325,9 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
     ib_qp_attr_list_t attrList;
     ib_address_vector_t av;
     attr_rec_t *attr_rec = NULL;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_MODIFYQP);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_MODIFYQP);
 
     if (qp_state == IB_QP_STATE_INIT)
     {
@@ -332,6 +335,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
 	    printf("Malloc failed %d\n", __LINE__);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
 	    
@@ -366,6 +370,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	     malloc(sizeof (attr_rec_t) * 6)) == NULL )
 	{
 	    printf("Malloc failed %d\n", __LINE__);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
 
@@ -391,6 +396,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
 	    printf("Malloc failed %d\n", __LINE__);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
 
@@ -415,6 +421,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
     }
     else
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	return IBU_FAIL;
     }
 
@@ -426,9 +433,11 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	free(attr_rec);
     if( status != IBU_SUCCESS )
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	return status;
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
     return IBU_SUCCESS;
 }
 
@@ -446,6 +455,9 @@ static ib_uint32_t createQP(ibu_t ibu, ibu_set_t set)
 	{IB_QP_ATTR_RCV_SGE_MAX, 8},
 	{IB_QP_ATTR_SIGNALING_TYPE, QP_SIGNAL_ALL}
     };
+    MPIDI_STATE_DECL(MPID_STATE_IBU_CREATEQP);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATEQP);
 
     attr_rec[1].data = (int)set;
     attr_rec[2].data = (int)set;
@@ -463,7 +475,11 @@ static ib_uint32_t createQP(ibu_t ibu, ibu_set_t set)
 	&ibu->dest_qp_num, 
 	NULL);
     if (status != IBA_OK)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
     return IBU_SUCCESS;
 }
 
@@ -474,11 +490,15 @@ static void *ib_malloc_register(size_t size)
     ib_uint32_t status;
     void *ptr;
     ib_uint32_t rkey;
+    MPIDI_STATE_DECL(MPID_STATE_IB_MALLOC_REGISTER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_MALLOC_REGISTER);
 
     ptr = malloc(size);
     if (ptr == NULL)
     {
 	printf("malloc(%d) failed.\n", size);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
     status = ib_mr_register_us(
@@ -492,16 +512,22 @@ static void *ib_malloc_register(size_t size)
     if (status != IBU_SUCCESS)
     {
 	printf("ib_mr_register_us failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
     return ptr;
 }
 
 static void ib_free_deregister(void *p)
 {
+    MPIDI_STATE_DECL(MPID_STATE_IB_FREE_DEREGISTER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_FREE_DEREGISTER);
     /*ib_mr_deregister_us(IBU_Process.hca_handle, s_mr_handle);*/
     free(p);
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_FREE_DEREGISTER);
 }
 
 ibu_t ibu_create_qp(ibu_set_t set, int dlid)
@@ -590,6 +616,9 @@ static int ibui_post_receive(ibu_t ibu)
     ib_data_segment_t data;
     ib_work_req_rcv_t work_req;
     void *mem_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
     mem_ptr = BlockAlloc(ibu->allocator);
 
@@ -614,9 +643,11 @@ static int ibui_post_receive(ibu_t ibu)
     if (status != IBU_SUCCESS)
     {
 	printf("Error: failed to post ib receive, status = %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
     return IBU_SUCCESS;
 }
 
@@ -633,6 +664,9 @@ static int ibui_next_num_written()
 {
     ibu_num_written_node_t *p;
     int num_bytes;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
 
     p = g_write_list_head;
     g_write_list_head = g_write_list_head->next;
@@ -640,6 +674,7 @@ static int ibui_next_num_written()
 	g_write_list_tail = NULL;
     num_bytes = p->num_bytes;
     free(p);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
     return num_bytes;
 }
 
@@ -652,6 +687,9 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
     void *mem_ptr;
     ibu_num_written_node_t *p;
     int length;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITE);
 
     while (len)
     {
@@ -710,22 +748,28 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	if (status != IBU_SUCCESS)
 	{
 	    printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
 	    return status;
 	}
 
 	buf = (char*)buf + length;
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
     return IBU_SUCCESS;
 }
 
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
     for (i=0; i<n; i++)
     {
 	ibui_post_write(ibu, iov[i].IBU_IOV_BUF, iov[i].IBU_IOV_LEN, NULL);
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
     return IBU_SUCCESS;
 }
 
@@ -761,9 +805,9 @@ int ibu_init()
     ib_uint32_t status;
     ib_uint32_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
     ib_uint32_t attr_size;
-    /*MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);*/
+    MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
-    /*MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);*/
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
 
     /*ib_init_us();*/
 
@@ -773,7 +817,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_hca_open_us failed, status %d\n", status);
-	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
     /* get a protection domain handle */
@@ -781,7 +825,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_pd_allocate_us failed, status %d\n", status);
-	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
     /* get a completion queue domain handle */
@@ -790,7 +834,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
-	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
 #endif
@@ -805,7 +849,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
-	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
@@ -814,18 +858,18 @@ int ibu_init()
     g_StateAllocator = BlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
     IBU_Process.unex_finished_list = NULL;
 
-    /*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
     return IBU_SUCCESS;
 }
 
 int ibu_finalize()
 {
-    /*MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);*/
+    MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);
 
-    /*MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);*/
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     /*ib_release_us();*/
     BlockAllocFinalize(&g_StateAllocator);
-    /*MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);*/
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
 
@@ -865,6 +909,9 @@ int ibu_destroy_set(ibu_set_t set)
 static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_BUFFER_UNEX_READ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_BUFFER_UNEX_READ);
 
     MPIU_dbg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
 
@@ -874,12 +921,16 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_byte
     p->next = ibu->unex_list;
     ibu->unex_list = p;
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_BUFFER_UNEX_READ);
     return IBU_SUCCESS;
 }
 
 static int ibui_read_unex(ibu_t ibu)
 {
     ibu_unex_read_t *temp;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_READ_UNEX);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READ_UNEX);
 
     MPIU_dbg_printf("ibui_read_unex\n");
 
@@ -906,6 +957,7 @@ static int ibui_read_unex(ibu_t ibu)
 	IBU_Process.unex_finished_list = ibu;
 	/* post another receive to replace the consumed one */
 	ibui_post_receive(ibu);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
 	return IBU_SUCCESS;
     }
     /* make the user upcall */
@@ -915,6 +967,7 @@ static int ibui_read_unex(ibu_t ibu)
 	*/
     /* post another receive to replace the consumed one */
     ibui_post_receive(ibu);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
     return IBU_SUCCESS;
 }
 
@@ -924,6 +977,9 @@ int ibui_readv_unex(ibu_t ibu)
     unsigned char * mem_ptr;
     unsigned char * iter_ptr;
     ibu_unex_read_t *temp;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_READV_UNEX);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READV_UNEX);
 
     MPIU_dbg_printf("ibui_readv_unex\n");
 
@@ -970,6 +1026,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    ibu->state &= ~IBU_READING;
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
 	    return IBU_SUCCESS;
 	}
 	/* make the user upcall */
@@ -980,6 +1037,7 @@ int ibui_readv_unex(ibu_t ibu)
 	/* replace the consumed read descriptor */
 	ibui_post_receive(ibu);
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
     return IBU_SUCCESS;
 }
 

@@ -132,6 +132,50 @@ static char *get_random_color_str()
 int CH3U_Describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBU_MODIFYQP,
+	"ibu_modifyqp",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBU_CREATEQP,
+	"iub_createqp",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IB_MALLOC_REGISTER,
+	"ib_malloc_register",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IB_FREE_DEREGISTER,
+	"ib_free_degregister",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_POST_RECEIVE,
+	"ibui_post_receive",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_NEXT_NUM_WRITTEN,
+	"ibui_next_num_written",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_POST_WRITE,
+	"ibui_post_write",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_POST_WRITEV,
+	"ibui_post_writev",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_BUFFER_UNEX_READ,
+	"ibui_buffer_unex_read",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_READ_UNEX,
+	"ibui_read_unex",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBUI_READV_UNEX,
+	"ibui_readv_unex",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_CREATE_QP,
 	"ibu_create_qp",
 	get_random_color_str());
