@@ -219,16 +219,16 @@ def _handle_console_input():
         msgToSend = { 'cmd'  : 'local_mpdid', 'id' : g.myId }
         mpd_send_one_msg(g.conSocket,msgToSend)
         for jobid in g.activeJobs.keys():
-            for pid in g.activeJobs[jobid]:
+            for manPid in g.activeJobs[jobid]:
                 msgToSend = { 'cmd' : 'mpdlistjobs_info',
                               'dest' : g.myId,
                               'jobid' : jobid,
-                              'username' : g.activeJobs[jobid][pid]['username'],
+                              'username' : g.activeJobs[jobid][manPid]['username'],
                               'host' : g.myHost,
-                              'pid'  : str(pid),
-                              'pgm'  : g.activeJobs[jobid][pid]['pgm'],
-                              'rank' : g.activeJobs[jobid][pid]['rank'] }
-                mpd_send_one_msg(g.rhsSocket, msgToSend)
+                              'clipid' : str(g.activeJobs[jobid][manPid]['clipid']),
+                              'pgm'  : g.activeJobs[jobid][manPid]['pgm'],
+                              'rank' : g.activeJobs[jobid][manPid]['rank'] }
+                mpd_send_one_msg(g.conSocket, msgToSend)
         msgToSend = { 'cmd'  : 'mpdlistjobs_trailer', 'dest' : g.myId }
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         # do not send an ack to console now; will send listjobs info later
@@ -303,15 +303,15 @@ def _handle_lhs_input():
             mpd_send_one_msg(g.conSocket,msg)
         else:
             for jobid in g.activeJobs.keys():
-                for pid in g.activeJobs[jobid]:
+                for manPid in g.activeJobs[jobid]:
                     msgToSend = { 'cmd' : 'mpdlistjobs_info',
                                   'dest' : msg['dest'],
                                   'jobid' : jobid,
-                                  'username' : g.activeJobs[jobid][pid]['username'],
+                                  'username' : g.activeJobs[jobid][manPid]['username'],
                                   'host' : g.myHost,
-                                  'pid'  : str(pid),
-                                  'pgm' : g.activeJobs[jobid][pid]['pgm'],
-                                  'rank' : g.activeJobs[jobid][pid]['rank'] }
+                                  'clipid' : str(g.activeJobs[jobid][manPid]['clipid']),
+                                  'pgm' : g.activeJobs[jobid][manPid]['pgm'],
+                                  'rank' : g.activeJobs[jobid][manPid]['rank'] }
                     mpd_send_one_msg(g.rhsSocket, msgToSend)
             mpd_send_one_msg(g.rhsSocket, msg)
     elif msg['cmd'] == 'mpdallexit':
@@ -338,10 +338,10 @@ def _handle_lhs_input():
             sjobid = jobid.split('  ')  # jobnum and mpdid
             if (sjobid[0] == msg['jobnum']  and  sjobid[1] == msg['mpdid'])  \
             or (msg['jobalias']  and  sjobid[2] == msg['jobalias']):
-                for pid in g.activeJobs[jobid].keys():
-                    if g.activeJobs[jobid][pid]['username'] == msg['username']  \
-                    or g.activeJobs[jobid][pid]['username'] == 'root':
-                        manSocket = g.activeJobs[jobid][pid]['socktoman']
+                for manPid in g.activeJobs[jobid].keys():
+                    if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
+                    or g.activeJobs[jobid][manPid]['username'] == 'root':
+                        manSocket = g.activeJobs[jobid][manPid]['socktoman']
                         mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
                                                       'sigtype' : sigtype } )
     elif msg['cmd'] == 'mpdkilljob':
@@ -353,18 +353,18 @@ def _handle_lhs_input():
             sjobid = jobid.split('  ')  # jobnum and mpdid
             if (sjobid[0] == msg['jobnum']  and  sjobid[1] == msg['mpdid'])  \
             or (msg['jobalias']  and  sjobid[2] == msg['jobalias']):
-                for pid in g.activeJobs[jobid].keys():
-                    if g.activeJobs[jobid][pid]['username'] == msg['username']  \
-                    or g.activeJobs[jobid][pid]['username'] == 'root':
-                        kill(pid * (-1), SIGKILL)  # neg pid -> group
+                for manPid in g.activeJobs[jobid].keys():
+                    if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
+                    or g.activeJobs[jobid][manPid]['username'] == 'root':
+                        kill(manPid * (-1), SIGKILL)  # neg manPid -> group
                 # del g.activeJobs[jobid]  ## handled by sigchld_handler
     elif msg['cmd'] == 'abortjob':
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         for jobid in g.activeJobs.keys():
             if jobid == msg['jobid']:
-                for pid in g.activeJobs[jobid].keys():
-                    kill(pid * (-1), SIGKILL)  # neg pid -> group
+                for manPid in g.activeJobs[jobid].keys():
+                    kill(manPid * (-1), SIGKILL)  # neg manPid -> group
                 # del g.activeJobs[jobid]  ## handled by sigchld_handler
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
@@ -457,8 +457,8 @@ def _do_mpdrun(msg):
             if currRank >= lo  and  currRank <= hi:
                 cwd = cwds[ranks]
                 break
-        pid = fork()
-        if pid == 0:
+        manPid = fork()
+        if manPid == 0:
             mpd_set_my_id('%s_man_before_exec_%d' % (g.myHost,g.myPid) )
             for sock in g.activeSockets:
                 sock.close()
@@ -508,8 +508,10 @@ def _do_mpdrun(msg):
             toMpdSocket.close()
             if not g.activeJobs.has_key(jobid):
                 g.activeJobs[jobid] = {}
-            g.activeJobs[jobid][pid] = { 'pgm' : pgm, 'rank' : currRank,
-                                         'username' : username, 'socktoman' : toManSocket }
+            g.activeJobs[jobid][manPid] = { 'pgm' : pgm, 'rank' : currRank,
+                                            'username' : username,
+                                            'clipid' : -1,    # until reported by man
+                                            'socktoman' : toManSocket }
             _add_active_socket(toManSocket,'man_msgs','_handle_man_msgs',
                                'localhost',tempPort)
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
@@ -643,7 +645,11 @@ def _handle_man_msgs(manSocket):
         del g.activeSockets[manSocket]
         manSocket.close()
         return
-    if msg['cmd'] == 'spawn':
+    if msg['cmd'] == 'client_pid':
+        jobid = msg['jobid']
+        manPid = msg['manpid']
+        g.activeJobs[jobid][manPid]['clipid'] = msg['clipid']
+    elif msg['cmd'] == 'spawn':
         msg['cmd'] = 'mpdrun'  # handle much like an mpdrun from a console
         msg['mpdid_mpdrun_start'] = g.myId
         msg['nstarted_on_this_loop'] = 0

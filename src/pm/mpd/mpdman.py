@@ -171,6 +171,9 @@ def mpdman():
             print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             exit(0)
         _exit(0)  # just in case (does no cleanup)
+    msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
+                  'manpid' : getpid(), 'clipid' : clientPid }
+    mpd_send_one_msg(mpdSocket,msgToSend)
     close(pipe_read_cli_stdin)
     close(pipe_write_cli_stdout)
     close(pipe_write_cli_stderr)
@@ -790,7 +793,7 @@ def mpdman():
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:
                 msg = mpd_recv_one_msg(mpdSocket)
-                mpd_print(1111, 'msg recvd on mpdSocket :%s:' % msg )
+                mpd_print(0000, 'msg recvd on mpdSocket :%s:' % msg )
                 if not msg:
                     if conSocket:
                         msgToSend = { 'cmd' : 'job_aborted', 'reason' : 'mpd disappeared',
@@ -799,15 +802,18 @@ def mpdman():
                         conSocket.close()
                     kill(0,SIGKILL)  # pid 0 -> all in my process group
                     _exit(0)
-                if msg['sigtype'].isdigit():
-                    signum = int(msg['sigtype'])
+                if msg.has_key('sigtype'):
+                    if msg['sigtype'].isdigit():
+                        signum = int(msg['sigtype'])
+                    else:
+                        import signal as tmpimp  # just to get valid SIG's
+                        exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
+                    try:    
+                        kill(clientPid,signum)
+                    except Exception, errmsg:
+                        mpd_print(1, 'invalid signal from mpd %d' % (signum) )
                 else:
-                    import signal as tmpimp  # just to get valid SIG's
-                    exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
-                try:    
-                    kill(clientPid,signum)
-                except Exception, errmsg:
-                    mpd_print(1, 'invalid signal %d' % (signum) )
+                    mpd_print(1, 'invalid msg recvd on mpdSocket :%s:' % msg )
             else:
                 mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
     mpd_print(0000, "out of loop")
