@@ -1456,6 +1456,7 @@ fi],enable_dependencies=$enable_dependencies)
 AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
+	  src/env/mpicc.conf \
 	  src/env/Makefile\
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
