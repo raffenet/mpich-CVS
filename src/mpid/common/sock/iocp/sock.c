@@ -64,6 +64,7 @@ typedef struct sock_state_t
     /* internal list */
     struct sock_state_t *list, *next;
     int accepted;
+    int listener_closed;
 } sock_state_t;
 
 static int g_num_cp_threads = 2;
@@ -493,6 +494,7 @@ static inline void init_state_struct(sock_state_t *p)
     p->list = NULL;
     p->next = NULL;
     p->accepted = 0;
+    p->listener_closed = 0;
 }
 
 #undef FUNCNAME
@@ -601,11 +603,11 @@ int MPIDU_Sock_init()
     szRange = getenv("MPICH_PORTRANGE");
     if (szRange != NULL)
     {
-	szNum = strtok(szRange, ",");
+	szNum = strtok(szRange, ",."); /* tokenize both min,max and min..max */
 	if (szNum)
 	{
 	    g_min_port = atoi(szNum);
-	    szNum = strtok(NULL, ",");
+	    szNum = strtok(NULL, ",.");
 	    if (szNum)
 	    {
 		g_max_port = atoi(szNum);
@@ -659,44 +661,60 @@ int MPIDU_Sock_finalize()
     return MPI_SUCCESS;
 }
 
-typedef struct sock_host_name_t
+typedef struct socki_host_name_t
 {
     char host[256];
-    struct sock_host_name_t *next;
-} sock_host_name_t;
+    struct socki_host_name_t *next;
+} socki_host_name_t;
 
-static int already_used_or_add(char *host, sock_host_name_t **list)
+static int already_used_or_add(char *host, socki_host_name_t **list)
 {
-    sock_host_name_t *iter;
+    socki_host_name_t *iter, *trailer;
 
     /* check if the host already has been used */
-    iter = *list;
+    iter = trailer = *list;
     while (iter)
     {
 	if (strcmp(iter->host, host) == 0)
 	{
 	    return 1;
 	}
+	if (trailer != iter)
+	    trailer = trailer->next;
 	iter = iter->next;
     }
 
     /* the host has not been used so add a node for it */
-    iter = (sock_host_name_t*)malloc(sizeof(sock_host_name_t));
+    iter = (socki_host_name_t*)malloc(sizeof(socki_host_name_t));
     if (!iter)
     {
 	/* if out of memory then treat it as not found */
 	return 0;
     }
     strcpy(iter->host, host);
-    iter->next = *list;
-    *list = iter;
+
+    /* insert new hosts at the end of the list */
+    if (trailer != NULL)
+    {
+        trailer->next = iter;
+        iter->next = NULL;
+    }
+    else
+    {
+        iter->next = NULL;
+        *list = iter;
+    }
+    /* insert new hosts at the beginning of the list                            
+    iter->next = *list;                                                         
+    *list = iter;                                                               
+    */
 
     return 0;
 }
 
-static void free_host_list(sock_host_name_t *list)
+static void socki_free_host_list(socki_host_name_t *list)
 {
-    sock_host_name_t *iter;
+    socki_host_name_t *iter;
     while (list)
     {
 	iter = list;
@@ -705,21 +723,87 @@ static void free_host_list(sock_host_name_t *list)
     }
 }
 
+static int socki_get_host_list(char *hostname, socki_host_name_t **listp)
+{
+    int mpi_errno;
+    struct addrinfo *res, *iter, hint;
+    char host[256];
+    socki_host_name_t *list = NULL;
+
+    /* add the hostname to the beginning of the list */
+    already_used_or_add(hostname, &list);
+
+    hint.ai_flags = AI_PASSIVE | AI_CANONNAME;
+    hint.ai_family = PF_UNSPEC;
+    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_protocol = 0;
+    hint.ai_addrlen = 0;
+    hint.ai_canonname = NULL;
+    hint.ai_addr = 0;
+    hint.ai_next = NULL;
+    if (getaddrinfo(hostname, NULL, NULL/*&hint*/, &res))
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**getinfo", "**getinfo %s %d", strerror(errno), errno);
+        MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+        return mpi_errno;
+    }
+
+    /* add the host names */
+    iter = res;
+    while (iter)
+    {
+        if (iter->ai_canonname)
+        {
+            already_used_or_add(iter->ai_canonname, &list);
+        }
+        else
+        {
+            switch (iter->ai_family)
+            {
+            case PF_INET:
+            case PF_INET6:
+                if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, 0) == 0)
+                {
+                    already_used_or_add(host, &list);
+                }
+                break;
+            }
+        }
+        iter = iter->ai_next;
+    }
+    /* add the names again, this time as ip addresses */
+    iter = res;
+    while (iter)
+    {
+        switch (iter->ai_family)
+        {
+        case PF_INET:
+        case PF_INET6:
+            if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, NI_NUMERICHOST) == 0)
+            {
+                already_used_or_add(host, &list);
+            }
+            break;
+        }
+        iter = iter->ai_next;
+    }
+    if (res)
+    {
+        freeaddrinfo(res);
+    }
+
+    *listp = list;
+    return MPI_SUCCESS;
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_hostname_to_host_description
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_description, int len)
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_description, int len)
 {
-    int mpi_errno;
-#if 0
-    char **hlist;
-    struct hostent *h = NULL;
-    int n = 0;
-#endif
-    ADDRINFO *res, *iter, hint;
-    char host[256];
-    sock_host_name_t *used_list = NULL;
+    int mpi_errno = MPI_SUCCESS;
+    socki_host_name_t *iter, *list = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
@@ -730,99 +814,31 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
 	return mpi_errno;
     }
 
-    hint.ai_flags = AI_PASSIVE | AI_CANONNAME;
-    hint.ai_family = PF_UNSPEC;
-    hint.ai_socktype = SOCK_STREAM;
-    hint.ai_protocol = 0;
-    hint.ai_addrlen = 0;
-    hint.ai_canonname = NULL;
-    hint.ai_addr = 0;
-    hint.ai_next = NULL;
-    if (getaddrinfo(hostname, NULL, NULL, &res))
+    mpi_errno = socki_get_host_list(hostname, &list);
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = WSAGetLastError();
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**getinfo", "**getinfo %s %d", get_error_string(mpi_errno), mpi_errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-	return mpi_errno;
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_exit;
     }
 
-    /* add the host names */
-    iter = res;
+    iter = list;
     while (iter)
     {
-	if (iter->ai_canonname)
-	{
-	    if (!already_used_or_add(iter->ai_canonname, &used_list))
-	    {
-		/*printf("adding canonname: %s\n", iter->ai_canonname);*/
-		mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->ai_canonname);
-		if (mpi_errno)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-		    return mpi_errno;
-		}
-	    }
-	}
-	else
-	{
-	    switch (iter->ai_family)
-	    {
-	    case PF_INET:
-	    case PF_INET6:
-		if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, 0) == 0)
-		{
-		    if (!already_used_or_add(host, &used_list))
-		    {
-			/*printf("adding nameinfo: %s\n", host);*/
-			mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
-			if (mpi_errno)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-			    return mpi_errno;
-			}
-		    }
-		}
-		break;
-	    }
-	}
-	iter = iter->ai_next;
-    }
-    /* add the names again, this time as ip addresses */
-    iter = res;
-    while (iter)
-    {
-	switch (iter->ai_family)
-	{
-	case PF_INET:
-	case PF_INET6:
-	    if (getnameinfo(iter->ai_addr, (socklen_t)iter->ai_addrlen, host, 256, NULL, 0, NI_NUMERICHOST) == 0)
-	    {
-		if (!already_used_or_add(host, &used_list))
-		{
-		    /*printf("adding nameinfo: %s\n", host);*/
-		    mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
-		    if (mpi_errno)
-		    {
-			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-			return mpi_errno;
-		    }
-		}
-	    }
-	    break;
-	}
-	iter = iter->ai_next;
-    }
-    if (res)
-    {
-	freeaddrinfo(res);
+        MPIU_DBG_PRINTF(("adding host: %s\n", iter->host));
+        mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->host);
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+            goto fn_exit;
+        }
+        iter = iter->next;
     }
 
-    free_host_list(used_list);
+ fn_exit:
+    socki_free_host_list(list);
 
 #if 0
+    /* The old way */
     h = gethostbyname(hostname);
     if (h == NULL)
     {
@@ -851,7 +867,7 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_descript
     }
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -1913,6 +1929,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
 		{
+		    /*printf("<1>");fflush(stdout);*/
 		    out->op_type = MPIDU_SOCK_OP_CLOSE;
 		    out->num_bytes = 0;
 		    out->error = MPI_SUCCESS;
@@ -2400,19 +2417,30 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
 		{
-		    out->op_type = MPIDU_SOCK_OP_CLOSE;
-		    out->num_bytes = 0;
-		    out->error = MPI_SUCCESS;
-		    out->user_ptr = sock->user_ptr;
-		    CloseHandle(sock->read.ovl.hEvent);
-		    CloseHandle(sock->write.ovl.hEvent);
-		    sock->read.ovl.hEvent = NULL;
-		    sock->write.ovl.hEvent = NULL;
+		    if (!sock->listener_closed)
+		    {
+			/* signal that the listener has been closed and prevent further posted accept failures from returning extra close_ops */
+			sock->listener_closed = 1;
+			/*printf("<2>");fflush(stdout);*/
+			out->op_type = MPIDU_SOCK_OP_CLOSE;
+			out->num_bytes = 0;
+			out->error = MPI_SUCCESS;
+			out->user_ptr = sock->user_ptr;
+			CloseHandle(sock->read.ovl.hEvent);
+			CloseHandle(sock->write.ovl.hEvent);
+			sock->read.ovl.hEvent = NULL;
+			sock->write.ovl.hEvent = NULL;
 #if 0
-		    BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
+			BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
 #endif
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-		    return MPI_SUCCESS;
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			return MPI_SUCCESS;
+		    }
+		    else
+		    {
+			/* ignore multiple close operations caused by the outstanding accept operations */
+			continue;
+		    }
 		}
 		iter = sock->list;
 		while (iter && &iter->read.ovl != ovl)
@@ -2484,15 +2512,25 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    continue;
 			}
 #else
-			out->op_type = MPIDU_SOCK_OP_CLOSE;
-			out->num_bytes = 0;
-			if (mpi_errno == ERROR_OPERATION_ABORTED)
-			    out->error = MPI_SUCCESS;
+			if (sock->listener_closed)
+			{
+			    /* only return a close_op once for the main listener, not any of the copies */
+			    continue;
+			}
 			else
-			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-			out->user_ptr = sock->user_ptr;
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-			return MPI_SUCCESS;
+			{
+			    sock->listener_closed = 1;
+			    /*printf("<3>");fflush(stdout);*/
+			    out->op_type = MPIDU_SOCK_OP_CLOSE;
+			    out->num_bytes = 0;
+			    if (mpi_errno == ERROR_OPERATION_ABORTED)
+				out->error = MPI_SUCCESS;
+			    else
+				out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+			    out->user_ptr = sock->user_ptr;
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			    return MPI_SUCCESS;
+			}
 #endif
 		    }
 		    else
