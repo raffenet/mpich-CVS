@@ -150,15 +150,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 
     MPIDI_CH3I_my_rank = pg_rank;    
 
-    /* initialize VCs */
-    for (p = 0; p < pg_size; p++)
-    {
-	pg->vct[p].gasnet.pg_rank = p;
-	pg->vct[p].gasnet.data_sz = 0;
-	pg->vct[p].gasnet.data = NULL;
-	pg->vct[p].gasnet.recv_active = NULL;
-    }
-
     /*
      * Initialize Progress Engine 
      */
@@ -211,6 +202,15 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 
     *pg_p = pg;
     *pg_rank_p = pg_rank;
+
+    /* initialize VCs */
+    for (p = 0; p < pg_size; p++)
+    {
+	pg->vct[p].gasnet.pg_rank = p;
+	pg->vct[p].gasnet.data_sz = 0;
+	pg->vct[p].gasnet.data = NULL;
+	pg->vct[p].gasnet.recv_active = NULL;
+    }
 
     if (*has_parent) 
     {
