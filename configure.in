@@ -399,13 +399,13 @@ long int oldval = 10;
 long int newval = 20;
 char ret;
 long int readval;
-__asm__ __volatile__ (*lock; cmpxchgl %3, %1; sete %0"
-        : "=q" (ret), "=m" (*p), "=a" (readval)
-        : "r" (newval), "m" (*p), "a" (oldval));
+__asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
+	: "=q" (ret), "=m" (*p), "=a" (readval)
+	: "r" (newval), "m" (*p), "a" (oldval));
 return (compval == 20) ? 0 : -1;
 }
 ], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
-Define if using gcc on a system with an Intel Pentium class chip),
+Define if using gcc on a system with an Intel Pentium class chip), 
 AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 
 AC_OUTPUT(Makefile src/Makefile \

@@ -143,6 +143,7 @@ typedef enum {
   MPID_INFO       = 0x6,
   MPID_WIN        = 0x7,
   MPID_KEYVAL     = 0x8,
+  MPID_BSOCKET    = 0x9
   } MPID_Object_kind;
 #define HANDLE_MPI_KIND_SHIFT 26
 #define HANDLE_GET_MPI_KIND(a) ( ((a)&0x3c000000) >> HANDLE_MPI_KIND_SHIFT )

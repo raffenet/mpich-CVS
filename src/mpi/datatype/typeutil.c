@@ -7,13 +7,13 @@
 
 #include "mpiimpl.h"
 
-/* This is the utility file for comm that contains the basic comm items
+/* This is the utility file for datatypes that contains the basic datatype items
    and storage management */
 #ifndef MPID_DATATYPE_PREALLOC 
 #define MPID_DATATYPE_PREALLOC 8
 #endif
 
-/* Preallocated comm objects */
+/* Preallocated datatype objects */
 MPID_Datatype MPID_Datatype_direct[MPID_DATATYPE_PREALLOC];
 MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE, 
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
