@@ -25,10 +25,10 @@ struct ADIOI_Fns_struct ADIO_PVFS2_operations = {
     ADIOI_PVFS2_Close, /* Close */
     ADIOI_GEN_IreadContig, /* IreadContig */
     ADIOI_GEN_IwriteContig, /* IwriteContig */
-    ADIOI_PVFS2_ReadDone, /* ReadDone */
-    ADIOI_PVFS2_WriteDone, /* WriteDone */
-    ADIOI_PVFS2_ReadComplete, /* ReadComplete */
-    ADIOI_PVFS2_WriteComplete, /* WriteComplete */
+    ADIOI_GEN_IODone, /* ReadDone */
+    ADIOI_GEN_IODone, /* WriteDone */
+    ADIOI_GEN_IOComplete, /* ReadComplete */
+    ADIOI_GEN_IOComplete, /* WriteComplete */
     ADIOI_GEN_IreadStrided, /* IreadStrided */
     ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_PVFS2_Flush, /* Flush */
