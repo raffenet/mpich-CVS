@@ -380,7 +380,7 @@ int PMI_KVS_Get( const char *kvsname, const char *key, char *value)
     }
 }
 
-int PMI_KVS_iter_first(const char *kvsname, char *key, char *val)
+int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val)
 {
     int rc;
 
@@ -388,7 +388,7 @@ int PMI_KVS_iter_first(const char *kvsname, char *key, char *val)
     return( rc );
 }
 
-int PMI_KVS_iter_next(const char *kvsname, char *key, char *val)
+int PMI_KVS_Iter_next(const char *kvsname, char *key, char *val)
 {
     int rc;
 

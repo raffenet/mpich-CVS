@@ -42,8 +42,8 @@ int PMI_KVS_Commit( const char *kvsname );      /* block until all pending put
                                                    local operation. */
 int PMI_KVS_Get( const char *kvsname,
                  const char *key, char *value); /* get value associated with key */
-int PMI_KVS_iter_first(const char *kvsname, char *key, char *val);  /* loop through the */
-int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);   /* pairs in the kvs */
+int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val);  /* loop through the */
+int PMI_KVS_Iter_next(const char *kvsname, char *key, char *val);   /* pairs in the kvs */
 
 /* PMI Process Creation functions */
 
