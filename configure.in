@@ -49,6 +49,13 @@ implementation.  option may be a list of common separated names including
     mem   - Memory usage tracing
     all   - All of the above choices],,enable_g=none)
 dnl
+dnl
+dnl "default" is a special device that allows MPICH to choose one based on 
+dnl the environment.
+AC_ARG_WITH(device,
+[--with-device=name - Specify the communication device for MPICH.],,
+with_device=default)
+dnl
 dnl Process any enable or with values
 dnl error-checking
 case "$enable_error_checking" in 
@@ -104,6 +111,7 @@ case "$enable_g" in
     ;;
     mem|all)
     AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
+    enable_g_mem=yes
     CFLAGS="$CFLAGS -g"
     ;;
     *)
@@ -111,6 +119,24 @@ case "$enable_g" in
     ;;
 esac
 dnl
+dnl with-device
+if test "$with_device" = "default" ; then
+    # Pick the device.  For now, always choose multi-method
+    with_device=mm
+fi
+dnl Extract the device name from any options
+device_name=`echo $with_device | sed -e 's/:.*//g'`
+changequote(<<,>>)
+device_args=`echo $with_device | sed -e 's/[^:]*://g'`
+changequote([,])
+if test ! -d $top_srcdir/src/mpid/$device_name ; then
+dnl     WAIT UNTIL WE INCLUDE A DEVICE
+dnl     AC_MSG_ERROR([Device $device_name is unknown)]
+    AC_MSG_WARN([Device $device_name is unknown])
+else 
+    # Add the device to the configure list
+    subsystems="$subsystems src/mpid/$devicename"
+fi
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
@@ -184,6 +210,18 @@ dnl
 dnl Check for functions.  This invokes another test if the function is 
 dnl found.  The braces around the second test are essential. 
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
+if test "$enable_g_mem" != "yes" ; then
+    dnl Strdup is needed only if memory tracing is not enabled.
+    AC_CHECK_FUNCS(strdup)
+else
+    dnl search.h is used for fancier output from trmem.  Disabled for now,
+    dnl since the tsearch routines have problematic prototypes.
+    dnl AC_CHECK_HEADERS(search)
+    dnl AC_CHECK_FUNCS(tsearch)
+    dnl Check that we can compile tsearch without error
+    dnl (not done yet)
+    :
+fi
 dnl
 dnl Specific checks that a function works correctly
 dnl AC_FUNC_VFORK
