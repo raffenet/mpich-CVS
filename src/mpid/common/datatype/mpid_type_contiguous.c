@@ -108,7 +108,7 @@ int MPID_Type_contiguous(int count,
 	if (new_dtp->has_sticky_lb) new_dtp->lb = old_dtp->lb;
 	else new_dtp->lb                        = old_dtp->lb;
 	if (new_dtp->has_sticky_ub) new_dtp->ub = old_dtp->extent * count + old_dtp->lb;
-	else new_dtp->ub                        = new_dtp->true_ub; /* NEED TO ADD PADDING */
+	else new_dtp->ub                        = new_dtp->true_ub; /* NEED TO ADD PADDING? */
 	new_dtp->extent                         = new_dtp->ub - new_dtp->lb;
 
 	new_dtp->alignsize      = old_dtp->alignsize;
