@@ -554,12 +554,12 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
         # Try to find the aio routines
 	use_aio=no
         AC_HEADER_CHECK(aio.h,has_aio_h=yes,has_aio_h=no)
-	dnl AC_CHECK_LIB(aio,aio_write,has_aio_write=yes,has_aio_write=no)
 	add_lib=""
-	AC_HAVE_LIBRARY(aio,add_lib="-laio")
+	AC_SEARCH_LIBS(aio_write,aio,add_lib="-laio")
+	# What function do we want -lrt for?
 	AC_HAVE_LIBRARY(rt,add_lib="$add_lib -lrt")
-	AC_HAVE_LIBRARY(pthread,[add_lib="$add_lib -lpthread"
-has_pthread=yes],[has_pthread=no])
+	AC_SEARCH_LIBS(pthread_create,pthread,[add_lib="$add_lib -lpthread"
+has_pthread=yes)],[has_pthread=no])
         AC_FUNC_CHECK(aio_write,has_aio_write=yes,has_aio_write=no)
 	if test "$has_aio_h" = "yes" -a "$has_aio_write" = "yes" -a \
 	        "$has_pthread" = "yes" ; then
