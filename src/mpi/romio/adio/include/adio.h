@@ -197,6 +197,7 @@ struct ADIOI_FileD {
     int atomicity;          /* true=atomic, false=nonatomic */
     int iomode;             /* reqd. to implement Intel PFS modes */
     MPI_Errhandler err_handler;
+    void *fs_ptr;            /* file-system specific information */
 };
 
 typedef struct ADIOI_FileD *ADIO_File;
