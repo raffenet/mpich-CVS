@@ -29,41 +29,42 @@
 #include "mpimem.h"
 
 /* Temporary debug definitions */
-#define DBG_PRINTF printf
-#define DBG_FPRINTF fprintf
+#define DBG_PRINTF(args) printf args ; fflush(stdout)
+#define DBG_FPRINTF(args) fprintf args 
 
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
 /* 
-   Shouldn't most of these globals be static (local to this file?) 
-   Shouldn't they all be initialized to avoid problems with common symbols? 
-   YES TO BOTH!!!!! 
+   These are global variable used *ONLY* in this file, and are hence
+   declared static.
  */
 
 
-int PMI_fd = -1;
-int PMI_size = 1;
-int PMI_rank = 0;
-int PMI_universe_size = -1;
+static int PMI_fd = -1;
+static int PMI_size = 1;
+static int PMI_rank = 0;
+static int PMI_universe_size = -1;
 
 /* Set PMI_initialized to 1 for regular initialized and 2 for 
    the singleton init case (no MPI_Init) */
 #define SINGLETON_INIT 2
-int PMI_initialized = 0;
+static int PMI_initialized = 0;
 
 /* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE 
    LIBRARY WITH COMMON SYMBOLS */
-int PMI_kvsname_max = 0;
-int PMI_keylen_max = 0;
-int PMI_vallen_max = 0;
+static int PMI_kvsname_max = 0;
+static int PMI_keylen_max = 0;
+static int PMI_vallen_max = 0;
 
-int PMI_iter_next_idx = 0;
-int PMI_debug = 0;
-int PMI_spawned = 0;
+static int PMI_iter_next_idx = 0;
+static int PMI_debug = 0;
+static int PMI_spawned = 0;
 
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
 static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, int key_len, char *val, int val_len );
+static int PMII_Set_from_port( int, int );
+static int PMII_Connect_to_pm( char *, int );
 
 /******************************** Group functions *************************/
 
@@ -91,14 +92,14 @@ int PMI_Init( int *spawned )
 	pn = strchr( p, ':' );
 
 	if (PMI_debug) {
-	    DBG_PRINTF( "Connecting to %s\n", p );
+	    DBG_PRINTF( ("Connecting to %s\n", p) );
 	}
 	if (pn) {
 	    MPIU_Strncpy( hostname, p, (pn - p) );
 	    hostname[(pn-p)] = 0;
 	    portnum = atoi( pn+1 );
 	    /* FIXME: Check for valid integer after : */
-	    PMI_fd = PMI_Connect_to_pm( hostname, portnum );
+	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
 	}
 	/* FIXME: If PMI_PORT specified but either no valid value of
 	   fd is -1, give an error return */
@@ -109,7 +110,9 @@ int PMI_Init( int *spawned )
 	if (p) {
 	    id = atoi( p );
 	}
-	PMI_Set_from_port( PMI_fd, id );
+	/* PMII_Set_from_port sets up the values that are delivered
+	   by enviroment variables when a separate port is not used */
+	PMII_Set_from_port( PMI_fd, id );
 	notset = 0;
     }
 #endif
@@ -696,7 +699,7 @@ a */
 
 /* stub for connecting to a specified host/port instead of using a 
    specified fd inherited from a parent process */
-int PMI_Connect_to_pm( char *hostname, int portnum )
+static int PMII_Connect_to_pm( char *hostname, int portnum )
 {
     struct hostent     *hp;
     struct sockaddr_in sa;
@@ -773,7 +776,7 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
     return fd;
 }
 
-int PMI_Set_from_port( int fd, int id )
+static int PMII_Set_from_port( int fd, int id )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
@@ -861,8 +864,8 @@ int PMI_Set_from_port( int fd, int id )
     PMI_debug = atoi(cmd);
 
     if (PMI_debug) {
-	DBG_PRINTF( "end of handshake, rank = %d, size = %d\n", 
-		    PMI_rank, PMI_size ); fflush(stdout);
+	DBG_PRINTF( ("end of handshake, rank = %d, size = %d\n", 
+		    PMI_rank, PMI_size )); 
     }
 
     return 0;
