@@ -46,6 +46,12 @@ int main(int argc, char **argv)
 	sscanf(argv[2], "%d", &niter);
     }
 
+    if (rank == 0)
+    {
+	printf("msg_sz=%d, niter=%d\n", msg_sz, niter);
+	fflush(stdout);
+    }
+    
     if (msg_sz > 0)
     {
 	msg = (int *) malloc(msg_sz * sizeof(int));
