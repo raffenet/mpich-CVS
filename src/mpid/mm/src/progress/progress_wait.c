@@ -16,4 +16,5 @@
 @*/
 void MPID_Progress_wait( void )
 {
+    MPID_Progress_test();
 }

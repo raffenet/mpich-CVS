@@ -80,7 +80,6 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->comm = request_ptr->comm;
     /* point the completion counter to the primary request */
     pRequest->cc_ptr = &request_ptr->cc;
-    (*(pRequest->cc_ptr))++;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
@@ -101,6 +100,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->mm.rcar[0].next_ptr = NULL;
     pRequest->mm.rcar[0].qnext_ptr = NULL;
     pRequest->mm.rcar[0].src = request_ptr->comm->rank; /* packer source is myself */
+    mm_inc_cc(pRequest);
 
 
     if (bNeedHeader)
@@ -114,6 +114,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].data.pkt.size = 0;
 	pRequest->mm.wcar[0].qnext_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].next_ptr = NULL;
+	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.wcar[1];
 	pCar->vc_ptr = pRequest->mm.wcar[0].vc_ptr;
@@ -129,6 +130,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pCar->dest = dest;
     pCar->next_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    mm_inc_cc(pRequest);
 
     return MPI_SUCCESS;
 }

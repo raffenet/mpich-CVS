@@ -63,7 +63,7 @@ int xfer_start(MPID_Request *request_ptr)
 		    pCarIter = pCarIter->qnext_ptr;
 		}
 		/* enqueue the send */
-		mm_enqueue_send(pCar);
+		mm_post_send(pCar);
 	    }
 	    pCar = pCar->next_ptr;
 	}

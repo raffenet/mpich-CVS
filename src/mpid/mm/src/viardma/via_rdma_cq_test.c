@@ -3,11 +3,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#include "tcpimpl.h"
+#include "via_rdmaimpl.h"
 
-int tcp_get_business_card(char *value)
+int via_rdma_cq_test()
 {
-    sprintf(value, "%s:%d", TCP_Process.host, TCP_Process.port);
-
     return MPI_SUCCESS;
 }

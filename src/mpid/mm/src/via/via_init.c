@@ -5,6 +5,8 @@
  */
 #include "viaimpl.h"
 
+VIA_PerProcess VIA_Process;
+
 /*@
    via_init - initialize via method
 

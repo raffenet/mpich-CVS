@@ -12,11 +12,10 @@
 
    Parameters:
 +  struct MPIDI_VC *vc_ptr - virtual connection pointer
--  MM_Car *car_ptr - communication agent request pointer
 
    Notes:
 @*/
-int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr)
+int mm_connector_connect(struct MPIDI_VC *vc_ptr)
 {
     int rank;
     char *name;

@@ -40,8 +40,10 @@ typedef struct OpenPortNode {
 
 typedef struct MPID_PerProcess {
       MPID_Thread_lock_t lock;
-       struct MPIDI_VC * posted_q;   /* unmatched posted read operations */
-       struct MPIDI_VC * unex_list;  /* active un-matched read operations */
+   struct MPID_Request * posted_q;   /* unmatched posted read operations */
+   struct MPID_Request * unex_q;     /* active un-matched read operations */
+         struct MM_Car * cq_head;    /* completion queue head */
+	 struct MM_Car * cq_tail;    /* completion queue tail */
        struct MPIDI_VC * read_list;  /* active read operations */
        struct MPIDI_VC * write_list; /* active write operations */
                     char pmi_kvsname[100];
@@ -110,8 +112,12 @@ typedef struct MPIDI_VC
   struct MM_Car * readq_tail;
            char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
               int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
+            int (*write)(struct MPIDI_VC *vc_ptr);
+            int (*read )(struct MPIDI_VC *vc_ptr);
+	    /*
             int (*write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
             int (*read )(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+	    */
 struct MPIDI_VC * read_next_ptr;
 struct MPIDI_VC * write_next_ptr;
 } MPIDI_VC;
@@ -154,11 +160,11 @@ MPID_Request * mm_request_alloc();
            int mm_vc_free(MPIDI_VC *ptr);
 
 /* vc functions */
-           int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-           int mm_packer_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-           int mm_packer_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-           int mm_unpacker_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-           int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_connector_connect(struct MPIDI_VC *vc_ptr);
+           int mm_packer_read(struct MPIDI_VC *vc_ptr);
+           int mm_packer_write(struct MPIDI_VC *vc_ptr);
+           int mm_unpacker_read(struct MPIDI_VC *vc_ptr);
+           int mm_unpacker_write(struct MPIDI_VC *vc_ptr);
 
 /* buffer */
            int mm_choose_buffer(MPID_Request *request_ptr);
@@ -167,7 +173,17 @@ MPID_Request * mm_request_alloc();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
-	   int mm_enqueue_send(MM_Car *car_ptr);
+	   int mm_post_send(MM_Car *car_ptr);
+	   int mm_cq_test();
+	   int mm_cq_wait();
+
+/* requests */
+/*
+          void mm_inc_cc(MPID_Request *request_ptr);
+	  void mm_dec_cc(MPID_Request *request_ptr);
+*/
+#define mm_inc_cc(p) (*(p->cc_ptr))++;
+#define mm_dec_cc(p) (*(p->cc_ptr))--;
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

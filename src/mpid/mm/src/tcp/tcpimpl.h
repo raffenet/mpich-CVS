@@ -13,6 +13,8 @@ typedef struct TCP_PerProcess {
                    int listener;
 		   int port;
 		  char host[100];
+               bfd_set readset;
+               bfd_set writeset;
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

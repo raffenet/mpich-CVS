@@ -3,11 +3,10 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#include "tcpimpl.h"
 
-int tcp_get_business_card(char *value)
+#include "mpidimpl.h"
+
+int mm_cq_wait()
 {
-    sprintf(value, "%s:%d", TCP_Process.host, TCP_Process.port);
-
     return MPI_SUCCESS;
 }

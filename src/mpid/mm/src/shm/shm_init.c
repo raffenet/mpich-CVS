@@ -5,6 +5,8 @@
  */
 #include "shmimpl.h"
 
+SHM_PerProcess SHM_Process;
+
 /*@
    shm_init - initialize the shared memory method
 
@@ -12,6 +14,12 @@
 @*/
 int shm_init( void )
 {
+#ifdef HAVE_WINDOWS_H
+    DWORD n = 100;
+    GetComputerName(SHM_Process.host, &n);
+#else
+    gethostname(SHM_Process.host, 100);
+#endif
     return MPI_SUCCESS;
 }
 

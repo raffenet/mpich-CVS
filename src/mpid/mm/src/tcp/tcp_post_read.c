@@ -3,10 +3,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+#include "tcpimpl.h"
 
-#include "mpidimpl.h"
-
-int mm_enqueue_send(MM_Car *car_ptr)
+int tcp_post_read()
 {
     return MPI_SUCCESS;
 }

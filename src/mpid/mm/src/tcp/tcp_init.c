@@ -40,6 +40,10 @@ int tcp_init()
 	err_printf("tcp_init: unable to get the hostname and port of the listener socket\nError: %s\n", str);
     }
 
+    BFD_ZERO(&TCP_Process.writeset);
+    BFD_ZERO(&TCP_Process.readset);
+    BFD_SET(TCP_Process.listener, &TCP_Process.readset);
+
     return MPI_SUCCESS;
 }
 

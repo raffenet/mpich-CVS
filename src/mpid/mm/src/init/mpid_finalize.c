@@ -6,6 +6,7 @@
  */
 
 #include "mpidimpl.h"
+#include "pmi.h"
 
 /*@
    MPID_Finalize - Terminates mm device

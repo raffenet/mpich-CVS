@@ -7,5 +7,6 @@
 
 int shm_get_business_card(char *value)
 {
+    strcpy(value, SHM_Process.host);
     return MPI_SUCCESS;
 }

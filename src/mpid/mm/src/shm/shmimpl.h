@@ -8,4 +8,11 @@
 
 #include "mm_shm.h"
 
+typedef struct SHM_PerProcess {
+    MPID_Thread_lock_t lock;
+		  char host[100];
+} SHM_PerProcess;
+
+extern SHM_PerProcess SHM_Process;
+
 #endif

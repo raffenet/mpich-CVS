@@ -74,7 +74,6 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pRequest->mm.op_valid = TRUE;
     pRequest->comm = request_ptr->comm;
     pRequest->cc_ptr = &request_ptr->cc;
-    (*(pRequest->cc_ptr))++;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
@@ -100,6 +99,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pRequest->mm.rcar[0].data.pkt.size = 0;
 	pRequest->mm.rcar[0].qnext_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].next_ptr = NULL;
+	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.rcar[1];
 	pCar->vc_ptr = pRequest->mm.rcar[0].vc_ptr;
@@ -115,6 +115,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->src = src;
     pCar->next_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    mm_inc_cc(pRequest);
 
     /* allocate a write car for unpacking */
     pCar = pRequest->mm.wcar;
@@ -123,6 +124,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->vc_ptr = mm_get_unpacker_vc();
     pCar->next_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    mm_inc_cc(pRequest);
 
     return MPI_SUCCESS;
 }
