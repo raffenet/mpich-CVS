@@ -147,8 +147,9 @@ typedef int MPI_Op;
 #define MPI_BSEND_OVERHEAD 512
 
 /* Topology types */
-#define MPI_GRAPH  1
-#define MPI_CART   2
+/* #define MPI_GRAPH  1 */
+/*   #define MPI_CART   2 */
+typedef enum { MPI_GRAPH=1, MPI_CART=2 } MPIR_Topo_type;
 
 #define MPI_BOTTOM      (void *)0
 
@@ -271,8 +272,8 @@ typedef struct {
 #define MPI_Group_f2c(group) (MPI_Group)(group)
 #define MPI_Info_c2f(info) (MPI_Fint)(info)
 #define MPI_Info_f2c(info) (MPI_Info)(info)
-/* MPI_Request_c2f is a routine in src/misc */
-#define MPI_Request_f2c(request) (MPI_Request)MPIR_ToPointer(request)
+#define MPI_Request_f2c(request) (MPI_Request)(request)
+#define MPI_Request_c2f(request) (MPI_Fint)(request)
 #define MPI_Op_c2f(op) (MPI_Fint)(op)
 #define MPI_Op_f2c(op) (MPI_Op)(op)
 #define MPI_Errhandler_c2f(errhandler) (MPI_Fint)(errhandler)
@@ -562,8 +563,6 @@ int MPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *);
 int MPI_Type_get_contents(MPI_Datatype, int, int, int, int *, MPI_Aint *, MPI_Datatype *);
 int MPI_Type_create_subarray(int, int *, int *, int *, int, MPI_Datatype, MPI_Datatype *);
 int MPI_Type_create_darray(int, int, int, int *, int *, int *, int *, int, MPI_Datatype, MPI_Datatype *);
-
-MPI_Fint MPI_Request_c2f( MPI_Request );
 
 /* external */
 int MPI_Status_set_cancelled( MPI_Status *, int );
