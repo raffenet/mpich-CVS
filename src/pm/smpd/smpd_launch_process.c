@@ -784,8 +784,25 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     int stdin_pipe_fds[2], stdout_pipe_fds[2], stderr_pipe_fds[2];
     int pid;
     sock_t sock_in, sock_out, sock_err;
+    char args[SMPD_MAX_EXE_LENGTH];
+    char *argv[1024];
+    char *token;
+    int i;
 
     smpd_enter_fn("smpd_launch_process");
+
+    /* parse the command for arguments */
+    args[0] = '\0';
+    strcpy(args, process->exe);
+    i = 0;
+    token = strtok(args, " ");
+    while (token)
+    {
+	argv[i] = token;
+	token = strtok(NULL, " ");
+	i++;
+    }
+    argv[i] = NULL;
 
     /* create pipes for redirecting I/O */
     /*
@@ -831,7 +848,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 
-	result = execvp( process->exe, NULL );
+	/*result = execvp( process->exe, NULL );*/
+	result = execvp( argv[0], argv );
 
 	result = errno;
 	fprintf(stderr, "error %d, unable to exec '%s'.\n", result, process->exe);
@@ -908,13 +926,27 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
-    WaitForSingleObject(wait, INFINITE);
+    smpd_enter_fn("smpd_wait_process");
+
+    if (WaitForSingleObject(wait, INFINITE) != WAIT_OBJECT_0)
+    {
+	smpd_err_printf("WaitForSingleObject failed, error %d\n", GetLastError());
+	*exit_code_ptr = -1;
+	smpd_exit_fn("smpd_wait_process");
+	return SMPD_FAIL;
+    }
     result = GetExitCodeProcess(wait, exit_code_ptr);
+    if (!result)
+    {
+	smpd_err_printf("GetExitCodeProcess failed, error %d\n", GetLastError());
+	*exit_code_ptr = -1;
+	smpd_exit_fn("smpd_wait_process");
+	return SMPD_FAIL;
+    }
     CloseHandle(wait);
-    if (result)
-	return SMPD_SUCCESS;
-    *exit_code_ptr = -1;
-    return SMPD_FAIL;
+
+    smpd_exit_fn("smpd_wait_process");
+    return SMPD_SUCCESS;
 #else
     int status;
     smpd_enter_fn("smpd_wait_process");
