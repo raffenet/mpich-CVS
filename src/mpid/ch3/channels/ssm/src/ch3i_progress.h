@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
-#include "sock.h"
+#include "mpidu_sock.h"
 
 #define USE_GCC_X86_CYCLE_ASM 1
 #define USE_WIN_X86_CYCLE_ASM 2
@@ -59,14 +59,14 @@ typedef enum conn_state
 typedef struct MPIDI_CH3I_Connection
 {
     MPIDI_VC * vc;
-    sock_t sock;
+    MPIDU_Sock_t sock;
     enum conn_state state;
     MPID_Request * send_active;
     MPID_Request * recv_active;
     MPIDI_CH3_Pkt_t pkt;
 } MPIDI_CH3I_Connection_t;
 
-extern sock_set_t sock_set;
+extern MPIDU_Sock_set_t sock_set;
 extern int listener_port;
 extern MPIDI_CH3I_Connection_t * listener_conn;
 

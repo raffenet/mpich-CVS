@@ -18,15 +18,15 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_SOCK_OP);
     switch (event_ptr->op_type)
     {
-    case SOCK_OP_READ:
+    case MPIDU_SOCK_OP_READ:
 	{
 	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event_ptr->user_ptr;
 
 	    MPID_Request * rreq = conn->recv_active;
 
-	    if (event_ptr->error != SOCK_SUCCESS)
+	    if (event_ptr->error != MPIDU_SOCK_SUCCESS)
 	    {
-		if (!shutting_down || event_ptr->error != SOCK_EOF)  /* FIXME: this should be handled by the close protocol */
+		if (!shutting_down /*|| event_ptr->error != SOCK_EOF*/)  /* FIXME: this should be handled by the close protocol */
 		{
 		    connection_recv_fail(conn, event_ptr->error);
 		}
@@ -116,7 +116,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 			if (conn->vc->ssm.sock != conn->sock)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bad_sock", "**bad_sock %d %d",
-				MPIDU_Sock_getid(conn->vc->ssm.sock), sock_getid(conn->sock));
+				MPIDU_Sock_getid(conn->vc->ssm.sock), MPIDU_Sock_getid(conn->sock));
 			    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SOCK_OP);
 			    return mpi_errno;
 			}
@@ -145,11 +145,11 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 	    break;
 	}
 
-    case SOCK_OP_WRITE:
+    case MPIDU_SOCK_OP_WRITE:
 	{
 	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event_ptr->user_ptr;
 
-	    if (event_ptr->error != SOCK_SUCCESS)
+	    if (event_ptr->error != MPIDU_SOCK_SUCCESS)
 	    {
 		connection_send_fail(conn, event_ptr->error);
 		break;
@@ -209,7 +209,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 	    break;
 	}
 
-    case SOCK_OP_ACCEPT:
+    case MPIDU_SOCK_OP_ACCEPT:
 	{
 	    MPIDI_CH3I_Connection_t * conn;
 
@@ -238,11 +238,11 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 	    break;
 	}
 
-    case SOCK_OP_CONNECT:
+    case MPIDU_SOCK_OP_CONNECT:
 	{
 	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event_ptr->user_ptr;
 
-	    if (event_ptr->error != SOCK_SUCCESS)
+	    if (event_ptr->error != MPIDU_SOCK_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**connfailed", "**connfailed %d %d",
 		    /* FIXME: pgid */ -1, conn->vc->ssm.pg_rank);
@@ -259,7 +259,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 	    break;
 	}
 
-    case SOCK_OP_CLOSE:
+    case MPIDU_SOCK_OP_CLOSE:
 	{
 	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event_ptr->user_ptr;
 
@@ -280,7 +280,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 			return mpi_errno;
 		    }
 #endif
-		    conn->sock = SOCK_INVALID_SOCK;
+		    conn->sock = SOCKI_INVALID_SOCK;
 		    conn->state = CONN_STATE_CLOSED;
 		    connection_free(conn);
 		}
