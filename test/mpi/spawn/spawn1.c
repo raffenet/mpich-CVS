@@ -44,15 +44,17 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    printf( "Did not create %d processes (got %d)\n", np, rsize );
 	}
-	for (i=0; i<rsize; i++) {
-	    MPI_Send( &i, 1, MPI_INT, i, 0, intercomm );
-	}
-	/* We could use intercomm reduce to get the errors from the 
-	   children, but we'll use a simpler loop to make sure that
-	   we get valid data */
-	for (i=0; i<rsize; i++) {
-	    MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
-	    errs += err;
+	if (rank == 0) {
+	    for (i=0; i<rsize; i++) {
+		MPI_Send( &i, 1, MPI_INT, i, 0, intercomm );
+	    }
+	    /* We could use intercomm reduce to get the errors from the 
+	       children, but we'll use a simpler loop to make sure that
+	       we get valid data */
+	    for (i=0; i<rsize; i++) {
+		MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
+		errs += err;
+	    }
 	}
     }
     else {
