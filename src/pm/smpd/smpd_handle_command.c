@@ -14,13 +14,15 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     smpd_stdin_write_node_t *node, *iter;
     int result;
     sock_size_t num_written, num_decoded;
+    int nd;
 
     smpd_enter_fn("handle_stdin_command");
 
     cmd = &context->read_cmd;
     if (smpd_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH))
     {
-	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
+	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &nd);
+	num_decoded = nd;
 	/*printf("[%d]", rank);*/
 	piter = smpd_process.process_list;
 	while (piter)
