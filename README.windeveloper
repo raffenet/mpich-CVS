@@ -56,4 +56,4 @@ Here are the instructions for setting up the mpich2 development environment on a
 
 7) Test and distribute mpich2\maint\ReleaseMSI\mpich2.msi
 
-    mpich2.msi can be renamed, eg mpich2-0.97.msi
+    mpich2.msi can be renamed, eg mpich2-1.0.msi
