@@ -47,6 +47,7 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     static const char FCNAME[] = "MPI_Lookup_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Info *info_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_LOOKUP_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_LOOKUP_NAME);
     /* Get handles to MPI objects. */

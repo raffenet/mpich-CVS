@@ -44,6 +44,7 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
 {
     static const char FCNAME[] = "MPI_Comm_get_parent";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GET_PARENT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_PARENT);
 #   ifdef HAVE_ERROR_CHECKING

@@ -45,6 +45,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
     static const char FCNAME[] = "MPI_Comm_join";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_JOIN);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
 #   ifdef HAVE_ERROR_CHECKING
