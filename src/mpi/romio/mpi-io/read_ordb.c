@@ -45,7 +45,6 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count,
     static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
 #endif
     ADIO_Offset shared_fp;
-    MPI_Status status;
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
@@ -152,7 +151,7 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count,
     }
 
     ADIO_ReadStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			 shared_fp, &status, &error_code);
+			 shared_fp, &fh->split_status, &error_code);
 
     return error_code;
 }

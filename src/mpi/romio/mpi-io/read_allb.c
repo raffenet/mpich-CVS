@@ -44,7 +44,6 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_READ_ALL_BEGIN";
 #endif
-    MPI_Status status;
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
@@ -134,6 +133,6 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
     }
 
     ADIO_ReadStridedColl(fh, buf, count, datatype, ADIO_INDIVIDUAL,
-			  0, &status, &error_code);
+			  0, &fh->split_status, &error_code);
     return error_code;
 }

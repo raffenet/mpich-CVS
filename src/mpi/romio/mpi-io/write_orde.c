@@ -67,6 +67,10 @@ int MPI_File_write_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
 #endif
     }
 
+#ifdef HAVE_STATUS_SET_BYTES
+    if (status != MPI_STATUS_IGNORE)
+       *status = fh->split_status;
+#endif
     fh->split_coll_count = 0;
 
     return MPI_SUCCESS;
