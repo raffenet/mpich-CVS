@@ -81,7 +81,6 @@ level is set to multiple.  If disabled, the level is set to single.
 When the level is set to multiple, an implementation may also be
 specified.  The following implementations are supported.
     global_mutex - a single global lock guards access to all MPI functions.
-    global_monitor - a single monitor guards access to all MPI functions.
 The default implementation is global_mutex.],,
 enable_threads=funneled)
 if test "$enable_threads" = "yes" ; then 
@@ -403,19 +402,17 @@ case "$enable_threads" in
     thread_impl=none
     ;;
     multiple)
-    AC_MSG_ERROR([MPI_THREAD_MULTIPLE not implemented])
     thread_pkg_required=yes
     thread_impl=global_mutex
     ;;
     multiple:*)
-    AC_MSG_ERROR([MPI_THREAD_MULTIPLE not implemented])
     thread_pkg_required=yes
     thread_impl="`echo $enable_threads | sed -e 's/.*://'`"
     case "$thread_impl" in 
 	global_mutex)
 	;;
-	global_monitor)
-	;;
+	# global_monitor)
+	# ;;
 	*)
 	AC_MSG_ERROR(["$thread_impl" is not a valid multi-thread implementation for MPICH2])     
 	;;
@@ -1578,6 +1575,7 @@ if test "$thread_pkg_required" = "yes" ; then
         posix|pthreads)
 	with_thread_package=posix
 	AC_CHECK_HEADERS(pthread.h)
+	AC_CHECK_FUNCS(pthread_yield)
 	# OSF1 has __pthread_create but not pthread_create (because of 
 	# inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
 	AC_SEARCH_LIBS(pthread_key_create,pthread,found=yes,found=no)
