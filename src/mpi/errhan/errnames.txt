@@ -401,23 +401,23 @@ with MPI_Alloc_mem.
 #
 # CH3:sock errors
 #
-**ch3|sock|strdup:[ch3:sock] MPIU_Strdup failed
-**ch3|sock|connclose:[ch3:sock] active connection unexpectedly closed
-**ch3|sock|hostlookup:[ch3:sock] hostname lookup failed
-**ch3|sock|hostlookup %d %d %s:[ch3:sock] failed to obtain host information for process %d:%d (%s)
-**ch3|sock|connrefused:[ch3:sock] connection refused
-**ch3|sock|connrefused %d %d %s:[ch3:sock] failed to connect to process %d:%d (%s)
-**ch3|sock|connterm:[ch3:sock] active connection unexpectedly terminated
-**ch3|sock|connfailed:[ch3:sock] failed to connnect to remote process
-**ch3|sock|connfailed %d %d:[ch3:sock] failed to connnect to remote process %d:%d
-**ch3|sock|badsock:[ch3:sock] internal error - bad sock
-**ch3|sock|failure:[ch3:sock] unknown failure
-**ch3|sock|failure %d:[ch3:sock] unknown failure, sock_errno=%d
-**ch3|sock|badpacket:[ch3:sock] received packet of unknow type
-**ch3|sock|badpacket %d:[ch3:sock] received packet of unknown type (%d)
-**ch3|sock|badbuscard:[ch3:sock] GetHostAndPort: Invalid business card
-**ch3|sock|badbuscard %s:[ch3:sock] GetHostAndPort: Invalid business card (%s)
-**ch3|sock|connallocfailed:[ch3:sock] unable to allocate a connection structure
+**ch3|sock|strdup:[ch3_sock] MPIU_Strdup failed
+**ch3|sock|connclose:[ch3_sock] active connection unexpectedly closed
+**ch3|sock|hostlookup:[ch3_sock] hostname lookup failed
+**ch3|sock|hostlookup %d %d %s:[ch3_sock] failed to obtain host information for process %d-%d (%s)
+**ch3|sock|connrefused:[ch3_sock] connection refused
+**ch3|sock|connrefused %d %d %s:[ch3_sock] failed to connect to process %d:%d (%s)
+**ch3|sock|connterm:[ch3_sock] active connection unexpectedly terminated
+**ch3|sock|connfailed:[ch3_sock] failed to connnect to remote process
+**ch3|sock|connfailed %d %d:[ch3_sock] failed to connnect to remote process %d:%d
+**ch3|sock|badsock:[ch3_sock] internal error - bad sock
+**ch3|sock|failure:[ch3_sock] unknown failure
+**ch3|sock|failure %d:[ch3_sock] unknown failure, sock_errno=%d
+**ch3|sock|badpacket:[ch3_sock] received packet of unknow type
+**ch3|sock|badpacket %d:[ch3_sock] received packet of unknown type (%d)
+**ch3|sock|badbuscard:[ch3_sock] GetHostAndPort - Invalid business card
+**ch3|sock|badbuscard %s:[ch3_sock] GetHostAndPort - Invalid business card (%s)
+**ch3|sock|connallocfailed:[ch3_sock] unable to allocate a connection structure
 **ch3|sock|pmi_finalize:PMI_Finalize failed
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 
@@ -439,7 +439,7 @@ with MPI_Alloc_mem.
 **ch3|mm|badpacket:Received a packet of unknown type
 **ch3|mm|badpacket %d:Received a packet of unknown type (%d)
 **ch3|mm|connfailed:Failed to connect to remote process
-**ch3|mm|connfailed %d %d:Failed to connect to remote process %d:%d
+**ch3|mm|connfailed %d %d:Failed to connect to remote process %d-%d
 **ch3|mm|OpenProcess:OpenProcess failed
 **ch3|mm|OpenProcess %d %d:OpenProcess failed for process %d, error %d
 **ch3|mm|open:open failed
@@ -475,3 +475,4 @@ with MPI_Alloc_mem.
 **ch3|shm|shmget %d:shmget failed, error %d
 **ch3|shm|MapViewOfFileEx:MapViewOfFileEx failed
 **ch3|shm|MapViewOfFileEx %d:MapViewOfFileEx failed, error %d
+**ch3|shm|GetMemTwice:Global shared memory initializer called more than once
