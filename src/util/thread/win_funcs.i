@@ -1,8 +1,9 @@
+#if 0
 /*
  * Threads
  */
 
-/* MPE_Thread_create() defined in mpe_thread_posix.c */
+/* MPE_Thread_create() defined in mpe_thread_win.c */
 
 #define MPE_Thread_exit()			\
 {						\
@@ -246,3 +247,4 @@
         }                                                       \
     }                                                           \
 }
+#endif
