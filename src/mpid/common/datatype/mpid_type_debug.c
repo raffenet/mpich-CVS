@@ -16,6 +16,7 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 void MPIDI_Datatype_contents_printf(MPI_Datatype type, int depth, int acount);
 static char *MPIDI_Datatype_depth_spacing(int depth);
 
+/* --BEGIN ERROR HANDLING-- */
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
 			       int depth,
 			       int header)
@@ -211,6 +212,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 		    blocklength);
     return;
 }
+/* --END ERROR HANDLING-- */
 
 /* longest string is 21 characters */
 char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
@@ -352,6 +354,7 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     return NULL;
 }
 
+/* --BEGIN ERROR HANDLING-- */
 void MPIDU_Datatype_debug(MPI_Datatype type,
 			  int array_ct)
 {
@@ -523,6 +526,6 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	    return;
     }
 }
-
+/* --END ERROR HANDLING-- */
 
 

@@ -48,10 +48,12 @@ int MPID_Type_vector(int count,
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     if (!new_dtp) {
+	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 "MPID_Type_vector", __LINE__,
 					 MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */

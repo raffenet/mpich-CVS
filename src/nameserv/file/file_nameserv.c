@@ -44,10 +44,12 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     int        err;
 
     *handle_ptr = (MPID_NS_Handle)MPIU_Malloc( sizeof(struct MPID_NS_Handle) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!*handle_ptr) {
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return err;
     }
+    /* --END ERROR HANDLING-- */
     (*handle_ptr)->nactive = 0;
     (*handle_ptr)->mypid   = getpid();
 
@@ -96,12 +98,15 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	handle->filenames[handle->nactive++] = MPIU_Strdup( filename );
     }
     else {
+	/* --BEGIN ERROR HANDLING-- */
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return err;
+	/* --END ERROR HANDLING-- */
     }
 
     /* Now, open the file and write out the port name */
     fp = fopen( filename, "w" );
+    /* --BEGIN ERROR HANDLING-- */
     if (!fp) {
 	char *reason;
 	char rbuf[50];
@@ -145,6 +150,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	    "**namepubfile %s %s %s", service_name, filename, reason );
 	return err;
     }
+    /* --END ERROR HANDLING-- */
     /* Should also add date? */
     fprintf( fp, "%s\n%d\n", port, handle->mypid );
     fclose( fp );
@@ -168,9 +174,11 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 
     fp = fopen( filename, "r" );
     if (!fp) {
+	/* --BEGIN ERROR HANDLING-- */
 	/* printf( "No file for service name %s\n", service_name ); */
 	port[0] = 0;
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotpub", "**namepubnotpub %s", service_name );
+	/* --END ERROR HANDLING-- */
     }
     else {
 	/* The first line is the name, the second is the
@@ -210,11 +218,13 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     }
 
     if (i == handle->nactive) {
+	/* --BEGIN ERROR HANDLING-- */
 	/* Error: this name was not found */
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
 				    MPI_ERR_OTHER, "**namepubnotpub",
 				    "**namepubnotpub %s", service_name );
 	return err;
+	/* -- END ERROR HANDLING-- */
     }
 
     /* Later, we can reduce the number of active and compress the list */

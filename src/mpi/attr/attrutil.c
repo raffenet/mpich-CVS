@@ -209,11 +209,13 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    /* duplicate the attribute by creating new storage, copying the
 	       attribute value, and invoking the copy function */
 	    new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (!new_p) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Attr_dup_list", __LINE__,
 						  MPI_ERR_OTHER, "**nomem", 0 );
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    if (!*new_attr) { 
 		*new_attr = new_p;
 	    }
