@@ -2905,7 +2905,7 @@ defining the appropriate \code{CROSS_SIZEOF_xxx} environment variables.
 All builtin types are predefined (at compile time), including the
 names of the datatypes (the name accessed through
 \mpifunc{MPI_Type_get_name})\footnote{An alternative is to provide the
-names only if \texttt{MPI\_Type\_get\_name} is used by the user's program.}.
+names only if \texttt{MPI_Type_get_name} is used by the user's program.}.
 
 \subsubsection{Creating a New Datatype}
 Here are the steps to create and return a new datatype.
@@ -3114,7 +3114,7 @@ Questions about the implementation of datatypes:
     XDR.  
 
 \item All datatype creation routines should call the routine
-\mpidfunc{MPIR_Type_signature} to compute 	
+\mpidfunc{MPIR_Type_signature} to compute       
 the representative type signature.
 The configure option
 \cfgoption{--disable-type-signature} could turn this off (and remove
@@ -4736,24 +4736,24 @@ example, \mpifunc{MPI_Wait} looks something like this:
 \begin{verbatim}
     MPI_Wait( ... )
     {
-	while (request->busy) {
+        while (request->busy) {
             MPID_Progress_start( );   // Notes that we are about to
                                       // check ready flags.  No busy 
                                       // flags will be cleared
-	    if (request->busy) {
+            if (request->busy) {
                 MPID_Progress_wait();
             }
-	    else {
+            else {
                 MPID_Progress_end();
             }
         }
         if (request->type & REQUEST_IS_RECV && status) {
-	    *status = request->status;
-	}
+            *status = request->status;
+        }
     }
 \end{verbatim}
 The reason for the \mpidfunc{MPID_Progress_start} and the other
-progress routines becomes clear when you consider \mpifunc{MPI_Waitsome).
+progress routines becomes clear when you consider \mpifunc{MPI_Waitsome}.
 
 \paragraph{Previous Discussion.}
 (This text is still true but represents a different direction that we

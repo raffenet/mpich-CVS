@@ -53,6 +53,11 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 	tohtml -default adi3man.tex
 	tohtml -default adi3man.tex
 
+#adi3new/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
+#	-rm -rf adi3new
+#	tohtml -default adi3new.tex
+#	tohtml -default adi3new.tex
+
 adi3new.ps: adi3new.tex adi3.c adi3.h Makefile
 	touch adi3new.ind
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
@@ -76,11 +81,10 @@ adi3new.ps: adi3new.tex adi3.c adi3.h Makefile
 	dvips adi3new
 
 # This isn't ready yet.  We'd like to use doctext to generate the 
-# HTML for the 
-adi3man/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
-	-rm -rf adi3man
-	tohtml -default adi3new.tex
-	tohtml -default adi3new.tex
+# HTML for the adi document
+adi3new/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
+	tohtml -default -dosnl adi3new.tex
+	tohtml -default -dosnl adi3new.tex
 
 core.dvi: core.tex adi3.c adi3.h
 	touch core-list.ind
@@ -88,23 +92,27 @@ core.dvi: core.tex adi3.c adi3.h
 	-latex core
 
 # This uses the full-featured date program in Linux
-install-web: adi3new.ps adi3new.pdf
-	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
-	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
-	cp adi3new.ps /mcs/www-unix/mpi/mpich/adi3/adi3man.ps
-	cp adi3new.pdf /mcs/www-unix/mpi/mpich/adi3/adi3man.pdf
-	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
+WEBDIR = /mcs/www-unix/mpi/mpich/adi3
+install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm
+	-rm -f ${WEBDIR}/adi3.[ch]
+	cp adi3.[ch] ${WEBDIR}
+	cp adi3new.ps ${WEBDIR}/adi3man.ps
+	cp adi3new.pdf ${WEBDIR}/adi3man.pdf
+	rm -rf ${WEBDIR}/adi3man
+	cp -r adi3new ${WEBDIR}/adi3man
+	mv ${WEBDIR}/adi3man/adi3new.htm ${WEBDIR}/adi3man/adi3man.htm
+	cp ${WEBDIR}/index.html .foo
 	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
-		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
+		.foo > ${WEBDIR}/index.html
 	rm -f .foo
 install-web-old: adi3man.ps adi3man.pdf
-	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
-	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
-	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3
-	cp adi3man.pdf /mcs/www-unix/mpi/mpich/adi3
-	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
+	-rm -f ${WEBDIR}/adi3.[ch]
+	cp adi3.[ch] ${WEBDIR}
+	cp adi3man.ps ${WEBDIR}
+	cp adi3man.pdf ${WEBDIR}
+	cp ${WEBDIR}/index.html .foo
 	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
-		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
+		.foo > ${WEBDIR}/index.html
 	rm -f .foo
 
 clean:

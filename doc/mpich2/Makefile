@@ -114,14 +114,20 @@ mmca.dvi: mmca.tex Makefile template.orig
 	latex template
 	mv template.dvi mmca.dvi
 
+mpich2/mpich2.htm: mpich2.tex
+	tohtml -default -dosnl mpich2.tex
+	tohtml -default -dosnl mpich2.tex
 
 # This uses the full-featured date program in Linux
-install-web: mpich2.ps mpich2.pdf
-	cp mpich2.ps /mcs/www-unix/mpi/mpich/adi3
-	cp mpich2.pdf /mcs/www-unix/mpi/mpich/adi3
-	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
+WEBDIR = /mcs/www-unix/mpi/mpich/adi3
+install-web: mpich2.ps mpich2.pdf mpich2/mpich2.htm
+	cp mpich2.ps ${WEBDIR}
+	cp mpich2.pdf ${WEBDIR}
+	rm -rf ${WEBDIR}/mpich2
+	cp -r mpich2 ${WEBDIR}
+	cp ${WEBDIR}/index.html .foo
 	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
-		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
+		.foo > ${WEBDIR}/index.html
 	rm -f .foo
 
 clean:
