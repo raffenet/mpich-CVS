@@ -99,11 +99,11 @@ colldesc.dvi: colldesc.tex Makefile template.orig
 mmca.dvi: mmca.tex Makefile template.orig
 	sed -e s/@dummy@/mmca.tex/ \
 	    -e s/@paragraph@/paragraph/g \
-	    -e s/@newparagraph@/subsubsection/g \
+	    -e s/@newparagraph@/paragraph/g \
 	    -e s/@subsubsection@/subsubsection/g \
-	    -e s/@newsubsubsection@/subsection/g \
+	    -e s/@newsubsubsection@/subsubsection/g \
 	    -e s/@subsection@/subsection/g \
-	    -e s/@newsubsection@/section/g \
+	    -e s/@newsubsection@/subsection/g \
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
