@@ -3,11 +3,10 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-
 #include "mpidimpl.h"
 
-int mm_post_send(MM_Car *car_ptr)
+int unpacker_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr);
+    unpacker_car_enqueue(vc_ptr, car_ptr);
     return MPI_SUCCESS;
 }

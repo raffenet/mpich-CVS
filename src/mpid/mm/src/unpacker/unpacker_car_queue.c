@@ -4,10 +4,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "tcpimpl.h"
+#include "mpidimpl.h"
 
 /*@
-   tcp_car_enqueue - enqueue a car in a vc
+   unpacker_car_enqueue - enqueue a car in a vc
 
    Parameters:
 +  MPIDI_VC *vc_ptr - vc
@@ -15,18 +15,10 @@
 
    Notes:
 @*/
-int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
+int unpacker_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     if (car_ptr->type & MM_WRITE_CAR)
     {
-	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
-	if (vc_ptr->writeq_head == NULL)
-	{
-	    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
-	    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
-	    vc_ptr->write_next_ptr = TCP_Process.write_list;
-	    TCP_Process.write_list = vc_ptr;
-	}
 	/* enqueue the write car in the vc_ptr write queue */
 	if (vc_ptr->writeq_tail != NULL)
 	    vc_ptr->writeq_tail->mnext_ptr = car_ptr;
@@ -34,7 +26,7 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    vc_ptr->writeq_head = car_ptr;
 	vc_ptr->writeq_tail = car_ptr;
     }
-    if (car_ptr->type & MM_READ_CAR)
+    else if (car_ptr->type & MM_READ_CAR)
     {
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
@@ -49,30 +41,8 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     return MPI_SUCCESS;
 }
 
-static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
-{
-    MPIDI_VC *iter_ptr;
-    BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
-    if (vc_ptr == TCP_Process.write_list)
-    {
-	TCP_Process.write_list = vc_ptr->write_next_ptr;
-	return MPI_SUCCESS;
-    }
-    iter_ptr = TCP_Process.write_list;
-    while (iter_ptr->write_next_ptr)
-    {
-	if (iter_ptr->write_next_ptr == vc_ptr)
-	{
-	    iter_ptr->write_next_ptr = vc_ptr->write_next_ptr;
-	    return MPI_SUCCESS;
-	}
-	iter_ptr = iter_ptr->write_next_ptr;
-    }
-    return MPI_ERR_ARG;
-}
-
 /*@
-   tcp_car_dequeue - dequeue a car from a vc
+   packer_car_dequeue - dequeue a car from a vc
 
    Parameters:
 +  MPIDI_VC *vc_ptr - vc
@@ -80,7 +50,7 @@ static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 
    Notes:
 @*/
-int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
+int unpacker_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
 
@@ -95,7 +65,7 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    if (vc_ptr->writeq_head == NULL)
 		vc_ptr->writeq_tail = NULL;
 	}
-	else
+	else 
 	{
 	    iter_ptr = vc_ptr->writeq_head;
 	    while (iter_ptr->mnext_ptr)
@@ -110,9 +80,6 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 		iter_ptr = iter_ptr->mnext_ptr;
 	    }
 	}
-	/* If the write queue becomes empty, remove the vc from the process active vc write list */
-	if (vc_ptr->writeq_head == NULL)
-	    tcp_vc_dequeue_write(car_ptr->vc_ptr);
     }
     if (car_ptr->type & MM_READ_CAR)
     {

@@ -13,8 +13,7 @@ int mm_post_recv(MM_Car *car_ptr)
     /* check if this is a packer car */
     if (car_ptr->type & MM_PACKER_CAR)
     {
-	car_ptr->qnext_ptr = MPID_Process.pkr_read_list;
-	MPID_Process.pkr_read_list = car_ptr;
+	packer_post_read(MPID_Process.packer_vc_ptr, car_ptr);
 	return MPI_SUCCESS;
     }
 
