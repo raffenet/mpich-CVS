@@ -69,12 +69,13 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
        whose request lies in this process's file domain. */
 
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
-    int *len_list, contig_access_count, interleave_count;
-    int buftype_is_contig, *buf_idx;
+    int contig_access_count, interleave_count = 0, buftype_is_contig;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
-    ADIO_Offset *offset_list, start_offset, end_offset, *st_offsets, orig_fp;
-    ADIO_Offset *fd_start, *fd_end, fd_size, min_st_offset, *end_offsets;
-    ADIO_Offset off;
+    ADIO_Offset orig_fp, start_offset, end_offset, fd_size, min_st_offset, off;
+    ADIO_Offset *offset_list = NULL, *st_offsets = NULL, *fd_start = NULL,
+	*fd_end = NULL, *end_offsets = NULL;
+    int *buf_idx = NULL, *len_list = NULL;
+
 
 #ifdef PROFILE
 	MPE_Log_event(13, 0, "start computation");
@@ -87,37 +88,38 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
  * is stored in the hints off the ADIO_File structure
  */
     nprocs_for_coll = fd->hints->cb_nodes;
-
-
-/* For this process's request, calculate the list of offsets and
-   lengths in the file and determine the start and end offsets. */
-
-/* Note: end_offset points to the last byte-offset that will be accessed.
-         e.g., if start_offset=0 and 100 bytes to be read, end_offset=99*/
-
     orig_fp = fd->fp_ind;
-    ADIOI_Calc_my_off_len(fd, count, datatype, file_ptr_type, offset,
-			   &offset_list, &len_list, &start_offset,
-			   &end_offset, &contig_access_count); 
 
-/* each process communicates its start and end offsets to other 
-   processes. The result is an array each of start and end offsets stored
-   in order of process rank. */ 
+    /* only check for interleaving if cb_write isn't disabled */
+    if (fd->hints->cb_write != ADIOI_HINT_DISABLE) {
+	/* For this process's request, calculate the list of offsets and
+	   lengths in the file and determine the start and end offsets. */
+
+	/* Note: end_offset points to the last byte-offset that will be accessed.
+	   e.g., if start_offset=0 and 100 bytes to be read, end_offset=99*/
+
+	ADIOI_Calc_my_off_len(fd, count, datatype, file_ptr_type, offset,
+			      &offset_list, &len_list, &start_offset,
+			      &end_offset, &contig_access_count); 
+
+	/* each process communicates its start and end offsets to other 
+	   processes. The result is an array each of start and end offsets stored
+	   in order of process rank. */ 
     
-    st_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
-    end_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
+	st_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
+	end_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
 
-    MPI_Allgather(&start_offset, 1, ADIO_OFFSET, st_offsets, 1, ADIO_OFFSET, 
-		  fd->comm);
-    MPI_Allgather(&end_offset, 1, ADIO_OFFSET, end_offsets, 1, ADIO_OFFSET, 
-		  fd->comm);
+	MPI_Allgather(&start_offset, 1, ADIO_OFFSET, st_offsets, 1,
+		      ADIO_OFFSET, fd->comm);
+	MPI_Allgather(&end_offset, 1, ADIO_OFFSET, end_offsets, 1,
+		      ADIO_OFFSET, fd->comm);
 
-/* are the accesses of different processes interleaved? */
-    interleave_count = 0;
-    for (i=1; i<nprocs; i++)
-	if (st_offsets[i] < end_offsets[i-1]) interleave_count++;
-/* This is a rudimentary check for interleaving, but should suffice
-   for the moment. */
+	/* are the accesses of different processes interleaved? */
+	for (i=1; i<nprocs; i++)
+	    if (st_offsets[i] < end_offsets[i-1]) interleave_count++;
+	/* This is a rudimentary check for interleaving, but should suffice
+	   for the moment. */
+    }
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
 
@@ -125,10 +127,12 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 	(!interleave_count && (fd->hints->cb_write == ADIOI_HINT_AUTO)))
     {
 	/* use independent accesses */
-	ADIOI_Free(offset_list);
-	ADIOI_Free(len_list);
-	ADIOI_Free(st_offsets);
-	ADIOI_Free(end_offsets);	
+	if (fd->hints->cb_write != ADIOI_HINT_DISABLE) {
+	    ADIOI_Free(offset_list);
+	    ADIOI_Free(len_list);
+	    ADIOI_Free(st_offsets);
+	    ADIOI_Free(end_offsets);
+	}
 
 	fd->fp_ind = orig_fp;
         ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
@@ -136,14 +140,15 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
         if (buftype_is_contig && filetype_is_contig) {
             if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
                 off = fd->disp + (fd->etype_size) * offset;
-                ADIO_WriteContig(fd, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-                       off, status, error_code);
+                ADIO_WriteContig(fd, buf, count, datatype,
+				 ADIO_EXPLICIT_OFFSET,
+				 off, status, error_code);
             }
             else ADIO_WriteContig(fd, buf, count, datatype, ADIO_INDIVIDUAL,
-                       0, status, error_code);
+				  0, status, error_code);
         }
 	else ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type,
-                          offset, status, error_code);
+			       offset, status, error_code);
 
 	return;
     }
@@ -161,10 +166,10 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
    located in what file domains */
 
     ADIOI_Calc_my_req(fd, offset_list, len_list, contig_access_count,
-			   min_st_offset, fd_start, fd_end, fd_size,
-			   nprocs, &count_my_req_procs, 
-			   &count_my_req_per_proc, &my_req,
-                           &buf_idx); 
+		      min_st_offset, fd_start, fd_end, fd_size,
+		      nprocs, &count_my_req_procs, 
+		      &count_my_req_per_proc, &my_req,
+		      &buf_idx); 
 
 /* based on everyone's my_req, calculate what requests of other
    processes lie in this process's file domain.
@@ -174,10 +179,10 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
    requests of proc. i lie in this process's file domain. */
 
     ADIOI_Calc_others_req(fd, count_my_req_procs, 
-			       count_my_req_per_proc, my_req, 
-			       nprocs, myrank,
-			       &count_others_req_procs, &others_req); 
-
+			  count_my_req_per_proc, my_req, 
+			  nprocs, myrank,
+			  &count_others_req_procs, &others_req); 
+    
     ADIOI_Free(count_my_req_per_proc);
     for (i=0; i < nprocs; i++) {
 	if (my_req[i].count) {
