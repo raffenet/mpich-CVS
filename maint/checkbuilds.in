@@ -488,17 +488,12 @@ sub RunProgram {
     #
     # We now use a different approach that uses a open that creates a 
     # fork and associates file handle (CFD for Child FD).
-    #if ($outfile ne "") {
-#	close $OUTFD;
-#    }
     @args = @_;
-    #$pid = fork();
     $pid = open(CFD,"-|");
     if ($pid == 0) {
         open STDIN, '/dev/null';
 	# Do we want to allow an output filter, e.g., to convert the 
 	# output into well-formed XML?
-       # open STDOUT, ">>$outfile";
         open STDERR, ">>&STDOUT";
         exec @args;
     }
@@ -518,15 +513,11 @@ sub RunProgram {
 	# end to complete, and puts the exit status into $?
 	close CFD;
 	# end of read from the child
-        #waitpid $pid,0;
 	# Note that this status is usually shifted right by 8, so
 	# we check for that
         $rc = $?;
 	if ($rc > 255) { $rc = $rc >> 8; }
     }
-#    if ($outfile ne "") {
-#	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile\n";
-#    }
     return $rc;
 }
 # ---------------------------------------------------------------------------
