@@ -93,6 +93,30 @@ int MPI_Type_create_struct(int count,
 				 array_of_types,
 				 newtype);
 
+    if (mpi_errno == MPI_SUCCESS) {
+	int i, *ints;
+	MPID_Datatype *new_dtp;
+
+	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+	assert(ints != NULL);
+	ints[0] = count;
+	for (i=0; i < count; i++) {
+	    ints[i+1] = array_of_blocklengths[i];
+	}
+
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_STRUCT,
+					       count+1, /* ints (count, blocklengths) */
+					       count, /* aints (displacements) */
+					       count, /* types */
+					       ints,
+					       array_of_displacements,
+					       array_of_types);
+
+	MPIU_Free(ints);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

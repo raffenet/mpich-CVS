@@ -102,7 +102,7 @@ int MPI_Type_struct(int count,
 	MPID_Datatype *new_dtp;
 
 	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
-	if (ints == NULL) assert(0);
+	assert(ints != NULL);
 
 	ints[0] = count;
 	for (i=0; i < count; i++) {
