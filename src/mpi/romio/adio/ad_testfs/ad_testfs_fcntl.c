@@ -14,6 +14,7 @@ void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 			int *error_code)
 {
     int myrank, nprocs;
+    static char myname[] = "ADIOI_TESTFS_FCNTL";
 
     *error_code = MPI_SUCCESS;
 
@@ -39,7 +40,7 @@ void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 
     default:
 	/* --BEGIN ERROR HANDLING-- */
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPI_ERR_RECOVERABLE,
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "Unknown flag", 0);
 	return;

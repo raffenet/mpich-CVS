@@ -296,7 +296,7 @@ typedef struct {
 void ADIO_Init(int *argc, char ***argv, int *error_code);
 void ADIO_End(int *error_code);
 MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
-		   int file_system,
+		   int file_system, ADIOI_Fns *ops,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
 		   MPI_Datatype filetype, int iomode, 
 		   MPI_Info info, int perm, int *error_code);

@@ -53,7 +53,7 @@ if (fh->access_mode & MPI_MODE_WRONLY) {			\
 
 #define MPIO_CHECK_WRITABLE(fh, myname, error_code)		\
 if (fh->access_mode & MPI_MODE_RDONLY) {			\
-    error_code = MPIR_Err_create_code(MPI_SUCCESS,		\
+    error_code = MPIO_Err_create_code(MPI_SUCCESS,		\
 				      MPIR_ERR_RECOVERABLE,	\
 				      myname, __LINE__,		\
 				      MPI_ERR_READ_ONLY,	\

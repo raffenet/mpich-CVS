@@ -14,6 +14,7 @@ void ADIO_End(int *error_code)
     ADIOI_Flatlist_node *curr, *next;
     ADIOI_Malloc_async *tmp;
     ADIOI_Malloc_req *tmp1;
+    static char myname[] = "ADIO_END";
     
 /*    FPRINTF(stderr, "reached end\n"); */
 

@@ -193,8 +193,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
 /* use default values for disp, etype, filetype */    
 
-    *fh = ADIO_Open(comm, dupcomm, filename, file_system, amode, 0, MPI_BYTE,
-                    MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
+    *fh = ADIO_Open(comm, dupcomm, filename, file_system, fsops, amode, 0,
+		    MPI_BYTE, MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
 
     if (error_code != MPI_SUCCESS)
         MPI_Comm_free(&dupcomm);

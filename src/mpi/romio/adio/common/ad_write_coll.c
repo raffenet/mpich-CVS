@@ -270,6 +270,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     MPI_Aint buftype_extent;
     int info_flag, coll_bufsize;
     char *value;
+    static char myname[] = "ADIOI_EXCH_AND_WRITE";
 
     *error_code = MPI_SUCCESS;  /* changed below if error */
     /* only I/O errors are currently reported */

@@ -17,6 +17,7 @@ static int is_aggregator(int rank, ADIO_File fd);
 
 MPI_File ADIO_Open(MPI_Comm orig_comm,
 		   MPI_Comm comm, char *filename, int file_system,
+		   ADIOI_Fns *ops,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
 		   MPI_Datatype filetype,
 		   int iomode /* ignored */,
@@ -60,9 +61,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->async_count = 0;
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
-
-/* set I/O function pointers */
-    ADIOI_SetFunctions(fd);
 
 /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
