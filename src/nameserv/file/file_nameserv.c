@@ -62,7 +62,8 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     /* FIXME: Determine if the directory exists before trying to create it */
     
     if (stat( (*handle_ptr)->dirname, &st ) || !S_ISDIR(st.st_mode) ) {
-	if (mkdir( (*handle_ptr)->dirname, 0x777 )) {
+	/* This mode is rwx by owner only.  */
+	if (mkdir( (*handle_ptr)->dirname, 00700 )) {
 	    /* An error.  Ignore most ? */
 	    ;
 	}
