@@ -2335,8 +2335,13 @@ sub FindWorkingAutoconf {
 	    # Grumble.  I need to redirect stderr to stdout before this
 	    # open.  We use open with a pipe and then exec so that we
 	    # can get stderr redirection to work correctly.
+	    #
+	    # Additional grumble.  Perl doesn't flush output the
+	    # way you'd like.  Of course, if you turn on -debug,
+	    # things do get flushed.
 	    $pid = open( ACFD, "-|");
 	    if ($pid == 0) {
+		close FD;  # without flushing
 		open STDIN, "/dev/null";
 		open STDERR, ">>&STDOUT";
 		exec split(/\s+/,"$file --version");
