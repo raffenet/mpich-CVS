@@ -45,7 +45,7 @@ int MPID_Type_struct(int count,
     int mpi_errno = MPI_SUCCESS;
     int i, nr_real_types = 0, all_basics = 1, all_same = 1, has_lb = 0, has_ub = 0;
 
-    MPID_Datatype *new_dtp;
+    MPID_Datatype *new_dtp, *old_dtp;
 
     if (count == 1) {
 	/* simplest case: count == 1 */
@@ -111,6 +111,7 @@ int MPID_Type_struct(int count,
 				      MPI_BYTE,
 				      newtype);
 	MPIU_Free(tmp_blocklength_array);
+
 	return mpi_errno;
     }
 
@@ -124,7 +125,7 @@ int MPID_Type_struct(int count,
 	 * strip out.  So we convert to MPI_BYTEs as before, pull out the LBs and
 	 * UBs, and then adjust the LB/UB as needed afterwards.
 	 */
-	int tmp_count = 0, *tmp_blocklength_array, found_lb = 0, found_ub = 0;
+	int tmp_idx = 0, *tmp_blocklength_array, found_lb = 0, found_ub = 0;
 	MPI_Aint lb_disp = 0, ub_disp = 0, *tmp_displacement_array;
 
 	/* don't bother to figure out exactly how much space we really need; use
@@ -157,13 +158,13 @@ int MPID_Type_struct(int count,
 	    else {
 		int sz = MPID_Datatype_get_basic_size(oldtype_array[i]);
 
-		tmp_blocklength_array[tmp_count]  = sz * blocklength_array[i];
-		tmp_displacement_array[tmp_count] = displacement_array[i];
-		tmp_count++;
+		tmp_blocklength_array[tmp_idx]  = sz * blocklength_array[i];
+		tmp_displacement_array[tmp_idx] = displacement_array[i];
+		tmp_idx++;
 	    } 
 	}
 
-	mpi_errno = MPID_Type_indexed(tmp_count,
+	mpi_errno = MPID_Type_indexed(tmp_idx,
 				      tmp_blocklength_array,
 				      tmp_displacement_array,
 				      1, /* displacement in bytes */
@@ -222,23 +223,14 @@ int MPID_Type_struct(int count,
 	    else real_type_idx = i;
 	}
 
-	if (displacement_array[real_type_idx] == 0) {
-	    mpi_errno = MPID_Type_dup(oldtype_array[real_type_idx], newtype);
-
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
-
-	    MPID_Datatype_get_ptr(*newtype, new_dtp);
-	    if (has_lb) {
-		new_dtp->has_sticky_lb = 1;
-		new_dtp->lb            = lb_disp;
-	    }
-	    if (has_ub) {
-		new_dtp->has_sticky_ub = 1;
-		new_dtp->ub            = ub_disp;
-	    }
-	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
-	   
-	    return mpi_errno;
+	if (displacement_array[real_type_idx] == 0 && blocklength_array[real_type_idx] == 0) {
+	    mpi_errno = MPID_Type_dup(oldtype_array[real_type_idx],
+				      newtype);
+	}
+	else if (displacement_array[real_type_idx] == 0) {
+	    mpi_errno = MPID_Type_contiguous(blocklength_array[real_type_idx],
+					     oldtype_array[real_type_idx],
+					     newtype);
 	}
 	else {
 	    mpi_errno = MPID_Type_indexed(1,
@@ -247,22 +239,22 @@ int MPID_Type_struct(int count,
 					  1,
 					  oldtype_array[real_type_idx],
 					  newtype);
-
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
-
-	    MPID_Datatype_get_ptr(*newtype, new_dtp);
-	    if (has_lb) {
-		new_dtp->has_sticky_lb = 1;
-		new_dtp->lb            = lb_disp;
-	    }
-	    if (has_ub) {
-		new_dtp->has_sticky_ub = 1;
-		new_dtp->ub            = ub_disp;
-	    }
-	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
-	   
-	    return mpi_errno;
 	}
+	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	MPID_Datatype_get_ptr(oldtype_array[real_type_idx], old_dtp);
+	if (has_lb) {
+	    new_dtp->has_sticky_lb = 1;
+	    new_dtp->lb            = lb_disp;
+	}
+	if (has_ub) {
+	    new_dtp->has_sticky_ub = 1;
+	    new_dtp->ub            = ub_disp;
+	}
+	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	   
+	return mpi_errno;
     }
 
     /* Multiple derived types ... this is essentially the flattening case from
