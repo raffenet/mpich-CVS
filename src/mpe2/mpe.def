@@ -1,0 +1,23 @@
+;LIBRARY mpe
+
+EXPORTS
+    MPE_Init_log
+    MPE_Initialized_logging
+    MPE_Describe_info_state
+    MPE_Describe_known_state
+    MPE_Describe_state
+    MPE_Describe_info_event
+    MPE_Describe_event
+    MPE_Log_get_event_number
+    MPE_Log_get_known_eventID
+    MPE_Log_get_known_stateID
+    MPE_Start_log
+    MPE_Log_send
+    MPE_Log_receive
+    MPE_Log_pack
+    MPE_Log_event
+    MPE_Log_bare_event
+    MPE_Log_info_event
+    MPE_Log_sync_clocks
+    MPE_Stop_log
+    MPE_Finish_log
