@@ -17,6 +17,12 @@ int main( int argc, char **argv )
 	fprintf( stderr, "Expected double but got :%s:\n", name );
     }
 
+    MPI_Type_get_name( MPI_INT, name, &namelen );
+    if (strncmp( name, "int", MPI_MAX_OBJECT_NAME )) {
+	errs++;
+	fprintf( stderr, "Expected int but got :%s:\n", name );
+    }
+
     if (errs) {
 	fprintf( stderr, "Found %d errors\n", errs );
     }

@@ -2,7 +2,7 @@ attr
 #basic
 coll
 comm
-#datatype
+datatype
 #errhan
 #group
 init
