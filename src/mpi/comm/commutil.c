@@ -37,10 +37,12 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     MPID_Comm *newptr;
 
     newptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!newptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     *newcomm_ptr = newptr;
     MPIU_Object_set_ref( newptr, 1 );
 
@@ -49,11 +51,13 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     newptr->context_id = new_context_id = 
 	MPIR_Get_contextid( oldcomm_ptr->handle );
     newptr->attributes = 0;
+    /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER,
 					  "**toomanycomm", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     return 0;
 }
 
@@ -67,11 +71,13 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     int mpi_errno;
 
     localcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!localcomm_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Setup_intercomm_localcomm", __LINE__,
 					  MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     MPIU_Object_set_ref( localcomm_ptr, 1 );
     localcomm_ptr->context_id = intercomm_ptr->context_id + 2;
 
@@ -306,10 +312,12 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     else {
 	new_context_id = MPIR_Get_contextid( comm_ptr->handle );
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     if (comm_ptr->rank >= size) {
 	*outcomm_ptr = 0;
@@ -320,10 +328,12 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
        Create the object, initialize the data, and return the result */
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!newcomm_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->context_id = new_context_id;
 

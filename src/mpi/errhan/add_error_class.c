@@ -66,12 +66,14 @@ int MPI_Add_error_class(int *errorclass)
 
     /* ... body of routine ...  */
     new_class = MPIR_Err_add_class( 0 );
+    /* --BEGIN ERROR HANDLING-- */
     if (new_class < 0) {
 	/* Error return.  */
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrclasses", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CLASS);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
 
     *errorclass = ERROR_DYN_MASK | new_class;
     MPIR_Setmax( &MPIR_Process.attrs.lastusedcode, *errorclass );
