@@ -48,6 +48,7 @@ int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, 
     static const char FCNAME[] = "MPI_Type_create_resized";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
     /* Get handles to MPI objects. */

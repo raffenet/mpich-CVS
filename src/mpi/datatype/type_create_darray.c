@@ -54,6 +54,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims, int array_of_gsizes[],
     static const char FCNAME[] = "MPI_Type_create_darray";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
     /* Get handles to MPI objects. */

@@ -46,6 +46,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 {
     static const char FCNAME[] = "MPI_Win_set_attr";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_ATTR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ATTR);
 #   ifdef HAVE_ERROR_CHECKING

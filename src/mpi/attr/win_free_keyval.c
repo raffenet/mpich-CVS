@@ -44,6 +44,7 @@ int MPI_Win_free_keyval(int *win_keyval)
 {
     static const char FCNAME[] = "MPI_Win_free_keyval";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_FREE_KEYVAL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_FREE_KEYVAL);
 #   ifdef HAVE_ERROR_CHECKING

@@ -51,6 +51,7 @@ int MPI_Type_create_subarray(int ndims, int array_of_sizes[], int array_of_subsi
     static const char FCNAME[] = "MPI_Type_create_subarray";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
     /* Get handles to MPI objects. */

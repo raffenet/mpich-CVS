@@ -51,6 +51,7 @@ int MPI_Pack_external(char *datarep, void *inbuf, int incount, MPI_Datatype data
     static const char FCNAME[] = "MPI_Pack_external";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_EXTERNAL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_EXTERNAL);
     /* Get handles to MPI objects. */

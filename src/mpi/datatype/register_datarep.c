@@ -48,6 +48,7 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
 {
     static const char FCNAME[] = "MPI_Register_datarep";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_REGISTER_DATAREP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REGISTER_DATAREP);
 #   ifdef HAVE_ERROR_CHECKING

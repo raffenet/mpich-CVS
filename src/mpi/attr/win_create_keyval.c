@@ -47,6 +47,7 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
 {
     static const char FCNAME[] = "MPI_Win_create_keyval";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
 #   ifdef HAVE_ERROR_CHECKING

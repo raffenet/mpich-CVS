@@ -49,6 +49,7 @@ int MPI_Type_create_indexed_block(int count, int blocklength, int *array_of_disp
     static const char FCNAME[] = "MPI_Type_create_indexed_block";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
     /* Get handles to MPI objects. */

@@ -45,6 +45,7 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 {
     static const char FCNAME[] = "MPI_Win_delete_attr";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_DELETE_ATTR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_DELETE_ATTR);
 #   ifdef HAVE_ERROR_CHECKING

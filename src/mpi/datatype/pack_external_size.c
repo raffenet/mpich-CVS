@@ -48,6 +48,7 @@ int MPI_Pack_external_size(char *datarep, int incount, MPI_Datatype datatype, MP
     static const char FCNAME[] = "MPI_Pack_external_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
     /* Get handles to MPI objects. */

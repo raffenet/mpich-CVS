@@ -47,6 +47,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     static const char FCNAME[] = "MPI_Type_match_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
     /* Get handles to MPI objects. */
