@@ -6,3 +6,5 @@ Makefile.in
 *.bbg
 *.da
 *.gcov
+Debug
+Release

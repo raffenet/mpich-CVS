@@ -5,3 +5,10 @@ config.status
 config.cache
 config.system
 config.log
+*.dsp
+*.dsw
+*.ncb
+*.opt
+*.plg
+Debug
+Release

@@ -110,7 +110,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		    {
 			sreq = create_request(iov, n_iov, offset, nb);
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIDI_CH3I_IB_post_write(vc, sreq);
+			/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
 			break;
 		    }
 		}
@@ -119,7 +119,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    {
 		sreq = create_request(iov, n_iov, 0, 0);
 		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		MPIDI_CH3I_IB_post_write(vc, sreq);
+		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
 	    }
 	    else
 	    {

@@ -82,7 +82,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 				  "send delayed, request enqueued"));
 		sreq = create_request(hdr, hdr_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		MPIDI_CH3I_IB_post_write(vc, sreq);
+		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
 	    }
 	    else
 	    {
