@@ -8,7 +8,8 @@
 usage: mpd --help
        mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
            [--trace] [--echo] [--daemon] [--bulletproof] \ 
-           [--if <interface/hostname>] [--listenport <listenport>]' 
+           [--if <interface/hostname>] [--listenport <listenport>]
+           [--pid <pidfilename>]
 
 Long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
@@ -29,6 +30,7 @@ Long parameter names may be abbreviated to their first letters by using
   on; e.g. may be used to specify the alias for an interface other than default
 --listenport specifies a port for this mpd to listen on; by default it will
   acquire one from the system
+--pid specifies a filename where the mpd will write its pid; most useful with --daemon
 
 A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
@@ -106,6 +108,12 @@ def _mpd_init():
     openlog("mpd",0,LOG_DAEMON)
     syslog(LOG_INFO,"mpd starting  mpdid=%s (port=%d)" % (g.myId,g.myPort) )
 
+    if g.pidFilename:
+        pidFileFD = open(g.pidFilename,O_CREAT|O_WRONLY,0755)
+        pidFile = fdopen(pidFileFD,'w',0)
+        print >>pidFile, "%d" % (getpid())
+        pidFile.close()
+        
     if g.daemon:      # see if I should become a daemon with no controlling tty
         rc = fork()
         if rc != 0:   # parent exits; child in background
@@ -1305,6 +1313,7 @@ def _process_cmdline_args():
     g.allowConsole = 1
     g.echoPortNum  = 0
     g.daemon       = 0
+    g.pidFilename  = ''
     g.bulletproof  = 0
     g.listenPort   = 0
     g.NCPUs        = 1
@@ -1315,7 +1324,7 @@ def _process_cmdline_args():
     try:
         (opts,args) = getopt(argv[1:],
                              'h:p:i:l:tnedb',
-                             ['host=','port=','if=','listenport=','ncpus=',
+                             ['host=','port=','if=','listenport=','ncpus=','pid=',
                               'trace','noconsole','echo','daemon','bulletproof'])
     except:
         usage()
@@ -1346,6 +1355,8 @@ def _process_cmdline_args():
             g.bulletproof = 1 
         elif opt[0] == '--ncpus':
             g.NCPUs = int(opt[1])
+        elif opt[0] == '--pid':
+            g.pidFilename = opt[1]
         else:
             pass    ## getopt raises an exception if not recognized
     if (g.entryHost and not g.entryPort) or (not g.entryHost and g.entryPort):

@@ -8,14 +8,19 @@
 
 int main( int argc, char *argv[] )
 {
-    int i;
+    int i, print_flag = 1;
 
+    if (argc > 1  &&  strcmp(argv[1],"-p") == 0)
+        print_flag = 0;
     for (i=0; ; i++)
     {
-	if (i % 10000000 == 0)
+	if (i % 100000000 == 0)
 	{
-            printf("i=%d\n",i);
-	    fflush(stdout);
+            if (print_flag)
+            {
+                printf("i=%d\n",i);
+	        fflush(stdout);
+            }
 	}
     }
     return 0;
