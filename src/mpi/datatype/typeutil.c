@@ -74,6 +74,7 @@ void MPIR_Datatype_init( void )
 {
     int i;
     MPID_Datatype *dptr;
+    MPI_Datatype  d;
     static int is_init = 0;
     
     if (is_init) return;
@@ -81,8 +82,11 @@ void MPIR_Datatype_init( void )
 	MPID_Common_thread_lock();
 	if (!is_init) { 
 	    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
-		dptr		   = &MPID_Datatype_builtin[i];
-		dptr->handle	   = mpi_dtypes[i];
+		/* Compute the index from the value of the handle */
+		d                  = mpi_dtypes[i];
+		MPID_Datatype_get_ptr(d,dptr);
+		/* dptr will point into MPID_Datatype_builtin */
+		dptr->handle	   = d;
 		dptr->is_permanent = 1;
 		dptr->is_contig	   = 1;
 		MPIU_Object_set_ref( dptr, 1 );
