@@ -1,7 +1,7 @@
 # SUBDIRS_pm_name are the names that @ pm_name @ can take in SUBDIRS
 # (except for util, which is included so that simplemake will process
 # the Makefile.sm in that directory)
-SUBDIRS_pm_name = mpd forker remshell smpd util
+SUBDIRS_pm_name = mpd forker smpd
 SUBDIRS = @pm_name@ @other_pm_names@ .
 all-postamble:
 	if test -n "@pm_name@" -a -d "@pm_name@" ; then \
