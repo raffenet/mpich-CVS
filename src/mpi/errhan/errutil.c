@@ -75,14 +75,23 @@ static MPID_Thread_lock_t error_ring_mutex;
 #endif
 
 int MPIR_Err_print_stack_flag = FALSE;
+static int MPIR_Err_abort_on_error = FALSE;
 
 void MPIR_Err_init( void )
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
+	char *env;
+
 	MPID_Thread_lock_init(&error_ring_mutex);
 	/* TODO: get environment setting to see if single message or message stack should be printed */
 	MPIR_Err_print_stack_flag = TRUE; /* for the moment... */
+	env = getenv("MPICH_ABORT_ON_ERROR");
+	if (env)
+	{
+	    if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || strcmp(env, "yes") == 0)
+		MPIR_Err_abort_on_error = TRUE;
+	}
     }
 #   endif
 }
@@ -383,6 +392,12 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
     int err_code;
     int generic_idx;
     /* Create the code from the class and the message ring index */
+
+    if (MPIR_Err_abort_on_error)
+    {
+	/*printf("aborting from %s, line %d\n", fcname, line);fflush(stdout);*/
+	abort();
+    }
 
     va_start(Argp, specific_msg);
 
