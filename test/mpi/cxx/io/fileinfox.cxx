@@ -35,7 +35,7 @@ int main( int argc, char **argv )
     MTest_Init( );
     // Open a simple file
     strcpy( filename, "iotest.txt" );
-    fh = MPI::File::Open( MPI::COMM_WORLD, filename, MPI::MODE_RDWR + 
+    fh = MPI::File::Open( MPI::COMM_WORLD, filename, MPI::MODE_RDWR |
 			  MPI::MODE_CREATE, MPI::INFO_NULL );
 
     // Try to set one of the available info hints  
@@ -61,7 +61,9 @@ int main( int argc, char **argv )
 
     fh.Close();
     
-    MPI::File::Delete( filename, MPI::INFO_NULL );
+    MPI::COMM_WORLD.Barrier();
+    if (MPI::COMM_WORLD.Get_rank() == 0) 
+	MPI::File::Delete( filename, MPI::INFO_NULL );
     
     MTest_Finalize( errs );
     MPI::Finalize();

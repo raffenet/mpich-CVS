@@ -87,12 +87,12 @@ int main( int argc, char **argv )
 	}
 	if (codesSeen[1] != code[0]) {
 	    errs++;
-	    cout << "Expected code " << code[0] << " got " <<
+	    cout << "(1)Expected code " << code[0] << " got " <<
 		codesSeen[1] << "\n";
 	}
 	if (codesSeen[2] != code[1]) {
 	    errs++;
-	    cout << "Expected code " << code[1] << " got " << 
+	    cout << "(2)Expected code " << code[1] << " got " << 
 		codesSeen[2] << "\n";
 	}
     }
@@ -142,7 +142,7 @@ void myerrhanfunc( MPI::File &fh, int *errcode, ... )
     callcount++;
 
     // Remember the code we've seen
-    if (callcount <  3) {
+    if (callcount <  4) {
 	codesSeen[callcount-1] = *errcode;
     }
     MPI::Get_error_string( *errcode, errstring, rlen );

@@ -51,13 +51,16 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    cout << "\n*#  Usage: misc -fname filename\n\n";
-	    MPI::COMM_WORLD.Abort( 1 );
+	    len = strlen("iotest.txt");
+	    filename = new char [len+1];
+	    strcpy( filename, "iotest.txt" );
 	}
-	argv++;
-	len = strlen(*argv);
-	filename = new char [len+1];
-	strcpy(filename, *argv);
+	else {
+	    argv++;
+	    len = strlen(*argv);
+	    filename = new char [len+1];
+	    strcpy(filename, *argv);
+	}
 	MPI::COMM_WORLD.Bcast(&len, 1, MPI::INT, 0 );
 	MPI::COMM_WORLD.Bcast(filename, len+1, MPI::CHAR, 0 );
     }
