@@ -80,7 +80,9 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     /* Copy attributes, executing the attribute copy functions */
     /* This accesses the attribute dup function through the perprocess
        structure to prevent comm_dup from forcing the linking of the
-       attribute functions */
+       attribute functions.  The actual function is (by default)
+       MPIR_Comm_attr_dup_list 
+    */
     if (MPIR_Process.comm_attr_dup) {
 	newcomm_ptr->attributes = 0;
 	mpi_errno = MPIR_Process.comm_attr_dup( comm_ptr, 
