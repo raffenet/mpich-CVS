@@ -293,21 +293,26 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	   be tested with with local processes */
 	if (strcmp(ps->hostname,myname) == 0 ||
 	    strcmp(ps->hostname,"localhost") == 0) {
+	    if (debug) {
+		DBG_PRINTF( "Using fork instead of remote shell\n" );
+	    }
 	    useRemshell = 0;
 	}
 	if (useRemshell) {
-	    /* FIXME: remote shell command may have multiple args */
+	    /* Because the remote shell program may have multiple arguments,
+	       we use a routine to update myargv */
 	    rshNargs = mpiexecGetRemshellArgv( myargv, 30 );
 	    /* Look for %h (hostname) and %e (executable).  If not
 	       found, then use the following.  
-	       FIXME: Assume no %h and %e */
+	       FIXME: Assume no %h and %e.  Further, assume 
+	       executable at the end */
 	    myargv[rshNargs++] = (char *)(ps->hostname);
 	    /* FIXME: no option for user name (e.g., -l username) */
 	    /* FIXME: Do we start with -n, or do we let mpiexec handle that? */
 	    /* myargv[rshNargs++] = "-n"; */
 	    /* FIXME: this assumes a particular shell syntax (csh) */
 	    myargv[rshNargs++] = "setenv";
-	    myargv[rshNargs++] = "MPIEXEC_PORT";
+	    myargv[rshNargs++] = "PMI_PORT";
 	    myargv[rshNargs++] = port_as_string;
 	    myargv[rshNargs++] = "\\;";
 	}
@@ -384,7 +389,9 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    close(read_out_pipe[0]);
 	    close(write_in_pipe[1]);
 	    close(read_err_pipe[0]);
-	    
+
+	    /* Redirect stdin/out/err to pipes that mpiexec will handle
+	       (reading from stdout/err and writing to stdin) */
 	    /* STDERR */
 	    close(2);               
 	    dup2(read_err_pipe[1],2);
@@ -401,6 +408,20 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    close(write_in_pipe[0]); 
 
 	    if (!useRemshell) {
+		/* Use environment variables to pass information to the
+		   process, including the fd used for the PMI calls */
+		char envvar[65];
+		MPIU_Snprintf( envvar, 64, "PMI_RANK=%d", i );
+		if (putenv( envvar )) {
+		    MPIU_Internal_error_printf( "Could not set environment PMI_RANK" );	    }
+		MPIU_Snprintf( envvar, 64, "PMI_SIZE=%d", ptable->nProcesses );
+		if (putenv( envvar )) {
+		    MPIU_Internal_error_printf( "Could not set environment PMI_SIZE" );
+		}
+		MPIU_Snprintf( envvar, 64, "PMI_FD=%d", pmi_pipe[1] );
+		if (putenv( envvar )) {
+		    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
+		}
 		/*
 		char portstring[256];
 		MPIU_Strncpy( portstring, "MPIEXEC_PORT=", 256 );
@@ -525,11 +546,12 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
    4*i+2 = processes stderr
    4*i+3 = processes pmi
 
-   The last 3 fds are for mpiexec itself.  To make these eaiser to find,
+   The last 4 fds are for mpiexec itself.  To make these eaiser to find,
    the index "mpiexecFdIdx gives the first of these:
    mpiexecFdIdx    = mpiexec stdin
    mpiexecFdIdx +1 = mpiexec stdout
    mpiexecFdIdx +2 = mpiexec stderr
+   mpiexecFdIdx +3 = mpiexec pmi connection port
 
    An alternate approach is to attach to each fd a handler function.
    
@@ -574,7 +596,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	pollarray[j].events = POLLIN;
 	j++;
     }
-    /* Add the last three */
+    /* Add the last four */
     mpiexecFdIdx = j;
     pollarray[j].fd = 0; 
     pollarray[j].events = POLLIN;
@@ -584,6 +606,9 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
     j++;
     pollarray[j].fd = 2;
     pollarray[j].events = POLLOUT;
+    j++;
+    pollarray[j].fd = fdPMI;
+    pollarray[j].events = POLLOUT;
 
     while (1) {
 	int timeout, rc;
@@ -592,6 +617,8 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	/* (A negative value is infinite) */
 	timeout = GetRemainingTime();
 	rc = poll( pollarray, nfds, timeout );
+
+	/* rc = ? is a timeout, with nothing read */
 
 	/* loop through the entries, looking at the processes first */
 	j = 0;
@@ -612,8 +639,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	    }
 	    j++;
 	    if (pollarray[j].revents == POLLIN) {
-		rc = mpiexecHandleStdin( pollarray[j].fd, 
-					 &ptable->table[i].stdinBuf );
+		rc = PMIServHandleStdin( &ptable->table[i].pmientry );
 	    }
 	}
 	if (pollarray[mpiexecFdIdx].revents == POLLIN) {
@@ -672,7 +698,12 @@ int mpiexecHandleStdin( int fd, charbuf *buf )
     int n;
     /* Attempt to write the awaiting data to the fd */
     
-    n = write( fd, buf->firstchar, buf->nleft );
+    /* Restart any interrupted system call */
+    do {
+	n = write( fd, buf->firstchar, buf->nleft );
+    }
+    while (n < 0 && errno = EINTR);
+
     if (n >= 0) {
 	buf->firstchar += n;
 	buf->nleft -= n;
@@ -690,8 +721,12 @@ int mpiexecHandleStdin( int fd, charbuf *buf )
 int mpiexecHandleStdout( int infd, charbuf *buf, int outfd )
 {
     int n, nout;
-    
-    n = read( infd, buf->firstchar, buf->nleft );
+
+    /* Restart any interrupted system call */
+    do {
+	n = read( infd, buf->firstchar, buf->nleft );
+    }
+    while (n < 0 && errno = EINTR);
     if (n >= 0) {
 	buf->nleft -= n;
 	/* Try to write to outfd */

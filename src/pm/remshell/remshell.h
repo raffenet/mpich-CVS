@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #endif
 
+#include "pmiserv.h"
+
 #define MAXNAMELEN  256		/* max length of vairous names */
 #ifndef PATH_MAX
 #define PATH_MAX 2048		/* max length of PATH */
@@ -98,10 +100,9 @@ typedef struct {
 
     int            rank;             /* rank in comm_world (or universe) */
 
-    int            pmiGroup;         /* PMI group index (into array of 
-					PMI Groups */
-    int            pmiKVS;           /* PMI kvs index (into array of 
-					key-value-spaces) */
+    PMI_Process    pmientry;         /* PMI information.  This allows
+					the pmi implementation to 
+					define whatever it needs */
 
     exit_state_t   exitReason;       /* how/why did the process exit */
     int            exitSig;          /* exit signal, if any */

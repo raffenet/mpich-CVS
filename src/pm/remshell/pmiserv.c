@@ -110,7 +110,7 @@ static void fPMI_Handle_getbyidx( PMI_Process * );
  * The return status indicates the state of the process that this
  * handler interacted with.
  */
-int PMIServ_handle_input_fd ( PMI_Process *pentry )
+int PMIServHandleInputFd ( PMI_Process *pentry )
 {
     int  rc;
     int  returnCode = 0;
