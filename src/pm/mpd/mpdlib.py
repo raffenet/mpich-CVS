@@ -188,23 +188,6 @@ def mpd_get_ranks_in_binary_tree(myRank,nprocs):
         rchild = -1;
     return (parent,lchild,rchild)
 
-def mpd_send_pmi_msg(sock,msg):
-    sock.sendall(msg)
-
-def mpd_recv_pmi_msg(sock):
-    msg = ''
-    done = 0
-    while not done:
-        try:
-            c = sock.recv(1)    # socket.error: (104, 'Connection reset by peer')
-        except Exception, errmsg:
-            mpd_print(1, 'mpd_recv_pmi_msg: errmsg=:%s:' % (errmsg) )
-            done = 1
-        if (not c)  or  (c == '\n'):
-            done = 1
-        msg = msg + c
-    return msg
-
 def mpd_socketpair():
     socket1 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     socket1.bind(('localhost',0))
