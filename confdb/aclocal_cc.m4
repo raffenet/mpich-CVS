@@ -756,66 +756,7 @@ fi
 # (later configure macros look for the .o file, not just success from the
 # compiler, but they should not HAVE to
 #
-dnl Later versions of autoconf (2.52+) do not include AC_PROG_CC_WORKS
-dnl so we have to check for it and define it if necessary
-dnl
-ifdef([AC_TRY_COMPILER],,[
-AC_DEFUN(AC_TRY_COMPILER,
-[cat > conftest.$ac_ext << EOF
-ifelse(AC_LANG, [FORTRAN77], ,
-[
-[#]line __oline__ "configure"
-#include "confdefs.h"
-])
-[$1]
-EOF
-if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
-  [$2]=yes
-  # If we can't run a trivial program, we are probably using a cross compiler.
-  if (./conftest; exit) 2>/dev/null; then
-    [$3]=no
-  else
-    [$3]=yes
-  fi
-else
-  echo "configure: failed program was:" >&AC_FD_CC
-  cat conftest.$ac_ext >&AC_FD_CC
-  [$2]=no
-fi
-rm -fr conftest*])
-])
-ifdef([AC_PROG_CC_WORKS],,[
-AC_DEFUN(AC_PROG_CC_WORKS,
-[AC_MSG_CHECKING([whether the C compiler ($CC $CFLAGS $LDFLAGS) works])
-AC_LANG_SAVE
-AC_LANG_C
-AC_TRY_COMPILER([main(){return(0);}], ac_cv_prog_cc_works, ac_cv_prog_cc_cross)
-AC_LANG_RESTORE
-AC_MSG_RESULT($ac_cv_prog_cc_works)
-if test $ac_cv_prog_cc_works = no; then
-  AC_MSG_ERROR([installation or configuration problem: C compiler cannot create executables.])
-fi
-AC_MSG_CHECKING([whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler])
-AC_MSG_RESULT($ac_cv_prog_cc_cross)
-cross_compiling=$ac_cv_prog_cc_cross
-])
-])
-
-ifdef([AC_PROG_CC_GNU],,[
-AC_DEFUN(AC_PROG_CC_GNU,
-[AC_CACHE_CHECK(whether we are using GNU C, ac_cv_prog_gcc,
-[dnl The semicolon is to pacify NeXT's syntax-checking cpp.
-cat > conftest.c <<EOF
-#ifdef __GNUC__
-  yes;
-#endif
-EOF
-if AC_TRY_COMMAND(${CC-cc} -E conftest.c) | egrep yes >/dev/null 2>&1; then
-  ac_cv_prog_gcc=yes
-else
-  ac_cv_prog_gcc=no
-fi])])
-])
+dnl --- insert 2.52 compatibility here ---
 dnl
 AC_DEFUN(PAC_PROG_CC_WORKS,
 [AC_PROG_CC_WORKS

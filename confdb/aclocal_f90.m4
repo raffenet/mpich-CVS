@@ -3,6 +3,7 @@ dnl Macros for Fortran 90
 dnl
 dnl We'd like to have a PAC_LANG_FORTRAN90 that worked with AC_TRY_xxx, but
 dnl that would require too many changes to autoconf macros.
+dnl
 AC_DEFUN(PAC_LANG_FORTRAN90,
 [AC_REQUIRE([PAC_PROG_F90])
 define([AC_LANG], [FORTRAN90])dnl
@@ -37,7 +38,7 @@ fi
 rm -f conftest*
 ifelse(NEED_POP,yes,[
 undefine([NEED_POP])
-AC_LANG_RESTORE)]
+AC_LANG_RESTORE])
 ])
 dnl
 dnl PAC_F90_MODULE_EXT(action if found,action if not found)
@@ -266,6 +267,7 @@ AC_LANG_SAVE
 # test in the context of _PROG_F90, which is a require on _LANG_FORTRAN90.
 # Instead, we insert the necessary code from _LANG_FORTRAN90 here
 dnl PAC_LANG_FORTRAN90
+dnl define(ifdef([_AC_LANG],[_AC_LANG],[AC_LANG]), [FORTRAN90])dnl
 define([AC_LANG], [FORTRAN90])dnl
 ac_ext=$pac_cv_f90_ext
 ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
