@@ -28,7 +28,8 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
 
-    if (comm_ptr->rank == root) {
+    if (comm_ptr->rank == root)
+    {
         info_keyval_sizes = (int *) MPIU_Malloc(count * sizeof(int));
         /* TEMPORARILY set all user-provided info to NULL. PMI is not
            using it anyway. */
@@ -36,7 +37,11 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
         info_keyval_vectors = NULL;
 
         mpi_errno = MPIDI_CH3_Open_port(port_name);
-        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+        if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    goto fn_exit;
+	}
         
         preput_keyval_vector.key = "PARENT_ROOT_PORT_NAME";
         preput_keyval_vector.val = port_name;
@@ -50,9 +55,9 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
                                        &preput_keyval_vector,
                                        errcodes);
 
-        if (mpi_errno != 0)
+        if (mpi_errno != PMI_SUCCESS)
         {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
             goto fn_exit;
         }
 

@@ -97,18 +97,18 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
                                          array_of_maxprocs,
                                          array_of_info_ptrs, root, 
                                          comm_ptr, &intercomm_ptr,
-                                         array_of_errcodes); 
+                                         array_of_errcodes);
 
-    
-    *intercomm = intercomm_ptr->handle;
     MPIU_Free(array_of_info_ptrs);
 
     if (mpi_errno == MPI_SUCCESS)
     {
+	*intercomm = intercomm_ptr->handle;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
 	return MPI_SUCCESS;
     }
 
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
