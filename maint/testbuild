@@ -18,9 +18,14 @@ tests="mpich;mpicxx;intel;mpich2"
 #
 # Option options to checkbuild
 other_opts=""
+# Keep track of which compilers are set
+ccset=no
+cxxset=no
+fcset=no
+f90set=no
 #
 # Get options
-for arg in $@ ; do
+for arg in "$@" ; do
     argval=""
     case $arg in 
         -*=*) argval=`echo "$arg" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
@@ -31,7 +36,17 @@ for arg in $@ ; do
     -outdir=*)  outdir=$argval ;;
     -tests=*)   tests=$argval ;;
     -echo) set -x ;;
-    *) other_opts="$other_opts $arg" ;;
+    *) other_opts="$other_opts '$arg'" 
+    envset=`echo A$arg | sed -e 's/A-env=\([A-Z]*\).*/\1/'`
+    if [ "$envset" != "$arg" ] ; then
+        case $envset in 
+	    CC) ccset=yes ;;
+	    FC) fcset=yes ;;
+	    CXX) cxxset=yes ;;
+	    F90) f90set=yes ;;
+	esac
+    fi
+    ;;
     esac
 done
 
@@ -70,8 +85,20 @@ fi
 #
 # -tests="mpich;mpicxx;intel"
 # Use -tests="mpich;mpicxx" to get a smaller list of tests.
-$rundir/maint/checkbuilds -rundir=$rundir \
-			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
-			  -tests="$tests" -tmpdir=$tmpdir \
+# Use eval to make sure that quoted arguments containing spaces are handled
+# correctly
+# Set the default values of the CC and FC environment variables
+#envargs='-envopt="CC;cc;gcc" -envopt="FC;f77;g77"'
+envargs=""
+if [ "$ccset" = no ] ; then
+    envargs='-envopt="CC;cc;gcc"'
+fi
+if [ "$fcset" = no ] ; then
+    envargs="$envargs '-envopt="'"'"FC;f77;g77"'"'"'"
+fi
+#			  '-envopt="CC;cc;gcc"' '-envopt="FC;f77;g77"' 
+eval $rundir/maint/checkbuilds -rundir=$rundir \
+			$envargs \
+			  "-tests='""$tests""'" -tmpdir=$tmpdir \
 			  -xml -maxcount=1 -outfile=$outfile $other_opts
 

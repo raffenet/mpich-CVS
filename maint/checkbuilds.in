@@ -167,7 +167,9 @@ foreach $_ (@ARGV) {
     }
     elsif (/-env=(.*)/) {
 	$use_rand_args = 0;
-	$env_args .= "--env-$1 ";
+	$envval=$1;
+	$envval =~ s/ /<SP>/g;
+	$env_args .= "--env-$envval ";
     }
     elsif (/-configarg=(.*)/) {
 	# Use this to add a special arg (such as -host) to the 
@@ -258,7 +260,7 @@ sub RunTest {
     $envset = "";
     %saveENV = %ENV;
     foreach $_ (split(/ /,$env_args)) {
-	if (/--env-(.*)=(.*)/) {
+	if (/--env-([^=]*)=(.*)/) {
 	    $name  = $1;
 	    $value = $2;
 	    # Replace <SP> with blanks
