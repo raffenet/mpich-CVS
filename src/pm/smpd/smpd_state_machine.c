@@ -288,6 +288,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
+
+		    /* connection failed, abort? */
+		    /* when does a forming context get assinged it's global place?  At creation?  At connection? */
+		    if (smpd_process.left_context == smpd_process.left_context)
+			smpd_process.left_context = NULL;		    
+		    result = smpd_post_abort_command("unable to connect to %s", context->host);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create the close command to tear down the job tree.\n");
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
 		}
 		else
 		{
@@ -341,6 +353,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
+		    /* abort here? */
 		    break;
 		}
 		result = smpd_generate_session_header(context->session_header, 1);
@@ -369,6 +382,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		smpd_dbg_printf("read process session result: '%s'\n", context->pwd_request);
 		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
 		{
+		    char *host_ptr;
+		    if (context->connect_to)
+			host_ptr = context->connect_to->host;
+		    else if (context->host[0] != '\0')
+			host_ptr = context->host;
+		    else
+			host_ptr = NULL;
+		    if (host_ptr)
+			printf("Credentials for %s rejected connecting to %s\n", context->account, host_ptr);
+		    else
+			printf("Credentials for %s rejected.\n", context->account);
+		    fflush(stdout);
 		    smpd_dbg_printf("process session rejected\n");
 		    context->read_state = SMPD_IDLE;
 		    context->state = SMPD_CLOSING;
@@ -376,6 +401,19 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    if (result != SOCK_SUCCESS)
 		    {
 			smpd_err_printf("unable to close sock,\nsock error: %s\n", get_sock_error_string(result));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    /* when does a forming context get assinged it's global place?  At creation?  At connection? */
+		    if (smpd_process.left_context == smpd_process.left_context)
+			smpd_process.left_context = NULL;
+		    if (host_ptr)
+			result = smpd_post_abort_command("unable to connect to %s", host_ptr);
+		    else
+			result = smpd_post_abort_command("connection failed");
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create the close command to tear down the job tree.\n");
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }

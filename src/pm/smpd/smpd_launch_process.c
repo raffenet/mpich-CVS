@@ -31,7 +31,10 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 
     smpd_enter_fn("smpd_get_user_handle");
 
-    smpd_dbg_printf("LogonUser(%s\\%s:%d)\n", domain, account, strlen(password));
+    if (domain)
+	smpd_dbg_printf("LogonUser(%s\\%s)\n", domain, account);
+    else
+	smpd_dbg_printf("LogonUser(%s)\n", account);
 
     /* logon the user */
     while (!LogonUser(
@@ -908,6 +911,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
     const char *temp_str;
     char temp_exe[SMPD_MAX_EXE_LENGTH];
+    smpd_command_t *cmd_ptr;
 
     smpd_enter_fn("smpd_launch_process");
 
@@ -980,6 +984,25 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	/* child process */
 	smpd_dbg_printf("client is alive and about to exec '%s'\n", argv[0]);
 
+	sprintf(str, "%d", process->rank);
+	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+	setenv("PMI_RANK", str, 1);
+	sprintf(str, "%d", process->nproc);
+	smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+	setenv("PMI_SIZE", str, 1);
+	sprintf(str, "%s", process->kvs_name);
+	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+	setenv("PMI_KVS", str, 1);
+	sprintf(str, "%d", pmi_pipe_fds[1]);
+	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+	setenv("PMI_SMPD_FD", str, 1);
+	sprintf(str, "%d", smpd_process.id);
+	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+	setenv("PMI_SMPD_ID", str, 1);
+	sprintf(str, "%d", process->id);
+	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+	setenv("PMI_SMPD_KEY", str, 1);
+
 	close(0); 		  /* close stdin     */
 	dup(stdin_pipe_fds[0]);   /* dup a new stdin */
 	close(stdin_pipe_fds[0]);
@@ -1003,31 +1026,54 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 
-/* It is dangerous to do dbg_printfs here because we are the forked child process*/
-	sprintf(str, "%d", process->rank);
-	/*smpd_dbg_printf("env: PMI_RANK=%s\n", str);*/
-	setenv("PMI_RANK", str, 1);
-	sprintf(str, "%d", process->nproc);
-	/*smpd_dbg_printf("env: PMI_SIZE=%s\n", str);*/
-	setenv("PMI_SIZE", str, 1);
-	sprintf(str, "%s", process->kvs_name);
-	/*smpd_dbg_printf("env: PMI_KVS=%s\n", str);*/
-	setenv("PMI_KVS", str, 1);
-	sprintf(str, "%d", pmi_pipe_fds[1]);
-	/*smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);*/
-	setenv("PMI_SMPD_FD", str, 1);
-	sprintf(str, "%d", smpd_process.id);
-	/*smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);*/
-	setenv("PMI_SMPD_ID", str, 1);
-	sprintf(str, "%d", process->id);
-	/*smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);*/
-	setenv("PMI_SMPD_KEY", str, 1);
-	/*result = execvp( process->exe, NULL );*/
 	result = execvp( argv[0], argv );
 
 	result = errno;
 	fprintf(stderr, "Unable to exec '%s'.\nError %d - %s", process->exe,
 		result, strerror(result));
+	sprintf(process->err_msg, "Error %d - %s", result, strerror(result));
+
+	/* create the result command */
+	result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create an abort command in response to failed launch command: '%s'\n", process->exe);
+	    exit(-1);
+	}
+	/* launch process should provide a reason for the error, for now just return FAIL */
+	result = smpd_add_command_arg(cmd_ptr, "result", SMPD_FAIL_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", process->exe);
+	    exit(-1);
+	}
+	if (process->err_msg[0] != '\0')
+	{
+	    result = smpd_add_command_arg(cmd_ptr, "error", process->err_msg);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the error field to the abort command in response to failed launch command: '%s'\n", process->exe);
+		exit(-1);
+	    }
+	}
+
+	/* send the result back */
+	smpd_package_command(cmd_ptr);
+	result = smpd_write(pmi_pipe_fds[1], cmd_ptr->cmd_hdr_str, SMPD_CMD_HDR_LENGTH);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to write the abort command header in response to failed launch command: '%s'\n", process->exe);
+	    exit(-1);
+	}
+	result = smpd_write(pmi_pipe_fds[1], cmd_ptr->cmd, cmd_ptr->length);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to write the abort command in response to failed launch command: '%s'\n", process->exe);
+	    exit(-1);
+	}
+
+	/* send a closed message on the pmi socket? */
+
 	exit(result);
     }
 
