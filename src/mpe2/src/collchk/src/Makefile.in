@@ -52,7 +52,7 @@ EXECS            =
 
 # GETNAME_DEFS are needed by mpehname.c
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
+CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 
 
 UTIL_SRC     = add_fh.c get_fh.c begin.c err_han.c exscan.c is_init.c \

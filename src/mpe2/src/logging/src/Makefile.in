@@ -50,7 +50,7 @@ EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@
 
 # GETNAME_DEFS are needed by mpehname.c
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
+CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 
 MPE_CSOURCES     = clog_util.c clog_timer.c \
                    clog_preamble.c clog_block.c clog_buffer.c clog_record.c \

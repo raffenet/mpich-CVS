@@ -53,7 +53,7 @@ EXECS            =
 
 # GETNAME_DEFS are needed by mpehname.c
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
+CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 
 MPE_CSOURCES     =
 MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)

@@ -52,7 +52,7 @@ EXECS            =
 
 # GETNAME_DEFS are needed by mpehname.c
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
+CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 
 MPE_CSOURCES     = mpe_graphics.c xcolor.c xframe.c xinit.c xwmap.c \
                    xmouse.c xkey.c

@@ -50,7 +50,7 @@ EXECS            = dbxtest@EXEEXT@ dbxtest2@EXEEXT@
 
 # GETNAME_DEFS are needed by mpehname.c
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
+CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 
 MPE_CSOURCES     = decomp.c mpe_seq.c dbxerr.c getgrank.c \
                    examine.c privtags.c mpehname.c mpe_io.c
