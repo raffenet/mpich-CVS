@@ -93,7 +93,7 @@
 			required = "false"
 		/>
 		<unnamed
-			name = "--use_ib_rdma"
+			name = "--use-ib-rdma"
 			helpstring = "Use the rdma interface in the infiniband channel"
 			required = "false"
 		/>
@@ -192,6 +192,8 @@ For arg = 0 To argCount - 1
 	WScript.Quit
   ElseIf argValue = "--remove-fortran" Then
     bRemoveFortran = True
+  ElseIf argValue = "--use-ib-rdma" Then
+	bUseIbRDMA = True
   ElseIf argValue = "--use_ib_rdma" Then
 	bUseIbRDMA = True
   ElseIf argValue = "--help" Then
@@ -2424,12 +2426,13 @@ Function ReplaceBetweenTags(str, tag1, find_str, tag2, replace_str)
 		ReplaceBetweenTags = str
 		Exit Function
 	End If
-	end_index = index + InStr(right_str, tag2)
+	end_index = InStr(right_str, tag2)
 	If end_index = 0 Then
 		'MsgBox tag2 & " not found in: " & right_str
 		ReplaceBetweenTags = str
 		Exit Function
 	End If
+	end_index = end_index + index;
 	ReplaceBetweenTags = Left(str, start_index-1) & replace_str & Right(str, Len(str) - end_index - Len(tag2) + 1)
 End Function
 
