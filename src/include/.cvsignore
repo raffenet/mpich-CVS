@@ -3,3 +3,6 @@ mpichconf.h
 mpichconf.h.in
 mpichtimer.h
 bnr.h
+mpidconf.h
+winmpichconf.h
+winmpidconf.h
