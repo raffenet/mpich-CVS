@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
-    int order, nprocs, j, len, flag;
+    int order, nprocs, j, len;
     int array_of_dargs[3], array_of_psizes[3];
     int *readbuf, *writebuf, bufcount, mynod, *tmpbuf, array_size;
     char *filename;
@@ -124,12 +124,10 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
 
     /* check the data read */
-    flag = 0;
     for (i=0; i<bufcount; i++) 
-	if (readbuf[i] != writebuf[i]) {
+	if (readbuf[i] != writebuf[i])
 	    printf("Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
-            flag = 1;
-	}
+
     if (!mynod) printf("Done\n");
 
     MPI_Type_free(&newtype);

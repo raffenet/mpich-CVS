@@ -59,7 +59,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 	}
 
 	/* abs. offset in bytes in the file */
-	off = fd->disp + n_filetypes * filetype_extent +
+	off = fd->disp + (ADIO_Offset) n_filetypes * filetype_extent +
                 abs_off_in_filetype;
     }
 

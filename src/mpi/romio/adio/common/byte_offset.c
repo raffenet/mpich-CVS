@@ -47,6 +47,6 @@ void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset, ADIO_Offset *disp)
 
 	/* abs. offset in bytes in the file */
 	MPI_Type_extent(fd->filetype, &filetype_extent);
-	*disp = fd->disp + n_filetypes*filetype_extent + abs_off_in_filetype;
+	*disp = fd->disp + (ADIO_Offset) n_filetypes*filetype_extent + abs_off_in_filetype;
     }
 }

@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,9 +8,9 @@
 
 #define SIZE 5000
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-    int *buf, i, mynod, nprocs, flag, len, b[3];
+    int *buf, i, mynod, nprocs, len, b[3];
     MPI_Aint d[3];
     MPI_File fh;
     MPI_Status status;
@@ -67,7 +67,6 @@ main(int argc, char **argv)
     MPI_Type_commit(&newtype);
     MPI_Type_free(&typevec);
 
-    flag = 0;
     if (!mynod) {
 	printf("\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
 	MPI_File_delete(filename, MPI_INFO_NULL);
@@ -90,34 +89,22 @@ main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
-	    if ((i%2) && (buf[i] != -1)) {
+	    if ((i%2) && (buf[i] != -1))
 		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
-		flag = 1;
-	    }
-	    if (!(i%2) && (buf[i] != i)) {
+	    if (!(i%2) && (buf[i] != i))
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
-		flag = 1;
-	    }
 	}
 	else {
-	    if ((i%2) && (buf[i] != i + mynod*SIZE)) {
+	    if ((i%2) && (buf[i] != i + mynod*SIZE))
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
-		flag = 1;
-	    }
-	    if (!(i%2) && (buf[i] != -1)) {
+	    if (!(i%2) && (buf[i] != -1))
 		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
-		flag = 1;
-	    }
 	}
     }
-
-    if (!flag) printf("noncontiguous in memory, noncontiguous in file works fine on process %d\n", mynod);
 
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
-    flag = 0;
 
     if (!mynod) {
 	printf("\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
@@ -139,34 +126,22 @@ main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
-	    if ((i%2) && (buf[i] != -1)) {
+	    if ((i%2) && (buf[i] != -1))
 		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
-		flag = 1;
-	    }
-	    if (!(i%2) && (buf[i] != i)) {
+	    if (!(i%2) && (buf[i] != i))
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
-		flag = 1;
-	    }
 	}
 	else {
-	    if ((i%2) && (buf[i] != i + mynod*SIZE)) {
+	    if ((i%2) && (buf[i] != i + mynod*SIZE))
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
-		flag = 1;
-	    }
-	    if (!(i%2) && (buf[i] != -1)) {
+	    if (!(i%2) && (buf[i] != -1))
 		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
-		flag = 1;
-	    }
 	}
     }
-
-    if (!flag) printf("noncontiguous in memory, contiguous in file works fine on process %d\n", mynod);
 
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
-    flag = 0;
 
     if (!mynod) {
 	printf("\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
@@ -190,20 +165,14 @@ main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
-	    if (buf[i] != i) {
+	    if (buf[i] != i)
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
-		flag = 1;
-	    }
 	}
 	else {
-	    if (buf[i] != i + mynod*SIZE) {
+	    if (buf[i] != i + mynod*SIZE)
 		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
-		flag = 1;
-	    }
 	}
     }
-
-    if (!flag) printf("contiguous in memory, noncontiguous in file works fine on process %d\n", mynod);
 
     MPI_File_close(&fh);
 
@@ -212,4 +181,5 @@ main(int argc, char **argv)
     free(buf);
     free(filename);
     MPI_Finalize();
+    return 0;
 }

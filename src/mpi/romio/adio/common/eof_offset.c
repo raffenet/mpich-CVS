@@ -55,14 +55,14 @@ void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset)
 	    for (i=0; i<flat_file->count; i++) {
 		sum += flat_file->blocklens[i];
 		if (disp + flat_file->indices[i] + 
-		    n_filetypes*filetype_extent + 
+		    (ADIO_Offset) n_filetypes*filetype_extent + 
 		       flat_file->blocklens[i] >= fsize) {
 		    if (disp + flat_file->indices[i] + 
-			   n_filetypes*filetype_extent >= fsize)
+			   (ADIO_Offset) n_filetypes*filetype_extent >= fsize)
 			sum -= flat_file->blocklens[i];
 		    else {
 			rem = (int) (disp + flat_file->indices[i] + 
-				n_filetypes*filetype_extent
+				(ADIO_Offset) n_filetypes*filetype_extent
 				+ flat_file->blocklens[i] - fsize);
 			sum -= rem;
 		    }
@@ -71,7 +71,7 @@ void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset)
 		}
 	    }
 	}
-	size_in_file = n_filetypes*filetype_size + sum;
+	size_in_file = (ADIO_Offset) n_filetypes*filetype_size + sum;
 	*eof_offset = (size_in_file+etype_size-1)/etype_size; /* ceiling division */
     }
 }

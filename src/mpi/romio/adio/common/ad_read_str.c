@@ -146,11 +146,11 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
                 n_filetypes++;
 		for (i=0; i<flat_file->count; i++) {
 		    if (disp + flat_file->indices[i] + 
-                        n_filetypes*filetype_extent + flat_file->blocklens[i] 
+                        (ADIO_Offset) n_filetypes*filetype_extent + flat_file->blocklens[i] 
                             >= offset) {
 			st_index = i;
 			frd_size = (int) (disp + flat_file->indices[i] + 
-			        n_filetypes*filetype_extent
+			        (ADIO_Offset) n_filetypes*filetype_extent
 			         + flat_file->blocklens[i] - offset);
 			flag = 1;
 			break;
@@ -177,7 +177,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 	    }
 
 	    /* abs. offset in bytes in the file */
-	    offset = disp + n_filetypes*filetype_extent + abs_off_in_filetype;
+	    offset = disp + (ADIO_Offset) n_filetypes*filetype_extent + abs_off_in_filetype;
 	}
 
         start_off = offset;
@@ -201,7 +201,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 		n_filetypes++;
 	    }
 
-	    off = disp + flat_file->indices[j] + n_filetypes*filetype_extent;
+	    off = disp + flat_file->indices[j] + (ADIO_Offset) n_filetypes*filetype_extent;
 	    frd_size = ADIOI_MIN(flat_file->blocklens[j], bufsize-i);
 	}
 
@@ -238,7 +238,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 		i += frd_size;
 
                 if (off + frd_size < disp + flat_file->indices[j] +
-                   flat_file->blocklens[j] + n_filetypes*filetype_extent)
+                   flat_file->blocklens[j] + (ADIO_Offset) n_filetypes*filetype_extent)
                        off += frd_size;
                 /* did not reach end of contiguous block in filetype.
                    no more I/O needed. off is incremented by frd_size. */
@@ -249,7 +249,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 			n_filetypes++;
 		    }
 		    off = disp + flat_file->indices[j] + 
-                                        n_filetypes*filetype_extent;
+                                        (ADIO_Offset) n_filetypes*filetype_extent;
 		    frd_size = ADIOI_MIN(flat_file->blocklens[j], bufsize-i);
 		}
 	    }
@@ -293,7 +293,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 		    }
 
 		    off = disp + flat_file->indices[j] + 
-                                              n_filetypes*filetype_extent;
+                                              (ADIO_Offset) n_filetypes*filetype_extent;
 
 		    new_frd_size = flat_file->blocklens[j];
 		    if (size != brd_size) {

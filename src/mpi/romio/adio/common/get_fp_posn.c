@@ -41,10 +41,10 @@ void ADIOI_Get_position(ADIO_File fd, ADIO_Offset *offset)
 	    for (i=0; i<flat_file->count; i++) {
 		sum += flat_file->blocklens[i];
 		if (disp + flat_file->indices[i] + 
-	     	    n_filetypes*filetype_extent + flat_file->blocklens[i] 
+	     	    (ADIO_Offset) n_filetypes*filetype_extent + flat_file->blocklens[i] 
 		    >= byte_offset) {
 		    frd_size = (int) (disp + flat_file->indices[i] + 
-			n_filetypes*filetype_extent
+			(ADIO_Offset) n_filetypes*filetype_extent
 			+ flat_file->blocklens[i] - byte_offset);
 		    sum -= frd_size;
 		    flag = 1;
@@ -52,7 +52,7 @@ void ADIOI_Get_position(ADIO_File fd, ADIO_Offset *offset)
 		}
 	    }
 	}
-	size_in_file = n_filetypes*filetype_size + sum;
+	size_in_file = (ADIO_Offset) n_filetypes*filetype_size + sum;
 	*offset = size_in_file/etype_size;
     }
 }
