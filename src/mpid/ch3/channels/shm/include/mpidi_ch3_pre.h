@@ -15,6 +15,19 @@
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
 
+#ifdef HAVE_SHARED_PROCESS_READ
+typedef struct MPIDI_CH3I_Shared_process
+{
+    int nRank;
+#ifdef HAVE_WINDOWS_H
+    DWORD nPid;
+#else
+    int nPid;
+#endif
+    BOOL bFinished;
+} MPIDI_CH3I_Shared_process_t;
+#endif
+
 typedef struct MPIDI_Process_group_s
 {
     volatile int ref_count;
@@ -24,6 +37,13 @@ typedef struct MPIDI_Process_group_s
     int nShmEagerLimit;
 #ifdef HAVE_SHARED_PROCESS_READ
     int nShmRndvLimit;
+    MPIDI_CH3I_Shared_process_t *pSHP;
+#ifdef HAVE_WINDOWS_H
+    HANDLE *pSharedProcessHandles;
+#else
+    int *pSharedProcessIDs;
+    int *pSharedProcessFileDescriptors;
+#endif
 #endif
     void *addr;
     int rank;

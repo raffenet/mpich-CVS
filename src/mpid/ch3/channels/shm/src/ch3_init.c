@@ -182,7 +182,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     else
     {
-        pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
+	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
     }
 
     /* initialize each shared memory queue */

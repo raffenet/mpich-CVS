@@ -9,27 +9,32 @@
 #define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
 #define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
 
+#define ZERO_RANK 0x10101010
+
 #undef SYNCHRONIZE_SHMAPPING
 
 #ifdef HAVE_SHARED_PROCESS_READ
-static void InitSharedProcesses(void *pShmem, int nRank, int nProc)
+static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 {
 #ifndef HAVE_WINDOWS_H
     char filename[256];
 #endif
     int i;
-    struct SharedProcessStruct
-    {
-        int nRank;
-#ifdef HAVE_WINDOWS_H
-        DWORD nPid;
-#else
-        int nPid;
-#endif
-        BOOL bFinished;
-    } *pSharedProcess;
+    MPIDI_CH3I_Shared_process_t *pSharedProcess;
+    int nRank, nProc;
 
-    pSharedProcess = (struct SharedProcessStruct *)pShmem;
+    nRank = pg->rank;
+    nProc = pg->size;
+
+    /* initialize arrays */
+#ifdef HAVE_WINDOWS_H
+    pg->pSharedProcessHandles = (HANDLE*)MPIU_Malloc(sizeof(HANDLE) * pg->size);
+#else
+    pg->pSharedProcessIDs = (int*)MPIU_Malloc(sizeof(int) * pg->size);
+    pg->pSharedProcessFileDescriptors = (int*)MPIU_Malloc(sizeof(int) * pg->size);
+#endif
+
+    pSharedProcess = pg->pSHP;
 
 #ifdef HAVE_WINDOWS_H
     pSharedProcess[nRank].nPid = GetCurrentProcessId();
@@ -37,39 +42,50 @@ static void InitSharedProcesses(void *pShmem, int nRank, int nProc)
     pSharedProcess[nRank].nPid = getpid();
 #endif
     pSharedProcess[nRank].bFinished = FALSE;
-    pSharedProcess[nRank].nRank = nRank;
+    if (nRank == 0)
+	pSharedProcess[nRank].nRank = ZERO_RANK;
+    else
+	pSharedProcess[nRank].nRank = nRank;
 
     for (i=0; i<nProc; i++)
     {
         if (i != nRank)
         {
-            while (pSharedProcess[i].nRank != i)
-                MPIDU_Yield();
+	    if (i == 0)
+	    {
+		while (pSharedProcess[i].nRank != ZERO_RANK)
+		    MPIDU_Yield();
+	    }
+	    else
+	    {
+		while (pSharedProcess[i].nRank != i)
+		    MPIDU_Yield();
+	    }
 #ifdef HAVE_WINDOWS_H
             /*printf("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid);*/
-            g_pSharedProcessHandles[i] =
+            pg->pSharedProcessHandles[i] =
                 OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
                             FALSE, pSharedProcess[i].nPid);
-            if (g_pSharedProcessHandles[i] == NULL)
+            if (pg->pSharedProcessHandles[i] == NULL)
             {
                 int err = GetLastError();
                 printf("unable to open process %d, error %d\n", i, err);
             }
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
-            g_pSharedProcessIDs[i] = pSharedProcess[i].nPid;
-            g_pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
-            if (g_pSharedProcessFileDescriptors[i] == -1)
+            pg->pSharedProcessIDs[i] = pSharedProcess[i].nPid;
+            pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
+            if (pg->pSharedProcessFileDescriptors[i] == -1)
                 printf("failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);
 #endif
         }
         else
         {
 #ifdef HAVE_WINDOWS_H
-            g_pSharedProcessHandles[i] = NULL;
+            pg->pSharedProcessHandles[i] = NULL;
 #else
-            g_pSharedProcessIDs[i] = 0;
-            g_pSharedProcessFileDescriptors[i] = 0;
+            pg->pSharedProcessIDs[i] = 0;
+            pg->pSharedProcessFileDescriptors[i] = 0;
 #endif
         }
     }
@@ -120,6 +136,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     void *pHighAddr, *pLastAddr, *pNextAddr = NULL;
     BOOL bAllEqual, bRepeat, bDoRemapping = TRUE;
 #ifdef HAVE_SHARED_PROCESS_READ
+    int shp_offset;
     BOOL bFirst = TRUE;
 #endif
 #ifdef HAVE_WINDOWS_H
@@ -131,6 +148,14 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
     
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
+
+#ifdef HAVE_SHARED_PROCESS_READ
+    /* add room at the end of the shard memory region for the shared process information */
+    shp_offset = nTotalSize;
+    nTotalSize += nNproc * sizeof(MPIDI_CH3I_Shared_process_t);
+#endif
+
     /* Setup and check parameters */
 #ifdef HAVE_WINDOWS_H
     GetSystemInfo(&sysInfo);
@@ -138,8 +163,6 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     MPIU_DBG_PRINTF(("[%d] nPageSize: %d\n", nRank, nPageSize));
 #endif
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
-    
 #if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
     hSyncEvent1 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent1");
     hSyncEvent2 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent2");
@@ -246,7 +269,8 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
 #ifdef HAVE_SHARED_PROCESS_READ
             if (bFirst)
             {
-                InitSharedProcesses(pg->addr, nRank, nNproc);
+		pg->pSHP = (MPIDI_CH3I_Shared_process_t*)((char*)pg->addr + shp_offset);
+                InitSharedProcesses(pg);
                 bFirst = FALSE;
             }
 #endif
@@ -371,6 +395,9 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
 @*/
 void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
 {
+#ifdef HAVE_SHARED_PROCESS_READ
+    int i;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
@@ -390,6 +417,21 @@ void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
 #ifdef HAVE_CREATEFILEMAPPING
         CloseHandle(pg->id);
         pg->id = NULL;
+#endif
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+	for (i=0; i<pg->size; i++)
+	    CloseHandle(pg->pSharedProcessHandles[i]);
+	MPIU_Free(pg->pSharedProcessHandles);
+	pg->pSharedProcessHandles = NULL;
+#else
+	for (i=0; i<pg->size; i++)
+	    close(pg->pSharedProcessFileDescriptors[i]);
+	MPIU_Free(pg->pSharedProcessFileDescriptors);
+	MPIU_Free(pg->pSharedProcessIDs);
+	pg->pSharedProcessFileDescriptors = NULL;
+	pg->pSharedProcessIDs = NULL;
+#endif
 #endif
     }
     else
