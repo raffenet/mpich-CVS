@@ -1789,6 +1789,9 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     ibu->read.use_iov = FALSE;
     ibu->read.progress_update = rfn;
     ibu->state |= IBU_READING;
+#ifdef USE_INLINE_PKT_RECEIVE
+    ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
+#endif
     ibu->pending_operations++;
     /* copy any pre-received data into the buffer */
     if (ibu->unex_list)
@@ -1830,6 +1833,9 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     ibu->read.use_iov = TRUE;
     ibu->read.progress_update = rfn;
     ibu->state |= IBU_READING;
+#ifdef USE_INLINE_PKT_RECEIVE
+    ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
+#endif
     ibu->pending_operations++;
     /* copy any pre-received data into the iov */
     if (ibu->unex_list)
