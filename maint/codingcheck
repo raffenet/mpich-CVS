@@ -239,7 +239,8 @@ sub CheckForBadSubs {
 	       'WITH_[A-Z0-9_]*',
 	       'F77_[A-Z_]*',
 	       'MPI_BUILD_PROFILING',
-	       'MPI_Info_f2c', 'MPI_Info_c2f', );
+	       'MPI_Info_f2c', 'MPI_Info_c2f', 'MPI_File_f2c', 'MPI_File_c2f', 
+	       );
 @BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
 @GoodRomioNames = ( 'PROFILE', 'PRINT_ERR_MSG', 'HPUX', 'SPPUX', 'SX4',
 		   'AIO_SUN', 'AIO_HANDLE_IN_AIOCB', 'NO_FD_IN_AIOCB',
