@@ -75,7 +75,7 @@ int main( int argc, char **argv )
 	recvcounts[i] = rank;
 	rdispls[i]    = i * rank * sizeof(int);
 	sdispls[i]    = (((i+1) * (i))/2) * sizeof(int);
-        sendtypes[i] = recvtypes[i] = MPI_INT;
+        sendtypes[i] = recvtypes[i] = MPI::INT;
       }
       comm.Alltoallw( sbuf, sendcounts, sdispls, sendtypes,
 		      rbuf, recvcounts, rdispls, recvtypes );
