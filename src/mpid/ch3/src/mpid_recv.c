@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	      int rank, int tag, MPID_Comm * comm, int context_offset,
 	      MPI_Status * status, MPID_Request ** request)
@@ -13,6 +17,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     MPID_Request * req;
     int found;
 
+    MPIDI_dbg_printf(10, FCNAME, "entering");
+    MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
+		     comm->context_id + context_offset);
     req = MPIDI_CH3U_Request_FUOAP(
 	rank, tag, comm->context_id + context_offset, &found);
     assert(req != NULL);
@@ -20,9 +27,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     if (found)
     {
 	/* Message was found in the unexepected queue */
-
-	printf("MPID_Recv: matching message found\n");
-	fflush(stdout);
+	MPIDI_dbg_printf(15, FCNAME, "request found in unexpected queue");
 
 #if 0	/* only zero length messages supported */
 	
@@ -105,6 +110,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	/* Message has yet to arrived.  The request has been placed on the list
            of posted receive requests.  The request still needs to be populated
            with information supplied in the arguments. */
+	MPIDI_dbg_printf(15, FCNAME, "request allocated in posted queue");
+	req->comm = comm;
 	req->ch3.user_buf = buf;
 	req->ch3.user_count = count;
 	req->ch3.datatype = datatype;
@@ -113,5 +120,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	/* XXX - thread safety? message could arrive while populating req */
     }
     
+    MPIDI_dbg_printf(10, FCNAME, "exiting");
     return MPI_SUCCESS;
 }

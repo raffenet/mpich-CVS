@@ -7,6 +7,11 @@
 #include "mpidimpl.h"
 
 /* XXX - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
+
+#undef FUNCNAME
+#define FUNCNAME MPID_Send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	      int rank, int tag, MPID_Comm * comm, int context_offset,
 	      MPID_Request ** request)
@@ -15,15 +20,20 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
     int dt_contig;
     MPID_Request * req;
 
+    MPIDI_dbg_printf(10, FCNAME, "entering");
+    MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
+		     comm->context_id + context_offset);
+    
     if (count == 0)
     {
 	    MPIDI_CH3_Pkt_t rpkt;
 	    MPIDI_CH3_Pkt_eager_send_t * const pkt = &(rpkt.eager_send);
 
+	    MPIDI_dbg_printf(15, FCNAME, "sending zero length message");
 	    pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
-	    pkt->match.context_id = comm->context_id + context_offset;
-	    pkt->match.rank = rank;
+	    pkt->match.rank = comm->rank;
 	    pkt->match.tag = tag;
+	    pkt->match.context_id = comm->context_id + context_offset;
 	    pkt->data_sz = 0;
 
 	    req = MPIDI_CH3_iStartMsg(comm->vcr[rank], pkt, sizeof(rpkt));
@@ -32,6 +42,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 		req->comm = comm;
 	    }
 
+	    MPIDI_dbg_printf(10, FCNAME, "exiting");
 	    *request = req;
 	    return MPI_SUCCESS;
     }
@@ -60,9 +71,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    struct iovec iov[2];
 
 	    pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
-	    pkt->match.context_id = comm->context_id + context_offset;
-	    pkt->match.rank = rank;
+	    pkt->match.rank = comm->rank;
 	    pkt->match.tag = tag;
+	    pkt->match.context_id = comm->context_id + context_offset;
 	    pkt->data_sz = count * dt_sz;
 
 	    iov[0].iov_base = pkt;
@@ -92,11 +103,12 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    
 	req = MPIDI_CH3_Request_create();
 	assert(req != NULL);
+	req->ref_count = 2;
 	req->cc = 1;
 	req->cc_ptr = &(req->cc);
 	req->comm = comm;
-	req->ch3.match.tag = tag;
 	req->ch3.match.rank = rank;
+	req->ch3.match.tag = tag;
 	req->ch3.match.context_id = comm->context_id + context_offset;
 	req->ch3.user_buf = (void *) buf;
 	req->ch3.user_count = count;
@@ -107,8 +119,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	/* XXX - what other information needs to go into the request? */
 	
 	pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
+	pkt->match.rank = comm->rank;
 	pkt->match.tag = tag;
-	pkt->match.rank = rank;
 	pkt->match.context_id = comm->context_id + context_offset;
 	pkt->data_sz = count * dt_sz;
 	pkt->req_id_sender = req->handle;
@@ -116,6 +128,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	MPIDI_CH3_iSend(comm->vcr[rank], req, pkt, sizeof(rpkt));
     }
     
+    MPIDI_dbg_printf(10, FCNAME, "exiting");
     *request = req;
     return MPI_SUCCESS;
 }
