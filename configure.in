@@ -1396,7 +1396,7 @@ fi
 dnl
 dnl check for asm() format
 dnl 
-dnl AC_MSG_CHECKING([for gcc asm() and pentium cmpxchgl instruction])
+dnl AC_MSG_CHECKING([for asm() and pentium cmpxchgl instruction])
 dnl AC_TRY_RUN([
 dnl int main(int argc, char *argv[])
 dnl {
