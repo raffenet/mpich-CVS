@@ -7,7 +7,8 @@ SUBDIRS = . channels src
 #
 all-local: ${srcdir}/Makefile.in ${srcdir}/src/Makefile.in \
 	   Makefile src/Makefile \
-	   ../../include/mpidpre.h ../../include/mpidpost.h \
+	   ../../include/mpidpre.h ../../include/mpidimpl.h \
+	   ../../include/mpidpost.h \
 	   ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
 	   ../../include/gen_dataloop.h
 
@@ -52,9 +53,19 @@ src/Makefile: ${srcdir}/src/Makefile.in
 	 make clean 2>&1 >/dev/null ;					      \
 	 exit 1
 
+../../include/mpidimpl.h: ${srcdir}/include/mpidimpl.h
+	@echo " " ;							      \
+	 echo "ERROR: src/include/mpidimpl.h is out of date." ;		      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
+	 exit 1
+
 ../../include/mpidpost.h: ${srcdir}/include/mpidpost.h
 	@echo " " ;							      \
-	 echo "ERROR: src/include/mpidpre.h is out of date." ;		      \
+	 echo "ERROR: src/include/mpidpost.h is out of date." ;		      \
 	 echo "Running config.status and cleaning build tree." ;	      \
 	 echo " " ;							      \
 	 ./config.status &&						      \
@@ -93,7 +104,8 @@ src/Makefile: ${srcdir}/src/Makefile.in
 	 exit 1
 
 distclean-local:
-	-rm -f ../../include/mpidpre.h ../../include/mpidpost.h
-	-rm -f ../../include/mpid_datatype.h ../../include/mpid_dataloop.h
-	-rm -f ../../include/gen_dataloop.h
-	-rm -f include/mpidi_ch3_conf.h
+	-rm -f ../../include/mpidpre.h ../../include/mpidimpl.h \
+	       ../../include/mpidpost.h \
+	       ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
+	       ../../include/gen_dataloop.h \
+	       ../../include/mpidi_ch3_conf.h

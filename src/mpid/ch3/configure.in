@@ -9,7 +9,7 @@ AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
+AC_CONFIG_HEADER(../../include/mpidi_ch3_conf.h:include/mpidi_ch3_conf.h.in)
 
 
 echo "RUNNING CONFIGURE FOR DEVICE CH3"
@@ -45,6 +45,12 @@ fi
 dnl AC_PROG_MAKE_SET
 PAC_PROG_MAKE
 
+AC_CHECK_HEADERS(				\
+    assert.h					\
+    limits.h					\
+    sys/types.h					\
+    sys/uio.h)
+
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
@@ -60,7 +66,9 @@ AC_CONFIG_SUBDIRS(channels/$CHANNEL)
 AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
                    cp $topdir/include/mpidpre.h ../../include/,
 		   topdir=$srcdir)
-AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
+AC_OUTPUT_COMMANDS(echo "copying mpidimpl.h to src/include" ;
+                   cp $topdir/include/mpidimpl.h ../../include/)
+AC_OUTPUT_COMMANDS(echo "copying mpidpost.h to src/include" ;
                    cp $topdir/include/mpidpost.h ../../include/)
 AC_OUTPUT_COMMANDS(echo "copying mpid_datatype.h to src/include" ;
                    cp $topdir/../common/datatype/mpid_datatype.h \
