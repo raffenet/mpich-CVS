@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     smpd_launch_node_t *launch_node_ptr;
     smpd_context_t *context;
     MPIDU_Sock_set_t set;
-    MPIDU_Sock_t sock;
+    MPIDU_Sock_t sock = MPIDU_SOCK_INVALID_SOCK;
     smpd_state_t state;
 
     smpd_enter_fn("main");
@@ -226,13 +226,16 @@ int main(int argc, char* argv[])
     /* set the state to create a console session or a job session */
     state = smpd_process.do_console ? SMPD_MPIEXEC_CONNECTING_SMPD : SMPD_MPIEXEC_CONNECTING_TREE;
 
-    /* start connecting the tree by posting a connect to the first host */
-    result = MPIDU_Sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
-    if (result != MPI_SUCCESS)
+    if (!smpd_process.local_root)
     {
-	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
-	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
-	goto quit_job;
+	/* start connecting the tree by posting a connect to the first host */
+	result = MPIDU_Sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
+		smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
+	    goto quit_job;
+	}
     }
     result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
     if (result != SMPD_SUCCESS)
@@ -242,13 +245,69 @@ int main(int argc, char* argv[])
     }
     context->state = state;
     context->connect_to = smpd_process.host_list;
-    smpd_process.left_context = context;
-    result = MPIDU_Sock_set_user_ptr(sock, context);
-    if (result != MPI_SUCCESS)
+    if (smpd_process.local_root)
     {
-	smpd_err_printf("unable to set the smpd sock user pointer,\nsock error: %s\n",
-	    get_sock_error_string(result));
-	goto quit_job;
+	int port;
+	smpd_context_t *rc_context;
+
+	/* get the path to smpd.exe because pszExe is currently mpiexec.exe */
+	smpd_get_smpd_data("binary", smpd_process.pszExe, SMPD_MAX_EXE_LENGTH);
+
+	/* launch the manager process */
+	result = smpd_start_win_mgr(context, SMPD_FALSE);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to start the local smpd manager.\n");
+	    goto quit_job;
+	}
+
+	/* connect to the manager */
+	smpd_dbg_printf("connecting a new socket.\n");
+	/* reconnect */
+	port = atol(context->port_str);
+	if (port < 1)
+	{
+	    smpd_err_printf("Invalid reconnect port read: %d\n", port);
+	    goto quit_job;
+	}
+	result = smpd_create_context(context->type, context->set, MPIDU_SOCK_INVALID_SOCK, context->id, &rc_context);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a new context for the reconnection.\n");
+	    goto quit_job;
+	}
+	rc_context->state = context->state;
+	rc_context->write_state = SMPD_RECONNECTING;
+	context->state = SMPD_CLOSING;
+	rc_context->connect_to = context->connect_to;
+	rc_context->connect_return_id = context->connect_return_id;
+	rc_context->connect_return_tag = context->connect_return_tag;
+	strcpy(rc_context->host, context->host);
+	/* replace the old context with the new */
+	smpd_process.left_context = rc_context;
+	smpd_dbg_printf("posting a re-connect to %s:%d in %s context.\n", rc_context->connect_to->host, port, smpd_get_context_str(rc_context));
+	result = MPIDU_Sock_post_connect(rc_context->set, rc_context, rc_context->connect_to->host, port, &rc_context->sock);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("Unable to post a connect to '%s:%d',\nsock error: %s\n",
+		rc_context->connect_to->host, port, get_sock_error_string(result));
+	    if (smpd_post_abort_command("Unable to connect to '%s:%d',\nsock error: %s\n",
+		rc_context->connect_to->host, port, get_sock_error_string(result)) != SMPD_SUCCESS)
+	    {
+		goto quit_job;
+	    }
+	}
+    }
+    else
+    {
+	smpd_process.left_context = context;
+	result = MPIDU_Sock_set_user_ptr(sock, context);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("unable to set the smpd sock user pointer,\nsock error: %s\n",
+		get_sock_error_string(result));
+	    goto quit_job;
+	}
     }
     result = smpd_enter_at_state(set, state);
     if (result != SMPD_SUCCESS)
