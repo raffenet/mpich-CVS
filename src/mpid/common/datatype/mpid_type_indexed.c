@@ -160,7 +160,7 @@ int MPID_Type_indexed(int count,
 	    dlp->handle    = new_dtp->handle;
 	    dlp->el_extent = el_extent;
 	    dlp->el_size   = el_size;
-	    dlp->el_type   = new_dtp->eltype;
+	    dlp->el_type   = oldtype;
 
 	    /* count up total size of data */
 	    for (i=0; i < count; i++) tot_blks += blocklength_array[i];
@@ -195,6 +195,7 @@ int MPID_Type_indexed(int count,
 	    dlp->loop_params.i_t.count      = contig_count;
 	    dlp->el_extent                  = el_size; /* extent = size for basic types */
 	    dlp->el_size                    = el_size;
+	    dlp->el_type                    = oldtype;
 	}
     }
     else /* user-defined base type */ {

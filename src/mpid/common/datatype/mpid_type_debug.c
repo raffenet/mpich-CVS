@@ -12,7 +12,7 @@
 #include <limits.h>
 
 static char *MPIDI_combiner_to_string(int combiner);
-static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type);
+char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type);
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
@@ -136,7 +136,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
     MPI_Aint extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
-	string = MPIDI_datatype_builtin_to_string(type);
+	string = MPIDI_Datatype_builtin_to_string(type);
 	if (type == MPI_LB) sticky_lb = 1;
 	else sticky_lb = 0;
 	if (type == MPI_UB) sticky_ub = 1;
@@ -187,7 +187,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 }
 
 /* longest string is 21 characters */
-static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type)
+char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type)
 {
     static char t_char[]             = "MPI_CHAR";
     static char t_uchar[]            = "MPI_UNSIGNED_CHAR";
@@ -359,7 +359,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
 	MPIU_dbg_printf("%stype: %s\n",
 			MPIDI_Datatype_depth_spacing(depth),
-			MPIDI_datatype_builtin_to_string(type));
+			MPIDI_Datatype_builtin_to_string(type));
 	return;
     }
 

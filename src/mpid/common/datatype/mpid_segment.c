@@ -15,6 +15,8 @@
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
+char *MPIDI_Datatype_builtin_to_string(MPI_Datatype type);
+
 /* MPID_Segment_piece_params
  *
  * This structure is used to pass function-specific parameters into our 
@@ -929,6 +931,17 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
     
     el_size = MPID_Datatype_get_basic_size(el_type);
 
+#ifdef MPID_SP_VERBOSE
+    dbg_printf("\t[index pack: do=%d, dp=%x, bp=%x, sz=%d (%s), cnt=%d, blks=%d]\n",
+	       rel_off, 
+	       (unsigned) bufp,
+	       (unsigned) paramp->u.pack.pack_buffer,
+	       (int) el_size,
+	       MPIDI_Datatype_builtin_to_string(el_type),
+	       (int) count,
+	       (int) *blocks_p);
+#endif
+
     while (blocks_left) {
 	assert(curblock < count);
 	cur_block_sz = blockarray[curblock];
@@ -936,6 +949,14 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 
 	if (cur_block_sz > blocks_left) cur_block_sz = blocks_left;
 
+#ifdef MPID_SP_VERBOSE
+	    dbg_printf("\t[index pack(1): do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+		       (int) (cbufp - (char *) bufp), 
+		       (unsigned) bufp,
+		       (unsigned) paramp->u.pack.pack_buffer,
+		       el_size,
+		       (int) cur_block_sz * el_size);
+#endif
 	if (el_size == 8) {
 	    /* note: macro updates pack buffer location */
 	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int64_t, cur_block_sz, 1);
