@@ -36,7 +36,10 @@ messages to print in situations where problems are spotted.
 The three major modes of operation for this program are:
 
     mpdcheck
-        prints info about 'this' host
+        looks for config problems on 'this' host; prints as nec
+
+    mpdcheck -pc
+        print config info about 'this' host, e.g. contents of /etc/hosts, etc.
 
     mpdcheck -f some_file [-ssh]
         prints info about 'this' host and locatability info about the ones
@@ -57,7 +60,7 @@ __version__ = "$Revision$"
 __credits__ = ""
 
 from sys    import argv, exit, stdout
-from os     import path, kill
+from os     import path, kill, system
 from signal import SIGKILL
 from socket import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
 from popen2 import Popen3
@@ -108,6 +111,18 @@ while argidx < len(argv):
             stdout.flush()
         sock.close()
         exit(0)
+    elif argv[argidx] == '-pc':
+        print "--- try to run uname -a"
+        system('/bin/uname -a')
+        print "--- try to print /etc/hosts"
+        system('/bin/cat /etc/hosts')
+        print "--- try to print /etc/resolv.conf"
+        system('/bin/cat /etc/resolv.conf')
+        print "--- try to run /sbin/ifconfig -a"
+        system('/sbin/ifconfig -a')
+        print "--- try to print /etc/nsswitch.conf"
+        system('/bin/cat /etc/nsswitch.conf')
+        exit(0)
     elif argv[argidx] == '-v':
         verbose = 1
         argidx += 1
@@ -130,6 +145,9 @@ while argidx < len(argv):
     elif argv[argidx] == '-ssh':
         do_ssh = 1
         argidx += 1
+    else:
+        print 'unrecognized arg:', argv[argidx]
+        exit(0)
 
 
 # See if we can do gethostXXX, etc. for this host
