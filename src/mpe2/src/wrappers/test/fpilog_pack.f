@@ -17,6 +17,15 @@ c    sum,pi      area of rectangles
 c    tmp         temporary scratch space for global summation
 c    i           do loop index
 c****************************************************************************
+      double precision function f( a )
+      implicit none
+      double precision a
+          f = 4.d0 / (1.d0 + a*a)
+          return
+      end
+c
+c
+c
       program main
       implicit none
 
@@ -26,8 +35,10 @@ c****************************************************************************
       double precision  PI25DT
       parameter        (PI25DT = 3.141592653589793238462643d0)
 
-      double precision  mypi, pi, h, sum, x, f, a
+      double precision  mypi, pi, h, sum, x
       integer n, myid, numprocs, ii, rc, idx
+      double precision f
+      external f
 
       integer event1a, event1b, event2a, event2b
       integer event3a, event3b, event4a, event4b
@@ -35,9 +46,6 @@ c****************************************************************************
 
       character*32 bytebuf
       integer bytebuf_pos
-
-c                                 function to integrate
-      f(a) = 4.d0 / (1.d0 + a*a)
 
       call MPI_INIT( ierr )
 
@@ -131,6 +139,6 @@ C         if ( n .le. 0 ) goto 30
 
       enddo
 
- 30   call MPI_Finalize( rc )
+      call MPI_Finalize( rc )
 
       end
