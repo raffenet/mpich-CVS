@@ -20,9 +20,9 @@ int MPI_Allgatherv( void* sbuff, int scnt, MPI_Datatype stype,
     if( g2g ) {
         MPI_Comm_rank(comm, &r);
 
-        /* check for call consistancy */
+        /* check for call consistency */
         CollChk_same_call( comm, call );
-        /* check MPI_IN_PLACE consistancy */
+        /* check MPI_IN_PLACE consistency */
         CollChk_check_buff( comm, sbuff, call );
 
         /* check data signature consistancy */

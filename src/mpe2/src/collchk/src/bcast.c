@@ -15,9 +15,9 @@ int MPI_Bcast(void* buff, int cnt, MPI_Datatype dt, int root, MPI_Comm comm)
     g2g = CollChk_is_init();
 
     if(g2g) {
-        /* check call consistancy */
+        /* check call consistency */
         CollChk_same_call(comm, call);
-        /* check root consistancy */
+        /* check root consistency */
         CollChk_same_root(comm, root, call);
 
         /* check datatype signature consistancy */
