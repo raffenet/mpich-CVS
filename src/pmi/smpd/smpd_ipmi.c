@@ -37,6 +37,7 @@ typedef struct pmi_process_t
     int root_port;
     int local_kvs;
     char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
+    char domain_name[PMI_MAX_KVS_NAME_LENGTH];
     MPIDU_Sock_t sock;
     MPIDU_Sock_set_t set;
     int iproc;
@@ -66,6 +67,7 @@ static pmi_process_t pmi_process =
     0,                   /* root port      */
     PMI_FALSE,           /* local_kvs      */
     "",                  /* kvs_name       */
+    "",                  /* domain_name    */
     MPIDU_SOCK_INVALID_SOCK,  /* sock           */
     MPIDU_SOCK_INVALID_SET,   /* set            */
     -1,                  /* iproc          */
@@ -380,6 +382,18 @@ static int rPMI_Init(int *spawned)
 	strncpy(smpd_process.kvs_name, "default_mpich_kvs_name", PMI_MAX_KVS_NAME_LENGTH);
     }
 
+    p = getenv("PMI_DOMAIN");
+    if (p != NULL)
+    {
+	strncpy(pmi_process.domain_name, p, PMI_MAX_KVS_NAME_LENGTH);
+	strncpy(smpd_process.domain_name, p, PMI_MAX_KVS_NAME_LENGTH);
+    }
+    else
+    {
+	strncpy(pmi_process.domain_name, "mpich2", PMI_MAX_KVS_NAME_LENGTH);
+	strncpy(smpd_process.domain_name, "mpich2", PMI_MAX_KVS_NAME_LENGTH);
+    }
+
     p = getenv("PMI_RANK");
     if (p != NULL)
     {
@@ -439,38 +453,42 @@ static int rPMI_Init(int *spawned)
 
     if (pmi_process.iproc == 0)
     {
+	p = getenv("PMI_ROOT_LOCAL");
+	if (p && strcmp(p, "1") == 0)
+	{
 #ifdef HAVE_WINDOWS_H
-	pmi_process.hRootThreadReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if (pmi_process.hRootThreadReadyEvent == NULL)
-	{
-	    pmi_err_printf("unable to create the root listener synchronization event, error: %d\n", GetLastError());
-	    return PMI_FAIL;
-	}
-	pmi_process.hRootThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)root_smpd, NULL, 0, NULL);
-	if (pmi_process.hRootThread == NULL)
-	{
-	    pmi_err_printf("unable to create the root listener thread: error %d\n", GetLastError());
-	    return PMI_FAIL;
-	}
-	if (WaitForSingleObject(pmi_process.hRootThreadReadyEvent, 60000) != WAIT_OBJECT_0)
-	{
-	    pmi_err_printf("the root process thread failed to initialize.\n");
-	    return PMI_FAIL;
-	}
+	    pmi_process.hRootThreadReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	    if (pmi_process.hRootThreadReadyEvent == NULL)
+	    {
+		pmi_err_printf("unable to create the root listener synchronization event, error: %d\n", GetLastError());
+		return PMI_FAIL;
+	    }
+	    pmi_process.hRootThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)root_smpd, NULL, 0, NULL);
+	    if (pmi_process.hRootThread == NULL)
+	    {
+		pmi_err_printf("unable to create the root listener thread: error %d\n", GetLastError());
+		return PMI_FAIL;
+	    }
+	    if (WaitForSingleObject(pmi_process.hRootThreadReadyEvent, 60000) != WAIT_OBJECT_0)
+	    {
+		pmi_err_printf("the root process thread failed to initialize.\n");
+		return PMI_FAIL;
+	    }
 #else
-	result = fork();
-	if (result == -1)
-	{
-	    pmi_err_printf("unable to fork the root listener, errno %d\n", errno);
-	    return PMI_FAIL;
-	}
-	if (result == 0)
-	{
-	    root_smpd(NULL);
-	    exit(0);
-	}
-	pmi_process.root_pid = result;
+	    result = fork();
+	    if (result == -1)
+	    {
+		pmi_err_printf("unable to fork the root listener, errno %d\n", errno);
+		return PMI_FAIL;
+	    }
+	    if (result == 0)
+	    {
+		root_smpd(NULL);
+		exit(0);
+	    }
+	    pmi_process.root_pid = result;
 #endif
+	}
     }
     else
     {
@@ -654,8 +672,19 @@ int iPMI_Init(int *spawned)
 	    pmi_err_printf("unable to create the process group kvs\n");
 	    return PMI_FAIL;
 	}
+	strncpy(pmi_process.domain_name, smpd_process.domain_name, PMI_MAX_KVS_NAME_LENGTH);
 	pmi_process.init_finalized = PMI_INITIALIZED;
 	return PMI_SUCCESS;
+    }
+
+    p = getenv("PMI_DOMAIN");
+    if (p != NULL)
+    {
+	strncpy(pmi_process.domain_name, p, PMI_MAX_KVS_NAME_LENGTH);
+    }
+    else
+    {
+	strncpy(pmi_process.domain_name, "mpich2", PMI_MAX_KVS_NAME_LENGTH);
     }
 
     p = getenv("PMI_RANK");
@@ -758,6 +787,7 @@ int iPMI_Init(int *spawned)
     iPMI_Barrier();
     */
 
+    /*printf("iPMI_Init returning success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
 }
 
@@ -806,6 +836,7 @@ int iPMI_Finalize()
 
     pmi_process.init_finalized = PMI_FINALIZED;
 
+    /*printf("iPMI_Finalize success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
 }
 
@@ -903,8 +934,8 @@ int iPMI_Get_kvs_domain_id(char id_str[], int length)
     if (length < PMI_MAX_KVS_NAME_LENGTH)
 	return PMI_ERR_INVALID_LENGTH;
 
-    id_str[0] = '1';
-    id_str[1] = '\0';
+    strncpy(id_str, pmi_process.domain_name, length);
+
     return PMI_SUCCESS;
 }
 
@@ -919,6 +950,8 @@ int iPMI_Barrier()
 
     if (pmi_process.nproc == 1)
 	return PMI_SUCCESS;
+
+    /*printf("entering barrier %d, %s\n", pmi_process.nproc, pmi_process.kvs_name);fflush(stdout);*/
 
     /* encode the size of the barrier */
     snprintf(count_str, 20, "%d", pmi_process.nproc);
@@ -943,6 +976,7 @@ int iPMI_Barrier()
 	return PMI_FAIL;
     }
 
+    /*printf("iPMI_Barrier success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
 }
 
@@ -1037,6 +1071,7 @@ int iPMI_KVS_Create(char kvsname[], int length)
     }
     strncpy(kvsname, str, PMI_MAX_KVS_NAME_LENGTH);
 
+    /*printf("iPMI_KVS_Create success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
 }
 
@@ -1092,10 +1127,7 @@ int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
     if (value == NULL)
 	return PMI_ERR_INVALID_VAL;
 
-    /*
-    printf("putting <%s:%s:%s>\n", kvsname, key, value);
-    fflush(stdout);
-    */
+    /*printf("putting <%s><%s><%s>\n", kvsname, key, value);fflush(stdout);*/
 
     if (pmi_process.local_kvs)
     {
@@ -1122,6 +1154,7 @@ int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
 	return PMI_FAIL;
     }
 
+    /*printf("iPMI_KVS_Put success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
 }
 
@@ -1188,6 +1221,11 @@ int iPMI_KVS_Get(const char kvsname[], const char key[], char value[], int lengt
 	return PMI_FAIL;
     }
 
+    /*
+    printf("iPMI_KVS_Get success.\n");fflush(stdout);
+    printf("get <%s><%s><%s>\n", kvsname, key, value);
+    fflush(stdout);
+    */
     return PMI_SUCCESS;
 }
 
