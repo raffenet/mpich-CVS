@@ -309,7 +309,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 			
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
-		esa_pkt->sender_req_id = es_pkt->sender_req_id;
+		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		if (mpi_errno != MPI_SUCCESS)
 		{
