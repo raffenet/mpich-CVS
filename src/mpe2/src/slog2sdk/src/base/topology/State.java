@@ -14,6 +14,7 @@ import java.awt.Stroke;
 import java.awt.Color;
 import java.awt.Point;
 import base.drawable.CoordPixelXform;
+import base.drawable.DrawnBox;
 
 public class State
 {
@@ -23,17 +24,16 @@ public class State
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
-    private static void drawForward( Graphics2D g, Color color, Stroke stroke,
-                                     CoordPixelXform coord_xform,
+    private static int  drawForward( Graphics2D g, Color color, Stroke stroke,
+                                     CoordPixelXform    coord_xform,
+                                     DrawnBox           last_drawn_pos,
                                      double start_time, float start_ypos,
                                      double final_time, float final_ypos )
     {
         int      iStart, jStart, iFinal, jFinal;
-        iStart   = coord_xform.convertTimeToPixel( start_time );
-        jStart   = coord_xform.convertRowToPixel( start_ypos );
 
+        iStart   = coord_xform.convertTimeToPixel( start_time );
         iFinal   = coord_xform.convertTimeToPixel( final_time );
-        jFinal   = coord_xform.convertRowToPixel( final_ypos );
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
         isStartVtxInImg = iStart >= 0 ;
@@ -45,15 +45,23 @@ public class State
             iHead = iStart;
         else
             iHead = 0;
-        jHead = jStart;
 
         // jTail = slope * ( iTail - iFinal ) + jFinal
         if ( isFinalVtxInImg )
             iTail = iFinal;
         else
             iTail = coord_xform.getImageWidth() - 1;
-        jTail = jFinal;
 
+        /* Determine if State should be drawn */
+        if ( last_drawn_pos.coversState( iHead, iTail ) )
+            return 0; // too small to be drawn in previously drawn location
+        last_drawn_pos.set( iHead, iTail );
+
+        jStart   = coord_xform.convertRowToPixel( start_ypos );
+        jFinal   = coord_xform.convertRowToPixel( final_ypos );
+        jHead    = jStart;
+        jTail    = jFinal;
+            
         // Fill the color of the rectangle
         if ( iTail > iHead && jTail > jHead ) {
             g.setColor( color );
@@ -78,6 +86,8 @@ public class State
 
         if ( stroke != null )
             g.setStroke( orig_stroke );
+
+        return 1;
     }
 
     /*
@@ -118,30 +128,35 @@ public class State
     }
 
 
-    public static void draw( Graphics2D g, Color color, Stroke stroke,
-                             CoordPixelXform coord_xform,
+    public static int  draw( Graphics2D g, Color color, Stroke stroke,
+                             CoordPixelXform    coord_xform,
+                             DrawnBox           last_drawn_pos,
                              double start_time, float start_ypos,
                              double final_time, float final_ypos )
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 drawForward( g, color, stroke, coord_xform,
-                              start_time, start_ypos,
-                              final_time, final_ypos );
+                 return drawForward( g, color, stroke,
+                                     coord_xform, last_drawn_pos,
+                                     start_time, start_ypos,
+                                     final_time, final_ypos );
              else
-                 drawForward( g, color, stroke, coord_xform,
-                              start_time, final_ypos,
-                              final_time, start_ypos );
+                 return drawForward( g, color, stroke,
+                                     coord_xform, last_drawn_pos,
+                                     start_time, final_ypos,
+                                     final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 drawForward( g, color, stroke, coord_xform,
-                              final_time, start_ypos,
-                              start_time, final_ypos );
+                 return drawForward( g, color, stroke,
+                                     coord_xform, last_drawn_pos,
+                                     final_time, start_ypos,
+                                     start_time, final_ypos );
              else
-                 drawForward( g, color, stroke, coord_xform,
-                              final_time, final_ypos,
-                              start_time, start_ypos );
+                 return drawForward( g, color, stroke,
+                                     coord_xform, last_drawn_pos,
+                                     final_time, final_ypos,
+                                     start_time, start_ypos );
          }
     }
 

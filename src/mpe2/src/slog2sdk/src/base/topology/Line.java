@@ -14,6 +14,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Line2D;
 import base.drawable.CoordPixelXform;
+import base.drawable.DrawnBox;
 
 public class Line
 {
@@ -29,8 +30,9 @@ public class Line
         (start_time, start_ypos) and (final_time, final_ypos)
         Asssume caller guarantees : start_time <= final_time
     */
-    private static void drawForward( Graphics2D g, Color color, Stroke stroke,
-                                     CoordPixelXform coord_xform,
+    private static int  drawForward( Graphics2D g, Color color, Stroke stroke,
+                                     CoordPixelXform    coord_xform,
+                                     DrawnBox           last_drawn_pos,
                                      double start_time, float start_ypos,
                                      double final_time, float final_ypos )
     {
@@ -50,7 +52,7 @@ public class Line
             if ( iStart != iFinal )
                 slope = (double) ( jFinal - jStart ) / ( iFinal - iStart );
             else
-                return; // because both vertices are NOT in this image
+                return 0; // because both vertices are NOT in this image
 
         int iHead, iTail, jHead, jTail;
         // jHead = slope * ( iHead - iStart ) + jStart
@@ -73,6 +75,11 @@ public class Line
             jTail = (int) Math.rint( jFinal + slope * ( iTail - iFinal ) );
         }
 
+        /* Determine if Arrow should be drawn */
+        if ( last_drawn_pos.coversArrow( iHead, iTail ) )
+            return 0;  // Line has been drawn at the same location before
+        last_drawn_pos.set( iHead, iTail );
+
         Stroke orig_stroke = null;
         if ( stroke != null ) {
             orig_stroke = g.getStroke();
@@ -85,6 +92,8 @@ public class Line
 
         if ( stroke != null )
             g.setStroke( orig_stroke );
+
+        return 1;
     }
 
     /*
@@ -114,18 +123,21 @@ public class Line
         return distSQ < Max_LineSeg2Pt_DistSQ;
     }
 
-    public static void draw( Graphics2D g, Color color, Stroke stroke,
-                             CoordPixelXform coord_xform,
+    public static int  draw( Graphics2D g, Color color, Stroke stroke,
+                             CoordPixelXform    coord_xform,
+                             DrawnBox           last_drawn_pos,
                              double start_time, float start_ypos,
                              double final_time, float final_ypos )
     {
         if ( start_time < final_time )
-            drawForward( g, color, stroke, coord_xform,
-                         start_time, start_ypos,
-                         final_time, final_ypos );
+            return drawForward( g, color, stroke,
+                                coord_xform, last_drawn_pos,
+                                start_time, start_ypos,
+                                final_time, final_ypos );
         else
-            drawForward( g, color, stroke, coord_xform,
-                         final_time, final_ypos,
-                         start_time, start_ypos );
+            return drawForward( g, color, stroke,
+                                coord_xform, last_drawn_pos,
+                                final_time, final_ypos,
+                                start_time, start_ypos );
     }
 }
