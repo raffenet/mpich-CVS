@@ -1012,6 +1012,8 @@ sub DefaultRules {
 	print FD "\t\tMakefile.sm )$newline";
 	print FD "Makefile: \${srcdir}/Makefile.in$newline";
 
+	# The following does not always work correctly.  There may be 
+	# problem in handling jumps between directories
 	my $topdir = &GetPathToParent( $curdir, $last_config_dir );
  	print "last config dir = $last_config_dir, topdir = $topdir\n" if $debug_confdir;
  	if ($topdir eq "") {	
@@ -1393,6 +1395,10 @@ sub LookForSuffixes {
 	if (defined($extdef{"$suffix:o"})) {  
 	    $ext_seen{$suffix} = 1;
 	}
+#  	# Also check for .txt files, used for documentation
+#  	if ($suffix eq "txt") {
+#  	    $ext_seen{$suffix} = 1;
+#  	}
     }
 }
 
@@ -1869,6 +1875,10 @@ sub SuffixDocs {
 	    $suffixes .= " .$kind";
 	}
     }
+    # Add source file suffixes
+    if (! ($suffixes =~ /\.txt/) ) {
+	$suffixes .= " .txt";
+    }
 }
 sub VariableDocs {
     # global: do_docs, suffixes, docsrc
@@ -1884,6 +1894,7 @@ sub VariableDocs {
 sub RuleDocs {
     # global: do_docs, docsrc, FD, newline
     if (! $do_docs) { return; }
+    $rootdir = $rootdirpath;
     foreach my $kind (keys(%docsrc)) {
 	# Set the default suffix
 	$docsrcsuffix = ".c";
@@ -1920,7 +1931,11 @@ sub RuleDocs {
 		}
 	    }
 	    print FD "$docsrcsuffix.$kind:$newline";
-	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir -heading $doc_heading \\$newline";
+	    $extarg = "";
+	    if ($kind eq man && ($docdestdir =~ /man(\d)$/)) {
+		$extarg = "-ext $1";
+	    }
+	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir $extarg -heading $doc_heading \\$newline";
 	    print FD "\t\t-quotefmt $docargs \$<$newline";
 	}
     }
