@@ -971,7 +971,10 @@ int smpd_remove_from_dynamic_hosts(void)
 	host = strtok(NULL, " \t\r\n");
     }
 
-    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts_less_me);
+    if (hosts_less_me[0] == '\0')
+	smpd_delete_smpd_data(SMPD_DYNAMIC_HOSTS_KEY);
+    else
+	smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts_less_me);
     smpd_unlock_smpd_data();
 #endif
     smpd_exit_fn("smpd_remove_from_dynamic_hosts");
