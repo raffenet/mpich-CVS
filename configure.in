@@ -1050,6 +1050,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpi/errhan/Makefile \
 	  test/mpi/group/Makefile \
 	  test/mpi/pt2pt/Makefile \
+          test/mpi/rma/Makefile \
 	  examples/Makefile\
           src/util/logging/Makefile\
           src/util/timing/Makefile )
