@@ -16,6 +16,6 @@ smpdconf.h.in
 smpdconf.h
 *.ncb
 *.suo
-*Debug*
-*Release*
+*ebug*
+*elease*
 .deps
