@@ -94,7 +94,8 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 
     ret = MPID_Type_vector(count, blocklength, stride, old_type, newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-    return ret;
+    if (ret == MPI_SUCCESS) return ret;
+    else return MPIR_Err_return_comm(0, FCNAME, ret);
 
 #if 0
     /* ... body of routine ...  */

@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
@@ -21,7 +28,7 @@
   This routine calls MPID_Dataloop_create_struct() to create the loops for this
   new datatype.  It calls MPID_Datatype_new() to allocate space for the new
   datatype.
- @*/
+@*/
 int MPID_Type_vector(int count,
 		     int blocklength,
 		     int stride,
@@ -48,11 +55,20 @@ int MPID_Type_vector(int count,
     new_dtp->combiner     = MPI_COMBINER_VECTOR;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
+    new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
 
-    /* builtins are handled differently than user-defined types because there
-     * is no associated dataloop or datatype structure.
+    /* The remaining parameters are filled in based on whether oldtype is 
+     * a builtin or not: loopinfo, loopsize, size, extent, has_mpi1_ub,
+     * has_mpi1_lb, loopinfo_depth, true_lb, alignsize, n_elements, 
+     * element_size.
+     *
+     * Plus of course the loopinfo itself must still be filled in.
+     */
+
+    /* builtins are handled differently than user-defined types because they
+     * have no associated dataloop or datatype structure.
      */
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
 	/* get old values directly from the handle using bit ops */
