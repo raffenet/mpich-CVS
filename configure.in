@@ -1443,12 +1443,23 @@ MPI_UB="0x4c000011"
 # These should define the mixed types *only* for contiguous data.
 # For example, MPI_SHORT_INT may have a gap; it will need to be defined
 # as a derived type instead.  For IA32, this only affects short_int.
-MPI_FLOAT_INT="0x4c00${len_float_int}12"
-MPI_DOUBLE_INT="0x4c00${len_double_int}13"
-MPI_LONG_INT="0x4c00${len_long_int}14"
-MPI_SHORT_INT="0x4c00${len_short_int}15"
 MPI_2INT="0x4c00${len_2_int}16"
-MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}17"
+#
+# For now we aren't being too clever about figuring out which of these
+# are in fact contiguous, so these are all allocated as "real" types.
+#
+# These values correspond to direct types 0..5.
+#
+dnl MPI_FLOAT_INT="0x4c00${len_float_int}12"
+dnl MPI_DOUBLE_INT="0x4c00${len_double_int}13"
+dnl MPI_LONG_INT="0x4c00${len_long_int}14"
+dnl MPI_SHORT_INT="0x4c00${len_short_int}15"
+dnl MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}17"
+MPI_FLOAT_INT="0x8c000000"
+MPI_DOUBLE_INT="0x8c000001"
+MPI_LONG_INT="0x8c000002"
+MPI_SHORT_INT="0x8c000003"
+MPI_LONG_DOUBLE_INT="0x8c000004"
 
 # 2 additional predefined types named in MPI-2
 MPI_SIGNED_CHAR="0x4c000118"

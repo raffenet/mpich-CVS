@@ -174,6 +174,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        HAVE_ ERROR_CHECKING block (as must all uses of Err_create_code) */
     MPIR_Err_init();
     MPID_Wtime_init();
+    MPIR_Datatype_init();
     /* MPIU_Timer_pre_init(); */
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);

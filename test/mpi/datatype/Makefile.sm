@@ -33,6 +33,8 @@ struct-zero-count_SOURCES = struct-zero-count.c
 
 transpose-pack_SOURCES = transpose-pack.c
 
+pairtype-pack_SOURCES = pairtype-pack.c
+
 pairtype-size-extent_SOURCES = pairtype-size-extent.c
 
 localpack_SOURCES = localpack.c

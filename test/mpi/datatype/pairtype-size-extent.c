@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 	}
     }
     
+
     /* print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);

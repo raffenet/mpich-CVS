@@ -98,9 +98,10 @@ static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
     return 0;
 }
 
-static void *MPIU_Handle_direct_init( void *direct, int direct_size, 
-				      int obj_size, 
-				      int handle_type)
+void *MPIU_Handle_direct_init(void *direct,
+			      int direct_size, 
+			      int obj_size, 
+			      int handle_type)
 {
     int                i;
     MPIU_Handle_common *hptr=0;
@@ -112,7 +113,8 @@ static void *MPIU_Handle_direct_init( void *direct, int direct_size,
 	hptr->next = ptr;
 	hptr->handle   = (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
-	}
+    }
+
     hptr->next = 0;
     return direct;
 }
@@ -186,6 +188,34 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
        and then did not destroy */
     return 0;
 }
+
+void MPIU_Handle_obj_alloc_start(MPIU_Object_alloc_t *objmem)
+{
+    /* FIXME: we should use memory atomic routines to acquire an item from
+       the list without the lock (see 3.12.5 in the MPICH2 coding document) */
+    /* Lock if necessary */
+    MPID_Allocation_lock();
+}
+
+void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
+				    int initialized)
+{
+    if (initialized) {
+	/* obj_alloc initialized region during this allocation;
+	 * perform any ancillary operations associated with
+	 * initialization prior to releasing control over region.
+	 */
+
+	/* Tell finalize to free up any memory that we allocate.
+	 * The 0 makes this the lowest priority callback, so 
+	 * that other callbacks will finish before this one is invoked.
+	 */
+	MPIR_Add_finalize(MPIU_Handle_finalize, objmem, 0);
+    }
+
+    MPID_Allocation_unlock();
+}
+
 /*+
   MPIU_Handle_obj_alloc - Create an object using the handle allocator
 
@@ -202,66 +232,66 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
 
   This routine is thread-safe.
   +*/
-void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
+void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 {
     MPIU_Handle_common *ptr;
-    int objsize, objkind;
+    int performed_initialize = 0;
 
-    /* FIXME: we should use memory atomic routines to acquire an item from
-       the list without the lock (see 3.12.5 in the MPICH2 coding document) */
-    /* Lock if necessary */
-    MPID_Allocation_lock();
+    MPIU_Handle_obj_alloc_start(objmem);
 
     if (objmem->avail) {
-	ptr		    = objmem->avail;
-	objmem->avail       = objmem->avail->next;
-	ptr->next	    = 0;
-	/* Unlock */
-	MPID_Allocation_unlock();
-	/* printf ("returning info %x\n", ptr->handle ); */
-#ifdef MPICH_DEBUG_HANDLES
-	MPIU_DBG_PRINTF(( "Allocating handle %x (0x%08x)\n", (unsigned) ptr, ptr->handle ));
-#endif
-	return ptr;
+	ptr	      = objmem->avail;
+	objmem->avail = objmem->avail->next;
+	ptr->next     = 0;
+
+	/* ptr points to object to allocate */
+    }
+    else {
+	int objsize, objkind;
+
+	objsize = objmem->size;
+	objkind = objmem->kind;
+
+	if (!objmem->initialized) {
+	    performed_initialize = 1;
+
+	    /* Setup the first block.  This is done here so that short MPI
+	       jobs do not need to include any of the Info code if no
+	       Info-using routines are used */
+	    objmem->initialized = 1;
+	    ptr = MPIU_Handle_direct_init(objmem->direct,
+					  objmem->direct_size,
+					  objsize,
+					  objkind);
+	    if (ptr) {
+		objmem->avail = ptr->next;
+	    }
+
+	    /* ptr points to object to allocate */
+	}
+	else {
+	    /* no space left in direct block; setup the indirect block. */
+
+	    ptr = MPIU_Handle_indirect_init(&objmem->indirect, 
+					    &objmem->indirect_size, 
+					    HANDLE_BLOCK_SIZE, 
+					    HANDLE_BLOCK_INDEX_SIZE,
+					    objsize,
+					    objkind);
+	    if (ptr) {
+		objmem->avail = ptr->next;
+	    }
+
+	    /* ptr points to object to allocate */
+	}
     }
 
-    objsize = objmem->size;
-    objkind = objmem->kind;
-    if (!objmem->initialized) {
-	/* Setup the first block.  This is done here so that short MPI
-	   jobs do not need to include any of the Info code if no
-	   Info-using routines are used */
-	/* Tell finalize to free up any memory that we allocate */
-	/* The 0 makes this the lowest priority callback, so 
-	   that other callbacks will finish before this one is invoked */
-	MPIR_Add_finalize( MPIU_Handle_finalize, objmem, 0 );
-
-	objmem->initialized = 1;
-	ptr   = MPIU_Handle_direct_init( objmem->direct, objmem->direct_size,
-					 objsize, objkind);
-	if (ptr)
-	    objmem->avail = ptr->next;
-	/* unlock */
-	MPID_Allocation_unlock();
 #ifdef MPICH_DEBUG_HANDLES
-	MPIU_DBG_PRINTF(( "Allocating handle %x (0x%08x)\n", (unsigned) ptr, ptr->handle ));
+    MPIU_DBG_PRINTF(("Allocating handle %x (0x%08x)\n",
+		     (unsigned) ptr, ptr->handle));
 #endif
-	return ptr;
-    }
 
-    ptr = MPIU_Handle_indirect_init( &objmem->indirect, 
-				     &objmem->indirect_size, 
-				     HANDLE_BLOCK_SIZE, 
-				     HANDLE_BLOCK_INDEX_SIZE,
-				     objsize, objkind );
-    if (ptr)
-	objmem->avail = ptr->next;
-
-    /* Unlock */
-    MPID_Allocation_unlock();
-#ifdef MPICH_DEBUG_HANDLES
-	MPIU_DBG_PRINTF(( "Allocating handle %x (0x%08x)\n", (unsigned) ptr, ptr->handle ));
-#endif
+    MPIU_Handle_obj_alloc_complete(objmem, performed_initialize);
     return ptr;
 }   
 

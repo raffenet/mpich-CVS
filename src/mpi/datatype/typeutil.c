@@ -89,12 +89,77 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_INTEGER16,
 #endif
     /* This entry is a guaranteed end-of-list item */
-    (MPI_Datatype)-1,
+    (MPI_Datatype) -1,
 };
 
-int MPIR_Datatype_builtin_fillin( void )
+/*
+  MPIR_Datatype_init()
+
+  Main purpose of this function is to set up the following pair types:
+  - MPI_FLOAT_INT
+  - MPI_DOUBLE_INT
+  - MPI_LONG_INT
+  - MPI_SHORT_INT
+  - MPI_LONG_DOUBLE_INT
+
+  The assertions in this code ensure that:
+  - this function is called before other types are allocated
+  - there are enough spaces in the direct block to hold our types
+  - we actually get the values we expect (otherwise errors regarding
+    these types could be terribly difficult to track down!)
+
+ */
+static MPI_Datatype mpi_pairtypes[] = {
+    MPI_FLOAT_INT,
+    MPI_DOUBLE_INT,
+    MPI_LONG_INT,
+    MPI_SHORT_INT,
+    MPI_LONG_DOUBLE_INT,
+    (MPI_Datatype) -1
+};
+
+int MPIR_Datatype_init(void)
 {
-    static const char FCNAME[] = "MPIR_Datatype_init";
+    int i;
+    MPIU_Handle_common *ptr;
+
+    MPIU_Handle_obj_alloc_start(&MPID_Datatype_mem);
+
+    MPIU_Assert(MPID_Datatype_mem.initialized == 0);
+    MPIU_Assert(MPID_DATATYPE_PREALLOC >= 5);
+
+    /* initialize also gets us our first pointer */
+    ptr = MPIU_Handle_direct_init(MPID_Datatype_mem.direct,
+				  MPID_Datatype_mem.direct_size,
+				  MPID_Datatype_mem.size,
+				  MPID_Datatype_mem.kind);
+
+    MPID_Datatype_mem.initialized = 1;
+    MPID_Datatype_mem.avail = ptr->next;
+
+    MPIU_Assert((void *) ptr == (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[0])));
+    MPID_Type_create_pairtype(mpi_pairtypes[0], (MPID_Datatype *) ptr);
+
+    for (i=1; mpi_pairtypes[i] != (MPI_Datatype) -1; i++) {
+	ptr = MPID_Datatype_mem.avail;
+	MPID_Datatype_mem.avail = ptr->next;
+	ptr->next = 0;
+	
+	MPIU_Assert(ptr);
+	MPIU_Assert((void *) ptr ==
+		    (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[i])));
+
+	MPID_Type_create_pairtype(mpi_pairtypes[i], (MPID_Datatype *) ptr);
+    }
+
+    MPIU_Handle_obj_alloc_complete(&MPID_Datatype_mem, 1);
+
+    return MPI_SUCCESS;
+}
+
+int MPIR_Datatype_builtin_fillin(void)
+{
+    static const char FCNAME[] = "MPIR_Datatype_builtin_fillin";
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *dptr;
@@ -112,7 +177,7 @@ int MPIR_Datatype_builtin_fillin( void )
 	if (!is_init) { 
 	    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
 		/* Compute the index from the value of the handle */
-		d                  = mpi_dtypes[i];
+		d = mpi_dtypes[i];
 		if (d == -1) {
 		    /* At the end of mpi_dtypes */
 		    break;
@@ -126,8 +191,14 @@ int MPIR_Datatype_builtin_fillin( void )
 		if (dptr < MPID_Datatype_builtin || 
 		    dptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
 		{
-		    MPIU_Snprintf(error_msg, 1024, "%dth builtin datatype handle references invalid memory", i);
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		    MPIU_Snprintf(error_msg, 1024,
+				  "%dth builtin datatype handle references invalid memory",
+				  i);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						     MPIR_ERR_FATAL, FCNAME,
+						     __LINE__, MPI_ERR_INTERN,
+						     "**fail", "**fail %s",
+						     error_msg);
 		    return mpi_errno;
 		}
 		/* --END ERROR HANDLING-- */
@@ -147,8 +218,14 @@ int MPIR_Datatype_builtin_fillin( void )
 	    if (d != -1 && mpi_dtypes[i] != -1) {
 		/* We did not hit the end-of-list */
 		/*MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );*/
-		MPIU_Snprintf(error_msg, 1024, "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		MPIU_Snprintf(error_msg, 1024,
+			      "Did not initialize all of the predefined datatypes (only did first %d)\n",
+			      i-1);
+
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+						 FCNAME, __LINE__,
+						 MPI_ERR_INTERN, "**fail",
+						 "**fail %s", error_msg);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -159,15 +236,14 @@ int MPIR_Datatype_builtin_fillin( void )
     return mpi_errno;
 }
 
-/* This will eventually be removed ones ROMIO knows more about 
-   MPICH2 */
-void MPIR_Datatype_iscontig( MPI_Datatype datatype, int *flag )
+/* This will eventually be removed once ROMIO knows more about MPICH2 */
+void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 {
     MPID_Datatype *datatype_ptr;
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
         *flag = 1;
     else  {
-        MPID_Datatype_get_ptr( datatype, datatype_ptr );
+        MPID_Datatype_get_ptr(datatype, datatype_ptr);
         *flag = datatype_ptr->is_contig;
     }
 }
