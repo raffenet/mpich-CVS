@@ -170,7 +170,54 @@ int smpd_entry_point()
 	}
 	smpd_clear_process_registry();
     }
-#else
+#endif
+
+    /* This process is the root_smpd.  All sessions are child processes of this process. */
+    smpd_process.id = 0;
+    smpd_process.root_smpd = SMPD_TRUE;
+
+    if (smpd_process.pszExe[0] != '\0')
+	smpd_set_smpd_data("binary", smpd_process.pszExe);
+
+    result = sock_create_set(&set);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_entry_point");
+	return result;
+    }
+    smpd_process.set = set;
+    smpd_dbg_printf("created a set for the listener: %d\n", sock_getsetid(set));
+    result = sock_listen(set, NULL, &smpd_process.port, &listener); 
+    if (result != SOCK_SUCCESS)
+    {
+	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
+	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_entry_point");
+	return result;
+    }
+    smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
+
+    result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a context for the smpd listener.\n");
+	smpd_exit_fn("smpd_entry_point");
+	return result;
+    }
+    result = sock_set_user_ptr(listener, smpd_process.listener_context);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_entry_point");
+	return result;
+    }
+    smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
+
+    if (smpd_process.root_smpd)
+	smpd_insert_into_dynamic_hosts();
+
+#ifndef HAVE_WINDOWS_H
     /* put myself in the background if flag is set */
     if (smpd_process.bNoTTY)
     {
@@ -226,51 +273,6 @@ int smpd_entry_point()
 	*/
     }
 #endif
-
-    /* This process is the root_smpd.  All sessions are child processes of this process. */
-    smpd_process.id = 0;
-    smpd_process.root_smpd = SMPD_TRUE;
-
-    if (smpd_process.pszExe[0] != '\0')
-	smpd_set_smpd_data("binary", smpd_process.pszExe);
-
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
-	return result;
-    }
-    smpd_process.set = set;
-    smpd_dbg_printf("created a set for the listener: %d\n", sock_getsetid(set));
-    result = sock_listen(set, NULL, &smpd_process.port, &listener); 
-    if (result != SOCK_SUCCESS)
-    {
-	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
-	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
-	return result;
-    }
-    smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
-
-    result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to create a context for the smpd listener.\n");
-	smpd_exit_fn("smpd_entry_point");
-	return result;
-    }
-    result = sock_set_user_ptr(listener, smpd_process.listener_context);
-    if (result != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_entry_point");
-	return result;
-    }
-    smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
-
-    if (smpd_process.root_smpd)
-	smpd_insert_into_dynamic_hosts();
 
     result = smpd_enter_at_state(set, SMPD_SMPD_LISTENING);
     if (result != SMPD_SUCCESS)
