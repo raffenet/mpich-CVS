@@ -2,6 +2,7 @@
 
 EXPORTS
 ; Fortran values
+        MPIPRIV
 	MPIR_Keyval_set_fortran
 	MPIR_Keyval_set_fortran90
 	MPIR_Grequest_set_lang_f77
