@@ -53,12 +53,23 @@ void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, .
 
 char * get_sock_error_string(int error)
 {
-    static char str[256];
+    static char str[1024];
 
     if (error == MPIDU_SOCK_SUCCESS)
 	return "operation completed successfully";
 
-    MPIR_Err_get_string_ext(error, str, 256, MPIDU_Sock_get_error_class_string);
+    str[0] = '\0';
+    MPIR_Err_get_string_ext(error, str, 1024, MPIDU_Sock_get_error_class_string);
+    if (MPIR_Err_print_stack_flag)
+    {
+	char *str2;
+	int len;
+	strcat(str, "\n");
+	len = (int)strlen(str);
+	str2 = str + len;
+	MPIR_Err_print_stack_string_ext(error, str2, 1024-len, MPIDU_Sock_get_error_class_string);
+    }
+
     return str;
 }
 
