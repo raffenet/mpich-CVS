@@ -69,7 +69,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     DLOOP_dbg_printf("DLOOP_Segment_init: count = %d, buf = %x\n",
 		    count,
 		    buf);
-#endif DLOOP_M_VERBOSE
+#endif
 
     if (!DLOOP_Handle_hasloop_macro(handle)) {
 	/* simplest case; datatype has no loop (basic) */
