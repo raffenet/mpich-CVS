@@ -121,11 +121,6 @@ Function RunTests(filename)
 					result = Replace( result, "&", "&amp;" )
 					result = Replace( result, "<", "&lt;" )
 					result = Replace( result, ">", "&gt;" )
-					' There better not be any *AMP* in the output
-					'result = Replace( result, "<", "*AMP*lt;" )
-					'result = Replace( result, ">", "*AMP*gt;" )
-					'result = Replace( result, "&", "*AMP*amp;" )
-					'result = Replace( result, "*AMP*", "&" )
 					fout.WriteLine(result)
 					fout.WriteLine("</TESTDIFF>")
 					if f.FileExists(exe) then
