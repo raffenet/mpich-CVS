@@ -977,6 +977,11 @@ maintainerclean-local:\
 install_INCLUDE = \${top_srcdir}/mpicxx.h\
 install_BIN     = mpicxx\n";
 
+# Since configure copies mpicxx to the bin dir, we need to remove it
+# in a distclean step.  
+print MAKEFD "distclean-local:\n";
+print MAKEFD "\trm -f ../../../bin/mpicxx\n";
+
 close( MAKEFD );
 
 #
