@@ -197,11 +197,11 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm);
 void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm);
 
-shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, int *error_ptr);
+int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out, int *error_ptr);
 int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len);
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
 int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
 
