@@ -11,6 +11,20 @@
 
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
+/* 
+ * MPID_Time_t is hrtime_t, which under Solaris is defined as a 64bit
+ * longlong_t .  However, the Solaris header files will define
+ * longlong_t as a structure in some circumstances, making arithmetic
+ * with hrtime_t invalid.  FIXME.  
+ * To fix this, we'll need to test hrtime_t arithmetic in the configure
+ * program, and if it fails, check for the Solaris defintions (
+ * union { double _d; int32_t _l[2]; }.  Alternately, we may decide that
+ * if hrtime_t is not supported, then neither is gethrtime.
+ *
+ * Note that the Solaris sys/types.h file *assumes* that no other compiler
+ * supports an 8 byte long long.  We can also cast hrtime_t to long long 
+ * if long long is available and 8 bytes.
+ */
 void MPID_Wtime( MPID_Time_t *timeval )
 {
     *timeval = gethrtime();
