@@ -30,7 +30,7 @@
 #define CREATE_DIFFERENCE_CURVES
 #undef CREATE_SINGLE_CURVE
 
-#define MAX_MSG_SIZE    1024*1024*8
+#define MAX_NUM_O12_TRIALS 20
 #define TRIALS          7
 #define PERT            3
 #define LONGTIME        1e99
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     char *memtmp1;
     MPI_Status status;
 
-    int ii, i, j, n, nq,	/* Loop indices					*/
+    int ii, i, j, k, n, nq,	/* Loop indices					*/
 	bufoffset = 0,		/* Align buffer to this				*/
 	bufalign = 16*1024,	/* Boundary to align buffer to			*/
 	nrepeat01, nrepeat12,	/* Number of time to do the transmission	*/
@@ -235,19 +235,17 @@ int main(int argc, char *argv[])
     args12.bufflen = start;
     args012.bufflen = start;
 
+#ifdef CREATE_DIFFERENCE_CURVES
     /* print the header line of the output file */
     if (g_nIproc == 0)
     {
 	fprintf(out, "bytes\tMbits/s\ttime\tMbits/s\ttime");
-	for (ii=1; ii<MAX_MSG_SIZE; ii <<= 1)
+	for (ii=1, itrial=0; itrial<MAX_NUM_O12_TRIALS; ii <<= 1, itrial++)
 	    fprintf(out, "\t%d", ii);
 	fprintf(out, "\n");
 	fflush(out);
     }
-#ifdef CREATE_DIFFERENCE_CURVES
-    ntrials = 1;
-    for (ii=1; ii<MAX_MSG_SIZE; ii <<= 1)
-	ntrials++;
+    ntrials = MAX_NUM_O12_TRIALS;
     dtrials = malloc(sizeof(double)*ntrials);
 #endif
 
@@ -751,7 +749,7 @@ skip_12_trial:
 		fflush(stdout);
 	    }
 
-	    for (itrial=0, ii=1; ii<=nrepeat012; ii <<= 1, itrial++)
+	    for (itrial=0, ii=1; ii <= nrepeat012 && itrial < ntrials; ii <<= 1, itrial++)
 	    {
 		/* Finally, we get to transmit or receive and time */
 		switch (g_proc_loc)
@@ -818,17 +816,35 @@ skip_12_trial:
 
 			/******* use the ii variable here !!! ******/
 
-			for (j = 0; j < nrepeat012; j++)
+			for (j = ii; j < nrepeat012; j+=ii)
 			{
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
-			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
-			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    for (k=0; k<ii; k++)
+			    {
+				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
+				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+			    }
+			    /* do the left process second because it does the timing and needs to include time to send to the right process. */
+			    for (k=0; k<ii; k++)
+			    {
+				MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+				MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    }
 			    if (bNoCache)
 			    {
 				args012.sbuff += args012.bufflen;
 				/* args012.rbuff += args012.bufflen; */
 			    }
+			}
+			for (k=0; k < (nrepeat012 % ii); k++)
+			{
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+			}
+			/* do the left process second because it does the timing and needs to include time to send to the right process. */
+			for (k=0; k < (nrepeat012 % ii); k++)
+			{
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
 			}
 			t = (MPI_Wtime() - t0)/(2 * nrepeat012);
 		    }
