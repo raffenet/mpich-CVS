@@ -8,6 +8,10 @@
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #endif
+#ifdef HAVE_WINDOWS_H
+#include "smpd_service.h"
+#include <Ntdsapi.h>
+#endif
 
 #undef FCNAME
 #define FCNAME "smpd_do_abort_job"
@@ -1103,6 +1107,14 @@ int smpd_handle_result(smpd_context_t *context)
 			    smpd_err_printf("invalid cred_request result returned, no account and password specified: '%s'\n", context->read_cmd.cmd);
 			    ret_val = SMPD_FAIL;
 			}
+		    }
+		    else if (strcmp(str, "sspi") == 0)
+		    {
+			strcpy(iter->context->cred_request, SMPD_CRED_ACK_SSPI);
+			iter->context->read_state = SMPD_IDLE;
+			iter->context->write_state = SMPD_WRITING_CRED_ACK_SSPI;
+			result = MPIDU_Sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			ret_val = result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 		    }
 		    else
 		    {
@@ -3454,17 +3466,72 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     }
 
 #ifdef HAVE_WINDOWS_H
-    if (smpd_process.UserAccount[0] == '\0')
+    if (smpd_process.use_sspi)
     {
-	if (smpd_process.logon || 
-	    (!smpd_get_cached_password(smpd_process.UserAccount, smpd_process.UserPassword) &&
-	    !smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword)))
+	result = smpd_add_command_arg(temp_cmd, "result", "sspi");
+	if (result != SMPD_SUCCESS)
 	{
-	    if (smpd_process.credentials_prompt)
+	    smpd_err_printf("unable to add the result parameter to the result command.\n");
+	    smpd_exit_fn(FCNAME);
+	    return result;
+	}
+    }
+    else
+    {
+	if (smpd_process.UserAccount[0] == '\0')
+	{
+	    if (smpd_process.logon || 
+		(!smpd_get_cached_password(smpd_process.UserAccount, smpd_process.UserPassword) &&
+		!smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword)))
 	    {
-		fprintf(stderr, "User credentials needed to launch processes on %s:\n", host);
-		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
-		smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		if (smpd_process.credentials_prompt)
+		{
+		    fprintf(stderr, "User credentials needed to launch processes on %s:\n", host);
+		    smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		    smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		    result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the account parameter to the result command.\n");
+			smpd_exit_fn(FCNAME);
+			return result;
+		    }
+		    /* FIXME: encrypt the password */
+		    result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to encrypt the password parameter to the result command.\n");
+			smpd_exit_fn(FCNAME);
+			return result;
+		    }
+		    result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the password parameter to the result command.\n");
+			smpd_exit_fn(FCNAME);
+			return result;
+		    }
+		    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the result parameter to the result command.\n");
+			smpd_exit_fn(FCNAME);
+			return result;
+		    }
+		}
+		else
+		{
+		    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the result parameter to the result command.\n");
+			smpd_exit_fn(FCNAME);
+			return result;
+		    }
+		}
+	    }
+	    else
+	    {
 		result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
 		if (result != SMPD_SUCCESS)
 		{
@@ -3476,7 +3543,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 		if (result != SMPD_SUCCESS)
 		{
-		    smpd_err_printf("unable to encrypt the password parameter to the result command.\n");
+		    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
@@ -3488,16 +3555,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		    return result;
 		}
 		result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to add the result parameter to the result command.\n");
-		    smpd_exit_fn(FCNAME);
-		    return result;
-		}
-	    }
-	    else
-	    {
-		result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the result parameter to the result command.\n");
@@ -3537,38 +3594,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	}
-    }
-    else
-    {
-	result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the account parameter to the result command.\n");
-	    smpd_exit_fn(FCNAME);
-	    return result;
-	}
-	/* FIXME: encrypt the password */
-	result = smpd_encrypt_data(smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
-	    smpd_exit_fn(FCNAME);
-	    return result;
-	}
-	result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the password parameter to the result command.\n");
-	    smpd_exit_fn(FCNAME);
-	    return result;
-	}
-	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the result parameter to the result command.\n");
-	    smpd_exit_fn(FCNAME);
-	    return result;
 	}
     }
 #else
@@ -3681,6 +3706,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
     smpd_sspi_client_context_t *sspi_context;
     char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    char target[SMPD_MAX_ACCOUNT_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -3723,6 +3749,51 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	identity->Password = smpd_process.UserPassword;
 	identity->PasswordLength = (unsigned long)strlen(smpd_process.UserPassword);
 	identity->Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
+	strncpy(target, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH);
+    }
+    else
+    {
+	ULONG len = SMPD_MAX_ACCOUNT_LENGTH;
+	char *env;
+	env = getenv("MPICH_SPN");
+	if (env)
+	{
+	    if (strlen(env) > 1)
+	    {
+		strncpy(target, env, SMPD_MAX_ACCOUNT_LENGTH);
+	    }
+	    else
+	    {
+		switch (env[0])
+		{
+		case 'p':
+		    GetUserNameEx(NameUserPrincipal, target, &len);
+		    break;
+		case 'd':
+		    GetUserNameEx(NameDnsDomain, target, &len);
+		    break;
+		case 'n':
+		    GetUserNameEx(NameSamCompatible, target, &len);
+		    break;
+		default:
+		    GetUserName(target, &len);
+		    break;
+		}
+	    }
+	}
+	else
+	{
+	    result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);
+	    if (result != ERROR_SUCCESS)
+	    {
+		smpd_translate_win_error(result, err_msg, 255, NULL);
+		smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
+		target[0] = '\0';
+	    }
+	    /*GetUserNameEx(NameUserPrincipal, target, &len);*/
+	    /*GetUserNameEx(NameDnsDomain, target, &len);*/
+	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
+	}
     }
     result = smpd_create_sspi_client_context(&sspi_context);
     if (result != SMPD_SUCCESS)
@@ -3739,6 +3810,8 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
+	info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
     smpd_dbg_printf("calling AcquireCredentialsHandle\n");
     sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &sspi_context->credential, &ts);
     if (identity != NULL)
@@ -3775,10 +3848,12 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("calling InitializeSecurityContext\n");
+    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", target);
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
-	&sspi_context->credential, NULL, SMPD_SECURITY_PACKAGE,
-	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT /*| ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE*/,
+	&sspi_context->credential, NULL,
+	target,
+	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_MUTUAL_AUTH | ISC_REQ_DELEGATE,
+	/*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT,*/
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
@@ -3948,6 +4023,7 @@ fn_fail:
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr)
 {
 #ifdef HAVE_WINDOWS_H
+    int result;
     char err_msg[256];
     SEC_WINNT_AUTH_IDENTITY *identity = NULL;
     SECURITY_STATUS sec_result, sec_result_copy;
@@ -3957,8 +4033,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     TimeStamp ts;
     SecPkgInfo *info;
     smpd_sspi_client_context_t *sspi_context;
-    char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
-    char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    char target[SMPD_MAX_ACCOUNT_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -3989,6 +4064,56 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	return SMPD_FAIL;
     }
 
+    if (smpd_process.UserAccount[0] != '\0')
+    {
+	strncpy(target, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH);
+    }
+    else
+    {
+	ULONG len = SMPD_MAX_ACCOUNT_LENGTH;
+	char *env;
+	env = getenv("MPICH_SPN");
+	if (env)
+	{
+	    if (strlen(env) > 1)
+	    {
+		strncpy(target, env, SMPD_MAX_ACCOUNT_LENGTH);
+	    }
+	    else
+	    {
+		switch (env[0])
+		{
+		case 'p':
+		    GetUserNameEx(NameUserPrincipal, target, &len);
+		    break;
+		case 'd':
+		    GetUserNameEx(NameDnsDomain, target, &len);
+		    break;
+		case 'n':
+		    GetUserNameEx(NameSamCompatible, target, &len);
+		    break;
+		default:
+		    GetUserName(target, &len);
+		    break;
+		}
+	    }
+	}
+	else
+	{
+	    /*Add DsServerRegisterSpn() or DsWriteAccountSpn() to the service installation code? */
+	    result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);
+	    if (result != ERROR_SUCCESS)
+	    {
+		smpd_translate_win_error(result, err_msg, 255, NULL);
+		smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
+		target[0] = '\0';
+	    }
+	    /*GetUserNameEx(NameUserPrincipal, target, &len);*/
+	    /*GetUserNameEx(NameDnsDomain, target, &len);*/
+	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
+	}
+    }
+
     inbound_descriptor.ulVersion = SECBUFFER_VERSION;
     inbound_descriptor.cBuffers = 1;
     inbound_descriptor.pBuffers = &inbound_buffer;
@@ -4004,6 +4129,8 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
+	info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
     sspi_context->buffer = malloc(info->cbMaxToken);
     if (sspi_context->buffer == NULL)
     {
@@ -4026,11 +4153,13 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("calling InitializeSecurityContext\n");
+    smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", target);
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential,
-	&sspi_context->context, SMPD_SECURITY_PACKAGE,
-	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT /*| ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE*/,
+	&sspi_context->context,
+	target,
+	/*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT,*/
+	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | /*ISC_REQ_MUTUAL_AUTH |*/ ISC_REQ_DELEGATE,
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	&inbound_descriptor, 0, &sspi_context->context,
@@ -4146,6 +4275,8 @@ int smpd_handle_sspi_iter_command(smpd_context_t *context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
+	info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
     sspi_buffer = malloc(info->cbMaxToken);
     if (sspi_buffer == NULL)
     {
