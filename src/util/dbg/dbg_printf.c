@@ -46,19 +46,10 @@ static void dbg_init(void)
      * - add support for sending to a log server, perhaps with global time
      *   sequencing information ???
      */
-    if (strcmp(envstr, "memlog") == 0)
-    {
-	MPIUI_dbg_state = MPIU_DBG_STATE_MEMLOG;
-    }
-    else if (strcmp(envstr, "stdout") == 0)
-    {
-	MPIUI_dbg_state = MPIU_DBG_STATE_STDOUT;
-    }
-    else if (strcmp(envstr, "memlog,stdout") == 0 ||
-	     strcmp(envstr, "stdout,memlog") == 0)
-    {
-	MPIUI_dbg_state = MPIU_DBG_STATE_STDOUT | MPIU_DBG_STATE_MEMLOG;
-    }
+    if (strstr(envstr, "stdout"))
+	MPIUI_dbg_state |= DBG_STATE_STDOUT;
+    if (strstr(envstr, "memlog"))
+	MPIUI_dbg_state |= DBG_STATE_MEMLOG;
 
     /* If memlog is enabled, the we need to allocate some memory for it */
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
