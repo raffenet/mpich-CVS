@@ -5,43 +5,10 @@ SUBDIRS = . channels src
 # the header files verify before make recurses into the source directory
 # and attempts to build files with a broken header files
 #
-all-local: ${srcdir}/Makefile.in ${srcdir}/src/Makefile.in \
-	   Makefile src/Makefile \
-	   ../../include/mpidpre.h ../../include/mpidimpl.h \
+all-local:  ../../include/mpidpre.h ../../include/mpidimpl.h \
 	   ../../include/mpidpost.h \
 	   ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
 	   ../../include/gen_dataloop.h
-
-
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	@echo " " ;							      \
-	 echo "ERROR: SRCDIR/src/mpid/ch3/Makefile.in is out of date." ;      \
-	 echo "You must run maint/updatefiles and then reconfigure." ;	      \
-	 echo " " ;							      \
-	 exit 1
-
-${srcdir}/src/Makefile.in: ${srcdir}/src/Makefile.sm
-	@echo " " ;							      \
-	 echo "ERROR: SRCDIR/src/mpid/ch3/src/Makefile.in is out of date." ;  \
-	 echo "You must run maint/updatefiles and then reconfigure." ;	      \
-	 echo " " ;							      \
-	 exit 1
-
-Makefile: ${srcdir}/Makefile.in
-	@echo " " ;							      \
-	 echo "ERROR: src/mpid/ch3/Makefile is out of date." ;		      \
-	 echo "Running config.status." ;				      \
-	 echo " " ;							      \
-	 ./config.status ;						      \
-	 exit 1
-
-src/Makefile: ${srcdir}/src/Makefile.in
-	@echo " " ;							      \
-	 echo "ERROR: src/mpid/ch3/src/Makefile is out of date." ;	      \
-	 echo "Running config.status." ;				      \
-	 echo " " ;							      \
-	 ./config.status ;						      \
-	 exit 1
 
 ../../include/mpidpre.h: ${srcdir}/include/mpidpre.h
 	@echo " " ;							      \
