@@ -44,7 +44,21 @@ changequote([,])dnl
 if test "$pac_cv_python_version" -lt "2" -o "$pac_cv_python_version" -eq "2" -a "$pac_cv_python_subversion" -lt "2" ; then
     AC_MSG_ERROR([Python version 2.2 or greater required; version ${pac_cv_python_version}.${pac_cv_python_subversion} found]) 
 fi	       
-
+#
+# Test for xml.dom.minidom module
+AC_MSG_CHECKING([that the xml module is available for Python])
+rm -f conftest*
+cat > conftest.py <<EOF
+from xml.dom.minidom import parseString
+EOF
+if $PYTHON conftest.py >/dev/null 2>&1 ; then
+    rm -f conftest*
+    AC_MSG_RESULT(yes)
+else
+    rm -f conftest*
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([The xml.dom.minidom module is required for the mpd process manager])
+fi
 # In case clinker is not defined
 if test -z "$CLINKER" ; then 
     CLINKER="$CC"
