@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,7 +9,7 @@
 
 #define SIZE (1048576*4)       /* read/write size per node in bytes */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *buf, i, j, mynod, nprocs, ntimes=5, len, err, flag;
     double stim, read_tim, write_tim, new_read_tim, new_write_tim;
@@ -88,8 +88,8 @@ main(int argc, char **argv)
     }
     
     if (mynod == 0) {
-	read_bw = (SIZE*nprocs)/(min_read_tim*1000000.0);
-	write_bw = (SIZE*nprocs)/(min_write_tim*1000000.0);
+	read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
+	write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
 	printf("Write bandwidth without file sync = %f Mbytes/sec\n", write_bw);
 	printf("Read bandwidth without prior file sync = %f Mbytes/sec\n", read_bw);
     }
@@ -142,8 +142,8 @@ main(int argc, char **argv)
     if (mynod == 0) {
 	if (flag) printf("MPI_File_sync returns error.\n");
 	else {
-	    read_bw = (SIZE*nprocs)/(min_read_tim*1000000.0);
-	    write_bw = (SIZE*nprocs)/(min_write_tim*1000000.0);
+	    read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
+	    write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
 	    printf("Write bandwidth including file sync = %f Mbytes/sec\n", write_bw);
 	    printf("Read bandwidth after file sync = %f Mbytes/sec\n", read_bw);
 	}
@@ -152,4 +152,5 @@ main(int argc, char **argv)
     free(buf);
     free(filename);
     MPI_Finalize();
+    return 0;
 }
