@@ -169,7 +169,6 @@ int MPID_Type_struct(int count,
 	MPIU_Free(tmp_displacement_array);
 
 	/* deal with the LB and/or UB */
-
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	if (has_lb) {
 	    new_dtp->has_mpi1_lb = 1;
