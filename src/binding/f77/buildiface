@@ -188,8 +188,15 @@ foreach $_ (@ARGV) {
 #
 # Special routines have very different calling seqences in C and Fortran
 # or different behavior.
+# Init and Init thread have different arg lists (no argc, argv)
+# Pcontrol has no varargs
+# Address and Get_address require special integer types and
+# possibly handling for MPI_BOTTOM
+# Keyval routines require setting the language to Fortran (Attribute
+# routines are handled with the special argument processing)
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
-		      'Address' => 1, 'Get_address' => 1 );
+		      'Address' => 1, 'Get_address' => 1,
+		      'Keyval_create' => 1 );
 # 
 # Note that wtime and wtick aren't found because they don't match the 
 # int MPI_xxx format.  They're handled directly by the special routine
@@ -218,6 +225,9 @@ foreach $_ (@ARGV) {
 #             use MPI_Address and MPI_Get_address to make addresses
 #             relative to the Fortran MPI_BOTTOM.  The lines that
 #             define this are commented out below.
+#    addrint: Given the address of an int, provide the int.  Used
+#             for attr_put/set routines 
+#    attrint: Convert an attribute value to an int.
 %special_args = ( 
 #    'Allreduce' => '1:2', 'Allreduce-1' => 'in:bufptr',	
 #		 'Allreduce-2' => 'in:bufptr', 
@@ -235,6 +245,9 @@ foreach $_ (@ARGV) {
 #		  'Reduce_scatter-2' => 'in:bufptr',
 #    'Scan' => '1:2', 'Scan-1' => 'in:bufptr', 'Scan-2' => 'in:bufptr',
     'Add_error_string' => '2', 'Add_error_string-2' => 'in:addnull',
+    'Attr_put' => '3', 'Attr_put-3' => 'in:addrint',
+    'Attr_get' => '3:4', 'Attr_get-4' => 'out:logical', 
+		 'Attr_get-3' => 'out:attrint:4',
     'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array:*v2', 
     'Cart_create-5' => 'in:logical', 
     'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array:*v2',
@@ -651,7 +664,11 @@ sub print_args {
 		$parm = $tof77{$parm};
 		$nstar_after = ($parm =~ /\*/);
 	    }
-	    print $OUTFD "${parm}v$count, ";
+	    $leadspace = "";
+	    if ($parm =~ /\w$/) {
+		$leadspace = " ";
+	    }
+	    print $OUTFD "${parm}${leadspace}v$count, ";
 	    $star_count = 0;
 	    if ($nstar_before != $nstar_after) {
 		$star_count = 1;
@@ -861,6 +878,42 @@ sub index_array_out_decl {
 sub index_array_out_arg {
     my $count = $_[0];
     print $OUTFD "v$count";
+}
+
+#
+# Address and attribute handling
+#in:addrint
+#out:attrint:4
+sub addrint_ftoc {
+}
+sub addrint_in_decl {
+}
+sub addrint_in_arg {
+    my $count = $_[0];
+    print $OUTFD "(void *)(MPI_Aint)((int)*(int *)v$count)";
+}
+
+sub attrint_ctof {
+    my $fvar = $_[0];
+    my $cvar = $_[1];
+    my $flagarg = 4; # get from option
+    print $OUTFD "
+    if ((int)*ierr || !l$flagarg) {
+        *(MPI_Fint*)$cvar = 0;
+    }
+    else {
+        *(MPI_Fint*)$cvar = (MPI_Fint)attr$cvar;
+    }\n";
+}
+
+sub attrint_out_decl {
+    my $count = $_[0];
+    print $OUTFD "    void *attrv$count;\n";
+}
+
+sub attrint_out_arg {
+    my $count = $_[0];
+    print $OUTFD "&attrv$count";
 }
 
 # This is the routine that handles the post-call processing
@@ -1307,6 +1360,26 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	print PROTOFD "double mpi_wtick_( void );\n";
     }
 
+    $OUTFD = "KEYVALCREATEF";
+    open ($OUTFD, ">keyval_createf.c" ) || die "Cannot open keyval_createf.c\n";
+    $files[$#files+1] = "keyval_createf.c";
+    &print_header( "MPI_Keyval_create", "keyval_create" );
+    &print_routine_type_decl( $OUTFD, "keyval_create" );
+    $args = "MPI_Copy_function , MPI_Delete_function , int *, void *";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{
+        *ierr = PMPI_Comm_create_keyval( v1, v2, v3, v4 );
+        if (!*ierr) {
+            MPIR_Keyval_set_fortran( *v3 );
+        }
+}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "keyval_create" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
 
 }
 

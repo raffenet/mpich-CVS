@@ -154,7 +154,8 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 		    copyfn.F77_CopyFunction( &fcomm, &fkeyval, &fextra,
 					     &fvalue, &fnew, &flag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
-		    flag = fflag;
+		    flag      = fflag;
+		    new_value = (void *)fnew;
 		}
 	    }
 	    break;
@@ -171,6 +172,7 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 					     &fvalue, &fnew, &fflag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
+		    new_value = (void *)fnew;
 		}
 	    }
 	    break;
@@ -241,3 +243,16 @@ int MPIR_Comm_attr_delete_list( MPID_Comm *comm_ptr, MPID_Attribute *attr )
     return mpi_errno;
 }
 
+#ifdef HAVE_FORTRAN_BINDING
+/* This routine is used by the Fortran binding to change the language of a
+   keyval to Fortran 
+*/
+void MPIR_Keyval_set_fortran( int keyval )
+{
+    MPID_Keyval *keyval_ptr;
+
+    MPID_Keyval_get_ptr( keyval, keyval_ptr );
+    if (keyval_ptr) 
+	keyval_ptr->language = MPID_LANG_FORTRAN;
+}
+#endif

@@ -1421,6 +1421,7 @@ int MPIR_Nest_value( void );
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
+void MPIR_Keyval_set_fortran( int );
 
 int MPIR_Group_create( int, MPID_Group ** );
 
