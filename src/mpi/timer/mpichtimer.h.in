@@ -22,6 +22,7 @@
 #define USE_LINUXALPHA_CYCLE 5
 #define USE_QUERYPERFORMANCECOUNTER 6
 #define USE_WIN86_CYCLE 7
+#define USE_GCC_IA64_CYCLE 8
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
@@ -235,16 +236,23 @@ void MPID_Wtime_init(void);
                               "=m" (*(((char *) (var_ptr))+4)) \
                             :: "eax", "ebx", "ecx", "edx" ); \
 }
-extern double g_timer_frequency;
-#define MPIDM_Wtime_todouble(t, d) *d = (double)*t / g_timer_frequency
+extern double g_seconds_per_tick;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)*t * g_seconds_per_tick
 #if 0
 #define MPIDM_Wtime_todouble(t, d) *d = (double)*t
 #endif
 
 #elif MPICH_TIMER_KIND == USE_GCC_IA64_CYCLE
-#define MPID_Wtime(var_ptr) { __asm__ __volatile__("mov %0=ar.itc" : "=r" (var_ptr)); }
-extern double g_timer_frequency;
-#define MPIDM_Wtime_todouble(t, d) *d = (double)*t / g_timer_frequency
+#ifdef __INTEL_COMPILER
+#include "ia64regs.h"
+#define MPID_Wtime(var_ptr) { MPID_Time_t t_val;\
+	t_val=__getReg(_IA64_REG_AR_ITC); *var_ptr=t_val;}
+#else
+#define MPID_Wtime(var_ptr) { MPID_Time_t t_val;\
+	__asm__ __volatile__("mov %0=ar.itc" : "=r" (t_val)); *var_ptr=t_val;}
+#endif
+extern double g_seconds_per_tick;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)*t * g_seconds_per_tick
 
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #define MPID_Wtime_init()
@@ -252,9 +260,9 @@ extern double g_timer_frequency;
 
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
 #define MPID_Wtime(var) QueryPerformanceCounter(var)
-extern double g_timer_frequency;
+extern double g_seconds_per_tick;
 #define MPIDM_Wtime_todouble( t, d ) \
-  *d = (double)t->QuadPart / g_timer_frequency /* convert to seconds */
+  *d = (double)t->QuadPart * g_seconds_per_tick /* convert to seconds */
 #if 0
 #define MPIDM_Wtime_todouble( t, d ) \
   *d = (double)t->QuadPart /* don't convert to seconds */
@@ -270,9 +278,9 @@ extern double g_timer_frequency;
     __asm mov [ecx], eax \
     __asm mov [ecx + TYPE int], edx \
 }
-extern double g_timer_frequency;
-#define MPIDM_Wtime_todouble(t, d) *d = (double)(__int64)*t / g_timer_frequency
-#define MPIDM_Wtime_diff(t1,t2,diff) *diff = (double)((__int64)( *t2 - *t1 )) / g_timer_frequency
+extern double g_seconds_per_tick;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)(__int64)*t * g_seconds_per_tick
+#define MPIDM_Wtime_diff(t1,t2,diff) *diff = (double)((__int64)( *t2 - *t1 )) * g_seconds_per_tick
 
 #endif
 

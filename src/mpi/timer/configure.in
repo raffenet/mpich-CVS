@@ -112,7 +112,8 @@ for MPI_Wtime and internal timestamps.  name may be one of
     clock_gettime   - Posix timer (where available)
     gettimeofday - Most Unix systems
     linux86_cycle - Linux x86; returns cycle counts, not time in seconds
-    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha    
+    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
+    gcc_ia64_cycle - IPF ar.itc timer
     ],timer_type=$enable_timer_type)
 dnl
 if test -z "$timer_type" ; then 
@@ -222,6 +223,24 @@ pac_cv_linux86_cycle,[
     fi
     MPID_TIMER_TYPE="long long"
     ;;
+
+    gcc_ia64_cycle)
+    AC_CACHE_CHECK([that IPF timer is available],
+pac_cv_ia64_cycle,[
+    AC_TRY_COMPILE(,[
+    long var, *var_ptr=&var;
+#ifdef __INTEL_COMPILER
+#include "ia64regs.h"
+    var=__getReg(_IA64_REG_AR_ITC);
+#else
+    __asm__ __volatile__("mov %0=ar.itc" : "=r" (var_ptr));
+#endif
+],pac_cv_gcc_ia64_cycle=yes,pac_cv_gcc_ia64_cycle=no)])
+    if test "$pac_cv_gcc_ia64_cycle" != "yes" ; then
+        AC_MSG_ERROR([IPF cycle counter is not available on this system and or with the $CC compiler])
+     fi
+     MPID_TIMER_TYPE="long"
+     ;;
 
     linuxalpha_cycle)
     # See the code in mpidtime.c.  This is a trivial test for now.
