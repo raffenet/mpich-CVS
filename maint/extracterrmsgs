@@ -7,19 +7,53 @@ $entrycount = 0;
 %defined_args = ();
 $showfiles = 0;
 $quiet = 0;
+$build_test_pgm = 1;
 
 # Check for special args
 @files = ();
+$outfile = "";
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
     elsif( $arg =~ /-quiet/) { $quiet = 1; }
+    elsif( $arg =~ /-notest/) { $build_test_pgm = 0; }
+    elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
     }
 }
 
+if ($outfile ne "") {
+    $OUTFD = "MyOutFile";
+    open( $OUTFD, ">$outfile" ) || die "Could not open $outfile\n";
+}
+else {
+    $OUTFD = STDOUT;
+}
+# Setup before processing the files
+if ($build_test_pgm) {
+    open( TESTFD, ">test/mpi/errhan/errcode.c" ) || die "Cannot create test program\n";
+    print TESTFD "#include <stdio.h>\n#include \"mpi.h\"\n";
+    print TESTFD "int MPIR_Err_create_code( int, const char [], ... );\n";
+    print TESTFD "void ChkMsg( int, int, const char [] );\n\n";
+    print TESTFD "int main(int argc, char **argv)\n";
+    print TESTFD "{\n    int err;\n    MPI_Init( 0, 0 );\n";
+}
+
+# Process the definitions
+foreach $file (@files) {
+    print "$file\n" if $showfiles;
+    &ProcessFile( $file );
+}
+&CreateErrmsgsHeader( $OUTFD );
+&CreateErrMsgMapping( $OUTFD );
+
+if ($build_test_pgm) {
+    print TESTFD "    return 0;\n}\n";
+}    
+
+# ==========================================================================
 # Call this for each file
 # This reads a file and adds does the following:
 #   add the generic message to the hash generic_msgs with value i.
@@ -29,8 +63,9 @@ foreach $arg (@ARGV) {
 #   The last two are used to provide better error reporting.
 #
 $generic_count = 0;
+$filename = "";    # Make global so that other routines can echo filename
 sub ProcessFile { 
-    my $filename = $_[0];
+    $filename = $_[0];
     open (FD, "<$filename" ) || die "Could not open $filename\n";
 
     while (<FD>) {
@@ -46,6 +81,10 @@ sub ProcessFile {
 		    print "|$arg|\n";
 		}
 	    }
+	    if ($build_test_pgm) {
+		&AddTestCall( @args )
+	    }
+
 	    # Check the 2nd and 3rd arguments
 	    $arg2 = $args[1];
 	    if ($arg2 =~ /\s$/) {
@@ -53,6 +92,9 @@ sub ProcessFile {
 	    }
 	    if ($#args >1) {
 		$arg3 = $args[2];
+		if ($arg3 =~ /^[1-9]/) {
+		    print STDERR "Error: third argument to Create_code is an invalid integer $arg3 (must be 0 or a string) in $filename\n";
+		}
 #		if ($arg3 =~ /^\s*0\s*$/) { $arg3 = $arg2; }
 	    }
 	    else {
@@ -123,15 +165,6 @@ sub CreateErrmsgsHeader {
     print $FD "typedef struct {\
         const char *short_name, *long_name; } msgpair;\n"
 }
-
-# Process the definitions
-foreach $file (@files) {
-    print "$file\n" if $showfiles;
-    &ProcessFile( $file );
-}
-&CreateErrmsgsHeader( STDOUT );
-&CreateErrMsgMapping( STDOUT );
-
 #
 # We also need a way to create the records
 # We then hash these on the first occurance (or precompute the hashes?)
@@ -144,7 +177,7 @@ foreach $file (@files) {
 # ...
 # static const namemap[] = { {short1, long1}, {...} }
 sub CreateErrMsgMapping {
-    $OUTFD = $_[0];
+    my $OUTFD = $_[0];
     #
     # Read the file with the long names
     #...
@@ -152,8 +185,8 @@ sub CreateErrMsgMapping {
     while (<FD>) {
 	if (/^\s*\#/) { next; }
 	if (/^\s*(\*\*.*):(.*)$/) {
-	    $name = $1;
-	    $repl = $2;
+	    my $name = $1;
+	    my $repl = $2;
 	    $repl =~ s/\r*\n*$//g;
 	    while ($repl =~ /\\\s*$/) {
 		# If there is a \\ at the end, read another.  
@@ -161,13 +194,13 @@ sub CreateErrMsgMapping {
 		# it into a \n (newline), but we may want to avoid 
 		# multiline messages
 		$repl =~ s/\\\s*$//;
-		$inline = <FD>;
+		my $inline = <FD>;
 		$inline =~ s/^\s*//;   # remove leading spaces
 		$repl .= $inline;
 		$repl =~ s/[\r\n]*$//g; # remove newlines
 	    }
-	    $namehasformat = ($name =~ /%/);
-	    $replhasformat = ($repl =~ /%/);
+	    my $namehasformat = ($name =~ /%/);
+	    my $replhasformat = ($repl =~ /%/);
 	    if ($namehasformat != $replhasformat) {
 		print STDERR "Warning: format control usage in $name and $repl do not agree in errnames.txt\n";
 	    }
@@ -217,7 +250,7 @@ sub CreateErrMsgMapping {
   linear search or bisection algorithm to find the message corresponding to\
   a particular message */\n";
     my $num = 0;
-    foreach $key (sort keys %generic_msgs) {
+    foreach my $key (sort keys %generic_msgs) {
 	$longvalue = "\"\0\"";
 	if ($key =~ /^\"\*\*/) {
 	    if (!defined($longnames{$key})) {
@@ -274,8 +307,10 @@ sub CreateErrMsgMapping {
     }
     # Generate the mapping of short to long names
     my $i = 0;
+    print $OUTFD "/* This array parallels the generic_err_msgs array, with
+ null entries where there is no special instance-specific message */\n";
     print $OUTFD "static msgpair specific_err_msgs[] = {\n";
-    for (my $i = 0; $i < $num ; $i ++) {
+    for ($i = 0; $i < $num ; $i ++) {
 	if ($has_spec[$i]) {
 	    print $OUTFD "{ short_spc$i, long_spc$i },\n";
 	}
@@ -296,4 +331,59 @@ sub CreateErrMsgMapping {
     }
     print $OUTFD "};\n";
     print $OUTFD "#endif\n";
+}
+#
+# Add a call to test this message for the error message.
+# Handle both the generic and specific messages
+#
+sub AddTestCall {
+
+    # Generic message (first instance only)
+    if (!defined($testmsg{$_[1]})) {
+	print TESTFD "    /* $filename */\n";
+	print TESTFD "    err = MPIR_Err_create_code( @_[0], @_[1], 0 );\n";
+	print TESTFD "    ChkMsg( err, $_[0], $_[1] );\n";
+	$testmsg{$_[1]} = $filename;
+    }
+
+    # Specific messages
+    if ($_[2] ne "0") {
+	print TESTFD "    {\n";
+	print TESTFD "    /* $filename */\n";
+	# Use types in the string to create the types with default
+	# values
+	my $format = $_[2];
+	my $fullformat = $format;
+	my $narg = 0;
+	my @args = ();
+	while ($format =~ /[^%]*%(.)(.*)/) {
+	    my $type = $1; 
+	    $format  = $2;
+	    $narg ++;
+	    if ($type eq "d") {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "s") {
+		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
+		$args[$#args+1] = "s$narg";
+	    }
+	    else {
+		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
+	    }
+	}   
+	$actargs = $#_ - 2;
+	if ($actargs != $narg) {
+	    print STDERR "Error: Format $fullformat provides $narg arguments but call has $actargs in $filename\n";
+	}
+	print TESTFD "     err = MPIR_Err_create_code( @_[0], @_[1], @_[2]";
+	foreach my $arg (@args) {
+	    print TESTFD ", $arg";
+	}
+	print TESTFD " );\n";
+	print TESTFD "    ChkMsg( err, $_[0], $_[2] );\n    }\n";
+	# ToDo: pass another string to ChkMsg that contains the 
+	# names of the variables, as a single string (comma separated).
+	# This allows us to review the source of the values for the args.
+    }
 }
