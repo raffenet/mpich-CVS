@@ -17,7 +17,7 @@ int MPID_Abort(MPID_Comm * comm, int errorcode)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_ABORT);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
-    fprintf(stderr, "ABORT - process %d: %s", MPIR_Process.comm_world->rank, MPIR_Err_get_string(errorcode));
+    fprintf(stderr, "ABORT - process %d: %s\n", MPIR_Process.comm_world->rank, MPIR_Err_get_string(errorcode));
     fflush(stderr);
     abort();
     

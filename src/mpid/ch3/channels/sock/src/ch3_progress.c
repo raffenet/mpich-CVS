@@ -764,7 +764,7 @@ static int sock_errno_to_mpi_errno(int sock_errno)
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "[ch3:sock] connection refused", 0 );
 	    break;
 	case SOCK_ERR_CONN_FAILED:
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "[ch3:sock] active connection unexpected terminated", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "[ch3:sock] active connection unexpectedly terminated", 0 );
 	    break;
 	case SOCK_ERR_BAD_SOCK:
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "[ch3:sock] internal error - bad sock", 0 );
@@ -774,6 +774,7 @@ static int sock_errno_to_mpi_errno(int sock_errno)
 	    break;
 	default:
 	    mpi_errno = MPI_ERR_OTHER;
+	    break;
     }
 
     return mpi_errno;
