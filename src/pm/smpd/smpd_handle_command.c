@@ -1125,10 +1125,13 @@ int smpd_handle_connect_command(smpd_context_t *context)
     result = sock_post_connect(dest_set, dest, host, SMPD_LISTENER_PORT, &dest_sock);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to post a connect to start the connect command, sock error:\n%s\n",
+	smpd_err_printf("unable to post a connect to start the connect command,\nsock error: %s\n",
 	    get_sock_error_string(result));
+	result = smpd_post_abort_command("Unable to connect to '%s:%d',\nsock error: %s\n",
+	    host, SMPD_LISTENER_PORT, get_sock_error_string(result));
 	smpd_exit_fn("handle_connect_command");
-	return SMPD_FAIL;
+	/*return SMPD_FAIL;*/
+	return result;
     }
 
 #if 0
@@ -1384,6 +1387,21 @@ int smpd_handle_stat_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_abort_command(smpd_context_t *context)
+{
+    char error_str[2048];
+
+    smpd_enter_fn("smpd_handle_abort_command");
+
+    if (smpd_get_string_arg(context->read_cmd.cmd, "error", error_str, 2048))
+    {
+	smpd_err_printf("abort: %s\n", error_str);
+    }
+
+    smpd_exit_fn("smpd_handle_abort_command");
+    return SMPD_EXIT;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -1493,6 +1511,12 @@ int smpd_handle_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_SUCCESS;
     }
+    else if (strcmp(cmd->cmd_str, "abort") == 0)
+    {
+	result = smpd_handle_abort_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
     else if (strcmp(cmd->cmd_str, "stdout") == 0)
     {
 	result = smpd_handle_stdout_command(context);
@@ -1549,7 +1573,7 @@ int smpd_handle_command(smpd_context_t *context)
 	result = sock_post_close(context->sock);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to post a close on sock %d, sock error:\n%s\n",
+	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
 		sock_getid(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
@@ -1567,7 +1591,7 @@ int smpd_handle_command(smpd_context_t *context)
 	result = sock_post_close(context->sock);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to post a close on sock %d, sock error:\n%s\n",
+	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
 		sock_getid(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
