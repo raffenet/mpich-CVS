@@ -1953,6 +1953,14 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("#define HAVE_MALLOC_H 1")
 				Case "MPICH_DEBUG_MEMINIT"
 					fout.WriteLine("/* #undef MPICH_DEBUG_MEMINIT */")
+				Case "C_ALLOCA"
+					fout.WriteLine("/* #undef C_ALLOCA */")
+				Case "HAVE_ALLOCA"
+					fout.WriteLine("/* #undef HAVE_ALLOCA */")
+				Case "HAVE_ALLOCA_H"
+					fout.WriteLine("/* #undef HAVE_ALLOCA_H */")
+				Case "HAVE_PTHREAD_YIELD"
+					fout.WriteLine("/* #undef HAVE_PTHREAD_YIELD */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
