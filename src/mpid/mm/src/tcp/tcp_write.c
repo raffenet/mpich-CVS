@@ -129,8 +129,18 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     
     MM_ENTER_FUNC(TCP_WRITE_VEC);
 
+#ifdef MPICH_DEV_BUILD
     /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
+    if (buf_ptr->vec.num_cars_outstanding == 0)
+    {
+	err_printf("Error: tcp_write_vec called when num_cars_outstanding == 0.\n");
+	return -1;
+    }
+#endif
 
+    /* num_read_copy is the amount of data described by the vector in car_ptr->data.tcp.buf.vec_write */
+    /* num_read is the amount of data described by the vector in buf_ptr->vec */
+    /* If they are not equal then this car needs to be updated */
     if (car_ptr->data.tcp.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
     {
 	/* update vector */
@@ -147,7 +157,12 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	car_vec[cur_index].MPID_VECTOR_BUF = 
 	    (char*)car_vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
 	car_vec[cur_index].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-	
+
+	/* modify the vector copied from buf_ptr->vec to represent only the data that has been read 
+	 * This is done by traversing the vector, subtracting the lengths of each buffer until all the read
+	 * data is accounted for.
+	 */
+
 	/* set the size of the car vector to zero */
 	car_ptr->data.tcp.buf.vec_write.vec_size = 0;
 	
@@ -161,7 +176,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    i++;
 	}
 	/* if the last vector buffer is larger than the amount of data read into that buffer,
-	update the length field in the car's copy of the vector */
+	update the length field in the car's copy of the vector to represent only the read data */
 	if (num_left < 0)
 	{
 	    car_vec[i].MPID_VECTOR_LEN += num_left;
@@ -169,7 +184,10 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	
 	/* at this point the vec in the car describes all the currently read data */
     }
-    
+
+    /* num_read_copy is the amount of data described by the vector in car_ptr->data.tcp.buf.vec_write */
+    /* cur_num_written is the amount of data in this car that has already been written */
+    /* If they are not equal then there is data available to be written */
     if (car_ptr->data.tcp.buf.vec_write.cur_num_written < car_ptr->data.tcp.buf.vec_write.num_read_copy)
     {
 	/* write */
