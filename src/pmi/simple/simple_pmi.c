@@ -38,10 +38,6 @@
 /* Shouldn't most of these globals be static (local to this file?) 
    Shouldn't they all be initialized to avoid problems with common symbols? */
 
-/* This one is shared with simple_pmiutil.c.  In fact, it is 
- *only* used there, and should probably be local to the file and 
- initialized there */
-char PMIU_print_id[PMIU_IDSIZE];
 
 int PMI_fd = -1;
 int PMI_size = 1;
@@ -140,7 +136,9 @@ int PMI_Init( int *spawned )
 	
 	if ( ( p = getenv( "PMI_RANK" ) ) ) {
 	    PMI_rank = atoi( p );
-	    snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+	    /* Let the util routine know the rank of this process for 
+	       any messages (usually debugging or error) */
+	    PMIU_Set_rank( PMI_rank );
 	}
 	else 
 	    PMI_rank = 0;

@@ -9,11 +9,8 @@
 #define PMIU_MAXLINE 1024
 #define PMIU_IDSIZE    32
 
-/* This must be extern because two files include this header.  simple_pmi.c 
-   declares this value */
-extern char PMIU_print_id[PMIU_IDSIZE];
-
 /* prototypes for PMIU routines */
+void PMIU_Set_rank( int PMI_rank );
 void PMIU_printf( int print_flag, char *fmt, ... );
 int  PMIU_readline( int fd, char *buf, int max );
 int  PMIU_writeline( int fd, char *buf );

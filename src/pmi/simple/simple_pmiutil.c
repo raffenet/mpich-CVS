@@ -35,6 +35,15 @@ struct PMIU_keyval_pairs {
 struct PMIU_keyval_pairs PMIU_keyval_tab[64];
 int  PMIU_keyval_tab_idx;
 
+/* This is used to prepend printed output.  Set the initial value to 
+   "unset" */
+static char PMIU_print_id[PMIU_IDSIZE] = "unset";
+
+void PMIU_Set_rank( int PMI_rank )
+{
+    snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+}
+
 /* This should be combined with the message routines */
 void PMIU_printf( int print_flag, char *fmt, ... )
 {
