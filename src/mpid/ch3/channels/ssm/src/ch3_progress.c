@@ -1013,7 +1013,11 @@ int MPIDI_CH3_Progress_poke()
     int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+#if defined(USE_ADAPTIVE_PROGRESS) && defined(MPID_CPU_TICK)
     mpi_errno = MPIDI_CH3_Progress_test();
+#else
+    mpi_errno = MPIDI_CH3_Progress(0);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     return mpi_errno;
 }
