@@ -6,6 +6,11 @@ dnl shared libraries, with *or without* the use of the GNU Libtool package.
 dnl For many of our important platforms, the Libtool approach is overkill,
 dnl and can be particularly painful for developers.
 dnl
+dnl To use libtool, you need macros that are defined by libtool for libtool
+dnl Don't even think about the consequences of this for updating and for
+dnl using user-versions of libtool :(
+builtin(include,libtool.m4)
+dnl
 dnl/*D
 dnl PAC_ARG_SHAREDLIBS - Add --enable-sharedlibs=kind to configure.
 dnl 
@@ -61,18 +66,23 @@ case "$enable_sharedlibs" in
     C_LINKPATH_SHL="-Wl,-rpath -Wl,"
     ;;
     libtool)
-    AC_MSG_RESULT([Creating shared libraries using libtool (not yet supported)])
-    AC_CHECK_PROGS(LIBTOOL,libtool,false)
+    AC_MSG_WARN([Creating shared libraries using libtool (not yet supported)])
+    dnl Using libtool requires a heavy-weight process to test for 
+    dnl various stuff that libtool needs.  Without this, you'll get a
+    dnl bizarre error message about libtool being unable to find
+    dnl configure.in or configure.ac (!)
+    AC_PROG_LIBTOOL
+dnl    AC_CHECK_PROGS(LIBTOOL,libtool,false)
     if test "$LIBTOOL" = "false" ; then
 	AC_MSG_WARN([Could not find libtool])
     else
         # Likely to be
         # either CC or CC_SHL is libtool $cc
-        CC_SHL='libtool ${CC}'
+        CC_SHL='${LIBTOOL} --mode=compile ${CC}'
         # CC_LINK_SHL includes the final installation path
         # For many systems, the link may need to include *all* libraries
         # (since many systems don't allow any unsatisfied dependencies)
-        C_LINK_SHL='libtool ${CC} -rpath ${libdir}'
+        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
         C_LINKPATH_SHL="-rpath "
     fi
     ;;
@@ -124,8 +134,8 @@ for pac_arg in $pac_kinds ; do
     else
         # Likely to be
         # either CC or CC_SHL is libtool $cc
-        pac_cc_sharedlibs'libtool ${CC}'
-        pac_clink_sharedlibs='libtool ${CC} -rpath ${libdir}'
+        pac_cc_sharedlibs'${LIBTOOL} -mode=compile ${CC}'
+        pac_clink_sharedlibs='${LIBTOOL} -mode=link ${CC} -rpath ${libdir}'
     fi
     ;;
     *)
@@ -137,4 +147,22 @@ if test -z "$pac_cc_sharedlibs" ; then pac_cc_sharedlibs=true ; fi
 if test -z "$pac_clink_sharedlibs" ; then pac_clink_sharedlibs=true ; fi
 ifelse($2,,CC_SHL=$pac_cc_sharedlibs,$2=$pac_cc_sharedlibs)
 ifelse($3,,C_LINK_SHL=$pac_clink_sharedlibs,$3=$pac_clink_sharedlibs)
+])
+dnl
+dnl
+dnl This macro ensures that all of the necessary substitutions are 
+dnl made by any subdirectory configure (which may simply SUBST the
+dnl necessary values rather than trying to determine them from scratch)
+dnl This is a more robust (and, in the case of libtool, only 
+dnl managable) method.
+AC_DEFUN(PAC_CC_SUBDIR_SHLIBS,[
+	AC_SUBST(CC_SHL)
+        AC_SUBST(C_LINK_SHL)
+        AC_SUBST(LIBTOOL)
+        AC_SUBST(ENABLE_SHLIB)
+	if test "$ENABLE_SHLIB" = "libtool" ; then
+	    if test -z "$LIBTOOL" ; then
+		AC_MSG_WARN([libtool selected for shared library support but LIBTOOL is not defined])
+            fi
+	fi
 ])
