@@ -84,10 +84,29 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     /* check for the service/silent option */
 #ifdef HAVE_WINDOWS_H
     smpd_process.bService = SMPD_TRUE;
-#else
+#endif
+
     if (smpd_get_opt(argcp, argvp, "-s"))
+    {
+#ifdef HAVE_WINDOWS_H
+	printf("The -s option is only available under unix.\n");
+	smpd_print_options();
+	smpd_exit(0);
+#else
 	smpd_process.bNoTTY = SMPD_TRUE;
 #endif
+    }
+
+    if (smpd_get_opt(argcp, argvp, "-r"))
+    {
+#ifdef HAVE_WINDOWS_H
+	printf("The -r option is only available under unix.\n");
+	smpd_print_options();
+#else
+	printf("The -r root option is not yet implemented.\n");
+#endif
+	smpd_exit(0);
+    }
 
     /* check for debug option */
     if (smpd_get_opt_int(argcp, argvp, "-d", &dbg_flag))
