@@ -141,14 +141,14 @@ int MPI_Finalize( void )
                                          MPIR_Process.comm_world->attributes);
     }
 
-    /* Question: why is this not one of the finalize callbacks?.  Do we need
+    /* FIXME: Why is this not one of the finalize callbacks?.  Do we need
        pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
 
     MPID_Finalize();
 
     /* delete local and remote groups on comm_world and comm_self if
-       they had been created (shoule we use a function pointer here
+       they had been created (should we use a function pointer here
        as well to avoid loading the group code?) */
     if (MPIR_Process.comm_world->local_group)
         MPIR_Group_release(MPIR_Process.comm_world->local_group);
@@ -164,11 +164,18 @@ int MPI_Finalize( void )
     /* If memory debugging is enabled, check the memory here, after all
        finalize callbacks */
 #ifdef USE_MEMORY_TRACING
+    /* FIXME: the (1) in the if test should be replaced by a 
+       parameter call */
+    /* FIXME: We'd like to arrange for the mem dump output to
+       go to separate files or to be sorted by rank (note that
+       the rank is at the head of the line) */
     if (1) {
 	MPIU_trdump( (void *)0 );
     }
 #endif
 #ifdef MPICH_DEBUG_NESTING
+    /* FIXME: the (1) in the if test should be replaced by a 
+       parameter call */
     if (1) {
 	/* Check for an error in the nesting level */
 	if (MPIR_Nest_value()) {
