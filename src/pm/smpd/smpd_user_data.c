@@ -334,7 +334,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    }
 	    else
 	    {
-		fin = fopen(pwdfile, "r");
+		fin = fopen(smpd_filename, "r");
 		if (fin != NULL)
 		{
 		    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
