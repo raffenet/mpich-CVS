@@ -19,5 +19,5 @@ int  PMIU_readline( int fd, char *buf, int max );
 int  PMIU_writeline( int fd, char *buf );
 int  PMIU_parse_keyvals( char *st );
 void PMIU_dump_keyvals( void );
-char *PMIU_getval( char *keystr, char *valstr, int vallen );
-void PMIU_chgval( char *keystr, char *valstr );
+char *PMIU_getval( const char *keystr, char *valstr, int vallen );
+void PMIU_chgval( const char *keystr, char *valstr );
