@@ -464,10 +464,10 @@ static void fPMI_Handle_get( PMIProcess *pentry )
     char message[PMIU_MAXLINE], key[PMIU_MAXLINE], value[PMIU_MAXLINE];
     char outbuf[PMIU_MAXLINE];
     
+    PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
     if (pmidebug) {
 	DBG_PRINTF( "Get: Finding kvs %s\n", kvsname );
     }
-    PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
     for ( i = 0; i < MAXKVSS; i++ ) {
 	if ( pmi.kvstable[i].active &&
 	     strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
