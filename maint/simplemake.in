@@ -662,10 +662,11 @@ sub RecursiveOp {
 	    # Add a - incase there is a problem
           print FD " - ; do \\\n";
 	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\\n";
-	  print FD "\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
+	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done\n";
         }	
 	else {
-          print FD " ; do \\\n\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
+          print FD " ; do \\\n\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
+	    "done\n";
         }
     }
 }
@@ -741,11 +742,11 @@ sub TargetAll {
 		# May be a replaced variable
 		print FD "\tfor dir in $dir - ; do\\\n";
 		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\\n";
-		print FD "\t\t(cd \$\$dir ; \${MAKE} all ) ;\\\n";
+		print FD "\t\t(cd \$\$dir && \${MAKE} all ) ;\\\n";
 		print FD "\tdone\n";
 	    }
 	    else {
-		print FD "\t(cd $dir ; \${MAKE} all )\n";
+		print FD "\t(cd $dir && \${MAKE} all )\n";
 	    }
 	    # If subdirs has no dot but there are local targets, add an 
 	    # implicit dot to the end.
