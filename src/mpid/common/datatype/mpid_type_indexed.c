@@ -169,7 +169,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = -1; /* ??? */
 
-	new_dtp->iscontig = 0; /* TODO: FIX THIS */
+	new_dtp->is_contig = 0; /* TODO: FIX THIS */
 
 	/* allocate space for dataloop */
 	new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop) + 
