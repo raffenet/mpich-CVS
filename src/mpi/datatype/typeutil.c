@@ -67,6 +67,7 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_2REAL,
     MPI_2DOUBLE_PRECISION,
     MPI_CHARACTER,
+#if 0
 /* Size-specific types */
     MPI_REAL4,
     MPI_REAL8,
@@ -79,6 +80,7 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_INTEGER4,
     MPI_INTEGER8,
     MPI_INTEGER16,
+#endif
 };
 
 void MPIR_Datatype_init( void )
