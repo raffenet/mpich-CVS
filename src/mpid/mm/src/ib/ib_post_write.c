@@ -35,6 +35,8 @@ int ib_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     }
     else
     {
+	err_printf("rndv sized messages not yet supported in ib.\n");
+
 	/* create a request to send car */
 	rndv_car_ptr = mm_car_alloc();
 
