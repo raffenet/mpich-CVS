@@ -2,29 +2,165 @@
 #
 # Configure and build mpich2 with some of the options
 #
-$srcdir=/home/gropp/projects/mpich2
-$instdir=/sandbox/gropp/mpi2-inst
-
-
-$srcdir/configure --prefix=$instdir --enable-g=all --enable-strict --enable-timing
-make
-
+# Set default values
+$srcdir  = "/home/gropp/projects/mpich2";
+$instdir = "/sandbox/gropp/mpi2-inst";
 #
-# Run some examples with memory tracing turned on.
+# Set available options.  For enable and with, the values are
+# {with,enable}-name[;possiblevalues]*
+@enable_array = ( 
+		  'error-checking;no;runtime;all', 
+		  'error-messages;all;generic;class;none',
+		  'timings;none;all;runtime',
+		  'mpi-macros',
+		  'g;none;all;mem',
+		  'internat',
+		  'fast',
+		  'f77',
+		  'cxx',
+		  'coverage',
+);
+@with_array = (
+	       'logging;rlog;dlog',
+	       'pmi;uni;forker;mpd',
+);
+@env_array = (
+#	      'CC;gcc;cc;pgcc;ecc;xlc',
+#	      'FC;f77;pgf77;efc;xlf',
+#	      'CXX;gcc;CC;pgCC;ecc;xlC',
+);	      
 
+# Also cross;sample-cross-files, but we need the files first
+# Also missing are levels of thread support.
+
+$n_enable = $#enable_array + 1;
+$n_with   = $#with_array + 1;
+$n_env    = $#env_array + 1;
+$show     = 0;
+$debug    = 0;
+
+# Read the arguments
+foreach $_ (@ARGV) {
+    if (/-enable-n=(\d*)/) {
+	$n_enable = $1;
+    }
+    elsif (/-with-n=(\d*)/) {
+	$n_with = $1;
+    }
+    elsif (/-show/) {
+	$show = 1;
+    }
+    elsif (/-debug/) {
+	$debug = 1;
+    }
+    elsif (/-envopt=(.*)/) {
+	# Add a list of possible env values
+	$env_array[$#env_array+1] = $1;
+	$n_env    = $#env_array + 1;
+    }
+    elsif (/-help/) {
+	print STDERR "\
+checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
+        -enable-n=d sets the number of --enable options to try
+        -with=n=d set the number of --with options to try
+        -envopt=name;value;... adds an environment variable with possible
+                 values (quote the text so that the semicolons do not
+                 cause trouble)
+
+        Example:
+        checkbuilds -envopt=\"CC;gcc;pgcc;ecc\"\n";
+        exit(1);
+    }
+
+    else {
+	print STDERR "Unrecognized argument $_\n";
+	exit(1);
+    }
+}
+
+# 
+# Create the with and enable options
+@enable_chosen = ();
+@with_chosen = ();
+$enable_args = "--enable-strict";  # Only if compiler is gcc
+$with_args = "";
+# Chosen *without* replacement.  If an option is chosen twice, 
+# then there will be fewer options
+$enable_args = &RandArgs( $n_enable, "enable_array", "enable" );
+$with_args   = &RandArgs ( $n_with, "with_array", "with" );
+
+# To set the environment, use the same code to set things up,
+# then process the env array to set the environment
+$env_args    = &RandArgs( $n_env, "env_array", "env" );
+$envset = "";
+foreach $_ (split(/ /,$env_args)) {
+    if (/--env-(.*)=(.*)/) {
+	$name  = $1;
+	$value = $2;
+	print "Env $name = $value\n" if $debug;
+	# Since most of these so far are programs, we should check to 
+	# see if they're available.  Instead, we'll make the user
+	# specify the valid values (see -envopt above)
+	$ENV{$name} = $value;
+	$envset .= "$name = $value; ";
+    }
+}
+
+# Check configure location
+if ( ! (-x "$srcdir/configure") && (-x "./configure") ) {
+    $srcdir = ".";
+}
+if ($show) {
+    print "Configure: $enable_args $with_args\n";
+    if ($envset ne "") {
+	print "Environment = $envset\n";
+    }
+}
+else {
+    @config = split( / /, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
+    print "Configure: " . join(" ", @config) . "\n";
+    if ($envset ne "") {
+	print "Environment = $envset\n";
+    }
+    $rc = system @config;
+    # print "rc = $rc\n";
+    system "make";
+}
+
+# ---------------------------------------------------------------------------
+# Chosen *without* replacement.  If an option is chosen twice, 
+# then there will be fewer options
+sub RandArgs { 
+    my ($n_choice, $array_name, $optname ) = @_;
+    my @chosen = ( );
+    my $args = "";
+    my $array_len = $#$array_name;
+    my $idx;
+
+    print "select $n_choice\n" if $debug;
+    for (my $i=0; $i<$n_choice; $i++) {
+	$idx = int( rand (1 + $array_len) );
+	print "Found $idx\n" if $debug;
+	if ($chosen[$idx]) { next; }
+	$chosen[$idx] = 1;
+	@args = split( /;/, $$array_name[$idx] );
+	print "Trying $$array_name[$idx]\n" if $debug;
+	$name = $args[0];
+	$idx = 1 + int( rand $#args );
+	$value = $args[$idx];
+	if ($value ne "") {
+	    $args .=  " --$optname-$name=$value";
+	}
+	else {
+	    $args .= " --$optname-$name";
+	}
+    }
+    return $args;
+}
+    
+
+# ---------------------------------------------------------------------------
 #
 # Other options
-# --enable-error-checking={ no, runtime, all }
-# --enable-error-messages={ all, generic, class, none }
-# --enable-timing={ none, all, runtime }
 # --enable-threads={single, multiple}
-# --enable-mpi-macros
-# --enable-g={ none, mem, all }
-# --enable-internat
-# --enable-fast
-# --enable-f77
-# --enable-cxx
-#
-# --with-loging = { ??? }
-# --with-pmi = { uni, forker, mpd }
-# --with-cross=filename (file containing cross-compilation values)
+
