@@ -97,7 +97,7 @@ int main( int argc, char **argv )
 	if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
 	name[0] = 0;
 	MPI_Type_get_name( mpi_names[i].dtype, name, &namelen );
-	if (strncmp( name, mpi_names[i].name, &namelen )) {
+	if (strncmp( name, mpi_names[i].name, namelen )) {
 	    errs++;
 	    fprintf( stderr, "Expected %s but got %s\n", 
 		     mpi_names[i].name, name );
