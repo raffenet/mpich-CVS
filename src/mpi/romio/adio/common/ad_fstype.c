@@ -61,7 +61,9 @@ Output Parameters:
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code)
 {
     char *dir, *slash;
+#ifndef NTFS
     int err;
+#endif
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
     struct statvfs vfsbuf;
 #endif
@@ -171,7 +173,12 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #else
     /* on other systems, make NFS the default */
     free(dir);
+#ifdef NTFS
+	*fstype = ADIO_NTFS;
+#else
     *fstype = ADIO_NFS;   
+#endif
+    *error_code = MPI_SUCCESS;
 #endif
 }
 
@@ -188,7 +195,7 @@ Output Parameters:
 . error_code - pointer to integer in which to store error code
 
   Returns MPI_SUCCESS in error_code on success.  Filename not having a prefix
-  is considered an error.
+  is considered an error. Except for on Windows systems where the default is NTFS.
 
  */
 static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code)
@@ -225,8 +232,12 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
 	*fstype = ADIO_TESTFS;
     }
     else {
+#ifdef NTFS
+	*fstype = ADIO_NTFS;
+#else
 	*fstype = 0;
 	*error_code = MPI_ERR_UNKNOWN;
+#endif
     }
 }
 
@@ -419,6 +430,21 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
 #else
 	*ops = &ADIO_PVFS_operations;
+#endif
+    }
+    if (file_system == ADIO_NTFS) {
+#ifndef ROMIO_NTFS
+#ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NTFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_NTFS,
+				     myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
+#endif
+#else
+	*ops = &ADIO_NTFS_operations;
 #endif
     }
     if (file_system == ADIO_TESTFS) {
