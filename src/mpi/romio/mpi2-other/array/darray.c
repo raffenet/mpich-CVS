@@ -256,7 +256,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
 }
 
 
-#ifndef MPIO_BUILD_PROFILING
+#if defined(USE_WINCONF_H) || !defined(MPIO_BUILD_PROFILING)
 void MPIOI_Type_block(int *array_of_gsizes, int dim, int ndims, int nprocs,
 		      int rank, int darg, int order, MPI_Aint orig_extent,
 		      MPI_Datatype type_old, MPI_Datatype *type_new,
