@@ -127,6 +127,7 @@ typedef struct DLOOP_Dataloop_indexed {
     struct DLOOP_Dataloop *dataloop;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
+    DLOOP_Count total_blocks;
 } DLOOP_Dataloop_indexed;
 
 /*S

@@ -14,17 +14,6 @@
 static char *MPIDI_combiner_to_string(int combiner);
 static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type);
 
-void MPIDI_Datatype_dot_printf(MPI_Datatype type)
-{
-    char *string;
-
-    if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
-    }
-    else {
-
-    }
-}
-
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			       int depth,
 			       int header)
@@ -53,9 +42,10 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			    loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_INDEXED:
-	    MPIU_dbg_printf("      dl%d [shape = record, label = \"indexed |{ ct = %d; regions = ",
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"indexed |{ ct = %d; tot_blks = %d; regions = ",
 			    depth,
-			    loop_p->loop_params.c_t.count);
+			    loop_p->loop_params.i_t.count,
+			    loop_p->loop_params.i_t.total_blocks);
 	    
 	    /* 3 picked as arbitrary cutoff */
 	    for (i=0; i < 3 && i < loop_p->loop_params.i_t.count; i++) {

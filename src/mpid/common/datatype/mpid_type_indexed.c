@@ -350,6 +350,13 @@ int MPID_Type_indexed(int count,
 				  el_size,
 				  el_extent);
 
+    dlp->loop_params.i_t.total_blocks = 0;
+
+    /* count up total number of blocks */
+    for (i=0; i < contig_count; i++) {
+	dlp->loop_params.i_t.total_blocks += dlp->loop_params.i_t.blocksize_array[i];
+    }
+
     /* return handle to new datatype in last parameter */
     *newtype = new_dtp->handle;
 
