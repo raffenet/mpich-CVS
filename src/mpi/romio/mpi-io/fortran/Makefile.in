@@ -40,16 +40,16 @@ all: $(LIBNAME)
 	$(CC) $(CFLAGS) -c $*.c
 
 .c.p:
-	@\cp $*.c _$*.c
+	@cp $*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
-	@\rm -f _$*.c
+	@rm -f _$*.c
 
 profile: $(MPIO_TMP_PFOBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_PFOBJECTS)
-	@\rm -f _*.o
+	@rm -f _*.o
 
 $(LIBNAME): $(MPIO_FOBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_FOBJECTS)
 
 clean: 
-	/bin/rm -f *.o
+	@rm -f *.o

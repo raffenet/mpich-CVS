@@ -18,4 +18,4 @@ $(LIBNAME): $(AD_XFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_XFS_OBJECTS)
 
 clean:
-	\rm *.o
+	@rm -f *.o

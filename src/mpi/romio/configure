@@ -1115,17 +1115,61 @@ fi
 
 #
    if test -z "$FILE_SYSTEM" ; then
-      if test -n "$arch_sgi5" ; then
-         file_system_ufs=1
-         file_system_nfs=1
-         FILE_SYSTEM="ufs nfs"
-         echo "configuring for file systems ufs and nfs"
-      else
-         file_system_xfs=1
-         file_system_nfs=1
-         FILE_SYSTEM="xfs nfs"
-         echo "configuring for file systems xfs and nfs"
-      fi
+       file_system_nfs=1
+       FILE_SYSTEM="nfs"
+       if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for xfs""... $ac_c"
+else
+echo $ac_n "checking for xfs""... $ac_c" 1>&1
+fi
+       cat > conftest.c <<EOF
+#include "confdefs.h"
+
+#include <aio.h>
+int main() { exit(0); }
+int t() { aiocb64_t *t1; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  file_system_xfs=1;FILE_SYSTEM="xfs $FILE_SYSTEM";
+
+fi
+rm -f conftest*
+
+       if test "$file_system_xfs" = 1 ; then 
+          if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+       else
+          if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+       fi
+       echo "configuring for file systems $FILE_SYSTEM"
    fi
    CFLAGS="$CFLAGS -D__IRIX"
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"

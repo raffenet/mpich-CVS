@@ -723,17 +723,18 @@ if test -n "$arch_IRIX"; then
    PAC_HAS_PREAD64
 #
    if test -z "$FILE_SYSTEM" ; then
-      if test -n "$arch_sgi5" ; then
-         file_system_ufs=1
-         file_system_nfs=1
-         FILE_SYSTEM="ufs nfs"
-         echo "configuring for file systems ufs and nfs"
-      else
-         file_system_xfs=1
-         file_system_nfs=1
-         FILE_SYSTEM="xfs nfs"
-         echo "configuring for file systems xfs and nfs"
-      fi
+       file_system_nfs=1
+       FILE_SYSTEM="nfs"
+       AC_MSG_CHECKING(for xfs)
+       AC_COMPILE_CHECK(,[
+#include <aio.h>],
+[aiocb64_t *t1;],file_system_xfs=1;FILE_SYSTEM="xfs $FILE_SYSTEM";)
+       if test "$file_system_xfs" = 1 ; then 
+          AC_MSG_RESULT(yes)
+       else
+          AC_MSG_RESULT(no)
+       fi
+       echo "configuring for file systems $FILE_SYSTEM"
    fi
    CFLAGS="$CFLAGS -D__IRIX"
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"

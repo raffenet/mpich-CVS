@@ -18,4 +18,4 @@ $(LIBNAME): $(AD_PFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_PFS_OBJECTS)
 
 clean:
-	rm *.o
+	@rm -f *.o
