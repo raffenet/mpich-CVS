@@ -850,12 +850,14 @@ int ibu_init()
     }
 #endif
     status = EVAPI_open_hca(id, NULL, &sugg_profile);
+#if 0
     if (status != VAPI_OK)
     {
 	err_printf("ibu_init: EVAPI_open_hca failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
+#endif
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
