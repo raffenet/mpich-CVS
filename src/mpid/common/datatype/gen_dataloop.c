@@ -111,6 +111,66 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 }
 
 /*@
+  Dataloop_size - return the size of the data described by the dataloop
+
+  Input Parameters:
++ dl_p   - pointer to dataloop for which we will return the size
+- sizefn - function for determining size of types in the corresponding stream
+           (passing NULL will instead result in el_size values being used)
+
+@*/
+DLOOP_Offset
+PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
+				     DLOOP_Offset (*sizefn)(DLOOP_Type el_type))
+{
+    DLOOP_Offset ret;
+
+    if ((dl_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) {
+	int i;
+
+	ret = 0;
+	for (i=0; i < dl_p->loop_params.s_t.count; i++) {
+	    ret += dl_p->loop_params.s_t.blocksize_array[i] *
+		PREPEND_PREFIX(Dataloop_stream_size)(dl_p->loop_params.s_t.dataloop_array[i],
+						     sizefn);
+	}
+    }
+    else {
+	DLOOP_Offset tmp_sz, tmp_ct = 1;
+
+	while (!(dl_p->kind & DLOOP_FINAL_MASK)) {
+	    switch (dl_p->kind & DLOOP_KIND_MASK) {
+		case DLOOP_KIND_CONTIG:
+		    tmp_ct *= dl_p->loop_params.c_t.count;
+		    break;
+		case DLOOP_KIND_VECTOR:
+		    tmp_ct *=
+			dl_p->loop_params.v_t.count * dl_p->loop_params.v_t.blocksize;
+		    break;
+		case DLOOP_KIND_BLOCKINDEXED:
+		    tmp_ct *= dl_p->loop_params.bi_t.total_blocks;
+		    break;
+		case DLOOP_KIND_INDEXED:
+		    tmp_ct *= dl_p->loop_params.i_t.total_blocks;
+		break;
+		default:
+		    assert(0);
+		    break;
+	    }
+	    assert(dl_p->loop_params.cm_t.dataloop != NULL);
+	    dl_p = dl_p->loop_params.cm_t.dataloop;
+	}
+
+	/* call fn for size using bottom type, or use size if fnptr is NULL */
+	tmp_sz = ((sizefn) ? sizefn(dl_p->el_type) : dl_p->el_size);
+
+	ret = tmp_sz * tmp_ct;
+    }
+
+    return ret;
+}
+
+/*@
   Dataloop_update - update pointers after a copy operation
 
   Input Parameters:

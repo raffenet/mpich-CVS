@@ -29,6 +29,10 @@
 #error "DLOOP_Buffer must be defined before gen_dataloop.h is included."
 #endif
 
+#ifndef DLOOP_Type
+#error "DLOOP_Type must be defined before gen_dataloop.h is included."
+#endif
+
 /* Redefine all of the internal structures in terms of the prefix */
 #define DLOOP_Dataloop              PREPEND_PREFIX(Dataloop)
 #define DLOOP_Dataloop_contig       PREPEND_PREFIX(Dataloop_contig)
@@ -96,6 +100,7 @@ typedef struct DLOOP_Dataloop_vector {
 + count - Number of blocks
 . blocksize - Number of elements in each block
 . offset_array - Array of offsets (in bytes) to each block
+. total_blocks - count of total blocks in the array (cached value)
 - dataloop - Dataloop of each element
 
   Module:
@@ -107,6 +112,7 @@ typedef struct DLOOP_Dataloop_blockindexed {
     struct DLOOP_Dataloop *dataloop;
     DLOOP_Count blocksize;
     DLOOP_Offset *offset_array;
+    DLOOP_Count total_blocks;
 } DLOOP_Dataloop_blockindexed;
 
 /*S
@@ -116,6 +122,7 @@ typedef struct DLOOP_Dataloop_blockindexed {
 + count - Number of blocks
 . blocksize_array - Array giving the number of elements in each block
 . offset_array - Array of offsets (in bytes) to each block
+. total_blocks - count of total blocks in the array (cached value)
 - dataloop - Dataloop of each element
 
   Module:
@@ -308,7 +315,9 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   int size);
 void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 				     DLOOP_Offset ptrdiff);
-
+DLOOP_Offset
+PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
+				     DLOOP_Offset (*sizefn)(DLOOP_Type el_type));
 void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth);
 
