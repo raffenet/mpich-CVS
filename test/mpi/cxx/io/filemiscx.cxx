@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	}
 	argv++;
 	len = strlen(*argv);
-	filename = (char *) malloc(len+1);
+	filename = new char [len+1];
 	strcpy(filename, *argv);
 	MPI::COMM_WORLD.Bcast(&len, 1, MPI::INT, 0 );
 	MPI::COMM_WORLD.Bcast(filename, len+1, MPI::CHAR, 0 );

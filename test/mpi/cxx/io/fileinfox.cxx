@@ -39,6 +39,7 @@ int main( int argc, char **argv )
 			  MPI::MODE_CREATE, MPI::INFO_NULL );
 
     // Try to set one of the available info hints  
+    info1 = MPI::Info::Create();
     info1.Set( "access_style", "read_once,write_once" );
     fh.Set_info( info1 );
     info1.Free();

@@ -17,6 +17,9 @@ using namespace std;
 #else
 #include <iostream.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #include "mpitestcxx.h"
 
 /* Create an array with all of the MPI names in it */

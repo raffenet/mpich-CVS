@@ -98,10 +98,10 @@ int main( int argc, char *argv[] )
 		    }
 		}
 	    }
-	    free( rbuf );
-	    free( sbuf );
-	    free( recvcounts );
-	    free( recvdispls );
+	    delete [] rbuf;
+	    delete [] sbuf;
+	    delete [] recvcounts;
+	    delete [] recvdispls;
         }
     }
 

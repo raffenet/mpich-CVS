@@ -48,7 +48,7 @@ int main( int argc, char **argv )
       sbuf = new int [ size * size ];
       rbuf = new int [ size * size ];
       if (!sbuf || !rbuf) {
-	fprintf( stderr, "Could not allocate buffers!\n" );
+	cout << "Could not allocate buffers!\n";
 	comm.Abort( 1 );
       }
       

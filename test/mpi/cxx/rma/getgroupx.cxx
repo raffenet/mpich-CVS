@@ -50,7 +50,7 @@ int main( int argc, char *argv[] )
 	result = MPI::Group::Compare( group, wingroup );
 	if (result != MPI::IDENT) {
 	    errs++;
-	    fprintf( stderr, "Group returned by Win_get_group not the same as the input group\n" );
+	    cout << "Group returned by Win_get_group not the same as the input group\n";
 	}
 	wingroup.Free();
 	group.Free();

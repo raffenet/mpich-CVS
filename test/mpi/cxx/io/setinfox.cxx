@@ -5,10 +5,22 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
-#include "mpitestcxx.h"
 #include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
 #include <iostream>
-#include <stdlib.h>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#include "mpitestcxx.h"
 
 static char MTEST_Descrip[] = "Test file_set_view";
 
@@ -72,11 +84,11 @@ int main( int argc, char *argv[] )
     count = status.Get_count( MPI::INT );
     if (count != 1) {
 	errs++;
-	printf( "Expected to read one int, read %d\n", count );
+	cout << "Expected to read one int, read " << count << "\n";
     }
     if (buf[0] != rank) {
 	errs++;
-	printf( "Did not read expected value (%d)\n", buf[0] );
+	cout << "Did not read expected value (" << buf[0] << ")\n";
     }
 
     try {
@@ -99,7 +111,7 @@ int main( int argc, char *argv[] )
 	if (strcmp( value, "read_once" ) != 0 &&
 	    strcmp( value, "write_once,random" ) != 0) {
 	    errs++;
-	    printf( "value for access_style unexpected; is %s\n", value );
+	    cout << "value for access_style unexpected; is " << value << "\n";
 	}
     }
     infoout.Free();

@@ -1,3 +1,8 @@
 comm 
 coll 
 init
+info
+datatype
+io
+spawn
+rma
