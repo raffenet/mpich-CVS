@@ -120,7 +120,13 @@ dnl
 AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],,
 with_pmi=default)
 dnl
-AC_ARG_WITH(pm, [--with-pm=name - Specify the process manager for MPICH.],,
+AC_ARG_WITH(pm, [--with-pm=name - Specify the process manager for MPICH.
+      Multiple process managers may be specified as long as they all use
+      the same pmi interface by separating them with colons.  The 
+      mpiexec for the first named process manager will be installed.
+      Example: --with-pm=forker:mpd:remshell builds the three process 
+      managers forker, mpd, and remshell; only the mpiexec from forker
+      is installed into the bin directory.],,
 with_pm=default)
 dnl
 AC_ARG_WITH(logging,
@@ -512,15 +518,30 @@ if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
 fi
 pm_name=$with_pm
 dnl
-if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
-    AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
-elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
-    AC_MSG_WARN([pm $pm_name has no configure])
-    pm_name=""
-else
-    subsystems="$subsystems src/pm/$pm_name"
-fi
+dnl Eventually, we should allow multiple pm names, separated by :
+dnl Set the value MANY_PM to yes in this case
+dnl
+MANY_PM=no
+AC_SUBST(MANY_PM)
+for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
+    if test -z "$first_pm_name" ; then
+       first_pm_name=$pm_name
+    else 
+       other_pm_names="$other_pm_names $pm_name"
+    fi
+    if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
+        AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
+    elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
+        AC_MSG_WARN([pm $pm_name has no configure])
+        pm_name=""
+    else
+        subsystems="$subsystems src/pm/$pm_name"
+    fi
+done
+dnl pm_name is the *primary* pm
+pm_name=$first_pm_name
 AC_SUBST(pm_name)
+AC_SUBST(other_pm_names)
 #
 # The bindings must be the *last* subsystems configured, since they may
 # need to inherit libraries and/or options required by the other subsystems
