@@ -52,14 +52,29 @@ int MPI_Grequest_complete( MPI_Request request )
     MPID_Request *request_ptr;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_COMPLETE);
     /* Get handles to MPI objects. */
-    MPID_Request_get_ptr( request, request_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_COMPLETE);
+    
+    MPID_Request_get_ptr( request, request_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
 	    MPID_Request_valid_ptr(request_ptr,mpi_errno);
 	    if (request_ptr && request_ptr->kind != MPID_UREQUEST) {
  	        mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 

@@ -61,9 +61,10 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) 
+	    {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}
@@ -82,15 +83,17 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPID_Datatype * datatype_ptr = NULL;
-	    
-	    /* Validate commmunicator */
+
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
+	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_RECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
-            /* Validate datatype */
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {

@@ -61,6 +61,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -72,7 +73,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
     
     /* ... body of routine ...  */
-
+    
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
@@ -83,14 +84,16 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         {
 	    MPID_Datatype * datatype_ptr = NULL;
 	    
-	    /* Validate communicator */
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
+	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
-            /* Validate datatype */
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
@@ -101,6 +104,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
 
     mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr,
 			  MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
@@ -129,6 +133,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
     
     /* ... end of body of routine ... */
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -997,12 +997,41 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
    should take a handle or pointer, or if they should take a handle and return 
    a pointer if the handle is valid.  These need to be rationalized with the
    MPID_xxx_valid_ptr and MPID_xxx_get_ptr.
+
+   [BRT] They should not take a handle and return a pointer if they will be
+   placed inside of a #ifdef HAVE_ERROR_CHECKING block.  Personally, I think
+   the macros should take handles.  We already have macros for validating
+   pointers to various objects.
 */
 #define MPIR_ERRTEST_OP(op,err)
 #define MPIR_ERRTEST_GROUP(group,err)
-#define MPIR_ERRTEST_COMM(comm,err)
+#define MPIR_ERRTEST_COMM(comm,err)					   \
+{									   \
+    if (HANDLE_GET_MPI_KIND(comm) != MPID_COMM ||			   \
+	(HANDLE_GET_KIND(comm) == HANDLE_KIND_INVALID &&		   \
+	 comm != MPI_COMM_NULL))					   \
+    {									   \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**comm", 0 );	   \
+    }									   \
+    if (comm == MPI_COMM_NULL)						   \
+    {									   \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**commnull", 0 ); \
+    }									   \
+}
 #define MPIR_ERRTEST_REQUEST(request,err)
-#define MPIR_ERRTEST_DATATYPE(datatype,err)
+#define MPIR_ERRTEST_DATATYPE(count, datatype,err)			    \
+{									    \
+    if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE ||		    \
+	(HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&		    \
+	 datatype != MPI_DATATYPE_NULL))				    \
+    {									    \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtype", 0 );	    \
+    }									    \
+    if (count > 0 && datatype == MPI_DATATYPE_NULL)			    \
+    {									    \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtypenull", 0 ); \
+    }									    \
+}
 #define MPIR_ERRTEST_ERRHANDLER(errhandler,err)
 
 /*

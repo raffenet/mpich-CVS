@@ -46,7 +46,9 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Wait";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Request *request_ptr = NULL;
+    MPID_Request * request_ptr = NULL;
+    MPID_Comm * comm_ptr = NULL;
+    int error = FALSE;
     MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
@@ -55,6 +57,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -67,6 +70,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
+    comm_ptr = request_ptr->comm;
     
     /* Validate parameters if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
@@ -77,7 +81,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -85,13 +89,29 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     MPIR_Wait(request_ptr);
+    
+    if (request_ptr->kind == MPID_UREQUEST)
+    {
+	mpi_errno = (request_ptr->query_fn)(
+	    request_ptr->grequest_extra_state, &request_ptr->status);
+	request_ptr->status.MPI_ERROR = mpi_errno;
+	mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    request_ptr->status.MPI_ERROR = mpi_errno;
+	}
+    }
+    
+    error = (request_ptr->status.MPI_ERROR != MPI_SUCCESS);
     if (status != NULL)
     {
 	*status = request_ptr->status;
     }
+
     *request = MPI_REQUEST_NULL;
     MPID_Request_release(request_ptr);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-    return MPI_SUCCESS;
+    return !error ? MPI_SUCCESS :
+	MPIR_Err_return_comm(comm_ptr, FCNAME, MPI_ERR_IN_STATUS);
 }

@@ -46,18 +46,42 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     static const char FCNAME[] = "MPI_Type_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_SIZE);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(0, datatype, mpi_errno);
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_SIZE);
+    /* ... body of routine ...  */
+
+    /* If this is a built-in datatype, then get the size out of the handle */
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    {
+	*size = MPID_Datatype_get_size(datatype);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
+	return MPI_SUCCESS;
+    }
+
+    /* Convert handles to MPI objects. */
+    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
+    /* Validate objects if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
@@ -69,6 +93,9 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    assert(HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN);
+    
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
     return MPI_SUCCESS;
 }
