@@ -29,7 +29,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	goto fn_exit;
     }
     
-    vc = sreq->comm->vcr[sreq->ch3.match.rank];
+    vc = sreq->comm->vcr[sreq->dev.match.rank];
 
     proto = MPIDI_Request_get_msg_type(sreq);
 
@@ -39,7 +39,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "attempting to cancel message sent to self"));
 	
-	rreq = MPIDI_CH3U_Recvq_FDU(sreq->handle, &sreq->ch3.match);
+	rreq = MPIDI_CH3U_Recvq_FDU(sreq->handle, &sreq->dev.match);
 	if (rreq)
 	{
 	    assert(rreq->partner_request == sreq);
@@ -130,7 +130,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	MPIDI_CH3_Pkt_cancel_send_req_t * const csr_pkt = &upkt.cancel_send_req;
 	MPID_Request * csr_sreq;
 	
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending cancel request to %d for 0x%08x", sreq->ch3.match.rank, sreq->handle));
+	MPIDI_DBG_PRINTF((15, FCNAME, "sending cancel request to %d for 0x%08x", sreq->dev.match.rank, sreq->handle));
 	
 	/* The completion counter and reference count are incremented to keep the request around long enough to receive a
 	   response regardless of what the user does (free the request before waiting, etc.). */
@@ -143,8 +143,8 @@ int MPID_Cancel_send(MPID_Request * sreq)
 
 	csr_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_REQ;
 	csr_pkt->match.rank = sreq->comm->rank;
-	csr_pkt->match.tag = sreq->ch3.match.tag;
-	csr_pkt->match.context_id = sreq->ch3.match.context_id;
+	csr_pkt->match.tag = sreq->dev.match.tag;
+	csr_pkt->match.context_id = sreq->dev.match.context_id;
 	csr_pkt->sender_req_id = sreq->handle;
 	
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);

@@ -13,8 +13,8 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found);
     (_rreq)->status.MPI_SOURCE = (_pkt)->match.rank;		\
     (_rreq)->status.MPI_TAG = (_pkt)->match.tag;		\
     (_rreq)->status.count = (_pkt)->data_sz;			\
-    (_rreq)->ch3.sender_req_id = (_pkt)->sender_req_id;		\
-    (_rreq)->ch3.recv_data_sz = (_pkt)->data_sz;		\
+    (_rreq)->dev.sender_req_id = (_pkt)->sender_req_id;		\
+    (_rreq)->dev.recv_data_sz = (_pkt)->data_sz;		\
     MPIDI_CH3U_Request_set_seqnum((_rreq), (_pkt)->seqnum);	\
     MPIDI_Request_set_msg_type((_rreq), (_msg_type));		\
 }
@@ -246,11 +246,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 							      "**rsendnomatch", "**rsendnomatch %d %d", ready_pkt->match.rank,
 							      ready_pkt->match.tag);
 		rreq->status.count = 0;
-		if (rreq->ch3.recv_data_sz > 0)
+		if (rreq->dev.recv_data_sz > 0)
 		{
 		     /* force read of extra data */
-		    rreq->ch3.segment_first = 0;
-		    rreq->ch3.segment_size = 0;
+		    rreq->dev.segment_first = 0;
+		    rreq->dev.segment_size = 0;
 		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
@@ -267,7 +267,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		else
 		{
 		    /* mark data transfer as complete and decrement CC */
-		    rreq->ch3.iov_count = 0;
+		    rreq->dev.iov_count = 0;
 		    MPIDI_CH3U_Request_complete(rreq);
 		}
 	    }
@@ -412,7 +412,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv CTS pkt"));
 
 	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
-	    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->ch3.user_count));
+	    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->dev.user_count));
 
 	    /* Release the RTS request if one exists.  MPID_Request_fetch_and_clear_rts_sreq() needs to be atomic to prevent
                cancel send from cancelling the wrong (future) request.  If MPID_Request_fetch_and_clear_rts_sreq() returns a NULL
@@ -428,24 +428,24 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
-	    MPIDI_CH3U_Datatype_get_info(sreq->ch3.user_count, sreq->ch3.datatype, dt_contig, data_sz, dt_ptr);
+	    MPIDI_CH3U_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr);
 	
 	    if (dt_contig) 
 	    {
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending contiguous rndv data, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 		
-		sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+		sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 		
-		iov[1].MPID_IOV_BUF = sreq->ch3.user_buf;
+		iov[1].MPID_IOV_BUF = sreq->dev.user_buf;
 		iov[1].MPID_IOV_LEN = data_sz;
 		iov_n = 2;
 	    }
 	    else
 	    {
-		MPID_Segment_init(sreq->ch3.user_buf, sreq->ch3.user_count, sreq->ch3.datatype, &sreq->ch3.segment);
+		MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment);
 		iov_n = MPID_IOV_LIMIT - 1;
-		sreq->ch3.segment_first = 0;
-		sreq->ch3.segment_size = data_sz;
+		sreq->dev.segment_first = 0;
+		sreq->dev.segment_size = data_sz;
 		mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -499,9 +499,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    if (rreq != NULL)
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "message cancelled"));
-		if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->ch3.recv_data_sz > 0)
+		if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->dev.recv_data_sz > 0)
 		{
-		    MPIU_Free(rreq->ch3.tmpbuf);
+		    MPIU_Free(rreq->dev.tmpbuf);
 		}
 		MPID_Request_release(rreq);
 		resp_pkt->ack = TRUE;
@@ -582,43 +582,43 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                 req = MPID_Request_create();
                 MPIU_Object_set_ref(req, 1);
                 
-                req->ch3.user_buf = put_pkt->addr;
-                req->ch3.user_count = put_pkt->count;
-                req->ch3.decr_ctr = put_pkt->decr_ctr;
+                req->dev.user_buf = put_pkt->addr;
+                req->dev.user_count = put_pkt->count;
+                req->dev.decr_ctr = put_pkt->decr_ctr;
 
                 if (HANDLE_GET_KIND(put_pkt->datatype) == HANDLE_KIND_BUILTIN) {
                     MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP);
-                    req->ch3.datatype = put_pkt->datatype;
+                    req->dev.datatype = put_pkt->datatype;
                 
                     MPID_Datatype_get_size_macro(put_pkt->datatype,
                                                  type_size);
-                    req->ch3.recv_data_sz = type_size * put_pkt->count;
+                    req->dev.recv_data_sz = type_size * put_pkt->count;
 
                     mpi_errno = post_data_receive(vc, req, 1);
                 }
                 else {  /* derived datatype */
                     MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT);
-                    req->ch3.datatype = MPI_DATATYPE_NULL;
+                    req->dev.datatype = MPI_DATATYPE_NULL;
 
-                    req->ch3.dtype_info = (MPIDI_RMA_dtype_info *) 
+                    req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                         MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-                    if (! req->ch3.dtype_info) {
+                    if (! req->dev.dtype_info) {
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         goto fn_exit;
                     }
 
-                    req->ch3.dataloop = MPIU_Malloc(put_pkt->dataloop_size);
-                    if (! req->ch3.dataloop) {
+                    req->dev.dataloop = MPIU_Malloc(put_pkt->dataloop_size);
+                    if (! req->dev.dataloop) {
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         goto fn_exit;
                     }
 
-                    req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
-                    req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                    req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
-                    req->ch3.iov[1].MPID_IOV_LEN = put_pkt->dataloop_size;
-                    req->ch3.iov_count = 2;
-                    req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+                    req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
+                    req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
+                    req->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dataloop;
+                    req->dev.iov[1].MPID_IOV_LEN = put_pkt->dataloop_size;
+                    req->dev.iov_count = 2;
+                    req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 
                     mpi_errno = MPIDI_CH3_iRead(vc, req);
                 }
@@ -642,14 +642,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
             req = MPID_Request_create();
             MPIU_Object_set_ref(req, 1);
 
-            req->ch3.user_count = accum_pkt->count;
-            req->ch3.op = accum_pkt->op;
-            req->ch3.decr_ctr = accum_pkt->decr_ctr;
-            req->ch3.real_user_buf = accum_pkt->addr;
+            req->dev.user_count = accum_pkt->count;
+            req->dev.op = accum_pkt->op;
+            req->dev.decr_ctr = accum_pkt->decr_ctr;
+            req->dev.real_user_buf = accum_pkt->addr;
 
             if (HANDLE_GET_KIND(accum_pkt->datatype) == HANDLE_KIND_BUILTIN) {
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP);
-                req->ch3.datatype = accum_pkt->datatype;
+                req->dev.datatype = accum_pkt->datatype;
 
                 mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, 
                                                       &true_lb, &true_extent);
@@ -665,36 +665,36 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
-                req->ch3.user_buf = tmp_buf;
+                req->dev.user_buf = tmp_buf;
 
                 MPID_Datatype_get_size_macro(accum_pkt->datatype, type_size);
-                req->ch3.recv_data_sz = type_size * accum_pkt->count;
+                req->dev.recv_data_sz = type_size * accum_pkt->count;
                 
                 mpi_errno = post_data_receive(vc, req, 1);
             }
             else {
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT);
-                req->ch3.datatype = MPI_DATATYPE_NULL;
+                req->dev.datatype = MPI_DATATYPE_NULL;
                 
-                req->ch3.dtype_info = (MPIDI_RMA_dtype_info *) 
+                req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                     MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-                if (! req->ch3.dtype_info) {
+                if (! req->dev.dtype_info) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     goto fn_exit;
                 }
                 
-                req->ch3.dataloop = MPIU_Malloc(accum_pkt->dataloop_size);
-                if (! req->ch3.dataloop) {
+                req->dev.dataloop = MPIU_Malloc(accum_pkt->dataloop_size);
+                if (! req->dev.dataloop) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     goto fn_exit;
                 }
                 
-                req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
-                req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
-                req->ch3.iov[1].MPID_IOV_LEN = accum_pkt->dataloop_size;
-                req->ch3.iov_count = 2;
-                req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+                req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
+                req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
+                req->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dataloop;
+                req->dev.iov[1].MPID_IOV_LEN = accum_pkt->dataloop_size;
+                req->dev.iov_count = 2;
+                req->dev.ca = MPIDI_CH3_CA_COMPLETE;
                 
                 mpi_errno = MPIDI_CH3_iRead(vc, req);
             }
@@ -714,8 +714,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
             req = MPID_Request_create();
             MPIU_Object_set_ref(req, 1);
-            req->ch3.decr_ctr = get_pkt->decr_ctr;
-            req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+            req->dev.decr_ctr = get_pkt->decr_ctr;
+            req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 
             if (HANDLE_GET_KIND(get_pkt->datatype) == HANDLE_KIND_BUILTIN) {
                 /* basic datatype. send the data. */
@@ -749,29 +749,29 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT);
 
-                req->ch3.user_buf = get_pkt->addr;
-                req->ch3.user_count = get_pkt->count;
-                req->ch3.datatype = MPI_DATATYPE_NULL;
-                req->ch3.request = get_pkt->request;
+                req->dev.user_buf = get_pkt->addr;
+                req->dev.user_count = get_pkt->count;
+                req->dev.datatype = MPI_DATATYPE_NULL;
+                req->dev.request = get_pkt->request;
 
-                req->ch3.dtype_info = (MPIDI_RMA_dtype_info *) 
+                req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                     MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-                if (! req->ch3.dtype_info) {
+                if (! req->dev.dtype_info) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     goto fn_exit;
                 }
                 
-                req->ch3.dataloop = MPIU_Malloc(get_pkt->dataloop_size);
-                if (! req->ch3.dataloop) {
+                req->dev.dataloop = MPIU_Malloc(get_pkt->dataloop_size);
+                if (! req->dev.dataloop) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     goto fn_exit;
                 }
 
-                req->ch3.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dtype_info;
-                req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
-                req->ch3.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->ch3.dataloop;
-                req->ch3.iov[1].MPID_IOV_LEN = get_pkt->dataloop_size;
-                req->ch3.iov_count = 2;
+                req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
+                req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
+                req->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dataloop;
+                req->dev.iov[1].MPID_IOV_LEN = get_pkt->dataloop_size;
+                req->dev.iov_count = 2;
                 
                 mpi_errno = MPIDI_CH3_iRead(vc, req);
                 if (mpi_errno != MPI_SUCCESS)
@@ -790,8 +790,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
             req = get_resp_pkt->request;
 
-            MPID_Datatype_get_size_macro(req->ch3.datatype, type_size);
-            req->ch3.recv_data_sz = type_size * req->ch3.user_count;
+            MPID_Datatype_get_size_macro(req->dev.datatype, type_size);
+            req->dev.recv_data_sz = type_size * req->dev.user_count;
 
             mpi_errno = post_data_receive(vc, req, 1);
             if (mpi_errno != MPI_SUCCESS)
@@ -837,12 +837,12 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     
     MPIDI_DBG_PRINTF((30, FCNAME, "entering"));
 
-    if (rreq->ch3.recv_data_sz == 0)
+    if (rreq->dev.recv_data_sz == 0)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "null message, %s, decrementing completion counter",
 			  (found ? "posted request found" : "unexpected request allocated")));
 	/* mark data transfer as complete adn decrment CC */
-	rreq->ch3.iov_count = 0;
+	rreq->dev.iov_count = 0;
 	MPIDI_CH3U_Request_complete(rreq);
 	goto fn_exit;
     }
@@ -851,31 +851,31 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 	
-	MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz, dt_ptr);
+	MPIDI_CH3U_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr);
 		
-	if (rreq->ch3.recv_data_sz <= userbuf_sz)
+	if (rreq->dev.recv_data_sz <= userbuf_sz)
 	{
-	    data_sz = rreq->ch3.recv_data_sz;
+	    data_sz = rreq->dev.recv_data_sz;
 	}
 	else
 	{
 	    MPIDI_DBG_PRINTF((35, FCNAME, "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
-			      MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
+			      MPIDI_MSG_SZ_FMT, rreq->dev.recv_data_sz, userbuf_sz));
 	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-							  "**truncate", "**truncate %d %d %d %d", rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, rreq->ch3.recv_data_sz, userbuf_sz );
+							  "**truncate", "**truncate %d %d %d %d", rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, rreq->dev.recv_data_sz, userbuf_sz );
 	    rreq->status.count = userbuf_sz;
 	    data_sz = userbuf_sz;
 	}
 
-	if (dt_contig && data_sz == rreq->ch3.recv_data_sz)
+	if (dt_contig && data_sz == rreq->dev.recv_data_sz)
 	{
 	    /* user buffer is contiguous and large enough to store the
 	       entire message */
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for contiguous read"));
-	    rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.user_buf;
-	    rreq->ch3.iov[0].MPID_IOV_LEN = data_sz;
-	    rreq->ch3.iov_count = 1;
-	    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	    rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.user_buf;
+	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
+	    rreq->dev.iov_count = 1;
+	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else
 	{
@@ -884,9 +884,9 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    int mpi_errno;
 		    
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for non-contiguous read"));
-	    MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &rreq->ch3.segment);
-	    rreq->ch3.segment_first = 0;
-	    rreq->ch3.segment_size = data_sz;
+	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &rreq->dev.segment);
+	    rreq->dev.segment_first = 0;
+	    rreq->dev.segment_size = data_sz;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -900,14 +900,14 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	/* TODO: to improve performance, allocate temporary buffer from a specialized buffer pool. */
 	MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
 		
-	rreq->ch3.tmpbuf = MPIU_Malloc(rreq->ch3.recv_data_sz);
-	rreq->ch3.tmpbuf_sz = rreq->ch3.recv_data_sz;
+	rreq->dev.tmpbuf = MPIU_Malloc(rreq->dev.recv_data_sz);
+	rreq->dev.tmpbuf_sz = rreq->dev.recv_data_sz;
 		
-	rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmpbuf;
-	rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
-	rreq->ch3.iov_count = 1;
-	rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
-	rreq->ch3.recv_pending_count = 2;
+	rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.tmpbuf;
+	rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
+	rreq->dev.iov_count = 1;
+	rreq->dev.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
+	rreq->dev.recv_pending_count = 2;
 	MPID_Request_initialized_set(rreq);
     }
 

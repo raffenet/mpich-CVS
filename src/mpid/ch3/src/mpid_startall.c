@@ -30,32 +30,32 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	{
 	    case MPIDI_REQUEST_TYPE_RECV:
 	    {
-		rc = MPID_Irecv(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Irecv(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
+		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 	    
 	    case MPIDI_REQUEST_TYPE_SEND:
 	    {
-		rc = MPID_Isend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Isend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
+		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 		
 	    case MPIDI_REQUEST_TYPE_RSEND:
 	    {
-		rc = MPID_Irsend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Irsend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
+		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 		
 	    case MPIDI_REQUEST_TYPE_SSEND:
 	    {
-		rc = MPID_Issend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Issend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
+		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
@@ -73,8 +73,8 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		    sreq->comm = preq->comm;
 		    MPIR_Comm_add_ref(sreq->comm);
 		    
-		    rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
-					  preq->ch3.match.tag, preq->comm, BSEND_INIT, &preq->partner_request);
+		    rc = MPIR_Bsend_isend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
+					  preq->dev.match.tag, preq->comm, BSEND_INIT, &preq->partner_request);
 
 		    sreq->status.MPI_ERROR = rc;
 		    preq->partner_request = sreq;

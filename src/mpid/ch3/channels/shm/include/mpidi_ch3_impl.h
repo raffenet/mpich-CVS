@@ -137,10 +137,10 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */						\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=0x%08x req=0x%08x",	\
 	              (unsigned long) vc, req->handle));		\
-    req->ch3.next = NULL;						\
+    req->dev.next = NULL;						\
     if (vc->shm.sendq_tail != NULL)					\
     {									\
-	vc->shm.sendq_tail->ch3.next = req;				\
+	vc->shm.sendq_tail->dev.next = req;				\
     }									\
     else								\
     {									\
@@ -154,7 +154,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */						     \
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=0x%08x req=0x%08x", \
 	              (unsigned long) vc, req->handle));		     \
-    req->ch3.next = vc->shm.sendq_tail;					     \
+    req->dev.next = vc->shm.sendq_tail;					     \
     if (vc->shm.sendq_tail == NULL)					     \
     {									     \
 	vc->shm.sendq_tail = req;					     \
@@ -167,7 +167,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */						\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=0x%08x req=0x%08x",	\
 	              (unsigned long) vc, vc->shm.sendq_head));		\
-    vc->shm.sendq_head = vc->shm.sendq_head->ch3.next;			\
+    vc->shm.sendq_head = vc->shm.sendq_head->dev.next;			\
     if (vc->shm.sendq_head == NULL)					\
     {									\
 	vc->shm.sendq_tail = NULL;					\

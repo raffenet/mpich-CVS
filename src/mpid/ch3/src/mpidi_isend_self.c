@@ -57,7 +57,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	MPIDI_DBG_PRINTF((15, FCNAME, "found posted receive request; copying data"));
 	    
 	MPIDI_CH3U_Buffer_copy(buf, count, datatype, &sreq->status.MPI_ERROR,
-			       rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &data_sz, &rreq->status.MPI_ERROR);
+			       rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &data_sz, &rreq->status.MPI_ERROR);
 	rreq->status.count = data_sz;
 	MPID_Request_set_completed(rreq);
 	MPID_Request_release(rreq);
@@ -74,11 +74,11 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {
-		MPID_Datatype_get_ptr(datatype, sreq->ch3.datatype_ptr);
-		MPID_Datatype_add_ref(sreq->ch3.datatype_ptr);
+		MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+		MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
 	    }
 	    rreq->partner_request = sreq;
-	    rreq->ch3.sender_req_id = sreq->handle;
+	    rreq->dev.sender_req_id = sreq->handle;
 	}
 	else
 	{
@@ -88,7 +88,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    rreq->status.MPI_ERROR = sreq->status.MPI_ERROR;
 	    
 	    rreq->partner_request = NULL;
-	    rreq->ch3.sender_req_id = MPI_REQUEST_NULL;
+	    rreq->dev.sender_req_id = MPI_REQUEST_NULL;
 	    rreq->status.count = 0;
 	    
 	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */

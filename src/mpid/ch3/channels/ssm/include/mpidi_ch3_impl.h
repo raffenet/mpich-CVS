@@ -161,10 +161,10 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 {														\
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));	\
-    req->ch3.next = NULL;											\
+    req->dev.next = NULL;											\
     if (vc->ssm.sendq_tail != NULL)										\
     {														\
-	vc->ssm.sendq_tail->ch3.next = req;									\
+	vc->ssm.sendq_tail->dev.next = req;									\
     }														\
     else													\
     {														\
@@ -179,7 +179,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 {														\
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));	\
-    req->ch3.next = vc->ssm.sendq_tail;										\
+    req->dev.next = vc->ssm.sendq_tail;										\
     if (vc->ssm.sendq_tail == NULL)										\
     {														\
 	/* increment number of active writes when posting to an empty queue */					\
@@ -193,7 +193,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 {																\
     /* MT - not thread safe! */													\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ssm.sendq_head->handle));	\
-    vc->ssm.sendq_head = vc->ssm.sendq_head->ch3.next;										\
+    vc->ssm.sendq_head = vc->ssm.sendq_head->dev.next;										\
     if (vc->ssm.sendq_head == NULL)												\
     {																\
 	/* decrement number of active writes when a queue becomes empty */							\

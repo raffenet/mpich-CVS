@@ -14,9 +14,9 @@
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
     /*assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t));*/ \
     sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt + nb; \
-    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
-    sreq->ch3.iov_count = 1; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
+    sreq->dev.iov_count = 1; \
     sreq->ssm.iov_offset = 0; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
@@ -89,7 +89,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    { 
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
 		MPIDI_CH3U_Handle_send_req(vc, sreq);
-		if (sreq->ch3.iov_count != 0)
+		if (sreq->dev.iov_count != 0)
 		{
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		}

@@ -32,13 +32,13 @@ MPID_Request * MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id)
 	    rreq = MPIDI_Process.recvq_unexpected_head;
 	    while(rreq != NULL)
 	    {
-		if (rreq->ch3.match.context_id == context_id && rreq->ch3.match.rank == source && rreq->ch3.match.tag == tag)
+		if (rreq->dev.match.context_id == context_id && rreq->dev.match.rank == source && rreq->dev.match.tag == tag)
 		{
 		    MPID_Request_add_ref(rreq);
 		    break;
 		}
 		
-		rreq = rreq->ch3.next;
+		rreq = rreq->dev.next;
 	    }
 	}
 	MPIDI_Recvq_unlock();
@@ -76,14 +76,14 @@ MPID_Request * MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id)
 	    rreq = MPIDI_Process.recvq_unexpected_head;
 	    while (rreq != NULL)
 	    {
-		if (rreq->ch3.match.context_id == match.context_id && (rreq->ch3.match.rank & mask.rank) == match.rank &&
-		    (rreq->ch3.match.tag & mask.tag) == match.tag)
+		if (rreq->dev.match.context_id == match.context_id && (rreq->dev.match.rank & mask.rank) == match.rank &&
+		    (rreq->dev.match.tag & mask.tag) == match.tag)
 		{
 		    MPID_Request_add_ref(rreq);
 		    break;
 		}
 	    
-		rreq = rreq->ch3.next;
+		rreq = rreq->dev.next;
 	    }
 	}
 	MPIDI_Recvq_unlock();
@@ -122,29 +122,29 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request sreq_id, MPIDI_Message_match * m
 	cur_rreq = MPIDI_Process.recvq_unexpected_head;
 	while(cur_rreq != NULL)
 	{
-	    if (cur_rreq->ch3.sender_req_id == sreq_id && cur_rreq->ch3.match.context_id == match->context_id &&
-		cur_rreq->ch3.match.rank == match->rank && cur_rreq->ch3.match.tag == match->tag)
+	    if (cur_rreq->dev.sender_req_id == sreq_id && cur_rreq->dev.match.context_id == match->context_id &&
+		cur_rreq->dev.match.rank == match->rank && cur_rreq->dev.match.tag == match->tag)
 	    {
 		matching_prev_rreq = prev_rreq;
 		matching_cur_rreq = cur_rreq;
 	    }
 	    
 	    prev_rreq = cur_rreq;
-	    cur_rreq = cur_rreq->ch3.next;
+	    cur_rreq = cur_rreq->dev.next;
 	}
 
 	if (matching_cur_rreq != NULL)
 	{
 	    if (matching_prev_rreq != NULL)
 	    {
-		matching_prev_rreq->ch3.next = matching_cur_rreq->ch3.next;
+		matching_prev_rreq->dev.next = matching_cur_rreq->dev.next;
 	    }
 	    else
 	    {
-		MPIDI_Process.recvq_unexpected_head = matching_cur_rreq->ch3.next;
+		MPIDI_Process.recvq_unexpected_head = matching_cur_rreq->dev.next;
 	    }
 	
-	    if (matching_cur_rreq->ch3.next == NULL)
+	    if (matching_cur_rreq->dev.next == NULL)
 	    {
 		MPIDI_Process.recvq_unexpected_tail = matching_prev_rreq;
 	    }
@@ -189,17 +189,17 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 	    rreq = MPIDI_Process.recvq_unexpected_head;
 	    while(rreq != NULL)
 	    {
-		if (rreq->ch3.match.context_id == context_id && rreq->ch3.match.rank == source && rreq->ch3.match.tag == tag)
+		if (rreq->dev.match.context_id == context_id && rreq->dev.match.rank == source && rreq->dev.match.tag == tag)
 		{
 		    if (prev_rreq != NULL)
 		    {
-			prev_rreq->ch3.next = rreq->ch3.next;
+			prev_rreq->dev.next = rreq->dev.next;
 		    }
 		    else
 		    {
-			MPIDI_Process.recvq_unexpected_head = rreq->ch3.next;
+			MPIDI_Process.recvq_unexpected_head = rreq->dev.next;
 		    }
-		    if (rreq->ch3.next == NULL)
+		    if (rreq->dev.next == NULL)
 		    {
 			MPIDI_Process.recvq_unexpected_tail = prev_rreq;
 		    }
@@ -208,7 +208,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 		}
 	    
 		prev_rreq = rreq;
-		rreq = rreq->ch3.next;
+		rreq = rreq->dev.next;
 	    }
 	}
 	else
@@ -243,18 +243,18 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 	    rreq = MPIDI_Process.recvq_unexpected_head;
 	    while (rreq != NULL)
 	    {
-		if (rreq->ch3.match.context_id == match.context_id && (rreq->ch3.match.rank & mask.rank) == match.rank &&
-		    (rreq->ch3.match.tag & mask.tag) == match.tag)
+		if (rreq->dev.match.context_id == match.context_id && (rreq->dev.match.rank & mask.rank) == match.rank &&
+		    (rreq->dev.match.tag & mask.tag) == match.tag)
 		{
 		    if (prev_rreq != NULL)
 		    {
-			prev_rreq->ch3.next = rreq->ch3.next;
+			prev_rreq->dev.next = rreq->dev.next;
 		    }
 		    else
 		    {
-			MPIDI_Process.recvq_unexpected_head = rreq->ch3.next;
+			MPIDI_Process.recvq_unexpected_head = rreq->dev.next;
 		    }
-		    if (rreq->ch3.next == NULL)
+		    if (rreq->dev.next == NULL)
 		    {
 			MPIDI_Process.recvq_unexpected_tail = prev_rreq;
 		    }
@@ -263,7 +263,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 		}
 	    
 		prev_rreq = rreq;
-		rreq = rreq->ch3.next;
+		rreq = rreq->dev.next;
 	    }
 	}
 
@@ -274,14 +274,14 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 	{
 	    MPIU_Object_set_ref(rreq, 2);
 	    rreq->kind = MPID_REQUEST_RECV;
-	    rreq->ch3.match.tag = tag;
-	    rreq->ch3.match.rank = source;
-	    rreq->ch3.match.context_id = context_id;
-	    rreq->ch3.next = NULL;
+	    rreq->dev.match.tag = tag;
+	    rreq->dev.match.rank = source;
+	    rreq->dev.match.context_id = context_id;
+	    rreq->dev.next = NULL;
 	
 	    if (MPIDI_Process.recvq_posted_tail != NULL)
 	    {
-		MPIDI_Process.recvq_posted_tail->ch3.next = rreq;
+		MPIDI_Process.recvq_posted_tail->dev.next = rreq;
 	    }
 	    else
 	    {
@@ -342,13 +342,13 @@ int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq)
 	    {
 		if (prev_rreq != NULL)
 		{
-		    prev_rreq->ch3.next = cur_rreq->ch3.next;
+		    prev_rreq->dev.next = cur_rreq->dev.next;
 		}
 		else
 		{
-		    MPIDI_Process.recvq_posted_head = cur_rreq->ch3.next;
+		    MPIDI_Process.recvq_posted_head = cur_rreq->dev.next;
 		}
-		if (cur_rreq->ch3.next == NULL)
+		if (cur_rreq->dev.next == NULL)
 		{
 		    MPIDI_Process.recvq_posted_tail = prev_rreq;
 		}
@@ -358,7 +358,7 @@ int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq)
 	    }
 	    
 	    prev_rreq = cur_rreq;
-	    cur_rreq = cur_rreq->ch3.next;
+	    cur_rreq = cur_rreq->dev.next;
 	}
     }
     MPIDI_Recvq_unlock();
@@ -391,19 +391,19 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match)
 	rreq = MPIDI_Process.recvq_posted_head;
 	while (rreq != NULL)
 	{
-	    if ((rreq->ch3.match.context_id == match->context_id) &&
-		(rreq->ch3.match.rank == match->rank || rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
-		(rreq->ch3.match.tag == match->tag || rreq->ch3.match.tag == MPI_ANY_TAG))
+	    if ((rreq->dev.match.context_id == match->context_id) &&
+		(rreq->dev.match.rank == match->rank || rreq->dev.match.rank == MPI_ANY_SOURCE) &&
+		(rreq->dev.match.tag == match->tag || rreq->dev.match.tag == MPI_ANY_TAG))
 	    {
 		if (prev_rreq != NULL)
 		{
-		    prev_rreq->ch3.next = rreq->ch3.next;
+		    prev_rreq->dev.next = rreq->dev.next;
 		}
 		else
 		{
-		    MPIDI_Process.recvq_posted_head = rreq->ch3.next;
+		    MPIDI_Process.recvq_posted_head = rreq->dev.next;
 		}
-		if (rreq->ch3.next == NULL)
+		if (rreq->dev.next == NULL)
 		{
 		    MPIDI_Process.recvq_posted_tail = prev_rreq;
 		}
@@ -412,7 +412,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match)
 	    }
 	    
 	    prev_rreq = rreq;
-	    rreq = rreq->ch3.next;
+	    rreq = rreq->dev.next;
 	}
     }
     MPIDI_Recvq_unlock();
@@ -447,19 +447,19 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * fo
 	rreq = MPIDI_Process.recvq_posted_head;
 	while (rreq != NULL)
 	{
-	    if ((rreq->ch3.match.context_id == match->context_id) &&
-		(rreq->ch3.match.rank == match->rank || rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
-		(rreq->ch3.match.tag == match->tag || rreq->ch3.match.tag == MPI_ANY_TAG))
+	    if ((rreq->dev.match.context_id == match->context_id) &&
+		(rreq->dev.match.rank == match->rank || rreq->dev.match.rank == MPI_ANY_SOURCE) &&
+		(rreq->dev.match.tag == match->tag || rreq->dev.match.tag == MPI_ANY_TAG))
 	    {
 		if (prev_rreq != NULL)
 		{
-		    prev_rreq->ch3.next = rreq->ch3.next;
+		    prev_rreq->dev.next = rreq->dev.next;
 		}
 		else
 		{
-		    MPIDI_Process.recvq_posted_head = rreq->ch3.next;
+		    MPIDI_Process.recvq_posted_head = rreq->dev.next;
 		}
-		if (rreq->ch3.next == NULL)
+		if (rreq->dev.next == NULL)
 		{
 		    MPIDI_Process.recvq_posted_tail = prev_rreq;
 		}
@@ -468,7 +468,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * fo
 	    }
 	    
 	    prev_rreq = rreq;
-	    rreq = rreq->ch3.next;
+	    rreq = rreq->dev.next;
 	}
 
 	/* A matching request was not found in the posted queue, so we need to allocate a new request and add it to the
@@ -478,12 +478,12 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * fo
 	{
 	    MPIU_Object_set_ref(rreq, 2);
 	    rreq->kind = MPID_REQUEST_RECV;
-	    rreq->ch3.match = *match;
-	    rreq->ch3.next = NULL;
+	    rreq->dev.match = *match;
+	    rreq->dev.next = NULL;
 	
 	    if (MPIDI_Process.recvq_unexpected_tail != NULL)
 	    {
-		MPIDI_Process.recvq_unexpected_tail->ch3.next = rreq;
+		MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
 	    }
 	    else
 	    {

@@ -25,9 +25,9 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 
     req->shm.iov_offset = 0;
     vc->shm.send_active = req;
-    mpi_errno = (req->ch3.iov_count == 1) ?
-	MPIDI_CH3I_SHM_write(vc, req->ch3.iov->MPID_IOV_BUF, req->ch3.iov->MPID_IOV_LEN, &nb) :
-	MPIDI_CH3I_SHM_writev(vc, req->ch3.iov, req->ch3.iov_count, &nb);
+    mpi_errno = (req->dev.iov_count == 1) ?
+	MPIDI_CH3I_SHM_write(vc, req->dev.iov->MPID_IOV_BUF, req->dev.iov->MPID_IOV_LEN, &nb) :
+	MPIDI_CH3I_SHM_writev(vc, req->dev.iov, req->dev.iov_count, &nb);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
@@ -40,7 +40,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Write operation complete */
-	    MPIDI_CA_t ca = req->ch3.ca;
+	    MPIDI_CA_t ca = req->dev.ca;
 	    
 	    vc->shm.send_active = NULL;
 	    
@@ -53,7 +53,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		}
 		vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
 		/* mark data transfer as complete and decrment CC */
-		req->ch3.iov_count = 0;
+		req->dev.iov_count = 0;
 		MPIDI_CH3U_Request_complete(req);
 	    }
 	    else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
@@ -74,7 +74,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		MPIDI_DBG_PRINTF((71, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		MPIDI_CH3U_Handle_send_req(vc, req);
 		/* FIXME: MT: the queuing code is not thread safe */
-		if (MPIDI_CH3I_SendQ_head(vc) == req && req->ch3.iov_count == 0)
+		if (MPIDI_CH3I_SendQ_head(vc) == req && req->dev.iov_count == 0)
 		{
 		    /* NOTE: This code assumes that if the iov_count is zero, then the device has completed the current request.
 		       As a result, the current request is dequeded and next request in the queue is processed. */
@@ -90,7 +90,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	}
 	else
 	{
-	    assert(req->shm.iov_offset < req->ch3.iov_count);
+	    assert(req->shm.iov_offset < req->dev.iov_count);
 	}
     }
     else if (nb == 0)

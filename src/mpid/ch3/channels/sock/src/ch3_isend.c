@@ -14,9 +14,9 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
     /* memcpy(&sreq->sc.pkt, hdr, hdr_sz); */
     assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
     sreq->sc.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->sc.pkt + nb;
-    sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb;
-    sreq->ch3.iov_count = 1;
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->sc.pkt + nb;
+    sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
+    sreq->dev.iov_count = 1;
     sreq->sc.iov_offset = 0;
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
 }
@@ -61,9 +61,9 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->ch3.iov_count == 0)
+		    if (sreq->dev.iov_count == 0)
 		    {
-			/* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete,
+			/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete,
 			   but the request may still be active (see MPI_Ssend()) */
 			MPIDI_CH3I_SendQ_dequeue(vc);
 		    }

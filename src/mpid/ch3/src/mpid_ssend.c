@@ -75,7 +75,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 
 	sreq->cc = 2;
-	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
 	es_pkt->match.rank = comm->rank;
@@ -110,7 +110,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPID_IOV iov[MPID_IOV_LIMIT];
 	    
 	sreq->cc = 2;
-	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
 	es_pkt->match.rank = comm->rank;
@@ -149,9 +149,9 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
-	    sreq->ch3.segment_first = 0;
-	    sreq->ch3.segment_size = data_sz;
+	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment);
+	    sreq->dev.segment_first = 0;
+	    sreq->dev.segment_size = data_sz;
 	    
 	    iov_n = MPID_IOV_LIMIT - 1;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
@@ -163,9 +163,9 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		MPIDI_CH3U_Pkt_set_seqnum(es_pkt, seqnum);
 		MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 		
-		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
+		if (sreq->dev.ca != MPIDI_CH3_CA_COMPLETE)
 		{
-		    /* sreq->ch3.datatype_ptr = dt_ptr;
+		    /* sreq->dev.datatype_ptr = dt_ptr;
 		       MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 		}
 
@@ -230,7 +230,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	if (dt_ptr != NULL)
 	{
-	    /* sreq->ch3.datatype_ptr = dt_ptr;
+	    /* sreq->dev.datatype_ptr = dt_ptr;
 	       MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 	}
     }

@@ -21,9 +21,9 @@
 	return mpi_errno; \
     } \
     sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->shm.pkt + nb; \
-    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
-    sreq->ch3.iov_count = 1; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->shm.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
+    sreq->dev.iov_count = 1; \
     sreq->shm.iov_offset = 0; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
@@ -78,9 +78,9 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 	    MPIDI_CH3U_Handle_send_req(vc, sreq);
 	    /* FIXME: MT: this is not quite right since the queue interface is not thread safe */
-	    if (sreq->ch3.iov_count != 0)
+	    if (sreq->dev.iov_count != 0)
 	    {
-		/* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
+		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
 		   request may still be active (see MPI_Ssend()) */
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 	    }

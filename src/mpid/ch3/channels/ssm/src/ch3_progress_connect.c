@@ -478,7 +478,7 @@ void connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     {
 	int mpi_errno;
 
-	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->ch3.iov, conn->send_active->ch3.iov_count, NULL);
+	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    connection_send_fail(conn, mpi_errno);

@@ -26,8 +26,8 @@ int MPID_Send_init(const void * buf, int count, MPI_Datatype datatype, int rank,
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
     {
-	MPID_Datatype_get_ptr(datatype, sreq->ch3.datatype_ptr);
-	MPID_Datatype_add_ref(sreq->ch3.datatype_ptr);
+	MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
     }
     *request = sreq;
 

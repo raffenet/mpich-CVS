@@ -39,12 +39,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    {
 		rreq->comm = comm;
 		MPIR_Comm_add_ref(comm);
-		rreq->ch3.match.rank = rank;
-		rreq->ch3.match.tag = tag;
-		rreq->ch3.match.context_id = comm->context_id + context_offset;
-		rreq->ch3.user_buf = buf;
-		rreq->ch3.user_count = count;
-		rreq->ch3.datatype = datatype;
+		rreq->dev.match.rank = rank;
+		rreq->dev.match.tag = tag;
+		rreq->dev.match.context_id = comm->context_id + context_offset;
+		rreq->dev.user_buf = buf;
+		rreq->dev.user_count = count;
+		rreq->dev.datatype = datatype;
 	    }
 #	    endif
 	}
@@ -64,9 +64,9 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 
     rreq->comm = comm;
     MPIR_Comm_add_ref(comm);
-    rreq->ch3.user_buf = buf;
-    rreq->ch3.user_count = count;
-    rreq->ch3.datatype = datatype;
+    rreq->dev.user_buf = buf;
+    rreq->dev.user_count = count;
+    rreq->dev.datatype = datatype;
 
     if (found)
     {
@@ -75,7 +75,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	/* Message was found in the unexepected queue */
 	MPIDI_DBG_PRINTF((15, FCNAME, "request found in unexpected queue"));
 
-	vc = comm->vcr[rreq->ch3.match.rank];
+	vc = comm->vcr[rreq->dev.match.rank];
 	
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
@@ -93,7 +93,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		    
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
-		esa_pkt->sender_req_id = rreq->ch3.sender_req_id;
+		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -108,10 +108,10 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    if (!recv_pending)
 	    {
 		/* All of the data has arrived, we need to copy the data and then free the buffer and the request. */
-		if (rreq->ch3.recv_data_sz > 0)
+		if (rreq->dev.recv_data_sz > 0)
 		{
 		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
-		    MPIU_Free(rreq->ch3.tmpbuf);
+		    MPIU_Free(rreq->dev.tmpbuf);
 		}
 
 		mpi_errno = rreq->status.MPI_ERROR;
@@ -123,8 +123,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		   entire message has arrived. */
 		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 		{
-		    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
-		    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+		    MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
+		    MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
 		}
 	    
 	    }
@@ -139,7 +139,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    MPIDI_DBG_PRINTF((15, FCNAME, "rndv RTS in the request, sending rndv CTS"));
 	    
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
-	    cts_pkt->sender_req_id = rreq->ch3.sender_req_id;
+	    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
 	    cts_pkt->receiver_req_id = rreq->handle;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
 	    if (mpi_errno != MPI_SUCCESS)
@@ -156,8 +156,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {
-		MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
-		MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+		MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
+		MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
 	    }
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
@@ -168,7 +168,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    {
 		MPIDI_msg_sz_t data_sz;
 		
-		MPIDI_CH3U_Buffer_copy(sreq->ch3.user_buf, sreq->ch3.user_count, sreq->ch3.datatype, &sreq->status.MPI_ERROR,
+		MPIDI_CH3U_Buffer_copy(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->status.MPI_ERROR,
 				       buf, count, datatype, &data_sz, &rreq->status.MPI_ERROR);
 		rreq->status.count = data_sz;
 		MPID_Request_set_completed(sreq);
@@ -201,11 +201,11 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	{
-	    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
-	    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+	    MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
+	    MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
 	}
 
-	rreq->ch3.recv_pending_count = 1;
+	rreq->dev.recv_pending_count = 1;
         MPID_Request_initialized_set(rreq);
     }
 

@@ -20,23 +20,23 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
     
-    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */
+    /* memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV)); */
     for (i = 0; i < iov_count; i++)
     {
-	sreq->ch3.iov[i] = iov[i];
+	sreq->dev.iov[i] = iov[i];
     }
     if (iov_offset == 0)
     {
 	/* memcpy(&sreq->sc.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
 	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
 	sreq->sc.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->sc.pkt;
+	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->sc.pkt;
     }
-    sreq->ch3.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[iov_offset].MPID_IOV_BUF + nb;
-    sreq->ch3.iov[iov_offset].MPID_IOV_LEN -= nb;
+    sreq->dev.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb;
+    sreq->dev.iov[iov_offset].MPID_IOV_LEN -= nb;
     sreq->sc.iov_offset = iov_offset;
-    sreq->ch3.iov_count = iov_count;
-    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+    sreq->dev.iov_count = iov_count;
+    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
     return sreq;

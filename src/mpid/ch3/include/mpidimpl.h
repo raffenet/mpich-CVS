@@ -99,12 +99,12 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->status.count = 0;					\
     (_req)->status.cancelled = FALSE;				\
     (_req)->comm = NULL;					\
-    (_req)->ch3.datatype_ptr = NULL;				\
+    (_req)->dev.datatype_ptr = NULL;				\
     MPIDI_Request_state_init((_req));				\
-    (_req)->ch3.cancel_pending = FALSE;				\
-    (_req)->ch3.decr_ctr = NULL;				\
-    (_req)->ch3.dtype_info = NULL;				\
-    (_req)->ch3.dataloop = NULL;				\
+    (_req)->dev.cancel_pending = FALSE;				\
+    (_req)->dev.decr_ctr = NULL;				\
+    (_req)->dev.dtype_info = NULL;				\
+    (_req)->dev.dataloop = NULL;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(_req)			\
@@ -114,9 +114,9 @@ extern MPIDI_Process_t MPIDI_Process;
 	MPIR_Comm_release((_req)->comm);			\
     }								\
 								\
-    if ((_req)->ch3.datatype_ptr != NULL)			\
+    if ((_req)->dev.datatype_ptr != NULL)			\
     {								\
-	MPID_Datatype_release((_req)->ch3.datatype_ptr);	\
+	MPID_Datatype_release((_req)->dev.datatype_ptr);	\
     }								\
 								\
     if (MPIDI_Request_get_srbuf_flag(_req))			\
@@ -129,7 +129,7 @@ extern MPIDI_Process_t MPIDI_Process;
 
 /* FIXME: MT: The reference count is normally set to two, one for the user and one for the device and channel.  The device and
  * channel should really be separated since the device may have completed the request and thus be done with it; but, the channel
- * may still need it (to check if ch3.iov_count is zero).  Right now the request is being referenced by the progress engine after
+ * may still need it (to check if dev.iov_count is zero).  Right now the request is being referenced by the progress engine after
  * the MPIDI_CH3U_Request_complete() is called, thus using the request after it may have been freed. */
 #define MPIDI_CH3U_Request_complete(req_)			\
 {								\
@@ -157,12 +157,12 @@ extern MPIDI_Process_t MPIDI_Process;
     (_sreq)->kind = MPID_REQUEST_SEND;						\
     (_sreq)->comm = comm;							\
     MPIR_Comm_add_ref(comm);							\
-    (_sreq)->ch3.match.rank = rank;						\
-    (_sreq)->ch3.match.tag = tag;						\
-    (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\
-    (_sreq)->ch3.user_buf = (void *) buf;					\
-    (_sreq)->ch3.user_count = count;						\
-    (_sreq)->ch3.datatype = datatype;						\
+    (_sreq)->dev.match.rank = rank;						\
+    (_sreq)->dev.match.tag = tag;						\
+    (_sreq)->dev.match.context_id = comm->context_id + context_offset;		\
+    (_sreq)->dev.user_buf = (void *) buf;					\
+    (_sreq)->dev.user_count = count;						\
+    (_sreq)->dev.datatype = datatype;						\
 }
 
 #define MPIDI_CH3M_create_psreq(_sreq, _mpi_errno, _FAIL)			\
@@ -179,19 +179,19 @@ extern MPIDI_Process_t MPIDI_Process;
     (_sreq)->kind = MPID_PREQUEST_SEND;						\
     (_sreq)->comm = comm;							\
     MPIR_Comm_add_ref(comm);							\
-    (_sreq)->ch3.match.rank = rank;						\
-    (_sreq)->ch3.match.tag = tag;						\
-    (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\
-    (_sreq)->ch3.user_buf = (void *) buf;					\
-    (_sreq)->ch3.user_count = count;						\
-    (_sreq)->ch3.datatype = datatype;						\
+    (_sreq)->dev.match.rank = rank;						\
+    (_sreq)->dev.match.tag = tag;						\
+    (_sreq)->dev.match.context_id = comm->context_id + context_offset;		\
+    (_sreq)->dev.user_buf = (void *) buf;					\
+    (_sreq)->dev.user_count = count;						\
+    (_sreq)->dev.datatype = datatype;						\
     (_sreq)->partner_request = NULL;						\
 }
 
 /* Masks and flags for channel device state in an MPID_Request */
 #define MPIDI_Request_state_init(_req)		\
 {						\
-    (_req)->ch3.state = 0;			\
+    (_req)->dev.state = 0;			\
 }
 
 #define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)
@@ -202,36 +202,36 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_SELF_MSG 3
 
 #define MPIDI_Request_get_msg_type(_req)					\
-(((_req)->ch3.state & MPIDI_REQUEST_MSG_MASK) >> MPIDI_REQUEST_MSG_SHIFT)
+(((_req)->dev.state & MPIDI_REQUEST_MSG_MASK) >> MPIDI_REQUEST_MSG_SHIFT)
 
 #define MPIDI_Request_set_msg_type(_req, _msgtype)						\
 {												\
-    (_req)->ch3.state &= ~MPIDI_REQUEST_MSG_MASK;						\
-    (_req)->ch3.state |= ((_msgtype) << MPIDI_REQUEST_MSG_SHIFT) & MPIDI_REQUEST_MSG_MASK;	\
+    (_req)->dev.state &= ~MPIDI_REQUEST_MSG_MASK;						\
+    (_req)->dev.state |= ((_msgtype) << MPIDI_REQUEST_MSG_SHIFT) & MPIDI_REQUEST_MSG_MASK;	\
 }
 
 #define MPIDI_REQUEST_SRBUF_MASK (0x1 << MPIDI_REQUEST_SRBUF_SHIFT)
 #define MPIDI_REQUEST_SRBUF_SHIFT 2
 
 #define MPIDI_Request_get_srbuf_flag(_req)					\
-(((_req)->ch3.state & MPIDI_REQUEST_SRBUF_MASK) >> MPIDI_REQUEST_SRBUF_SHIFT)
+(((_req)->dev.state & MPIDI_REQUEST_SRBUF_MASK) >> MPIDI_REQUEST_SRBUF_SHIFT)
 
 #define MPIDI_Request_set_srbuf_flag(_req, _flag)						\
 {												\
-    (_req)->ch3.state &= ~MPIDI_REQUEST_SRBUF_MASK;						\
-    (_req)->ch3.state |= ((_flag) << MPIDI_REQUEST_SRBUF_SHIFT) & MPIDI_REQUEST_SRBUF_MASK;	\
+    (_req)->dev.state &= ~MPIDI_REQUEST_SRBUF_MASK;						\
+    (_req)->dev.state |= ((_flag) << MPIDI_REQUEST_SRBUF_SHIFT) & MPIDI_REQUEST_SRBUF_MASK;	\
 }
 
 #define MPIDI_REQUEST_SYNC_SEND_MASK (0x1 << MPIDI_REQUEST_SYNC_SEND_SHIFT)
 #define MPIDI_REQUEST_SYNC_SEND_SHIFT 3
 
 #define MPIDI_Request_get_sync_send_flag(_req)						\
-(((_req)->ch3.state & MPIDI_REQUEST_SYNC_SEND_MASK) >> MPIDI_REQUEST_SYNC_SEND_SHIFT)
+(((_req)->dev.state & MPIDI_REQUEST_SYNC_SEND_MASK) >> MPIDI_REQUEST_SYNC_SEND_SHIFT)
 
 #define MPIDI_Request_set_sync_send_flag(_req, _flag)							\
 {													\
-    (_req)->ch3.state &= ~MPIDI_REQUEST_SYNC_SEND_MASK;							\
-    (_req)->ch3.state |= ((_flag) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;	\
+    (_req)->dev.state &= ~MPIDI_REQUEST_SYNC_SEND_MASK;							\
+    (_req)->dev.state |= ((_flag) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;	\
 }
 
 #define MPIDI_REQUEST_TYPE_MASK (0xF << MPIDI_REQUEST_TYPE_SHIFT)
@@ -250,19 +250,19 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT 10
 
 #define MPIDI_Request_get_type(_req)						\
-(((_req)->ch3.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
+(((_req)->dev.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
 
 #define MPIDI_Request_set_type(_req, _type)							\
 {												\
-    (_req)->ch3.state &= ~MPIDI_REQUEST_TYPE_MASK;						\
-    (_req)->ch3.state |= ((_type) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
+    (_req)->dev.state &= ~MPIDI_REQUEST_TYPE_MASK;						\
+    (_req)->dev.state |= ((_type) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
 }
 
 #if defined(MPICH_SINGLE_THREADED)
 #define MPIDI_Request_cancel_pending(_req, _flag)	\
 {							\
-    *(_flag) = (_req)->ch3.cancel_pending;		\
-    (_req)->ch3.cancel_pending = TRUE;			\
+    *(_flag) = (_req)->dev.cancel_pending;		\
+    (_req)->dev.cancel_pending = TRUE;			\
 }
 #else
 /* MT: to make this code lock free, an atomic exchange can be used. */ 
@@ -270,8 +270,8 @@ extern MPIDI_Process_t MPIDI_Process;
 {							\
     MPID_Request_thread_lock(_req);			\
     {							\
-	*(_flag) = (_req)->ch3.cancel_pending;		\
-	(_req)->ch3.cancel_pending = TRUE;		\
+	*(_flag) = (_req)->dev.cancel_pending;		\
+	(_req)->dev.cancel_pending = TRUE;		\
     }							\
     MPID_Request_thread_unlock(_req);			\
 }
@@ -280,7 +280,7 @@ extern MPIDI_Process_t MPIDI_Process;
 #if defined(MPICH_SINGLE_THREADED)
 #define MPIDI_Request_recv_pending(req_, recv_pending_)		\
 {								\
-    *(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
+    *(recv_pending_) = --(req_)->dev.recv_pending_count;	\
 }
 #else
 #if defined(USE_ATOMIC_UPDATES)
@@ -288,7 +288,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {										\
     int recv_pending__;								\
     										\
-    MPID_Atomic_decr_flag(&(req_)->ch3.recv_pending_count, recv_pending__);	\
+    MPID_Atomic_decr_flag(&(req_)->dev.recv_pending_count, recv_pending__);	\
     *(recv_pending_) = recv_pending__;						\
 }
 #else
@@ -296,7 +296,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {								\
     MPID_Request_thread_lock(req_);				\
     {								\
-	*(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
+	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
@@ -334,15 +334,15 @@ extern MPIDI_Process_t MPIDI_Process;
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
 #define MPIDI_CH3U_SRBuf_alloc(_req, _size)			\
 {								\
-    (_req)->ch3.tmpbuf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
-    if ((_req)->ch3.tmpbuf != NULL)				\
+    (_req)->dev.tmpbuf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
+    if ((_req)->dev.tmpbuf != NULL)				\
     {								\
-	(_req)->ch3.tmpbuf_sz = MPIDI_CH3U_SRBuf_size;		\
+	(_req)->dev.tmpbuf_sz = MPIDI_CH3U_SRBuf_size;		\
 	MPIDI_Request_set_srbuf_flag((_req), TRUE);		\
     }								\
     else							\
     {								\
-	(_req)->ch3.tmpbuf_sz = 0;				\
+	(_req)->dev.tmpbuf_sz = 0;				\
     }								\
 }
 #endif
@@ -352,7 +352,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {							\
     assert(MPIDI_Request_get_srbuf_flag(_req));		\
     MPIDI_Request_set_srbuf_flag((_req), FALSE);	\
-    MPIU_Free((_req)->ch3.tmpbuf);			\
+    MPIU_Free((_req)->dev.tmpbuf);			\
 }
 #endif
 
@@ -386,7 +386,7 @@ extern MPIDI_Process_t MPIDI_Process;
 #endif
 #define MPIDI_CH3U_Request_set_seqnum(_req, _seqnum)	\
 {							\
-    (_req)->ch3.seqnum = (_seqnum);			\
+    (_req)->dev.seqnum = (_seqnum);			\
 }
 #define MPIDI_CH3U_Pkt_set_seqnum(_pkt, _seqnum)	\
 {							\

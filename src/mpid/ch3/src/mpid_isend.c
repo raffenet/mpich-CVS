@@ -60,7 +60,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
 
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
@@ -112,7 +112,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
 	    iov[1].MPID_IOV_BUF = (void *) buf;
 	    iov[1].MPID_IOV_LEN = data_sz;
@@ -135,9 +135,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
-	    sreq->ch3.segment_first = 0;
-	    sreq->ch3.segment_size = data_sz;
+	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment);
+	    sreq->dev.segment_first = 0;
+	    sreq->dev.segment_size = data_sz;
 	    
 	    iov_n = MPID_IOV_LIMIT - 1;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
@@ -159,9 +159,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		    goto fn_exit;
 		}
 		
-		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
+		if (sreq->dev.ca != MPIDI_CH3_CA_COMPLETE)
 		{
-		    sreq->ch3.datatype_ptr = dt_ptr;
+		    sreq->dev.datatype_ptr = dt_ptr;
 		    MPID_Datatype_add_ref(dt_ptr);
 		}
 	    }
@@ -219,7 +219,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	if (dt_ptr != NULL)
 	{
-	    sreq->ch3.datatype_ptr = dt_ptr;
+	    sreq->dev.datatype_ptr = dt_ptr;
 	    MPID_Datatype_add_ref(dt_ptr);
 	}
     }

@@ -906,7 +906,7 @@ int MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 
     assert (conn->recv_active == NULL);
     conn->recv_active = rreq;
-    mpi_errno = MPIDU_Sock_post_readv(conn->sock, rreq->ch3.iov + rreq->sc.iov_offset, rreq->ch3.iov_count - rreq->sc.iov_offset, NULL);
+    mpi_errno = MPIDU_Sock_post_readv(conn->sock, rreq->dev.iov + rreq->sc.iov_offset, rreq->dev.iov_count - rreq->sc.iov_offset, NULL);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -932,8 +932,8 @@ int MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
     
     assert (conn->send_active == NULL);
     conn->send_active = sreq;
-    mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->ch3.iov + sreq->sc.iov_offset,
-				  sreq->ch3.iov_count - sreq->sc.iov_offset,  NULL);
+    mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->dev.iov + sreq->sc.iov_offset,
+				  sreq->dev.iov_count - sreq->sc.iov_offset,  NULL);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -1093,7 +1093,7 @@ static inline void connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     {
 	int rc;
 	
-	rc = MPIDU_Sock_post_writev(conn->sock, conn->send_active->ch3.iov, conn->send_active->ch3.iov_count, NULL);
+	rc = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
 	if (rc != MPI_SUCCESS)
 	{
 	    connection_send_fail(conn, rc);

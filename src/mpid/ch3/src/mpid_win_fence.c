@@ -379,15 +379,15 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         MPIU_Object_set_ref(*request, 2);
         (*request)->kind = MPID_REQUEST_SEND;
 	    
-        (*request)->ch3.datatype_ptr = origin_dtp;
+        (*request)->dev.datatype_ptr = origin_dtp;
         /* this will cause the datatype to be freed when the request
            is freed. */ 
 
         MPID_Segment_init(rma_op->origin_addr, rma_op->origin_count,
                           rma_op->origin_datatype,
-                          &((*request)->ch3.segment));
-        (*request)->ch3.segment_first = 0;
-        (*request)->ch3.segment_size = rma_op->origin_count * origin_type_size;
+                          &((*request)->dev.segment));
+        (*request)->dev.segment_first = 0;
+        (*request)->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
         iov_n = MPID_IOV_LIMIT - iovcnt;
         mpi_errno = MPIDI_CH3U_Request_load_send_iov(*request,
@@ -400,7 +400,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             mpi_errno = MPIDI_CH3_iSendv(vc, *request, iov, iov_n);
             if (mpi_errno != MPI_SUCCESS)
             {
-                MPID_Datatype_release((*request)->ch3.datatype_ptr);
+                MPID_Datatype_release((*request)->dev.datatype_ptr);
                 MPIU_Object_set_ref(*request, 0);
                 MPIDI_CH3_Request_destroy(*request);
                 *request = NULL;
@@ -410,7 +410,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         }
         else
         {
-            MPID_Datatype_release((*request)->ch3.datatype_ptr);
+            MPID_Datatype_release((*request)->dev.datatype_ptr);
             MPIU_Object_set_ref(*request, 0);
             MPIDI_CH3_Request_destroy(*request);
             *request = NULL;
@@ -450,13 +450,13 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
     MPIU_Object_set_ref(req, 2);
 
-    req->ch3.user_buf = rma_op->origin_addr;
-    req->ch3.user_count = rma_op->origin_count;
-    req->ch3.datatype = rma_op->origin_datatype;
-    req->ch3.decr_ctr = NULL;
-    if (HANDLE_GET_KIND(req->ch3.datatype) != HANDLE_KIND_BUILTIN) {
-        MPID_Datatype_get_ptr(req->ch3.datatype, dtp);
-        req->ch3.datatype_ptr = dtp;
+    req->dev.user_buf = rma_op->origin_addr;
+    req->dev.user_count = rma_op->origin_count;
+    req->dev.datatype = rma_op->origin_datatype;
+    req->dev.decr_ctr = NULL;
+    if (HANDLE_GET_KIND(req->dev.datatype) != HANDLE_KIND_BUILTIN) {
+        MPID_Datatype_get_ptr(req->dev.datatype, dtp);
+        req->dev.datatype_ptr = dtp;
         /* this will cause the datatype to be freed when the
            request is freed. */  
     }

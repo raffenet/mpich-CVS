@@ -19,22 +19,22 @@
 static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 {
     int offset = req->ssm.iov_offset;
-    const int count = req->ch3.iov_count;
+    const int count = req->dev.iov_count;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
     
     while (offset < count)
     {
-	if (req->ch3.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
+	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
 	{
-	    nb -= req->ch3.iov[offset].MPID_IOV_LEN;
+	    nb -= req->dev.iov[offset].MPID_IOV_LEN;
 	    offset++;
 	}
 	else
 	{
-	    req->ch3.iov[offset].MPID_IOV_BUF = (char *) req->ch3.iov[offset].MPID_IOV_BUF + nb;
-	    req->ch3.iov[offset].MPID_IOV_LEN -= nb;
+	    req->dev.iov[offset].MPID_IOV_BUF = (char *) req->dev.iov[offset].MPID_IOV_BUF + nb;
+	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ssm.iov_offset = offset;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
@@ -78,7 +78,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
-	    MPIDI_CA_t ca = req->ch3.ca;
+	    MPIDI_CA_t ca = req->dev.ca;
 	    
 	    vc->ssm.recv_active = NULL;
 
@@ -86,7 +86,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
 		/* mark data transfer as complete adn decrment CC */
-		req->ch3.iov_count = 0;
+		req->dev.iov_count = 0;
 		MPIDI_CH3U_Request_complete(req);
 		vc->ssm.shm_reading_pkt = TRUE;
 		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -102,7 +102,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 		/* decrement the number of active reads */
 		MPIDI_CH3I_shm_read_active--;
 		MPIDI_CH3U_Handle_recv_req(vc, req);
-		if (req->ch3.iov_count == 0)
+		if (req->dev.iov_count == 0)
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete, posting new recv packet"));
 		    vc->ssm.shm_reading_pkt = TRUE;
@@ -130,10 +130,10 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	else
 	{
 #ifdef MPICH_DBG_OUTPUT
-	    /*assert(req->ssm.iov_offset < req->ch3.iov_count);*/
-	    if (req->ssm.iov_offset >= req->ch3.iov_count)
+	    /*assert(req->ssm.iov_offset < req->dev.iov_count);*/
+	    if (req->ssm.iov_offset >= req->dev.iov_count)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->ch3.iov_count);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->dev.iov_count);
 		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
 		return mpi_errno;
 	    }
@@ -146,7 +146,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
     else
     {
 	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d",
-	    req->ch3.iov + req->ssm.iov_offset, req->ch3.iov_count - req->ssm.iov_offset));
+	    req->dev.iov + req->ssm.iov_offset, req->dev.iov_count - req->ssm.iov_offset));
     }
     
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -173,20 +173,20 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	MPID_Request * req = vc->ssm.send_active;
 
 #ifdef MPICH_DBG_OUTPUT
-	if (req->ssm.iov_offset >= req->ch3.iov_count)
+	if (req->ssm.iov_offset >= req->dev.iov_count)
 	{
-	    error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->ch3.iov_count);
+	    error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->dev.iov_count);
 	    MPID_Abort(MPIR_Process.comm_world, error, -1);
 	}
-	/*assert(req->ssm.iov_offset < req->ch3.iov_count);*/
+	/*assert(req->ssm.iov_offset < req->dev.iov_count);*/
 #endif
 	/* Check here or inside shm_writev?
 	if (vc->ssm.write_shmq->packet[vc->ssm.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
-	    error = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->ssm.iov_offset, req->ch3.iov_count - req->ssm.iov_offset, &nb);
+	    error = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ssm.iov_offset, req->dev.iov_count - req->ssm.iov_offset, &nb);
 	else
 	    nb = 0;
 	*/
-	error = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->ssm.iov_offset, req->ch3.iov_count - req->ssm.iov_offset, &nb);
+	error = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ssm.iov_offset, req->dev.iov_count - req->ssm.iov_offset, &nb);
 
 	if (nb > 0)
 	{
@@ -195,7 +195,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
-		MPIDI_CA_t ca = req->ch3.ca;
+		MPIDI_CA_t ca = req->dev.ca;
 			
 		vc->ssm.send_active = NULL;
 		
@@ -205,7 +205,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		    vc->ssm.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    /* mark data transfer as complete and decrment CC */
-		    req->ch3.iov_count = 0;
+		    req->dev.iov_count = 0;
 		    MPIDI_CH3U_Request_complete(req);
 		}
 		else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
@@ -226,7 +226,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		    MPIDI_CH3U_Handle_send_req(vc, req);
-		    if (req->ch3.iov_count == 0)
+		    if (req->dev.iov_count == 0)
 		    {
 			/* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
 			   device has completed the current request.  As a result, the current request is dequeded and next request
@@ -249,7 +249,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	    else
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete", nb));
-		assert(req->ssm.iov_offset < req->ch3.iov_count);
+		assert(req->ssm.iov_offset < req->dev.iov_count);
 		break;
 	    }
 	}

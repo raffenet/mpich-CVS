@@ -345,7 +345,7 @@ struct MPIDI_Request														\
     MPIDI_REQUEST_SEQNUM													\
 																\
     struct MPID_Request * next;													\
-} ch3;
+} dev;
 
 #if defined(MPIDI_CH3_REQUEST_DECL)
 #define MPID_DEV_REQUEST_DECL			\
