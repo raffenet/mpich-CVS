@@ -55,7 +55,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     {
 	av.sl                         = 0;
 	/*MPIU_dbg_printf("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid);*/
-	av.dest_lid                   = ib->m_dlid;
+	av.dest_lid                   = (ib_uint16_t)ib->m_dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
 	av.max_static_rate            = 1;
@@ -325,7 +325,7 @@ int ib_setup_connections()
 	    return -1;
 	}
 	ib->m_recv_sglist.data_seg_num = ib->m_message_segments;
-	for (i=0; i<ib->m_message_segments; i++)
+	for (i=0; i<(int)ib->m_message_segments; i++)
 	{
 	    ib->m_recv_sglist.data_seg_p[i].length = ib->m_message_size;
 	    ib->m_recv_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
@@ -344,7 +344,7 @@ int ib_setup_connections()
 	    return -1;
 	}
 	ib->m_send_sglist.data_seg_num = ib->m_message_segments;
-	for (i=0; i<ib->m_message_segments; i++)
+	for (i=0; i<(int)ib->m_message_segments; i++)
 	{
 	    ib->m_send_sglist.data_seg_p[i].length = ib->m_message_size;
 	    ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
