@@ -805,20 +805,20 @@ if test -n "$arch_IRIX"; then
    if test $osversion = 4 ; then
 	RANLIB="ar ts"
         if test -n "$mpi_sgi"; then
-            AC_MSG_ERROR(["SGI's MPI doesn't work with IRIX 4.x"])
+            AC_MSG_ERROR([SGI\'s MPI does not work with IRIX 4.x])
         fi
    elif test $osversion = 5 ; then
         if test -n "$mpi_sgi"; then
-            AC_MSG_ERROR("SGI's MPI doesn't work with IRIX 5.x"])
+            AC_MSG_ERROR([SGI\'s MPI does not work with IRIX 5.x])
         fi
    elif test $osversion = 6 ; then
 	if test -z "$MPI"; then
             if test -f "/usr/include/mpi.h" ; then
-                echo "assuming that you want to use ROMIO with SGI's MPI"
+                AC_MSG_WARN([assuming that you want to use ROMIO with SGI\'s MPI])
                 MPI=sgi
                 mpi_sgi=1
             else 
-                echo "assuming that you want to use ROMIO with MPICH"
+	        AC_MSG_WARN([assuming that you want to use ROMIO with MPICH])
                 MPI=mpich
                 mpi_mpich=1
             fi            
