@@ -20,6 +20,9 @@ the correct place, or should there be a separate file?).  The additional error
 codes all have the form of \code{MPIi_ERR_<class>_<subclass>}.  For example,
 the code for a null communicator is \mpiconst{MPIi_ERR_COMM_NULL}.
 
+Comment [BRT]: I find that MPIi_ is painful to type.  Is there a
+reason the second `i' is lowercase?
+
 Many of these descriptions list the optional arguments.  These can be provided
 (in the order and with the types specified) to the call that creates an error
 code (see \mpidfunc{MPID_Err_create_code}). 

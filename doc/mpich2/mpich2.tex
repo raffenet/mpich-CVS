@@ -74,6 +74,7 @@ Draft of \today}{\em
 William Gropp\\
 Ewing Lusk\\
 Rob Ross\\
+Brian Toonen\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}{00}{\today}
 
@@ -165,6 +166,19 @@ was invoked.  It could return an error code if it finds a problem.
 Note that this won't work in the multi-threaded case (unless a
 thread-specific signal handler is available).
 
+Question [BRT]: Are there systems where a pointer can be less
+than zero?  I have always (perhaps incorrectly) considered pointers to
+be unsigned, so the above code fragment seems bizzare to me.  
+
+Question [BRT]: What is the purpose of performing these tests?  If the
+purpose is to help us, the MPICH developers, find bugs, then I suggest
+that we avoid adding these types of tests and instead make use of a
+product like Insure++.  If the purpose is to keep the user's code from
+core dumping, then such tests might be useful.  However, I highly
+recommend that the user be able to turn off such checks as a core dump
+frequently provides useful information about the source of the
+problem.
+
 \subsubsection{Choosing Error Handlers and Classes}
 Error handlers should be chosen using the following decision tree:
 \begin{enumerate}
@@ -254,6 +268,16 @@ needs to know which thread package is being used.  This suggests that
 the function that provides the thread id by well isolated and perhaps
 dynamically loaded.
 
+Comment [BRT]: I believe most threads packages provide thread-specific
+storage.  If such storage is available, we should use it rather than
+creating our own implementation of thread-specific storage.
+
+Comment [BRT]: On some systems, the choice of the threads package (or
+lack thereof) must be selected at compile time and be consistent for
+all object files linked into the executable.  On these systems,
+dynamic loading of libraries compiled with different thread packages
+is likely to be problematic.
+
 Under pthreads, the situation is somewhat easier.  We can use
 \code{pthread_key_create} to create a key that can be used to access
 thread-private data with \code{pthread_getspecific} in any thread.
@@ -284,6 +308,9 @@ push/pop of error handlers.  While push/pop of error handlers is a
 nice abstract model, it is more than is needed for the layered MPI
 routines, and, as noted above, is not correct for the multithreaded
 case.
+
+Comment [BRT]: push/pop would be correct for the multi-threaded case
+as long as thread-specific stacks are used.
 
 \subsection{Memory Allocation}
 Avoid memory allocation wherever practical.  Use \mpidfunc{MPID_Malloc}
@@ -317,6 +344,9 @@ memory.  The memory allocator could be
 #define FREE_STK     {int i; for (i=0;i<_memstack.n_alloc;i++) {\
                FREE(_memstack.ptrs[i]);}
 \end{verbatim}
+
+Comment [BRT]: _memstack needs to be allocated in thread specific
+storage in order for the MPI implementation to be thread safe.
 
 \subsection{MPI Opaque Objects}
 
@@ -404,6 +434,11 @@ which will be adequate (if long double is 16 bytes, then the long complex and
 long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
 be at least 32 bits, leaving us enough room for the size of these longer
 types). 
+
+Comment [BRT]: If we can assume that all basic types are of the size
+2^N, the we can simply store N, eliminating the need for more than a
+few bits of storage.  I'm not sure if this is a reasonable
+assumption...
 
 For predefined Groups and Communicators we simply use the remaining bits
 to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
@@ -610,6 +645,9 @@ Question: should we specify an indentation style?  If so, we need to
 specify it at the top of each file (as an emacs command) so that emacs
 will use the correct style for users with other styles or projects.
 
+Comment [BRT]: Yes.  Having a style standard makes it much easier to
+read and modify code written by others.
+
 \item[File header.]
 There should be a standard file header, containing the copyright and
 standardized includes (e.g., something like "\file{mpiimpl.h}").  This header
@@ -627,6 +665,10 @@ declaration.
 Alternately, we could use \code{FCNAME} and include optional code to
 set it to either \code{__FUNCTION__} for systems that define that or
 explicitly to the name.
+
+Comment [BRT]: Names beginning with an underscore are reserved for the
+compiler and runtime system.  Use of \code{__FUNCTION__} could affect
+portability.  So, I prefer the use of \code{FCNAME}.
 
 \item[Boolean Flags.]
 Data structures that contain a number of flags should store them
@@ -4850,6 +4892,10 @@ time.
 implementation are reliable at indicating a non-zero return code or at
 flushing output.  A requirement for an output of \code{Test passed} is
 necessary. 
+\item [BRT] Errors should not be reported as a result of a feature
+having been disabled (i.e., tests for the long long type should not
+report a failure when the system is configured with
+\code{--disable-long-long}),
 \end{enumerate}
 
 Results should be maintained in a database which should include
