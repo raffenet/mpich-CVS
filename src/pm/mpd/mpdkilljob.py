@@ -48,9 +48,13 @@ def mpdkilljob():
     msg = mpd_recv_one_msg(conSocket)
     if not msg or msg['cmd'] != 'mpdkilljob_ack':
         if msg['cmd'] == 'already_have_a_console':
-            mpd_raise('mpd already has a console (e.g. for long ringtest); try later')
+            print 'mpd already has a console (e.g. for long ringtest); try later'
         else:
-            mpd_raise('unexpected message from mpd: %s' % (msg) )
+            print 'unexpected message from mpd: %s' % (msg)
+        exit(-1)
+    if not msg['handled']:
+        print 'job not found'
+        exit(-1)
     conSocket.close()
 
 def sigint_handler(signum,frame):
