@@ -154,9 +154,7 @@
 /* prototype the initialization/finalization functions */
 int MPIU_Timer_init(int rank, int size);
 int MPIU_Timer_finalize(void);
-int MPIR_Describe_mpi_timer_states(void);
-int MPIDU_Describe_timer_states(void);
-int MPIDU_Segment_describe_timer_states(void);
+int MPIR_Describe_timer_states(void);
 
 /* Statistics macros aren't defined yet */
 /* All uses of these are protected by the symbol COLLECT_STATS, so they
