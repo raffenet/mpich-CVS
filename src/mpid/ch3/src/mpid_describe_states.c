@@ -202,6 +202,14 @@ int MPIDU_Describe_timer_states()
 		       "MPID_Win_free",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_LOCK,
+		       "MPID_Win_lock",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_UNLOCK,
+		       "MPID_Win_unlock",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPID_WIN_POST,
 		       "MPID_Win_post",
 		       get_random_color_str());
