@@ -179,9 +179,9 @@ static int smpd_build_spn_list()
 
     /* Get an IDirectorySearch pointer for the Global Catalog.  */
     hr = GetGCSearch(&pSearch);
-    if (FAILED(hr)) 
+    if (FAILED(hr) || pSearch == NULL) 
     {
-	smpd_err_printf("GetGC failed 0x%x", hr);
+	smpd_err_printf("GetGC failed 0x%x\n", hr);
 	goto Cleanup;
     }
 
@@ -256,7 +256,7 @@ static int smpd_build_spn_list()
 	}       
 	else
 	{
-	    smpd_err_printf("Failed to allocate a buffer");
+	    smpd_err_printf("Failed to allocate a buffer\n");
 	    goto Cleanup;
 	}               
 	/*wprintf(L"pszDN = %s\n", pszDN);*/
