@@ -55,7 +55,7 @@ int main( int argc, char **argv)
 	if ((vval < 0 || vval >= size) && vval != MPI_ANY_SOURCE &&
 		  vval != MPI_PROC_NULL) {
 	    errs++;
-	    fprintf( stderr, "Got invalid value %d for IO\n" );
+	    fprintf( stderr, "Got invalid value %d for IO\n", vval );
 	}
     }
 
