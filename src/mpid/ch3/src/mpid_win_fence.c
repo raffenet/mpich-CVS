@@ -17,7 +17,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests=NULL; /* array of requests */
-    int *decr_addr;
+    int *decr_addr, *recvcnts;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
 
@@ -112,16 +112,27 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
 
-        /* do a global sum on rma_target_proc. As a result,
-           rma_target_proc[i] indicates how many procs. will be
-           doing RMA ops on rank i's window */
+        /* do a reduce_scatter global sum on rma_target_proc. As a result,
+           each process knows how many other processes will be doing
+           RMA ops on its window */  
         
-        /* first initialize the completion counter. needed for the MT case. */
+        /* first initialize the completion counter. */
         win_ptr->my_counter = comm_size;
 
+        /* set up the recvcnts array for reduce scatter */
+
+        recvcnts = (int *) MPIU_Malloc(comm_size * sizeof(int));
+        if (!recvcnts) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+            return mpi_errno;
+        }
+        for (i=0; i<comm_size; i++) recvcnts[i] = 1;
+
         MPIR_Nest_incr();
-        mpi_errno = NMPI_Allreduce(MPI_IN_PLACE, rma_target_proc, comm_size,
+        mpi_errno = NMPI_Reduce_scatter(MPI_IN_PLACE, rma_target_proc, recvcnts,
                                    MPI_INT, MPI_SUM, win_ptr->comm);
+        /* result is stored in rma_target_proc[0] */
         MPIR_Nest_decr();
         if (mpi_errno != MPI_SUCCESS)
 	{
@@ -134,8 +145,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         /* FIXME: MT: this needs to be done atomically because other
            procs have the address and could decrement it. */
         win_ptr->my_counter = win_ptr->my_counter - comm_size +
-            rma_target_proc[comm_ptr->rank];  
+                              rma_target_proc[0];  
 
+        MPIU_Free(recvcnts);
         MPIU_Free(rma_target_proc);
 
         i = 0;
