@@ -106,8 +106,6 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	assert(sreq != NULL);
 	sreq->ref_count = 2;
 	sreq->kind = MPID_REQUEST_SEND;
-	sreq->cc = 1;
-	sreq->cc_ptr = &(sreq->cc);
 	sreq->comm = comm;
 	sreq->ch3.match.rank = rank;
 	sreq->ch3.match.tag = tag;

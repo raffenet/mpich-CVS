@@ -249,8 +249,6 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
     {
 	rreq->ref_count = 2;
 	rreq->kind = MPID_REQUEST_RECV;
-	rreq->cc = 1;
-	rreq->cc_ptr = &(rreq->cc);
 	rreq->ch3.match.tag = tag;
 	rreq->ch3.match.rank = source;
 	rreq->ch3.match.context_id = context_id;
@@ -371,8 +369,6 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
     {
 	rreq->ref_count = 2;
 	rreq->kind = MPID_REQUEST_RECV;
-	rreq->cc = 1;
-	rreq->cc_ptr = &(rreq->cc);
 	rreq->ch3.match = *match;
 	rreq->ch3.next = NULL;
 	
