@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
     /* char */
     cinbuf[0] = 1;
     cinbuf[1] = 0;
-    cinbuf[2] = rank 
+    cinbuf[2] = rank;
 
     coutbuf[0] = 0;
     coutbuf[1] = 1;

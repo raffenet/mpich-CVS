@@ -16,7 +16,6 @@ int main( int argc, char *argv[] )
     int rank, size, root;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    MPI_Status    status;
     MTestDatatype sendtype, recvtype;
 
     MTest_Init( &argc, &argv );

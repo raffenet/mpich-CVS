@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test MPI_Reduce with non-commutative user-define operations and arbitrary root";
@@ -35,14 +36,14 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
     for (nmat = 0; nmat < *count; nmat++) {
 	for (j=0; j<matSize; j++) {
 	    for (i=0; i<matSize; i++) {
-		tempcol[i] = 0;
+		tempCol[i] = 0;
 		for (k=0; k<matSize; k++) {
 		    /* col[i] += cin(i,k) * cout(k,j) */
-		    tempcol[i] += cin[k+i*matSize] * cout[j+k*matSize];
+		    tempCol[i] += cin[k+i*matSize] * cout[j+k*matSize];
 		}
 	    }
 	    for (i=0; i<matSize; i++) {
-		cout[j+i*matSize] = tempcol[i];
+		cout[j+i*matSize] = tempCol[i];
 	    }
 	}
     }
@@ -71,7 +72,7 @@ static void initMat( MPI_Comm comm, int mat[] )
 }
 
 /* Compare a matrix with the identity matrix */
-static int isToeplitz( MPI_Comm comm, int mat[] )
+static int isIdentity( MPI_Comm comm, int mat[] )
 {
     int i, j, size, rank, errs = 0;
     
@@ -101,7 +102,7 @@ int main( int argc, char *argv[] )
     int rank, size, root;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    int *buf, i;
+    int *buf, *bufout, i;
     MPI_Op op;
     MPI_Datatype mattype;
 
@@ -112,18 +113,19 @@ int main( int argc, char *argv[] )
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
 	MPI_Comm_size( comm, &size );
+	MPI_Comm_rank( comm, &rank );
 
 	/* Only one matrix for now */
 	count = 1;
 
 	/* A single matrix, the size of the communicator */
-	MPI_Type_contig( size*size, MPI_INT, &mattype );
+	MPI_Type_contiguous( size*size, MPI_INT, &mattype );
 	MPI_Type_commit( &mattype );
 	
 	buf = (int *)malloc( count * size * size * sizeof(int) );
-	if (!buf) MPI_Abort( MPI_COMM_WORLD, 1, );
+	if (!buf) MPI_Abort( MPI_COMM_WORLD, 1 );
 	bufout = (int *)malloc( count * size * size * sizeof(int) );
-	if (!bufout) MPI_Abort( MPI_COMM_WORLD, 1, );
+	if (!bufout) MPI_Abort( MPI_COMM_WORLD, 1 );
 
 	for (root = 0; root < size; root ++) {
 	    initMat( comm, buf );
