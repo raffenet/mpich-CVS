@@ -107,6 +107,14 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	return mpi_errno;
     }
 
+#ifdef MPICH_DBG_OUTPUT
+    if (has_parent && MPIR_Process.comm_parent == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "parent flag set but parent communicator not set");
+	return mpi_errno;
+    }
+#endif
+
     /* MT:  only single threaded applications are supported at the moment... */
     if (provided != NULL)
     {
