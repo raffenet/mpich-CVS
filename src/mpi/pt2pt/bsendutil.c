@@ -53,7 +53,7 @@
 
 /* BsendMsg is used to hold all of the message particulars in case
    a request is not currently available */
-typedef struct {
+typedef struct BsendMsg_t {
     void         *msgbuf;
     int          count;
     MPI_Datatype dtype;
@@ -77,7 +77,7 @@ typedef struct BsendData {
 #define BSENDDATA_HEADER_TRUE_SIZE (sizeof(BsendData_t) - sizeof(double))
 
 /* BsendBuffer is the structure that describes the overall Bsend buffer */
-static struct {
+static struct BsendBuffer {
     void               *buffer;        /* Pointer to the begining of the user-
 					  provided buffer */
     int                buffer_size;    /* Size of the user-provided buffer */
@@ -501,7 +501,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 #endif
 
     /* Is there enough space left to create a new block? */
-    if (alloc_size + BSENDDATA_HEADER_TRUE_SIZE + MIN_BUFFER_BLOCK <= p->size) {
+    if (alloc_size + (int)BSENDDATA_HEADER_TRUE_SIZE + MIN_BUFFER_BLOCK <= p->size) {
 	/* Yes, the available space (p->size) is large enough to 
 	   carve out a new block */
 	BsendData_t *newp;
