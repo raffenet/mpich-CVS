@@ -31,6 +31,12 @@ double	 g_STOPTM = 	0.1;
 #define MIN(x, y)	(((x) < (y))?(x):(y))
 #define MAX(x, y)	(((x) > (y))?(x):(y))
 
+#ifdef HAVE_WINDOWS_H
+#define POINTER_TO_INT(a)   ( ( int )( 0xffffffff & (__int64) ( a ) ) )
+#else
+#define POINTER_TO_INT(a)   ( ( int )( a ) )
+#endif
+
 #define When MPI_Wtime
 
 int g_nIproc = 0, g_nNproc = 0;
@@ -38,13 +44,13 @@ int g_nIproc = 0, g_nNproc = 0;
 typedef struct argstruct ArgStruct;
 struct argstruct 
 {
-    /* This is the common information that is needed for all tests		*/
-    char    *buff;	/* Transmitted buffer					*/
-    char    *buff1;	/* Transmitted buffer					*/
-    int     bufflen;	/* Length of transmitted buffer 			*/
-	    /*tr;*/ 	/* Transmit flag 					*/
-    int nbor, iproc, tr, latency_reps;
-    /*ProtocolStruct prot1, prot2;*/
+    char *buff;	        /* Send buffer      */
+    char *buff1;        /* Recv buffer      */
+    int  bufflen;       /* Length of buffer */
+    int  nbor,          /* neighbor */
+	 iproc,         /* rank */
+	 tr,            /* transmitter/receiver flag */
+	 latency_reps;  /* reps needed to time latency */
 };
 
 typedef struct data Data;
@@ -58,11 +64,13 @@ struct data
 
 int Setup(ArgStruct *p01, ArgStruct *p12);
 void Sync(ArgStruct *p);
-void SendData(ArgStruct *p);
-void RecvData(ArgStruct *p);
+#define SendData( p ) MPI_Send( p . buff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD)
+#define RecvData( p ) MPI_Recv( p . buff1,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD, &status)
 void SendRecvData(ArgStruct *p);
-void SendTime(ArgStruct *p, double *t, int *rpt);
-void RecvTime(ArgStruct *p, double *t, int *rpt);
+void SendTime(ArgStruct *p, double *t);
+void RecvTime(ArgStruct *p, double *t);
+void SendReps(ArgStruct *p, int *rpt);
+void RecvReps(ArgStruct *p, int *rpt);
 double TestLatency(ArgStruct *p);
 void PrintOptions(void);
 int DetermineLatencyReps(ArgStruct *p);
@@ -78,7 +86,6 @@ void PrintOptions()
     printf("       -end final_msg_size\n");
     printf("       -out outputfile\n");
     printf("       -nocache\n");
-    printf("       -headtohead\n");
     printf("       -pert\n");
     printf("       -noprint\n");
     printf("Requires exactly three processes\n");
@@ -91,32 +98,29 @@ int main(int argc, char *argv[])
     char s[255]; 		/* Generic string				*/
     char *memtmp;
     char *memtmp1;
-    
+    MPI_Status status;
+
     int i, j, n, nq,		/* Loop indices					*/
 	bufoffset = 0,		/* Align buffer to this				*/
 	bufalign = 16*1024,	/* Boundary to align buffer to			*/
 	nrepeat,		/* Number of time to do the transmission	*/
-	nzero = 0,
 	len,			/* Number of bytes to be transmitted		*/
 	inc = 1,		/* Increment value				*/
-	detailflag = 0,		/* Set to examine the signature curve detail*/
 	pert,			/* Perturbation value				*/
         ipert,                  /* index of the perturbation loop		*/
 	start = 0,		/* Starting value for signature curve 		*/
 	end = MAXINT,		/* Ending value for signature curve		*/
 	printopt = 1;		/* Debug print statements flag			*/
     
-    ArgStruct	args01, args12;		/* Argumentsfor all the calls			*/
+    ArgStruct	args01, args12;	/* Argumentsfor all the calls			*/
     
     double t, t0, t1, t2,	/* Time variables				*/
-	tlast,			/* Time for the last transmission		*/
-	tzero = 0,
-	latency01, latency12;		/* Network message latency			*/
+	tlast01, tlast12,	/* Time for the last transmission		*/
+	latency01, latency12;	/* Network message latency			*/
     
-    Data *bwdata;		/* Bandwidth curve data 			*/
+    Data *bwdata01, *bwdata12;	/* Bandwidth curve data 			*/
     
     BOOL bNoCache = FALSE;
-    BOOL bHeadToHead = FALSE;
     BOOL bSavePert = FALSE;
     BOOL bUseMegaBytes = FALSE;
 
@@ -138,13 +142,13 @@ int main(int argc, char *argv[])
     GetOptInt(&argc, &argv, "-start", &start);
     GetOptInt(&argc, &argv, "-end", &end);
     bNoCache = GetOpt(&argc, &argv, "-nocache");
-    bHeadToHead = GetOpt(&argc, &argv, "-headtohead");
     bUseMegaBytes = GetOpt(&argc, &argv, "-mb");
     if (GetOpt(&argc, &argv, "-noprint"))
 	printopt = 0;
     bSavePert = GetOpt(&argc, &argv, "-pert");
     
-    bwdata = malloc((g_NSAMP+1) * sizeof(Data));
+    bwdata01 = malloc((g_NSAMP+1) * sizeof(Data));
+    bwdata12 = malloc((g_NSAMP+1) * sizeof(Data));
 
     if (g_nIproc == 0)
 	strcpy(s, "adapt.out");
@@ -155,9 +159,9 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Start MUST be LESS than end\n");
 	exit(420132);
     }
-    
+
     Setup(&args01, &args12);
-    
+
     if (g_nIproc == 0)
     {
 	if ((out = fopen(s, "w")) == NULL)
@@ -167,24 +171,25 @@ int main(int argc, char *argv[])
 	}
     }
 
+    /* Calculate latency */
     switch (g_nIproc)
     {
     case 0:
 	latency01 = TestLatency(&args01);
 	/*printf("[0] latency01 = %0.9f\n", latency01);fflush(stdout);*/
-	RecvTime(&args01, &latency12, &nzero);
+	RecvTime(&args01, &latency12);
 	/*printf("[0] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	break;
     case 1:
 	latency01 = TestLatency(&args01);
 	/*printf("[1] latency01 = %0.9f\n", latency01);fflush(stdout);*/
-	SendTime(&args12, &latency01, &nzero);
+	SendTime(&args12, &latency01);
 	latency12 = TestLatency(&args12);
 	/*printf("[1] latency12 = %0.9f\n", latency12);fflush(stdout);*/
-	SendTime(&args01, &latency12, &nzero);
+	SendTime(&args01, &latency12);
 	break;
     case 2:
-	RecvTime(&args12, &latency01, &nzero);
+	RecvTime(&args12, &latency01);
 	/*printf("[2] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	latency12 = TestLatency(&args12);
 	/*printf("[2] latency12 = %0.9f\n", latency12);fflush(stdout);*/
@@ -199,29 +204,34 @@ int main(int argc, char *argv[])
 	printf("Now starting main loop\n");
 	fflush(stdout);
     }
-    tlast = latency01;
-    inc = (start > 1 && !detailflag) ? start/2: inc;
+    tlast01 = latency01;
+    tlast12 = latency12;
+    inc = (start > 1) ? start/2: inc;
     args01.bufflen = start;
 
-    if (g_nIproc == 2)
-    {
-	MPI_Finalize();
-	exit(0);
-    }
     /* Main loop of benchmark */
     for (nq = n = 0, len = start; 
-         n < g_NSAMP && tlast < g_STOPTM && len <= end; 
+         n < g_NSAMP && tlast01 < g_STOPTM && tlast12 < g_STOPTM && len <= end; 
 	 len = len + inc, nq++)
     {
-	if (nq > 2 && !detailflag)
-	    inc = ((nq % 2))? inc + inc: inc;
+	if (nq > 2)
+	    inc = (nq % 2) ? inc + inc : inc;
 	
 	/* This is a perturbation loop to test nearby values */
-	for (ipert = 0, pert = (!detailflag && inc > PERT + 1)? -PERT: 0;
+	for (ipert = 0, pert = (inc > PERT + 1) ? -PERT : 0;
 	     pert <= PERT; 
-	     ipert++, n++, pert += (!detailflag && inc > PERT + 1)? PERT: PERT + 1)
+	     ipert++, n++, pert += (inc > PERT + 1) ? PERT : PERT + 1)
 	{
-	    
+
+
+	    /*****************************************************/
+	    /*         Run a trial between rank 0 and 1          */
+	    /*****************************************************/
+
+
+	    if (g_nIproc == 2)
+		goto skip_01_trial;
+
 	    /* Calculate howmany times to repeat the experiment. */
 	    if (args01.tr)
 	    {
@@ -229,13 +239,12 @@ int main(int argc, char *argv[])
 		    nrepeat = args01.latency_reps;
 		else
 		    nrepeat = (int)(MAX((RUNTM / ((double)args01.bufflen /
-			           (args01.bufflen - inc + 1.0) * tlast)), TRIALS));
-		SendTime(&args01, &tzero, &nrepeat);
+			           (args01.bufflen - inc + 1.0) * tlast01)), TRIALS));
+		SendReps(&args01, &nrepeat);
 	    }
 	    else
 	    {
-		nrepeat = 1; /* Just needs to be greater than zero */
-		RecvTime(&args01, &tzero, &nrepeat);
+		RecvReps(&args01, &nrepeat);
 	    }
 	    
 	    /* Allocate the buffer */
@@ -266,19 +275,21 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 		break;
 	    }
-	    /* Possibly align the data buffer */
+
+	    /* save the original pointers in case alignment moves them */
 	    memtmp = args01.buff;
 	    memtmp1 = args01.buff1;
-	    
+
+	    /* Possibly align the data buffer */
 	    if (!bNoCache)
 	    {
 		if (bufalign != 0)
 		{
-		    args01.buff += (bufalign - ((int)args01.buff % bufalign) + bufoffset) % bufalign;
+		    args01.buff += (bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign;
 		    /* args01.buff1 += (bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
-	    args01.buff1 += (bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign;
+	    args01.buff1 += (bufalign - (POINTER_TO_INT(args01.buff1) % bufalign) + bufoffset) % bufalign;
 	    
 	    if (args01.tr && printopt)
 	    {
@@ -290,7 +301,7 @@ int main(int argc, char *argv[])
 	    /* Finally, we get to transmit or receive and time */
 	    if (args01.tr)
 	    {
-		bwdata[n].t = LONGTIME;
+		bwdata01[n].t = LONGTIME;
 		t2 = t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
@@ -298,7 +309,7 @@ int main(int argc, char *argv[])
 		    {
 			if (bufalign != 0)
 			{
-			    args01.buff = memtmp + ((bufalign - ((int)args01.buff % bufalign) + bufoffset) % bufalign);
+			    args01.buff = memtmp + ((bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign);
 			    /* args01.buff1 = memtmp1 + ((bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign); */
 			}
 			else
@@ -312,30 +323,25 @@ int main(int argc, char *argv[])
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			if (bHeadToHead)
-			    SendRecvData(&args01);
-			else
-			{
-			    SendData(&args01);
-			    RecvData(&args01);
-			}
+			SendData(args01);
+			RecvData(args01);
 			if (bNoCache)
 			{
 			    args01.buff += args01.bufflen;
 			    /* args01.buff1 += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/((1 + !0) * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat);
 
 		    t2 += t*t;
 		    t1 += t;
-		    bwdata[n].t = MIN(bwdata[n].t, t);
+		    bwdata01[n].t = MIN(bwdata01[n].t, t);
 		}
-		SendTime(&args01, &bwdata[n].t, &nzero);
+		SendTime(&args01, &bwdata01[n].t);
 	    }
 	    else
 	    {
-		bwdata[n].t = LONGTIME;
+		bwdata01[n].t = LONGTIME;
 		t2 = t1 = 0;
 		for (i = 0; i < TRIALS; i++)
 		{
@@ -343,7 +349,7 @@ int main(int argc, char *argv[])
 		    {
 			if (bufalign != 0)
 			{
-			    args01.buff = memtmp + ((bufalign - ((int)args01.buff % bufalign) + bufoffset) % bufalign);
+			    args01.buff = memtmp + ((bufalign - (POINTER_TO_INT(args01.buff) % bufalign) + bufoffset) % bufalign);
 			    /* args01.buff1 = memtmp1 + ((bufalign - ((int)args01.buff1 % bufalign) + bufoffset) % bufalign); */
 			}
 			else
@@ -357,36 +363,31 @@ int main(int argc, char *argv[])
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			if (bHeadToHead)
-			    SendRecvData(&args01);
-			else
-			{
-			    RecvData(&args01);
-			    SendData(&args01);
-			}
+			RecvData(args01);
+			SendData(args01);
 			if (bNoCache)
 			{
 			    args01.buff += args01.bufflen;
 			    /* args01.buff1 += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/((1 + !0) * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat);
 		}
-		RecvTime(&args01, &bwdata[n].t, &nzero);
+		RecvTime(&args01, &bwdata01[n].t);
 	    }
-	    tlast = bwdata[n].t;
-	    bwdata[n].bits = args01.bufflen * CHARSIZE;
-	    bwdata[n].bps = bwdata[n].bits / (bwdata[n].t * 1024 * 1024);
-	    bwdata[n].repeat = nrepeat;
+	    tlast01 = bwdata01[n].t;
+	    bwdata01[n].bits = args01.bufflen * CHARSIZE;
+	    bwdata01[n].bps = bwdata01[n].bits / (bwdata01[n].t * 1024 * 1024);
+	    bwdata01[n].repeat = nrepeat;
 	    
 	    if (args01.tr)
 	    {
 		if (bSavePert)
 		{
 		    if (bUseMegaBytes)
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n].bits / 8, bwdata[n].bps / 8, bwdata[n].t);
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata01[n].bits / 8, bwdata01[n].bps / 8, bwdata01[n].t);
 		    else
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata01[n].bits / 8, bwdata01[n].bps, bwdata01[n].t);
 		    fflush(out);
 		}
 	    }
@@ -397,49 +398,250 @@ int main(int argc, char *argv[])
 	    if (args01.tr && printopt)
 	    {
 		if (bUseMegaBytes)
-		    fprintf(stdout," %6.2f MBps in %0.9f sec\n", bwdata[n].bps / 8, tlast);
+		    printf(" %6.2f MBps in %0.9f sec\n", bwdata01[n].bps / 8, tlast01);
 		else
-		    fprintf(stdout," %6.2f Mbps in %0.9f sec\n", bwdata[n].bps, tlast);
+		    printf(" %6.2f Mbps in %0.9f sec\n", bwdata01[n].bps, tlast01);
 		fflush(stdout);
 	    }
-	} /* End of perturbation loop */	
+
+skip_01_trial:
+
+
+	    /*****************************************************/
+	    /*         Run a trial between rank 1 and 2          */
+	    /*****************************************************/
+
+
+
+	    if (g_nIproc == 0)
+		goto skip_12_trial;
+
+	    /* Calculate howmany times to repeat the experiment. */
+	    if (args12.tr)
+	    {
+		if (args12.bufflen == 0)
+		    nrepeat = args12.latency_reps;
+		else
+		    nrepeat = (int)(MAX((RUNTM / ((double)args12.bufflen /
+			           (args12.bufflen - inc + 1.0) * tlast12)), TRIALS));
+		SendReps(&args12, &nrepeat);
+	    }
+	    else
+	    {
+		RecvReps(&args12, &nrepeat);
+	    }
+	    
+	    /* Allocate the buffer */
+	    args12.bufflen = len + pert;
+	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat + bufalign); */
+	    if (bNoCache)
+	    {
+		if ((args12.buff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		{
+		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
+		    break;
+		}
+	    }
+	    else
+	    {
+		if ((args12.buff = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
+		{
+		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
+		    break;
+		}
+	    }
+	    /* if ((args12.buff1 = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    if ((args12.buff1 = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
+	    {
+		fprintf(stdout,"Couldn't allocate memory\n");
+		fflush(stdout);
+		break;
+	    }
+
+	    /* save the original pointers in case alignment moves them */
+	    memtmp = args12.buff;
+	    memtmp1 = args12.buff1;
+	    
+	    /* Possibly align the data buffer */
+	    if (!bNoCache)
+	    {
+		if (bufalign != 0)
+		{
+		    args12.buff += (bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign;
+		    /* args12.buff1 += (bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign; */
+		}
+	    }
+	    args12.buff1 += (bufalign - (POINTER_TO_INT(args12.buff1) % bufalign) + bufoffset) % bufalign;
+	    
+	    if (args12.tr && printopt)
+	    {
+		printf("%3d: %9d bytes %4d times --> ", n, args12.bufflen, nrepeat);
+		fflush(stdout);
+	    }
+	    
+	    /* Finally, we get to transmit or receive and time */
+	    if (args12.tr)
+	    {
+		bwdata12[n].t = LONGTIME;
+		t2 = t1 = 0;
+		for (i = 0; i < TRIALS; i++)
+		{
+		    if (bNoCache)
+		    {
+			if (bufalign != 0)
+			{
+			    args12.buff = memtmp + ((bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign);
+			    /* args12.buff1 = memtmp1 + ((bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign); */
+			}
+			else
+			{
+			    args12.buff = memtmp;
+			    /* args12.buff1 = memtmp1; */
+			}
+		    }
+		    
+		    Sync(&args12);
+		    t0 = When();
+		    for (j = 0; j < nrepeat; j++)
+		    {
+			SendData(args12);
+			RecvData(args12);
+			if (bNoCache)
+			{
+			    args12.buff += args12.bufflen;
+			    /* args12.buff1 += args12.bufflen; */
+			}
+		    }
+		    t = (When() - t0)/(2 * nrepeat);
+
+		    t2 += t*t;
+		    t1 += t;
+		    bwdata12[n].t = MIN(bwdata12[n].t, t);
+		}
+		SendTime(&args12, &bwdata12[n].t);
+	    }
+	    else
+	    {
+		bwdata12[n].t = LONGTIME;
+		t2 = t1 = 0;
+		for (i = 0; i < TRIALS; i++)
+		{
+		    if (bNoCache)
+		    {
+			if (bufalign != 0)
+			{
+			    args12.buff = memtmp + ((bufalign - (POINTER_TO_INT(args12.buff) % bufalign) + bufoffset) % bufalign);
+			    /* args12.buff1 = memtmp1 + ((bufalign - ((int)args12.buff1 % bufalign) + bufoffset) % bufalign); */
+			}
+			else
+			{
+			    args12.buff = memtmp;
+			    /* args12.buff1 = memtmp1; */
+			}
+		    }
+		    
+		    Sync(&args12);
+		    t0 = When();
+		    for (j = 0; j < nrepeat; j++)
+		    {
+			RecvData(args12);
+			SendData(args12);
+			if (bNoCache)
+			{
+			    args12.buff += args12.bufflen;
+			    /* args12.buff1 += args12.bufflen; */
+			}
+		    }
+		    t = (When() - t0)/(2 * nrepeat);
+		}
+		RecvTime(&args12, &bwdata12[n].t);
+	    }
+	    tlast12 = bwdata12[n].t;
+	    bwdata12[n].bits = args12.bufflen * CHARSIZE;
+	    bwdata12[n].bps = bwdata12[n].bits / (bwdata12[n].t * 1024 * 1024);
+	    bwdata12[n].repeat = nrepeat;
+
+	    /*
+	    if (args12.tr)
+	    {
+		if (bSavePert)
+		{
+		    if (bUseMegaBytes)
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n].bits / 8, bwdata12[n].bps / 8, bwdata12[n].t);
+		    else
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n].bits / 8, bwdata12[n].bps, bwdata12[n].t);
+		    fflush(out);
+		}
+	    }
+	    */
+	    
+	    free(memtmp);
+	    free(memtmp1);
+	    
+	    if (args12.tr && printopt)
+	    {
+		if (bUseMegaBytes)
+		    printf(" %6.2f MBps in %0.9f sec\n", bwdata12[n].bps / 8, tlast12);
+		else
+		    printf(" %6.2f Mbps in %0.9f sec\n", bwdata12[n].bps, tlast12);
+		fflush(stdout);
+	    }
+skip_12_trial:
+	    MPI_Barrier(MPI_COMM_WORLD); /* prevent non-participating ranks from getting ahead */
+	} /* End of perturbation loop */
+
 	if (!bSavePert && args01.tr)
 	{
 	    /* if we didn't save all of the perturbation loops, find the max and save it */
 	    int index = 1;
-	    double dmax = bwdata[n-1].bps;
+	    double dmax = bwdata01[n-1].bps;
 	    for (; ipert > 1; ipert--)
 	    {
-		if (bwdata[n-ipert].bps > dmax)
+		if (bwdata01[n-ipert].bps > dmax)
 		{
 		    index = ipert;
-		    dmax = bwdata[n-ipert].bps;
+		    dmax = bwdata01[n-ipert].bps;
 		}
 	    }
 	    if (bUseMegaBytes)
-		fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps / 8, bwdata[n-index].t);
+		fprintf(out, "%d\t%f\t%0.9f\n", bwdata01[n-index].bits / 8, bwdata01[n-index].bps / 8, bwdata01[n-index].t);
 	    else
-		fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
+		fprintf(out, "%d\t%f\t%0.9f\n", bwdata01[n-index].bits / 8, bwdata01[n-index].bps, bwdata01[n-index].t);
 	    fflush(out);
 	}
+#if 0
+	if (!bSavePert && args12.tr)
+	{
+	    /* if we didn't save all of the perturbation loops, find the max and save it */
+	    int index = 1;
+	    double dmax = bwdata12[n-1].bps;
+	    for (; ipert > 1; ipert--)
+	    {
+		if (bwdata12[n-ipert].bps > dmax)
+		{
+		    index = ipert;
+		    dmax = bwdata12[n-ipert].bps;
+		}
+	    }
+	    if (bUseMegaBytes)
+		fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n-index].bits / 8, bwdata12[n-index].bps / 8, bwdata12[n-index].t);
+	    else
+		fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n-index].bits / 8, bwdata12[n-index].bps, bwdata12[n-index].t);
+	    fflush(out);
+	}
+#endif
     } /* End of main loop  */
 	
     if (args01.tr)
 	fclose(out);
     /* THE_END:		 */
     MPI_Finalize();
-    free(bwdata);
+    free(bwdata01);
+    free(bwdata12);
     return 0;
 }
-
-
-/* Return the current time in seconds, using a double precision number. 	 */
-/*
-double When()
-{
-    return MPI_Wtime();
-}
-*/
 
 int Setup(ArgStruct *p01, ArgStruct *p12)
 {
@@ -595,31 +797,24 @@ void SendRecvData(ArgStruct *p)
     MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
 }
 
-void SendData(ArgStruct *p)
+void SendTime(ArgStruct *p, double *t)
 {
-    MPI_Send(p->buff, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+    MPI_Send(t, 1, MPI_DOUBLE, p->nbor, 2, MPI_COMM_WORLD);
 }
 
-void RecvData(ArgStruct *p)
+void RecvTime(ArgStruct *p, double *t)
 {
     MPI_Status status;
-    MPI_Recv(p->buff1, p->bufflen, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+    MPI_Recv(t, 1, MPI_DOUBLE, p->nbor, 2, MPI_COMM_WORLD, &status);
 }
 
-
-void SendTime(ArgStruct *p, double *t, int *rpt)
+void SendReps(ArgStruct *p, int *rpt)
 {
-    if (*rpt > 0)
-	MPI_Send(rpt, 1, MPI_INT, p->nbor, 2, MPI_COMM_WORLD);
-    else
-	MPI_Send(t, 1, MPI_DOUBLE, p->nbor, 2, MPI_COMM_WORLD);
+    MPI_Send(rpt, 1, MPI_INT, p->nbor, 2, MPI_COMM_WORLD);
 }
 
-void RecvTime(ArgStruct *p, double *t, int *rpt)
+void RecvReps(ArgStruct *p, int *rpt)
 {
     MPI_Status status;
-    if (*rpt > 0)
-	MPI_Recv(rpt, 1, MPI_INT, p->nbor, 2, MPI_COMM_WORLD, &status);
-    else
-	MPI_Recv(t, 1, MPI_DOUBLE, p->nbor, 2, MPI_COMM_WORLD, &status);
+    MPI_Recv(rpt, 1, MPI_INT, p->nbor, 2, MPI_COMM_WORLD, &status);
 }
