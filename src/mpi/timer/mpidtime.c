@@ -17,15 +17,15 @@ void MPID_Wtime( MPID_Time_t *timeval )
 }
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 {
-    *diff = 1.0e-9 * (double)( t2 - t1 );
+    *diff = 1.0e-9 * (double)( *t2 - *t1 );
 }
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
-    *val = 1.0e-9 * t;
+    *val = 1.0e-9 * (*t);
 }
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
-    *t3 += (*t2 - *t1);
+    *t3 += ((*t2) - (*t1));
 }
 double MPID_Wtick( void )
 {
