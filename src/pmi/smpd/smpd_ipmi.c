@@ -1032,6 +1032,18 @@ int iPMI_Abort(int exit_code, const char error_msg[])
     fflush(stdout);
     fflush(stderr);
 
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+    {
+	printf("PMI_Abort called after PMI_Finalize, error message:\n%s\n", error_msg);
+	fflush(stdout);
+#ifdef HAVE_WINDOWS_H
+	ExitProcess(exit_code);
+#else
+	exit(exit_code);
+	return PMI_FAIL;
+#endif
+    }
+
     if (pmi_process.local_kvs)
     {
 	if (smpd_process.verbose_abort_output)
