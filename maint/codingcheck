@@ -1,11 +1,12 @@
 #! /usr/bin/perl
+#use Crypt::DSA;
 #
 # Check that coding standards have been followed.  This checks for common
 # and easy to overlook errors, such as the use of non-portable system routines
 #
 # ToDo:
 # Add support for
-# /* style: allow:routine-name sig:value */
+# /* style: allow:routine-name:count sig:value */
 # where routine-name is the name of a routine that is on the warning list
 # and value is a digital signature computed from the filename and routine-name
 # by the lead programmer.
@@ -31,6 +32,8 @@ foreach $arg (@ARGV) {
 # Call once for each file
 sub ProcessFile {
     $filename = $_[0];
+    %AllowedRoutines = ();
+    $cxx_comments_found = 0;
     %warningmsgs = ();
     open( FD, "<$filename" ) || die "Could not open $filename";
     while (<FD>) {
@@ -38,18 +41,33 @@ sub ProcessFile {
 #	    
 #	}
 	$errsrc = " in $filename";
+	# Check for special comments
+	if (/\/\* style: *allow:(\w*):(\d*) *sig:(\d*)/) {
+	    # Found a style comment.  Add the routine name to this 
+	    # list of allowed routines.  Eventually, this may require
+	    # a signed key
+	    # Compute as (using the Crypt module)
+            # $public = new Crypt::RSA::Key::Public(Filename => $keyfile, );
+            # $rsa->verify( Message => "$1:$2:$filename", 
+	    # Signature => $3, Key => $public ) && $AllowedRoutines{$1}=$2;
+            # But for now, we do:
+	    $AllowedRoutines{$1} = $2;
+	}
 	$_ = StripComments( FD, $_ );
 	# Check for C++ style comments
 	if (/\/\//) {
-	    print "C++ comment found in $filename:\n";
-	    my $line = $_;
-	    if (/(.*)\n/) {
-		$line = "$1\n";
+	    $cxx_comments_found ++;
+	    if ($cxx_comments_found == 1) {
+		print "C++ comment found in $filename:\n";
+		my $line = $_;
+		if (/(.*)\n/) {
+		    $line = "$1\n";
+		}
+		else {
+		    $line = $_;
+		}
+		print $line;
 	    }
-	    else {
-		$line = $_;
-	    }
-	    print $line;
 	    s/\/\/.*//;
 	}
 	&CheckForBadSubs( $_, $filename );
@@ -58,6 +76,9 @@ sub ProcessFile {
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
 	print "$key ($warningmsgs{$key} times)\n";
+    }
+    if ($cxx_comments_found > 1) {
+	print "$cxx_comments_found C++ comments found in $filename\n";
     }
 }
 
@@ -78,7 +99,7 @@ sub CheckForBadSubs {
     my $curline = $_[0];
     my $filename = $_[1];
     foreach $subname (@avoidsubs) {
-	if (/(?<!\w)$subname\s*\(/) {
+	if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
 	    $msg = "Warning: found $subname in $filename";
 	    if (defined($warningmsgs{$msg})) { 
 		$warningmsgs{$msg} = $warningmsgs{$msg} + 1;
@@ -94,7 +115,7 @@ sub CheckForBadSubs {
 #	}
 #    }
     foreach $subname (@guardsubs) {
-        if (/(?<!\w)$subname\s*\(/) {
+        if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
             $msg = "Caution: found $subname in $filename";
             if (defined($warningmsgs{$msg})) {
                 $warningmsgs{$msg} = $warningmsgs{$msg} + 1;
@@ -112,7 +133,7 @@ sub CheckForBadSubs {
 #    }
 
     foreach $subname (keys %bettersubs) {
-        if (/(?<!\w)$subname\s*\(/) {
+        if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
             $msg = "Caution: found $subname in $filename, consider $bettersubs{$subname}";
             if (defined($warningmsgs{$msg})) {
                 $warningmsgs{$msg} = $warningmsgs{$msg} + 1;
