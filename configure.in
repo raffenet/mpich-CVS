@@ -464,7 +464,6 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpi/topo/Makefile \
           src/mpid/Makefile \
           src/pmi/Makefile \
-          src/pmi/impls/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/mem/Makefile \
