@@ -18,12 +18,11 @@ MPIDI_Process_t MPIDI_Process;
 #define FUNCNAME MPID_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Init(int * argc, char *** argv, int requested, int * provided,
-	      int * has_args, int * has_env)
+int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * has_args, int * has_env)
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
-    MPIDI_dbg_printf(10, FCNAME, "entering");
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
     MPIDI_Process.recv_posted_head = NULL;
     MPIDI_Process.recv_posted_tail = NULL;
@@ -31,8 +30,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
     MPIDI_Process.recv_unexpected_tail = NULL;
 
     /*
-     * Initialize the collective operations for the MPI_COMM_WORLD and
-     * MPI_COMM_SELF
+     * Initialize the collective operations for the MPI_COMM_WORLD and MPI_COMM_SELF
      *
      * NOTE: now using the default collective operations supplied by MPICH
      */
@@ -67,15 +65,13 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
 #   endif
     
     /*
-     * Set process attributes.  These can be overridden by the channel if
-     * necessary.
+     * Set process attributes.  These can be overridden by the channel if necessary.
      */
     MPIR_Process.attrs.tag_ub          = INT_MAX;
     
 #   if defined(HAVE_GETHOSTNAME)
     {
-	/* The value 128 is returned by the ch3/Makefile for the
-	   echomaxprocname target.  */
+	/* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
 	MPIDI_Process.processor_name = MPIU_Malloc(128);
 	if(gethostname(MPIDI_Process.processor_name, 128) != 0)
 	{
@@ -98,23 +94,21 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
 	return mpi_errno;
     }
 
-    /* MPIR_Process.parent_comm is set to a real communicator when the current
-       process group is spawned by another MPI job using MPI_Comm_spawn or
-       MPI_Comm_spawn_multiple. */
+    /* MPIR_Process.parent_comm is set to a real communicator when the current process group is spawned by another MPI job using
+       MPI_Comm_spawn or MPI_Comm_spawn_multiple. */
     if (has_parent)
     {
-	/* XXX - functionality is not yet supported */
-	MPIDI_err_printf(FCNAME, "initialization of parent communicator is "
-			"UNIMPLEMENTED");
+	/* FIXME: functionality is not yet supported */
+	MPIDI_ERR_PRINTF((FCNAME, "initialization of parent communicator is UNIMPLEMENTED"));
 	MPID_Abort(NULL, MPI_ERR_INTERN);
     }
     
-    /* MT - only single threaded applications are supported at the moment... */
+    /* MT:  only single threaded applications are supported at the moment... */
     if (provided != NULL)
     {
 	*provided = MPI_THREAD_SINGLE;
     }
 
-    MPIDI_dbg_printf(10, FCNAME, "exiting");
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     return mpi_errno;
 }

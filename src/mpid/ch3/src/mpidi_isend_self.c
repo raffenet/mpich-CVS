@@ -66,7 +66,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     {
 #       if defined(MPICH_SINGLE_THREADED)
 	{
-	    MPIDI_err_printf(FCNAME, "DEADLOCK!");
+	    MPIDI_ERR_PRINTF((FCNAME, "DEADLOCK!"));
 	    abort();
 	}
 #	else

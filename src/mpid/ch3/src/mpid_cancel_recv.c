@@ -16,13 +16,13 @@ void MPID_Cancel_recv(MPID_Request * rreq)
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_RECV);
    
-    MPIDI_dbg_printf(10, FCNAME, "entering");
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     assert(rreq->kind == MPID_REQUEST_RECV);
     /* XXX - need to handle persistent requests */
     
     if (MPIDI_CH3U_Request_DP(rreq))
     {
-	MPIDI_dbg_printf(15, FCNAME, "request 0x%08x cancelled", rreq->handle);
+	MPIDI_DBG_PRINTF((15, FCNAME, "request 0x%08x cancelled", rreq->handle));
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
 	/* MT - MPID_Request_set_complete() used as a write barrier */
@@ -31,10 +31,9 @@ void MPID_Cancel_recv(MPID_Request * rreq)
     }
     else
     {
-	MPIDI_dbg_printf(15, FCNAME, "request 0x%08x already matched, "
-			 "unable to cancel", rreq->handle);
+	MPIDI_DBG_PRINTF((15, FCNAME, "request 0x%08x already matched, unable to cancel", rreq->handle));
     }
 
-    MPIDI_dbg_printf(10, FCNAME, "exiting");
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_RECV);
 }

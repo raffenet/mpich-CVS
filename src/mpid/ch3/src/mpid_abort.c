@@ -15,12 +15,12 @@ int MPID_Abort(MPID_Comm * comm, int errorcode)
     MPIDI_STATE_DECL(MPID_STATE_MPID_ABORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_ABORT);
-    MPIDI_dbg_printf(10, FCNAME, "entering");
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
-    MPIDI_err_printf(FCNAME, "MPID_Abort() is not properly implemented!\n");
+    MPIDI_ERR_PRINTF((FCNAME, "MPID_Abort() is not properly implemented!\n"));
     abort();
     
-    MPIDI_dbg_printf(10, FCNAME, "exiting");
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return MPI_ERR_INTERN;

@@ -73,7 +73,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	default:
 	{
-	    MPIDI_err_printf(FCNAME, "action %d UNIMPLEMENTED", rreq->ch3.ca);
+	    MPIDI_ERR_PRINTF((FCNAME, "action %d UNIMPLEMENTED", rreq->ch3.ca));
 	    abort();
 	}
     }

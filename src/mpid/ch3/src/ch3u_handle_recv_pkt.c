@@ -363,19 +363,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    iov[0].MPID_IOV_BUF = rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
-	    if (HANDLE_GET_KIND(sreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
-	    {
-		dt_contig = TRUE;
-		data_sz = sreq->ch3.user_count * MPID_Datatype_get_basic_size(sreq->ch3.datatype);
-	    }
-	    else
-	    {
-		MPID_Datatype * dtp;
-		
-		MPID_Datatype_get_ptr(sreq->ch3.datatype, dtp);
-		dt_contig = dtp->is_contig;
-		data_sz = sreq->ch3.user_count * dtp->size;
-	    }
+	    MPIDI_CH3U_Datatype_get_info(sreq->ch3.user_count, sreq->ch3.datatype, dt_contig, data_sz);
 	
 	    if (dt_contig) 
 	    {
@@ -532,19 +520,7 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 	
-	if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
-	{
-	    dt_contig = TRUE;
-	    userbuf_sz = rreq->ch3.user_count * MPID_Datatype_get_basic_size(rreq->ch3.datatype);
-	}
-	else
-	{
-	    MPID_Datatype * dtp;
-
-	    MPID_Datatype_get_ptr(rreq->ch3.datatype, dtp);
-	    dt_contig = dtp->is_contig;
-	    userbuf_sz = rreq->ch3.user_count * dtp->size;
-	}
+	MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz);
 		
 	if (rreq->ch3.recv_data_sz <= userbuf_sz)
 	{

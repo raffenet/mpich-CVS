@@ -766,19 +766,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
-    if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
-    {
-	dt_contig = TRUE;
-	userbuf_sz = rreq->ch3.user_count * MPID_Datatype_get_basic_size(rreq->ch3.datatype);
-    }
-    else
-    {
-	MPID_Datatype * dtp;
-
-	MPID_Datatype_get_ptr(rreq->ch3.datatype, dtp);
-	dt_contig = dtp->is_contig;
-	userbuf_sz = rreq->ch3.user_count * dtp->size;
-    }
+    MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz);
     
     if (rreq->ch3.recv_data_sz <= userbuf_sz)
     {

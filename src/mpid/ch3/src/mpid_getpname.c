@@ -6,10 +6,8 @@
 
 #include "mpidimpl.h"
 
-/* XXX - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
-
 /*
- * MPID_Get_processor_name
+ * MPID_Get_processor_name()
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Send
