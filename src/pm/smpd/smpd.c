@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 
 #ifdef HAVE_WINDOWS_H
     /* prevent the os from bringing up debug message boxes if this process crashes */
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+    /*SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);*/
 #endif
 
     /* initialization */
