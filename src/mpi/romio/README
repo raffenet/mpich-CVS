@@ -1,23 +1,26 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version 1.0.4, December 2001
+                      Version 1.2.3, December 2002
 
 Major Changes in This Version:
 ------------------------------
-* Aggregation support
+* Enhanced aggregation control via cb_config_list, romio_cb_read,
+  and romio_cb_write hints
 
 * Asynchronous IO can be enabled under Linux with the --enable-aio argument
   to configure
 
 * Additional PVFS support
 
-* ???
+* Additional control over data sieving with romio_ds_read hint
 
-                      Version 1.0.3, September 2000
+* NTFS ADIO implementation integrated into source tree
+
+* testfs ADIO implementation added for debugging purposes
 
 
-Major Changes in This Version:
------------------------------
+Major Changes in Version 1.0.3:
+-------------------------------
 
 * When used with MPICH 1.2.1, the MPI-IO functions return proper error codes 
   and classes, and the status object is filled in.
@@ -207,12 +210,12 @@ workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).  Supported
 file systems are IBM PIOFS, Intel PFS, HP/Convex HFS, SGI XFS, NEC
 SFS, PVFS, NFS, and any Unix file system (UFS).
 
-This version of ROMIO is included in MPICH 1.2.1; an earlier version
+This version of ROMIO is included in MPICH 1.2.3; an earlier version
 is included in at least the following MPI implementations: LAM, HP
 MPI, SGI MPI, and NEC MPI.  
 
 Note that proper I/O error codes and classes are returned and the
-status variable is filled only when used with MPICH 1.2.1.
+status variable is filled only when used with MPICH 1.2.1 or later.
 
 You can open files on multiple file systems in the same program. The
 only restriction is that the directory where the file is to be opened
@@ -341,7 +344,7 @@ against the installed copy.
 
 To rebuild ROMIO with a different set of configure options, do
 
-    make cleanall
+    make distclean
 
 to clean everything including the Makefiles created by configure.
 Then run configure again with the new options, followed by make.
@@ -419,10 +422,10 @@ and link MPI-IO programs.
 Limitations of this version of ROMIO
 ------------------------------------
 
-* When used with any MPI implementation other than MPICH 1.2.1, the
-"status" argument is not filled in any MPI-IO function. Consequently, 
-MPI_Get_count and MPI_Get_elements will not work when passed the
-status object from an MPI-IO operation.
+* When used with any MPI implementation other than MPICH 1.2.1 (or later),
+the "status" argument is not filled in any MPI-IO function. Consequently,
+MPI_Get_count and MPI_Get_elements will not work when passed the status
+object from an MPI-IO operation.
 
 * All nonblocking I/O functions use a ROMIO-defined "MPIO_Request"
 object instead of the usual "MPI_Request" object. Accordingly, two
@@ -439,9 +442,9 @@ work for nonblocking I/O.
 * This version works only on a homogeneous cluster of machines,
 and only the "native" file data representation is supported.
 
-* When used with any MPI implementation other than MPICH 1.2.1, all
-MPI-IO functions return only two possible error codes---MPI_SUCCESS on
-success and MPI_ERR_UNKNOWN on failure.
+* When used with any MPI implementation other than MPICH 1.2.1 (or later),
+all MPI-IO functions return only two possible error codes---MPI_SUCCESS
+on success and MPI_ERR_UNKNOWN on failure.
 
 * Shared file pointers are not supported on PVFS and IBM PIOFS file
 systems because they don't support fcntl file locks, and ROMIO uses
