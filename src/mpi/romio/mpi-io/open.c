@@ -209,8 +209,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	    MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
 	    /* this dup is freed either in ADIO_Open if the open fails,
                or in ADIO_Close */
-	    *fh = ADIO_Open(dupcommself, filename, file_system, amode, 0, 
-               MPI_BYTE, MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
+	    *fh = ADIO_Open(comm, dupcommself, filename, file_system, amode, 
+			    0, MPI_BYTE, MPI_BYTE, M_ASYNC, info, 
+			    ADIO_PERM_NULL, &error_code);
 	    /* broadcast the error code to other processes */
 	    MPI_Bcast(&error_code, 1, MPI_INT, 0, dupcomm);
 	    /* if no error, close the file. It will be reopened normally 
@@ -234,8 +235,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 /* set iomode=M_ASYNC. It is used to implement the Intel PFS interface
    on top of ADIO. Not relevant for MPI-IO implementation */    
 
-    *fh = ADIO_Open(dupcomm, filename, file_system, amode, 0, MPI_BYTE,
-                     MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
+    *fh = ADIO_Open(comm, dupcomm, filename, file_system, amode, 0, MPI_BYTE,
+                    MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
 
     /* if MPI_MODE_EXCL was removed, add it back */
     if ((error_code == MPI_SUCCESS) && (amode != orig_amode))
