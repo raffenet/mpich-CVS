@@ -72,7 +72,10 @@ typedef int MPI_Fint;
 
 #define MPI_DISPLACEMENT_CURRENT   -54278278
 
+#ifndef MPICH2
+/* MPICH2 defines null object handles differently */
 #define MPI_FILE_NULL           ((MPI_File) 0)
+#endif
 #define MPIO_REQUEST_NULL       ((MPIO_Request) 0)
 
 #define MPI_SEEK_SET            600
@@ -210,8 +213,11 @@ int MPI_File_get_atomicity(MPI_File fh, int *flag);
 int MPI_File_sync(MPI_File fh);
 
 /* Section 4.13.3 */
+#ifndef MPICH2
+/* MPICH2 provides these definitions */
 int MPI_File_set_errhandler( MPI_File, MPI_Errhandler );
 int MPI_File_get_errhandler( MPI_File, MPI_Errhandler * );
+#endif
 /* End Prototypes */
 
 #ifndef HAVE_MPI_DARRAY_SUBARRAY
@@ -405,8 +411,11 @@ int PMPI_File_get_atomicity(MPI_File fh, int *flag);
 int PMPI_File_sync(MPI_File fh);
 
 /* Section 4.13.3 */
+#ifndef MPICH2
+/* MPICH2 provides these definitions */
 int PMPI_File_set_errhandler( MPI_File, MPI_Errhandler );
 int PMPI_File_get_errhandler( MPI_File, MPI_Errhandler * );
+#endif
 
 #ifndef HAVE_MPI_DARRAY_SUBARRAY
 /* Section 4.14.4 */
