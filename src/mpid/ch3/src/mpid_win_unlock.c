@@ -183,7 +183,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         }
     }
     else
-        win_ptr->lock_granted = 0; /* not really necessary, but we do it anyway */
+        win_ptr->lock_granted = 0; 
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
@@ -204,52 +204,45 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_DO_PASSIVE_TARGET_RMA);
 
-    if (win_ptr->rma_ops_list->lock_type == MPI_LOCK_EXCLUSIVE) {
-        /* exclusive lock. no need to wait for rma done pkt at the end */
+    /* To determine if an rma_done packet is needed at the end, check
+       if any of the rma ops is a get. If so, move it to the end of
+       the list and do it last, in which case an rma done pkt is not
+       needed. If there is no get, an rma done pkt is needed */
+    
+    /* First check whether the last operation is a get. Skip the first op, 
+       which is a lock. */
+    curr_ptr = win_ptr->rma_ops_list->next;
+    while (curr_ptr->next != NULL) 
+        curr_ptr = curr_ptr->next;
+    
+    if (curr_ptr->type == MPIDI_RMA_GET) {
+        /* last operation is a get. no need to wait for rma done pkt */
         *wait_for_rma_done_pkt = 0;
     }
     else {
-        /* shared lock. check if any of the rma ops is a get. If so, move it 
-           to the end of the list and do it last, in which case an rma done 
-           pkt is not needed. If there is no get, rma done pkt is needed */
-
-        /* First check whether the last operation is a get. Skip the first op, 
-           which is a lock. */
+        /* go through the list and move the first get operation 
+           (if there is one) to the end */
+        
         curr_ptr = win_ptr->rma_ops_list->next;
-        while (curr_ptr->next != NULL) 
-            curr_ptr = curr_ptr->next;
+        curr_ptr_ptr = &(win_ptr->rma_ops_list->next);
 
-        if (curr_ptr->type == MPIDI_RMA_GET) {
-            /* last operation is a get. no need to wait for rma done pkt */
-            *wait_for_rma_done_pkt = 0;
-        }
-        else {
-            /* go through the list and move the first get operation 
-               (if there is one) to the end */
-
-            curr_ptr = win_ptr->rma_ops_list->next;
-            curr_ptr_ptr = &(win_ptr->rma_ops_list->next);
-
-            while (curr_ptr != NULL) {
-                if (curr_ptr->type == MPIDI_RMA_GET) {
-                    *curr_ptr_ptr = curr_ptr->next;
-                    tmp_ptr = curr_ptr;
-                    while (curr_ptr->next != NULL)
-                        curr_ptr = curr_ptr->next;
-                    curr_ptr->next = tmp_ptr;
-                    tmp_ptr->next = NULL;
-                    break;
-                }
-                else {
-                    curr_ptr_ptr = &(curr_ptr->next);
-                    curr_ptr = curr_ptr->next;
-                }
-            }
-
-            if (curr_ptr == NULL) 
-                *wait_for_rma_done_pkt = 1;
-            else
+        *wait_for_rma_done_pkt = 1;
+        
+        while (curr_ptr != NULL) {
+            if (curr_ptr->type == MPIDI_RMA_GET) {
                 *wait_for_rma_done_pkt = 0;
+                *curr_ptr_ptr = curr_ptr->next;
+                tmp_ptr = curr_ptr;
+                while (curr_ptr->next != NULL)
+                    curr_ptr = curr_ptr->next;
+                curr_ptr->next = tmp_ptr;
+                tmp_ptr->next = NULL;
+                break;
+            }
+            else {
+                curr_ptr_ptr = &(curr_ptr->next);
+                curr_ptr = curr_ptr->next;
+            }
         }
     }
 
@@ -436,6 +429,10 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     MPID_Comm *comm_ptr;
     MPID_Datatype *origin_dtp=NULL;
     int origin_type_size;
+    MPIDI_CH3_Pkt_t upkt;
+    MPIDI_CH3_Pkt_lock_put_unlock_t *lock_put_unlock_pkt = &upkt.lock_put_unlock;
+    MPIDI_CH3_Pkt_lock_accum_unlock_t *lock_accum_unlock_pkt = &upkt.lock_accum_unlock;
+        
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEND_LOCK_PUT_OR_ACC);
 
@@ -446,9 +443,6 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     rma_op = win_ptr->rma_ops_list->next;
 
     if (rma_op->type == MPIDI_RMA_PUT) {
-        MPIDI_CH3_Pkt_t upkt;
-        MPIDI_CH3_Pkt_lock_put_unlock_t *lock_put_unlock_pkt = &upkt.lock_put_unlock;
-        
         lock_put_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_PUT_UNLOCK;
         lock_put_unlock_pkt->target_win_handle = 
             win_ptr->all_win_handles[rma_op->target_rank];
@@ -466,10 +460,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         iov[0].MPID_IOV_LEN = sizeof(*lock_put_unlock_pkt);
     }
     
-    else if (rma_op->type == MPIDI_RMA_ACCUMULATE) {
-        MPIDI_CH3_Pkt_t upkt;
-        MPIDI_CH3_Pkt_lock_accum_unlock_t *lock_accum_unlock_pkt = &upkt.lock_accum_unlock;
-        
+    else if (rma_op->type == MPIDI_RMA_ACCUMULATE) {        
         lock_accum_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK;
         lock_accum_unlock_pkt->target_win_handle = 
             win_ptr->all_win_handles[rma_op->target_rank];
@@ -573,7 +564,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     }
 
     if (request != NULL) {
-        while (1)
+        while (*(request->cc_ptr) != 0)
         {
             MPID_Progress_start();
 	
@@ -590,22 +581,23 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
             }
             else
             {
-                mpi_errno = request->status.MPI_ERROR;
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
-                    goto fn_exit;
-                }
-                /* --END ERROR HANDLING-- */
-                
-                /* if origin datatype was a derived datatype, it will get 
-                   freed when the request gets freed. */ 
-                MPID_Request_release(request);
                 MPID_Progress_end();
                 break;
             }
         }
+        
+        mpi_errno = request->status.MPI_ERROR;
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+                
+        /* if origin datatype was a derived datatype, it will get 
+           freed when the request gets freed. */ 
+        MPID_Request_release(request);
     }
 
     /* free MPIDI_RMA_ops_list */
