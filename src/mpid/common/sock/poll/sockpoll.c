@@ -937,6 +937,7 @@ static inline void socki_handle_connect(struct pollfd * const pollfd, struct pol
 
     pollfd->events &= ~POLLOUT;
     
+    addr_len = sizeof(struct sockaddr_in);
     rc = getpeername(pollfd->fd, (struct sockaddr *) &addr, &addr_len);
     if (rc == 0)
     {
