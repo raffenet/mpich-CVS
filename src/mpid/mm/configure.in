@@ -1,20 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
-dnl bugs in autoconf caching.
-dnl
 dnl The file name here refers to a file in the source being configured
 AC_INIT(include/mpidimpl.h)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(include/mpidconf.h)
-dnl
-dnl Set the directory that contains support scripts such as install-sh and
-dnl config.guess
-dnl AC_CONFIG_AUX_DIR(confdb)
-dnl
-dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
-dnl --with-capability
 dnl
 dnl Enable better caching control
 PAC_ARG_CACHING
@@ -57,17 +47,11 @@ implementation.  option may be a list of common separated names including
     all   - All of the above choices],,enable_g=none)
 dnl
 dnl
-AC_ARG_ENABLE(sharedlis,
+AC_ARG_ENABLE(sharedlibs,
 [--enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gnu     - Standard gcc and GNU ld options for creating shared libraries
     libtool - GNU libtool 
 This option is currently ignored])
-dnl With options
-dnl "default" is a special device that allows MPID to choose one based on 
-dnl the environment.
-dnl AC_ARG_WITH(device,
-dnl [--with-device=name - Specify the communication device for MPICH.],,
-dnl with_device=default)
 dnl
 dnl Process any enable or with values
 dnl error-checking
@@ -132,17 +116,6 @@ case "$enable_g" in
     ;;
 esac
 dnl
-dnl with-device
-dnl if test "$with_device" = "default" ; then
-dnl     # Pick the device.  For now, always choose multi-method
-dnl     with_device=mm
-dnl fi
-dnl Extract the device name from any options
-dnl device_name=`echo $with_device | sed -e 's/:.*//g'`
-dnl changequote(<<,>>)
-dnl device_args=`echo $with_device | sed -e 's/[^:]*://g'`
-dnl changequote([,])
-dnl
 dnl This test is complicated by the fact that top_srcdir is not set until
 dnl the very end of configure.  Instead, we get it ourselves
 if test -z "$top_srcdir" ; then
@@ -150,19 +123,7 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
-dnl if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
-dnl     WAIT UNTIL WE INCLUDE A DEVICE
-dnl     AC_MSG_ERROR([Device $device_name is unknown)]
-dnl     AC_MSG_WARN([Device $device_name is unknown])
-dnl elif test ! -x $use_top_srcdir/src/mpid/$device_name/configure ; then
-dnl     AC_MSG_WARN([Device $device_name has no configure])
-dnl     device_name=""
-dnl else 
-dnl     # Add the device to the configure list
-dnl     subsystems="$subsystems src/mpid/$device_name"
-dnl     dnl Make device_name available to subdirs
-dnl     AC_SUBST(device_name)
-dnl fi
+dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
@@ -186,127 +147,12 @@ dnl AC_PROG_MAKE_SET
 PAC_PROG_MAKE
 dnl
 dnl     check for compiler characteristics
-PAC_PROG_C_WEAK_SYMBOLS
+dnl PAC_PROG_C_WEAK_SYMBOLS
 AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
-PAC_C_STRUCT_ALIGNMENT
-dnl
-dnl Get the size of the C types for encoding in the basic datatypes and for
-dnl the specific-sized integers
-dnl AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
-dnl AC_CHECK_SIZEOF(int,CROSS_SIZEOF_INT)
-dnl AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
-dnl AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
-dnl AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
-dnl AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
-dnl AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
-dnl AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
-dnl AC_CHECK_SIZEOF(void *,CROSS_SIZEOF_VOID_P)
-dnl
-dnl AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
-dnl AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],
-dnl pac_cv_int16_t=yes,pac_cv_int16_t=no)])
-dnl
-dnl If there is not int16_t, try to define one
-dnl if test "$pac_cv_int16_t" = "no" ; then
-dnl     if test -z "$CROSS_SIZEOF_SHORT" ; then CROSS_SIZEOF_SHORT=2 ; fi
-dnl     AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
-dnl     if test "$ac_cv_sizeof_short" = 2 ; then 
-dnl         INT16_T=short
-dnl     else
-dnl         INT16_T=int
-dnl     fi
-dnl     AC_SUBST(INT16_T)
-dnl else
-dnl     AC_DEFINE(HAVE_INT16_T,,[Define if int16_t is supported by the C compiler])
-dnl fi
-dnl AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
-dnl AC_TRY_COMPILE([#include <sys/types.h>],[int32_t a=0;],
-dnl pac_cv_int32_t=yes,pac_cv_int32_t=no)])
-dnl
-dnl If there is not int32_t, try to define one
-dnl if test "$pac_cv_int32_t" = "no" ; then
-dnl     if test -z "$CROSS_SIZEOF_INT" ; then CROSS_SIZEOF_INT=4 ; fi
-dnl     AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
-dnl     if test "$ac_cv_sizeof_int" = 4 ; then 
-dnl         INT32_T=int
-dnl     else
-dnl         # No good alternative
-dnl         INT32_T=int
-dnl     fi
-dnl     AC_SUBST(INT32_T)
-dnl else
-dnl     AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
-dnl fi
-dnl
-dnl Generate a hex version of the size of each type
-dnl for type in short int long long_long float double long_double wchar_t ; do
-dnl     eval len=\$ac_cv_sizeof_$type
-dnl     if test -z "$len" ; then len=0 ; fi
-dnl     if test $len -le 0 ; then
-dnl          eval len_$type="00"
-dnl     elif test $len -le 9 ; then 
-dnl          eval len_$type="0$len" 
-dnl     elif test $len -le 15 ; then
-dnl          case $len in 
-dnl          10) char=a ;;
-dnl 	 11) char=b ;;
-dnl 	 12) char=c ;;
-dnl 	 13) char=d ;;
-dnl 	 14) char=e ;;
-dnl 	 15) char=f ;;
-dnl          esac
-dnl          eval len_$type="0$char"
-dnl     else
-dnl          len=`expr $len - 16`
-dnl          eval len_$type="1$len"
-dnl     fi
-dnl done
-dnl # By definition, sizeof char is 1
-dnl MPI_CHAR="0x50000101"
-dnl MPI_UNSIGNED_CHAR="0x50000201"
-dnl MPI_SHORT="0x500003$len_short"
-dnl MPI_UNSIGNED_SHORT="0x500004$len_short"
-dnl MPI_INT="0x500005$len_int"
-dnl MPI_UNSIGNED_INT="0x500006$len_int"
-dnl MPI_LONG="0x500007$len_long"
-dnl MPI_UNSIGNED_LONG="0x500008$len_long"
-dnl MPI_LONG_LONG="0x500009$len_long_long"
-dnl MPI_FLOAT="0x50000b$len_float"
-dnl MPI_DOUBLE="0x50000d$len_double"
-dnl MPI_LONG_DOUBLE="0x50000f$len_long_double"
-dnl MPI_BYTE="0x50001101"
-dnl MPI_WCHAR_T="0x500013$len_wchar_t"
-dnl AC_SUBST(MPI_CHAR)
-dnl AC_SUBST(MPI_UNSIGNED_CHAR)
-dnl AC_SUBST(MPI_SHORT)
-dnl AC_SUBST(MPI_UNSIGNED_SHORT)
-dnl AC_SUBST(MPI_INT)
-dnl AC_SUBST(MPI_UNSIGNED_INT)
-dnl AC_SUBST(MPI_LONG)
-dnl AC_SUBST(MPI_UNSIGNED_LONG)
-dnl AC_SUBST(MPI_LONG_LONG)
-dnl AC_SUBST(MPI_FLOAT)
-dnl AC_SUBST(MPI_DOUBLE)
-dnl AC_SUBST(MPI_LONG_DOUBLE)
-dnl AC_SUBST(MPI_BYTE)
-dnl AC_SUBST(MPI_WCHAR_T)
-dnl
-dnl Is char * the byte address?
-dnl AC_CACHE_CHECK([if char * pointers use give byte addresses],
-dnl pac_cv_c_char_p_is_byte,[
-dnl AC_TRY_RUN([
-dnl int main(int argc, char **argv ){
-dnl char *a, buf;
-dnl a = &buf;
-dnl if ((long)(a-(char*)0) == (long)(a)) return 0; return 1;
-dnl }],pac_cv_c_char_p_is_byte=yes,pac_cv_char_p_is_byte=no,
-dnl pac_cv_char_p_is_byte=unknown)])
-dnl if test "$pac_cv_char_p_is_byte" = "yes" ; then
-dnl     AC_DEFINE(CHAR_PTR_IS_BYTE,,[define if char * is byte pointer])
-dnl fi
+dnl PAC_C_STRUCT_ALIGNMENT
 dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
@@ -369,31 +215,10 @@ else
     :
 fi
 dnl
-dnl Specific checks that a function works correctly
-dnl AC_FUNC_VFORK
-dnl
-dnl Check for support for long file names
-dnl AC_SYS_LONG_FILE_NAMES
-dnl
 dnl
 dnl Setup other replaceable values
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
-dnl MPI_AINT=int
-dnl for type in int long long_long short ; do
-dnl     eval len=\$ac_cv_sizeof_$type
-dnl     if test "$len" = "$ac_cv_sizeof_void_p" ; then
-dnl         MPI_AINT=`echo $type | sed -e 's/_/ /'`
-dnl         break
-dnl     fi
-dnl done
-dnl AC_SUBST(MPI_AINT)
-dnl
-dnl If sizeof(mpi_aint) = sizeof(int), set this value
-dnl if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
-dnl     AC_DEFINE(SIZEOF_INT_IS_AINT,,[define if sizeof(int) = sizeof(void*)])
-dnl fi
-dnl
 
 AC_SEARCH_LIBS(socket, socket)
 AC_CHECK_LIB(thread, mutex_init)
@@ -402,33 +227,9 @@ AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h)
 AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
 
-dnl Configure any subdirectories.  Note that config.status will *not* 
-dnl reexecute these!
-dnl Export any important variables first:
-export AR
-export RANLIB
-export MPILIBNAME
-export CC
-PAC_SUBDIR_CACHE
-dnl AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems )
-dnl
-dnl # Temporary values for MPI_Fint (need help from the Fortran subsystem)
-dnl MPI_FINT=int
-dnl AC_SUBST(MPI_FINT)
-dnl # Temporary values for MPI_Offset (need help from IO subsystem)
-dnl MPI_OFFSET=long
-dnl AC_SUBST(MPI_OFFSET)
-dnl
-dnl Temporary value for extra status information, from device subsystem
-dnl AC_SUBST(EXTRA_STATUS_DECL)
-dnl
-dnl TEMPORARY: copy bnr.h to the source include directory
-dnl In the future bnr's configure will do this
 AC_OUTPUT_COMMANDS(cp include/mpidconf.h ../../include)
-dnl
+
 dnl Generate the Makefiles from Makefile.in
-dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
-dnl from the file.
 
 AC_OUTPUT(Makefile \
           src/Makefile \
@@ -438,6 +239,3 @@ AC_OUTPUT(Makefile \
 	  src/spawn/Makefile \
           src/pt2pt/Makefile \
 )
-
-
-dnl PAC_SUBDIR_CACHE_CLEANUP
