@@ -44,7 +44,7 @@ IF "%1" == "--with-checkout" GOTO CHECKOUT
 GOTO AFTERCHECKOUT
 :CHECKOUT
 set CVS_RSH=ssh
-cvs -d :ext:%USERNAME%@harley.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2all
+cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2all
 if %errorlevel% NEQ 0 goto CVSERROR
 pushd mpich2
 GOTO CONFIGURE
@@ -63,9 +63,9 @@ echo maint/updatefiles >> sshcmds.txt
 echo tar cvf dotin.tar `find . -name "*.h.in"` >> sshcmds.txt
 echo gzip dotin.tar >> sshcmds.txt
 echo exit >> sshcmds.txt
-ssh -l %USERNAME% harley.mcs.anl.gov < sshcmds.txt
-scp %USERNAME%@harley.mcs.anl.gov:/sandbox/%USERNAME%/dotintmp/mpich2/dotin.tar.gz .
-ssh -l %USERNAME% harley.mcs.anl.gov rm -rf /sandbox/%USERNAME%/dotintmp
+ssh -l %USERNAME% petagate.mcs.anl.gov < sshcmds.txt
+scp %USERNAME%@petagate.mcs.anl.gov:/sandbox/%USERNAME%/dotintmp/mpich2/dotin.tar.gz .
+ssh -l %USERNAME% petagate.mcs.anl.gov rm -rf /sandbox/%USERNAME%/dotintmp
 del sshcmds.txt
 tar xvfz dotin.tar.gz
 del dotin.tar.gz
