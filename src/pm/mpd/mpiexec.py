@@ -12,7 +12,7 @@ except KeyboardInterrupt:
 signal(SIGINT,SIG_IGN)
 
 from sys    import argv, exit
-from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path
+from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, chmod
 from popen2 import Popen3
 from pwd    import getpwuid
 from urllib import quote
@@ -145,7 +145,10 @@ def mpiexec():
         submitter = getpwuid(getuid())[0]
         xmlCPG.setAttribute('submitter', submitter)
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
+        try:    unlink(xmlFilename)
+	except: pass
         xmlFile = open(xmlFilename,'w')
+        chmod(xmlFilename,0600)
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         # print xmlDOC.toprettyxml(indent='   ')    #### TEMP DEBUG
         xmlFile.close()

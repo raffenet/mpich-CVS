@@ -8,7 +8,7 @@ from sys       import stdout, argv, settrace, exit, excepthook, __stdout__, __st
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, strerror, \
-                      dup2, R_OK, X_OK, WNOHANG
+                      dup2, R_OK, X_OK, WNOHANG, chmod
 from pwd       import getpwnam
 from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname, gethostbyname_ex
 from errno     import EINTR
@@ -69,7 +69,10 @@ def _mpd_init():
         chdir("/")  # free up filesys for umount
         umask(0)
         g.logfileName = '/tmp/mpd2.logfile_' + mpd_get_my_username()
+        try:    unlink(g.logfileName)
+        except: pass
         logfile = open(g.logfileName,'w')
+        chmod(g.logfileName,0600)
         stdout = logfile
         stderr = logfile
         print >>stdout, 'logfile for mpd with pid %d' % getpid()
