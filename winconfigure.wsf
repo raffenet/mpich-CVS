@@ -2647,63 +2647,67 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	fout.Close()
 End If
 
-'
-' mpe_logging_conf.h
-'
-If f.FileExists("src\mpe2\src\logging\mpe_logging_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpe2\src\logging\include\mpe_logging_conf.h")
-	Call WriteHeader(fout, "mpe_logging_")
-	Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in")
-	fout.WriteLine("#define HAVE_IO_H 1")
-	fout.WriteLine("#define HAVE_WINDOWS_H 1")
-	fout.WriteLine("#define read _read")
-	fout.WriteLine("#define write _write")
-	fout.WriteLine("#define open _open")
-	fout.WriteLine("#define close _close")
-	fout.WriteLine("#define mktemp _mktemp")
-	fout.WriteLine("#define lseek _lseek")
-	fout.WriteLine("#define snprintf _snprintf")
-	fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
-	Call WriteFooter(fout)
-	fout.Close()
-End If
+If f.PathExists("src\mpe2") Then
 
-'/src/misc/mpe_misc_conf.h.in
+	'
+	' mpe_logging_conf.h
+	'
+	If f.FileExists("src\mpe2\src\logging\mpe_logging_conf.h.in") Then
+		Set fout = f.CreateTextFile("src\mpe2\src\logging\include\mpe_logging_conf.h")
+		Call WriteHeader(fout, "mpe_logging_")
+		Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in")
+		fout.WriteLine("#define HAVE_IO_H 1")
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		fout.WriteLine("#define read _read")
+		fout.WriteLine("#define write _write")
+		fout.WriteLine("#define open _open")
+		fout.WriteLine("#define close _close")
+		fout.WriteLine("#define mktemp _mktemp")
+		fout.WriteLine("#define lseek _lseek")
+		fout.WriteLine("#define snprintf _snprintf")
+		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		Call WriteFooter(fout)
+		fout.Close()
+	End If
 
-'
-' mpe_wrappers_conf.h
-'
-If f.FileExists("src\mpe2\src\wrappers\mpe_wrappers_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpe2\include\mpe_wrappers_conf.h")
-	Call WriteHeader(fout, "mpe_wrappers_")
-	Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in")
-	fout.WriteLine("#define HAVE_WINDOWS_H 1")
-	Call WriteFooter(fout)
-	fout.Close()
-End If
+	'/src/misc/mpe_misc_conf.h.in
 
-'/src/slog2sdk/trace_rlog/trace_impl.h.in
-'/src/slog2sdk/trace_sample/trace_impl.h.in
+	'
+	' mpe_wrappers_conf.h
+	'
+	If f.FileExists("src\mpe2\src\wrappers\mpe_wrappers_conf.h.in") Then
+		Set fout = f.CreateTextFile("src\mpe2\include\mpe_wrappers_conf.h")
+		Call WriteHeader(fout, "mpe_wrappers_")
+		Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in")
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		Call WriteFooter(fout)
+		fout.Close()
+	End If
 
-'
-' mpe_conf.h
-'
-If f.FileExists("src\mpe2\mpe_conf.h.in") Then
-	Set fout = f.CreateTextFile("src\mpe2\include\mpe_conf.h")
-	Call WriteHeader(fout, "mpe_")
-	Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in")
-	fout.WriteLine("#define HAVE_IO_H 1")
-	fout.WriteLine("#define HAVE_WINDOWS_H 1")
-	fout.WriteLine("#define read _read")
-	fout.WriteLine("#define write _write")
-	fout.WriteLine("#define open _open")
-	fout.WriteLine("#define close _close")
-	fout.WriteLine("#define mktemp _mktemp")
-	fout.WriteLine("#define lseek _lseek")
-	fout.WriteLine("#define snprintf _snprintf")
-	fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
-	Call WriteFooter(fout)
-	fout.Close()
+	'/src/slog2sdk/trace_rlog/trace_impl.h.in
+	'/src/slog2sdk/trace_sample/trace_impl.h.in
+
+	'
+	' mpe_conf.h
+	'
+	If f.FileExists("src\mpe2\mpe_conf.h.in") Then
+		Set fout = f.CreateTextFile("src\mpe2\include\mpe_conf.h")
+		Call WriteHeader(fout, "mpe_")
+		Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in")
+		fout.WriteLine("#define HAVE_IO_H 1")
+		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		fout.WriteLine("#define read _read")
+		fout.WriteLine("#define write _write")
+		fout.WriteLine("#define open _open")
+		fout.WriteLine("#define close _close")
+		fout.WriteLine("#define mktemp _mktemp")
+		fout.WriteLine("#define lseek _lseek")
+		fout.WriteLine("#define snprintf _snprintf")
+		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		Call WriteFooter(fout)
+		fout.Close()
+	End If
+
 End If
 
 '
