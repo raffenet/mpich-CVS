@@ -501,7 +501,7 @@ def mpdrun():
         except mpdrunInterrupted, errmsg:
             if errmsg.args == 'SIGINT':
                 if manSocket:
-                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
+                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                     mpd_send_one_msg(manSocket,msgToSend)
                     # next code because no longer exiting
                     ### del socketsToSelect[manSocket]
