@@ -333,3 +333,5 @@ statusf2c.c
 *Debug*
 *Release*
 .libs
+*fs.c
+fprotos.h
