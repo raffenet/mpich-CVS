@@ -11,7 +11,7 @@
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    MPI_Comm comm, dupcomm;
+    MPI_Comm comm, dupcomm, dupcomm2;
     MPI_Request rreq[2];
     int count;
     int indicies[2];
@@ -81,6 +81,10 @@ int main( int argc, char *argv[] )
 			r2buf, s2buf );
 	    }
 	}
+	/* Try to duplicate a duplicated intercomm.  (This caused problems
+	 with some MPIs) */
+	MPI_Comm_dup( dupcomm, &dupcomm2 );
+	MPI_Comm_free( &dupcomm2 );
 	MPI_Comm_free( &dupcomm );
 	MPI_Comm_free( &comm );
     }
