@@ -2432,7 +2432,7 @@ Function ReplaceBetweenTags(str, tag1, find_str, tag2, replace_str)
 		ReplaceBetweenTags = str
 		Exit Function
 	End If
-	end_index = end_index + index;
+	end_index = end_index + index
 	ReplaceBetweenTags = Left(str, start_index-1) & replace_str & Right(str, Len(str) - end_index - Len(tag2) + 1)
 End Function
 
