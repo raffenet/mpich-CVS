@@ -1,5 +1,6 @@
 # This is temporary until the tests have their own configure
 typename_SOURCES = typename.c
+typename_LDADD = -L ../../../lib
 segtest_SOURCES = segtest.c
 segtest_LDADD = ../util/mtest.o -L ../../../lib 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
