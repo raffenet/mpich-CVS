@@ -1,5 +1,8 @@
-/* timerconf.h.  Generated automatically by configure.  */
-/* timerconf.h.in.  Generated automatically from configure.in by autoheader.  */
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 
 /* Define if you have the `clock_getres' function. */
 /* #undef HAVE_CLOCK_GETRES */

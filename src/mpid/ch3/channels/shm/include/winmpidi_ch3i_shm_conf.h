@@ -1,5 +1,8 @@
-/* include/mpidi_ch3i_shm_conf.h.  Generated automatically by configure.  */
-/* include/mpidi_ch3i_shm_conf.h.in.  Generated automatically from configure.in by autoheader.  */
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 
 /* Define if you have the <assert.h> header file.  */
 #define HAVE_ASSERT_H 1
