@@ -54,8 +54,10 @@
   - The clean targets now remove the cache files produced by newer versions of
     autoconf.
 
-  - The determination of the source directory has been improved, allowing for
-    better control of configure.
+  - For files that are created by configure, the determination of the
+    location of that configure has been improved, so that make of those
+    files (e.g., make Makefile) is more likely to work.  There is still 
+    more to do here.
 
   - Short loops over subdirectories are now unrolled.
 
