@@ -284,12 +284,6 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
 		MPIDI_DBG_PRINTF((60, FCNAME, "reading header(%d bytes) from read_shmq %08p packet[%d]", sizeof(MPIDI_CH3_Pkt_t), shm_ptr, index));
-		if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
-		{
-		    pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
-		    pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
-		}
-
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -297,6 +291,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 		    return mpi_errno;
 		}
+
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
 		    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
@@ -305,24 +300,24 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		{
 		    mpi_errno = MPIDI_CH3I_SHM_post_readv(recv_vc_ptr, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count, NULL);
 		}
-		if (num_bytes == sizeof(MPIDI_CH3_Pkt_t))
+		if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
+		{
+		    pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
+		    num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
+		    pkt_ptr->num_bytes = num_bytes;
+		    mem_ptr = (char*)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
+		}
+		else
 		{
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
+		    
+		    recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader;
+		    continue;
 		}
-		/*
-		if (millisecond_timeout == 0)
-		{
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
-		    *shm_out = SHM_WAIT_TIMEOUT;
-		    return MPI_SUCCESS;
-		}
-		*/
-		recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader;
-		continue;
 	    }
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes", num_bytes));
