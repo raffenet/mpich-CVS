@@ -148,7 +148,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 	    }
 	    break;
 	default:
-	    /* -- BEGIN ERROR HANDLING-- */
+	    /* --BEGIN ERROR HANDLING-- */
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
 					     MPIR_ERR_RECOVERABLE,
 					     "MPID_Type_create_pairtype",
