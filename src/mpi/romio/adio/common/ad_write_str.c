@@ -99,7 +99,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
     char *writebuf;
     int flag, st_fwr_size, st_n_filetypes, writebuf_len, write_sz;
     ADIO_Status status1;
-    int new_bwr_size, new_fwr_size, info_flag, max_bufsize;
+    int new_bwr_size, new_fwr_size, max_bufsize;
 
     *error_code = MPI_SUCCESS;  /* changed below if error */
 
