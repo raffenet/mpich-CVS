@@ -47,8 +47,10 @@ int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
+#ifdef FOO
     char pszPortName[MPI_MAX_PORT_NAME];
     int spawned;
+#endif
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING

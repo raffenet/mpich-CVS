@@ -69,9 +69,7 @@ int MPIR_Init_thread( int required, int *provided )
     MPI_COMM_SELF  = PREDEFINED_HANDLE(COMM,1);
     */
 
-    MPIR_Process.bnr_dbname[0]         = '\0';
-    MPIR_Process.port_list             = NULL;
-    MPIR_Process.comm_parent           = MPI_COMM_NULL;
+    MPID_Init();
 
     MPIR_Process.initialized           = MPICH_WITHIN_MPI;
     return 0;

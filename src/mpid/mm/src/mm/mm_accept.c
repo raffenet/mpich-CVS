@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 #include "bsocket.h"
 #ifdef HAVE_ERRNO_H
 #include "errno.h"
@@ -16,7 +16,7 @@ int MM_Accept(MPID_Info *info_ptr, char *port_name)
     int bfd;
     OpenPortNode_t *p;
 
-    p = MPIR_Process.port_list;
+    p = MPID_Process.port_list;
     while (p)
     {
 	if (strcmp(p->port_name, port_name) == 0)

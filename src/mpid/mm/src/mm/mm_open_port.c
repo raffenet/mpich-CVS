@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 #include "bsocket.h"
 #ifdef HAVE_ERRNO_H
 #include "errno.h"
@@ -46,8 +46,8 @@ int MM_Open_port(MPID_Info *info_ptr, char *port_name)
     p = (OpenPortNode_t*)MPIU_Malloc(sizeof(OpenPortNode_t));
     p->bfd = bfd;
     strcpy(p->port_name, port_name);
-    p->next = MPIR_Process.port_list;
-    MPIR_Process.port_list = p;
+    p->next = MPID_Process.port_list;
+    MPID_Process.port_list = p;
 
     return 0;
 }

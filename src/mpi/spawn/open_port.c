@@ -70,7 +70,7 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MM_Open_port(info_ptr, port_name);
+    MPID_Open_port(info_ptr, port_name);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
     return MPI_SUCCESS;

@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 #include "bsocket.h"
 #ifdef HAVE_ERRNO_H
 #include "errno.h"

@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 
 #ifdef HAVE_WINDOWS_SOCKET
 #define close closesocket

@@ -105,6 +105,9 @@ int MPI_Finalize( void )
 	MPIU_trdump( (void *)0 );
     }
 #endif
+
+    MPID_Finalize();
+
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);

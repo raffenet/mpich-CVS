@@ -4,14 +4,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 #include "bsocket.h"
 
 int MM_Close_port(char *port_name)
 {
     OpenPortNode_t *p, *pTrailer;
 
-    pTrailer = p = MPIR_Process.port_list;
+    pTrailer = p = MPID_Process.port_list;
     if (p == NULL)
 	return -1;
 
@@ -20,8 +20,8 @@ int MM_Close_port(char *port_name)
 	if (strcmp(port_name, p->port_name) == 0)
 	{
 	    beasy_closesocket(p->bfd);
-	    if (p == MPIR_Process.port_list)
-		MPIR_Process.port_list = MPIR_Process.port_list->next;
+	    if (p == MPID_Process.port_list)
+		MPID_Process.port_list = MPID_Process.port_list->next;
 	    else
 		pTrailer->next = p->next;
 	    MPIU_Free(p);

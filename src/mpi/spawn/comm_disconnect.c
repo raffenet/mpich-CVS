@@ -69,6 +69,8 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_Comm_disconnect(comm_ptr);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);
     return MPI_SUCCESS;
 }

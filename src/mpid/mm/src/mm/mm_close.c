@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpidimpl.h"
 #include "bsocket.h"
 
 int MM_Close(int conn)
