@@ -11,6 +11,7 @@
  */
 
 #include "adio.h"
+
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
 #include <sys/statvfs.h>
 #endif
@@ -34,10 +35,14 @@
 #ifdef ROMIO_PVFS
 #include "pvfs_config.h"
 #include <sys/param.h>
-#include <unistd.h>
 #endif
 #ifdef tflops
 #include <sys/mount.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+/* Needed for readlink */
+#include <unistd.h>
 #endif
 
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep);
