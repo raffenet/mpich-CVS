@@ -161,24 +161,6 @@ if test -n "$mpichconfig_file" -a -s "$mpichconfig_file" ; then
     pac_lib_mpi_is_building="yes"
 fi
 
-dnl
-dnl Set size of MPI_Status
-dnl
-if test -z "$MPI_STATUS_SIZE" ; then
-    if test -n "$SIZEOF_MPI_STATUS" ; then
-        # compute from the C sizeof
-	MPI_STATUS_SIZE=`expr $SIZEOF_MPI_STATUS / $ac_cv_sizeof_int`
-	if test "$MPI_STATUS_SIZE" = "0" ; then
-	    AC_MSG_WARN([Could not compute the size of MPI_Status])
-	    MPI_STATUS_SIZE=5
-        fi
-    else
-        AC_MSG_WARN([MPI_STATUS_SIZE was not defined!])
-        # The default size is 5.  See mpi.h.in
-        MPI_STATUS_SIZE=5
-    fi
-fi
-AC_SUBST(MPI_STATUS_SIZE)
 
 #
 # Define the installation directory names (defaults)
@@ -784,6 +766,25 @@ dnl Include a defined value for Fint is int
 if test "$MPI_FINT" = "int" ; then
     AC_DEFINE(HAVE_FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
 fi
+
+#
+# Set size of MPI_Status.  We may need sizeof_int here as well
+#
+if test -z "$MPI_STATUS_SIZE" ; then
+    if test -n "$SIZEOF_MPI_STATUS" ; then
+        # compute from the C sizeof
+	MPI_STATUS_SIZE=`expr $SIZEOF_MPI_STATUS / $ac_cv_sizeof_int`
+	if test "$MPI_STATUS_SIZE" = "0" ; then
+	    AC_MSG_WARN([Could not compute the size of MPI_Status])
+	    MPI_STATUS_SIZE=5
+        fi
+    else
+        AC_MSG_WARN([MPI_STATUS_SIZE was not defined!])
+        # The default size is 5.  See mpi.h.in
+        MPI_STATUS_SIZE=5
+    fi
+fi
+AC_SUBST(MPI_STATUS_SIZE)
 
 PAC_PROG_C_UNALIGNED_DOUBLES(,
 [AC_MSG_WARN(Your C compiler $CC does not support unaligned accesses
