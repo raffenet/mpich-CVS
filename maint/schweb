@@ -1,0 +1,19 @@
+#! /bin/sh
+#
+# Create simple schedule web pages
+rm -f .m1 .m2 .m3 mpich2-1pgrs.html
+cat schedule | maint/schdtox -html -mpi1 > .m2
+cat >>.m1 <<EOF
+<HTML>
+<HEAD>
+<TITLE>MPICH2 Progress: MPI 1 Routines</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<H2>Status of MPI-1 Functions in MPICH2</H2>
+EOF
+cat >>.m3 <<EOF
+</BODY>
+</HTML>
+EOF
+cat .m1 .m2 .m3 > mpich2-1pgrs.html
+rm -f .m1 .m2 .m3

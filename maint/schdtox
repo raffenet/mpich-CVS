@@ -9,16 +9,30 @@
 # and takes only dates.  This is called the "Task export map"
 
 $do_html = 0;
+$mpi1_only = 0;
 foreach $_ (@ARGV) {
-    if (/-html/) { $do_html = 1; shift; }
+    if (/-html/) { $do_html = 1; }
+    elsif (/-mpi1/) { $mpi1_only = 1; }
     else {
 	print STDERR "Unexpected option $_\n";
 	exit 1;
     }
 }
+
+# If requested, get MPI 1 only
+if ($mpi1_only) {
+    open( MPI1, "<maint/mpi1.lst" ) || die "Cannot open mpi1.lst\n";
+    while (<MPI1>) {
+	s/#.*//g;
+	s/[\r\n]*//g;
+	if (/^MPI_/) {
+	    $mpi1_names{$_} = 1;
+	}
+    }
+}
 #
 # Skip header
-while (<>) {
+while (<STDIN>) {
     if (/-------------------------/) { last; }
 }
 
@@ -36,7 +50,7 @@ while (<>) {
 %nametoowner = ();
 @idtoname = ();
 $id = 1;
-while (<>) {
+while (<STDIN>) {
     s/[\r\n]*$//;
     if (/^\s*BEGIN\s*(\w*)/) {
 	$prefix = "$1:";
@@ -50,6 +64,12 @@ while (<>) {
     elsif (/^.*,.*,.*,.*,.*,.*/) { 
 	($routine,$min,$max,$avg,$priority,$name,$depend,$actual,$finished) = 
 	    split(/,/);
+	if ($mpi1_only) {
+	    # Skip if not an MPI function
+	    $ucroutine = $routine;
+	    $ucroutine =~ tr/a-z/A-Z/;
+	    if (!defined($mpi1_names{$ucroutine})) { next; }
+	}
 	# Validate data (check for typos)
 	if ($min ne "" && $min =~ /([\.0-9]*)/ && $1 ne $min) {
 	    print STDERR "$routine: min value ($min) not valid\n";
@@ -87,6 +107,12 @@ while (<>) {
 	#print "$1\n";
 	#print "$id\t$id\t$1\t\r\n";
 	$routine = $1;
+	if ($mpi1_only) {
+	    # Skip if not an MPI function
+	    $ucroutine = $routine;
+	    $ucroutine =~ tr/a-z/A-Z/;
+	    if (!defined($mpi1_names{$ucroutine})) { next; }
+	}
 	# Add any prefix to the routine
 	$routine = "$prefix$routine";
         $nametotime{$routine} = 1;
