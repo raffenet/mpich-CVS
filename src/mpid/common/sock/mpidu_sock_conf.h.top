@@ -5,5 +5,5 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef SOCKCONF_H
-#define SOCKCONF_H
+#if !defined(MPICH_MPIDU_SOCK_CONF_H_INCLUDED)
+#define MPICH_MPIDU_SOCK_CONF_H_INCLUDED

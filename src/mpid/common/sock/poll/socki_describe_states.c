@@ -129,42 +129,34 @@ static char *get_random_color_str()
     return random_color_str;
 }
 
-int Socki_describe_timer_states()
+int MPIDU_Socki_describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_HANDLE_ACCEPT,
-		       "socki_handle_accept",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_HANDLE_CONNECT,
-		       "socki_handle_connect",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_HANDLE_READ,
+		       MPID_STATE_MPIDU_SOCKI_READ,
 		       "socki_handle_read",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_HANDLE_WRITE,
+		       MPID_STATE_MPIDU_SOCKI_WRITE,
 		       "socki_handle_write",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_SOCK_ALLOC,
+		       MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC,
 		       "socki_alloc",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_SOCK_FREE,
+		       MPID_STATE_MPIDU_SOCKI_SOCK_FREE,
 		       "socki_free",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_EVENT_ENQUEUE,
+		       MPID_STATE_MPIDU_SOCKI_EVENT_ENQUEUE,
 		       "socki_event_enqueue",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_EVENT_DEQUEUE,
+		       MPID_STATE_MPIDU_SOCKI_EVENT_DEQUEUE,
 		       "socki_event_dequeue",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_ADJUST_IOV,
+		       MPID_STATE_MPIDU_SOCKI_ADJUST_IOV,
 		       "socki_adjust_iov",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
@@ -187,7 +179,7 @@ int Socki_describe_timer_states()
 		       MPID_STATE_POLL,
 		       "poll",
 		       get_random_color_str());
-    return 0;
+    return MPI_SUCCESS;
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */

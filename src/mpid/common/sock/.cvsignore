@@ -3,8 +3,8 @@ config.*
 autom4te.cache
 Makefile.in
 Makefile
-sockconf.h.in
-sockconf.h
+mpidu_sock_conf.h.in
+mpidu_sock_conf.h
 localdefs
 *.o
 *.lo

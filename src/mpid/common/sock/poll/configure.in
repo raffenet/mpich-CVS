@@ -9,7 +9,7 @@ AC_CONFIG_AUX_DIR(../../../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(sockpollconf.h)
+AC_CONFIG_HEADER(mpidu_socki_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE POLL IMPLEMENTATION OF SOCK"
 
