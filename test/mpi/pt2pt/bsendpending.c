@@ -16,7 +16,7 @@ int main( int argc, char *argv[] )
     int errs = 0;
     int rank, size, source, dest;
     unsigned char *buf, *bufp;
-    int minsize = 2, count; 
+    int minsize = 2; 
     int i, msgsize, bufsize, outsize;
     unsigned char *msg1, *msg2, *msg3;
     MPI_Comm      comm;
