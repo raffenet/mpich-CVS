@@ -19,7 +19,8 @@
 /* we are going to muck with this later to make it evenly divisible by however many compute nodes we have */
 #define STARTING_SIZE 5000
 
-int test_file(char *filename, int mynod, int nprocs, char * cb_hosts); 
+int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, 
+		char *msg, int verbose); 
 
 static int cb_config_list_keyval = MPI_KEYVAL_INVALID;
 
@@ -301,7 +302,7 @@ void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest
 
 int main(int argc, char **argv)
 {
-    int i, mynod, nprocs, len;
+    int i, mynod, nprocs, len, errs=0, verbose=0;
     char *filename;
     char * cb_config_string;
     int cb_config_len;
@@ -316,6 +317,7 @@ int main(int argc, char **argv)
    broadcasts it to other processes */
     if (!mynod) {
 	i = 1;
+	/* TODO: at some point, accept -v for verbose */
 	while ((i < argc) && strcmp("-fname", *argv)) {
 	    i++;
 	    argv++;
@@ -362,29 +364,28 @@ int main(int argc, char **argv)
     }
 
     /* first, no hinting */
-    if (!mynod) fprintf(stderr, "collective w/o hinting:\n");
-    test_file(filename, mynod, nprocs, NULL);
+    errs += test_file(filename, mynod, nprocs, NULL, "collective w/o hinting", verbose);
 
     /* hint, but no change in order */
-    if (!mynod) fprintf(stderr, "collective w/ hinting: default order\n");
     default_str(mynod, cb_config_len, array, cb_config_string);
-    test_file(filename, mynod, nprocs, cb_config_string);
+    errs += test_file(filename, mynod, nprocs, cb_config_string, "collective w/ hinting: default order", verbose);
 
     /*  reverse order */
-    if (!mynod) fprintf(stderr, "collective w/ hinting: reverse order\n");
     reverse_str(mynod, cb_config_len, array, cb_config_string); 
-    test_file(filename, mynod, nprocs, cb_config_string);
+    errs += test_file(filename, mynod, nprocs, cb_config_string, "collective w/ hinting: reverse order", verbose);
 
     /* reverse, every other */
-    if (!mynod) fprintf(stderr, "collective w/ hinting: permutation1\n");
     reverse_alternating_str(mynod, cb_config_len, array, cb_config_string);
-    test_file(filename, mynod, nprocs, cb_config_string);
+    errs += test_file(filename, mynod, nprocs, cb_config_string,"collective w/ hinting: permutation1", verbose);
 
     /* second half, first half */
-    if (!mynod) fprintf(stderr, "collective w/ hinting: permutation2\n");
     simple_shuffle_str(mynod, cb_config_len, array, cb_config_string);
-    test_file(filename, mynod, nprocs, cb_config_string);
+    errs += test_file(filename, mynod, nprocs, cb_config_string, "collective w/ hinting: permutation2", verbose);
 	 
+    if (!mynod) {
+	    if (errs) fprintf(stderr, "Found %d error cases\n", errs);
+	    else printf("no errors.\n");
+    }
     free(filename);
     free(cb_config_string);
     MPI_Finalize();
@@ -393,10 +394,10 @@ int main(int argc, char **argv)
 
 #define SEEDER(x,y,z) ((x)*1000000 + (y) + (x)*(z))
 
-int test_file(char *filename, int mynod, int nprocs, char * cb_hosts) 
+int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg, int verbose) 
 {
     MPI_Datatype typevec, newtype, t[3];
-    int *buf, i, b[3], errcode;
+    int *buf, i, b[3], errcode, errors=0;
     MPI_File fh;
     MPI_Aint d[3];
     MPI_Status status;
@@ -404,7 +405,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_Info info;
 
     buf = (int *) malloc(SIZE*sizeof(int));
-    fprintf(stderr, "[%d/%d] caller buffer: %p\n",mynod, nprocs, buf);
+    if (verbose) fprintf(stderr, "[%d/%d] caller buffer: %p\n",mynod, nprocs, buf);
 
 
     if (cb_hosts != NULL ) {
@@ -429,7 +430,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_Type_free(&typevec);
 
     if (!mynod) {
-	fprintf(stderr, "\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
+	if(verbose) fprintf(stderr, "\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
 	MPI_File_delete(filename, info);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -460,7 +461,8 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     /* verify those leading -1s exist if they should */
     for (i=0; i<mynod; i++ ) {
 	    if ( buf[i] != -1 ) {
-		    fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
+		    if(verbose) fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
+		    errors++;
 	    }
     }
     /* now the modulo games are hairy.  processor 0 sees real data in the 0th,
@@ -468,19 +470,23 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
      * the data in 1st, 4th, 7th..., and proc 2 sees it in 2nd, 5th, 8th */
 
     for(/* 'i' set in above loop */; i<SIZE; i++) {
-	    if ( ((i-mynod)%nprocs) && buf[i] != -1) 
-		    fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
+	    if ( ((i-mynod)%nprocs) && buf[i] != -1)  {
+		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
 				    mynod, i, buf[i]);
-	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE) )
-		    fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
+		    errors++;
+	    }
+	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE) ) {
+		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
 				    mynod, i, buf[i], SEEDER(mynod,i,SIZE));
+		    errors++;
+	    }
     }
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (!mynod) {
-	fprintf(stderr, "\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
+	if(verbose) fprintf(stderr, "\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
 	MPI_File_delete(filename, info);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -500,16 +506,20 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     /* just like as above */
     for (i=0; i<mynod; i++ ) {
 	    if ( buf[i] != -1 ) {
-		    fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
+		    if(verbose) fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
+		    errors++;
 	    }
     }
     for(/* i set in above loop */; i<SIZE; i++) {
-	    if ( ((i-mynod)%nprocs) && buf[i] != -1) 
-		    fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
+	    if ( ((i-mynod)%nprocs) && buf[i] != -1)  {
+		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
 				    mynod, i, buf[i]);
-	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE))
-		    fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
+		    errors++;
+	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE)) {
+		    if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
 				    mynod, i, buf[i], SEEDER(mynod,i,SIZE) );
+		    errors++;
+	    }
     }
 
     MPI_File_close(&fh);
@@ -517,7 +527,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (!mynod) {
-	fprintf(stderr, "\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
+	if(verbose) fprintf(stderr, "\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
 	MPI_File_delete(filename, info);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -538,8 +548,10 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
 
     /* same crazy checking */
     for (i=0; i<SIZE; i++) {
-	    if (buf[i] != SEEDER(mynod, i, SIZE))
-		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], SEEDER(mynod, i, SIZE));
+	    if (buf[i] != SEEDER(mynod, i, SIZE)) {
+		if(verbose) fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], SEEDER(mynod, i, SIZE));
+		errors++;
+	    }
     }
 
     MPI_File_close(&fh);
@@ -548,5 +560,5 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_Type_free(&newtype);
     free(buf);
     if (info != MPI_INFO_NULL) MPI_Info_free(&info);
-    return 0;
+    return errors;
 }
