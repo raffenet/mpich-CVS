@@ -30,13 +30,11 @@ int main( int argc, char *argv[] )
 
     MPI_Comm_get_parent( &parentcomm );
 
-    /* This is an incorrect assumption.
-       The first process is not guaranteed to have MPI_COMM_NULL for its parent. */
     if (parentcomm == MPI_COMM_NULL) {
 	/* Create 2 more processes */
-	/* ./ is unix specific and therefore limits the usefullness of this test.
-	   The more generic approach would be to specify "spawnargv" as the executable
-	   and pass an info with ("path", ".") */
+	/* ./ is unix specific .
+	   The more generic approach would be to specify "spawnargv" as the 
+	   executable and pass an info with ("path", ".") */
 	MPI_Comm_spawn( "./spawnargv", inargv, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, errcodes );
