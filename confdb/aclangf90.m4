@@ -998,3 +998,120 @@ dnl Backwards compatibility features
 dnl
 AC_DEFUN([PAC_PROG_F90],[AC_PROG_F90])
 AC_DEFUN([PAC_LANG_FORTRAN90],[AC_LANG_PUSH(Fortran 90)])
+dnl Internal routine for testing F90
+dnl PAC_PROG_F90_WORKS()
+AC_DEFUN(PAC_PROG_F90_WORKS,
+[AC_MSG_CHECKING([for extension for Fortran 90 programs])
+pac_cv_f90_ext="f90"
+cat > conftest.$pac_cv_f90_ext <<EOF
+      program conftest
+      end
+EOF
+ac_compile='${F90-f90} -c $F90FLAGS conftest.$pac_cv_f90_ext 1>&AC_FD_CC'
+if AC_TRY_EVAL(ac_compile) ; then
+    AC_MSG_RESULT([f90])
+else
+    rm -f conftest*
+    pac_cv_f90_ext="f"
+    cat > conftest.$pac_cv_f90_ext <<EOF
+      program conftest
+      end
+EOF
+    if AC_TRY_EVAL(ac_compile) ; then
+	AC_MSG_RESULT([f])
+    else
+        AC_MSG_RESULT([unknown!])
+    fi
+fi
+AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) works])
+AC_LANG_SAVE
+# We cannot use _LANG_FORTRAN90 here because we will usually be executing this
+# test in the context of _PROG_F90, which is a require on _LANG_FORTRAN90.
+# Instead, we insert the necessary code from _LANG_FORTRAN90 here
+dnl PAC_LANG_FORTRAN90
+dnl define(ifdef([_AC_LANG],[_AC_LANG],[AC_LANG]), [FORTRAN90])dnl
+define([AC_LANG], [FORTRAN90])dnl
+ac_ext=$pac_cv_f90_ext
+ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
+ac_link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'
+cross_compiling=$pac_cv_prog_f90_cross
+# Include a Fortran 90 construction to distinguish between Fortran 77 
+# and Fortran 90 compilers.
+cat >conftest.$ac_ext <<EOF
+      program conftest
+      integer, dimension(10) :: n
+      end
+EOF
+if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeect} ; then
+    pac_cv_prog_f90_works="yes"
+    if (./conftest; exit) 2>/dev/null ; then
+        pac_cv_prog_f90_cross="no"
+    else
+        pac_cv_prog_f90_cross="yes"
+    fi
+else
+  echo "configure: failed program was:" >&AC_FD_CC
+  cat conftest.$ac_ext >&AC_FD_CC
+  pac_cv_prog_f90_works="no"
+fi
+rm -f conftest*
+# The intel compiler sometimes generates these work.pc and .pcl files
+rm -f work.pc work.pcl
+AC_LANG_RESTORE
+AC_MSG_RESULT($pac_cv_prog_f90_works)
+if test $pac_cv_prog_f90_works = no; then
+  AC_MSG_WARN([installation or configuration problem: Fortran 90 compiler cannot create executables.])
+fi
+AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) is a cross-compiler])
+AC_MSG_RESULT($pac_cv_prog_f90_cross)
+cross_compiling=$pac_cv_prog_f90_cross
+])
+dnl
+dnl PAC_F90_AND_F77_COMPATIBLE([action-if-true],[action-if-false])
+dnl
+AC_DEFUN([PAC_F90_AND_F77_COMPATIBLE],[
+AC_REQUIRE([PAC_PROG_F90_WORKS])
+AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
+pac_cv_f90_and_f77,[
+pac_cv_f90_and_f77="unknown"
+rm -f conftest*
+if test -z "$ac_ext_f90" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
+# Define the two language-specific steps
+link_f90='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest1.$ac_ext_f90 conftest2.o $LIBS 1>&AC_FD_CC'
+compile_f77='${F77-f77} -c $FFLAGS conftest2.f 1>&AC_FD_CC'
+# Create test programs
+cat > conftest1.$ac_ext_f90 <<EOF
+       program main
+       integer a
+       a = 1
+       call t1(a)
+       end
+EOF
+cat > conftest2.f <<EOF
+       subroutine t1(b)
+       integer b
+       b = b + 1
+       end
+EOF
+# compile the f77 program and link with the f90 program
+# The reverse may not work because the Fortran 90 environment may
+# expect to be in control (and to provide library files unknown to any other
+# environment, even Fortran 77!)
+if AC_TRY_EVAL(compile_f77) ; then
+    if AC_TRY_EVAL(link_f90) && test -x conftest ; then
+        pac_cv_f90_and_f77="yes"
+    else 
+        pac_cv_f90_and_f77="no"
+    fi
+    # Some versions of the Intel compiler produce these two files
+    rm -f work.pc work.pcl
+else
+    pac_cv_f90_and_f77="yes"
+fi])
+# Perform the requested action based on whether the test succeeded
+if test "$pac_cv_f90_and_f77" = yes ; then
+    ifelse($1,,:,[$1])
+else
+    ifelse($2,,:,[$2])
+fi
+])
