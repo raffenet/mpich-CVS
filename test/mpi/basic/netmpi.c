@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
     bool bNoCache = false;
     bool bHeadToHead = false;
     bool bSavePert = false;
+    bool bUseMegaBytes = false;
 
     MPI_Init(&argc, &argv);
     
@@ -146,6 +147,7 @@ int main(int argc, char *argv[])
     GetOptInt(&argc, &argv, "-end", &end);
     bNoCache = GetOpt(&argc, &argv, "-nocache");
     bHeadToHead = GetOpt(&argc, &argv, "-headtohead");
+    bUseMegaBytes = GetOpt(&argc, &argv, "-mb");
     if (GetOpt(&argc, &argv, "-noprint"))
 	printopt = 0;
     bSavePert = GetOpt(&argc, &argv, "-pert");
@@ -403,7 +405,10 @@ int main(int argc, char *argv[])
 		{
 		/* fprintf(out,"%f\t%f\t%d\t%d\t%f\n", bwdata[n].t, bwdata[n].bps,
 		    bwdata[n].bits, bwdata[n].bits / 8, bwdata[n].variance); */
-		    fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
+		    if (bUseMegaBytes)
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n].bits / 8, bwdata[n].bps / 8, bwdata[n].t);
+		    else
+			fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
 		    fflush(out);
 		}
 	    }
@@ -413,7 +418,10 @@ int main(int argc, char *argv[])
 	    
 	    if (args.tr && printopt)
 	    {
-		fprintf(stdout," %6.2f Mbps in %0.9f sec\n", bwdata[n].bps, tlast);
+		if (bUseMegaBytes)
+		    fprintf(stdout," %6.2f MBps in %0.9f sec\n", bwdata[n].bps / 8, tlast);
+		else
+		    fprintf(stdout," %6.2f Mbps in %0.9f sec\n", bwdata[n].bps, tlast);
 		fflush(stdout);
 	    }
 	} /* End of perturbation loop */	
@@ -430,7 +438,10 @@ int main(int argc, char *argv[])
 		    dmax = bwdata[n-ipert].bps;
 		}
 	    }
-	    fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
+	    if (bUseMegaBytes)
+		fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps / 8, bwdata[n-index].t);
+	    else
+		fprintf(out,"%d\t%f\t%0.9f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
 	    fflush(out);
 	}
     } /* End of main loop  */
