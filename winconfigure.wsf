@@ -1496,6 +1496,7 @@ Function BuildIFaces()
 	  contents = fin.ReadAll()
 	  contents = ReplaceAts(contents, false, false)
 	  if bCleanCode then
+		cEcho "modifying the comm, win datatype classes to handle unreferenced variables."
 		' Comm class
 		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Comm &oldcomm", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
 		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Comm &comm", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
