@@ -66,6 +66,13 @@ Routines not yet available include
 MPI_Bsend_init
 MPI_Sendrecv_replace
 
+Testing Status
+--------------
+We are beginning to run regular tests of the MPI-1 functions.  We are 
+using both the MPICH-1 test suite and the Intel test suite (with corrections).
+The current status is available at 
+http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests .
+
 VPATH Builds
 ------------
 MPICH2 supports building MPICH in a different directory tree than the one
