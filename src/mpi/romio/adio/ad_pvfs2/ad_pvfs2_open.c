@@ -95,6 +95,10 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 		o_status.error = ret;
 		goto error_modes;
 	    }
+	} else if (fd->access_mode & MPI_MODE_EXCL) {
+	    /* lookup should not succeed if opened with EXCL */
+	    o_status.error = -1; /* XXX: what should it be? */
+	    goto error_excl;
 	} else {
 	    o_status.pinode_refn = resp_lookup.pinode_refn;
 	}
@@ -124,6 +128,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     fd->fs_ptr = pvfs2_fs;
     return;
 
+error_excl:
 error_status:
 error_modes:
 error_create:
