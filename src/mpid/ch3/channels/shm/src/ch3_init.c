@@ -436,7 +436,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 #else
     /* figure out how many processors are available and set the spin count accordingly */
-#ifdef HAVE_SYSCONF
+#if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     {
 	int num_cpus;
 	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
@@ -446,6 +446,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
             pg->nShmWaitSpinCount = 1;
 	    /* pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size; */
     }
+#else
+    /* if the number of cpus cannot be determined, set the spin count to 1 */
+    pg->nShmWaitSpinCount = 1;
 #endif
 #endif
 
