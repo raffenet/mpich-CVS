@@ -34,8 +34,8 @@ all: mpio
 #
 # Eventually, the clean at the top will also be removed, at least for the
 # MPICH builds (which do their own clean if required)
+#	$(MAKE) clean
 mpio:
-	$(MAKE) clean
 	$(MAKE) mpiolib
 	@if [ "$(NOPROFILE)" = 0 ] ; then\
             $(MAKE) profile; \
