@@ -111,9 +111,13 @@ int MPI_Type_struct(int count,
 
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(old_types, "types", mpi_errno);
+	    if (count > 0) {
+		/* Only teset the others if the count is positive.
+		   This focuses attention on count */
+		MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(old_types, "types", mpi_errno);
+	    }
 	    if (mpi_errno == MPI_SUCCESS) {
 		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
 		for (i=0; i < count; i++) {

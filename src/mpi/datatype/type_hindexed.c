@@ -73,8 +73,12 @@ int MPI_Type_hindexed(int count,
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
+	    if (count > 0) {
+		/* Only teset the others if the count is positive.
+		   This focuses attention on count */
+		MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
+	    }
 	    if (mpi_errno == MPI_SUCCESS) {
 		if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
 		    MPID_Datatype_get_ptr( old_type, datatype_ptr );
