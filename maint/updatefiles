@@ -89,6 +89,37 @@ if [ $at_top = "no" ] ; then
     exit 1
 fi
 #
+# Create the bindings if necessary 
+if [ $do_bindings = "yes" ] ; then
+    if [ ! -s src/binding/f77/abortf.c ] ; then 
+	build_f77=yes
+    elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
+	build_f77=yes
+    else
+	build_f77=no
+    fi
+
+    if [ $build_f77 = "yes" ] ; then
+	echo "Building Fortran 77 interface"
+	(cd src/binding/f77 ; ./buildiface )
+    fi
+    if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
+	build_cxx=yes
+    elif find -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
+	build_cxx=yes
+    else
+	build_cxx=no
+    fi
+    if [ $build_cxx = "yes" ] ; then
+	echo "Building C++ interface"
+    #    File code still needs work
+    #    if [ ! -d src/mpi/romio ] ; then
+	    otherarg="-noromio"
+    #    fi
+	(cd src/binding/cxx ; ./buildiface -nosep $otherarg )
+    fi
+fi
+#
 # Capture the error messages
 if [ ! -x maint/extracterrmsgs -a -s maint/extracterrmsgs ] ; then
     # grrr.  CVS doesn't maintain permissions correctly across Windows/Unix
@@ -129,36 +160,6 @@ EOF
     fi
 fi
 #
-# Create the bindings if necessary 
-if [ $do_bindings = "yes" ] ; then
-    if [ ! -s src/binding/f77/abortf.c ] ; then 
-	build_f77=yes
-    elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
-	build_f77=yes
-    else
-	build_f77=no
-    fi
-
-    if [ $build_f77 = "yes" ] ; then
-	echo "Building Fortran 77 interface"
-	(cd src/binding/f77 ; ./buildiface )
-    fi
-    if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
-	build_cxx=yes
-    elif find -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
-	build_cxx=yes
-    else
-	build_cxx=no
-    fi
-    if [ $build_cxx = "yes" ] ; then
-	echo "Building C++ interface"
-    #    File code still needs work
-    #    if [ ! -d src/mpi/romio ] ; then
-	    otherarg="-noromio"
-    #    fi
-	(cd src/binding/cxx ; ./buildiface -nosep $otherarg )
-    fi
-fi
 # Build scripts such as simplemake if necessary
 made_simplemake=no
 run_configure=no
