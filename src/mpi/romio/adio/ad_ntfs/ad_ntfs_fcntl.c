@@ -42,61 +42,7 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
-	/* will be called by one process only */
-	/* On file systems with no preallocation function, I have to 
-           explicitly write 
-           to allocate space. Since there could be holes in the file, 
-           I need to read up to the current file size, write it back, 
-           and then write beyond that depending on how much 
-           preallocation is needed.
-           read/write in sizes of no more than ADIOI_PREALLOC_BUFSZ */
-
-	curr_fsize = SetFilePointer(fd->fd_sys, 0, 0, FILE_END);
-	alloc_size = fcntl_struct->diskspace;
-
-	size = ADIOI_MIN(curr_fsize, alloc_size);
-	
-	ntimes = ((int)size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
-	buf = (char *) ADIOI_Malloc(ADIOI_PREALLOC_BUFSZ);
-	done = 0;
-
-	for (i=0; i<ntimes; i++) {
-	    len = ADIOI_MIN(size-done, ADIOI_PREALLOC_BUFSZ);
-	    ADIO_ReadContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, (ADIO_Offset)done,
-			    &status, error_code);
-	    if (*error_code != MPI_SUCCESS) {
-		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
-						   MPIR_ERR_RECOVERABLE,
-						   myname, __LINE__,
-						   MPI_ERR_IO, "**io",
-						   "**io %s", strerror(errno));
-		return;
-	    }
-	    ADIO_WriteContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
-                             (ADIO_Offset)done, &status, error_code);
-	    if (*error_code != MPI_SUCCESS) return;
-	    done += len;
-	}
-
-	if (alloc_size > curr_fsize) {
-	    memset(buf, 0, ADIOI_PREALLOC_BUFSZ); 
-	    size = alloc_size - curr_fsize;
-	    ntimes = ((int)size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
-	    for (i=0; i<ntimes; i++) {
-		len = ADIOI_MIN(alloc_size-done, ADIOI_PREALLOC_BUFSZ);
-		ADIO_WriteContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
-				 (ADIO_Offset)done, &status, error_code);
-		if (*error_code != MPI_SUCCESS) return;
-		done += len;  
-	    }
-	}
-	ADIOI_Free(buf);
-	if (fd->fp_sys_posn != -1) 
-	{
-		dwTemp = DWORDHIGH(fd->fp_sys_posn);
-		SetFilePointer(fd->fd_sys, DWORDLOW(fd->fp_sys_posn), &dwTemp, FILE_BEGIN);
-	}
-	*error_code = MPI_SUCCESS;
+	ADIOI_GEN_Prealloc(fd, fcntl_struct->diskspace, error_code);
 	break;
 
     case ADIO_FCNTL_SET_ATOMICITY:
