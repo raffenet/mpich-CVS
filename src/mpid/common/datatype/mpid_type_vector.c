@@ -52,7 +52,7 @@ int MPID_Type_vector(int count,
     }
 
     /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
-    new_dtp->ref_count    = 1;
+    MPIU_Object_set_ref(new_dtp, 1);
     new_dtp->combiner     = MPI_COMBINER_VECTOR;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;

@@ -45,7 +45,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
     /* fill in datatype */
-    new_dtp->ref_count     = 1;
+    MPIU_Object_set_ref(new_dtp, 1);
     new_dtp->is_contig     = old_dtp->is_contig;
     new_dtp->size          = old_dtp->size;
     new_dtp->extent        = old_dtp->extent;

@@ -61,7 +61,7 @@ int MPID_Type_indexed(int count,
     if (dispinbytes) new_dtp->combiner = MPI_COMBINER_HINDEXED;
     else new_dtp->combiner             = MPI_COMBINER_INDEXED;
 
-    new_dtp->ref_ct       = 1;
+    MPIU_Object_set_ref(new_dtp, 1);
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes   = 0;
