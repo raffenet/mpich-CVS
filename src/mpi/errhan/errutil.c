@@ -82,7 +82,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
     
-    if (!comm_ptr) {
+    if (!comm_ptr || comm_ptr->errhandler == NULL) {
 	/* Try to replace with the default handler, which is the one
 	   on MPI_COMM_WORLD.  This gives us correct behavior
 	   for the case where the error handler on MPI_COMM_WORLD
@@ -90,6 +90,23 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	if (MPIR_Process.comm_world) {
 	    comm_ptr = MPIR_Process.comm_world;
 	}
+    }
+    if (!comm_ptr || comm_ptr->errhandler == NULL)
+    {
+	const char *p = MPIR_Err_get_string( errcode );
+
+	/* The default handler should try the following:
+	   Provide the rank in comm_world.  If the process is not
+	   in comm world, use something else.  If the communicator
+	   exists and has a name, provide that name */
+	if (p) {
+	    fprintf( stderr, "Fatal error (code %d): %s in %s\n", errcode, p, fcname );
+	}
+	else
+	{
+	    fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
+	}
+	abort(); /* Change this to MPID_Abort */
     }
 
     /* Now, invoke the error handler for the communicator */
@@ -105,7 +122,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	   in comm world, use something else.  If the communicator
 	   exists and has a name, provide that name */
 	if (p) {
-	    fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
+	    fprintf( stderr, "Fatal error (code %d): %s in %s\n", errcode, p, fcname );
 	}
 	else
 	{
