@@ -282,19 +282,30 @@ int main(int argc, char *argv[])
 	    fflush(stdout);
 
 	    printf("sending image size to visualizer.\n");
+	    /*
+	    printf("sending pixels_across.\n");
 	    fflush(stdout);
+	    */
 	    result = MPI_Send(&ipixels_across, 1, MPI_INT, 0, 0, comm);
 	    if (result != MPI_SUCCESS)
 	    {
 		printf("Unable to send pixel width to visualizer, aborting.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
+	    /*
+	    printf("sending pixels_down.\n");
+	    fflush(stdout);
+	    */
 	    result = MPI_Send(&ipixels_down, 1, MPI_INT, 0, 0, comm);
 	    if (result != MPI_SUCCESS)
 	    {
 		printf("Unable to send pixel height to visualizer, aborting.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
+	    /*
+	    printf("sending num_colors.\n");
+	    fflush(stdout);
+	    */
 	    MPI_Send(&num_colors, 1, MPI_INT, 0, 0, comm);
 	    if (result != MPI_SUCCESS)
 	    {
@@ -479,8 +490,10 @@ int main(int argc, char *argv[])
 		printf("Unable to broadcast the port name on COMM_WORLD.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
+	    /*
 	    printf("%s listening on port: %s\n", processor_name, mpi_port);
 	    fflush(stdout);
+	    */
 
 	    result = MPI_Comm_accept(mpi_port, info, 0, MPI_COMM_WORLD, &comm);
 	    if (result != MPI_SUCCESS)
