@@ -1,8 +1,11 @@
 #!/bin/sh
-AUTOHEADER=autoheader
-AUTOCONF=autoconf
+SLOG2_AUTOHEADER=${SLOG2_AUTOHEADER:-"autoheader"}
+SLOG2_AUTOCONF=${SLOG2_AUTOCONF:-"autoconf"}
+AUTOHEADER=${AUTOHEADER:-${SLOG2_AUTOHEADER}}
+AUTOCONF=${AUTOCONF:-${SLOG2_AUTOCONF}}
 
 # The directory of this script is located
+PWD=`pwd`
 curr_dir="$PWD/`dirname $0`"
 # The parent directory of where this script is located
 master_dir="`dirname $curr_dir`"
