@@ -149,7 +149,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
  * Detach a buffer.  This routine must wait until any pending bsends 
  * are complete.
  */
-int MPIR_Bsend_detach( void *p, int *size )
+int MPIR_Bsend_detach( void *bufferp, int *size )
 {
     if (BsendBuffer.pending) {
 	return MPIR_Err_create_code( MPI_ERR_OTHER, "**notimpl", 0 );
@@ -165,6 +165,7 @@ int MPIR_Bsend_detach( void *p, int *size )
 	}
     }
 
+    *(void **) bufferp = BsendBuffer.buffer;
     *size = BsendBuffer.buffer_size;
     BsendBuffer.buffer = 0;
     BsendBuffer.avail  = 0;
