@@ -172,8 +172,12 @@ sub ProcessDir {
     my $listfile = $_[1];
     my $savedir = `pwd`;
     my $savecurdir = $curdir;
+    my $savesrcdir = $srcdir;
 
     chop $savedir;
+    if (substr($srcdir,0,3) eq "../") {
+      $srcdir = "../$srcdir";
+    }
 
     print "Processing directory $dir\n" if ($verbose || $debug);
     chdir $dir;
@@ -186,6 +190,7 @@ sub ProcessDir {
 
     chdir $savedir;
     $curdir = $savecurdir;
+    $srcdir = $savesrcdir;
 }
 # ---------------------------------------------------------------------------
 # Run the programs listed in the file given as the argument. 
