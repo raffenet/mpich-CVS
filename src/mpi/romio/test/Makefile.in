@@ -74,8 +74,8 @@ fmisc: fmisc.f
 pfcoll_test: pfcoll_test.f	
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
 
-testing: 
-	-./runtests $(TESTARGS)
+#testing: 
+#	-./runtests $(TESTARGS)
 
 cleanall:
-	-@rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f \mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests pfcoll_test.f noncontig_coll2
+	-@rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f \mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests pfcoll_test.f pfcoll_test noncontig_coll2

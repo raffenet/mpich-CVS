@@ -19,6 +19,8 @@
 
 /* Note that the file access pattern is noncontiguous. */
    
+void handle_error(int errcode, char *str);
+
 void handle_error(int errcode, char *str)
 {
 	char msg[MPI_MAX_ERROR_STRING];

@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     MPI_File_set_atomicity(fh, 1);
     MPI_File_get_atomicity(fh, &flag);
     if (!flag) {
-	errs;
+	errs++;
 	fprintf(stderr, "atomicity is %d, should be 1\n", flag);
     }
     MPI_File_set_atomicity(fh, 0);

@@ -40,6 +40,22 @@ struct ADIO_cb_name_arrayD {
 };  
 typedef struct ADIO_cb_name_arrayD *ADIO_cb_name_array;
 
+void handle_error(int errcode, char *str);
+int cb_copy_name_array(MPI_Comm comm, 
+		       int *keyval, 
+		       void *extra, 
+		       void *attr_in,
+		       void **attr_out, 
+		       int *flag);
+int cb_delete_name_array(MPI_Comm comm, 
+			 int *keyval, 
+			 void *attr_val, 
+			 void *extra);
+int cb_gather_name_array(MPI_Comm comm, ADIO_cb_name_array *arrayp);
+void default_str(int mynod, int len, ADIO_cb_name_array array, char *dest);
+void reverse_str(int mynod, int len, ADIO_cb_name_array array, char *dest);
+void reverse_alternating_str(int mynod, int len, ADIO_cb_name_array array, char *dest);
+void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest);
 
 
 void handle_error(int errcode, char *str) 
