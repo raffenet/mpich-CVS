@@ -10,6 +10,4 @@ bsend2_SOURCES = bsend2.c
 bsend3_SOURCES = bsend3.c
 bsend4_SOURCES = bsend4.c
 isendself_SOURCES = isendself.c
-isendirecv_SOURCES = isendirecv.c
-isendirecv_LDADD = -lm
 bsend1cxx_SOURCES = bsend1cxx.cxx
