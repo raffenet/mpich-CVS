@@ -25,50 +25,51 @@ import viewer.common.TopWindow;
 
 public class FirstPanel extends JPanel
 {
-    private static String       about_str = "Jumpshot-4, the SLOG-2 viewer.\n"
-                                          + "bug-reports/questions:\n"
-                                          + "            chan@mcs.anl.gov";
-    private static String       manual_path      = Const.DOC_PATH
-                                                 + "usersguide.html";
-    private static String       faq_path         = Const.DOC_PATH
-                                                 + "faq_index.html";
-    private static String       js_icon_path     = Const.IMG_PATH
-                                                 + "jumpshot.gif";
+    private static String        about_str = "Jumpshot-4, the SLOG-2 viewer.\n"
+                                           + "bug-reports/questions:\n"
+                                           + "            chan@mcs.anl.gov";
+    private static String        manual_path      = Const.DOC_PATH
+                                                  + "usersguide.html";
+    private static String        faq_path         = Const.DOC_PATH
+                                                  + "faq_index.html";
+    private static String        js_icon_path     = Const.IMG_PATH
+                                                  + "jumpshot.gif";
 
-    private static String       open_icon_path   = Const.IMG_PATH
-                                                 + "Open24.gif";
-    private static String       show_icon_path   = Const.IMG_PATH
-                                                 + "New24.gif";
-    private static String       close_icon_path  = Const.IMG_PATH
-                                                 + "Stop24.gif";
-    private static String       legend_icon_path = Const.IMG_PATH
-                                                 + "Properties24.gif";
-    private static String       prefer_icon_path = Const.IMG_PATH
-                                                 + "Preferences24.gif";
-    private static String       manual_icon_path = Const.IMG_PATH
-                                                 + "Help24.gif";
-    private static String       faq_icon_path    = Const.IMG_PATH
-                                                 + "Information24.gif";
-    private static String       about_icon_path  = Const.IMG_PATH
-                                                 + "About24.gif";
+    private static String        open_icon_path   = Const.IMG_PATH
+                                                  + "Open24.gif";
+    private static String        show_icon_path   = Const.IMG_PATH
+                                                  + "New24.gif";
+    private static String        close_icon_path  = Const.IMG_PATH
+                                                  + "Stop24.gif";
+    private static String        legend_icon_path = Const.IMG_PATH
+                                                  + "Properties24.gif";
+    private static String        prefer_icon_path = Const.IMG_PATH
+                                                  + "Preferences24.gif";
+    private static String        manual_icon_path = Const.IMG_PATH
+                                                  + "Help24.gif";
+    private static String        faq_icon_path    = Const.IMG_PATH
+                                                  + "Information24.gif";
+    private static String        about_icon_path  = Const.IMG_PATH
+                                                  + "About24.gif";
 
-    private        JTextField   logname_fld;
-    private        JComboBox    pulldown_list;
+    private        LogNameField  logname_fld;
+    private        JComboBox     pulldown_list;
 
     /*  some of these are hidden buttons */
-    private        JButton      file_select_btn;
-    private        JButton      file_close_btn;
-    private        JButton      show_timeline_btn;
-    private        JButton      show_legend_btn;
-    private        JButton      edit_prefer_btn;
-    private        JButton      help_manual_btn;
-    private        JButton      help_faq_btn;
-    private        JButton      help_about_btn;
+    private        JButton       file_select_btn;
+    private        JButton       file_close_btn;
+    private        JButton       show_timeline_btn;
+    private        JButton       show_legend_btn;
+    private        JButton       edit_prefer_btn;
+    private        JButton       help_manual_btn;
+    private        JButton       help_faq_btn;
+    private        JButton       help_about_btn;
 
-    private        HTMLviewer   manual_viewer;
-    private        HTMLviewer   faq_viewer;
+    private        HTMLviewer    manual_viewer;
+    private        HTMLviewer    faq_viewer;
 
     private        LogFileOperations   file_ops;
+    private        String              logfile_name;
     private        int                 view_ID;
 
 
@@ -81,8 +82,9 @@ public class FirstPanel extends JPanel
         lowered_border  = BorderFactory.createLoweredBevelBorder();
         etched_border   = BorderFactory.createEtchedBorder();
 
-        file_ops  = new LogFileOperations( isApplet );
-        view_ID   = view_idx;
+        file_ops     = new LogFileOperations( isApplet );
+        logfile_name = filename;
+        view_ID      = view_idx;
 
         int         fld_height, fld_width;
         Dimension   min_size, max_size, pref_size;
@@ -105,7 +107,7 @@ public class FirstPanel extends JPanel
     
                     label = new JLabel( " LogName : " );
                 logname_panel.add( label );
-                    logname_fld = new JTextField( filename, 40 );
+                    logname_fld = new LogNameField( logfile_name, 40 );
                     logname_fld.setBorder( BorderFactory.createCompoundBorder(
                                            lowered_border, etched_border ) );
                     logname_fld.addActionListener(
@@ -292,6 +294,8 @@ public class FirstPanel extends JPanel
     public void init()
     {
         file_ops.init();
+        if ( logfile_name != null )
+            logname_fld.fireActionPerformed();
     }
 
     private URL getURL( String filename )
@@ -354,6 +358,19 @@ public class FirstPanel extends JPanel
 
 
 
+
+    private class LogNameField extends JTextField
+    {
+        public LogNameField( String name, int icolumn )
+        {
+            super( name, icolumn );
+        }
+
+        public void fireActionPerformed()
+        {
+            super.fireActionPerformed();
+        }
+    }
 
     private class FileSelectButtonListener implements ActionListener
     {

@@ -138,7 +138,9 @@ public class LogFileOperations
             if ( (err_msg = slog_ins.getCompatibleHeader() ) != null ) {
                 if ( ! Dialogs.confirm( TopWindow.First.getWindow(),
                                 err_msg
-                              + logformat.slog2.Const.VERSION_HISTORY
+                              + "Check the following version history "
+                              + "for compatibility.\n\n"
+                              + logformat.slog2.Const.VERSION_HISTORY + "\n"
                               + "Do you still want to continue reading "
                               + "the logfile ?" ) ) {
                     slog_ins = null;
