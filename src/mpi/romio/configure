@@ -123,8 +123,10 @@ ARCH=""
 arch_IRIX=""
 MPI=""
 MPI_INCLUDE_DIR=""
+ROMIO_INCLUDE=""
 MPI_LIB=""
 LIBNAME=""
+TEST_LIBNAME=""
 FILE_SYSTEM=""
 PREFIX=""
 DEBUG=0
@@ -149,6 +151,11 @@ MPI_FARRAY5=""
 MPI_FARRAY6=""
 MPI_FARRAY7=""
 DEFS=""
+ROMIO_LFLAGS=""
+ROMIO_LIBLIST=""
+ROMIO_TCFLAGS=""
+ROMIO_TFFLAGS=""
+MPIRUN=""
 # foll. needed for f77 test programs
 F77GETARG="call getarg(i,str)"
 F77IARGC="iargc()"
@@ -395,23 +402,27 @@ if test -n "$MPI" ; then
 fi
 #
 # check for valid MPI include directory if specified
-if test -n "$MPI_INCLUDE_DIR"; then
-   if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
-      echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_INCLUDE_DIR"; then
+      if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
+         echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
+         exit 1
+      fi
+   else
+#     assume that mpi.h is in the default path
+#     set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
+#     compile command. Some compilers complain if it's only -I
+      MPI_INCLUDE_DIR=.
    fi
-else
-# assume that mpi.h is in the default path
-# set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
-# compile command. Some compilers complain if it's only -I
-   MPI_INCLUDE_DIR=.
 fi
 #
 # check for valid MPI library if specified
-if test -n "$MPI_LIB" ; then
-   if test ! -f "$MPI_LIB" ; then
-      echo "Error: MPI library $MPI_LIB not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_LIB" ; then
+      if test ! -f "$MPI_LIB" ; then
+         echo "Error: MPI library $MPI_LIB not found"
+         exit 1
+      fi
    fi
 fi
 #
@@ -499,6 +510,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         MPI_LIB="$MPI_LIB -laio"
     fi
     AR="ar cr"
+    ROMIO_LIBLIST="-laio"
 # solaris does not have l option to ar
 # solaris f90 does not have 8-byte integer type
 fi
@@ -744,6 +756,8 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    ROMIO_TCFLAGS="-Ae"
+    ROMIO_TFFLAGS="+U77"
 fi
 #
 if test -n "$arch_alpha" ; then
@@ -768,6 +782,7 @@ if test -n "$arch_alpha" ; then
     CFLAGS="$CFLAGS -D__DEC"
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    ROMIO_LIBLIST="-laio"
 fi    
 #
 if test -n "$arch_sgi" ; then
@@ -2213,12 +2228,15 @@ if test -n "$file_system_piofs"; then
     CFLAGS="$CFLAGS -D__PIOFS"
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
+    ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
    CFLAGS="$CFLAGS -D__NEEDS_MPI_TEST -D__MPICH"
+   MPIOF_H_INCLUDED=1
 fi
 if test -n "$mpi_sgi"; then
    CFLAGS="$CFLAGS -D__MPISGI"
+   MPIRUN=mpirun
 fi
 if test -n "$mpi_hp"; then
    CFLAGS="$CFLAGS -D__MPIHP"
@@ -2278,6 +2296,7 @@ fi
   \rm -f a.out mpitest.f
 
    fi
+   MPIRUN=mpirun
 fi
 CFLAGS="$CFLAGS $DEFS"
 
@@ -2456,6 +2475,27 @@ else
    NEEDS_MPI_FINT=""
 fi
 #
+ROMIO_INCLUDE="-I$ROMIO_HOME/include"
+TEST_LIBNAME=$LIBNAME
+#
+# if MPICH, use mpicc in test programs
+#
+if test $MPI = "mpich" ; then
+   MPICH_HOME=`dirname $ROMIO_HOME`
+   TEST_CC=$MPICH_HOME/bin/mpicc
+   MPI_LIB=""
+   ROMIO_INCLUDE=""
+   USER_CFLAGS=""
+   USER_FFLAGS=""
+   TEST_LIBNAME=""
+   MPIRUN=$MPICH_HOME/bin/mpirun
+   if test -n "$arch_SX4" || test -n "$arch_hpux" ; then
+      TEST_F77=$MPICH_HOME/bin/mpif90
+   else
+      TEST_F77=$MPICH_HOME/bin/mpif77
+   fi     
+fi
+#
 if test -z "$TEST_CC" ; then
    TEST_CC="$CC"
 fi
@@ -2469,6 +2509,13 @@ echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
 #
+
+
+
+
+
+
+
 
 
 
@@ -2557,7 +2604,7 @@ do
   esac
 done
 
-trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c util/romioinstall include/mpio.h include/mpiof.h; exit 1' 1 3 15
+trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h; exit 1' 1 3 15
 RANLIB='$RANLIB'
 CC='$CC'
 F77='$F77'
@@ -2578,6 +2625,7 @@ PREFIX='$PREFIX'
 arch_IRIX='$arch_IRIX'
 ROMIO_HOME='$ROMIO_HOME'
 LIBNAME='$LIBNAME'
+TEST_LIBNAME='$TEST_LIBNAME'
 LL='$LL'
 F77GETARG='$F77GETARG'
 F77IARGC='$F77IARGC'
@@ -2606,6 +2654,12 @@ MPI_OFFSET_KIND1='$MPI_OFFSET_KIND1'
 MPI_OFFSET_KIND2='$MPI_OFFSET_KIND2'
 TEST_CC='$TEST_CC'
 TEST_F77='$TEST_F77'
+ROMIO_INCLUDE='$ROMIO_INCLUDE'
+ROMIO_LFLAGS='$ROMIO_LFLAGS'
+ROMIO_LIBLIST='$ROMIO_LIBLIST'
+ROMIO_TCFLAGS='$ROMIO_TCFLAGS'
+ROMIO_TFFLAGS='$ROMIO_TFFLAGS'
+MPIRUN='$MPIRUN'
 LIBS='$LIBS'
 srcdir='$srcdir'
 DEFS='$DEFS'
@@ -2618,7 +2672,7 @@ cat >> config.status <<\EOF
 
 top_srcdir=$srcdir
 
-CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c util/romioinstall include/mpio.h include/mpiof.h"}
+CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h"}
 for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   srcdir=$top_srcdir
   # Remove last slash and all that follows it.  Not all systems have dirname.
@@ -2653,6 +2707,7 @@ s%@PREFIX@%$PREFIX%g
 s%@arch_IRIX@%$arch_IRIX%g
 s%@ROMIO_HOME@%$ROMIO_HOME%g
 s%@LIBNAME@%$LIBNAME%g
+s%@TEST_LIBNAME@%$TEST_LIBNAME%g
 s%@LL@%$LL%g
 s%@F77GETARG@%$F77GETARG%g
 s%@F77IARGC@%$F77IARGC%g
@@ -2681,6 +2736,12 @@ s%@MPI_OFFSET_KIND1@%$MPI_OFFSET_KIND1%g
 s%@MPI_OFFSET_KIND2@%$MPI_OFFSET_KIND2%g
 s%@TEST_CC@%$TEST_CC%g
 s%@TEST_F77@%$TEST_F77%g
+s%@ROMIO_INCLUDE@%$ROMIO_INCLUDE%g
+s%@ROMIO_LFLAGS@%$ROMIO_LFLAGS%g
+s%@ROMIO_LIBLIST@%$ROMIO_LIBLIST%g
+s%@ROMIO_TCFLAGS@%$ROMIO_TCFLAGS%g
+s%@ROMIO_TFFLAGS@%$ROMIO_TFFLAGS%g
+s%@MPIRUN@%$MPIRUN%g
 s%@LIBS@%$LIBS%g
 s%@srcdir@%$srcdir%g
 s%@DEFS@%$DEFS%
@@ -2752,6 +2813,10 @@ sed 1d include/mpio.h > include/tmp
 \mv include/tmp include/mpio.h
 sed 1d include/mpiof.h > include/tmp
 \mv include/tmp include/mpiof.h
+sed 1d test/runtests > test/tmp
+\mv test/tmp test/runtests
+#
+chmod 755 test/runtests
 #
 \rm -f *.o
 print_error " "
