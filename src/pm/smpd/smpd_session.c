@@ -18,8 +18,8 @@
 #include <string.h> /* strrchr */
 #endif
 
-#if 0
-int exists(char *filename)
+#ifndef HAVE_WINDOWS_H
+static int exists(char *filename)
 {
     struct stat file_stat;
 
@@ -30,15 +30,44 @@ int exists(char *filename)
     return 1;
 }
 
-/* SEARCH_PATH() - use the given environment, find the PATH variable,
- * search the path for cmd, return a string with the full path to
- * the command.
- *
- * This could probably be done a lot more efficiently.
- *
- * Returns a pointer to a string containing the filename (including
- * path) if successful, or NULL on failure.
- */
+static SMPD_BOOL search_path(const char *smpd_path, const char *exe, int maxlen, char *str)
+{
+    char test[SMPD_MAX_EXE_LENGTH];
+    char path[SMPD_MAX_PATH_LENGTH];
+    char *token;
+    int n;
+
+    if (smpd_path == NULL || exe == NULL || maxlen < 1 || str == NULL)
+	return SMPD_FALSE;
+
+    strncpy(path, smpd_path, SMPD_MAX_PATH_LENGTH);
+    path[SMPD_MAX_PATH_LENGTH - 1] = '\0';
+    token = strtok(path, ";:");
+    while (token)
+    {
+	/* this does not catch the case where SMPD_MAX_EXE_LENGTH is not long enough and the file exists */
+	if (token[strlen(token)-1] != '/')
+	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s/%s", token, exe);
+	else
+	    n = snprintf(test, SMPD_MAX_EXE_LENGTH, "%s%s", token, exe);
+	test[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	if (exists(test))
+	{
+	    if (n < maxlen)
+	    {
+		strcpy(str, test);
+		return SMPD_TRUE;
+	    }
+	    smpd_err_printf("buffer provided is too small: %d provided, %d needed\n", maxlen, n);
+	    return SMPD_FALSE;
+	}
+	token = strtok(NULL, ";:");
+    }
+    return SMPD_FALSE;
+}
+#endif
+
+#if 0
 char *search_path(char **env, char *cmd, char *cwd, int uid, int gid, char *uname)
 {
     int i, len;
@@ -161,38 +190,111 @@ int is_executable(char *fn, char *un, int uid, int gid)
 SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, char **namepart)
 {
 #ifdef HAVE_WINDOWS_H
+    DWORD dwResult;
+    DWORD dwLength;
     int len;
+    char buffer[SMPD_MAX_EXE_LENGTH];
+    char info_buffer[sizeof(REMOTE_NAME_INFO) + SMPD_MAX_EXE_LENGTH];
+    REMOTE_NAME_INFO *info = (REMOTE_NAME_INFO*)info_buffer;
+    char *filename;
+    char temp_name[SMPD_MAX_EXE_LENGTH];
 
     /* make a full path out of the name provided */
     len = GetFullPathName(exe, maxlen, exe_path, namepart);
     if (len == 0 || len > maxlen)
+    {
+	smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
 	return SMPD_FALSE;
+    }
+    *(*namepart - 1) = '\0'; /* separate the path from the executable */
     
     /* Verify file exists.  If it doesn't search the path for exe */
+    if ((len = SearchPath(exe_path, *namepart, NULL, SMPD_MAX_EXE_LENGTH, buffer, &filename)) == 0)
+    {
+	if ((len = SearchPath(exe_path, *namepart, ".exe", SMPD_MAX_EXE_LENGTH, buffer, &filename)) == 0)
+	{
+	    /* search the default path for an exact match */
+	    if ((len = SearchPath(NULL, *namepart, NULL, SMPD_MAX_EXE_LENGTH, buffer, &filename)) == 0)
+	    {
+		/* search the default path for a match + .exe */
+		if ((len = SearchPath(NULL, *namepart, ".exe", SMPD_MAX_EXE_LENGTH, buffer, &filename)) == 0)
+		{
+		    smpd_dbg_printf("path not found. leaving as is in case the path exists on the remote machine.\n");
+		    return SMPD_TRUE;
+		}
+	    }
+	    if (len > SMPD_MAX_EXE_LENGTH || len > maxlen)
+	    {
+		smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
+		return SMPD_FALSE;
+	    }
+	    *(filename - 1) = '\0'; /* separate the file name */
+	    /* copy the path */
+	    strcpy(exe_path, buffer);
+	    *namepart = &exe_path[strlen(exe_path)+1];
+	    /* copy the filename */
+	    strcpy(*namepart, filename);
+	}
+    }
+    if (len > maxlen)
+    {
+	smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n", maxlen, len);
+	return SMPD_FALSE;
+    }
 
-    /* convert the name to its UNC equivalent to avoid need to map drive */
+    /* save the filename */
+    strcpy(temp_name, *namepart);
 
-    *(*namepart - 1) = '\0'; /* separate the path from the executable */
+    /* convert the path to its UNC equivalent to avoid need to map a drive */
+    dwLength = sizeof(REMOTE_NAME_INFO)+SMPD_MAX_EXE_LENGTH;
+    info->lpConnectionName = NULL;
+    info->lpRemainingPath = NULL;
+    info->lpUniversalName = NULL;
+    dwResult = WNetGetUniversalName(exe_path, REMOTE_NAME_INFO_LEVEL, info, &dwLength);
+    if (dwResult == NO_ERROR)
+    {
+	if ((int)(strlen(info->lpUniversalName) + strlen(temp_name) + 2) > maxlen)
+	{
+	    smpd_err_printf("buffer provided too short for path: %d provided, %d needed\n",
+		maxlen, strlen(info->lpUniversalName) + strlen(temp_name) + 2);
+	    return SMPD_FALSE;
+	}
+	strcpy(exe_path, info->lpUniversalName);
+	*namepart = &exe_path[strlen(exe_path)+1];
+	strcpy(*namepart, temp_name);
+    }
+
     return SMPD_TRUE;
 #else
     char *path = NULL;
-    char cwd[SMPD_MAX_EXE_LENGTH] = "";
+    char temp_str[SMPD_MAX_EXE_LENGTH] = "./";
 
-    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
-    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
+    getcwd(temp_str, SMPD_MAX_EXE_LENGTH);
 
-    if (cwd[strlen(cwd)-1] != '/')
-	strcat(cwd, "/");
+    if (temp_str[strlen(temp_str)-1] != '/')
+	strcat(temp_str, "/");
 
-    /* add searching of the path and verifying file exists */
-
-    /* for now, just put whatever they give you tacked on to the cwd */
-    snprintf(exe_path, maxlen, "%s%s", cwd, exe);
+    /* start with whatever they give you tacked on to the cwd */
+    snprintf(exe_path, maxlen, "%s%s", temp_str, exe);
+    if (exists(exe_path))
+    {
+	*namepart = strrchr(exe_path, '/');
+	*(*namepart - 1) = '\0'; /* separate the path from the executable */
+	return SMPD_TRUE;
+    }
     *namepart = strrchr(exe_path, '/');
     *(*namepart - 1) = '\0'; /* separate the path from the executable */
 
-    free(path);
-    return SMPD_TRUE;
+    /* add searching of the path and verifying file exists */
+    path = getenv("PATH");
+    strcpy(temp_str, *namepart);
+    if (search_path(path, temp_str, maxlen, exe_path))
+    {
+	*namepart = strrchr(exe_path, '/');
+	*(*namepart - 1) = '\0';
+	return SMPD_TRUE;
+    }
+    return SMPD_FALSE;
 #endif
 }
 
@@ -218,7 +320,7 @@ SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *
     }
     return SMPD_TRUE;
 #else
-    return SMPD_FALSE;
+    return search_path(path, exe, maxlen, str);
 #endif
 }
 
