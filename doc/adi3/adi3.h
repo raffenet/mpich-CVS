@@ -961,11 +961,15 @@ typedef enum { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND,
 typedef struct {
     int          handle;  /* Value of MPI_Request for this structure */
     volatile int ref_count;
-    volatile int busy;    /* Set to zero when the request is completed */
     MPID_Request_kind kind; /* Kind of request */
     /* The various types of requests may define subclasses for each 
        kind.  In particular, the user and persistent requests need
        special information */
+    volatile int cc;      /* Completion counter */
+    int volatile *cc_ptr;
+    /* Pointer to the completion counter associated with a group of requests.
+       When the counter reaches zero, the group of requests is complete. */
+    MPI_Status status;
     MPID_Segment segment;
     MPID_Comm    *comm;   /* Originating Comm; needed to find error
                              handler if necessary */

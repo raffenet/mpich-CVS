@@ -962,14 +962,12 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
 - context_offset - context id offset of communicator to match
 
   Output Parameter:
-. status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
-  value is true).
++ flag - true if a matching request was found, false otherwise.
+- status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only valid when return 
+  flag is true).
 
   Return Value:
-  True if a matching request was found, false otherwise.
-
-  We should consider changing this to an error return, in the event that 
-  a problem is detected in the communicator.
+  Error Code.
 
   Notes:
   Note that the values returned in 'status' will be valid for a subsequent
@@ -989,7 +987,7 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
 
   @*/
 int MPID_Iprobe( int source, int tag, MPID_Comm *comm, int context_offset, 
-		 MPI_Status *status )
+		 int * flag, MPI_Status *status )
 {
 }
 
@@ -1007,6 +1005,9 @@ int MPID_Iprobe( int source, int tag, MPID_Comm *comm, int context_offset,
 . status - 'MPI_Status' set as defined by 'MPI_Probe'
 
 
+  Return Value:
+  Error code.
+  
   Notes:
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
@@ -1020,16 +1021,12 @@ int MPID_Iprobe( int source, int tag, MPID_Comm *comm, int context_offset,
   to use message-queues attached to particular communicators or connections
   between processes.
 
-  
-  We should consider changing this routine to include  an error return, in 
-  the event that a problem is detected in the communicator.
-
   Module:
   Request
 
   @*/
-void MPID_Request_probe( int source, int tag, MPID_Comm *comm,
-			 int context_offset, MPI_Status *status )
+int MPID_probe( int source, int tag, MPID_Comm *comm,
+		int context_offset, MPI_Status *status )
 {
 }
 
@@ -1043,8 +1040,8 @@ void MPID_Request_probe( int source, int tag, MPID_Comm *comm,
   Cancel is a tricky operation, particularly for sends.  Read the
   discussion in the MPI-1 and MPI-2 documents carefully.  This call
   only requests that the request be cancelled; a subsequent wait 
-  or test must first succeed (i.e., the request 'busy' flag must be
-  cleared).
+  or test must first succeed (i.e., the request completion counter must be
+  zeroed).
 
   Module:
   Request
@@ -1066,8 +1063,8 @@ void MPID_Cancel_send( MPID_Request *request )
   However, some ADI implementations may maintain these queues in special 
   places, such as within a NIC (Network Interface Card).
   This call only requests that the request be cancelled; a subsequent wait 
-  or test must first succeed (i.e., the request 'busy' flag must be
-  cleared).
+  or test must first succeed (i.e., the request completion counter must be
+  zeroed).
 
   Module:
   Request
@@ -1114,15 +1111,15 @@ void MPID_Request_ready( MPID_Request *request )
 }
 
 /*@
-  MPID_Request_free - Free a request 
+  MPID_Request_release - Release a request 
 
   Input Parameter:
-. request - request to free
+. request - request to release
 
   Notes:
-  This routine is called to free a request whose reference count has reached
-  zero or that has completed and is non-persistent, point-to-point 
-  communication request.
+  This routine is called to release a reference to request object.  If
+  the reference count of the request object has reached zero, the object will
+  be deallocated.
 
   Module:
   Request
@@ -2038,12 +2035,12 @@ int MPID_tBsend( const void *buf, int count, MPI_Datatype datatype,
 
 /* Progress Engine */
 /*@
-  MPID_Progress_start - Begin a block of operations that check busy flags
-  in requests.
+  MPID_Progress_start - Begin a block of operations that check the completion
+  counters in requests.
 
   Notes:
   This routine is used to inform the progress engine that a block of code will
-  examine the 'busy' value of some 'MPID_Request' objects and then call
+  examine the completion counter of some 'MPID_Request' objects and then call
   one of 'MPID_Progress_end', 'MPID_Progress_wait', or 'MPID_Progress_test'.
   
   This routine is needed to properly implement blocking tests when 
@@ -2066,7 +2063,7 @@ void MPID_Progress_start( void )
 
    The purpose of this call is to release any locks initiated by 
    'MPID_Progess_start'.  It is typically used when checks of the 
-   relevant request 'busy' flags found a completed request.  In a single
+   relevant request completion counters found a completed request.  In a single
    threaded ADI implementation, this may be defined as an empty macro.
    @*/
 void MPID_Progress_end( void )
@@ -2096,7 +2093,7 @@ void MPID_Progress_wait( void )
   begun with 'MPID_Progress_start'.  Unlike 'MPID_Progress_wait', it is a
   nonblocking call.  It returns the number of communication events, which
   is only indicates the maximum number of separate requests that were
-  completed.  The only restriction is that if the 'busy' status of any 
+  completed.  The only restriction is that if the completion status of any 
   request changed between 'MPID_Progress_start' and  'MPID_Progress_test',
   the return value must be at least one.
   @*/
