@@ -16,9 +16,20 @@
 #include <string.h>
 #endif
 
-#ifndef err_printf
-#define err_printf printf
-#endif
+static int pmi_err_printf(char *str, ...)
+{
+    int n;
+    va_list list;
+
+    printf("[%d] ", g_nIproc);
+    va_start(list, str);
+    n = vprintf(str, list);
+    va_end(list);
+
+    fflush(stdout);
+
+    return n;
+}
 
 char g_pszKVSName[PMI_MAX_KVS_NAME_LENGTH] = "";
 char g_pszMPDHost[100] = "";
@@ -27,8 +38,8 @@ char g_pszPMIPassword[100] = "";
 int g_nMPDPort = MPD_DEFAULT_PORT;
 char g_pszMPDPhrase[MPD_PASSPHRASE_MAX_LENGTH] = MPD_DEFAULT_PASSPHRASE;
 int g_bfdMPD = BFD_INVALID_SOCKET;
-int g_nIproc = 0;
-int g_nNproc = 1;
+int g_nIproc = -1;
+int g_nNproc = -1;
 int g_bInitFinalized = PMI_FINALIZED;
 BOOL g_bPMIFinalizeWaiting = FALSE;
 
@@ -36,6 +47,10 @@ int PMI_Init(int *spawned)
 {
     char *p;
     int error;
+
+    /* initialize to defaults */
+    g_nIproc = 0;
+    g_nNproc = 1;
 
     p = getenv("PMI_SPAWN");
     *spawned = (p != NULL) ? 1 : 0;
@@ -108,6 +123,7 @@ int PMI_Init(int *spawned)
     error = ConnectToMPD(g_pszMPDHost, g_nMPDPort, g_pszMPDPhrase, &g_bfdMPD);
     if (error)
     {
+	pmi_err_printf("Unable to connect to the mpd on %s:%d\n", g_pszMPDHost, g_nMPDPort);
 	return PMI_FAIL;
     }
 
@@ -178,18 +194,18 @@ int PMI_Barrier()
     snprintf(pszStr, 256, "barrier name=%s count=%d", g_pszKVSName, g_nNproc);
     if (WriteString(g_bfdMPD, pszStr) == SOCKET_ERROR)
     {
-	err_printf("PMI_Barrier: WriteString('%s') failed, error %d\n", pszStr, WSAGetLastError());
+	pmi_err_printf("PMI_Barrier: WriteString('%s') failed, error %d\n", pszStr, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (!ReadString(g_bfdMPD, pszStr))
     {
-	err_printf("PMI_Barrier: ReadString failed, error %d\n", WSAGetLastError());
+	pmi_err_printf("PMI_Barrier: ReadString failed, error %d\n", WSAGetLastError());
 	return PMI_FAIL;
     }
     if (strncmp(pszStr, "SUCCESS", 8) == 0)
 	return PMI_SUCCESS;
 
-    err_printf("PMI_Barrier returned: '%s'\n", pszStr);
+    pmi_err_printf("PMI_Barrier returned: '%s'\n", pszStr);
     return PMI_FAIL;
 }
 
@@ -225,13 +241,13 @@ int PMI_KVS_Create(char * kvsname)
 
     if (WriteString(g_bfdMPD, "dbcreate") == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Create: WriteString('dbcreate') failed, error %d\n", WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Create: WriteString('dbcreate') failed, error %d\n", WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, kvsname))
     {
-	err_printf("PMI_KVS_Create: ReadString failed, error %d\n", WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Create: ReadString failed, error %d\n", WSAGetLastError());
 	return PMI_FAIL;
     }
 
@@ -248,13 +264,13 @@ int PMI_KVS_Destroy(const char * kvsname)
     snprintf(str, PMI_MAX_KVS_NAME_LENGTH+20, "dbdestroy %s", kvsname);
     if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Destroy: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Destroy: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, str))
     {
-	err_printf("PMI_KVS_Destroy('%s'): ReadString failed, error %d\n", kvsname, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Destroy('%s'): ReadString failed, error %d\n", kvsname, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (stricmp(str, DBS_SUCCESS_STR) == 0)
@@ -272,13 +288,13 @@ int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     snprintf(str, MAX_CMD_LENGTH, "dbput name=%s key='%s' value='%s'", kvsname, key, value);
     if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Put: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Put: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, str))
     {
-	err_printf("PMI_KVS_Put('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Put('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (stricmp(str, DBS_SUCCESS_STR) == 0)
@@ -304,13 +320,13 @@ int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
     snprintf(str, MAX_CMD_LENGTH, "dbget name=%s key='%s'", kvsname, key);
     if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Get: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Get: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, value))
     {
-	err_printf("PMI_KVS_Get('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Get('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (strncmp(value, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
@@ -330,13 +346,13 @@ int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
     snprintf(str, MAX_CMD_LENGTH, "dbfirst %s", kvsname);
     if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Iter_first: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_first: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, str))
     {
-	err_printf("PMI_KVS_Iter_first('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_first('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (strncmp(str, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
@@ -367,13 +383,13 @@ int PMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
     snprintf(str, MAX_CMD_LENGTH, "dbnext %s", kvsname);
     if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
     {
-	err_printf("PMI_KVS_Iter_next: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_next: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
 
     if (!ReadString(g_bfdMPD, str))
     {
-	err_printf("PMI_KVS_Iter_next('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_next('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
 	return PMI_FAIL;
     }
     if (strncmp(str, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
