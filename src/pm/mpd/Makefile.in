@@ -134,6 +134,16 @@ mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	${C_COMPILE} -c mpich2-mpdroot.c
 	/bin/rm -f mpich2-mpdroot.c
 
+# Empty dependencies target (MPICH2 wants this target)
+dependencies:
+# Empty documentations targets (MPICH2 wants this target)
+htmldoc:
+latexdoc:
+mandoc:
+# Empty tags targets (MPICH2 wants this target)
+tags: TAGS
+TAGS:
+
 
 # EXPERIMENTAL TOTALVIEW STUFF
 mtv:
