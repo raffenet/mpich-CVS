@@ -121,6 +121,7 @@ int MPIDI_CH3_Progress_test()
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", NULL);
     }
 
+  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
     return mpi_errno;
 }
@@ -407,6 +408,15 @@ int MPIDI_CH3I_Progress_finalize()
 
 
 #undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_wakeup
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_Progress_wakeup(void)
+{
+    MPIDU_Sock_wakeup(sock_set);
+}
+
+#undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -457,7 +467,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 #define FUNCNAME MPIDI_CH3I_Progress_handle_sock_event
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
+static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 {
     int complete;
     int mpi_errno = MPI_SUCCESS;
