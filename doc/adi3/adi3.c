@@ -3287,6 +3287,9 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
   Question:
   Do we want to have a procedural interface for defining the full message that
   corresponds to each predefined message?  
+
+  Do we want an alternative version for the predefined messages?  E.g., 
+  something like MPID_Err_create_code_predef( int precode, ... )?
   @*/
 int MPID_Err_create_code( int class, const char *generic_msg, 
                           const char instance_msg, ... )
