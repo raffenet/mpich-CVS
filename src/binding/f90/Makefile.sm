@@ -13,11 +13,13 @@ all-preamble: $(MPIMOD).$(MOD)
 # Thes copy line in this step makes the F90 modules available to 
 # the mpif90 script before an install takes place
 # The if handles the Intel F90 compiler, which has an unusual interface
+# (The mpimod.pcl file should contain only a local mpimod.pc name; if
+# it contains a file name in another directory and that file does not 
+# exist, the compiler may refuse to compile the file)
 $(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
-	    echo "${includedir}/mpimod.pc" >> mpimod.pcl ;\
 	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
