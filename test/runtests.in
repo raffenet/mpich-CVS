@@ -32,6 +32,8 @@ $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary
 $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
 $np_default = 2;         # Default number of processes to use
+$np_max     = -1;        # Maximum number of processes to use (overrides any
+                         # value in the test list files.  -1 is Infinity
 
 $srcdir = ".";           # Used to set the source dir for testlist files
 
@@ -56,6 +58,7 @@ $clean_pgms      = 1;
 foreach $_ (@ARGV) {
     if (/-mpiexec=(.*)/) { $mpiexec = $1; }
     elsif (/-np=(.*)/)   { $np_default = $1; }
+    elsif (/-maxnp=(.*)/) { $np_max = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
     elsif (/-srcdir=(.*)/) { $srcdir = $1; }
     elsif (/-verbose/) { $verbose = 1; }
@@ -67,6 +70,10 @@ foreach $_ (@ARGV) {
     }
     else {
 	print STDERR "Unrecognized argument $_\n";
+	print STDERR "runtests [-tests=testfile] [-np=nprocesses] \
+        [-maxnp=max-nprocesses] [-srcdir=location-of-tests] \
+        [-xmlfile=filename ] \
+        [-verbose] [-debug]\n";
     }
 }
 
@@ -134,6 +141,7 @@ sub RunList {
 	# List files are "program <optional-np>"
 	my ($programname,$np,$ResultTest) = split(/\s+/,$_);
 	if ($np eq "") { $np = $np_default; }
+	if ($np_max > 0 && $np > $np_max) { $np = $np_max; }
 	# skip empty lines
 	if ($programname eq "") { next; }
 	if (-d $programname) {
@@ -206,7 +214,8 @@ sub ProcessImplicitList {
 # return status is 0 and that the output is " No Errors" is used.
 sub RunMPIProgram {
     my ($programname,$np,$ResultTest) = @_;
-    my $found_error = 0;
+    my $found_error   = 0;
+    my $found_noerror = 0;
     my $inline = "";
 
     &RunPreMsg( $programname );
@@ -229,6 +238,9 @@ sub RunMPIProgram {
 	    # Skip FORTRAN STOP
 	    if (/FORTRAN STOP/) { next; }
 	    $inline .= $_;
+	    if (/^\s*No Errors\s*$/ && $found_noerror == 0) {
+		$found_noerror = 1;
+	    }
 	    if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
 		print STDERR "Unexpected output in $programname: $_";
 		if (!$found_error) {
@@ -237,13 +249,16 @@ sub RunMPIProgram {
 		}
 	    }
 	}
+	if ($found_noerror == 0) {
+	    print STDERR "Program $programname exited without No Errors\n";
+	}
 	$rc = close ( MPIOUT );
 	if ($rc == 0) {
 	    # Only generate a message if we think that the program
 	    # passed the test.
 	    if (!$found_error) {
 		$run_status = $?;
-		print STDERR "Program exited with non-zero status $run_status\n";
+		print STDERR "Program $programname exited with non-zero status $run_status\n";
 		$round_error = 1;
 		$err_count ++;
 	    }

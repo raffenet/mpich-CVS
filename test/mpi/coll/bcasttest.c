@@ -28,11 +28,13 @@ int main( int argc, char **argv)
 
     for (n=0; n<NUM_SIZES; n++)
     {
+#ifdef DEBUG
 	if (rank == ROOT)
 	{
 	    printf("bcasting %d MPI_INTs %d times\n", sizes[n], NUM_REPS);
 	    fflush(stdout);
 	}
+#endif
 	for (reps=0; reps < NUM_REPS; reps++)
 	{
 	    if (bVerify)

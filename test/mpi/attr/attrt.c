@@ -110,14 +110,22 @@ int test_communicators( void )
     ranges[0][1] = (world_size - n) - 1;
     ranges[0][2] = 1;
 
+#ifdef DEBUG
     printf( "world rank = %d before range incl\n", world_rank );FFLUSH;
+#endif
     MPI_Group_range_incl(world_group, 1, ranges, &lo_group );
+#ifdef DEBUG
     printf( "world rank = %d after range incl\n", world_rank );FFLUSH;
+#endif
     MPI_Comm_create(world_comm, lo_group, &lo_comm );
+#ifdef DEBUG
     printf( "world rank = %d before group free\n", world_rank );FFLUSH;
+#endif
     MPI_Group_free( &lo_group );
 
+#ifdef DEBUG
     printf( "world rank = %d after group free\n", world_rank );FFLUSH;
+#endif
 
     if (world_rank < (world_size - n)) {
 	MPI_Comm_rank(lo_comm, &rank );
@@ -140,10 +148,14 @@ int test_communicators( void )
 	}
     }
 
+#ifdef DEBUG
     printf( "worldrank = %d\n", world_rank );FFLUSH;
+#endif
     MPI_Barrier(world_comm);
 
+#ifdef DEBUG
     printf( "bar!\n" );FFLUSH;
+#endif
     /*
       Check Comm_dup by adding attributes to lo_comm & duplicating
     */
@@ -279,10 +291,12 @@ int test_communicators( void )
     MPI_Group_range_incl(world_group, 1, ranges, &rev_group );
     MPI_Comm_create(world_comm, rev_group, &rev_comm );
 
+#ifdef DEBUG
     printf ("[%d] reverse group\n", world_rank );
     MPITEST_Group_print( rev_group );
     printf ("[%d] world group\n", world_rank );
     MPITEST_Group_print( world_group );
+#endif
 
     MPI_Comm_compare(world_comm, rev_comm, &result );
     if (result != MPI_SIMILAR && world_size != 1) {
@@ -320,7 +334,6 @@ int test_communicators( void )
         MPI_Comm_free( &lo_comm );
         MPI_Comm_free( &dup_comm );
     }
-    
     
     return errs;
 }
