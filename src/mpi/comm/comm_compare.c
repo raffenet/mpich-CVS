@@ -57,14 +57,11 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
             MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
                 return MPIR_Err_return_comm( comm_ptr1, FCNAME, mpi_errno );
@@ -73,6 +70,62 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    if (comm_ptr1->comm_kind != comm_ptr2->comm_kind) {
+	*result = MPI_UNEQUAL;
+    }
+    else if (comm1 == comm2) {
+	*result = MPI_IDENT;
+    }
+    else if (comm_ptr1->comm_kind == MPID_INTRACOMM) {
+	MPI_Group group1, group2;
+
+	MPIR_Nest_incr();
+	NMPI_Comm_group( comm1, &group1 );
+	NMPI_Comm_group( comm2, &group2 );
+	NMPI_Group_compare( group1, group2, result );
+	/* If the groups are the same but the contexts are different, then
+	   the communicators are congruent */
+	if (*result == MPI_IDENT) 
+	    *result = MPI_CONGRUENT;
+	NMPI_Group_free( &group1 );
+	NMPI_Group_free( &group2 );
+	MPIR_Nest_decr();
+    }
+    else { 
+	/* INTER_COMM */
+	int       lresult, rresult;
+	MPI_Group group1, group2;
+	MPI_Group rgroup1, rgroup2;
+	
+	/* Get the groups and see what their relationship is */
+	MPIR_Nest_incr();
+	NMPI_Comm_group (comm1, &group1);
+	NMPI_Comm_group (comm2, &group2);
+	NMPI_Group_compare ( group1, group2, &lresult );
+
+	NMPI_Comm_remote_group (comm1, &rgroup1);
+	NMPI_Comm_remote_group (comm2, &rgroup2);
+	NMPI_Group_compare ( rgroup1, rgroup2, &rresult );
+
+	/* Choose the result that is "least" strong. This works 
+	   due to the ordering of result types in mpi.h */
+	(*result) = (rresult > lresult) ? rresult : lresult;
+
+	/* They can't be identical since they're not the same
+	   handle, they are congruent instead */
+	if ((*result) == MPI_IDENT)
+	  (*result) = MPI_CONGRUENT;
+
+	/* Free the groups */
+	NMPI_Group_free (&group1);
+	NMPI_Group_free (&group2);
+	NMPI_Group_free (&rgroup1);
+	NMPI_Group_free (&rgroup2);
+	MPIR_Nest_decr();
+    }
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
     return MPI_SUCCESS;

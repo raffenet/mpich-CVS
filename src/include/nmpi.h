@@ -21,4 +21,8 @@
 #define NMPI_Comm_set_attr PMPI_Comm_set_attr
 #define NMPI_Comm_create_keyval PMPI_Comm_create_keyval 
 #define NMPI_Comm_free_keyval PMPI_Comm_free_keyval 
+#define NMPI_Comm_group PMPI_Comm_group
+#define NMPI_Comm_remote_group PMPI_Comm_remote_group
+#define NMPI_Group_compare PMPI_Group_compare
+#define NMPI_Group_free PMPI_Group_free
 #endif /* MPICH_NMPI_H_INCLUDED */

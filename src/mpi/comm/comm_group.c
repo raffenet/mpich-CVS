@@ -72,24 +72,29 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Create a group and populate it with the local process ids */
-    n = comm_ptr->local_size;
-    mpi_errno = MPIR_Group_create( n, &group_ptr );
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* Create a group if necessary and populate it with the 
+       local process ids */
+    if (!comm_ptr->local_group) {
+	n = comm_ptr->local_size;
+	mpi_errno = MPIR_Group_create( n, &group_ptr );
+	if (mpi_errno) {
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+	
+	for (i=0; i<n; i++) {
+	    group_ptr->lrank_to_lpid[i].lrank = i;
+	    (void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
+	    group_ptr->lrank_to_lpid[i].lpid  = lpid;
+	}
+	group_ptr->size		 = n;
+	group_ptr->rank		 = comm_ptr->rank;
+	group_ptr->idx_of_first_lpid = -1;
+	
+	comm_ptr->local_group = group_ptr;
     }
-    
-    for (i=0; i<n; i++) {
-	group_ptr->lrank_to_lpid[i].lrank = i;
-	(void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
-	group_ptr->lrank_to_lpid[i].lpid  = lpid;
-    }
-    group_ptr->size		 = n;
-    group_ptr->rank		 = comm_ptr->rank;
-    group_ptr->idx_of_first_lpid = -1;
-
-    *group = group_ptr->handle;
+    *group = comm_ptr->local_group->handle;
+    MPIU_Object_add_ref( comm_ptr->local_group );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);

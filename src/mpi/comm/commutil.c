@@ -94,11 +94,20 @@ int MPIR_Get_contextid( MPI_Comm comm )
        check for this and generate the appropriate error code */
     return context_id;
 }
+void MPIR_Free_contextid( int context_id )
+{
+    int idx, bitpos;
+    /* Convert the context id to the bit position */
+    context_id <<= 2;       /* Remove the shift of a factor of four */
+    idx = context_id % 32;
+    bitpos = context_id / 32;
 
+    context_mask[idx] |= (0x1 << bitpos);
+}
 #else
 int MPIR_Get_contextid( MPI_Comm comm )
 {
-    /* Not yet implemented.  See the MPICH 2 document for the 
+    /* FIXME. Not yet implemented.  See the MPICH 2 document for the 
        thread-safe algorithm. */
     return 0;
 }

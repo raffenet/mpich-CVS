@@ -91,6 +91,10 @@ int MPI_Comm_free(MPI_Comm *comm)
 
     /* Free the VCRT */
     MPID_VCRT_Release(comm_ptr->vcrt);
+
+    /* Free the context value */
+    MPIR_Free_contextid( comm_ptr->context_id );
+    
     /* ... end of body of routine ... */
 
     if (mpi_errno == MPI_SUCCESS)

@@ -73,23 +73,26 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 
     /* ... body of routine ...  */
     /* Create a group and populate it with the local process ids */
-    n = comm_ptr->remote_size;
-    mpi_errno = MPIR_Group_create( n, &group_ptr );
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    if (!comm_ptr->remote_group) {
+	n = comm_ptr->remote_size;
+	mpi_errno = MPIR_Group_create( n, &group_ptr );
+	if (mpi_errno) {
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+	
+	for (i=0; i<n; i++) {
+	    group_ptr->lrank_to_lpid[i].lrank = i;
+	    (void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
+	    group_ptr->lrank_to_lpid[i].lpid  = lpid;
+	}
+	group_ptr->size		 = n;
+	group_ptr->rank		 = MPI_UNDEFINED;
+	group_ptr->idx_of_first_lpid = -1;
+	comm_ptr->remote_group   = group_ptr;
     }
-    
-    for (i=0; i<n; i++) {
-	group_ptr->lrank_to_lpid[i].lrank = i;
-	(void) MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
-	group_ptr->lrank_to_lpid[i].lpid  = lpid;
-    }
-    group_ptr->size		 = n;
-    group_ptr->rank		 = MPI_UNDEFINED;
-    group_ptr->idx_of_first_lpid = -1;
-
-    *group = group_ptr->handle;
+    *group = comm_ptr->remote_group->handle;
+    MPIU_Object_add_ref( comm_ptr->remote_group );
     /* ... end of body of routine ... */
 
 

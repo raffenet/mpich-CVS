@@ -162,6 +162,9 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 
     /* Notify the device of this new communicator */
     MPID_Dev_comm_create_hook( newcomm_ptr );
+
+    *newcomm = newcomm_ptr->handle;
+
     /* ... end of body of routine ... */
 
     /* mpi_errno = MPID_Comm_create(); */
