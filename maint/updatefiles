@@ -626,9 +626,9 @@ elif [ "$has_unix_find" = no ] ; then
 else 
     echo "Skipping creation of configure files"
 fi
-if [ -x src/mpe2/maint/updatefiles -a "$do_build_configure" = "yes" ] ; then
+if [ -f src/mpe2/maint/updatefiles -a "$do_build_configure" = "yes" ] ; then
     # If we have the mpe2 updatefiles, execute it from the mpe directory
-    (cd src/mpe2 && maint/updatefiles )
+    (cd src/mpe2 && chmod a+x maint/updatefiles && maint/updatefiles )
 fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
