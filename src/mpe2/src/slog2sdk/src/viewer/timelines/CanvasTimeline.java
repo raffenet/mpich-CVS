@@ -48,8 +48,11 @@ import viewer.histogram.StatlineDialog;
 public class CanvasTimeline extends ScrollableObject
                             implements SearchableView, SummarizableView
 {
+    private static final Drawable.Order INCRE_STARTTIME_ORDER
+                                        = Drawable.INCRE_STARTTIME_ORDER;
+    private static final Drawable.Order DECRE_STARTTIME_ORDER
+                                        = Drawable.DECRE_STARTTIME_ORDER;
     private static final int            MIN_VISIBLE_ROW_COUNT = 2;
-    private static final boolean        INCRE_STARTTIME_ORDER = true;
     private static       GradientPaint  BackgroundPaint       = null;
 
     private TreeTrunk          treetrunk;
@@ -293,8 +296,8 @@ public class CanvasTimeline extends ScrollableObject
 
             // set NestingFactor/RowID of Nestable Real Drawables and Shadows
             dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
-                                                      isConnectedComposite,
                                                       INCRE_STARTTIME_ORDER,
+                                                      isConnectedComposite,
                                                       true );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next();
@@ -309,8 +312,8 @@ public class CanvasTimeline extends ScrollableObject
             
             // Draw Nestable Real Drawables
             dobjs = treetrunk.iteratorOfRealDrawables( timebounds,
-                                                       isConnectedComposite,
                                                        INCRE_STARTTIME_ORDER,
+                                                       isConnectedComposite,
                                                        true );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next();
@@ -324,8 +327,8 @@ public class CanvasTimeline extends ScrollableObject
 
             // Draw Nestable Shadows
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
-                                                         INCRE_STARTTIME_ORDER,
-                                                         true );
+                                                          INCRE_STARTTIME_ORDER,
+                                                          true );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
                 if ( sobj.getCategory().isVisible() ) {
@@ -343,8 +346,8 @@ public class CanvasTimeline extends ScrollableObject
             // Draw Nestless Shadows
             /*
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
-                                                         INCRE_STARTTIME_ORDER,
-                                                         false );
+                                                          INCRE_STARTTIME_ORDER,
+                                                          false );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
                 if ( sobj.getCategory().isVisible() ) {
@@ -358,8 +361,8 @@ public class CanvasTimeline extends ScrollableObject
 
             // Draw all Nestless Real Drawables and Shadows
             dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
-                                                      isConnectedComposite,
                                                       INCRE_STARTTIME_ORDER,
+                                                      isConnectedComposite,
                                                       false );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next(); 
@@ -413,8 +416,8 @@ public class CanvasTimeline extends ScrollableObject
 
         // Search Nestless Drawables in reverse drawing order
         dobjs = treetrunk.iteratorOfAllDrawables( vport_timeframe,
+                                                  DECRE_STARTTIME_ORDER,
                                                   isConnectedComposite,
-                                                  !INCRE_STARTTIME_ORDER,
                                                   false );
         while ( dobjs.hasNext() ) {
             dobj = (Drawable) dobjs.next();
@@ -436,7 +439,7 @@ public class CanvasTimeline extends ScrollableObject
         // Search Nestless Shadows in reverse drawing order
         /*
         sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
-                                                        !INCRE_STARTTIME_ORDER,
+                                                        DECRE_STARTTIME_ORDER,
                                                         false );
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
@@ -458,7 +461,7 @@ public class CanvasTimeline extends ScrollableObject
         
         // Search Nestable Shadows in reverse drawing order
         sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
-                                                        !INCRE_STARTTIME_ORDER,
+                                                        DECRE_STARTTIME_ORDER,
                                                         true );
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
@@ -479,8 +482,8 @@ public class CanvasTimeline extends ScrollableObject
 
         // Search Nestable Drawables in reverse drawing order
         dobjs = treetrunk.iteratorOfRealDrawables( vport_timeframe,
+                                                   DECRE_STARTTIME_ORDER,
                                                    isConnectedComposite,
-                                                   !INCRE_STARTTIME_ORDER,
                                                    true );
         while ( dobjs.hasNext() ) {
             dobj = (Drawable) dobjs.next();

@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
+import base.drawable.Drawable;
 import base.drawable.Method;
 import logformat.slog2.LineIDMapList;
 import logformat.slog2.LineIDMap;
@@ -108,7 +109,8 @@ public class TimelinePanel extends JPanel
         y_model     = y_scrollbar.getModel();
 
         /* Initialize the ModelTime slog.input.InputLog().getTreeRoot() */
-        treetrunk     = new TreeTrunk( slog_ins );
+        treetrunk     = new TreeTrunk( slog_ins,
+                                       Drawable.INCRE_STARTTIME_ORDER );
         treetrunk.initFromTreeTop();
         treeroot      = treetrunk.getTreeRoot();
         time_model    = new ModelTime( root_window,

@@ -38,7 +38,7 @@ import viewer.zoomable.ScrollableObject;
 public class CanvasStatline extends ScrollableObject
 {
     private static final int            MIN_VISIBLE_ROW_COUNT = 2;
-    private static final boolean        INCRE_STARTTIME_ORDER = true;
+    private static final boolean        IS_INCRE_STARTTIME    = true;
     private static       GradientPaint  BackgroundPaint       = null;
 
     private BufForTimeAveBoxes buf4statboxes;
