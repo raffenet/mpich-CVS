@@ -1598,6 +1598,7 @@ sub addnullandtrim_ftoc {
 sub chararray_in_decl {
     my $count = $_[0];
     print $OUTFD "    char **p$count, *pcpy$count;\n";
+    # pcpy<digit> is used for the case where the array length is not known
     print $OUTFD "    int  asize$count=0;\n";
 }
 sub chararray_in_arg {
