@@ -75,13 +75,13 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
 }
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
-void MPID_Wtime_init()
+void MPID_Wtime_init(void)
 {
     LARGE_INTEGER n;
     QueryPerformanceFrequency(&n);
     MPIR_Process.timer_frequency = (double)n.QuadPart;
 }
-double MPID_Wtick()
+double MPID_Wtick(void)
 {
     return MPIR_Process.timer_frequency;
 }
