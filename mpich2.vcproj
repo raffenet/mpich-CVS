@@ -1927,6 +1927,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpid\common\datatype\mpid_type_contiguous.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_type_create_resized.c">
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_type_debug.c">
 			</File>
 			<File
