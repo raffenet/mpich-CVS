@@ -8,12 +8,18 @@
 
 MPIDI_Process_t MPIDI_Process;
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Init(int * argc, char *** argp, int requested, int * provided,
 	      int * has_args, int * has_env)
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
 
+    MPIDI_dbg_printf(10, FCNAME, "entering");
+    
     MPIDI_Process.recv_posted_head = NULL;
     MPIDI_Process.recv_posted_tail = NULL;
     MPIDI_Process.recv_unexpected_head = NULL;
@@ -43,5 +49,6 @@ int MPID_Init(int * argc, char *** argp, int requested, int * provided,
 	*provided = MPI_THREAD_SINGLE;
     }
 
+    MPIDI_dbg_printf(10, FCNAME, "exiting");
     return mpi_errno;
 }
