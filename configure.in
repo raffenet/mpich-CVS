@@ -649,7 +649,7 @@ if test -z "$master_top_srcdir" ; then
     case "$use_top_srcdir" in
     /) ;;
     *)
-        use_top_srcdir=`(cd $use_top_srcdir ; pwd)`
+        use_top_srcdir=`(cd $use_top_srcdir && pwd)`
 	;;	
     esac
     master_top_srcdir=$use_top_srcdir
@@ -1760,9 +1760,13 @@ int main( int argc, char *argv[] ){
   fprintf(f, "%d\n", sizeof(BsendData_t)+sizeof(void*)-1);
   exit(0);
 }
-],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=256,pac_cv_mpi_bsend_overhead=256)
+],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=128,pac_cv_mpi_bsend_overhead=128)
 ])
+# If you change the default size (128 above) for pac_cv_mpi_bsend_overhead,
+# make the same change in src/binding/f77/configure.in (where there is 
+# a default value for BSEND_OVERHEAD if no value is provided).
 BSEND_OVERHEAD=$pac_cv_mpi_bsend_overhead
+export BSEND_OVERHEAD
 AC_SUBST(BSEND_OVERHEAD)
 #
 # The size of MPI_Status is needed for the Fortran interface. 
@@ -2404,7 +2408,7 @@ AC_OUTPUT_COMMANDS([
 #export top_srcdir
 #export enable_romio
 AC_OUTPUT_COMMANDS([if test "$enable_romio" = "yes" ; then
-  /bin/rm -f src/include/mpio.h "${top_srcdir}/include/mpio.h"
+  /bin/rm -f src/include/mpio.h "${use_top_srcdir}/include/mpio.h"
   cp src/mpi/romio/include/mpio.h src/include ; fi],enable_romio=$enable_romio
 top_srcdir=$top_srcdir)
 
