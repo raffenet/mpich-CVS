@@ -675,13 +675,19 @@ def mpdman():
                             pass
                     continue
                 if line.startswith('mcmd='):
-                    line = line[1:-1]  # strip off the leading m and trailing \n
-                    templine = ''
-                    while not templine.startswith('endcmd'):
-                        templine = mpd_recv_one_line(pmiSocket)
-                        if not templine.startswith('endcmd'):
-                            line += templine[:-1]  # strip off the trailing \n
-                parsedMsg = parse_pmi_msg(line)
+                    parsedMsg = {}
+                    line = line.rstrip()
+                    splitLine = line.split('=',1)
+                    parsedMsg['cmd'] = splitLine[1]
+                    line = ''
+                    while not line.startswith('endcmd'):
+                        line = mpd_recv_one_line(pmiSocket)
+                        if not line.startswith('endcmd'):
+                            line = line.rstrip()
+                            splitLine = line.split('=',1)
+                            parsedMsg[splitLine[0]] = splitLine[1]
+                else:
+                    parsedMsg = parse_pmi_msg(line)
                 if not parsedMsg.has_key('cmd'):
                     mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
                     continue
