@@ -208,7 +208,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     disps,
 				     types,
 				     &type_tmp);
-	MPI_Type_free(type_new);
+	PMPI_Type_free(type_new);
 	*type_new = type_tmp;
 
 	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
@@ -232,7 +232,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     types,
 				     &type_tmp);
 
-        MPI_Type_free(type_new);
+        PMPI_Type_free(type_new);
         *type_new = type_tmp;
 
 	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
@@ -467,7 +467,7 @@ int MPI_Type_create_darray(int size,
 					    st_offsets+i); 
 		break;
 	    }
-	    if (i) MPI_Type_free(&type_old);
+	    if (i) PMPI_Type_free(&type_old);
 	    type_old = type_new;
 
 	    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
@@ -528,7 +528,7 @@ int MPI_Type_create_darray(int size,
 					    st_offsets+i); 
 		break;
 	    }
-	    if (i != ndims-1) MPI_Type_free(&type_old);
+	    if (i != ndims-1) PMPI_Type_free(&type_old);
 	    type_old = type_new;
 
 	    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
@@ -561,7 +561,7 @@ int MPI_Type_create_darray(int size,
 				 newtype);
     if (mpi_errno != MPI_SUCCESS) goto fn_exit;
 
-    MPI_Type_free(&type_new);
+    PMPI_Type_free(&type_new);
     MPIU_Free(st_offsets);
     MPIU_Free(coords);
 
