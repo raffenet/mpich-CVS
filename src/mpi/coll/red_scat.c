@@ -300,7 +300,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                       send_cnt, recv_cnt, last_idx);
 */
                 /* Send data from tmp_results. Recv into tmp_recvbuf */ 
-                mpi_errno = MPIC_Sendrecv((char *) tmp_results +
+                if ((send_cnt != 0) && (recv_cnt != 0)) 
+                    mpi_errno = MPIC_Sendrecv((char *) tmp_results +
                                           newdisps[send_idx]*extent,
                                           send_cnt, datatype,  
                                           dst, MPIR_REDUCE_SCATTER_TAG, 
@@ -309,25 +310,40 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                                           recv_cnt, datatype, dst,
                                           MPIR_REDUCE_SCATTER_TAG, comm,
                                           MPI_STATUS_IGNORE); 
+                else if ((send_cnt == 0) && (recv_cnt != 0))
+                    mpi_errno = MPIC_Recv((char *) tmp_recvbuf +
+                                          newdisps[recv_idx]*extent,
+                                          recv_cnt, datatype, dst,
+                                          MPIR_REDUCE_SCATTER_TAG, comm,
+                                          MPI_STATUS_IGNORE);
+                else if ((recv_cnt == 0) && (send_cnt != 0))
+                    mpi_errno = MPIC_Send((char *) tmp_results +
+                                          newdisps[send_idx]*extent,
+                                          send_cnt, datatype,  
+                                          dst, MPIR_REDUCE_SCATTER_TAG,
+                                          comm);  
+
                 if (mpi_errno) return mpi_errno;
                 
                 /* tmp_recvbuf contains data received in this step.
                    tmp_results contains data accumulated so far */
                 
+                if (recv_cnt) {
 #ifdef HAVE_CXX_BINDING
-                if (is_cxx_uop) {
-                    (*MPIR_Process.cxx_call_op_fn)((char *) tmp_recvbuf +
+                    if (is_cxx_uop) {
+                        (*MPIR_Process.cxx_call_op_fn)((char *) tmp_recvbuf +
                                                    newdisps[recv_idx]*extent,
                                                    (char *) tmp_results + 
                                                    newdisps[recv_idx]*extent, 
                                                    recv_cnt, datatype, uop);
-                }
-                else 
+                    }
+                    else 
 #endif
-                    (*uop)((char *) tmp_recvbuf + newdisps[recv_idx]*extent,
-                           (char *) tmp_results + newdisps[recv_idx]*extent, 
-                           &recv_cnt, &datatype);
-                
+                        (*uop)((char *) tmp_recvbuf + newdisps[recv_idx]*extent,
+                             (char *) tmp_results + newdisps[recv_idx]*extent, 
+                               &recv_cnt, &datatype);
+                }
+
                 /* update send_idx for next iteration */
                 send_idx = recv_idx;
                 last_idx = recv_idx + mask;
@@ -335,11 +351,13 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             }
 
             /* copy this process's result from tmp_results to recvbuf */
-            mpi_errno = MPIR_Localcopy((char *)tmp_results +
-                                       disps[rank]*extent, 
-                                       recvcnts[rank], datatype, recvbuf,
-                                       recvcnts[rank], datatype);
-            if (mpi_errno) return mpi_errno;
+            if (recvcnts[rank]) {
+                mpi_errno = MPIR_Localcopy((char *)tmp_results +
+                                           disps[rank]*extent, 
+                                           recvcnts[rank], datatype, recvbuf,
+                                           recvcnts[rank], datatype);
+                if (mpi_errno) return mpi_errno;
+            }
             
             MPIU_Free(newcnts);
             MPIU_Free(newdisps);
@@ -349,17 +367,20 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
            processes of rank < 2*rem send to (rank-1) the result they
            calculated for that process */
         if (rank < 2*rem) {
-            if (rank % 2)  /* odd */
-                mpi_errno = MPIC_Send((char *) tmp_results +
+            if (rank % 2) { /* odd */
+                if (recvcnts[rank-1]) 
+                    mpi_errno = MPIC_Send((char *) tmp_results +
                                       disps[rank-1]*extent, recvcnts[rank-1],
                                       datatype, rank-1,
                                       MPIR_REDUCE_SCATTER_TAG, comm);
-            else  /* even */
-                mpi_errno = MPIC_Recv(recvbuf, recvcnts[rank],
+            }
+            else  {   /* even */
+                if (recvcnts[rank])  
+                    mpi_errno = MPIC_Recv(recvbuf, recvcnts[rank],
                                       datatype, rank+1,
                                       MPIR_REDUCE_SCATTER_TAG, comm,
                                       MPI_STATUS_IGNORE); 
-            
+            }
             if (mpi_errno) return mpi_errno;
         }
 

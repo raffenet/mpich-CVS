@@ -51,7 +51,6 @@ int MPIR_Scatterv (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
-    MPI_Status status;
     int        rank, comm_size, remote_comm_size;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
@@ -74,38 +73,48 @@ int MPIR_Scatterv (
                a simple Recv, it may not make much difference in performance, 
                and using the blocking version is simpler */
             for ( i=0; i<root; i++ ) {
-                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                if (sendcnts[i]) {
+                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i,
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) return mpi_errno;
+                }
             }
             if (recvbuf != MPI_IN_PLACE) {
-                mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
+                if (sendcnts[rank]) {
+                    mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
                                            sendcnts[rank], sendtype, 
                                            recvbuf, recvcnt, recvtype);
-                if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) return mpi_errno;
+                }
             }        
             for ( i=root+1; i<comm_size; i++ ) {
-                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                if (sendcnts[i]) {
+                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i, 
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) return mpi_errno;
+                }
             }
         }
         else {
             /* intercommunicator */
             remote_comm_size = comm_ptr->remote_size;
             for (i=0; i<remote_comm_size; i++) {
-                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                if (sendcnts[i]) {
+                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i,
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;                
+                    if (mpi_errno) return mpi_errno;      
+                }          
             }
         }
     }
-    else
-        mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
-                              MPIR_SCATTERV_TAG,comm,&status);
+    else {
+        if (recvcnt)
+            mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
+                              MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE);
+    }
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

@@ -66,44 +66,56 @@ int MPIR_Gatherv (
     if ( rank == root ) {
         MPI_Aint       extent;
         int            i;
-	MPI_Status       status;
         
         MPID_Datatype_get_extent_macro(recvtype, extent);
 
         if (comm_ptr->comm_kind == MPID_INTRACOMM) {
             for ( i=0; i<root; i++ ) {
-                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
-                                      recvcnts[i], recvtype, i,
-                                      MPIR_GATHERV_TAG, comm, &status);
-                if (mpi_errno) return mpi_errno;
+                if (recvcnts[i]) {
+                    mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                          recvcnts[i], recvtype, i,
+                                          MPIR_GATHERV_TAG, comm,
+                                          MPI_STATUS_IGNORE); 
+                    if (mpi_errno) return mpi_errno;
+                }
             }
             if (sendbuf != MPI_IN_PLACE) {
-                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+                if (recvcnts[rank]) {
+                    mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                         ((char *)recvbuf+displs[rank]*extent), 
                                            recvcnts[rank], recvtype);
-                if (mpi_errno) return mpi_errno;
+                    if (mpi_errno) return mpi_errno;
+                }
             }
             for ( i=root+1; i<comm_size; i++ ) {
-                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
-                                      recvcnts[i], recvtype, i,
-                                      MPIR_GATHERV_TAG, comm, &status);
-                if (mpi_errno) return mpi_errno;
+                if (recvcnts[i]) {
+                    mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                          recvcnts[i], recvtype, i,
+                                          MPIR_GATHERV_TAG, comm,
+                                          MPI_STATUS_IGNORE); 
+                    if (mpi_errno) return mpi_errno;
+                }
             }
         }
         else {
             /* intercommunicator */
             remote_comm_size = comm_ptr->remote_size;
             for (i=0; i<remote_comm_size; i++) {
-                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
-                                      recvcnts[i], recvtype, i,
-                                      MPIR_GATHERV_TAG, comm, &status);
-                if (mpi_errno) return mpi_errno;                
+                if (recvcnts[i]) {
+                    mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                          recvcnts[i], recvtype, i,
+                                          MPIR_GATHERV_TAG, comm,
+                                          MPI_STATUS_IGNORE);  
+                    if (mpi_errno) return mpi_errno;
+                }                
             }
         }
     }
-    else 
-        mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, root, 
-                              MPIR_GATHERV_TAG, comm);
+    else {
+        if (sendcnt)
+            mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, root, 
+                                  MPIR_GATHERV_TAG, comm);
+    }
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

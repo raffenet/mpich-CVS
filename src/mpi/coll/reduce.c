@@ -256,8 +256,8 @@ int MPIR_Reduce (
         
         if (newrank != -1) {
             for (i=0; i<(pof2-1); i++) 
-                cnts[i] = count/comm_size;
-            cnts[pof2-1] = count - (count/comm_size)*(pof2-1);
+                cnts[i] = count/pof2;
+            cnts[pof2-1] = count - (count/pof2)*(pof2-1);
             
             disps[0] = 0;
             for (i=1; i<pof2; i++)
@@ -344,8 +344,8 @@ int MPIR_Reduce (
                 if (rank == root) {    /* recv */
                     /* initialize the arrays that weren't initialized */
                     for (i=0; i<(pof2-1); i++) 
-                        cnts[i] = count/comm_size;
-                    cnts[pof2-1] = count - (count/comm_size)*(pof2-1);
+                        cnts[i] = count/pof2;
+                    cnts[pof2-1] = count - (count/pof2)*(pof2-1);
                     
                     disps[0] = 0;
                     for (i=1; i<pof2; i++)
