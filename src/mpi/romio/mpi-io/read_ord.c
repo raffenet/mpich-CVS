@@ -46,7 +46,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
     int error_code, datatype_size, nprocs, myrank, incr;
     int source, dest;
     static char myname[] = "MPI_FILE_READ_ORDERED";
-    ADIO_Offset shared_fp;
+    ADIO_Offset shared_fp=0;
     ADIO_File fh;
 
     fh = MPIO_File_resolve(mpi_fh);
