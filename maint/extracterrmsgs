@@ -464,7 +464,12 @@ sub ProcessFile
 		if (!defined($bad_syntax_in_file{$filename}))
 		{
 		    $bad_syntax_in_file{$filename} = 1;
-		    print STDERR "Warning: MPIR_Err_create_code() call with too few arguments in $filename\n";
+		    if ($args[3] ne "__LINE__" && $args[3] ne "line") {
+			print STDERR "Warning: Expected __LINE__ or line as 4th argument in MPIR_Err_create_code\n";
+		    }
+		    else {
+			print STDERR "Warning: MPIR_Err_create_code() call with too few arguments in $filename\n";
+		    }
 		}
 		next;
 	    }
