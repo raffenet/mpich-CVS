@@ -123,13 +123,13 @@ int vector_of_vectors_test(void)
     buf = (char *) malloc(sizeoftype);
 
     position = 0;
-    err = MPI_Pack(array,
-		   1,
-		   outer_vector,
-		   buf,
-		   sizeoftype,
-		   &position,
-		   MPI_COMM_WORLD);
+    err = MPI_Pack_external("external32",
+			    array,
+			    1,
+			    outer_vector,
+			    buf,
+			    sizeoftype,
+			    &position);
 
     if (position != sizeoftype) {
 	errs++;
@@ -150,13 +150,13 @@ int vector_of_vectors_test(void)
     
     memset(array, 0, 9*sizeof(int));
     position = 0;
-    err = MPI_Unpack(buf,
-		     sizeoftype,
-		     &position,
-		     array,
-		     1,
-		     outer_vector,
-		     MPI_COMM_WORLD);
+    err = MPI_Unpack_external("external32",
+			      buf,
+			      sizeoftype,
+			      &position,
+			      array,
+			      1,
+			      outer_vector);
 
     if (position != sizeoftype) {
 	errs++;
@@ -240,13 +240,13 @@ int optimizable_vector_of_basics_test(void)
     buf = (char *) malloc(sizeoftype);
 
     position = 0;
-    err = MPI_Pack(array,
-		   1,
-		   parent_type,
-		   buf,
-		   sizeoftype,
-		   &position,
-		   MPI_COMM_WORLD);
+    err = MPI_Pack_external("external32",
+			    array,
+			    1,
+			    parent_type,
+			    buf,
+			    sizeoftype,
+			    &position);
 
     if (position != sizeoftype) {
 	errs++;
@@ -267,13 +267,13 @@ int optimizable_vector_of_basics_test(void)
 
     memset(array, 0, 20 * sizeof(int));
     position = 0;
-    err = MPI_Unpack(buf,
-		     sizeoftype,
-		     &position,
-		     array,
-		     1,
-		     parent_type,
-		     MPI_COMM_WORLD);
+    err = MPI_Unpack_external("external32",
+			      buf,
+			      sizeoftype,
+			      &position,
+			      array,
+			      1,
+			      parent_type);
 
     if (position != sizeoftype) {
 	errs++;
