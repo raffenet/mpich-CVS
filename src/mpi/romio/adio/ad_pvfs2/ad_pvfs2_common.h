@@ -10,6 +10,10 @@
 #define _AD_PVFS2_H
 #include "ad_pvfs2.h"
 
+/* useful values:
+ *  0:		    no debugging
+ *  CLIENT_DEBUG:   debug client state machines
+ */
 #define ADIOI_PVFS2_DEBUG_MASK 0
 
 
