@@ -65,7 +65,7 @@ C Initialize the buffer
 C         
          call mpi_put( buf(1,1), nrows, MPI_INTEGER, left, ncols+1, 
      &                 nrows, MPI_INTEGER, win, ierr )
-         call mpi_get( buf(1,ncols+1), nrows, MPI_INTEGER, right, 1, 
+         call mpi_put( buf(1,ncols), nrows, MPI_INTEGER, right, 0, 
      &                 nrows, MPI_INTEGER, win, ierr )
 C         
          call mpi_win_complete( win, ierr )
@@ -77,7 +77,7 @@ C
 C Check the results
          if (left .ne. MPI_PROC_NULL) then
             do i=1, nrows
-               ans = rank * (ncols * nrows) - ncols + i
+               ans = rank * (ncols * nrows) - nrows + i
                if (buf(i,0) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then
@@ -89,7 +89,7 @@ C Check the results
          endif
          if (right .ne. MPI_PROC_NULL) then
             do i=1, nrows
-               ans = rank * (ncols * nrows) + nrows * (ncols-1) + i
+               ans = (rank+1) * (ncols * nrows) + i
                if (buf(i,ncols+1) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then

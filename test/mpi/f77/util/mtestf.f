@@ -59,14 +59,15 @@ C A simple get intracomm for now
            call mpi_comm_dup( MPI_COMM_WORLD, comm, ierr )
         else if (myindex .eq. 2) then
            call mpi_comm_size( MPI_COMM_WORLD, size, ierr )
-           call mpi_comm_size( MPI_COMM_WORLD, rank, ierr )
-           call mpi_comm_split( MPI_COMM_WORLD, 0, size - rank, ierr )
+           call mpi_comm_rank( MPI_COMM_WORLD, rank, ierr )
+           call mpi_comm_split( MPI_COMM_WORLD, 0, size - rank, comm, 
+     &                                 ierr )
         else
-           if (min_size .gt. 1) then
+           if (min_size .eq. 1 .and. myindex .eq. 3) then
               comm = MPI_COMM_SELF
            endif
         endif
-        myindex = mod( myindex, 3 ) + 1
+        myindex = mod( myindex, 4 ) + 1
         MTestGetIntracomm = comm .ne. MPI_COMM_NULL
         end
 C
