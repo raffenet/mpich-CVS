@@ -297,7 +297,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* host */
 	    if (strcmp(info[j].key, "host") == 0)
 	    {
-		smpd_dbg_printf("host key sent with spawn command: <%s>\n", info[j].val);fflush(stdout);
+		smpd_dbg_printf("host key sent with spawn command: <%s>\n", info[j].val);
 		if (smpd_get_host_id(info[j].val, &node.host_id) == SMPD_SUCCESS)
 		{
 		    strcpy(node.hostname, info[j].val);
