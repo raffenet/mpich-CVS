@@ -8406,6 +8406,12 @@ cut was made).
 \item We should consider an XML format for the output.
 \end{enumerate}
 
+The first steps toward such testing have been taken.  The Perl script
+\file{test/runtests} can run and collect the data for all programs in a
+directory; the file \file{test/mpi/util/mtest.c} contains common routines for
+running tests, including error reporting; that file will contain routines for
+the construction of datatypes and communicators. 
+
 Testing should also contain performances tests (see the current Chiba
 tests for an example: \file{/home/gropp/projects/chiba/perf/getperf}).
 \begin{enumerate}
