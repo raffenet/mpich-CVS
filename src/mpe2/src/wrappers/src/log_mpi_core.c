@@ -2310,7 +2310,6 @@ char *** argv;
 
   rq_init( requests_avail_0 );
 
-  MPE_Start_log();
   trace_on = 1;
 
   return returnVal;
