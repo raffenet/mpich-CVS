@@ -183,6 +183,66 @@
 /* FIXME: not yet done */
 #define MPIR_ERR_MEMALLOCFAILED MPI_ERR_INTERN
 
+/* 
+ * Standardized error setting and checking macros
+ * These are intended to simplify the insertion of standardized error
+ * checks
+ *
+ */
+/* --BEGIN ERROR MACROS-- */
+#ifdef HAVE_ERROR_CHECKING
+#define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
+           __LINE__, class_, msg_, 0 ); stmt_ ;}
+#define MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
+           __LINE__, class_, gmsg_, smsg_, arg1_ ); stmt_ ;}
+#define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
+           __LINE__, class_, msg_, 0 ); stmt_ ;}
+#define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
+           __LINE__, class_, gmsg_, smsg_, arg1_ ); stmt_ ;}
+#else
+#define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
+     {if (!err_){err_=class_;} stmt_;}
+#define MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+     {if(!err_){err_=class_;}stmt_;}
+#define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
+     {if(!err_){err_=class_;} stmt_;}
+#define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+     {if(!err_){err_=class_;}stmt_;}
+#endif
+
+/* The following definitions are the same independent of the choice of 
+   HAVE_ERROR_CHECKING */
+#define MPIU_ERR_SETANDJUMP(err_,class_,msg_) \
+     MPIU_ERR_SETANDSTMT(err_,class_,goto fn_fail,msg_)
+#define MPIU_ERR_CHKANDSTMT(cond_,err_,class_,stmt_,msg_) \
+    {if (cond_) { MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_); }}
+#define MPIU_ERR_CHKANDJUMP(cond_,err_,class_,msg_) \
+     MPIU_ERR_CHKANDSTMT(cond_,err_,class_,goto fn_fail,msg_)
+
+#define MPIU_ERR_SETANDJUMP1(err_,class_,gmsg_,smsg_,arg1_) \
+     MPIU_ERR_SETANDSTMT1(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_)
+#define MPIU_ERR_CHKANDSTMT1(cond_,err_,class_,stmt_,gmsg_,smsg_,arg1_) \
+    {if (cond_) { MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_); }}
+#define MPIU_ERR_CHKANDJUMP1(cond_,err_,class_,gmsg_,smsg_,arg1_) \
+     MPIU_ERR_CHKANDSTMT1(cond_,err_,class_,goto fn_fail,gmsg_,smsg_,arg1_)
+/* --END ERROR MACROS-- */
+
+/* 
+ * Special case for "is initialized".  
+ * This should be used in cases where there is no
+ * additional error checking
+ */
+#ifdef HAVE_ERROR_CHECKING
+#define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP \
+  if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {\
+      mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 ); goto fn_fail;}
+#else
+#define MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP
+#endif
 /* ------------------------------------------------------------------------- */
 /* end of mpierrs.h */
 /* ------------------------------------------------------------------------- */
