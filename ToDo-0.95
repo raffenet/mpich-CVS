@@ -216,6 +216,10 @@ Open Tasks:
 
 * measure and compare performance of shm and ssm (using shm) [David]
 
+* modify the error code perl script that generates defmsg.h to be entirely 
+  written in perl.  Currently there is a shell script that generates command
+  lines to send to a perl script.  Having a shell script prevents the 
+  integration with the Windows configure script, winconfigure.wsf.
 
 --------------------
 
