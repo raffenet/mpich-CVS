@@ -12,7 +12,7 @@ void ADIOI_XFS_IreadContig(ADIO_File fd, void *buf, int count,
                 MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
-    int  len, typesize, err=-1;
+    int  len, typesize, aio_errno = 0;
     static char myname[] = "ADIOI_XFS_IREADCONTIG";
 
     (*request) = ADIOI_Malloc_request();
@@ -24,7 +24,7 @@ void ADIOI_XFS_IreadContig(ADIO_File fd, void *buf, int count,
     len = count * typesize;
 
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    err = ADIOI_XFS_aio(fd, buf, len, offset, 0, &((*request)->handle));
+    aio_errno = ADIOI_XFS_aio(fd, buf, len, offset, 0, &((*request)->handle));
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
@@ -33,7 +33,7 @@ void ADIOI_XFS_IreadContig(ADIO_File fd, void *buf, int count,
     fd->fp_sys_posn = -1;
 
     /* --BEGIN ERROR HANDLING-- */
-    if (err != 0) {
+    if (aio_errno != 0) {
 	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
 	return;
     }
