@@ -32,6 +32,8 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* printf( "new group ptr is %x handle %x\n", (int)*new_group_ptr,
+       (*new_group_ptr)->handle );fflush(stdout); */
     MPIU_Object_set_ref( *new_group_ptr, 1 );
     (*new_group_ptr)->lrank_to_lpid = 
 	(MPID_Group_pmap_t *)MPIU_Malloc( nproc * sizeof(MPID_Group_pmap_t) );
