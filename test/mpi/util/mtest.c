@@ -653,6 +653,10 @@ void MTestFreeDatatype( MTestDatatype *mtype )
     if (mtype->FreeBuf) {
 	(mtype->FreeBuf)( mtype );
     }
+    /* Free the datatype itself if it was created */
+    if (!mtype->isBasic) {
+	MPI_Type_free( &mtype->datatype );
+    }
 }
 
 /* Check that a message was received correctly.  Returns the number of
