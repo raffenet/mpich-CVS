@@ -97,7 +97,6 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 	smpd_err_printf("smpd_server_authenticate: Reading challenge response failed\n");
 	return SMPD_FAIL;
     }
-    /*smpd_dbg_printf("read challenge-response string: %s\n", pszStr);*/
 
     /*smpd_dbg_printf("read response, comparing with crypted string:\n%s\n%s\n", pszStr, pszCrypt);*/
     /* compare the response with the encrypted result and write success or failure*/

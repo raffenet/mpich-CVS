@@ -30,19 +30,32 @@ int smpd_get_opt(int argc, char *argv[], char *opt, char *val, int len)
 int smpd_parse_command_args(int argc, char *argv[])
 {
 #ifdef HAVE_WINDOWS_H
-    char str[20], handle_str[20];
+    char str[20], read_handle_str[20], write_handle_str[20];
     int port;
     sock_t listener, session_sock;
     sock_set_t set, session_set;
     sock_event_t event;
     int result;
-    HANDLE hPipe;
-    DWORD num_written;
+    HANDLE hWrite, hRead;
+    DWORD num_written, num_read;
 #endif
 
 #ifdef HAVE_WINDOWS_H
-    if (smpd_get_opt(argc, argv, "-mgr", handle_str, 20))
+    if (smpd_get_opt(argc, argv, "-mgr", NULL, 0))
     {
+	if (!smpd_get_opt(argc, argv, "-read", read_handle_str, 20))
+	{
+	    smpd_err_printf("manager started without a read pipe handle.\n");
+	    return SMPD_FAIL;
+	}
+	if (!smpd_get_opt(argc, argv, "-write", write_handle_str, 20))
+	{
+	    smpd_err_printf("manager started without a write pipe handle.\n");
+	    return SMPD_FAIL;
+	}
+	hRead = (HANDLE)atol(read_handle_str);
+	hWrite = (HANDLE)atol(write_handle_str);
+
 	result = sock_init();
 	if (result != SOCK_SUCCESS)
 	{
@@ -68,19 +81,40 @@ int smpd_parse_command_args(int argc, char *argv[])
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("smpd manager listening on port %d\n", port);
-	hPipe = (HANDLE)atol(handle_str);
+
 	memset(str, 0, 20);
 	snprintf(str, 20, "%d", port);
-	smpd_dbg_printf("manager writing port string back to smpd.\n");
-	if (!WriteFile(hPipe, str, 20, &num_written, NULL))
+	smpd_dbg_printf("manager writing port back to smpd.\n");
+	if (!WriteFile(hWrite, str, 20, &num_written, NULL))
 	{
 	    smpd_err_printf("WriteFile failed, error %d\n", GetLastError());
 	    return SMPD_FAIL;
 	}
-	CloseHandle(hPipe);
+	CloseHandle(hWrite);
 	if (num_written != 20)
 	{
 	    smpd_err_printf("wrote only %d bytes of 20\n", num_written);
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("manager reading account and password from smpd.\n");
+	if (!ReadFile(hRead, g_UserAccount, 100, &num_read, NULL))
+	{
+	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
+	    return SMPD_FAIL;
+	}
+	if (num_read != 100)
+	{
+	    smpd_err_printf("read only %d bytes of 100\n", num_read);
+	    return SMPD_FAIL;
+	}
+	if (!ReadFile(hRead, g_UserPassword, 100, &num_read, NULL))
+	{
+	    smpd_err_printf("ReadFile failed, error %d\n", GetLastError());
+	    return SMPD_FAIL;
+	}
+	if (num_read != 100)
+	{
+	    smpd_err_printf("read only %d bytes of 100\n", num_read);
 	    return SMPD_FAIL;
 	}
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
@@ -127,7 +161,10 @@ int smpd_parse_command_args(int argc, char *argv[])
 	    smpd_err_printf("Unable to destroy the listener set, sock error:\n%s\n", get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
-	smpd_session(session_set, session_sock);
+	result = smpd_session(session_set, session_sock);
+	if (result != SMPD_SUCCESS)
+	    smpd_err_printf("smpd_session() failed.\n");
+	exit(result);
     }
 #endif
 

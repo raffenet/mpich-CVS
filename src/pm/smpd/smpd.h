@@ -52,6 +52,8 @@ extern char g_pszSMPDExe[1024];
 extern int  g_bService;
 extern int  g_bPasswordProtect;
 extern char g_SMPDPassword[100];
+extern char g_UserAccount[100];
+extern char g_UserPassword[100];
 
 int smpd_write_string(sock_set_t set, sock_t sock, char *str);
 int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen);
@@ -72,5 +74,6 @@ int smpd_parse_command_args(int argc, char *argv[]);
 int smpd_get_opt(int argc, char *argv[], char *opt, char *val, int len);
 int smpd_session(sock_set_t set, sock_t sock);
 char * get_sock_error_string(int error);
+int smpd_close_connection(sock_set_t set, sock_t sock);
 
 #endif

@@ -15,6 +15,7 @@ char g_pszSMPDExe[1024];
 int  g_bService = SMPD_FALSE;
 int  g_bPasswordProtect = SMPD_FALSE;
 char g_SMPDPassword[100] = SMPD_DEFAULT_PASSWORD;
+char g_UserAccount[100], g_UserPassword[100];
 
 int main(int argc, char* argv[])
 {
