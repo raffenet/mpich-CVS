@@ -711,6 +711,22 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "topotest", "mpi\topo\topote
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "baseattrwin", "mpi\attr\baseattrwin.vcproj", "{EC18613E-099E-4CB1-B219-FBA7C38CB5D3}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opland", "mpi\coll\opland.vcproj", "{DEDE55D5-F182-4241-81BA-4F9A183107BE}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oplor", "mpi\coll\oplor.vcproj", "{73107D39-0B79-47EA-B528-A26B63C1F366}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oplxor", "mpi\coll\oplxor.vcproj", "{057BB4D7-AE8E-4335-90BF-715A8A6F8373}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -776,7 +792,6 @@ Global
 		{044046B7-8955-4AD3-8885-CDD3BD79F119}.Debug.ActiveCfg = Debug|Win32
 		{044046B7-8955-4AD3-8885-CDD3BD79F119}.Debug.Build.0 = Debug|Win32
 		{044046B7-8955-4AD3-8885-CDD3BD79F119}.Release.ActiveCfg = Release|Win32
-		{044046B7-8955-4AD3-8885-CDD3BD79F119}.Release.Build.0 = Release|Win32
 		{08FC064D-E650-4B50-8F6F-98B184979DE7}.Debug.ActiveCfg = Debug|Win32
 		{08FC064D-E650-4B50-8F6F-98B184979DE7}.Debug.Build.0 = Debug|Win32
 		{08FC064D-E650-4B50-8F6F-98B184979DE7}.Release.ActiveCfg = Release|Win32
@@ -1429,6 +1444,22 @@ Global
 		{267B6702-1FBB-4D1B-A7DD-57C32F11D59E}.Debug.Build.0 = Debug|Win32
 		{267B6702-1FBB-4D1B-A7DD-57C32F11D59E}.Release.ActiveCfg = Release|Win32
 		{267B6702-1FBB-4D1B-A7DD-57C32F11D59E}.Release.Build.0 = Release|Win32
+		{EC18613E-099E-4CB1-B219-FBA7C38CB5D3}.Debug.ActiveCfg = Debug|Win32
+		{EC18613E-099E-4CB1-B219-FBA7C38CB5D3}.Debug.Build.0 = Debug|Win32
+		{EC18613E-099E-4CB1-B219-FBA7C38CB5D3}.Release.ActiveCfg = Release|Win32
+		{EC18613E-099E-4CB1-B219-FBA7C38CB5D3}.Release.Build.0 = Release|Win32
+		{DEDE55D5-F182-4241-81BA-4F9A183107BE}.Debug.ActiveCfg = Debug|Win32
+		{DEDE55D5-F182-4241-81BA-4F9A183107BE}.Debug.Build.0 = Debug|Win32
+		{DEDE55D5-F182-4241-81BA-4F9A183107BE}.Release.ActiveCfg = Release|Win32
+		{DEDE55D5-F182-4241-81BA-4F9A183107BE}.Release.Build.0 = Release|Win32
+		{73107D39-0B79-47EA-B528-A26B63C1F366}.Debug.ActiveCfg = Debug|Win32
+		{73107D39-0B79-47EA-B528-A26B63C1F366}.Debug.Build.0 = Debug|Win32
+		{73107D39-0B79-47EA-B528-A26B63C1F366}.Release.ActiveCfg = Release|Win32
+		{73107D39-0B79-47EA-B528-A26B63C1F366}.Release.Build.0 = Release|Win32
+		{057BB4D7-AE8E-4335-90BF-715A8A6F8373}.Debug.ActiveCfg = Debug|Win32
+		{057BB4D7-AE8E-4335-90BF-715A8A6F8373}.Debug.Build.0 = Debug|Win32
+		{057BB4D7-AE8E-4335-90BF-715A8A6F8373}.Release.ActiveCfg = Release|Win32
+		{057BB4D7-AE8E-4335-90BF-715A8A6F8373}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
