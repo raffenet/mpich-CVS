@@ -52,6 +52,7 @@ MPI_ERR_IO
     MPIR_READ_PERM "ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR."
     MPIR_PREALLOC_PERM "To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR."
     MPIR_ERR_FILETYPE  "Filetype must be constructed out of one or more etypes"
+    MPIR_ERR_NO_TESTFS "ROMIO has not been configured to use the TESTFS file system"
 
 MPI_ERR_COMM
     MPIR_ERR_COMM_NULL (null communicator. from MPICH)
