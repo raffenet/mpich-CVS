@@ -927,7 +927,7 @@ if test -n "$mpi_sgi"; then
 fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
-if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
+if test $FROM_MPICH = 0 ; then
    PAC_MPI_DARRAY_SUBARRAY()
 else
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if Darray is available])
@@ -1098,10 +1098,12 @@ if test -n "$file_system_piofs"; then
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
-   AC_DEFINE(NEEDS_MPI_TEST,,[Define if mpi_test needed])
-   AC_DEFINE(MPICH,,[Define if using MPICH])
-   if test -z "$arch_SX4" ; then
-      MPIOF_H_INCLUDED=1
+   if test "$FROM_MPICH2" = 0; then
+      AC_DEFINE(NEEDS_MPI_TEST,,[Define if mpi_test needed])
+      AC_DEFINE(MPICH,,[Define if using MPICH])
+      if test -z "$arch_SX4" ; then
+         MPIOF_H_INCLUDED=1
+      fi
    fi
 fi
 if test -n "$mpi_sgi"; then
@@ -1184,12 +1186,14 @@ fi
 # For now, separate the mpich2 from mpich cases
 if test $FROM_MPICH2 = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
+   MPICH_HOME=`dirname $MPICH_HOME`
+   MPICH_HOME=`dirname $MPICH_HOME`
    if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin ; fi
    # No special compiler script.
    # BUT we need the include paths
    CC="$CC -I${use_top_srcdir}/src/include -I${top_build_dir}/src/include"
    TEST_CC="$CC"
-   MPI_LIB=""
+   MPI_LIB="$LIBNAME"
    ROMIO_INCLUDE=""
    USER_CFLAGS=""
    USER_FFLAGS=""
@@ -1316,6 +1320,16 @@ This will enable us to notify you of new releases of ROMIO
 as well as bug fixes.
 
 EOF
+fi
+if test $FROM_MPICH2 = 1 -a "$NOF77" = 0 ; then
+      sed 5d test/fcoll_test.f > test/tmp
+      mv test/tmp test/fcoll_test.f
+      sed 5d test/pfcoll_test.f > test/tmp
+      mv test/tmp test/fcoll_test.f
+      sed 5d test/fperf.f > test/tmp
+      mv test/tmp test/fperf.f
+      sed 5d test/fmisc.f > test/tmp
+      mv test/tmp test/fmisc.f
 fi
 if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
    AC_MSG_RESULT([Configure done. Now type make])
