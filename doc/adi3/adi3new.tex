@@ -76,6 +76,7 @@ device-dependent modules.
 \appendix
 
 \section{Data Structures}
+\label{sec:datastructures}
 \input adi3man/MPID_Request_kind.tex
 \input adi3man/MPID_Request.tex
 \input adi3man/MPID_Comm.tex
@@ -89,6 +90,7 @@ device-dependent modules.
 \input adi3man/MPID_Datatype.tex
 
 \section{Basic Point-to-Point}
+\label{sec:pt-2-pt}
 \input adi3man/MPID_Send.tex
 \input adi3man/MPID_Ssend.tex
 \input adi3man/MPID_Rsend.tex
@@ -105,11 +107,17 @@ device-dependent modules.
 \input adi3man/MPID_Probe.tex
 
 \section{Persistent Point-to-Point}
+\label{sec:persistent}
 \input adi3man/MPID_Send_init.tex
 \input adi3man/MPID_Ssend_init.tex
 \input adi3man/MPID_Rsend_init.tex
 \input adi3man/MPID_Recv_init.tex
 \input adi3man/MPID_Startall.tex
+
+\section{Generalized Requests}
+\label{sec:grequests}
+\input adi3man/MPID_Request_create.tex
+\input adi3man/MPID_Request_set_completed.tex
 
 \section{Data Segment}
 \label{sec:segment-fcns}
@@ -120,6 +128,7 @@ device-dependent modules.
 \input adi3man/MPID_Segment_free
 
 \section{Progress Engine}
+\label{sec:progress}
 The progress engine provides a way for the MPI implementation and the
 ADI implementation to coordinate progress on communication.  The
 design makes no assumptions about whether the ADI uses polling or a
@@ -146,6 +155,9 @@ MPID_Progress_wait - if no completions since flag set,
                      wait on condition variable.  Otherwise, return.
 MPID_Progress_poke - either no-op or yield to communication thread
 \end{verbatim}
+
+See the generalized request functions in Section~\ref{sec:grequests}
+for some additional requirements on the progress engine.
 
 \input adi3man/MPID_Progress_start.tex
 \input adi3man/MPID_Progress_end.tex

@@ -952,6 +952,36 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
 }
 
 /*@
+  MPID_Request_create - Create and return a bare request
+
+  Return value:
+  A pointer to a new request object.
+
+  Notes:
+  This routine is intended for use by 'MPI_Grequest_start' only.  Note that 
+  once a request is created with this routine, any progress engine must assume 
+  that an outside function can complete a request with 
+  'MPID_Request_set_completed'. 
+  @*/
+MPID_Request *MPID_Request_create( void )
+{
+}
+
+/*@ MPID_Request_set_completed - Mark a request as completed 
+
+  Input Parameter:
+. request_ptr - Pointer to request to mark as completed.
+
+  Notes:
+  This routine is intended for use by 'MPI_Grequest_complete' only.  It is 
+  provided to ensure that any MPI routine that is blocked waiting for a 
+  request to complete will be unblocked.
+  @*/
+void MPID_Request_set_completed( MPID_Request *request )
+{
+}
+
+/*@
    MPID_Iprobe - Look for a matching request in the receive queue 
    but do not remove or return it
 
