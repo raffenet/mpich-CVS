@@ -1,5 +1,18 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
+                      Version 1.0.4, December 2001
+
+Major Changes in This Version:
+------------------------------
+* Aggregation support
+
+* Asynchronous IO can be enabled under Linux with the --enable-aio argument
+  to configure
+
+* Additional PVFS support
+
+* ???
+
                       Version 1.0.3, September 2000
 
 
