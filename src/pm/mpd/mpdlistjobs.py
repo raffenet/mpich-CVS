@@ -35,6 +35,8 @@ def mpdlistjobs():
             elif argv[aidx] == '-a'  or  argv[aidx] == '--alias':
                 jobalias = argv[aidx+1]
                 aidx += 2
+            elif argv[aidx] == '-sss':
+                aidx +=1
             else:
                 print 'unrecognized arg: %s' % argv[aidx]
                 exit(-1)
@@ -82,14 +84,17 @@ def mpdlistjobs():
             if not smjobid[2]:
                 smjobid[2] = '          '  # just for printing
             if print_based_on_uname and (print_based_on_jobid or print_based_on_jobalias):
-                print 'jobid    = %s@%s' % (smjobid[0],smjobid[1])
-                print 'jobalias = %s'    % (smjobid[2])
-                print 'username = %s'    % (msg['username'])
-                print 'host     = %s'    % (msg['host'])
-                print 'pid      = %s'    % (msg['pid'])
-                print 'rank     = %s'    % (msg['rank'])
-                print 'pgm      = %s'    % (msg['pgm'])
-                print
+                if '-sss' in argv:
+                    print "%s %s %s"%(msg['host'],msg['pid'],'')
+                else:
+                    print 'jobid    = %s@%s' % (smjobid[0],smjobid[1])
+                    print 'jobalias = %s'    % (smjobid[2])
+                    print 'username = %s'    % (msg['username'])
+                    print 'host     = %s'    % (msg['host'])
+                    print 'pid      = %s'    % (msg['pid'])
+                    print 'rank     = %s'    % (msg['rank'])
+                    print 'pgm      = %s'    % (msg['pgm'])
+                    print
         else:
             break  # mpdlistjobs_trailer
 
