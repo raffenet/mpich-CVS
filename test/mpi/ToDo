@@ -4,15 +4,8 @@ in the GNU coverage code (it appears to lose data if two processes
 simulateously update the same coverage data file), there may be some 
 items listed here that are already sufficiently tested.
 
-1. Free keyvals, while in use in a communicator and while not in use
-2. User copy and delete functions on keyvals
-   a) Also check error return on attribute copy during comm dup.  This
-      should be a recoverable error.
-3. Check all 7 predefined attributes on comm world
-4. Set multiple attributes, in various orders (to ensure that all
-   branches of the insert-into-list of keyvals code are exercised).
-5. Perform attribute tests with comm, type, win (same code?)
--- 1-5 done --
+(completed tests removed to below)
+
 6. Collective code:
    a) mark off heterogeneous code so that it is not compiled for
       homogeneous devices -- partially done
@@ -71,8 +64,8 @@ items listed here that are already sufficiently tested.
 9. Check the use of error macros in intercomm create and merge; also
    consider adding tests that would exercise this code.
 10. Datatype info routines: get address (use address test), get count
-    (for partial datatype; use example from MPI book), get elements
-    (ditto)
+    (for partial datatype; use example from MPI book), get elements 
+    (for partial datatype, done with pack and datatype)
 11. pack (see lines 184-208 in pack.c)
 12. status_set_elements - combine with get_elements to ensure that the 
     correct values are set.
@@ -91,8 +84,6 @@ items listed here that are already sufficiently tested.
     freed).
 19. errutil.c - make sure MPIR_Err_preinit protected in error macros.
 20. (win set/get/call errhandler) - see 18
-21. Ensure group compare unequal (line 142--145 in source) are tested;
-    this is for groups of the same size but with different processes -- done
 22. Ensure group diff error checks are macro protected
 23. group incl with empty group as output (n == 0)
 24. group intersection error check ; group union error check
@@ -104,36 +95,17 @@ items listed here that are already sufficiently tested.
     returns false in the comm_self attribute delete functions.
 27. Add tests for finalized, initthread, ismain, querythread, version
     -- all but finalized and ismain from another thread
-28. bsendutil.c - construct tests to ensure that all branches are
-    tested.  For example, arrange for different completion orders for
-    entries added to the buffer (e.g., use send but then do the
-    receives in a particular order, and make the data large enough to
-    trigger rendezvous sending in the internal Isend).
 29. Add tests for generalized requests, including cancelling a generalized
     request.
 30. Add tests for Request_free for regular send or receive requests.
 31. request_get_status; can be tested as if MPI_Test, but does not free
     the request (really a nondestructive MPI_Test) (also see 29.)
-32. For testall, testsome, waitall, and waitsome.  Add tests that
-    trigger the MPI_ERR_IN_STATUS, by using MPI_ERR_TRUNCATE for
-    receives.
-33. Add tests for lookup/publish/unpublish.  use host:port values as
-    port name. -- done
 34. Topology tests:
-    cart-map - newrank undefined - done
-    cart-shift - displ == 0 - done
-    cart-sub - remove all dimensions - done
-    dims-create - see code FIXME (-done-maybe)
-    graph_map - newrank undefined - done
     graph-create - n == 0
-    topotest - undefined - done
     topoutil - see line 92+; add test (dup communicator with topology)
 35. Ixsend to self.
       If thread multiple, all MPI_Issend, MPI_Ssend to self, with no posted
       receive when send initiated.
-36. Add tests for info delete, dup, getvaluelen.  Add enough tests to 
-    check insert at beginning, middle, end. -- all done
-37. Add tests for info set that replaces an existing value. -- done
 38. Add tests for all RMA (alloc mem, free mem, get, put, accumulate, 
     win_create, win_free, win_complete, win_test, win_fence, win_get_group,
     win_get_name, win_set_name, win_lock, win_unlock, win_post, win_start,
@@ -169,3 +141,36 @@ Also,
 Replace the calls to MPIR_Group_release in Finalize with
 MPIR_Process.group_release, and set the pointer to this routine when
 the group code is used.
+
+--- DONE ---
+1. Free keyvals, while in use in a communicator and while not in use
+2. User copy and delete functions on keyvals
+   a) Also check error return on attribute copy during comm dup.  This
+      should be a recoverable error.
+3. Check all 7 predefined attributes on comm world
+4. Set multiple attributes, in various orders (to ensure that all
+   branches of the insert-into-list of keyvals code are exercised).
+5. Perform attribute tests with comm, type, win (same code?)
+21. Ensure group compare unequal (line 142--145 in source) are tested;
+    this is for groups of the same size but with different processes -- done
+28. bsendutil.c - construct tests to ensure that all branches are
+    tested.  For example, arrange for different completion orders for
+    entries added to the buffer (e.g., use send but then do the
+    receives in a particular order, and make the data large enough to
+    trigger rendezvous sending in the internal Isend).  - test added (need
+    to test against the coverage tests)
+32. For testall, testsome, waitall, and waitsome.  Add tests that
+    trigger the MPI_ERR_IN_STATUS, by using MPI_ERR_TRUNCATE for
+    receives. -- done for all four.
+33. Add tests for lookup/publish/unpublish.  use host:port values as
+    port name. -- done
+34. Topology tests:
+    cart-map - newrank undefined - done
+    cart-shift - displ == 0 - done
+    cart-sub - remove all dimensions - done
+    dims-create - see code FIXME (-done-maybe)
+    graph_map - newrank undefined - done
+    topotest - undefined - done
+36. Add tests for info delete, dup, getvaluelen.  Add enough tests to 
+    check insert at beginning, middle, end. -- all done
+37. Add tests for info set that replaces an existing value. -- done

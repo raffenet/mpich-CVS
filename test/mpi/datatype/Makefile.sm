@@ -21,3 +21,6 @@ localpack_SOURCES = localpack.c
 lbub_SOURCES = lbub.c
 
 zeroparms_SOURCES = zeroparms.c
+
+getpartelm_SOURCES = getpartelm.c
+getpartelm_LDADD = ../util/mtest.o
