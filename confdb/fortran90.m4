@@ -134,7 +134,7 @@ fi[]dnl
 # AC_LANG(Fortran 90)
 # -------------------
 m4_define([AC_LANG(Fortran 90)],
-[ac_ext=f
+[ac_ext=${ac_f90ext-f}
 ac_compile='$F90 -c $F90FLAGS conftest.$ac_ext >&AS_MESSAGE_LOG_FD'
 ac_link='$F90 -o conftest$ac_exeext $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS >&AS_MESSAGE_LOG_FD'
 ac_compiler_gnu=$ac_cv_f90_compiler_gnu
@@ -256,6 +256,41 @@ AC_CHECK_TOOLS(F90,
       [m4_default([$1],
                   [f90 xlf90 pgf90 epcf90 f95 fort xlf95 lf95 g95])])
 
+
+# once we find the compiler, confirm the extension 
+AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])
+cat > conftest.$ac_ext <<EOF
+      program conftest
+      end
+EOF
+if AC_TRY_EVAL(ac_compile) ; then
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+    AC_MSG_CHECKING([for extension for Fortran 90 programs])
+    ac_ext="f90"
+    cat > conftest.$ac_ext <<EOF
+      program conftest
+      end
+EOF
+    if AC_TRY_EVAL(ac_compile) ; then
+        AC_MSG_RESULT([f90])
+    else
+        rm -f conftest*
+        ac_ext="f"
+        cat > conftest.$ac_ext <<EOF
+      program conftest
+      end
+EOF
+        if AC_TRY_EVAL(ac_compile) ; then
+            AC_MSG_RESULT([f])
+        else
+            AC_MSG_RESULT([unknown!])
+        fi
+    fi
+    ac_f90ext=$ac_ext
+    rm -f conftest*
+fi
 # Provide some information about the compiler.
 echo "$as_me:__oline__:" \
      "checking for _AC_LANG compiler version" >&AS_MESSAGE_LOG_FD
