@@ -121,7 +121,7 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 
 	for (i=0; i<ntimes; i++) {
 	    len = ADIOI_MIN(size-done, ADIOI_PREALLOC_BUFSZ);
-	    ADIO_ReadContig(fd, buf, len, MPI_BYTE, (ADIO_Offset)ADIO_EXPLICIT_OFFSET, done,
+	    ADIO_ReadContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, (ADIO_Offset)done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
 #ifdef PRINT_ERR_MSG
@@ -134,8 +134,8 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
                 return;  
 #endif
 	    }
-	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, (ADIO_Offset)ADIO_EXPLICIT_OFFSET, 
-                             done, &status, error_code);
+	    ADIO_WriteContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
+                             (ADIO_Offset)done, &status, error_code);
 	    if (*error_code != MPI_SUCCESS) return;
 	    done += len;
 	}
@@ -143,11 +143,11 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	if (alloc_size > curr_fsize) {
 	    memset(buf, 0, ADIOI_PREALLOC_BUFSZ); 
 	    size = alloc_size - curr_fsize;
-	    ntimes = (size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
+	    ntimes = ((int)size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
 	    for (i=0; i<ntimes; i++) {
 		len = ADIOI_MIN(alloc_size-done, ADIOI_PREALLOC_BUFSZ);
-		ADIO_WriteContig(fd, buf, len, MPI_BYTE, (ADIO_Offset)ADIO_EXPLICIT_OFFSET, 
-				 done, &status, error_code);
+		ADIO_WriteContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
+				 (ADIO_Offset)done, &status, error_code);
 		if (*error_code != MPI_SUCCESS) return;
 		done += len;  
 	    }
