@@ -12,7 +12,8 @@ dnl Currently, only checks for lib mpi and mpi.h.  Later, we will add
 dnl MPI_Pcontrol prototype (const int or not?).  
 dnl
 dnl If PAC_ARG_MPICH_BUILDING is included, this will work correctly 
-dnl when MPICH is being built
+dnl when MPICH is being built.
+dnl
 dnlD*/
 dnl Other tests to add:
 dnl Version of MPI
@@ -50,6 +51,19 @@ ifelse($1,,,[$1])
 ])
 dnl
 dnl
+dnl/*D
+dnl PAC_ARG_MPICH_BUILDING - Add configure command-line argument to indicated
+dnl that MPICH is being built
+dnl
+dnl Output Effect:
+dnl Adds the command-line switch '--with-mpichbuilding' that may be used to
+dnl indicate that MPICH is building.  This allows a configure to work-around
+dnl the fact that during a build of MPICH, certain commands, particularly the
+dnl compilation commands such as 'mpicc', are not yet functional.
+dnl
+dnl See Also:
+dnl PAC_LIB_MPI
+dnlD*/
 AC_DEFUN(PAC_ARG_MPICH_BUILDING,[
 AC_ARG_WITH(mpichbuilding,
 [--with-mpichbuilding - Assume that MPICH is being built],
@@ -59,6 +73,24 @@ dnl
 dnl
 dnl This should also set MPIRUN.
 dnl
+dnl/*D
+dnl PAC_ARG_MPI_TYPES - Add command-line switches for different MPI 
+dnl environments
+dnl
+dnl Synopsis:
+dnl PAC_ARG_MPI_TYPES
+dnl
+dnl Output Effects:
+dnl Adds the following command line options to configure
+dnl+ \-\-with\-mpich[=path] - MPICH.  'path' is the location of MPICH commands
+dnl. \-\-with\-ibmmpi - IBM MPI
+dnl- \-\-with\-sgimpi - SGI MPI
+dnl
+dnl Sets 'CC', 'F77', 'TESTCC', and 'TESTF77'.
+dnl
+dnl See also:
+dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
+dnlD*/
 AC_DEFUN(PAC_ARG_MPI_TYPES,[
 AC_ARG_WITH(mpich,
 [--with-mpich=path  - Assume that we are building with MPICH],[

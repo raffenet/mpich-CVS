@@ -1,4 +1,22 @@
 dnl
+dnl/*D
+dnl PAC_LANG_PUSH_COMPILERS - Replace all compilers with test versions 
+dnl
+dnl Synopsis:
+dnl PAC_LANG_PUSH_COMPILERS
+dnl
+dnl Output Effects:
+dnl The values of 'CC', 'CXX', 'F77', 'F90', and 'CPP' are replaced with
+dnl the values of 'TESTCC' etc.  The old values are saved (see 
+dnl 'PAC_LANG_POP_COMPILERS').
+dnl 
+dnl Calls to this macro may be nested, but only the outer-most calls have
+dnl any effect.
+dnl
+dnl See also:
+dnl PAC_LANG_POP_COMPILERS
+dnlD*/
+dnl
 dnl These two name allow you to use TESTCC for CC, etc, in all of the 
 dnl autoconf compilation tests.  This is useful, for example, when the
 dnl compiler needed at the end cannot be used to build programs that can 
@@ -8,7 +26,7 @@ dnl compilers.  Because autoconf insists on calling cpp for the header
 dnl checks, we use TESTCPP for the CPP test as well.  And if no TESTCPP 
 dnl is defined, we create one using TESTCC.
 dnl
-AC_DEFUN(PAC_LANG_PUSH,[
+AC_DEFUN(PAC_LANG_PUSH_COMPILERS,[
 if test "X$pac_save_level" = "X" ; then
     pac_save_CC="$CC"
     pac_save_CXX="$CXX"
@@ -30,7 +48,24 @@ if test "X$pac_save_level" = "X" ; then
 fi
 pac_save_level=`expr $pac_save_level + 1`
 ])
-AC_DEFUN(PAC_LANG_POP,[
+dnl/*D
+dnl PAC_LANG_POP_COMPILERS - Restore compilers that were displaced by
+dnl PAC_LANG_PUSH_COMPILERS
+dnl
+dnl Synopsis:
+dnl PAC_LANG_POP_COMPILERS
+dnl
+dnl Output Effects:
+dnl The values of 'CC', 'CXX', 'F77', 'F90', and 'CPP' are replaced with
+dnl their original values from the outermost call to 'PAC_LANG_PUSH_COMPILERS'.
+dnl 
+dnl Calls to this macro may be nested, but only the outer-most calls have
+dnl any effect.
+dnl
+dnl See also:
+dnl PAC_LANG_PUSH_COMPILERS
+dnlD*/
+AC_DEFUN(PAC_LANG_POP_COMPILERS,[
 pac_save_level=`expr $pac_save_level - 1`
 if test "X$pac_save_level" = "X0" ; then
     CC="$pac_save_CC"

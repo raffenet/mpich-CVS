@@ -33,20 +33,27 @@ else
 fi
 ])
 dnl
-dnl 
+dnl/*D
+dnl PAC_C_CHECK_COMPILER_OPTION - Check that a compiler option is accepted
+dnl without warning messages
 dnl
+dnl Synopsis:
 dnl PAC_C_CHECK_COMPILER_OPTION(optionname,action-if-ok,action-if-fail)
+dnl
+dnl Output Effects:
+dnl
+dnl If no actions are specified, a working value is added to 'COPTIONS'
+dnl
+dnl Notes:
 dnl This is now careful to check that the output is different, since 
 dnl some compilers are noisy.
 dnl 
 dnl We are extra careful to prototype the functions in case compiler options
 dnl that complain about poor code are in effect.
 dnl
-dnl
-dnl if no actions are specified, a working value is added to COPTIONS
-dnl
 dnl Because this is a long script, we have ensured that you can pass a 
 dnl variable containing the option name as the first argument.
+dnlD*/
 AC_DEFUN(PAC_C_CHECK_COMPILER_OPTION,[
 AC_MSG_CHECKING([that C compiler accepts option $1])
 save_CFLAGS="$CFLAGS"
@@ -117,32 +124,75 @@ fi
 rm -f conftest*
 ])
 dnl
+dnl/*D
+dnl PAC_C_OPTIMIZATION - Determine C options for producing optimized code
+dnl
+dnl Synopsis
+dnl PAC_C_OPTIMIZATION([action if found])
+dnl
+dnl Output Effect:
+dnl Adds options to 'COPTIONS' if no other action is specified
+dnl 
+dnl Notes:
 dnl This is a temporary standin for compiler optimization.
 dnl It should try to match known systems to known compilers (checking, of
 dnl course), and then falling back to some common defaults.
 dnl Note that many compilers will complain about -g and aggressive
 dnl optimization.  
-dnl 
+dnlD*/
 AC_DEFUN(PAC_C_OPTIMIZATION,[
     for copt in "-O4 -Ofast" "-Ofast" "-fast" "-O3" "-xO3" "-O" ; do
         PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
         if test $found_opt = "yes" ; then
-	    COPTIONS="$COPTIONS $copt" 
+	    ifelse($1,,COPTIONS="$COPTIONS $copt",$1)
 	    break
         fi
     done
 ])
-
 dnl
-dnl Determine the argument that generates dependency information
-dnl (incomplete)
-dnl Sets C_DEPEND_OPT to the options(s)
-dnl Sets C_DEPEND_MAKES_O to ??? if .o files are also produced
-dnl Set  C_DEPEND_OUTPUT to ???
-dnl Also creates a Depends file in the top directory (!)
+dnl/*D
+dnl PAC_C_DEPENDS - Determine how to use the C compiler to generate 
+dnl dependency information
+dnl
+dnl Synopsis:
+dnl PAC_C_DEPENDS
+dnl
+dnl Output Effects:
+dnl Sets the following shell variables and call AC_SUBST for them:
+dnl+ C_DEPEND_OPT - Compiler options needed to create dependencies
+dnl. C_DEPEND_OUT - Shell redirection for dependency file (may be empty)
+dnl- C_DEPEND_MV - Command to move created dependency file
+dnl Also creates a Depends file in the top directory (!).
+dnl
+dnl Notes:
+dnl A typical Make rule that exploits this macro is
+dnl.vb
+dnl #
+dnl # Dependency processing
+dnl .SUFFIXES: .dep
+dnl DEP_SOURCES = ${SOURCES:.c=.dep}
+dnl Depends: ${DEP_SOURCES}
+dnl         @-rm -f Depends
+dnl         cat *.dep >Depends
+dnl .c.dep:
+dnl         @${C_COMPILE} @C_DEPEND_OPT@ $< @C_DEPEND_OUT@
+dnl         @@C_DEPEND_MV@
+dnl
+dnl depends-clean:
+dnl         @-rm -f *.dep ${srcdir}/*.dep Depends ${srcdir}/Depends
+dnl         @-touch Depends
+dnl.ve
+dnl
+dnl For each file 'foo.c', this creates a file 'foo.dep' and creates a file
+dnl 'Depends' that contains all of the '*.dep' files.
+dnl 
+dnlD*/
+dnl 
+dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
+dnl includes, such as /usr/xxxx and /opt/xxxx
+dnl
 AC_DEFUN(PAC_C_DEPENDS,[
 AC_SUBST(C_DEPEND_OPT)
-AC_SUBST(C_DEPEND_OUTPUT)
 AC_SUBST(C_DEPEND_OUT)
 AC_SUBST(C_DEPEND_MV)
 rm -f conftest*
@@ -199,17 +249,14 @@ dnl fi
 touch Depends
 rm -f conftest*
 ])
-dnl 
-dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
-dnl includes, such as /usr/xxxx and /opt/xxxx
 dnl
+dnl/*D 
+dnl PAC_C_PROTOTYPES - Check that the compiler accepts ANSI prototypes.  
 dnl
+dnl Synopsis:
+dnl PAC_C_PROTOTYPES([action if true],[action if false])
 dnl
-dnl Check that the compile accepts ANSI prototypes.  Perform first arg if yes,
-dnl second if false.  Only test if it hasn't been tested for this compiler
-dnl (and flags) before
-dnl PAC_C_PROTOTYPES(true-action, false-action)
-dnl
+dnlD*/
 AC_DEFUN(PAC_C_PROTOTYPES,[
 AC_CACHE_CHECK([if $CC supports function prototypes],
 pac_cv_c_prototypes,[
@@ -222,30 +269,45 @@ else
 fi
 ])dnl
 dnl
+dnl/*D
+dnl PAC_FUNC_SEMCTL - Check for semctl and its argument types
 dnl
+dnl Synopsis:
+dnl PAC_FUNC_SEMCTL
+dnl
+dnl Output Effects:
+dnl Sets 'HAVE_SEMCTL' if semctl is available.
+dnl Sets 'HAVE_UNION_SEMUN' if 'union semun' is available.
+dnl Sets 'SEMCTL_NEEDS_SEMUN' if a 'union semun' type must be passed as the
+dnl fourth argument to 'semctl'.
+dnlD*/ 
 dnl Check for semctl and arguments
 AC_DEFUN(PAC_FUNC_SEMCTL,[
-AC_CACHE_CHECK([for union semun],
-pac_cv_type_union_semun,[
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_CHECK_FUNC(semctl)
+if test "$ac_cv_func_semctl" = "yes" ; then
+    AC_CACHE_CHECK([for union semun],
+    pac_cv_type_union_semun,[
+    AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>],[union semun arg;arg.val=0;],
-pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
-  if test "$pac_cv_type_union_semun" = "yes" ; then
-      AC_DEFINE(HAVE_UNION_SEMUN)
-  #
-  # See if we can use an int in semctl or if we need the union
-  AC_CACHE_CHECK([whether semctl needs union semun],
-  pac_cv_func_semctl_needs_semun,[
-  AC_TRY_COMPILE([#include <sys/types.h>
+    pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
+    if test "$pac_cv_type_union_semun" = "yes" ; then
+        AC_DEFINE(HAVE_UNION_SEMUN)
+        #
+        # See if we can use an int in semctl or if we need the union
+        AC_CACHE_CHECK([whether semctl needs union semun],
+        pac_cv_func_semctl_needs_semun,[
+        AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>],[
 int arg = 0; semctl( 1, 1, SETVAL, arg );],
-  pac_cv_func_semctl_needs_semun="yes",pac_cv_func_semctl_needs_semun="no")
-  ])
-  if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
-      AC_DEFINE(SEMCTL_NEEDS_SEMUN)
-  fi
+        pac_cv_func_semctl_needs_semun="yes",
+        pac_cv_func_semctl_needs_semun="no")
+        ])
+        if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
+            AC_DEFINE(SEMCTL_NEEDS_SEMUN)
+        fi
+    fi
 fi
 ])
 dnl
