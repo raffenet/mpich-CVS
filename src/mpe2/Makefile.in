@@ -103,7 +103,7 @@ clean_include:
 	  fi
 
 clean_bin:
-	@-cd $(binbuild_dir) ; \
+	 -cd $(binbuild_dir) ; \
 	  files=`/bin/ls` ; \
 	  for file in ${files} ; do \
 	      if [ ! -d "$$file" ] ; then \
@@ -112,31 +112,29 @@ clean_bin:
 	  done;
 
 clean_lib:
-	@-$(RM) -f $(libbuild_dir)/lib*
+	 -$(RM) -f $(libbuild_dir)/lib*
+	 -$(RM) -f $(libbuild_dir)/*.jar
+	 -$(RM) -f $(libbuild_dir)/*.o
 
-clean: clean_bin
+clean: clean_bin clean_lib
 	@-$(RM) -f work.pc work.pcl
-	@( cd src && $(MAKE) clean )
-	@-for dir in contrib/life contrib/mandel contrib/mastermind \
-	             contrib/test share/examples slog2sdk ; do \
-	      if [ -s $$dir/Makefile ] ; then \
-	          ( cd $$dir && $(MAKE) clean ) ; \
-	      fi ; \
+	@-for pkg in $(PKGS) ; do \
+              if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg ; $(MAKE) clean ) ; \
+              fi ; \
 	  done
 
-distclean: clean_bin
-	( cd src && $(MAKE) distclean )
-	@-for dir in contrib/life contrib/mandel contrib/mastermind \
-	             contrib/test share/examples slog2sdk ; do \
-	      if [ -s $$dir/Makefile ] ; then \
-	          ( cd $$dir && $(MAKE) distclean ) ; \
-	      fi ; \
+distclean: clean_bin clean_lib
+	@-for pkg in $(PKGS) ; do \
+              if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg ; $(MAKE) distclean ) ; \
+              fi ; \
 	  done
 	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
-	@-$(RM) -f Makefile mpeconf.h config.log config.status
+	@-$(RM) -f Makefile mpe_conf.h config.log config.status
 
-configure: configure.in aclocal.m4 aclocal_f77.m4 aclocal_make.m4 \
-	aclocal_mpi.m4
+configure: configure.in aclocal_core.m4 aclocal_f77.m4 aclocal_make.m4 \
+	aclocal_mpi.m4 aclocal.m4
 	autoheader
 	autoconf
 

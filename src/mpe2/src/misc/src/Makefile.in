@@ -134,13 +134,13 @@ dbxtest2: dbxtest2.@OBJEXT@
 # Remove the old libraries before rebuilding (in case they came from another
 # architecture or are otherwise damaged)
 rmlib:
-	$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
 
 rmprog:
-	$(RM) -f $(EXECS)
+	@-$(RM) -f $(EXECS)
 
 clean: rmprog
-	-@$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
+	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
 
-distclean: clean rmprog rmlib
-	-@$(RM) -f Makefile dbxerr.c
+distclean: clean rmlib
+	@-$(RM) -f Makefile dbxerr.c

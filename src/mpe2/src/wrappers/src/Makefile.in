@@ -129,16 +129,16 @@ ${libbuild_dir}/mpe_prof.@OBJEXT@: mpe_prof.@OBJEXT@
 # Remove the old libraries before rebuilding (in case they came from another
 # architecture or are otherwise damaged)
 rmlib:
-	$(RM) -f ${libbuild_dir}/lib$(LOG_LIBNAME).a 
-	$(RM) -f ${libbuild_dir}/lib$(TRACE_LIBNAME).a 
-	$(RM) -f ${libbuild_dir}/lib$(F2CMPI_LIBNAME).a 
-	$(RM) -f ${libbuild_dir}/mpe_prof.@OBJEXT@
+	@-$(RM) -f ${libbuild_dir}/lib$(LOG_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(TRACE_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(F2CMPI_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/mpe_prof.@OBJEXT@
 
 rmprog:
-	$(RM) -f $(EXECS)
+	@-$(RM) -f $(EXECS)
 
 clean: rmprog
-	-@$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
+	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
 
-distclean: clean rmprog rmlib
-	-@$(RM) -f Makefile
+distclean: clean rmlib
+	@-$(RM) -f Makefile

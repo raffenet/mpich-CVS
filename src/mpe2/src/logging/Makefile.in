@@ -1,4 +1,4 @@
-LL: all
+ALL: all
 
 MAKE   = @MAKE@
 SHELL  = /bin/sh
@@ -65,4 +65,7 @@ clean_bin:
 clean: clean_bin clean_lib
 	@( cd src && $(MAKE) clean )
 
-realclean: clean_include clean
+distclean: clean_include clean_bin clean_lib
+	@-( cd src && $(MAKE) distclean )
+	@-$(RM) -f mpe*conf.h
+	@-$(RM) -f Makefile config.log config.status

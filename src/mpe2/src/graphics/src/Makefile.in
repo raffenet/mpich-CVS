@@ -135,15 +135,15 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: $(MPE_COBJECTS)
 # Remove the old libraries before rebuilding (in case they came from another
 # architecture or are otherwise damaged)
 rmlib:
-	$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
-	$(RM) -f ${libbuild_dir}/lib$(ANIM_LIBNAME).a 
-	$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(ANIM_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
 
 rmprog:
-	$(RM) -f $(EXECS)
+	@-$(RM) -f $(EXECS)
 
 clean: rmprog
-	-@$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
+	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
 
-distclean: clean rmprog rmlib
-	-@$(RM) -f Makefile Makefile_nompi
+distclean: clean rmlib
+	@-$(RM) -f Makefile Makefile_nompi
