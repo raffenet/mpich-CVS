@@ -53,7 +53,7 @@ static PMIMaster pmimaster = { 0, 0, 0 };
    command */
 static int (*userSpawner)( ProcessWorld *, void *) = 0;
 static void *userSpawnerData = 0;
-static int pmidebug = 1;
+static int pmidebug = 0;
 
 #if 0
 /*
@@ -234,15 +234,24 @@ int PMISetupFinishInServer( PMISetup *pmiinfo, ProcessState *pState )
 
 static PMIGroup *curPMIGroup = 0;
 static int       curNprocess = 0;
+/*
+  Create a new PMIProcess and initialize it.
 
+  If there is an allocation failure, return non zero.
+*/
 PMIProcess *PMISetupNewProcess( int fd, ProcessState *pState )
 {
     PMIProcess *pmiprocess;
 
     pmiprocess = (PMIProcess *)MPIU_Malloc( sizeof(PMIProcess) );
-    pmiprocess->fd     = fd;
-    pmiprocess->group  = curPMIGroup;
-    pmiprocess->pState = pState;
+    if (!pmiprocess) return 0;
+    pmiprocess->fd           = fd;
+    pmiprocess->group        = curPMIGroup;
+    pmiprocess->pState       = pState;
+    pmiprocess->spawnApp     = 0;
+    pmiprocess->spawnAppTail = 0;
+    pmiprocess->spawnKVS     = 0;
+    pmiprocess->spawnWorld   = 0;
 
     /* Add this process to the curPMIGroup */
     curPMIGroup->pmiProcess[curNprocess++] = pmiprocess;
@@ -250,19 +259,25 @@ PMIProcess *PMISetupNewProcess( int fd, ProcessState *pState )
     return pmiprocess;
 }
 
-/* Initialize a new PMI group that will be the parent of all
-   PMIProcesses until the next group is created 
-   Each group also starts with a KV Space */
+/*
+  Initialize a new PMI group that will be the parent of all
+  PMIProcesses until the next group is created 
+  Each group also starts with a KV Space 
+  
+  If there is an allocation failure, return non zero.
+*/
 int PMISetupNewGroup( int nProcess, PMIKVSpace *kvs )
 {
     PMIGroup *g;
     curPMIGroup = (PMIGroup *)MPIU_Malloc( sizeof(PMIGroup) );
+    if (!curPMIGroup) return 1;
 
     curPMIGroup->nProcess   = nProcess;
     curPMIGroup->groupID    = pmimaster.nGroups++;
     curPMIGroup->nInBarrier = 0;
     curPMIGroup->pmiProcess = (PMIProcess **)MPIU_Malloc( 
 					 sizeof(PMIProcess*) * nProcess );
+    if (!curPMIGroup->pmiProcess) return 1;
     curPMIGroup->nextGroup  = 0;
     curNprocess             = 0;
 
@@ -1035,21 +1050,31 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 
     DBG_PRINTFCOND(pmidebug,( "Entering fPMI_Handle_spawn\n" ));
 
-    pWorld = (ProcessWorld *)MPIU_Malloc( sizeof(ProcessWorld) );
-    /* FIXME check pWorld */
-    
-    pWorld->apps      = 0;
-    pWorld->nProcess  = 0;
-    pWorld->nextWorld = 0;
-    pWorld->nApps     = 0;
-    pWorld->worldNum  = pUniv.nWorlds++;
+    if (!pentry->spawnWorld) {
+	pWorld = (ProcessWorld *)MPIU_Malloc( sizeof(ProcessWorld) );
+	if (!pWorld) return 1;
+	
+	pentry->spawnWorld = pWorld;
+	pWorld->apps       = 0;
+	pWorld->nProcess   = 0;
+	pWorld->nextWorld  = 0;
+	pWorld->nApps      = 0;
+	pWorld->worldNum   = pUniv.nWorlds++;
+	pentry->spawnKVS   = fPMIKVSAllocate();
+    }
+    else {
+	pWorld = pentry->spawnWorld;
+    }
+    kvs    = pentry->spawnKVS;
 
+    /* Note that each mcmd=spawn creates an app.  When all apps
+       are present, then then can be linked to a world.  A 
+       spawnmultiple command makes use of multiple mcmd=spawn PMI
+       commands */ 
 
-    /* FIXME: each mcmd=spawn should create an app.  When all apps
-       are present, then then can be linked to a world */
-
-    /* Create an initial app */
+    /* Create a new app */
     app = (ProcessApp *)MPIU_Malloc( sizeof(ProcessApp) );
+    if (!app) return 1;
     app->myAppNum  = 0;
     app->exename   = 0;
     app->arch      = 0;
@@ -1064,23 +1089,23 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     app->nextApp   = 0;
     app->pWorld    = pWorld;
 
-    kvs = fPMIKVSAllocate();
+    /* Add to the pentry spawn structure */
+    if (pentry->spawnAppTail) {
+	pentry->spawnAppTail->nextApp = app;
+    }
+    else {
+	pentry->spawnApp = app;
+	pWorld->apps     = app;
+    }
+    pentry->spawnAppTail = app;
 
     for (i=0; i<PMI_MAX_ARGS; i++) args[i] = 0;
-
-    /* Input:
-       (see above)
-
-       Output:
-       cmd=spawn_result remote_kvsname=name rc=integer
-    */
 
     /* Get lines until we find either cmd or mcmd (an error) or endcmd 
        (expected end) */
     while ((rc = PMIU_readline( pentry->fd, inbuf, sizeof(inbuf) )) > 0) {
 	char *cmdPtr, *valPtr, *p;
 
-	printf( "Spawn: read line %s", inbuf );
 	/* Find the command = format */
 	p = inbuf;
 	/* Find first nonblank */
@@ -1106,7 +1131,6 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    *p = 0;
 	}
 	
-	printf( "Cmd = %s\n", cmdPtr );
 	/* Found an = .  value is the rest of the line */
 	valPtr = ++p; 
 	while (*p && *p != '\n') p++;
@@ -1140,7 +1164,6 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    /* argcnt may not be set before the args */
 	    /* Handle arg%d.  Values are 1 - origin */
 	    argnum = atoi( cmdPtr + 3 ) - 1;
-	    printf( "Argnum = %d, arg = %s\n", argnum, valPtr );
 	    if (argnum < 0 || argnum >= PMI_MAX_ARGS) {
 		/* FIXME: malformed command */
 	    }
@@ -1168,19 +1191,14 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     if (app->nArgs > 0) {
 	app->args  = (const char **)MPIU_Malloc( app->nArgs * sizeof(char *) );
 	for (i=0; i<app->nArgs; i++) {
-	    printf( "Setting args[%d] to %s\n", i, args[i] );
 	    app->args[i] = args[i];
 	    args[i]      = 0;
 	}
     }
 
-    /* FIXME: end of read mcmd=spawn for an app */
+    pWorld->nApps ++;
 
     /* Now that we've read the commands, invoke the user's spawn command */
-    pWorld->nApps ++;
-    /* FIXME: Add to end */
-    pWorld->apps  = app;
-
     if (totspawns == spawnnum) {
 	PMISetupNewGroup( pWorld->nProcess, kvs );
 	
@@ -1188,7 +1206,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    rc = (*userSpawner)( pWorld, userSpawnerData );
 	}
 	else {
-	    printf( "Unable to spawn %s\n", app->exename );
+	    MPIU_Error_printf( "Unable to spawn %s\n", app->exename );
 	    rc = 1;
 	    MPIE_PrintProcessWorld( stdout, pWorld );
 	}

@@ -230,7 +230,8 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     }
     MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", pState->wRank );
     client_env[j++] = env_pmi_rank;
-    MPIU_Snprintf( env_pmi_size, MAXNAMELEN, "PMI_SIZE=%d", app->nProcess );
+    MPIU_Snprintf( env_pmi_size, MAXNAMELEN, "PMI_SIZE=%d", 
+		   app->pWorld->nProcess );
     client_env[j++] = env_pmi_size;
     MPIU_Snprintf( env_pmi_debug, MAXNAMELEN, "PMI_DEBUG=%d", MPIE_Debug );
     client_env[j++] = env_pmi_debug; 
@@ -789,7 +790,7 @@ static void MPIE_InstallSigHandler( int sig, void (*handler)(int) )
        if possible turn off the reset-handler-to-default bit, then
        set the new handler */
     sigaction( sig, (struct sigaction *)0, &oldact );
-    oldact.sa_handler = (void (*)(int))handler
+    oldact.sa_handler = (void (*)(int))handler;
 #ifdef SA_RESETHAND
     /* Note that if this feature is not supported, there is a race
        condition in the handling of signals, and the OS is fundementally

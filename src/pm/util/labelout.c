@@ -85,7 +85,7 @@ int IOLabelSetupFinishInServer( IOLabelSetup *iofds, ProcessState *pState )
     leadererr = (IOLabel *)malloc( sizeof(IOLabel) );
     IOLabelSetLabelText( errLabelPattern, 
 			 leadererr->label, sizeof(leadererr->label),
-			 pState->wRank, 0 );
+			 pState->wRank, pState->app->pWorld->worldNum );
     leadererr->lastNL = 1;
     MPIE_IORegister( iofds->readOut[0], IO_READ, IOLabelWriteLine, leader );
     MPIE_IORegister( iofds->readErr[0], IO_READ, IOLabelWriteLine, leadererr );
@@ -105,7 +105,6 @@ static int IOLabelWriteLine( int fd, int rdwr, void *data )
 
     MPIE_SYSCALL(n,read,( fd, buf, 1024 ));
     if (n == 0) {
-	printf( "Closing fd %d\n", fd );
 	return 1;  /* ? EOF */
     }
 
@@ -207,24 +206,23 @@ static int IOLabelSetLabelText( const char pattern[], char label[],
 		break;
 	    case 'W':
 		{
-		    char delim = *++pin;
-		    const char *endW;
-		    char wPattern[MAX_LABEL], wLabel[MAX_LABEL];
-		    char *wptr = wLabel;
+		    char        delim = *++pin;
+		    char        wPattern[MAX_LABEL], wLabel[MAX_LABEL];
+		    char       *wptr = wPattern;
 
-		    endW = pin + 1;
-		    while (*endW && *endW != delim && 
-			   (wptr - wLabel) < MAX_LABEL) *wptr++ = *endW++;
+		    pin++;
+		    while (*pin && *pin != delim && 
+			   (wptr - wPattern) < MAX_LABEL) {
+			*wptr++ = *pin++;
+		    }
 		    *wptr = 0;
-		    pin = endW;
-		    /* The W string is pin to endW-1. */
 		    if (worldnum > 0) {
 			IOLabelSetLabelText( wPattern, wLabel, sizeof(wLabel), 
 					     rank, worldnum );
 			dlen = strlen(wLabel);
 			if (dlen < lenleft) {
 			    MPIU_Strnapp( pout, wLabel, maxlabel );
-			    pout += dlen;
+			    pout    += dlen;
 			    lenleft -= dlen;
 			}
 			else {

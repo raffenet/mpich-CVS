@@ -20,10 +20,18 @@
    process.h)
 */
 typedef struct PMIProcess {
-    int                  fd;         /* fd to client */
-    struct PMIGroup     *group;      /* PMI group to which this process 
-					belongs */
-    struct ProcessState *pState;     /* ProcessState */
+    int                  fd;             /* fd to client */
+    struct PMIGroup     *group;          /* PMI group to which this process 
+					    belongs */
+    struct ProcessState *pState;         /* ProcessState */
+    /* The following are used to hold data used to handle
+       spawn and spawn multiple commands */
+    struct ProcessApp   *spawnApp, 
+                        *spawnAppTail;  /* In progress spawn multiple 
+					   data */
+    struct ProcessWorld *spawnWorld;    /* In progress spawn multiple 
+					   new world */
+    struct PMIKVSpace   *spawnKVS;      /* In progres KV space for new world */
 } PMIProcess;
 
 typedef struct PMIGroup {

@@ -22,7 +22,7 @@
 /* Debug value */
 extern int MPIE_Debug;
 
-#define HAVE_DEBUGGING
+/* #define HAVE_DEBUGGING */
 #ifdef HAVE_DEBUGGING
 #define DBG_COND(cond,stmt) {if (cond) { stmt;}}
 #else
@@ -34,7 +34,7 @@ extern int MPIE_Debug;
 #define DBG_EPRINTF(a) DBG_EPRINTFCOND(MPIE_Debug,a)
 #define DBG_PRINTF(a)  DBG_PRINTFCOND(MPIE_Debug,a)
 
-#define USE_LOG_SYSCALLS
+/* #define USE_LOG_SYSCALLS */
 #ifdef USE_LOG_SYSCALLS
 #include <errno.h>
 #define MPIE_SYSCALL(a_,b_,c_) { \
