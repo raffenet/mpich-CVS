@@ -1094,6 +1094,7 @@ PAC_TEST_MPIR_STATUS_SET_BYTES
 
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
+    F77=${FC:-f77}
     PAC_GET_FORTNAMES
     if test -n "$WDEF" ; then
         CFLAGS="$CFLAGS $WDEF"
