@@ -53,6 +53,8 @@ int main(int argc, char* argv[])
     /* put myself in the background if flag is set */
     if (smpd_process.bNoTTY)
     {
+	int fd;
+
         if (fork() != 0)  /* parent exits; child in background */
 	    exit(0);
 	setsid();           /* become session leader; no controlling tty */
@@ -60,7 +62,19 @@ int main(int argc, char* argv[])
 	/* leader exits; svr4: make sure do not get another controlling tty */
         if (fork() != 0)
 	    exit(0);
-	/* How do I make stdout and stderr go away?
+
+	/* How do I make stdout and stderr go away? */
+	/* redirect stdout/err to nothing */
+	fd = open("/dev/null", O_APPEND);
+	if (fd != -1)
+	{
+	    close(1);
+	    close(2);
+	    dup2(fd, 1);
+	    dup2(fd, 2);
+	    close(fd);
+	}
+	/*
         freopen("/dev/null", "a", stdout);
         freopen("/dev/null", "a", stderr);
 	*/
