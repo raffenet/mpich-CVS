@@ -127,10 +127,10 @@ foreach $_ (@ARGV) {
 %declarg = ( 'type_extent-2' => 'MPI_Fint *',
 	     'type_lb-2' => 'MPI_Fint *',
 	     'type_ub-2' => 'MPI_Fint *', 
+	     'type_struct-3' => 'MPI_Fint *',   # Really [], but * is easier
+             'type_hindexed-3' => 'MPI_Fint *', # As above
+             'type_hvector-3' => 'MPI_Fint *',
 	    );
-# also need
-# 'type_struct-3' => 'MPI_Fint []',
-# 'type_hindexed-3' => 'MPI_Fint []',
 
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
@@ -360,9 +360,10 @@ foreach $_ (@ARGV) {
     'Type_extent' => '2', 'Type_extent-2' => 'out:aintToInt',	      
     'Type_lb' => '2', 'Type_lb-2' => 'out:aintToInt',	      
     'Type_ub' => '2', 'Type_ub-2' => 'out:aintToInt',	      
+    'Type_struct' => '3', 'Type_struct-3' => 'in:intToAintArr:*v1',
+    'Type_hindexed' => '3', 'Type_hindexed-3' => 'in:intToAintArr:*v1',
 # also need
-# 'Type_struct' => '3', 'Type_struct-3' => 'in:intToAintArr:*v1',
-# 'Type_hindexed'=> '3', 'Type_hindexed-3' => 'in:intToAintArr:*v1',
+    'Type_hvector' => '3', 'Type_hvector-3' => 'in:intToAint',
     'Unpack_external' => '1', 'Unpack_external-1' => 'in:addnull',
     'Unpublish_name' => '1:3', 'Unpublish_name-1' => 'in:addnull',
 		  'Unpublish_name-3' => 'in:addnull',
@@ -848,7 +849,28 @@ sub print_weak_decl {
     }
 }
 #
+# --------------------------------------------------------------------------
 # Special processing
+#
+# Each parameter can be processed by a routine, with the suffix controlling
+# the routine invoked for each step.  Roughly, these are:
+# 
+# void foo( MPI_Fint *v1, etc )
+# {
+# /* Special declarations needed for the variables */
+# <name>_<direction>_decl( <argnum> )
+# /* Special processing need for in variables */
+# <name>_ftoc( <argnum> )
+# /* Call the function.  Replace special arguments with the output from */
+# <name>_<direction>_arg( <argnum> )
+# /* Special post call processing (for out variables) */
+# <name>_ctof( l$count, v$count ) /* local (C) variable name, fortran var name */
+# 
+# Special case: For parameters that are arrays, the size of the
+# array is in $Array_size.
+# 
+# 
+# --------------------------------------------------------------------------
 # Buffer pointers
 sub bufptr_ftoc {
     my $count = $_[0];
@@ -1116,8 +1138,12 @@ sub print_post_call {
 	$rule = $special_args{"${routine_name}-$count"};
 	($direction,$method,$Array_size) = split(/:/,$rule);
 	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
+        $processing_routine = "${method}_ctof";
 	if ($direction eq "out") {
-	    $processing_routine = "${method}_ctof";
+	    &$processing_routine( "l$count", "v$count" );
+	}
+	elsif (defined(&$processing_routine)) {
+	    # Invoke even for "in" args incase we need to free a temp
 	    &$processing_routine( "l$count", "v$count" );
 	}
 	if ($clean_up ne "") {
@@ -1296,6 +1322,57 @@ sub chararray2_ftoc {
     $clean_up .= "    $free( p$count\[0\] ); $free( p$count );\n";
 }
 
+# ---------------------------------------------------------------------------
+# Convert from an int array to an Aint array for routines taking an Aint as 
+# input
+sub intToAintArr_in_decl {
+    my $count = $_[0];
+    print $OUTFD "    MPI_Aint *l$count;\n";
+}
+sub intToAintArr_ftoc {
+    my $count = $_[0];
+    print $OUTFD "
+#ifdef HAVE_AINT_LARGER_THAN_FINT
+    if ($Array_size > 0) {
+        int li;
+        l$count = (MPI_Aint *)$malloc( $Array_size * sizeof(MPI_Aint) );
+        for (li=0; li<$Array_size; li++) 
+            l$count\[li\] = v$count\[li\];
+    }
+    else l$count = 0;
+#else 
+    l$count = v$count;
+#endif\n";
+}
+sub intToAintArr_in_arg {
+    my $count = $_[0];
+    print $OUTFD "l$count";
+}
+sub intToAintArr_ctof {
+    my $lname = $_[0];
+    my $vname = $_[1];
+    print $OUTFD "
+#ifdef HAVE_AINT_LARGER_THAN_FINT
+    if ($lname) { $free($lname); }
+#endif\n";
+}
+# ---------------------------------------------------------------------------
+# Convert from an int to an Aint for routines taking an Aint as 
+# input
+sub intToAint_in_decl {
+    my $count = $_[0];
+    print $OUTFD "    MPI_Aint l$count;\n";
+}
+sub intToAint_ftoc {
+    my $count = $_[0];
+    print $OUTFD "    l$count = (MPI_Aint)*v$count;\n";
+}
+sub intToAint_in_arg {
+    my $count = $_[0];
+    print $OUTFD "l$count";
+}
+
+# ---------------------------------------------------------------------------
 # This routine handles the special arguments in the *call*
 sub print_special_call_arg {
     my $routine_name = $_[0];
