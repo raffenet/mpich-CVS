@@ -15,3 +15,4 @@ tmatchsize 1
 tfree 2
 contigstruct 1
 struct-zero-count 1
+blockindexed-zero-count 1

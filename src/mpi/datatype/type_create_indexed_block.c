@@ -66,9 +66,13 @@ int MPI_Type_create_indexed_block(int count,
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_displacements, "indices", mpi_errno);
+	    if (count > 0) {
+		MPIR_ERRTEST_ARGNULL(array_of_displacements,
+				     "indices",
+				     mpi_errno);
+	    }
 	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
-
+	    
 	    if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr(oldtype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
