@@ -330,7 +330,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
 					int (*piecefn) (DLOOP_Offset *blocks_p,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+							DLOOP_Type el_type,
+#else
 							int el_size,
+#endif
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
@@ -338,7 +342,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 int count,
 							 int blklen,
 							 DLOOP_Offset stride,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+							 DLOOP_Type el_type,
+#else
 							 int el_size,
+#endif
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
@@ -346,10 +354,16 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							int count,
 							int *blockarray,
 							DLOOP_Offset *offsetarray,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+#else
 							int el_size,
+#endif
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+					DLOOP_Offset (sizefn) (DLOOP_Type el_type),
+#endif
 					void *pieceparams);
 
 #endif
