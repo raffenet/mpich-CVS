@@ -10,6 +10,7 @@ static int verbose = 0;
 
 /* tests */
 int blockindexed_contig_test(void);
+int blockindexed_vector_test(void);
 
 /* helper functions */
 int parse_args(int argc, char **argv);
@@ -28,6 +29,11 @@ int main(int argc, char **argv)
     /* perform some tests */
     err = blockindexed_contig_test();
     if (err && verbose) fprintf(stderr, "%d errors in blockindexed test.\n",
+				err);
+    errs += err;
+
+    err = blockindexed_vector_test();
+    if (err && verbose) fprintf(stderr, "%d errors in blockindexed vector test.\n",
 				err);
     errs += err;
 
@@ -128,6 +134,119 @@ int blockindexed_contig_test(void)
 	    case 0:
 		goodval = 7;
 		break;
+	    default:
+		goodval = 0; /* pack_and_unpack() zeros before unpack */
+		break;
+	}
+	if (buf[i] != goodval) {
+	    errs++;
+	    if (verbose) fprintf(stderr, "buf[%d] = %d; should be %d\n",
+				 i, buf[i], goodval);
+	}
+    }
+
+    return errs;
+}
+
+/* blockindexed_vector_test()
+ *
+ * Tests behavior with a blockindexed of some vector types;
+ * this shouldn't be easily convertable into anything else.
+ *
+ * Returns the number of errors encountered.
+ */
+int blockindexed_vector_test(void)
+{
+    int buf[18] = { -1, -1, -1,
+		     1, -2,  2,
+		    -3, -3, -3,
+		    -4, -4, -4,
+		     3, -5,  4,
+		     5, -6,  6 };
+    int err, errs = 0;
+
+    int i, count = 3;
+    MPI_Aint disp[] = {1, 4, 5};
+    MPI_Datatype vectype, newtype;
+
+    int size, int_size;
+
+    /* create a vector type of 2 ints, skipping one in between */
+    err = MPI_Type_vector(2, 1, 2, MPI_INT, &vectype);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error creating vector type in blockindexed_contig_test()\n");
+	}
+	errs++;
+    }
+
+    err = MPI_Type_create_indexed_block(count,
+					1,
+					disp,
+					vectype,
+					&newtype);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error creating blockindexed type in blockindexed_contig_test()\n");
+	}
+	errs++;
+    }
+
+    MPI_Type_size(MPI_INT, &int_size);
+
+    err = MPI_Type_size(newtype, &size);
+    if (err != MPI_SUCCESS) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error obtaining type size in blockindexed_contig_test()\n");
+	}
+	errs++;
+    }
+    
+    if (size != 6 * int_size) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error: size != 6 * int_size in blockindexed_contig_test()\n");
+	}
+	errs++;
+    }    
+
+    MPI_Type_commit(&newtype);
+
+    err = pack_and_unpack((char *) buf, 1, newtype, 16 * sizeof(int));
+    if (err != 0) {
+	if (verbose) {
+	    fprintf(stderr,
+		    "error packing/unpacking in blockindexed_vector_test()\n");
+	}
+	errs += err;
+    }
+
+    for (i=0; i < 16; i++) {
+	int goodval;
+
+	switch(i) {
+	    case 3:
+		goodval = 1;
+		break;
+	    case 5:
+		goodval = 2;
+		break;
+	    case 12:
+		goodval = 3;
+		break;
+	    case 14:
+		goodval = 4;
+		break;
+	    case 15:
+		goodval = 5;
+		break;
+	    case 16:
+		goodval = 6;
+		break;
+
 	    default:
 		goodval = 0; /* pack_and_unpack() zeros before unpack */
 		break;
