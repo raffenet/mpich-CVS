@@ -99,6 +99,12 @@ AC_ARG_WITH(weak-symbols,
 [--with-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
 with_weak_symbols=yes)
 dnl
+dnl Flavor is used to setup separate directories for the flavor-specific
+dnl code (e.g., libraries that depend on a particular thread library) from
+dnl the generic files (e.g., the manual pages).
+AC_ARG_WITH(flavor,
+[--with-flavor=name - Set the name to associate with this flavor of MPICH],,)
+dnl
 dnl
 dnl Process any enable or with values
 dnl error-checking
@@ -147,6 +153,7 @@ case "$enable_timing" in
     changequote([,])
     timing_kind=MPID_TIMING_KIND_$timing_kind
     AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
+    AC_DEFINE(COLLECT_STATS,,[define to enable collection of statistics])
     ;;
     *)
     AC_MSG_WARN([Unknown value $enable_timing for enable-timing])

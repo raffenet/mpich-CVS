@@ -2,6 +2,15 @@
 #
 # Check that coding standards have been followed.  This checks for common
 # and easy to overlook errors, such as the use of non-portable system routines
+#
+# ToDo:
+# Add support for
+# /* style: allow:routine-name sig:value */
+# where routine-name is the name of a routine that is on the warning list
+# and value is a digital signature computed from the filename and routine-name
+# by the lead programmer.
+#
+# Add line-length check.  Optionally warn of >80 character lines.
 
 require "maint/parse.sub";
 
@@ -54,7 +63,8 @@ sub ProcessFile {
 
 #
 # Subroutines that we want to avoid
-@avoidsubs = ( "fprintf", "fputs", "puts", "printf" );
+@avoidsubs = ( "fprintf", "fputs", "puts", "printf", 
+               "malloc", "calloc", "free", "strdup", "realloc" );
 @guardedsubs = ( "alloca", "closedir", "fnmatch", "getloadavg", 
 		 "getmntent", "getpgrp", "memcmp", "mmap", 
 		 "setpgrp", "setvbuf", "strcoll", "strftime",
@@ -100,6 +110,7 @@ sub CheckForBadSubs {
 #	    print "Consider using $bettersubs{$subname} instead\n";
 #	}
 #    }
+
     foreach $subname (keys %bettersubs) {
         if (/(?<!\w)$subname\s*\(/) {
             $msg = "Caution: found $subname in $filename, consider $bettersubs{$subname}";

@@ -342,6 +342,30 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr(Request,ptr,err)
 
+/* Generic pointer test.  This is applied to any address, not just one from
+   an MPI object.
+   Currently unimplemented (returns success except for null pointers.
+   With a little work, could check that the pointer is properly aligned,
+   using something like 
+   ((p) == 0 || ((char *)(p) & MPID_Alignbits[alignment] != 0)
+   where MPID_Alignbits is set with a mask whose bits must be zero in a 
+   properly aligned quantity.  For systems with no alignment rules, 
+   all of these masks are zero, and this part of test can be eliminated.
+ */
+#define MPID_Pointer_is_invalid(p,alignment) ((p) == 0)
+
+/* Parameter handling.  These functions have not been implemented yet.
+   See src/util/param.[ch] */
+typedef enum { MPIU_PARAM_FOUND = 0, 
+               MPIU_PARAM_OK = 1, 
+               MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
+int MPIU_Param_init( int *, char **[] );
+int MPIU_Param_bcast( void );
+int MPIU_Param_register( const char [], const char [], const char [] );
+int MPIU_Param_get_int( const char [], int, int * );
+int MPIU_Param_get_string( const char [], const char *, char ** );
+void MPIU_Param_finalize( void );
+
 /* Info */
 typedef struct MPID_Info_s {
     int                handle;
@@ -453,11 +477,12 @@ typedef struct MPID_Comm {
     int           handle;        /* value of MPI_Comm for this structure */
     volatile int  ref_count;
     int16_t       context_id;    /* Assigned context id */
-    int           size;          /* Value of MPI_Comm_(remote)_size */
+    int           remote_size;   /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VCRT     vcrt;          /* virtual connecton reference table */
     MPID_VCR     *vcr;           /* alias to the array of virtual connections in vcrt */
     MPID_List     attributes;    /* List of attributes */
+    int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
 				    same for intra communicators */
@@ -490,18 +515,27 @@ extern MPID_Comm MPID_Comm_direct[];
 #define MPID_CONTEXT_INTER_COLL  3
 
 /* Requests */
+/* This currently defines a single structure type for all requests.  
+   Eventually, we may want a union type, as used in MPICH-1 */
+typedef enum { MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND, 
+	       MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
+    MPID_Request_kind_t kind;
     /* completion counter */
     volatile int cc;
     /* pointer to the completion counter */
-    /* This is necessary for the case when an operation is described by a list of requests */
+    /* This is necessary for the case when an operation is described by a 
+       list of requests */
     int volatile *cc_ptr;
     /* A comm is needed to find the proper error handler */
     MPID_Comm *comm;
     /* Status is needed for wait/test/recv */
     MPI_Status status;
+    /* Persistent requests have their own, "real" requests */
+    struct MPID_Request *active_request;
+    /* Still missing: user-defined request support */
     /* Other, device-specific information */
 #ifdef MPID_DEV_REQUEST_DECL
     MPID_DEV_REQUEST_DECL
@@ -743,6 +777,15 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
 #define MPID_MPI_STATE_DECLS  MPID_Time_t time_stamp
 #define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateBegin( a, &time_stamp )
 #define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateEnd( a, &time_stamp )
+/* Statistics macros aren't defined yet */
+/* All uses of these are protected by the symbol COLLECT_STATS, so they
+   do not need to be defined in the non-HAVE_TIMING branch. */
+#define MPID_STAT_BEGIN
+#define MPID_STAT_END
+#define MPID_STAT_ACC(statid,val)
+#define MPID_STAT_ACC_RANGE(statid,rng)
+#define MPID_STAT_ACC_SIMPLE(statid,val)
+#define MPID_STAT_MISC(a) a
 #else
 #define MPID_MPI_STATE_DECLS
 #define MPID_MPI_FUNC_EXIT(a)
