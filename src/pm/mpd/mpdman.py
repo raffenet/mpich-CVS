@@ -654,6 +654,9 @@ def mpdman():
                         except: pass
                 else:
                     parsedMsg = parse_pmi_msg(line)
+		    if not parsedMsg.has_key('cmd'):
+                        mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
+                        continue
 		    # invalid_executable is sent BEFORE client actually starts
                     if parsedMsg['cmd'] == 'invalid_executable':
                         msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
