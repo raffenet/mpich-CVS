@@ -146,7 +146,7 @@ FROM_MPICH=0
 CFLAGS=""
 LL="\%lld"
 AR_LOCAL=l
-HAS_MPI_INFO=""
+HAVE_MPI_INFO=""
 BUILD_MPI_INFO=""
 MPI_FINFO1=""
 MPI_FINFO2=""
@@ -1031,7 +1031,7 @@ if test -n "$arch_CRAY" ; then
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
-        CFLAGS="$CFLAGS -DMPISGI -DHAS_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
+        CFLAGS="$CFLAGS -DMPISGI -DHAVE_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
     fi
 #       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
@@ -1364,9 +1364,9 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining HAS_PREAD64"
-echo "#define" HAS_PREAD64 1 >> confdefs.h
-DEFS="$DEFS -DHAS_PREAD64=1"
+echo "	defining HAVE_PREAD64"
+echo "#define" HAVE_PREAD64 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_PREAD64=1"
 }
 
   else
@@ -2242,12 +2242,12 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining HAS_MPI_INFO"
-echo "#define" HAS_MPI_INFO 1 >> confdefs.h
-DEFS="$DEFS -DHAS_MPI_INFO=1"
+echo "	defining HAVE_MPI_INFO"
+echo "#define" HAVE_MPI_INFO 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_INFO=1"
 }
 
-      HAS_MPI_INFO="#define HAS_MPI_INFO"
+      HAVE_MPI_INFO="#define HAVE_MPI_INFO"
       MPI_FINFO1="!"
       MPI_FINFO2="!"
       MPI_FINFO3="!"
@@ -2270,12 +2270,12 @@ else
    
 {
 test -n "$verbose" && \
-echo "	defining HAS_MPI_INFO"
-echo "#define" HAS_MPI_INFO 1 >> confdefs.h
-DEFS="$DEFS -DHAS_MPI_INFO=1"
+echo "	defining HAVE_MPI_INFO"
+echo "#define" HAVE_MPI_INFO 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_INFO=1"
 }
 
-   HAS_MPI_INFO="#define HAS_MPI_INFO"
+   HAVE_MPI_INFO="#define HAVE_MPI_INFO"
    MPI_FINFO1="!"
    MPI_FINFO2="!"
    MPI_FINFO3="!"
@@ -2283,7 +2283,7 @@ DEFS="$DEFS -DHAS_MPI_INFO=1"
 fi   
 #
 if test -n "$mpi_sgi"; then
-   if test -z "$HAS_MPI_INFO" ; then
+   if test -z "$HAVE_MPI_INFO" ; then
       
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -2451,9 +2451,9 @@ fi
      
 {
 test -n "$verbose" && \
-echo "	defining HAS_MPI_COMBINERS"
-echo "#define" HAS_MPI_COMBINERS 1 >> confdefs.h
-DEFS="$DEFS -DHAS_MPI_COMBINERS=1"
+echo "	defining HAVE_MPI_COMBINERS"
+echo "#define" HAVE_MPI_COMBINERS 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_COMBINERS=1"
 }
 
   else
@@ -2574,12 +2574,12 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining HAS_MPI_DARRAY_SUBARRAY"
-echo "#define" HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
-DEFS="$DEFS -DHAS_MPI_DARRAY_SUBARRAY=1"
+echo "	defining HAVE_MPI_DARRAY_SUBARRAY"
+echo "#define" HAVE_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_DARRAY_SUBARRAY=1"
 }
 
-      HAS_MPI_DARRAY_SUBARRAY="#define HAS_MPI_DARRAY_SUBARRAY"
+      HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
       MPI_FARRAY1="!"
       MPI_FARRAY2="!"
       MPI_FARRAY3="!"
@@ -2608,12 +2608,12 @@ else
    
 {
 test -n "$verbose" && \
-echo "	defining HAS_MPI_DARRAY_SUBARRAY"
-echo "#define" HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
-DEFS="$DEFS -DHAS_MPI_DARRAY_SUBARRAY=1"
+echo "	defining HAVE_MPI_DARRAY_SUBARRAY"
+echo "#define" HAVE_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_DARRAY_SUBARRAY=1"
 }
 
-   HAS_MPI_DARRAY_SUBARRAY="#define HAS_MPI_DARRAY_SUBARRAY"
+   HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
    MPI_FARRAY1="!"
    MPI_FARRAY2="!"
    MPI_FARRAY3="!"
@@ -2629,7 +2629,7 @@ fi
 # Test for weak symbol support...
 # We can't put # in the message because it causes autoconf to generate
 # incorrect code
-HAS_WEAK_SYMBOLS=0
+HAVE_WEAK_SYMBOLS=0
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
 # multiple secondary definitions not allowed by HP compilers
 # Fortran interface for HP already uses one secondary defn. 
@@ -2695,7 +2695,7 @@ echo "$ac_t""pragma weak"
 else
 echo "$ac_t""pragma weak" 1>&1
 fi
-    HAS_WEAK_SYMBOLS=1
+    HAVE_WEAK_SYMBOLS=1
     
 {
 test -n "$verbose" && \
@@ -2745,7 +2745,7 @@ echo "$ac_t""pragma _HP_SECONDARY_DEF"
 else
 echo "$ac_t""pragma _HP_SECONDARY_DEF" 1>&1
 fi
-        HAS_WEAK_SYMBOLS=1
+        HAVE_WEAK_SYMBOLS=1
         
 {
 test -n "$verbose" && \
@@ -2795,7 +2795,7 @@ echo "$ac_t""pragma _CRI duplicate x as y"
 else
 echo "$ac_t""pragma _CRI duplicate x as y" 1>&1
 fi
-	    HAS_WEAK_SYMBOLS=1
+	    HAVE_WEAK_SYMBOLS=1
 	    
 {
 test -n "$verbose" && \
@@ -3461,7 +3461,7 @@ VPATH='$VPATH'
 RANLIB='$RANLIB'
 CC='$CC'
 F77='$F77'
-HAS_WEAK_SYMBOLS='$HAS_WEAK_SYMBOLS'
+HAVE_WEAK_SYMBOLS='$HAVE_WEAK_SYMBOLS'
 srcdir='$srcdir'
 ARCH='$ARCH'
 FILE_SYSTEM='$FILE_SYSTEM'
@@ -3489,9 +3489,9 @@ FTESTDEFINE='$FTESTDEFINE'
 FORTRAN_MPI_OFFSET='$FORTRAN_MPI_OFFSET'
 FROM_MPICH='$FROM_MPICH'
 NEEDS_MPI_FINT='$NEEDS_MPI_FINT'
-HAS_MPI_INFO='$HAS_MPI_INFO'
+HAVE_MPI_INFO='$HAVE_MPI_INFO'
 BUILD_MPI_INFO='$BUILD_MPI_INFO'
-HAS_MPI_DARRAY_SUBARRAY='$HAS_MPI_DARRAY_SUBARRAY'
+HAVE_MPI_DARRAY_SUBARRAY='$HAVE_MPI_DARRAY_SUBARRAY'
 BUILD_MPI_ARRAY='$BUILD_MPI_ARRAY'
 DEFINE_MPI_OFFSET='$DEFINE_MPI_OFFSET'
 MPI_FINFO1='$MPI_FINFO1'
@@ -3547,7 +3547,7 @@ s%@VPATH@%$VPATH%g
 s%@RANLIB@%$RANLIB%g
 s%@CC@%$CC%g
 s%@F77@%$F77%g
-s%@HAS_WEAK_SYMBOLS@%$HAS_WEAK_SYMBOLS%g
+s%@HAVE_WEAK_SYMBOLS@%$HAVE_WEAK_SYMBOLS%g
 s%@srcdir@%$srcdir%g
 s%@ARCH@%$ARCH%g
 s%@FILE_SYSTEM@%$FILE_SYSTEM%g
@@ -3575,9 +3575,9 @@ s%@FTESTDEFINE@%$FTESTDEFINE%g
 s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
 s%@FROM_MPICH@%$FROM_MPICH%g
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
-s%@HAS_MPI_INFO@%$HAS_MPI_INFO%g
+s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
 s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
-s%@HAS_MPI_DARRAY_SUBARRAY@%$HAS_MPI_DARRAY_SUBARRAY%g
+s%@HAVE_MPI_DARRAY_SUBARRAY@%$HAVE_MPI_DARRAY_SUBARRAY%g
 s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
