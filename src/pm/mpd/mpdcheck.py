@@ -114,6 +114,7 @@ for argidx in range(1,len(argv)):
     print
     uqhn2 = argv[argidx]
     fqhn2 = getfqdn(uqhn2)
+    uipaddr2 = 0
     try:
         ghbnu = gethostbyname_ex(uqhn2)
         print "gethostbyname_ex: ", ghbnu
@@ -123,12 +124,12 @@ for argidx in range(1,len(argv)):
         except:
             print "*** gethostbyaddr failed for %s" % (uipaddr2)
     except:
-        print "*** gethostbyname_ex failed for this host %s %s" % (uqhn2,uipaddr2)
+        print "*** gethostbyname_ex failed for host %s" % (uqhn2)
     try:
         ghbnf = gethostbyname_ex(fqhn2)
         print "gethostbyname_ex: ", ghbnf
         fipaddr2 = ghbnf[2][0]
-        if fipaddr2 != uipaddr2:
+        if uipaddr2  and  fipaddr2 != uipaddr2:
             print "*** ipaddr via uqn (%s) does not match via fqn (%s)" % (uipaddr2,fipaddr2)
         try:
             ghbaf = gethostbyaddr(fipaddr2)
