@@ -297,6 +297,9 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 	    /*handle_error(elem, req);*/
 	    break;
 	}
+
+	/* There is no active reading for infiniband so set the next num_bytes to zero */
+	nb = 0;
     }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -383,11 +386,11 @@ static inline void handle_written(MPIDI_VC * vc, int nb)
 	}
 	else
 	{
-	    assert(nb != 0);
-
+	    /*assert(nb != 0);*/
 	    /*handle_error(elem, req);*/
 	    break;
 	}
+	nb = 0;
     }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
