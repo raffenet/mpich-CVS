@@ -59,11 +59,23 @@ dnl
 dnl Process any enable or with values
 if test "$with_device" = "default" ; then
     # Pick the method.  For now, always choose shm and tcp
-    with_device=mm:shm:tcp
+    with_device=mm:shm,tcp
 fi
 dnl Extract the methods
-method_subdirs=`echo $with_device | sed -e 's/mm://g' | sed -e 's/:/ /g' | sed -e 's/:/ /g' | sed -e 's/:/ /g'`
+method_subdirs=`echo $with_device | sed -e 's/mm://' | sed -e 's/,/ /g'`
+if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" fi
 AC_SUBST(method_subdirs)
+for method in $method_subdirs - ; do \
+    if [ "$method" = "-" ] ; then break ; fi ; \
+    if [ "$method" = "tcp" ] ; then AC_DEFINE(WITH_METHOD_TCP) ; \
+    else if [ "$method" = "shm" ] ; then AC_DEFINE(WITH_METHOD_SHM) ; \
+         else if [ "$method" = "via" ] ; then AC_DEFINE(WITH_METHOD_VIA) ; \
+              else if [ "$method" = "via_rdma" ] ; then AC_DEFINE_WITH_METHOD_VIA_RDMA) ; \
+                   fi ; \
+              fi ; \
+         fi ; \
+    fi
+done
 dnl error-checking
 case "$enable_error_checking" in 
     no)
