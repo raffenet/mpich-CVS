@@ -15,14 +15,14 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buff,
     sprintf(call, "FILE_WRITE_AT_ALL_BEGIN");
 
     /* Check if init has been called */
-    g2g = CollChk_err_is_init();
+    g2g = CollChk_is_init();
 
     if(g2g) {
         /* get the communicator */
         if (CollChk_err_get_fh(fh, &comm)) {
-            return CollChk_err_err_han("File has not been opened",
-                                       COLLCHK_ERR_FILE_NOT_OPEN,
-                                       call, MPI_COMM_WORLD);
+            return CollChk_err_han("File has not been opened",
+                                   COLLCHK_ERR_FILE_NOT_OPEN,
+                                   call, MPI_COMM_WORLD);
         }
 
         /* check for call consistancy */
@@ -33,8 +33,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buff,
             sprintf(err_str, "Previous MPI_File_%s_begin called, "
                              "must call MPI_File_%s_end first.",
                              CollChk_begin_str, CollChk_begin_str);
-            return CollChk_err_err_han(err_str, COLLCHK_ERR_PREVIOUS_BEGIN,
-                                       call, comm);
+            return CollChk_err_han(err_str, COLLCHK_ERR_PREVIOUS_BEGIN,
+                                   call, comm);
         }
         else {
             CollChk_set_begin("WRITE_AT_ALL");
@@ -45,7 +45,7 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buff,
     }
     else {
         /* init not called */
-        return CollChk_err_err_han("MPI_Init() has not been called!",
-                                   COLLCHK_ERR_NOT_INIT, call, MPI_COMM_WORLD);
+        return CollChk_err_han("MPI_Init() has not been called!",
+                                COLLCHK_ERR_NOT_INIT, call, MPI_COMM_WORLD);
     }
 }

@@ -15,7 +15,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buff, int cnt,
     sprintf(call, "FILE_READ_ALL_BEGIN");
 
     /* Check if init has been called */
-    g2g = is_init();
+    g2g = CollChk_is_init();
 
     if(g2g) {
         /* get the communicator */

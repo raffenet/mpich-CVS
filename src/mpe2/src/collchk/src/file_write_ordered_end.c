@@ -41,7 +41,7 @@ int MPI_File_write_at_all_end(MPI_File fh, void *buff, MPI_Status *st)
         }
         else {
             sprintf(err_str, "MPI_File_%s_begin has not been called",
-                             CollChk_begin_str, CollChk_begin_str);
+                             CollChk_begin_str);
             return CollChk_err_han(err_str, COLLCHK_ERR_PREVIOUS_BEGIN,
                                    call, comm);
         }

@@ -4,7 +4,7 @@
 */
 #include "collchk.h" 
 
-int MPI_AllGatherv( void* sbuff, int scnt, MPI_Datatype stype,
+int MPI_Allgatherv( void* sbuff, int scnt, MPI_Datatype stype,
                     void* rbuff, int *rcnt, int *displs, MPI_Datatype rtype,
                     MPI_Comm comm )
 {
@@ -50,4 +50,3 @@ int MPI_AllGatherv( void* sbuff, int scnt, MPI_Datatype stype,
                                 COLLCHK_ERR_NOT_INIT, call, comm );
     }
 }
-

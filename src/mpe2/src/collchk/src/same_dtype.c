@@ -169,7 +169,6 @@ int CollChk_same_dtype(MPI_Comm comm, int cnt, MPI_Datatype dt, char* call)
     int r, s, i, go, ok;           /* rank, size, counter, go flag, ok flag */
     char err_str[255];             /* error string */
     MPI_Status st;int tag=0;       /* needed for communications */
-    MPI_Datatype hash_type;        /* the hashed datatype for communications */
     CollChk_hash_struct hs, buff;  /* local hash value, global hash value */
 
     /* get the rank and size */
@@ -234,10 +233,8 @@ int CollChk_same_dtype(MPI_Comm comm, int cnt, MPI_Datatype dt, char* call)
 int CollChk_same_dtype_vector(MPI_Comm comm, int root, int cnt,
                               int *rootcnts, MPI_Datatype dt, char *call)
 {
-    int r, s, i, go, ok;           /* rank, size, counter, go flag, ok flag */
+    int r, s, i, go;               /* rank, size, counter, go flag */
     char err_str[255];             /* error string */
-    MPI_Status st;int tag=0;       /* needed for communications */
-    MPI_Datatype hash_type;        /* the hashed datatype for communications */
     CollChk_hash_struct hs, *buff; /* local hash value, global hash value */
     CollChk_hash_struct curr;      /* the current hash being checked */
 
@@ -298,8 +295,6 @@ int CollChk_same_dtype_vector2(MPI_Comm comm, int *cnts,
 {
     int r, s, i, go, ok;           /* rank, size, counter, go flag, ok flag */
     char err_str[255];             /* error string */
-    MPI_Status st;int tag=0;       /* needed for communications */
-    MPI_Datatype hash_type;        /* the hashed datatype for communications */
     CollChk_hash_struct hs, *buff; /* local hash value, global hash value */
     CollChk_hash_struct curr;      /* the current hash being checked */
 
@@ -350,8 +345,6 @@ int CollChk_same_dtype_general(MPI_Comm comm, int *rcnts, int *scnts,
 {
     int r, s, i, go, ok;        /* rank, size, counter, go flag, ok flag */
     char err_str[255];          /* error string */
-    MPI_Status st;int tag=0;    /* needed for communications */
-    MPI_Datatype hash_type;     /* the hashed datatype for communications */
     CollChk_hash_struct rhs, shs, *rbuff, *sbuff, curr;
 
     /* get the rank and size */

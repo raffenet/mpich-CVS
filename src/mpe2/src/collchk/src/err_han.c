@@ -6,7 +6,7 @@
 
 int CollChk_err_han(char * err_str, int err_code, char * call, MPI_Comm comm)
 {
-    int r, i;
+    int r;
     char err[255];
 
     if(err_code == COLLCHK_ERR_NOT_INIT) {

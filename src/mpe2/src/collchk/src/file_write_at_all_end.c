@@ -14,7 +14,7 @@ int MPI_File_write_at_all_end(MPI_File fh, void *buff, MPI_Status *st)
     sprintf(call, "FILE_WRITE_AT_ALL_END");
 
     /* Check if init has been called */
-    g2g = CollChk_err_is_init();
+    g2g = CollChk_is_init();
 
     if(g2g) {
         /* get the communicator */
@@ -41,7 +41,7 @@ int MPI_File_write_at_all_end(MPI_File fh, void *buff, MPI_Status *st)
         }
         else {
             sprintf(err_str, "MPI_File_%s_begin has not been called",
-                             CollChk_begin_str, CollChk_begin_str);
+                             CollChk_begin_str);
             return CollChk_err_han(err_str, COLLCHK_ERR_PREVIOUS_BEGIN,
                                    call, comm);
         }

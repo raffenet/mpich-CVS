@@ -8,31 +8,38 @@ int CollChk_check_graph(MPI_Comm comm, int nnodes, int *index, int* edges,
                         char* call)
 {
     char err_str[256], check[20];
-    int i, e;
+    int idx, e;
 
-    if(CollChk_same_int(comm, nnodes, call, "Nnodes", err_str) != MPI_SUCCESS) {
+    if (    CollChk_same_int(comm, nnodes, call, "Nnodes", err_str)
+         != MPI_SUCCESS ) {
         return CollChk_err_han(err_str, COLLCHK_ERR_GRAPH, call, comm);
     }
 
-    for(i=0; i<nnodes; i++) {
-        sprintf(check, "Index Sub %d", i);
+    for ( idx=0; idx<nnodes; idx++ ) {
+        sprintf(check, "Index Sub %d", idx);
 
-        if(CollChk_same_int(comm, index[i], call, check, err_str) != MPI_SUCCESS) {
+        if (    CollChk_same_int(comm, index[idx], call, check, err_str)
+             != MPI_SUCCESS) {
             return CollChk_err_han(err_str, COLLCHK_ERR_GRAPH, call, comm);
         }
         
-        e = index[i];
+        e = index[idx];
     }
 
-    for(i=0; i<e; i++) {
-        sprintf(check, "Edges Sub %d", i);
+    /*
+        The e=index[idx] looks very suspicious in the following loop.
+        1) The loop does not modify the array index[] ??
+        2) if e is modified, so is the termination condition of the loop!???
+    */
+    for (idx=0; idx<e; idx++) {
+        sprintf(check, "Edges Sub %d", idx);
         
-        if(    CollChk_same_int(comm, edges[i], call, check, err_str)
+        if(    CollChk_same_int(comm, edges[idx], call, check, err_str)
             != MPI_SUCCESS) {
             return CollChk_err_han(err_str, COLLCHK_ERR_GRAPH, call, comm);
         }
 
-        e = index[i];
+        e = index[idx];
     }
 
     return MPI_SUCCESS;
