@@ -1,11 +1,21 @@
 -------------------------------------------------------------------------------
+		       Major Changes Impacting Usability
+-------------------------------------------------------------------------------
+
+- A new and improved process manager that spawns processes using fork() in now
+  available.  This process manager, "gforker", should be used in place of the
+  previous "forker" process manager.
+
+- (see the CHANGES file for a more extensive list of new features)
+
+-------------------------------------------------------------------------------
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
 - Several of the tests in the MPICH2 test suite fail.  On the other hand, a
   few hundred pass :-)
 
-  The scancel and packef tests are expected to fail for all configurations.
+  The scancel test is expected to fail for all configurations.
 
   Due to limitations in the current implementation of MPI_COMM_CONNECT and
   MPI_COMM_ACCEPT, many tests associated with these routines will fail.
@@ -15,16 +25,13 @@
   other channels will experience failures for tests exercising
   MPI_COMM_SPAWN functionality.
 
-  The implementation of MPI-IO and the datatype processing code have a few
-  outstanding issues with 64-bit pointers, so test failures in these areas
-  are expected on 64-bit platforms.
+  The implementation of MPI-IO has a few outstanding issues with 64-bit
+  pointers, so test failures in these areas are expected on 64-bit platforms.
 
 - Previous releases of MPICH2 supported the "forker" process manager.  This
   process manager is still available but is unsupported and untested.  It
   does not support the dynamic-process operations in MPI-2 and thus will
-  fail many of the tests included with MPICH2.  We plan to support
-  additional process managers (probably including a new version of forker)
-  at some future time, but we do not have a scheduled for it yet.
+  fail many of the tests included with MPICH2.
 
 - The CH3 device does not presently support heterogeneous communication.  That
   is to say that the processes involved in a job must use the same basic type
@@ -50,8 +57,6 @@
 - C++ Binding:
   The following functions do not yet have C++ bindings
   Grequest::Create
-  Win::Create_keyval
-  Type::Create_keyval
   Comm::Join  
   
   There is an unidentified problem with the intercommunicator collective
@@ -71,10 +76,6 @@
 
   With the exception of the profiling interface, future releases of MPICH2 
   will address these limitations of the C++ binding.
-
-- When using the Simple implementation of PMI (the default),
-  MPI_COMM_SPAWN_MULTIPLE does not work properly when count is greater
-  than one, effectively making it the same as MPI_COMM_SPAWN.
 
 - For passive target RMA, there is no asynchronous agent at the target
   that will cause progress to occur. Progress occurs only when the user

@@ -1,5 +1,15 @@
 ===============================================================================
-				Changes in 0.971
+				Changes in 1.0
+===============================================================================
+
+*** FIXME: update before official 1.0 release ***
+
+- A new and improved process manager that spawns processes using fork() in now
+  available.  This process manager, "gforker", should be used in place of the
+  previous "forker" process manager.
+
+===============================================================================
+			       Changes in 0.971
 ===============================================================================
 
 - Code restricted by copyrights less flexible than the one described in the
