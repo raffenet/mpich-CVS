@@ -23,6 +23,7 @@ $fcname = "f77";
 @enable_array = ( 
 		  'error-checking;no;runtime;all', 
 		  'error-messages;all;generic;class;none',
+		  'timer-type;linux86_cycle;gethrtime;clock_gettime;gettimeofday;linuxalpha_cycle',
 		  'timings;none;all;runtime',
 		  'mpi-macros',
 		  'g;none;all;handle;mem;dbg',
@@ -42,6 +43,7 @@ $fcname = "f77";
 	       'logging;none;rlog;dlog',
 #	       'pmi;uni',
 	       'pm;forker;mpd',
+	       'device;ch3;ch3:shm',
 );
 @env_array = (
 #	      'CC;gcc;cc;pgcc;ecc;xlc',
