@@ -1,5 +1,20 @@
 #! @PERL@
 #
+# This script extracts information from files produced by gcov showing what
+# parts of each file have *not* been executed by the test programs.
+# 
+# To create a coverage report, use the following steps:
+#
+# configure --enable-coverage <other options>
+# make 
+# make install
+# make testing
+# < run other tests, such as the Intel, MPICH1, and C++ tests >
+# make coverage
+# maint/getcoverage src/mpi src/util > coverage.txt
+#
+# The script in mpich2-tests/getcoverage will perform all of these steps 
+# (this script is not yet included with the MPICH2 distribution)
 #
 #
 $includeFileInOutput = 0;
