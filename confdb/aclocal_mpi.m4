@@ -14,6 +14,8 @@ dnl
 dnl If PAC_ARG_MPICH_BUILDING is included, this will work correctly 
 dnl when MPICH is being built.
 dnl
+dnl Prerequisites:
+dnl autoconf version 2.13 (for AC_SEARCH_LIBS)
 dnlD*/
 dnl Other tests to add:
 dnl Version of MPI
@@ -22,6 +24,7 @@ dnl MPI-2 Spawn?
 dnl MPI-2 RMA?
 dnl PAC_LIB_MPI([found text],[not found text])
 AC_DEFUN(PAC_LIB_MPI,[
+AC_PREREQ(2.13)
 if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
   # Use CC if TESTCC is defined
   if test "X$pac_save_level" != "X" ; then
@@ -98,10 +101,14 @@ save_PATH="$PATH"
 if test "$withval" != "yes" -a "$withval" != "no" ; then 
     PATH=$withval:${PATH}
 fi
-TESTCC=${CC-cc}; TESTF77=${F77-f77}
+dnl 
+dnl This isn't correct.  It should try to get the underlying compiler
+dnl from the mpicc and mpif77 scripts or mpireconfig
 AC_PATH_PROG(MPICC,mpicc)
+TESTCC=${CC-cc}
 CC="$MPICC"
 AC_PATH_PROG(MPIF77,mpif77)
+TESTF77=${F77-f77}
 F77="$MPIF77"
 PATH="$save_PATH"
 ])
@@ -109,5 +116,6 @@ AC_ARG_WITH(ibmmpi,
 [--with-ibmmpi    - Use the IBM SP implementation of MPI],
 TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf)
 AC_ARG_WITH(sgimpi,
-[--with-sgimpi    - Use the SGI implementation of MPI],)
+[--with-sgimpi    - Use the SGI implementation of MPI],
+TESTCC=${CC:=cc}; TESTF77=${F77:=f77})
 ])

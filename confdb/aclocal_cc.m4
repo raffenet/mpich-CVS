@@ -161,6 +161,8 @@ dnl Output Effects:
 dnl Sets the following shell variables and call AC_SUBST for them:
 dnl+ C_DEPEND_OPT - Compiler options needed to create dependencies
 dnl. C_DEPEND_OUT - Shell redirection for dependency file (may be empty)
+dnl. C_DEPEND_PREFIX - Empty (null) or true; this is used to handle
+dnl  systems that do not provide dependency information
 dnl- C_DEPEND_MV - Command to move created dependency file
 dnl Also creates a Depends file in the top directory (!).
 dnl
@@ -175,7 +177,7 @@ dnl Depends: ${DEP_SOURCES}
 dnl         @-rm -f Depends
 dnl         cat *.dep >Depends
 dnl .c.dep:
-dnl         @${C_COMPILE} @C_DEPEND_OPT@ $< @C_DEPEND_OUT@
+dnl         @@C_DEPEND_PREFIX@ ${C_COMPILE} @C_DEPEND_OPT@ $< @C_DEPEND_OUT@
 dnl         @@C_DEPEND_MV@
 dnl
 dnl depends-clean:
@@ -196,6 +198,10 @@ AC_SUBST(C_DEPEND_OPT)
 AC_SUBST(C_DEPEND_OUT)
 AC_SUBST(C_DEPEND_MV)
 rm -f conftest*
+dnl
+dnl Some systems (/usr/ucb/cc on Solaris) do not generate a dependency for
+dnl an include that doesn't begin in column 1
+dnl
 cat >conftest.c <<EOF
     #include "confdefs.h"
     int f(void) { return 0; }
@@ -206,7 +212,7 @@ dnl -MMD is gcc to .d
 dnl .u is xlC (AIX) output
 for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
     AC_MSG_CHECKING([whether $copt option generates dependencies])
-    rm -f conftest.o conftest.u conftest.d conftest.err
+    rm -f conftest.o conftest.u conftest.d conftest.err conftest.out
     dnl also need to check that error output is empty
     if $CC $CFLAGS $copt conftest.c >conftest.out 2>conftest.err && \
 	test ! -s conftest.err ; then
@@ -232,19 +238,27 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
 	        AC_MSG_RESULT(yes)
 	    else
                 AC_MSG_RESULT(no)
+		echo "Output of $copt option was" >&AC_FD_CC
+		cat $pac_dep_file >&AC_FD_CC
             fi
 	    break
         else
 	    AC_MSG_RESULT(no)
         fi
     else
+	echo "Error in compiling program with flags $copt" >&AC_FD_CC
 	cat conftest.out >&AC_FD_CC
+	if test -s conftest.err ; then cat conftest.err >&AC_FD_CC ; fi
 	AC_MSG_RESULT(no)
     fi
     copt=""
 done
-dnl if test "X$copt" = "X" ; then
-dnl fi
+AC_SUBST(C_DEPEND_PREFIX)
+if test "X$copt" = "X" ; then
+    C_DEPEND_PREFIX="true"
+else
+    C_DEPEND_PREFIX=""
+fi
 # Ensure that there is a Depends file
 touch Depends
 rm -f conftest*
@@ -413,3 +427,152 @@ elif test "$pac_cv_c_restrict" != "restrict" ; then
   AC_DEFINE_UNQUOTED(restrict,$pac_cv_c_restrict)
 fi
 ])dnl
+dnl
+dnl/*D
+dnl PAC_HEADER_STDARG - Check whether standard args are defined and whether
+dnl they are old style or new style
+dnl
+dnl Synopsis:
+dnl PAC_HEADER_STDARG(action if works, action if oldstyle, action if fails)
+dnl
+dnl Output Effects:
+dnl Defines HAVE_STDARG_H if the header exists.
+dnl defines 
+dnl
+dnl Notes:
+dnl It isn't enough to check for stdarg.  Even gcc doesn't get it right;
+dnl on some systems, the gcc version of stdio.h loads stdarg.h `with the wrong
+dnl options` (causing it to choose the `old style` 'va_start' etc).
+dnl
+dnl The original test tried the two-arg version first; the old-style
+dnl va_start took only a single arg.
+dnl This turns out to be VERY tricky, because some compilers (e.g., Solaris) 
+dnl are quite happy to accept the *wrong* number of arguments to a macro!
+dnl Instead, we try to find a clean compile version, using our special
+dnl PAC_C_TRY_COMPILE_CLEAN command.
+dnl
+dnlD*/
+AC_DEFUN(PAC_HEADER_STDARG,[
+AC_CHECK_HEADER(stdarg,h)
+dnl Sets ac_cv_header_stdarg_h
+if test "$ac_cv_header_stdarg_h" = "yes" ; then
+    dnl results are yes,oldstyle,no.
+    AC_CACHE_CHECK([whether stdarg is oldstyle],
+    pac_cv_header_stdarg_oldstyle,[
+PAC_C_TRY_COMPILE_CLEAN([#include <stdio.h>
+#include <stdarg.h>],
+[int func( int a, ... ){
+int b;
+va_list ap;
+va_start( ap );
+b = va_arg(ap, int);
+printf( "%d-%d\n", a, b );
+va_end(ap);
+fflush(stdout);
+return 0;
+}
+int main() { func( 1, 2 ); return 0;}],pac_check_compile)
+case $pac_check_compile in 
+    0)  pac_cv_header_stdarg_oldstyle="yes"
+	;;
+    1)  pac_cv_header_stdarg_oldstyle="may be newstyle"
+	;;
+    2)  pac_cv_header_stdarg_oldstyle="no"   # compile failed
+	;;
+esac
+])
+if test "$pac_cv_header_stdarg_oldstyle" = "yes" ; then
+    ifelse($2,,:,[$2])
+else
+    AC_CACHE_CHECK([whether stdarg works],
+    pac_cv_header_stdarg_works,[
+    PAC_C_TRY_COMPILE_CLEAN([
+#include <stdio.h>
+#include <stdarg.h>],[
+int func( int a, ... ){
+int b;
+va_list ap;
+va_start( ap, a );
+b = va_arg(ap, int);
+printf( "%d-%d\n", a, b );
+va_end(ap);
+fflush(stdout);
+return 0;
+}
+int main() { func( 1, 2 ); return 0;}],pac_check_compile)
+case $pac_check_compile in 
+    0)  pac_cv_header_stdarg_works="yes"
+	;;
+    1)  pac_cv_header_stdarg_works="yes with warnings"
+	;;
+    2)  pac_cv_header_stdarg_works="no"
+	;;
+esac
+])
+fi   # test on oldstyle
+if test "$pac_cv_header_stdarg_works" = "no" ; then
+    ifelse($3,,:,[$3])
+else
+    ifelse($1,,:,[$1])
+fi
+else 
+    ifelse($3,,:,[$3])
+fi  # test on header
+])
+dnl/*D
+dnl PAC_C_TRY_COMPILE_CLEAN - Try to compile a program, separating success
+dnl with no warnings from success with warnings.
+dnl
+dnl Synopsis:
+dnl PAC_C_TRY_COMPILE_CLEAN(header,program,flagvar)
+dnl
+dnl Output Effect:
+dnl The 'flagvar' is set to 0 (clean), 1 (dirty but success ok), or 2
+dnl (failed).
+dnl
+dnlD*/
+AC_DEFUN(PAC_C_TRY_COMPILE_CLEAN,[
+$3=2
+dnl Get the compiler output to test against
+if test -z "$pac_TRY_COMPLILE_CLEAN" ; then
+    rm -f conftest*
+    echo 'int try(void);int try(void){return 0;}' > conftest.c
+    if ${CC-cc} $CFLAGS -c conftest.c >conftest.bas 2>&1 ; then
+	if test -s conftest.bas ; then 
+	    pac_TRY_COMPILE_CLEAN_OUT=`cat conftest.bas`
+        fi
+        pac_TRY_COMPILE_CLEAN=1
+    else
+	AC_MSG_WARN([Could not compile simple test program!])
+	if test -s conftest.bas ; then 	cat conftest.bas >> config.log ; fi
+    fi
+fi
+dnl
+dnl Create the program that we need to test with
+rm -f conftest*
+cat >conftest.c <<EOF
+#include "confdefs.h"
+[$1]
+[$2]
+EOF
+dnl
+dnl Compile it and test
+if ${CC-cc} $CFLAGS -c conftest.c >conftest.bas 2>&1 ; then
+    dnl Success.  Is the output the same?
+    if test "$pac_TRY_COMPILE_CLEAN_OUT" = "`cat conftest.bas`" ; then
+	$3=0
+    else
+        cat conftest.c >>config.log
+	if test -s conftest.bas ; then 	cat conftest.bas >> config.log ; fi
+        $3=1
+    fi
+else
+    dnl Failure.  Set flag to 2
+    cat conftest.c >>config.log
+    if test -s conftest.bas ; then cat conftest.bas >> config.log ; fi
+    $3=2
+fi
+rm -f conftest*
+])
+
+

@@ -62,7 +62,7 @@ EOF
 
    AC_LANG_SAVE
    AC_LANG_C   
-   LIBS="$save_LIBS"
+   save_LIBS="$LIBS"
    LIBS="fconftestf.o $LIBS"
    AC_TRY_LINK(,my_name();,pac_cv_prog_f77_name_mangle="lower")
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -72,7 +72,7 @@ EOF
      AC_TRY_LINK(,MY_NAME();,pac_cv_prog_f77_name_mangle="upper")
    fi
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
-     AC_TRY_LINK(,myname__();,
+     AC_TRY_LINK(,my_name__();,
        pac_cv_prog_f77_name_mangle="lower doubleunderscore")
    fi
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -182,10 +182,10 @@ undefine([PAC_CV_NAME])
 ])
 dnl
 dnl/*D
-dnl PAC_PROG_F77_EXCLAME_COMMENTS
+dnl PAC_PROG_F77_EXCLAIM_COMMENTS
 dnl
 dnl Synopsis:
-dnl PAC_PROG_F77_EXCLAME_COMMENTS([action-if-true],[action-if-false])
+dnl PAC_PROG_F77_EXCLAIM_COMMENTS([action-if-true],[action-if-false])
 dnl
 dnl Notes:
 dnl Check whether '!' may be used to begin comments in Fortran.
@@ -195,18 +195,18 @@ dnl file contains an error in the handling of Fortran programs in
 dnl 'AC_TRY_COMPILE' (fixed in our local version).
 dnl
 dnlD*/
-AC_DEFUN(PAC_PROG_F77_EXCLAME_COMMENTS,[
+AC_DEFUN(PAC_PROG_F77_EXCLAIM_COMMENTS,[
 AC_CACHE_CHECK([whether Fortran accepts ! for comments],
-pac_cv_prog_f77_exclame_comments,[
+pac_cv_prog_f77_exclaim_comments,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
 AC_TRY_COMPILE(,[
 !      This is a comment
-],pac_cv_prog_f77_exclame_comments="yes",
-pac_cv_prog_f77_exclame_comments="no")
+],pac_cv_prog_f77_exclaim_comments="yes",
+pac_cv_prog_f77_exclaim_comments="no")
 AC_LANG_RESTORE
 ])
-if test "$pac_cv_prog_f77_exclame_comments" = "yes" ; then
+if test "$pac_cv_prog_f77_exclaim_comments" = "yes" ; then
     ifelse($1,,:,$1)
 else
     ifelse($2,,:,$2)
@@ -311,4 +311,249 @@ else
     AC_MSG_RESULT(no)
 fi
 rm -f conftest*
+])
+dnl
+dnl/*D
+dnl PAC_PROG_F77_CMDARGS - Determine how to access the command line from
+dnl Fortran 77
+dnl
+dnl Output Effects:
+dnl  The following variables are set:
+dnl.vb
+dnl    F77_GETARG   - Statement to get an argument i into string s
+dnl    F77_IARGC    - Routine to return the number of arguments
+dnl    FXX_MODULE   - Module command when using Fortran 90 compiler
+dnl    F77_GETARGDECL - Declaration of routine used for F77_GETARG
+dnl.ve
+dnl If 'F77_GETARG' has a value, then that value and the values for these
+dnl other symbols will be used instead.  If no approach is found, all of these
+dnl variables will have empty values.
+dnl If no other approach works and a file 'f77argdef' is in the directory, 
+dnl that file will be sourced for the values of the above four variables.
+dnl
+dnl 'AC_SUBST' is called for all four variables.
+dnl
+dnl f77argdef
+dnlD*/
+AC_DEFUN(PAC_PROG_F77_CMDARGS,[
+found_cached="yes"
+AC_MSG_CHECKING([for routines to access the command line from Fortran 77])
+AC_CACHE_VAL(pac_cv_prog_f77_cmdarg,
+[
+    AC_MSG_RESULT([searching...])
+    found_cached="no"
+    # Grumph.  Here are a bunch of different approaches
+    # We have several axes the check:
+    # Library to link with (none, -lU77 (HPUX), -lg2c (LINUX f77))
+    # The first line is "<space><newline>, the space is important
+trial_LIBS=" 
+-lU77
+-lg2c"
+    # Discard libs that are not availble:
+    save_IFS="$IFS"
+    IFS="
+"
+    save_trial_LIBS="$trial_LIBS"
+    trial_LIBS=""
+    cat > conftest.f <<EOF
+        program main
+        end
+EOF
+    ac_fcompilelink_test='${F77-f77} -o conftest $FFLAGS conftest.f $libs $LIBS 1>&AC_FD_CC'
+    for libs in $save_trial_LIBS ; do
+	if test "$libs" = " " ; then
+	    lib_ok="yes"
+        else
+	    AC_MSG_CHECKING([whether Fortran 77 links with $libs])
+	    if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
+		AC_MSG_RESULT([yes])
+	        lib_ok="yes"
+	    else
+		AC_MSG_RESULT([no])
+	        lib_ok="no"
+	    fi
+	fi
+	if test "$lib_ok" = "yes" ; then
+	    trial_LIBS="$trial_LIBS
+$libs"
+        fi
+    done
+
+    # Options to use when compiling and linking
+    # The first line is "<space><newline>, the space is important
+trial_FLAGS=" 
+-f
+-N109
+-YEXT_NAMES=LCS
++U77"
+    # Discard options that are not available:
+    save_IFS="$IFS"
+    IFS="
+"
+    save_trial_FLAGS="$trial_FLAGS"
+    trial_FLAGS=""
+    for flag in $save_trial_FLAGS ; do
+	if test "$flag" = " " ; then
+	    opt_ok="yes"
+        else
+            PAC_F77_CHECK_COMPILER_OPTION($flag,opt_ok=yes,opt_ok=no)
+        fi
+	if test "$opt_ok" = "yes" ; then
+	    if test "$flag" = " " ; then fflag="" ; else fflag="$flag" ; fi
+	    
+	    # discard options that don't allow mixed-case name matching
+	    cat > conftest.f <<EOF
+        program main
+        call aB()
+        end
+        subroutine Ab()
+        end
+EOF
+	    if test -n "$fflag" ; then flagval="with $fflag" ; else flagval="" ; fi
+	    AC_MSG_CHECKING([that Fortran 77 routine names are case-insensitive $flagval])
+	    dnl we can use double quotes here because all is already
+            dnl evaluated
+            ac_fcompilelink_test="${F77-f77} -o conftest $fflag $FFLAGS
+conftest.f $LIBS 1>&AC_FD_CC"
+	    if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
+	        AC_MSG_RESULT(yes)
+	    else
+	        AC_MSG_RESULT(no)
+	        opt_ok="no"
+            fi
+        fi
+        if test "$opt_ok" = "yes" ; then
+	    trial_FLAGS="$trial_FLAGS
+$flag"
+        fi
+    done
+    IFS="$save_IFS"
+    # Name of routines.  Since these are in groups, we use a case statement
+    # and loop until the end (accomplished by reaching the end of the
+    # case statement
+    trial=0
+    while test -z "$pac_cv_prog_f77_cmdarg" ; do
+        case $trial in 
+	0) # User-specified values, if any
+	   if test -z "$F77_GETARG" -o -z "$F77_IARGC" ; then 
+	       trial=`expr $trial + 1`
+	       continue 
+           fi
+           MSG="Using environment values of F77_GETARG etc."
+	   ;;
+	1) # Standard practice, uppercase (some compilers are case-sensitive)
+	   FXX_MODULE=""
+	   F77_GETARGDECL="external GETARG"
+	   F77_GETARG="call GETARG(i,s)"
+	   F77_IARGC="IARGC()"
+	   MSG="GETARG and IARGC"
+	   ;;
+	2) # Standard practice, lowercase
+	   FXX_MODULE=""
+           F77_GETARGDECL="external getarg"
+	   F77_GETARG="call getarg(i,s)"
+	   F77_IARGC="iargc()"
+	   MSG="getarg and iargc"
+	   ;;
+	3) # Posix alternative
+	   FXX_MODULE=""
+	   F77_GETARGDECL="external pxfgetarg"
+	   F77_GETARG="call pxfgetarg(i,s,l,ier)"
+	   F77_IARGC="ipxfiargc()"
+	   MSG="pxfgetarg and ipxfiargc"
+	   ;;
+	4) # Nag f90_unix_env module
+	   FXX_MODULE="        use f90_unix_env"
+	   F77_GETARGDECL=""
+	   F77_GETARG="call getarg(i,s)"
+	   F77_IARGC="iargc()"
+	   MSG="f90_unix_env module"
+	   ;;
+        5) # Nag f90_unix module
+	   FXX_MODULE="        use f90_unix"
+	   F77_GETARGDECL=""
+	   F77_GETARG="call getarg(i,s)"
+	   F77_IARGC="iargc()"
+	   MSG="f90_unix module"
+	   ;;
+	6) # user spec in a file
+	   if test -s f77argdef ; then
+		. ./f77argdef
+	       MSG="Using definitions in the file f77argdef"
+	   else
+	        trial=`expr $trial + 1`
+		continue
+	   fi
+	   ;;
+        *) # exit from while loop
+	   FXX_MODULE=""
+	   F77_GETARGDECL=""
+	   F77_GETARG=""
+	   F77_IARGC=""
+           break
+	   ;;
+	esac
+	# Create the program
+        cat > conftest.f <<EOF
+        program main
+$FXX_MODULE
+        integer i
+        character*20 s
+
+        $F77_GETARGDECL
+        $F77_GETARG
+        i=$F77_IARGC
+        end
+EOF
+    #
+    # Now, try to find some way to compile and link that program, looping 
+    # over the possibilities of options and libraries
+        save_IFS="$IFS"
+        IFS="
+"
+        for libs in $trial_LIBS ; do
+            if test -n "$pac_cv_prog_f77_cmdarg" ; then break ; fi
+	    if test "$libs" = " " ; then libs="" ; fi
+            for flags in $trial_FLAGS ; do
+	        if test "$flags" = " " ; then flags="" ; fi
+                AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with $MSG])
+		IFS="$save_IFS"
+		dnl We need this here because we've fiddled with IFS
+	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $libs $LIBS 1>&AC_FD_CC"
+                if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
+	            AC_MSG_RESULT([yes])
+		    pac_cv_prog_f77_cmdarg="$MSG"
+		    break
+	        else
+                    AC_MSG_RESULT([no])
+		    echo "configure: failed program was:" >&AC_FD_CC
+                    cat conftest.f >&AC_FD_CC
+	        fi
+		IFS="
+"
+            done
+        done
+        IFS="$save_IFS"   
+	rm -f conftest.*
+        trial=`expr $trial + 1`   
+    done
+pac_cv_F77_GETARGDECL="$F77_GETARGDECL"
+pac_cv_F77_IARGC="$F77_IARGC"
+pac_cv_F77_GETARG="$F77_GETARG"
+pac_cv_FXX_MODULE="$FXX_MODULE"
+])
+if test "$found_cached" = "yes" ; then 
+    AC_MSG_RESULT([$pac_cv_prog_f77_cmdarg])
+elif test -z "$pac_cv_F77_IARGC" ; then
+    AC_MSG_WARN([Could not find a way to access the command line from Fortran 77])
+fi
+# Set the variable values based on pac_cv_prog_xxx
+F77_GETARGDECL="$pac_cv_F77_GETARGDECL"
+F77_IARGC="$pac_cv_F77_IARGC"
+F77_GETARG="$pac_cv_F77_GETARG"
+FXX_MODULE="$pac_cv_FXX_MODULE"
+AC_SUBST(F77_GETARGDECL)
+AC_SUBST(F77_IARGC)
+AC_SUBST(F77_GETARG)
+AC_SUBST(FXX_MODULE)
 ])

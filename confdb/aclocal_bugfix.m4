@@ -4,6 +4,14 @@ dnl
 dnl (AC_TRY_COMPILE is missing a newline after the end in the Fortran
 dnl branch; that has been fixed in-place)
 dnl
+dnl (AC_PROG_CC makes many dubious assumptions.  One is that -O is safe
+dnl with -g, even with gcc.  This isn't true; gcc will eliminate dead code
+dnl when -O is used, even if you added code explicitly for debugging 
+dnl purposes.  -O shouldn't do dead code elimination when -g is selected, 
+dnl unless a specific option is selected.  Unfortunately, there is no
+dnl documented option to turn off dead code elimination.
+dnl
+dnl
 dnl AC_CONFIG_AUX_DIRS only checks for install-sh, but assumes other
 dnl values are present.  Also doesn't provide a way to override the
 dnl sources of the various configure scripts.  PAC_CONFIG_AUX_DIRS
