@@ -303,6 +303,7 @@ public class Category
                   + ", name=" + name
                   + ", topo=" + topo
                   + ", color=" + color
+                  + ", isUsed=" + hasBeenUsed
                   + ", width=" + width );
         if (    ( infokeys != null && infokeys.length > 0 )
              || ( infotypes != null && infotypes.length > 0 ) ) {
@@ -335,5 +336,44 @@ public class Category
         rep.append( ", search=" + isSearchable );
         rep.append( " ]" );
         return rep.toString();
+    }
+
+    private static final int     PREVIEW_EVENT_INDEX = -1;
+    private static final int     PREVIEW_ARROW_INDEX = -2;
+    private static final int     PREVIEW_STATE_INDEX = -3;
+
+    public boolean isShadowCategory()
+    {
+        return index < 0;
+    }
+
+    // A static function call, because the returned shadow category
+    // should be the same for for all TRACE formats.
+    public static Category getShadowCategory( final Topology aTopo )
+    {
+        Category   type;
+        if ( aTopo.isEvent() ) {
+            type = new Category( PREVIEW_EVENT_INDEX,
+                                 "Preview_" + aTopo.toString(),
+                                 aTopo, ColorAlpha.WHITE_NEAR_OPAQUE, 5 );
+            // type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
+            return type;
+        }
+        else if ( aTopo.isArrow() ) {
+            type = new Category( PREVIEW_ARROW_INDEX,
+                                 "Preview_" + aTopo.toString(),
+                                 aTopo, ColorAlpha.YELLOW_OPAQUE, 5 );
+            // type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n"
+            //                 + "msg_size=%d\n" );
+            return type;
+        }
+        else if ( aTopo.isState() ) {
+            type = new Category( PREVIEW_STATE_INDEX,
+                                 "Preview_" + aTopo.toString(),
+                                 aTopo, ColorAlpha.WHITE_NEAR_OPAQUE, 5 );
+            // type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
+            return type;
+        }
+        return null;
     }
 }
