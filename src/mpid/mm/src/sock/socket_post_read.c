@@ -11,7 +11,7 @@ int socket_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_POST_READ);
 
     MPIU_dbg_printf("socket_post_read\n");
-    socket_car_enqueue(vc_ptr, car_ptr);
+    socket_car_enqueue_read(vc_ptr, car_ptr);
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_READ);
     return MPI_SUCCESS;
@@ -131,6 +131,7 @@ int socket_handle_read_connect_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
 	    vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_REJECT_CONNECTION;
 	    sock_post_write(sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
 	    /* close the new socket and keep the old */
+	    MPIU_dbg_printf("closing new socket: %d\n", sock_getid(sock));
 	    sock_post_close(sock);
 	}
     }

@@ -28,7 +28,7 @@ int socket_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 	if (posted_car_ptr)
 	{
 	    /* start reading the eager data */
-	    socket_car_head_enqueue(posted_car_ptr->vc_ptr, posted_car_ptr);
+	    socket_car_head_enqueue_read(posted_car_ptr->vc_ptr, posted_car_ptr);
 	}
 	else
 	{

@@ -438,7 +438,7 @@ int socket_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
     
     if (car_ptr->data.socket.buf.vec_read.total_num_read == buf_ptr->vec.segment_last)
     {
-	socket_car_dequeue(vc_ptr, car_ptr);
+	socket_car_dequeue_read(vc_ptr, car_ptr);
 	mm_cq_enqueue(car_ptr);
     }
     else
@@ -491,7 +491,7 @@ int socket_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
     {
 	dbg_printf("num_read: %d\n", buf_ptr->tmp.num_read);
 	/* remove from read queue and insert in completion queue */
-	socket_car_dequeue(vc_ptr, car_ptr);
+	socket_car_dequeue_read(vc_ptr, car_ptr);
 	mm_cq_enqueue(car_ptr);
     }
     else
@@ -546,7 +546,7 @@ int socket_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buff
     {
 	dbg_printf("num_read: %d\n", buf_ptr->simple.num_read);
 	/* remove from read queue and insert in completion queue */
-	socket_car_dequeue(vc_ptr, car_ptr);
+	socket_car_dequeue_read(vc_ptr, car_ptr);
 	mm_cq_enqueue(car_ptr);
     }
     else

@@ -56,7 +56,7 @@ typedef enum SOCK_OP
 #define SOCK_IOV_LEN         len
 #define SOCK_IOV_BUF         buf
 #define SOCK_INFINITE        INFINITE
-#define SOCK_INVALID_SOCKET  NULL
+#define SOCK_INVALID_SOCKET  INVALID_SOCKET
 
 typedef HANDLE sock_set_t;
 typedef struct sock_state_t * sock_t;

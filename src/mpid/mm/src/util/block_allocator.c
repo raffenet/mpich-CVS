@@ -98,6 +98,9 @@ int BlockFree(BlockAllocator p, void *pBlock)
     MPIDU_Lock(&p->lock);
 #endif
 
+#ifdef MPICH_DEV_BUILD
+    memset(pBlock, 0, p->nBlockSize);
+#endif
     ((void**)pBlock)--;
     *((void**)pBlock) = p->pNextFree;
     p->pNextFree = pBlock;

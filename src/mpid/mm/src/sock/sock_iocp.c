@@ -342,8 +342,8 @@ static inline int easy_get_sock_info(SOCKET sock, char *name, int *port)
 
 static inline void init_state_struct(sock_state_t *p)
 {
-    p->listen_sock = INVALID_SOCKET;
-    p->sock = INVALID_SOCKET;
+    p->listen_sock = SOCK_INVALID_SOCKET;
+    p->sock = SOCK_INVALID_SOCKET;
     p->set = INVALID_HANDLE_VALUE;
     p->user_ptr = NULL;
     p->type = 0;
@@ -373,7 +373,7 @@ static inline int post_next_accept(sock_state_t * listen_state)
     int error;
     listen_state->state = SOCK_ACCEPTING;
     listen_state->sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-    if (listen_state->sock == INVALID_SOCKET)
+    if (listen_state->sock == SOCK_INVALID_SOCKET)
 	return SOCK_FAIL;
     if (!AcceptEx(
 	listen_state->listen_sock, 
@@ -682,6 +682,7 @@ int sock_post_close(sock_t sock)
     {
 	shutdown(sock->sock, SD_BOTH);
 	closesocket(sock->sock);
+	sock->sock = SOCK_INVALID_SOCKET;
 	PostQueuedCompletionStatus(sock->set, 0, (DWORD)sock, NULL);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_CLOSE);
@@ -744,8 +745,10 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    sock->pending_operations--;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
+				MPIU_dbg_printf("closing socket(%d) after iov read completed.\n", sock_getid(sock));
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
+				sock->sock = SOCK_INVALID_SOCKET;
 			    }
 			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 			    return SOCK_SUCCESS;
@@ -768,8 +771,10 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    sock->pending_operations--;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
+				MPIU_dbg_printf("closing socket(%d) after simple read completed.\n", sock_getid(sock));
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
+				sock->sock = SOCK_INVALID_SOCKET;
 			    }
 			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 			    return SOCK_SUCCESS;
@@ -794,8 +799,10 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			sock->pending_operations--;
 			if (sock->closing && sock->pending_operations == 0)
 			{
+			    MPIU_dbg_printf("closing socket(%d) after connect completed.\n", sock_getid(sock));
 			    shutdown(sock->sock, SD_BOTH);
 			    closesocket(sock->sock);
+			    sock->sock = SOCK_INVALID_SOCKET;
 			}
 			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 			return SOCK_SUCCESS;
@@ -829,8 +836,10 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 				sock->pending_operations--;
 				if (sock->closing && sock->pending_operations == 0)
 				{
+				    MPIU_dbg_printf("closing socket(%d) after iov write completed.\n", sock_getid(sock));
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
+				    sock->sock = SOCK_INVALID_SOCKET;
 				}
 				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 				return SOCK_SUCCESS;
@@ -853,8 +862,10 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 				sock->pending_operations--;
 				if (sock->closing && sock->pending_operations == 0)
 				{
+				    MPIU_dbg_printf("closing socket(%d) after simple write completed.\n", sock_getid(sock));
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
+				    sock->sock = SOCK_INVALID_SOCKET;
 				}
 				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 				return SOCK_SUCCESS;

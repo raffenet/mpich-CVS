@@ -241,8 +241,8 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->post_write = socket_post_write;
 	vc_ptr->reset_car = socket_reset_car;
 	vc_ptr->post_read_pkt = socket_post_read_pkt;
-	vc_ptr->enqueue_read_at_head = socket_car_head_enqueue;
-	vc_ptr->enqueue_write_at_head = socket_car_head_enqueue;
+	vc_ptr->enqueue_read_at_head = socket_car_head_enqueue_read;
+	vc_ptr->enqueue_write_at_head = socket_car_head_enqueue_write;
 	vc_ptr->setup_packet_car = socket_setup_packet_car;
 	/* socket specific */
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */

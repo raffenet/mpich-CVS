@@ -29,7 +29,7 @@ int socket_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	/* enqueue the head packet car */
 	/*msg_printf("socket_post_write: enqueueing packet\n");*/
-	socket_car_enqueue(vc_ptr, car_ptr);
+	socket_car_enqueue_write(vc_ptr, car_ptr);
     }
     else
     {
@@ -56,7 +56,7 @@ int socket_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 	/*printf("enqueueing rts packet.\n");fflush(stdout);*/
 	/* enqueue the request to send car */
-	socket_car_enqueue(vc_ptr, rndv_car_ptr);
+	socket_car_enqueue_write(vc_ptr, rndv_car_ptr);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_WRITE);
