@@ -207,9 +207,6 @@ typedef struct MPIDI_VC
 {
     int handle;  /* not used; exists so that we may use the MPIU_Object routines for reference counting */
     volatile int ref_count;
-#if !defined(MPICH_SINGLE_THREADED)
-    MPID_Thread_lock_t mutex;
-#endif
     int lpid;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum_send;

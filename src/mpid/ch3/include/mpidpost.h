@@ -414,8 +414,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match);
 MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * found);
 
 void MPIDI_CH3U_Request_complete(MPID_Request * req);
-void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_complete);
-void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * complete);
+void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_incomplete);
+void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * incomplete);
 
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
@@ -436,31 +436,55 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 #if defined(MPICH_SINGLE_THREADED)
 /* SHMEM: In the case of a single-threaded shmem channel sharing requests between processes, a write barrier must be performed
    before decrementing the completion counter.  This insures that other fields in the req structure are updated before the
-   completion is signaled.  How should that be incorporated into this code at the device level? */
-#define MPIDI_CH3U_Request_decrement_cc(req_, complete_)	\
+   completion is signalled.  How should that be incorporated into this code from the channel level? */
+#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
 {								\
-    *(complete_) = --(*(req_)->cc_ptr);				\
+    *(incomplete_) = --(*(req_)->cc_ptr);			\
 }
-#else
-/* MT: If locks are not used, a write barrier must be performed before decrementing the completion counter .  This insures that
-   other fields in the req structure are updated before the completion is signaled. */
-#define MPIDI_CH3U_Request_decrement_cc(req_, complete_)	\
+#else /* !defined(MPICH_SINGLE_THREADED) */
+/* The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one thread
+   and the application could be cancelling the request in another thread. */
+#if defined(USE_ATOMIC_UPDATES)
+/* If locks are not used, a write barrier must be performed if *before* the completion counter reaches zero.  This insures that
+   other fields in the req structure are updated before the completion is signalled. */
+#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
+{								\
+    int new_cc__;						\
+    								\
+    MPID_Atomic_write_barrier();				\
+    MPID_Atomic_decr_flag((req_)->cc_ptr, new_cc__);		\
+    *(incomplete_) = new_cc__;					\
+}
+#else /* !defined(USE_ATOMIC_UPDATES) */
+#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
 {								\
     MPID_Request_thread_lock(req_);				\
     {								\
-	*(inuse_) = --(*(req_)->cc_ptr);			\
+	*(incomplete_) = --(*(req_)->cc_ptr);			\
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
-#endif
+#endif /* defined(USE_ATOMIC_UPDATES) */
+#endif /* defined(MPICH_SINGLE_THREADED) */
+
 #if defined(MPICH_SINGLE_THREADED)
 #define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     *(was_incomplete_) = (*(req_)->cc_ptr)++;			\
 }
-#else
-/* MT: To avoid the use of locks, an atomic fetch and increment can be used here */
-#define MPIDI_CH3U_Request_increment_cc(req_, was_complete_)	\
+#else /* !defined(MPICH_SINGLE_THREADED) */
+/* The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one thread
+   and the application could be cancelling the request in another thread. */
+#if defined(USE_ATOMIC_UPDATES)
+#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
+{								\
+    int old_cc__;						\
+								\
+    MPID_Atomic_fetch_and_incr((req_)->cc_ptr, old_cc__);	\
+    *(was_incomplete_) = old_cc__;				\
+}
+#else /* !defined(USE_ATOMIC_UPDATES) */
+#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     MPID_Request_thread_lock(req_);				\
     {								\
@@ -468,7 +492,8 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
-#endif
+#endif /* defined(USE_ATOMIC_UPDATES) */
+#endif /* defined(MPICH_SINGLE_THREADED */
 
 /*
  * Device level request management macros

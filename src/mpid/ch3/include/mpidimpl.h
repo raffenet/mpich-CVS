@@ -22,7 +22,7 @@ typedef struct MPIDI_Process
     MPID_Request * recvq_unexpected_head;
     MPID_Request * recvq_unexpected_tail;
 #if !defined(MPICH_SINGLE_THREADED)
-    MPID_Thread_t recvq_mutex;
+    MPID_Thread_lock_t recvq_mutex;
 #endif
     char * processor_name;
 }
@@ -124,16 +124,16 @@ extern MPIDI_Process_t MPIDI_Process;
     MPID_Request_destruct(_req);				\
 }
 
-#define MPIDI_CH3U_Request_complete(_req)		\
-{							\
-    int cc;						\
-							\
-    MPIDI_CH3U_Request_decrement_cc((_req), &cc);	\
-    if (cc == 0)					\
-    {							\
-	MPID_Request_release(_req);			\
-	MPIDI_CH3_Progress_signal_completion();		\
-    }							\
+#define MPIDI_CH3U_Request_complete(req_)			\
+{								\
+    int incomplete__;						\
+								\
+    MPIDI_CH3U_Request_decrement_cc((req_), &incomplete__);	\
+    if (!incomplete__)						\
+    {								\
+	MPID_Request_release(req_);				\
+	MPIDI_CH3_Progress_signal_completion();			\
+    }								\
 }
 
 #define MPIDI_CH3M_create_sreq(_sreq, _mpi_errno, _FAIL)			\
@@ -256,7 +256,7 @@ extern MPIDI_Process_t MPIDI_Process;
 {							\
     MPID_Request_thread_lock(_req);			\
     {							\
-	*(_flag) = ((_req)->ch3.cancel_pending;		\
+	*(_flag) = (_req)->ch3.cancel_pending;		\
 	(_req)->ch3.cancel_pending = TRUE;		\
     }							\
     MPID_Request_thread_unlock(_req);			\
@@ -269,7 +269,15 @@ extern MPIDI_Process_t MPIDI_Process;
     *(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
 }
 #else
-/* MT: to make this code lock free, an atomic decrement that sets a zero flag can be used. */ 
+#if defined(USE_ATOMIC_UPDATES)
+#define MPIDI_Request_recv_pending(req_, recv_pending_)				\
+{										\
+    int recv_pending__;								\
+    										\
+    MPID_Atomic_decr_flag(&(req_)->ch3.recv_pending_count, recv_pending__);	\
+    *(recv_pending_) = recv_pending__;						\
+}
+#else
 #define MPIDI_Request_recv_pending(req_, recv_pending_)		\
 {								\
     MPID_Request_thread_lock(req_);				\
@@ -278,25 +286,26 @@ extern MPIDI_Process_t MPIDI_Process;
     }								\
     MPID_Request_thread_unlock(req_);				\
 }
-#endif
+#endif /* defined(USE_ATOMIC_UPDATES) */
+#endif /* defined(MPICH_SINGLE_THREADED) */
 
-/* MPIDI_Request_fetch_rts_sreq_and_clear() - atomically fetch current partner RTS sreq and nullify partner request */
+/* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current partner RTS sreq and nullify partner request */
 #if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_Request_fetch_rts_sreq_and_clear(sreq_, rts_sreq_)	\
+#define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
 {									\
     *(rts_sreq_) = (sreq_)->partner_request;				\
     (sreq_)->partner_request = NULL;					\
 }
 #else
 /* MT: to make this code lock free, an atomic exchange can be used. */
-#define MPIDI_Request_fetch_rts_sreq_and_clear(sreq_, rts_sreq_)	\
+#define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
 {									\
     MPID_Request_thread_lock(sreq_);					\
     {									\
 	*(rts_sreq_) = (sreq_)->partner_request;			\
 	(sreq_)->partner_request = NULL;				\
     }									\
-    MPID_Request_unlock(sreq_);						\
+    MPID_Request_thread_unlock(sreq_);					\
 }
 #endif
 
@@ -344,15 +353,22 @@ extern MPIDI_Process_t MPIDI_Process;
     (_seqnum_out) = (_vc)->seqnum_send++;		\
 }
 #else
-/* MT: To avoid the use of locks, an atomic fetch and increment can be used here */
+#if defined(USE_ATOMIC_UPDATES)
+#define MPIDI_CH3U_VC_FAI_send_seqnum(_vc, _seqnum_out)			\
+{									\
+    MPID_Atomic_fetch_and_incr(&(_vc)->seqnum_send, (_seqnum_out));	\
+}
+#else
+/* FIXME: a VC specific mutex could be used if contention is a problem. */
 #define MPIDI_CH3U_VC_FAI_send_seqnum(_vc, _seqnum_out)	\
 {							\
-    MPID_Thread_lock((_vc)->mutex);			\
+    MPID_Common_thread_lock();				\
     {							\
 	(_seqnum_out) = (_vc)->seqnum_send++;		\
     }							\
-    MPID_Thread_unlock((_vc)->mutex);			\
+    MPID_Common_thread_unlock();			\
 }
+#endif /* defined(USE_ATOMIC_UPDATES) */
 #endif
 #define MPIDI_CH3U_Request_set_seqnum(_req, _seqnum)	\
 {							\
