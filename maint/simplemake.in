@@ -120,7 +120,7 @@ $quiet = 0;
 	      'c:' => '$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
 	      'f:' => '$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
 	      'f90:' => '$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
-              'cxx:' => '(CXX_COMPILE) -o $< $(LDFLAGS) $(LIBS)',
+              'cxx:' => '$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
 # LaTeX definitions
 	      'tex:dvi' => 'latex $<',
 	      'dvi:ps' => 'dvips $<',
@@ -182,11 +182,13 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	       'cxx' => '$(CXX_LINK) $(LDFLAGS)',
 	       'cpp' => '$(CXX_LINK) $(LDFLAGS)',
 	       'f'   => '$(F77_LINK) $(LDFLAGS)',
+	       'f90' => '$(F90_LINK) $(LDFLAGS)',
 	      );
 %progdefs = ( 'c' =>   'C_LINK      = $(CC)',
 	      'cxx' => 'CXX_LINK    = $(CXX)',
 	      'cpp' => 'CXX_LINK    = $(CXX)',
 	      'f'   => 'F77_LINK    = $(FC)',
+	      'f90' => 'F90_LINK    = $(F90)',
 	     );
 
 # Rules to build shared libraries (these are like programs
