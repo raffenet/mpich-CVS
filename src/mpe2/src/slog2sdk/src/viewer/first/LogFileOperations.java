@@ -9,6 +9,8 @@
 
 package viewer.first;
 
+import java.awt.Window;
+import javax.swing.JTextField;
 import java.util.List;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,6 +21,8 @@ import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 import viewer.common.Parameters;
 import viewer.common.PreferenceFrame;
+import viewer.common.LogFileChooser;
+import viewer.convertor.ConvertorDialog;
 import viewer.legends.LegendFrame;
 import viewer.timelines.TimelineFrame;
 
@@ -50,24 +54,24 @@ public class LogFileOperations
         pptys_frame.setVisible( false );
     }
 
-    private static InputLog createInputLog( String pathname )
+    private static InputLog createInputLog( Window window, String pathname )
     {
         String logname = pathname.trim();
         if ( logname != null && logname.length() > 0 ) {
             File logfile = new File( logname );
             if ( ! logfile.exists() ) {
-                Dialogs.error( TopWindow.First.getWindow(),
+                Dialogs.error( window,
                                "File Not Found when initializing "
                              + logname + "." );
                 return null;
             }
             if ( logfile.isDirectory() ) {
-                Dialogs.error( TopWindow.First.getWindow(),
+                Dialogs.error( window,
                                logname + " is a directory." );
                 return null;
             }
-            else if ( ! logfile.canRead() ) {
-                Dialogs.error( TopWindow.First.getWindow(),
+            if ( ! logfile.canRead() ) {
+                Dialogs.error( window,
                                "File " + logname + " cannot be read." );
                 return null;
             }
@@ -76,12 +80,12 @@ public class LogFileOperations
             try {
                 slog = new InputLog( logname );
             } catch ( NullPointerException nperr ) {
-                Dialogs.error( TopWindow.First.getWindow(),
+                Dialogs.error( window,
                                "NullPointerException when initializing "
                              + logname + "!" );
                 return null;
             } catch ( Exception err ) {
-                Dialogs.error( TopWindow.First.getWindow(),
+                Dialogs.error( window,
                                "EOFException when initializing "
                              + logname + "!" );
                 return null;
@@ -89,7 +93,7 @@ public class LogFileOperations
             return slog;
         }
         else {
-            Dialogs.error( TopWindow.First.getWindow(), "Null pathname!" );
+            Dialogs.error( window, "Null pathname!" );
             return null;
         }
 
@@ -130,34 +134,49 @@ public class LogFileOperations
         this.disposeLogFileAndResources() has to be called
         before this.openLogFile() can be invoked.
     */
-    public List openLogFile( String filename )
+    public List openLogFile( JTextField  logname_txtfld )
     {
-        String err_msg = null;
-        slog_ins  = LogFileOperations.createInputLog( filename );
-        if ( slog_ins != null ) {
-            if ( (err_msg = slog_ins.getCompatibleHeader() ) != null ) {
-                if ( ! Dialogs.confirm( TopWindow.First.getWindow(),
-                                err_msg
-                              + "Check the following version history "
-                              + "for compatibility.\n\n"
-                              + logformat.slog2.Const.VERSION_HISTORY + "\n"
-                              + "Do you still want to continue reading "
-                              + "the logfile ?" ) ) {
-                    slog_ins = null;
-                    return null;
-                }
-            }
-            slog_ins.initialize();
-            legend_frame = new LegendFrame( slog_ins );
-            legend_frame.pack();
-            TopWindow.layoutIdealLocations();
-            legend_frame.setVisible( true );
-            return (List) slog_ins.getLineIDMapList();
-        }
-        else {
-            Dialogs.error( TopWindow.First.getWindow(), "Null logfile!" );
+        String filename, new_filename, err_msg;
+        filename  = logname_txtfld.getText();
+        slog_ins  = LogFileOperations.createInputLog(
+                           TopWindow.First.getWindow(), filename );
+        if ( slog_ins == null ) {
+            Dialogs.error( TopWindow.First.getWindow(), "Null InputLog!" );
             return null;
         }
+        if ( ! slog_ins.isSLOG2() ) {
+            slog_ins = null;
+            if ( Dialogs.confirm( TopWindow.First.getWindow(),
+                                  filename + " is NOT a SLOG-2 file!\n"
+                                + "Do you want to convert it to SLOG-2 format "
+                                + "readable by this viewer?" ) ) {
+                new_filename = ConvertorDialog.convertLogfile(
+                                   TopWindow.First.getWindow(), filename );
+                logname_txtfld.setText( new_filename );
+                return openLogFile( logname_txtfld );
+            }
+            else
+                return null;
+        }
+        err_msg   = null;
+        if ( (err_msg = slog_ins.getCompatibleHeader() ) != null ) {
+            if ( ! Dialogs.confirm( TopWindow.First.getWindow(),
+                             err_msg
+                          + "Check the following version history "
+                          + "for compatibility.\n\n"
+                          + logformat.slog2.Const.VERSION_HISTORY + "\n"
+                          + "Do you still want to continue reading "
+                          + "the logfile ?" ) ) {
+                slog_ins = null;
+                return null;
+            }
+        }
+        slog_ins.initialize();
+        legend_frame = new LegendFrame( slog_ins );
+        legend_frame.pack();
+        TopWindow.layoutIdealLocations();
+        legend_frame.setVisible( true );
+        return (List) slog_ins.getLineIDMapList();
     }
 
     /*

@@ -20,53 +20,59 @@ import java.util.Iterator;
 
 import logformat.slog2.LineIDMap;
 import viewer.common.Const;
-import viewer.common.Dialogs;
+import viewer.common.Routines;
 import viewer.common.TopWindow;
+import viewer.common.Dialogs;
+import viewer.common.ActableTextField;
+import viewer.convertor.ConvertorDialog;
 
 public class FirstPanel extends JPanel
 {
     private static String        about_str = "Jumpshot-4, the SLOG-2 viewer.\n"
                                            + "bug-reports/questions:\n"
                                            + "            chan@mcs.anl.gov";
-    private static String        manual_path      = Const.DOC_PATH
-                                                  + "usersguide.html";
-    private static String        faq_path         = Const.DOC_PATH
-                                                  + "faq_index.html";
-    private static String        js_icon_path     = Const.IMG_PATH
-                                                  + "jumpshot.gif";
+    private static String        manual_path        = Const.DOC_PATH
+                                                    + "usersguide.html";
+    private static String        faq_path           = Const.DOC_PATH
+                                                    + "faq_index.html";
+    private static String        js_icon_path       = Const.IMG_PATH
+                                                    + "jumpshot.gif";
 
-    private static String        open_icon_path   = Const.IMG_PATH
-                                                  + "Open24.gif";
-    private static String        show_icon_path   = Const.IMG_PATH
-                                                  + "New24.gif";
-    private static String        close_icon_path  = Const.IMG_PATH
-                                                  + "Stop24.gif";
-    private static String        legend_icon_path = Const.IMG_PATH
-                                                  + "Properties24.gif";
-    private static String        prefer_icon_path = Const.IMG_PATH
-                                                  + "Preferences24.gif";
-    private static String        manual_icon_path = Const.IMG_PATH
-                                                  + "Help24.gif";
-    private static String        faq_icon_path    = Const.IMG_PATH
-                                                  + "Information24.gif";
-    private static String        about_icon_path  = Const.IMG_PATH
-                                                  + "About24.gif";
+    private static String        open_icon_path     = Const.IMG_PATH
+                                                    + "Open24.gif";
+    private static String        convert_icon_path  = Const.IMG_PATH
+                                                    + "Copy24.gif";
+    private static String        show_icon_path     = Const.IMG_PATH
+                                                    + "New24.gif";
+    private static String        close_icon_path    = Const.IMG_PATH
+                                                    + "Stop24.gif";
+    private static String        legend_icon_path   = Const.IMG_PATH
+                                                    + "Properties24.gif";
+    private static String        prefer_icon_path   = Const.IMG_PATH
+                                                    + "Preferences24.gif";
+    private static String        manual_icon_path   = Const.IMG_PATH
+                                                    + "Help24.gif";
+    private static String        faq_icon_path      = Const.IMG_PATH
+                                                    + "Information24.gif";
+    private static String        about_icon_path    = Const.IMG_PATH
+                                                    + "About24.gif";
 
-    private        LogNameField  logname_fld;
-    private        JComboBox     pulldown_list;
+    private        ActableTextField    logname_fld;
+    private        JComboBox           pulldown_list;
 
     /*  some of these are hidden buttons */
-    private        JButton       file_select_btn;
-    private        JButton       file_close_btn;
-    private        JButton       show_timeline_btn;
-    private        JButton       show_legend_btn;
-    private        JButton       edit_prefer_btn;
-    private        JButton       help_manual_btn;
-    private        JButton       help_faq_btn;
-    private        JButton       help_about_btn;
+    private        JButton             file_select_btn;
+    private        JButton             file_convert_btn;
+    private        JButton             file_close_btn;
+    private        JButton             show_timeline_btn;
+    private        JButton             show_legend_btn;
+    private        JButton             edit_prefer_btn;
+    private        JButton             help_manual_btn;
+    private        JButton             help_faq_btn;
+    private        JButton             help_about_btn;
 
-    private        HTMLviewer    manual_viewer;
-    private        HTMLviewer    faq_viewer;
+    private        HTMLviewer          manual_viewer;
+    private        HTMLviewer          faq_viewer;
 
     private        LogFileOperations   file_ops;
     private        String              logfile_name;
@@ -86,13 +92,14 @@ public class FirstPanel extends JPanel
         logfile_name = filename;
         view_ID      = view_idx;
 
-        int         fld_height, fld_width;
-        Dimension   min_size, max_size, pref_size;
-        fld_width    = 400;
-        fld_height   = 25;
-        min_size     = new Dimension( 0, fld_height );
-        max_size     = new Dimension( Short.MAX_VALUE, fld_height );
-        pref_size    = new Dimension( fld_width, fld_height );
+
+        Dimension   row_pref_sz;
+        Dimension   lbl_pref_sz;
+        Dimension   fld_pref_sz;
+        row_pref_sz  = new Dimension( 410, 27 );
+        lbl_pref_sz  = new Dimension( 110, 25 );
+        fld_pref_sz  = new Dimension( row_pref_sz.width - lbl_pref_sz.width,
+                                      lbl_pref_sz.height );
 
         JPanel  ctr_panel;
         ctr_panel  = new JPanel();
@@ -101,37 +108,41 @@ public class FirstPanel extends JPanel
 
                 JLabel  label;
                 JPanel logname_panel = new JPanel();
+                logname_panel.setAlignmentX( Component.CENTER_ALIGNMENT );
                 logname_panel.setLayout( new BoxLayout( logname_panel,
                                                         BoxLayout.X_AXIS ) );
-                logname_panel.setAlignmentX( Component.CENTER_ALIGNMENT );
     
                     label = new JLabel( " LogName : " );
+                    Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 logname_panel.add( label );
-                    logname_fld = new LogNameField( logfile_name, 40 );
+                    logname_fld = new ActableTextField( logfile_name, 40 );
                     logname_fld.setBorder( BorderFactory.createCompoundBorder(
                                            lowered_border, etched_border ) );
                     logname_fld.addActionListener(
                                 new LogNameTextFieldListener() );
+                    Routines.setShortJComponentSizes( logname_fld,
+                                                      fld_pref_sz );
                 logname_panel.add( logname_fld );
-                logname_panel.setMinimumSize( min_size );
-                logname_panel.setMaximumSize( max_size );
-                logname_panel.setPreferredSize( pref_size );
+                Routines.setShortJComponentSizes( logname_panel, row_pref_sz );
                 // logname_panel.add( Box.createHorizontalStrut( 40 ) );
             ctr_panel.add( logname_panel );
             ctr_panel.add( Box.createVerticalGlue() );
             ctr_panel.add( Box.createVerticalStrut( 4 ) );
     
                 JPanel map_panel = new JPanel();
+                map_panel.setAlignmentX( Component.CENTER_ALIGNMENT );
                 map_panel.setLayout( new BoxLayout( map_panel,
                                                     BoxLayout.X_AXIS ) );
-                map_panel.setAlignmentX( Component.CENTER_ALIGNMENT );
     
                     label = new JLabel( " ViewMap : " );
+                    Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 map_panel.add( label );
                     pulldown_list = new JComboBox();
                     pulldown_list.setBorder( lowered_border );
                     pulldown_list.addActionListener(
                                   new ViewMapComboBoxListener() );
+                    Routines.setShortJComponentSizes( pulldown_list,
+                                                      fld_pref_sz );
                     /*
                     //  ItemListener does not work here, because the listener
                     //  is not invoked when same item is selected again.
@@ -145,9 +156,7 @@ public class FirstPanel extends JPanel
                     } );
                     */
                 map_panel.add( pulldown_list );
-                map_panel.setMinimumSize( min_size );
-                map_panel.setMaximumSize( max_size );
-                map_panel.setPreferredSize( pref_size );
+                Routines.setShortJComponentSizes( map_panel, row_pref_sz );
     
             ctr_panel.add( map_panel );
             ctr_panel.add( Box.createVerticalGlue() );
@@ -187,6 +196,19 @@ public class FirstPanel extends JPanel
             file_select_btn.addActionListener(
                             new FileSelectButtonListener() );
         toolbar.add( file_select_btn );
+
+            icon_URL = null;
+            icon_URL = getURL( convert_icon_path );
+            if ( icon_URL != null )
+                file_convert_btn = new JButton( new ImageIcon( icon_URL ) );
+            else
+                file_convert_btn = new JButton( "CONVERT" );
+            file_convert_btn.setToolTipText( "Invoke the Logfile Convertor" );
+            // file_convert_btn.setBorder( empty_border );
+            file_convert_btn.setMargin( btn_insets );
+            file_convert_btn.addActionListener(
+                             new FileConvertButtonListener() );
+        toolbar.add( file_convert_btn );
 
         toolbar.addSeparator();
 
@@ -321,6 +343,11 @@ public class FirstPanel extends JPanel
         return file_select_btn;
     }
 
+    public JButton getLogFileConvertButton()
+    {
+        return file_convert_btn;
+    }
+
     public JButton getLogFileCloseButton()
     {
         return file_close_btn;
@@ -359,36 +386,36 @@ public class FirstPanel extends JPanel
 
 
 
-    private class LogNameField extends JTextField
-    {
-        public LogNameField( String name, int icolumn )
-        {
-            super( name, icolumn );
-        }
-
-        public void fireActionPerformed()
-        {
-            super.fireActionPerformed();
-        }
-    }
-
     private class FileSelectButtonListener implements ActionListener
     {
         public void actionPerformed( ActionEvent evt )
         {
             final String filename = file_ops.selectLogFile();
-            if ( filename != null ) {
+            if ( filename != null && filename.length() > 0 ) {
                 logname_fld.setText( filename );
-                // pulldown_list.removeAllItems();//done by setMapPullDownMenu()
-                file_ops.disposeLogFileAndResources();
+                // invoke LogNameTextFieldListener.actionPerformed()
+                logname_fld.fireActionPerformed();
+            }
+        }
+    }
 
-                List lineIDmaps = file_ops.openLogFile( filename );
-                if ( lineIDmaps != null ) {
-                    FirstPanel.this.setMapPullDownMenu( lineIDmaps );
-                    // Timeline window is created by ViewMapComboBoxListener
-                    // if ( lineIDmaps.size() == 1 )
-                    //     file_ops.createTimelineWindow( view_ID=0 );
-                }
+    private class FileConvertButtonListener implements ActionListener
+    {
+        public void actionPerformed( ActionEvent evt )
+        {
+            String filename, new_filename;
+            new_filename  = null;
+            filename      = logname_fld.getText();
+            if ( filename != null && filename.length() > 0 )
+                new_filename = ConvertorDialog.convertLogfile(
+                                  TopWindow.First.getWindow(), filename ); 
+            else
+                new_filename = ConvertorDialog.convertLogfile(
+                                  TopWindow.First.getWindow(), null );
+            if ( new_filename != null && new_filename.length() > 0 ) {
+                logname_fld.setText( new_filename );
+                // invoke LogNameTextFieldListener.actionPerformed()
+                logname_fld.fireActionPerformed();
             }
         }
     }
@@ -400,7 +427,7 @@ public class FirstPanel extends JPanel
             // pulldown_list.removeAllItems();  // done by setMapPullDownMenu()
             file_ops.disposeLogFileAndResources();
 
-            List lineIDmaps = file_ops.openLogFile( logname_fld.getText() );
+            List lineIDmaps = file_ops.openLogFile( logname_fld );
             if ( lineIDmaps != null ) {
                 FirstPanel.this.setMapPullDownMenu( lineIDmaps );
                 // Timeline window is created by ViewMapComboBoxListener

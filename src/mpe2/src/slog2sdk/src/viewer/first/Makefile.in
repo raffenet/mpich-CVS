@@ -20,8 +20,7 @@ RM           = @RM@
 
 TARGET    = $(libbuild_dir)/jumpshot.jar
 PACKAGE   = viewer.first
-SRC       = LogPermitDirFilter.java LogRefuseDirFilter.java \
-            LogFileChooser.java HTMLviewer.java LogFileOperations.java \
+SRC       = HTMLviewer.java LogFileOperations.java \
             FirstPanel.java FirstMenuBar.java FirstFrame.java
 
 OBJ       = $(SRC:.java=.class)
@@ -51,7 +50,7 @@ $(TARGET): $(OBJ)
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ base/topology/ base/drawable/ base/statistics/ \
 	           logformat/slog2/ logformat/slog2/input/ \
-	           viewer/common/ viewer/legends/ \
+	           viewer/common/ viewer/convertor/ viewer/legends/ \
 	           viewer/zoomable/ viewer/histogram/ viewer/timelines/ \
 	           $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \

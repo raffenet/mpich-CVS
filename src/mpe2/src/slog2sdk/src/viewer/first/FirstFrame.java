@@ -13,6 +13,9 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+// import java.util.Properties;
+import java.util.Enumeration;
+
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 import viewer.common.TopControl;
@@ -37,6 +40,20 @@ public class FirstFrame extends JFrame
         super.setContentPane( top_panel );
         top_menubar  = new FirstMenuBar( isApplet, top_panel );
         super.setJMenuBar( top_menubar );
+
+        /*
+        Properties   sys_pptys;
+        sys_pptys = System.getProperties();
+
+        Enumeration  ppty_keys;
+        String       ppty_key, ppty_val;
+        ppty_keys = sys_pptys.propertyNames();
+        while ( ppty_keys.hasMoreElements() ) {
+            ppty_key  = (String) ppty_keys.nextElement();
+            ppty_val  = sys_pptys.getProperty( ppty_key );
+            System.out.println( ppty_key + " = " + ppty_val );
+        }
+        */
 
         addWindowListener( new WindowAdapter() {
             public void windowClosing( WindowEvent e ) {

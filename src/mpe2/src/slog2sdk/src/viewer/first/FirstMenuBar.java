@@ -24,6 +24,7 @@ public class FirstMenuBar extends JMenuBar
     private        FirstPanel      first_panel;
 
     private        JMenuItem       file_select_item;
+    private        JMenuItem       file_convert_item;
     private        JMenuItem       file_close_item;
     private        JMenuItem       file_exit_item;
     private        JMenuItem       show_legend_item;
@@ -50,6 +51,13 @@ public class FirstMenuBar extends JMenuBar
                     }
                 } );
             menu.add( file_select_item );
+                file_convert_item = new JMenuItem( "Convert ..." );
+                file_convert_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getLogFileConvertButton().doClick();
+                    }
+                } );
+            menu.add( file_convert_item );
                 file_close_item  = new JMenuItem( "Close" );
                 file_close_item.addActionListener( new ActionListener() {
                     public void actionPerformed( ActionEvent evt ) {
