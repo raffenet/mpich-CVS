@@ -434,25 +434,25 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     saInfo.dwFlags = STARTF_USESTDHANDLES;
 
     SetEnvironmentVariables(process->env);
-    sprintf(str, "PMI_RANK=%d", process->rank);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
-    sprintf(str, "PMI_SIZE=%d", process->nproc);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
-    sprintf(str, "PMI_KVS=%s", process->kvs_name);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
+    sprintf(str, "%d", process->rank);
+    smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+    SetEnvironmentVariable("PMI_RANK", str);
+    sprintf(str, "%d", process->nproc);
+    smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+    SetEnvironmentVariable("PMI_SIZE", str);
+    sprintf(str, "%s", process->kvs_name);
+    smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+    SetEnvironmentVariable("PMI_KVS", str);
     smpd_encode_handle(sock_str, (HANDLE)hSockPmiW);
-    sprintf(str, "PMI_SMPD_FD=%s", sock_str);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
-    sprintf(str, "PMI_SMPD_ID=%d", smpd_process.id);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
-    sprintf(str, "PMI_SMPD_KEY=%d", process->id);
-    smpd_dbg_printf("env: %s\n", str);
-    putenv(str);
+    sprintf(str, "%s", sock_str);
+    smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+    SetEnvironmentVariable("PMI_SMPD_FD", str);
+    sprintf(str, "%d", smpd_process.id);
+    smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+    SetEnvironmentVariable("PMI_SMPD_ID", str);
+    sprintf(str, "%d", process->id);
+    smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+    SetEnvironmentVariable("PMI_SMPD_KEY", str);
     pEnv = GetEnvironmentStrings();
 
     GetCurrentDirectory(MAX_PATH, tSavedPath);
@@ -485,6 +485,12 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     FreeEnvironmentStrings((TCHAR*)pEnv);
     SetCurrentDirectory(tSavedPath);
     RemoveEnvironmentVariables(process->env);
+    SetEnvironmentVariable("PMI_RANK", NULL);
+    SetEnvironmentVariable("PMI_SIZE", NULL);
+    SetEnvironmentVariable("PMI_KVS", NULL);
+    SetEnvironmentVariable("PMI_SMPD_FD", NULL);
+    SetEnvironmentVariable("PMI_SMPD_ID", NULL);
+    SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
 
     /* make sock structures out of the sockets */
     nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
@@ -908,24 +914,24 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 
-	sprintf(str, "PMI_RANK=%d", process->rank);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
-	sprintf(str, "PMI_SIZE=%d", process->nproc);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
-	sprintf(str, "PMI_KVS=%s", process->kvs_name);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
-	sprintf(str, "PMI_SMPD_FD=%d", pmi_pipe_fds[1]);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
-	sprintf(str, "PMI_SMPD_ID=%d", smpd_process.id);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
-	sprintf(str, "PMI_SMPD_KEY=%d", process->id);
-	smpd_dbg_printf("env: %s\n", str);
-	putenv(str);
+	sprintf(str, "%d", process->rank);
+	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+	setenv("PMI_RANK", str, 1);
+	sprintf(str, "%d", process->nproc);
+	smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+	setenv("PMI_SIZE", str, 1);
+	sprintf(str, "%s", process->kvs_name);
+	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+	setenv("PMI_KVS", str, 1);
+	sprintf(str, "%d", pmi_pipe_fds[1]);
+	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+	putenv("PMI_SMPD_FD", str, 1);
+	sprintf(str, "%d", smpd_process.id);
+	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+	setenv("PMI_SMPD_ID", str, 1);
+	sprintf(str, "%d", process->id);
+	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+	setenv("PMI_SMPD_KEY", str, 1);
 	/*result = execvp( process->exe, NULL );*/
 	result = execvp( argv[0], argv );
 
