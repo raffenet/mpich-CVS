@@ -25,16 +25,23 @@
 $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary)
 $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
+$np_default = 2;         # Default number of processes to use
 
 # Output forms
 $xmloutput = 0;          # Set to true to get xml output (also specify file)
 $verbose = 0;            # Set to true to get more output
 $newline = "\r\n";       # Set to \r\n for Windows-friendly, \n for Unix only
+
+# Build flags
+$remove_this_pgm = 0;
+$clean_pgms      = 1;
+
 #---------------------------------------------------------------------------
 # Process arguments and override any defaults
 #---------------------------------------------------------------------------
 foreach $_ (@ARGV) {
     if (/-mpiexec=(.*)/) { $mpiexec = $1; }
+    elsif (/-np=(.*)/)   { $np_default = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
     elsif (/-verbose/) { $verbose = 1; }
     elsif (/-xmlfile=(.*)/) {
@@ -48,15 +55,41 @@ foreach $_ (@ARGV) {
 }
 
 if ($listfiles eq "") {
-    # The default is to build every file in the current directory
-    open (PGMS, "ls -1 *.c |" ) || die "Cannot list programs\n";
+    # The default is to run every file in the current directory.
+    # If there are no built programs, build and run every file
+    $found_exec = 0;
+    $found_src  = 0;
+    open (PGMS, "ls -1 |" ) || die "Cannot list directory\n";
     while (<PGMS>) {
 	s/\r?\n//;
 	$programname = $_;
-	$programname =~ s/\.c//;
-	&BuildMPIProgram( $programname );
-	&RunMPIProgram( $programname, 2 );
-	&CleanUpAfterRun( $programname );
+	if (-x $programname) { $found_exec++; }
+	if ($programname =~ /\.[cf]$/) { $found_src++; } 
+    }
+    close PGMS;
+    
+    if ($found_exec) {
+	open (PGMS, "ls -1 |" ) || die "Cannot list programs\n";
+	while (<PGMS>) {
+	    s/\r?\n//;
+	    $programname = $_;
+	    if (-x $programname) {
+		&RunMPIProgram( $programname, $np_default );
+	    }
+	}
+	close PGMS;
+    }
+    elsif ($found_src) { 
+	open (PGMS, "ls -1 *.c |" ) || die "Cannot list programs\n";
+	while (<PGMS>) {
+	    s/\r?\n//;
+	    $programname = $_;
+	    $programname =~ s/\.c//;
+	    &BuildMPIProgram( $programname );
+	    &RunMPIProgram( $programname, $np_default );
+	    &CleanUpAfterRun( $programname );
+	}
+	close PGMS;
     }
 }
 elsif (-d $listfiles) { 
@@ -78,7 +111,7 @@ sub RunList {
     while (<LIST>) {
 	s/\r?\n//;
 	my ($programname,$np) = split(/\s+/,$_);
-	if ($np eq "") { $np = 2; }
+	if ($np eq "") { $np = $np_default; }
 	&BuildMPIProgram( $programname );
 	&RunMPIProgram( $programname, $np );
 	&CleanUpAfterRun( $programname );
@@ -96,10 +129,12 @@ sub RunMPIProgram {
     if ($verbose) {
 	print STDERR "$mpiexec $np_arg $np $programname\n";
     }
-    open ( MPIOUT, "$mpiexec $np_arg $np $programname 2>err |" ) ||
+    unlink "err";
+    open ( MPIOUT, "$mpiexec $np_arg $np $programname 2>&1 |" ) ||
 	 die "Could not run $programname\n";
     $inline = "";
     while (<MPIOUT>) {
+	#print STDOUT $_ if $verbose;
 	# Skip FORTRAN STOP
 	if (/FORTRAN STOP/) { next; }
 	$inline .= $_;
@@ -124,6 +159,8 @@ sub RunMPIProgram {
 sub BuildMPIProgram {
     my $programname = $_[0];
     if ($verbose) { print STDERR "making $programname\n"; }
+    if (! -x $programname) { $remove_this_pgm = 1; }
+    else { $remove_this_pgm = 0; }
     my $output = `make $programname 2>&1`;
     if (! -x $programname) {
 	print STDERR "Failed to build $programname; $output\n";
@@ -132,7 +169,10 @@ sub BuildMPIProgram {
 
 sub CleanUpAfterRun {
     my $programname = $_[0];
-    unlink $programname, "$programname.o";
+    if ($remove_this_pgm && $clean_pgms) {
+	unlink $programname, "$programname.o";
+    }
+    $remove_this_pgm = 0;
 }
 #
 # ----------------------------------------------------------------------------
