@@ -226,8 +226,10 @@ int main(int argc, char* argv[])
     /* set the state to create a console session or a job session */
     state = smpd_process.do_console ? SMPD_MPIEXEC_CONNECTING_SMPD : SMPD_MPIEXEC_CONNECTING_TREE;
 
+#ifdef HAVE_WINDOWS_H
     if (!smpd_process.local_root)
     {
+#endif
 	/* start connecting the tree by posting a connect to the first host */
 	result = MPIDU_Sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
 	if (result != MPI_SUCCESS)
@@ -236,7 +238,9 @@ int main(int argc, char* argv[])
 		smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
 	    goto quit_job;
 	}
+#ifdef HAVE_WINDOWS_H
     }
+#endif
     result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
     if (result != SMPD_SUCCESS)
     {
@@ -245,6 +249,7 @@ int main(int argc, char* argv[])
     }
     context->state = state;
     context->connect_to = smpd_process.host_list;
+#ifdef HAVE_WINDOWS_H
     if (smpd_process.local_root)
     {
 	int port;
@@ -307,6 +312,7 @@ int main(int argc, char* argv[])
     }
     else
     {
+#endif
 	smpd_process.left_context = context;
 	result = MPIDU_Sock_set_user_ptr(sock, context);
 	if (result != MPI_SUCCESS)
@@ -315,7 +321,9 @@ int main(int argc, char* argv[])
 		get_sock_error_string(result));
 	    goto quit_job;
 	}
+#ifdef HAVE_WINDOWS_H
     }
+#endif
     result = smpd_enter_at_state(set, state);
     if (result != SMPD_SUCCESS)
     {
