@@ -282,7 +282,7 @@ the user to give us some guidence on what to do if a TCP connection
 fails.  Should we do that?  What should it look like? (It is too bad
 that the communicator construction don't have an info hint.)
 
-\implementation{{General Notes}}
+\implementation{General Notes}
 The basic structures include the following:
 \begin{verbatim}
 typedef struct { 
@@ -545,7 +545,7 @@ data; some systems even make it efficient.  For now, we won't worry
 about it.
 
 
-\implementation{{MPI_Irecv}}
+\implementation{MPI_Irecv}
 
 \ifcodefirst
 \fileinclude{samples/irecv_tcp.c}
@@ -700,7 +700,7 @@ Notes:
 \fileinclude{samples/irecv_tcp.c}
 \fi
 
-\implementation{{MPI_Isend}}
+\implementation{MPI_Isend}
 
 \ifcodefirst
 \fileinclude{samples/isend_tcp.c}
@@ -808,7 +808,7 @@ Notes:
 \fileinclude{samples/isend_tcp.c}
 \fi
 
-\implementation{{Communication Agent}}
+\implementation{Communication Agent}
 The communication agent in MPICH2 replaces the \code{MPID_Device_check} in
 MPICH-1.  In a version of MPICH2 that uses polling, there will be a similar
 routine that executes the communication agent code.  Other implementations may
@@ -1163,7 +1163,7 @@ while (1) {
 \fileinclude{samples/agent_tcp.c}
 \fi
 
-\implementation{{MPI_Wait}}
+\implementation{MPI_Wait}
 
 \ifcodefirst
 \fileinclude{samples/wait_tcp.c}
@@ -1291,7 +1291,7 @@ sets the eager buffer fields in the request (e.g., \code{MPID_Eager_info}),
 and clears the \code{busy} flag in the request.  When the eager message is
 finally received, the eager buffer is returned to shared memory.
 
-\implementation{{MPI_Irecv}}
+\implementation{MPI_Irecv}
 
 The initial steps are the same as in the \tcpname\ case.  A major difference
 is caused by the fact that the requests can be (and we will assume are)
@@ -1327,7 +1327,7 @@ queue element directly. The two cases are
 \end{enumerate}
 
 
-\implementation{{MPI_Isend}}
+\implementation{MPI_Isend}
 
 Check remote queue for matching receive request (using
 \mpidfunc{MPID_Request_send_FOA}).  
@@ -1369,7 +1369,7 @@ Check remote queue for matching receive request (using
     Subsequent transfers will be handled by the communication agent.
 \end{enumerate}
 
-\implementation{{MPI_Wait}}
+\implementation{MPI_Wait}
 
 Again, this is much like the \tcpname\ case.  Note, however, that the
 \mpids{MPID_Request}{xfer_completed} field can, in some cases, be set by the
@@ -1389,7 +1389,7 @@ message to manage the communication.
 Question: If we use a \code{data_available} field, how do we avoid
 busy-waiting?  Do we simply poll and yield?
 
-\implementation{{Communication agent}}
+\implementation{Communication agent}
 
 The communication agent is responsible for making progress on a stream (the
 sending of segments).  There is no special action on the receiving end.  On
@@ -1474,7 +1474,7 @@ are two different types of rendezvous:
 \end{enumerate}
 These suggest special cases that can be optimized.
 
-\implementation{{MPI_Irecv}}
+\implementation{MPI_Irecv}
 
 This follow the same approach as in \tcpname.  
 If a message must be sent (e.g., a
@@ -1498,7 +1498,7 @@ this.
 
 Further processing is handled by the communication agent.
 
-\implementation{{MPI_Isend}}
+\implementation{MPI_Isend}
 
 This also follows the approach in \tcpname.
 
@@ -1506,11 +1506,11 @@ Note that since we don't know whether the destination is going to provide a
 contiguous, registered-memory buffer or not, we shouldn't take the step of
 transfering the first segment into an internal registered-memory buffer.
 
-\implementation{{MPI_Wait}}
+\implementation{MPI_Wait}
 
 The same as for \tcpname.  
 
-\implementation{{Communication agent}}
+\implementation{Communication agent}
 
 The agent must respond to messages in much the same way as \tcpname.  However,
 the process of sending a stream of segments may be different. 

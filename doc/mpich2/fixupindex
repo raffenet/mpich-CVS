@@ -13,7 +13,15 @@
 		  "MPI_SIMILAR" => 1, "MPI_UNDEFINED" => 1,
 		  "MPI_UNEQUAL" => 1, "MPI_IDENT" => 1,
 		  "MPI_IN_PLACE" => 1, "MPI_ROOT" => 1, 
+		  "MPI_REPLACE" => 1,
 		  "MPI_ANY_SOURCE" => 1, "MPI_ANY_TAG" => 1, 
+		  "MPI_DISTRIBUTE_NONE" => 1,
+		  "MPI_INFO_NULL" => 1,
+		  "MPI_COMM_NULL" => 1,
+		  "MPI_TYPE_NULL" => 1,
+		  "MPI_GROUP_NULL" => 1,
+		  "MPI_PACKED" => 1,
+		  "MPI_KEYVAL_INVALID" => 1,
 		  "MPI_MAX_PROCESSOR_NAME" => 1, 
 		  "MPI_MAX_KEY_VALUE" => 1,
 		  "MPI_MODE_NOCHECK" => 1,
@@ -21,11 +29,18 @@
 		  "MPI_MODE_NOPUT" => 1,
 		  "MPI_MODE_NOSTORE" => 1,
 		  "MPI_MODE_NOSUCCEED" => 1,
+		  "MPI_MODE_CREATE" => 1,
+		  "MPI_MODE_EXCL" => 1,
+		  "MPI_MODE_RDONLY" => 1,
+		  "MPI_MODE_RDWR" => 1,
+		  "MPI_MODE_SEQUENTIAL" => 1,
+		  "MPI_MODE_WRONLY" => 1,
 		  "MPI_F_STATUS_IGNORE" => 1,
 		  "MPI_F_STATUSES_IGNORE" => 1,
 		  "MPI_FILE_NULL" => 1,
 		  "MPI_VERSION" => 1, "MPI_SUBVERSION" => 1,
 		  "MPI_STATUS_IGNORE" => 1,
+		  "MPI_THREAD_SERIALIZED" => 1,
 		  "MPI_TYPECLASS_COMPLEX" => 1,
 		  "MPI_TYPECLASS_INTEGER" => 1,
 		  "MPI_TYPECLASS_REAL" => 1,
@@ -142,11 +157,14 @@
 		  "MPIi_ERR_KEYVAL_NOT_IN_COMM" => 1,
 		  "MPIi_ERR_KEYVAL_NOT_IN_TYPE" => 1,
 		  "MPIi_ERR_KEYVAL_NOT_IN_WIN" => 1,
+		  "MPIi_ERR_NOEXPOSURE" => 1,
+		  "MPIi_ERR_WIN_NOACCESS" => 1,
 		  "MPI_PROC_NULL" => 1 );
 while (<>) {
     # Remove the \_ expansion
     s/\\discretionary \{-\}\{\}\{\}//g;
     s/{\\texttt{\\char *`\\_ *}/_/g;
+    s/{\\tt\s*\\char\s`\\_\s*}/_/g;
     if (/\\indexentry{MPID_(.)([A-Za-z0-9_]*)(!?[A-Za-z0-9_]*)}{(.*)}/) {
         $firstchar = $1;
         $name = $2;

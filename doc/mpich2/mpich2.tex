@@ -5397,23 +5397,36 @@ messages in the multi-threaded case).
 % \code{MPI_Win_copy_attr_function}\\
 % \code{MPI_Win_errhandler_fn}\\
 
+% %%
+% %% Temporary
+% \clearpage
+% Accessing this document.  Use one of:
+% \begin{enumerate}
+% \item \code{cvs -d /home/MPI/cvsMaster checkout mpich2-coding}
+% \item \code{cvs -d /home/MPI/cvsMaster checkout mpich2all; cd doc/mpich2}
+% \item \code{cd mpich2 ; cvs -q update -d}, only if you have previously checked
+%   \code{mpich2} out with \code{mpich2all} instead of \code{mpich2}.
+% \end{enumerate}
+% %% End of Temporary
 \section{ToDo List}
 \label{sec:todo}
 This section contains a ToDo list for this document; that is, the outstanding
 issues and questions.  The process for resolving each of these is to have each
 item choosen by one person who is responsible for writing the text (the
 section author) and one
-other person who is the ``immediate reviewer''.  The writer is responsible for
+other person who is the ``immediate reviewer.''  The section author is
+responsible for 
 organizing and leading any discussion necessary to complete the text.
 Anyone may read and comment on the document at any time, but should check with
 the section author first to make sure that the document is up-to-date.
-Once a section is written, it should be read and by everyone and we should
+Once a section is written, it should be read by everyone and we should
 ``vote'' on the section.  Once a section is ``passed,'' the section author
 should update the ADI-3 document to match the section.  This may involve
 changing, adding, and/or deleting routines from the ADI-3 document.  Once that
 step is completed, the routines in the section can be written.  The section
 author is \emph{not} responsible for implementing the routines in the
-section.  
+section (though they can be; the point is that authoring a section is separate
+from implementing a section).  
 
 Many of these sections can be implemented independently, once the
 infrastructure list is settled. 
@@ -5425,7 +5438,7 @@ infrastructure list is settled.
     \item Directory structure
     \item MPI routine source code template
     \item Partial definitions for key structures, such as communicators and
-      datatypes 
+      datatypes, and macros for thread-safe operations
     \item Coding standards (documentation, style, associated tests)
     \item Integral profiling and data collection.  Definition of macros for
       collecting timing data and for generating slog records.
