@@ -8,10 +8,13 @@ $debug = 0;
 	      "if", "make", "[A-Za-z0-9_\/-]*\/mpicc",
 	      "cleaning", "/bin/rm", "sleep", "g77", "f77", "f90", "pgCC",
 	      "pgf77", "CC", "g\\+\\+", "c\\+\\+",
-	      "/usr/bin/ar", 
+	      "/usr/bin/ar", "mkdir",
 	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
+	      "\\(cd .tmp", 
+	      "building profiling interface in directory",
+	      "/usr/bin/install",
 	      "Copying Upshot",
 	      "Making upshot", "\s*\$", );
 # Read lines.  Categorize lines as commands and output.  This
@@ -48,8 +51,11 @@ while (! eof(STDIN)) {
 	    last;
 	}
     }
+    # If it isn't, we assume that it is an error message for the
+    # preceding command.  We'll then keep reading lines until
+    # we find the next command.
     if (!$is_command) {
-	# Simplify the command line
+	# Simplify the command line before printing
 	$cmdline =~ s/-I[^\s]*\s+//g;
 	$cmdline =~ s/-ansi//g;
 	$cmdline =~ s/-W[^\s]*\s+//g;
@@ -76,6 +82,8 @@ while (! eof(STDIN)) {
 		}
 	    }
 	}
+	# Add a newline to separate the output
+	print "\n";
     }
     $cmdline = $nextline;
     $nextline = "";
