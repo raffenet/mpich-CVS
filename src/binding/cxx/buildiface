@@ -765,13 +765,15 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		      'Unpack' => Datatype
 		      );
 
-# These classes (in the binding name) do not have a compare operation.
+# These classes (in the binding name) do not have a compare operation, or 
+# use the parent class's compare operation.
 # These use the Full class name.
 %class_has_no_compare = ( 'Status' => 1,
 			  'Intracomm' => 1,
 			  'Intercomm' => 1,
 			  'Cartcomm' => 1,
-			  'Graphcomm' => 1 
+			  'Graphcomm' => 1,
+			  'Prequest' => 1,
 			  );
 # These classes do not have a default intialization
 # These use the Full class name
