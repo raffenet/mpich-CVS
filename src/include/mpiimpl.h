@@ -837,19 +837,19 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
 #if !defined(MPID_Progress_start)
-void MPID_Progress_start();
+void MPID_Progress_start(void);
 #endif
 #if !defined(MPID_Progress_end)
-void MPID_Progress_end();
+void MPID_Progress_end(void);
 #endif
 #if !defined(MPID_Progress_test)
-int MPID_Progress_test();
+int MPID_Progress_test(void);
 #endif
 #if !defined(MPID_Progress_wait)
-void MPID_Progress_wait();
+void MPID_Progress_wait(void);
 #endif
 #if !defined(MPID_Progress_poke)
-void MPID_Progress_poke();
+void MPID_Progress_poke(void);
 #endif
 
 #if !defined(MPID_Request_free)
