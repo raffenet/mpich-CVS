@@ -20,7 +20,7 @@ int mm_release_buffers_tmp(MPID_Request *request_ptr)
 	err_printf("mm_release_buffers_tmp called on an empty buffer.\n");
 	return -1;
     }
-    buf_ptr->tmp.len = 0;
+    buf_ptr->tmp.len = -1;
 #endif
     MPIU_Free(buf_ptr->tmp.buf);
     buf_ptr->tmp.buf = NULL;

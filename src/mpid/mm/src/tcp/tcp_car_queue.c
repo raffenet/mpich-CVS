@@ -290,11 +290,9 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     iter_ptr = car_ptr;
     while (iter_ptr)
     {
-	iter_ptr->vcqnext_ptr = NULL;
+	iter_ptr->vcqnext_ptr = INVALID_POINTER;
 	iter_ptr = iter_ptr->next_ptr;
     }
-#else
-    car_ptr->vcqnext_ptr = NULL;
 #endif
 
     MM_EXIT_FUNC(TCP_CAR_DEQUEUE);

@@ -27,7 +27,11 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 
     /* set up the cts header packet */
     rndv_cts_ptr = &rndv_car_ptr->msg_header.pkt.u.cts;
+    if ((unsigned long)posted_car_ptr < 1000)
+	msg_printf("Error: mm_post_rndv_clear_to_send setting invalid receiver_car_ptr: %u\n", posted_car_ptr);
     rndv_cts_ptr->receiver_car_ptr = posted_car_ptr;
+    if ((unsigned long)rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr < 1000)
+	msg_printf("Error: mm_post_rndv_clear_to_send setting invalid send_car_ptr: %u\n", rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr);
     rndv_cts_ptr->sender_car_ptr = rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr;
     rndv_cts_ptr->type = MPID_RNDV_CLEAR_TO_SEND_PKT;
 

@@ -47,6 +47,8 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	rndv_rts_ptr->src = car_ptr->msg_header.pkt.u.hdr.src;
 	rndv_rts_ptr->tag = car_ptr->msg_header.pkt.u.hdr.tag;
 	rndv_rts_ptr->type = MPID_RNDV_REQUEST_TO_SEND_PKT;
+	if ((unsigned long)car_ptr < 1000)
+	    msg_printf("Error: tcp_post_write setting invalid send_car_ptr: %u\n", car_ptr);
 	rndv_rts_ptr->sender_car_ptr = car_ptr;
 
 	/*printf("enqueueing rts packet.\n");fflush(stdout);*/

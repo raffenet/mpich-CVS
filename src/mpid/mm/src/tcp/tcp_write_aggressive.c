@@ -65,8 +65,11 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     /* set the first vector to be the buf_ptr vector offset by the amount previously written */
     vec[cur_pos].MPID_VECTOR_BUF = 
-	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-    vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + 
+	car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+    vec[cur_pos].MPID_VECTOR_LEN = 
+	buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN - 
+	car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
     num_avail -= vec[cur_pos].MPID_VECTOR_LEN;
     cur_pos++;
     cur_index++;

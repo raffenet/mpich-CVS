@@ -146,10 +146,10 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
 #ifdef MPICH_DEV_BUILD
-    vc_ptr->pmi_kvsname = NULL;
+    vc_ptr->pmi_kvsname = INVALID_POINTER;
     vc_ptr->rank = -1;
-    vc_ptr->read_next_ptr = NULL;
-    vc_ptr->write_next_ptr = NULL;
+    vc_ptr->read_next_ptr = INVALID_POINTER;
+    vc_ptr->write_next_ptr = INVALID_POINTER;
 #endif
     switch (method)
     {

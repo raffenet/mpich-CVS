@@ -52,8 +52,9 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
     if (vc_ptr->data.tcp.bytes_of_header_read == sizeof(MPID_Packet))
     {
 #ifdef MPICH_DEV_BUILD
-	vc_ptr->data.tcp.read = NULL; /* set the function pointer to NULL to catch the potential error
-				         of calling this function again before the pointer is reset. */
+     /* set the function pointer to INVALID_POINTER to catch the potential error
+        of calling this function again before the pointer is reset. */
+	vc_ptr->data.tcp.read = INVALID_POINTER;
 #endif
 	mm_cq_enqueue(&vc_ptr->pkt_car);
     }

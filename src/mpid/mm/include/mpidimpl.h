@@ -18,6 +18,10 @@
 #define MM_EXIT_FUNC(a)
 #endif
 
+#ifdef MPICH_DEV_BUILD
+#define INVALID_POINTER ((void*)0xcdcdcdcd)
+#endif
+
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
 #define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
 /* key used to tell comm_accept that it doesn't need to transfer pmi databases */

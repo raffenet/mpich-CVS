@@ -649,6 +649,7 @@ int bwrite(int bfd, char *ubuf, int len)
 {
     /*dbg_printf("bwrite\n");*/
     return bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
+    /*return bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, BSOCKET_MIN(len, 20*1024));*/
 }
 
 /*
