@@ -79,8 +79,8 @@ int MPIR_Gather (
         is_homogeneous = 0;
 #endif
 
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
 /* Use binary tree algorithm. */
     
@@ -303,8 +303,8 @@ int MPIR_Gather (
     }
 #endif /* MPID_HAS_HETERO */
 
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }
@@ -363,11 +363,11 @@ PMPI_LOCAL int MPIR_Gather_inter (
     if (nbytes < MPIR_GATHER_SHORT_MSG) {
         if (root == MPI_ROOT) {
             /* root receives data from rank 0 on remote group */
-            MPID_Comm_thread_lock( comm_ptr );
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
             mpi_errno = MPIC_Recv(recvbuf, recvcnt*remote_size,
                                   recvtype, 0, MPIR_GATHER_TAG, comm,
                                   &status);
-            MPID_Comm_thread_unlock( comm_ptr ); 
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
  
             return mpi_errno;
         }
@@ -405,11 +405,11 @@ PMPI_LOCAL int MPIR_Gather_inter (
                                     tmp_buf, sendcnt, sendtype, 0,
                                     newcomm_ptr); 
             if (rank == 0) {
-                MPID_Comm_thread_lock( comm_ptr );
+                MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
                 mpi_errno = MPIC_Send(tmp_buf, sendcnt*local_size,
                                       sendtype, root,
                                       MPIR_GATHER_TAG, comm); 
-                MPID_Comm_thread_unlock( comm_ptr ); 
+                MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
                 if (mpi_errno) return mpi_errno;
                 MPIU_Free(((char*)tmp_buf+true_lb));
             }
@@ -417,7 +417,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
     }
     else {
         /* long message. use linear algorithm. */
-        MPID_Comm_thread_lock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         if (root == MPI_ROOT) {
             MPID_Datatype_get_extent_macro(recvtype, extent);
             for (i=0; i<remote_size; i++) {
@@ -431,7 +431,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
             mpi_errno = MPIC_Send(sendbuf,sendcnt,sendtype,root,
                                   MPIR_GATHER_TAG,comm);
         }
-        MPID_Comm_thread_unlock( comm_ptr ); 
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
     }
 
     return mpi_errno;

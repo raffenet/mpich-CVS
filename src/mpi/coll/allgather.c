@@ -98,8 +98,8 @@ PMPI_LOCAL int MPIR_Allgather (
     MPID_Datatype_get_extent_macro( recvtype, recv_extent );
     MPID_Datatype_get_size_macro( recvtype, type_size );
 
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     if (recvcount*comm_size*type_size < MPIR_ALLGATHER_LONG_MSG) {
         /* short message. use recursive doubling algorithm */
@@ -414,8 +414,8 @@ PMPI_LOCAL int MPIR_Allgather (
         }
     }
 
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }

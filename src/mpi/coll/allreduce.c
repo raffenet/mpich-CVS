@@ -214,8 +214,8 @@ PMPI_LOCAL int MPIR_Allreduce (
            participate in the algorithm until the very end. The
            remaining processes form a nice power-of-two. */
         
-        /* Lock for collective operation */
-        MPID_Comm_thread_lock( comm_ptr );
+        /* check if multiple threads are calling this collective function */
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
         if (rank < 2*rem) {
             if (rank % 2 == 0) { /* even */
@@ -485,8 +485,8 @@ PMPI_LOCAL int MPIR_Allreduce (
             if (mpi_errno) return mpi_errno;
         }
 
-        /* Unlock for collective operation */
-        MPID_Comm_thread_unlock( comm_ptr );
+        /* check if multiple threads are calling this collective function */
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
         MPIU_Free((char *)tmp_buf+true_lb); 
             
@@ -600,8 +600,8 @@ PMPI_LOCAL int MPIR_Allreduce (
             if (mpi_errno) return mpi_errno;
         }
         
-        /* Lock for collective operation */
-        MPID_Comm_thread_lock( comm_ptr );
+        /* check if multiple threads are calling this collective function */
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         
         mask = 0x1;
         i = 0;
@@ -717,8 +717,8 @@ PMPI_LOCAL int MPIR_Allreduce (
         
         MPIU_Free((char *)tmp_buf+true_lb); 
         
-        /* Unlock for collective operation */
-        MPID_Comm_thread_unlock( comm_ptr );
+        /* check if multiple threads are calling this collective function */
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
         if (p->op_errno) mpi_errno = p->op_errno;
     }

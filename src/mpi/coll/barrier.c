@@ -58,7 +58,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     MPIR_Nest_incr();
     /* Only one collective operation per communicator can be active at any
        time */
-    MPID_Comm_thread_lock( comm_ptr );
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     mask = 0x1;
     while (mask < size) {
@@ -72,7 +72,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
         mask <<= 1;
     }
 
-    MPID_Comm_thread_unlock( comm_ptr );
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     MPIR_Nest_decr();
 
     return mpi_errno;
@@ -122,7 +122,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 
     /* Only one collective operation per communicator can be active at any
        time */
-    MPID_Comm_thread_lock( comm_ptr );
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     /* Find the twon_within (this could be cached if more routines
      need it) */
@@ -195,7 +195,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     }
 
   fn_exit:
-    MPID_Comm_thread_unlock( comm_ptr );
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
     return mpi_errno;
 }

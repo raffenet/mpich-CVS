@@ -88,8 +88,8 @@ PMPI_LOCAL int MPIR_Scatter (
     
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     if (is_homogeneous) {
         /* communicator is homogeneous */
@@ -356,8 +356,8 @@ PMPI_LOCAL int MPIR_Scatter (
     }
 #endif /* MPID_HAS_HETERO */
     
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }
@@ -414,10 +414,10 @@ PMPI_LOCAL int MPIR_Scatter_inter (
     if (nbytes < MPIR_SCATTER_SHORT_MSG) {
         if (root == MPI_ROOT) {
             /* root sends all data to rank 0 on remote group and returns */
-            MPID_Comm_thread_lock( comm_ptr );
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
             mpi_errno = MPIC_Send(sendbuf, sendcnt*remote_size,
                                   sendtype, 0, MPIR_SCATTER_TAG, comm); 
-            MPID_Comm_thread_unlock( comm_ptr );
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
             return mpi_errno;
         }
         else {
@@ -441,11 +441,11 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
-                MPID_Comm_thread_lock( comm_ptr );
+                MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
                 mpi_errno = MPIC_Recv(tmp_buf, recvcnt*local_size,
                                       recvtype, root,
                                       MPIR_SCATTER_TAG, comm, &status); 
-                MPID_Comm_thread_unlock( comm_ptr );
+                MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
                 if (mpi_errno) return mpi_errno;
             }
             
@@ -465,7 +465,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
     }
     else {
         /* long message. use linear algorithm. */
-        MPID_Comm_thread_lock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         if (root == MPI_ROOT) {
             MPID_Datatype_get_extent_macro(sendtype, extent);
             for (i=0; i<remote_size; i++) {
@@ -479,7 +479,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
             mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
                                   MPIR_SCATTER_TAG,comm,&status);
         }
-        MPID_Comm_thread_unlock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     }
 
     return mpi_errno;

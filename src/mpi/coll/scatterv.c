@@ -59,8 +59,8 @@ int MPIR_Scatterv (
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     /* If I'm the root, then scatter */
     if ( rank == root ) {
@@ -116,8 +116,8 @@ int MPIR_Scatterv (
                               MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE);
     }
     
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }

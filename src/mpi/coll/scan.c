@@ -158,8 +158,8 @@ PMPI_LOCAL int MPIR_Scan (
         
     if (mpi_errno) return mpi_errno;
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     mask = 0x1;
     while (mask < comm_size) {
@@ -221,8 +221,8 @@ PMPI_LOCAL int MPIR_Scan (
     MPIU_Free((char *)partial_scan+true_lb); 
     MPIU_Free((char *)tmp_buf+true_lb); 
     
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     if (p->op_errno) mpi_errno = p->op_errno;
 

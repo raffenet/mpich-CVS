@@ -69,8 +69,8 @@ PMPI_LOCAL int MPIR_Alltoallv (
     MPID_Datatype_get_extent_macro(sendtype, send_extent);
     MPID_Datatype_get_extent_macro(recvtype, recv_extent);
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     starray = (MPI_Status *) MPIU_Malloc(2*comm_size*sizeof(MPI_Status));
     reqarray = (MPI_Request *) MPIU_Malloc(2*comm_size*sizeof(MPI_Request));
@@ -105,8 +105,8 @@ PMPI_LOCAL int MPIR_Alltoallv (
     MPIU_Free(reqarray);
     MPIU_Free(starray);
     
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }
@@ -154,8 +154,8 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
     MPID_Datatype_get_extent_macro(sendtype, send_extent);
     MPID_Datatype_get_extent_macro(recvtype, recv_extent);
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     /* Use pairwise exchange algorithm. */
     max_size = MPIR_MAX(local_size, remote_size);
@@ -188,8 +188,8 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
         if (mpi_errno) return mpi_errno;
     }
     
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
     return (mpi_errno);
 }

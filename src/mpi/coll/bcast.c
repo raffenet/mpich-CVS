@@ -137,8 +137,8 @@ int MPIR_Bcast (
 
   relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
 
-  /* Lock for collective operation */
-  MPID_Comm_thread_lock( comm_ptr );
+  /* check if multiple threads are calling this collective function */
+  MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
   if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS)) {
 
@@ -477,8 +477,8 @@ int MPIR_Bcast (
       }
   }
 
-  /* Unlock for collective operation */
-  MPID_Comm_thread_unlock( comm_ptr );
+  /* check if multiple threads are calling this collective function */
+  MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
   return mpi_errno;
 }
@@ -509,10 +509,10 @@ PMPI_LOCAL int MPIR_Bcast_inter (
     }
     else if (root == MPI_ROOT) {
         /* root sends to rank 0 on remote group and returns */
-        MPID_Comm_thread_lock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         mpi_errno =  MPIC_Send(buffer, count, datatype, 0,
                                MPIR_BCAST_TAG, comm); 
-        MPID_Comm_thread_unlock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
         return mpi_errno;
     }
     else {

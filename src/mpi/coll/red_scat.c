@@ -159,8 +159,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPID_Datatype_get_size_macro(datatype, type_size);
     nbytes = total_count * type_size;
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     MPIR_Nest_incr();
 
     if ((is_commutative) && (nbytes < MPIR_REDSCAT_COMMUTATIVE_LONG_MSG)) {
@@ -765,8 +765,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPIU_Free(disps);
     
     MPIR_Nest_decr();
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
     if (p->op_errno) mpi_errno = p->op_errno;
 

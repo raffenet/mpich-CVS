@@ -172,8 +172,8 @@ int MPIR_Reduce (
     pof2 >>=1;
 
     MPIR_Nest_incr();
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         
     if ((count*type_size > MPIR_REDUCE_SHORT_MSG) &&
         (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) && (count >= pof2)) {
@@ -563,8 +563,8 @@ int MPIR_Reduce (
     if (rank != root)
         MPIU_Free( (char *)recvbuf + true_lb );
         
-    /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     MPIR_Nest_decr();
     
     if (p->op_errno) mpi_errno = p->op_errno;
@@ -607,10 +607,10 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 
     if (root == MPI_ROOT) {
             /* root receives data from rank 0 on remote group */
-        MPID_Comm_thread_lock( comm_ptr );
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         mpi_errno = MPIC_Recv(recvbuf, count, datatype, 0,
                               MPIR_REDUCE_TAG, comm, &status);
-        MPID_Comm_thread_unlock( comm_ptr ); 
+        MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
         
         return mpi_errno;
     }
@@ -647,10 +647,10 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                                 op, 0, newcomm_ptr);
         if (mpi_errno) return mpi_errno;
         if (rank == 0) {
-            MPID_Comm_thread_lock( comm_ptr );
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
             mpi_errno = MPIC_Send(tmp_buf, count, datatype, root,
                                   MPIR_REDUCE_TAG, comm); 
-            MPID_Comm_thread_unlock( comm_ptr ); 
+            MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
             if (mpi_errno) return mpi_errno;
             MPIU_Free((char*)tmp_buf+true_lb);
         }

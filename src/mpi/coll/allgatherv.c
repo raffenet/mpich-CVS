@@ -90,8 +90,8 @@ PMPI_LOCAL int MPIR_Allgatherv (
     MPID_Datatype_get_extent_macro( recvtype, recv_extent );
     MPID_Datatype_get_size_macro(recvtype, type_size);
     
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     if (total_count*type_size > MPIR_ALLGATHERV_MEDIUM_MSG) {
         /* long message. use ring algorithm. */
@@ -483,8 +483,8 @@ PMPI_LOCAL int MPIR_Allgatherv (
 #endif /* MPID_HAS_HETERO */
     }
 
-  /* Unlock for collective operation */
-    MPID_Comm_thread_unlock( comm_ptr );
+  /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
   return (mpi_errno);
 }
