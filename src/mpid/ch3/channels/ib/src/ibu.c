@@ -1191,6 +1191,11 @@ static int ibui_read_unex(ibu_t ibu)
 	else
 	{
 	    /* put the receive packet back in the pool */
+	    if (ibu->unex_list->mem_ptr == NULL)
+	    {
+		err_printf("ibui_read_unex: mem_ptr == NULL\n");
+	    }
+	    assert(ibu->unex_list->mem_ptr != NULL);
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
@@ -1326,6 +1331,11 @@ int ibui_readv_unex(ibu_t ibu)
 	if (ibu->unex_list->length == 0)
 	{
 	    /* put the receive packet back in the pool */
+	    if (ibu->unex_list->mem_ptr == NULL)
+	    {
+		err_printf("ibui_read_unex: mem_ptr == NULL\n");
+	    }
+	    assert(ibu->unex_list->mem_ptr != NULL);
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
@@ -1437,11 +1447,17 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		for (; i<0; i++)
 		{
 		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
+		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
+			err_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
+		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
 		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index--].mem_ptr);
 		}
 	    }
 	    else
 	    {
+		if (mem_ptr == NULL)
+		    err_printf("ibu_wait: send mem_ptr == NULL\n");
+		assert(mem_ptr != NULL);
 		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
 	    printf("ibu_wait: num_bytes sent = %d\n", num_bytes);fflush(stdout);
@@ -1562,6 +1578,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		if (num_bytes == 0)
 		{
 		    /* put the receive packet back in the pool */
+		    if (mem_ptr == NULL)
+			err_printf("ibu_wait: read mem_ptr == NULL\n");
+		    assert(mem_ptr != NULL);
 		    ibuBlockFree(ibu->allocator, mem_ptr);
 		    ibui_post_receive(ibu);
 		}
@@ -1600,13 +1619,25 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    else
 	    {
-		/* copy the received data */
-		memcpy(ibu->read.buffer, mem_ptr, num_bytes);
-		/* advance the user pointer */
-		ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
-		ibu->read.bufflen -= num_bytes;
-		/* put the receive packet back in the pool */
-		ibuBlockFree(ibu->allocator, mem_ptr);
+		if (num_bytes > ibu->read.bufflen)
+		{
+		    /* copy the received data */
+		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
+		    ibu->read.total = ibu->read.bufflen;
+		    ibui_buffer_unex_read(ibu, mem_ptr, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
+		    ibu->read.bufflen = 0;
+		}
+		else
+		{
+		    /* copy the received data */
+		    memcpy(ibu->read.buffer, mem_ptr, num_bytes);
+		    /* advance the user pointer */
+		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
+		    ibu->read.bufflen -= num_bytes;
+		    /* put the receive packet back in the pool */
+		    ibuBlockFree(ibu->allocator, mem_ptr);
+		    ibui_post_receive(ibu);
+		}
 		if (ibu->read.bufflen == 0)
 		{
 		    ibu->state &= ~IBU_READING;
@@ -1622,7 +1653,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    else
 		    {
 			/* post another receive to replace the consumed one */
-			ibui_post_receive(ibu);
+			//ibui_post_receive(ibu);
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    return IBU_SUCCESS;
@@ -1633,7 +1664,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		/* post a read of the remaining data */
 		/*ReadFile((HANDLE)(ibu->ibu), ibu->read.buffer, ibu->read.bufflen, &ibu->read.num_bytes, &ibu->read.ovl);*/
 		/* post another receive to replace the consumed one */
-		ibui_post_receive(ibu);
+		//ibui_post_receive(ibu);
 	    }
 	    break;
 	default:
