@@ -43,6 +43,8 @@ void CZoomDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_RIGHT, m_dRight);
 	DDX_Text(pDX, IDC_WIDTH, m_dWidth);
 	DDX_Control(pDX, IDC_LEFT_RIGHT_RADIO, m_first_radio);
+	DDX_Control(pDX, IDC_WIDTH_RADIO, m_second_radio);
+	DDX_Control(pDX, IDC_PERPIXEL_RADIO, m_third_radio);
 	//}}AFX_DATA_MAP
 }
 
@@ -62,17 +64,21 @@ void CZoomDlg::OnLeftRightRadio()
 {
     m_right_edit.EnableWindow();
     m_left_edit.EnableWindow();
+    m_first_radio.SetCheck(1);
     m_bLR = true;
     
     m_bWidth = false;
     m_bPerPixel = false;
     m_width_edit.EnableWindow(FALSE);
     m_perpixel_edit.EnableWindow(FALSE);
+    m_second_radio.SetCheck(0);
+    m_third_radio.SetCheck(0);
 }
 
 void CZoomDlg::OnWidthRadio() 
 {
     m_width_edit.EnableWindow();
+    m_second_radio.SetCheck(1);
     m_bWidth = true;
 
     m_bLR = false;
@@ -80,11 +86,14 @@ void CZoomDlg::OnWidthRadio()
     m_right_edit.EnableWindow(FALSE);
     m_left_edit.EnableWindow(FALSE);
     m_perpixel_edit.EnableWindow(FALSE);
+    m_first_radio.SetCheck(0);
+    m_third_radio.SetCheck(0);
 }
 
 void CZoomDlg::OnPerpixelRadio() 
 {
     m_perpixel_edit.EnableWindow();
+    m_third_radio.SetCheck(1);
     m_bPerPixel = true;
 
     m_bWidth = false;
@@ -92,6 +101,8 @@ void CZoomDlg::OnPerpixelRadio()
     m_width_edit.EnableWindow(FALSE);
     m_right_edit.EnableWindow(FALSE);
     m_left_edit.EnableWindow(FALSE);
+    m_first_radio.SetCheck(0);
+    m_second_radio.SetCheck(0);
 }
 
 BOOL CZoomDlg::OnInitDialog() 

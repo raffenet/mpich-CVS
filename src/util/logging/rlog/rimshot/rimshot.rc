@@ -179,22 +179,23 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,129,25,50,14
-    LTEXT           "Left",IDC_STATIC,129,52,13,8
-    LTEXT           "Right",IDC_STATIC,129,74,18,8
-    EDITTEXT        IDC_LEFT,41,49,81,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_RIGHT,41,71,81,14,ES_AUTOHSCROLL
-    GROUPBOX        "",IDC_STATIC,7,40,172,99
+    GROUPBOX        "",IDC_STATIC,7,40,172,99,WS_GROUP
     CONTROL         "",IDC_LEFT_RIGHT_RADIO,"Button",BS_AUTORADIOBUTTON,15,
-                    63,8,8
-    CONTROL         "",IDC_WIDTH_RADIO,"Button",BS_AUTORADIOBUTTON,15,98,8,8
-    EDITTEXT        IDC_WIDTH,41,95,81,14,ES_AUTOHSCROLL
-    LTEXT           "Width",IDC_STATIC,129,98,20,8
+                    63,18,8
+    EDITTEXT        IDC_LEFT,33,49,103,14,ES_AUTOHSCROLL
+    LTEXT           "Left",IDC_STATIC,143,52,13,8
+    EDITTEXT        IDC_RIGHT,33,71,103,14,ES_AUTOHSCROLL
+    LTEXT           "Right",IDC_STATIC,143,74,18,8
+    CONTROL         "",IDC_WIDTH_RADIO,"Button",BS_AUTORADIOBUTTON,15,98,17,
+                    8
+    EDITTEXT        IDC_WIDTH,33,95,103,14,ES_AUTOHSCROLL
+    LTEXT           "Width",IDC_STATIC,143,98,20,8
+    CONTROL         "",IDC_PERPIXEL_RADIO,"Button",BS_AUTORADIOBUTTON,15,119,
+                    17,8
+    EDITTEXT        IDC_PERPIXEL,33,116,103,14,ES_AUTOHSCROLL
+    LTEXT           "time/pixel",IDC_STATIC,143,119,31,8
     LTEXT           "Enter the leftmost and rightmost times or specify the total width centered about the current event or the time per screen pixel.",
                     IDC_STATIC,7,7,119,36
-    CONTROL         "",IDC_PERPIXEL_RADIO,"Button",BS_AUTORADIOBUTTON,15,119,
-                    8,8
-    EDITTEXT        IDC_PERPIXEL,41,116,81,14,ES_AUTOHSCROLL
-    LTEXT           "time/pixel",IDC_STATIC,129,119,31,8
 END
 
 

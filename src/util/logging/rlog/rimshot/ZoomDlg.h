@@ -29,6 +29,8 @@ public:
 	double	m_dRight;
 	double	m_dWidth;
 	CButton m_first_radio;
+	CButton m_second_radio;
+	CButton m_third_radio;
 	//}}AFX_DATA
 
 
