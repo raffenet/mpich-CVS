@@ -72,7 +72,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_size_macro(handle, elmsize);
 
 	/* NOTE: ELMSIZE IS WRONG */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK | (elmsize << DLOOP_ELMSIZE_SHIFT);
+	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 	segp->builtin_loop.handle = handle;
 	segp->builtin_loop.loop_params.c_t.count = count;
 	segp->builtin_loop.loop_params.c_t.dataloop = 0;
@@ -84,7 +84,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     }
     else if (count == 0) {
 	/* only use the builtin, call it 0 ints */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK | (elmsize << DLOOP_ELMSIZE_SHIFT);
+	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 	segp->builtin_loop.handle = MPI_INT;
 	segp->builtin_loop.loop_params.c_t.count = 0;
 	segp->builtin_loop.loop_params.c_t.dataloop = 0;
@@ -100,20 +100,28 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
     }
     else {
-	/* need to use builtin to handle contig; must check loop depth first */
+	/* default: need to use builtin to handle contig; must check loop depth first */
+	DLOOP_Dataloop *tmploop;
 	
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
-	depth++; /* we're adding to the depth with the builtin */
-
-	DLOOP_Handle_get_size_macro(handle, elmsize);
-	/* NOTE: ELMSIZE IS WRONG */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | (elmsize << DLOOP_ELMSIZE_SHIFT);
-	segp->builtin_loop.loop_params.c_t.count = count;
 	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
-	segp->builtin_loop.el_size = elmsize;
+	DLOOP_Handle_get_size_macro(handle, segp->builtin_loop.el_size);
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
+
+	tmploop = segp->builtin_loop.loop_params.c_t.dataloop;
+	if (depth == 1 && (tmploop->kind & DLOOP_KIND_CONTIG)) {
+	    /* optimization: coalesce counts and use just the builtin */
+	    segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+	    segp->builtin_loop.loop_params.c_t.count = count * tmploop->loop_params.c_t.count;
+	}
+	else {
+	    segp->builtin_loop.kind = DLOOP_KIND_CONTIG;
+	    segp->builtin_loop.loop_params.c_t.count = count;
+
+	    depth++; /* we're adding to the depth with the builtin */
+	}
 
 	dlp = &segp->builtin_loop;
     }

@@ -12,6 +12,22 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+static int MPIDI_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   int el_sz,
+					   int el_extent);
+
+static void MPIDI_Type_indexed_array_copy(int count,
+					  int contig_count,
+					  int *input_blocklength_array,
+					  void *input_displacement_array,
+					  int *output_blocklength_array,
+					  MPI_Aint *output_displacement_array,
+					  int dispinbytes,
+					  int el_sz,
+					  int el_extent);
 /*@
   MPID_Type_indexed - create an indexed datatype
  
@@ -43,12 +59,11 @@ int MPID_Type_indexed(int count,
 		      MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, new_loopsize, el_count, *iptr;
+    int i, new_loopsize, el_count, contig_count;
     char *curpos;
 
     MPID_Datatype *new_dtp;
     struct MPID_Dataloop *dlp;
-    MPI_Aint *aptr;
 
     MPI_Aint min_lb = 0, max_ub = 0, eff_disp, el_extent = 0, el_size = 0;
 
@@ -118,30 +133,67 @@ int MPID_Type_indexed(int count,
 	new_dtp->is_contig      = 0; /* ??? */
         new_dtp->eltype         = oldtype;
 
-	/* allocate dataloop
-	 * 
-	 * Note: we allocate space for displacements as MPI_Aints, because
-	 * that is how they are stored in the loop (despite being passed in
-	 * as ints).
-	 *
-	 * We'll need to do a conversion in here too.
-	 *
-	 */
-	new_loopsize = sizeof(struct MPID_Dataloop) + count * (sizeof(MPI_Aint) + sizeof(int));
+	contig_count = MPIDI_Type_indexed_count_contig(count,
+						       blocklength_array,
+						       displacement_array,
+						       dispinbytes,
+						       el_size,
+						       el_extent);
 
-	dlp = (struct MPID_Dataloop *)MPIU_Malloc(new_loopsize);
-	if (dlp == NULL) assert(0);
+	if (contig_count == 1 &&
+	    ((!dispinbytes && ((int *) displacement_array)[0] == 0) ||
+	     (dispinbytes && ((MPI_Aint *) displacement_array)[0] == 0)))
+	{
+	    /* optimization: allocate a contig dataloop instead */
+	    int tot_blks = 0;
 
-	new_dtp->loopinfo       = dlp;
-	new_dtp->loopsize       = new_loopsize;
+	    new_loopsize = sizeof(struct MPID_Dataloop);
+	    dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
+	    if (dlp == NULL) assert(0);
 
-	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
-	/* NOTE: element size in kind is off. */
-	dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (el_size << DLOOP_ELMSIZE_SHIFT);
-	dlp->handle                     = new_dtp->handle;
-	dlp->loop_params.i_t.count      = count;
-	dlp->el_extent                  = el_size; /* extent = size for basic types */
-	dlp->el_size                    = el_size;
+	    new_dtp->loopinfo = dlp;
+	    new_dtp->loopsize = new_loopsize;
+
+	    dlp->kind      = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+	    dlp->handle    = new_dtp->handle;
+	    dlp->el_extent = el_extent;
+	    dlp->el_size   = el_size;
+
+	    /* count up total size of data */
+	    for (i=0; i < count; i++) tot_blks += blocklength_array[i];
+	    dlp->loop_params.c_t.count = tot_blks;
+
+	    /* return handle to new datatype in last parameter */
+	    *newtype = new_dtp->handle;
+
+	    return MPI_SUCCESS;
+	}
+	else {
+	    /* allocate indexed dataloop
+	     * 
+	     * Note: we allocate space for displacements as MPI_Aints, because
+	     * that is how they are stored in the loop (despite being passed in
+	     * as ints).
+	     *
+	     * We'll need to do a conversion in here too.
+	     *
+	     */
+	    new_loopsize = sizeof(struct MPID_Dataloop) + contig_count * (sizeof(MPI_Aint) + sizeof(int));
+	    
+	    dlp = (struct MPID_Dataloop *)MPIU_Malloc(new_loopsize);
+	    if (dlp == NULL) assert(0);
+	    
+	    new_dtp->loopinfo       = dlp;
+	    new_dtp->loopsize       = new_loopsize;
+	    
+	    /* fill in dataloop, noting that this is a leaf.  no need to copy. */
+	    /* NOTE: element size in kind is off. */
+	    dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (el_size << DLOOP_ELMSIZE_SHIFT);
+	    dlp->handle                     = new_dtp->handle;
+	    dlp->loop_params.i_t.count      = contig_count;
+	    dlp->el_extent                  = el_size; /* extent = size for basic types */
+	    dlp->el_size                    = el_size;
+	}
     }
     else /* user-defined base type */ {
 	MPI_Aint el_lb, el_ub;
@@ -210,29 +262,73 @@ int MPID_Type_indexed(int count,
 
 	new_dtp->is_contig = 0; /* TODO: FIX THIS */
 
-	/* allocate space for dataloop */
-	new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop) + 
-	    count * (sizeof(MPI_Aint) + sizeof(int));
+	contig_count = MPIDI_Type_indexed_count_contig(count,
+						       blocklength_array,
+						       displacement_array,
+						       dispinbytes,
+						       el_size,
+						       el_extent);
+	if (contig_count == 1 &&
+	    ((!dispinbytes && ((int *) displacement_array)[0] == 0) ||
+	     (dispinbytes && ((MPI_Aint *) displacement_array)[0] == 0)))
+	{
+	    /* optimization: allocate a contig loop instead */
+	    int tot_blks = 0;
 
-	dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
-	if (dlp == NULL) assert(0);
+	    new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop);
+	    dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
+	    if (dlp == NULL) assert(0);
 
-	new_dtp->loopinfo = dlp;
-	new_dtp->loopsize = new_loopsize;
+	    new_dtp->loopinfo = dlp;
+	    new_dtp->loopsize = new_loopsize;
+	    
+	    /* fill in top part of dataloop */
+	    dlp->kind      = DLOOP_KIND_CONTIG;
+	    dlp->handle    = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
+	    dlp->el_extent = el_extent;
+	    dlp->el_size   = el_size;
+	    
+	    /* count up total size of data */
+	    for (i=0; i < count; i++) tot_blks += blocklength_array[i];
+	    dlp->loop_params.c_t.count = tot_blks;
 
-	/* fill in top part of dataloop */
-	dlp->kind                       = DLOOP_KIND_INDEXED | (old_dtp->size << DLOOP_ELMSIZE_SHIFT); /* WRONG I THINK */
-	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
-	dlp->loop_params.i_t.count      = count;
-	dlp->el_extent                  = el_extent;
-	dlp->el_size                    = el_size;
+	    /* copy in old dataloop */
+	    curpos = (char *) dlp;
+	    curpos += new_loopsize - old_dtp->loopsize;
+	    
+	    MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	    dlp->loop_params.c_t.dataloop = (struct MPID_Dataloop *) curpos;
 
-	/* copy in old dataloop */
-	curpos = (char *) dlp; /* NEED TO PAD? */
-	curpos += new_loopsize - old_dtp->loopsize;
+	    /* return handle to new datatype in last parameter */
+	    *newtype = new_dtp->handle;
 
-	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->loop_params.i_t.dataloop = (struct MPID_Dataloop *) curpos;
+	    return MPI_SUCCESS;
+	}
+	else {
+	    /* allocate space for dataloop */
+	    new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop) + 
+		contig_count * (sizeof(MPI_Aint) + sizeof(int));
+	    
+	    dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
+	    if (dlp == NULL) assert(0);
+	    
+	    new_dtp->loopinfo = dlp;
+	    new_dtp->loopsize = new_loopsize;
+	    
+	    /* fill in top part of dataloop */
+	    dlp->kind                  = DLOOP_KIND_INDEXED;
+	    dlp->handle                = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
+	    dlp->loop_params.i_t.count = contig_count;
+	    dlp->el_extent             = el_extent;
+	    dlp->el_size               = el_size;
+	    
+	    /* copy in old dataloop */
+	    curpos = (char *) dlp; /* NEED TO PAD? */
+	    curpos += new_loopsize - old_dtp->loopsize;
+	    
+	    MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	    dlp->loop_params.i_t.dataloop = (struct MPID_Dataloop *) curpos;
+	}
     }
 
     /* copy in blocklength and displacement parameters (in that order) */
@@ -240,20 +336,19 @@ int MPID_Type_indexed(int count,
     curpos += sizeof(struct MPID_Dataloop);
 
     dlp->loop_params.i_t.blocksize_array = (int *) curpos;
-    iptr = (int *) curpos;
-    for (i=0; i < count; i++) {
-	iptr[i] = blocklength_array[i];
-    }
-    curpos += count * sizeof(int);
+    curpos += contig_count * sizeof(int);
 
     dlp->loop_params.i_t.offset_array = (MPI_Aint *) curpos;
-    aptr = (MPI_Aint *) curpos;
-    for (i=0; i < count; i++) {
-	if (dispinbytes) /* hindexed */
-	    aptr[i] = (MPI_Aint) ((MPI_Aint *) displacement_array)[i];
-	else /* indexed */
-	    aptr[i] = ((MPI_Aint) ((int *) displacement_array)[i]) * el_extent;
-    }
+
+    MPIDI_Type_indexed_array_copy(count,
+				  contig_count,
+				  blocklength_array,
+				  displacement_array,
+				  dlp->loop_params.i_t.blocksize_array,
+				  dlp->loop_params.i_t.offset_array,
+				  dispinbytes,
+				  el_size,
+				  el_extent);
 
     /* return handle to new datatype in last parameter */
     *newtype = new_dtp->handle;
@@ -263,3 +358,116 @@ int MPID_Type_indexed(int count,
 #endif
     return MPI_SUCCESS;
 }
+
+
+
+/* MPIDI_Type_indexed_count_contig()
+ *
+ * Determines the actual number of contiguous blocks represented by the
+ * blocklength/displacement arrays.  This might be less than count (as
+ * few as 1).
+ *
+ * TODO: cut out some of the unnecessary math.
+ */
+static int MPIDI_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   int el_sz,
+					   int el_extent)
+{
+    int i, contig_count = 1;
+    int cur_blklen = blocklength_array[0];
+
+    if (!dispinbytes) {
+	int cur_tdisp = ((int *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++) {
+	    if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i]) {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else {
+		cur_tdisp  = ((int *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    else {
+	MPI_Aint cur_bdisp = ((MPI_Aint *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++) {
+	    if (cur_bdisp + cur_blklen * el_extent == ((MPI_Aint *) displacement_array)[i]) {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else {
+		cur_bdisp  = ((MPI_Aint *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    return contig_count;
+}
+
+
+/* MPIDI_Type_indexed_array_copy()
+ *
+ * Copies arrays into place, combining adjacent contiguous regions.
+ */
+static void MPIDI_Type_indexed_array_copy(int count,
+					  int contig_count,
+					  int *input_blocklength_array,
+					  void *input_displacement_array,
+					  int *output_blocklength_array,
+					  MPI_Aint *output_displacement_array,
+					  int dispinbytes,
+					  int el_sz,
+					  int el_extent)
+{
+    int i, cur_idx = 0;
+
+    output_blocklength_array[0] = input_blocklength_array[0];
+
+    if (!dispinbytes) {
+	 output_displacement_array[0] = (MPI_Aint) ((int *) input_displacement_array)[0];
+	
+	for (i = 1; i < count; i++) {
+	    if (output_displacement_array[cur_idx] + ((MPI_Aint) output_blocklength_array[cur_idx]) * el_extent ==
+		((MPI_Aint) ((int *) input_displacement_array)[i]) * el_extent)
+	    {
+		/* adjacent to current block; add to block */
+		output_blocklength_array[cur_idx] += input_blocklength_array[i];
+	    }
+	    else {
+		cur_idx++;
+		assert(cur_idx < contig_count);
+		output_displacement_array[cur_idx] = ((MPI_Aint) ((int *) input_displacement_array)[i]) * el_extent;
+		output_blocklength_array[cur_idx]  = input_blocklength_array[i];
+	    }
+	}
+    }
+    else {
+	output_displacement_array[0] = ((MPI_Aint *) input_displacement_array)[0];
+	
+	for (i = 1; i < count; i++) {
+	    if (output_displacement_array[cur_idx] + ((MPI_Aint) output_blocklength_array[cur_idx]) * el_extent ==
+		((MPI_Aint *) input_displacement_array)[i])
+	    {
+		/* adjacent to current block; add to block */
+		output_blocklength_array[cur_idx] += input_blocklength_array[i];
+	    }
+	    else {
+		cur_idx++;
+		assert(cur_idx < contig_count);
+		output_displacement_array[cur_idx] = ((MPI_Aint *) input_displacement_array)[i];
+		output_blocklength_array[cur_idx]  = input_blocklength_array[i];
+	    }
+	}
+    }
+    return;
+}
+
+

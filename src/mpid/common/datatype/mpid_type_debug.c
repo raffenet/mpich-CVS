@@ -14,6 +14,106 @@
 static char *MPIDI_combiner_to_string(int combiner);
 static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type);
 
+void MPIDI_Datatype_dot_printf(MPI_Datatype type)
+{
+    char *string;
+
+    if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
+    }
+    else {
+
+    }
+}
+
+void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
+			       int depth,
+			       int header)
+{
+    int i;
+
+    if (header) {
+	MPIU_dbg_printf("digraph %d {   {\n", (int) loop_p);
+    }
+
+    switch (loop_p->kind & DLOOP_KIND_MASK) {
+	case DLOOP_KIND_CONTIG:
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"contig |{ ct = %d; el_sz = %d; el_ext = %d }\"];\n",
+			    depth,
+			    loop_p->loop_params.c_t.count,
+			    loop_p->el_size,
+			    loop_p->el_extent);
+	    break;
+	case DLOOP_KIND_VECTOR:
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"vector |{ ct = %d; blk = %d; str = %d; el_sz = %d; el_ext = %d }\"];\n",
+			    depth,
+			    loop_p->loop_params.v_t.count,
+			    loop_p->loop_params.v_t.blocksize,
+			    loop_p->loop_params.v_t.stride,
+			    loop_p->el_size,
+			    loop_p->el_extent);
+	    break;
+	case DLOOP_KIND_INDEXED:
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"indexed |{ ct = %d; regions = ",
+			    depth,
+			    loop_p->loop_params.c_t.count);
+	    
+	    /* 3 picked as arbitrary cutoff */
+	    for (i=0; i < 3 && i < loop_p->loop_params.i_t.count; i++) {
+		if (i + 1 < loop_p->loop_params.i_t.count) {
+		    /* more regions after this one */
+		    MPIU_dbg_printf("(%d, %d), ",
+				    loop_p->loop_params.i_t.offset_array[i],
+				    loop_p->loop_params.i_t.blocksize_array[i]);
+		}
+		else {
+		    MPIU_dbg_printf("(%d, %d); ",
+				    loop_p->loop_params.i_t.offset_array[i],
+				    loop_p->loop_params.i_t.blocksize_array[i]);
+		}
+	    }
+	    if (i < loop_p->loop_params.i_t.count) {
+		MPIU_dbg_printf("...; ");
+	    }
+
+	    MPIU_dbg_printf("el_sz = %d; el_ext = %d }\"];\n",
+			    loop_p->el_size,
+			    loop_p->el_extent);
+	    break;
+	case DLOOP_KIND_BLOCKINDEXED:
+	case DLOOP_KIND_STRUCT:
+	default:
+	    assert(0);
+    }
+
+    if (!(loop_p->kind & DLOOP_FINAL_MASK)) {
+	/* more loops to go; recurse */
+	MPIU_dbg_printf("      dl%d -> dl%d;\n", depth, depth + 1);
+	switch (loop_p->kind & DLOOP_KIND_MASK) {
+	    case DLOOP_KIND_CONTIG:
+		MPIDI_Dataloop_dot_printf(loop_p->loop_params.c_t.dataloop, depth + 1, 0);
+		break;
+	    case DLOOP_KIND_VECTOR:
+		MPIDI_Dataloop_dot_printf(loop_p->loop_params.v_t.dataloop, depth + 1, 0);
+		break;
+	    case DLOOP_KIND_INDEXED:
+		MPIDI_Dataloop_dot_printf(loop_p->loop_params.i_t.dataloop, depth + 1, 0);
+		break;
+	    case DLOOP_KIND_BLOCKINDEXED:
+		MPIDI_Dataloop_dot_printf(loop_p->loop_params.bi_t.dataloop, depth + 1, 0);
+		break;
+	    case DLOOP_KIND_STRUCT:
+	    default:
+		assert(0);
+	}
+    }
+
+
+    if (header) {
+	MPIU_dbg_printf("   }\n}\n");
+    }
+    return;
+}
+
 void MPIDI_Datatype_printf(MPI_Datatype type,
 			   int depth,
 			   MPI_Aint displacement,
