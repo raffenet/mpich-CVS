@@ -300,6 +300,11 @@ has a type of \code{MPI_Request} while a request object has a type of
 \code{MPID_Request}.  A request handle may be converted to a request object
 using \code{MPID_Request_get_ptr}.
 
+\begin{comment}
+  Is this mapping of objects to types true for requests?  They appear to be
+  treated differently that other MPI types in the design document.
+\end{comment}
+
 The MPI request object contains a completion counter which the multi-method
 device must use to signal completion.  When the request is initialized, the
 counter is set to the number of operations that must complete before the
@@ -364,13 +369,13 @@ int method::get_description([OUT] char description[])
 
 int method::match_description([IN] char description[])
 
-int method::post_send([IN] MPID_Segment * segment,
-                      [IN] int dest, [IN] int tag, [IN] MPID_Comm * comm,
-                      [INOUT] int * completion_cntr)
+int method::post_send(
+        [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
+        [IN] int dest, [IN] int tag, [INOUT] int * completion_cntr)
 
-int method::post_recv([IN] MPID_Segment * segment,
-                      [IN] int source, [IN] int tag, [IN] MPID_Comm * comm,
-                      [INOUT] int * completion_cntr)
+int method::post_recv(
+        [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
+        [IN] int source, [IN] int tag, [INOUT] int * completion_cntr)
 
 int method::poll([IN] int quanta)
 \end{verbatim}
@@ -403,14 +408,13 @@ the job, making the capabilities and contact information known to all
 processes.  This database functionality is provided as part of the BNR
 interface, which is described in Section~\ref{sec:bnr}.
 
-Given a collection of descriptions for a remote process, a local process can
+Given a collection of descriptions for a remote process, the local process can
 now select a method.  The capability description string for a particular method
 is passed to the \code{method::match_description} function, which is
 responsible for determining if it is capable of communicating with the remote
 process using the method in question.  If the processes are capable of
 communicating using that method, \code{match_description} extracts the contact
 information from the description string and stores it for later use.
-
 
 \begin{cmt}[BRT]
   Where does the contact information get stored?  In the VC?  What if multiple
@@ -423,6 +427,13 @@ information from the description string and stores it for later use.
   to match methods (or can it?).  The first match wins, so there is never an
   issue.  maybe :).  dynamic loading of methods would make this more difficult.
 \end{cmt}
+
+The selection of a communication method is performed by the
+\code{MPID_VC_get_method} function, part of the virtual connection object.  A
+virtual connection... \todo{finish this paragraph}
+
+Once a communication method of has been selected, requests for communication
+operations can be made.  \todo{finish this paragraph}
 
 \todo{describe communication functions...}
 
@@ -437,10 +448,8 @@ in order to make progress on outstanding requests.
 The \code{method::poll} function is the mechanism for providing the method will
 an opportunity to make progress.  We envision this method being called by the
 progress engine which we will describe shortly.  The \code{poll} function takes
-two arguments which are described in the paragraphs that follow.
-
-This first argument, \code{quanta}, conveys the amount of time the function is
-allowed to block waiting for an event.  This argument should be viewed as a
+a single argument, \code{quanta}, that conveys the amount of time the function
+is allowed to block waiting for an event.  This argument should be viewed as a
 soft upper bound used to impose a rough schedule between the methods.  It is
 intended to limit non-productive blocking or busy waiting only and should not
 be viewed as a limit on the amount of useful work that can be completed by the
@@ -451,11 +460,11 @@ should do so without worry about exceeding the limits expressed by the
 
 The reason for expressing time in quanta rather than realtime is twofold.
 First, we were attempting to dispell the notion that it was necessary to
-``watch the clock'' which on many system can be a very expensive operation.
+``watch the clock'' which on many systems can be a very expensive operation.
 Second, we believed that having an integer value instead of a timeval structure
-would be simply the computation required in critical path components.  We
-expect that, at startup, methods wishing to utilize the \code{quanta} argument
-will measure the busy waiting algorithm used in their \code{poll} functions to
+would simplify the computation required in critical path components.  We expect
+that, at startup, methods wishing to utilize the \code{quanta} argument will
+measure the busy waiting algorithm used in their \code{poll} functions to
 establish an estimated number of loops per quanta.  Then a quick multiplication
 can be performed when \code{poll} is called to determine the number of loops
 that may be performed before the \code{poll} function must return control to
@@ -469,6 +478,22 @@ the progress engine.
   needs to be serviced for a while.  Some experimentation is necessary to
   verify that the \code{quanta} argument is really useful.
 \end{cmt}
+
+\begin{cmt}
+  The \code{method::poll} function needs provide to some indication of whether
+  or not completions occurred, so that a blocking PE operation knows when to
+  return.  It is unclear if such information should be return through a
+  parameter, a return value, or using one or more elements stored in the method
+  object.
+\end{cmt}
+
+\begin{cmt}
+  I had been assuming that the \code{method::poll} function would return an
+  error code.  Does this make sense?  If an error occurs, what can we do about
+  it in the PE?  Perhaps errors occurring during polling should be saved and
+  returned through other mechanisms.  What might these be?
+\end{cmt}
+
 
 % [BRT] I removed the argument conveying the number of completion from poll()
 % because the count becomes useless in the face of multiple application threads
@@ -555,38 +580,6 @@ equivalent function in that method's function table.
   of the method specific data.
 \end{cmt}
 
-\paragraph{Multi-method requests}
-
-\todo{come up with a better name for these (we could stil use CARs) and
-  describe them}
-
-\paragraph{Request Arbiter}
-
-% request arbiter
-% - performs matching between posted requests and incoming messages, handling 
-%   specifics of mpi semantics for matching and ordering
-% - global unexpected queue (not needed yet, but we keep it for later)
-% - walks posted receive structure for appropriate VC first
-% - not worrying about wildcards yet
-% - functions:
-%   - recv_posted_foa() -- allocate a new recv request and post it to the VC 
-%     unless the request already exists in the unexpected list
-%   - recv_incoming_foa() -- search the VC posted recv structure for a request
-%     that matches the supplied envelope information; if one is not find
-%     allocate a new request and place it on the ordered unexpected list
-% - elements:
-%   - ordered unexpected list
-%
-% - requirement that certain structures be publically visible (e.g. receive 
-%   lists)
-
-\begin{cmt}[BRT]
-  We need to define multi-method requests before we can describe request
-  arbitration since the requests store in the receive lists are multi-method
-  requests.
-\end{cmt}
-
-
 \paragraph{Progress Engine}
 
 % progress engine
@@ -618,6 +611,9 @@ int MPID_PE_poll_blocking_start()
 
 int MPID_PE_poll_nonblocking()
 \end{verbatim}
+
+
+While some methods may choose to only make ....
 
 Progress is be made by calling one of two sets of functions: blocking and
 nonblocking.  The nonblocking set consists of a single function
@@ -756,7 +752,7 @@ the (publically accessible) receive list located in the VC.
   later (or now for that matter).
 \end{cmt}
 
-\todo{need to talk about \code{method::post_recv}}
+% \todo{need to talk about \code{method::post_recv}}
 
 % - progress
 %   - where/when make_progress() is called
@@ -795,19 +791,89 @@ the (publically accessible) receive list located in the VC.
   \item request abritrator element - secret magic wildcard stuff
 \end{itemize}
 
+\paragraph{Communication Action Requests}
+
+\paragraph{Request Arbiter}
+
+% request arbiter
+% - performs matching between posted requests and incoming messages, handling 
+%   specifics of mpi semantics for matching and ordering
+% - global unexpected queue (not needed yet, but we keep it for later)
+% - walks posted receive structure for appropriate VC first
+% - not worrying about wildcards yet
+% - functions:
+%   - recv_posted_foa() -- allocate a new recv request and post it to the VC 
+%     unless the request already exists in the unexpected list
+%   - recv_incoming_foa() -- search the VC posted recv structure for a request
+%     that matches the supplied envelope information; if one is not find
+%     allocate a new request and place it on the ordered unexpected list
+% - elements:
+%   - ordered unexpected list
+%
+% - requirement that certain structures be publically visible (e.g. receive 
+%   lists)
+
+\begin{verbatim}
+int MPID_RA_post_foa(
+        [IN] int dest, [IN] int tag, [IN] MPID_Comm * comm, [IN] MPID_VC * vc,
+        [OUT] MPID_CAR * car, [OUT] int * found)
+
+int MPID_RA_incoming_foa(
+        [IN] int dest, [IN] int tag, [IN] MPID_Comm * comm, [IN] MPID_VC * vc,
+        [OUT] MPID_CAR * car, [OUT] int * found)
+\end{verbatim}
+
+\begin{cmt}[BRT]
+  We need to define multi-method requests before we can describe request
+  arbitration since the requests store in the receive lists are multi-method
+  requests.
+\end{cmt}
+
+\code{recv_posted_foa} returns a locked CAR to insure atomicity; the calling
+code must unlock the CAR
+
 \subsubsection{Persistent Sends}
 
 \subsubsection{Request Cancellation}
 
+\begin{cmt}
+  Message cancellation is considered a local operation (not requiring the
+  remote process to call any MPI functions).  Does this imply that active
+  messages are needed for message cancellation?  If so, this discusssion needs
+  to wait until active messages are introduced.
+\end{cmt}
+
 %------------------------------------------------------------------------------
 
 \subsection{Threads: implementation and usage}
-- threads, VCs, and changing methods (from unbound to bound) during runtime
-  - having the unbound method hold a lock on the vc can prevent additional
-    threads from also attempting to rebind the VC
-  - the newly bound method may receive requests from other threads while
-    it is forming a connection.  it must insure that requests are queued
-    and handled in the proper order once this connection is established
+
+\paragraph [Method binding] threads, VCs, and changing methods (from unbound
+to bound) during runtime
+\begin{itemize}
+\item having the unbound method hold a lock on the vc can prevent additional
+  threads from also attempting to rebind the VC
+\item the newly bound method may receive requests from other threads while it
+  is forming a connection.  it must insure that requests are queued and handled
+  in the proper order once this connection is established
+\end{itemize}
+
+\paragraph [Request arbiter] The request matching process becomes much more
+complex when multiple threads are introduced.  The arbiter and method must work
+together to insure that incoming unexpected message CARs and posted receive
+CARs do not bypass each other causing a match to be missed and MPI message
+ordering semantics to be violated.  We believe this coordination can happen
+relative efficiently using some sort of two phase posting interface between the
+RA and the method.
+
+This two phase posting interface would consist of the functions
+\code{method::post_recv_init} and \code{method::post_recv_start}.  The first
+function would insur that the method did not attempt to post unexpected
+messages with the RA until after the second the function was called.  During
+the period of time between the calls to the first and second functions, the RA
+could safely scan the unexpected message list for matching messages without
+concern that a matching unexpected message might be posted after its scan of
+the unexpected list but before the CAR could be posted with the method.
+
 
 %------------------------------------------------------------------------------
 
@@ -843,6 +909,31 @@ point-to-point communication.
 % device, not just the multi-method device.  On the other hand, we do
 % want to support these optimizations, so it seems unwise not to mention
 % them and include them in the design.
+
+\subsubsection{bypassing the request arbiter}
+
+In the common case of pre-posted, non-wildcard receives, we would like to avoid
+interacting with the arbiter at the time of message reception.  We accomplish
+this by extending the request arbiter's post_foa() function to notify the
+method of posted requests under circumstances where inter-method arbitration is
+not required.  The incoming message matching is then handled directly by the
+method without further interaction with the RA.  (That is to say that the
+method will first check its internal list of posted receives before calling
+incoming_foa().)  This has the additional benefit of allowing the method to
+optimize reception by allowing it to know of the recv call ahead of time (which
+it did not earlier in this document).
+
+\begin{verbatim}
+post_foa()
+    look at unexpected list(s)
+    if existing request not found
+        look at posted wildcard list(s)
+        if no request in same context (or other optimized conditions)
+            method::post_recv(...)
+\end{verbatim}
+
+
+\subsubsection{more optimizations}
 
 for contiguous data, send directly from and receive directly into the
 user buffer.
