@@ -1173,7 +1173,6 @@ AC_OUTPUT_COMMANDS([chmod a+x mpif77 ;
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpif77 > ../../../bin/mpif77 ;
    chmod a+x ../../../bin/mpif77 ])
-dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
 AC_OUTPUT_COMMANDS([cp mpif.h ../../../src/include])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0
