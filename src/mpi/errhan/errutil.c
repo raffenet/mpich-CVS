@@ -25,7 +25,7 @@
 /* stdio is needed for vsprintf and vsnprintf */
 #include <stdio.h>
 
-static const char *get_class_msg( int class );
+static const char *get_class_msg( int error_class );
     
 /*
  * Instance-specific error messages are stored in a ring.
@@ -109,14 +109,14 @@ void MPIR_Err_preinit( void )
  */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode )
 {
-    const int class = ERROR_GET_CLASS(errcode);
+    const int error_class = ERROR_GET_CLASS(errcode);
     
-    if (class > MPICH_ERR_LAST_CLASS)
+    if (error_class > MPICH_ERR_LAST_CLASS)
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  The error stack follows:\n", class);
+			      "Please file a bug report.  The error stack follows:\n", error_class);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
@@ -195,14 +195,14 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], 
 			  int errcode )
 {
-    const int class = ERROR_GET_CLASS(errcode);
+    const int error_class = ERROR_GET_CLASS(errcode);
     
-    if (class > MPICH_ERR_LAST_CLASS)
+    if (error_class > MPICH_ERR_LAST_CLASS)
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  The error stack follows:\n", class);
+			      "Please file a bug report.  The error stack follows:\n", error_class);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
@@ -263,14 +263,14 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[], 
 			  int errcode )
 {
-    const int class = ERROR_GET_CLASS(errcode);
+    const int error_class = ERROR_GET_CLASS(errcode);
     
-    if (class > MPICH_ERR_LAST_CLASS)
+    if (error_class > MPICH_ERR_LAST_CLASS)
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  The error stack follows:\n", class);
+			      "Please file a bug report.  The error stack follows:\n", error_class);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
@@ -385,7 +385,7 @@ int MPIR_Err_is_fatal(int errcode)
     return (errcode & ERROR_FATAL_MASK) ? TRUE : FALSE;
 }
 
-int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line, int class, const char generic_msg[],
+int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line, int error_class, const char generic_msg[],
 			  const char specific_msg[], ... )
 {
     va_list Argp;
@@ -401,7 +401,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 
     va_start(Argp, specific_msg);
 
-    err_code = class;
+    err_code = error_class;
 
     /* Handle the generic message.  This selects a subclass, based on a text string */
 #   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
@@ -498,7 +498,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	    }
 	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
 	    
-	    ErrorRing[ring_idx].id = class & ERROR_CLASS_MASK;
+	    ErrorRing[ring_idx].id = error_class & ERROR_CLASS_MASK;
 	    ErrorRing[ring_idx].id |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
 	    ErrorRing[ring_idx].id |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
 	    ErrorRing[ring_idx].prev_error = lastcode;
@@ -536,11 +536,11 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
  * access the messages in this file, or the messages that may be
  * available through any message catalog facility 
  */
-static const char *get_class_msg( int class )
+static const char *get_class_msg( int error_class )
 {
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
-    if (class >= 0 && class < MPIR_MAX_ERROR_CLASS_INDEX) {
-	return generic_err_msgs[class_to_index[class]].long_name;
+    if (error_class >= 0 && error_class < MPIR_MAX_ERROR_CLASS_INDEX) {
+	return generic_err_msgs[class_to_index[error_class]].long_name;
     }
     else {
 	return "Unknown error class";
@@ -594,7 +594,7 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	   error message ring).  If the seq number is *not* valid,
 	   use the generic message.
 	 */
-	int class;
+	int error_class;
 	int ring_idx;
 	int ring_seq;
 	int generic_idx;
@@ -647,18 +647,18 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	}
 #       endif
 
-	class = ERROR_GET_CLASS(errorcode);
+	error_class = ERROR_GET_CLASS(errorcode);
 
-	if (class <= MPICH_ERR_LAST_CLASS)
+	if (error_class <= MPICH_ERR_LAST_CLASS)
 	{
-	    if (MPIU_Strncpy(msg, get_class_msg(class), MPI_MAX_ERROR_STRING))
+	    if (MPIU_Strncpy(msg, get_class_msg(error_class), MPI_MAX_ERROR_STRING))
 	    {
 		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
 	    }
 	}
 	else
 	{
-	    MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "Error code contains an invalid class (%d)\n", class);
+	    MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "Error code contains an invalid class (%d)\n", error_class);
 	}
     }
 
@@ -666,6 +666,132 @@ fn_exit:
     return;
 }
 
+void MPIR_Err_get_string_ext(int errorcode, char * msg, int maxlen, MPIR_Err_get_class_string_func_t fn)
+{
+    int error_class;
+    int ring_idx;
+    int ring_seq;
+    int generic_idx;
+
+    /* Convert the code to a string.  The cases are:
+       simple class.  Find the corresponding string.
+       <not done>
+       if (user code) { go to code that extracts user error messages }
+       else {
+           is specific message code set and available?  if so, use it
+	   else use generic code (lookup index in table of messages)
+       }
+     */
+    if (errorcode & ERROR_DYN_MASK)
+    {
+	/* This is a dynamically created error code (e.g., with MPI_Err_add_class) */
+	if (!MPIR_Process.errcode_to_string)
+	{
+	    if (MPIU_Strncpy(msg, "Undefined dynamic error code", MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	    
+	}
+	else
+	{
+	    if (MPIU_Strncpy(msg, MPIR_Process.errcode_to_string( errorcode ), MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	}
+    }
+    else if ( (errorcode & ERROR_CLASS_MASK) == errorcode)
+    {
+	error_class = MPIR_ERR_GET_CLASS(errorcode);
+
+	if (error_class <= MPICH_ERR_LAST_CLASS)
+	{
+	    /* code is a raw error class.  Convert the class to an index */
+	    if (MPIU_Strncpy(msg, get_class_msg( errorcode ), MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	}
+	else
+	{
+	    fn(errorcode, msg, maxlen);
+	}
+    }
+    else
+    {
+	/* error code encodes a message.  Find it and make sure that
+	   it is still valid (seq number matches the stored value in the
+	   error message ring).  If the seq number is *not* valid,
+	   use the generic message.
+	 */
+	ring_idx    = (errorcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+	ring_seq    = (errorcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+	generic_idx = ((errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+#       if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+	{
+	    if (generic_idx >= 0)
+	    {
+		int flag = FALSE;
+
+		MPID_Thread_lock(&error_ring_mutex);
+		{
+		    int ring_id;
+
+		    ring_id = errorcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+
+		    if (ErrorRing[ring_idx].id == ring_id)
+		    {
+			if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
+			{
+			    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+			}
+			flag = TRUE;
+		    }
+		}
+		MPID_Thread_unlock(&error_ring_mutex);
+
+		if (flag)
+		{
+		    goto fn_exit;
+		}
+	    }
+	}
+#       endif
+	
+#       if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
+	{
+	    if (generic_idx >= 0)
+	    {
+		if (MPIU_Strncpy(msg, generic_err_msgs[generic_idx].long_name, MPI_MAX_ERROR_STRING))
+		{
+		    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+		}
+		goto fn_exit;
+	    }
+	}
+#       endif
+
+	error_class = ERROR_GET_CLASS(errorcode);
+
+	if (error_class <= MPICH_ERR_LAST_CLASS)
+	{
+	    if (MPIU_Strncpy(msg, get_class_msg(error_class), MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	}
+	else
+	{
+	    /*MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "Error code contains an invalid class (%d)\n", error_class);*/
+	    fn(errorcode, msg, maxlen);
+	}
+    }
+
+fn_exit:
+    return;
+}
 
 void MPIR_Err_print_stack(FILE * fp, int errcode)
 {
@@ -723,17 +849,17 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 #   endif
     
     {
-	int class;
+	int error_class;
 
-	class = ERROR_GET_CLASS(errcode);
+	error_class = ERROR_GET_CLASS(errcode);
 	
-	if (class <= MPICH_ERR_LAST_CLASS)
+	if (error_class <= MPICH_ERR_LAST_CLASS)
 	{
 	    fprintf(fp, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
 	}
 	else
 	{
-	    fprintf(fp, "Error code contains an invalid class (%d)\n", class);
+	    fprintf(fp, "Error code contains an invalid class (%d)\n", error_class);
 	}
     }
     
