@@ -238,9 +238,11 @@ def mpdrun():
         mpd_raise('mpd unexpectedly closed connection')
     elif msg['cmd'] != 'mpdrun_ack':
         if msg['cmd'] == 'already_have_a_console':
-            mpd_raise('mpd already has a console (e.g. for long ringtest); try later')
+            print 'mpd already has a console (e.g. for long ringtest); try later'
+            exit(-1)
         elif msg['cmd'] == 'job_failed'  and  msg['reason'] == 'some_procs_not_started':
-            mpd_raise('unable to start all procs; may have invalid machine names')
+            print 'mpdrun: unable to start all procs; may have invalid machine names'
+            exit(-1)
         else:
             mpd_raise('unexpected message from mpd: %s' % (msg) )
     conSocket.close()
