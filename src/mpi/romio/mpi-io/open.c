@@ -45,7 +45,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     int error_code, file_system, flag, tmp_amode, rank, orig_amode;
     int err, min_code;
     char *tmp;
-    MPI_Comm dupcomm;
+    MPI_Comm dupcomm, dupcommself;
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -228,7 +228,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
            reach later will return error. */
 
 	if (!rank) {
-	    *fh = ADIO_Open(MPI_COMM_SELF, filename, file_system, amode, 0, 
+	    MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
+	    /* this dup is freed either in ADIO_Open if the open fails,
+               or in ADIO_Close */
+	    *fh = ADIO_Open(dupcommself, filename, file_system, amode, 0, 
                MPI_BYTE, MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
 	    /* broadcast the error code to other processes */
 	    MPI_Bcast(&error_code, 1, MPI_INT, 0, dupcomm);
