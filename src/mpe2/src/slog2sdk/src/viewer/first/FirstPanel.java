@@ -207,8 +207,8 @@ public class FirstPanel extends JPanel
                                   + logformat.slog2.Const.VERSION_HISTORY 
                                   + "Do you still want to continue reading "
                                   + "the logfile ?" ) ) {
-                         slog_ins = null;
-                         return;
+                        slog_ins = null;
+                        return;
                     }
                 }
                 slog_ins.initialize();
