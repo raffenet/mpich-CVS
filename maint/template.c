@@ -18,11 +18,15 @@
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
-   the MPI routines */
+   the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
+   using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Foo PMPI_Foo
 
-/* Any internal routines can go here.  Make them static if possible */
+/* Any internal routines can go here.  Make them static if possible.  If they
+   are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of 
+   static; this macro expands into "static" if weak symbols are supported and
+   into nothing otherwise. */
 int MPIR_Foo_util( int a, MPID_Comm *comm )
 {
 ...
