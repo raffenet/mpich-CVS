@@ -1,4 +1,5 @@
 #! /usr/bin/perl
+# -*- Mode: perl; -*-
 #use Crypt::TripleDES;
 #
 # Check that coding standards have been followed.  This checks for common
