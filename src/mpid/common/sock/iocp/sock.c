@@ -356,27 +356,27 @@ static inline void init_state_struct(sock_state_t *p)
 #define FUNCNAME post_next_accept
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int post_next_accept(sock_state_t * listen_state)
+static inline int post_next_accept(sock_state_t * context)
 {
     int mpi_errno;
-    listen_state->state = SOCKI_ACCEPTING;
-    listen_state->accepted = 0;
+    context->state = SOCKI_ACCEPTING;
+    context->accepted = 0;
     /*printf("posting an accept.\n");fflush(stdout);*/
-    listen_state->sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-    if (listen_state->sock == INVALID_SOCKET)
+    context->sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (context->sock == INVALID_SOCKET)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", WSAGetLastError());
 	return mpi_errno;
     }
     if (!AcceptEx(
-	listen_state->listen_sock, 
-	listen_state->sock, 
-	listen_state->accept_buffer, 
+	context->listen_sock, 
+	context->sock, 
+	context->accept_buffer, 
 	0, 
 	sizeof(struct sockaddr_in)+16, 
 	sizeof(struct sockaddr_in)+16, 
-	&listen_state->read.num_bytes,
-	&listen_state->read.ovl))
+	&context->read.num_bytes,
+	&context->read.ovl))
     {
 	mpi_errno = WSAGetLastError();
 	if (mpi_errno == ERROR_IO_PENDING)
@@ -1109,6 +1109,7 @@ int MPIDU_Sock_set_user_ptr(MPIDU_Sock_t sock, void * user_ptr)
 int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 {
     int mpi_errno;
+    SOCKET s, *sp;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_CLOSE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_CLOSE);
@@ -1119,7 +1120,23 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	return mpi_errno;
     }
 
-    if (sock == NULL || sock->sock == INVALID_SOCKET)
+    if (sock == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**nullptr", "**nullptr %s", "sock");
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	return mpi_errno;
+    }
+    if (sock->type == SOCKI_LISTENER)
+    {
+	s = sock->listen_sock;
+	sp = &sock->listen_sock;
+    }
+    else
+    {
+	s = sock->sock;
+	sp = &sock->sock;
+    }
+    if (s == INVALID_SOCKET)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**bad_sock", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
@@ -1187,10 +1204,10 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
     */
 	sock->pending_operations = 0;
 	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
-	FlushFileBuffers((HANDLE)sock->sock);
-	shutdown(sock->sock, SD_BOTH);
-	closesocket(sock->sock);
-	sock->sock = INVALID_SOCKET;
+	FlushFileBuffers((HANDLE)s);
+	shutdown(s, SD_BOTH);
+	closesocket(s);
+	*sp = INVALID_SOCKET;
 	PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL);
     /*
     }
@@ -1951,6 +1968,10 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		if (iter != NULL)
 		    iter->accepted = 1;
 		out->op_type = MPIDU_SOCK_OP_ACCEPT;
+		if (sock->sock == INVALID_SOCKET)
+		{
+		    MPIU_Error_printf("returning OP_ACCEPT with an INVALID_SOCKET\n");
+		}
 		out->num_bytes = num_bytes;
 		out->error = MPI_SUCCESS;
 		out->user_ptr = sock->user_ptr;
