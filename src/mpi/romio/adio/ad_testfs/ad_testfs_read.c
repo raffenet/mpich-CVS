@@ -29,8 +29,12 @@ void ADIOI_TESTFS_ReadContig(ADIO_File fd, void *buf, int count,
     if (file_ptr_type != ADIO_EXPLICIT_OFFSET)
     {
 	fd->fp_ind += datatype_size * count;
+	fd->fp_sys_posn = fd->fp_ind;
 	FPRINTF(stdout, "[%d/%d]    new file position is %Ld\n", myrank, 
 		nprocs, (long long) fd->fp_ind);
+    }
+    else {
+	fd->fp_sys_posn = offset + datatype_size * count;
     }
 
 #ifdef HAVE_STATUS_SET_BYTES
