@@ -125,7 +125,7 @@ dist-with-version:
 	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/doc/logging/logging.pdf ; \
 	    rm -rf tmpdir2 ; \
 	fi
-	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
+	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
 	( cd tmpdir/${PACKAGE}-${version}/src/mpid && /bin/rm -rf mm rdma)
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes develop )
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd )
