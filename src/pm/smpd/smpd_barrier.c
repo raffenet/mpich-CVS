@@ -86,6 +86,13 @@ int smpd_handle_barrier_command(smpd_context_t *context)
 			smpd_exit_fn("smpd_handle_barrier_command");
 			return SMPD_FAIL;
 		    }
+		    result = smpd_add_command_arg(temp_cmd, "cmd_orig", "barrier");
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add cmd_orig to the result command for a barrier command\n");
+			smpd_exit_fn("smpd_handle_barrier_command");
+			return SMPD_FAIL;
+		    }
 		    /* add the ctx_key for control channel matching */
 		    result = smpd_add_command_arg(temp_cmd, "ctx_key", iter->in_array[i].ctx_key);
 		    if (result != SMPD_SUCCESS)

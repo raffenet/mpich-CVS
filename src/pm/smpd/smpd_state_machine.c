@@ -2540,6 +2540,13 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    smpd_exit_fn("smpd_state_writing_session_header");
 	    return SMPD_FAIL;
 	}
+	result = smpd_add_command_arg(cmd_ptr, "cmd_orig", "connect");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add cmd_orig to the result command for a connect command\n");
+	    smpd_exit_fn("smpd_state_writing_session_header");
+	    return SMPD_FAIL;
+	}
 	result = smpd_add_command_arg(cmd_ptr, "result", SMPD_SUCCESS_STR);
 	if (result != SMPD_SUCCESS)
 	{

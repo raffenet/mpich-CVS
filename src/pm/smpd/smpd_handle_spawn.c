@@ -49,6 +49,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_spawn_command");
+	return SMPD_FAIL;
+    }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
@@ -359,7 +366,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     context = smpd_process.left_context;
     /* save the launch list to be used after the new hosts are connected */
     context->spawn_context->launch_list = launch_list;
-    context->spawn_context->num_outstanding_launch_cmds = nproc; /* this assumes all launch commands will be successfully posted. */
+    context->spawn_context->num_outstanding_launch_cmds = 0;/*nproc;*/ /* this assumes all launch commands will be successfully posted. */
     host_iter = smpd_process.host_list;
     while (host_iter)
     {

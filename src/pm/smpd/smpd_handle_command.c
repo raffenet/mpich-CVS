@@ -419,8 +419,17 @@ int smpd_handle_result(smpd_context_t *context)
 			    smpd_dbg_printf("successfully spawned: '%s'\n", iter->cmd);
 			    /*printf("successfully spawned: '%s'\n", iter->cmd);fflush(stdout);*/
 			    context->spawn_context->num_outstanding_launch_cmds--;
+			    smpd_dbg_printf("%d outstanding spawns.\n", context->spawn_context->num_outstanding_launch_cmds);
 			    if (context->spawn_context->num_outstanding_launch_cmds == 0)
 			    {
+				/* add the result string */
+				result = smpd_add_command_arg(context->spawn_context->result_cmd, "result", SMPD_SUCCESS_STR);
+				if (result != SMPD_SUCCESS)
+				{
+				    smpd_err_printf("unable to add the result string to the result command.\n");
+				    smpd_exit_fn("smpd_handle_result");
+				    return result;
+				}
 				/* send the spawn result command */
 				result = smpd_post_write_command(context, context->spawn_context->result_cmd);
 				if (result != SMPD_SUCCESS)
@@ -803,6 +812,13 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_dbs_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
@@ -1142,6 +1158,13 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	    smpd_exit_fn("handle_launch_command");
 	    return SMPD_FAIL;
 	}
+	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	    smpd_exit_fn("handle_launch_command");
+	    return SMPD_FAIL;
+	}
 	/* launch process should provide a reason for the error, for now just return FAIL */
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
 	if (result != SMPD_SUCCESS)
@@ -1197,6 +1220,13 @@ int smpd_handle_launch_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
@@ -1431,6 +1461,13 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	    smpd_exit_fn("handle_connect_command");
 	    return SMPD_FAIL;
 	}
+	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	    smpd_exit_fn("handle_connect_command");
+	    return SMPD_FAIL;
+	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - root smpd is not allowed to connect to other smpds.");
 	if (result != SMPD_SUCCESS)
 	{
@@ -1463,6 +1500,13 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the tag to the result command.\n");
+	    smpd_exit_fn("handle_connect_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	    smpd_exit_fn("handle_connect_command");
 	    return SMPD_FAIL;
 	}
@@ -1611,6 +1655,13 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("handle_start_dbs_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("handle_start_dbs_command");
 	return SMPD_FAIL;
     }
@@ -1875,6 +1926,13 @@ int smpd_handle_stat_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
     /* add the result string */
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
@@ -1975,6 +2033,13 @@ int smpd_handle_validate_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
@@ -2024,6 +2089,13 @@ int smpd_handle_status_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a status command.\n");
+	smpd_exit_fn("smpd_handle_status_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("smpd_handle_status_command");
 	return SMPD_FAIL;
     }
@@ -2097,6 +2169,13 @@ int smpd_handle_get_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a get %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_get_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("smpd_handle_get_command");
 	return SMPD_FAIL;
     }
@@ -2185,6 +2264,13 @@ int smpd_handle_set_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_set_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
@@ -2251,6 +2337,13 @@ int smpd_handle_delete_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_delete_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
@@ -2303,6 +2396,13 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a cred_request command.\n");
+	smpd_exit_fn("smpd_handle_cred_request_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("smpd_handle_cred_request_command");
 	return SMPD_FAIL;
     }
@@ -2501,6 +2601,13 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a exit_on_done command.\n");
+	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
 	smpd_exit_fn("smpd_handle_exit_on_done_command");
 	return SMPD_FAIL;
     }
