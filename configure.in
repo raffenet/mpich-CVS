@@ -1570,8 +1570,13 @@ top_srcdir=$top_srcdir)
 # we must generate the dependency directories.  We do this by detecting 
 # the dependencies target.  Note that this refers to the Makefile,
 # in case we are building with VPATH
+# Grr. Finds differ on how they handle {} in a string.  We could use
+# xargs, but that may not be standard enough.  Instead we fall back on 
+# the old standby of using find with -print, then sed to
+# construct the line, which is fed to sh
+#    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
 AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
-    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
+    find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
 fi],enable_dependencies=$enable_dependencies)
 
 AC_OUTPUT(Makefile src/Makefile \
