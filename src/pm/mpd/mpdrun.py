@@ -66,6 +66,8 @@ def mpdrun():
     linesOrdered = []
     ranksCached = {}
     gdb = 0
+    known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
+                          'nproc','nofile','ofile','memlock','as','vmem']
     process_cmdline_args()
     (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
     cwd = path.abspath(getcwd())
@@ -265,7 +267,7 @@ def mpdrun():
             limitList = p.getElementsByTagName('limit')
             for limitElem in limitList:
                 type = limitElem.getAttribute('type')
-                if valid_limit_type(type):
+                if type in known_rlimit_types:
                     limitDict[type] = limitElem.getAttribute('value')
                 else:
                     print 'mpdrun: invalid type in limit: %s' % (type)
@@ -449,12 +451,12 @@ def mpdrun():
                         done += 1
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
-                    elif msg['cmd'] == 'invalid_executable':
+                    elif msg['cmd'] == 'execution_problem':
                         # print 'rank %d (%s) in job %s failed to find executable %s' % \
                               # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
                         host = msg['src'].split('_')[0]
                         reason = unquote(msg['reason'])
-                        print 'problem with executable  %s  on  %s:  %s ' % \
+                        print 'problem with execution of %s  on  %s:  %s ' % \
                               (msg['exec'],host,reason)
                         # keep going until all man's finish
                     elif msg['cmd'] == 'job_aborted_early':
@@ -769,12 +771,6 @@ def process_cmdline_args():
         pgmArgs.append(argv[argidx])
         argidx += 1
 
-def valid_limit_type(type):
-    if type == 'core'   or  type == 'cpu'    or  type == 'fsize'  or  type == 'data'   \
-    or type == 'stack'  or  type == 'rss'    or  type == 'nproc'  or  type == 'nofile' \
-    or type == 'ofile'  or  type == 'memloc' or  type == 'as':
-        return 1
-    return 0
 
 def usage():
     global myExitStatus

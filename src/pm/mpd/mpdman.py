@@ -15,9 +15,7 @@ from signal   import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DF
 from md5      import new
 from cPickle  import loads
 from urllib   import quote
-from resource import setrlimit, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_FSIZE, RLIMIT_DATA, \
-                     RLIMIT_STACK, RLIMIT_RSS, RLIMIT_NPROC, RLIMIT_NOFILE, RLIMIT_OFILE, \
-                     RLIMIT_MEMLOCK
+from resource import setrlimit  # others imported in set_limits as needed
 from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_send_one_msg, mpd_send_one_msg_noprint, mpd_recv_one_msg, \
                      mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
@@ -217,7 +215,12 @@ def mpdman():
         cli_environ['MPD_JRANK'] = str(myRank)                                 ## BNR
         cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
         cli_environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
-        set_limits(clientPgmLimits)
+        errmsg = set_limits(clientPgmLimits)
+        if errmsg:
+            reason = quote(str(errmsg))
+	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
+	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
+            exit(0)
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
             execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
@@ -225,7 +228,7 @@ def mpdman():
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             reason = quote(str(errmsg))
-	    pmiMsgToSend = 'cmd=invalid_executable reason=%s\n' % (reason)
+	    pmiMsgToSend = 'cmd=execution_problem reason=%s\n' % (reason)
 	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
             exit(0)
         exit(0)
@@ -496,7 +499,7 @@ def mpdman():
                         kill(pgrp,SIGKILL)   # may be reaped by sighandler
                     except:
                         pass
-                elif msg['cmd'] == 'invalid_executable':
+                elif msg['cmd'] == 'execution_problem':
                     jobEndingEarly = 1
                     if msg['src'] != myId:
                         if rhsSocket:  # still alive ?
@@ -719,9 +722,9 @@ def mpdman():
                 if not parsedMsg.has_key('cmd'):
                     mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
                     continue
-                # invalid_executable is sent BEFORE client actually starts
-                if parsedMsg['cmd'] == 'invalid_executable':
-                    msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
+                # execution_problem is sent BEFORE client actually starts
+                if parsedMsg['cmd'] == 'execution_problem':
+                    msgToSend = { 'cmd' : 'execution_problem', 'src' : myId, 'jobid' : jobid,
                                   'rank' : myRank, 'exec' : clientPgm,
                                   'reason' : parsedMsg['reason']  }
                     mpd_send_one_msg(rhsSocket,msgToSend)
@@ -1006,28 +1009,48 @@ def parse_pmi_msg(msg):
 def set_limits(limits):
     for type in limits.keys():
         limit = int(limits[type])
-        if   type == 'core':
-            setrlimit(RLIMIT_CORE,(limit,limit))
-        elif type == 'cpu':
-            setrlimit(RLIMIT_CPU,(limit,limit))
-        elif type == 'fsize':
-            setrlimit(RLIMIT_FSIZE,(limit,limit))
-        elif type == 'data':
-            setrlimit(RLIMIT_DATA,(limit,limit))
-        elif type == 'stack':
-            setrlimit(RLIMIT_STACK,(limit,limit))
-        elif type == 'rss':
-            setrlimit(RLIMIT_RSS,(limit,limit))
-        elif type == 'nproc':
-            setrlimit(RLIMIT_NPROC,(limit,limit))
-        elif type == 'nofile':
-            setrlimit(RLIMIT_NOFILE,(limit,limit))
-        elif type == 'ofile':
-            setrlimit(RLIMIT_OFILE,(limit,limit))
-        elif type == 'memloc':
-            setrlimit(RLIMIT_MEMLOC,(limit,limit))
-        elif  type == 'as':
-            setrlimit(RLIMIT_AS,(limit,limit))
+        try:
+            if   type == 'core':
+                from resource import RLIMIT_CORE
+                setrlimit(RLIMIT_CORE,(limit,limit))
+            elif type == 'cpu':
+                from resource import RLIMIT_CPU
+                setrlimit(RLIMIT_CPU,(limit,limit))
+            elif type == 'fsize':
+                from resource import RLIMIT_FSIZE
+                setrlimit(RLIMIT_FSIZE,(limit,limit))
+            elif type == 'data':
+                from resource import RLIMIT_DATA
+                setrlimit(RLIMIT_DATA,(limit,limit))
+            elif type == 'stack':
+                from resource import RLIMIT_STACK
+                setrlimit(RLIMIT_STACK,(limit,limit))
+            elif type == 'rss':
+                from resource import RLIMIT_RSS
+                setrlimit(RLIMIT_RSS,(limit,limit))
+            elif type == 'nproc':
+                from resource import RLIMIT_NPROC
+                setrlimit(RLIMIT_NPROC,(limit,limit))
+            elif type == 'nofile':
+                from resource import RLIMIT_NOFILE
+                setrlimit(RLIMIT_NOFILE,(limit,limit))
+            elif type == 'ofile':
+                from resource import RLIMIT_OFILE
+                setrlimit(RLIMIT_OFILE,(limit,limit))
+            elif type == 'memloc':
+                from resource import RLIMIT_MEMLOCK
+                setrlimit(RLIMIT_MEMLOCK,(limit,limit))
+            elif  type == 'as':
+                from resource import RLIMIT_AS
+                setrlimit(RLIMIT_AS,(limit,limit))
+            elif  type == 'vmem':
+                from resource import RLIMIT_VMEM
+                setrlimit(RLIMIT_VMEM,(limit,limit))
+            else:
+                raise NameError, 'invalid resource name: %s' % type  # validated at mpdrun
+        except (NameError,ImportError), errmsg:
+            return errmsg
+    return 0
 
 
 if __name__ == '__main__':
