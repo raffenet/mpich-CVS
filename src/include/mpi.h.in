@@ -1094,6 +1094,18 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 #endif  /* MPI_BUILD_PROFILING */
 /* End of MPI bindings */
 
+/* feature advertisement */
+#define MPIIMPL_ADVERTISES_FEATURES 1
+#define MPIIMPL_HAVE_MPI_INFO 1                                                 
+#define MPIIMPL_HAVE_MPI_COMBINER_DARRAY 1                                      
+#define MPIIMPL_HAVE_MPI_TYPE_CREATE_DARRAY 1
+#define MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY 1                                    
+#define MPIIMPL_HAVE_MPI_TYPE_CREATE_DARRAY 1
+#define MPIIMPL_HAVE_MPI_COMBINER_DUP 1                                         
+#define MPIIMPL_HAVE_MPI_GREQUEST 1      
+#define MPIIMPL_HAVE_STATUS_SET_BYTES 1
+#define MPIIMPL_HAVE_STATUS_SET_INFO 1
+
 @HAVE_ROMIO@
 
 #if defined(__cplusplus)
