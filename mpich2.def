@@ -701,3 +701,6 @@ EXPORTS
 	PMPI_Wtime
 	MPI_Wtime=PMPI_Wtime
 	MPIR_Dup_fn
+
+;	MPIR_Op_set_cxx
+;	MPIR_Keyval_set_cxx
