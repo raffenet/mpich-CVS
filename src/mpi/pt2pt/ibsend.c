@@ -60,6 +60,8 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     static const char FCNAME[] = "MPI_Ibsend";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Request *request_ptr;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_IBSEND);
 
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_IBSEND);
     /* Get handles to MPI objects. */
@@ -85,7 +87,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     /* We don't try tbsend in for MPI_Ibsend because we must create a
        request even if we can send the message */
 
-    mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dst, tag, comm_ptr, 
+    mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  &request_ptr );
     if (!mpi_errno) {
 	*request = request_ptr->handle;
