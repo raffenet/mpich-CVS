@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "ipmi.h"
+#ifdef HAVE_MACH_O_DYLD_H
+#include <mach-o/dyld.h>
+#endif
 
 /* global variables */
 static ipmi_functions_t fn =
@@ -15,11 +18,30 @@ int PMI_Init(int *spawned)
 {
     char *dll_name;
 #ifdef HAVE_WINDOWS_H
+#define LoadLibrary(a,b) a = LoadLibrary( b )
     HMODULE hModule;
-#else
-#define LoadLibrary(a) dlopen(a, RTLD_LAZY /* or RTLD_NOW */)
+#elif defined(HAVE_DLOPEN)
+#define LoadLibrary(a, b) a = dlopen( b , RTLD_LAZY /* or RTLD_NOW */)
 #define GetProcAddress dlsym
     void *hModule;
+#elif defined(HAVE_NSLINKMODULE)
+    NSModule hModule;
+#define LoadLibrary(a, b) \
+{ \
+    NSObjectFileImage fileImage; \
+    NSObjectFileImageReturnCode returnCode = \
+	NSCreateObjectFileImageFromFile(b, &fileImage); \
+    if(returnCode == NSObjectFileImageSuccess) \
+    { \
+	a = NSLinkModule(fileImage, b, \
+			 NSLINKMODULE_OPTION_RETURN_ON_ERROR \
+			 | NSLINKMODULE_OPTION_PRIVATE); \
+	NSDestroyObjectFileImage(fileImage); \
+    } else { \
+	a = NULL; \
+    } \
+}
+#define GetProcAddress(a, b) NSAddressOfSymbol( NSLookupSymbolInModule( a, b ) )
 #endif
 
     if (fn.PMI_Init != NULL)
@@ -31,7 +53,7 @@ int PMI_Init(int *spawned)
     dll_name = getenv("PMI_DLL_NAME");
     if (dll_name)
     {
-	hModule = LoadLibrary(dll_name);
+	LoadLibrary(hModule, dll_name);
 	if (hModule != NULL)
 	{
 	    fn.PMI_Init = (int (*)(int *))GetProcAddress(hModule, "PMI_Init");
