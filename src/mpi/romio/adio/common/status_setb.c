@@ -5,6 +5,7 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+#include "adio.h"
 #include "mpi.h"
 
 #ifdef MPICH
