@@ -11,7 +11,7 @@
 /* This is the utility file for comm that contains the basic comm items
    and storage management */
 #ifndef MPID_COMM_PREALLOC 
-#define MPID_COMM_PREALLOC (8 + MPI_COMM_RESERVED)
+#define MPID_COMM_PREALLOC (8 + MPID_COMM_RESERVED)
 #endif
 
 
