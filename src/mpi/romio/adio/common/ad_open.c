@@ -23,7 +23,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 {
     ADIO_File fd;
     ADIO_cb_name_array array;
-    int orig_amode, err, rank, procs;
+    int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
     char *value;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_OPEN";
@@ -141,16 +141,73 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
      * communicator until we try to do independent IO */
     fd->agg_comm = MPI_COMM_NULL;
     fd->is_open = 0;
+    fd->io_worker = 0;
     if (fd->hints->deferred_open && 
 		    ADIOI_Uses_generic_read(fd) &&
 		    ADIOI_Uses_generic_write(fd) ) {
+	    /* MPI_Comm_split will create a communication group of aggregators.
+	     * for non-aggregators it will return MPI_COMM_NULL .  we rely on
+	     * fd->agg_comm == MPI_COMM_NULL for non-aggregators in several
+	     * tests in the code  */
 	    if (is_aggregator(rank, fd)) {
 		    MPI_Comm_split(fd->comm, 1, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
+		    MPI_Comm_rank(fd->agg_comm, &agg_rank);
+		    if (agg_rank == 0) fd->io_worker = 1;
 	    } else {
 		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
-		    /* the non-aggregators have to return now  */
+	    }
+
+    } else {
+	    if (rank == 0) fd->io_worker = 1;
+    }
+
+    orig_amode_excl = access_mode;
+
+    /* we used to do this EXCL|CREAT workaround in MPI_File_open, but if we are
+     * doing deferred open, we more easily know who the aggregators are in
+     * ADIO_Open */
+    if ((access_mode & MPI_MODE_CREATE) && (access_mode & MPI_MODE_EXCL)) {
+       /* the open should fail if the file exists. Only *1* process should
+	   check this. Otherwise, if all processes try to check and the file
+	   does not exist, one process will create the file and others who
+	   reach later will return error. */
+       if(fd->io_worker) {
+    		fd->access_mode = access_mode;
+    		(*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
+		MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
+		/* if no error, close the file and reopen normally below */
+		if (*error_code == MPI_SUCCESS) 
+			(*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+       }
+       else MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
+
+       if (*error_code != MPI_SUCCESS) {
+	       /* coppied from below */
+	       ADIOI_Free(fd->fns);
+	       MPI_Comm_free(&(fd->comm));
+	       free(fd->filename);
+	       MPI_Info_free(&(fd->info));
+	       ADIOI_Free(fd);
+	       fd = ADIO_FILE_NULL;
+	       return fd;
+       } 
+       else {
+	       /* turn off EXCL for real open */
+	       access_mode = access_mode ^ MPI_MODE_EXCL; 
+       }
+    }
+
+    /* if we are doing deferred open, non-aggregators should return now */
+    if (fd->hints->deferred_open && 
+		    ADIOI_Uses_generic_read(fd) &&
+		    ADIOI_Uses_generic_write(fd) ) {
+	    if (fd->agg_comm == MPI_COMM_NULL) {
+		    /* we might have turned off EXCL for the aggregators.
+		     * restore access_mode that non-aggregators get the right
+		     * value from get_amode */
+		    fd->access_mode = orig_amode_excl;
 		    *error_code = MPI_SUCCESS;
 		    return fd;
 	    }
@@ -161,7 +218,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
    if write_only, open the file as read_write, but record it as write_only
    in fd, so that get_amode returns the right answer. */
 
-    orig_amode = access_mode;
+    orig_amode_wronly = access_mode;
     if (access_mode & ADIO_WRONLY) {
 	access_mode = access_mode ^ ADIO_WRONLY;
 	access_mode = access_mode | ADIO_RDWR;
@@ -170,15 +227,17 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
     (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
 
-    fd->access_mode = orig_amode;
-
     /* if error, may be it was due to the change in amode above. 
        therefore, reopen with access mode provided by the user.*/ 
+    fd->access_mode = orig_amode_wronly;  
     if (*error_code != MPI_SUCCESS) 
         (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
 
+    /* if we turned off EXCL earlier, then we should turn it back on */
+    if (fd->access_mode != orig_amode_excl) fd->access_mode = orig_amode_excl;
+
     /* for deferred open: this process has opened the file (because if we are
-     * not an aggregaor and we are doing deferred open, we returned earlier*/
+     * not an aggregaor and we are doing deferred open, we returned earlier)*/
     fd->is_open = 1;
 
     /* if error, free and set fd to NULL */

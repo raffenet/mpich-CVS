@@ -110,7 +110,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
 		    /* romio_cb_read overrides no_indep_rw */
 		MPI_Info_set(info, "romio_cb_read", value);
-		MPI_Info_set(info, "romio_no_indep_rw", "disable");
+		MPI_Info_set(info, "romio_no_indep_rw", "false");
 		fd->hints->cb_read = ADIOI_HINT_DISABLE;
 		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
@@ -136,7 +136,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
 		    /* romio_cb_write overrides no_indep_rw, too */
 		MPI_Info_set(info, "romio_cb_write", value);
-		MPI_Info_set(info, "romio_no_indep_rw", "disable");
+		MPI_Info_set(info, "romio_no_indep_rw", "false");
 		fd->hints->cb_write = ADIOI_HINT_DISABLE;
 		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
@@ -303,7 +303,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	     * disable at the same time doesn't make sense. honor
 	     * romio_cb_{read,write} and force the no_indep_rw hint to
 	     * 'disable' */
-	    MPI_Info_set(info, "romio_no_indep_rw", "disable");
+	    MPI_Info_set(info, "romio_no_indep_rw", "false");
 	    fd->hints->no_indep_rw = 0;
 	    fd->hints->deferred_open = 0;
     }
