@@ -281,6 +281,8 @@ while (<FD>) {
 
 # Read each one
 while (<FD>) {
+    # Remove any comments
+    s/\/\*.*\*\///g;
     if (/\/\*\s*End Prototypes/ ) { last; }
     if (/^int\s*MPI_([A-Z][a-z0-9_]*)\s*\((.*)/) {
 	$routine_name = $1;
@@ -928,6 +930,8 @@ open ( MPIFD, "<../../include/mpi.h.in" ) || die "Could not open mpi.h.in\n";
 #
 # First, find the values that we need
 while (<MPIFD>) {
+    # Remove any comments
+    s/\/\*.*\*\///g;
     if (/#\s*define\s+(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
 	$mpidef{$1} = $2;
     }
