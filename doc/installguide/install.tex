@@ -265,6 +265,16 @@ The output of mpdtrace should be the hostname of the machine you are
 running on.  The \texttt{mpdallexit} causes the mpd daemon to exit.
 
 \item
+The next sanity check is to run a non-MPI program using the daemon.
+\begin{verbatim}
+    mpd & 
+    mpiexec -n 1 /bin/hostname
+    mpdallexit
+\end{verbatim}
+This should print the name of the machine you are running on.  If not,
+you should check the troubleshooting section below.
+
+\item
 Now we will bring up a ring of mpd's on a set of machines.  Create
 a file consisting of a list of machine names, one per line.  Name this
 file \texttt{mpd.hosts}.  These hostnames will be used as targets for
@@ -393,21 +403,26 @@ for details. A typical example is:
 \end{verbatim}
 or
 \begin{verbatim}
-    mpiexec -n 1 -host mymachine : -n 19 slave
+    mpiexec -n 1 -host mymachine master : -n 19 slave
 \end{verbatim}
 to ensure that the process with rank 0 runs on your workstation.
 
 The arguments between ':'s in this syntax are called "argument sets",
 since they apply to a set of processes.  \textbf{Change this to match
-new global and local arguments described in User's Guide.}  There is
+new global and local arguments described in User's Guide.}  There can be
 an extra argument set for arguments that apply to all the processes,
-introduced by the -default argument.  For example, to get rank labels on
+which must come first.  For example, to get rank labels on
 standard output, use
 \begin{verbatim}
-    mpiexec -default -l : -n 3 cpi
+    mpiexec -l : -n 3 cpi
+\end{verbatim}
+This first ':' is optional, since \texttt{mpiexec} knows which are the
+global arguments and knows they are first.  So you can also use
+\begin{verbatim}
+    mpiexec -l : -n 3 cpi
 \end{verbatim}
 The \texttt{mpirun} command from the original MPICH is still available,
-although it does not support as many options as mpiexec.  You might
+although it does not support as many options as \texttt{mpiexec}.  You might
 want to use it in the case where you do not have the XML parser
 required for the use of \texttt{mpiexec}.
 \end{enumerate}
@@ -1062,7 +1077,7 @@ that those kinds of things work also.
 
 \item If all above went fine above, you can probably skip this step.
 This step was attempted automatically in the previous one.  But,
-if there were propblems, you may find it useful to re-run by hand and
+if there were problems, you may find it useful to rerun by hand and
 keep the output.  On your two machines in the \texttt{mpd.hosts}
 file (call them m1 and m2), try the following:
 
