@@ -2,12 +2,15 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+
 #define MAX_DIRNAME_SIZE 256 
 
 int main( int argc, char *argv[], char *envp[] )
 {
     int  i, myid, numprocs;
     int  namelen;
+    char *p;
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     char curr_wd[MAX_DIRNAME_SIZE];
 
@@ -26,7 +29,13 @@ int main( int argc, char *argv[], char *envp[] )
     }
 
     getcwd( curr_wd, MAX_DIRNAME_SIZE ); 
-    fprintf( stdout, "[%d] current working directory=%s\n", i, curr_wd );
+    fprintf( stdout, "[%d] current working directory=%s\n", myid, curr_wd );
+
+    p = getenv("PATH");
+    if ( p )
+	fprintf( stdout, "[%d] PATH=%s\n", myid, p );
+    else
+	fprintf( stdout, "[%d] PATH not set in environment\n", myid );
 
 #ifdef PRINTENV
     /* may produce lots of output, but here if you need it */
