@@ -1,2 +1,3 @@
 simple_SOURCES = simple.c
+simple_LDADD = -L ../../../lib -lmpich
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include

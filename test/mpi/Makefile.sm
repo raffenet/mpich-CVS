@@ -1,2 +1,2 @@
-SUBDIRS = util datatype errhan .
+SUBDIRS = basic util datatype errhan .
 

@@ -567,6 +567,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/Makefile test/util/Makefile \
 	  test/util/info/Makefile \
 	  test/mpi/Makefile \
+          test/mpi/basic/Makefile \
 	  test/mpi/util/Makefile \
 	  test/mpi/datatype/Makefile \
 	  test/mpi/errhan/Makefile \
