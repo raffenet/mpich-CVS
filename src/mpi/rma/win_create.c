@@ -126,6 +126,8 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     win_ptr->base = base;
     win_ptr->size = size;
     win_ptr->disp_unit = disp_unit;
+    win_ptr->start_group_ptr = NULL; 
+    win_ptr->post_group_ptr = NULL; 
     mpi_errno = NMPI_Comm_dup(comm, &(win_ptr->comm));
 
     /* return the handle of the window object to the user */

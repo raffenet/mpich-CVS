@@ -47,6 +47,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     static const char FCNAME[] = "MPI_Win_start";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
+    MPID_Group *group_ptr=NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_START);
 
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_START);
@@ -67,11 +68,12 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
+    MPID_Group_get_ptr(group, group_ptr);
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Group *group_ptr=NULL;
 
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
@@ -80,7 +82,6 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
                 return MPIR_Err_return_win( NULL, FCNAME, mpi_errno );
             }
 
-            MPID_Group_get_ptr(group, group_ptr);
             MPID_Group_valid_ptr(group_ptr, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
@@ -90,6 +91,9 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    win_ptr->start_group_ptr = group_ptr;
+    MPIU_Object_add_ref( group_ptr );
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPI_SUCCESS;

@@ -79,6 +79,8 @@ int MPI_Win_complete(MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_Win_complete(win_ptr);
+
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_COMPLETE);
     return MPI_SUCCESS;
 }

@@ -730,6 +730,8 @@ typedef struct MPID_Win {
     MPI_Aint    size;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_Attribute *attributes;
+    MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
+    MPID_Group *post_group_ptr; /* group passed in MPI_Win_post */
     MPI_Comm    comm;         /* communicator of window (dup) */
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
@@ -1315,7 +1317,8 @@ int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
 int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
 		   MPI_Datatype,  MPI_Op, MPID_Win *);
 int MPID_Win_free(MPID_Win **); 
-
+int MPID_Win_wait(MPID_Win *win_ptr);
+int MPID_Win_complete(MPID_Win *win_ptr);
 
 void MPID_Progress_start(void);
 void MPID_Progress_end(void);
