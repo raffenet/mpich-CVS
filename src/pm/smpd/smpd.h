@@ -126,6 +126,7 @@ typedef int SMPD_BOOL;
 #define SMPD_PLAINTEXT_PREFIX             'y'
 #define SMPD_ENCRYPTED_PREFIX             'x'
 #define SMPD_SSPI_HEADER_LENGTH           SMPD_CMD_HDR_LENGTH
+#define SMPD_SSPI_MAX_BUFFER_SIZE         (64*1024)
 #define SMPD_SECURITY_PACKAGE             "NTLM"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 

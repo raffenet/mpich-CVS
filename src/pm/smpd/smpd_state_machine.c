@@ -2356,6 +2356,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 {
 #ifdef HAVE_WINDOWS_H
     int result;
+    char err_msg[256];
     SECURITY_STATUS sec_result, sec_result_copy;
     SecBufferDesc outbound_descriptor, inbound_descriptor;
     SecBuffer outbound_buffer, inbound_buffer;
@@ -2406,6 +2407,10 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
 	    info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
 	context->sspi_max_buffer_size = info->cbMaxToken;
+	if (context->sspi_max_buffer_size < 0)
+	{
+	    context->sspi_max_buffer_size = SMPD_SSPI_MAX_BUFFER_SIZE;
+	}
 	smpd_dbg_printf("calling FreeContextBuffer\n");
 	sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
 	if (sec_result != SEC_E_OK)
@@ -2443,6 +2448,10 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     outbound_descriptor.pBuffers = &outbound_buffer;
     outbound_buffer.BufferType = SECBUFFER_TOKEN;
     outbound_buffer.cbBuffer = context->sspi_max_buffer_size;
+    if (context->sspi_outbound_buffer != NULL)
+    {
+	free(context->sspi_outbound_buffer);
+    }
     context->sspi_outbound_buffer = malloc(context->sspi_max_buffer_size);
     if (context->sspi_outbound_buffer == NULL)
     {
@@ -2503,7 +2512,8 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	return SMPD_SUCCESS;
     default:
 	/* error occurred */
-	smpd_err_printf("AcceptSecurityContext failed with error %d\n", sec_result);
+	smpd_translate_win_error(sec_result, err_msg, 256, NULL);
+	smpd_err_printf("AcceptSecurityContext failed with error %d: %s\n", sec_result, err_msg);
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn(FCNAME);
@@ -2697,6 +2707,8 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
     }
 
     /* create an sspi_iter command and send the sspi buffer to the root */
@@ -3059,11 +3071,11 @@ int smpd_state_writing_sspi_header(smpd_context_t *context, MPIDU_Sock_event_t *
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
 
-    smpd_dbg_printf("wrote sspi header.\n");
+    smpd_dbg_printf("wrote sspi header: %s.\n", context->sspi_header);
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_SSPI_BUFFER;
-    result = MPIDU_Sock_post_write(context->sock, context->sspi_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->sspi_outbound_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
     if (result != MPI_SUCCESS)
     {
 	/* FIXME: Add code to cleanup sspi structures */
@@ -3129,7 +3141,7 @@ int smpd_state_writing_client_sspi_header(smpd_context_t *context, MPIDU_Sock_ev
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
 
-    smpd_dbg_printf("wrote client sspi header.\n");
+    smpd_dbg_printf("wrote client sspi header: %s.\n", context->sspi_header);
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_CLIENT_SSPI_BUFFER;
@@ -3220,6 +3232,10 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
 	    smpd_err_printf("unable to initialize an sspi context command.\n");
 	    smpd_exit_fn(FCNAME);
 	    return result;
+	}
+	if (context->sspi_buffer != NULL)
+	{
+	    free(context->sspi_buffer);
 	}
 	context->sspi_buffer = malloc(sspi_context->buffer_length);
 	if (context->sspi_buffer == NULL)

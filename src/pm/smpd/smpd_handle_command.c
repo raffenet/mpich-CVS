@@ -3642,8 +3642,9 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
+    char err_msg[256];
     SEC_WINNT_AUTH_IDENTITY *identity = NULL;
-    SECURITY_STATUS sec_result;
+    SECURITY_STATUS sec_result, sec_result_copy;
     SecBufferDesc outbound_descriptor;
     SecBuffer outbound_buffer;
     ULONG attr;
@@ -3746,17 +3747,18 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("calling InitializeSecurityContext\n");
-    sec_result = smpd_process.sec_fn->InitializeSecurityContext(
+    sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential, NULL, SMPD_SECURITY_PACKAGE,
-	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE,
+	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT /*| ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE*/,
 	0,
-	SECURITY_NATIVE_DREP, //SECURITY_NETWORK_DREP,
+	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
     switch (sec_result)
     {
     case SEC_E_OK:
 	break;
     case SEC_I_COMPLETE_NEEDED:
+	sspi_context->buffer_length = 0;
     case SEC_I_COMPLETE_AND_CONTINUE:
 	smpd_dbg_printf("calling CompleteAuthToken\n");
 	sec_result = smpd_process.sec_fn->CompleteAuthToken(&sspi_context->context, &outbound_descriptor);
@@ -3768,17 +3770,19 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	break;
+	if (sec_result_copy == SEC_I_COMPLETE_NEEDED)
+	    break;
     case SEC_I_CONTINUE_NEEDED:
+	smpd_dbg_printf("outbound buffer size: %d\n", outbound_buffer.cbBuffer);
+	sspi_context->buffer_length = outbound_buffer.cbBuffer;
 	break;
     default:
 	/* error occurred */
-	smpd_err_printf("InitializeSecurityContext failed with error %d\n", sec_result);
+	smpd_translate_win_error(sec_result, err_msg, 256, NULL);
+	smpd_err_printf("InitializeSecurityContext failed with error %d: %s\n", sec_result, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("outbound buffer size: %d\n", outbound_buffer.cbBuffer);
-    sspi_context->buffer_length = outbound_buffer.cbBuffer;
     *sspi_context_pptr = sspi_context;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -3898,10 +3902,11 @@ fn_fail:
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr)
 {
 #ifdef HAVE_WINDOWS_H
+    char err_msg[256];
     SEC_WINNT_AUTH_IDENTITY *identity = NULL;
-    SECURITY_STATUS sec_result;
-    SecBufferDesc outbound_descriptor;
-    SecBuffer outbound_buffer;
+    SECURITY_STATUS sec_result, sec_result_copy;
+    SecBufferDesc outbound_descriptor, inbound_descriptor;
+    SecBuffer outbound_buffer, inbound_buffer;
     ULONG attr;
     TimeStamp ts;
     SecPkgInfo *info;
@@ -3938,23 +3943,18 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	return SMPD_FAIL;
     }
 
+    inbound_descriptor.ulVersion = SECBUFFER_VERSION;
+    inbound_descriptor.cBuffers = 1;
+    inbound_descriptor.pBuffers = &inbound_buffer;
+    inbound_buffer.BufferType = SECBUFFER_TOKEN;
+    inbound_buffer.cbBuffer = *length_ptr;
+    inbound_buffer.pvBuffer = *sspi_buffer_pptr;
+
     smpd_dbg_printf("calling QuerySecurityPackageInfo\n");
     sec_result = smpd_process.sec_fn->QuerySecurityPackageInfo(SMPD_SECURITY_PACKAGE, &info);
     if (sec_result != SEC_E_OK)
     {
 	smpd_err_printf("unable to query the security package, error %d\n", sec_result);
-	smpd_exit_fn(FCNAME);
-	return SMPD_FAIL;
-    }
-    smpd_dbg_printf("calling AcquireCredentialsHandle\n");
-    sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &sspi_context->credential, &ts);
-    if (identity != NULL)
-    {
-	free(identity);
-    }
-    if (sec_result != SEC_E_OK)
-    {
-	smpd_err_printf("unable to acquire the outbound client credential, error %d\n", sec_result);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -3981,12 +3981,12 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("calling InitializeSecurityContext\n");
-    sec_result = smpd_process.sec_fn->InitializeSecurityContext(
-	&sspi_context->credential, NULL, SMPD_SECURITY_PACKAGE,
-	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE,
+    sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
+	&sspi_context->credential, &sspi_context->context, SMPD_SECURITY_PACKAGE,
+	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT /*| ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE*/,
 	0,
-	SECURITY_NATIVE_DREP, //SECURITY_NETWORK_DREP,
-	NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
+	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
+	&inbound_descriptor, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
     switch (sec_result)
     {
     case SEC_E_OK:
@@ -4003,12 +4003,16 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	break;
+	if (sec_result_copy == SEC_I_COMPLETE_NEEDED)
+	    break;
     case SEC_I_CONTINUE_NEEDED:
+	*sspi_buffer_pptr = outbound_buffer.pvBuffer;
+	*length_ptr = outbound_buffer.cbBuffer;
 	break;
     default:
 	/* error occurred */
-	smpd_err_printf("InitializeSecurityContext failed with error %d\n", sec_result);
+	smpd_translate_win_error(sec_result, err_msg, 256, NULL);
+	smpd_err_printf("InitializeSecurityContext failed with error %d: %s\n", sec_result, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
