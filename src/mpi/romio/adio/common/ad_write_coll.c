@@ -237,13 +237,18 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
 
 
+/* If successful, error_code is set to MPI_SUCCESS.  Otherwise an error
+ * code is created and returned in error_code.
+ */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
-			 datatype, int nprocs, int myrank, ADIOI_Access
-			 *others_req, ADIO_Offset *offset_list,
-			 int *len_list, int contig_access_count, ADIO_Offset
-                         min_st_offset, ADIO_Offset fd_size,
-			 ADIO_Offset *fd_start, ADIO_Offset *fd_end,
-                         int *buf_idx, int *error_code)
+				 datatype, int nprocs, int myrank,
+				 ADIOI_Access
+				 *others_req, ADIO_Offset *offset_list,
+				 int *len_list, int contig_access_count,
+				 ADIO_Offset
+				 min_st_offset, ADIO_Offset fd_size,
+				 ADIO_Offset *fd_start, ADIO_Offset *fd_end,
+				 int *buf_idx, int *error_code)
 {
 /* Send data to appropriate processes and write in sizes of no more
    than coll_bufsize.    
@@ -299,7 +304,9 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 
     ntimes = (int) ((end_loc - st_loc + coll_bufsize)/coll_bufsize);
 
-    if ((st_loc==-1) && (end_loc==-1)) ntimes = 0; /* this process does no I/O. */
+    if ((st_loc==-1) && (end_loc==-1)) {
+	ntimes = 0; /* this process does no writing. */
+    }
 
     MPI_Allreduce(&ntimes, &max_ntimes, 1, MPI_INT, MPI_MAX,
 		  fd->comm); 
@@ -416,14 +423,25 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 			recv_size[i] += (int)(ADIOI_MIN(off + (ADIO_Offset)size - 
 						  req_off, req_len));
 
-			if (off+size-req_off < req_len) {
+			if (off+size-req_off < req_len)
+			{
 			    partial_recv[i] = (int) (off + size - req_off);
+
+			    /* --BEGIN ERROR HANDLING-- */
 			    if ((j+1 < others_req[i].count) && 
-                                 (others_req[i].offsets[j+1] < 
-                                     off+size)) { 
-				FPRINTF(stderr, "Error: the filetype specifies an overlapping write\n");
-				MPI_Abort(MPI_COMM_WORLD, 1);
+                                 (others_req[i].offsets[j+1] < off+size))
+			    { 
+				*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+								   MPIR_ERR_RECOVERABLE,
+								   myname,
+								   __LINE__,
+								   MPI_ERR_ARG,
+								   "Filetype specifies overlapping write regions (which is illegal according to the MPI-2 specification)", 0);
+				/* allow to continue since additional
+				 * communication might have to occur
+				 */
 			    }
+			    /* --END ERROR HANDLING-- */
 			    break;
 			}
 		    }
@@ -470,7 +488,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 	MPE_Log_event(7, 0, "start communication");
 #endif
     for (m=ntimes; m<max_ntimes; m++) 
-/* nothing to recv, but check for send. */
+	/* nothing to recv, but check for send. */
 	ADIOI_W_Exchange_data(fd, buf, write_buf, flat_buf, offset_list, 
                             len_list, send_size, recv_size, off, size, count, 
                             start_pos, partial_recv, 
@@ -499,22 +517,26 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 }
 
 
-
+/* Sets error_code to MPI_SUCCESS if successful, or creates an error code
+ * in the case of error.
+ */
 static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
-                         ADIOI_Flatlist_node *flat_buf, ADIO_Offset 
-                         *offset_list, int *len_list, int *send_size, 
-                         int *recv_size, ADIO_Offset off, int size,
-			 int *count, int *start_pos, int *partial_recv,
-			 int *sent_to_proc, int nprocs, 
-			 int myrank, int
-			 buftype_is_contig, int contig_access_count,
-			 ADIO_Offset min_st_offset, ADIO_Offset fd_size,
-			 ADIO_Offset *fd_start, ADIO_Offset *fd_end, 
-			 ADIOI_Access *others_req, 
-			 int *send_buf_idx, int *curr_to_proc,
-			 int *done_to_proc, int *hole, int iter, 
-                         MPI_Aint buftype_extent, int *buf_idx,
-                         int *error_code)
+				  ADIOI_Flatlist_node *flat_buf, ADIO_Offset 
+				  *offset_list, int *len_list, int *send_size, 
+				  int *recv_size, ADIO_Offset off, int size,
+				  int *count, int *start_pos,
+				  int *partial_recv,
+				  int *sent_to_proc, int nprocs, 
+				  int myrank, int
+				  buftype_is_contig, int contig_access_count,
+				  ADIO_Offset min_st_offset,
+				  ADIO_Offset fd_size,
+				  ADIO_Offset *fd_start, ADIO_Offset *fd_end, 
+				  ADIOI_Access *others_req, 
+				  int *send_buf_idx, int *curr_to_proc,
+				  int *done_to_proc, int *hole, int iter, 
+				  MPI_Aint buftype_extent, int *buf_idx,
+				  int *error_code)
 {
     int i, j, k, *tmp_len, nprocs_recv, nprocs_send, err;
     char **send_buf = NULL; 
@@ -597,7 +619,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 			    ADIO_EXPLICIT_OFFSET, off, &status, &err);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err != MPI_SUCCESS) {
-		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+		*error_code = MPIO_Err_create_code(err,
 						   MPIR_ERR_RECOVERABLE, myname,
 						   __LINE__, MPI_ERR_IO,
 						   "**ioRMWrdwr", 0);

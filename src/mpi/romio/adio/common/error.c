@@ -9,6 +9,9 @@
 #include "adio.h"
 #include "adio_extern.h"
 
+/* NOTE: THIS FUNCTION IS DEPRECATED AND ONLY EXISTS HERE BECAUSE
+ * SOME DEPRECATED ADIO IMPLEMENTATIONS STILL CALL IT (SFS, HFS, PIOFS).
+ */
 int ADIOI_Error(ADIO_File fd, int error_code, char *string)
 {
     char buf[MPI_MAX_ERROR_STRING];

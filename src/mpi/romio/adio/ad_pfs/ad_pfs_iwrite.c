@@ -39,7 +39,8 @@ void ADIOI_PFS_IwriteContig(ADIO_File fd, void *buf, int count,
         /* exceeded the max. no. of outstanding requests. */
 
         /* complete all previous async. requests */
-        ADIOI_Complete_async(&err);
+        ADIOI_Complete_async(error_code);
+	if (error_code != MPI_SUCCESS) return;
 
         /* try again */
 	*id_sys = _iwrite(fd->fd_sys, buf, len);

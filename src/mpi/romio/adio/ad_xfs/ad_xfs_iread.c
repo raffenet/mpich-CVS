@@ -30,18 +30,18 @@ void ADIOI_XFS_IreadContig(ADIO_File fd, void *buf, int count,
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-    if (err == -1) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__, MPI_ERR_IO,
-					   "**io",
-					   "**io %s", strerror(errno));
-    }
-    else *error_code = MPI_SUCCESS;
+    fd->fp_sys_posn = -1;
 
-    fd->fp_sys_posn = -1;   /* set it to null. */
+    /* --BEGIN ERROR HANDLING-- */
+    if (err != 0) {
+	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
+	return;
+    }
+    /* --END ERROR HANDLING-- */
+
+    *error_code = MPI_SUCCESS;
     fd->async_count++;
 }
-
 
 
 void ADIOI_XFS_IreadStrided(ADIO_File fd, void *buf, int count, 

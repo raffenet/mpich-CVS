@@ -34,10 +34,28 @@ int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
 
 int MPIO_Err_return_file(MPI_File mpi_fh, int error_code)
 {
-    return ADIOI_Error(mpi_fh, error_code, "I/O Error");
+    char buf[MPI_MAX_ERROR_STRING];
+    int myrank, result_len; 
+    MPI_Errhandler err_handler;
+
+    if (fd == ADIO_FILE_NULL) err_handler = ADIOI_DFLT_ERR_HANDLER;
+    else err_handler = fd->err_handler;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if (err_handler == MPI_ERRORS_ARE_FATAL) {
+	MPI_Error_string(error_code, buf, &result_len);
+	FPRINTF(stderr, "[%d] %s\n", myrank, buf);
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    else if (err_handler != MPI_ERRORS_RETURN) {
+	FPRINTF(stderr, "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported as error handlers for files\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    return error_code;
 }
 
 int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code)
 {
-    return ADIOI_Error(MPI_FILE_NULL, error_code, "I/O Error");
+    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
 }

@@ -9,10 +9,11 @@
 #include "ad_xfs.h"
 
 void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int count, 
-                MPI_Datatype datatype, int file_ptr_type,
-                ADIO_Offset offset, ADIO_Request *request, int *error_code)  
+			    MPI_Datatype datatype, int file_ptr_type,
+			    ADIO_Offset offset, ADIO_Request *request,
+			    int *error_code)  
 {
-    int len, typesize, err=-1;
+    int len, typesize, aio_errno = 0;
     static char myname[] = "ADIOI_XFS_IWRITECONTIG";
 
     *request = ADIOI_Malloc_request();
@@ -24,23 +25,24 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int count,
     len = count * typesize;
 
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    err = ADIOI_XFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
+    aio_errno = ADIOI_XFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-    if (err == -1) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__, MPI_ERR_IO, "**io",
-					   "**io %s", strerror(errno));
-    }
-    else *error_code = MPI_SUCCESS;
+    fd->fp_sys_posn = -1;
 
-    fd->fp_sys_posn = -1;   /* set it to null. */
+    /* --BEGIN ERROR HANDLING-- */
+    if (aio_errno != 0) {
+	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
+	return;
+    }
+    /* --END ERROR HANDLING-- */
+
+    *error_code = MPI_SUCCESS;
     fd->async_count++;
 }
-
 
 
 void ADIOI_XFS_IwriteStrided(ADIO_File fd, void *buf, int count, 
@@ -76,9 +78,11 @@ void ADIOI_XFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 
 
 /* This function is for implementation convenience. It is not user-visible.
-   It takes care of the differences in the interface for nonblocking I/O
-   on various Unix machines! If wr==1 write, wr==0 read. */
-
+ * It takes care of the differences in the interface for nonblocking I/O
+ * on various Unix machines! If wr==1 write, wr==0 read.
+ *
+ * Returns 0 on success, -errno on failure.
+ */
 int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
 {
@@ -109,16 +113,18 @@ int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     if (wr) err = aio_write64(aiocbp);
     else err = aio_read64(aiocbp);
 
-    if (err == -1) {
+    if (err != 0) {
 	if (errno == EAGAIN) {
         /* exceeded the max. no. of outstanding requests.
 	   complete all previous async. requests and try again. */
 
 	    ADIOI_Complete_async(&error_code);
+	    if (error_code != MPI_SUCCESS) return -EIO;
+
 	    if (wr) err = aio_write64(aiocbp);
 	    else err = aio_read64(aiocbp);
 
-	    while (err == -1) {
+	    while (err != 0) {
 		if (errno == EAGAIN) {
 		    /* sleep and try again */
 		    sleep(1);
@@ -126,17 +132,15 @@ int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		    else err = aio_read64(aiocbp);
 		}
 		else {
-		    FPRINTF(stderr, "Unknown errno %d in ADIOI_XFS_aio\n", errno);
-		    MPI_Abort(MPI_COMM_WORLD, 1);
+		    return -errno;
 		}
 	    }
         }
         else {
-            FPRINTF(stderr, "Unknown errno %d in ADIOI_XFS_aio\n", errno);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    return -errno;
         }
     }
 
     *((aiocb64_t **) handle) = aiocbp;
-    return err;
+    return 0;
 }

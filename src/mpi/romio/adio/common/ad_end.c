@@ -28,10 +28,16 @@ void ADIO_End(int *error_code)
     }
     ADIOI_Flatlist = NULL;
 
+    /* --BEGIN ERROR HANDLING-- */
     if (ADIOI_Async_list_head) {
-	FPRINTF(stderr, "ADIO_End: Error! There are outstanding nonblocking I/O operations!\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_IO,
+					   "Error: outstanding nonblocking I/O operations", 0);
+	return;
     }
+    /* --END ERROR HANDLING-- */
 
 /* free list of available ADIOI_Async_nodes. */
     while (ADIOI_Malloc_async_head) {

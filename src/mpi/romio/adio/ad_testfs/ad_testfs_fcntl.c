@@ -38,7 +38,11 @@ void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_TESTFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPI_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "Unknown flag", 0);
+	return;
+	/* --END ERROR HANDLING-- */
     }
 }

@@ -101,8 +101,8 @@ if ((fh->file_system == ADIO_PIOFS) ||					\
 				       MPIR_ERR_RECOVERABLE,	  \
 				       myname, __LINE__,	  \
 				       MPI_ERR_IO,		  \
-				       "Syscall I/O error",	  \
-				       "Error from %s: %s",	  \
+				       "System call I/O error",	  \
+				       "Syscall error from %s: %s",	  \
 				       myname,                    \
 				       strerror(myerrno));
 

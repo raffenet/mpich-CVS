@@ -32,8 +32,9 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
-    ADIOI_NFS_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
-                    error_code);  
+    ADIOI_NFS_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset,
+			  &status,
+			  error_code);  
     (*request)->queued = 0;
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
@@ -41,6 +42,8 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
 	(*request)->nbytes = len;
     }
 #endif
+
+    fd->fp_sys_posn = -1;
 
 #else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
@@ -50,24 +53,25 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
+    fd->fp_sys_posn = -1;
+
     if (aio_errno != 0) {
 	/* --BEGIN ERROR HANDLING-- */
 	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
+	return;
 	/* --END ERROR HANDLING-- */
     }
     else *error_code = MPI_SUCCESS;
 #endif
 
-    fd->fp_sys_posn = -1;   /* set it to null. */
     fd->async_count++;
 }
 
 
-
 void ADIOI_NFS_IwriteStrided(ADIO_File fd, void *buf, int count, 
-		       MPI_Datatype datatype, int file_ptr_type,
-                       ADIO_Offset offset, ADIO_Request *request, int
-                       *error_code)
+			     MPI_Datatype datatype, int file_ptr_type,
+			     ADIO_Offset offset, ADIO_Request *request, int
+			     *error_code)
 {
     ADIO_Status status;
 #ifdef HAVE_STATUS_SET_BYTES
@@ -143,6 +147,8 @@ int error_code, this_errno;
            complete all previous async. requests and try again.*/
 
 	    ADIOI_Complete_async(&error_code);
+	    if (error_code != MPI_SUCCESS) return -EIO;
+
 	    if (wr) {
 		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
 		err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
@@ -212,6 +218,8 @@ int error_code, this_errno;
           complete all previous async. requests and try again. */
 
 	    ADIOI_Complete_async(&error_code);
+	    if (error_code != MPI_SUCCESS) return -EIO;
+
 	    if (wr) {
 		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
 		err = aio_write(fd_sys, aiocbp);
@@ -297,6 +305,8 @@ int error_code, this_errno;
            complete all previous async. requests and try again. */
 
 	    ADIOI_Complete_async(&error_code);
+	    if (error_code != MPI_SUCCESS) return -EIO;
+
 	    if (wr) {
 		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
 		err = aio_write(aiocbp);

@@ -43,6 +43,8 @@ void ADIOI_NFS_IreadContig(ADIO_File fd, void *buf, int count,
     }
 #endif
 
+    fd->fp_sys_posn = -1;
+
 #else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
     aio_errno = ADIOI_NFS_aio(fd, buf, len, offset, 0, &((*request)->handle));
@@ -51,15 +53,17 @@ void ADIOI_NFS_IreadContig(ADIO_File fd, void *buf, int count,
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
+    fd->fp_sys_posn = -1;
+
     if (aio_errno != 0) {
 	/* --BEGIN ERROR HANDLING-- */
 	MPIO_ERR_CREATE_CODE_ERRNO(myname, aio_errno, error_code);
+	return;
 	/* --END ERROR HANDLING-- */
     }
     else *error_code = MPI_SUCCESS;
 #endif
 
-    fd->fp_sys_posn = -1;   /* set it to null. */
     fd->async_count++;
 }
 

@@ -68,8 +68,11 @@ void ADIOI_NFS_WriteContig(ADIO_File fd, void *buf, int count,
 	lseek(fd->fd_sys, writebuf_off, SEEK_SET); \
 	err = read(fd->fd_sys, writebuf, writebuf_len); \
         if (err == -1) { \
-            FPRINTF(stderr, "ADIOI_NFS_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
-            MPI_Abort(MPI_COMM_WORLD, 1); \
+            *error_code = MPIO_Err_create_code(MPI_SUCCESS, \
+					       MPIR_ERR_RECOVERABLE, myname, \
+					       __LINE__, MPI_ERR_IO, \
+					       "**ioRMWrdwr", 0); \
+	    return; \
         } \
     } \
     write_sz = (int) (ADIOI_MIN(req_len, writebuf_off + writebuf_len - req_off)); \
@@ -87,8 +90,11 @@ void ADIOI_NFS_WriteContig(ADIO_File fd, void *buf, int count,
 	lseek(fd->fd_sys, writebuf_off, SEEK_SET); \
 	err = read(fd->fd_sys, writebuf, writebuf_len); \
         if (err == -1) { \
-            FPRINTF(stderr, "ADIOI_NFS_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
-            MPI_Abort(MPI_COMM_WORLD, 1); \
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, \
+					       MPIR_ERR_RECOVERABLE, myname, \
+					       __LINE__, MPI_ERR_IO, \
+					       "**ioRMWrdwr", 0); \
+	    return; \
         } \
         write_sz = ADIOI_MIN(req_len, writebuf_len); \
         memcpy(writebuf, (char *)buf + userbuf_off, write_sz);\
