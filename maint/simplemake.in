@@ -651,6 +651,10 @@ sub ReadMfile {
 		$extra_programs{$program} = 1;
 	    }
 	}
+	elsif (/^TAGS_DIRS\s*=\s*(.*)\s*$/) {
+	    # Keep track of tags dirs
+	    @tags_dirs = split( /\s+/,$1);
+	}
 	elsif (/^EXTRA_DIRS\s*=\s*(.*)\s*$/) {
 	    @extra_dirs = split( /\s+/,$1);
 	}
@@ -1363,6 +1367,7 @@ sub ClearVars {
     @install_subdirs = ();
     %install_dirs = ();
     %optinstall_files = ();
+    $gIssuedInstallLocal = 0;
     %external_libraries = ();
     $found_profilelib = 0;
     $found_sharedlib  = 0;
@@ -1385,6 +1390,7 @@ sub ClearVars {
     $docargsAdd = "";
     %docthiskinddir = ();
     @extra_dirs = ();
+    @tags_dirs  = ();
     @other_dirs = ();
     $subdirs_has_autoconf = 0;
     # Suffix definitions
@@ -1571,6 +1577,9 @@ sub ListTargets {
 #
 # Add to a target the designate operation in all subdirs (except for .)
 #     &RecursiveOp( "target" [, optional array of directories ] );
+# If the array of directories is not included, (@extra_dirs,@subdirs) 
+# is used.  These are the arrays maintined by simplemake of the 
+# directories set by EXTRA_DIRS and SUB_DIRS
 # Special notes:
 #    For a small number of directories, use a simpler (non loop) approach
 #    
@@ -2667,8 +2676,9 @@ sub TargetInstall {
 	}
 	#
 	# If there is an install-local target, invoke it here:
-	if (defined($usertargets{"install-local"})) {
+	if (defined($usertargets{"install-local"}) && !$gIssuedInstallLocal) {
 	    print FD "\t\${MAKE} install-local$newline";
+	    $gIssuedInstallLocal = 1;
 	}
 	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
