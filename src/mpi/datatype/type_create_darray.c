@@ -287,7 +287,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 
 
 /*@
-   MPI_Type_create_darray - create darray datatype
+   MPI_Type_create_darray - Create a datatype representing a distributed array
 
    Input Parameters:
 + size - size of process group (positive integer) 
@@ -302,6 +302,8 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 
     Output Parameter:
 . newtype - new datatype (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -658,9 +660,12 @@ int MPI_Type_create_darray(int size,
     }
 fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_create_darray", "**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p",
 	size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

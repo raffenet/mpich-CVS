@@ -689,6 +689,8 @@ Input Parameters:
 Output Parameter:
 . recvbuf - address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -697,7 +699,9 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                 MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Alltoall";
     int mpi_errno = MPI_SUCCESS;
@@ -793,9 +797,11 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_alltoall", "**mpi_alltoall %p %d %D %p %d %D %C",
 	sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

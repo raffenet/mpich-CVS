@@ -45,6 +45,8 @@ Input Parameters:
 Output Parameters:
 + recvbuf - initial address of receive buffer (choice) 
 - status - status object (Status).  This refers to the receive operation.
+
+.N ThreadSafe
   
 .N Fortran
 
@@ -59,8 +61,10 @@ Output Parameters:
 .N MPI_ERR_RANK
 
 @*/
-int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag,
-		 void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag,
+int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+		 int dest, int sendtag,
+		 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+		 int source, int recvtag,
 		 MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv";

@@ -41,6 +41,8 @@ Input Parameters:
 Output Parameter:
 . newtype - new datatype (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 The indices are displacements, and are based on a zero origin.  A common error
@@ -164,6 +166,7 @@ int MPI_Type_indexed(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -176,6 +179,7 @@ fn_fail:
 				     indices,
 				     old_type,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

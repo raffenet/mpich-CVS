@@ -43,6 +43,9 @@ of handles to datatype objects)
 Output Parameter:
 . newtype - new datatype (handle) 
 
+.N Deprecated
+The replacement for this routine is 'MPI_Type_create_struct'
+
 Notes:
 If an upperbound is set explicitly by using the MPI datatype 'MPI_UB', the
 corresponding index must be positive.
@@ -80,6 +83,8 @@ for the structure foo
     blen[2] = 1; indices[2] = sizeof(foo); oldtypes[2] = MPI_UB;
     MPI_Type_struct( 3, blen, indices, oldtypes, &newtype );
 .ve
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -174,6 +179,7 @@ int MPI_Type_struct(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -186,6 +192,7 @@ fn_fail:
 				     indices,
 				     old_types,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

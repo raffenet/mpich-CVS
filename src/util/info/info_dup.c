@@ -32,13 +32,13 @@
 /*@
     MPI_Info_dup - Returns a duplicate of the info object
 
-Input Arguments:
+Input Parameters:
 . info - info object (handle)
 
-Output Arguments:
+Output Parameters:
 . newinfo - duplicate of info object (handle)
 
-   Notes:
+.N ThreadSafeInfoRead
 
 .N Fortran
 
@@ -107,8 +107,11 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_info_dup", "**mpi_info_dup %I %p", info, newinfo);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Accumulate
 
 /*@
-   MPI_Accumulate - accumulate
+   MPI_Accumulate - Accumulate data into the target process using remote 
+   memory access 
 
    Input Parameters:
 + origin_addr - initial address of buffer (choice) 
@@ -50,6 +51,9 @@ predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COUNT
+.N MPI_ERR_RANK
+.N MPI_ERR_OP
 @*/
 int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint

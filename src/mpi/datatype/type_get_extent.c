@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Type_get_extent
 
 /*@
-   MPI_Type_get_extent - get type extent
+   MPI_Type_get_extent - Get the lower bound and extent for a Datatype
 
    Input Parameter:
 . datatype - datatype to get information on (handle) 
@@ -36,6 +36,9 @@
    Output Parameters:
 + lb - lower bound of datatype (integer) 
 - extent - extent of datatype (integer) 
+
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -80,8 +83,12 @@ int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_get_extent", "**mpi_type_get_extent %D %p %p", datatype, lb, extent);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_get_extent", "**mpi_type_get_extent %D %p %p", 
+				     datatype, lb, extent);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_EXTENT);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

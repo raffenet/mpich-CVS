@@ -303,6 +303,8 @@ Notes:
    calling process is not included in the result at the calling process
    (it is contributed to the subsequent processes, of course).
 
+.N ThreadSafe
+
 .N Fortran
 
 .N collops
@@ -315,7 +317,8 @@ Notes:
 .N MPI_ERR_BUFFER
 .N MPI_ERR_BUFFER_ALIAS
 @*/
-int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+               MPI_Op op, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Exscan";
     int mpi_errno = MPI_SUCCESS;
@@ -412,8 +415,11 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+				     __LINE__, MPI_ERR_OTHER,
 	    "**mpi_exscan", "**mpi_exscan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

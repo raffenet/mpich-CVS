@@ -39,6 +39,8 @@ Input Parameters:
 Output Parameter:
 . nneighbors - number of neighbors of specified process (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -110,8 +112,11 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_graph_neighbors_count", "**mpi_graph_neighbors_count %C %d %p", comm, rank, nneighbors);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

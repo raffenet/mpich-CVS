@@ -40,7 +40,7 @@ Input Parameters:
 Output Parameter:
 . newtype_p - new datatype (handle) 
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -112,6 +112,7 @@ int MPI_Type_vector(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -124,6 +125,7 @@ fn_fail:
 				     stride,
 				     old_type,
 				     newtype_p);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

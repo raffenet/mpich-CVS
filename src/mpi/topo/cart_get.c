@@ -45,6 +45,8 @@ Output Parameters:
 - coords - coordinates of calling process in cartesian structure 
 (array of integer) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -53,7 +55,8 @@ Output Parameters:
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, int *coords)
+int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
+                 int *coords)
 {
     static const char FCNAME[] = "MPI_Cart_get";
     int mpi_errno = MPI_SUCCESS;
@@ -92,11 +95,13 @@ int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, int *coord
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notcarttopo", 0 );
 	    }
 	    else if (cart_ptr->topo.cart.ndims > maxdims) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
 					  "**dimsmany", "**dimsmany %d %d",
 						  cart_ptr->topo.cart.ndims,
 						  maxdims);
@@ -129,8 +134,10 @@ int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, int *coord
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cart_get", "**mpi_cart_get %C %d %p %p %p", comm, maxdims, dims, periods, coords);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_GET);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

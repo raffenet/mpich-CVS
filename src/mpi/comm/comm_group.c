@@ -33,26 +33,15 @@
 MPI_Comm_group - Accesses the group associated with given communicator
 
 Input Parameter:
-. comm - Communicator
+. comm - Communicator (handle)
 
 Output Parameter:
-. group - Group in communicator
+. group - Group in communicator (handle)
 
-Using 'MPI_COMM_NULL' with 'MPI_Comm_group':
+Notes:
+.N COMMNULL
 
-It is an error to use 'MPI_COMM_NULL' as one of the arguments to
-'MPI_Comm_group'.  The relevant sections of the MPI standard are 
-
-$(2.4.1 Opaque Objects)
-A null handle argument is an erroneous 'IN' argument in MPI calls, unless an
-exception is explicitly stated in the text that defines the function.
-
-$(5.3.2. Group Constructors)
-<no text in 'MPI_COMM_GROUP' allowing a null handle>
-
-Previous versions of MPICH allow 'MPI_COMM_NULL' in this function.  In the
-interests of promoting portability of applications, we have changed the
-behavior of 'MPI_Comm_group' to detect this violation of the MPI standard.
+.N ThreadSafe
 
 .N Fortran
 
@@ -130,8 +119,11 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_group", "**mpi_comm_group %C %p", comm, group);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

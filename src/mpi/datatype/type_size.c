@@ -37,6 +37,8 @@ Input Parameters:
 Output Parameter:
 . size - datatype size (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -97,8 +99,12 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_size", "**mpi_type_size %D %p", datatype, size);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_size", 
+				     "**mpi_type_size %D %p", datatype, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

@@ -39,6 +39,8 @@ Input Parameters:
 Output Parameter:
 . comm_out - new communicator (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -56,21 +58,12 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     int i, j, n, *mapping = 0, new_context_id;
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -100,12 +93,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        so it must be created before we decide if this process is a 
        member of the group */
     new_context_id = MPIR_Get_contextid( comm_ptr->handle );
-    /* --BEGIN ERROR HANDLING-- */
-    if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_ERR_CHKANDJUMP(new_context_id == 0, mpi_errno, MPI_ERR_OTHER, 
+			"**toomanycomm" );
 
     /* Make sure that the processes for this group are contained within
        the input communicator.  Also identify the mapping from the ranks of 
@@ -125,13 +114,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	n = group_ptr->size;
 	/*printf( "group size = %d comm size = %d\n", n, 
 	  comm_ptr->remote_size ); */
-	mapping = (int *)MPIU_Malloc( n * sizeof(int) );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!mapping) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(mapping,int*,n*sizeof(int),mpi_errno,"mapping");
 	for (i=0; i<n; i++) {
 	    /* Mapping[i] is the rank in the communicator of the process that
 	       is the ith element of the group */
@@ -148,26 +131,14 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		    break;
 		}
 	    }
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mapping[i] == -1) {
-		/*printf( "failed for %d entry (pid=%d)\n", i,
-		  group_ptr->lrank_to_lpid[i].lpid); */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_GROUP, 
-						  "**groupnotincomm", 
-						  "**groupnotincomm %d", i );
-		goto fn_fail;
-	    }
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_CHKANDJUMP1(mapping[i] == -1,mpi_errno,MPI_ERR_GROUP,
+			 "**groupnotincomm", "**groupnotincomm %d", i );
 	}
 
 	/* Get the new communicator structure and context id */
 	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!newcomm_ptr) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP(!newcomm_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
+
 	MPIU_Object_set_ref( newcomm_ptr, 1 );
 	newcomm_ptr->attributes  = 0;
 	newcomm_ptr->context_id  = new_context_id;
@@ -194,8 +165,6 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    /* printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] ); */
 	}
 
-	MPIU_Free(mapping);
-
 	/* Notify the device of this new communicator */
 	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
@@ -216,10 +185,14 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	return MPI_SUCCESS;
     }
 
+    MPIU_CHKLMEM_FREEALL;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKLMEM_FREEALL;
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_create", "**mpi_comm_create %C %G %p", comm, group, newcomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

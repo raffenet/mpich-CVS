@@ -32,7 +32,7 @@
 MPI_Comm_free - Marks the communicator object for deallocation
 
 Input Parameter:
-. comm - communicator to be destroyed (handle) 
+. comm - Communicator to be destroyed (handle) 
 
 Notes:
 This routine `frees` a communicator.  Because the communicator may still
@@ -53,6 +53,8 @@ disallows freeing a null communicator.  The text from the standard is:
  returns a reference to it in the handle.
 .ve
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -67,19 +69,9 @@ int MPI_Comm_free(MPI_Comm *comm)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_FREE);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED( mpi_errno );
-	    if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_FREE);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( *comm, comm_ptr );
@@ -93,7 +85,8 @@ int MPI_Comm_free(MPI_Comm *comm)
 	    
 	    /* Cannot free the predefined communicators */
 	    if (HANDLE_GET_KIND(*comm) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,
 					  "**commperm", "**commperm %s", 
 						  comm_ptr->name );
 	    }
@@ -115,8 +108,11 @@ int MPI_Comm_free(MPI_Comm *comm)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_free", "**mpi_comm_free %p", comm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

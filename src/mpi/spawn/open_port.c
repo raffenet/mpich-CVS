@@ -28,11 +28,12 @@
 #define FUNCNAME MPI_Open_port
 
 /*@
-   MPI_Open_port - short description
+   MPI_Open_port - Establish an address that can be used to establish 
+   connections between groups of MPI processes
 
  Input Parameter:
-. info - implementation-specific information on how to establish an 
-   address (handle) 
+. info - implementation-specific information on how to establish a 
+   port for 'MPI_Comm_accept' (handle) 
 
  Output Parameter:
 . port_name - newly established port (string) 
@@ -49,6 +50,8 @@ The maximum size string that may be supplied by the system is
  If the address is not a valid IP address of the host on which the
  'MPI_OPEN_PORT' call is made, the results are undefined. 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -62,18 +65,22 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OPEN_PORT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OPEN_PORT);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
+
     /* Get handles to MPI objects. */
-    MPID_Info_get_ptr( info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
+	MPID_Info_get_ptr( info, info_ptr );
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPID_Info_valid_ptr(info_ptr,mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(port_name,"port_name",mpi_errno);
             if (mpi_errno) goto fn_fail;
-	    /* check info_ptr? */
         }
         MPID_END_ERROR_CHECKS;
     }
+#   else
+    MPID_Info_get_ptr( info, info_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Open_port(info_ptr, port_name);
@@ -85,8 +92,11 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_open_port", "**mpi_open_port %I %p", info, port_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -779,6 +779,8 @@ Output Parameter:
 . recvbuf - address of receive buffer (choice, 
  significant only at 'root') 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N collops
@@ -792,7 +794,8 @@ Output Parameter:
 .N MPI_ERR_BUFFER_ALIAS
 
 @*/
-int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
+int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+	       MPI_Op op, int root, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Reduce";
     int mpi_errno = MPI_SUCCESS;
@@ -929,8 +932,11 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_reduce", "**mpi_reduce %p %p %d %D %O %d %C", sendbuf, recvbuf, count, datatype, op, root, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -34,14 +34,15 @@
 . comm - Communicator to get name of (handle)
 
   Output Parameters:
-+ comm_name - One output, contains the name of the communicator.  It must
++ comm_name - On output, contains the name of the communicator.  It must
   be an array of size at least 'MPI_MAX_OBJECT_NAME'.
 - resultlen - Number of characters in name
 
  Notes:
- Because MPI specifies that null objects (e.g., 'MPI_COMM_NULL') are invalid
- as input to MPI routines unless otherwise specified, using 'MPI_COMM_NULL'
- as input to this routine is an error.
+
+.N COMMNULL
+
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -89,8 +90,12 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_get_name", "**mpi_comm_get_name %C %p %p", comm, comm_name, resultlen);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_get_name", "**mpi_comm_get_name %C %p %p", 
+				     comm, comm_name, resultlen);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Send
 
 /*@
-    MPI_Send - Performs a basic send
+    MPI_Send - Performs a blocking send
 
 Input Parameters:
 + buf - initial address of send buffer (choice) 
@@ -39,7 +39,10 @@ Input Parameters:
 - comm - communicator (handle) 
 
 Notes:
-This routine may block until the message is received.
+This routine may block until the message is received by the destination 
+process.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -71,8 +74,10 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             if (mpi_errno)
 	    { 
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_send",
-		    "**mpi_send %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+		    MPI_ERR_OTHER, "**mpi_send",
+		    "**mpi_send %p %d %D %d %d %C", 
+		    buf, count, datatype, dest, tag, comm);
 		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
 	    }
 	}
@@ -83,7 +88,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
        /*
-        * FIXME: this is for temporary testing purposes only and will be replaced with a suitable abstraction once initial
+        * FIXME: this is for temporary testing purposes only and will be
+	* replaced with a suitable abstraction once initial
         * testing is complete.
         */
 	pthread_mutex_lock(&MPIR_Process.global_mutex);
@@ -131,7 +137,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr, 
+			  MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -144,7 +151,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	goto fn_exit;
     }
 
-    /* If a request was returned, then we need to block until the request is complete */
+    /* If a request was returned, then we need to block until the request 
+       is complete */
     if ((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_state progress_state;
@@ -178,7 +186,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
        /*
-        * FIXME: this is for temporary testing purposes only and will be replaced with a suitable abstraction once initial
+        * FIXME: this is for temporary testing purposes only and will be 
+	* replaced with a suitable abstraction once initial
         * testing is complete.
         */
 	pthread_mutex_unlock(&MPIR_Process.global_mutex);
@@ -190,8 +199,13 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
 fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_send", "**mpi_send %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_send", 
+				     "**mpi_send %p %d %D %d %d %C", 
+				     buf, count, datatype, dest, tag, comm);
+#endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */

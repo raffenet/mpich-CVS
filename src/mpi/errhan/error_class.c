@@ -37,6 +37,8 @@ Input Parameter:
 Output Parameter:
 . errorclass - Error class associated with 'errorcode'
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -49,16 +51,7 @@ int MPI_Error_class(int errorcode, int *errorclass)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERROR_CLASS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_CLASS);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     /* We include the dynamic bit because this is needed to fully
@@ -70,8 +63,11 @@ int MPI_Error_class(int errorcode, int *errorclass)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_error_class", "**mpi_error_class %d %p", errorcode, errorclass);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_CLASS);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

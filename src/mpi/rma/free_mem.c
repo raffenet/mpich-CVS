@@ -28,10 +28,13 @@
 #define FUNCNAME MPI_Free_mem
 
 /*@
-   MPI_Free_mem - Free memory allocatd with MPI_Alloc_mem
+   MPI_Free_mem - Free memory allocated with MPI_Alloc_mem
 
    Input Parameter:
-.  base - initial address of memory segment allocated by 'MPI_ALLOC_MEM' (choice) 
+.  base - initial address of memory segment allocated by 'MPI_ALLOC_MEM' 
+       (choice) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -45,16 +48,7 @@ int MPI_Free_mem(void *base)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FREE_MEM);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FREE_MEM);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     MPIU_Free(base);
 
@@ -62,8 +56,11 @@ int MPI_Free_mem(void *base)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_free_mem", "**mpi_free_mem %p", base);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FREE_MEM);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -37,6 +37,11 @@ Output Parameter:
 . displacement - displacement of upper bound from origin, 
                              in bytes (integer) 
 
+.N Deprecated
+The replacement for this routine is 'MPI_Type_get_extent'
+
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -77,8 +82,12 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_ub", "**mpi_type_ub %D %p", datatype, displacement);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_ub", "**mpi_type_ub %D %p", 
+				     datatype, displacement);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_UB);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -52,6 +52,11 @@ exception is explicitly stated in the text that defines the function.
 $(5.4.1. Communicator Accessors)
 where there is no text in 'MPI_COMM_COMPARE' allowing a null handle.
 
+.N ThreadSafe
+(To perform the communicator comparisions, this routine may need to
+allocate some memory.  Memory allocation is not interrupt-safe, and hence
+this routine is only thread-safe.)
+
 .N Fortran
 
 .N Errors
@@ -146,11 +151,16 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_compare", "**mpi_comm_compare %C %C %p", comm1, comm2, result);
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_compare", "**mpi_comm_compare %C %C %p", 
+				     comm1, comm2, result);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
     /* Use whichever communicator is non-null if possible */
-    return MPIR_Err_return_comm( comm_ptr1 ? comm_ptr1 : comm_ptr2, FCNAME, mpi_errno );
+    return MPIR_Err_return_comm( comm_ptr1 ? comm_ptr1 : comm_ptr2, 
+				 FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }
 

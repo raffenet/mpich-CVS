@@ -28,18 +28,20 @@
 #define FUNCNAME MPI_Status_set_cancelled
 
 /*@
-   MPI_Status_set_cancelled - Sets the cancelled state associated with a Status object
+   MPI_Status_set_cancelled - Sets the cancelled state associated with a 
+   Status object
 
 Input Parameters:
-+  MPI_Status *status - status to associate cancel flag with (Status)
--  int flag - if true indicates request was cancelled (logical)
++  status - status to associate cancel flag with (Status)
+-  flag - if true indicates request was cancelled (logical)
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 {
@@ -66,8 +68,11 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_status_set_cancelled", "**mpi_status_set_cancelled %p %d", status, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_CANCELLED);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

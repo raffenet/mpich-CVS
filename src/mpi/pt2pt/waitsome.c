@@ -32,7 +32,7 @@
 #define FUNCNAME MPI_Waitsome
 
 /*@
-    MPI_Waitsome - Waits for some given communications to complete
+    MPI_Waitsome - Waits for some given MPI Requests to complete
 
 Input Parameters:
 + incount - length of array_of_requests (integer) 
@@ -68,6 +68,8 @@ completion of the message.
 
 .N waitstatus
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -76,7 +78,8 @@ completion of the message.
 .N MPI_ERR_ARG
 .N MPI_ERR_IN_STATUS
 @*/
-int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[],
+int MPI_Waitsome(int incount, MPI_Request array_of_requests[], 
+		 int *outcount, int array_of_indices[],
 		 MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Waitsome";
@@ -101,8 +104,11 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
             if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_waitsome",
-		    "**mpi_waitsome %d %p %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+		    MPI_ERR_OTHER, "**mpi_waitsome",
+		    "**mpi_waitsome %d %p %p %p %p", incount, 
+		    array_of_requests, outcount, array_of_indices, 
+		    array_of_statuses);
 		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 	    }
 	}
@@ -160,8 +166,11 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	if (request_ptrs == NULL)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-					     "**nomem %d", incount * sizeof(MPID_Request*));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+					     FCNAME, __LINE__, MPI_ERR_OTHER, 
+					     "**nomem",
+					     "**nomem %d", 
+					     incount * sizeof(MPID_Request*));
 	    goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
@@ -202,8 +211,10 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	goto fn_exit;
     }
     
-    /* Bill Gropp says MPI_Waitsome() is expected to try to make progress even if some requests have already completed;
-       therefore, we kick the pipes once and then fall into a loop checking for completion and waiting for progress. */
+    /* Bill Gropp says MPI_Waitsome() is expected to try to make
+       progress even if some requests have already completed;  
+       therefore, we kick the pipes once and then fall into a loop
+       checking for completion and waiting for progress. */ 
     mpi_errno = MPID_Progress_test();
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -296,9 +307,13 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(
-	mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_waitsome", "**mpi_waitsome %d %p %p %p %p",
-	incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+	mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	"**mpi_waitsome", "**mpi_waitsome %d %p %p %p %p",
+	incount, array_of_requests, outcount, array_of_indices, 
+	array_of_statuses);
+#endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

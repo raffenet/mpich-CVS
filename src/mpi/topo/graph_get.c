@@ -38,9 +38,11 @@ Input Parameters:
 . maxindex - length of vector 'index' in the calling program  (integer) 
 - maxedges - length of vector 'edges' in the calling program  (integer) 
 
-Output Parameter:
+Output Parameters:
 + index - array of integers containing the graph structure (for details see the definition of 'MPI_GRAPH_CREATE') 
 - edges - array of integers containing the graph structure 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -50,7 +52,8 @@ Output Parameter:
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 @*/
-int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *edges)
+int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
+                  int *index, int *edges)
 {
     static const char FCNAME[] = "MPI_Graph_get";
     int mpi_errno = MPI_SUCCESS;
@@ -126,8 +129,11 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_graph_get", "**mpi_graph_get %C %d %d %p %p", comm, maxindex, maxedges, index, edges);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_GET);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

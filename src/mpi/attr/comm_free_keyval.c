@@ -29,13 +29,15 @@
 #define FUNCNAME MPI_Comm_free_keyval
 
 /*@
-   MPI_Comm_free_keyval - free communicator keyval
+   MPI_Comm_free_keyval - Frees an attribute key for communicators
 
 Input Parameter:
 . keyval - Frees the integer key value (integer) 
 
    Notes:
 Key values are global (they can be used with any and all communicators)
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -64,8 +66,9 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (keyval_ptr->kind != MPID_COMM) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						      MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+				     MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 		}
 	    }
             if (mpi_errno) goto fn_fail;
@@ -87,8 +90,11 @@ int MPI_Comm_free_keyval(int *comm_keyval)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_free_keyval", "**mpi_comm_free_keyval %p", comm_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE_KEYVAL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

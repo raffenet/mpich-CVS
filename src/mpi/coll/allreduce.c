@@ -941,6 +941,8 @@ Input Parameters:
 Output Parameter:
 . recvbuf - starting address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N collops

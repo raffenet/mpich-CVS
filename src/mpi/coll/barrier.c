@@ -285,15 +285,18 @@ int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 
 /*@
 
-MPI_Barrier - Blocks until all process have reached this routine.
+MPI_Barrier - Blocks until all processes in the communicator have
+reached this routine.  
 
 Input Parameter:
 . comm - communicator (handle) 
 
 Notes:
-Blocks the caller until all group members have called it; 
-the call returns at any process only after all group members
-have entered the call.
+Blocks the caller until all processes in the communicator have called it; 
+that is, the call returns at any process only after all members of the
+communicator have entered the call.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -367,8 +370,11 @@ int MPI_Barrier( MPI_Comm comm )
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_barrier", "**mpi_barrier %C", comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

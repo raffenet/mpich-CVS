@@ -35,6 +35,8 @@
 + win - window with error handler (handle) 
 - errorcode - error code (integer) 
 
+.N ThreadSafeNoUpdate
+
 .N Fortran
 
 .N Errors
@@ -97,8 +99,13 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_call_errhandler", "**mpi_win_call_errhandler %W %d", win, errorcode);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+				     __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_call_errhandler", 
+				     "**mpi_win_call_errhandler %W %d", 
+				     win, errorcode);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

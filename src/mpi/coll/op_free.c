@@ -38,6 +38,8 @@
 
 .N NULL
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -56,16 +58,7 @@ int MPI_Op_free(MPI_Op *op)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_FREE);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     MPID_Op_get_ptr( *op, op_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -75,7 +68,8 @@ int MPI_Op_free(MPI_Op *op)
 	    MPID_Op_valid_ptr( op_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (op_ptr->kind < MPID_OP_USER_NONCOMMUTE) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
 						      "**permop", 0 );
 		}
 	    }
@@ -96,8 +90,11 @@ int MPI_Op_free(MPI_Op *op)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_op_free", "**mpi_op_free %p", op);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

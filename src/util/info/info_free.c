@@ -31,7 +31,9 @@
     MPI_Info_free - Frees an info object
 
 Input Parameter:
-. info - info object (handle)
+. info - info object to be freed (handle)
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -72,8 +74,11 @@ int MPI_Info_free( MPI_Info *info )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_info_free", "**mpi_info_free %p", info);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

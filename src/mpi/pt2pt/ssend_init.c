@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Ssend_init
 
 /*@
-    MPI_Ssend_init - Builds a handle for a synchronous send
+    MPI_Ssend_init - Creates a persistent request for a synchronous send
 
 Input Parameters:
 + buf - initial address of send buffer (choice) 
@@ -40,6 +40,8 @@ Input Parameters:
 
 Output Parameter:
 . request - communication request (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -122,8 +124,11 @@ int MPI_Ssend_init(void *buf, int count, MPI_Datatype datatype, int dest,
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_ssend_init", "**mpi_ssend_init %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

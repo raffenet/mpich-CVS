@@ -38,11 +38,13 @@ Input Parameters:
 . n - number of triplets in array  'ranges' (integer) 
 - ranges - a one-dimensional array of integer triplets, of the 
 form (first rank, last rank, stride) indicating ranks in
-'group'  or processes to be included in 'newgroup'  
+'group'  or processes to be included in 'newgroup'.
 
 Output Parameter:
 . newgroup - new group derived from above, in the 
-order defined by  'ranges' (handle)  
+order defined by  'ranges' (handle)
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -55,7 +57,8 @@ order defined by  'ranges' (handle)
 
 .seealso: MPI_Group_free
 @*/
-int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *newgroup)
+int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], 
+                         MPI_Group *newgroup)
 {
     static const char FCNAME[] = "MPI_Group_range_incl";
     int mpi_errno = MPI_SUCCESS;
@@ -144,8 +147,11 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+				     __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_range_incl", "**mpi_group_range_incl %G %d %p %p", group, n, ranges, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

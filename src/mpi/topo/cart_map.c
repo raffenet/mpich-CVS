@@ -43,6 +43,8 @@ Output Parameter:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if 
   calling process does not belong to grid (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -98,7 +100,8 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    
 	    /* Test that the communicator is large enough */
 	    if (size < nranks) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
 						  "**topotoolarge",
 						  "**topotoolarge %d %d",
 						  size, nranks );
@@ -122,8 +125,11 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cart_map", "**mpi_cart_map %C %d %p %p %p", comm_old, ndims, dims, periods, newrank);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

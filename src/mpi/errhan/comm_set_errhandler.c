@@ -34,12 +34,7 @@
 + comm - communicator (handle) 
 - errhandler - new error handler for communicator (handle) 
 
-
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Errhandler errhandler - error handler
-
-   Notes:
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -47,6 +42,8 @@
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 .N MPI_ERR_OTHER
+
+.seealso MPI_Comm_get_errhandler, MPI_Comm_call_errhandler
 @*/
 int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 {
@@ -103,8 +100,11 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_set_errhandler", "**mpi_comm_set_errhandler %C %E", comm, errhandler);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -48,6 +48,8 @@ Output Parameter:
 Algorithm:
 We ignore 'reorder' info currently.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -64,6 +66,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     int newsize, rank, nranks, i;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPIR_Topology *cart_ptr;
+    MPIU_CHKPMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_CREATE);
@@ -83,8 +86,9 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    MPIR_ERRTEST_ARGNULL( comm_cart, "comm_cart", mpi_errno );
 	    if (ndims <= 0) {
 		/* Must have a positive number of dimensions */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS, "**dims",
-						  "**dims %d", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+			  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
+						  "**dims",  "**dims %d", 0 );
 	    }
 	    MPIR_ERRTEST_ARGNEG( ndims, "ndims", mpi_errno );
 	    if (comm_ptr) {
@@ -134,28 +138,18 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     }
 
     /* Create the topololgy structure */
-    cart_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology ) );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!cart_ptr)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKPMEM_MALLOC(cart_ptr,MPIR_Topology*,sizeof(MPIR_Topology),
+			mpi_errno, "cart_ptr" );
 
     cart_ptr->kind               = MPI_CART;
     cart_ptr->topo.cart.nnodes   = newsize;
     cart_ptr->topo.cart.ndims    = ndims;
-    cart_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims * sizeof(int) );
-    cart_ptr->topo.cart.periodic = (int *)MPIU_Malloc( ndims * sizeof(int) );
-    cart_ptr->topo.cart.position = (int *)MPIU_Malloc( ndims * sizeof(int) );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic || !cart_ptr->topo.cart.position)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.dims,int*,ndims*sizeof(int),
+			mpi_errno, "cart.dims");
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.periodic,int*,ndims*sizeof(int),
+			mpi_errno, "cart.periodic");
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.position,int*,ndims*sizeof(int),
+			mpi_errno, "cart.position");
     rank   = comm_ptr->rank;
     nranks = newsize;
     for (i=0; i<ndims; i++)
@@ -179,9 +173,12 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKPMEM_REAP;
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cart_create", "**mpi_cart_create %C %d %p %p %d %p",
 	comm_old, ndims, dims, periods, reorder, comm_cart);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

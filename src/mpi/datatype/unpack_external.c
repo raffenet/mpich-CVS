@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Unpack_external
 
 /*@
-   MPI_Unpack_external - external unpack
+   MPI_Unpack_external - Unpack a buffer (packed with MPI_Pack_external) 
+   according to a datatype into contiguous memory
 
    Input Parameters:
 + datarep - data representation (string)  
@@ -42,6 +43,8 @@
 
    Output Parameter:
 . outbuf - output buffer start (choice)  
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -138,6 +141,7 @@ int MPI_Unpack_external(char *datarep,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -152,6 +156,7 @@ fn_fail:
 				     outbuf,
 				     outcount,
 				     datatype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -29,21 +29,26 @@
 #define FUNCNAME MPI_Add_error_string
 
 /*@
-   MPI_Add_error_string - add error string
+   MPI_Add_error_string - Associates an error string with an MPI error code or 
+   class
 
    Input Parameters:
 + errorcode - error code or class (integer) 
-- string text - corresponding to errorcode (string) 
+- string - text corresponding to errorcode (string) 
 
    Notes:
 The string must be no more than 'MPI_MAX_ERROR_STRING' characters long. 
 The length of the string is as defined in the calling language. 
 The length of the string does not include the null terminator in C or C++.  
+Note that the string is 'const' even though the MPI standard does not 
+specify it that way.
 
 According to the MPI-2 standard, it is erroneous to call 'MPI_Add_error_string'
 for an error code or class with a value less than or equal 
 to 'MPI_ERR_LASTCODE'.  Thus, you cannot replace the predefined error messages
 with this routine.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -62,6 +67,7 @@ int MPI_Add_error_string(int errorcode, char *string)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
@@ -78,8 +84,11 @@ int MPI_Add_error_string(int errorcode, char *string)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_add_error_string", "**mpi_add_error_string %d %s", errorcode, string);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+         FCNAME, __LINE__, MPI_ERR_OTHER,
+  "**mpi_add_error_string", "**mpi_add_error_string %d %s", errorcode, string);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_STRING);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

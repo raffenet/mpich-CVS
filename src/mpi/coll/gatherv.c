@@ -178,6 +178,8 @@ at root)
 Output Parameter:
 . recvbuf - address of receive buffer (choice, significant only at 'root') 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -186,7 +188,9 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *displs, MPI_Datatype recvtype, int root, MPI_Comm comm)
+int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                void *recvbuf, int *recvcnts, int *displs, 
+                MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Gatherv";
     int mpi_errno = MPI_SUCCESS;
@@ -335,9 +339,11 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_gatherv", "**mpi_gatherv %p %d %D %p %p %p %D %d %C", 
 	sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

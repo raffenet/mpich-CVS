@@ -44,8 +44,10 @@ void MPIR_Get_file_error_routine( MPID_Errhandler *,
    file
 
    Input Parameters:
-+ fh - file with error handler (handle) 
++ fh - MPI file with error handler (handle) 
 - errorcode - error code (integer) 
+
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -121,8 +123,11 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_file_call_errhandler", "**mpi_file_call_errhandler %F %d", fh, errorcode);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
 #ifdef USE_ROMIO_FILE
     return MPIO_Err_return_file( fh, mpi_errno );

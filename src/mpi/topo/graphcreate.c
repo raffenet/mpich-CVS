@@ -49,6 +49,8 @@ neigbors of the calling process.
 Algorithm:
 We ignore the 'reorder' info currently.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -66,6 +68,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     int i, nedges;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPIR_Topology *graph_ptr;
+    MPIU_CHKPMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_CREATE);
@@ -186,27 +189,16 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     }
 
     nedges = index[nnodes-1];
-    graph_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof(MPIR_Topology) );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!graph_ptr)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKPMEM_MALLOC(graph_ptr,MPIR_Topology*,sizeof(MPIR_Topology),
+			mpi_errno,"graph_ptr");
     
     graph_ptr->kind = MPI_GRAPH;
     graph_ptr->topo.graph.nnodes = nnodes;
     graph_ptr->topo.graph.nedges = nedges;
-    graph_ptr->topo.graph.index = (int *)MPIU_Malloc( nnodes * sizeof(int) );
-    graph_ptr->topo.graph.edges = (int *)MPIU_Malloc( nedges * sizeof(int) );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!graph_ptr->topo.graph.index || !graph_ptr->topo.graph.edges)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKPMEM_MALLOC(graph_ptr->topo.graph.index,int*,
+			nnodes*sizeof(int),mpi_errno,"graph.index");
+    MPIU_CHKPMEM_MALLOC(graph_ptr->topo.graph.edges,int*,
+			nedges*sizeof(int),mpi_errno,"graph.edges");
     for (i=0; i<nnodes; i++) 
 	graph_ptr->topo.graph.index[i] = index[i];
     for (i=0; i<nedges; i++) 
@@ -228,8 +220,11 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKPMEM_REAP;
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

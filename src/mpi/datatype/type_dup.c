@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Type_dup
 
 /*@
-   MPI_Type_dup - duplicate a datatype
+   MPI_Type_dup - Duplicate a datatype
 
    Input Parameter:
 . type - datatype (handle) 
@@ -36,8 +36,7 @@
    Output Parameter:
 . newtype - copy of type (handle) 
 
-   Notes:
-   This is an MPI-2 function.
+.N ThreadSafe
 
 .N Fortran
 
@@ -114,10 +113,12 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
 				     "**mpi_type_dup", "**mpi_type_dup %D %p",
 				     datatype, newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -29,11 +29,14 @@
 #define FUNCNAME MPI_Win_delete_attr
 
 /*@
-   MPI_Win_delete_attr - delete window attribute
+   MPI_Win_delete_attr - Deletes an attribute value associated with a key on 
+   a datatype
 
    Input Parameters:
 + win - window from which the attribute is deleted (handle) 
 - win_keyval - key value (integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -65,11 +68,17 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 	    /* If win_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
 	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_KEYVAL, 
 						  "**keyvalnotwin", 0 );
 	    }
 	    else {
@@ -135,8 +144,13 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_delete_attr", "**mpi_win_delete_attr %W %d", win, win_keyval);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_delete_attr", 
+				     "**mpi_win_delete_attr %W %d", 
+				     win, win_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_DELETE_ATTR);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

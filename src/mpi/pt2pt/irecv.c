@@ -41,7 +41,18 @@ Input Parameters:
 Output Parameter:
 . request - communication request (handle) 
 
+.N ThreadSafe
+
 .N Fortran
+
+.N Errors
+.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Request *request)
@@ -100,7 +111,8 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, 
+			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -113,8 +125,11 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_irecv", "**mpi_irecv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

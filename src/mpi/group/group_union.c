@@ -39,6 +39,8 @@ Input Parameters:
 Output Parameter:
 . newgroup - union group (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -186,8 +188,11 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_union", "**mpi_group_union %G %G %p", group1, group2, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

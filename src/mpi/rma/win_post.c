@@ -32,7 +32,8 @@
 
    Input parameters:
 + group - group of origin processes (handle) 
-. assert - program assertion (integer) 
+. assert - Used to optimize this call; zero may be used as a default.
+  See notes. (integer) 
 - win - window object (handle) 
 
    Notes:

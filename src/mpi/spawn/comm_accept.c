@@ -39,7 +39,7 @@
  Output Parameter:
 . newcomm - intercommunicator with client as remote group (handle) 
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -48,7 +48,8 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_COMM
 @*/
-int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm)
+int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
+                    MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_accept";
     int mpi_errno = MPI_SUCCESS;
@@ -58,6 +59,7 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_ACCEPT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_ACCEPT);
+
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
     MPID_Info_get_ptr( info, info_ptr );
@@ -74,7 +76,8 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Comm_accept(port_name, info_ptr, root, comm_ptr, &newcomm_ptr);
+    mpi_errno = MPID_Comm_accept(port_name, info_ptr, root, comm_ptr, 
+				 &newcomm_ptr);
     if (mpi_errno == MPI_SUCCESS)
     {
         *newcomm = newcomm_ptr->handle;
@@ -85,8 +88,11 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_accept", "**mpi_comm_accept %s %I %d %C %p", port_name, info, root, comm, newcomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_ACCEPT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

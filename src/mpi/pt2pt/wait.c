@@ -28,15 +28,17 @@
 #define FUNCNAME MPI_Wait
 
 /*@
-    MPI_Wait  - Waits for an MPI send or receive to complete
+    MPI_Wait - Waits for an MPI request to complete
 
 Input Parameter:
 . request - request (handle) 
 
 Output Parameter:
-. status - status object (Status) .  May be 'MPI_STATUS_IGNORE'.
+. status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
 .N waitstatus
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -146,9 +148,13 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	return mpi_errno;
 	
   fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_wait", "**mpi_wait %p %p", request, status);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_wait", "**mpi_wait %p %p", 
+				     request, status);
+#endif
     mpi_errno = MPIR_Err_return_comm((request_ptr != NULL) ? request_ptr->comm : NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

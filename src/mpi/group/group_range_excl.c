@@ -36,11 +36,9 @@ MPI_Group_range_excl - Produces a group by excluding ranges of processes from
 Input Parameters:
 + group - group (handle) 
 . n - number of elements in array 'ranks' (integer) 
-- ranges - a one-dimensional 
-array of integer triplets of the
+- ranges - a one-dimensional array of integer triplets of the
 form (first rank, last rank, stride), indicating the ranks in
-'group'  of processes to be excluded
-from the output group 'newgroup' .  
+'group'  of processes to be excluded from the output group 'newgroup' .  
 
 Output Parameter:
 . newgroup - new group derived from above, preserving the 
@@ -50,6 +48,8 @@ Note:
 The MPI standard requires that each of the ranks to be excluded must be
 a valid rank in the group and all elements must be distinct or the
 function is erroneous.  
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -62,7 +62,8 @@ function is erroneous.
 
 .seealso: MPI_Group_free
 @*/
-int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *newgroup)
+int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], 
+                         MPI_Group *newgroup)
 {
     static const char FCNAME[] = "MPI_Group_range_excl";
     int mpi_errno = MPI_SUCCESS;
@@ -172,8 +173,11 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_range_excl", "**mpi_group_range_excl %G %d %p %p", group, n, ranges, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_EXCL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

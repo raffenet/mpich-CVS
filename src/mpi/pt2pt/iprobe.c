@@ -35,9 +35,12 @@ Input Parameters:
 . tag - tag value or  'MPI_ANY_TAG' (integer) 
 - comm - communicator (handle) 
 
-Output Parameter:
-+ flag - (logical) 
+Output Parameters:
++ flag - True if a message with the specified source, tag, and communicator 
+    is available (logical) 
 - status - status object (Status) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -103,8 +106,11 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_iprobe", "**mpi_iprobe %d %d %C %p %p", source, tag, comm, flag, status);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

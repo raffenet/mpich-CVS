@@ -28,14 +28,16 @@
 #define FUNCNAME MPI_Test
 
 /*@
-    MPI_Test  - Tests for the completion of a send or receive
+    MPI_Test  - Tests for the completion of a request
 
 Input Parameter:
-. request - communication request (handle) 
+. request - MPI request (handle) 
 
 Output Parameter:
 + flag - true if operation completed (logical) 
 - status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
+
+.N ThreadSafe
 
 .N waitstatus
 
@@ -56,19 +58,9 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TEST);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TEST);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -125,7 +117,8 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     {
 	if (*request_ptr->cc_ptr == 0)
 	{
-	    mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
+	    mpi_errno = MPIR_Request_complete(request, request_ptr, status, 
+					      &active_flag);
 	    *flag = TRUE;
 	    goto fn_exit;
 	}
@@ -140,7 +133,8 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     
     if (*request_ptr->cc_ptr == 0)
     {
-	mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
+	mpi_errno = MPIR_Request_complete(request, request_ptr, status, 
+					  &active_flag);
 	*flag = TRUE;
 	goto fn_exit;
     }
@@ -153,8 +147,11 @@ fn_exit:
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_test", "**mpi_test %p %p %p", request, flag, status);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST);
     return MPIR_Err_return_comm(request_ptr ? request_ptr->comm : 0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

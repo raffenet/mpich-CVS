@@ -55,7 +55,7 @@ void MPIR_Op_set_cxx( MPI_Op op, void (*opcall)(void) )
 
   Input Parameters:
 + function - user defined function (function) 
-- commute -  true if commutative;  false otherwise. 
+- commute -  true if commutative;  false otherwise. (logical)
 
   Output Parameter:
 . op - operation (handle) 
@@ -70,6 +70,8 @@ void MPIR_Op_set_cxx( MPI_Op op, void (*opcall)(void) )
   to the datatype given to the MPI collective computation routine (i.e., 
   'MPI_Reduce', 'MPI_Allreduce', 'MPI_Scan', or 'MPI_Reduce_scatter') is also
   passed to the user-specified routine.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -88,16 +90,7 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_CREATE);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     op_ptr = (MPID_Op *)MPIU_Handle_obj_alloc( &MPID_Op_mem );
@@ -117,8 +110,11 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				    FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_op_create", "**mpi_op_create %p %d %p", function, commute, op);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

@@ -41,6 +41,8 @@ Output Parameters:
 . neighbors - ranks of processes that are neighbors to specified process
  (array of integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -114,8 +116,11 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_graph_neighbors", "**mpi_graph_neighbors %C %d %d %p", comm, rank, maxneighbors, neighbors);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

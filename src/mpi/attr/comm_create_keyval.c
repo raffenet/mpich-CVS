@@ -31,20 +31,36 @@
 /*@
    MPI_Comm_create_keyval - Create a new attribute key 
 
-   Input Parameters:
-+  MPI_Comm_copy_attr_function *comm_copy_attr_fn - copy function
-.  MPI_Comm_delete_attr_function *comm_delete_attr_fn - delete function
--  void *extra_state - extra state
+Input Parameters:
++ copy_fn - Copy callback function for 'keyval' 
+. delete_fn - Delete callback function for 'keyval' 
+- extra_state - Extra state for callback functions 
 
-   Output Parameters:
-.  int *comm_keyval - keyval
+Output Parameter:
+. keyval - key value for future access (integer) 
 
-   Notes:
+Notes:
+Key values are global (available for any and all communicators).
+
+Default copy and delete functions are available.  These are
++ MPI_COMM_NULL_COPY_FN   - empty copy function
+. MPI_COMM_NULL_DELETE_FN - empty delete function
+- MPI_COMM_DUP_FN         - simple dup function
+
+There are subtle differences between C and Fortran that require that the
+copy_fn be written in the same language that 'MPI_Comm_create_keyval'
+is called from.
+This should not be a problem for most users; only programers using both 
+Fortran and C in the same program need to be sure that they follow this rule.
+
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+
+.seealso MPI_Comm_free_keyval
 @*/
 int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, 
 			   MPI_Comm_delete_attr_function *comm_delete_attr_fn, 
@@ -55,28 +71,12 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     MPID_Keyval *keyval_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     keyval_ptr = (MPID_Keyval *)MPIU_Handle_obj_alloc( &MPID_Keyval_mem );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!keyval_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_ERR_CHKANDJUMP(!keyval_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
     /* Initialize the attribute dup function */
     if (!MPIR_Process.attr_dup) {
 	MPIR_Process.attr_dup  = MPIR_Attr_dup_list;
@@ -100,9 +100,12 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_create_keyval", "**mpi_comm_create_keyval %p %p %p %p", comm_copy_attr_fn, comm_delete_attr_fn,
 	comm_keyval, extra_state);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_KEYVAL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

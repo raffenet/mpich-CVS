@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Put
 
 /*@
-   MPI_Put - put
+   MPI_Put - Put data into a memory window on a remote process
 
    Input Parameters:
 + origin_addr -initial address of origin buffer (choice) 
@@ -41,12 +41,16 @@
 
 - win - window object used for communication (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_WIN
 .N MPI_ERR_ARG
+.N MPI_ERR_TYPE
+.N MPI_ERR_COUNT
 @*/
 int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
@@ -61,16 +65,7 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_PUT);
 
     /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
@@ -113,7 +108,8 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             MPIR_Nest_decr();
             if ((target_rank < MPI_PROC_NULL) || (target_rank >=
                                                   comm_size))
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		   MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
                    "**rank", "**rank %d %d", target_rank, comm_size );
 
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -139,10 +135,12 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_put", "**mpi_put %p %d %D %d %d %d %D %W", origin_addr, origin_count, origin_datatype,
 	target_rank, target_disp, target_count, target_datatype, win);
-
+#endif
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
     return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

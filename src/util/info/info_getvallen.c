@@ -31,15 +31,15 @@
     MPI_Info_get_valuelen - Retrieves the length of the value associated with 
     a key
 
-    Input Arguments:
+    Input Parameters:
 + info - info object (handle)
 - key - key (string)
 
-    Output Arguments:
+    Output Parameters:
 + valuelen - length of value argument (integer)
 - flag - true if key defined, false if not (boolean)
 
-   Notes:
+.N ThreadSafeInfoRead
 
 .N Fortran
 
@@ -67,14 +67,17 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 
 	    /* Check input arguments */
 	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
 	    else if ((keylen = (int)strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeyempty", 0 );
 	    }
             /* Validate info_ptr */
@@ -103,8 +106,12 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_info_get_valuelen", "**mpi_info_get_valuelen %I %s %p %p", info, key, valuelen, flag);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+            FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_info_get_valuelen", "**mpi_info_get_valuelen %I %s %p %p", 
+	    info, key, valuelen, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_VALUELEN);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

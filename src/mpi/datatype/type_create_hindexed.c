@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_create_hindexed
 
 /*@
-   MPI_Type_create_hindexed - create hindexed datatype
+   MPI_Type_create_hindexed - Create a datatype for an indexed datatype with 
+   displacements in bytes
 
    Input Parameters:
 + count - number of blocks --- also number of entries in 
@@ -39,6 +40,8 @@
 
    Output Parameter:
 . newtype - new datatype (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -134,6 +137,7 @@ int MPI_Type_create_hindexed(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -146,6 +150,7 @@ fn_fail:
 				     displacements,
 				     oldtype,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

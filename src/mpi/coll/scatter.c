@@ -580,7 +580,8 @@ int MPIR_Scatter_inter (
 
 /*@
 
-MPI_Scatter - Sends data from one task to all other tasks in a group
+MPI_Scatter - Sends data from one process to all other processes in a 
+communicator
 
 Input Parameters:
 + sendbuf - address of send buffer (choice, significant 
@@ -597,6 +598,8 @@ only at 'root')
 Output Parameter:
 . recvbuf - address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -606,7 +609,9 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
+int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+		void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
+		MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Scatter";
     int mpi_errno = MPI_SUCCESS;
@@ -722,7 +727,8 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                      comm_ptr); 
         else {
             /* intercommunicator */ 
-/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );*/
             mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
@@ -739,8 +745,11 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_scatter", "**mpi_scatter %p %d %D %p %d %D %d %C", sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -39,9 +39,34 @@ Input Parameters:
 Output Parameter:
 . newtype - new datatype (handle) 
 
+.N Deprecated
+This routine is replaced by 'MPI_Type_create_hindexed'.
+
+.N ThreadSafe
+
 .N Fortran
 
-Also see the discussion for 'MPI_Type_indexed' about the 'indices' in Fortran.
+The indices are displacements, and are based on a zero origin.  A common error
+is to do something like to following
+.vb
+    integer a(100)
+    integer blens(10), indices(10)
+    do i=1,10
+         blens(i)   = 1
+10       indices(i) = (1 + (i-1)*10) * sizeofint
+    call MPI_TYPE_HINDEXED(10,blens,indices,MPI_INTEGER,newtype,ierr)
+    call MPI_TYPE_COMMIT(newtype,ierr)
+    call MPI_SEND(a,1,newtype,...)
+.ve
+expecting this to send 'a(1),a(11),...' because the indices have values 
+'1,11,...'.   Because these are `displacements` from the beginning of 'a',
+it actually sends 'a(1+1),a(1+11),...'.
+
+If you wish to consider the displacements as indices into a Fortran array,
+consider declaring the Fortran array with a zero origin
+.vb
+    integer a(0:99)
+.ve
 
 .N Errors
 .N MPI_SUCCESS
@@ -148,6 +173,7 @@ int MPI_Type_hindexed(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -160,6 +186,7 @@ fn_fail:
 				     indices,
 				     old_type,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -230,7 +230,9 @@ int MPIR_Alltoallv_inter (
 #define FUNCNAME MPI_Alltoallv
 
 /*@
-MPI_Alltoallv - Sends data from all to all processes, with a displacement
+MPI_Alltoallv - Sends data from all to all processes; each process may 
+   send a different amount of data and provide displacements for the input
+   and output data.
 
 Input Parameters:
 + sendbuf - starting address of send buffer (choice) 
@@ -252,6 +254,8 @@ which to place the incoming data from process  'i'
 Output Parameter:
 . recvbuf - address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -260,7 +264,9 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, 
+                  MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
+                  int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Alltoallv";
     int mpi_errno = MPI_SUCCESS;
@@ -375,9 +381,12 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_alltoallv", "**mpi_alltoallv %p %p %p %D %p %p %p %D %C",
 	    sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

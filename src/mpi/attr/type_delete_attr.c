@@ -29,11 +29,14 @@
 #define FUNCNAME MPI_Type_delete_attr
 
 /*@
-   MPI_Type_delete_attr - delete type attribute
+   MPI_Type_delete_attr - Deletes an attribute value associated with a key on 
+   a datatype
 
    Input Parameters:
 +  comm - MPI datatype to which attribute is attached (handle)
 -  type_keyval - The key value of the deleted attribute (integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -136,8 +139,12 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_delete_attr", "**mpi_type_delete_attr %D %d", type, type_keyval);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_delete_attr", "**mpi_type_delete_attr %D %d", type, 
+				     type_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DELETE_ATTR);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

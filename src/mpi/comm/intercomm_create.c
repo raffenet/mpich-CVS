@@ -71,7 +71,8 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
 	bit = lpids2[i] % 32;
 	/* --BEGIN ERROR HANDLING-- */
 	if (lpidmask[idx] & (1 << bit)) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		       MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**dupprocesses", 
 					      "**dupprocesses %d", lpids2[i] );
 	    return mpi_errno;
@@ -94,7 +95,7 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
 
 MPI_Intercomm_create - Creates an intercommuncator from two intracommunicators
 
-Input Paramters:
+Input Parameters:
 + local_comm - Local (intra)communicator
 . local_leader - Rank in local_comm of leader (often 0)
 . peer_comm - Communicator used to communicate between a 
@@ -122,6 +123,8 @@ Notes:
   `not` the reason for this choice; rather, the `other` operations on 
   intercommunicators (like 'MPI_Intercomm_merge') do not make sense if the
   groups are not disjoint.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -151,6 +154,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int is_low_group = 0;
     int i;
     MPID_Comm *newcomm_ptr, *commworld_ptr;
+    MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
@@ -258,22 +262,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	   will need to be fixed for the MPI2 version - FIXME */
 	
 	remote_size  = remote_size;
-	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!remote_lpids)
-	{
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
-	local_lpids =  (int *)MPIU_Malloc( local_size * sizeof(int) );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!local_lpids)
-	{
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(remote_lpids,int*,remote_size*sizeof(int),
+			    mpi_errno,"remote_lpids");
+	MPIU_CHKLMEM_MALLOC(local_lpids,int*,local_size*sizeof(int),
+			    mpi_errno,"local_lpids");
+
 	for (i=0; i<comm_ptr->local_size; i++) {
 	    (void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &local_lpids[i] );
 	}
@@ -307,8 +300,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	   local process ids of the 0th member of the two groups */
 	is_low_group = local_lpids[0] < remote_lpids[0];
 
-	/* At this point, we're done with the local lpids */
-	MPIU_Free( local_lpids );
+	/* At this point, we're done with the local lpids; they'll
+	   be freed with the other local memory on exit */
     } /* End of the first phase of the leader communication */
 
     /* 
@@ -364,14 +357,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	DEBUG(printf ("About to receive bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
-	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!remote_lpids)
-	{
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(remote_lpids,int*,remote_size*sizeof(int),
+			    mpi_errno,"remote_lpids");
 	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
 	final_context_id = comm_info[1];
@@ -445,14 +432,17 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     
     *newintercomm = newcomm_ptr->handle;
 
-    MPIU_Free( remote_lpids );
+    MPIU_CHKLMEM_FREEALL;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKLMEM_FREEALL;
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -36,7 +36,9 @@ Input Parameter:
 . comm - communicator (handle) 
 
 Output Parameter:
-. size - number of processes in the group of 'comm'  (integer) 
+. size - number of processes in the remote group of 'comm'  (integer) 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -64,7 +66,8 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr && comm_ptr->comm_kind != MPID_INTERCOMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                        MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 						  "**commnotinter", 0 );
 	    }
             if (mpi_errno) goto fn_fail;
@@ -81,8 +84,11 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_remote_size", "**mpi_comm_remote_size %C %p", comm, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_SIZE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -32,17 +32,18 @@
    MPI_Request_get_status - Nondestructive test for the completion of a Request
 
 Input Parameter:
-.  MPI_Request request - request handle
+.  request - request (handle)
 
 Output Parameters:
-+  int *flag - true if operation has completed (logical)
--  MPI_Status *status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
++  flag - true if operation has completed (logical)
+-  status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
    Notes:
+   Unlike 'MPI_Test', 'MPI_Request_get_status' does not deallocate or
+   deactivate the request.  A call to one of the test/wait routines or 
+   'MPI_Request_free' should be made to release the request object.
 
-   Unlike MPI_Test, MPI_Request_get_status does not deallocate or deactivate
-   the request.  A call to one of the test/wait routines or MPI_Request_free
-   should be made to release the request object.
+.N ThreadSafe
 
 .N Fortran
 
@@ -56,19 +57,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
     MPID_Request *request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REQUEST_GET_STATUS);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_GET_STATUS);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -138,7 +128,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		{
 		    if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
 		    {
-			/* if the persistent request failed to start then make the error code available */
+			/* if the persistent request failed to start then 
+			   make the error code available */
 			if (status != MPI_STATUS_IGNORE)
 			{
 			    status->cancelled = request_ptr->status.cancelled;
@@ -165,7 +156,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		}
 		else
 		{
-		    /* if the persistent request failed to start then make the error code available */
+		    /* if the persistent request failed to start then
+		       make the error code available */
 		    mpi_errno = request_ptr->status.MPI_ERROR;
 		    MPIR_Status_set_empty(status);
 		}
@@ -178,14 +170,15 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+		         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                         MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
 		}
 		MPIR_Request_extract_status(request_ptr, status);
 		break;
 	    }
 	}
 
-	
 	*flag = TRUE;
     }
     else
@@ -201,8 +194,11 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_request_get_status", "**mpi_request_get_status %R %p %p", request, flag, status);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

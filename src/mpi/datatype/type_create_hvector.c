@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_create_hvector
 
 /*@
-   MPI_Type_create_hvector - create hvector datatype
+   MPI_Type_create_hvector - Create a datatype with a constant stride given
+     in bytes
 
    Input Parameters:
 + count - number of blocks (nonnegative integer) 
@@ -38,6 +39,8 @@
 
    Output Parameter:
 . newtype - new datatype (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -112,6 +115,7 @@ int MPI_Type_create_hvector(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -124,6 +128,7 @@ fn_fail:
 				     stride,
 				     oldtype,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -29,13 +29,18 @@
 
 /*@
 
-MPI_Keyval_free - Frees attribute key for communicator cache attribute
+MPI_Keyval_free - Frees an attribute key for communicators
 
 Input Parameter:
 . keyval - Frees the integer key value (integer) 
 
 Note:
 Key values are global (they can be used with any and all communicators)
+
+.N Deprecated
+The replacement for this routine is 'MPI_Comm_free_keyval'.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -44,7 +49,7 @@ Key values are global (they can be used with any and all communicators)
 .N MPI_ERR_ARG
 .N MPI_ERR_PERM_KEY
 
-.seealso: MPI_Keyval_create
+.seealso: MPI_Keyval_create, MPI_Comm_free_keyval
 @*/
 int MPI_Keyval_free(int *keyval)
 {

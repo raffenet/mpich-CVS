@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Pack_external
 
 /*@
-   MPI_Pack_external - pack external
+   MPI_Pack_external - Packs a datatype into contiguous memory, using the
+     external32 format
 
    Input Parameters:
 + datarep - data representation (string)  
@@ -43,11 +44,15 @@
    Input/Output Parameter:
 . position - current position in buffer, in bytes (integer)  
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_TYPE
+.N MPI_ERR_ARG
+.N MPI_ERR_COUNT
 @*/
 int MPI_Pack_external(char *datarep,
 		      void *inbuf,
@@ -135,6 +140,7 @@ int MPI_Pack_external(char *datarep,
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
     return MPI_SUCCESS;
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -149,6 +155,7 @@ fn_fail:
 				     outbuf,
 				     outcount,
 				     position);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

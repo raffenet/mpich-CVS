@@ -34,6 +34,8 @@ Input Parameter:
 . errhandler - MPI error handler (handle).  Set to 'MPI_ERRHANDLER_NULL' on 
 exit.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -76,8 +78,11 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_errhandler_free", "**mpi_errhandler_free %p", errhandler);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

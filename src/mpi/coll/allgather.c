@@ -777,7 +777,8 @@ int MPIR_Allgather_inter (
 #define FUNCNAME MPI_Allgather
 
 /*@
-MPI_Allgather - Gathers data from all tasks and distribute it to all 
+MPI_Allgather - Gathers data from all tasks and distribute the combined
+    data to all tasks
 
 Input Parameters:
 + sendbuf - starting address of send buffer (choice) 
@@ -792,18 +793,23 @@ Output Parameter:
 
 Notes:
  The MPI standard (1.0 and 1.1) says that 
-
- The jth block of data sent from 
- each proess is received by every process and placed in the jth block of the 
- buffer 'recvbuf'.  
-
+.n
+.n
+ The jth block of data sent from  each proess is received by every process 
+ and placed in the jth block of the buffer 'recvbuf'.  
+.n
+.n
  This is misleading; a better description is
-
+.n
+.n
  The block of data sent from the jth process is received by every
  process and placed in the jth block of the buffer 'recvbuf'.
-
+.n
+.n
  This text was suggested by Rajeev Thakur and has been adopted as a 
- clarification.
+ clarification by the MPI Forum.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -813,7 +819,9 @@ Notes:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                  MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Allgather";
     int mpi_errno = MPI_SUCCESS;

@@ -39,6 +39,11 @@ Input Parameters:
 Output Parameter:
 . newgroup - difference group (handle) 
 
+Notes:
+The generated group containc the members of 'group1' that are not in 'group2'.
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -154,8 +159,11 @@ int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_difference", "**mpi_group_difference %G %G %p", group1, group2, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_DIFFERENCE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

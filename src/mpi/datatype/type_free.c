@@ -36,13 +36,15 @@ Input Parameter:
 Predefined types:
 
 The MPI standard states that (in Opaque Objects)
-.vb
+.Bqs
 MPI provides certain predefined opaque objects and predefined, static handles
 to these objects. Such objects may not be destroyed.
-.ve
+.Bqe
 
 Thus, it is an error to free a predefined datatype.  The same section makes
 it clear that it is an error to free a null datatype.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -86,8 +88,11 @@ int MPI_Type_free(MPI_Datatype *datatype)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_free", "**mpi_type_free %p", datatype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -69,6 +69,8 @@ Output Parameter:
 Notes:
   The 'color' must be non-negative or 'MPI_UNDEFINED'.
 
+.N ThreadSafe
+
 .N Fortran
 
 Algorithm:
@@ -81,7 +83,6 @@ Algorithm:
   4. Set the VCRs using the ordered key values
 .ve
  
-
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
@@ -96,9 +97,11 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     splittype *table, *keytable;
     int       rank, size, i, new_size, first_entry, *last_ptr;
+    MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPLIT);
+
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -121,7 +124,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     size = comm_ptr->local_size;
 
     /* Step 1: Find out what color and keys all of the processes have */
-    table = (splittype *) MPIU_Malloc( size * sizeof(splittype) );
+    MPIU_CHKLMEM_MALLOC(table,splittype*,size*sizeof(splittype),mpi_errno,"table");
     table[rank].color = color;
     table[rank].key   = key;
     
@@ -171,7 +174,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	   extract the table into a smaller array and sort that.
 	   Also, store in the "color" entry the rank in the input communicator
 	   of the entry. */
-	keytable = (splittype *) MPIU_Malloc( new_size * sizeof(splittype) );
+	MPIU_CHKLMEM_MALLOC(keytable,splittype*,new_size*sizeof(splittype),
+			    mpi_errno,"keytable");
 	for (i=0; i<new_size; i++) {
 	    keytable[i].key	  = table[first_entry].key;
 	    keytable[i].color = first_entry;
@@ -204,9 +208,6 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	newcomm_ptr->coll_fns	  = 0;
 	newcomm_ptr->name[0]	  = 0;
 
-	/* Free all storage */
-	MPIU_Free( keytable );
-
         /* Notify the device of this new communicator */
 	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
@@ -218,15 +219,18 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	*newcomm = MPI_COMM_NULL;
 	MPIU_Handle_obj_free( &MPID_Comm_mem, newcomm_ptr ); 
     }
-    MPIU_Free( table );
+    MPIU_CHKLMEM_FREEALL;
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT);
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKLMEM_FREEALL;
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_split", "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
+#endif /* HAVE_ERROR_CHECKING */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

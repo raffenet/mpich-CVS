@@ -39,6 +39,8 @@ Input Parameters:
 Output Parameter:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if the 
 calling process does not belong to graph (integer) 
+
+.N SignalSafe
  
 .N Fortran
 
@@ -48,7 +50,8 @@ calling process does not belong to graph (integer)
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 @*/
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *newrank)
+int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
+                  int *newrank)
 {
     static const char FCNAME[] = "MPI_Graph_map";
     int mpi_errno = MPI_SUCCESS;
@@ -77,11 +80,8 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    if (comm_ptr->local_size < nnodes)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**graphnnodes", 0 );
-	goto fn_fail;
-    }
+    MPIU_ERR_CHKANDJUMP(comm_ptr->local_size < nnodes,mpi_errno,MPI_ERR_ARG,
+			"**graphnnodes");
     
     /* This is the trivial version that does not remap any processes.
        FIXME: Add hook to optional device support for process mapping */
@@ -96,8 +96,11 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_graph_map", "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, newrank);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Rsend
 
 /*@
-    MPI_Rsend - Basic ready send 
+    MPI_Rsend - Blocking ready send 
 
 Input Parameters:
 + buf - initial address of send buffer (choice) 
@@ -37,6 +37,8 @@ Input Parameters:
 . dest - rank of destination (integer) 
 . tag - message tag (integer) 
 - comm - communicator (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -81,8 +83,10 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_rsend",
-		    "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                           MPI_ERR_OTHER, "**mpi_rsend",
+		           "**mpi_rsend %p %d %D %d %d %C", 
+                           buf, count, datatype, dest, tag, comm);
 		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
 	    }
 	}
@@ -117,7 +121,8 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr, 
+			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -130,7 +135,8 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	goto fn_exit;
     }
 
-    /* If a request was returned, then we need to block until the request is complete */
+    /* If a request was returned, then we need to block until the request 
+       is complete */
     if ((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_state progress_state;
@@ -165,9 +171,12 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     return mpi_errno;
     
   fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_rsend", "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+#endif
     mpi_errno =  MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */

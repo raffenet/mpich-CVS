@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Get
 
 /*@
-   MPI_Get - Get data from a remote process
+   MPI_Get - Get data from a memory window on a remote process
 
  Input Parameters:
 + origin_addr - Address of the buffer in which to receive the data
@@ -41,10 +41,7 @@
 . target_datatype - datatype of each entry in target buffer (handle) 
 - win - window object used for communication (handle) 
 
- Output Parameter:
-. origin_addr - initial address of origin buffer (choice) 
-
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -53,6 +50,7 @@
 .N MPI_ERR_ARG
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+.N MPI_ERR_COUNT
 @*/
 int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,

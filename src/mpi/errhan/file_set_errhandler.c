@@ -40,13 +40,13 @@ void MPIR_Get_file_error_routine( MPID_Errhandler *,
 #define FUNCNAME MPI_File_set_errhandler
 
 /*@
-   MPI_File_set_errhandler - set file error handler
+   MPI_File_set_errhandler - Set the error handler for an MPI file
 
-   Arguments:
-+  MPI_File file - file
--  MPI_Errhandler errhandler - error handler
+   Input Parameters:
++ file - MPI file (handle) 
+- errhandler - new error handler for file (handle) 
 
-   Notes:
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -131,8 +131,11 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_file_set_errhandler", "**mpi_file_set_errhandler %F %E", file, errhandler);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
 #if defined(USE_ROMIO_FILE)
     return MPIO_Err_return_file( file, mpi_errno );

@@ -33,6 +33,8 @@
 Input Parameter:
 . request - communication request (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -92,8 +94,11 @@ int MPI_Start(MPI_Request *request)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_start", "**mpi_start %p", request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -42,6 +42,8 @@ Input Parameters:
 Output Parameter:
 . request - communication request (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -103,14 +105,9 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	   been copied, so we can return a created request here */
 	/* Create a completed request */
 	request_ptr = MPID_Request_create();
-	/* --BEGIN ERROR HANDLING-- */
-	if (!request_ptr)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**nomem", "**nomem %s", "MPI_Request");
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP1(!request_ptr,mpi_errno,MPI_ERR_OTHER,
+			     "**nomem", "**nomem %s", "MPI_Request");
+
 	request_ptr->kind                 = MPID_REQUEST_SEND;
 	MPIU_Object_set_ref( request_ptr, 1 );
 	request_ptr->cc_ptr               = &request_ptr->cc;
@@ -129,8 +126,11 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

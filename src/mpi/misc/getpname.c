@@ -45,12 +45,14 @@
   the exact format is implementation defined.  This name may or may not
   be the same as might be returned by 'gethostname', 'uname', or 'sysinfo'.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Get_processor_name( char *name, int *resultlen)
+int MPI_Get_processor_name( char *name, int *resultlen )
 {
     static const char FCNAME[] = "MPI_Get_processor_name";
     int mpi_errno = MPI_SUCCESS;
@@ -82,8 +84,11 @@ int MPI_Get_processor_name( char *name, int *resultlen)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_get_processor_name", "**mpi_get_processor_name %p %p", name, resultlen);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
     return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Buffer_attach
 
 /*@
-  MPI_Buffer_attach - Attaches a user-defined buffer for sending 
+  MPI_Buffer_attach - Attaches a user-provided buffer for sending 
 
 Input Parameters:
 + buffer - initial buffer address (choice) 
@@ -56,6 +56,11 @@ the value computed by
 The 'MPI_BSEND_OVERHEAD' gives the maximum amount of space that may be used in 
 the buffer for use by the BSEND routines in using the buffer.  This value 
 is in 'mpi.h' (for C) and 'mpif.h' (for Fortran).
+
+.N NotThreadSafe
+Because the buffer for buffered sends (e.g., 'MPI_Bsend') is shared by all
+threads in a process, the user is responsible for ensuring that only
+one thread at a time calls this routine or 'MPI_Buffer_detach'.  
 
 .N Fortran
 
@@ -95,8 +100,10 @@ int MPI_Buffer_attach(void *buffer, int size)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_buffer_attach", "**mpi_buffer_attach %p %d", buffer, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

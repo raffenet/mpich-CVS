@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Recv
 
 /*@
-    MPI_Recv - Basic receive
+    MPI_Recv - Blocking receive for a message
 
 Output Parameters:
 + buf - initial address of receive buffer (choice) 
@@ -43,7 +43,9 @@ Input Parameters:
 
 Notes:
 The 'count' argument indicates the maximum length of a message; the actual 
-number can be determined with 'MPI_Get_count'.  
+length of the message can be determined with 'MPI_Get_count'.  
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -76,7 +78,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
             if (mpi_errno != MPI_SUCCESS)
 	    { 
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_recv",
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+		    MPI_ERR_OTHER, "**mpi_recv",
 		    "**mpi_recv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, status);
 		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
 	    }
@@ -139,7 +142,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
+    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr, 
+			  MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -152,7 +156,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	goto fn_exit;
     }
     
-    /* If a request was returned, then we need to block until the request is complete */
+    /* If a request was returned, then we need to block until the request 
+       is complete */
     if ((*(request_ptr)->cc_ptr) != 0)
     {
 	MPID_Progress_state progress_state;
@@ -197,8 +202,11 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_recv", "**mpi_recv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, status);
+#endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */

@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_create_resized
 
 /*@
-   MPI_Type_create_resized - create resized datatype
+   MPI_Type_create_resized - Create a datatype with a new lower bound and 
+     extent from an existing datatype
 
    Input Parameters:
 + oldtype - input datatype (handle) 
@@ -37,6 +38,8 @@
 
    Output Parameter:
 . newtype - output datatype (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -100,8 +103,12 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_create_resized", "**mpi_type_create_resized %D %d %d %p", oldtype, lb, extent, newtype);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_create_resized", "**mpi_type_create_resized %D %d %d %p", 
+				     oldtype, lb, extent, newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -37,6 +37,8 @@ Output Parameter:
 . errhandler - MPI error handler currently associated with communicator
 (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 Note on Implementation:
@@ -91,8 +93,11 @@ int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_errhandler_get", "**mpi_errhandler_get %C %p", comm, errhandler);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_GET);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -33,20 +33,21 @@
 Input Parameter:
 . request - communication request (handle) 
 
-Note:
-Cancel has only been implemented for receive requests; it is a no-op for
-send requests.  The primary expected use of MPI_Cancel is in multi-buffering
-schemes, where speculative MPI_Irecvs are made.  When the computation 
-completes, some of these receive requests may remain; using MPI_Cancel allows
+Notes:
+The primary expected use of 'MPI_Cancel' is in multi-buffering
+schemes, where speculative 'MPI_Irecvs' are made.  When the computation 
+completes, some of these receive requests may remain; using 'MPI_Cancel' allows
 the user to cancel these unsatisfied requests.  
 
 Cancelling a send operation is much more difficult, in large part because the 
 send will usually be at least partially complete (the information on the tag,
-size, and source are usually sent immediately to the destination).  As of
-version 1.2.0, MPICH supports cancelling of sends.  Users are
+size, and source are usually sent immediately to the destination).  
+Users are
 advised that cancelling a send, while a local operation (as defined by the MPI
 standard), is likely to be expensive (usually generating one or more internal
 messages). 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -64,18 +65,8 @@ int MPI_Cancel(MPI_Request *request)
     MPID_Request * request_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CANCEL);
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_CANCEL);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
@@ -176,8 +167,10 @@ int MPI_Cancel(MPI_Request *request)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cancel", "**mpi_cancel %p", request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

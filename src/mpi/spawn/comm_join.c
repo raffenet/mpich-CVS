@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Comm_join
 
 /*@
-   MPI_Comm_join - join
+   MPI_Comm_join - Create a communicator by joining two processes connected by 
+     a socket.
 
    Input Parameter:
 . fd - socket file descriptor 
@@ -41,6 +42,8 @@
   'MPI_COMM_JOIN' returns. More specifically, on entry to 'MPI_COMM_JOIN', a 
   read on the socket will not read any data that was written to the socket 
   before the remote process called 'MPI_COMM_JOIN'.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -57,16 +60,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_JOIN);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     local_port = MPIU_Malloc(MPI_MAX_PORT_NAME);
     /* --BEGIN ERROR HANDLING-- */
@@ -142,8 +136,11 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_join", "**mpi_comm_join %d %p", fd, intercomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

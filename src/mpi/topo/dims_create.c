@@ -132,7 +132,7 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
  dimension.  A value of 0 indicates that 'MPI_Dims_create' should fill in a
  suitable value.
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 

@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Win_set_attr
 
 /*@
-   MPI_Win_set_attr - set window attribute
+   MPI_Win_set_attr - Stores attribute value associated with a key
 
 Input Parameters:
 + win - MPI window object to which attribute will be attached (handle) 
@@ -44,6 +44,9 @@ address-sized integer.
 
 If an attribute is already present, the delete function (specified when the
 corresponding keyval was created) will be called.
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -75,18 +78,32 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    /* If win_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (win_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE,
+						  FCNAME, __LINE__,
+						  MPI_ERR_KEYVAL, 
+						  "**keyvalinvalid", 0 );
 	    }
 	    else if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_KEYVAL, 
+						  "**keyval", 0 );
 	    } 
 	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotwin", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__,
+						  MPI_ERR_KEYVAL, 
+						  "**keyvalnotwin", 0 );
 	    }
 	    else if (HANDLE_GET_KIND(win_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**permattr", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_OTHER, 
+						  "**permattr", 0 );
 	    }
 	    else {
 		MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
@@ -134,14 +151,10 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    break;
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
-	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (!new_p)
-	    {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
-		goto fn_fail;
-	    }
-	    /* --END ERROR HANDLING-- */
+	    MPID_Attribute *new_p = 
+		(MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	    MPIU_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
+				 "**nomem", "**nomem %s", "MPID_Attribute" );
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
 	    new_p->value	 = attribute_val;
@@ -156,14 +169,10 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     }
     if (!p)
     {
-	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!new_p)
-	{
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPID_Attribute *new_p = 
+	    (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	MPIU_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
+			     "**nomem", "**nomem %s", "MPID_Attribute" );
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;
@@ -184,8 +193,13 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_set_attr", 
+				     "**mpi_win_set_attr %W %d %p", 
+				     win, win_keyval, attribute_val);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

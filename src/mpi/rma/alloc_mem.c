@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Alloc_mem
 
 /*@
-   MPI_Alloc_mem - allocate memory for message passing and RMA
+   MPI_Alloc_mem - Allocate memory for message passing and RMA
 
   Input Parameters:
 + size - size of memory segment in bytes (nonnegative integer) 
@@ -46,6 +46,8 @@
    simply to allow easy use of any pointer object for this parameter.  
    In fact, this argument is really a 'void **' type, that is, a 
    pointer to a pointer. 
+
+.N ThreadSafe
 
 .N Fortran
 

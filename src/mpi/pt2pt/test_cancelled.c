@@ -34,9 +34,15 @@ Input Parameter:
 . status - status object (Status) 
 
 Output Parameter:
-. flag - (logical) 
+. flag - true if the request was cancelled, false otherwise (logical) 
+
+.N ThreadSafe
 
 .N Fortran
+
+.N Errors
+.N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Test_cancelled(MPI_Status *status, int *flag)
 {
@@ -64,8 +70,11 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_test_cancelled", "**mpi_test_cancelled %p %p", status, flag);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
     return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

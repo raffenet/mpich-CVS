@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Pack_external_size
 
 /*@
-   MPI_Pack_external_size - pack external size
+  MPI_Pack_external_size - Returns the upper bound on the amount of
+  space needed to pack a message using MPI_Pack_external.
 
    Input Parameters:
 + datarep - data representation (string)  
@@ -37,6 +38,8 @@
 
    Output Parameters:
 . size - output buffer size, in bytes (integer)  
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -77,8 +80,11 @@ int MPI_Pack_external_size(char *datarep,
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_pack_external_size", "**mpi_pack_external_size %s %d %D %p", datarep, incount, datatype, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

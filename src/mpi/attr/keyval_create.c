@@ -29,12 +29,12 @@
 
 /*@
 
-MPI_Keyval_create - Generates a new attribute key
+MPI_Keyval_create - Greates a new attribute key
 
 Input Parameters:
-. copy_fn - Copy callback function for 'keyval' 
++ copy_fn - Copy callback function for 'keyval' 
 . delete_fn - Delete callback function for 'keyval' 
-. extra_state - Extra state for callback functions 
+- extra_state - Extra state for callback functions 
 
 Output Parameter:
 . keyval - key value for future access (integer) 
@@ -48,12 +48,19 @@ is called from.
 This should not be a problem for most users; only programers using both 
 Fortran and C in the same program need to be sure that they follow this rule.
 
+.N ThreadSafe
+
+.N Deprecated
+The replacement for this routine is 'MPI_Comm_create_keyval'.
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_EXHAUSTED
 .N MPI_ERR_ARG
+
+.seealso  MPI_Keyval_free, MPI_Comm_create_keyval
 @*/
 int MPI_Keyval_create(MPI_Copy_function *copy_fn, 
 		      MPI_Delete_function *delete_fn, 
@@ -64,16 +71,7 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_KEYVAL_CREATE);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     MPIR_Nest_incr();
@@ -88,8 +86,11 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_keyval_create", "**mpi_keyval_create %p %p %p %p", copy_fn, delete_fn, keyval, extra_state);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_CREATE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -40,6 +40,12 @@ Input Parameters:
 Output Parameter:
 . newgroup - intersection group (handle) 
 
+Notes:
+The output group contains those processes that are in both 'group1' and 
+'group2'.
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -153,8 +159,11 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_intersection", "**mpi_group_intersection %G %G %p", group1, group2, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

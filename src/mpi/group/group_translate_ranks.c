@@ -29,7 +29,8 @@
 #define FUNCNAME MPI_Group_translate_ranks
 
 /*@
-   MPI_Group_translate_ranks - group_translate_ranks
+ MPI_Group_translate_ranks - Translates the ranks of processes in one group to 
+                             those in another group
 
   Input Parameters:
 + group1 - group1 (handle) 
@@ -41,7 +42,7 @@
 . ranks2 - array of corresponding ranks in group2,  'MPI_UNDEFINED'  when no 
 correspondence exists. 
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -81,7 +82,9 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 		for (i=0; i<n; i++) {
 		    if (ranks1[i] < 0 || 
 			ranks1[i] >= size1) {
-			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
+			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                              MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+							  MPI_ERR_RANK,
 						  "**rank", "**rank %d %d", 
 						  ranks1[i], size1 );
 			break;
@@ -141,8 +144,11 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_translate_ranks", "**mpi_group_translate_ranks %G %d %p %G %p", group1, n, ranks1, group2, ranks2);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

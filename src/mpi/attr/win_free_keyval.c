@@ -29,10 +29,12 @@
 #define FUNCNAME MPI_Win_free_keyval
 
 /*@
-   MPI_Win_free_keyval - free window keyval
+   MPI_Win_free_keyval - Frees an attribute key for MPI RMA windows
 
    Input Parameter:
 . win_keyval - key value (integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -62,8 +64,11 @@ int MPI_Win_free_keyval(int *win_keyval)
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (keyval_ptr->kind != MPID_WIN) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, 
-						    "**keyvalnotwin", 0 );
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						      MPIR_ERR_RECOVERABLE, 
+						      FCNAME, __LINE__, 
+						      MPI_ERR_KEYVAL, 
+						      "**keyvalnotwin", 0 );
 		}
 	    }
             if (mpi_errno) goto fn_fail;
@@ -83,8 +88,12 @@ int MPI_Win_free_keyval(int *win_keyval)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_free_keyval", "**mpi_win_free_keyval %p", win_keyval);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_free_keyval", 
+				     "**mpi_win_free_keyval %p", win_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE_KEYVAL);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -46,6 +46,8 @@ Notes:
  Versions of MPICH before 1.2.2 returned 'MPI_PROC_NULL' for the rank in this 
  case.
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -90,7 +92,8 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notcarttopo", 0 );
 	    }
 	    /* Validate coordinates */
@@ -101,7 +104,8 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 			coord = coords[i];
 			if (coord < 0 || 
 			    coord >= cart_ptr->topo.cart.dims[i] ) {
-			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
+			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                           MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 					  "**cartcoordinvalid",
 					  "**cartcoordinvalid %d %d %d",
 					  i, coords[i], 
@@ -138,8 +142,10 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cart_rank", "**mpi_cart_rank %C %p %p", comm, coords, rank);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -32,7 +32,7 @@
 #define FUNCNAME MPI_Waitall
 
 /*@
-    MPI_Waitall - Waits for all given communications to complete
+    MPI_Waitall - Waits for all given MPI Requests to complete
 
 Input Parameters:
 + count - list length (integer) 
@@ -40,22 +40,24 @@ Input Parameters:
 
 Output Parameter:
 . array_of_statuses - array of status objects (array of Statuses).  May be
-  'MPI_STATUSES_IGNORE'
+  'MPI_STATUSES_IGNORE'.
 
 Notes:
 
-If one or more of the requests completes with an error, MPI_ERR_IN_STATUS is
-returned.  An error value will be present is elements of array_of_status
-associated with the requests.  Likewise, the MPI_ERROR field in the status
+If one or more of the requests completes with an error, 'MPI_ERR_IN_STATUS' is
+returned.  An error value will be present is elements of 'array_of_status'
+associated with the requests.  Likewise, the 'MPI_ERROR' field in the status
 elements associated with requests that have successfully completed will be
-MPI_SUCCESS.  Finally, those requests that have not completed will have a value
-of MPI_ERR_PENDING.
+'MPI_SUCCESS'.  Finally, those requests that have not completed will have a 
+value of 'MPI_ERR_PENDING'.
 
 While it is possible to list a request handle more than once in the
 array_of_requests, such an action is considered erroneous and may cause the
 program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -65,7 +67,8 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_ARG
 .N MPI_ERR_IN_STATUS
 @*/
-int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
+int MPI_Waitall(int count, MPI_Request array_of_requests[], 
+		MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Waitall";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -88,8 +91,10 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
             if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_waitall",
-		    "**mpi_waitall %d %p %p", count, array_of_requests, array_of_statuses);
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+		    MPI_ERR_OTHER, "**mpi_waitall",
+		    "**mpi_waitall %d %p %p", count, array_of_requests,
+		    array_of_statuses);
 		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 	    }
 	}
@@ -107,9 +112,11 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    if (count != 0) 
 	    {
-		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", 
+				     mpi_errno);
 		/* NOTE: MPI_STATUSES_IGNORE != NULL */
-		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
+				     mpi_errno);
 		if (array_of_requests != NULL && count > 0)
 		{
 		    for (i = 0; i < count; i++)
@@ -140,8 +147,11 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	if (request_ptrs == NULL)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-					     "**nomem %d", count * sizeof(MPID_Request*));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+					     FCNAME, __LINE__, MPI_ERR_OTHER, 
+					     "**nomem",
+					     "**nomem %d", 
+					     count * sizeof(MPID_Request*));
 	    goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
@@ -257,9 +267,15 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
     return mpi_errno;
 
   fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_waitall", "**mpi_waitall %d %p %p", count, array_of_requests, array_of_statuses);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_waitall", 
+				     "**mpi_waitall %d %p %p", 
+				     count, array_of_requests, 
+				     array_of_statuses);
+#endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

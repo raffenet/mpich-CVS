@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Comm_get_attr
 
 /*@
-   MPI_Comm_get_attr - get communicator attribute
+   MPI_Comm_get_attr - Retrieves attribute value by key
 
 Input Parameters:
 + comm - communicator to which attribute is attached (handle) 
@@ -48,6 +48,8 @@ Notes for C:
     Even though the 'attr_value' arguement is declared as 'void *', it is
     really the address of a void pointer.  See the rationale in the 
     standard for more details. 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -78,11 +80,14 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                           MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                           MPI_ERR_KEYVAL, "**keyval", 0 );
 	    } 
 	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+				    MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 	    }
             if (mpi_errno) goto fn_fail;
         }
@@ -192,8 +197,11 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_get_attr", "**mpi_comm_get_attr %C %d %p %p", comm, comm_keyval, attribute_val, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_ATTR);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -38,17 +38,24 @@ Input Parameters:
 
 Notes:
 Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
-'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
- may not be changed. 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and
+'MPI_APPNUM'  may not be changed. 
 
-The type of the attribute value depends on whether C or Fortran is being used.
-In C, an attribute value is a pointer ('void *'); in Fortran, it is a single 
+The type of the attribute value depends on whether C, C++, or Fortran
+is being used. 
+In C and C++, an attribute value is a pointer ('void *'); in Fortran,
+it is a single  
 integer (`not` a pointer, since Fortran has no pointers and there are systems 
 for which a pointer does not fit in an integer (e.g., any > 32 bit address 
 system that uses 64 bits for Fortran 'DOUBLE PRECISION').
 
 If an attribute is already present, the delete function (specified when the
 corresponding keyval was created) will be called.
+
+.N ThreadSafe
+
+.N Deprecated
+   The replacement for this routine is 'MPI_Comm_set_attr'.
 
 .N Fortran
 
@@ -58,7 +65,7 @@ corresponding keyval was created) will be called.
 .N MPI_ERR_KEYVAL
 .N MPI_ERR_PERM_KEY
 
-.seealso MPI_Attr_get, MPI_Keyval_create, MPI_Attr_delete
+.seealso MPI_Attr_get, MPI_Keyval_create, MPI_Attr_delete, MPI_Comm_set_attr
 @*/
 int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 {

@@ -32,7 +32,8 @@
 
   Input Parameters:
 + group - group of target processes (handle) 
-. assert - program assertion (integer) 
+. assert - Used to optimize this call; zero may be used as a default.
+  See notes. (integer) 
 - win - window object (handle) 
 
    Notes:
@@ -48,6 +49,8 @@
   of ready-send that may save a handshake when the handshake is implicit in 
   the code. (However, ready-send is matched by a regular receive, whereas 
   both start and post must specify the nocheck option.) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -67,16 +70,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_START);
 
     /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
@@ -86,7 +80,6 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
@@ -105,8 +98,13 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_start", "**mpi_win_start %G %A %W", group, assert, win);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_start", 
+				     "**mpi_win_start %G %A %W", 
+				     group, assert, win);
+#endif
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

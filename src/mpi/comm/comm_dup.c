@@ -34,7 +34,7 @@ MPI_Comm_dup - Duplicates an existing communicator with all its cached
                information
 
 Input Parameter:
-. comm - communicator (handle) 
+. comm - Communicator to be duplicated (handle) 
 
 Output Parameter:
 . newcomm - A new communicator over the same group as 'comm' but with a new
@@ -61,6 +61,8 @@ Notes:
   interconnection topology and (b) communicators that are given back
   to the user; the attibutes in this case can track subsequent
   'MPI_Comm_dup' operations on this communicator.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -146,8 +148,11 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

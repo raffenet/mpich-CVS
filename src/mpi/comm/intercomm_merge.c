@@ -32,15 +32,15 @@
 MPI_Intercomm_merge - Creates an intracommuncator from an intercommunicator
 
 Input Parameters:
-+ comm - Intercommunicator
-- high - Used to order the groups within comm
++ comm - Intercommunicator (handle)
+- high - Used to order the groups within comm (logical)
   when creating the new communicator.  This is a boolean value; the group
   that sets high true has its processes ordered `after` the group that sets 
   this value to false.  If all processes in the intercommunicator provide
   the same value, the choice of which group is ordered first is arbitrary.
 
 Output Parameter:
-. comm_out - Created intracommunicator
+. comm_out - Created intracommunicator (handle)
 
 Notes:
  While all processes may provide the same value for the 'high' parameter,
@@ -51,15 +51,17 @@ Notes:
  Robust applications should avoid using the same value for 'high' in 
  both groups.
 
+.N ThreadSafe
+
 .N Fortran
 
 Algorithm:
-.vb
- 1) Allocate contexts 
- 2) Local and remote group leaders swap high values
- 3) Determine the high value.
- 4) Merge the two groups and make the intra-communicator
-.ve
+.Es
+.i Allocate contexts 
+.i Local and remote group leaders swap high values
+.i Determine the high value.
+.i Merge the two groups and make the intra-communicator
+.Ee
 
 .N Errors
 .N MPI_SUCCESS
@@ -67,7 +69,6 @@ Algorithm:
 .N MPI_ERR_EXHAUSTED
 
 .seealso: MPI_Intercomm_create, MPI_Comm_free
-   MPI_Intercomm_merge - merge communicators
 @*/
 int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {
@@ -304,8 +305,11 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", intercomm, high, newintracomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

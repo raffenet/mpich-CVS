@@ -30,14 +30,14 @@
 /*@
     MPI_Info_get_nthkey - Returns the nth defined key in info
 
-Input Arguments:
+Input Parameters:
 + info - info object (handle)
 - n - key number (integer)
 
-Output Argument:
+Output Parameters:
 . keys - key (string).  The maximum number of characters is 'MPI_MAX_INFO_KEY'.
 
-   Notes:
+.N ThreadSafeInfoRead
 
 .N Fortran
 
@@ -90,7 +90,8 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     else
     {
 	/* n is invalid */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+					  FCNAME, __LINE__, MPI_ERR_ARG,
 					  "**infonkey", "**infonkey %d %d", 
 					  n, nkeys );
 	goto fn_fail;
@@ -102,8 +103,12 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_info_get_nthkey", "**mpi_info_get_nthkey %I %d %p", info, n, key);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_info_get_nthkey", "**mpi_info_get_nthkey %I %d %p", 
+				     info, n, key);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

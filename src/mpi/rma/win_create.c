@@ -39,6 +39,7 @@
   Output Parameter:
 . win - window object returned by the call (handle) 
 
+.N ThreadSafe
 .N Fortran
 
 .N Errors
@@ -85,11 +86,17 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             if (size < 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_SIZE,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_SIZE,
                                                   "**rmasize",
                                                   "**rmasize %d", size);  
             if (disp_unit <= 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_ARG,
                                                  "**arg", "**arg %s", 
                                                  "disp_unit must be positive");  
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -112,8 +119,13 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_create", "**mpi_win_create %p %d %d %I %C %p", base, size, disp_unit, info, comm, win);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_create", 
+				     "**mpi_win_create %p %d %d %I %C %p", 
+				     base, size, disp_unit, info, comm, win);
+#endif
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
     return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

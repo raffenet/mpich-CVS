@@ -28,13 +28,13 @@
 #define FUNCNAME MPI_Comm_set_name
 
 /*@
-   MPI_Comm_set_name - set the communicator name
+   MPI_Comm_set_name - Sets the print name for a communicator
 
    Input Parameters:
 +  MPI_Comm comm - communicator to name (handle)
 -  char *comm_name - Name for communicator
 
-   Notes:
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -76,8 +76,11 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_set_name", "**mpi_comm_set_name %C %s", comm, comm_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_NAME);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

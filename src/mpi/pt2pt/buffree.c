@@ -69,6 +69,11 @@ This could be read as applying only to the various Bsend routines.  This
 implementation takes the position that this applies to 'MPI_BUFFER_DETACH'
 as well.
 
+.N NotThreadSafe
+Because the buffer for buffered sends (e.g., 'MPI_Bsend') is shared by all
+threads in a process, the user is responsible for ensuring that only
+one thread at a time calls this routine or 'MPI_Buffer_attach'.  
+
 .N Fortran
 
     The Fortran binding for this routine is different.  Because Fortran 
@@ -80,6 +85,8 @@ Notes for C:
     Even though the 'bufferptr' argument is declared as 'void *', it is
     really the address of a void pointer.  See the rationale in the 
     standard for more details. 
+
+.seealso: MPI_Buffer_attach
 @*/
 int MPI_Buffer_detach(void *buffer, int *size)
 {
@@ -110,8 +117,10 @@ int MPI_Buffer_detach(void *buffer, int *size)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_buffer_detach", "**mpi_buffer_detach %p %p", buffer, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_DETACH);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

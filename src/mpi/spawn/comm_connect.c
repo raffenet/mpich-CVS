@@ -39,6 +39,8 @@
  Output Parameter:
 . newcomm - intercommunicator with server as remote group (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -47,7 +49,8 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_PORT
 @*/
-int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm)
+int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
+                     MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_connect";
     int mpi_errno = MPI_SUCCESS;
@@ -74,7 +77,8 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Comm_connect(port_name, info_ptr, root, comm_ptr, &newcomm_ptr); 
+    mpi_errno = MPID_Comm_connect(port_name, info_ptr, root, comm_ptr, 
+                                  &newcomm_ptr); 
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -86,8 +90,13 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_connect", "**mpi_comm_connect %s %I %d %C %p", port_name, info, root, comm, newcomm);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_comm_connect", 
+				     "**mpi_comm_connect %s %I %d %C %p",
+				     port_name, info, root, comm, newcomm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

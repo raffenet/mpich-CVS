@@ -957,8 +957,10 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	}
     }
 
-    /* Handle special case of MPI_ERR_IN_STATUS.  According to the standard, 
-       the code must be equal to the class. */
+    /* Handle special case of MPI_ERR_IN_STATUS.  According to the standard,
+       the code must be equal to the class. See section 3.7.5.  
+       Information on the particular error is in the MPI_ERROR field 
+       of the status. */
     if (error_class == MPI_ERR_IN_STATUS)
     {
 	return MPI_ERR_IN_STATUS;

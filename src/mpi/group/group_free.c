@@ -31,11 +31,13 @@
 
 MPI_Group_free - Frees a group
 
-Input Parameter
-. group - group (handle) 
+Input Parameter:
+. group - group to free (handle) 
 
 Notes:
 On output, group is set to 'MPI_GROUP_NULL'.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -83,8 +85,11 @@ int MPI_Group_free(MPI_Group *group)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_free", "**mpi_group_free %p", group);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -34,7 +34,7 @@
 + rank - rank of window (nonnegative integer) 
 - win - window object (handle) 
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -42,6 +42,8 @@
 .N MPI_SUCCESS
 .N MPI_ERR_WIN
 .N MPI_ERR_OTHER
+
+.seealso: MPI_Win_lock
 @*/
 int MPI_Win_unlock(int rank, MPI_Win win)
 {
@@ -78,8 +80,12 @@ int MPI_Win_unlock(int rank, MPI_Win win)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_unlock", "**mpi_win_unlock %d %W", rank, win);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_unlock", 
+				     "**mpi_win_unlock %d %W", rank, win);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

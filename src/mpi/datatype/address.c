@@ -30,10 +30,10 @@
 /*@
     MPI_Address - Gets the address of a location in memory  
 
-Input Argument:
+Input Parameter:
 . location - location in caller memory (choice) 
 
-Output Argument:
+Output Parameter:
 . address - address of location (integer) 
 
     Note:
@@ -42,8 +42,11 @@ Output Argument:
     as produced by the C '&' operator, but this is not required in C and
     may not be true of systems with word- rather than byte-oriented 
     instructions or systems with segmented address spaces.  
+
+.N SignalSafe
  
-    This function is deprecated.  Use 'MPI_Get_address' instead.
+.N Deprecated
+The replacement for this routine is 'MPI_Get_address'.
 
 .N Fortran
 

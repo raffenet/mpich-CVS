@@ -35,6 +35,8 @@
 + comm - communicator with error handler (handle) 
 - errorcode - error code (integer) 
 
+.N ThreadSafeNoUpdate
+
 .N Fortran
 
 .N Errors
@@ -48,7 +50,6 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -105,8 +106,11 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_call_errhandler", "**mpi_comm_call_errhandler %C %d", comm, errorcode);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

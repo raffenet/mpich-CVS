@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Comm_get_parent
 
 /*@
-   MPI_Comm_get_parent - short description
+   MPI_Comm_get_parent - Return the parent communicator for this process
 
    Output Parameter:
 . parent - the parent communicator (handle) 
@@ -46,6 +46,8 @@
 
   After the parent communicator is freed or disconnected, 'MPI_Comm_get_parent'
   returns 'MPI_COMM_NULL'. 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -79,8 +81,11 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_get_parent", "**mpi_comm_get_parent %p", parent);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -29,11 +29,17 @@
 
 /*@
 
-MPI_Attr_delete - Deletes attribute value associated with a key
+MPI_Attr_delete - Deletes an attribute value associated with a key on a 
+    communicator
 
 Input Parameters:
 + comm - communicator to which attribute is attached (handle) 
 - keyval - The key value of the deleted attribute (integer) 
+
+.N ThreadSafe
+
+.N Deprecated
+   The replacement for this routine is 'MPI_Comm_delete_attr'.
 
 .N Fortran
 
@@ -78,8 +84,11 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_attr_delete", "**mpi_attr_delete %C %d", comm, keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

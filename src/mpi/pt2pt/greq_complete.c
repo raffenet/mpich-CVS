@@ -38,12 +38,14 @@
    Input Parameter:
 .  request - Generalized request to mark as complete
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+
+.seealso: MPI_Grequest_start
 @*/
 int MPI_Grequest_complete( MPI_Request request )
 {
@@ -93,8 +95,11 @@ int MPI_Grequest_complete( MPI_Request request )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_grequest_complete", "**mpi_grequest_complete %R", request);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_COMPLETE);
     return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -32,7 +32,7 @@
 #define FUNCNAME MPI_Waitany
 
 /*@
-    MPI_Waitany - Waits for any specified send or receive to complete
+    MPI_Waitany - Waits for any specified MPI Request to complete
 
 Input Parameters:
 + count - list length (integer) 
@@ -53,6 +53,8 @@ program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -60,7 +62,8 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_REQUEST
 .N MPI_ERR_ARG
 @*/
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Status *status)
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
+		MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Waitany";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -81,8 +84,10 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
             if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(
-		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_waitany",
-		    "**mpi_waitany %d %p %p %p", count, array_of_requests, index, status);
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+		    MPI_ERR_OTHER, "**mpi_waitany",
+		    "**mpi_waitany %d %p %p %p", count, array_of_requests, 
+		    index, status);
 		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 	    }
 	}
@@ -134,8 +139,11 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 	if (request_ptrs == NULL)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-					     "**nomem %d", count * sizeof(MPID_Request*));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+					     FCNAME, __LINE__, MPI_ERR_OTHER, 
+					     "**nomem",
+					     "**nomem %d", 
+					     count * sizeof(MPID_Request*));
 	    goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
@@ -184,7 +192,9 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	    {
-		mpi_errno = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status, &active_flag);
+		mpi_errno = MPIR_Request_complete(&array_of_requests[i], 
+						  request_ptrs[i], status, 
+						  &active_flag);
 		if (active_flag)
 		{
 		    *index = i;
@@ -226,8 +236,13 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_waitany", "**mpi_waitany %d %p %p %p", count, array_of_requests, index, status);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_waitany", 
+				     "**mpi_waitany %d %p %p %p", 
+				     count, array_of_requests, index, status);
+#endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

@@ -46,8 +46,15 @@ Notes:
 
 Notes for C:
     Even though the 'attr_value' arguement is declared as 'void *', it is
-    really the address of a void pointer.  See the rationale in the 
-    standard for more details. 
+    really the address of a void pointer (i.e., a 'void **').  Using
+    a 'void *', however, is more in keeping with C idiom and allows the
+    pointer to be passed without additional casts.
+
+
+.N ThreadSafe
+
+.N Deprecated
+   The replacement for this routine is 'MPI_Comm_get_attr'.
 
 .N Fortran
 
@@ -58,6 +65,8 @@ Notes for C:
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 .N MPI_ERR_KEYVAL
+
+.seealso MPI_Attr_put, MPI_Keyval_create, MPI_Attr_delete, MPI_Comm_get_attr
 @*/
 int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 {
@@ -95,8 +104,10 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_attr_get", "**mpi_attr_get %C %d %p %p", comm, keyval, attr_value, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_GET);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

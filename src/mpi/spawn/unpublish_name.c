@@ -29,11 +29,15 @@
 #define FUNCNAME MPI_Unpublish_name
 
 /*@
-   MPI_Unpublish_name - Unpublish a service name published with MPI_Publish_name
+   MPI_Unpublish_name - Unpublish a service name published with 
+   MPI_Publish_name
+
  Input Parameters:
 + service_name - a service name (string) 
 . info - implementation-specific information (handle) 
 - port_name - a port name (string) 
+
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -88,21 +92,25 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
 	return MPI_SUCCESS;
     }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_unpublish_name", "**mpi_unpublish_name %s %I %s", service_name, info, port_name);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    /* --END ERROR HANDLING-- */
+#else /* No name publishing service available */
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				      FCNAME, __LINE__, MPI_ERR_OTHER, 
+				      "**nonamepub", 0 );
 #else
+    mpi_errno = MPI_ERR_OTHER;
+#endif
+#endif
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_unpublish_name", "**mpi_unpublish_name %s %I %s", service_name, info, port_name);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_unpublish_name", 
+				     "**mpi_unpublish_name %s %I %s",
+				     service_name, info, port_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
-#endif    
 }

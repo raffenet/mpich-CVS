@@ -30,8 +30,10 @@
 /*@
     MPI_Info_create - Creates a new info object
 
-   Output Argument:
-. info - info object (handle)
+   Output Parameter:
+. info - info object created (handle)
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -47,6 +49,7 @@ int MPI_Info_create( MPI_Info *info )
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_CREATE);
+
     /* Get handles to MPI objects. */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -79,10 +82,14 @@ int MPI_Info_create( MPI_Info *info )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
     return MPI_SUCCESS;
+
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING    
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_info_create", "**mpi_info_create %p", info);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

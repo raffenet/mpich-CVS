@@ -41,6 +41,8 @@ Output Parameter:
 . coords - integer array (of size 'ndims') containing the Cartesian 
   coordinates of specified process (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -85,11 +87,13 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notcarttopo", 0 );
 	    }
 	    else if (cart_ptr->topo.cart.ndims > maxdims) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
 					  "**dimsmany", "**dimsmany %d %d",
 						  cart_ptr->topo.cart.ndims,
 						  maxdims );
@@ -113,8 +117,10 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cart_coords", "**mpi_cart_coords %C %d %d %p", comm, rank, maxdims, coords);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

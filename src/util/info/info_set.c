@@ -37,6 +37,8 @@ Input Parameters:
 . key - key (string)
 - value - value (string)
 
+.N NotThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -63,22 +65,27 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check input arguments */
 	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
 	    else if ((keylen = (int)strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeyempty", 0 );
 	    }
 	    if (!value) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_VALUE, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                   MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_VALUE, 
 						  "**infovalnull", 0 );
 	    }
 	    else if (strlen(value) > MPI_MAX_INFO_VAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_VALUE, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                   MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_VALUE, 
 						  "**infovallong", 0 );
 	    }
             /* Validate info_ptr */
@@ -110,8 +117,9 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	/* --BEGIN ERROR HANDLING-- */
 	if (!curr_ptr)
 	{
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
-					      "**nomem", "**nomem %s", "MPI_Info" );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                        MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+				      "**nomem", "**nomem %s", "MPI_Info" );
 	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
@@ -127,8 +135,10 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_info_set", "**mpi_info_set %I %s %s", info, key, value);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -33,12 +33,14 @@
 MPI_Graphdims_get - Retrieves graph topology information associated with a 
                     communicator
 
-Input Parameters:
+Input Parameter:
 . comm - communicator for group with graph structure (handle) 
 
-Output Parameter:
+Output Parameters:
 + nnodes - number of nodes in graph (integer) 
 - nedges - number of edges in graph (integer) 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -103,8 +105,11 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+				     __LINE__, MPI_ERR_OTHER,
 	"**mpi_graphdims_get", "**mpi_graphdims_get %C %p %p", comm, nnodes, nedges);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

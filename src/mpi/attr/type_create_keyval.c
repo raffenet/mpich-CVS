@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Type_create_keyval
 
 /*@
-   MPI_Type_create_keyval - Create a attribute keyval for MPI datatypes
+   MPI_Type_create_keyval - Create an attribute keyval for MPI datatypes
 
    Input Parameters:
 + type_copy_attr_fn - copy callback function for type_keyval (function) 
@@ -38,13 +38,24 @@
 
    Output Parameter:
 . type_keyval - key value for future access (integer) 
+
+Notes:
+
+   Default copy and delete functions are available.  These are
++ MPI_TYPE_NULL_COPY_FN   - empty copy function
+. MPI_TYPE_NULL_DELETE_FN - empty delete function
+- MPI_TYPE_DUP_FN         - simple dup function
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, MPI_Type_delete_attr_function *type_delete_attr_fn,
+int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, 
+			   MPI_Type_delete_attr_function *type_delete_attr_fn,
 			   int *type_keyval, void *extra_state)
 {
     static const char FCNAME[] = "MPI_Type_create_keyval";
@@ -58,7 +69,7 @@ int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, MPI_T
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
+	    MPIR_ERRTEST_ARGNULL(type_keyval,"type_keyval",mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
@@ -70,7 +81,9 @@ int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, MPI_T
     /* --BEGIN ERROR HANDLING-- */
     if (!keyval_ptr)
     {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Keyval" );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				  FCNAME, __LINE__, MPI_ERR_OTHER, 
+				  "**nomem", "**nomem %s", "MPID_Keyval" );
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
@@ -97,8 +110,13 @@ int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, MPI_T
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_create_keyval", "**mpi_type_create_keyval %p %p %p %p", type_copy_attr_fn, type_delete_attr_fn, type_keyval, extra_state);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_create_keyval", "**mpi_type_create_keyval %p %p %p %p", 
+				     type_copy_attr_fn, type_delete_attr_fn,
+				     type_keyval, extra_state);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_KEYVAL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

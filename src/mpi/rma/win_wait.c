@@ -28,10 +28,12 @@
 #define FUNCNAME MPI_Win_wait
 
 /*@
-   MPI_Win_wait - Completes an RMA exposure epoch
+   MPI_Win_wait - Completes an RMA exposure epoch begun with MPI_Win_post
 
    Input Parameter:
 . win - window object (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -50,16 +52,7 @@ int MPI_Win_wait(MPI_Win win)
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_WAIT);
 
     /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
@@ -84,8 +77,12 @@ int MPI_Win_wait(MPI_Win win)
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_wait", "**mpi_win_wait %W", win);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_wait", 
+				     "**mpi_win_wait %W", win);
+#endif
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

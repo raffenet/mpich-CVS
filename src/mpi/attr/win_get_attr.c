@@ -35,7 +35,7 @@
 - win_keyval - key value (integer) 
 
    Output Parameters:
-+ attribute_val - attribute value, unless flag = false 
++ attribute_val - attribute value, unless flag is false 
 - flag - false if no attribute is associated with the key (logical) 
 
    Notes:
@@ -45,6 +45,8 @@
 . MPI_WIN_SIZE - window size, in bytes. 
 - MPI_WIN_DISP_UNIT - displacement unit associated with the window. 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -53,7 +55,8 @@
 .N MPI_ERR_KEYVAL
 .N MPI_ERR_OTHER
 @*/
-int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag)
+int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, 
+		     int *flag)
 {
     static const char FCNAME[] = "MPI_Win_get_attr";
     int mpi_errno = MPI_SUCCESS;
@@ -61,16 +64,8 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_GET_ATTR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_GET_ATTR);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
+
     MPID_Win_get_ptr( win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -80,11 +75,18 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 	    /* If win_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE,
+						  FCNAME, __LINE__, 
+						  MPI_ERR_KEYVAL, 
+						  "**keyval", 0 );
 	    } 
 	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotwin", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__,
+						  MPI_ERR_KEYVAL, 
+						  "**keyvalnotwin", 0 );
 	    }
             if (mpi_errno) goto fn_fail;
 	
@@ -159,8 +161,13 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_get_attr", "**mpi_win_get_attr %W %d %p %p", win, win_keyval, attribute_val, flag);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_get_attr", 
+				     "**mpi_win_get_attr %W %d %p %p", 
+				     win, win_keyval, attribute_val, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

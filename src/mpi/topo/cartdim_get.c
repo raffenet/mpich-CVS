@@ -39,6 +39,8 @@ Input Parameter:
 Output Parameter:
 . ndims - number of dimensions of the cartesian structure (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -80,7 +82,8 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notcarttopo", 0 );
 	    }
 	    if (mpi_errno) goto fn_fail;
@@ -95,8 +98,11 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_cartdim_get", "**mpi_cartdim_get %C %p", comm, ndims);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CARTDIM_GET);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

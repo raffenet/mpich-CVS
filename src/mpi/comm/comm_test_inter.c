@@ -32,10 +32,12 @@
 MPI_Comm_test_inter - Tests to see if a comm is an inter-communicator
 
 Input Parameter:
-. comm - communicator (handle) 
+. comm - communicator to test (handle) 
 
 Output Parameter:
-. flag - (logical) 
+. flag - true if this is an inter-communicator(logical) 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -78,8 +80,11 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_test_inter", "**mpi_comm_test_inter %C %p", comm, flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

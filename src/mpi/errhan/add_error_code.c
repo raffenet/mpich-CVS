@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Add_error_code
 
 /*@
-   MPI_Add_error_code - add error code
+   MPI_Add_error_code - Add and MPI error code to an MPI error class
 
    Input Parameter:
 .  errorclass - Error class to add an error code.
@@ -37,7 +37,7 @@
    Output Parameter:
 .  errorcode - New error code for this error class.
 
-   Notes:
+.N ThreadSafe
 
 .N Fortran
 
@@ -53,26 +53,12 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ADD_ERROR_CODE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ADD_ERROR_CODE);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     new_code = MPIR_Err_add_code( errorclass, 0 );
-    /* --BEGIN ERROR HANDLING-- */
-    if (new_code < 0) {
-	/* Error return.  */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrcodes", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_ERR_CHKANDJUMP(new_code<0,mpi_errno,MPI_ERR_OTHER,"**noerrcodes");
 
     *errorcode = new_code;
     /* ... end of body of routine ... */
@@ -81,8 +67,11 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_add_error_code", "**mpi_add_error_code %d %p", errorclass, errorcode);
+#ifdef HAVE_ERROR_CHECKING    
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+        FCNAME, __LINE__, MPI_ERR_OTHER,
+  "**mpi_add_error_code", "**mpi_add_error_code %d %p", errorclass, errorcode);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CODE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

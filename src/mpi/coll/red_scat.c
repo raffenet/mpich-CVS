@@ -1061,6 +1061,8 @@ Array must be identical on all calling processes.
 Output Parameter:
 . recvbuf - starting address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N collops
@@ -1074,7 +1076,8 @@ Output Parameter:
 .N MPI_ERR_OP
 .N MPI_ERR_BUFFER_ALIAS
 @*/
-int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, 
+		       MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Reduce_scatter";
     int mpi_errno = MPI_SUCCESS;
@@ -1185,8 +1188,11 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_reduce_scatter", "**mpi_reduce_scatter %p %p %p %D %O %C", sendbuf, recvbuf, recvcnts, datatype, op, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

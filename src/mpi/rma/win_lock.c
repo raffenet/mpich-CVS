@@ -31,9 +31,11 @@
    MPI_Win_lock - Begin an RMA access epoch at the target process.
 
    Input Parameters:
-+ lock_type - either 'MPI_LOCK_EXCLUSIVE' or 'MPI_LOCK_SHARED' (state) 
++ lock_type - Indicates whether other processes may access the target 
+   window at the same time (if 'MPI_LOCK_SHARED') or not ('MPI_LOCK_EXCLUSIVE')
 . rank - rank of locked window (nonnegative integer) 
-. assert - program assertion (integer) 
+. assert - Used to optimize this call; zero may be used as a default.
+  See notes. (integer) 
 - win - window object (handle) 
 
    Notes:
@@ -52,11 +54,13 @@
    operation.  The value zero is always correct.  Other assertion values
    may be or''ed together.  Assertions that are valid for 'MPI_Win_fence' are\:
 
-   . MPI_MODE_NOCHECK - no other process holds, or will attempt to acquire a 
-   conflicting lock, while the caller holds the window lock. This is useful 
-   when mutual exclusion is achieved by other means, but the coherence 
-   operations that may be attached to the lock and unlock calls are still 
-   required. 
+. MPI_MODE_NOCHECK - no other process holds, or will attempt to acquire a 
+  conflicting lock, while the caller holds the window lock. This is useful 
+  when mutual exclusion is achieved by other means, but the coherence 
+  operations that may be attached to the lock and unlock calls are still 
+  required. 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -79,16 +83,17 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
         {
             MPID_Comm *comm_ptr;
 
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not value, it will be reset to null */
 
             if (lock_type != MPI_LOCK_SHARED && lock_type != MPI_LOCK_EXCLUSIVE)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**locktype", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE, 
+						  FCNAME, __LINE__, 
+						  MPI_ERR_OTHER, 
+						  "**locktype", 0 );
 
             MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
             MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
@@ -109,8 +114,13 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_lock", "**mpi_win_lock %d %d %A %W", lock_type, rank, assert, win);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_lock", 
+				     "**mpi_win_lock %d %d %A %W", 
+				     lock_type, rank, assert, win);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

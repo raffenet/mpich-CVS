@@ -43,9 +43,7 @@ Output Parameter:
 . newgroup - new group derived from above, in the order defined by 'ranks' 
 (handle) 
 
-Note:
-This implementation does not currently check to see that the list of
-ranks to ensure that there are no duplicates.
+.N ThreadSafe
 
 .N Fortran
 
@@ -118,8 +116,11 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_incl", "**mpi_group_incl %G %d %p %p", group, n, ranks, newgroup);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

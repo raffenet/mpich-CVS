@@ -32,7 +32,7 @@
 #define FUNCNAME MPI_Testsome
 
 /*@
-    MPI_Testsome - Tests for some given communications to complete
+    MPI_Testsome - Tests for some given requests to complete
 
 Input Parameters:
 + incount - length of array_of_requests (integer) 
@@ -48,8 +48,10 @@ completed (array of integers)
 Notes:
 
 While it is possible to list a request handle more than once in the
-array_of_requests, such an action is considered erroneous and may cause the
+'array_of_requests', such an action is considered erroneous and may cause the
 program to unexecpectedly terminate or produce incorrect results.
+
+.N ThreadSafe
 
 .N waitstatus
 
@@ -60,7 +62,8 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_IN_STATUS
 
 @*/
-int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, 
+		 int array_of_indices[], MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Testsome";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -74,19 +77,9 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTSOME);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTSOME);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -136,7 +129,9 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", incount * sizeof(MPID_Request *));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+					     FCNAME, __LINE__, MPI_ERR_OTHER,
+                    "**nomem", "**nomem %d", incount * sizeof(MPID_Request *));
 	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
@@ -186,7 +181,8 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	{
 	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
-	    rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);
+	    rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i],
+				       status_ptr, &active_flag);
 	    if (active_flag)
 	    {
 		array_of_indices[n_active] = i;
@@ -250,8 +246,11 @@ fn_exit:
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_testsome", "**mpi_testsome %d %p %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

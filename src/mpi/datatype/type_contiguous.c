@@ -37,6 +37,8 @@ Input Parameters:
 Output Parameter:
 . newtype - new datatype (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -103,6 +105,7 @@ int MPI_Type_contiguous(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -113,6 +116,7 @@ fn_fail:
 				     count,
 				     old_type,
 				     new_type_p);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -51,6 +51,8 @@
   issued RMA calls. If the assertion is given by any process in the window 
   group, then it must be given by all processes in the group. 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors

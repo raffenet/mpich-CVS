@@ -36,6 +36,11 @@ Input Parameters:
 Output Parameter:
 . extent - datatype extent (integer) 
 
+.N SignalSafe
+
+.N Deprecated
+The replacement for this routine is 'MPI_Type_get_extent'.
+
 .N Fortran
 
 .N Errors
@@ -73,8 +78,11 @@ int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_extent", "**mpi_type_extent %D %p", datatype, extent);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_EXTENT);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

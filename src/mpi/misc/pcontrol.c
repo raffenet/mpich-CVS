@@ -32,12 +32,14 @@
 
   Input Parameters:
 + level - Profiling level 
--  ... - other arguments
+-  ... - other arguments (see notes)
 
   Notes:
   This routine provides a common interface for profiling control.  The
   interpretation of 'level' and any other arguments is left to the
-  profiling library.
+  profiling library.  The intention is that a profiling library will 
+  provide a replacement for this routine and define the interpretation
+  of the parameters.
 
 .N Fortran
 
@@ -51,16 +53,7 @@ int MPI_Pcontrol(const int level, ...)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PCONTROL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PCONTROL);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     /* This is a dummy routine that does nothing.  It is intended for 
@@ -70,8 +63,11 @@ int MPI_Pcontrol(const int level, ...)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_pcontrol", "**mpi_pcontrol %d", level);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

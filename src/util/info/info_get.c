@@ -39,7 +39,8 @@ Output Parameters:
 + value - value (string)
 - flag - true if key defined, false if not (boolean)
 
-   Notes:
+
+.N ThreadSafeInfoRead
 
 .N Fortran
 

@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Send_init
 
 /*@
-    MPI_Send_init - Builds a handle for a standard send
+    MPI_Send_init - Create a persistent request for a standard send
 
 Input Parameters:
 + buf - initial address of send buffer (choice) 
@@ -37,8 +37,11 @@ Input Parameters:
 . dest - rank of destination (integer) 
 . tag - message tag (integer) 
 - comm - communicator (handle) 
+
 Output Parameter:
 . request - communication request (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -124,8 +127,11 @@ int MPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest,
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_send_init", "**mpi_send_init %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

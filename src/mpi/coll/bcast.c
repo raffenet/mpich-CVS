@@ -698,14 +698,18 @@ int MPIR_Bcast_inter (
 
 /*@
 MPI_Bcast - Broadcasts a message from the process with rank "root" to
-            all other processes of the group. 
+            all other processes of the communicator
 
-Input/output Parameters:
-+ buffer - starting address of buffer (choice) 
-. count - number of entries in buffer (integer) 
+Input/Output Parameter:
+. buffer - starting address of buffer (choice) 
+
+Input Parameters:
++ count - number of entries in buffer (integer) 
 . datatype - data type of buffer (handle) 
 . root - rank of broadcast root (integer) 
 - comm - communicator (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -717,7 +721,8 @@ Input/output Parameters:
 .N MPI_ERR_BUFFER
 .N MPI_ERR_ROOT
 @*/
-int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
+int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, 
+               MPI_Comm comm )
 {
     static const char FCNAME[] = "MPI_Bcast";
     int mpi_errno = MPI_SUCCESS;
@@ -811,8 +816,11 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_bcast", "**mpi_bcast %p %d %D %d %C", buffer, count, datatype, root, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

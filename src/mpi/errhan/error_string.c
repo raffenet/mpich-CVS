@@ -42,6 +42,8 @@ Notes:  Error codes are the values return by MPI routines (in C) or in the
 'ierr' argument (in Fortran).  These can be converted into error classes 
 with the routine 'MPI_Error_class'.  
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -79,8 +81,11 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_error_string", "**mpi_error_string %d %s %p", errorcode, string, resultlen);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -32,7 +32,7 @@
 #define FUNCNAME MPI_Startall
 
 /*@
-  MPI_Startall - Starts a collection of requests 
+  MPI_Startall - Starts a collection of persistent requests 
 
 Input Parameters:
 + count - list length (integer) 
@@ -40,16 +40,20 @@ Input Parameters:
 
    Notes:
 
-   Unlike MPI_Waitall(), MPI_Startall() does not provide a mechanism for
+   Unlike 'MPI_Waitall', 'MPI_Startall' does not provide a mechanism for
    returning multiple errors nor pinpointing the request(s) involved.
-   Futhermore, the behavior of MPI_Startall() after an error occurs is not
-   defined by the MPI standard.  If well defined error reporting and behavior
-   are required, multiple calls to MPI_Start() should be used instead.
+   Futhermore, the behavior of 'MPI_Startall' after an error occurs is not
+   defined by the MPI standard.  If well-defined error reporting and behavior
+   are required, multiple calls to 'MPI_Start' should be used instead.
+
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_REQUEST
 @*/
 int MPI_Startall(int count, MPI_Request array_of_requests[])
 {
@@ -60,19 +64,10 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_STARTALL);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_STARTALL);
+
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -113,7 +108,9 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                      "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
 	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
@@ -165,8 +162,11 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_startall", "**mpi_startall %d %p", count, array_of_requests);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

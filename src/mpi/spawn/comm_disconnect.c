@@ -30,13 +30,22 @@
 /*@
    MPI_Comm_disconnect - Disconnect from a communicator
 
-   Input Parameter
+   Input Parameter:
 .  comm - communicator (handle) 
+
+Notes:
+This routine waits for all pending communication to complete, then frees the
+communicator and sets 'comm' to 'MPI_COMM_NULL'.  It may not be called 
+with 'MPI_COMM_WORLD' or 'MPI_COMM_SELF'.
+
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+
+.seealso MPI_Comm_connect, MPI_Comm_join
 @*/
 int MPI_Comm_disconnect(MPI_Comm * comm)
 {
@@ -45,24 +54,10 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_DISCONNECT);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**mpi_comm_disconnect", "**mpi_comm_disconnect %C", *comm);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_DISCONNECT);
+
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( *comm, comm_ptr );
@@ -83,7 +78,8 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /*
-     * Since outstanding I/O bumps the reference count on the communicator, we wait until we hold the last reference count to
+     * Since outstanding I/O bumps the reference count on the communicator, 
+     * we wait until we hold the last reference count to
      * ensure that all communication has completed.
      */
     if (comm_ptr->ref_count > 1)
@@ -118,9 +114,12 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
     return MPI_SUCCESS;
 
   fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_disconnect", "**mpi_comm_disconnect %C", *comm);
+#endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */

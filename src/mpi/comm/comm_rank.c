@@ -34,7 +34,9 @@ Input Argument:
 . comm - communicator (handle) 
 
 Output Argument:
-. rank - rank of the calling process in group of  'comm'  (integer) 
+. rank - rank of the calling process in the group of 'comm'  (integer) 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -75,8 +77,11 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_rank", "**mpi_comm_rank %C %p", comm, rank);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_RANK);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

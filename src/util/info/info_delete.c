@@ -34,7 +34,7 @@
 + info - info object (handle)
 - key - key (string)
 
-   Notes:
+.N NotThreadSafe
 
 .N Fortran
 
@@ -60,14 +60,17 @@ int MPI_Info_delete( MPI_Info info, char *key )
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check input arguments */
 	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
 	    else if ((keylen = (int)strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeyempty", 0 );
 	    }
             /* Validate info_ptr */
@@ -98,7 +101,8 @@ int MPI_Info_delete( MPI_Info info, char *key )
     if (!curr_ptr)
     {
 	/* If curr_ptr is not defined, we never found the key */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_NOKEY, "**infonokey",
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+                        FCNAME, __LINE__, MPI_ERR_INFO_NOKEY, "**infonokey",
 					  "**infonokey %s", key );
 	goto fn_fail;
     }
@@ -110,8 +114,11 @@ int MPI_Info_delete( MPI_Info info, char *key )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_info_delete", "**mpi_info_delete %I %s", info, key);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+	     FCNAME, __LINE__, MPI_ERR_OTHER,
+	     "**mpi_info_delete", "**mpi_info_delete %I %s", info, key);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

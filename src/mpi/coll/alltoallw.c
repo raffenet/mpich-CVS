@@ -249,7 +249,8 @@ int MPIR_Alltoallw_inter (
 #define FUNCNAME MPI_Alltoallw
 
 /*@
-   MPI_Alltoallw - Generalized all-to-all communication
+   MPI_Alltoallw - Generalized all-to-all communication allowing different
+   datatypes, counts, and displacements for each partner
 
    Input Parameters:
 + sendbuf - starting address of send buffer (choice) 
@@ -272,6 +273,8 @@ int MPIR_Alltoallw_inter (
  Output Parameter:
 . recvbuf - address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -281,7 +284,9 @@ int MPIR_Alltoallw_inter (
 .N MPI_ERR_COUNT
 .N MPI_ERR_TYPE
 @*/
-int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
+int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
+                  MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
+                  int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Alltoallw";
     int mpi_errno = MPI_SUCCESS;
@@ -396,9 +401,11 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING    
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_alltoallw", "**mpi_alltoallw %p %p %p %p %p %p %p %p %C",
 	    sendbuf, sendcnts, sdispls, sendtypes, recvbuf, recvcnts, rdispls, recvtypes, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

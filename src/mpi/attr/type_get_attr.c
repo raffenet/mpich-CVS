@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Type_get_attr
 
 /*@
-   MPI_Type_get_attr - get type attribute
+   MPI_Type_get_attr - Retrieves attribute value by key
 
    Input Parameters:
 + type - datatype to which the attribute is attached (handle) 
@@ -38,6 +38,19 @@
    Output Parameters:
 + attribute_val - attribute value, unless flag = false 
 - flag - false if no attribute is associated with the key (logical) 
+
+   Notes:
+    Attributes must be extracted from the same language as they were inserted  
+    in with 'MPI_Type_set_attr'.  The notes for C and Fortran below explain 
+    why. 
+
+Notes for C:
+    Even though the 'attr_value' arguement is declared as 'void *', it is
+    really the address of a void pointer.  See the rationale in the 
+    standard for more details. 
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors

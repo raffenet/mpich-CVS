@@ -29,10 +29,12 @@
 #define FUNCNAME MPI_Type_free_keyval
 
 /*@
-   MPI_Type_free_keyval - Free a datatype keyval
+   MPI_Type_free_keyval - Frees an attribute key for datatypes
 
-   Input Parameter:
-. type_keyval - key value (integer) 
+Input Parameter:
+. keyval - Frees the integer key value (integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -61,7 +63,9 @@ int MPI_Type_free_keyval(int *type_keyval)
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (keyval_ptr->kind != MPID_DATATYPE) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, 
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+				  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+						      MPI_ERR_KEYVAL, 
 						    "**keyvalnotdatatype", 0 );
 		}
 	    }
@@ -83,8 +87,12 @@ int MPI_Type_free_keyval(int *type_keyval)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_free_keyval", "**mpi_type_free_keyval %p", type_keyval);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_free_keyval", 
+				     "**mpi_type_free_keyval %p", type_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE_KEYVAL);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

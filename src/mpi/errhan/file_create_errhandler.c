@@ -28,20 +28,23 @@
 #define FUNCNAME MPI_File_create_errhandler
 
 /*@
-   MPI_File_create_errhandler - create file error handler
+   MPI_File_create_errhandler - Create a file error handler
 
-   Arguments:
-+  MPI_File_errhandler_fn *function - function
--  MPI_Errhandler *errhandler - error handler
+   Input Parameter:
+. function - user defined error handling procedure (function) 
 
-   Notes:
+   Output Parameter:
+. errhandler - MPI error handler (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler *errhandler)
+int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, 
+                               MPI_Errhandler *errhandler)
 {
     static const char FCNAME[] = "MPI_File_create_errhandler";
     int mpi_errno = MPI_SUCCESS;
@@ -49,26 +52,11 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* ... body of routine ...  */
     errhan_ptr = (MPID_Errhandler *)MPIU_Handle_obj_alloc( &MPID_Errhandler_mem );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!errhan_ptr)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_ERR_CHKANDJUMP(!errhan_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_FILE;
@@ -80,8 +68,11 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_file_create_errhandler", "**mpi_file_create_errhandler %p %p", function, errhandler);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

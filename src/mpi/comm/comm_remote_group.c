@@ -34,16 +34,23 @@ MPI_Comm_remote_group - Accesses the remote group associated with
                         the given inter-communicator
 
 Input Parameter:
-. comm - Communicator (must be intercommunicator)
+. comm - Communicator (must be an intercommunicator) (handle)
 
 Output Parameter:
-. group - remote group of communicator
+. group - remote group of communicator (handle)
+
+Notes:
+The user is responsible for freeing the group when it is no longer needed.
+
+.N ThreadSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
+
+.seealso MPI_Group_free
 @*/
 int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {
@@ -66,7 +73,8 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr && comm_ptr->comm_kind != MPID_INTERCOMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 						  "**commnotinter", 0 );
 	    }
             if (mpi_errno) goto fn_fail;
@@ -105,8 +113,11 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_remote_group", "**mpi_comm_remote_group %C %p", comm, group);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

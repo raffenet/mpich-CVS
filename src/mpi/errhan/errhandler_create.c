@@ -44,13 +44,21 @@ value of the argument to 'MPI_ERRHANDLER_NULL'.  In addition, the actual
 error handler must remain until all communicators that use it are 
 freed.
 
+.N ThreadSafe
+
+.N Deprecated
+The replacement routine for this function is 'MPI_Comm_create_errhandler'.
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Comm_create_errhandler, MPI_Errhandler_free
 @*/
-int MPI_Errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler)
+int MPI_Errhandler_create(MPI_Handler_function *function, 
+                          MPI_Errhandler *errhandler)
 {
     static const char FCNAME[] = "MPI_Errhandler_create";
     int mpi_errno = MPI_SUCCESS;

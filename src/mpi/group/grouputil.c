@@ -39,6 +39,7 @@ int MPIR_Group_release(MPID_Group *group_ptr)
  * Allocate a new group and the group lrank to lpid array.  Does *not* 
  * initialize any arrays, but does set the reference count.
  */
+#define FCNAME "MPIR_Group_create"
 int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -59,7 +60,8 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
     if (!(*new_group_ptr)->lrank_to_lpid) {
 	MPIU_Handle_obj_free( &MPID_Group_mem, *new_group_ptr );
 	*new_group_ptr = NULL;
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Group_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	MPIU_CHKMEM_SETERR(mpi_errno,nproc*sizeof(MPID_Group_pmap_t),
+			   "newgroup->lrank_to_lpid");
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */

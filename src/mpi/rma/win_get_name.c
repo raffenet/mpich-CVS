@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Win_get_name
 
 /*@
-   MPI_Win_get_name - get window name
+   MPI_Win_get_name - Get the print name associated with the MPI RMA window
 
    Input Parameter:
 . win - window whose name is to be returned (handle) 
@@ -37,6 +37,8 @@
 + win_name - the name previously stored on the window, or a empty string if 
   no such name exists (string) 
 - resultlen - length of returned name (integer) 
+
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -82,8 +84,13 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_get_name", "**mpi_win_get_name %W %p %p", win, win_name, resultlen);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_get_name", 
+				     "**mpi_win_get_name %W %p %p", 
+				     win, win_name, resultlen);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

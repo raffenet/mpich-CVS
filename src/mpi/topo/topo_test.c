@@ -37,8 +37,10 @@ Input Parameter:
 . comm - communicator (handle) 
 
 Output Parameter:
-. top_type - topology type of communicator 'comm' (choice).  If the 
+. top_type - topology type of communicator 'comm' (integer).  If the 
   communicator has no associated topology, returns 'MPI_UNDEFINED'.
+
+.N SignalSafe
 
 .N Fortran
 
@@ -85,8 +87,11 @@ int MPI_Topo_test(MPI_Comm comm, int *topo_type)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_topo_test", "**mpi_topo_test %C %p", comm, topo_type);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TOPO_TEST);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -33,6 +33,8 @@
 Input Parameter:
 . datatype - datatype (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -70,8 +72,11 @@ int MPI_Type_commit(MPI_Datatype *datatype)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_commit", "**mpi_type_commit %p", datatype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

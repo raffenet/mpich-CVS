@@ -28,16 +28,19 @@
 
 /*@
 
-MPI_Comm_size - Determines the size of the group associated with a communictor
+MPI_Comm_size - Determines the size of the group associated with a communicator
 
-Input Argument:
+Input Parameter:
 . comm - communicator (handle) 
 
-Output Argument:
+Output Parameter:
 . size - number of processes in the group of 'comm'  (integer) 
 
 Notes:
-   'MPI_COMM_NULL' is `not` a valid argument to this function.
+
+.N NULL
+
+.N SignalSafe
 
 .N Fortran
 
@@ -79,8 +82,11 @@ int MPI_Comm_size( MPI_Comm comm, int *size )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_size", "**mpi_comm_size %C %p", comm, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SIZE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

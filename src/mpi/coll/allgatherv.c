@@ -849,7 +849,8 @@ int MPIR_Allgatherv_inter (
 
 /*@
 
-MPI_Allgatherv - Gathers data from all tasks and deliver it to all
+MPI_Allgatherv - Gathers data from all tasks and deliver the combined data
+                 to all tasks
 
 Input Parameters:
 + sendbuf - starting address of send buffer (choice) 
@@ -868,18 +869,24 @@ Output Parameter:
 
 Notes:
  The MPI standard (1.0 and 1.1) says that 
-
+.n
+.n
  The jth block of data sent from 
  each proess is received by every process and placed in the jth block of the 
  buffer 'recvbuf'.  
-
+.n
+.n
  This is misleading; a better description is
-
+.n
+.n
  The block of data sent from the jth process is received by every
  process and placed in the jth block of the buffer 'recvbuf'.
-
+.n
+.n
  This text was suggested by Rajeev Thakur, and has been adopted as a 
- clarification to the MPI standard.
+ clarification to the MPI standard by the MPI-Forum.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -888,7 +895,9 @@ Notes:
 .N MPI_ERR_COUNT
 .N MPI_ERR_TYPE
 @*/
-int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int *recvcounts, int *displs, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                   void *recvbuf, int *recvcounts, int *displs, 
+                   MPI_Datatype recvtype, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Allgatherv";
     int mpi_errno = MPI_SUCCESS;
@@ -1004,9 +1013,11 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_allgatherv", "**mpi_allgatherv %p %d %D %p %p %p %D %C",
 	    sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_create_indexed_block
 
 /*@
-   MPI_Type_create_indexed_block - create indexed block datatype
+   MPI_Type_create_indexed_block - Create an indexed
+     datatype with constant-sized blocks
 
    Input Parameters:
 + count - length of array of displacements (integer) 
@@ -38,6 +39,9 @@
 
     Output Parameter:
 . newtype - new datatype (handle) 
+
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors

@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Pack
 
 /*@
-   MPI_Pack - short description
+    MPI_Pack - Packs a datatype into contiguous memory
 
    Arguments:
 +  void *inbuf - input buffer

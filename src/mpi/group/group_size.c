@@ -36,6 +36,8 @@ Input Parameters:
 Output Parameter:
 - size - number of processes in the group (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
@@ -75,8 +77,11 @@ int MPI_Group_size(MPI_Group group, int *size)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_size", "**mpi_group_size %G %p", group, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_SIZE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -43,6 +43,8 @@ Output Parameters:
 + buf - initial address of send and receive buffer (choice) 
 - status - status object (Status) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N FortranStatus
@@ -58,7 +60,8 @@ Output Parameters:
 .N MPI_ERR_EXHAUSTED
 
 @*/
-int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag,
+int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, 
+			 int dest, int sendtag, int source, int recvtag,
 			 MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv_replace";
@@ -70,19 +73,9 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 #endif
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV_REPLACE);
     
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr(comm, comm_ptr);
@@ -126,7 +119,9 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 
 #   if defined(MPID_Sendrecv_replace)
     {
-	mpi_errno = MPID_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm_ptr, status)
+	mpi_errno = MPID_Sendrecv_replace(buf, count, datatype, dest,
+					  sendtag, source, recvtag, comm_ptr, 
+					  status)
     }
 #   else
     {
@@ -150,12 +145,15 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmpbuf == NULL)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", tmpbuf_size);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, 
+                          MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+			  MPI_ERR_OTHER, "**nomem", "**nomem %d", tmpbuf_size);
 		goto blk_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
 
-	    mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	    mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, 
+				  &tmpbuf_count, comm);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -164,7 +162,8 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    /* --END ERROR HANDLING-- */
 	}
 	
-	mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
+	mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag, 
+			       comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
@@ -172,7 +171,9 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	}
 	/* --END ERROR HANDLING-- */
 
-	mpi_errno = MPID_Isend(tmpbuf, tmpbuf_count, MPI_PACKED, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
+	mpi_errno = MPID_Isend(tmpbuf, tmpbuf_count, MPI_PACKED, dest, 
+			       sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
+			       &sreq);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
@@ -181,7 +182,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
-
+	
 	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
 	    MPID_Progress_state progress_state;
@@ -237,9 +238,12 @@ fn_exit:
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_sendrecv_replace", "**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p",
 	buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

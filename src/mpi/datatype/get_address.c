@@ -28,14 +28,13 @@
 #define FUNCNAME MPI_Get_address
 
 /*@
-   MPI_Get_address - get address
+   MPI_Get_address - Get the address of a location in memory 
 
-Input Argument:
+Input Parameter:
 . location - location in caller memory (choice) 
 
-Output Argument:
+Output Parameter:
 . address - address of location (address) 
-   Arguments:
 
    Notes:
     This routine is provided for both the Fortran and C programmers.
@@ -45,6 +44,8 @@ Output Argument:
     instructions or systems with segmented address spaces.  
 
     This routine should be used instead of 'MPI_Address'. 
+
+.N SignalSafe
 
 .N Fortran
 

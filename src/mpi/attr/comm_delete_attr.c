@@ -29,11 +29,14 @@
 #define FUNCNAME MPI_Comm_delete_attr
 
 /*@
-   MPI_Comm_delete_attr - delete communicator attribute
+   MPI_Comm_delete_attr - Deletes an attribute value associated with a key on 
+   a  communicator
 
 Input Parameters:
 + comm - communicator to which attribute is attached (handle) 
 - comm_keyval - The key value of the deleted attribute (integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -41,6 +44,8 @@ Input Parameters:
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 .N MPI_ERR_PERM_KEY
+
+.seealso MPI_Comm_set_attr, MPI_Comm_create_keyval
 @*/
 int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 {
@@ -64,14 +69,19 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                             MPI_ERR_KEYVAL, "**keyval", 0 );
 	    } 
 	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+			     MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 	    }
 	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**permattr", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                             MPI_ERR_OTHER, "**permattr", 0 );
 	    }
 	    else {
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
@@ -137,8 +147,11 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_delete_attr", "**mpi_comm_delete_attr %C %d", comm, comm_keyval);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -162,7 +162,7 @@ int MPIR_Scatterv (
 
 /*@
 
-MPI_Scatterv - Scatters a buffer in parts to all tasks in a group
+MPI_Scatterv - Scatters a buffer in parts to all processes in a communicator
 
 Input Parameters:
 + sendbuf - address of send buffer (choice, significant only at 'root') 
@@ -180,6 +180,8 @@ which to take the outgoing data to process  'i'
 Output Parameter:
 . recvbuf - address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -189,8 +191,10 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype,
-		 int root, MPI_Comm comm)
+int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, 
+		  MPI_Datatype sendtype, void *recvbuf, int recvcnt,
+		  MPI_Datatype recvtype,
+		  int root, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Scatterv";
     int mpi_errno = MPI_SUCCESS;
@@ -341,8 +345,11 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKIN
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_scatterv", "**mpi_scatterv %p %p %p %D %p %d %D %d %C", sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTERV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

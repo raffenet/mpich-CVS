@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Unpack
 
 /*@
-    MPI_Unpack - Unpack a datatype into contiguous memory
+    MPI_Unpack - Unpack a buffer according to a datatype into contiguous memory
 
 Input Parameters:
 + inbuf - input buffer start (choice) 
@@ -40,6 +40,8 @@ Input Parameters:
 
 Output Parameter:
 . outbuf - output buffer start (choice) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -134,8 +136,14 @@ int MPI_Unpack(void *inbuf,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_unpack", "**mpi_unpack %p %d %p %p %d %D %C", inbuf, insize, position, outbuf, outcount, datatype, comm);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_unpack", 
+				     "**mpi_unpack %p %d %p %p %d %D %C", 
+				     inbuf, insize, position, outbuf, 
+				     outcount, datatype, comm);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

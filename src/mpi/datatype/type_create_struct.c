@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_create_struct
 
 /*@
-   MPI_Type_create_struct - create struct datatype
+   MPI_Type_create_struct - Create an MPI datatype from a general set of 
+   datatypes, displacements, and block sizes
 
    Input Parameters:
 + count - number of blocks (integer) --- also number of entries in arrays 
@@ -40,6 +41,8 @@
 
    Output Parameter:
 . newtype - new datatype (handle) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -139,6 +142,7 @@ int MPI_Type_create_struct(int count,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,
@@ -151,6 +155,7 @@ fn_fail:
 				     array_of_displacements,
 				     array_of_types,
 				     newtype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

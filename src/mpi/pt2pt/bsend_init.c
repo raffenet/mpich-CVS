@@ -41,6 +41,8 @@ Input Parameters:
 Output Parameter:
 . request - communication request (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -50,8 +52,11 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_RANK
 .N MPI_ERR_TAG
+
+.seealso: MPI_Buffer_attach
 @*/
-int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, 
+                   int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Bsend_init";
     int mpi_errno = MPI_SUCCESS;
@@ -122,9 +127,11 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int ta
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_bsend_init", "**mpi_bsend_init %p %d %D %d %d %C %p",
 	buf, count, datatype, dest, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

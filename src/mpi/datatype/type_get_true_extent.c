@@ -28,7 +28,8 @@
 #define FUNCNAME MPI_Type_get_true_extent
 
 /*@
-   MPI_Type_get_true_extent - get true type extent
+   MPI_Type_get_true_extent - Get the true lower bound and extent for a 
+     datatype
 
    Input Parameter:
 . datatype - datatype to get information on (handle) 
@@ -37,13 +38,17 @@
 + true_lb - true lower bound of datatype (integer) 
 - true_extent - true size of datatype (integer) 
 
+.N SignalSafe
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
-int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent)
+int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, 
+			     MPI_Aint *true_extent)
 {
     static const char FCNAME[] = "MPI_Type_get_true_extent";
     int mpi_errno = MPI_SUCCESS;
@@ -79,8 +84,13 @@ int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint 
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_get_true_extent", "**mpi_type_get_true_extent %D %p %p", datatype, true_lb, true_extent);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_get_true_extent", 
+				     "**mpi_type_get_true_extent %D %p %p", 
+				     datatype, true_lb, true_extent);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_TRUE_EXTENT);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

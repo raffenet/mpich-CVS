@@ -44,6 +44,8 @@ The MPI standard document describes this in terms of 'MPI_Pack', but it
 applies to both 'MPI_Pack' and 'MPI_Unpack'.  That is, the value 'size' is 
 the maximum that is needed by either 'MPI_Pack' or 'MPI_Unpack'.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -108,8 +110,11 @@ int MPI_Pack_size(int incount,
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_pack_size", "**mpi_pack_size %d %D %C %p", incount, datatype, comm, size);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -28,17 +28,14 @@
 #define FUNCNAME MPI_Status_set_elements
 
 /*@
-   MPI_Status_set_elements - status set elements
+   MPI_Status_set_elements - Set the number of elements in a status
 
    Input Parameters:
 + status - status to associate count with (Status) 
 . datatype - datatype associated with count (handle) 
 - count - number of elements to associate with status (integer) 
 
-   Arguments:
-+  MPI_Status *status - status
-.  MPI_Datatype datatype - datatype
--  int count - count
+.N ThreadSafe
 
 .N Fortran
 
@@ -84,8 +81,11 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_status_set_elements", "**mpi_status_set_elements %p %D %d", status, datatype, count);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

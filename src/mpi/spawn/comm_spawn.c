@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Comm_spawn
 
 /*@
-   MPI_Comm_spawn - spawn up to maxprocs instances of a single mpi application
+   MPI_Comm_spawn - Spawn up to maxprocs instances of a single MPI application
 
    Input Parameters:
 + command - name of program to be spawned (string, significant only at root) 
@@ -44,6 +44,8 @@
 + intercomm - intercommunicator between original group and the 
    newly spawned group (handle) 
 - array_of_errcodes - one code per process (array of integer) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -110,9 +112,12 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+				     __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_spawn", "**mpi_comm_spawn %s %p %d %I %d %C %p %p",
 	command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

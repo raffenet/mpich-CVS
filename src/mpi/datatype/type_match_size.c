@@ -43,6 +43,7 @@ Notes:
 The function returns an MPI datatype matching a local variable of type 
 '( typeclass, size )'. 
 
+.N ThreadSafe
 
 .N Fortran
 
@@ -172,6 +173,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 					 MPIR_ERR_RECOVERABLE,
 					 FCNAME,
@@ -182,6 +184,7 @@ fn_fail:
 					 typeclass,
 					 size,
 					 datatype);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -30,13 +30,13 @@
 /*@
     MPI_Info_get_nkeys - Returns the number of currently defined keys in info
 
-Input Arguments:
+Input Parameters:
 . info - info object (handle)
 
-Output Arguments:
+Output Parameters:
 . nkeys - number of defined keys (integer)
 
-   Notes:
+.N ThreadSafeInfoRead
 
 .N Fortran
 
@@ -85,8 +85,11 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_info_get_nkeys", "**mpi_info_get_nkeys %I %p", info, nkeys);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NKEYS);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

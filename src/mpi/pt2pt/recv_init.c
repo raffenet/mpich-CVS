@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Recv_init
 
 /*@
-    MPI_Recv_init - Builds a handle for a receive
+    MPI_Recv_init - Create a persistent request for a receive
 
 Input Parameters:
 + buf - initial address of receive buffer (choice) 
@@ -41,6 +41,8 @@ Input Parameters:
 Output Parameter:
 . request - communication request (handle) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -52,9 +54,10 @@ Output Parameter:
 .N MPI_ERR_COMM
 .N MPI_ERR_EXHAUSTED
 
-.seealso: MPI_Start, MPI_Request_free
+.seealso: MPI_Start, MPI_Startall, MPI_Request_free
 @*/
-int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, 
+		  int tag, MPI_Comm comm, MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Recv_init";
     int mpi_errno = MPI_SUCCESS;
@@ -111,7 +114,8 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr, 
+			       MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -123,8 +127,11 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_recv_init", "**mpi_recv_init %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, request);
+#endif
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

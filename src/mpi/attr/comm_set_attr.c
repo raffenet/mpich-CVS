@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Comm_set_attr
 
 /*@
-   MPI_Comm_set_attr - set communicator attribute
+   MPI_Comm_set_attr - Stores attribute value associated with a key
 
 Input Parameters:
 + comm - communicator to which attribute will be attached (handle) 
@@ -38,15 +38,18 @@ Input Parameters:
 
 Notes:
 Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
-'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
- may not be changed. 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 
+'MPI_APPNUM' may not be changed. 
 
-The type of the attribute value depends on whether C or Fortran is being used.
-In C, an attribute value is a pointer ('void *'); in Fortran, it is an 
+The type of the attribute value depends on whether C, C++, or Fortran
+is being used. 
+In C and C++, an attribute value is a pointer ('void *'); in Fortran, it is an 
 address-sized integer.
 
 If an attribute is already present, the delete function (specified when the
 corresponding keyval was created) will be called.
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -55,6 +58,8 @@ corresponding keyval was created) will be called.
 .N MPI_ERR_COMM
 .N MPI_ERR_KEYVAL
 .N MPI_ERR_PERM_KEY
+
+.seealso MPI_Comm_create_keyval, MPI_Comm_delete_attr
 @*/
 int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 {
@@ -79,18 +84,24 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
 	    if (comm_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+				MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
 	    }
 	    else if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                                MPI_ERR_KEYVAL, "**keyval", 0 );
 	    } 
 	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+				MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 	    }
 	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**permattr", 0 );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                                MPI_ERR_OTHER, "**permattr", 0 );
 	    }
 	    else {
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
@@ -133,12 +144,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (!new_p) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-		goto fn_fail;
-	    }
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_CHKANDJUMP(!new_p,mpi_errno,MPI_ERR_OTHER,"**nomem");
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
 	    new_p->value	 = attribute_val;
@@ -153,12 +159,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     }
     if (!p) {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	/* --BEGIN ERROR HANDLING-- */
-	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    goto fn_fail;
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP(!new_p,mpi_errno,MPI_ERR_OTHER,"**nomem");
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;
@@ -180,8 +181,11 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_set_attr", "**mpi_comm_set_attr %C %d %p", comm, comm_keyval, attribute_val);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

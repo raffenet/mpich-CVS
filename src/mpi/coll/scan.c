@@ -283,6 +283,8 @@ Input Parameters:
 Output Parameter:
 . recvbuf - starting address of receive buffer (choice) 
 
+.N ThreadSafe
+
 .N Fortran
 
 .N collops
@@ -295,7 +297,8 @@ Output Parameter:
 .N MPI_ERR_BUFFER
 .N MPI_ERR_BUFFER_ALIAS
 @*/
-int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+	     MPI_Op op, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Scan";
     int mpi_errno = MPI_SUCCESS;
@@ -384,8 +387,11 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
     }
 
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_scan", "**mpi_scan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
+#endif
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -35,8 +35,10 @@ Input Parameters:
 . group - group (handle) 
 
 Output Parameter:
-. rank - rank of the calling process in group, or   'MPI_UNDEFINED'  if the 
+. rank - rank of the calling process in group, or 'MPI_UNDEFINED'  if the 
 process is not a member (integer) 
+
+.N SignalSafe
 
 .N Fortran
 
@@ -76,8 +78,11 @@ int MPI_Group_rank(MPI_Group group, int *rank)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_group_rank", "**mpi_group_rank %G %p", group, rank);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANK);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

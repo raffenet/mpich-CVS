@@ -33,14 +33,14 @@
 
 /*@
     MPI_Testall - Tests for the completion of all previously initiated
-    communications
+    requests
 
 Input Parameters:
 + count - lists length (integer) 
 - array_of_requests - array of requests (array of handles) 
 
 Output Parameters:
-+ flag - (logical) 
++ flag - True if all requests have completed; false otherwise (logical) 
 - array_of_statuses - array of status objects (array of Status).  May be
  'MPI_STATUSES_IGNORE'.
 
@@ -49,16 +49,18 @@ Notes:
   false and neither the 'array_of_requests' nor the 'array_of_statuses' is
   modified.
 
-If one or more of the requests completes with an error, MPI_ERR_IN_STATUS is
-returned.  An error value will be present is elements of array_of_status
-associated with the requests.  Likewise, the MPI_ERROR field in the status
+If one or more of the requests completes with an error, 'MPI_ERR_IN_STATUS' is
+returned.  An error value will be present is elements of 'array_of_status'
+associated with the requests.  Likewise, the 'MPI_ERROR' field in the status
 elements associated with requests that have successfully completed will be
-MPI_SUCCESS.  Finally, those requests that have not completed will have a value
-of MPI_ERR_PENDING.
+'MPI_SUCCESS'.  Finally, those requests that have not completed will have a 
+value of 'MPI_ERR_PENDING'.
 
 While it is possible to list a request handle more than once in the
-array_of_requests, such an action is considered erroneous and may cause the
+'array_of_requests', such an action is considered erroneous and may cause the
 program to unexecpectedly terminate or produce incorrect results.
+
+.N ThreadSafe
 
 .N waitstatus
 
@@ -70,7 +72,8 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_REQUEST
 .N MPI_ERR_ARG
 @*/
-int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
+int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, 
+		MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Testall";
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
@@ -83,19 +86,9 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTALL);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTALL);
+    /* Verify that MPI has been initialized */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -252,9 +245,12 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTALL);
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_testall", "**mpi_testall %d %p %p %p", count, array_of_requests, flag, array_of_statuses);
+#endif
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTALL);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */
 }

@@ -46,6 +46,8 @@ created with 'MPI_Irecv' or 'MPI_Isend' and friends.  Like active persistent
 requests, once freed, the request can no longer be used with test/wait routines
 to determine completion.
 
+.N ThreadSafe
+
 .N Fortran
 
 .N Errors
@@ -65,19 +67,8 @@ int MPI_Request_free(MPI_Request *request)
     MPID_Request *request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REQUEST_FREE);
 
-    /* Verify that MPI has been initialized */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     /* Check the arguments */
 #   ifdef HAVE_ERROR_CHECKING
@@ -124,7 +115,8 @@ int MPI_Request_free(MPI_Request *request)
 	case MPID_PREQUEST_SEND:
 	case MPID_PREQUEST_RECV:
 	{
-	    /* If this is an active persistent request, we must also release the partner request. */
+	    /* If this is an active persistent request, we must also 
+	       release the partner request. */
 	    if (request_ptr->partner_request != NULL)
 	    {
 		MPID_Request_release(request_ptr->partner_request);
@@ -159,16 +151,19 @@ int MPI_Request_free(MPI_Request *request)
 	    
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**user", "**userfree %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+			MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+			"**user", "**userfree %d", mpi_errno);
 	    }
 	    break;
 	}
 
 	default:
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**request_invalid_kind", "**request_invalid_kind %d", request_ptr->kind);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+			 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		         "**request_invalid_kind", 
+			 "**request_invalid_kind %d", request_ptr->kind);
 	    break;
 	}
     }
@@ -183,8 +178,11 @@ int MPI_Request_free(MPI_Request *request)
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_request_free", "**mpi_request_free %p", request);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

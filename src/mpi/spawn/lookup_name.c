@@ -41,9 +41,16 @@ MPID_NS_Handle MPIR_Namepub = 0;
 + service_name - a service name (string) 
 - info - implementation-specific information (handle) 
 
+
    Output Parameter:
 .  port_name - a port name (string) 
 
+Notes:
+If the 'service_name' is found, MPI copies the associated value into 
+'port_name'.  The maximum size string that may be supplied by the system is 
+'MPI_MAX_PORT_NAME'. 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -110,20 +117,27 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 
 #else
 
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
+    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+		       FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

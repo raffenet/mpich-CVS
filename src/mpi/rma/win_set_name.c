@@ -28,11 +28,13 @@
 #define FUNCNAME MPI_Win_set_name
 
 /*@
-   MPI_Win_set_name - set the window name
+   MPI_Win_set_name - Set the print name for an MPI RMA window
 
    Input Parameters:
 + win - window whose identifier is to be set (handle) 
 - win_name - the character string which is remembered as the name (string) 
+
+.N ThreadSafe
 
 .N Fortran
 
@@ -76,8 +78,13 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_NAME);
     return MPI_SUCCESS;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_set_name", "**mpi_win_set_name %W %s", win, win_name);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_win_set_name", 
+				     "**mpi_win_set_name %W %s", 
+				     win, win_name);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_NAME);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

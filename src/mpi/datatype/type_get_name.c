@@ -168,7 +168,7 @@ int MPIR_Datatype_init_names( void )
 #define FUNCNAME MPI_Type_get_name
 
 /*@
-   MPI_Type_get_name - get type name
+   MPI_Type_get_name - Get the print name for a datatype
 
    Input Parameter:
 . type - datatype whose name is to be returned (handle) 
@@ -177,6 +177,8 @@ int MPIR_Datatype_init_names( void )
 + type_name - the name previously stored on the datatype, or a empty string 
   if no such name exists (string) 
 - resultlen - length of returned name (integer) 
+
+.N ThreadSafeNoUpdate
 
 .N Fortran
 
@@ -232,8 +234,13 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_get_name", "**mpi_type_get_name %D %p %p", datatype, type_name, resultlen);
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_get_name", 
+				     "**mpi_type_get_name %D %p %p", 
+				     datatype, type_name, resultlen);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

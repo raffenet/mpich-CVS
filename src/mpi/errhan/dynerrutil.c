@@ -171,7 +171,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
     if (errcode) {
 	if (errcode < first_free_code) {
 	    if (user_code_msgs[errcode]) {
-		MPIU_Free( user_code_msgs[errcode] );
+		MPIU_Free( (void*)(user_code_msgs[errcode]) );
 	    }
 	    user_code_msgs[errcode] = (const char *)str;
 	}
@@ -183,7 +183,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
     else {
 	if (errclass < first_free_class) {
 	    if (user_class_msgs[errclass]) {
-		MPIU_Free( user_class_msgs[errclass] );
+		MPIU_Free( (void*)(user_class_msgs[errclass]) );
 	    }
 	    user_class_msgs[errclass] = (const char *)str;
 	}
