@@ -201,7 +201,8 @@ int tcp_make_progress()
     tv.tv_usec = 1;
     
     readset = TCP_Process.readset;
-    writeset = TCP_Process.writeset;
+    if (TCP_Process.num_writers)
+	writeset = TCP_Process.writeset;
 
     /* select */
     MM_ENTER_FUNC(BSELECT);
