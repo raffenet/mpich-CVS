@@ -210,27 +210,26 @@ because an MPI implementation is not complete without these components.
       \code{remsh} implementation for those who don't want
       free-running demons.
 
-      \textbf{This organization (with BNR here) does not provide a
-    clean separation between the functions of packages like mpd and
-    providing an implementation of BNR.  Is there a better
-    organization, perhaps with a pmi directory that contains process
-    manager tools, and bnr simply contains the implementation of bnr
-    in terms of those tools?}
+%       \textbf{This organization (with BNR here) does not provide a
+%     clean separation between the functions of packages like mpd and
+%     providing an implementation of BNR.  Is there a better
+%     organization, perhaps with a pmi directory that contains process
+%     manager tools, and bnr simply contains the implementation of bnr
+%     in terms of those tools?}
     \begin{description}
       \item[include]BNR header files
-      \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}, 
-        including the mpd \file{configure}.  Note that mpd is available as
-        as seperate CVS module.
-        \begin{description}
-          \item[src]Source files for mpd
-          \item[include]Include files for mpd.  No MPICH code includes
-    any files here (MPICH code can only include BNR includes).
-        \end{description}
-      \item[remsh]Implementation of \code{bnr} in terms of remote
-      shell (\code{rsh}, \code{ssh}, or \code{remsh}).
-      \item[windows]Implementation of \code{bnr} for Windows (this is
-    probably not the correct name, but it is important that one or
-    more Windows implementations be included here)
+      \item[impls]Implementations of BNR in terms of various process managers
+      \begin{description}
+          \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}, 
+           including the mpd \file{configure}.  
+          \item[remsh]Implementation of \code{bnr} in terms of remote
+          shell (\code{rsh}, \code{ssh}, or \code{remsh}).
+          \item[windows]Implementation of \code{bnr} for Windows (this is
+          probably not the correct name, but it is important that one or
+          more Windows implementations be included here)
+          \item[bproc]Scyld bproc
+          \item[openpbs]OpenPBS process-manager interface
+      \end{description}
     \end{description}
 % [BRT] BNR is an interface provide by a variety of process managers.
 % It should not be a directory in the MPICH2 tree; although we do need
@@ -238,6 +237,18 @@ because an MPI implementation is not complete without these components.
 % to define how BNR implementation needs to present itself)
 % [WDG] Added some discussion.  This is really a compromise; but BNR
 % is likely to exist only in or for MPICH.
+    \item[pm]Process managers.  
+        \begin{description}
+        \item[mpd]Note that mpd is available as
+            as seperate CVS module.
+          \begin{description}
+          \item[src]Source files for mpd
+          \item[include]Include files for mpd.  No MPICH code includes
+           any files here (MPICH code can only include BNR includes).
+          \end{description}
+        \item[windows]
+        \end{description}
+
   \item[binding]Alternative Language bindings (C is the primary binding)
     \begin{description}
     \item[c++]C++ binding (includes \file{configure})
