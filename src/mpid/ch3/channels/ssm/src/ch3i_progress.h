@@ -42,7 +42,7 @@ typedef unsigned __int64 MPID_CPU_Tick_t;
 #undef MPID_CPU_TICK
 #endif
 
-extern volatile unsigned int MPIDI_CH3I_progress_completions;
+extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
 typedef enum MPIDI_CH3I_Conn_state
 {
