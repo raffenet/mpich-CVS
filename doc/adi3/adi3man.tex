@@ -884,6 +884,9 @@ See the table of contents for an up-to-date-list.
 % \end{verbatim}
 
 \section{MPID Core}
+%\subsection{Data Structures}
+%\input MPID_CORE-DS-list.tex
+\subsection{Functions}
 \input MPID_CORE-list.tex
 %\input Handlers.tex
 
@@ -930,10 +933,21 @@ debuggers to locate all processes in an MPI job.
 
 \subsection{Keyval functions}
 \input KyOverview.tex
+\subsection{Data Structures}
+\input Attribute-DS-list.tex
+\subsection{Functions}
 \input Attribute-list.tex
+
+\section{Error Handlers}
+\subsection{Data Structures}
+\input ErrHand-DS-list.tex
 
 \section{Info}
 \input InfoOverview.tex
+\subsection{Data Structures}
+\input Info-DS-list.tex
+\subsection{Functions}
+\input Info-list.tex
 
 \section{Datatypes}
 Datatypes are a key part of MPI; they provide a great deal of expressive
@@ -960,21 +974,38 @@ and to retain a description of the arguments to the routine that
 created the datatype, necessary to implement the MPI routines to
 return the `envelope` and `contents` of a datatype.
 
+\subsection{Data Structures}
+\input Datatype-DS-list.tex
+\subsection{Functions}
 \input Datatype-list.tex
+
 \input SGOverview.tex
+
+\subsection{Data Structures}
+\input Segment-DS-list.tex
+\subsection{Functions}
 \input Segment-list.tex
 
 \section{Groups}
 \input LocalPID.tex
-\input Group-list.tex
+\subsection{Data Structures}
+\input Group-DS-list.tex
+%\subsection{Functions}
+%\input Group-list.tex
 
 \section{Communicators}
+\subsection{Data Structures}
+\input Communicator-DS-list.tex
+\subsection{Functions}
 \input Communicator-list.tex
 
 %\section{Dynamic}
 %\input Dynamic-list.tex
 
 \section{Requests}
+\subsection{Data Structures}
+\input Request-DS-list.tex
+\subsection{Functions}
 \input Request-list.tex
 
 \section{Communication}
@@ -985,14 +1016,23 @@ return the `envelope` and `contents` of a datatype.
 \textbf{How do these relate to the xfer interface?  Are they
 superceeded?  Are streams used to implemente xfer?}
 \input StmOverview.tex
+%\subsection{Data Structures}
+%\input Stream-DS-list.tex
+\subsection{Functions}
 \input Stream-list.tex
 
 \section{Collective Computation}
 %\input CollOverview.tex
-\input Collective-list.tex
+\subsection{Data Structures}
+\input Collective-DS-list.tex
+%\subsection{Functions}
+%\input Collective-list.tex
 
 \section{Window Objects}
 \label{sec:window-objects}
+\subsection{Data Structures}
+\input Win-DS-list.tex
+\subsection{Functions}
 \input Win-list.tex
 
 \section{Timers}
@@ -1015,18 +1055,24 @@ The timer is local to a process (no global timer).
 %%% Global timers commented out because they are too far down the
 %%% priority list.
 
+\subsection{Functions}
 \input Timer-list.tex
 
 \section{Topology}
 \input TopoOverview.tex
+\subsection{Functions}
 \input Topology-list.tex
 
 \section{Utility}
+\subsection{Functions}
 \input Memory.tex
 \input Utility-list.tex 
 
 \section{Environment}
-\input Environment-list.tex
+\subsection{Data Structures}
+\input Environment-DS-list.tex
+%\subsection{Functions}
+%\input Environment-list.tex
 
 \section{Error Reporting}
 MPI allows separate error codes and classes.  An error \emph{class} is

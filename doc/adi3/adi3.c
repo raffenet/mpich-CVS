@@ -297,6 +297,8 @@ int MPID_Object_release_ref( MPIU_Object_head *ptr )
 
   This routine can process the datatype inorder to optimize operations with it.
 
+  Module:
+  Datatype
   @*/
 int MPID_Datatype_commit( MPID_Datatype *datatype )
 {}
@@ -3241,6 +3243,9 @@ MPID_Info *MPIU_Info_create( void )
   Notes:
   Frees all members of an info object.  In a multithreaded environment,
   it ensures that 'MPID_Info' storage is reclaimed in a thread-safe fashion.
+
+  Module:
+  Info
  @*/
 void MPID_Info_destroy( MPID_Info *info_ptr )
 {}
@@ -3287,7 +3292,7 @@ void MPIU_Info_destroy( MPID_Info *info_ptr )
   Superceeded by the 'thread_provided' field in 'MPIR_Process'.
 
   Module:
-  Environment
+  Environment-DS
   D */
 extern int MPID_THREAD_LEVEL;
 

@@ -71,7 +71,7 @@ typedef struct {
   zero)?
 
   Module:
-  Attribute
+  Attribute-DS
   E*/
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
@@ -112,6 +112,9 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   as bits to allow future expansion to the case where an object is value for
   multiple types (for example, we may want a universal error handler for 
   errors return).
+
+  Module:
+  Attribute-DS
   E*/
 typedef enum { 
   MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Object_kind;
@@ -139,8 +142,7 @@ typedef enum {
   Do we want to create typedefs for the two Fortran functions?
 
   Module:
-  Attribute
-
+  Attribute-DS
 
   E*/
 typedef union {
@@ -173,7 +175,7 @@ typedef union {
   F90 function corresponds to the Fortran 90 binding used in MPI-2.
 
   Module:
-  Attribute
+  Attribute-DS
 
   E*/
 typedef union {
@@ -191,7 +193,7 @@ typedef union {
   MPID_Keyval - Structure of an MPID keyval
 
   Module:
-  Attribute
+  Attribute-DS
 
   Question:
   Because this structure contains pointers to user-functions, there is always
@@ -247,7 +249,7 @@ typedef struct {
   we cast it to 'MPI_Fint *' and use that value.
  
   Module:
-  Attribute
+  Attribute-DS
 
  S*/
 typedef struct {
@@ -285,7 +287,7 @@ typedef struct {
   of values.
 
   Module:
-  Info
+  Info-DS
   S*/
 typedef struct MPID_Info_s {
     int                id;
@@ -350,7 +352,7 @@ typedef struct MPID_Info_s {
 .ve  
 
   Module:
-  Group
+  Group-DS
   S*/
 typedef struct {
     /* other, device-specific information */
@@ -377,7 +379,7 @@ typedef struct {
   'kind' field, particularly for leaf dataloops.
 
   Module:
-  Datatype
+  Datatype-DS
   S*/
 typedef struct {
     int count;
@@ -398,7 +400,7 @@ typedef struct {
   the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
-  Datatype
+  Datatype-DS
   S*/
 typedef struct { 
     int      count;
@@ -421,7 +423,7 @@ typedef struct {
   the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
-  Datatype
+  Datatype-DS
 
   S*/
 typedef struct {
@@ -445,7 +447,7 @@ typedef struct {
   the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
-  Datatype
+  Datatype-DS
 
   S*/
 typedef struct {
@@ -469,7 +471,7 @@ typedef struct {
   the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
-  Datatype
+  Datatype-DS
 
   S*/
 typedef struct {
@@ -495,7 +497,7 @@ typedef struct {
 - id     - id for the corresponding 'MPI_Datatype'.
 
   Module:
-  Datatype
+  Datatype-DS
 
   S*/
 typedef struct dataloop_ { 
@@ -532,7 +534,7 @@ typedef struct dataloop_ {
 .ve
 
   Module:
-  Datatype
+  Datatype-DS
 
   Notes:
 
@@ -634,7 +636,7 @@ typedef struct {
  method-specific) information.
 
  Module:
- Group
+ Group-DS
 
  Questions:
  Do we want a rank of this process in the group (if any)?
@@ -656,6 +658,9 @@ typedef struct {
   The MPI-1 Standard declared only the C version of this, implicitly 
   assuming that 'int' and 'MPI_Fint' were the same. 
 
+  Module:
+  ErrHand-DS
+  
   Questions:
   What do we want to do about C++?  Do we want a hook for a routine that can
   be called to throw an exception in C++, particularly if we give C++ access
@@ -685,6 +690,9 @@ typedef union {
   valid, to help catch the case where the user has freed the errhandler but
   is still using a copy of the 'MPI_Errhandler' value.  We may want to 
   define the 'id' value for deleted errhandlers.
+
+  Module:
+  ErrHand-DS
   S*/
 typedef struct {
   int                id;
@@ -717,7 +725,7 @@ typedef struct {
   the implementation of the intercommunicator collective routines).
   
   Module:
-  Communicator
+  Communicator-DS
 
   Question:
   Do we want to have the collective operations pointer here?
@@ -767,7 +775,7 @@ typedef struct {
   MPID_Win - Description of the Window Object data structure.
 
   Module:
-  Win
+  Win-DS
 
   Notes:
   The following 3 keyvals are defined for attributes on all MPI 
@@ -828,6 +836,8 @@ typedef struct {
 . curoffset - Offset for relative offsets in datatypes 
 - loopinfo  - Loop-based description of the datatype
 
+  Module:
+  Datatype-DS
 S*/
 typedef struct {
     int           curcount;
@@ -896,7 +906,7 @@ typedef struct {
   object.
 
   Module:
-  Segment
+  Segment-DS
 
   Questions:
   Should this have an id for allocation and similarity purposes?
@@ -927,7 +937,7 @@ typedef struct {
   MPID_Request - Description of the Request data structure
 
   Module:
-  Request
+  Request-DS
 
   Question:
   Do we need an 'MPID_Datatype *' to hold the datatype in the event of a 
@@ -957,7 +967,7 @@ typedef struct {
   of the other (i.e., not 'MPID_CORE') modules.
 
   Module:
-  MPID_CORE
+  MPID_CORE-DS
 
   E */
 typedef enum { MPID_Hid_Request_to_send = 1, 
@@ -996,7 +1006,7 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   This handler may be processed with polling.
 
   Module:
-  MPID_CORE
+  MPID_CORE-DS
 
  S */
 typedef struct {
@@ -1019,7 +1029,7 @@ typedef struct {
   that does not require polling is prefered.
 
    Module:
-   MPID_CORE
+   MPID_CORE-DS
 
   S */
 typedef struct {
@@ -1042,7 +1052,7 @@ typedef struct {
   extensions (such as a Read-Modify-Write operation).
 
   Module:
-  Collective  
+  Collective-DS
   E*/
 typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4, 
 	       MPID_LAND_OP=5, MPID_BAND_OP=6, MPID_LOR_OP=7, MPID_BOR_OP=8,
@@ -1084,7 +1094,7 @@ typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4,
   Should there be a C++ function here?
 
   Module:
-  Collective
+  Collective-DS
   S*/
 typedef union {
     void (*c_function) ( const void restrict *, void restrict *, 
@@ -1105,7 +1115,7 @@ typedef union {
   a valid program can free an 'MPI_Op' while it is in use.
 
   Module:
-  Collective
+  Collective-DS
   S*/
 typedef struct {
      MPID_Op_kind       kind;
@@ -1128,7 +1138,7 @@ typedef struct {
   instead of MPID)?
 
   Module:
-  Environment
+  Environment-DS
   D*/
 #define MPID_THREAD_SINGLE     0
 #define MPID_THREAD_FUNNELLED  1
@@ -1159,7 +1169,7 @@ typedef struct {
 .ve
 
   Module:
-  Environment
+  Environment-DS
   D*/
 #define MPID_MAX_THREAD_LEVEL 
 
