@@ -191,6 +191,19 @@ for some additional requirements on the progress engine.
 \section{Collective Communication}
 (not yet designed)
 
+\section{Connections and Local Process Ids}
+\label{sec:connections}
+These routines are used to manage connections.  MPI Communicators contain
+references to these tables; group operations use the local process id
+(see \code{MPID_VCR_Get_lpid}) to identify processes.
+
+\input adi3man/MPID_VCRT_Create.tex
+\input adi3man/MPID_VCRT_Add_ref.tex
+\input adi3man/MPID_VCRT_Release.tex
+\input adi3man/MPID_VCRT_Get_ptr.tex
+\input adi3man/MPID_VCR_Dup.tex
+\input adi3man/MPID_VCR_Get_lpid.tex
+
 \section{Device Hooks}
 \input adi3man/MPID_Dev_xxx_create_hook.tex
 \input adi3man/MPID_Dev_xxx_destroy_hook.tex

@@ -4326,6 +4326,88 @@ int MPICH_Quiet( MPID_Comm *comm,
 		  int (*checkpointfunction)(MPI_Comm *, void *), 
 		  void *extra_data )
 {}
+
+/*
+ * Virtual Connection Reference Table (VCRT)
+ */
+/*@
+  MPID_VCRT_Create - Create a virtual connection reference table
+  @*/
+int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
+{}
+/*@
+  MPID_VCRT_Add_ref - Add a reference to a VCRT
+  @*/
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
+{}
+/*@
+  MPID_VCRT_Release - Release a reference to a VCRT
+  @*/
+int MPID_VCRT_Release(MPID_VCRT vcrt)
+{}
+/*@
+  MPID_VCRT_Get_ptr - 
+  @*/
+int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
+{}
+
+/*@
+  MPID_VCR_Dup - 
+  @*/
+int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
+{}     
+/*@
+   MPID_VCR_Get_lpid - Get the local process id that corresponds to a 
+   virtual connection reference.
+
+   Notes:
+   The local process ids are described elsewhere.  Basically, they are
+   a nonnegative number by which this process can refer to other processes 
+   to which it is connected.  These are local process ids because different
+   processes may use different ids to identify the same target process
+  @*/
+int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
+{}
+
+/*
+  Description from Brian Toonen
+
+NOTE: MPID_VCRT_Release() must release the VCRs held by the table when the
+reference count on the table reaches zero.
+
+With the above routines, you should be able to create, duplicate, and free
+communicators.  See code fragments below.
+
+
+MPI_Comm_create(comm, group, newcomm)
+{
+    ...
+    MPID_VCRT_Create(group_ptr->size, &comm_ptr->vcrt)
+    MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr)
+    for (i = 0; i < group_ptr->size, i++)
+    {
+         MPID_VCR_Dup(comm_ptr->vcr[mapping[i]], newcomm_ptr->vcr[i])
+    }
+    ...
+}
+
+MPI_Comm_dup(oldcomm, newcomm)
+{
+    ...
+    MPID_VCRT_Add_ref(oldcomm_ptr->vcrt)
+    newcomm_ptr->vcrt = oldcomm_ptr->vcrt
+    newcomm_ptr->vcr = oldcomm_ptr->vcr
+    ...
+}
+
+MPI_Comm_free(comm)
+{
+    ...
+    MPID_VCRT_Release(comm_ptr->vcrt)
+    ...
+}
+*/
+
 /*
  * ToDo:
  * Complete list
