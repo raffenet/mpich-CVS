@@ -1,0 +1,104 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2003 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+#include "mpi.h"
+#include <stdio.h>
+#include "mpitest.h"
+
+static char MTEST_Descrip[] = "A simple test of Comm_spawn, with complex arguments";
+
+int main( int argc, char *argv[] )
+{
+    int errs = 0, err;
+    int rank, size, rsize, i;
+    int np = 2;
+    int errcodes[2];
+    MPI_Comm      parentcomm, intercomm;
+    MPI_Status    status;
+    const char * const inargv[]  = { "a", "b=c", "d e", "-pf" " Ss", 0 };
+    const char * const outargv[] = { "a", "b=c", "d e", "-pf" " Ss", 0 };
+
+    MTest_Init( &argc, &argv );
+
+    MPI_Comm_get_parent( &parentcomm );
+
+    if (parentcomm == MPI_COMM_NULL) {
+	/* Create 2 more processes */
+	MPI_Comm_spawn( "./spawn1", inargv, np,
+			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
+			&intercomm, errcodes );
+    }
+    else 
+	intercomm = parentcomm;
+
+    /* We now have a valid intercomm */
+
+    MPI_Comm_remote_size( intercomm, &rsize );
+    MPI_Comm_size( intercomm, &size );
+    MPI_Comm_rank( intercomm, &rank );
+
+    if (parentcomm == MPI_COMM_NULL) {
+	/* Master */
+	if (rsize != np) {
+	    errs++;
+	    printf( "Did not create %d processes (got %d)\n", np, rsize );
+	}
+	for (i=0; i<rsize; i++) {
+	    MPI_Send( &i, 1, MPI_INT, i, 0, intercomm );
+	}
+	/* We could use intercomm reduce to get the errors from the 
+	   children, but we'll use a simpler loop to make sure that
+	   we get valid data */
+	for (i=0; i<rsize; i++) {
+	    MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
+	    errs += err;
+	}
+    }
+    else {
+	/* Child */
+	if (size != np) {
+	    errs++;
+	    printf( "(Child) Did not create %d processes (got %d)\n", 
+		    np, size );
+	}
+	MPI_Recv( &i, 1, MPI_INT, 0, 0, intercomm, &status );
+	if (i != rank) {
+	    errs++;
+	    printf( "Unexpected rank on child %d (%d)\n", rank, i );
+	}
+	/* Send the errs back to the master process */
+	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
+
+	/* Check the command line */
+	for (i=1; i<argc; i++) {
+	    if (!outargv[i-1]) {
+		errs++;
+		printf( "Wrong number of arguments (%d)\n", argc );
+		break;
+	    }
+	    if (strcmp( argv[i], outargv[i-1] ) != 0) {
+		errs++;
+		printf( "Found arg %s but expected %s\n", argv[i],
+			outargv[i-1] );
+	    }
+	}
+	if (outargv[i-1]) {
+	    /* We had too few args in the spawned command */
+	    errs++;
+	    printf( "Too few arguments to spawned command\n" );
+	}
+    }
+
+    /* It isn't necessary to free the intercomm, but it should not hurt */
+    MPI_Comm_free( &intercomm );
+
+    /* Note that the MTest_Finalize get errs only over COMM_WORLD */
+    MTest_Finalize( errs );
+
+    sleep(5);
+    MPI_Finalize();
+    return 0;
+}
