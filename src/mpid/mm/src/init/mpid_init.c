@@ -89,35 +89,38 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     value = (char*)MPIU_Malloc(value_len);
 
 #ifdef WITH_METHOD_SHM
-    strncat(sCapabilities, "shm ", 5);
+    strncat(sCapabilities, "shm,", 5);
     shm_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_shm:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_TCP
-    strncat(sCapabilities, "tcp ", 5);
+    strncat(sCapabilities, "tcp,", 5);
     tcp_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA
-    strncat(sCapabilities, "via ", 5);
+    strncat(sCapabilities, "via,", 5);
     via_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_via:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-    strncat(sCapabilities, "via_rdma ", 9);
+    strncat(sCapabilities, "via_rdma,", 9);
     via_rdma_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_via_rdma:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_NEW
-    strncat(sCapabilities, "new ", 5);
+    strncat(sCapabilities, "new,", 5);
     new_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_new:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
+
+    if (sCapabilities[strlen(sCapabilities)-1] == ',')
+	sCapabilities[strlen(sCapabilities)-1] = '\0';
 
     MPIU_Free(value);
 
