@@ -68,7 +68,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_WRITE);
 	return IBU_FAIL;
     }
     id_ptr->ptr = (void*)ibu;
@@ -144,7 +144,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_READ);
 	return IBU_FAIL;
     }
     id_ptr->ptr = (void*)ibu;
