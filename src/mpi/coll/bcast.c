@@ -26,11 +26,11 @@
    
    Algorithm: MPI_Bcast
 
-   For short messages, we use a binary tree algorithm. 
+   For short messages, we use a binomial tree algorithm. 
    Cost = lgp.alpha + n.lgp.beta
 
    For long messages, we do a scatter followed by an allgather. 
-   We first scatter the buffer using a binary tree algorithm. This costs
+   We first scatter the buffer using a binomial tree algorithm. This costs
    lgp.alpha + n.((p-1)/p).beta
    If the datatype is contiguous and the communicator is homogeneous,
    we treat the data as bytes and divide (scatter) it among processes
@@ -157,7 +157,7 @@ int MPIR_Bcast (
   if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS))
   {
 
-      /* Use short message algorithm, namely, binary tree */
+      /* Use short message algorithm, namely, binomial tree */
 
       /* Algorithm:
          This uses a fairly basic recursive subdivision algorithm.
@@ -237,11 +237,11 @@ int MPIR_Bcast (
 
   else
   { 
-      /* use long message algorithm: binary tree scatter followed by an allgather */
+      /* use long message algorithm: binomial tree scatter followed by an allgather */
 
       /* The scatter algorithm divides the buffer into nprocs pieces and
          scatters them among the processes. Root gets the first piece,
-         root+1 gets the second piece, and so forth. Uses the same binary
+         root+1 gets the second piece, and so forth. Uses the same binomial
          tree algorithm as above. Ceiling division
          is used to compute the size of each piece. This means some
          processes may not get any data. For example if bufsize = 97 and

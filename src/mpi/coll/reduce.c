@@ -33,14 +33,14 @@
    This algorithm implements the reduce in two steps: first a
    reduce-scatter, followed by a gather to the root. A
    recursive-halving algorithm (beginning with processes that are
-   distance 1 apart) is used for the reduce-scatter, and a binary tree
+   distance 1 apart) is used for the reduce-scatter, and a binomial tree
    algorithm is used for the gather. The non-power-of-two case is
    handled by dropping to the nearest lower power-of-two: the first
    few odd-numbered processes send their data to their left neighbors
    (rank-1), and the reduce-scatter happens among the remaining
    power-of-two processes. If the root is one of the excluded
    processes, then after the reduce-scatter, rank 0 sends its result to
-   the root and exits; the root now acts as rank 0 in the binary tree
+   the root and exits; the root now acts as rank 0 in the binomial tree
    algorithm for gather.
 
    For the power-of-two case, the cost for the reduce-scatter is 
@@ -55,12 +55,12 @@
 
 
    For short messages, user-defined ops, and count < pof2, we use a
-   binary tree algorithm for both short and long messages. 
+   binomial tree algorithm for both short and long messages. 
 
    Cost = lgp.alpha + n.lgp.beta + n.lgp.gamma
 
 
-   We use the binary tree algorithm in the case of user-defined ops
+   We use the binomial tree algorithm in the case of user-defined ops
    because in this case derived datatypes are allowed, and the user
    could pass basic datatypes on one process and derived on another as
    long as the type maps are the same. Breaking up derived datatypes
@@ -505,7 +505,7 @@ PMPI_LOCAL int MPIR_Reduce (
         MPIU_Free(disps);
     }
 
-    else {  /* use a binary tree algorithm */ 
+    else {  /* use a binomial tree algorithm */ 
     
     /* This code is from MPICH-1. */
 

@@ -25,7 +25,7 @@
    
    Algorithm: MPI_Gather
 
-   We use a binary tree algorithm for both short and
+   We use a binomial tree algorithm for both short and
    long messages. At nodes other than leaf nodes we need to allocate
    a temporary buffer to store the incoming message. If the root is
    not rank 0, we receive data in a temporary buffer on the root and
@@ -82,7 +82,7 @@ int MPIR_Gather (
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
-/* Use binary tree algorithm. */
+/* Use binomial tree algorithm. */
     
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
     
