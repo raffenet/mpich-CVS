@@ -1538,6 +1538,7 @@ void MPIR_Err_preinit( void );
 void MPIR_Err_get_string(int, char *);
 void MPIR_Err_print_stack(FILE *, int);
 int MPIR_Err_set_msg( int code, const char *msg_string );
+extern int MPIR_Err_print_stack_flag;
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
