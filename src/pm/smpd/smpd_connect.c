@@ -45,8 +45,22 @@ smpd_global_t smpd_process =
 void smpd_child_handler(int code)
 {
     int status;
+    int pid;
+
     if (code == SIGCHLD)
-	waitpid(-1, &status, WNOHANG);
+    {
+	/*pid = waitpid(-1, &status, WNOHANG);*/
+	pid = waitpid(-1, &status, 0);
+	if (pid < 0)
+	{
+	    fprintf(stderr, "waitpid failed, error %d\n", errno);
+	}
+	else
+	{
+	    printf("process %d exited with code: %d\n", pid, WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+	    fflush(stdout);
+	}
+    }
 }
 #endif
 
