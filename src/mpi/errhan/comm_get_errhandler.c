@@ -28,18 +28,20 @@
 #define FUNCNAME MPI_Comm_get_errhandler
 
 /*@
-   MPI_Comm_get_errhandler - get error handler
+   MPI_Comm_get_errhandler - Get the error handler attached to a communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Errhandler *errhandler - error handler
+   Input Parameter:
+. comm - communicator (handle) 
 
-   Notes:
+   Output Parameter:
+. errhandler perror handler currently associated with communicator (handle) 
+
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
 {

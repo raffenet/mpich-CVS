@@ -28,18 +28,18 @@
 #define FUNCNAME MPI_Comm_call_errhandler
 
 /*@
-   MPI_Comm_call_errhandler - call communicator error handler
+   MPI_Comm_call_errhandler - Call the error handler installed on a 
+   communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int errorcode - error code
-
-   Notes:
+ Input Parameters:
++ comm - communicator with error handler (handle) 
+- errorcode - error code (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 {

@@ -29,19 +29,19 @@
 #define FUNCNAME MPI_Unpublish_name
 
 /*@
-   MPI_Unpublish_name - unpublish name
-
-   Arguments:
-+  char *service_name - service name
-.  MPI_Info info - info
--  char *port_name - port name
-
-   Notes:
+   MPI_Unpublish_name - Unpublish a service name published with MPI_Publish_name
+ Input Parameters:
++ service_name - a service name (string) 
+. info - implementation-specific information (handle) 
+- port_name - a port name (string) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_INFO
+.N MPI_ERR_ARG
+.N MPI_ERR_OTHER
 @*/
 int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 {

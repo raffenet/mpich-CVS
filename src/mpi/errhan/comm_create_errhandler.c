@@ -28,18 +28,20 @@
 #define FUNCNAME MPI_Comm_create_errhandler
 
 /*@
-   MPI_Comm_create_errhandler - create a communicator error handler
+   MPI_Comm_create_errhandler - Create a communicator error handler
 
-   Arguments:
-+  MPI_Comm_errhandler_fn *function - function
--  MPI_Errhandler *errhandler - error handler
+   Input Parameter:
+. function - user defined error handling procedure (function) 
 
-   Notes:
+   Output Parameter:
+. errhandler - MPI error handler (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_OTHER
 @*/
 int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, MPI_Errhandler *errhandler)
 {

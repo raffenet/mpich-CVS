@@ -28,7 +28,12 @@
 #define FUNCNAME MPI_Comm_set_errhandler
 
 /*@
-   MPI_Comm_set_errhandler - set communicator error handler
+   MPI_Comm_set_errhandler - Set the error handler for a communicator
+
+   Input Parameters:
++ comm - communicator (handle) 
+- errhandler - new error handler for communicator (handle) 
+
 
    Arguments:
 +  MPI_Comm comm - communicator
@@ -40,6 +45,8 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_OTHER
 @*/
 int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 {
@@ -61,7 +68,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
 
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );

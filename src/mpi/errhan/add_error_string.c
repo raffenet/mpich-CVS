@@ -31,11 +31,14 @@
 /*@
    MPI_Add_error_string - add error string
 
-   Arguments:
-+  int errorcode - error code
--  char *string - string
+   Input Parameters:
++ errorcode - error code or class (integer) 
+- string text - corresponding to errorcode (string) 
 
    Notes:
+The string must be no more than 'MPI_MAX_ERROR_STRING' characters long. 
+The length of the string is as defined in the calling language. 
+The length of the string does not include the null terminator in C or C++.  
 
 .N Fortran
 

@@ -31,15 +31,18 @@
 /*@
    MPI_Comm_free_keyval - free communicator keyval
 
-   Arguments:
-.  int *comm_keyval - keyval
+Input Parameter:
+. keyval - Frees the integer key value (integer) 
 
    Notes:
+Key values are global (they can be used with any and all communicators)
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_PERM_KEY
 @*/
 int MPI_Comm_free_keyval(int *comm_keyval)
 {

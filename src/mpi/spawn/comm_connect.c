@@ -28,23 +28,24 @@
 #define FUNCNAME MPI_Comm_connect
 
 /*@
-   MPI_Comm_connect - connect
+   MPI_Comm_connect - Make a request to form a new intercommunicator
 
-   Input Arguments:
-+  char *port_name - port name
-.  MPI_Info info - info
-.  int root - root
--  MPI_Comm comm - communicator
+ Input Parameters:
++ port_name - network address (string, used only on root) 
+. info - implementation-dependent information (handle, used only on root) 
+. root - rank in comm of root node (integer) 
+- comm - intracommunicator over which call is collective (handle) 
 
-   Output Arguments:
-.  MPI_Comm *newcomm - new communicator
-
-   Notes:
+ Output Parameter:
+. newcomm - intercommunicator with server as remote group (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_INFO
+.N MPI_ERR_PORT
 @*/
 int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm)
 {
@@ -63,14 +64,11 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -31,13 +31,14 @@
 /*@
    MPI_Comm_delete_attr - delete communicator attribute
 
-   Arguments:
+Input Parameters:
 + comm - communicator to which attribute is attached (handle) 
 - comm_keyval - The key value of the deleted attribute (integer) 
 
 .N Fortran
 
 .N Errors
+.N MPI_SUCCESS
 .N MPI_ERR_COMM
 .N MPI_ERR_PERM_KEY
 @*/

@@ -28,19 +28,27 @@
 #define FUNCNAME MPI_Alloc_mem
 
 /*@
-   MPI_Alloc_mem - allocate memory
+   MPI_Alloc_mem - allocate memory for message passing and RMA
 
-   Arguments:
-+  MPI_Aint size - size
-.  MPI_Info info - info
--  void *baseptr - base pointer
+  Input Parameters:
++ size - size of memory segment in bytes (nonnegative integer) 
+- info - info argument (handle) 
+
+  Output Parameter:
+. baseptr - pointer to beginning of memory segment allocated 
 
    Notes:
+ Using this routine from Fortran requires that the Fortran compiler accept
+ a common pointer extension.  See Section 4.11 (Memory Allocation) in the
+ MPI-2 standard for more information and examples.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_INFO
+.N MPI_ERR_ARG
+.N MPI_ERR_NO_MEM
 @*/
 int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 {

@@ -31,17 +31,25 @@
 /*@
    MPI_Type_set_attr - set type attribute
 
-   Arguments:
-+  MPI_Datatype type - type
-.  int type_keyval - keyval
--  void *attribute_val - value
+Input Parameters:
++ type - MPI Datatype to which attribute will be attached (handle) 
+. keyval - key value, as returned by  'MPI_Type_create_keyval' (integer) 
+- attribute_val - attribute value 
 
-   Notes:
+Notes:
 
+The type of the attribute value depends on whether C or Fortran is being used.
+In C, an attribute value is a pointer ('void *'); in Fortran, it is an 
+address-sized integer.
+
+If an attribute is already present, the delete function (specified when the
+corresponding keyval was created) will be called.
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 {

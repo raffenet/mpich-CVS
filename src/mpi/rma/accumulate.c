@@ -30,18 +30,21 @@
 /*@
    MPI_Accumulate - accumulate
 
-   Arguments:
-+  void *origin_addr - origin address
-.  int origin_count - origin count
-.  MPI_Datatype origin_datatype - origin datatype
-.  int target_rank - target rank
-.  MPI_Aint target_disp - target disp
-.  int target_count - target count
-.  MPI_Datatype target_datatype - target datatype
-.  MPI_Op op - operation
--  MPI_Win win - window
+   Input Parameters:
++ origin_addr - initial address of buffer (choice) 
+. origin_count - number of entries in buffer (nonnegative integer) 
+. origin_datatype - datatype of each buffer entry (handle) 
+. target_rank - rank of target (nonnegative integer) 
+. target_disp - displacement from start of window to beginning of target 
+  buffer (nonnegative integer)  
+. target_count - number of entries in target buffer (nonnegative integer) 
+. target_datatype - datatype of each entry in target buffer (handle) 
+. op - predefined reduce operation (handle) 
+- win - window object (handle) 
 
    Notes:
+The basic components of both the origin and target datatype must be the same 
+predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 
 .N Fortran
 

@@ -31,17 +31,25 @@
 /*@
    MPI_Win_set_attr - set window attribute
 
-   Arguments:
-+  MPI_Win win - window
-.  int win_keyval - keyval
--  void *attribute_val - value
+Input Parameters:
++ win - MPI window object to which attribute will be attached (handle) 
+. keyval - key value, as returned by  'MPI_Win_create_keyval' (integer) 
+- attribute_val - attribute value 
 
-   Notes:
+Notes:
 
+The type of the attribute value depends on whether C or Fortran is being used.
+In C, an attribute value is a pointer ('void *'); in Fortran, it is an 
+address-sized integer.
+
+If an attribute is already present, the delete function (specified when the
+corresponding keyval was created) will be called.
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 {

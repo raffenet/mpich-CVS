@@ -38,7 +38,7 @@ Input Parameters:
 
 Notes:
 Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
-'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
  may not be changed. 
 
 The type of the attribute value depends on whether C or Fortran is being used.

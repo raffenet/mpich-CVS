@@ -30,18 +30,31 @@
 /*@
    MPI_Comm_get_attr - get communicator attribute
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int comm_keyval - keyval
-.  void *attribute_val - value
--  int *flag - flag
+Input Parameters:
++ comm - communicator to which attribute is attached (handle) 
+- keyval - key value (integer) 
+
+Output Parameters:
++ attr_value - attribute value, unless 'flag' = false 
+- flag -  true if an attribute value was extracted;  false if no attribute is
+  associated with the key 
 
    Notes:
+    Attributes must be extracted from the same language as they were inserted  
+    in with 'MPI_Comm_set_attr'.  The notes for C and Fortran below explain 
+    why. 
+
+Notes for C:
+    Even though the 'attr_value' arguement is declared as 'void *', it is
+    really the address of a void pointer.  See the rationale in the 
+    standard for more details. 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag)
 {

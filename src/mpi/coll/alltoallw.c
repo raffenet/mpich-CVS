@@ -216,25 +216,37 @@ PMPI_LOCAL int MPIR_Alltoallw_inter (
 #define FUNCNAME MPI_Alltoallw
 
 /*@
-   MPI_Alltoallw - alltoallw
+   MPI_Alltoallw - Generalized all-to-all communication
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int *sendcnts - send counts
-.  int *sdispls - send displacements
-.  MPI_Datatype *sendtypes - send datatypes
-.  void *recvbuf - receive buffer
-.  int *recvcnts - receive counts
-.  int *rdispls - receive displacements
-.  MPI_Datatype *recvtypes - receive datatypes
--  MPI_Comm comm - communicator
+   Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcounts - integer array equal to the group size specifying the number of 
+  elements to send to each processor (integer) 
+. sdispls - integer array (of length group size). Entry j specifies the 
+  displacement in bytes (relative to sendbuf) from which to take the outgoing 
+  data destined for process j 
+. sendtypes - array of datatypes (of length group size). Entry j specifies the 
+  type of data to send to process j (handle) 
+. recvcounts - integer array equal to the group size specifying the number of
+   elements that can be received from each processor (integer) 
+. rdispls - integer array (of length group size). Entry i specifies the 
+  displacement in bytes (relative to recvbuf) at which to place the incoming 
+  data from process i 
+. recvtypes - array of datatypes (of length group size). Entry i specifies 
+  the type of data received from process i (handle) 
+- comm - communicator (handle) 
 
-   Notes:
+ Output Parameter:
+. recvbuf - address of receive buffer (choice) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
 @*/
 int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
 {

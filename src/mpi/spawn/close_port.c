@@ -30,10 +30,8 @@
 /*@
    MPI_Close_port - close port
 
-   Arguments:
-.  char *port_name - port name
-
-   Notes:
+   Input Parameter:
+.  port_name - a port name (string)
 
 .N Fortran
 

@@ -30,11 +30,24 @@
 /*@
    MPI_Open_port - short description
 
-   Input Arguments:
-+  MPI_Info info - info
--  char *port_name - port name
+ Input Parameter:
+. info - implementation-specific information on how to establish an 
+   address (handle) 
 
-   Notes:
+ Output Parameter:
+. port_name - newly established port (string) 
+
+Notes:
+MPI copies a system-supplied port name into 'port_name'. 'port_name' identifies
+the newly opened port and can be used by a client to contact the server. 
+The maximum size string that may be supplied by the system is 
+'MPI_MAX_PORT_NAME'. 
+
+ Reserved Info Key Values:
++ ip_port - Value contains IP port number at which to establish a port. 
+- ip_address - Value contains IP address at which to establish a port.
+ If the address is not a valid IP address of the host on which the
+ 'MPI_OPEN_PORT' call is made, the results are undefined. 
 
 .N Fortran
 

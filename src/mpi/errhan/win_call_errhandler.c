@@ -28,18 +28,18 @@
 #define FUNCNAME MPI_Win_call_errhandler
 
 /*@
-   MPI_Win_call_errhandler - call window error handler
+   MPI_Win_call_errhandler - Call the error handler installed on a 
+   window object
 
-   Arguments:
-+  MPI_Win win - window
--  int errorcode - error code
-
-   Notes:
+   Input Parameters:
++ win - window with error handler (handle) 
+- errorcode - error code (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
 @*/
 int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 {
@@ -58,7 +58,7 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
+	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

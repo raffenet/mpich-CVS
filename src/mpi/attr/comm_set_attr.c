@@ -31,17 +31,30 @@
 /*@
    MPI_Comm_set_attr - set communicator attribute
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int comm_keyval - keyval
--  void *attribute_val - value
+Input Parameters:
++ comm - communicator to which attribute will be attached (handle) 
+. keyval - key value, as returned by  'MPI_Comm_create_keyval' (integer) 
+- attribute_val - attribute value 
 
-   Notes:
+Notes:
+Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
+ may not be changed. 
+
+The type of the attribute value depends on whether C or Fortran is being used.
+In C, an attribute value is a pointer ('void *'); in Fortran, it is an 
+address-sized integer.
+
+If an attribute is already present, the delete function (specified when the
+corresponding keyval was created) will be called.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_KEYVAL
+.N MPI_ERR_PERM_KEY
 @*/
 int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 {

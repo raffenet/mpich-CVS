@@ -29,19 +29,21 @@
 #define FUNCNAME MPI_Publish_name
 
 /*@
-   MPI_Publish_name - publish name
+   MPI_Publish_name - Publish a service name for use with MPI_Comm_connect
 
-   Arguments:
-+  char *service_name - service name
-.  MPI_Info info - info
--  char *port_name - port name
+ Input Parameters:
++ service_name - a service name to associate with the port (string) 
+. info - implementation-specific information (handle) 
+- port_name - a port name (string) 
 
-   Notes:
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_INFO
+.N MPI_ERR_OTHER
 @*/
 int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 {

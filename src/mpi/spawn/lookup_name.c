@@ -35,19 +35,23 @@ MPID_NS_Handle MPIR_Namepub = 0;
 #define FUNCNAME MPI_Lookup_name
 
 /*@
-   MPI_Lookup_name - lookup name
+   MPI_Lookup_name - Lookup a port given a service name
 
-   Arguments:
-+  char *service_name - service name
-.  MPI_Info info - info
--  char *port_name - port name
+   Input Parameters:
++ service_name - a service name (string) 
+- info - implementation-specific information (handle) 
 
-   Notes:
+   Output Parameter:
+.  port_name - a port name (string) 
+
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_INFO
+.N MPI_ERR_OTHER
+.N MPI_ERR_ARG
 @*/
 int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 {

@@ -28,12 +28,10 @@
 #define FUNCNAME MPI_Free_mem
 
 /*@
-   MPI_Free_mem - free memory
+   MPI_Free_mem - Free memory allocatd with MPI_Alloc_mem
 
-   Arguments:
-.  void *base - base
-
-   Notes:
+   Input Parameter:
+.  base - initial address of memory segment allocated by 'MPI_ALLOC_MEM' (choice) 
 
 .N Fortran
 

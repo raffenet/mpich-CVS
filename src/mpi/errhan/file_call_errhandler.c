@@ -28,18 +28,18 @@
 #define FUNCNAME MPI_File_call_errhandler
 
 /*@
-   MPI_File_call_errhandler - call file error handler
+   MPI_File_call_errhandler - Call the error handler installed on a 
+   file
 
-   Arguments:
-+  MPI_File fh - file handle
--  int errorcode - error code
-
-   Notes:
+   Input Parameters:
++ fh - file with error handler (handle) 
+- errorcode - error code (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_FILE
 @*/
 int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 {
