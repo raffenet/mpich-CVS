@@ -28,7 +28,7 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     sg_list.data_seg_p = &data;
     sg_list.data_seg_num = 1;
     data.length = IB_PACKET_SIZE;
-    data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
+    data.va = (ib_uint64_t)mem_ptr;
     data.l_key = vc_ptr->data.ib.info.m_lkey;
     work_req.op_type = OP_RECEIVE;
     work_req.sg_list = sg_list;
