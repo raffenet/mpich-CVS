@@ -13,6 +13,7 @@ import java.text.NumberFormat;
 import java.text.DecimalFormat;
 import java.awt.Font;
 import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.event.ActionListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -22,25 +23,46 @@ import javax.swing.*;
 
 public class LabeledTextField extends JPanel
 {
-    private static final   int     TEXT_HEIGHT = 20;
-    private static         Font    FONT        = null;
+    private   static final   int     TEXT_HEIGHT = 20;
+    protected static         Font    FONT        = null;
 
-    private JLabel                 tag;
-    private JTextField             fld;
-    private DecimalFormat          fmt;
+    private   JLabel                 tag;
+    private   ExpandedTextField      fld;
+    protected DecimalFormat          fmt;
     // private int                    preferred_height;
 
     private FieldDocumentListener  self_listener;
 
     public LabeledTextField( String label, String format )
     {
+        this( false, label, format );
+    }
+
+    public LabeledTextField( boolean isIndentedLabel,
+                             String label, String format )
+    {
         super();
-        setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
+        super.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
         tag = new JLabel( label );
-        fld = new JTextField();
+        if ( isIndentedLabel ) {
+            JPanel tag_panel = new JPanel();
+            tag_panel.setLayout( new BoxLayout( tag_panel, BoxLayout.X_AXIS ) );
+            tag_panel.add( Box.createHorizontalStrut(
+                               Const.LABEL_INDENTATION ) );
+            tag_panel.add( tag );
+            tag_panel.add( Box.createHorizontalGlue() );
+            tag_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+            super.add( tag_panel );
+        }
+        else {
+            tag.setAlignmentX( Component.LEFT_ALIGNMENT );
+            super.add( tag );
+        }
+
+        fld = new ExpandedTextField();
         tag.setLabelFor( fld );
-        add( tag );
-        add( fld );
+        fld.setAlignmentX( Component.LEFT_ALIGNMENT );
+        super.add( fld );
 
         // preferred_height = fld.getPreferredSize().height + this.TEXT_HEIGHT;
         if ( format != null ) {
@@ -138,7 +160,11 @@ public class LabeledTextField extends JPanel
         if ( self_listener != null )
             return Integer.parseInt( self_listener.getLastUpdatedText() );
         else
-            return Integer.parseInt( fld.getText() );
+            try {
+                return Integer.parseInt( fld.getText() );
+            } catch ( NumberFormatException err ) {
+                return Integer.MIN_VALUE;
+            }
     }
 
     public void setFloat( float fval )
@@ -190,6 +216,22 @@ public class LabeledTextField extends JPanel
         return new Dimension( Short.MAX_VALUE, 
                               fld.getPreferredSize().height
                             + this.TEXT_HEIGHT );
+    }
+
+    public void fireActionPerformed()
+    {
+        fld.fireActionPerformed();
+    }
+
+
+
+
+    private class ExpandedTextField extends JTextField
+    {
+        public void fireActionPerformed()
+        {
+            super.fireActionPerformed();
+        }
     }
 
 

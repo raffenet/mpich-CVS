@@ -29,19 +29,21 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.5";
+    private static final String       VERSION_INFO             = "1.0.0.8";
     private static       String       setupfile_path           = null;
 
     public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
     public  static       short        INIT_SLOG2_LEVEL_READ    = 3;
-    public  static       float        SCREEN_HEIGHT_RATIO      = 0.7f;
+    public  static       float        SCREEN_HEIGHT_RATIO      = 0.6f;
+    public  static       float        TIME_SCROLL_UNIT_RATIO   = 0.01f;
 
     public  static       String       Y_AXIS_ROOT_LABEL        = "SLOG-2";
     public  static       boolean      Y_AXIS_ROOT_VISIBLE      = true;
     public  static       Alias        BACKGROUND_COLOR
                                       = Const.COLOR_BLACK;
 
-    public  static       int          Y_AXIS_ROW_HEIGHT        = 71;
+    public  static       boolean      ACTIVE_REFRESH           = false;
+    public  static       String       ROW_RESIZE_MODE          = "Row";
     public  static       StateBorder  STATE_BORDER
                                       = StateBorder.COLOR_RAISED_BORDER;
     public  static       float        STATE_HEIGHT_FACTOR      = 0.90f;
@@ -66,6 +68,7 @@ public class Parameters
     public  static       int          SEARCH_ARROW_LENGTH      = 20;
     public  static       int          SEARCH_FRAME_THICKNESS   = 3;
     public  static       boolean      SEARCHED_OBJECT_ON_TOP   = false;
+    public  static       boolean      LEFTCLICK_INSTANT_ZOOM   = false;
 
     public static final void initSetupFile()
     {
@@ -120,14 +123,17 @@ public class Parameters
                            String.valueOf( SCREEN_HEIGHT_RATIO ) );
         pptys.setProperty( "AUTO_WINDOWS_LOCATION",
                            String.valueOf( AUTO_WINDOWS_LOCATION ) );
+        pptys.setProperty( "TIME_SCROLL_UNIT_RATIO",
+                           String.valueOf( TIME_SCROLL_UNIT_RATIO ) );
 
         pptys.setProperty( "Y_AXIS_ROOT_VISIBLE",
                            String.valueOf( Y_AXIS_ROOT_VISIBLE ) );
         pptys.setProperty( "BACKGROUND_COLOR",
                            String.valueOf( BACKGROUND_COLOR ) );
 
-        pptys.setProperty( "Y_AXIS_ROW_HEIGHT",
-                           String.valueOf( Y_AXIS_ROW_HEIGHT ) );
+        pptys.setProperty( "ACTIVE_REFRESH",
+                           String.valueOf( ACTIVE_REFRESH ) );
+        pptys.setProperty( "ROW_RESIZE_MODE", ROW_RESIZE_MODE );
         pptys.setProperty( "STATE_BORDER",
                            String.valueOf( STATE_BORDER ) );
         pptys.setProperty( "STATE_HEIGHT_FACTOR",
@@ -164,6 +170,8 @@ public class Parameters
                            String.valueOf( SEARCH_FRAME_THICKNESS ) );
         pptys.setProperty( "SEARCHED_OBJECT_ON_TOP",
                            String.valueOf( SEARCHED_OBJECT_ON_TOP ) );
+        pptys.setProperty( "LEFTCLICK_INSTANT_ZOOM",
+                           String.valueOf( LEFTCLICK_INSTANT_ZOOM ) );
 
         try {
             FileOutputStream fouts = new FileOutputStream( setupfile_path );
@@ -223,17 +231,28 @@ public class Parameters
         if ( ppty_val != null )
             AUTO_WINDOWS_LOCATION =    ppty_val.equalsIgnoreCase( "true" )
                                     || ppty_val.equalsIgnoreCase( "yes" );
+        ppty_val = pptys.getProperty( "TIME_SCROLL_UNIT_RATIO" );
+        if ( ppty_val != null )
+            TIME_SCROLL_UNIT_RATIO = Float.parseFloat( ppty_val );
 
         ppty_val = pptys.getProperty( "Y_AXIS_ROOT_VISIBLE" );
         if ( ppty_val != null ) 
             Y_AXIS_ROOT_VISIBLE =    ppty_val.equalsIgnoreCase( "true" )
                                   || ppty_val.equalsIgnoreCase( "yes" );
-        ppty_val = pptys.getProperty( "Y_AXIS_ROW_HEIGHT" );
-        if ( ppty_val != null )
-            Y_AXIS_ROW_HEIGHT = Integer.parseInt( ppty_val );
         ppty_val = pptys.getProperty( "BACKGROUND_COLOR" );
         if ( ppty_val != null )
             BACKGROUND_COLOR = Const.parseBackgroundColor( ppty_val );
+
+        // ppty_val = pptys.getProperty( "Y_AXIS_ROW_HEIGHT" );
+        // if ( ppty_val != null )
+        //     Y_AXIS_ROW_HEIGHT = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "ACTIVE_REFRESH" );
+        if ( ppty_val != null )
+            ACTIVE_REFRESH =    ppty_val.equalsIgnoreCase( "true" )
+                             || ppty_val.equalsIgnoreCase( "yes" );
+        ppty_val = pptys.getProperty( "ROW_RESIZE_MODE" );
+        if ( ppty_val != null )
+            ROW_RESIZE_MODE = ppty_val;
         ppty_val = pptys.getProperty( "STATE_BORDER" );
         if ( ppty_val != null )
             STATE_BORDER = StateBorder.parseString( ppty_val );
@@ -289,6 +308,10 @@ public class Parameters
         if ( ppty_val != null )
             SEARCHED_OBJECT_ON_TOP =    ppty_val.equalsIgnoreCase( "true" )
                                      || ppty_val.equalsIgnoreCase( "yes" );
+        ppty_val = pptys.getProperty( "LEFTCLICK_INSTANT_ZOOM" );
+        if ( ppty_val != null )
+            LEFTCLICK_INSTANT_ZOOM =    ppty_val.equalsIgnoreCase( "true" )
+                                     || ppty_val.equalsIgnoreCase( "yes" );
         System.out.println( "Initialize Parameters: \n"
                           + Parameters.toInOutString() );
     }
@@ -301,11 +324,14 @@ public class Parameters
         rep.append( "SCREEN_HEIGHT_RATIO = "   + SCREEN_HEIGHT_RATIO   + "\n" );
         rep.append( "INIT_SLOG2_LEVEL_READ = " + INIT_SLOG2_LEVEL_READ + "\n" );
         rep.append( "AUTO_WINDOWS_LOCATION = " + AUTO_WINDOWS_LOCATION + "\n" );
+        rep.append( "TIME_SCROLL_UNIT_RATIO = "+ TIME_SCROLL_UNIT_RATIO+ "\n" );
 
         rep.append( "Y_AXIS_ROOT_VISIBLE = "   + Y_AXIS_ROOT_VISIBLE   + "\n" );
         rep.append( "BACKGROUND_COLOR = "      + BACKGROUND_COLOR      + "\n" );
 
-        rep.append( "Y_AXIS_ROW_HEIGHT = "     + Y_AXIS_ROW_HEIGHT     + "\n" );
+    //  rep.append( "Y_AXIS_ROW_HEIGHT = "     + Y_AXIS_ROW_HEIGHT     + "\n" );
+        rep.append( "ACTIVE_REFRESH = "        + ACTIVE_REFRESH        + "\n" );
+        rep.append( "ROW_RESIZE_MODE = "       + ROW_RESIZE_MODE       + "\n" );
         rep.append( "STATE_BORDER = "          + STATE_BORDER          + "\n" );
         rep.append( "STATE_HEIGHT_FACTOR = "   + STATE_HEIGHT_FACTOR   + "\n" );
         rep.append( "NESTING_HEIGHT_FACTOR = " + NESTING_HEIGHT_FACTOR + "\n" );
@@ -326,6 +352,7 @@ public class Parameters
         rep.append( "SEARCH_ARROW_LENGTH = "   + SEARCH_ARROW_LENGTH   + "\n" );
         rep.append( "SEARCH_FRAME_THICKNESS = "+ SEARCH_FRAME_THICKNESS+ "\n" );
         rep.append( "SEARCHED_OBJECT_ON_TOP = "+ SEARCHED_OBJECT_ON_TOP+ "\n" );
+        rep.append( "LEFTCLICK_INSTANT_ZOOM = "+ LEFTCLICK_INSTANT_ZOOM+ "\n" );
         return rep.toString();
     }
 

@@ -31,7 +31,8 @@ public class Const
     public  static final String  STRING_FORMAT          = null;
     public  static final String  BOOLEAN_FORMAT         = null;
 
-    public  static final int     TIME_SCROLLBAR_UNIT_INCREMENT = 20;
+    public  static final int     LABEL_INDENTATION      = 5;
+    public  static final int     TIME_SCROLL_UNIT_INIT  = 10;
 
     public  static final Alias   ANTIALIAS_DEFAULT
             = new Alias( RenderingHints.VALUE_ANTIALIAS_DEFAULT, "default" );
@@ -50,6 +51,8 @@ public class Const
             = new Alias( Color.lightGray, "light gray" );
     public  static final Alias   COLOR_WHITE
             = new Alias( Color.white, "white" );
+
+    public  static final String  IMG_PATH = "/images/";
 
     public static Alias  parseAntiAliasing( String str_rep )
     {

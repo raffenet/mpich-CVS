@@ -20,7 +20,8 @@ RM           = @RM@
 
 TARGET    =
 PACKAGE   = viewer.common
-SRC       = Dialogs.java Routines.java LabeledTextField.java \
+SRC       = Dialogs.java Routines.java \
+            LabeledTextField.java LabeledFloatSlider.java \
             Alias.java Const.java LabeledComboBox.java Parameters.java \
             PreferencePanel.java TopWindow.java PreferenceFrame.java
 

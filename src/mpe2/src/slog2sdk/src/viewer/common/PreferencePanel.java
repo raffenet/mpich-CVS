@@ -9,6 +9,8 @@
 
 package viewer.common;
 
+import java.awt.Dimension;
+import java.awt.Component;
 import javax.swing.*;
 
 import base.topology.StateBorder;
@@ -19,17 +21,19 @@ public class PreferencePanel extends JPanel
     private static int                    VERTICAL_GAP_HEIGHT = 10;
 
     private        LabeledTextField       fld_Y_AXIS_ROOT_LABEL;
-    private        LabeledComboBox        lst_AUTO_WINDOWS_LOCATION;
-    private        LabeledTextField       fld_SCREEN_HEIGHT_RATIO;
     private        LabeledTextField       fld_INIT_SLOG2_LEVEL_READ;
+    private        LabeledComboBox        lst_AUTO_WINDOWS_LOCATION;
+    private        LabeledFloatSlider     sdr_SCREEN_HEIGHT_RATIO;
+    private        LabeledFloatSlider     sdr_TIME_SCROLL_UNIT_RATIO;
 
     private        LabeledComboBox        lst_Y_AXIS_ROOT_VISIBLE;
     private        LabeledComboBox        lst_BACKGROUND_COLOR;
 
-    private        LabeledTextField       fld_Y_AXIS_ROW_HEIGHT;
+    // private        LabeledTextField       fld_Y_AXIS_ROW_HEIGHT;
+    private        LabeledComboBox        lst_ACTIVE_REFRESH;
     private        LabeledComboBox        lst_STATE_BORDER;
-    private        LabeledTextField       fld_STATE_HEIGHT_FACTOR;
-    private        LabeledTextField       fld_NESTING_HEIGHT_FACTOR;
+    private        LabeledFloatSlider     sdr_STATE_HEIGHT_FACTOR;
+    private        LabeledFloatSlider     sdr_NESTING_HEIGHT_FACTOR;
 
     private        LabeledComboBox        lst_ARROW_ANTIALIASING;
     private        LabeledTextField       fld_ARROW_HEAD_LENGTH;
@@ -47,6 +51,7 @@ public class PreferencePanel extends JPanel
     private        LabeledTextField       fld_SEARCH_ARROW_LENGTH;
     private        LabeledTextField       fld_SEARCH_FRAME_THICKNESS;
     private        LabeledComboBox        lst_SEARCHED_OBJECT_ON_TOP;
+    private        LabeledComboBox        lst_LEFTCLICK_INSTANT_ZOOM;
 
 
     public PreferencePanel()
@@ -61,12 +66,13 @@ public class PreferencePanel extends JPanel
             label = new JLabel( "Options for all windows" );
             label.setToolTipText( "Options become effective after being saved "
                                 + "and the program is restarted" );
-        label_panel.add( Box.createHorizontalStrut( 5 ) );
+        label_panel.add( Box.createHorizontalStrut( Const.LABEL_INDENTATION ) );
         label_panel.add( label );
         label_panel.add( Box.createHorizontalGlue() );
+        label_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
         super.add( label_panel );
 
-        fld_Y_AXIS_ROOT_LABEL = new LabeledTextField(
+        fld_Y_AXIS_ROOT_LABEL = new LabeledTextField( true,
                                     "Y_AXIS_ROOT_LABEL",
                                     Const.STRING_FORMAT );
         fld_Y_AXIS_ROOT_LABEL.setToolTipText(
@@ -76,27 +82,7 @@ public class PreferencePanel extends JPanel
         fld_Y_AXIS_ROOT_LABEL.setEditable( true );
         super.add( fld_Y_AXIS_ROOT_LABEL );
 
-        lst_AUTO_WINDOWS_LOCATION = new LabeledComboBox(
-                                        "AUTO_WINDOWS_LOCATION" );
-        lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.TRUE );
-        lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.FALSE );
-        lst_AUTO_WINDOWS_LOCATION.setToolTipText(
-        "Whelther to let Jumpshot-4 automatically set windows placement." );
-        super.add( lst_AUTO_WINDOWS_LOCATION );
-
-        fld_SCREEN_HEIGHT_RATIO = new LabeledTextField(
-                                      "SCREEN_HEIGHT_RATIO",
-                                      Const.FLOAT_FORMAT );
-        fld_SCREEN_HEIGHT_RATIO.setToolTipText(
-        "Initial available screen height(ratio) for Timeline window's canvas" );
-        fld_SCREEN_HEIGHT_RATIO.setHorizontalAlignment( JTextField.CENTER );
-        fld_SCREEN_HEIGHT_RATIO.addSelfDocumentListener();
-        fld_SCREEN_HEIGHT_RATIO.setEditable( true );
-        super.add( fld_SCREEN_HEIGHT_RATIO );
-
-        super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
-
-        fld_INIT_SLOG2_LEVEL_READ = new LabeledTextField(
+        fld_INIT_SLOG2_LEVEL_READ = new LabeledTextField( true,
                                         "INIT_SLOG2_LEVEL_READ",
                                         Const.SHORT_FORMAT );
         fld_INIT_SLOG2_LEVEL_READ.setToolTipText(
@@ -107,6 +93,35 @@ public class PreferencePanel extends JPanel
         fld_INIT_SLOG2_LEVEL_READ.setEditable( true );
         super.add( fld_INIT_SLOG2_LEVEL_READ );
 
+        lst_AUTO_WINDOWS_LOCATION = new LabeledComboBox(
+                                        "AUTO_WINDOWS_LOCATION" );
+        lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.TRUE );
+        lst_AUTO_WINDOWS_LOCATION.addItem( Boolean.FALSE );
+        lst_AUTO_WINDOWS_LOCATION.setToolTipText(
+        "Whelther to let Jumpshot-4 automatically set windows placement." );
+        super.add( lst_AUTO_WINDOWS_LOCATION );
+
+        super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
+
+        sdr_SCREEN_HEIGHT_RATIO = new LabeledFloatSlider(
+                                      "SCREEN_HEIGHT_RATIO",
+                                      0.0f, 1.0f );
+        sdr_SCREEN_HEIGHT_RATIO.setToolTipText(
+        "Initial available screen height(ratio) for Timeline window's canvas" );
+        sdr_SCREEN_HEIGHT_RATIO.setHorizontalAlignment( JTextField.CENTER );
+        sdr_SCREEN_HEIGHT_RATIO.setEditable( true );
+        super.add( sdr_SCREEN_HEIGHT_RATIO );
+
+        sdr_TIME_SCROLL_UNIT_RATIO = new LabeledFloatSlider(
+                                         "TIME_SCROLL_UNIT_RATIO",
+                                         0.0f, 1.0f );
+        sdr_TIME_SCROLL_UNIT_RATIO.setToolTipText(
+          "The number r, 0.0 < r < 1.0, defines the ratio of unit increment of "
+        + "the time scrollbar to the width of timeline canvas." );
+        sdr_TIME_SCROLL_UNIT_RATIO.setHorizontalAlignment( JTextField.CENTER );
+        sdr_TIME_SCROLL_UNIT_RATIO.setEditable( true );
+        super.add( sdr_TIME_SCROLL_UNIT_RATIO );
+
         super.add( Box.createVerticalStrut( 2 * VERTICAL_GAP_HEIGHT ) );
 
         /*                                                        */
@@ -116,9 +131,10 @@ public class PreferencePanel extends JPanel
             label = new JLabel( "Options for Timeline window" );
             label.setToolTipText( "Options become effective after return "
                                 + "and the Timeline window is redrawn" );
-        label_panel.add( Box.createHorizontalStrut( 5 ) );
+        label_panel.add( Box.createHorizontalStrut( Const.LABEL_INDENTATION ) );
         label_panel.add( label );
         label_panel.add( Box.createHorizontalGlue() );
+        label_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
         super.add( label_panel );
 
         lst_Y_AXIS_ROOT_VISIBLE = new LabeledComboBox( "Y_AXIS_ROOT_VISIBLE" );
@@ -140,7 +156,15 @@ public class PreferencePanel extends JPanel
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
-        fld_Y_AXIS_ROW_HEIGHT = new LabeledTextField(
+
+        lst_ACTIVE_REFRESH = new LabeledComboBox( "ACTIVE_REFRESH" );
+        lst_ACTIVE_REFRESH.addItem( Boolean.TRUE );
+        lst_ACTIVE_REFRESH.addItem( Boolean.FALSE );
+        lst_ACTIVE_REFRESH.setToolTipText(
+        "Whelther to let Jumpshot-4 actively update the Timeline canvas." );
+        super.add( lst_ACTIVE_REFRESH );
+        /*
+        fld_Y_AXIS_ROW_HEIGHT = new LabeledTextField( true,
                                     "Y_AXIS_ROW_HEIGHT",
                                     Const.INTEGER_FORMAT );
         fld_Y_AXIS_ROW_HEIGHT.setToolTipText(
@@ -149,6 +173,7 @@ public class PreferencePanel extends JPanel
         fld_Y_AXIS_ROW_HEIGHT.addSelfDocumentListener();
         fld_Y_AXIS_ROW_HEIGHT.setEditable( true );
         super.add( fld_Y_AXIS_ROW_HEIGHT );
+        */
 
         lst_STATE_BORDER = new LabeledComboBox( "STATE_BORDER" );
         lst_STATE_BORDER.addItem( StateBorder.COLOR_RAISED_BORDER );
@@ -160,28 +185,26 @@ public class PreferencePanel extends JPanel
         lst_STATE_BORDER.setToolTipText( "Border style of real states" );
         super.add( lst_STATE_BORDER );
 
-        fld_STATE_HEIGHT_FACTOR = new LabeledTextField(
+        sdr_STATE_HEIGHT_FACTOR = new LabeledFloatSlider(
                                       "STATE_HEIGHT_FACTOR",
-                                      Const.FLOAT_FORMAT );
-        fld_STATE_HEIGHT_FACTOR.setToolTipText(
+                                      0.0f, 1.0f );
+        sdr_STATE_HEIGHT_FACTOR.setToolTipText(
           "Factor f, 0.0 < f < 1.0, defines the height of the outermost "
         + "rectangle with respect to the Y_AXIS_ROW_HEIGHT. The larger "
         + "the factor f is, the larger the outermost rectangle will be." );
-        fld_STATE_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
-        fld_STATE_HEIGHT_FACTOR.addSelfDocumentListener();
-        fld_STATE_HEIGHT_FACTOR.setEditable( true );
-        super.add( fld_STATE_HEIGHT_FACTOR );
+        sdr_STATE_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
+        sdr_STATE_HEIGHT_FACTOR.setEditable( true );
+        super.add( sdr_STATE_HEIGHT_FACTOR );
 
-        fld_NESTING_HEIGHT_FACTOR = new LabeledTextField(
+        sdr_NESTING_HEIGHT_FACTOR = new LabeledFloatSlider(
                                         "NESTING_HEIGHT_FACTOR",
-                                        Const.FLOAT_FORMAT );
-        fld_NESTING_HEIGHT_FACTOR.setToolTipText(
+                                        0.0f, 1.0f );
+        sdr_NESTING_HEIGHT_FACTOR.setToolTipText(
           "Factor f, 0.0 < f < 1.0, defines the gap between nesting rectangles."
         + " The larger the factor f is, the smaller the gap." );
-        fld_NESTING_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
-        fld_NESTING_HEIGHT_FACTOR.addSelfDocumentListener();
-        fld_NESTING_HEIGHT_FACTOR.setEditable( true );
-        super.add( fld_NESTING_HEIGHT_FACTOR );
+        sdr_NESTING_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
+        sdr_NESTING_HEIGHT_FACTOR.setEditable( true );
+        super.add( sdr_NESTING_HEIGHT_FACTOR );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
@@ -194,7 +217,7 @@ public class PreferencePanel extends JPanel
         + "the drawing by a factor of ~3" );
         super.add( lst_ARROW_ANTIALIASING );
 
-        fld_ARROW_HEAD_LENGTH = new LabeledTextField(
+        fld_ARROW_HEAD_LENGTH = new LabeledTextField( true,
                                     "ARROW_HEAD_LENGTH",
                                     Const.INTEGER_FORMAT );
         fld_ARROW_HEAD_LENGTH.setToolTipText(
@@ -204,7 +227,7 @@ public class PreferencePanel extends JPanel
         fld_ARROW_HEAD_LENGTH.setEditable( true );
         super.add( fld_ARROW_HEAD_LENGTH );
 
-        fld_ARROW_HEAD_HALF_WIDTH = new LabeledTextField(
+        fld_ARROW_HEAD_HALF_WIDTH = new LabeledTextField( true,
                                         "ARROW_HEAD_HALF_WIDTH",
                                         Const.INTEGER_FORMAT );
         fld_ARROW_HEAD_HALF_WIDTH.setToolTipText(
@@ -214,7 +237,7 @@ public class PreferencePanel extends JPanel
         fld_ARROW_HEAD_HALF_WIDTH.setEditable( true );
         super.add( fld_ARROW_HEAD_HALF_WIDTH );
 
-        fld_CLICK_RADIUS_TO_LINE = new LabeledTextField(
+        fld_CLICK_RADIUS_TO_LINE = new LabeledTextField( true,
                                        "CLICK_RADIUS_TO_LINE",
                                        Const.INTEGER_FORMAT );
         fld_CLICK_RADIUS_TO_LINE.setToolTipText(
@@ -247,7 +270,7 @@ public class PreferencePanel extends JPanel
         "Border style of Preview state." );
         super.add( lst_PREVIEW_STATE_BORDER );
 
-        fld_PREVIEW_STATE_LEGEND_H = new LabeledTextField(
+        fld_PREVIEW_STATE_LEGEND_H = new LabeledTextField( true,
                                         "PREVIEW_STATE_LEGEND_H",
                                         Const.INTEGER_FORMAT );
         fld_PREVIEW_STATE_LEGEND_H.setToolTipText(
@@ -257,7 +280,7 @@ public class PreferencePanel extends JPanel
         fld_PREVIEW_STATE_LEGEND_H.setEditable( true );
         super.add( fld_PREVIEW_STATE_LEGEND_H );
 
-        fld_PREVIEW_STATE_BORDER_W = new LabeledTextField(
+        fld_PREVIEW_STATE_BORDER_W = new LabeledTextField( true,
                                          "PREVIEW_STATE_BORDER_W",
                                          Const.INTEGER_FORMAT );
         fld_PREVIEW_STATE_BORDER_W.setToolTipText(
@@ -267,7 +290,7 @@ public class PreferencePanel extends JPanel
         fld_PREVIEW_STATE_BORDER_W.setEditable( true );
         super.add( fld_PREVIEW_STATE_BORDER_W );
 
-        fld_PREVIEW_STATE_BORDER_H = new LabeledTextField(
+        fld_PREVIEW_STATE_BORDER_H = new LabeledTextField( true,
                                          "PREVIEW_STATE_BORDER_H",
                                          Const.INTEGER_FORMAT );
         fld_PREVIEW_STATE_BORDER_H.setToolTipText(
@@ -277,7 +300,7 @@ public class PreferencePanel extends JPanel
         fld_PREVIEW_STATE_BORDER_H.setEditable( true );
         super.add( fld_PREVIEW_STATE_BORDER_H );
 
-        fld_PREVIEW_ARROW_LINE_W = new LabeledTextField(
+        fld_PREVIEW_ARROW_LINE_W = new LabeledTextField( true,
                                        "PREVIEW_ARROW_LINE_W",
                                        Const.FLOAT_FORMAT );
         fld_PREVIEW_ARROW_LINE_W.setToolTipText(
@@ -289,7 +312,7 @@ public class PreferencePanel extends JPanel
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
-        fld_MIN_WIDTH_TO_DRAG = new LabeledTextField(
+        fld_MIN_WIDTH_TO_DRAG = new LabeledTextField( true,
                                     "MIN_WIDTH_TO_DRAG",
                                     Const.INTEGER_FORMAT );
         fld_MIN_WIDTH_TO_DRAG.setToolTipText(
@@ -299,7 +322,7 @@ public class PreferencePanel extends JPanel
         fld_MIN_WIDTH_TO_DRAG.setEditable( true );
         super.add( fld_MIN_WIDTH_TO_DRAG );
 
-        fld_SEARCH_ARROW_LENGTH = new LabeledTextField(
+        fld_SEARCH_ARROW_LENGTH = new LabeledTextField( true,
                                       "SEARCH_ARROW_LENGTH",
                                       Const.INTEGER_FORMAT );
         fld_SEARCH_ARROW_LENGTH.setToolTipText(
@@ -309,7 +332,7 @@ public class PreferencePanel extends JPanel
         fld_SEARCH_ARROW_LENGTH.setEditable( true );
         super.add( fld_SEARCH_ARROW_LENGTH );
 
-        fld_SEARCH_FRAME_THICKNESS = new LabeledTextField(
+        fld_SEARCH_FRAME_THICKNESS = new LabeledTextField( true,
                                          "SEARCH_FRAME_THICKNESS",
                                          Const.INTEGER_FORMAT );
         fld_SEARCH_FRAME_THICKNESS.setToolTipText(
@@ -328,6 +351,14 @@ public class PreferencePanel extends JPanel
         "Whelther to display the searched object on top of the search frame." );
         super.add( lst_SEARCHED_OBJECT_ON_TOP );
 
+        lst_LEFTCLICK_INSTANT_ZOOM = new LabeledComboBox(
+                                         "LEFTCLICK_INSTANT_ZOOM" );
+        lst_LEFTCLICK_INSTANT_ZOOM.addItem( Boolean.TRUE );
+        lst_LEFTCLICK_INSTANT_ZOOM.addItem( Boolean.FALSE );
+        lst_LEFTCLICK_INSTANT_ZOOM.setToolTipText(
+        "Whelther to zoom in immediately after left mouse click on canvas." );
+        super.add( lst_LEFTCLICK_INSTANT_ZOOM );
+
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
         super.setBorder( BorderFactory.createEtchedBorder() );
@@ -336,19 +367,22 @@ public class PreferencePanel extends JPanel
     public void updateAllFields()
     {
         fld_Y_AXIS_ROOT_LABEL.setText( Parameters.Y_AXIS_ROOT_LABEL );
-        fld_SCREEN_HEIGHT_RATIO.setFloat( Parameters.SCREEN_HEIGHT_RATIO );
+        sdr_SCREEN_HEIGHT_RATIO.setFloat( Parameters.SCREEN_HEIGHT_RATIO );
         fld_INIT_SLOG2_LEVEL_READ.setShort( Parameters.INIT_SLOG2_LEVEL_READ );
         lst_AUTO_WINDOWS_LOCATION.setSelectedBooleanItem(
                                   Parameters.AUTO_WINDOWS_LOCATION );
+        sdr_TIME_SCROLL_UNIT_RATIO.setFloat(
+                                   Parameters.TIME_SCROLL_UNIT_RATIO );
 
         lst_Y_AXIS_ROOT_VISIBLE.setSelectedBooleanItem(
                                 Parameters.Y_AXIS_ROOT_VISIBLE );
         lst_BACKGROUND_COLOR.setSelectedItem( Parameters.BACKGROUND_COLOR );
 
-        fld_Y_AXIS_ROW_HEIGHT.setInteger( Parameters.Y_AXIS_ROW_HEIGHT );
+        // fld_Y_AXIS_ROW_HEIGHT.setInteger( Parameters.Y_AXIS_ROW_HEIGHT );
+        lst_ACTIVE_REFRESH.setSelectedBooleanItem( Parameters.ACTIVE_REFRESH );
         lst_STATE_BORDER.setSelectedItem( Parameters.STATE_BORDER );
-        fld_STATE_HEIGHT_FACTOR.setFloat( Parameters.STATE_HEIGHT_FACTOR );
-        fld_NESTING_HEIGHT_FACTOR.setFloat( Parameters.NESTING_HEIGHT_FACTOR );
+        sdr_STATE_HEIGHT_FACTOR.setFloat( Parameters.STATE_HEIGHT_FACTOR );
+        sdr_NESTING_HEIGHT_FACTOR.setFloat( Parameters.NESTING_HEIGHT_FACTOR );
 
         lst_ARROW_ANTIALIASING.setSelectedItem( Parameters.ARROW_ANTIALIASING );
         fld_ARROW_HEAD_LENGTH.setInteger( Parameters.ARROW_HEAD_LENGTH );
@@ -375,6 +409,8 @@ public class PreferencePanel extends JPanel
                                    Parameters.SEARCH_FRAME_THICKNESS );
         lst_SEARCHED_OBJECT_ON_TOP.setSelectedBooleanItem(
                                    Parameters.SEARCHED_OBJECT_ON_TOP );
+        lst_LEFTCLICK_INSTANT_ZOOM.setSelectedBooleanItem(
+                                   Parameters.LEFTCLICK_INSTANT_ZOOM );
     }
 
     public void updateAllParameters()
@@ -382,25 +418,29 @@ public class PreferencePanel extends JPanel
         Parameters.Y_AXIS_ROOT_LABEL
                   = fld_Y_AXIS_ROOT_LABEL.getText();
         Parameters.SCREEN_HEIGHT_RATIO
-                  = fld_SCREEN_HEIGHT_RATIO.getFloat();
+                  = sdr_SCREEN_HEIGHT_RATIO.getFloat();
         Parameters.INIT_SLOG2_LEVEL_READ
                   = fld_INIT_SLOG2_LEVEL_READ.getShort();
         Parameters.AUTO_WINDOWS_LOCATION
                   = lst_AUTO_WINDOWS_LOCATION.getSelectedBooleanItem();
+        Parameters.TIME_SCROLL_UNIT_RATIO
+                  = sdr_TIME_SCROLL_UNIT_RATIO.getFloat();
 
         Parameters.Y_AXIS_ROOT_VISIBLE
                   = lst_Y_AXIS_ROOT_VISIBLE.getSelectedBooleanItem();
         Parameters.BACKGROUND_COLOR
                   = (Alias) lst_BACKGROUND_COLOR.getSelectedItem();
 
-        Parameters.Y_AXIS_ROW_HEIGHT
-                  = fld_Y_AXIS_ROW_HEIGHT.getInteger();
+        // Parameters.Y_AXIS_ROW_HEIGHT
+        //           = fld_Y_AXIS_ROW_HEIGHT.getInteger();
+        Parameters.ACTIVE_REFRESH
+                  = lst_ACTIVE_REFRESH.getSelectedBooleanItem();
         Parameters.STATE_BORDER
                   = (StateBorder) lst_STATE_BORDER.getSelectedItem();
         Parameters.STATE_HEIGHT_FACTOR
-                  = fld_STATE_HEIGHT_FACTOR.getFloat();
+                  = sdr_STATE_HEIGHT_FACTOR.getFloat();
         Parameters.NESTING_HEIGHT_FACTOR
-                  = fld_NESTING_HEIGHT_FACTOR.getFloat();
+                  = sdr_NESTING_HEIGHT_FACTOR.getFloat();
 
         Parameters.ARROW_ANTIALIASING
                   = (Alias) lst_ARROW_ANTIALIASING.getSelectedItem();
@@ -432,5 +472,7 @@ public class PreferencePanel extends JPanel
                   = fld_SEARCH_FRAME_THICKNESS.getInteger();
         Parameters.SEARCHED_OBJECT_ON_TOP
                   = lst_SEARCHED_OBJECT_ON_TOP.getSelectedBooleanItem();
+        Parameters.LEFTCLICK_INSTANT_ZOOM
+                  = lst_LEFTCLICK_INSTANT_ZOOM.getSelectedBooleanItem();
     }
 }

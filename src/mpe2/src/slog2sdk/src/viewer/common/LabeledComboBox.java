@@ -12,6 +12,7 @@ package viewer.common;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.ActionListener;
@@ -32,12 +33,14 @@ public class LabeledComboBox extends JPanel
         JPanel tag_panel = new JPanel();
         tag_panel.setLayout( new BoxLayout( tag_panel, BoxLayout.X_AXIS ) );
             tag = new JLabel( label );
-        tag_panel.add( Box.createHorizontalStrut( 5 ) );
+        tag_panel.add( Box.createHorizontalStrut( Const.LABEL_INDENTATION ) );
         tag_panel.add( tag );
         tag_panel.add( Box.createHorizontalGlue() );
 
         lst = new JComboBox();
         tag.setLabelFor( lst );
+        tag_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+        lst.setAlignmentX( Component.LEFT_ALIGNMENT );
 
         super.add( tag_panel );
         super.add( lst );
