@@ -22,8 +22,6 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_RTS);
 
-    printf("do_rts");fflush(stdout);
-
 #ifdef USE_SHM_RDMA_GET
     pkt.rts_iov.type = MPIDI_CH3_PKT_RTS_IOV;
     pkt.rts_iov.sreq = sreq->handle;

@@ -22,8 +22,6 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_CTS);
 
-    printf("do_cts");fflush(stdout);
-
 #ifdef USE_SHM_RDMA_GET
 
     /*
