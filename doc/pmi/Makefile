@@ -82,7 +82,7 @@ pmi.pdf: $(CH3_FILES)
 	mv -f pmipdf.pdf pmi.pdf
 
 clean:
-	rm -f *.log *.aux *.dvi pmi.ps *.bbl
+	rm -f *.log *.aux *.dvi pmi.ps pmi.pdf *.bbl
 	rm -f *.ilg *.ind *.idx *.blg *.toc
 	rm -f pmiman/*.tex
 
