@@ -4,8 +4,7 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-def mpdhelp():
-    print """
+"""
 The following mpd commands are available.  For usage of any specific one,
 invoke it with the single argument --help .
 
@@ -23,9 +22,12 @@ mpdsigjob     deliver a specific signal to the application processes of a job
 Each command can be invoked with the --help argument, which prints usage
 information for the command without running it.
 """
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 
 if __name__ == '__main__':
-    try:
-        mpdhelp()
-    except mpdError, errmsg:
-	print 'mpdhelp failed: %s' % (errmsg)
+    print __doc__
