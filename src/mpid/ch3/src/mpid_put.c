@@ -30,7 +30,14 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
         return mpi_errno;
     }
 
+    /* FIXME: It makes sense to save the rank (and size) of the
+       communicator in the window structure to speed up these operations,
+       or to save a pointer to the communicator structure, rather than
+       just the handle 
+    */
+    MPIR_Nest_incr();
     NMPI_Comm_rank(win_ptr->comm, &rank);
+    MPIR_Nest_decr();
 
     /* If the put is a local operation, do it here */
     if (target_rank == rank) {
