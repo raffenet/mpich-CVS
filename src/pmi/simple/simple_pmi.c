@@ -215,10 +215,22 @@ int PMI_Get_rank( int *rank )
 int PMI_Get_universe_size( int *size)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], size_c[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     if ( PMI_initialized )
     {
+#ifdef USE_HUMAN_READABLE_TOKENS
+	iter = buf;
+	maxlen = PMIU_MAXLINE;
+	MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "get_universe_size");
+	MPIU_Strncpy(iter, "\n", maxlen);
+	PMIU_writeline( PMI_fd, buf );
+#else
 	PMIU_writeline( PMI_fd, "cmd=get_universe_size\n" );
+#endif
 	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
 	PMIU_parse_keyvals( buf );
 	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -240,10 +252,22 @@ int PMI_Get_universe_size( int *size)
 int PMI_Barrier( )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     if ( PMI_initialized == 1) {
 	/* Ignore if SINGLETON_INIT */
-	PMIU_writeline( PMI_fd, "cmd=barrier_in\n" );
+#ifdef USE_HUMAN_READABLE_TOKENS
+	iter = buf;
+	maxlen = PMIU_MAXLINE;
+	MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "barrier_in");
+	MPIU_Strncpy(iter, "\n", maxlen);
+	PMIU_writeline( PMI_fd, buf /*"cmd=barrier_in\n"*/ );
+#else
+	PMIU_writeline( PMI_fd, "cmd=barrier_in\n");
+#endif
 	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
 	PMIU_parse_keyvals( buf );
 	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -275,9 +299,25 @@ int PMI_Get_clique_ranks( int ranks[], int length )
 /* Inform the process manager that we're in finalize */
 int PMI_Finalize( )
 {
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char buf[PMIU_MAXLINE];
+    char *iter;
+    int maxlen;
+#endif
+
     /* Ignore SINGLETON_INIT */
     if (PMI_initialized == 1)
+    {
+#ifdef USE_HUMAN_READABLE_TOKENS
+	iter = buf;
+	maxlen = PMIU_MAXLINE;
+	MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "finalize");
+	MPIU_Strncpy(iter, "\n", maxlen);
+	PMIU_writeline( PMI_fd, buf );
+#else
 	PMIU_writeline( PMI_fd, "cmd=finalize\n" );
+#endif
+    }
     return( 0 );
 }
 
@@ -286,13 +326,25 @@ int PMI_Finalize( )
 int PMI_KVS_Get_my_name( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     if (PMI_initialized == SINGLETON_INIT) {
 	/* Return a dummy name */
 	MPIU_Strncpy( kvsname, "mykvs", PMIU_MAXLINE );
 	return 0;
     }
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "get_my_kvsname");
+    MPIU_Strncpy(iter, "\n", maxlen);
+    PMIU_writeline( PMI_fd, buf );
+#else
     PMIU_writeline( PMI_fd, "cmd=get_my_kvsname\n" );
+#endif
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -354,13 +406,25 @@ int PMI_Get_kvs_domain_id( char id_str[], int length )
 int PMI_KVS_Create( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
     
     if (PMI_initialized == SINGLETON_INIT) {
 	/* It is ok to pretend to *create* a kvs space */
 	return 0;
     }
 
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "create_kvs");
+    MPIU_Strncpy(iter, "\n", maxlen);
+    PMIU_writeline( PMI_fd, buf );
+#else
     PMIU_writeline( PMI_fd, "cmd=create_kvs\n" );
+#endif
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -378,13 +442,25 @@ int PMI_KVS_Destroy( const char kvsname[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int rc;
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     if (PMI_initialized == SINGLETON_INIT) {
 	return 0;
     }
 
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "destroy_kvs");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "kvsname", kvsname);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=destroy_kvs kvsname=%s\n", kvsname );
+#endif
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -411,14 +487,29 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], message[PMIU_MAXLINE];
     int  rc;
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     if (PMI_initialized == SINGLETON_INIT) {
 	/* Ignore the put */
 	return 0;
     }
+    
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "put");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "kvsname", kvsname);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "key", key);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "value", value);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
 	      kvsname, key, value);
+#endif
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -449,9 +540,22 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int lengt
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "get");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "kvsname", kvsname);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "key", key);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", kvsname, key );
+#endif
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf ); 
@@ -498,10 +602,24 @@ int PMI_Spawn(const char *command, const char *argv[],
 {
     int  rc;
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "spawn");
+    MPIU_Str_add_int_arg(&iter, &maxlen, "nprocs", maxprocs);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "execname", command);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "arg", argv[0]);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
 	      maxprocs, command, argv[0] );
+#endif
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf ); 
@@ -677,9 +795,22 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "getbyidx");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "kvsname", kvsname);
+    MPIU_Str_add_int_arg(&iter, &maxlen, "idx", idx);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", kvsname, idx  );
+#endif
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -716,9 +847,26 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "init");
+    MPIU_Strncpy(iter, "\n", maxlen);
+    PMIU_writeline( PMI_fd, buf );
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "get_maxes");
+    MPIU_Strncpy(iter, "\n", maxlen);
+    PMIU_writeline( PMI_fd, buf );
+#else
     PMIU_writeline( PMI_fd, "cmd=init\n" );
     PMIU_writeline( PMI_fd, "cmd=get_maxes\n" );
+#endif
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -847,6 +995,10 @@ static int PMII_Set_from_port( int fd, int id )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
+#ifdef USE_HUMAN_READABLE_TOKENS
+    char *iter;
+    int maxlen;
+#endif
 
     /* We start by sending a startup message to the server */
 
@@ -856,7 +1008,15 @@ static int PMII_Set_from_port( int fd, int id )
     /* Handshake and initialize from a port */
 
     /* FIXME: Check for tempbuf too short */
+#ifdef USE_HUMAN_READABLE_TOKENS
+    iter = buf;
+    maxlen = PMIU_MAXLINE;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "initack");
+    MPIU_Str_add_int_arg(&iter, &maxlen, "pmiid", id);
+    MPIU_Strncpy(iter, "\n", maxlen);
+#else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
+#endif
     err = PMIU_writeline( fd, buf );
     if (err) {
 	PMIU_printf( 1, "Error in writeline initack\n" );
