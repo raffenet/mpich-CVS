@@ -2,27 +2,85 @@
 #
 #
 #
-$missed_lines = 0;
-while (<>) {
-    if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
-	while (<>) {
-	    if (/^\s*#\s*endif/) { 
-		last; 
-	    }
+$includeFileInOutput = 0;
+$skipErrExits = 1;
+$outputUncovered = 1;
+for (@ARGV) {
+    my $filename = $_;
+    if (-s $filename) {
+	$missed_lines = &CountUncoveredLines( $filename );
+	if ($missed_lines) {
+	    print "$missed_lines line(s) not covered by tests in $filename\n";
 	}
-	next;	       
-    }
-    if (/^\s*######/) {
-	if (! /^\s*######\s*\}\s*/) {
-	    $missed_lines++;
+	else {
+	    print "All code covered by tests in $filename\n";
 	}
     }
-    print $_;
+    else {
+	print "Cannot open $filename\n";
+    }
 }
 
-if ($missed_lines) {
-    print "$missed_lines line(s) not covered by tests\n";
+sub CountUncoveredLines {
+    my $filename = $_[0];
+    my $missed_lines = 0;
+    my $headerOutput = 0;
+    my $linecount = 0;
+    my $lastLineOut = -1;
+    my $oldLine;
+    my $lastLine;
+
+    open( FD, "<$filename" ) || die "Could not open $filename\n";
+
+    while (<FD>) {
+	$linecount++;
+	# Skip any error checking block
+	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	    while (<FD>) {
+		$linecount++;
+		if (/^\s*#\s*endif/) { 
+		    last; 
+		}
+	    }
+	    next;	       
+	}
+	# If requested, skip obvious error checking lines
+	if ($skipErrExits && 
+	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
+	     /MPIR_Err_create_code/)) {
+	    next;
+	}
+	if (/^\s*######/) {
+	    if (! /^\s*######\s*\}\s*/) {
+		$missed_lines++;
+		
+		if ($outputUncovered) {
+		    if (!$headerOutput) {
+			print "\nUncovered lines in $filename\n";
+			$headerOutput = 1;
+		    }
+		    if ($lastLineOut < $linecount - 2) {
+			my $ll = $linecount - 2;
+			print "$ll:\t$oldLine";
+			$ll++;
+			print "$ll:\t$lastLine";
+		    }
+		    print "$linecount:\t$_";
+		    $lastLineOut = $linecount;
+		}
+	    }
+	}
+	if ($includeFileInOutput) {
+	    print $_;
+	}
+	$oldLine = $lastLine;
+	$lastLine = $_;
+    }
+    close (FD);
+    return $missed_lines;
 }
-else {
-    print "All code covered by tests\n";
-}
+
+#
+# To generate a summary
+# cd mpich2/src 
+# ~/projects/mpich2/maint/getcoverage.in mpi/*/*.gcov util/info/*.gcov mpid/ch3/src/*.gcov mpid/ch3/channels/sock/src/*.gcov > coverage.txt
