@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 # Autoconf initialization:
 AC_INIT(mpdroot.h)
-AC_PREREQ(2.13)                 dnl needed for SHELL
+AC_PREREQ(2.59)
 # Autoconf header:
 rm -f ${srcdir}/mpdconf.h mpdconf.h
 AC_CONFIG_HEADER(mpdconf.h)
