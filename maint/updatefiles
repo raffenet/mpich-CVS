@@ -28,6 +28,7 @@ do_f77=yes
 use_patched_autoonf=no
 do_build_configure=yes
 do_genstates=yes
+do_getstates=yes
 autoconfdir=""
 #
 # Extract the arguments intended for updatefiles.  Any others are
@@ -229,6 +230,7 @@ if [ $do_bindings = "yes" ] ; then
 	echo "Building Fortran 77 interface"
 	( cd src/binding/f77 && chmod a+x ./buildiface && ./buildiface )
     fi
+
     if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
 	build_cxx=yes
     elif find . -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
@@ -246,6 +248,18 @@ if [ $do_bindings = "yes" ] ; then
 	  ./buildiface -nosep $otherarg )
     fi
 
+    if [ ! -s src/binding/f90/mpi.f90 ] ; then
+	build_f90=yes
+    elif find -name 'src/binding/f90/buildiface' -newer 'src/binding/f90/mpi.f90' ; then
+	build_f90=yes
+    else
+	build_f90=no
+    fi
+    if [ $build_f90 = "yes" -a -s src/binding/f90/buildiface ] ; then
+	echo "Building F90 interface"
+	( cd src/binding/f90 && chmod a+x ./buildiface && \
+	    ./buildiface $otherarg)
+    fi
 fi
 #
 # Capture the error messages
@@ -350,6 +364,22 @@ fi
 if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
     echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
     maint/genstates
+fi
+if [ -x maint/getstates -a $do_getstates = "yes" ] ; then
+    echo "Creating the list of routine state into src/util/logging/lwlog/lwstates.c"
+    maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
+	            -namefile=src/util/logging/lwlog/lwnames.h src
+fi
+if [ -x maint/f77tof90 ] ; then
+    echo "Create or update the Fortran 90 tests derived from the Fortran 77 tess"
+    for dir in test/mpi/f77/* ; do
+        if [ ! -d $dir ] ; then continue ; fi
+	leafDir=`basename $dir`
+        if [ ! -d test/mpi/f90/$leafDir ] ; then
+	    mkdir test/mpi/f90/$leafDir
+        fi
+        maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.sm Makefile.ap
+    done
 fi
 
 if [ $made_simplemake != "no" ] ; then
