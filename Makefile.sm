@@ -8,6 +8,18 @@ DOC_SUBDIRS = doc
 # errors caused by out-of-date objects in the directories and in the 
 # library.  We do not replace the pkglist file until the make completes,
 # using the all-postamble target.
+#
+# Here is the logic:
+#   A new configure creates lib/newconfig
+#   A cleanobjsandlibs step removes that file, as well as removing the
+#     libraries and object files
+#   The test for whether the clean step is performed is this:
+#      Create a file lib/pkglist.new
+#      Compare lib/pkglist.new to lib/pkglist
+#      If the same, rm lib/pkglist.new and done.
+#      If different, then cleanout the libraries and object files,
+#          then mv lib/pkglist.new lib/pkglist
+#          
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; \
 	else \
@@ -17,13 +29,18 @@ all-local:
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
 	        rm -f lib/pkglist.new ; \
             else \
-	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
-		rm -f lib/lib${MPILIBNAME}.so* lib/libp${MPILIBNAME}.so* ; \
-		rm -f lib/lib${MPILIBNAME}.la* lib/libp${MPILIBNAME}.la* ; \
+		${MAKE} cleanobjsandlibs ; \
 		rm -f lib/pkglist ; \
-		${MAKE} clean ; cd test && ${MAKE} clean ; \
+		mv -f lib/pkglist.new lib/pkglist ; \
 	    fi ; \
 	fi
+cleanobjsandlibs:
+	rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a
+	rm -f lib/lib${MPILIBNAME}.so* lib/libp${MPILIBNAME}.so*
+	rm -f lib/lib${MPILIBNAME}.la* lib/libp${MPILIBNAME}.la*
+	${MAKE} clean ; cd test && ${MAKE} clean
+	rm -f lib/newconfig
+
 all-preamble:
 	@echo "Beginning make"
 
