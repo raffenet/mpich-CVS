@@ -295,8 +295,5 @@ static int file_write(MPI_File fh,
 	/* For strided and atomic mode, locking is done in ADIO_WriteStrided */
     }
 
-#ifdef MPI_hpux
-    HPMP_IO_END(fl_xmpi, fh, datatype, count);
-#endif /* MPI_hpux */
     return error_code;
 }
