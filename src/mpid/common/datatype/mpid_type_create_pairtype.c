@@ -28,6 +28,23 @@
 
   Return Value:
   MPI_SUCCESS on success, MPI errno on failure.
+
+  Note:
+  Section 4.9.3 (MINLOC and MAXLOC) of the MPI-1 standard specifies that
+  these types should be built as if by the following (e.g. MPI_FLOAT_INT):
+
+    type[0] = MPI_FLOAT
+    type[1] = MPI_INT
+    disp[0] = 0
+    disp[1] = sizeof(float) <---- questionable displacement!
+    block[0] = 1
+    block[1] = 1
+    MPI_TYPE_STRUCT(2, block, disp, type, MPI_FLOAT_INT)
+
+  However, this is a relatively naive approach that does not take struct
+  padding into account when setting the displacement of the second element.
+  Thus in our implementation we have chosen to instead use the actual
+  difference in starting locations of the two types in an actual struct.
 @*/
 int MPID_Type_create_pairtype(MPI_Datatype type,
 			      MPID_Datatype *new_dtp)
@@ -60,7 +77,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		struct { float a; int b; } foo;
 
 		disps[0]    = 0;
-		disps[1]    = sizeof(foo.a) /* not &foo.b - &foo.a! */;
+		disps[1]    = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
 		types[0]    = MPI_FLOAT;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
@@ -75,7 +92,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		struct { double a; int b; } foo;
 
 		disps[0]    = 0;
-		disps[1]    = sizeof(foo.a);
+		disps[1]    = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
 		types[0]    = MPI_DOUBLE;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
@@ -90,7 +107,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		struct { long a; int b; } foo;
 
 		disps[0]    = 0;
-		disps[1]    = sizeof(foo.a);
+		disps[1]    = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
 		types[0]    = MPI_LONG;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
@@ -105,7 +122,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		struct { short a; int b; } foo;
 
 		disps[0]    = 0;
-		disps[1]    = sizeof(foo.a);
+		disps[1]    = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
 		types[0]    = MPI_SHORT;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
@@ -120,7 +137,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		struct { long double a; int b; } foo;
 
 		disps[0]    = 0;
-		disps[1]    = sizeof(foo.a);
+		disps[1]    = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
 		types[0]    = MPI_LONG_DOUBLE;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
