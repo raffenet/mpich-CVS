@@ -41,6 +41,15 @@ void ADIOI_SetFunctions(ADIO_File fd)
 #endif
 	break;
 
+    case ADIO_NTFS:
+#ifdef NTFS
+	*(fd->fns) = ADIO_NTFS_operations;
+#else
+	FPRINTF(stderr, "ADIOI_SetFunctions: ROMIO has not been configured to use the NTFS file system\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+	break;
+
     case ADIO_NFS:
 #ifdef NFS	
 	*(fd->fns) = ADIO_NFS_operations;
