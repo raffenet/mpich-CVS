@@ -47,7 +47,7 @@ int PMI_Init( int *spawned )
     else if ( ( p = getenv( "PMI_PORT" ) ) ) {
 	/* Not yet implemented.  Connect to the indicated port (in
 	   format hostname:portnumber) and get the fd for the socket */
-	PMP_fd = -1;
+	PMI_fd = -1;
     }
     else {
 	PMI_fd = -1;
