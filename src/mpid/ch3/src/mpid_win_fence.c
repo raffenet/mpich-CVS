@@ -366,8 +366,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     new_dtp->has_sticky_ub = dtype_infos[total_op_count].has_sticky_ub;
                     new_dtp->has_sticky_lb = dtype_infos[total_op_count].has_sticky_lb;
                     /* update pointers in dataloop */
-                    ptrdiff = (char *) (new_dtp->loopinfo) - (char *)
-                        (dtype_infos[total_op_count].loopinfo); 
+                    ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
+                        (dtype_infos[total_op_count].loopinfo));
 
                     MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
                 }
@@ -484,8 +484,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         type_size = MPID_Datatype_get_basic_size(type);
                         for (i=0; i<vec_len; i++) {
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                          (*uop)((char *)tmp_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
-                           (char *)win_buf_addr + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                            (*uop)((char *)tmp_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                            (char *)win_buf_addr + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
                                  &count, &type);
                         }
 
