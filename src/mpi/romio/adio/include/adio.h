@@ -65,6 +65,7 @@
 #endif
 
 #include "mpi.h"
+#include "mpio.h"
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif

@@ -1619,7 +1619,7 @@ done
 EXTRA_SRC_DIRS=""
 if test "$FROM_MPICH2" = yes -o "${MPI}_mpi" = "mpich2_mpi"; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
-elif test "$FROM_MPICH" = yes ; then
+elif test "$FROM_MPICH" = yes -o "${MPI}_mpi" = "mpich_mpi"; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich1"
 else
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/default"
