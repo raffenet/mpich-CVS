@@ -700,8 +700,9 @@ typedef struct MPID_Request {
     MPID_Comm *comm;
     /* Status is needed for wait/test/recv */
     MPI_Status status;
-    /* Persistent requests have their own, "real" requests */
-    struct MPID_Request *active_request;
+    /* Persistent requests have their own "real" requests.  Receive requests
+       have partnering send requests when src=dest. etc. */
+    struct MPID_Request *partner_request;
     /* User-defined request support */
     MPI_Grequest_cancel_function *cancel_fn;
     MPI_Grequest_free_function *free_fn;
@@ -1256,6 +1257,9 @@ int MPID_VCRT_get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
 int MPID_VCR_dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
 int MPID_VCR_release(MPID_VCR vcr);
 int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr);
+
+int MPID_Get_processor_name(char *, int *);
+
 
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
