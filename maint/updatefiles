@@ -224,8 +224,7 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
     echo "Extracting the error messages..."
     rm -rf .tmp
     rm -f .err
-    maint/extracterrmsgs src/mpi src/nameserv src/util src/binding \
-        src/include src/mpid > .tmp 2>.err
+    maint/extracterrmsgs `cat maint/errmsgdirs` > .tmp 2>.err
     # (error here is ok)
     update_errdefs=yes
     if [ -s .err ] ; then 
