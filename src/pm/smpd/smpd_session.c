@@ -1203,45 +1203,6 @@ int smpd_session(sock_set_t set, sock_t sock)
 		{
 		    smpd_dbg_printf("rank %d %s closed.\n", context->rank,
 			smpd_get_context_str(context));
-
-#if 0
-		    /* insert code to figure out when to send a process exited command */
-		    if (context->type == SMPD_CONTEXT_STDOUT)
-		    {
-			/* create the process exited command */
-			smpd_dbg_printf("creating an exit command in response to stdout closing.\n");
-			result = smpd_create_command("exit", smpd_process.id, 0, SMPD_FALSE, &temp_cmd);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to create an exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-			result = smpd_add_command_int_arg(temp_cmd, "rank", context->rank);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to add the rank %d to the exit command.\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-			result = smpd_add_command_int_arg(temp_cmd, "code", 0);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to add the exit code to the exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-
-			/* send the exit command */
-			result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to post a write of the exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("handle_launch_command");
-			    return SMPD_FAIL;
-			}
-		    }
-#endif
 		}
 
 		result = smpd_post_close_context(context);
@@ -1278,45 +1239,6 @@ int smpd_session(sock_set_t set, sock_t sock)
 		{
 		    smpd_dbg_printf("rank %d %s closed.\n", context->rank,
 			smpd_get_context_str(context));
-
-#if 0
-		    /* insert code to figure out when to send a process exited command */
-		    if (context->type == SMPD_CONTEXT_STDOUT)
-		    {
-			/* create the process exited command */
-			smpd_dbg_printf("creating an exit command in response to stdout closing.\n");
-			result = smpd_create_command("exit", smpd_process.id, 0, SMPD_FALSE, &temp_cmd);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to create an exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-			result = smpd_add_command_int_arg(temp_cmd, "rank", context->rank);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to add the rank %d to the exit command.\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-			result = smpd_add_command_int_arg(temp_cmd, "code", 0);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to add the exit code to the exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("smpd_session");
-			    return SMPD_FAIL;
-			}
-
-			/* send the exit command */
-			result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
-			if (result != SMPD_SUCCESS)
-			{
-			    smpd_err_printf("unable to post a write of the exit command for rank %d\n", context->rank);
-			    smpd_exit_fn("handle_launch_command");
-			    return SMPD_FAIL;
-			}
-		    }
-#endif
 		}
 
 		result = smpd_post_close_context(context);

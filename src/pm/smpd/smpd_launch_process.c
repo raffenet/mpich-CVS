@@ -917,8 +917,21 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     return SMPD_FAIL;
 #else
     int status;
+    smpd_enter_fn("smpd_wait_process");
+
+    smpd_dbg_printf("waiting for process %d\n", wait);
     waitpid(wait, &status, WUNTRACED);
-    *exit_code_ptr = (WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
+    if (WIFEXITED(status))
+    {
+	*exit_code_ptr =  WEXITSTATUS(status);
+    }
+    else
+    {
+	smpd_err_printf("WIFEXITED(%d) failed, setting exit code to -1\n", wait);
+	*exit_code_ptr = -1;
+    }
+
+    smpd_exit_fn("smpd_wait_process");
     return SMPD_SUCCESS;
 #endif
 }
