@@ -369,7 +369,7 @@ through the nightly test suites.
 The scalable shared channel, like the shm channel, uses shared memory for
 communication.  However, unlike the shm channel which allocates a NxN array of
 queues in shared memory during MPI_INIT, the sshm channel only allocates a
-queue is shared memory when a pair of processes communicate for the first time.
+queue in shared memory when a pair of processes communicate for the first time.
 Since the communication patterns in most programs does no involve all processes
 communicating with all other processes, this channel will scale to a larger
 number of process than the shm channel.  Hence it's name.  The sshm channel may
@@ -385,7 +385,7 @@ putting
 
   --with-device=ch3:ib --with-ib=vapi
 
-on the configure command line.  The channel preselyts only supports the
+on the configure command line.  The channel presently only supports the
 Mellanox Verbs API, although support for the open source InfiniBand Access
 Layer (IBAL) API is nearly complete.  The Mellanox Verbs API is typically
 installed in /usr/mellanox.  The configure option
