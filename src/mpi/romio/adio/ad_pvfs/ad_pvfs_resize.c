@@ -11,11 +11,20 @@
 void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;
+    int ret, rank;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_RESIZE";
 #endif
-    
-    err = pvfs_ftruncate64(fd->fd_sys, size);
+
+    /* because MPI_File_set_size is a collective operation, and PVFS1 clients
+     * do not cache metadata locally, one client can resize and broadcast the
+     * result to the others */
+    MPI_Comm_rank(fd->comm, &rank);
+    if (rank == fd->hints->ranklist[0]) {
+	err = pvfs_ftruncate64(fd->fd_sys, size);
+    }
+    MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm)
+
     if (err == -1) {
 #ifdef MPICH2
 	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
