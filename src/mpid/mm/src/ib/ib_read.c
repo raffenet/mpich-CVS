@@ -7,8 +7,8 @@
 
 #ifdef WITH_METHOD_IB
 
-#ifndef HAVE_WINSOCK2_H
-#include <errno.h>
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 /* Handling read data */

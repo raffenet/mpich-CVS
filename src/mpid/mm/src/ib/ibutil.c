@@ -77,7 +77,7 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
     status = ib_post_send_req_us( IB_Process.hca_handle,
 	vc_ptr->data.ib.info.m_qp_handle, 
 	&work_req);
-    if( status != IB_SUCCESS )
+    if (status != IB_SUCCESS)
     {
 	err_printf("Error: failed to post ib send, status = %d\n", status);
 	return status;
