@@ -591,7 +591,25 @@ sub ProcessFile {
     &WriteMfile( $output_name );
 
     my @dirs = @subdirs;
-    M: foreach my $dir (@dirs) {
+    # First, check for names that are replaced by autoconf (e.g., @name@)
+    my @actdirs = ()
+    foreach my $dir (@dirs) {
+	$sdir = $dir;
+	if ($sdir =~ /@([^@]*)@/) {
+	    $subst_name = $1;
+	    # Look up the special name
+	    $var_name = "SUBDIRS_$subst_name";
+	    if (defined( $makevars{$var_name} )) {
+		# Concatenate the value of the variable name to the list
+		# of directories
+		@actdirs = ( @actdirs, split( / /, $makevars{$var_name} ) );
+	    }
+	}
+	else {
+            $actdirs[$#actdirs+1] = $dir;
+        }
+    }
+    M: foreach my $dir (@actdirs) {
 	if ($dir eq ".") { next M; }
 	if (! -d $dir) { print "Directory $curdir$dir does not exist\n"; next M; }
 	if (! -s "$dir/$file") { print "File $curdir$dir/$file does not exist\n"; next M; }
