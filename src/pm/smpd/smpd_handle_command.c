@@ -5278,7 +5278,7 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     len = SMPD_MAX_PASSWORD_LENGTH;
-    result = smpd_decrypt_data(encrypted, strlen(encrypted), decrypted, &len);
+    result = smpd_decrypt_data(encrypted, (int)strlen(encrypted), decrypted, &len);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to decrypt the password in the add_job_key_and_password command.\n");
