@@ -397,7 +397,7 @@ int CollChk_dtype_bcast(MPI_Comm comm, MPI_Datatype type, int cnt, int root,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &are_hashes_equal, 1, MPI_INT,
                     MPI_LAND, comm );
 
     if ( !are_hashes_equal )
@@ -456,7 +456,7 @@ int CollChk_dtype_scatter(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &are_hashes_equal, 1, MPI_INT,
                     MPI_LAND, comm );
 
     if ( !are_hashes_equal )
@@ -522,7 +522,7 @@ int CollChk_dtype_scatterv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &are_hashes_equal, 1, MPI_INT,
                     MPI_LAND, comm );
 
 #if ! defined( HAVE_ALLOCA )
@@ -617,7 +617,7 @@ int CollChk_dtype_allgather(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &err_rank_size, 1, MPI_INT,
                     MPI_SUM, comm );
 
 #if ! defined( HAVE_ALLOCA )
@@ -715,7 +715,7 @@ int CollChk_dtype_allgatherv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &err_rank_size, 1, MPI_INT,
                     MPI_SUM, comm );
 
 #if ! defined( HAVE_ALLOCA )
@@ -810,7 +810,7 @@ int CollChk_dtype_alltoallv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &err_rank_size, 1, MPI_INT,
                     MPI_SUM, comm );
 
 #if ! defined( HAVE_ALLOCA )
@@ -905,7 +905,7 @@ int CollChk_dtype_alltoallw(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+    PMPI_Allreduce( MPI_IN_PLACE, &err_rank_size, 1, MPI_INT,
                     MPI_SUM, comm );
 
 #if ! defined( HAVE_ALLOCA )
