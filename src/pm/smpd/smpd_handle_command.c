@@ -5144,13 +5144,13 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("set command missing key parameter\n");
+	smpd_err_printf("add_job_key command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "username", value, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("set command missing username parameter\n");
+	smpd_err_printf("add_job_key command missing username parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5164,6 +5164,125 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
     else
     {
 	strcpy(result_str, SMPD_SUCCESS_STR);
+    }
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a add job key %s=%s command.\n", key, value);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a add job key %s=%s command.\n", key, value);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a add job key %s=%s command.\n", key, value);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to add job key %s=%s command: \"%s\"\n", key, value, temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return result;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_exit_fn(FCNAME);
+    return SMPD_FAIL;
+#endif
+}
+
+#undef FCNAME
+#define FCNAME "smpd_handle_add_job_key_command_and_password"
+int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
+{
+#ifdef HAVE_WINDOWS_H
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char result_str[100];
+    char key[SMPD_MAX_NAME_LENGTH];
+    char value[SMPD_MAX_NAME_LENGTH];
+    char encrypted[SMPD_MAX_PASSWORD_LENGTH];
+    char decrypted[SMPD_MAX_PASSWORD_LENGTH];
+    char account[SMPD_MAX_ACCOUNT_LENGTH], domain[SMPD_MAX_ACCOUNT_LENGTH];
+    int len;
+    HANDLE hUser;
+
+    smpd_enter_fn(FCNAME);
+
+    cmd = &context->read_cmd;
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("add_job_key_and_password command missing key parameter\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "username", value, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("add_job_key_and_password command missing username parameter\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "password", encrypted, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("add_job_key_and_password command missing password parameter\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    len = SMPD_MAX_PASSWORD_LENGTH;
+    result = smpd_decrypt_data(encrypted, strlen(encrypted), decrypted, &len);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to decrypt the password in the add_job_key_and_password command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    account[0] = '\0';
+    domain[0] = '\0';
+    smpd_parse_account_domain(value, account, domain);
+    /*if (LogonUser(username, domain, decrypted, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, &hUser))*/
+    if (smpd_get_user_handle(account, domain[0] != '\0' ? domain : NULL, decrypted, &hUser) == SMPD_SUCCESS)
+    {
+	result = smpd_add_job_key_and_handle(key, value, hUser);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to set job key %s=%s\n", key, value);
+	    strcpy(result_str, SMPD_FAIL_STR);
+	}
+	else
+	{
+	    strcpy(result_str, SMPD_SUCCESS_STR);
+	}
+    }
+    else
+    {
+	strcpy(result_str, SMPD_FAIL_STR);
     }
 
     /* prepare the result command */
@@ -5232,7 +5351,7 @@ int smpd_handle_remove_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("set command missing key parameter\n");
+	smpd_err_printf("remove_job_key command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5314,7 +5433,7 @@ int smpd_handle_associate_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("set command missing key parameter\n");
+	smpd_err_printf("associate_job_key command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5777,6 +5896,12 @@ int smpd_handle_command(smpd_context_t *context)
 		else if (strcmp(cmd->cmd_str, "add_job_key") == 0)
 		{
 		    result = smpd_handle_add_job_key_command(context);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+		else if (strcmp(cmd->cmd_str, "add_job_key_and_password") == 0)
+		{
+		    result = smpd_handle_add_job_key_command_and_password(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}

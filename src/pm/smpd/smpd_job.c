@@ -39,6 +39,29 @@ int smpd_add_job_key(const char *key, const char *username)
 }
 
 #undef FCNAME
+#define FCNAME "smpd_add_job_key"
+int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser)
+{
+    smpd_job_key_list_t *node;
+    smpd_enter_fn(FCNAME);
+
+    node = (smpd_job_key_list_t*)malloc(sizeof(smpd_job_key_list_t));
+    if (node == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    strcpy(node->key, key);
+    strcpy(node->username, username);
+    node->user_handle = hUser;
+    node->next = list;
+    list = node;
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_remove_job_key"
 int smpd_remove_job_key(const char *key)
 {

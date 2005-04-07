@@ -5235,6 +5235,56 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    break;
 	}
 
+	/* check to see if this is an add_job_key_and_password session */
+	if (smpd_process.builtin_cmd == SMPD_CMD_ADD_JOB_KEY_AND_PASSWORD)
+	{
+	    char buffer[SMPD_MAX_PASSWORD_LENGTH];
+	    result = smpd_create_command("add_job_key_and_password", 0, 1, SMPD_TRUE, &cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create an add_job_key_and_password command.\n");
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "key", smpd_process.job_key); /*context->sspi_job_key ??? */
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the job key(%s) to the add_job_key_and_password command.\n", smpd_process.job_key);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "username", smpd_process.job_key_account);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the job account(%s) to the add_job_key_and_password command.\n", smpd_process.job_key_account);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_encrypt_data(smpd_process.job_key_password, strlen(smpd_process.job_key_password), buffer, SMPD_MAX_PASSWORD_LENGTH);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to encrypt the job password.\n");
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "password", buffer);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the job password to the add_job_key_and_password command.\n");
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_write_command(context, cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the add_job_key_and_password command on the %s context.\n",
+		    smpd_get_context_str(context));
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    break;
+	}
+
 	/* check to see if this is an remove_job_key session */
 	if (smpd_process.builtin_cmd == SMPD_CMD_REMOVE_JOB_KEY)
 	{

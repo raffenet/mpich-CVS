@@ -172,7 +172,9 @@ smpd_global_t smpd_process =
       NULL,             /* sec_fn                  */
 #endif
       NULL,             /* sspi_context_list       */
-      ""                /* job_key                 */
+      "",               /* job_key                 */
+      "",               /* job_key_account         */
+      ""                /* job_key_password        */
     };
 
 #undef FCNAME

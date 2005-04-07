@@ -556,6 +556,7 @@ typedef enum smpd_builtin_commands_t
     SMPD_CMD_VALIDATE,
     SMPD_CMD_DO_STATUS,
     SMPD_CMD_ADD_JOB_KEY,
+    SMPD_CMD_ADD_JOB_KEY_AND_PASSWORD,
     SMPD_CMD_REMOVE_JOB_KEY,
     SMPD_CMD_ASSOCIATE_JOB_KEY
 } smpd_builtin_commands_t;
@@ -675,6 +676,7 @@ typedef struct smpd_global_t
     smpd_sspi_client_context_t *sspi_context_list;
     char job_key[SMPD_SSPI_JOB_KEY_LENGTH];
     char job_key_account[SMPD_MAX_ACCOUNT_LENGTH];
+    char job_key_password[SMPD_MAX_PASSWORD_LENGTH];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -849,6 +851,7 @@ void smpd_finalize_drive_maps();
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val);
 #ifdef HAVE_WINDOWS_H
 int smpd_add_job_key(const char *key, const char *username);
+int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser);
 int smpd_remove_job_key(const char *key);
 int smpd_associate_job_key(const char *key, const char *username, HANDLE user_handle);
 int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle);

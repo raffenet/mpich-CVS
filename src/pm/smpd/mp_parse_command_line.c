@@ -299,7 +299,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_env_node_t *env_node, *env_list;
     smpd_env_node_t *genv_list;
     char *env_str, env_data[SMPD_MAX_ENV_LENGTH];
-    /*char *equal_sign_pos;*/
     char wdir[SMPD_MAX_DIR_LENGTH];
     char gwdir[SMPD_MAX_DIR_LENGTH];
     int use_debug_flag;
@@ -410,7 +409,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY;
+	    if (smpd_get_opt_string(argcp, argvp, "-password", smpd_process.job_key_password, SMPD_MAX_PASSWORD_LENGTH))
+	    {
+		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY_AND_PASSWORD;
+	    }
+	    else
+	    {
+		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY;
+	    }
 	    smpd_do_console();
 	    fflush(stdout);
 	    smpd_exit(0);
@@ -899,35 +905,6 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
 	    {
-		/*
-		if (argc < 3)
-		{
-		    printf("Error: no environment variables after -env option\n");
-		    smpd_exit_fn(FCNAME);
-		    return SMPD_FAIL;
-		}
-		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
-		if (env_node == NULL)
-		{
-		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn(FCNAME);
-		    return SMPD_FAIL;
-		}
-		equal_sign_pos = strstr((*argvp)[2], "=");
-		if (equal_sign_pos == NULL)
-		{
-		    printf("Error: improper environment variable option. '%s %s' is not in the format '-env var=value'\n",
-			(*argvp)[1], (*argvp)[2]);
-		    smpd_exit_fn(FCNAME);
-		    return SMPD_FAIL;
-		}
-		*equal_sign_pos = '\0';
-		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
-		strncpy(env_node->value, equal_sign_pos+1, SMPD_MAX_VALUE_LENGTH);
-		env_node->next = env_list;
-		env_list = env_node;
-		num_args_to_strip = 2;
-		*/
 		if (argc < 4)
 		{
 		    printf("Error: no environment variable after -env option\n");
