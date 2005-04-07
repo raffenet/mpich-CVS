@@ -5285,17 +5285,24 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    if (len < 0 || len >= SMPD_MAX_PASSWORD_LENGTH)
+    {
+	smpd_err_printf("invalid password length: %d\n", len);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    decrypted[len] = '\0';
 
     account[0] = '\0';
     domain[0] = '\0';
     smpd_parse_account_domain(value, account, domain);
-    /*if (LogonUser(username, domain, decrypted, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, &hUser))*/
-    if (smpd_get_user_handle(account, domain[0] != '\0' ? domain : NULL, decrypted, &hUser) == SMPD_SUCCESS)
+    result = smpd_get_user_handle(account, domain[0] != '\0' ? domain : NULL, decrypted, &hUser);
+    if (result == SMPD_SUCCESS)
     {
 	result = smpd_add_job_key_and_handle(key, value, hUser);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to set job key %s=%s\n", key, value);
+	    smpd_err_printf("unable to set job key %s=%s:%p\n", key, value, hUser);
 	    strcpy(result_str, SMPD_FAIL_STR);
 	}
 	else
@@ -5305,6 +5312,7 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
     }
     else
     {
+	smpd_dbg_printf("smpd_get_user_handle(%s,%s,%d) returned error: %d\n", account, domain, strlen(decrypted), result);
 	strcpy(result_str, SMPD_FAIL_STR);
     }
 
