@@ -470,8 +470,7 @@ else
     AC_MSG_RESULT( [$leftover_pkgs cleaned] )
 fi
 
-dnl trial_pkgs="graphics wrappers logging misc"
-trial_pkgs="misc logging wrappers graphics"
+dnl trial_pkgs="misc logging wrappers graphics collchk"
 
 dnl
 AC_ARG_ENABLE( misc,
@@ -525,7 +524,7 @@ fi
 AC_ARG_ENABLE( collchk,
 [--enable-collchk                   - Build MPI Collective checking libraries.
                                      libmpe_collchk.a],
-, enable_collchk=no )
+, enable_collchk=yes )
 
 selected_pkgs=""
 
