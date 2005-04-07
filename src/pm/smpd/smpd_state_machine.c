@@ -3182,7 +3182,8 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	context->sspi_type = SMPD_SSPI_IDENTIFY;
 	smpd_dbg_printf("calling ImpersonateSecurityContext\n");
 	sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);
-	smpd_dbg_printf("ImpersonateSecurityContext returned\n");
+	/* revert must be called before any smpd_dbg_printfs will work */
+	context->account[0] = '\0';
 	GetUserName(context->account, &len);
 	if (sec_result == SEC_E_OK)
 	{
