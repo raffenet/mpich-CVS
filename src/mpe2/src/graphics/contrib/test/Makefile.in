@@ -31,10 +31,10 @@ RM                   = @RM@
 
 srcdir        = @srcdir@
 
-CFLAGS        = $(MPE_CFLAGS) $(C_INCS) 
-FFLAGS        = $(MPE_FFLAGS) $(F_INCS)
-CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS)
-FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS)
+CFLAGS        = $(MPE_CFLAGS) $(C_INCS) @CFLAGS@
+FFLAGS        = $(MPE_FFLAGS) $(F_INCS) @FFLAGS@
+CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS) @FFLAGS@
 EXECS         = cpi_anim@EXEEXT@ cxgraphics@EXEEXT@
 
 .SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@

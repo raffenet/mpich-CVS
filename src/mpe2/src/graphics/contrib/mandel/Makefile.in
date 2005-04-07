@@ -23,9 +23,8 @@ RM          = rm
 
 srcdir      = @srcdir@
 
-
-CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) 
-CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS)
+CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
+CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 EXECS      = pmandel@EXEEXT@
 
 .SUFFIXES: .c .@OBJEXT@ @EXEEXT@

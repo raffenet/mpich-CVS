@@ -27,8 +27,8 @@ srcdir      = @srcdir@
 .c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
 
-CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) 
-CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS)
+CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
+CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 EXECS      = life_g@EXEEXT@
 
 default: $(EXECS)
