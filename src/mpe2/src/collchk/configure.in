@@ -254,4 +254,4 @@ AC_SUBST(MPI_LIBS)
 AC_SUBST(COLLCHK_LIBNAME)
 AC_SUBST(COLLCHK_LIBS)
 
-AC_OUTPUT( Makefile src/Makefile )
+AC_OUTPUT( Makefile src/Makefile test/Makefile )

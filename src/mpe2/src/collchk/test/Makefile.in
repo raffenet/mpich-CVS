@@ -1,0 +1,50 @@
+
+##### User configurable options #####
+
+MAKE          = @MAKE@
+
+MPI_CC        = @MPI_CC@
+MPI_CLINKER   = $(MPI_CC)
+
+DEBUG_LIBS    = @DEBUG_LIBS@
+MPI_INC       = @MPI_INC@
+MPI_LIBS      = @MPI_LIBS@
+MPE_CFLAGS    = @MPE_CFLAGS@
+MPE_INCDIR    = @includebuild_dir@
+MPE_LIBDIR    = @libbuild_dir@
+COLLCHK_LIBS  = -L$(MPE_LIBDIR) @COLLCHK_LIBS@ $(MPI_LIBS)
+
+C_INCS        = -I$(MPE_INCDIR) $(MPI_INC)
+RM            = @RM@
+
+#### End User configurable options ###
+
+srcdir        = @srcdir@
+
+CFLAGS        = $(MPE_CFLAGS) $(C_INCS) @CFLAGS@
+CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+
+@VPATH@
+
+.SUFFIXES: .c .@OBJEXT@ @EXEEXT@
+
+SRC           = wrong_composite.c wrong_scatterv.c \
+                wrong_int_byte.c wrong_root.c \
+                composite.c scatterv.c \
+                time_allreduce.c time_alltoallv.c
+OBJS          = $(SRC:.c=.@OBJEXT@)
+EXECS         = $(OBJS:.o=)
+
+.c.@OBJEXT@:
+	$(MPI_CC) $(CFLAGS) -c $<
+
+.@OBJEXT@@EXEEXT@:
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $< $(COLLCHK_LIBS)
+
+default: $(OBJS) $(EXECS)
+
+clean:
+	@-$(RM) -f $(EXECS) $(OBJS) *.@OBJEXT@
+
+distclean: clean
+	@-$(RM) -f Makefile
