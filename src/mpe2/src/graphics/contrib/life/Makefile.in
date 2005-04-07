@@ -22,21 +22,22 @@ RM          = rm
 
 srcdir      = @srcdir@
 
+.SUFFIXES: .c .@OBJEXT@ @EXEEXT@
 
-.c.o:
+.c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
 
 CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) 
 CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS)
-EXECS      = life_g
+EXECS      = life_g@EXEEXT@
 
 default: $(EXECS)
 
-life_g:	life_g.o
+life_g@EXEEXT@:	life_g.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(PROF_LIBS)
 
 clean:
-	@-$(RM) -f *.o *~ PI* $(EXECS)
+	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
 
 distclean: clean
 	@-$(RM) -f Makefile

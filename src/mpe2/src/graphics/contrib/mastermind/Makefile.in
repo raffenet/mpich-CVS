@@ -22,29 +22,31 @@ RM          = rm
 
 srcdir      = @srcdir@
 
-.c.o:
+.SUFFIXES: .c .@OBJEXT@ @EXEEXT@
+
+.c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
 
-.o:
+.@OBJEXT@@EXEEXT@:
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $< $(PROF_LIBS)
 
 CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR)
 CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS)
-EXECS      = gmm mm vb
+EXECS      = gmm@EXEEXT@ mm@EXEEXT@ vb@EXEEXT@
 
 default: $(EXECS)
 
-gmm.o:	gmm.c
+gmm.@OBJEXT@:	gmm.c
 	$(MPI_CC) $(CFLAGS) -DUSE_GRAPHICS -c $?
 
-mm.o:	gmm.c
-	$(MPI_CC) $(CFLAGS) -c -o mm.o $?
+mm.@OBJEXT@:	gmm.c
+	$(MPI_CC) $(CFLAGS) -c -o mm.@OBJEXT@ $?
 
-vb.o:	vb.c
+vb.@OBJEXT@:	vb.c
 	$(MPI_CC) $(CFLAGS) -c $?
 
 clean:
-	@-$(RM) -f *.o *~ PI* $(EXECS) gmmlog
+	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS) gmmlog
 
 distclean: clean
 	@-$(RM) -f Makefile

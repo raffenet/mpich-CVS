@@ -26,26 +26,28 @@ srcdir      = @srcdir@
 
 CFLAGS     = $(MPE_CFLAGS) $(INCLUDE_DIR) 
 CC_LDFLAGS = $(LDFLAGS) $(MPE_CFLAGS)
-EXECS      = pmandel
+EXECS      = pmandel@EXEEXT@
 
-.c.o:
+.SUFFIXES: .c .@OBJEXT@ @EXEEXT@
+
+.c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
 
 default: $(EXECS)
 
-fract_gen.o: fract_gen.h pmandel.h
+fract_gen.@OBJEXT@: fract_gen.h pmandel.h
 
-pm_genproc.o: pmandel.h fract_gen.h
+pm_genproc.@OBJEXT@: pmandel.h fract_gen.h
 
-pmandel.o: pmandel.h fract_gen.h lists.h pm_genproc.h
+pmandel.@OBJEXT@: pmandel.h fract_gen.h lists.h pm_genproc.h
 
-pm_separate_rect.o: pmandel.h pm_genproc.h
+pm_separate_rect.@OBJEXT@: pmandel.h pm_genproc.h
 
-pmandel: pmandel.o pm_genproc.o fract_gen.o pm_separate_rect.o lists.o args.o
+pmandel@EXEEXT@: pmandel.@OBJEXT@ pm_genproc.@OBJEXT@ fract_gen.@OBJEXT@ pm_separate_rect.@OBJEXT@ lists.@OBJEXT@ args.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(PROF_LIBS)
 
 clean:
-	@-$(RM) -f *.o *~ PI* $(EXECS) *.log *.out *.ln
+	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS) *.log *.out *.ln
 
 distclean: clean
 	@-$(RM) -f Makefile

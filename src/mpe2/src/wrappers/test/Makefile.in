@@ -38,42 +38,43 @@ CFLAGS        = $(MPE_CFLAGS) $(C_INCS)
 FFLAGS        = $(MPE_FFLAGS) $(F_INCS)
 CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS)
 FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS)
-EXECS         = cpilog cpilog_pack srtest
+EXECS         = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@
 
+.SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
 
-.c.o:
+.c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
-.f.o:
+.f.@OBJEXT@:
 	$(MPI_F77) $(FFLAGS) -c $<
 
 default: $(EXECS)
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) fpilog ; \
-	     $(MAKE) fpilog_pack ; \
+	     $(MAKE) fpilog@EXEEXT@ ; \
+	     $(MAKE) fpilog_pack@EXEEXT@ ; \
 	 fi
 
-cpi_log: cpi.o
+cpi_log@EXEEXT@: cpi.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
-cpi_trace: cpi.o
+cpi_trace@EXEEXT@: cpi.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(TRACE_LIBS) $(DEBUG_LIBS) -lm
 
-cpilog: cpilog.o
+cpilog@EXEEXT@: cpilog.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
-cpilog_pack: cpilog_pack.o
+cpilog_pack@EXEEXT@: cpilog_pack.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
-fpilog: fpilog.o
+fpilog@EXEEXT@: fpilog.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
 
-fpilog_pack: fpilog_pack.o
+fpilog_pack@EXEEXT@: fpilog_pack.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
 
-srtest: srtest.o
+srtest@EXEEXT@: srtest.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
-iotest: iotest.o
+iotest@EXEEXT@: iotest.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 linktest: linktest_C
@@ -81,31 +82,31 @@ linktest: linktest_C
 linktest_C: 
 	@-echo ; \
 	echo "** Testing if C application can be linked with logging library" ; \
-	$(RM) -f cpi_log ; \
-	$(MAKE) cpi_log ; \
-	if test -x cpi_log ; then \
+	$(RM) -f cpi_log@EXEEXT@ ; \
+	$(MAKE) cpi_log@EXEEXT@ ; \
+	if test -x cpi_log@EXEEXT@ ; then \
 	    echo "** C application can be linked with logging library" ; \
-	    $(RM) -f cpi_log ; \
+	    $(RM) -f cpi_log@EXEEXT@ ; \
 	else \
 	    echo "** C application CANNOT be linked with logging library" ; \
 	fi 
 	@-echo ; \
 	echo "** Testing if C application can be linked with tracing library" ; \
-	$(RM) -f cpi_trace ; \
-	$(MAKE) cpi_trace ; \
-	if test -x cpi_trace ; then \
+	$(RM) -f cpi_trace@EXEEXT@ ; \
+	$(MAKE) cpi_trace@EXEEXT@ ; \
+	if test -x cpi_trace@EXEEXT@ ; then \
 	    echo "** C application can be linked with tracing library" ; \
-	    $(RM) -f cpi_trace ; \
+	    $(RM) -f cpi_trace@EXEEXT@ ; \
 	else \
 	    echo "** C application CANNOT be linked with tracing library" ; \
 	fi 
 	@-echo ; \
 	echo "** Testing if C application can use both automatic and manual logging together" ; \
-	$(RM) -f cpilog ; \
-	$(MAKE) cpilog ; \
-	if test -x cpilog ; then \
+	$(RM) -f cpilog@EXEEXT@ ; \
+	$(MAKE) cpilog@EXEEXT@ ; \
+	if test -x cpilog@EXEEXT@ ; then \
 	    echo "** C application can use both automatic and manual logging together" ; \
-	    $(RM) -f cpilog ; \
+	    $(RM) -f cpilog@EXEEXT@ ; \
 	else \
 	    echo "** C application CANNOT use both automatic and manual logging together" ; \
 	fi ; \
@@ -116,11 +117,11 @@ linktest_F77:
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
 	    echo "** Testing if Fortran77 application can be linked with logging library" ; \
-	    $(RM) -f fpilog ; \
-	    $(MAKE) fpilog ; \
-	    if test -x fpilog ; then \
+	    $(RM) -f fpilog@EXEEXT@ ; \
+	    $(MAKE) fpilog@EXEEXT@ ; \
+	    if test -x fpilog@EXEEXT@ ; then \
 	        echo "** Fortran77 application can be linked with logging library" ; \
-	        $(RM) -f fpilog ; \
+	        $(RM) -f fpilog@EXEEXT@ ; \
 	    else \
 	        echo "** Fortran77 application CANNOT be linked with logging library" ; \
 	    fi ; \
@@ -130,8 +131,8 @@ linktest_F77:
 
 clean:
 	@-$(RM) -f work.pc work.pcl
-	@-$(RM) -f *.o *~ PI* $(EXECS)
-	@-$(RM) -f cpi_log cpi_trace cpilog fpilog fpilog_pack srtest
+	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
+	@-$(RM) -f cpi_log@EXEEXT@ cpi_trace@EXEEXT@ cpilog@EXEEXT@ fpilog@EXEEXT@ fpilog_pack@EXEEXT@ srtest@EXEEXT@
 	@-$(RM) -f *.clog2 *.slog2
 
 distclean: clean

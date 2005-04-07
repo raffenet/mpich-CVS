@@ -35,26 +35,27 @@ CFLAGS        = $(MPE_CFLAGS) $(C_INCS)
 FFLAGS        = $(MPE_FFLAGS) $(F_INCS)
 CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS)
 FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS)
-EXECS         = cpi_anim cxgraphics
+EXECS         = cpi_anim@EXEEXT@ cxgraphics@EXEEXT@
 
+.SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
 
-.c.o:
+.c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
-.f.o:
+.f.@OBJEXT@:
 	$(MPI_F77) $(FFLAGS) -c $<
 
 default: $(EXECS)
 	-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) fxgraphics ; \
+	     $(MAKE) fxgraphics@EXEEXT@ ; \
 	 fi
 
-cpi_anim: cpi.o
+cpi_anim@EXEEXT@: cpi.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(ANIM_LIBS) $(DEBUG_LIBS) -lm 
 
-cxgraphics: cxgraphics.o
+cxgraphics@EXEEXT@: cxgraphics.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(C_XGRAPH_LIBS) $(DEBUG_LIBS) -lm
 
-fxgraphics: fxgraphics.o
+fxgraphics@EXEEXT@: fxgraphics.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(F_XGRAPH_LIBS) $(DEBUG_LIBS) -lm
 
 linktest: linktest_C
@@ -62,21 +63,21 @@ linktest: linktest_C
 linktest_C: 
 	@-echo ; \
 	echo "** Testing if C application can be linked with animation library" ; \
-	$(RM) -f cpi_anim ; \
-	$(MAKE) cpi_anim ; \
-	if test -x cpi_anim ; then \
+	$(RM) -f cpi_anim@EXEEXT@ ; \
+	$(MAKE) cpi_anim@EXEEXT@ ; \
+	if test -x cpi_anim@EXEEXT@ ; then \
 	    echo "** C application can be linked with animation library" ; \
-	    $(RM) -f cpi_anim ; \
+	    $(RM) -f cpi_anim@EXEEXT@ ; \
 	else \
 	    echo "** C application CANNOT be linked with animation library" ; \
 	fi
 	@-echo ; \
 	echo "** Testing if C application can be linked with graphics library" ; \
-	$(RM) -f cxgraphics ; \
-	$(MAKE) cxgraphics ; \
-	if test -x cxgraphics ; then \
+	$(RM) -f cxgraphics@EXEEXT@ ; \
+	$(MAKE) cxgraphics@EXEEXT@ ; \
+	if test -x cxgraphics@EXEEXT@ ; then \
 	    echo "** C application can be linked with graphics library" ; \
-	    $(RM) -f cxgraphics ; \
+	    $(RM) -f cxgraphics@EXEEXT@ ; \
 	else \
 	    echo "** C application CANNOT be linked with graphics library" ; \
 	fi ; \
@@ -87,11 +88,11 @@ linktest_F77:
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	      echo ; \
 	      echo "** Testing if Fortran77 application can be linked with graphics library" ; \
-	      $(RM) -f fxgraphics ; \
-	      $(MAKE) fxgraphics ; \
-	      if test -x fxgraphics ; then \
+	      $(RM) -f fxgraphics@EXEEXT@ ; \
+	      $(MAKE) fxgraphics@EXEEXT@ ; \
+	      if test -x fxgraphics@EXEEXT@ ; then \
 	          echo "** Fortran77 application can be linked with graphics library" ; \
-	          $(RM) -f fxgraphics ; \
+	          $(RM) -f fxgraphics@EXEEXT@ ; \
 	      else \
 	          echo "** Fortran77 application CANNOT be linked with graphics library" ; \
 	      fi ; \
@@ -101,7 +102,8 @@ linktest_F77:
 
 clean:
 	@-$(RM) -f work.pc work.pcl
-	@-$(RM) -f *.o *~ PI* $(EXECS) cpi_anim cxgraphics fxgraphics
+	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
+	@-$(RM) -f cpi_anim@EXEEXT@ cxgraphics@EXEEXT@ fxgraphics@EXEEXT@
 
 distclean: clean
 	@-$(RM) -f Makefile
