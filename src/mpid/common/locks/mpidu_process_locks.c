@@ -138,7 +138,7 @@ void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
     if (!ReleaseMutex(*lock))
     {
         MPIU_Error_printf("error in mutex_unlock: %d\n", GetLastError());
-        MPIU_Error_printf("Handle = %u\n", (unsigned long)*lock);
+        MPIU_Error_printf("Handle = %p\n", *lock);
     }
     /*printf("unlock: Handle = %u\n", (unsigned long)*lock);*/
 #elif defined(HAVE_PTHREAD_H)
