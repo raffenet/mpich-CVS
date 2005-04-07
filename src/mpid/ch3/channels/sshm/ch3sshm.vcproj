@@ -193,6 +193,9 @@
 				RelativePath=".\src\ch3_abort.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_accumulate.c">
+			</File>
+			<File
 				RelativePath=".\src\ch3_alloc_mem.c">
 			</File>
 			<File
@@ -220,6 +223,9 @@
 				RelativePath=".\src\ch3_free_mem.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_get.c">
+			</File>
+			<File
 				RelativePath="src\ch3_init.c">
 			</File>
 			<File
@@ -245,6 +251,9 @@
 			</File>
 			<File
 				RelativePath="src\ch3_progress_shm.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_put.c">
 			</File>
 			<File
 				RelativePath="src\ch3_request.c">
@@ -332,6 +341,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_get.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_get_universe_size.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_getpname.c">
@@ -434,6 +446,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_printf.c">
+			</File>
+			<File
+				RelativePath="..\..\..\common\locks\mpidu_process_locks.c">
 			</File>
 		</Filter>
 		<Filter
