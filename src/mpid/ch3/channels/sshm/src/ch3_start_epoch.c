@@ -116,7 +116,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                         while (1) {
                             if (pscw_sync_addr[src] == '1') {
                                 /* reset it and break */
-                                pscw_sync_addr[src] == '0';
+                                pscw_sync_addr[src] = '0';
                                 break;
                             }
                         }
