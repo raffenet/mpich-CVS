@@ -292,7 +292,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm"
 			>
 			<File
-				RelativePath="initcxx.cpp"
+				RelativePath="initcxx.cxx"
 				>
 			</File>
 		</Filter>
