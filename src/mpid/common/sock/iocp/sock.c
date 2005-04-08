@@ -85,76 +85,6 @@ static int g_max_port = 0;
 /* empty structure used to wake up a sock_wait call */
 sock_state_t g_wakeup_state;
 
-/* utility allocator functions */
-
-typedef struct BlockAllocator_struct * BlockAllocator;
-#ifdef WITH_ALLOCATOR_LOCKING
-typedef volatile long SOCKI_Lock_t;
-#endif
-
-static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
-static int BlockAllocFinalize(BlockAllocator *p);
-static void * BlockAlloc(BlockAllocator p);
-static int BlockFree(BlockAllocator p, void *pBlock);
-
-struct BlockAllocator_struct
-{
-    void **pNextFree;
-    void *(* alloc_fn)(size_t size);
-    void (* free_fn)(void *p);
-    struct BlockAllocator_struct *pNextAllocation;
-    unsigned int nBlockSize;
-    int nCount, nIncrementSize;
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Lock_t lock;
-#endif
-};
-
-#ifdef WITH_ALLOCATOR_LOCKING
-
-static int g_nLockSpinCount = 100;
-
-static inline void SOCKI_Init_lock( SOCKI_Lock_t *lock )
-{
-    *(lock) = 0;
-}
-
-static inline void SOCKI_Lock( SOCKI_Lock_t *lock )
-{
-    int i;
-    for (;;)
-    {
-        for (i=0; i<g_nLockSpinCount; i++)
-        {
-            if (*lock == 0)
-            {
-#ifdef HAVE_INTERLOCKEDEXCHANGE
-                if (InterlockedExchange((LPLONG)lock, 1) == 0)
-                {
-                    /*printf("lock %x\n", lock);fflush(stdout);*/
-                    return;
-                }
-#elif defined(HAVE_COMPARE_AND_SWAP)
-                if (compare_and_swap(lock, 0, 1) == 1)
-                {
-                    return;
-                }
-#else
-#error Atomic memory operation needed to implement busy locks
-#endif
-            }
-        }
-        MPIDU_Yield();
-    }
-}
-
-static inline void SOCKI_Unlock( SOCKI_Lock_t *lock )
-{
-    *(lock) = 0;
-}
-
-#endif
-
 static void translate_error(int error, char *msg, char *prepend)
 {
     HLOCAL str;
@@ -191,92 +121,6 @@ static char *get_error_string(int error_code)
     static char error_msg[1024];
     translate_error(error_code, error_msg, NULL);
     return error_msg;
-}
-
-static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
-{
-    BlockAllocator p;
-    void **ppVoid;
-    int i;
-
-    p = alloc_fn( sizeof(struct BlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
-
-    p->alloc_fn = alloc_fn;
-    p->free_fn = free_fn;
-    p->nIncrementSize = incrementsize;
-    p->pNextAllocation = NULL;
-    p->nCount = count;
-    p->nBlockSize = blocksize;
-    p->pNextFree = (void**)(p + 1);
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Init_lock(&p->lock);
-#endif
-
-    ppVoid = (void**)(p + 1);
-    for (i=0; i<count-1; i++)
-    {
-	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
-	ppVoid = *ppVoid;
-    }
-    *ppVoid = NULL;
-
-    return p;
-}
-
-static int BlockAllocFinalize(BlockAllocator *p)
-{
-    if (*p == NULL)
-	return 0;
-    BlockAllocFinalize(&(*p)->pNextAllocation);
-    if ((*p)->free_fn != NULL)
-	(*p)->free_fn(*p);
-    *p = NULL;
-    return 0;
-}
-
-static void * BlockAlloc(BlockAllocator p)
-{
-    void *pVoid;
-    
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Lock(&p->lock);
-#endif
-
-    pVoid = p->pNextFree + 1;
-    
-    if (*(p->pNextFree) == NULL)
-    {
-	BlockAllocator pIter = p;
-	while (pIter->pNextAllocation != NULL)
-	    pIter = pIter->pNextAllocation;
-	pIter->pNextAllocation = BlockAllocInit(p->nBlockSize, p->nIncrementSize, p->nIncrementSize, p->alloc_fn, p->free_fn);
-	p->pNextFree = pIter->pNextFree;
-    }
-    else
-	p->pNextFree = *(p->pNextFree);
-
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Unlock(&p->lock);
-#endif
-
-    return pVoid;
-}
-
-static int BlockFree(BlockAllocator p, void *pBlock)
-{
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Lock(&p->lock);
-#endif
-
-    ((void**)pBlock)--;
-    *((void**)pBlock) = p->pNextFree;
-    p->pNextFree = pBlock;
-
-#ifdef WITH_ALLOCATOR_LOCKING
-    SOCKI_Unlock(&p->lock);
-#endif
-
-    return 0;
 }
 
 #undef FUNCNAME
@@ -559,8 +403,6 @@ static inline int post_next_accept(sock_state_t * context)
 
 /* sock functions */
 
-static BlockAllocator g_StateAllocator;
-
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_init
 #undef FCNAME
@@ -599,7 +441,7 @@ int MPIDU_Sock_init()
     if (szNum != NULL)
     {
 	g_socket_buffer_size = atoi(szNum);
-	if (g_socket_buffer_size < 1)
+	if (g_socket_buffer_size < 0)
 	    g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
     }
 
@@ -647,8 +489,6 @@ int MPIDU_Sock_init()
 	*/
     }
 
-    g_StateAllocator = BlockAllocInit(sizeof(sock_state_t), 1000, 500, malloc, free);
-
     init_state_struct(&g_wakeup_state);
     g_wakeup_state.type = SOCKI_WAKEUP;
 
@@ -678,7 +518,6 @@ int MPIDU_Sock_finalize()
     if (g_init_called == 0)
     {
 	WSACleanup();
-	BlockAllocFinalize(&g_StateAllocator);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
     return MPI_SUCCESS;
@@ -995,7 +834,7 @@ int MPIDU_Sock_native_to_sock(MPIDU_Sock_set_t set, MPIDU_SOCK_NATIVE_FD fd, voi
     }
 
     /* setup the structures */
-    sock_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
+    sock_state = (sock_state_t*)MPIU_Malloc(sizeof(sock_state_t));
     if (sock_state == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**nomem", 0);
@@ -1053,7 +892,7 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
 	return mpi_errno;
     }
 
-    listen_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
+    listen_state = (sock_state_t*)MPIU_Malloc(sizeof(sock_state_t));
     init_state_struct(listen_state);
     mpi_errno = easy_create_ranged(&listen_state->listen_sock, *port, INADDR_ANY);
     if (mpi_errno != MPI_SUCCESS)
@@ -1087,7 +926,7 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
     listener_copies = (sock_state_t**)MPIU_Malloc(g_num_posted_accepts * sizeof(sock_state_t*));
     for (i=0; i<g_num_posted_accepts; i++)
     {
-	listener_copies[i] = (sock_state_t*)BlockAlloc(g_StateAllocator);
+	listener_copies[i] = (sock_state_t*)MPIU_Malloc(sizeof(sock_state_t));
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(listener_copies[i], listen_state, sizeof(*listen_state));
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
@@ -1133,7 +972,7 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
 	return mpi_errno;
     }
 
-    accept_state = BlockAlloc(g_StateAllocator);
+    accept_state = MPIU_Malloc(sizeof(sock_state_t));
     if (accept_state == NULL)
     {
 	*sock = NULL;
@@ -1393,7 +1232,7 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
     memset(&sockAddr,0,sizeof(sockAddr));
 
     /* setup the structures */
-    connect_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
+    connect_state = (sock_state_t*)MPIU_Malloc(sizeof(sock_state_t));
     init_state_struct(connect_state);
     connect_state->cur_host = connect_state->host_description;
     MPIU_Strncpy(connect_state->host_description, host_description, SOCKI_DESCRIPTION_LENGTH);
@@ -2160,7 +1999,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    sock->read.ovl.hEvent = NULL;
 		    sock->write.ovl.hEvent = NULL;
 #if 0
-		    BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
+		    MPIU_Free(sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
 #endif
 		    if (sock->sock != INVALID_SOCKET)
 		    {
@@ -2930,7 +2769,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			sock->read.ovl.hEvent = NULL;
 			sock->write.ovl.hEvent = NULL;
 #if 0
-			BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
+			MPIU_Free(sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
 #endif
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			return MPI_SUCCESS;
@@ -3599,67 +3438,3 @@ int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
     return MPI_SUCCESS;
 }
-
-/*
-int test_string_functions()
-{
-    char val[1024], val2[1024];
-    char buffer[1024];
-    char recursed[1024];
-    int bin_buf[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int bin_dest[10];
-    int length, age, i;
-    char *iter;
-
-    iter = buffer;
-    length = 1024;
-    MPIU_Str_add_string_arg(&iter, &length, "name", "David Ashton");
-    MPIU_Str_add_int_arg(&iter, &length, "age", 31);
-    MPIU_Str_add_binary_arg(&iter, &length, "foo", bin_buf, 40);
-
-    printf("encoded string: <%s>\n", buffer);
-
-    MPIU_Str_get_string_arg(buffer, "name", val, 1024);
-    printf("got name = '%s'\n", val);
-    MPIU_Str_get_int_arg(buffer, "age", &age);
-    printf("got age = %d\n", age);
-    MPIU_Str_get_binary_arg(buffer, "foo", bin_dest, 40);
-    printf("got binary data 'foo'\n");
-    for (i=0; i<10; i++)
-	printf(" bin[0] = %d\n", bin_dest[i]);
-
-    iter = recursed;
-    length = 1024;
-    MPIU_Str_add_string_arg(&iter, &length, "name", "foobar");
-    MPIU_Str_add_string_arg(&iter, &length, "buscard", buffer);
-    MPIU_Str_add_string_arg(&iter, &length, "reason", "Because I say so");
-
-    printf("recursive encoded string: <%s>\n", recursed);
-
-    MPIU_Str_get_string_arg(recursed, "name", val, 1024);
-    printf("got name = '%s'\n", val);
-    MPIU_Str_get_string_arg(recursed, "buscard", val, 1024);
-    printf("got buscard = '%s'\n", val);
-    MPIU_Str_get_string_arg(val, "name", val2, 1024);
-    printf("got name from buscard = '%s'\n", val2);
-    MPIU_Str_get_string_arg(recursed, "reason", val, 1024);
-    printf("got reason = '%s'\n", val);
-
-    MPIU_Str_hide_string_arg(recursed, "reason");
-    printf("hidden recursed string: <%s>\n", recursed);
-
-    iter = buffer;
-    iter += MPIU_Str_add_string(iter, 1024, "foo=\"");
-    iter += MPIU_Str_add_string(iter, 1024, "=");
-    iter += MPIU_Str_add_string(iter, 1024, "Wally World");
-    printf("buffer = <%s>\n", buffer);
-    iter = MPIU_Str_get_string(buffer, val, 1024, &i);
-    printf("one = '%s'\n", val);
-    iter = MPIU_Str_get_string(iter, val, 1024, &i);
-    printf("two = '%s'\n", val);
-    iter = MPIU_Str_get_string(iter, val, 1024, &i);
-    printf("three = '%s'\n",val);
-
-    return 0;
-}
-*/
