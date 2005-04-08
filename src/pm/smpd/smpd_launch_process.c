@@ -1585,6 +1585,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	    sprintf(str, "%d", process->appnum);
 	    smpd_dbg_printf("env: PMI_APPNUM=%s\n", str);
 	    setenv("PMI_APPNUM", str, 1);
+	    sprintf(str, "%s", process->clique);
+	    smpd_dbg_printf("env: PMI_CLIQUE=%s\n", str);
+	    setenv("PMI_CLIQUE", str, 1);
 	}
 	set_environment_variables(process->env);
 
