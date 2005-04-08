@@ -19,7 +19,7 @@
   that use point-to-point operations
  */
 
-#define BLOCK_SIZE 100000
+#define BLOCK_SIZE 131072
 
 int main( int argc, char **argv )
 {
@@ -27,7 +27,7 @@ int main( int argc, char **argv )
     MPI_Comm      comm;
     MPI_Datatype  elemtype;
     double        time_init, time_final;
-    int          *sbuff, *rbuff;
+    double       *sbuff, *rbuff;
     int           rank, size;
     int          *sendcounts, *recvcounts, *rdispls, *sdispls;
     int           ii, jj, idx;
@@ -42,8 +42,8 @@ int main( int argc, char **argv )
       /* Create the buffer */
       MPI_Type_contiguous( BLOCK_SIZE, MPI_DOUBLE, &elemtype );
       MPI_Type_commit( &elemtype );
-      sbuff = (int *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
-      rbuff = (int *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
+      sbuff = (double *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
+      rbuff = (double *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
       if (!sbuff || !rbuff) {
         fprintf( stderr, "Could not allocated buffers!\n" );
         MPI_Abort( comm, 1 );
@@ -69,19 +69,23 @@ int main( int argc, char **argv )
       }
       for ( ii = 0; ii < size; ii++ ) {
         sendcounts[ii] = ii;
+        sdispls[ii]    = (ii * (ii+1))/2;
         recvcounts[ii] = rank;
         rdispls[ii]    = ii * rank;
-        sdispls[ii]    = (ii * (ii+1))/2;
       }
 
+      MPI_Barrier( comm );
+      MPI_Barrier( comm );
       time_init   = MPI_Wtime();
+
       MPI_Alltoallv( sbuff, sendcounts, sdispls, elemtype,
                      rbuff, recvcounts, rdispls, elemtype, comm );
+
+      /* MPI_Barrier( comm ); */
       time_final  = MPI_Wtime();
       
       fprintf( stdout, "time taken by MPI_AlltoAllv() at rank %d = %f\n",
                        rank, time_final - time_init );
-      fflush( stdout );
 
       MPI_Type_free( &elemtype );
       

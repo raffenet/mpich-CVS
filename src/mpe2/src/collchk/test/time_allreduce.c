@@ -11,8 +11,8 @@
 int main( int argc, char *argv[] )
 {
     MPI_Comm  comm;
+    double    *buf;
     int       rank, size;
-    int       *buf;
     int       count, ii; 
     int       errs = 0;
     double    time_init, time_final;
@@ -24,14 +24,19 @@ int main( int argc, char *argv[] )
         MPI_Comm_size( comm, &size );
         MPI_Comm_rank( comm, &rank );
 
-        count = 1000000;
+        count = 131072;
         /* Contiguous data */
-        buf = (int *) malloc( count * sizeof(int) );
+        buf = (double *) malloc( count * sizeof(double) );
         for ( ii = 0; ii < count; ii++ )
             buf[ii] = rank + ii;
 
+        MPI_Barrier( comm );
+        MPI_Barrier( comm );
         time_init   = MPI_Wtime();
-        MPI_Allreduce( MPI_IN_PLACE, buf, count, MPI_INT, MPI_SUM, comm );
+
+        MPI_Allreduce( MPI_IN_PLACE, buf, count, MPI_DOUBLE, MPI_SUM, comm );
+
+        /* MPI_Barrier( comm ); */
         time_final  = MPI_Wtime();
 
         fprintf( stdout, "time taken by MPI_Allreduce() at rank %d = %f\n",
