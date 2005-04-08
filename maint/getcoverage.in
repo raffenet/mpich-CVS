@@ -193,12 +193,12 @@ sub CountUncoveredLines {
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
 	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
-	    /^\s*-:\s*\d+:\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
+	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
 		if (/^\s*\/\*\s+--BEGIN/ ||
-		    /^\s*-:\s*\d+:\/\*\s+--BEGIN/) {
+		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
 		    my $cleanline = $_;
 		    $cleanline =~ s/^\s*//;
 		    chop $cleanline;
@@ -213,7 +213,7 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as experimental
 	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
-	    /^\s*-:\s*\d+:\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
