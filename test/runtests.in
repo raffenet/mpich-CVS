@@ -248,6 +248,12 @@ sub RunList {
 	    if (&BuildMPIProgram( $programname ) == 0) {
 		&RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
 	    }
+	    else {
+		# We expected to run this program, so failure to build
+		# is an error
+		$found_error = 1;
+		$err_count++;
+	    }
 	    &CleanUpAfterRun( $programname );
 	}
     }
@@ -310,6 +316,12 @@ sub ProcessImplicitList {
 	    $total_count++;
 	    if (&BuildMPIProgram( $programname ) == 0) {
 		&RunMPIProgram( $programname, $np_default, "", "" );
+	    }
+	    else {
+		# We expected to run this program, so failure to build
+		# is an error
+		$found_error = 1;
+		$err_count++;
 	    }
 	    &CleanUpAfterRun( $programname );
 	}
@@ -457,8 +469,10 @@ sub TestStatus {
     }
     else {
 	# This test *requires* non-zero return codes
-	$found_error = 1;
-	$err_count ++;
+        if (!$found_error) {
+	    $found_error = 1;
+	    $err_count ++;
+        }
 	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     return ($found_error,$inline);
@@ -496,8 +510,10 @@ sub TestTimeout {
     }
     else {
 	# This test *requires* non-zero return codes
-	$found_error = 1;
-	$err_count ++;
+	if (!$found_error) {
+	    $found_error = 1;
+	    $err_count ++;
+        }
 	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     #
@@ -533,8 +549,10 @@ sub TestErrFatal {
     }
     else {
 	# This test *requires* non-zero return codes
-	$found_error = 1;
-	$err_count ++;
+	if (!$found_error) {
+	    $found_error = 1;
+	    $err_count ++;
+	}
 	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     return ($found_error,$inline);
