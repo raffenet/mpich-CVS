@@ -191,6 +191,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
+			<File
+				RelativePath=".\smpd.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
