@@ -399,6 +399,8 @@ typedef struct smpd_context_t
     char pwd_request[SMPD_MAX_PWD_REQUEST_LENGTH];
     char cred_request[SMPD_MAX_CRED_REQUEST_LENGTH];
     char account[SMPD_MAX_ACCOUNT_LENGTH];
+    char domain[SMPD_MAX_ACCOUNT_LENGTH];
+    char full_domain[SMPD_MAX_ACCOUNT_LENGTH];
     char password[SMPD_MAX_PASSWORD_LENGTH];
     char encrypted_password[SMPD_MAX_PASSWORD_LENGTH];
     char smpd_pwd[SMPD_MAX_PASSWORD_LENGTH];
@@ -745,8 +747,9 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 int smpd_get_opt_two_strings(int *argc, char ***argv, char * flag, char *str1, int len1, char *str2, int len2);
 int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int len);
 #ifdef HAVE_WINDOWS_H
-void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
+void smpd_parse_account_domain(const char *domain_account, char *account, char *domain);
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);
+int smpd_get_user_name(char *account, char *domain, char *full_domain);
 int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite);
 int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWrite, int write_overlapped);
 #endif
@@ -851,10 +854,10 @@ SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
 void smpd_finalize_drive_maps();
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val);
 #ifdef HAVE_WINDOWS_H
-int smpd_add_job_key(const char *key, const char *username);
-int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser);
+int smpd_add_job_key(const char *key, const char *username, const char *domain, const char *full_domain);
+int smpd_add_job_key_and_handle(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE hUser);
 int smpd_remove_job_key(const char *key);
-int smpd_associate_job_key(const char *key, const char *username, HANDLE user_handle);
+int smpd_associate_job_key(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE user_handle);
 int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle);
 #endif
 

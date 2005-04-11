@@ -5159,7 +5159,7 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
     smpd_command_t *cmd, *temp_cmd;
     char result_str[100];
     char key[SMPD_MAX_NAME_LENGTH];
-    char value[SMPD_MAX_NAME_LENGTH];
+    char username[SMPD_MAX_NAME_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -5171,17 +5171,17 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    if (MPIU_Str_get_string_arg(cmd->cmd, "username", value, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
+    if (MPIU_Str_get_string_arg(cmd->cmd, "username", username, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("add_job_key command missing username parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    result = smpd_add_job_key(key, value);
+    result = smpd_add_job_key(key, username, NULL, NULL);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to set job key %s=%s\n", key, value);
+	smpd_err_printf("unable to set job key %s=%s\n", key, username);
 	strcpy(result_str, SMPD_FAIL_STR);
     }
     else
@@ -5193,7 +5193,7 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
     result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to create a result command for a add job key %s=%s command.\n", key, value);
+	smpd_err_printf("unable to create a result command for a add job key %s=%s command.\n", key, username);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5201,7 +5201,7 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
     result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to add the tag to the result command for a add job key %s=%s command.\n", key, value);
+	smpd_err_printf("unable to add the tag to the result command for a add job key %s=%s command.\n", key, username);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5215,13 +5215,13 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to add the result string to the result command for a add job key %s=%s command.\n", key, value);
+	smpd_err_printf("unable to add the result string to the result command for a add job key %s=%s command.\n", key, username);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     /* send result back */
-    smpd_dbg_printf("replying to add job key %s=%s command: \"%s\"\n", key, value, temp_cmd->cmd);
+    smpd_dbg_printf("replying to add job key %s=%s command: \"%s\"\n", key, username, temp_cmd->cmd);
     result = smpd_post_write_command(context, temp_cmd);
     if (result != SMPD_SUCCESS)
     {
@@ -5299,7 +5299,7 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
     result = smpd_get_user_handle(account, domain[0] != '\0' ? domain : NULL, decrypted, &hUser);
     if (result == SMPD_SUCCESS)
     {
-	result = smpd_add_job_key_and_handle(key, value, hUser);
+	result = smpd_add_job_key_and_handle(key, value, NULL, NULL, hUser);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to set job key %s=%s:%p\n", key, value, hUser);
@@ -5469,7 +5469,7 @@ int smpd_handle_associate_job_key_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
-    result = smpd_associate_job_key(key, context->account, context->sspi_context->user_handle);
+    result = smpd_associate_job_key(key, context->account, context->domain, context->full_domain, context->sspi_context->user_handle);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to associate the job key %s\n", key);

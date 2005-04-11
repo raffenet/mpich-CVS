@@ -3178,13 +3178,11 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 
     if (context->sspi_type == SMPD_SSPI_IDENTIFY || (strcmp(context->sspi_header, "identify") == 0))
     {
-	DWORD len = SMPD_MAX_ACCOUNT_LENGTH;
 	context->sspi_type = SMPD_SSPI_IDENTIFY;
 	smpd_dbg_printf("calling ImpersonateSecurityContext\n");
 	sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);
 	/* revert must be called before any smpd_dbg_printfs will work */
-	context->account[0] = '\0';
-	GetUserName(context->account, &len);
+	smpd_get_user_name(context->account, context->domain, context->full_domain);
 	if (sec_result == SEC_E_OK)
 	{
 	    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
@@ -3230,12 +3228,10 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 
     if (context->target == SMPD_TARGET_SMPD && (strcmp(context->sspi_header, "no") == 0))
     {
-	DWORD len = SMPD_MAX_ACCOUNT_LENGTH;
 	context->sspi_type = SMPD_SSPI_IMPERSONATE;
 	sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);
 	/* revert must be called before any smpd_dbg_printfs will work */
-	context->account[0] = '\0';
-	GetUserName(context->account, &len);
+	smpd_get_user_name(context->account, context->domain, context->full_domain);
 
 	if (sec_result == SEC_E_OK)
 	{
@@ -3321,11 +3317,10 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	    duplicate_result = DuplicateTokenEx(context->sspi_context->user_handle, MAXIMUM_ALLOWED, NULL, SecurityDelegation, TokenPrimary, &user_handle);
 	    if (context->target == SMPD_TARGET_SMPD)
 	    {
-		DWORD len = SMPD_MAX_ACCOUNT_LENGTH;
 		/* smpd targets need the user token and the user name */
 		/* so get the user name here */
 		sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);
-		GetUserName(context->account, &len);
+		smpd_get_user_name(context->account, context->domain, context->full_domain);
 		if (sec_result == SEC_E_OK)
 		{
 		    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);

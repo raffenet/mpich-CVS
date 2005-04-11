@@ -611,6 +611,8 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_IDLE;
     context->account[0] = '\0';
+    context->domain[0] = '\0';
+    context->full_domain[0] = '\0';
     context->connect_return_id = -1;
     context->connect_return_tag = -1;
     context->connect_to = NULL;

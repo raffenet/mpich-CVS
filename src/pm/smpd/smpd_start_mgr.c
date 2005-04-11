@@ -222,9 +222,22 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 
     if (job != INVALID_HANDLE_VALUE)
     {
-	AssignProcessToJobObject(job, pInfo.hProcess);
+	smpd_dbg_printf("assinging smpd manager to job\n");
+	if (!AssignProcessToJobObject(job, pInfo.hProcess))
+	{
+	    smpd_err_printf("AssignProcessToJobObject failed: %d\n", GetLastError());
+	    TerminateProcess(pInfo.hProcess, -1);
+	    result = SMPD_FAIL;
+	}
+	else
+	{
+	    ResumeThread(pInfo.hThread);
+	}
     }
-    ResumeThread(pInfo.hThread);
+    else
+    {
+	ResumeThread(pInfo.hThread);
+    }
 
     if (smpd_process.bService)
     {

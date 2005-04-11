@@ -8,7 +8,9 @@
 typedef struct smpd_job_key_list_t
 {
     char key[SMPD_MAX_NAME_LENGTH];
-    char username[SMPD_MAX_NAME_LENGTH];
+    char username[SMPD_MAX_ACCOUNT_LENGTH];
+    char domain[SMPD_MAX_ACCOUNT_LENGTH];
+    char full_domain[SMPD_MAX_ACCOUNT_LENGTH];
     HANDLE user_handle;
     HANDLE job;
     struct smpd_job_key_list_t *next;
@@ -18,7 +20,7 @@ static smpd_job_key_list_t *list = NULL;
 
 #undef FCNAME
 #define FCNAME "smpd_add_job_key"
-int smpd_add_job_key(const char *key, const char *username)
+int smpd_add_job_key(const char *key, const char *username, const char *domain, const char *full_domain)
 {
     int error;
     smpd_job_key_list_t *node;
@@ -31,7 +33,21 @@ int smpd_add_job_key(const char *key, const char *username)
 	return SMPD_FAIL;
     }
     strcpy(node->key, key);
-    strcpy(node->username, username);
+    node->domain[0] = '\0';
+    node->full_domain[0] = '\0';
+    if (domain == NULL && full_domain == NULL)
+    {
+	smpd_parse_account_domain(username, node->username, node->domain);
+	node->full_domain[0] = '\0';
+    }
+    else
+    {
+	strcpy(node->username, username);
+    }
+    if (domain != NULL)
+	strcpy(node->domain, domain);
+    if (full_domain != NULL)
+	strcpy(node->full_domain, full_domain);
     node->user_handle = INVALID_HANDLE_VALUE;
     node->job = CreateJobObject(NULL, NULL);
     if (node->job == NULL)
@@ -51,7 +67,7 @@ int smpd_add_job_key(const char *key, const char *username)
 
 #undef FCNAME
 #define FCNAME "smpd_add_job_key"
-int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser)
+int smpd_add_job_key_and_handle(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE hUser)
 {
     int error;
     smpd_job_key_list_t *node;
@@ -64,7 +80,21 @@ int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hU
 	return SMPD_FAIL;
     }
     strcpy(node->key, key);
-    strcpy(node->username, username);
+    node->domain[0] = '\0';
+    node->full_domain[0] = '\0';
+    if (domain == NULL && full_domain == NULL)
+    {
+	smpd_parse_account_domain(username, node->username, node->domain);
+	node->full_domain[0] = '\0';
+    }
+    else
+    {
+	strcpy(node->username, username);
+    }
+    if (domain != NULL)
+	strcpy(node->domain, domain);
+    if (full_domain != NULL)
+	strcpy(node->full_domain, full_domain);
     node->user_handle = hUser;
     node->job = CreateJobObject(NULL, NULL);
     if (node->job == NULL)
@@ -105,7 +135,10 @@ int smpd_remove_job_key(const char *key)
 	    if (iter->user_handle != INVALID_HANDLE_VALUE)
 		CloseHandle(iter->user_handle);
 	    if (iter->job != NULL && iter->job != INVALID_HANDLE_VALUE)
+	    {
 		TerminateJobObject(iter->job, -1);
+		CloseHandle(iter->job);
+	    }
 	    free(iter);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
@@ -121,7 +154,7 @@ int smpd_remove_job_key(const char *key)
 
 #undef FCNAME
 #define FCNAME "smpd_associate_job_key"
-int smpd_associate_job_key(const char *key, const char *username, HANDLE user_handle)
+int smpd_associate_job_key(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE user_handle)
 {
     smpd_job_key_list_t *iter;
     smpd_enter_fn(FCNAME);
@@ -135,13 +168,19 @@ int smpd_associate_job_key(const char *key, const char *username, HANDLE user_ha
 	    if (strcmp(iter->username, username) == 0)
 	    {
 		/* username matches */
-		if (iter->user_handle == INVALID_HANDLE_VALUE)
+		if ((domain != NULL && stricmp(domain, iter->domain) == 0) ||                /* domain matches */
+		    (full_domain != NULL && stricmp(full_domain, iter->full_domain) == 0) || /* full domain name matches */
+		    (iter->domain[0] == '\0' && iter->full_domain[0] == '\0'))               /* no domain to match */
 		{
-		    /* handle not already set */
-		    smpd_dbg_printf("associated user token: %s,%p\n", username, user_handle);
-		    iter->user_handle = user_handle;
-		    smpd_exit_fn(FCNAME);
-		    return SMPD_SUCCESS;
+		    /* domain matches */
+		    if (iter->user_handle == INVALID_HANDLE_VALUE)
+		    {
+			/* handle not already set */
+			smpd_dbg_printf("associated user token: %s,%p\n", username, user_handle);
+			iter->user_handle = user_handle;
+			smpd_exit_fn(FCNAME);
+			return SMPD_SUCCESS;
+		    }
 		}
 	    }
 	}
@@ -164,11 +203,12 @@ int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_hand
     {
 	if (strcmp(iter->key, key) == 0)
 	{
-	    if (strcmp(iter->username, username) == 0)
+	    if (stricmp(iter->username, username) == 0)
 	    {
 		if (iter->user_handle != INVALID_HANDLE_VALUE)
 		{
 		    *user_handle = iter->user_handle;
+		    *job_handle = iter->job;
 		    smpd_exit_fn(FCNAME);
 		    return SMPD_SUCCESS;
 		}

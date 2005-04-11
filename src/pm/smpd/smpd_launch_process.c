@@ -312,6 +312,61 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_user_name"
+int smpd_get_user_name(char *account, char *domain, char *full_domain)
+{
+    DWORD len;
+    char name[SMPD_MAX_ACCOUNT_LENGTH];
+    char *separator;
+    size_t i;
+
+    *account = '\0';
+    if (domain != NULL)
+	*domain = '\0';
+    if (full_domain != NULL)
+	*full_domain = '\0';
+
+    len = 100;
+    if (GetUserNameEx(NameSamCompatible, name, &len))
+    {
+	for (i=0; i<strlen(name); i++)
+	{
+	    name[i] = tolower(name[i]);
+	}
+	separator = strchr(name, '\\');
+	if (separator)
+	{
+	    *separator = '\0';
+	    separator++;
+	}
+	if (domain != NULL)
+	    strcpy(domain, name);
+	strcpy(account, separator);
+    }
+
+    if (full_domain != NULL)
+    {
+	len = 100;
+	if (GetUserNameEx(NameDnsDomain, name, &len))
+	{
+	    for (i=0; i<strlen(name); i++)
+	    {
+		name[i] = tolower(name[i]);
+	    }
+	    separator = strchr(name, '\\');
+	    if (separator)
+	    {
+		*separator = '\0';
+		strcpy(full_domain, name);
+	    }
+	}
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
 /*
 static void SetEnvironmentVariables(char *bEnv)
 {
@@ -1361,30 +1416,55 @@ CLEANUP:
 
 #undef FCNAME
 #define FCNAME "smpd_parse_account_domain"
-void smpd_parse_account_domain(char *domain_account, char *account, char *domain)
+void smpd_parse_account_domain(const char *domain_account, char *account, char *domain)
 {
-    char *pCh, *pCh2;
+    const char *pCh;
+    char *pCh2;
 
     smpd_enter_fn(FCNAME);
 
-    pCh = domain_account;
-    pCh2 = domain;
-    while ((*pCh != '\\') && (*pCh != '\0'))
+    if ((strchr(domain_account, '\\') == NULL) && (strchr(domain_account, '@') != NULL))
     {
-	*pCh2 = *pCh;
-	pCh++;
-	pCh2++;
-    }
-    if (*pCh == '\\')
-    {
-	pCh++;
-	strcpy(account, pCh);
-	*pCh2 = L'\0';
+	pCh = domain_account;
+	pCh2 = account;
+	while ((*pCh != '@') && (*pCh != '\0'))
+	{
+	    *pCh2 = *pCh;
+	    pCh++;
+	    pCh2++;
+	}
+	*pCh2 = '\0';
+	if (*pCh == '@')
+	{
+	    pCh++;
+	    strcpy(domain, pCh);
+	}
+	else
+	{
+	    domain[0] = '\0';
+	}
     }
     else
     {
-	strcpy(account, domain_account);
-	domain[0] = '\0';
+	pCh = domain_account;
+	pCh2 = domain;
+	while ((*pCh != '\\') && (*pCh != '\0'))
+	{
+	    *pCh2 = *pCh;
+	    pCh++;
+	    pCh2++;
+	}
+	if (*pCh == '\\')
+	{
+	    pCh++;
+	    strcpy(account, pCh);
+	    *pCh2 = '\0';
+	}
+	else
+	{
+	    strcpy(account, domain_account);
+	    domain[0] = '\0';
+	}
     }
 
     smpd_exit_fn(FCNAME);
