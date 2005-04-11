@@ -676,6 +676,7 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
     SecInvalidateHandle(&context->context);
     memset(&context->expiration_time, 0, sizeof(TimeStamp));
     context->user_handle = INVALID_HANDLE_VALUE;
+    context->job = INVALID_HANDLE_VALUE;
     context->flags = 0;
     context->close_handle = SMPD_TRUE;
 #endif

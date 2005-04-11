@@ -10,6 +10,7 @@ typedef struct smpd_job_key_list_t
     char key[SMPD_MAX_NAME_LENGTH];
     char username[SMPD_MAX_NAME_LENGTH];
     HANDLE user_handle;
+    HANDLE job;
     struct smpd_job_key_list_t *next;
 } smpd_job_key_list_t;
 
@@ -19,6 +20,7 @@ static smpd_job_key_list_t *list = NULL;
 #define FCNAME "smpd_add_job_key"
 int smpd_add_job_key(const char *key, const char *username)
 {
+    int error;
     smpd_job_key_list_t *node;
     smpd_enter_fn(FCNAME);
 
@@ -31,6 +33,15 @@ int smpd_add_job_key(const char *key, const char *username)
     strcpy(node->key, key);
     strcpy(node->username, username);
     node->user_handle = INVALID_HANDLE_VALUE;
+    node->job = CreateJobObject(NULL, NULL);
+    if (node->job == NULL)
+    {
+	error = GetLastError();
+	smpd_err_printf("CreateJobObject failed: %d\n", error);
+	free(node);
+	smpd_exit_fn(FCNAME);
+	return error;
+    }
     node->next = list;
     list = node;
 
@@ -42,6 +53,7 @@ int smpd_add_job_key(const char *key, const char *username)
 #define FCNAME "smpd_add_job_key"
 int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser)
 {
+    int error;
     smpd_job_key_list_t *node;
     smpd_enter_fn(FCNAME);
 
@@ -54,6 +66,15 @@ int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hU
     strcpy(node->key, key);
     strcpy(node->username, username);
     node->user_handle = hUser;
+    node->job = CreateJobObject(NULL, NULL);
+    if (node->job == NULL)
+    {
+	error = GetLastError();
+	smpd_err_printf("CreateJobObject failed: %d\n", error);
+	free(node);
+	smpd_exit_fn(FCNAME);
+	return error;
+    }
     node->next = list;
     list = node;
 
@@ -83,6 +104,8 @@ int smpd_remove_job_key(const char *key)
 	    }
 	    if (iter->user_handle != INVALID_HANDLE_VALUE)
 		CloseHandle(iter->user_handle);
+	    if (iter->job != NULL && iter->job != INVALID_HANDLE_VALUE)
+		TerminateJobObject(iter->job, -1);
 	    free(iter);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
@@ -131,7 +154,7 @@ int smpd_associate_job_key(const char *key, const char *username, HANDLE user_ha
 
 #undef FCNAME
 #define FCNAME "smpd_lookup_job_key"
-int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle)
+int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle)
 {
     smpd_job_key_list_t *iter;
     smpd_enter_fn(FCNAME);

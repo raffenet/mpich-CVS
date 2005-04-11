@@ -35,6 +35,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     char *pszDomain;
     char password[SMPD_MAX_PASSWORD_LENGTH];
     HANDLE user_handle = INVALID_HANDLE_VALUE;
+    HANDLE job = INVALID_HANDLE_VALUE;
     int num_tries;
     char cmd[8192];
     PROCESS_INFORMATION pInfo;
@@ -134,6 +135,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 		return SMPD_ERR_INVALID_USER;
 	    }
 	    user_handle = context->sspi_context->user_handle;
+	    job = context->sspi_context->job;
 	}
 	else
 	{
@@ -181,7 +183,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	    result = CreateProcessAsUser(
 		user_handle,
 		NULL, cmd, NULL, NULL, TRUE,
-		0,
+		CREATE_SUSPENDED,
 		NULL, NULL, &sInfo, &pInfo);
 	}
 	else
@@ -189,7 +191,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	    smpd_dbg_printf("CreateProcess\n");
 	    result = CreateProcess(
 		NULL, cmd, NULL, NULL, TRUE,
-		0,
+		CREATE_SUSPENDED,
 		NULL, NULL, &sInfo, &pInfo);
 	}
 
@@ -217,6 +219,12 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	    }
 	}
     } while (num_tries);
+
+    if (job != INVALID_HANDLE_VALUE)
+    {
+	AssignProcessToJobObject(job, pInfo.hProcess);
+    }
+    ResumeThread(pInfo.hThread);
 
     if (smpd_process.bService)
     {

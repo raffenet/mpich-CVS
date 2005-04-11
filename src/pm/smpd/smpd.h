@@ -346,6 +346,7 @@ typedef struct smpd_sspi_client_context_t
     CredHandle credential;
     TimeStamp expiration_time;
     HANDLE user_handle;
+    HANDLE job;
     DWORD flags;
     SMPD_BOOL close_handle;
 #endif
@@ -854,7 +855,7 @@ int smpd_add_job_key(const char *key, const char *username);
 int smpd_add_job_key_and_handle(const char *key, const char *username, HANDLE hUser);
 int smpd_remove_job_key(const char *key);
 int smpd_associate_job_key(const char *key, const char *username, HANDLE user_handle);
-int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle);
+int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle);
 #endif
 
 #if defined(__cplusplus)

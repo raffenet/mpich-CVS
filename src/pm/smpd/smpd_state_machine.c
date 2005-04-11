@@ -3412,7 +3412,7 @@ int smpd_state_reading_sspi_job_key(smpd_context_t *context, MPIDU_Sock_event_t 
     }
     smpd_dbg_printf("job key: '%s'\n", context->sspi_job_key);
 
-    result = smpd_lookup_job_key(context->sspi_job_key, context->account, &context->sspi_context->user_handle);
+    result = smpd_lookup_job_key(context->sspi_job_key, context->account, &context->sspi_context->user_handle, &context->sspi_context->job);
     if (result == SMPD_SUCCESS)
     {
 	context->sspi_context->close_handle = SMPD_FALSE;
@@ -5260,7 +5260,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
-	    result = smpd_encrypt_data(smpd_process.job_key_password, strlen(smpd_process.job_key_password), buffer, SMPD_MAX_PASSWORD_LENGTH);
+	    result = smpd_encrypt_data(smpd_process.job_key_password, (int)strlen(smpd_process.job_key_password), buffer, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to encrypt the job password.\n");
