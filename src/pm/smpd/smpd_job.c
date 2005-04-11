@@ -18,6 +18,7 @@ typedef struct smpd_job_key_list_t
 
 static smpd_job_key_list_t *list = NULL;
 
+#if 0 /* check for the key and username */
 #undef FCNAME
 #define FCNAME "job_key_exists"
 static SMPD_BOOL job_key_exists(const char *key, const char *username, const char *domain, const char *full_domain)
@@ -63,7 +64,31 @@ static SMPD_BOOL job_key_exists(const char *key, const char *username, const cha
     smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
+#endif
 
+#undef FCNAME
+#define FCNAME "job_key_exists"
+static SMPD_BOOL job_key_exists(const char *key)
+{
+    smpd_job_key_list_t *iter;
+
+    smpd_enter_fn(FCNAME);
+
+    iter = list;
+    while (iter)
+    {
+	if (strcmp(iter->key, key) == 0)
+	{
+	    /* key matches */
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_TRUE;
+	}
+	iter = iter->next;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_FALSE;
+}
 
 #undef FCNAME
 #define FCNAME "smpd_add_job_key"
@@ -74,7 +99,7 @@ int smpd_add_job_key(const char *key, const char *username, const char *domain, 
 
     smpd_enter_fn(FCNAME);
 
-    if (job_key_exists(key, username, domain, full_domain))
+    if (job_key_exists(key/*, username, domain, full_domain*/))
     {
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
@@ -128,7 +153,7 @@ int smpd_add_job_key_and_handle(const char *key, const char *username, const cha
 
     smpd_enter_fn(FCNAME);
 
-    if (job_key_exists(key, username, domain, full_domain))
+    if (job_key_exists(key/*, username, domain, full_domain*/))
     {
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
