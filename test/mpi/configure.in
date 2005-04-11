@@ -436,6 +436,12 @@ if test "$enable_cxx" = yes ; then
     AC_LANG_RESTORE])
     if test "$pac_cv_cxx_has_iostream" = yes ; then
         AC_DEFINE(HAVE_IOSTREAM,1,[Define if iostream is available])
+    else
+        # Look for iostream.h
+        AC_CHECK_HEADERS(iostream)
+        if test "$ac_cv_header_iostream_h" != yes ; then
+            AC_MSG_ERROR([C++ compiler $CXX $CXXFLAGS has neither iostream nor iostream.h.])
+        fi
     fi
 
     AC_CXX_NAMESPACE_STD
