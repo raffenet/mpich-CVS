@@ -19,12 +19,66 @@ typedef struct smpd_job_key_list_t
 static smpd_job_key_list_t *list = NULL;
 
 #undef FCNAME
+#define FCNAME "job_key_exists"
+static SMPD_BOOL job_key_exists(const char *key, const char *username, const char *domain, const char *full_domain)
+{
+    smpd_job_key_list_t *iter;
+    char account_str[SMPD_MAX_ACCOUNT_LENGTH];
+    char domain_str[SMPD_MAX_ACCOUNT_LENGTH];
+
+    smpd_enter_fn(FCNAME);
+
+    if (domain == NULL && full_domain == NULL)
+    {
+	smpd_parse_account_domain(username, account_str, domain_str);
+	if (domain_str[0] != '\0')
+	{
+	    username = account_str;
+	    domain = domain_str;
+	}
+    }
+    iter = list;
+    while (iter)
+    {
+	if (strcmp(iter->key, key) == 0)
+	{
+	    /* key matches */
+	    if (strcmp(iter->username, username) == 0)
+	    {
+		/* username matches */
+		if ((domain != NULL && stricmp(domain, iter->domain) == 0) ||                /* domain matches */
+		    (full_domain != NULL && stricmp(full_domain, iter->full_domain) == 0) || /* full domain name matches */
+		    (iter->domain[0] == '\0' && iter->full_domain[0] == '\0') ||             /* no domain to match */
+		    (domain == NULL && full_domain == NULL))                                 /* no domain to match */
+		{
+		    /* domain matches */
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_TRUE;
+		}
+	    }
+	}
+	iter = iter->next;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_FALSE;
+}
+
+
+#undef FCNAME
 #define FCNAME "smpd_add_job_key"
 int smpd_add_job_key(const char *key, const char *username, const char *domain, const char *full_domain)
 {
     int error;
     smpd_job_key_list_t *node;
+
     smpd_enter_fn(FCNAME);
+
+    if (job_key_exists(key, username, domain, full_domain))
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
 
     node = (smpd_job_key_list_t*)malloc(sizeof(smpd_job_key_list_t));
     if (node == NULL)
@@ -71,7 +125,14 @@ int smpd_add_job_key_and_handle(const char *key, const char *username, const cha
 {
     int error;
     smpd_job_key_list_t *node;
+
     smpd_enter_fn(FCNAME);
+
+    if (job_key_exists(key, username, domain, full_domain))
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
 
     node = (smpd_job_key_list_t*)malloc(sizeof(smpd_job_key_list_t));
     if (node == NULL)
@@ -117,6 +178,7 @@ int smpd_add_job_key_and_handle(const char *key, const char *username, const cha
 int smpd_remove_job_key(const char *key)
 {
     smpd_job_key_list_t *iter, *trailer;
+
     smpd_enter_fn(FCNAME);
 
     iter = trailer = list;
@@ -157,6 +219,7 @@ int smpd_remove_job_key(const char *key)
 int smpd_associate_job_key(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE user_handle)
 {
     smpd_job_key_list_t *iter;
+
     smpd_enter_fn(FCNAME);
 
     iter = list;
@@ -196,21 +259,34 @@ int smpd_associate_job_key(const char *key, const char *username, const char *do
 int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle)
 {
     smpd_job_key_list_t *iter;
+    char account[SMPD_MAX_ACCOUNT_LENGTH];
+    char domain[SMPD_MAX_ACCOUNT_LENGTH];
+
     smpd_enter_fn(FCNAME);
+
+    smpd_parse_account_domain(username, account, domain);
 
     iter = list;
     while (iter)
     {
 	if (strcmp(iter->key, key) == 0)
 	{
-	    if (stricmp(iter->username, username) == 0)
+	    /* key matches */
+	    if (stricmp(iter->username, account) == 0)
 	    {
-		if (iter->user_handle != INVALID_HANDLE_VALUE)
+		/* username matches */
+		if ((stricmp(domain, iter->domain) == 0) ||
+		    (stricmp(domain, iter->full_domain) == 0) ||
+		    (iter->domain[0] == '\0' && iter->full_domain[0] == '\0'))
 		{
-		    *user_handle = iter->user_handle;
-		    *job_handle = iter->job;
-		    smpd_exit_fn(FCNAME);
-		    return SMPD_SUCCESS;
+		    /* domain matches */
+		    if (iter->user_handle != INVALID_HANDLE_VALUE)
+		    {
+			*user_handle = iter->user_handle;
+			*job_handle = iter->job;
+			smpd_exit_fn(FCNAME);
+			return SMPD_SUCCESS;
+		    }
 		}
 	    }
 	}
