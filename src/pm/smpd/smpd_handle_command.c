@@ -1313,9 +1313,9 @@ int smpd_handle_result(smpd_context_t *context)
 		    smpd_dbg_printf("suspend command result returned: %s\n", str);
 		    ret_val = smpd_handle_suspend_result(iter, str);
 		}
-		else if (strcmp(iter->cmd_str, "add_job_key") == 0)
+		else if (strcmp(iter->cmd_str, "add_job") == 0)
 		{
-		    /* print the result of the add_job_key command */
+		    /* print the result of the add_job command */
 		    printf("%s\n", str);
 		    /* close the session */
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
@@ -1336,9 +1336,9 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("unable to create a done command.\n");
 		    }
 		}
-		else if (strcmp(iter->cmd_str, "add_job_key_and_password") == 0)
+		else if (strcmp(iter->cmd_str, "add_job_and_password") == 0)
 		{
-		    /* print the result of the add_job_key_and_password command */
+		    /* print the result of the add_job_and_password command */
 		    printf("%s\n", str);
 		    /* close the session */
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
@@ -1359,9 +1359,9 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("unable to create a done command.\n");
 		    }
 		}
-		else if (strcmp(iter->cmd_str, "remove_job_key") == 0)
+		else if (strcmp(iter->cmd_str, "remove_job") == 0)
 		{
-		    /* print the result of the remove_job_key command */
+		    /* print the result of the remove_job command */
 		    printf("%s\n", str);
 		    /* close the session */
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
@@ -1382,9 +1382,9 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("unable to create a done command.\n");
 		    }
 		}
-		else if (strcmp(iter->cmd_str, "associate_job_key") == 0)
+		else if (strcmp(iter->cmd_str, "associate_job") == 0)
 		{
-		    /* print the result of the associate_job_key command */
+		    /* print the result of the associate_job command */
 		    printf("%s\n", str);
 		    /* close the session */
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
@@ -5151,8 +5151,8 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
 }
 
 #undef FCNAME
-#define FCNAME "smpd_handle_add_job_key_command"
-int smpd_handle_add_job_key_command(smpd_context_t *context)
+#define FCNAME "smpd_handle_add_job_command"
+int smpd_handle_add_job_command(smpd_context_t *context)
 {
 #ifdef HAVE_WINDOWS_H
     int result = SMPD_SUCCESS;
@@ -5167,13 +5167,13 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("add_job_key command missing key parameter\n");
+	smpd_err_printf("add_job command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "username", username, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("add_job_key command missing username parameter\n");
+	smpd_err_printf("add_job command missing username parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5240,8 +5240,8 @@ int smpd_handle_add_job_key_command(smpd_context_t *context)
 }
 
 #undef FCNAME
-#define FCNAME "smpd_handle_add_job_key_command_and_password"
-int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
+#define FCNAME "smpd_handle_add_job_command_and_password"
+int smpd_handle_add_job_command_and_password(smpd_context_t *context)
 {
 #ifdef HAVE_WINDOWS_H
     int result = SMPD_SUCCESS;
@@ -5261,19 +5261,19 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("add_job_key_and_password command missing key parameter\n");
+	smpd_err_printf("add_job_and_password command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "username", value, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("add_job_key_and_password command missing username parameter\n");
+	smpd_err_printf("add_job_and_password command missing username parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "password", encrypted, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("add_job_key_and_password command missing password parameter\n");
+	smpd_err_printf("add_job_and_password command missing password parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5281,7 +5281,7 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
     result = smpd_decrypt_data(encrypted, (int)strlen(encrypted), decrypted, &len);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to decrypt the password in the add_job_key_and_password command.\n");
+	smpd_err_printf("unable to decrypt the password in the add_job_and_password command.\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5367,8 +5367,8 @@ int smpd_handle_add_job_key_command_and_password(smpd_context_t *context)
 }
 
 #undef FCNAME
-#define FCNAME "smpd_handle_remove_job_key_command"
-int smpd_handle_remove_job_key_command(smpd_context_t *context)
+#define FCNAME "smpd_handle_remove_job_command"
+int smpd_handle_remove_job_command(smpd_context_t *context)
 {
 #ifdef HAVE_WINDOWS_H
     int result = SMPD_SUCCESS;
@@ -5382,7 +5382,7 @@ int smpd_handle_remove_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("remove_job_key command missing key parameter\n");
+	smpd_err_printf("remove_job command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5449,8 +5449,8 @@ int smpd_handle_remove_job_key_command(smpd_context_t *context)
 }
 
 #undef FCNAME
-#define FCNAME "smpd_handle_associate_job_key_command"
-int smpd_handle_associate_job_key_command(smpd_context_t *context)
+#define FCNAME "smpd_handle_associate_job_command"
+int smpd_handle_associate_job_command(smpd_context_t *context)
 {
 #ifdef HAVE_WINDOWS_H
     int result = SMPD_SUCCESS;
@@ -5464,7 +5464,7 @@ int smpd_handle_associate_job_key_command(smpd_context_t *context)
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("associate_job_key command missing key parameter\n");
+	smpd_err_printf("associate_job command missing key parameter\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -5924,21 +5924,21 @@ int smpd_handle_command(smpd_context_t *context)
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
-		else if (strcmp(cmd->cmd_str, "add_job_key") == 0)
+		else if (strcmp(cmd->cmd_str, "add_job") == 0)
 		{
-		    result = smpd_handle_add_job_key_command(context);
+		    result = smpd_handle_add_job_command(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
-		else if (strcmp(cmd->cmd_str, "add_job_key_and_password") == 0)
+		else if (strcmp(cmd->cmd_str, "add_job_and_password") == 0)
 		{
-		    result = smpd_handle_add_job_key_command_and_password(context);
+		    result = smpd_handle_add_job_command_and_password(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
-		else if (strcmp(cmd->cmd_str, "remove_job_key") == 0)
+		else if (strcmp(cmd->cmd_str, "remove_job") == 0)
 		{
-		    result = smpd_handle_remove_job_key_command(context);
+		    result = smpd_handle_remove_job_command(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
@@ -5961,9 +5961,9 @@ int smpd_handle_command(smpd_context_t *context)
     }
     if (context->access == SMPD_ACCESS_USER)
     {
-	if (strcmp(cmd->cmd_str, "associate_job_key") == 0)
+	if (strcmp(cmd->cmd_str, "associate_job") == 0)
 	{
-	    result = smpd_handle_associate_job_key_command(context);
+	    result = smpd_handle_associate_job_command(context);
 	    smpd_exit_fn(FCNAME);
 	    return result;
 	}

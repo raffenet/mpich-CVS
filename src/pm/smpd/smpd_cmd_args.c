@@ -635,7 +635,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
 
     /* These commands are handled by mpiexec although doing them here is an alternate solution.
-    if (smpd_get_opt_two_strings(argcp, argvp, "-add_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
+    if (smpd_get_opt_two_strings(argcp, argvp, "-add_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
     {
 	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
@@ -646,7 +646,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.do_console = 1;
     }
 
-    if (smpd_get_opt_string(argcp, argvp, "-remove_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+    if (smpd_get_opt_string(argcp, argvp, "-remove_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
     {
 	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
@@ -654,7 +654,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB_KEY;
     }
 
-    if (smpd_get_opt_string(argcp, argvp, "-associate_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+    if (smpd_get_opt_string(argcp, argvp, "-associate_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
     {
 	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);

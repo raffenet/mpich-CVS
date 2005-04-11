@@ -401,7 +401,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
-	if (smpd_get_opt_two_strings(argcp, argvp, "-add_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
+	if (smpd_get_opt_two_strings(argcp, argvp, "-add_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
 	{
 	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    {
@@ -411,18 +411,18 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
 	    if (smpd_get_opt_string(argcp, argvp, "-password", smpd_process.job_key_password, SMPD_MAX_PASSWORD_LENGTH))
 	    {
-		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY_AND_PASSWORD;
+		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_AND_PASSWORD;
 	    }
 	    else
 	    {
-		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY;
+		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB;
 	    }
 	    smpd_do_console();
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
 
-	if (smpd_get_opt_string(argcp, argvp, "-remove_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	if (smpd_get_opt_string(argcp, argvp, "-remove_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
 	{
 	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    {
@@ -430,13 +430,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB_KEY;
+	    smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB;
 	    smpd_do_console();
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
 
-	if (smpd_get_opt_string(argcp, argvp, "-associate_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	if (smpd_get_opt_string(argcp, argvp, "-associate_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
 	{
 	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 	    {
@@ -444,7 +444,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB_KEY;
+	    smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB;
 	    smpd_do_console();
 	    fflush(stdout);
 	    smpd_exit(0);

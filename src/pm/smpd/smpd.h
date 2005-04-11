@@ -558,10 +558,10 @@ typedef enum smpd_builtin_commands_t
     SMPD_CMD_RESTART,
     SMPD_CMD_VALIDATE,
     SMPD_CMD_DO_STATUS,
-    SMPD_CMD_ADD_JOB_KEY,
-    SMPD_CMD_ADD_JOB_KEY_AND_PASSWORD,
-    SMPD_CMD_REMOVE_JOB_KEY,
-    SMPD_CMD_ASSOCIATE_JOB_KEY
+    SMPD_CMD_ADD_JOB,
+    SMPD_CMD_ADD_JOB_AND_PASSWORD,
+    SMPD_CMD_REMOVE_JOB,
+    SMPD_CMD_ASSOCIATE_JOB
 } smpd_builtin_commands_t;
 
 /* If you add elements to the process structure you must add the appropriate
