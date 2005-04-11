@@ -37,7 +37,7 @@ fi
 FROM_LAM=${FROM_LAM:-no}
 if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
 CFLAGS=${CFLAGS:-""}
-LL="\%lld"
+LL="lld"
 AR_LOCAL=l
 DEFINE_HAVE_MPI_GREQUEST="#undef HAVE_MPI_GREQUEST"
 HAVE_MPI_INFO=""
@@ -703,6 +703,8 @@ fi
 dnl The original ROMIO configure used a set of complex tests here; this
 dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
 dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
+# LL is the printf-style format name for output of a MPI_Offset.
+# We have to match this to the type that we use for MPI_Offset.
 CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
 AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
 if test "$ac_cv_sizeof_long_long" != 0 ; then
@@ -711,13 +713,13 @@ if test "$ac_cv_sizeof_long_long" != 0 ; then
        MPI_OFFSET_TYPE="long long"
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
-       LL="\%lld"
+       LL="lld"
     elif test "$ac_cv_sizeof_long_long" = "$ac_cv_sizeof_int" ; then
        MPI_OFFSET_TYPE="int"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
        AC_DEFINE(MPI_OFFSET_IS_INT,1,[Define if MPI_Offset is int])
-       LL="\%d"
+       LL="d"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
     else
@@ -725,7 +727,7 @@ if test "$ac_cv_sizeof_long_long" != 0 ; then
        MPI_OFFSET_TYPE="long"
        DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
-       LL="\%ld"
+       LL="ld"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
     fi
@@ -734,7 +736,7 @@ else
     MPI_OFFSET_TYPE="long"
     DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
     FORTRAN_MPI_OFFSET="integer"
-    LL="\%ld"
+    LL="ld"
     MPI_OFFSET_KIND1="!"
     MPI_OFFSET_KIND2="!"
 fi
