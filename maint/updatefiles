@@ -464,6 +464,24 @@ if [ $do_build_configure = yes ] ; then
 	    echo "Directory `pwd`/confdb is missing and is required for rebuilding configure"
   	    exit 1
         fi
+	# Check for out-of-date configures (the dependency handling
+	# isn't 100% accurate, so we use this step as an additional
+	# check)
+	if [ ! -s maint/conftimestamp ] ; then
+	    echo "Rebuilding all configure script because of missing confdbtimestamp"
+	    find . -name configure -print | grep -v maint/configure | xargs rm -f
+	    date > maint/conftimestamp
+	else
+	    # We can't us a status check here because find will always
+	    # report success, even if there are no newer files in confdb
+	    files=`find confdb -newer  maint/conftimestamp 2>&1` 
+	    if [ -n "$files" ] ; then
+		echo "Rebuilding all configure script because of changes in confdb"
+ 	        find . -name configure -print | grep -v maint/configure | xargs rm -f
+	        date > maint/conftimestamp
+	    fi
+	fi
+	#
         for dir in `find . -name 'configure.in' -print` ; do
             dir=`dirname $dir`
   	    allowFailure=no
