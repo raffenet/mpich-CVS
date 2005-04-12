@@ -21,5 +21,4 @@ greq1 1
 probe-unexp 4
 # For testing, scancel will run with 1 process as well
 scancel 2
-threaded_sr 2
 isendselfprobe 1
