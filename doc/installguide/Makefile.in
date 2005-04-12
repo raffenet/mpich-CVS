@@ -23,3 +23,6 @@ mandoc:
 htmldoc:
 
 latexdoc: ALL
+
+clean:
+	-rm -f *.dvi *.log *.out *.aux *.toc *.bbl *.blg
