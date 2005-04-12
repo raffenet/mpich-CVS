@@ -76,10 +76,16 @@ int myprefork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
 
+
+/* Set printFailure to 1 to get an explanation of the failure reason
+   for each process when a process fails */
+static int printFailure = 0;
+
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
 {
     int          rc;
+    int          erc = 0;  /* Other (exceptional) return codes */
     int          reason;
     SetupInfo    s;
 
@@ -115,6 +121,7 @@ int main( int argc, char *argv[], char *envp[] )
 	   terminate the children */
 	MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
 			 pUniv.timeout / 60 );
+	erc = 1;
 	MPIE_KillUniverse( &pUniv );
     }
 
@@ -128,8 +135,12 @@ int main( int argc, char *argv[], char *envp[] )
     rc = MPIE_ProcessGetExitStatus();
 
     /* Optionally provide detailed information about failed processes */
-    if (rc) 
+    if (rc && printFailure) 
 	MPIE_PrintFailureReasons( stderr );
+
+    /* If the processes exited normally (or were already gone) but we
+       had an exceptional exit, such as a timeout, use the erc value */
+    if (!rc && erc) rc = erc;
 
     return( rc );
 }
