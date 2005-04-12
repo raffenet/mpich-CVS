@@ -17,8 +17,6 @@ mpiman.dvi: mpiman.tex MPI_Wtime.tex
 	    if [ ! -s $$file ] ; then \
 	       if [ -s $(srcdir)/$$file ] ; then \
 	            cp $(srcdir)/$$file . ; \
-               elif [ -s $(srcdir)/../adi3/$$file ] ; then \
-		    cp $(srcdir)/../adi3/$$file . ; \
                else \
 		    echo "Unable to find file $$file" ; \
 		    exit 1; \
