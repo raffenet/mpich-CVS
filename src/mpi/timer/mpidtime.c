@@ -5,8 +5,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "timerconf.h"
-#include "mpichtimer.h"
 #include "mpiimpl.h"
 
 

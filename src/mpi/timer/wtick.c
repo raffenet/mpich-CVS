@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "timerconf.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Wtick */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -41,7 +40,6 @@
 @*/
 double MPI_Wtick( void )
 {
-    static const char FCNAME[] = "MPI_Wtick";
     double tick;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WTICK);
 

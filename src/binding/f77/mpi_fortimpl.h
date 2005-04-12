@@ -4,9 +4,7 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef NO_FORTCONF_H
-#include "mpi_fortconf.h"
-#endif
+#include "mpichconf.h"
 
 /* Handle different mechanisms for passing Fortran CHARACTER to routines */
 #ifdef USE_FORT_MIXED_STR_LEN

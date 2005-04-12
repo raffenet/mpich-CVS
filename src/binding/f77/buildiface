@@ -599,8 +599,6 @@ maint-clean:\
 \trm -f \${mpi_sources} $prototype_header_file\n";
 
     print MAKEFD "install_INCLUDE = mpif.h\n";
-    print MAKEFD "install_BIN     = mpif77\n";
-    print MAKEFD "install_ETC     = mpif77.conf\n";
 
     # Add the documentation
     print MAKEFD "# Documentation sources
@@ -710,7 +708,7 @@ sub print_profiling_block {
 	# Later, we can add support for other name mappings.
 	print $OUTFD "\
 /* Begin MPI profiling block */\
-#if defined(HAVE_WEAK_SYMBOLS)\
+#if defined(USE_WEAK_SYMBOLS)\
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)\n";
         &print_weak_decl( $OUTFD, "MPI_$ucname", $args, $lcname ); 
 	&print_weak_decl( $OUTFD, "mpi_${lcname}__", $args, $lcname );
@@ -767,7 +765,7 @@ sub print_profiling_block {
 #pragma _CRI duplicate mpi_${lcname}_ as pmpi_${lcname}_\
 #endif\
 #endif /* HAVE_PRAGMA_WEAK */\
-#endif /* HAVE_WEAK_SYMBOLS */\
+#endif /* USE_WEAK_SYMBOLS */\
 /* End MPI profiling block */\n\n";
     }
 }
@@ -2074,10 +2072,14 @@ if ($write_mpif) {
     }
     # Value of MPI_BYTE from top level configure!
     $mpidef{"MPI_BYTE"} = hex "0x4c00010d";
-    &print_mpif_int( "MPI_BYTE" );
-    &print_mpif_int( "MPI_UB" );
-    &print_mpif_int( "MPI_LB" );
-    &print_mpif_int( "MPI_PACKED" );
+    foreach $key (BYTE, UB, LB, PACKED) {
+	print MPIFFD "       INTEGER MPI_$key\n";
+        print MPIFFD "       PARAMETER (MPI_$key=\@MPI_F77_$key\@)\n";
+    }
+    #&print_mpif_int( "MPI_BYTE" );
+    #&print_mpif_int( "MPI_UB" );
+    #&print_mpif_int( "MPI_LB" );
+    #&print_mpif_int( "MPI_PACKED" );
 
     # Optional types
     # Warning: Should these use \@MPI_$key\@, since the 

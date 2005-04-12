@@ -25,7 +25,7 @@ MPI_OTHERLIBS="@LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 #
 # MPIVERSION is the version of the MPICH2 library that mpif77 is intended for
-MPIVERSION=@MPIVERSION@
+MPIVERSION="@VERSION@"
 #
 # ----------------------------------------------------------------------------
 # We also keep track of properties of the compilation system.  These
