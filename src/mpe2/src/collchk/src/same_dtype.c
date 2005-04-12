@@ -22,7 +22,7 @@ char *alloca ();
 unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n );
 unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n )
 {
-    /* Doing circular left shift of beta and save it in x */
+    /* Doing circular left shift of alpha by n bits */
     unsigned int t1, t2;
     t1 = alpha >> (sizeof(unsigned int)-n);
     t2 = alpha << n;

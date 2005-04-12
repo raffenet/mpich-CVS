@@ -83,7 +83,7 @@ AC_SUBST(MV)
 AC_ARG_ENABLE( strict,
 [--enable-strict                    - Turn on strict compilation testing
                                      when using gcc],
-COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL" )
+COPTIONS="${COPTIONS} -std=c89 -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL" )
 dnl
 AC_ARG_ENABLE( g,
 [--enable-g                         - Turn on/off the compilation flag -g.
