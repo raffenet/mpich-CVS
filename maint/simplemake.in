@@ -3260,9 +3260,7 @@ sub ReadAutoconf {
 	    # Remove any M4 dnl line
 	    s/\sdnl\s.*//;
 	    while (/\\\s*$/) {
-		#chomp;    # remove trailing EOL (\n on Unix, \r\n on DOS)
-		s/[\r\n]*$//; # David added
-		#strip;
+		s/\r?\n$//; # Removes eol on both Unix and Windows
 		chop($_); # remove the backslash
 		$line .= $_;
 		$_ = <FDCONF>;
@@ -3270,9 +3268,10 @@ sub ReadAutoconf {
 		s/\sdnl\s.*//;
 	    }
 	    $line .= $_; 
-	    #chomp( $line );
-	    $line =~ s/[\r\n]*$//; # David added
-		#strip ( $line );
+	    $line =~ s/\r?\n$//; # Removes eol on both Unix and Windows
+	    $line =~ s/,.*/\)/;  # Changes a ,... to ) to handle
+                                 # AC_OUTPUT(files...,[command]),
+                                 # where the final ) may not be on this line
 	    #print $line;
 	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
 	    $files = $1;
