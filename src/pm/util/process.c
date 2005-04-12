@@ -5,6 +5,9 @@
  */
 
 #include "pmutilconf.h"
+#ifdef NEEDS_POSIX_FOR_SIGACTION
+#define _POSIX_SOURCE
+#endif
 
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
@@ -164,7 +167,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 
 /*@
   MPIE_ProcessGetExitStatus - Return an integer exit status based on the
-  return status of all processes in the process universe.
+  return status of all processes in the process universe; returns the
+  maximum value seen
   @*/
 int MPIE_ProcessGetExitStatus( void )
 {
@@ -179,8 +183,8 @@ int MPIE_ProcessGetExitStatus( void )
 	while (app) {
 	    pState = app->pState;
 	    for (i=0; i<app->nProcess; i++) {
-		if (pState->exitStatus.exitStatus > rc) {
-		    rc = pState->exitStatus.exitStatus;
+		if (pState[i].exitStatus.exitStatus > rc) {
+		    rc = pState[i].exitStatus.exitStatus;
 		}
 	    }
 	    app = app->nextApp;
@@ -808,6 +812,7 @@ int MPIE_ForwardCommonSignals( void )
     MPIE_ForwardSignal( SIGCONT );
 #endif
     /* Do we want to forward usr1 and usr2? */
+    return 0;
 }
 
 /*
