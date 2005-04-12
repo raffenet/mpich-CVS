@@ -1403,6 +1403,7 @@ changequote(<<,>>)dnl
 define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
 define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
 changequote([,])dnl
+rm -f conftestval
 AC_MSG_CHECKING([for size of $1])
 AC_CACHE_VAL(AC_CV_NAME,
 [AC_TRY_RUN([#include <stdio.h>
@@ -1432,6 +1433,7 @@ changequote(<<,>>)dnl
 define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
 define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
 changequote([,])dnl
+rm -f conftestval
 AC_MSG_CHECKING([for size of $1])
 AC_CACHE_VAL(AC_CV_NAME,
 [AC_TRY_RUN([#include <stdio.h>
