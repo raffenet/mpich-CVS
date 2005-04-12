@@ -226,7 +226,8 @@ dnl We can't use OUTPUT_COMMANDS to remove the cache file, because those
 dnl commands are executed *before* the subdir configures.
 dnl
 dnl D*/
-AC_DEFUN(PAC_SUBDIR_CACHE,[
+AC_DEFUN(PAC_SUBDIR_CACHE,[])
+AC_DEFUN(PAC_SUBDIR_CACHE_OLD,[
 if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" \) ; then
     # Use an absolute directory to help keep the subdir configures from getting
     # lost
@@ -259,6 +260,29 @@ if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_ca
     ac_cv_env_CXX_set=${CXX+set}
     ac_cv_env_CXX_value=$CXX
 
+    ac_env_CC_set=set
+    ac_env_CC_value=$CC
+    ac_env_CFLAGS_set=${CFLAGS+set}
+    ac_env_CFLAGS_value=$CFLAGS
+    ac_env_CPP_set=set
+    ac_env_CPP_value=$CPP
+    ac_env_CPPFLAGS_set=${CPPFLAGS+set}
+    ac_env_CPPFLAGS_value=$CPPFLAGS
+    ac_env_LDFLAGS_set=${LDFLAGS+set}
+    ac_env_LDFLAGS_value=$LDFLAGS
+    ac_env_LIBS_set=${LIBS+set}
+    ac_env_LIBS_value=$LIBS
+    ac_env_FC_set=${FS+set}
+    ac_env_FC_value=$FC
+    ac_env_F77_set=${F77+set}
+    ac_env_F77_value=$F77
+    ac_env_F90_set=${F90+set}
+    ac_env_F90_value=$F90
+    ac_env_FFLAGS_set=${FFLAGS+set}
+    ac_env_FFLAGS_value=$FFLAGS
+    ac_env_CXX_set=${CXX+set}
+    ac_env_CXX_value=$CXX
+
     dnl other parameters are
     dnl build_alias, host_alias, target_alias
 
@@ -288,8 +312,10 @@ export CXX
 export FFLAGS
 export CCFLAGS
 ])
-AC_DEFUN(PAC_SUBDIR_CACHE_CLEANUP,[
+AC_DEFUN(PAC_SUBDIR_CACHE_CLEANUP,[])
+AC_DEFUN(PAC_SUBDIR_CACHE_CLEANUP_OLD,[
 if test "$cache_file" != "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; then
    rm -f $cache_file
+   cache_file=/dev/null
 fi
 ])
