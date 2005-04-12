@@ -149,6 +149,7 @@ void MPIE_ProcessSetExitStatus( ProcessState *, int );
 int MPIE_InitWorldWithSoft( ProcessWorld *, int );
 void MPIE_PrintFailureReasons( FILE * );
 int MPIE_WaitForProcesses( ProcessUniverse *, int );
+int MPIE_OnAbend( ProcessUniverse * );
 
 int MPIE_SignalWorld( ProcessWorld *, int );
 int MPIE_KillWorld( ProcessWorld * );
