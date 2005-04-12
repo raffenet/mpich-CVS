@@ -32,15 +32,31 @@ PAC_PROG_MAKE
 
 MPILIBLOC=""
 AC_SUBST(MPILIBLOC)
-if test -n "$with_mpi" ; then
-    if test -z "$BASECC" ; then
-        AC_PROG_CC
-        BASECC=$CC
-    fi
+# Select the base compiler.  We need to run them through
+# the ac_prog_xx commands because in later versions of autoconf, these
+# commands do more than just find the program, they set many of the 
+# variables that are needed when using the other autoconf commands, such as 
+# try compile
+AC_PROG_CC
+if test -z "$BASECC" ; then
+    BASECC="$CC"
+fi
+if test "$enable_f77" = yes ; then
+    AC_PROG_F77
     if test -z "$BASEF77" ; then
-        AC_PROG_F77
-        BASEF77=$F77
+        BASEF77="$F77"
     fi
+fi
+if test "$enable_cxx" = yes ; then
+    AC_PROG_CXX
+    if test -z "$BASECXX" ; then
+        BASECXX="$CXX"
+    fi
+fi
+
+#
+# Now, get the versions of the compilers that we'll use for MPI programs
+if test -n "$with_mpi" ; then
     if test -z "$MPICC" ; then
         CC=$with_mpi/bin/mpicc
     else 
@@ -57,7 +73,6 @@ if test -n "$with_mpi" ; then
         CXX=$MPICXX
     fi
 else
-
     if test -z "$top_build_dir" ; then 
         top_build_dir=`cd ../.. ; pwd`
     fi
@@ -84,6 +99,7 @@ dnl        F90=$top_build_dir/bin/mpif90
         LIBS=
     fi
 fi
+
 # Clear the CPPFLAGS, since the MPI configure will have added many items
 # that are not required for user MPI programs.
 CPPFLAGS=
@@ -432,13 +448,12 @@ if test "$enable_cxx" = yes ; then
     AC_LANG_CPLUSPLUS
     AC_TRY_COMPILE([
 #include <iostream>
-],[using namespace std;],pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)
-    AC_LANG_RESTORE])
+],[using namespace std;],pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)])
     if test "$pac_cv_cxx_has_iostream" = yes ; then
         AC_DEFINE(HAVE_IOSTREAM,1,[Define if iostream is available])
     else
-        # Look for iostream.h
-        AC_CHECK_HEADERS(iostream)
+        # Look for iostream.h (in C++ mode, we need the full name)
+        AC_CHECK_HEADERS(iostream.h)
         if test "$ac_cv_header_iostream_h" != yes ; then
             AC_MSG_ERROR([C++ compiler $CXX $CXXFLAGS has neither iostream nor iostream.h.])
         fi
@@ -450,6 +465,7 @@ if test "$enable_cxx" = yes ; then
         AC_MSG_WARN([The compiler $CXX does not support C++ namespaces.  This may cause problems for the tests])
     fi
     CXX=$CXXsave
+    AC_LANG_RESTORE
 fi
 # Find perl; used to create some of the tests from template and 
 # defintion files
