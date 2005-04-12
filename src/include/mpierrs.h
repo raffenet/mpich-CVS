@@ -43,11 +43,18 @@
  */
 #define MPIR_ERRTEST_INITIALIZED(err)                  \
   if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {  \
-      err = MPIR_Err_create_code(MPI_SUCCESS,          \
+      if (MPIR_Process.initialized == MPICH_PRE_INIT)  \
+          err = MPIR_Err_create_code(MPI_SUCCESS,      \
 				 MPIR_ERR_RECOVERABLE, \
 				 FCNAME, __LINE__,     \
 				 MPI_ERR_OTHER,        \
 				 "**initialized", 0 ); \
+      else                                             \
+          err = MPIR_Err_create_code(MPI_SUCCESS,      \
+				 MPIR_ERR_RECOVERABLE, \
+				 FCNAME, __LINE__,     \
+				 MPI_ERR_OTHER,        \
+				 "**finalized", 0 ); \
   }
 
 #define MPIR_ERRTEST_SEND_TAG(tag,err) \

@@ -5,6 +5,7 @@
 **countneg:Negative count
 **countneg %d:Negative count, value is %d
 **initialized:MPI not initialized. Call MPI_Init or MPI_Init_thread first
+**finalized:MPI has already called MPI_Finalize
 **inittwice:Cannot call MPI_INIT or MPI_INIT_THREAD more than once
 **nomem:Out of memory
 **nomem %d %d:Out of memory (requested %d but only %d available)
