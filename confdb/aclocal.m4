@@ -42,6 +42,26 @@ AC_DEFUN(AC_OBJEXT,[
 OBJEXT=
 AC_SUBST(OBJEXT)
 ])])
+dnl
+dnl PAC_MKDIRS(path)
+dnl Create any missing directories in the path
+dnl
+AC_DEFUN([PAC_MKDIRS],[
+#
+# Build any intermediate directories
+for dir in $1 ; do
+    saveIFS="$IFS"
+    IFS="/"
+    tmp_curdir=""
+    for tmp_subdir in $dir ; do
+	tmp_curdir="${tmp_curdir}$tmp_subdir"
+	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
+        tmp_curdir="${tmp_curdir}/"
+    done
+    IFS="$saveIFS"
+done
+])
+dnl
 dnl PAC_CONFIG_SUBDIRS_IMMEDIATE(DIR ...)
 dnl Perform the configuration *now*
 dnl 
