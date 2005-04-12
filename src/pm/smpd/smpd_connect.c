@@ -940,7 +940,10 @@ int smpd_get_default_hosts()
 	    smpd_process.default_host_list->alt_host[0] = '\0';
 	    smpd_process.default_host_list->nproc = 1;
 	    smpd_process.default_host_list->connected = SMPD_FALSE;
+	    smpd_process.default_host_list->connect_cmd_tag = -1;
 	    smpd_process.default_host_list->next = smpd_process.default_host_list;
+	    smpd_process.default_host_list->left = NULL;
+	    smpd_process.default_host_list->right = NULL;
 	    smpd_process.cur_default_host = smpd_process.default_host_list;
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
@@ -964,7 +967,10 @@ int smpd_get_default_hosts()
 		smpd_process.default_host_list->alt_host[0] = '\0';
 		smpd_process.default_host_list->nproc = 1;
 		smpd_process.default_host_list->connected = SMPD_FALSE;
+		smpd_process.default_host_list->connect_cmd_tag = -1;
 		smpd_process.default_host_list->next = smpd_process.default_host_list;
+		smpd_process.default_host_list->left = NULL;
+		smpd_process.default_host_list->right = NULL;
 		smpd_process.cur_default_host = smpd_process.default_host_list;
 		/* add this host to the dynamic_hosts key */
 		strcpy(myhostname, hosts);
@@ -1025,7 +1031,10 @@ int smpd_get_default_hosts()
 		    cur_host->nproc = 1;
 	    }
 	    cur_host->connected = SMPD_FALSE;
+	    cur_host->connect_cmd_tag = -1;
 	    cur_host->next = NULL;
+	    cur_host->left = NULL;
+	    cur_host->right = NULL;
 	    if (smpd_process.default_host_list == NULL)
 	    {
 		smpd_process.default_host_list = cur_host;

@@ -1302,6 +1302,7 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 {
     int result;
     smpd_command_t *cmd_ptr;
+    smpd_host_node_t *left, *right, *host_node;
 
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
@@ -1398,31 +1399,44 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 
 	/* mark the node as connected */
 	context->connect_to->connected = SMPD_TRUE;
+	left = context->connect_to->left;
+	right = context->connect_to->right;
 
-	/* send the next connect command or start_dbs command */
-	/* create a command to connect to the next host in the tree */
-	context->connect_to = context->connect_to->next;
-	if (context->connect_to)
+	while (left != NULL || right != NULL)
 	{
+	    if (left != NULL)
+	    {
+		smpd_dbg_printf("creating connect command for left node\n");
+		host_node = left;
+		left = NULL;
+	    }
+	    else
+	    {
+		smpd_dbg_printf("creating connect command for right node\n");
+		host_node = right;
+		right = NULL;
+	    }
+	    smpd_dbg_printf("creating connect command to '%s'\n", host_node->host);
 	    /* create a connect command to be sent to the parent */
-	    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd_ptr);
+	    result = smpd_create_command("connect", 0, host_node->parent, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a connect command.\n");
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    result = smpd_add_command_arg(cmd_ptr, "host", context->connect_to->host);
+	    host_node->connect_cmd_tag = cmd_ptr->tag;
+	    result = smpd_add_command_arg(cmd_ptr, "host", host_node->host);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
+		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", host_node->host);
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    result = smpd_add_command_int_arg(cmd_ptr, "id", context->connect_to->id);
+	    result = smpd_add_command_int_arg(cmd_ptr, "id", host_node->id);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
+		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", host_node->host);
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
@@ -1432,7 +1446,7 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 		result = smpd_add_command_arg(cmd_ptr, "plaintext", "yes");
 		if (result != SMPD_SUCCESS)
 		{
-		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", host_node->host);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
@@ -1447,8 +1461,21 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 		return result;
 	    }
 	}
-	else
+
+	host_node = smpd_process.host_list;
+	while (host_node != NULL)
 	{
+	    if (host_node->connected == SMPD_FALSE)
+	    {
+		smpd_dbg_printf("not connected yet: %s not connected\n", host_node->host);
+		break;
+	    }
+	    host_node = host_node->next;
+	}
+	if (host_node == NULL)
+	{
+	    context->connect_to = NULL;
+	    /* Everyone connected, send the start_dbs command */
 	    /* create the start_dbs command to be sent to the first host */
 	    result = smpd_create_command("start_dbs", 0, 1, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
@@ -4913,6 +4940,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
     DWORD dwThreadID;
     SOCKET hWrite;
 #endif
+    smpd_host_node_t *left, *right, *host_node;
 
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
@@ -4935,31 +4963,44 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 
 	/* mark the node as connected */
 	context->connect_to->connected = SMPD_TRUE;
+	left = context->connect_to->left;
+	right = context->connect_to->right;
 
-	/* create a command to connect to the next host in the tree */
-	context->connect_to = context->connect_to->next;
-	if (context->connect_to)
+	while (left != NULL || right != NULL)
 	{
-	    smpd_dbg_printf("creating connect command to '%s'\n", context->connect_to->host);
+	    if (left != NULL)
+	    {
+		smpd_dbg_printf("creating connect command for left node\n");
+		host_node = left;
+		left = NULL;
+	    }
+	    else
+	    {
+		smpd_dbg_printf("creating connect command for right node\n");
+		host_node = right;
+		right = NULL;
+	    }
+	    smpd_dbg_printf("creating connect command to '%s'\n", host_node->host);
 	    /* create a connect command to be sent to the parent */
-	    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd_ptr);
+	    result = smpd_create_command("connect", 0, host_node->parent, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a connect command.\n");
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    result = smpd_add_command_arg(cmd_ptr, "host", context->connect_to->host);
+	    host_node->connect_cmd_tag = cmd_ptr->tag;
+	    result = smpd_add_command_arg(cmd_ptr, "host", host_node->host);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
+		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", host_node->host);
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    result = smpd_add_command_int_arg(cmd_ptr, "id", context->connect_to->id);
+	    result = smpd_add_command_int_arg(cmd_ptr, "id", host_node->id);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
+		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", host_node->host);
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
@@ -4969,7 +5010,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		result = smpd_add_command_arg(cmd_ptr, "plaintext", "yes");
 		if (result != SMPD_SUCCESS)
 		{
-		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", host_node->host);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
@@ -4984,14 +5025,20 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		return result;
 	    }
 	}
-	else
-	{
-	    /*
-	    smpd_err_printf("this code seems to never get executed.\n");
-	    return SMPD_FAIL;
-	    */
 
-	    smpd_dbg_printf("hosts connected, sending start_dbs command.\n");
+	host_node = smpd_process.host_list;
+	while (host_node != NULL)
+	{
+	    if (host_node->connected == SMPD_FALSE)
+	    {
+		smpd_dbg_printf("not connected yet: %s not connected\n", host_node->host);
+		break;
+	    }
+	    host_node = host_node->next;
+	}
+	if (host_node == NULL)
+	{
+	    /* Everyone connected, send the start_dbs command */
 	    /* create the start_dbs command to be sent to the first host */
 	    result = smpd_create_command("start_dbs", 0, 1, SMPD_TRUE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)

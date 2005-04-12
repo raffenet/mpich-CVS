@@ -736,6 +736,21 @@ int smpd_handle_result(smpd_context_t *context)
 			{
 			case SMPD_MPIEXEC_CONNECTING_TREE:
 			    smpd_dbg_printf("successful connect, state: connecting tree.\n");
+			    {
+				smpd_host_node_t *host_node_iter;
+				/* find the host node that this connect command was issued for and set the connect_to variable to to point to it */
+				host_node_iter = smpd_process.host_list;
+				context->connect_to = NULL;
+				while (host_node_iter != NULL)
+				{
+				    if (host_node_iter->connect_cmd_tag == match_tag)
+				    {
+					context->connect_to = host_node_iter;
+					break;
+				    }
+				    host_node_iter = host_node_iter->next;
+				}
+			    }
 			    break;
 			case SMPD_MPIEXEC_CONNECTING_SMPD:
 			    smpd_dbg_printf("successful connect, state: connecting smpd.\n");
@@ -2409,8 +2424,11 @@ int smpd_handle_connect_command(smpd_context_t *context)
     dest->connect_to->id = dest_id;
     dest->connect_to->nproc = 1;
     dest->connect_to->connected = SMPD_FALSE;
+    dest->connect_to->connect_cmd_tag = -1;
     dest->connect_to->parent = smpd_process.id;
     dest->connect_to->next = NULL;
+    dest->connect_to->left = NULL;
+    dest->connect_to->right = NULL;
     dest->connect_return_id = cmd->src;
     dest->connect_return_tag = cmd->tag;
 

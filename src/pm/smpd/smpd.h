@@ -129,7 +129,7 @@ typedef int SMPD_BOOL;
 #define SMPD_ENCRYPTED_PREFIX             'x'
 #define SMPD_SSPI_HEADER_LENGTH           SMPD_CMD_HDR_LENGTH
 #define SMPD_SSPI_JOB_KEY_LENGTH          100
-#define SMPD_SSPI_MAX_BUFFER_SIZE         (64*1024)
+#define SMPD_SSPI_MAX_BUFFER_SIZE         (4*1024)
 /*#define SMPD_SECURITY_PACKAGE             "Kerberos"*/
 #define SMPD_SECURITY_PACKAGE             "Negotiate"
 #define SMPD_ENV_OPTION_PREFIX            "SMPD_OPTION_"
@@ -317,7 +317,6 @@ typedef struct smpd_command_t
 } smpd_command_t;
 
 #ifdef HAVE_WINDOWS_H
-/*typedef HANDLE smpd_pwait_t;*/
 typedef struct smpd_pwait_t
 {
     HANDLE hProcess, hThread;
@@ -333,7 +332,10 @@ typedef struct smpd_host_node_t
     char alt_host[SMPD_MAX_HOST_LENGTH];
     int nproc;
     SMPD_BOOL connected;
+    int connect_cmd_tag;
     struct smpd_host_node_t *next;
+    struct smpd_host_node_t *left;
+    struct smpd_host_node_t *right;
 } smpd_host_node_t;
 
 struct smpd_spawn_context_t;
@@ -755,14 +757,6 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
 #endif
 int smpd_generate_session_header(char *str, int session_id);
 int smpd_interpret_session_header(char *str);
-/*
-int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const char *val);
-int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *flag, int val);
-int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen);
-int smpd_get_int_arg(const char *str, const char *flag, int *val_ptr);
-int smpd_add_string(char *str, int maxlen, const char *val);
-const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_chars);
-*/
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set);

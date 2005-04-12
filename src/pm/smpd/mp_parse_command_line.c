@@ -282,6 +282,34 @@ static int mpiexec_assert_hook( int reportType, char *message, int *returnValue 
 }
 #endif
 
+static void fix_up_host_tree(smpd_host_node_t *node)
+{
+    smpd_host_node_t *cur, *iter;
+    SMPD_BOOL left_found;
+
+    cur = node;
+    while (cur != NULL)
+    {
+	left_found = SMPD_FALSE;
+	iter = cur->next;
+	while (iter != NULL)
+	{
+	    if (iter->parent == cur->id)
+	    {
+		if (left_found)
+		{
+		    cur->right = iter;
+		    break;
+		}
+		cur->left = iter;
+		left_found = SMPD_TRUE;
+	    }
+	    iter = iter->next;
+	}
+	cur = cur->next;
+    }
+}
+
 #undef FCNAME
 #define FCNAME "mp_parse_command_args"
 int mp_parse_command_args(int *argcp, char **argvp[])
@@ -806,7 +834,11 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
+		host_list->left = NULL;
+		host_list->right = NULL;
 		host_list->connected = SMPD_FALSE;
+		host_list->connect_cmd_tag = -1;
+		host_list->connect_cmd_tag = -1;
 		host_list->nproc = -1;
 		host_list->alt_host[0] = '\0';
 		smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
@@ -1126,7 +1158,10 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
+		host_list->left = NULL;
+		host_list->right = NULL;
 		host_list->connected = SMPD_FALSE;
+		host_list->connect_cmd_tag = -1;
 		host_list->nproc = -1;
 		host_list->alt_host[0] = '\0';
 		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
@@ -1156,7 +1191,10 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		ghost_list->next = NULL;
+		ghost_list->left = NULL;
+		ghost_list->right = NULL;
 		ghost_list->connected = SMPD_FALSE;
+		ghost_list->connect_cmd_tag = -1;
 		ghost_list->nproc = -1;
 		ghost_list->alt_host[0] = '\0';
 		strncpy(ghost_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
@@ -1207,7 +1245,10 @@ configfile_loop:
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr->next = NULL;
+			    host_node_ptr->left = NULL;
+			    host_node_ptr->right = NULL;
 			    host_node_ptr->connected = SMPD_FALSE;
+			    host_node_ptr->connect_cmd_tag = -1;
 			    host_node_ptr->nproc = 1;
 			    host_node_ptr->alt_host[0] = '\0';
 			    strncpy(host_node_ptr->host, (*argvp)[index], SMPD_MAX_HOST_LENGTH);
@@ -1565,7 +1606,10 @@ configfile_loop:
 			return SMPD_FAIL;
 		    }
 		    host_list->next = NULL;
+		    host_list->left = NULL;
+		    host_list->right = NULL;
 		    host_list->connected = SMPD_FALSE;
+		    host_list->connect_cmd_tag = -1;
 		    host_list->nproc = -1;
 		    host_list->alt_host[0] = '\0';
 		    smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
@@ -1704,7 +1748,10 @@ configfile_loop:
 		return SMPD_FAIL;
 	    }
 	    host_list->next = NULL;
+	    host_list->left = NULL;
+	    host_list->right = NULL;
 	    host_list->connected = SMPD_FALSE;
+	    host_list->connect_cmd_tag = -1;
 	    host_list->nproc = -1;
 	    host_list->alt_host[0] = '\0';
 	    strncpy(host_list->host, ghost_list->host, SMPD_MAX_HOST_LENGTH);
@@ -2019,6 +2066,8 @@ configfile_loop:
 	    }
 	}
     }
+
+    fix_up_host_tree(smpd_process.host_list);
 
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;

@@ -247,10 +247,13 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    strcpy(node->host, hostname);
 	    node->alt_host[0] = '\0';
 	    node->connected = SMPD_FALSE;
+	    node->connect_cmd_tag = -1;
 	    node->id = -1;
 	    node->parent = -1;
 	    node->nproc = nproc;
 	    node->next = NULL;
+	    node->left = NULL;
+	    node->right = NULL;
 	    smpd_parse_extra_machinefile_options(iter, node);
 	    if (smpd_process.s_host_list == NULL)
 		smpd_process.s_host_list = node;
@@ -317,8 +320,11 @@ int smpd_get_host_id(char *host, int *id_ptr)
     node->parent = smpd_process.tree_parent;
     node->id = smpd_process.tree_id;
     node->connected = SMPD_FALSE;
+    node->connect_cmd_tag = -1;
     node->nproc = -1;
     node->next = NULL;
+    node->left = NULL;
+    node->right = NULL;
 
     /* move to the next id and parent */
     smpd_process.tree_id++;
