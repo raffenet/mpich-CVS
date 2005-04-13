@@ -19,7 +19,7 @@ int MPIDI_CH3_Get_universe_size(int * universe_size)
     pmi_errno = PMI_Get_universe_size(universe_size);
     MPIU_ERR_CHKANDJUMP1((pmi_errno != PMI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**pmi_get_universe_size",
 			"**pmi_get_universe_size %d", pmi_errno);
-    if (universe_size < 0)
+    if (*universe_size < 0)
     {
 	*universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     }

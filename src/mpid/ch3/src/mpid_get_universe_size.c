@@ -21,6 +21,7 @@ int MPID_Get_universe_size(int  * universe_size)
 #   if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE)
     {
 	mpi_errno = MPIDI_CH3_Get_universe_size(universe_size);
+        if (mpi_errno) goto fn_fail;
     }
 #   else
     {
