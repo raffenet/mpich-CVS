@@ -456,9 +456,9 @@ unmatched_size_strs = ""
 set fin = f.OpenTextFile("configure.in")
 contents = fin.ReadAll()
 fin.Close()
-set fin = f.OpenTextFile("src\binding\f77\configure.in")
-contents = contents + fin.ReadAll()
-fin.Close()
+'set fin = f.OpenTextFile("src\binding\f77\configure.in")
+'contents = contents + fin.ReadAll()
+'fin.Close()
 'set dtypes = CreateDtypeDictionary(contents, false)
 'set dtypes64 = CreateDtypeDictionary(contents, true)
 set dtypes = WScript.CreateObject("Scripting.Dictionary")
@@ -1329,7 +1329,8 @@ End Function
 
 cEcho "Creating src\include\win32\mpichtimer.h"
 set fout = f.CreateTextFile("src\include\win32\mpichtimer.h")
-set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+'set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+set fin = f.OpenTextFile("src\include\mpichtimer.h.in")
 
 contents = fin.ReadAll()
 contents = ReplaceAts(contents, false, false)
@@ -1339,7 +1340,9 @@ fout.Close()
 
 cEcho "Creating src\include\win64\mpichtimer.h"
 set fout = f.CreateTextFile("src\include\win64\mpichtimer.h")
-set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+'set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+set fin = f.OpenTextFile("src\include\mpichtimer.h.in")
+
 
 contents = fin.ReadAll()
 contents = ReplaceAts(contents, false, true)
@@ -2069,6 +2072,14 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@F77_REAL8@", F77_REAL8)
 			Case "@F77_REAL16@"
 				str = Replace(str, "@F77_REAL16@", F77_REAL16)
+			Case "@MPI_F77_BYTE@"
+				str = Replace(str, "@MPI_F77_BYTE@", F77_MPI_BYTE)
+			Case "@MPI_F77_UB@"
+				str = Replace(str, "@MPI_F77_UB@", F77_MPI_UB)
+			Case "@MPI_F77_LB@"
+				str = Replace(str, "@MPI_F77_LB@", F77_MPI_LB)
+			Case "@MPI_F77_PACKED@"
+				str = Replace(str, "@MPI_F77_PACKED@", F77_MPI_PACKED)
 			Case "@MPI_STATUS_SIZE@"
 				str = Replace(str, "@MPI_STATUS_SIZE@", "5")
 			Case "@HAVE_CXX_EXCEPTIONS@"
@@ -2724,6 +2735,12 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef MPICH_DEBUG_FINE_GRAIN_NESTING */")
 				Case "HAVE_SPARC_INLINE_PROCESS_LOCKS"
 					fout.WriteLine("/* #undef HAVE_SPARC_INLINE_PROCESS_LOCKS */")
+				Case "HAVE_IOSTREAM_H"
+					fout.WriteLine("/* #undef HAVE_IOSTREAM_H */")
+				Case "HAVE_CXX_EXCEPTIONS"
+					fout.WriteLine("#define HAVE_CXX_EXCEPTIONS 1")
+				Case "bool"
+					fout.WriteLine("/* bool */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -2753,48 +2770,49 @@ Sub WriteFooter( fout )
 	fout.WriteLine("#endif")
 End Sub
 
-If Not bRemoveFortran Then
-	'
-	' mpi_fortconf.h
-	'
-	cEcho "Creating src\include\win32\mpi_fortconf.h"
-	Set fout = f.CreateTextFile("src\include\win32\mpi_fortconf.h")
-	Call WriteHeader(fout, "mpi_fort")
-	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", false)
-	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-	fout.WriteLine("#define HAVE_WINDOWS_H")
-	fout.WriteLine("#endif")
-	fout.WriteLine("")
-	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
-	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
-	Call WriteFooter(fout)
-	fout.Close()
-	cEcho "Creating src\include\win64\mpi_fortconf.h"
-	Set fout = f.CreateTextFile("src\include\win64\mpi_fortconf.h")
-	Call WriteHeader(fout, "mpi_fort")
-	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", true)
-	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-	fout.WriteLine("#define HAVE_WINDOWS_H")
-	fout.WriteLine("#endif")
-	fout.WriteLine("")
-	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
-	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
-	Call WriteFooter(fout)
-	fout.Close()
-	
-	'
-	' mpi_fortimpl.h
-	'
-	'Set fin = f.OpenTextFile("src\binding\f77\mpi_fortimpl.h")
-	'contents = fin.ReadAll()
-	'fin.Close()
-	'contents = Replace(contents, "#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )", "#define MPIR_FROM_FLOG(a) ( (a) != 0 ? 1 : 0 )")
-	'cEcho "Creating src\binding\f77\mpi_fortimpl.h"
-	'Set fout = f.CreateTextFile("src\binding\f77\mpi_fortimpl.h")
-	'fout.Write(contents)
-	'fout.Close()
-
-End If
+' mpi_fortconf.h was removed and mpichconf.h is now included instead
+'If Not bRemoveFortran Then
+'	'
+'	' mpi_fortconf.h
+'	'
+'	cEcho "Creating src\include\win32\mpi_fortconf.h"
+'	Set fout = f.CreateTextFile("src\include\win32\mpi_fortconf.h")
+'	Call WriteHeader(fout, "mpi_fort")
+'	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", false)
+'	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+'	fout.WriteLine("#define HAVE_WINDOWS_H")
+'	fout.WriteLine("#endif")
+'	fout.WriteLine("")
+'	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+'	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'	cEcho "Creating src\include\win64\mpi_fortconf.h"
+'	Set fout = f.CreateTextFile("src\include\win64\mpi_fortconf.h")
+'	Call WriteHeader(fout, "mpi_fort")
+'	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", true)
+'	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+'	fout.WriteLine("#define HAVE_WINDOWS_H")
+'	fout.WriteLine("#endif")
+'	fout.WriteLine("")
+'	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+'	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'	
+'	'
+'	' mpi_fortimpl.h
+'	'
+'	'Set fin = f.OpenTextFile("src\binding\f77\mpi_fortimpl.h")
+'	'contents = fin.ReadAll()
+'	'fin.Close()
+'	'contents = Replace(contents, "#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )", "#define MPIR_FROM_FLOG(a) ( (a) != 0 ? 1 : 0 )")
+'	'cEcho "Creating src\binding\f77\mpi_fortimpl.h"
+'	'Set fout = f.CreateTextFile("src\binding\f77\mpi_fortimpl.h")
+'	'fout.Write(contents)
+'	'fout.Close()
+'
+'End If
 
 '
 ' mpichconf.h
@@ -2838,6 +2856,10 @@ fout.WriteLine("#define HAVE_PTRTOINT")
 fout.WriteLine("#define HAVE_LONGTOPTR")
 fout.WriteLine("#define HAVE_INTTOPTR")
 fout.WriteLine("#endif")
+If Not bRemoveFortran Then
+	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+End If
 Call WriteFooter(fout)
 fout.Close()
 cEcho "Creating src\include\win64\mpichconf.h"
@@ -2879,6 +2901,10 @@ fout.WriteLine("#define HAVE_PTRTOINT")
 fout.WriteLine("#define HAVE_LONGTOPTR")
 fout.WriteLine("#define HAVE_INTTOPTR")
 fout.WriteLine("#endif")
+If Not bRemoveFortran Then
+	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+End If
 Call WriteFooter(fout)
 fout.Close()
 
