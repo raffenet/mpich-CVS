@@ -478,9 +478,9 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	{
 	    smpd_err_printf("number of launch nodes does not match number of processes: %d < %d\n", i, launch_node_ptr->nproc);
 	    goto launch_failure;
-	}
-	pg->processes[i].node_id = launch_iter->host_id;
-	MPIU_Strncpy(pg->processes[i].host, launch_iter->hostname, SMPD_MAX_HOST_LENGTH);
+	} 
+	pg->processes[launch_iter->iproc].node_id = launch_iter->host_id;
+	MPIU_Strncpy(pg->processes[launch_iter->iproc].host, launch_iter->hostname, SMPD_MAX_HOST_LENGTH);
 	launch_iter = launch_iter->next;
     }
 
