@@ -110,11 +110,11 @@ later, in the section "Alternative configurations".
 
 7.  Add the bin subdirectory of the installation directory to your path:
 
-      setenv PATH /home/you/mpich2-install:$PATH
+      setenv PATH /home/you/mpich2-install/bin:$PATH
 
     for csh and tcsh, or 
 
-      export PATH=/home/you/mpich2-install:$PATH
+      export PATH=/home/you/mpich2-install/bin:$PATH
 
     for bash and sh.  Check that everything is in order at this point by
     doing 
