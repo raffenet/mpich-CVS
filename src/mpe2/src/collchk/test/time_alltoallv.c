@@ -30,7 +30,7 @@ int main( int argc, char **argv )
     double       *sbuff, *rbuff;
     int           rank, size;
     int          *sendcounts, *recvcounts, *rdispls, *sdispls;
-    int           ii, jj, idx;
+    int           num_itr, block_size, ii, jj, idx;
 
     MPI_Init( &argc, &argv );
 
@@ -39,11 +39,21 @@ int main( int argc, char **argv )
       MPI_Comm_size( comm, &size );
       MPI_Comm_rank( comm, &rank );
 
+      if ( argv != NULL && argv[1] != NULL )
+          block_size = atoi( argv[1] );
+      else
+          block_size = 1;
+
+      if ( argv != NULL && argv[2] != NULL )
+          num_itr = atoi( argv[2] );
+      else
+          num_itr = 1;
+
       /* Create the buffer */
-      MPI_Type_contiguous( BLOCK_SIZE, MPI_DOUBLE, &elemtype );
+      MPI_Type_contiguous( block_size, MPI_DOUBLE, &elemtype );
       MPI_Type_commit( &elemtype );
-      sbuff = (double *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
-      rbuff = (double *)malloc( size * size * BLOCK_SIZE * sizeof(double) );
+      sbuff = (double *)malloc( size * size * block_size * sizeof(double) );
+      rbuff = (double *)malloc( size * size * block_size * sizeof(double) );
       if (!sbuff || !rbuff) {
         fprintf( stderr, "Could not allocated buffers!\n" );
         MPI_Abort( comm, 1 );
@@ -51,8 +61,8 @@ int main( int argc, char **argv )
 
       /* Load up the buffers */
       for ( ii = 0; ii < size*size; ii++ ) {
-        for ( jj = 0; jj < BLOCK_SIZE; jj++ ) {
-          idx        = ii * BLOCK_SIZE + jj;
+        for ( jj = 0; jj < block_size; jj++ ) {
+          idx        = ii * block_size + jj;
           sbuff[idx] = ii + 100*rank;
           rbuff[idx] = -ii;
         }
@@ -78,14 +88,16 @@ int main( int argc, char **argv )
       MPI_Barrier( comm );
       time_init   = MPI_Wtime();
 
-      MPI_Alltoallv( sbuff, sendcounts, sdispls, elemtype,
-                     rbuff, recvcounts, rdispls, elemtype, comm );
-
+      for ( idx = 0; idx < num_itr; idx++ ) {
+          MPI_Alltoallv( sbuff, sendcounts, sdispls, elemtype,
+                         rbuff, recvcounts, rdispls, elemtype, comm );
+      }
+     
       /* MPI_Barrier( comm ); */
       time_final  = MPI_Wtime();
       
-      fprintf( stdout, "time taken by MPI_AlltoAllv() at rank %d = %f\n",
-                       rank, time_final - time_init );
+      fprintf( stdout, "time taken by %dx%d MPI_AlltoAllv() at rank %d = %f\n",
+                       block_size, num_itr, rank, time_final - time_init );
 
       MPI_Type_free( &elemtype );
       

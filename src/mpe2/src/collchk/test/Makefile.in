@@ -31,9 +31,13 @@ CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
 SRC           = wrong_composite.c wrong_scatterv.c \
                 wrong_int_byte.c wrong_root.c \
                 composite.c scatterv.c \
-                time_allreduce.c time_alltoallv.c
+                time_bcast.c time_allreduce.c \
+                time_alltoallv.c time_alltoallv0.c
 OBJS          = $(SRC:.c=.@OBJEXT@)
 EXECS         = $(OBJS:.o=)
+
+OPT_EXECS     = time_bcast_nochk@EXEEXT@ time_allreduce_nochk@EXEEXT@ \
+                time_alltoallv0_nochk@EXEEXT@ time_alltoallv_nochk@EXEEXT@
 
 .c.@OBJEXT@:
 	$(MPI_CC) $(CFLAGS) -c $<
@@ -41,10 +45,22 @@ EXECS         = $(OBJS:.o=)
 .@OBJEXT@@EXEEXT@:
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $< $(COLLCHK_LIBS)
 
-default: $(OBJS) $(EXECS)
+default: $(OBJS) $(EXECS) $(OPT_EXECS)
 
 clean:
-	@-$(RM) -f $(EXECS) $(OBJS) *.@OBJEXT@
+	@-$(RM) -f $(EXECS) $(OPT_EXECS) $(OBJS) *.@OBJEXT@
+
+time_bcast_nochk@EXEEXT@: time_bcast.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+
+time_allreduce_nochk@EXEEXT@: time_allreduce.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+
+time_alltoallv_nochk@EXEEXT@: time_alltoallv.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+
+time_alltoallv0_nochk@EXEEXT@: time_alltoallv0.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
 
 distclean: clean
 	@-$(RM) -f Makefile
