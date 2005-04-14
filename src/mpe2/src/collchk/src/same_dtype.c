@@ -17,7 +17,12 @@ char *alloca ();
 #   endif
 #  endif
 # endif
+#else
+# if defined( HAVE_ALLOCA_H )
+# include <alloca.h>
+# endif
 #endif
+
 
 unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n );
 unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n )
@@ -294,9 +299,10 @@ void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
     CollChk_hash_t  curr_hash, next_hash;
     int             type_cnt;
     int             ii;
-    
+
     /*  Don't know if this makes sense or not */
     if ( cnt <= 0 ) {
+        /* (value,count)=(0,0) => skipping of this (type,cnt) in addition */
         type_hash->value = 0;
         type_hash->count = 0;
         return;
@@ -405,6 +411,9 @@ int CollChk_dtype_bcast(MPI_Comm comm, MPI_Datatype type, int cnt, int root,
 
     return MPI_SUCCESS;
 #endif
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_bcast()\n" );
+#endif
     return CollChk_dtype_scatter(comm, type, cnt, type, cnt, root, 1, call );
 }
 
@@ -425,6 +434,10 @@ int CollChk_dtype_scatter(MPI_Comm comm,
     char            err_str[COLLCHK_STD_STRLEN];
     int             rank, size;
     int             are_hashes_equal;
+
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_scatter()\n" );
+#endif
 
     /* get the rank and size */
     MPI_Comm_rank(comm, &rank);
@@ -482,6 +495,10 @@ int CollChk_dtype_scatterv(MPI_Comm comm,
     char            err_str[COLLCHK_STD_STRLEN];
     int             rank, size, idx;
     int             are_hashes_equal;
+
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_scatterv()\n" );
+#endif
 
     /* get the rank and size */
     MPI_Comm_rank(comm, &rank);
@@ -557,6 +574,10 @@ int CollChk_dtype_allgather(MPI_Comm comm,
     int             err_rank_size;
     int             err_str_sz, str_sz;
     int             rank, size, idx;
+
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_allgather()\n" );
+#endif
 
     /* get the rank and size */
     MPI_Comm_rank(comm, &rank);
@@ -657,6 +678,10 @@ int CollChk_dtype_allgatherv(MPI_Comm comm,
     int             err_str_sz, str_sz;
     int             rank, size, idx;
 
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_allgatherv()\n" );
+#endif
+
     /* get the rank and size */
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
@@ -753,6 +778,10 @@ int CollChk_dtype_alltoallv(MPI_Comm comm,
     int             err_rank_size;
     int             err_str_sz, str_sz;
     int             rank, size, idx;
+
+#if defined( DEBUG )
+    fprintf( stdout, "CollChk_dtype_alltoallv()\n" );
+#endif
 
     /* get the rank and size */
     MPI_Comm_rank(comm, &rank);
