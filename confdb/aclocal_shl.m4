@@ -75,21 +75,15 @@ case "$enable_sharedlibs" in
     dnl various stuff that libtool needs.  Without this, you'll get a
     dnl bizarre error message about libtool being unable to find
     dnl configure.in or configure.ac (!)
-dnl AC_PROG_LIBTOOL requires 2.50 or better !!!!!!!!!!!!!!!!
-dnl    AC_PROG_LIBTOOL
-dnl    AC_CHECK_PROGS(LIBTOOL,libtool,false)
-    if test "$LIBTOOL" = "false" ; then
-	AC_MSG_WARN([Could not find libtool])
-    else
-        # Likely to be
-        # either CC or CC_SHL is libtool $cc
-        CC_SHL='${LIBTOOL} --mode=compile ${CC}'
-        # CC_LINK_SHL includes the final installation path
-        # For many systems, the link may need to include *all* libraries
-        # (since many systems don't allow any unsatisfied dependencies)
-        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
-        C_LINKPATH_SHL="-rpath "
-    fi
+    AC_PROG_LIBTOOL
+    # Likely to be
+    # either CC or CC_SHL is libtool $cc
+    CC_SHL='${LIBTOOL} --mode=compile ${CC}'
+    # CC_LINK_SHL includes the final installation path
+    # For many systems, the link may need to include *all* libraries
+    # (since many systems don't allow any unsatisfied dependencies)
+    C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
+    C_LINKPATH_SHL="-rpath "
     ;;
 dnl
 dnl Other, such as solaris-cc
