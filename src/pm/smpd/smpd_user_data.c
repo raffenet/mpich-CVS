@@ -630,6 +630,7 @@ static SMPD_BOOL smpd_get_smpd_data_from_environment(const char *key, char *valu
     env_option = (char*)malloc(length * sizeof(char));
     if (env_option != NULL)
     {
+	strcpy(env_option, SMPD_ENV_OPTION_PREFIX);
 	env = &env_option[strlen(SMPD_ENV_OPTION_PREFIX)];
 	while (*key != '\0')
 	{
