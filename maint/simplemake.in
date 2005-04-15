@@ -276,6 +276,10 @@ $mandir_name =               'mandir          = @' . "mandir"      . '@';
 $htmldir_name =              'htmldir         = @' . "htmldir"     . '@';
 $docdir_name =               'docdir          = @' . "docdir"      . '@';
 $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
+# top_builddir is used by libtool.  We use master_top_builddir because
+# the various configure scripts need to use the root of the build (that
+# is the model that we use for simplemake projects)
+$top_builddir_name = "\@master_top_builddir\@";
 
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
@@ -286,6 +290,7 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 	     'libdir'     => $libdir_name,
 	     'includedir' => $includedir_name,
 	     'master_top_srcdir' => $master_topsrcdir_name,
+	     'top_builddir' => $top_builddir_name,
 	     'mandir'     => $mandir_name,
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
@@ -616,6 +621,11 @@ sub ReadMfile {
 	    # Lowercase the type
 	    $docdir{lc($1)} = $2;
 	}
+	elsif (/^profilelib_([@\${}\(\)\w-]*)_SOURCES\s*=\s*(.*)\s*$/) {
+	    # proflib_<oldname>_SOURCES = files
+	    $profile_library_sources{$1} = $2;
+	    $found_profilelib = 1;
+	}
 	elsif (/^profilelib_([@\${}\(\)\w-]*)\s*=\s*(.*)\s*$/) {
 	    # proflib_<oldname> = <newname>
 	    $profile_libraries{$1} = $2;
@@ -804,6 +814,7 @@ sub WriteMfile {
     # We use the master_top_builddir instead of top_builddir because
     # we manage subdirectory builds in a different way than the Automake and
     # Autoconf style
+    # (but we do need top_builddir if we're using libtool)
 # These are not currently in use (or we should generate them only
 # when they are used)
 #    print FD "top_builddir = \@master_top_builddir\@$newline";
@@ -1081,6 +1092,10 @@ sub DefaultRules {
 		# Only add the libtool definition if there are targets that
 		# may need it.
 		$libtool_def = 1;
+		if (!defined($dir_added{'top_builddir'})) {
+		    $dir_added{'top_builddir'} = 1;
+		    print FD "top_builddir = \@master_top_builddir\@$newline";
+		}
 		print FD "LIBTOOL  = \@LIBTOOL\@$newline";
 	    }
 	    $extkey = "$ext:lo";
@@ -1434,6 +1449,7 @@ sub ClearVars {
     %libraries = ();
     %shared_libraries = ();
     %profile_libraries = ();
+    %profile_library_sources = ();
     %install_files = ();
     @install_subdirs = ();
     %install_dirs = ();
@@ -2198,7 +2214,14 @@ sub TargetProfileLibraries {
     foreach $lib (keys(%profile_libraries)) {
 	$proflib_name = $profile_libraries{$lib};
 	$libloc = &GetLibLoc( $lib );
-	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+	# Take the sources from the base library unless 
+	# they were explicitly listed
+	if (defined($profile_library_sources{$lib})) {
+	    $sourcefiles = &ExpandMakeVars($profile_library_sources{$lib});
+	}
+	else {
+            $sourcefiles = &ExpandMakeVars($libraries{$lib});
+	}
 #	&LibraryBuild( $proflib_name, $libloc, $sourcefiles, "a", "pf" );
 	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
         foreach $sourcefile (split(/\s+/,$sourcefiles)) {
@@ -2227,7 +2250,7 @@ sub TargetProfileLibraries {
 	    # Add these files as objects to the archive
 	    print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
 	    print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
-	    print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file \$\${bname}.o ; done;)$newline";
+	    print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file _\$\${bname}.o ; done;)$newline";
 	    # We should try to use a single invocation of ar instead of
 	    # a separate one for each file, since ar is usually O(length) 
 	    # for a single file, so this approach is O(length*nfiles).
