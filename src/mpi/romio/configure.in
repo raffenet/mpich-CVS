@@ -1438,6 +1438,10 @@ if test -z "$master_top_builddir" ; then
 fi
 export master_top_builddir
 AC_SUBST(master_top_builddir)
+# Make sure the alternate spelling is used until we clean up all of the code
+master_topbuild_dir=$master_top_builddir
+export master_topbuild_dir
+AC_SUBST(master_topbuild_dir)
 
 # The following definitions are needed within adio/common/status_setb.c
 if test "$FROM_MPICH" = yes ; then

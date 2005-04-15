@@ -9,6 +9,8 @@ SHLIBNAME   = @SHLIBNAME@
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I${srcdir}/../../../../../src/include -I../../../../../src/include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
+top_builddir  = @master_topbuild_dir@
+LIBTOOL       = @LIBTOOL@
 C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@

@@ -9,7 +9,8 @@ HEADERS = attr.h
 
 lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} attrutil.c dup_fn.c 
 INCLUDES = -I../../include -I${top_srcdir}/src/include
-profilelib_${MPILIBNAME} = p${MPILIBNAME}
+profilelib_${MPILIBNAME} = ${PMPILIBNAME}
+profilelib_${MPILIBNAME}_SOURCES = ${mpi_sources}
 #
 doc_HTML_SOURCES = ${mpi_sources}
 doc_MAN_SOURCES = ${mpi_sources}

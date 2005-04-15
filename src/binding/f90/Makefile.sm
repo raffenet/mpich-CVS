@@ -6,7 +6,10 @@ MPIMOD           = @MPIMODNAME@
 F90INCFLAG       = @F90INCFLAG@
 F90EXT           = @F90EXT@
 F90_COMPILE_MODS = $(F90_COMPILE) 
-F90INCLUDES = 
+# We need to tell some compilers (e.g., Solaris f90) to look in the current 
+# directory when the source file is not in the working directory (i.e.,
+# in a VPATH build)
+F90INCLUDES = @F90INCFLAG@.
 
 lib${MPILIBNAME}f90_a_SOURCES = mpi.o
 all-preamble: $(MPIMOD).$(MOD)

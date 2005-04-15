@@ -35,11 +35,11 @@ all-local:
 	    fi ; \
 	fi
 cleanobjsandlibs:
-	rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a
+	rm -f lib/lib${MPILIBNAME}.a lib/lib${PMPILIBNAME}.a
 	rm -f lib/lib${MPILIBNAME}cxx.a 
-	rm -f lib/lib${MPILIBNAME}.so* lib/libp${MPILIBNAME}.so*
+	rm -f lib/lib${MPILIBNAME}.so* lib/lib${PMPILIBNAME}.so*
 	rm -f lib/lib${MPILIBNAME}cxx.so* 
-	rm -f lib/lib${MPILIBNAME}.la* lib/libp${MPILIBNAME}.la*
+	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
 	rm -f lib/lib${MPILIBNAME}cxx.la* 
 	${MAKE} clean ; cd test && ${MAKE} clean
 	rm -f lib/newconfig
@@ -187,7 +187,7 @@ optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
 
 install_INCLUDE = src/include/mpi.h
 
-optinstall_LIB = lib/libp${MPILIBNAME}.a
+optinstall_LIB = lib/lib${PMPILIBNAME}.a
 optinstall_SHLIB = lib/lib${MPILIBNAME}.so
 optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 optinstall_LIB = lib/libf${MPILIBNAME}.a

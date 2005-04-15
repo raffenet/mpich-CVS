@@ -1,10 +1,6 @@
-mpif90.conf
-mpif90
+mpif.h
 Makefile
 Makefile.in
-configure
-config.*
-autom4te.cache
 mpi.f90
 mpimod.pcl
 .deps

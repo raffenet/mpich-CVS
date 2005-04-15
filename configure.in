@@ -233,11 +233,14 @@ fi
 dnl
 # Set default variable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
+PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
 if test -z "$MPIFLIBNAME" ; then MPIFLIBNAME=$MPILIBNAME ; fi
+PMPIFLIBNAME=${PMPIFLIBNAME:-"p$MPIFLIBNAME"}
 # We use a different library for the C++ wrappers to avoid problems when
 # creating shared libraries
 if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
 export MPIFLIBNAME
+export PMPIFLIBNAME
 export MPICXXLIBNAME
 
 dnl Process any enable or with values
@@ -662,23 +665,47 @@ master_top_builddir="`pwd`"
 AC_SUBST(master_top_builddir)
 export master_top_builddir
 
+# We create this file to allow other configures to find the "master" 
+# top builddir
+rm -f .mpich2
+date > .mpich2
 # ----------------------------------------------------------------------------
-dnl with-device
+# with-device
 if test "$with_device" = "default" ; then
     # Pick the device.  For now, always choose ch3
     with_device=ch3
 fi
-dnl Extract the device name from any options
+# Extract the device name from any options
+# Allow the device to specify a directory; if no directory, use the
+# included directories
+# 
 DEVICE=$with_device
 AC_SUBST(DEVICE)
+
 device_name=`echo $with_device | sed -e 's/:.*$//'`
 changequote(<<,>>)
 device_args=`echo $with_device | sed -e 's/^[^:]*//' -e 's/^://'`
 changequote([,])
+
+hasdir=no
+devicedir=$use_top_srcdir/src/mpid/$device_name
+devicereldir=src/mpid/$device_name
+case "$device_name" in
+     /) hasdir=yes 
+     devicedir=$DEVICE
+     # Get the name from the leaf
+     device_name=`echo $device_name ~ sed -e 's%.*/%%'`
+     # FIXME: should the devicereldir be different (perhaps not -
+     # this allows use to build within our tree, even when other data
+     # is outside of the tree)
+     ;;
+     *) hasdir=no
+     ;;
+esac
 export device_name
 export device_args
-dnl
-dnl This goes here because we need the top_srcdir
+
+# This goes here because we need the top_srcdir
 FROM_MPICH2=yes
 export FROM_MPICH2
 if test "$enable_romio" = "yes" ; then
@@ -712,17 +739,18 @@ if test "$enable_romio" = "yes" ; then
 fi
 dnl
 #
-#
-if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
+# FIXME: If an external device, don't necessarily complain (e.g.,
+# if the device is already built)
+if test ! -d $devicedir ; then
 dnl     WAIT UNTIL WE INCLUDE A DEVICE
 dnl     AC_MSG_ERROR([Device $device_name is unknown)]
     AC_MSG_WARN([Device $device_name is unknown])
-elif test ! -x $use_top_srcdir/src/mpid/$device_name/configure ; then
+elif test ! -x $devicedir/configure ; then
     AC_MSG_WARN([Device $device_name has no configure])
     device_name=""
 else 
     # Add the device to the configure list
-    devsubsystems="$devsubsystems src/mpid/$device_name"
+    devsubsystems="$devsubsystems $devicereldir"
     dnl Make device_name available to subdirs
 fi
 AC_SUBST(device_name)
@@ -834,6 +862,13 @@ fi
 AC_SUBST(mpe_dir)
 AC_SUBST(other_install_dirs)
 #
+# See if the device wants to say something about the compilers (for example,
+# the globus device may need to do this)
+if test -f $devicedir/mpich2prereq ; then
+    . $devicedir/mpich2prereq
+fi
+
+#
 dnl
 dnl Find a C compiler (choose gcc first).
 dnl Autoconf 2.13 has the feature that you cannot override the test for
@@ -870,6 +905,8 @@ fi
 ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
     ENABLE_SHLIB=none
+    # Also turn off the libtool tests
+    enable_shared=no
 fi
 
 # ----------------------------------------------------------------------------
@@ -1002,15 +1039,29 @@ dnl PAC_F77_CHECK_COMPILER_OPTION(-g)
     fi
     AC_SUBST(FC_SHL)
     AC_SUBST(FC_LINKPATH_SHL)
-    if test "$ENABLE_SHLIB" = "gcc" ; then
-        # Assume that the compiler is g77 if gcc style shared libraries chosen
-	# (unfortunately, the name may be g77 or f77)
-        FC_SHL="$F77 -shared -fpic"
-        FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
-    elif test "$ENABLE_SHLIB" = "solaris" ; then
-        FC_SHL="$F77 -xcode=pic32"
-        FC_LINKPATH_SHL=$C_LINKPATH_SHL
-    fi
+    case "$ENABLE_SHLIB" in
+	 gcc-osx)
+	 FC_SHL="$F77 -fPIC"
+	 FC_LINKPATH_SHL=""
+	 ;;
+	 gcc)
+	 # Assume that the compiler is g77 if gcc style shared libraries chosen
+	 # (unfortunately, the name may be g77 or f77)
+	 FC_SHL="$F77 -shared -fpic"
+	 FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
+	 ;;
+	 solaris)
+	 FC_SHL="$F77 -xcode=pic32"
+         FC_LINKPATH_SHL=$C_LINKPATH_SHL
+	 ;;
+	 libtool)
+	 FC_SHL='${LIBTOOL} --mode=compile ${F77}'
+         FC_LINKPATH_SHL="-rpath "
+	 ;;
+	 *)
+	 FC_SHL=false
+	 ;;
+    esac
     # ------------------------------------------------
 
     #
@@ -1267,16 +1318,29 @@ if test "$enable_cxx" = "yes" ; then
     # Add support for shared libraries if possible
     AC_SUBST(CXX_SHL)
     AC_SUBST(CXX_LINKPATH_SHL)
-    if test "$ENABLE_SHLIB" = "gcc" ; then
+    case "$ENABLE_SHLIB" in
+        gcc-osx)
+        # Assume that the compiler is g++ if gcc style shared libraries chosen
+        CXX_SHL="$CXX -fPIC"
+        CXX_LINKPATH_SHL=""
+	;;
+	gcc)
         # Assume that the compiler is g++ if gcc style shared libraries chosen
         CXX_SHL="$CXX -shared -fpic"
         CXX_LINKPATH_SHL="-Wl,-rpath -Wl,"
-    elif test "$ENABLE_SHLIB" = "solaris" ; then
+	;;
+	solaris)
         CXX_SHL="$CXX -xcode=pic32"
         CXX_LINKPATH_SHL=$C_LINKPATH_SHL
-    else 
-        CXX_SHL=false
-    fi
+	;;
+	libtool)
+	CXX_SHL='${LIBTOOL} --mode=compile ${CXX}'
+	CXX_LINKPATH_SHL="-rpath "
+	;;
+	*)
+	CXX_SHL=false
+	;;
+    esac
 
     # Copy the mpicxx.h file to the main include directory
     AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
@@ -3329,6 +3393,7 @@ AC_SUBST(MPICH_TIMER_KIND)
 dnl
 dnl Setup other replaceable values
 AC_SUBST(MPILIBNAME)
+AC_SUBST(PMPILIBNAME)
 MPI_AINT=int
 for type in int long long_long short ; do
     eval len=\$ac_cv_sizeof_$type
@@ -3373,9 +3438,9 @@ dnl
 # of subdirectories means that the subdir configures will not get the 
 # value.  This is normally ok for libraries but not for include paths,
 # which is why there is a pre and post step
-if test -f $use_top_srcdir/src/mpid/$device_name/setup_device ; then
-    echo sourcing $use_top_srcdir/src/mpid/$device_name/setup_device
-    . $use_top_srcdir/src/mpid/$device_name/setup_device
+if test -f $devicedir/setup_device ; then
+    echo sourcing $devicedir/setup_device
+    . $devicedir/setup_device
 fi
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
@@ -3393,6 +3458,7 @@ dnl invoke the configure scripts (if present) directly.
 export AR
 export RANLIB
 export MPILIBNAME
+export PMPILIBNAME
 export CC
 export CPPFLAGS
 export LIBS
@@ -3766,18 +3832,19 @@ dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
 dnl
-dnl Get the value of MPI_MAX_PROCESSOR_NAME
-if test -s src/mpid/$device_name/Makefile ; then
+# Get the value of MPI_MAX_PROCESSOR_NAME
+dnl FIXME: make the device specify this without a Makefile
+if test -s $devicereldir/Makefile ; then
     #
     # The dependency handling will look for a file in a .deps directory.
     # Make sure that the directory and file exists before running Make.
-    if test ! -d src/mpid/$device_name/.deps ; then 
-        mkdir src/mpid/$device_name/.deps
+    if test ! -d $devicereldir/.deps ; then 
+        mkdir $devicereldir/.deps
     fi
-    if  test ! -f src/mpid/$device_name/.deps/alldeps ; then
-        touch src/mpid/$device_name/.deps/alldeps
+    if  test ! -f $devicereldir/.deps/alldeps ; then
+        touch $devicereldir/.deps/alldeps
     fi
-    maxproc="`(cd src/mpid/$device_name ; ${MAKE} echomaxprocname) | tail -1`"
+    maxproc="`(cd $devicereldir ; ${MAKE} echomaxprocname) | tail -1`"
     # Note: if this is more than one line, there will be problems with
     # the final step.  That may happen if MAKE is acting in some wierd
     # way, such as echoing all directory changes (even if the only
@@ -3804,7 +3871,7 @@ dnl Set the libraries to use in building programs
 if test "$NEEDSPLIB" = "yes" ; then
     # Ugh.  We don't have the dependencies between the libraries right 
     # yet.  We *should* only need -lmpich -lpmpich .  
-    EXAMPLE_LIBS="-l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME $LIBS"
+    EXAMPLE_LIBS="-l$MPILIBNAME -l$PMPILIBNAME -l$MPILIBNAME -l$PMPILIBNAME $LIBS"
 else
     EXAMPLE_LIBS="-l$MPILIBNAME $LIBS"
 fi
@@ -3864,6 +3931,7 @@ done],[
 EXTERNAL_SETUPS="$EXTERNAL_SETUPS"
 LIBDIR="$libbuild_dir"
 MPILIBNAME="$MPILIBNAME"
+PMPILIBNAME="$PMPILIBNAME"
 AR="$AR"
 CC="$CC"
 CC_SHL="$CC_SHL"
@@ -3871,6 +3939,7 @@ CPPFLAGS="$CPPFLAGS"
 CFLAGS="$CFLAGS"
 ENABLE_SHLIB="$ENABLE_SHLIB"
 export LIBDIR ; export MPILIBNAME ; export AR ; export CC ; export CPPFLAGS 
+export PMPILIBNAME 
 export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB ; export C_LINKPATH_SHL
 ])
 
@@ -3984,7 +4053,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/mpi/topo/Makefile \
           src/mpid/Makefile \
           src/mpid/common/Makefile \
-          $TOPLEVEL_OUTPUT_FILES \
           src/mpid/common/datatype/Makefile \
           src/mpid/common/locks/Makefile \
           src/pm/Makefile \
@@ -4021,10 +4089,5 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  doc/userguide/Makefile \
 	  doc/logging/Makefile \
 	  doc/smpd/Makefile )
-
-dnl The following files should be created by the appropriate configure within
-dnl the device.
-dnl          src/mpid/mm/Makefile 
-
 
 echo 'Configuration completed.'

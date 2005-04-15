@@ -7,7 +7,8 @@ distclean-local:
 	@-rm -f ${master_top_srcdir}/src/include/mpichtimer.h \
 	    ../../include/mpichtimer.h ./timerconf.h
 
-profilelib_${MPILIBNAME} = p${MPILIBNAME}
+profilelib_${MPILIBNAME} = ${PMPILIBNAME}
+profilelib_${MPILIBNAME}_SOURCES = ${mpi_sources}
 #
 doc_HTML_SOURCES = ${mpi_sources}
 doc_MAN_SOURCES = ${mpi_sources}

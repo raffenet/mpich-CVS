@@ -3,7 +3,7 @@ mpi_sources =
 
 lib${MPILIBNAME}_a_SOURCES = dbginit.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
-profilelib_${MPILIBNAME} = p${MPILIBNAME}
+profilelib_${MPILIBNAME} = ${PMPILIBNAME}
 #
 # We need to make sure that dbginit is compiled with -g, so
 # we use an explicit target.  Note that there are no PMPI functions in
