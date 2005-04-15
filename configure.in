@@ -214,6 +214,7 @@ AC_ARG_WITH(flibname,
 [--with-flibname=name  - Specify name of library containing Fortran interface
 routines],[MPIFLIBNAME=$withval;set_MPIFLIBNAME="yes"],MPIFLIBNAME=)
 AC_SUBST(MPIFLIBNAME)
+AC_SUBST(PMPIFLIBNAME)
 
 dnl The default is a special wrapper library
 AC_ARG_WITH(fwrapname,
