@@ -1059,7 +1059,7 @@ if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-I"
 elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
-	test-s conftest.o ; then
+	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-M"
 elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
