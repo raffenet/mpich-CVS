@@ -1013,6 +1013,7 @@ if test "$enable_strict_done" != "yes" ; then
 	;;
     esac
 fi
+export enable_strict_done
 ])
 dnl
 dnl Use the value of enable-strict to update CFLAGS
