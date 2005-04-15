@@ -191,22 +191,23 @@ static Param_entry *find_entry( const char name[] )
 int MPIU_Param_get_int( const char name[], int default_val, int *value )
 {
     Param_entry *entry; 
+    int rc = 0;
 
     entry = find_entry( name );
     if (entry) {
 	if (entry->kind == MPIU_INT) {
 	    *value = entry->val.int_value;
-	    return 0;
+	    rc = 0;
 	}
 	else {
-	    return 2;
+	    rc = 2;
 	}
     }
     else  {
 	*value = default_val;
-	return 1;
+	rc = 1;
     }
-    return 0;
+    return rc;
 }
 
 int MPIU_Param_get_string( const char name[], const char *default_val,
