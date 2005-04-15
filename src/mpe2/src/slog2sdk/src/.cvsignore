@@ -2,3 +2,4 @@ config.h.in
 config.log
 autom4te.cache
 configure
+configure.lineno

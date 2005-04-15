@@ -1,5 +1,6 @@
 genstates
 configure
+configure.lineno
 simplemake
 checkbuilds
 findfixme

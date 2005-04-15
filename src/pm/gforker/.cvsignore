@@ -1,6 +1,7 @@
 Makefile
 Makefile.in
 configure
+configure.lineno
 config.*
 forkerconf.h.in
 forkerconf.h

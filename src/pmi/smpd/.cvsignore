@@ -10,6 +10,7 @@ config.log
 config.status
 config.system
 configure
+configure.lineno
 *.cache
 pmiconf.h.in
 pmiconf.h

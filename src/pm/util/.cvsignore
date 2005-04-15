@@ -1,6 +1,7 @@
 Makefile.in
 Makefile
 configure
+configure.lineno
 config.*
 .deps
 autom4te*

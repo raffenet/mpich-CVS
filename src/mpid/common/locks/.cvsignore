@@ -1,6 +1,7 @@
 mpid_locksconf.h
 mpid_locksconf.h.in
 configure
+configure.lineno
 autom4te.cache
 Makefile.in
 Makefile

@@ -1,6 +1,7 @@
 Makefile
 Makefile.in
 configure
+configure.lineno
 config.status
 config.cache
 config.system

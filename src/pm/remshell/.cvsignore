@@ -1,6 +1,7 @@
 Makefile
 Makefile.in
 configure
+configure.lineno
 config.*
 remshellconf.h.in
 remshellconf.h

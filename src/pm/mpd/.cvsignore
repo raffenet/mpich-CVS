@@ -1,6 +1,7 @@
 pmitest0
 *.pyc
 configure
+configure.lineno
 config.status
 config.log
 config.system
