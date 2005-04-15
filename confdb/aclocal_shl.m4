@@ -51,12 +51,20 @@ AC_ARG_ENABLE(sharedlibs,
     libtool - GNU libtool 
     none    - same as --disable-sharedlibs
 Only gcc is currently supported],
-,enable_sharedlibs=none)
+,enable_sharedlibs=none;enable_shared=no)
 dnl
 CC_SHL=true
 C_LINK_SHL=true
 case "$enable_sharedlibs" in 
     no|none)
+    ;;
+    gcc-osx)
+    AC_MSG_RESULT([Creating shared libraries using GNU for Mac OSX])
+    # Not quite right yet.  See mpich2 req # 1393
+    C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flag_namespace'
+    CC_SHL='${CC} -fPIC'
+    # No way in osx to specify the location of the shared libraries???!?
+    C_LINKPATH_SHL=""
     ;;
     gcc)
     AC_MSG_RESULT([Creating shared libraries using GNU])
@@ -66,11 +74,12 @@ case "$enable_sharedlibs" in
     C_LINK_SHL='${CC} -shared'
     # For example, include the libname as ${LIBNAME_SHL}
     #C_LINK_SHL='${CC} -shared -Wl,-h,<finallibname>'
-    CC_SHL='${CC} -shared -fpic'
+    # May need -fPIC 
+    CC_SHL='${CC} -fpic'
     C_LINKPATH_SHL="-Wl,-rpath -Wl,"
     ;;
     libtool)
-    AC_MSG_WARN([Creating shared libraries using libtool (not yet supported)])
+    AC_MSG_WARN([Creating shared libraries using libtool not yet supported])
     dnl Using libtool requires a heavy-weight process to test for 
     dnl various stuff that libtool needs.  Without this, you'll get a
     dnl bizarre error message about libtool being unable to find
