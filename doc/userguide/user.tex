@@ -547,11 +547,11 @@ The default, if \texttt{-s} is not specified, is to send
 A ``\texttt{:}'' can optionally be used between global args
 and normal argument sets, e.g.:
 \begin{verbatim}
-    mpiexec -l -n 1 -host host1 pgm1 : -n 4 host2 pgm2
+    mpiexec -l -n 1 -host host1 pgm1 : -n 4 -host host2 pgm2
 \end{verbatim}
 is equivalent to:
 \begin{verbatim}
-    mpiexec -l : -n 1 -host host1 pgm1 : -n 4 host2 pgm2
+    mpiexec -l : -n 1 -host host1 pgm1 : -n 4 -host host2 pgm2
 \end{verbatim}
 This option implies that the global arguments can occur on a separate
 line in the file specified by \texttt{-configfile} when it is used to 
