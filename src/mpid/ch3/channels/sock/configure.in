@@ -71,6 +71,13 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 PAC_CC_SUBDIR_SHLIBS
 AC_SUBST(master_top_srcdir)
+# Master_top_builddir is imported from the top; use it for the "top"
+# (used for things like libtool)
+if test -z "$master_top_builddir" ; then
+    if test -s ../../../../../.mpich2 ; then
+        master_top_builddir=../../../../..
+    fi
+fi
 AC_SUBST(master_top_builddir)
 dnl
 dnl Dependency handling
