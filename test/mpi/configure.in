@@ -26,6 +26,30 @@ AC_ARG_WITH(mpi,
 [--with-mpi=dir - Use the selected MPI; compilation scripts for mpicc, mpif77
                   and mpicxx should be in dir/bin],,)
 
+AC_ARG_ENABLE(threads,
+[--enable-threads=level - Specify the level of thread support expected from the
+MPI implementation.  The following levels are supported.
+    single - No threads (MPI_THREAD_SINGLE)
+    funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
+    serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
+    multiple - Fully multi-threaded (MPI_THREAD_MULTIPLE)
+The default is funneled.  If enabled and no level is specified, the
+level is set to multiple.  If disabled, the level is set to single.],,
+enable_threads=funneled)
+
+# ------------------------------------------------------------------------
+if test "$enable_threads" = "yes" ; then 
+    enable_threads=multiple
+elif test "$enable_threads" = "no" ; then
+    enable_threads=single
+fi
+
+# 
+# Only run the threads tests if multiple is specified
+if test "$enable_threads" = "multiple" ; then
+    threadsdir="threads"
+fi
+
 PAC_VPATH_CHECK()
 
 PAC_PROG_MAKE
@@ -472,6 +496,7 @@ fi
 AC_PATH_PROG(PERL,perl)
 AC_SUBST(PERL)
 AC_SUBST(otherlangs)
+AC_SUBST(threadsdir)
 AC_SUBST(CC)
 AC_SUBST(FC)
 AC_SUBST(F90)
@@ -524,6 +549,7 @@ AC_OUTPUT(maint/testmerge \
           f77/io/Makefile \
 	  f77/io/iooffset.h \
 	  f77/io/iodisp.h \
+	  f77/io/ioaint.h \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/attr/Makefile \
