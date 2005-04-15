@@ -61,7 +61,7 @@ case "$enable_sharedlibs" in
     gcc-osx)
     AC_MSG_RESULT([Creating shared libraries using GNU for Mac OSX])
     # Not quite right yet.  See mpich2 req # 1393
-    C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flag_namespace'
+    C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flat_namespace'
     CC_SHL='${CC} -fPIC'
     # No way in osx to specify the location of the shared libraries???!?
     C_LINKPATH_SHL=""
