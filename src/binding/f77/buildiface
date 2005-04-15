@@ -1327,6 +1327,13 @@ sub index_array_out_arg {
 # --------------------------------------------------------------------------
 #
 # Address and attribute handling
+# Note that this construction can lead to compiler warnings on systems
+# where an address is larger than an MPI_Fint.  This is correct; these
+# routines are for the MPI-1 routines that use an MPI_Fint where the 
+# C code uses a void * (MPI_Aint in MPI-2).  
+# A possible extension is to provide an error warning (much as 
+# MPI_Address does) when the attribute value loses bits when assigned into
+# the MPI_Fint.
 #in:addrint
 #out:attrint:4
 sub addrint_ftoc {
@@ -1640,9 +1647,11 @@ sub addnullandtrim_ftoc {
 # ----------------------------------------------------------------------------
 # Add null to arrays of input strings
 # We must make a copy 
+# chararray is used ONLY in comm_spawn
 sub chararray_in_decl {
     my $count = $_[0];
-    print $OUTFD "    char **p$count, *pcpy$count;\n";
+    print $OUTFD "    char **p$count;\n";
+    if (!$Array_size) { print $OUTFD "    char *pcpy$count;\n"; }
     # pcpy<digit> is used for the case where the array length is not known
     print $OUTFD "    int  asize$count=0;\n";
 }
@@ -1652,7 +1661,12 @@ sub chararray_in_arg {
 }
 sub chararray_ftoc {
     my $count = $_[0];
-    
+
+    # There is a special case - the input is MPI_ARGV_NULL.  We
+    # detect this by checking for a null string (all blanks).
+    # The initialization of MPI_ARGV_NULL is done in the special
+    #init setup
+    &specialInitStatement( $OUTFD );
     # First, compute the number of elements.  In Fortran, a null
     # string terminates the array.  The array is stored as 
     # a two-dimensional field of fixed-length characters.
@@ -1958,6 +1972,8 @@ sub print_special_decls {
 	    $processing_routine = "${method}_${direction}_decl";
 	    &$processing_routine( $count );
 	}
+    }
+    if (defined($special_args{$routine_name})) {
 	# Then do the precall steps
 	foreach $count (split(/:/,$special_args{$routine_name})) {
 	    $rule = $special_args{"${routine_name}-$count"};
