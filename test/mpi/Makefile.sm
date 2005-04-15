@@ -1,2 +1,3 @@
 SUBDIRS_otherlangs = f77 cxx
-SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ .
+SUBDIRS_threadsdir = threads
+SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ .
