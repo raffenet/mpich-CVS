@@ -63,6 +63,11 @@ $prototype_file = "../../include/mpi.h.in";
 %mpidefFile = ();
 %mpiRoutinesFile = ();
 
+# Handle special initializations
+$specialInitAdded = 0;
+$specialInitString = "\
+    if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }";
+
 # Process arguments
 #
 # Args
@@ -356,6 +361,19 @@ foreach $_ (@ARGV) {
 #    'Reduce_scatter' => '1:2', 'Reduce_scatter-1' => 'in:bufptr', 
 #		  'Reduce_scatter-2' => 'in:bufptr',
 #    'Scan' => '1:2', 'Scan-1' => 'in:bufptr', 'Scan-2' => 'in:bufptr',
+#
+    'Gather' => '1', 'Gather-1' => 'in:inplace', 
+    'Gatherv' => '1', 'Gatherv-1' => 'in:inplace',
+    'Scatter' => '4', 'Scatter-4' => 'in:inplace',
+    'Scatterv' => '5', 'Scatterv-5' => 'in:inplace',
+    'Allgather' => '1', 'Allgather-1' => 'in:inplace',
+    'Allgatherv' => '1', 'Allgatherv-1' => 'in:inplace',
+    'Reduce' => '1', 'Reduce-1' => 'in:inplace',
+    'Allreduce' => '1', 'Allreduce-1' => 'in:inplace',
+    'Reduce_scatter' => '1', 'Reduce_scatter-1' => 'in:inplace',
+    'Scan' => '1', 'Scan-1' => 'in:inplace',
+
+  
     'Add_error_string' => '2', 'Add_error_string-2' => 'in:addnull',
     'Attr_put' => '3', 'Attr_put-3' => 'in:addrint',
     'Attr_get' => '3:4', 'Attr_get-4' => 'out:logical', 
@@ -1159,6 +1177,25 @@ sub bufptr_ctof {
     my $outvar  = $_[1];
 }
 # --------------------------------------------------------------------------
+# MPI_IN_PLACE buffer pointers
+sub inplace_ftoc {
+    my $count = $_[0];
+    &specialInitStatement( $OUTFD );
+    print $OUTFD "    if (v$count == MPIR_F_MPI_IN_PLACE) v$count = MPI_IN_PLACE;\n";
+}
+sub inplace_in_decl {
+    my $count = $_[0];
+}
+sub inplace_in_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
+# inplace_ctof( cvar, fvar )
+sub inplace_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+# --------------------------------------------------------------------------
 # Logical variables
 sub logical_ftoc {
     my $count = $_[0];
@@ -1388,6 +1425,7 @@ sub status_ftoc {
     my $count = $_[0];
     # Cast MPI_STATUS_IGNORE back to an MPI_Fint (we'll re-cast it back
     # to (MPI_Status *) in the call to the C version of the routine)
+    &specialInitStatement( $OUTFD );
     print $OUTFD "\
     if (v$count == MPI_F_STATUS_IGNORE) { v$count = (MPI_Fint*)MPI_STATUS_IGNORE; }\n";
 }
@@ -1407,8 +1445,7 @@ sub status_in_arg {
 # Handle MPI_ERRCODES_IGNORE
 sub errcodesignore_ftoc {
     my $count = $_[0];
-    # Cast MPI_STATUS_IGNORE back to an MPI_Fint (we'll re-cast it back
-    # to (MPI_Status *) in the call to the C version of the routine)
+    &specialInitStatement( $OUTFD );
     print $OUTFD "\
     if (v$count == MPI_F_ERRCODES_IGNORE) { v$count = MPI_ERRCODES_IGNORE; }\n";
 }
@@ -1429,6 +1466,7 @@ sub errcodesignore_in_arg {
 # Array args can use the global $Array_size and $Array_typedef if necessary
 sub status_array_ftoc {
     my $count = $_[0];
+    &specialInitStatement( $OUTFD );
     print $OUTFD "\
     if (v$count == MPI_F_STATUSES_IGNORE) { v$count = (MPI_Fint *)MPI_STATUS_IGNORE; }\n";
 }
@@ -1688,6 +1726,7 @@ sub chararray2_ftoc {
     # Since this is a 2-d array, we always know the first dimension,
     # the second dimension must be computed, this is asize$count.
     # The first dimension is Array_size.
+    &specialInitStatement( $OUTFD );
     print $OUTFD "\
     /* Check for the special case of a the null args case. */
     if (v$count == MPI_F_ARGVS_NULL) { v$count = (char *)MPI_ARGVS_NULL; } 
@@ -1990,7 +2029,7 @@ if ($write_mpif) {
     print MPIFFD "       CHARACTER*1 MPI_ARGVS_NULL(1,1)\n";
     # Unfortunately, we cannot parameter initialize this.  Further,
     # there is no default initialization.  We could use a block data item...
-    # ARGV_IGNORE can actually be a single blank string, but it needs
+    # ARGV_NULL can actually be a single blank string, but it needs
     # to be typed as a character array
     print MPIFFD "       CHARACTER*1 MPI_ARGV_NULL(1)\n";
 
@@ -2328,6 +2367,7 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
     # MPI_F_STATUSES_IGNORE as global variables in mpi.h (!)
     print $OUTFD "
 #ifndef USE_POINTER_FOR_BOTTOM
+int  MPIR_F_NeedInit        = 1;
 void *MPIR_F_MPI_BOTTOM     = 0;
 void *MPIR_F_MPI_IN_PLACE   = 0;
 void *MPI_F_STATUS_IGNORE   = 0;
@@ -2393,7 +2433,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     #&print_attr;
     print $OUTFD "{
     MPI_Aint a, b;
-    *ierr = MPI_Address( v1, &a );
+    *ierr = MPI_Address( v1, &a );\n";
+    &specialInitStatement( $OUTFD );
+    print $OUTFD "\
 #ifdef USE_POINTER_FOR_BOTTOM
     b = a;
 #else
@@ -2432,7 +2474,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     #&print_attr;
     print $OUTFD "{
     MPI_Aint a;
-    *ierr = MPI_Get_address( v1, &a );
+    *ierr = MPI_Get_address( v1, &a );\n";
+    &specialInitStatement( $OUTFD );
+    print $OUTFD "\
 #ifndef USE_POINTER_FOR_BOTTOM
     a = a - (MPI_Aint) MPIR_F_MPI_BOTTOM;
 #endif
@@ -2632,7 +2676,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 {
     int mpi_errno = MPI_SUCCESS;
-    /* This code assumes that the ints are the same size */
+    /* This code assumes that the ints are the same size */\n";
+    &specialInitStatement( $OUTFD );
+print $OUTFD "\    
     if (f_status == MPI_F_STATUS_IGNORE) {
 	/* The call is erroneous (see 4.12.5 in MPI-2) */
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
@@ -2848,6 +2894,7 @@ sub ReadAndProcessInterface {
 
 		#&print_attr;
 		print $OUTFD "{\n";
+		&specialInitClear;
 		&print_special_decls( $routine_name );
 		print $OUTFD "    $errparmlval = $routine_prefix$routine_name";
 		print "Printing call arguments for mpi_${lcname}_\n" if $debug;
@@ -3161,4 +3208,25 @@ sub ReplaceIfDifferent {
     else {
 	unlink $newfilename;
     }
+}
+# ------------------------------------------------------------------------
+# We wish to have the option of adding a special init call for some
+# variables.  This lets us ensure that MPI routines that need special
+# symbols (such as MPI_BOTTOM or MPI_IN_PLACE) can initialize them without
+# requiring any Fortran routines be called from the C verison of MPI_Init
+# (this can cause problems if the Fortran object file includes references
+# to compiler-specific symbols, making it difficult and inconvenient at
+# best to link C programs)
+# ------------------------------------------------------------------------
+sub specialInitClear {
+    $specialInitAdded = 0;
+}
+sub specialInitStatement {
+    my $FD = $_[0];
+    
+    if ($specialInitAdded) { return; }
+    if (length($specialInitString) > 0) {
+	print $FD $specialInitString . "\n";
+    }
+    $specialInitAdded = 1;
 }

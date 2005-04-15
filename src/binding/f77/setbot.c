@@ -29,6 +29,7 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
 #endif
 
 #ifndef USE_POINTER_FOR_BOTTOM
+int  MPIR_F_NeedInit        = 1;
 void *MPIR_F_MPI_BOTTOM     = 0;
 void *MPIR_F_MPI_IN_PLACE   = 0;
 void *MPI_F_STATUS_IGNORE   = 0;

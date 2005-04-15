@@ -159,6 +159,7 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #define MPIR_F_PTR(a) (a)
 #else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
+extern FORT_C_DLL_SPEC int  MPIR_F_NeedInit;
 extern FORT_C_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
 extern FORT_C_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
 extern FORT_C_DLL_SPEC void *MPI_F_STATUS_IGNORE;
@@ -171,6 +172,17 @@ extern FORT_C_DLL_SPEC void *MPI_F_ARGVS_NULL;
 */
 /*  #define MPIR_F_PTR(a) (((a)==(MPIR_F_MPI_BOTTOM))?MPI_BOTTOM:a) */
 #define MPIR_F_PTR(a) (a)
+
+/* Define the name of the function that we call to initialize the
+   special symbols */
+#if defined(F77_NAME_LOWER_USCORE) || defined(F77_NAME_LOWER_2USCORE)
+/* do nothing */
+#elif defined(F77_NAME_UPPER)
+#define mpirinitf_ MPIRINITF
+#else
+#define mpirinitf_ mpirinitf
+#endif
+
 #endif
 
 /*  

@@ -211,19 +211,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIU_trid( 1 );
 #endif
 
-#ifdef HAVE_FORTRAN_BINDING
-    /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs)
-       We must do this here because the MPI standard requires that 
-       all languages be initialized by MPI_Init/MPI_Init_thread in any
-       language */
-#if defined(F77_NAME_LOWER_USCORE) || defined(F77_NAME_LOWER_2USCORE)
-    mpirinitf_();
-#elif defined(F77_NAME_UPPER)
-    MPIRINITF();
-#else
-    mpirinitf();
-#endif
-#endif
+    /* We now initialize the Fortran symbols from within the Fortran 
+       interface in the routine that first needs the symbols.
+       This fixes a problem with symbols added by a Fortran compiler that 
+       are not part of the C runtime environment (the Portland group
+       compilers would do this) */
 
     if (mpi_errno != MPI_SUCCESS)
         MPIR_Process.initialized = MPICH_PRE_INIT;
