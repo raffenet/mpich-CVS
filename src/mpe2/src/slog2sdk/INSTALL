@@ -10,8 +10,8 @@
 The package is developed based on SUN's Java 2 SDK.  The non-CLOG related
 code can be compiled by older JDK like Solaris_JDK_1.2_01_dev06_fcsV.
 
-One need to make sure there is at least a Jave 2 Run Time is installed
-to run the code.  To install this package without any compilation, do
+A Jave 2 Run Time is required to run the code.
+To install this package without any compilation, do
 
 <slog2sdk>/configure --disable-build \
                      --with-trace-libdir=<libTraceInput.so_path>
