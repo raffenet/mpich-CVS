@@ -24,6 +24,10 @@ char *alloca ();
 #   endif
 #  endif
 # endif
+#else
+# if defined( HAVE_ALLOCA_H )
+#  include <alloca.h>
+# endif
 #endif
 
 #if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
