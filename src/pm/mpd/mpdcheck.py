@@ -108,6 +108,8 @@ if __name__ == '__main__':    # so I can be imported by pydoc
             sock.close()
             exit(0)
         elif argv[argidx] == '-pc':
+            print "--- try to run /bin/hostname"
+            system('/bin/hostname')
             print "--- try to run uname -a"
             system('/bin/uname -a')
             print "--- try to print /etc/hosts"
