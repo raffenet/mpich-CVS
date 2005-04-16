@@ -38,7 +38,7 @@ MPI_IMPL=${MPI_IMPL:-UserSupplied}
 MPE_BUILD_FORTRAN2C=${MPE_BUILD_FORTRAN2C:-no}
 CC=${CC:-cc}
 CLINKER=${CLINKER:-$CC}
-MPE_CFLAGS=${MPE_CFLAGS}
+CFLAGS=${MPE_CFLAGS}
 MPI_CC=${MPI_CC:-$CC}
 MPI_INC=${MPI_INC}
 MPI_LIBS=${MPI_LIBS}
@@ -89,28 +89,28 @@ if test -z "$nonopt" ; then nonopt=NONE ; fi
 AC_CANONICAL_HOST
 case "$host" in
    *alpha*)
-        MPE_CFLAGS="$MPE_CFLAGS -DDBX_IS_OSF"
+        CFLAGS="$CFLAGS -DDBX_IS_OSF"
         host=alpha
         ;;
    *rs6000*)
         host=rs6000
-        MPE_CFLAGS="$MPE_CFLAGS -DMPI_rs6000"
+        CFLAGS="$CFLAGS -DMPI_rs6000"
         ;;
    *solaris*)
         host=solaris
-        MPE_CFLAGS="$MPE_CFLAGS -DMPI_solaris"
+        CFLAGS="$CFLAGS -DMPI_solaris"
         ;;
     *linux*)
         host=linux
-        MPE_CFLAGS="$MPE_CFLAGS -DMPI_LINUX"
+        CFLAGS="$CFLAGS -DMPI_LINUX"
         ;;
     *sun4*)
         host=sun4
-        MPE_CFLAGS="$MPE_CFLAGS -DMPI_sun4"
+        CFLAGS="$CFLAGS -DMPI_sun4"
         ;;
     mips-sgi-irix*)
         host=irix
-        MPE_CFLAGS="$MPE_CFLAGS -DMPI_IRIX"
+        CFLAGS="$CFLAGS -DMPI_IRIX"
         ;;
 esac
 
@@ -213,7 +213,7 @@ AC_SUBST(MPE_BUILD_FORTRAN2C)
 AC_SUBST(MPEDBG)
 AC_SUBST(CC)
 AC_SUBST(CLINKER)
-AC_SUBST(MPE_CFLAGS)
+AC_SUBST(CFLAGS)
 AC_SUBST(MPI_CC)
 AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)

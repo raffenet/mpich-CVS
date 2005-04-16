@@ -24,7 +24,7 @@ INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
                        @X_INC@ $(MPI_INC)
 PROF_LIBNAME         = @PROF_LIBNAME@
 ANIM_LIBNAME         = @ANIM_LIBNAME@
-MPE_CFLAGS           = @MPE_CFLAGS@
+CFLAGS               = @CFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = @X_LIB@ $(MPI_LIBS)
@@ -51,8 +51,8 @@ srcdir           = @srcdir@
 EXECS            =
 
 # GETNAME_DEFS are needed by mpehname.c
-CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
+CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
 MPE_CSOURCES     = mpe_graphics.c xcolor.c xframe.c xinit.c xwmap.c \
                    xmouse.c xkey.c
@@ -67,14 +67,14 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 .SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
 
 .c.a:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
-	$(CC_SHL) $(CFLAGS) -c $< $(INC_DIR)
+	$(CC_SHL) $(CC_FLAGS) -c $< $(INC_DIR)
 	@mv $*.@OBJEXT@ $*.lo
 
 # default_all is the same as default, but without the RANLIB.  This
@@ -106,33 +106,27 @@ default: clean
 # is done once (e.g., a blip in the filesystem time can't be 
 # responsible if make works as Sun documents it).  To fix this, we
 # add all the objects to the library, not just the "recent" ones.
-build_Cobjs: $(MPE_COBJECTS)
-	$(AR) $(ARFLAGS) ${libbuild_dir}/lib$(PROF_LIBNAME).a ${MPE_COBJECTS}
-	$(RANLIB) ${libbuild_dir}/lib$(PROF_LIBNAME).a
-#	-$(RM) -f $?
-
-build_Wobjs: $(MPE_WOBJECTS)
-	$(AR) $(ARFLAGS) ${libbuild_dir}/lib$(PROF_LIBNAME).a ${MPE_WOBJECTS}
-	$(RANLIB) ${libbuild_dir}/lib$(PROF_LIBNAME).a
-#	-$(RM) -f $?
-
-${libbuild_dir}/lib$(PROF_LIBNAME).a: build_Cobjs
+${libbuild_dir}/lib$(PROF_LIBNAME).a: clean
+	@$(MAKE) $(MPE_COBJECTS) \
+	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}"
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) build_Wobjs ; \
+	     $(MAKE) $(MPE_WOBJECTS) \
+	     "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
 	 fi
-
-${libbuild_dir}/lib$(ANIM_LIBNAME).a: visual_mess.@OBJEXT@
-	$(AR) $(ARFLAGS) $@ $?
-	$(RANLIB) $@
-#	-$(RM) -f $?
-
-${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
-	for file in $(MPE_CSOURCES) ; do \
-	    $(CC) $(CFLAGS) -DMPE_NOMPI -c $(srcdir)/$$file ; \
-	done
 	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
-	-$(RM) -f *.@OBJEXT@
+
+${libbuild_dir}/lib$(ANIM_LIBNAME).a: clean
+	@$(MAKE) visual_mess.@OBJEXT@ \
+	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}"
+	$(AR) $(ARFLAGS) $@ visual_mess.@OBJEXT@
+	$(RANLIB) $@
+
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
+	@$(MAKE) $(MPE_COBJECTS) \
+	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS} -DMPE_NOMPI"
+	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
+	$(RANLIB) $@
 
 # ********
 

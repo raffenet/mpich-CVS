@@ -21,7 +21,7 @@ INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
                        -I../../.. -I${top_srcdir}/../../include \
                        $(MPI_INC)
 PROF_LIBNAME         = @PROF_LIBNAME@
-MPE_CFLAGS           = @MPE_CFLAGS@
+CFLAGS               = @CFLAGS@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = $(MPI_LIBS)
 PROF_LIBS            = -L$(MPE_LIBDIR) @PROF_LIBS@ $(MPI_LIBS)
@@ -49,8 +49,8 @@ srcdir           = @srcdir@
 EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@
 
 # GETNAME_DEFS are needed by mpehname.c
-CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
+CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
 MPE_CSOURCES     = clog_util.c clog_timer.c \
                    clog_preamble.c clog_block.c clog_buffer.c clog_record.c \
@@ -66,14 +66,14 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 .SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPE_INT_CC) $(MPE_INT_CFLAGS) -c $<
+	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
 
 .c.a:
-	$(MPI_INT_CC) $(MPE_INT_CFLAGS) -c $<
+	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
-	$(CC_SHL) $(CFLAGS) -c $< $(INC_DIR)
+	$(CC_SHL) $(CC_FLAGS) -c $< $(INC_DIR)
 	@mv $*.@OBJEXT@ $*.lo
 
 # default_all is the same as default, but without the RANLIB.  This
@@ -104,20 +104,20 @@ default: clean
 # add all the objects to the library, not just the "recent" ones.
 ${libbuild_dir}/lib$(PROF_LIBNAME).a: clean
 	@$(MAKE) $(MPE_COBJECTS) \
-	 "MPE_INT_CC=${MPI_CC}" "MPE_INT_CFLAGS=${CFLAGS}"
+	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}"
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_INT_CC=${MPI_CC}" "MPE_INT_CFLAGS=${CFLAGS}" ; \
+	     "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
 	 fi
 	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
 ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
 	@$(MAKE) $(MPE_COBJECTS) \
-	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI"
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI" ; \
+	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI" ; \
 	 fi
 	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
@@ -125,17 +125,17 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
 # -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_null.a
 ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: clean
 	@$(MAKE) mpe_log_null.@OBJEXT@ \
-	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} "
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} "
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS}" ; \
+	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
 	 fi
 	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
 ${binbuild_dir}/clog2_print@EXEEXT@: clean
-	@$(MAKE) clog_print.o \
-	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI"
+	@$(MAKE) clog_print.@OBJEXT@ \
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
 	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.@OBJEXT@ \
                    -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 

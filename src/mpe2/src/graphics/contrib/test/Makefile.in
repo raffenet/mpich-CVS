@@ -11,8 +11,8 @@ MPI_FLINKER          = $(MPI_F77)
 DEBUG_LIBS           = @DEBUG_LIBS@
 MPI_INC              = @MPI_INC@
 MPI_LIBS             = @MPI_LIBS@
-MPE_CFLAGS           = @MPE_CFLAGS@
-MPE_FFLAGS           = @MPE_FFLAGS@
+CFLAGS               = @CFLAGS@
+FFLAGS               = @FFLAGS@
 MPE_INCDIR           = @includebuild_dir@
 MPE_LIBDIR           = @libbuild_dir@
 ANIM_LIBS            = -L$(MPE_LIBDIR) @ANIM_LIBS@ $(MPI_LIBS)
@@ -31,18 +31,18 @@ RM                   = @RM@
 
 srcdir        = @srcdir@
 
-CFLAGS        = $(MPE_CFLAGS) $(C_INCS) @CFLAGS@
-FFLAGS        = $(MPE_FFLAGS) $(F_INCS) @FFLAGS@
-CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
-FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS) @FFLAGS@
+CC_FLAGS      = $(CFLAGS) $(C_INCS) $(MPE_COPTS)
+FC_FLAGS      = $(FFLAGS) $(F_INCS) $(MPE_FOPTS)
+CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
+FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
 EXECS         = cpi_anim@EXEEXT@ cxgraphics@EXEEXT@
 
 .SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPI_CC) $(CC_FLAGS) -c $<
 .f.@OBJEXT@:
-	$(MPI_F77) $(FFLAGS) -c $<
+	$(MPI_F77) $(FC_FLAGS) -c $<
 
 default: $(EXECS)
 	-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \

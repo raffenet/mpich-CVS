@@ -23,7 +23,7 @@ INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
                        -I../../.. -I${top_srcdir}/../../include \
                        $(MPI_INC)
 COLLCHK_LIBNAME      = @COLLCHK_LIBNAME@
-MPE_CFLAGS           = @MPE_CFLAGS@
+CFLAGS               = @CFLAGS@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = $(MPI_LIBS)
 LDFLAGS              = @LDFLAGS@
@@ -51,8 +51,8 @@ srcdir           = @srcdir@
 EXECS            =
 
 # GETNAME_DEFS are needed by mpehname.c
-CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
+CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
 
 UTIL_SRC     = add_fh.c get_fh.c begin.c err_han.c exscan.c is_init.c \
@@ -92,7 +92,7 @@ MPI_COMM_OBJ = $(MPI_COMM_SRC:.c=.@OBJEXT@)
 .SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPI_CC) $(CC_FLAGS) -c $<
 
 default: clean
 	$(MAKE) ${libbuild_dir}/lib$(COLLCHK_LIBNAME).a

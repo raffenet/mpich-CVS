@@ -24,7 +24,7 @@ INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
 LOG_LIBNAME          = @LOG_LIBNAME@
 TRACE_LIBNAME        = @TRACE_LIBNAME@
 F2CMPI_LIBNAME       = @F2CMPI_LIBNAME@
-MPE_CFLAGS           = @MPE_CFLAGS@
+CFLAGS               = @CFLAGS@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = $(MPI_LIBS)
 LDFLAGS              = @LDFLAGS@
@@ -52,8 +52,8 @@ srcdir           = @srcdir@
 EXECS            = 
 
 # GETNAME_DEFS are needed by mpehname.c
-CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
-CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS) @CFLAGS@
+CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
+CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
 MPE_CSOURCES     =
 MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)
@@ -67,14 +67,14 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 .SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPI_CC) $(CC_FLAGS) -c $<
 
 .c.a:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPI_CC) $(CC_FLAGS) -c $<
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
-	$(CC_SHL) $(CFLAGS) -c $< $(INC_DIR)
+	$(CC_SHL) $(CC_FLAGS) -c $< $(INC_DIR)
 	@mv $*.@OBJEXT@ $*.lo
 
 # default_all is the same as default, but without the RANLIB.  This
