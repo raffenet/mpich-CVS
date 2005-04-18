@@ -215,7 +215,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
-	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using do_rts"));
+	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using iStartRndvMsg"));
     
 	if (dt_contig) 
 	{
