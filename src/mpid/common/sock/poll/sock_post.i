@@ -32,36 +32,44 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
      * Create a non-blocking socket with Nagle's algorithm disabled
      */
     fd = socket(PF_INET, SOCK_STREAM, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (fd == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|socket", "**sock|poll|socket %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     flags = fcntl(fd, F_GETFL, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     nodelay = 1;
     rc = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+    /* --BEGIN ERROR HANDLING-- */
     if (rc != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nodelay", "**sock|poll|nodelay %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Allocate and initialize sock and poll structures
@@ -71,12 +79,14 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
      * the remote process.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					 "**sock|sockalloc", NULL);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
@@ -95,6 +105,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
      */
     strtok(host_description, " ");
     hostent = gethostbyname(host_description);
+    /* --BEGIN ERROR HANDLING-- */
     if (hostent == NULL || hostent->h_addrtype != AF_INET)
     {
 	/* FIXME: we should make multiple attempts and try different interfaces */
@@ -107,6 +118,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	goto fn_exit;
     }
     MPIU_Assert(hostent->h_length == sizeof(addr.sin_addr.s_addr));
+    /* --END ERROR HANDLING-- */
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     memcpy(&addr.sin_addr.s_addr, hostent->h_addr_list[0], sizeof(addr.sin_addr.s_addr));
@@ -123,6 +135,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(
@@ -131,10 +144,11 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	    goto fn_fail;
 	    
 	}
-	
+	/* --END ERROR HANDLING-- */
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(
@@ -143,9 +157,10 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	    goto fn_fail;
 	    
 	}
-	
+	/* --END ERROR HANDLING-- */
 	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -154,9 +169,11 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
 
     	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -165,6 +182,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
     }
     
     /*
@@ -182,6 +200,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
 	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, user_ptr, MPI_SUCCESS, mpi_errno, fn_fail);
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (errno == EINPROGRESS)
     {
 	/* connection pending */
@@ -208,6 +227,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 		MPIU_Strerror(errno)), mpi_errno, fn_fail);
 	}
     }
+    /* --END ERROR HANDLING-- */
 
     *sockp = sock;
 
@@ -215,6 +235,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (fd != -1)
     { 
@@ -227,6 +248,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 /* end MPIDU_Sock_post_connect() */
 
@@ -254,52 +276,62 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_LISTEN);
 
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    /* --BEGIN ERROR HANDLING-- */
     if (*port < 0 || *port > USHRT_MAX)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_PORT,
 					 "**sock|badport", "**sock|badport %d", *port);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Create a non-blocking socket for the listener
      */
     fd = socket(PF_INET, SOCK_STREAM, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (fd == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|socket", "**sock|poll|socket %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* set SO_REUSEADDR to a prevent a fixed service port from being bound to during subsequent invocations */
     if (*port != 0)
     {
 	flags = 1;
 	rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(long));
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					     "**sock|poll|reuseaddr", "**sock|poll|reuseaddr %d %s", errno, MPIU_Strerror(errno));
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     /* make the socket non-blocking so that accept() will return immediately if no new connection is available */
     flags = fcntl(fd, F_GETFL, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Bind the socket to all interfaces and the specified port.  The port specified by the calling routine may be 0, indicating
@@ -310,12 +342,14 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons((unsigned short) *port);
     rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Set and verify the socket buffer size
@@ -328,6 +362,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
+	/* --END ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(
@@ -336,21 +371,24 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
 	    goto fn_fail;
 	    
 	}
+	/* --END ERROR HANDLING-- */
 	
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(
 		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setrcvbufsz",
 		"**sock|poll|setrcvbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
-	    goto fn_fail;
-	    
+	    goto fn_fail;    
 	}
+	/* --END ERROR HANDLING-- */
 	
 	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -359,9 +397,11 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
 
     	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -370,18 +410,21 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
     }
     
     /*
      * Start listening for incoming connections...
      */
     rc = listen(fd, SOMAXCONN);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|listen", "**sock|poll|listen %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Get listener port.  Techincally we don't need to do this if a port was specified by the calling routine; but it adds an
@@ -389,12 +432,14 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
      */
     addr_len = sizeof(addr);
     rc = getsockname(fd, (struct sockaddr *) &addr, &addr_len);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|getport", "**sock|poll|getport %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     *port = (unsigned int) ntohs(addr.sin_port);
 
     /*
@@ -402,12 +447,14 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
      * long enough to pick up the addition of the listener socket.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					 "**sock|sockalloc", NULL);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
@@ -425,6 +472,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_LISTEN);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (fd != -1)
     { 
@@ -432,6 +480,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 /* end MPIDU_Sock_listen() */
 
@@ -460,6 +509,7 @@ int MPIDU_Sock_post_read(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minle
     MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo, mpi_errno, fn_exit);
     MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd, pollinfo, mpi_errno, fn_exit);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (minlen < 1 || minlen > maxlen)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
@@ -467,6 +517,7 @@ int MPIDU_Sock_post_read(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minle
 					 pollinfo->sock_set->id, pollinfo->sock_id, minlen, maxlen);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     pollinfo->read.buf.ptr = buf;
     pollinfo->read.buf.min = minlen;
@@ -507,6 +558,7 @@ int MPIDU_Sock_post_readv(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, M
     MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo, mpi_errno, fn_exit);
     MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd, pollinfo, mpi_errno, fn_exit);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (iov_n < 1 || iov_n > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
@@ -514,6 +566,7 @@ int MPIDU_Sock_post_readv(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, M
 					 pollinfo->sock_set->id, pollinfo->sock_id, iov_n);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     pollinfo->read.iov.ptr = iov;
     pollinfo->read.iov.count = iov_n;
@@ -555,6 +608,7 @@ int MPIDU_Sock_post_write(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minl
     MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo, mpi_errno, fn_exit);
     MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd, pollinfo, mpi_errno, fn_exit);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (minlen < 1 || minlen > maxlen)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
@@ -562,6 +616,7 @@ int MPIDU_Sock_post_write(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minl
 					 pollinfo->sock_set->id, pollinfo->sock_id, minlen, maxlen);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     pollinfo->write.buf.ptr = buf;
     pollinfo->write.buf.min = minlen;
@@ -602,6 +657,7 @@ int MPIDU_Sock_post_writev(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, 
     MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo, mpi_errno, fn_exit);
     MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd, pollinfo, mpi_errno, fn_exit);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (iov_n < 1 || iov_n > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
@@ -609,6 +665,7 @@ int MPIDU_Sock_post_writev(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, 
 					 pollinfo->sock_set->id, pollinfo->sock_id, iov_n);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     pollinfo->write.iov.ptr = iov;
     pollinfo->write.iov.count = iov_n;
@@ -647,7 +704,8 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
 
     MPIDU_SOCKI_VALIDATE_FD(pollinfo, mpi_errno, fn_exit);
-    
+
+    /* --BEGIN ERROR HANDLING-- */
     if (pollinfo->state == MPIDU_SOCKI_STATE_CLOSING)
     {
 	mpi_errno = MPIR_Err_create_code(
@@ -655,11 +713,13 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	    "**sock|closing_already %d %d", pollinfo->sock_set->id, pollinfo->sock_id);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     if (pollinfo->type == MPIDU_SOCKI_TYPE_COMMUNICATION)
     {
 	if (MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd, pollinfo, POLLIN | POLLOUT))
 	{
+	    /* --BEGIN ERROR HANDLING-- */
 	    int event_mpi_errno;
 	    
 	    event_mpi_errno = MPIR_Err_create_code(
@@ -679,6 +739,7 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	    }
 	
 	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN | POLLOUT);
+	    /* --END ERROR HANDLING-- */
 	}
     }
     else /* if (pollinfo->type == MPIDU_SOCKI_TYPE_LISTENER) */

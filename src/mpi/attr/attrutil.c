@@ -77,10 +77,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 						attr_p->keyval->handle, 
 						attr_p->value, 
 						attr_p->keyval->extra_state );
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	break;
 
@@ -94,10 +96,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 						attr_p->value,
 						attr_p->keyval->extra_state, 
 				(void (*)(void)) delfn.C_DeleteFunction );
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	break;
 #endif
@@ -117,10 +121,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != 0)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	}
 	break;
@@ -137,10 +143,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != 0)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	}
 	break;
@@ -187,10 +195,12 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 						p->keyval->handle, 
 						p->keyval->extra_state, 
 						p->value, &new_value, &flag );
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != 0)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	    break;
 #ifdef HAVE_CXX_BINDING
@@ -204,6 +214,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 				   p->keyval->extra_state, 
 				   p->value, &new_value, &flag,
 				   (void (*)(void)) copyfn.C_CopyFunction );
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != 0) {
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
 					 MPIR_ERR_RECOVERABLE, 
@@ -211,6 +222,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 					 MPI_ERR_OTHER, 
 					 "**user", "**usercopy %d", mpi_errno);
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	    break;
 #endif
@@ -230,10 +242,12 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag      = fflag;
 		    new_value = (void *)fnew;
+		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != 0)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
 		    }
+		    /* --END ERROR HANDLING-- */
 		}
 	    }
 	    break;
@@ -251,10 +265,12 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
 		    new_value = (void *)fnew;
+		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != 0)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
 		    }
+		    /* --END ERROR HANDLING-- */
 		}
 	    }
 	    break;

@@ -217,6 +217,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 
 		continue;
 	    }
+	    /* --BEGIN ERROR HANDLING-- */
 	    else if (errno == ENOMEM || errno == EAGAIN)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
@@ -229,6 +230,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 						 "**sock|oserror", "**sock|poll|oserror %d %s", errno, MPIU_Strerror(errno));
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 
 	elem = sock_set->starting_elem;
@@ -268,7 +270,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    "**sock|poll|badhandle %d %d %d %d", pollinfo->sock_set->id, pollinfo->sock_id, pollfd->fd, pollinfo->fd);
 		goto fn_exit;
 	    }
-	
+
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (pollfd->revents & POLLHUP)
 	    {
 		mpi_errno = MPIDU_Socki_handle_pollhup(pollfd, pollinfo);
@@ -287,6 +290,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    goto fn_exit;
 		}
 	    }
+	    /* --END ERROR HANDLING-- */
 	    
 	    if (pollfd->revents & POLLIN)
 	    {
@@ -295,11 +299,14 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RW || pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO)
 		    {
 			mpi_errno = MPIDU_Socki_handle_read(pollfd, pollinfo);
+			/* --BEGIN ERROR HANDLING-- */
 			if (MPIR_Err_is_fatal(mpi_errno))
 			{
 			    goto fn_exit;
 			}
+			/* --END ERROR HANDLING-- */
 		    }
+		    /* --BEGIN ERROR HANDLING-- */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(
@@ -307,6 +314,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 			    "**sock|poll|unhandledstate %d", pollinfo->state);
 			goto fn_exit;
 		    }
+		    /* --END ERROR HANDLING-- */
 
 		}
 		else if (pollinfo->type == MPIDU_SOCKI_TYPE_LISTENER)
@@ -326,6 +334,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    }
 		    while (nb > 0 || (nb < 0 && errno == EINTR));
 		}
+		/* --BEGIN ERROR HANDLING-- */
 		else
 		{
 		    mpi_errno = MPIR_Err_create_code(
@@ -333,6 +342,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 			"**sock|poll|unhandledtype %d", pollinfo->type);
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 
 	    if (pollfd->revents & POLLOUT)
@@ -342,19 +352,24 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RW)
 		    {
 			mpi_errno = MPIDU_Socki_handle_write(pollfd, pollinfo);
+			/* --BEGIN ERROR HANDLING-- */
 			if (MPIR_Err_is_fatal(mpi_errno))
 			{
 			    goto fn_exit;
 			}
+			/* --END ERROR HANDLING-- */
 		    }
 		    else if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING)
 		    {
 			mpi_errno = MPIDU_Socki_handle_connect(pollfd, pollinfo);
+			/* --BEGIN ERROR HANDLING-- */
 			if (MPIR_Err_is_fatal(mpi_errno))
 			{
 			    goto fn_exit;
 			}
+			/* --END ERROR HANDLING-- */
 		    }
+		    /* --BEGIN ERROR HANDLING-- */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(
@@ -362,7 +377,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 			    "**sock|poll|unhandledstate %d", pollinfo->state);
 			goto fn_exit;
 		    }
+		    /* --END ERROR HANDLING-- */
 		}
+		/* --BEGIN ERROR HANDLING-- */
 		else
 		{
 		    mpi_errno = MPIR_Err_create_code(
@@ -370,6 +387,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 			"**sock|poll|unhandledtype %d", pollinfo->type);
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 
 	    n_fds -= 1;
@@ -400,6 +418,7 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
 	 * If a write was posted then cancel it and generate an connection closed event.  If a read is posted, it will be handled
 	 * by the POLLIN handler.
 	 */
+	/* --BEGIN ERROR HANDLING-- */
 	if (pollfd->events & POLLOUT)
 	{
 	    int event_mpi_errno;
@@ -412,6 +431,7 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
 	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
 	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
+	/* --END ERROR HANDLING-- */
     }
     else if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO)
     {
@@ -440,6 +460,7 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
 	MPIU_Assert(pollinfo->state == MPIDU_SOCKI_STATE_CONNECTING && (pollfd->events & POLLOUT));
 	pollfd->revents = POLLOUT;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	mpi_errno = MPIR_Err_create_code(
@@ -447,6 +468,7 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
 	    "**sock|poll|unhandledstate %d", pollinfo->state);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCKI_HANDLE_POLLHUP);
@@ -465,7 +487,8 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCKI_HANDLE_POLLERR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_HANDLE_POLLERR);
-    
+
+    /* --BEGIN ERROR HANDLING-- */
     if (pollinfo->type != MPIDU_SOCKI_TYPE_COMMUNICATION)
     { 
 	mpi_errno = MPIR_Err_create_code(
@@ -473,6 +496,7 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
 	    "**sock|poll|unhandledtype %d", pollinfo->type);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 		
     if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RW)
     { 
@@ -493,11 +517,13 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
 	    MPIDU_SOCKI_GET_SOCKET_ERROR(pollinfo, os_errno, mpi_errno, fn_exit);
 		
 	    event_mpi_errno = MPIDU_Socki_os_to_mpi_errno(pollinfo, os_errno, FCNAME, __LINE__, &disconnected);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (MPIR_Err_is_fatal(event_mpi_errno))
 	    {
 		mpi_errno = event_mpi_errno;
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 			
 	    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr,
 				      event_mpi_errno, mpi_errno, fn_exit);
@@ -530,6 +556,7 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
 	/* We are already disconnected!  Why are we handling an error? */
 	MPIU_Assert(pollfd->fd == -1);
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	mpi_errno = MPIR_Err_create_code(
@@ -537,6 +564,7 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
 	    "**sock|poll|unhandledstate %d", pollinfo->state);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCKI_HANDLE_POLLERR);
@@ -595,6 +623,7 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN);
 	}
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (nb == 0)
     {
 	int event_mpi_errno;
@@ -614,11 +643,13 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 
     }
+    /* --END ERROR HANDLING-- */
     else if (errno == EAGAIN && errno == EWOULDBLOCK)
     {
 	/* do nothing... */
 	goto fn_exit;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	int disconnected;
@@ -651,6 +682,7 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 				  event_mpi_errno, mpi_errno, fn_exit);
 	MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN);
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCKI_HANDLE_READ);
@@ -714,6 +746,7 @@ static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, struct pollinf
 	/* do nothing... */
 	goto fn_exit;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	int disconnected;
@@ -742,6 +775,7 @@ static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, struct pollinf
 	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCKI_HANDLE_WRITE);
@@ -771,6 +805,7 @@ static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct polli
 	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, pollinfo->user_ptr, MPI_SUCCESS, mpi_errno, fn_exit);
 	pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	int event_mpi_errno;
@@ -783,7 +818,8 @@ static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct polli
 	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, pollinfo->user_ptr, event_mpi_errno, mpi_errno, fn_exit);
 	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
     }
-    
+    /* --END ERROR HANDLING-- */
+
     MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLOUT);
     
   fn_exit:

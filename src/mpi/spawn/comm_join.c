@@ -46,6 +46,7 @@ int MPIR_fd_send(int fd, void *buffer, int length)
     while (length)
     {
 	num_bytes = send(fd, buffer, length, 0);
+	/* --BEGIN ERROR HANDLING-- */
 	if (num_bytes == -1)
 	{
 #ifdef HAVE_WINDOWS_H
@@ -58,6 +59,7 @@ int MPIR_fd_send(int fd, void *buffer, int length)
             else
                 return result;
 	}
+	/* --END ERROR HANDLING-- */
         else {
             length -= num_bytes;
             buffer = (char*)buffer + num_bytes;
@@ -73,6 +75,7 @@ int MPIR_fd_recv(int fd, void *buffer, int length)
     while (length)
     {
 	num_bytes = recv(fd, buffer, length, 0);
+	/* --BEGIN ERROR HANDLING-- */
 	if (num_bytes == -1)
 	{
 #ifdef HAVE_WINDOWS_H
@@ -85,6 +88,7 @@ int MPIR_fd_recv(int fd, void *buffer, int length)
 	    else
                 return result;
 	}
+	/* --END ERROR HANDLING-- */
         else {
             length -= num_bytes;
             buffer = (char*)buffer + num_bytes;

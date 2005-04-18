@@ -107,7 +107,9 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_PUT);    
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

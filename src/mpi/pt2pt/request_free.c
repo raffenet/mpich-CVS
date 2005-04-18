@@ -151,15 +151,17 @@ int MPI_Request_free(MPI_Request *request)
 		}
 #             endif	    
 	    }
-	    
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(
 		    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userfree %d", mpi_errno);
 	    }
+	    /* --END ERROR HANDLING-- */
 	    break;
 	}
 
+	/* --BEGIN ERROR HANDLING-- */
 	default:
 	{
 	    mpi_errno = MPIR_Err_create_code(
@@ -167,6 +169,7 @@ int MPI_Request_free(MPI_Request *request)
 		"**request_invalid_kind %d", request_ptr->kind);
 	    break;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     MPID_Request_release(request_ptr);

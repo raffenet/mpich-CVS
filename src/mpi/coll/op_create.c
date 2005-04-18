@@ -97,12 +97,14 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     /* ... body of routine ...  */
     
     op_ptr = (MPID_Op *)MPIU_Handle_obj_alloc( &MPID_Op_mem );
+    /* --BEGIN ERROR HANDLING-- */
     if (!op_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
 					  "**nomem %s", "MPI_Op" );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     *op	             = op_ptr->handle;
     op_ptr->language = MPID_LANG_C;

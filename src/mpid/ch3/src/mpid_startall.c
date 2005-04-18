@@ -106,6 +106,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    preq->status.MPI_ERROR = MPI_SUCCESS;
 	    preq->cc_ptr = &preq->partner_request->cc;
 	}
+	/* --BEGIN ERROR HANDLING-- */
 	else
 	{
 	    /* If a failure occurs attempting to start the request, then we assume that partner request was not created, and stuff
@@ -116,6 +117,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    preq->cc_ptr = &preq->cc;
 	    preq->cc = 0;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_STARTALL);

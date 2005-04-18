@@ -158,12 +158,14 @@ int MPI_Cancel(MPI_Request *request)
 	    break;
 	}
 
+	/* --BEGIN ERROR HANDLING-- */
 	default:
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INTERN,
 					      "**cancelunknown", NULL );
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;

@@ -121,6 +121,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	   storage */
 	mpi_errno = MPIR_Call_attr_delete( type, p );
 
+	/* --BEGIN ERROR HANDLING-- */
 	if (!mpi_errno)
 	{
 	    int in_use;
@@ -134,6 +135,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	    }
 	    MPID_Attr_free(p);
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     MPID_Common_thread_unlock( );

@@ -71,8 +71,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	{
 	    if(gethostname(MPIDI_Process.processor_name, MPIDI_PROCESSOR_NAME_SIZE) != 0)
 	    {
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Free(MPIDI_Process.processor_name);
 		MPIDI_Process.processor_name = NULL;
+		/* --END ERROR HANDLING-- */
 	    }
 	}
 #       endif
@@ -242,12 +244,14 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	    /* --END ERROR HANDLING-- */
 #	  else
 	    mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    { 
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						 "**ch3|get_parent_port", NULL);
 		goto fn_fail;
 	    }
+	    /* --END ERROR HANDLING-- */
 #         endif
 	    
 	    mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &comm);
@@ -298,6 +302,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (MPIDI_Process.processor_name != NULL)
     { 
@@ -305,4 +310,5 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

@@ -107,8 +107,6 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
 		    MPIU_CHKLMEM_MALLOC(tmp_buf, void *, target_count * (MPIR_MAX(extent,true_extent)), mpi_errno,
 					"temporary buffer");
-
-                    /* --END ERROR HANDLING-- */
                     /* adjust for potential negative lower bound in datatype */
                     tmp_buf = (void *)((char*)tmp_buf - true_lb);
                     
@@ -201,7 +199,9 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

@@ -88,11 +88,13 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 	    mpi_errno = MPID_Type_contiguous(mysize,
 					     type_old,
 					     type_new);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else {
 	    for (i=0; i<dim; i++) stride *= array_of_gsizes[i];
@@ -102,11 +104,13 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 					 1, /* stride in bytes */
 					 type_old,
 					 type_new);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
     }
     else {
@@ -114,11 +118,13 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 	    mpi_errno = MPID_Type_contiguous(mysize,
 					     type_old,
 					     type_new);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else {
 	    for (i=ndims-1; i>dim; i--) stride *= array_of_gsizes[i];
@@ -128,11 +134,13 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 					 1, /* stride in bytes */
 					 type_old,
 					 type_new);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
     }
 
@@ -205,11 +213,13 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				 1, /* stride in bytes */
 				 type_old,
 				 type_new);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     if (rem) {
 	/* if the last block is of size less than blksize, include
@@ -232,11 +242,13 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 	MPIR_Nest_decr();
 	*type_new = type_tmp;
 
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     /* In the first iteration, we need to set the displacement in that
@@ -261,11 +273,13 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 	MPIR_Nest_decr();
         *type_new = type_tmp;
 
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
 
         *st_offset = 0;  /* set it to 0 because it is taken care of in
                             the struct above */
@@ -523,7 +537,9 @@ int MPI_Type_create_darray(int size,
 	    }
 	    type_old = type_new;
 
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    /* --END ERROR HANDLING-- */
 	}
 
 	/* add displacement and UB */
@@ -589,7 +605,9 @@ int MPI_Type_create_darray(int size,
 	    }
 	    type_old = type_new;
 
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    /* --END ERROR HANDLING-- */
 	}
 
 	/* add displacement and UB */
@@ -617,7 +635,9 @@ int MPI_Type_create_darray(int size,
 				 disps,
 				 types,
 				 newtype);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     MPIR_Nest_incr();
     NMPI_Type_free(&type_new);
@@ -657,8 +677,9 @@ int MPI_Type_create_darray(int size,
 					   ints,
 					   NULL,
 					   &oldtype);
-
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     /* ... end of body of routine ... */
     

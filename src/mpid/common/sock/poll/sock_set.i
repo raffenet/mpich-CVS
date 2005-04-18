@@ -23,12 +23,14 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
      * Allocate and initialized a new sock set structure
      */
     sock_set = MPIU_Malloc(sizeof(struct MPIDU_Sock_set));
+    /* --BEGIN ERROR HANDLING-- */
     if (sock_set == NULL)
     { 
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					 "**sock|setalloc", 0);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     sock_set->id = MPIDU_Socki_set_next_id++;
     sock_set->poll_array_sz = 0;
@@ -66,14 +68,17 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 	 * performing a thread yield between iterations.
 	 */
 	rc = pipe(sock_set->intr_fds);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					     "**sock|poll|pipe", "**sock|poll|pipe %d %s", errno, MPIU_Strerror(errno));
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 
 	flags = fcntl(sock_set->intr_fds[0], F_GETFL, 0);
+	/* --BEGIN ERROR HANDLING-- */
 	if (flags == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
@@ -81,8 +86,10 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 					     errno, MPIU_Strerror(errno));
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     
 	rc = fcntl(sock_set->intr_fds[0], F_SETFL, flags | O_NONBLOCK);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
@@ -90,17 +97,20 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 					     errno, MPIU_Strerror(errno));
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 
 	/*
 	 * Allocate and initialize a sock structure for the interrupter pipe
 	 */
 	mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					     "**sock|sockalloc", NULL);
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
     
 	sock_set->intr_sock = sock;
 
@@ -124,6 +134,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_CREATE_SET);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (sock_set != NULL)
     {
@@ -145,6 +156,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 

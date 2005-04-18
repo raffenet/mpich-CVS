@@ -355,6 +355,7 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 #define FUNCNAME MPIDU_Socki_os_to_mpi_errno
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
+/* --BEGIN ERROR HANDLING-- */
 static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * disconnected)
 {
     int mpi_errno;
@@ -417,6 +418,7 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
 
     return mpi_errno;
 }
+/* --END ERROR HANDLING-- */
 /* end MPIDU_Socki_os_to_mpi_errno() */
 
 
@@ -472,11 +474,13 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC);
     
     sock = MPIU_Malloc(sizeof(struct MPIDU_Sock));
+    /* --BEGIN ERROR HANDLING-- */
     if (sock == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**nomem", 0);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Check existing poll structures for a free element.
@@ -503,19 +507,23 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	int elem;
 	
 	pollfds = MPIU_Malloc((sock_set->poll_array_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollfd));
+	/* --BEGIN ERROR HANDLING-- */
 	if (pollfds == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					     "**nomem", 0);
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	pollinfos = MPIU_Malloc((sock_set->poll_array_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollinfo));
+	/* --BEGIN ERROR HANDLING-- */
 	if (pollinfos == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					     "**nomem", 0);
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	
 	if (sock_set->poll_array_sz > 0)
 	{
@@ -622,6 +630,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (pollinfos != NULL)
     {
@@ -639,6 +648,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     }
     
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 /* end MPIDU_Socki_sock_alloc() */
 
@@ -734,12 +744,14 @@ static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, MPIDU_Sock_op_t
 	int i;
 	
 	eventq_elem = MPIU_Malloc(sizeof(struct MPIDU_Socki_eventq_elem) * MPIDU_SOCK_EVENTQ_POOL_SIZE);
+	/* --BEGIN ERROR HANDLING-- */
 	if (eventq_elem == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**sock|poll|eqmalloc", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 
 	if (MPIDU_SOCK_EVENTQ_POOL_SIZE > 1)
 	{ 
@@ -803,10 +815,12 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 	eventq_elem->next = MPIDU_Socki_eventq_pool;
 	MPIDU_Socki_eventq_pool = eventq_elem;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	mpi_errno = MPIDU_SOCK_ERR_FAIL;
     }
+    /* --END ERROR HANDLING-- */
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_EVENT_DEQUEUE);
     return mpi_errno;

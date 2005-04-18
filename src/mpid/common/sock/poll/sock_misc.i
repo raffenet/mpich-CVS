@@ -19,10 +19,12 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
     
     if (MPIU_Strncpy(host_description, hostname, len))
+    /* --BEGIN ERROR HANDLING-- */
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
 					 "**sock|badhdmax", 0);
     }
+    /* --END ERROR HANDLING-- */
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
     return mpi_errno;
@@ -42,28 +44,33 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
     
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    /* --BEGIN ERROR HANDLING-- */
     if (len < 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
 					 "**sock|badhdmax", NULL);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /* Use hostname supplied in environment variable, if it exists */
     env_hostname = getenv("MPICH_INTERFACE_HOSTNAME");
     if (env_hostname != NULL)
     {
 	rc = MPIU_Strncpy(host_description, env_hostname, len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
 					     "**sock|badhdlen", NULL);
 	}
+	/* --END ERROR HANDLING-- */
 
 	goto fn_exit;
     }
 
     rc = gethostname(host_description, len);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	if (errno == EINVAL)
@@ -82,6 +89,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 					     "**sock|oserror", "**sock|poll|oserror %d %s", errno, MPIU_Strerror(errno));
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
@@ -110,31 +118,37 @@ int MPIDU_Sock_native_to_sock(struct MPIDU_Sock_set * sock_set, MPIDU_SOCK_NATIV
 
     /* allocate sock and poll structures */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					 "**sock|sockalloc", NULL);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
     
     /* set file descriptor to non-blocking */
     flags = fcntl(fd, F_GETFL, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* initialize sock and poll structures */
     pollfd->fd = -1;
@@ -152,6 +166,7 @@ int MPIDU_Sock_native_to_sock(struct MPIDU_Sock_set * sock_set, MPIDU_SOCK_NATIV
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_NATIVE_TO_SOCK);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (sock != NULL)
     {
@@ -159,6 +174,7 @@ int MPIDU_Sock_native_to_sock(struct MPIDU_Sock_set * sock_set, MPIDU_SOCK_NATIV
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 
@@ -180,11 +196,13 @@ int MPIDU_Sock_set_user_ptr(struct MPIDU_Sock * sock, void * user_ptr)
     {
 	MPIDU_Socki_sock_get_pollinfo(sock)->user_ptr = user_ptr;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
 					 "**sock|badsock", NULL);
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_SET_USER_PTR);
@@ -251,6 +269,7 @@ int MPIDU_Sock_get_sock_set_id(struct MPIDU_Sock_set * sock_set)
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
+/* --BEGIN ERROR HANDLING-- */
 int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
@@ -316,3 +335,4 @@ int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
     return MPI_SUCCESS;
 }
+/* --END ERROR HANDLING-- */

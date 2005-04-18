@@ -547,12 +547,13 @@ int MPIR_Reduce (
         
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-    
+    /* --BEGIN ERROR HANDLING-- */
     if (p->op_errno)
     {
 	mpi_errno = p->op_errno;
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();

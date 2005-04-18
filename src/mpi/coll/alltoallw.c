@@ -116,12 +116,14 @@ int MPIR_Alltoallw (
 
     mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_ERR_IN_STATUS) {
         for (i=0; i<2*comm_size; i++) {
             if (starray[i].MPI_ERROR != MPI_SUCCESS) 
                 mpi_errno = starray[i].MPI_ERROR;
         }
     }
+    /* --END ERROR HANDLING-- */
     
     MPIU_Free(reqarray);
     MPIU_Free(starray);

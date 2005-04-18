@@ -19,6 +19,7 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg)
 
     PMI_Abort(exit_code, error_msg);
 
+    /* --BEGIN ERROR HANDLING-- */
     /* if abort returns for some reason, exit here */
 
     MPIU_Error_printf("%s", error_msg);
@@ -30,6 +31,7 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg)
 #else
     exit(exit_code);
 #endif
+    /* --END ERROR HANDLING-- */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ABORT);
     return MPI_ERR_INTERN;

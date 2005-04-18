@@ -172,12 +172,14 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    case MPID_UREQUEST:
 	    {
 		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
 		         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
                          MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
 		}
+		/* --END ERROR HANDLING-- */
 		MPIR_Request_extract_status(request_ptr, status);
 		break;
 	    }
@@ -190,7 +192,9 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	*flag = FALSE;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     /* ... end of body of routine ... */
     

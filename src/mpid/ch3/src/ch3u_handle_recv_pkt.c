@@ -318,12 +318,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		    rreq->dev.segment_first = 0;
 		    rreq->dev.segment_size = 0;
 		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 							 "**ch3|loadrecviov", 0);
 			goto fn_exit;
 		    }
+		    /* --END ERROR HANDLING-- */
 		}
 		else
 		{

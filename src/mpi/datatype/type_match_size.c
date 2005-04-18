@@ -140,12 +140,16 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	}
 	break;
     default:
+	/* --BEGIN ERROR HANDLING-- */
 	MPIU_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, break, "**typematchnoclass");
+	/* --END ERROR HANDLING-- */
     }
 
     if (mpi_errno == MPI_SUCCESS) {
 	if (matched_datatype == MPI_DATATYPE_NULL) {
+	    /* --BEGIN ERROR HANDLING-- */
 	    MPIU_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_ARG,, "**typematchsize", "**typematchsize %s %d", tname, size);
+	    /* --END ERROR HANDLING-- */
 	}
 	else {
 	    *datatype = matched_datatype;

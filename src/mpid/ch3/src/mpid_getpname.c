@@ -21,10 +21,12 @@ int MPID_Get_processor_name(char * name, int * resultlen)
 		     MPI_MAX_PROCESSOR_NAME );
 	*resultlen = (int)strlen(MPIDI_Process.processor_name);
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	return MPI_ERR_UNKNOWN;
     }
+    /* --END ERROR HANDLING-- */
 
     return MPI_SUCCESS;
 }

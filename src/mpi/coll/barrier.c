@@ -70,11 +70,13 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
                                   MPIR_BARRIER_TAG, NULL, 0, MPI_BYTE,
                                   src, MPIR_BARRIER_TAG, comm,
                                   MPI_STATUS_IGNORE);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
         mask <<= 1;
     }
 
@@ -144,10 +146,12 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 	    if (request_ptr) {
 		mpi_errno = MPIC_Wait(request_ptr);
 		MPID_Request_release(request_ptr);
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	}
 	/* Second step: recursive doubling exchange */
@@ -165,10 +169,12 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 	    if (request_ptr) {
 		mpi_errno = MPIC_Wait(request_ptr);
 		MPID_Request_release(request_ptr);
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	}
     }
@@ -179,10 +185,12 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 	if (request_ptr) {
 	    mpi_errno = MPIC_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	/* There is no second step; for the third step, recv */
 	MPID_Recv( 0, 0, MPI_BYTE, rank - twon_within, MPIR_BARRIER_TAG, 
@@ -191,10 +199,12 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 	if (request_ptr) {
 	    mpi_errno = MPIC_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
     }
 
@@ -223,11 +233,13 @@ int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 
     /* do a barrier on the local intracommunicator */
     mpi_errno = MPIR_Barrier(newcomm_ptr);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* rank 0 on each group does an intercommunicator broadcast to the
        remote group to indicate that all processes in the local group
@@ -240,37 +252,45 @@ int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
         /* bcast to right*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
         /* receive bcast from right */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
     }
     else {
         /* receive bcast from left */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
         /* bcast to left */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr);  
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     return mpi_errno;
@@ -367,7 +387,9 @@ int MPI_Barrier( MPI_Comm comm )
         MPIR_Nest_decr();
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
     /* ... end of body of routine ... */
 

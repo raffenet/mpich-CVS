@@ -116,12 +116,14 @@ int MPID_Finalize()
     while(MPIDI_Outstanding_close_ops > 0)
     {
 	mpi_errno = MPID_Progress_wait(&progress_state);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**ch3|close_progress", 0);
 	    break;
 	}
+	/* --END ERROR HANDLING-- */
     }
     MPID_Progress_end(&progress_state);
 

@@ -120,6 +120,7 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 	   storage */
 	mpi_errno = MPIR_Call_attr_delete( win, p );
 
+	/* --BEGIN ERROR HANDLING-- */
 	if (!mpi_errno)
 	{
 	    int in_use;
@@ -133,6 +134,7 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 	    }
 	    MPID_Attr_free(p);
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     MPID_Common_thread_unlock( );

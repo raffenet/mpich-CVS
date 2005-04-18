@@ -33,6 +33,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     pollfd = MPIDU_Socki_sock_get_pollfd(listener);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(listener);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (pollinfo->type != MPIDU_SOCKI_TYPE_LISTENER)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,
@@ -48,6 +49,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 					 pollinfo->sock_set->id, pollinfo->sock_id, pollinfo->state);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Get a socket for the new connection from the operating system.  Make the socket nonblocking, and disable Nagle's
@@ -63,7 +65,8 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	 */
 	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
     }
-    
+
+    /* --BEGIN ERROR HANDLING-- */
     if (fd == -1)
     {
 	if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -90,30 +93,37 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     flags = fcntl(fd, F_GETFL, 0);
+    /* --BEGIN ERROR HANDLING-- */
     if (flags == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     nodelay = 1;
     rc = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+    /* --BEGIN ERROR HANDLING-- */
     if (rc != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
 					 "**sock|poll|nodelay", "**sock|poll|nodelay %d %s", errno, MPIU_Strerror(errno));
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /*
      * Verify that the socket buffer size is correct
@@ -125,6 +135,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
 	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -133,9 +144,11 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
 
     	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
 	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
@@ -144,6 +157,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 				MPIDU_Socki_socket_bufsz, bufsz);
 	    }
 	}
+	/* --END ERROR HANDLING-- */
     }
     
     /*
@@ -154,12 +168,14 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
      * the remote process.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
 					 "**sock|sockalloc", NULL);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
@@ -176,6 +192,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (fd != -1)
     {
@@ -183,6 +200,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 /* end MPIDU_Sock_accept() */
 
@@ -230,6 +248,7 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
     {
 	*num_read = (MPIU_Size_t) nb;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (nb == 0)
     {
 	*num_read = 0;
@@ -281,6 +300,7 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
 	    pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READ);
@@ -330,6 +350,7 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
     {
 	*num_read = (MPIU_Size_t) nb;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (nb == 0)
     {
 	*num_read = 0;
@@ -382,6 +403,7 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 	    pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READV);
@@ -433,6 +455,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
     {
 	*num_written = nb;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (errno == EAGAIN || errno == EWOULDBLOCK)
     {
 	*num_written = 0;
@@ -462,6 +485,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
@@ -511,6 +535,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
     {
 	*num_written = (MPIU_Size_t) nb;
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (errno == EAGAIN || errno == EWOULDBLOCK)
     {
 	*num_written = 0;
@@ -540,6 +565,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 	    pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 	}
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);

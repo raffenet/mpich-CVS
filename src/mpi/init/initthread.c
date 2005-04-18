@@ -217,8 +217,10 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        are not part of the C runtime environment (the Portland group
        compilers would do this) */
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
         MPIR_Process.initialized = MPICH_PRE_INIT;
+    /* --END ERROR HANDLING-- */
 
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_WaitForDebugger();

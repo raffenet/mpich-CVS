@@ -20,8 +20,10 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
     
     sreq = MPIDI_CH3_Request_create();
+    /* --BEGIN ERROR HANDLING-- */
     if (sreq == NULL)
 	return NULL;
+    /* --END ERROR HANDLING-- */
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
     
@@ -83,6 +85,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 #ifdef MPICH_DBG_OUTPUT
+    /* --BEGIN ERROR HANDLING-- */
     if (n_iov > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
@@ -93,6 +96,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 #endif
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
@@ -129,23 +133,27 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 		    {
 			MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
 			sreq = create_request(iov, n_iov, offset, nb);
+			/* --BEGIN ERROR HANDLING-- */
 			if (sreq == NULL)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 							     "**nomem", 0);
 			    goto fn_exit;
 			}
+			/* --END ERROR HANDLING-- */
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			vc->ch.conn->send_active = sreq;
 			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov + offset,
 							   sreq->dev.iov_count - offset, NULL);
+			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
 							     sreq, vc->ch.conn, vc);
 			}
+			/* --END ERROR HANDLING-- */
 			break;
 		    }
 		}
@@ -159,11 +167,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_writev failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
+		/* --BEGIN ERROR HANDLING-- */
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
 		/* TODO: Create an appropriate error message based on the return value */
@@ -174,11 +184,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
 	    sreq = create_request(iov, n_iov, 0, 0);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq == NULL)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
@@ -188,11 +200,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(iov, n_iov, 0, 0);
+	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	
 	/* Form a new connection */
@@ -203,11 +217,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
 	sreq = create_request(iov, n_iov, 0, 0);
+	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     else
@@ -215,11 +231,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	/* Connection failed, so allocate a request and return an error. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed"));
 	sreq = MPIDI_CH3_Request_create();
+	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
 	/* TODO: Create an appropriate error message */

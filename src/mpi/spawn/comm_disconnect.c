@@ -106,13 +106,13 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
 	while (comm_ptr->ref_count > 1)
 	{
 	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		/* --BEGIN ERROR HANDLING-- */
 		MPID_Progress_end(&progress_state);
 		goto fn_fail;
-		/* --END ERROR HANDLING-- */
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	MPID_Progress_end(&progress_state);
     }

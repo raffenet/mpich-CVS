@@ -82,12 +82,14 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     /* ... body of routine ...  */
     
     lrequest_ptr = MPID_Request_create();
+    /* --BEGIN ERROR HANDLING-- */
     if (lrequest_ptr == NULL)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 					  "**nomem", "**nomem %s", "generalized request" );
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     
     lrequest_ptr->kind                 = MPID_UREQUEST;
     MPIU_Object_set_ref( lrequest_ptr, 2 );

@@ -29,11 +29,13 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 
     q_item = (MPIDI_CH3I_Acceptq_t *)
         MPIU_Malloc(sizeof(MPIDI_CH3I_Acceptq_t)); 
+    /* --BEGIN ERROR HANDLING-- */
     if (q_item == NULL)
     {
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     q_item->vc = vc;
     q_item->next = NULL;

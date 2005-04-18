@@ -255,9 +255,11 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 	    case MPI_COMBINER_F90_COMPLEX:
 	    case MPI_COMBINER_F90_INTEGER:
 	    default:
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Assert(0);
 		return -1;
 		break;
+		/* --END ERROR HANDLING-- */
 	}
     }
 }
