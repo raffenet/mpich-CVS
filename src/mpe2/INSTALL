@@ -55,7 +55,7 @@ command line arguments to configure.  In some MPI implementations, like
 HP-UX's, MPI_CC and MPI_F77 are reserved for use by the MPI implementation,
 use the configure options to set MPI_CC and MPI_F77 instead.
 
-For those who requires cross-compilation support, there are 5 or 8 
+For those who requires cross-compilation support, another 5 to 8 
 more environmental variables are needed depends on if one needs to use the
 MPE's internal Fortran to C MPI profiling wrapper library.  If your MPI
 implementation does NOT provide any Fortran to C MPI profiling wrapper
@@ -196,6 +196,9 @@ Other User Options:
                                 have the X11 include files or that do not
                                 support X11 graphics.  The default enable=yes.
 
+--enable-collchk                bild MPI Collective and Datatype
+                                checking library, libmpe_collchk.a
+
 --enable-slog2[=build]          Configure all the SLOG-2 tools.
                                 --enable-slog2 without any argument will
                                 use the prebuilt jar files.
@@ -298,7 +301,6 @@ For HP-UX's MPI implementation,
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
 
-
 MPE's Fortran support on HP-UX's MPI is NOT working yet.  So to get MPI 
 Fortran code to generate logfile, you could use HP-UX's libfmpi.a if it
 is there.  Here is the configure options.
@@ -310,6 +312,8 @@ is there.  Here is the configure options.
     make
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
+
+note: configure option --with-flib_path_leader="-Wl,-L" may not needed.
 
 
 For LAM, do
@@ -454,13 +458,13 @@ or MPI_INC and MPI_LIBS can be included in a mpicc_ibm and mpif77_ibm scripts.
 III. c) Miscellaneous Info about the Build System.
 --------------------------------------------------
 
-There are 3 extra variables built in almost all of MPE's Makefiles.
-They are MPE_COPTS, MPE_FOPTS, and MPE_LDOPTS, where
+3 extra variables, MPE_COPTS, MPE_FOPTS, and MPE_LDOPTS, are included in 
+almost all of MPE's Makefiles to mimic the usage of CFLAGS, FFLAGS and LDFLAGS.
    MPE_COPTS  is the CFLAGS equivalent,
    MPE_FOPTS  is the FFLAGS equivalent,
    MPE_LDOPTS is the LDFLAGS equivalent.
 These variables are not set in configures and Makefiles.  So it allows
-end-user to quickly set one of this variables in Makefile without rerun
-configure.  For instance, if user forgets to set CFLAGS=-g in configuring
-MPE, he/she can do "make MPE_COPTS=-g" instead or do it selectively in
-one subpackages..
+end-user to quickly set one of this variables in Makefile through environmental
+variable without rerun configure.  For instance, if user forgets to set
+CFLAGS=-g in configuring MPE, one can do "make MPE_COPTS=-g" instead and 
+this can be done selectively in any subpackages.
