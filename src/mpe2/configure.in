@@ -49,6 +49,8 @@ CFLAGS=${CFLAGS}
 FFLAGS=${FFLAGS}
 MPE_LIBNAME=""
 
+echo "CFLAGS = $CFLAGS."
+
 dnl Read FROM_MPICHx variables from the environment
 MAKE=${MAKE:-make}
 FROM_MPICH=${FROM_MPICH:-no}
@@ -388,16 +390,21 @@ AC_PROG_LN_S
 
 dnl
 dnl MPE_CFLAGS/MPE_FFLAGS are used to pass MPE-modified CFLAGS/FFLAGS
-dnl to other subpackages.
+dnl to other subpackages.  Can't use CFLAGS to pass this info because
+dnl user may have set CFLAGS in the environment.  In that scenario,
+dnl env variable CFLAGS can't be set! So subpackages cannot get the
+dnl MPE-modified CFLAGS.
 dnl
+MPE_CFLAGS="$CFLAGS"
+if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
+    MPE_FFLAGS="$FFLAGS"
+fi
+
 dnl Include --enable-strict option only if this isn't part of MPICHx build.
 dnl MPE does not even need to check enable_strict_done passed down by MPICH2.
 dnl
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    MPE_CFLAGS="$CFLAGS $STRICT_COPTS"
-fi
-if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
-    MPE_FFLAGS="$FFLAGS"
+    MPE_CFLAGS="$MPE_CFLAGS $STRICT_COPTS"
 fi
 dnl
 if test -z "$CLINKER" ; then CLINKER="$CC" ; fi
