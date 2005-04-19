@@ -529,8 +529,8 @@ if test "$enable_graphics" = "yes" -a "$enable_misc" != "yes" ; then
 fi
 
 AC_ARG_ENABLE( collchk,
-[--enable-collchk                   - Build MPI Collective checking libraries.
-                                     libmpe_collchk.a],
+[--enable-collchk                   - Build MPI Collective and Datatype 
+                                     checking library, libmpe_collchk.a],
 , enable_collchk=yes )
 
 selected_pkgs=""
