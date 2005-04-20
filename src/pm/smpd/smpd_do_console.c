@@ -11,12 +11,13 @@
 #define FCNAME "smpd_do_console"
 int smpd_do_console()
 {
-    int result;
+    int result = -1;
     smpd_context_t *context;
     MPIDU_Sock_set_t set;
     MPIDU_Sock_t sock;
     SMPD_BOOL no_smpd = SMPD_FALSE;
     int saved_state = 0;
+    int exit_code = 0;
 
     smpd_enter_fn(FCNAME);
 
@@ -97,6 +98,11 @@ int smpd_do_console()
 
 quit_job:
 
+    if (result != SMPD_SUCCESS)
+    {
+	exit_code = result;
+    }
+
     if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS && (no_smpd || smpd_process.state_machine_ret_val != SMPD_SUCCESS))
     {
 	printf("no smpd running on %s\n", smpd_process.console_host);
@@ -130,6 +136,6 @@ quit_job:
     }
 #endif
     smpd_exit_fn(FCNAME);
-    smpd_exit(0);
+    smpd_exit(exit_code);
     return SMPD_SUCCESS;
 }
