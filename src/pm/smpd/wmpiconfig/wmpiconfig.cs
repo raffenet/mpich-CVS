@@ -51,6 +51,7 @@ namespace wmpiconfig
 		private System.Windows.Forms.Button toggle_button;
 		private System.Windows.Forms.ProgressBar scan_progressBar;
 		private ToolTip tool_tip;
+		private Color orig_background;
 
 		public wmpiconfig()
 		{
@@ -92,6 +93,8 @@ namespace wmpiconfig
 
 			UpdateHash(get_settings(host_textBox.Text));
 			UpdateListBox();
+
+			orig_background = list.BackColor;
 		}
 
 		/// <summary>
@@ -236,6 +239,7 @@ namespace wmpiconfig
 			this.hosts_list.Size = new System.Drawing.Size(128, 360);
 			this.hosts_list.TabIndex = 6;
 			this.hosts_list.View = System.Windows.Forms.View.Details;
+			this.hosts_list.KeyUp += new System.Windows.Forms.KeyEventHandler(this.hosts_list_KeyUp);
 			this.hosts_list.SelectedIndexChanged += new System.EventHandler(this.hosts_list_SelectedIndexChanged);
 			// 
 			// HostsHeader
@@ -531,9 +535,17 @@ namespace wmpiconfig
 		delegate void ScanHostDelegate(string host);
 		private void ScanHost(string host)
 		{
+			bool success;
 			string result = host + "\r\n";
 			Hashtable h;
 			h = get_settings(host);
+			success = !(h.Contains("error") || h.Count == 0);
+
+			SetHostBackgroundDelegate sd = new SetHostBackgroundDelegate(set_host_background);
+			object [] sd_list = new object[2] { host, success };
+			Invoke(sd, sd_list);
+			//set_host_background(host, success);
+
 			foreach (string key in h.Keys)
 			{
 				result = result + key + " = " + h[key] + "\r\n";
@@ -557,6 +569,7 @@ namespace wmpiconfig
 			output_textBox.Text = "";
 			foreach (ListViewItem item in hosts_list.Items)
 			{
+				item.BackColor = orig_background;
 				ScanHostDelegate shd = new ScanHostDelegate(ScanHost);
 				shd.BeginInvoke(item.Text, null, null);
 			}
@@ -655,6 +668,12 @@ namespace wmpiconfig
 			}
 			catch (Exception)
 			{
+				hash.Clear();
+				hash.Add("error", host + ": Unable to detect the settings");
+			}
+			if (hash.Count == 0)
+			{
+				hash.Add("error", host + ": MPICH2 not installed or unable to query the host");
 			}
 			return hash;
 		}
@@ -881,12 +900,16 @@ namespace wmpiconfig
 
 		private void get_settings_button_Click(object sender, System.EventArgs e)
 		{
+			bool success;
 			Hashtable h;
 			Cursor.Current = Cursors.WaitCursor;
+			output_textBox.Text = "";
 			h = get_settings(host_textBox.Text);
 			UpdateHash(h);
 			UpdateListBox();
 			add_host_to_list(host_textBox.Text);
+			success = !(h.Contains("error") || h.Count == 0);
+			set_host_background(host_textBox.Text, success);
 			Cursor.Current = Cursors.Default;
 		}
 
@@ -895,12 +918,27 @@ namespace wmpiconfig
 			bool found = false;
 			foreach (ListViewItem item in hosts_list.Items)
 			{
-				if (item.Text == host)
+				if (String.Compare(item.Text, host, true) == 0)
 					found = true;
 			}
 			if (!found)
 			{
 				hosts_list.Items.Add(host);
+			}
+		}
+
+		delegate void SetHostBackgroundDelegate(string host, bool success);
+		private void set_host_background(string host, bool success)
+		{
+			foreach (ListViewItem item in hosts_list.Items)
+			{
+				if (String.Compare(item.Text, host, true) == 0)
+				{
+					if (success)
+                        item.BackColor = Color.GreenYellow;
+					else
+						item.BackColor = Color.LightGray;
+				}
 			}
 		}
 
@@ -1030,8 +1068,7 @@ namespace wmpiconfig
 			tool_tip.SetToolTip(click_checkBox, "Get settings when a host name is selected");
 			tool_tip.SetToolTip(apply_button, "Apply the checked settings to the host in the host edit box");
 			tool_tip.SetToolTip(apply_all_button, "Apply the checked settings to all the hosts in the host list");
-			//tool_tip.SetToolTip(scan_button, "Retrieve the settings from the hosts in the host list");
-			tool_tip.SetToolTip(scan_button, "Scan and remove hosts from the list that don't have MPICH2 installed");
+			tool_tip.SetToolTip(scan_button, "Retrieve the settings from the hosts in the host list");
 			tool_tip.SetToolTip(get_hosts_button, "Get the host names from the specified domain");
 			tool_tip.SetToolTip(toggle_button, "Check or uncheck all the checked settings");
 		}
@@ -1062,6 +1099,7 @@ namespace wmpiconfig
 		{
 			int index = -1;
 			int port_index = -1;
+			int error_index = -1;
 			bool phrase_checked = false;
 			bool port_checked = false;
 			check_recursed = true;
@@ -1078,6 +1116,10 @@ namespace wmpiconfig
 					port_index = item.Index + 1;
 					port_checked = item.Checked;
 				}
+				else if (item.Text == "error")
+				{
+					error_index = item.Index + 1;
+				}
 				else
 				{
 					item.Checked = checkuncheck; //!item.Checked;
@@ -1093,9 +1135,26 @@ namespace wmpiconfig
 				// reset the port value
 				list.Items[port_index].Checked = port_checked;
 			}
+			if (error_index != -1)
+			{
+				// remove the error item check
+				list.Items[error_index].Checked = false;
+			}
 			checkuncheck = !checkuncheck;
 			toggle_button.Text = checkuncheck ? "x" : "o";
 			check_recursed = false;
+		}
+
+		private void hosts_list_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+		{
+			if (e.KeyValue == 46) // FIXME: Is there a generic way to determine the delete key?
+			{
+				// remove the host from the list
+				if (hosts_list.FocusedItem != null)
+				{
+					hosts_list.Items.Remove(hosts_list.FocusedItem);
+				}
+			}
 		}
 	}
 
