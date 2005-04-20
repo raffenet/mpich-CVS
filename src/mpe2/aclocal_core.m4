@@ -26,18 +26,18 @@ $1=$PWD
 if test "${$1}" != "" -a -d "${$1}" ; then 
     if test -r ${$1}/.foo$$ ; then
         /bin/rm -f ${$1}/.foo$$
-	/bin/rm -f .foo$$
+        /bin/rm -f .foo$$
     fi
     if test -r ${$1}/.foo$$ -o -r .foo$$ ; then
-	$1=
+        $1=
     else
-	echo "test" > ${$1}/.foo$$
-	if test ! -r .foo$$ ; then
+        echo "test" > ${$1}/.foo$$
+        if test ! -r .foo$$ ; then
             /bin/rm -f ${$1}/.foo$$
-	    $1=
+            $1=
         else
- 	    /bin/rm -f ${$1}/.foo$$
-	fi
+             /bin/rm -f ${$1}/.foo$$
+        fi
     fi
 fi
 if test "${$1}" = "" ; then
@@ -50,11 +50,11 @@ if test ! -r ${$1}/$2 ; then
     dnl PWD must be messed up
     $1=`pwd`
     if test ! -r ${$1}/$2 ; then
-	AC_MSG_ERROR([Cannot determine the root directory!])
+        AC_MSG_ERROR([Cannot determine the root directory!])
     fi
     $1=`pwd | sed -e 's%/tmp_mnt/%/%g'`
     if test ! -d ${$1} ; then 
-	AC_MSG_WARN([Warning: your default path uses the automounter; this may
+        AC_MSG_WARN([Warning: your default path uses the automounter; this may
 cause some problems if you use other NFS-connected systems.])
         $1=`pwd`
     fi
@@ -62,7 +62,7 @@ fi)
 if test -z "${$1}" ; then
     $1=`pwd | sed -e 's%/tmp_mnt/%/%g'`
     if test ! -d ${$1} ; then 
-	AC_MSG_WARN([Warning: your default path uses the automounter; this may
+        AC_MSG_WARN([Warning: your default path uses the automounter; this may
 cause some problems if you use other NFS-connected systems.])
         $1=`pwd`
     fi
@@ -155,9 +155,9 @@ test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
 PAC_PROG_CC_WORKS
 AC_PROG_CC_GNU
 if test "$ac_cv_prog_gcc" = yes; then
-  GCC=yes
+    GCC=yes
 else
-  GCC=
+    GCC=
 fi
 ])
 dnl
@@ -212,19 +212,19 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
     if ${AR-ar} cr libconftest.a conftest1.o >/dev/null 2>&1 ; then
         if ${RANLIB-:} libconftest.a >/dev/null 2>&1 ; then
             if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
-		# Success!  C works
-		ac_cv_prog_cc_globals_work=yes
-	    else
-	        # Failure!  Do we need -fno-common?
-	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c >> conftest.out 2>&1
-		rm -f libconftest.a
-		${AR-ar} cr libconftest.a conftest1.o >>conftest.out 2>&1
-	        ${RANLIB-:} libconftest.a >>conftest.out 2>&1
-	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
-		    ac_cv_prog_cc_globals_work="needs -fno-common"
-		    CFLAGS="$CFLAGS -fno-common"
-		fi
-	    fi
+                # Success!  C works
+                ac_cv_prog_cc_globals_work=yes
+            else
+                # Failure!  Do we need -fno-common?
+                ${CC-cc} $CFLAGS -fno-common -c conftest1.c >> conftest.out 2>&1
+                rm -f libconftest.a
+                ${AR-ar} cr libconftest.a conftest1.o >>conftest.out 2>&1
+                ${RANLIB-:} libconftest.a >>conftest.out 2>&1
+                if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
+                    ac_cv_prog_cc_globals_work="needs -fno-common"
+                    CFLAGS="$CFLAGS -fno-common"
+                fi
+            fi
         fi
     fi
 fi
@@ -244,3 +244,69 @@ else
     AC_MSG_ERROR([ $2 ])
 fi
 ])dnl
+dnl
+dnl Modified from mpich2/confdb/aclocal_cc.m4's PAC_CC_STRICT,
+dnl remove all reference to enable_strict_done.  Also, make it
+dnl more flexible by appending the content of $1 with the
+dnl --enable-strict flags.
+dnl
+dnl PAC_GET_GCC_STRICT_CFLAGS([COPTIONS])
+dnl COPTIONS    - returned variable with --enable-strict flags appended.
+dnl
+dnl Use the value of enable-strict to update input COPTIONS.
+dnl be sure no space is inserted after "(" and before ")", otherwise invalid
+dnl /bin/sh shell statement like 'COPTIONS  ="$COPTIONS ..."' will be resulted.
+dnl
+dnl AC_PROG_CC should be called before this macro function.
+dnl
+AC_DEFUN(PAC_GET_GCC_STRICT_FLAGS,[
+AC_MSG_CHECKING( [whether to add strict compiler check flags to $1] )
+# We must know the compiler type
+if test -z "CC" ; then
+    AC_CHECK_PROGS(CC,gcc)
+fi
+case "$enable_strict" in
+    yes)
+        if test "$ac_cv_prog_gcc" = "yes" ; then
+            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_WARN([no, strict support for gcc only!])
+        fi
+        ;;
+    all)
+        if test "$ac_cv_prog_gcc" = "yes" ; then
+            $1="[$]$1 -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -std=c89"
+            AC_MSG_RESULT([yes, all possible flags.])
+        else
+            AC_MSG_WARN([no, strict support for gcc only!])
+        fi
+        ;;
+    posix)
+        if test "$ac_cv_prog_gcc" = "yes" ; then
+            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L -std=c89"
+            AC_MSG_RESULT([yes, POSIX flavor flags.])
+        else
+            AC_MSG_WARN([no, strict support for gcc only!])
+        fi
+        ;;
+    noopt)
+        if test "$ac_cv_prog_gcc" = "yes" ; then
+            $1="[$]$1 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            AC_MSG_RESULT([yes, non-optimization flags.])
+        else
+            AC_MSG_WARN([no, strict support for gcc only!])
+        fi
+        ;;
+    no)
+        # Accept and ignore this value
+        :
+        ;;
+    *)
+        if test -n "$enable_strict" ; then
+            AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
+        fi
+        ;;
+esac
+])
+dnl
