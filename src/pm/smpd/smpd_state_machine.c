@@ -2029,8 +2029,15 @@ int smpd_state_reading_session_request(smpd_context_t *context, MPIDU_Sock_event
 #ifdef HAVE_WINDOWS_H
 	if (smpd_process.bService)
 	{
+	    if (smpd_option_on("jobs_only"))
+	    {
+		strcpy(context->cred_request, SMPD_CRED_REQUEST_JOB);
+	    }
+	    else
+	    {
+		strcpy(context->cred_request, SMPD_CRED_REQUEST);
+	    }
 	    context->write_state = SMPD_WRITING_CRED_REQUEST;
-	    strcpy(context->cred_request, SMPD_CRED_REQUEST);
 	}
 	else
 #endif
@@ -2551,6 +2558,14 @@ int smpd_state_reading_cred_ack(smpd_context_t *context, MPIDU_Sock_event_t *eve
     }
     smpd_dbg_printf("read cred ack: '%s'\n", context->cred_request);
     context->write_state = SMPD_IDLE;
+    if (smpd_option_on("jobs_only") && strcmp(context->cred_request, SMPD_CRED_ACK_SSPI_JOB_KEY))
+    {
+	/* jobs_only but the client returned something other than SMPD_CRED_ACK_SSPI_JOB_KEY */
+	context->state = SMPD_CLOSING;
+	result = MPIDU_Sock_post_close(context->sock);
+	smpd_exit_fn(FCNAME);
+	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
     if (strcmp(context->cred_request, "yes") == 0)
     {
 	context->read_state = SMPD_READING_ACCOUNT;
@@ -4636,6 +4651,31 @@ int smpd_state_reading_cred_request(smpd_context_t *context, MPIDU_Sock_event_t 
 	    return SMPD_FAIL;
 	}
 	return SMPD_SUCCESS;
+    }
+    if (strcmp(context->cred_request, SMPD_CRED_REQUEST_JOB) == 0)
+    {
+	if (smpd_process.use_sspi_job_key)
+	{
+	    strcpy(context->cred_request, SMPD_CRED_ACK_SSPI_JOB_KEY);
+	    context->write_state = SMPD_WRITING_CRED_ACK_SSPI_JOB_KEY;
+	    context->read_state = SMPD_IDLE;
+	    result = MPIDU_Sock_post_write(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+	    if (result != MPI_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the cred request sspi ack.\nsock error: %s\n",
+		    get_sock_error_string(result));
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    return SMPD_SUCCESS;
+	}
+	/* smpd requested(requires) a job but no job key specified. */
+	strcpy(context->cred_request, "no");
+	context->write_state = SMPD_WRITING_CRED_ACK_NO;
+	context->read_state = SMPD_IDLE;
+	result = MPIDU_Sock_post_write(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+	smpd_exit_fn(FCNAME);
+	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
     context->read_state = SMPD_READING_RECONNECT_REQUEST;
     result = MPIDU_Sock_post_read(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, SMPD_MAX_PORT_STR_LENGTH, NULL);

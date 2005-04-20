@@ -30,7 +30,7 @@ State [writing process session request],[label="writing process session request"
 State [reading cred request],[label="reading cred request"]
 	Event [data read]
 		if yes
-			Invoke_Action([have credentials],[label="yes"])
+			Invoke_Action([have credentials],[label="yes/job"])
 		else no
 			Change_State([reading reconnect request], [label="no"])
 Action [have credentials],[label="have credentials"]

@@ -23,7 +23,7 @@ State [writing connect result]
 State [reading session request],[label="reading session request"]
 	Event [data read]
 		if process_cred
-			Change_State([writing cred request],[label="process"])
+			Change_State([writing cred/job request],[label="process"])
 		else if process_nocred
 			Change_State([writing nocred request],[label="process"])
 		else if smpd_pwd
@@ -32,7 +32,7 @@ State [reading session request],[label="reading session request"]
 			Change_State([writing sspi request],[label="smpd"])
 		else
 			Change_State([writing nopwd request],[label="smpd"])
-State [writing cred request],[label="writing cred request"]
+State [writing cred/job request],[label="writing cred/job request"]
 	Event [data written]
 		Change_State([reading cred ack])
 State [reading cred ack],[label="reading cred ack"]

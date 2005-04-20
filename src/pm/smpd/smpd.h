@@ -112,6 +112,7 @@ typedef int SMPD_BOOL;
 #define SMPD_REGISTRY_CACHE_KEY           "SOFTWARE\\MPICH\\SMPD\\CACHE"
 #define MPICH_REGISTRY_KEY                "SOFTWARE\\MPICH"
 #define SMPD_CRED_REQUEST                 "credentials"
+#define SMPD_CRED_REQUEST_JOB             "job"
 #define SMPD_NO_CRED_REQUEST              "nocredentials"
 #define SMPD_CRED_ACK_SSPI                "sspi"
 #define SMPD_CRED_ACK_SSPI_JOB_KEY        "sspi_job"
