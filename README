@@ -471,6 +471,23 @@ placed in /home/me/mpich2-<VERSION>, the build is done in
   make install
 
 
+
+Shared Libraries
+================
+
+Shared libraries are currently only supported by gcc and tested under
+Linux.  To have shared libraries created when MPICH2 is built, specify
+the following when MPICH2 is configured:
+
+    configure --enable-sharedlibs=gcc --disable-cxx
+
+since currently shared libraries are incompatible with the C++
+libraries.  It is currently also necessary to build the Fortran
+libraries, which is the default, so just be sure not to configure with
+--disable-f77.
+
+
+
 Optional Features
 =================
 
