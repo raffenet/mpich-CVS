@@ -2313,6 +2313,18 @@ int smpd_state_reading_pwd_request(smpd_context_t *context, MPIDU_Sock_event_t *
     smpd_dbg_printf("read pwd request: '%s'\n", context->pwd_request);
     if (strcmp(context->pwd_request, SMPD_PWD_REQUEST) == 0)
     {
+	if (smpd_process.builtin_cmd == SMPD_CMD_ADD_JOB)
+	{
+	    /* job keys without passwords cannot be added unless the smpd is sspi protected. */
+	    smpd_err_printf("unable to save a job key because the smpd is not sspi protected.\n");
+	    context->state = SMPD_CLOSING;
+	    result = MPIDU_Sock_post_close(context->sock);
+	    smpd_exit_fn(FCNAME);
+	    result = (result == MPI_SUCCESS) ? SMPD_SUCCESS : SMPD_FAIL;
+	    smpd_exit_fn(FCNAME);
+	    return result;
+	}
+	/* FIXME: the smpd password needs to be able to be set */
 	strcpy(context->smpd_pwd, SMPD_DEFAULT_PASSWORD);
 	context->write_state = SMPD_WRITING_SMPD_PASSWORD;
 	result = MPIDU_Sock_post_write(context->sock, context->smpd_pwd, SMPD_MAX_PASSWORD_LENGTH, SMPD_MAX_PASSWORD_LENGTH, NULL);
@@ -2437,6 +2449,21 @@ int smpd_state_reading_pwd_request(smpd_context_t *context, MPIDU_Sock_event_t *
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
+
+    /* no password required case */
+
+    if (smpd_process.builtin_cmd == SMPD_CMD_ADD_JOB)
+    {
+	/* job keys without passwords cannot be added unless the smpd is sspi protected. */
+	smpd_err_printf("unable to save a job key because the smpd is not sspi protected.\n");
+	context->state = SMPD_CLOSING;
+	result = MPIDU_Sock_post_close(context->sock);
+	smpd_exit_fn(FCNAME);
+	result = (result == MPI_SUCCESS) ? SMPD_SUCCESS : SMPD_FAIL;
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+
     result = smpd_generate_session_header(context->session_header, 1);
     if (result != SMPD_SUCCESS)
     {
