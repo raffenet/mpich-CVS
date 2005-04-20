@@ -429,53 +429,90 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
-	if (smpd_get_opt_two_strings(argcp, argvp, "-add_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
+
+	if (strcmp((*argvp)[1], "-add_job") == 0)
 	{
-	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    if (smpd_get_opt(argcp, argvp, "-verbose"))
 	    {
-		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		smpd_process.verbose = SMPD_TRUE;
+		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
 	    }
-	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
-	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    if (smpd_get_opt_string(argcp, argvp, "-password", smpd_process.job_key_password, SMPD_MAX_PASSWORD_LENGTH))
+
+	    if (smpd_get_opt_two_strings(argcp, argvp, "-add_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
 	    {
-		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_AND_PASSWORD;
+		if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+		{
+		    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		}
+		smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+		smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+		if (smpd_get_opt_string(argcp, argvp, "-password", smpd_process.job_key_password, SMPD_MAX_PASSWORD_LENGTH))
+		{
+		    smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_AND_PASSWORD;
+		}
+		else
+		{
+		    smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB;
+		}
+		smpd_do_console();
+		fflush(stdout);
+		smpd_exit(0);
 	    }
-	    else
-	    {
-		smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB;
-	    }
-	    smpd_do_console();
+	    printf("Invalid number of arguments passed to -add_job\n");
 	    fflush(stdout);
-	    smpd_exit(0);
+	    smpd_exit(-1);
 	}
 
-	if (smpd_get_opt_string(argcp, argvp, "-remove_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	if (strcmp((*argvp)[1], "-remove_job") == 0)
 	{
-	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    if (smpd_get_opt(argcp, argvp, "-verbose"))
 	    {
-		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		smpd_process.verbose = SMPD_TRUE;
+		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
 	    }
-	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
-	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB;
-	    smpd_do_console();
+
+	    if (smpd_get_opt_string(argcp, argvp, "-remove_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	    {
+		if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+		{
+		    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		}
+		smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+		smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+		smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB;
+		smpd_do_console();
+		fflush(stdout);
+		smpd_exit(0);
+	    }
+	    printf("Invalid number of arguments passed to -remove_job\n");
 	    fflush(stdout);
-	    smpd_exit(0);
+	    smpd_exit(-1);
 	}
 
-	if (smpd_get_opt_string(argcp, argvp, "-associate_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	if (strcmp((*argvp)[1], "-associate_job") == 0)
 	{
-	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    if (smpd_get_opt(argcp, argvp, "-verbose"))
 	    {
-		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		smpd_process.verbose = SMPD_TRUE;
+		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
 	    }
-	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
-	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-	    smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB;
-	    smpd_do_console();
+
+	    if (smpd_get_opt_string(argcp, argvp, "-associate_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	    {
+		if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+		{
+		    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+		}
+		smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+		smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+		smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB;
+		smpd_do_console();
+		fflush(stdout);
+		smpd_exit(0);
+	    }
+	    printf("Invalid number of arguments passed to -associate_job\n");
 	    fflush(stdout);
-	    smpd_exit(0);
+	    smpd_exit(-1);
 	}
     }
 #endif
