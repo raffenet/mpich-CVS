@@ -1052,7 +1052,10 @@ int smpd_handle_result(smpd_context_t *context)
 		{
 		    /* print the result of the status command */
 		    printf("smpd running on %s\n", smpd_process.console_host);
-		    printf("dynamic hosts: %s\n", str);
+		    if (strcmp(str, "none"))
+		    {
+			printf("dynamic hosts: %s\n", str);
+		    }
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
 		    if (ret_val == SMPD_SUCCESS)
 		    {
@@ -5604,6 +5607,62 @@ int smpd_fail_unexpected_command(smpd_context_t *context)
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_generic_fail_command"
+int smpd_generic_fail_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+
+    smpd_enter_fn(FCNAME);
+
+    cmd = &context->read_cmd;
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying with failure to command: \"%s\"\n", temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 #undef FCNAME
@@ -5957,6 +6016,13 @@ int smpd_handle_command(smpd_context_t *context)
 		else if (strcmp(cmd->cmd_str, "remove_job") == 0)
 		{
 		    result = smpd_handle_remove_job_command(context);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+		else if (strcmp(cmd->cmd_str, "associate_job") == 0)
+		{
+		    smpd_dbg_printf("associate_job command received with improper smpd access\n");
+		    result = smpd_generic_fail_command(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
