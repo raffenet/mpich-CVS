@@ -1,6 +1,5 @@
 \documentclass[dvipdfm,11pt]{article}
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
-% \usepackage{code}
 \parskip=.1in
 
 \begin{document}
@@ -133,8 +132,10 @@ options of \texttt{mpiexec} or all of the options of MPICH1's
 MPICH1 (more precisely) MPICH1's \texttt{mpirun}) required access to
 command line arguments in all application programs, including Fortran
 ones, and MPICH1's \texttt{configure} devoted some effort to finding the
-right versions of \texttt{iargc} and \texttt{getarg} and placing them in
-the library.  Since MPICH2 does not require access to command line
+libraries that contained the right versions of \texttt{iargc} and
+\texttt{getarg} and including those libraries with which the
+\texttt{mpif77} script linked MPI programs.
+Since MPICH2 does not require access to command line
 arguments to applications, these functions are optional, and
 \texttt{configure} does nothing special with them.  If you need them in
 your applications, you will have to ensure that they are available in
@@ -226,14 +227,19 @@ You need not use the same compiler that MPICH2 was built with, but not
 all compilers are compatible.  You can also specify the compiler for
 building MPICH2 itself, as reported by \texttt{mpich2version} just by
 using the compiling and linking commands from the previous section.
-(See the \emph{Installer's Guide}).
+%(See the \emph{Installer's Guide}).
+The environment variables \texttt{MPICH\_CC}, \texttt{MPICH\_CXX},
+\texttt{MPICH\_F77}, and \texttt{MPICH\_F90} may be used to specify
+alternate C, C++, Fortran 77, and Fortran 90 compilers, respectively.
 
 \subsection{Shared Libraries}
 \label{sec:shared-libraries}
 
 Currently shared libraries are only tested on Linux, and there are
 restrictions.  See the \emph{Installer's Guide} for how to build MPICH2
-as a shared library.
+as a shared library.  If shared libraries have been built, you will
+get them automatically when you link your program with any of the
+MPICH2 compilation scripts.
 
 \subsection{Special Issues for C++}
 \label{sec:cxx}
@@ -259,26 +265,35 @@ etc. to be skipped).
 
 \subsection{Special Issues for Fortran}
 \label{sec:fortran}
-This section is under development.
 
-\begin{itemize}
-\item Review of basic and extended support; the Fortran 90 module.
-\item Flushing output.
-G95 requires 
-\begin{verbatim}
-setenv G95_UNBUFFERED_ALL TRUE
-\end{verbatim}
-or at least
-\begin{verbatim}
-setenv G95_UNBUFFERED_6 TRUE
-\end{verbatim}
-to have output to \texttt{stdout} appear when it is printed.  For
-example, in the example program \texttt{examples/f90/pi3f90}, without
-this setting, the prompt to enter the number of intervals will not
-appear until the program exits.
+MPICH2 provides two kinds of support for Fortran programs.  For
+Fortran 77 programmers, the file \texttt{mpif.h} provides the
+definitions of the MPI constants such as \texttt{MPI\_COMM\_WORLD}.
+Fortran 90 programmers should use the \texttt{MPI} module instead;
+this provides all of the definitions as well as interface definitions
+for many of the MPI functions.  However, this MPI module does not
+provide full Fortran 90 support; in particular, interfaces for the
+routines, such as \texttt{MPI\_Send}, that take ``choice'' arguments
+are not provided.
 
-\item Various name-mangling issues
-\end{itemize}
+%% \begin{itemize}
+%% \item Review of basic and extended support; the Fortran 90 module.
+%% \item Flushing output.
+%% G95 requires 
+%% \begin{verbatim}
+%% setenv G95_UNBUFFERED_ALL TRUE
+%% \end{verbatim}
+%% or at least
+%% \begin{verbatim}
+%% setenv G95_UNBUFFERED_6 TRUE
+%% \end{verbatim}
+%% to have output to \texttt{stdout} appear when it is printed.  For
+%% example, in the example program \texttt{examples/f90/pi3f90}, without
+%% this setting, the prompt to enter the number of intervals will not
+%% appear until the program exits.
+
+%% \item Various name-mangling issues
+%% \end{itemize}
 
 
 \section{Running Programs with \texttt{mpiexec}}
@@ -401,7 +416,9 @@ processes being started by the invocation of \texttt{mpiexec}.
 
 The MPI-2 Standard provides a way to pass different arguments to different
 application processes, but does not provide a way to pass environment
-variables.  The local parameter \texttt{-env} does this for one set of
+variables.  MPICH2 provides an extension that supports environment
+variables.
+The local parameter \texttt{-env} does this for one set of
 processes.  That is,
 \begin{verbatim}
    mpiexec -n 1 -env FOO BAR a.out : -n 2 -env BAZZ FAZZ b.out
@@ -471,7 +488,7 @@ For example, assume that a machinefile named \texttt{mf} contains:
     hosta
     hostb:2
     hostc    ifhn=hostc-gige
-    hostd:4  ifhn=hostd=gige
+    hostd:4  ifhn=hostd-gige
 \end{verbatim}
 In addition to specifying hosts and number of processes to run on each,
 this machinefile indicates that processes running on hostc and hostd
@@ -493,7 +510,7 @@ Process rank 0 is to run on \texttt{hosta}, ranks 1 and 2 on
 \texttt{hostb}, rank 3 on \texttt{hostc}, and ranks 4-6 on
 \texttt{hostd}.  Note that the file specifies information for up to 8
 ranks and we only used 7.  That is OK.  But, if we had used ``\texttt{-n
-  9}'', an error would be raised.  The file is NOT used as a pool of
+  9}'', an error would be raised.  The file is not used as a pool of
 machines that are cycled through; the processes are mapped to the hosts
 in the order specified in the file.
 
@@ -689,9 +706,9 @@ Windows specific options:
 \end{description}
 
 
-\subsection{Extensions for Forker}
+\subsection{Extensions for gforker}
 \label{sec:extensions-forker}
-The \texttt{forker} is a process management system for starting
+\texttt{gforker} is a process management system for starting
 processes on a single machine, so called because the MPI processes are
 simply \texttt{fork}ed from the \texttt{mpiexec} process.
 
@@ -699,7 +716,9 @@ simply \texttt{fork}ed from the \texttt{mpiexec} process.
 \label{sec:mpiexec-forker}
 
 The argument \texttt{-maxtime} sets a maximum time in seconds for the
-job to run.
+job to run.  \texttt{gforker} also supports all of the MPI-2 standard
+arguments for \texttt{mpiexec} as well as the extensions for
+environment variables described in Section~\ref{sec:environment}.
 
 
 \section{Managing the Process Management Environment}
@@ -936,9 +955,10 @@ the library path.  Add \texttt{cxx.lib} and \texttt{mpi.lib} to the
 Release target link command.  Add \texttt{cxxd.lib} and
 \texttt{mpid.lib} to the Debug target.
 
-Intel Fortran 8 users add \texttt{fmpich2d.lib} and \texttt{mpich2d.lib} to the link command.
+Intel Fortran 8 users should add \texttt{fmpich2d.lib} and
+\texttt{mpich2d.lib} to the link command. 
 
-Cygwin users use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
+Cygwin users should use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
 
 \subsection{Running}
 \label{sec:winrun}
