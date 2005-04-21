@@ -2,6 +2,35 @@
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
 \parskip=.1in
 
+% Formatting conventions for contributors
+% 
+% A quoting mechanism is needed to set off things like file names, command
+% names, code fragments, and other strings that would confuse the flow of
+% text if left undistinguished from preceding and following text.  In this
+% document we use the LaTeX macro '\texttt' to indicate such text in the
+% source, which normally produces, when used as in '\texttt{special text}',
+% the typewriter font.
+
+% It is particularly easy to use this convention if one is using emacs as
+% the editor and LaTeX mode within emacs for editing LaTeX documents.  In
+% such a case the key sequence ^C^F^T (hold down the control key and type
+% 'cft') produces '\texttt{}' with the cursor positioned between the
+% braces, ready for the special text to be typed.  The closing brace can
+% be skipped over by typing ^e (go to the end of the line) if entering
+% text or ^C-} to just move the cursor past the brace.
+
+% LaTeX mode is usually loaded automatically.  At Argonne, one way to 
+% get several useful emacs tools working for you automatically is to put
+% the following in your .emacs file.
+
+% (require 'tex-site)
+% (setq LaTeX-mode-hook '(lambda ()
+%          		 (auto-fill-mode 1)
+%          		 (flyspell-mode 1)
+%          		 (reftex-mode 1)
+% 			 (setq TeX-command "latex")))
+   
+
 \begin{document}
 \markright{MPICH2 User's Guide}
 \title{MPICH2 User's Guide\thanks{This work was supported by the Mathematical,
