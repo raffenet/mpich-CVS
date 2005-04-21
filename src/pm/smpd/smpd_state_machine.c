@@ -6642,23 +6642,37 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	{
 	    if (smpd_process.root_smpd == SMPD_FALSE && smpd_process.parent_context == NULL && smpd_process.left_context == NULL && smpd_process.right_context == NULL)
 	    {
-		if (smpd_process.listener_context)
+		smpd_context_t *iter = smpd_process.context_list;
+		/* If there is no connection to the parent, left child, and right child then exit.
+		 * But first check to see that no context is in the process of being formed that would become a left or right child.
+		 */
+		while (iter)
 		{
-		    smpd_dbg_printf("all contexts closed, closing the listener.\n");
-		    smpd_process.listener_context->state = SMPD_EXITING;
-		    result = MPIDU_Sock_post_close(smpd_process.listener_context->sock);
-		    if (result == MPI_SUCCESS)
-		    {
+		    /*if (iter->type == SMPD_CONTEXT_PARENT || iter->type == SMPD_CONTEXT_LEFT_CHILD || iter->type == SMPD_CONTEXT_RIGHT_CHILD)*/
+		    if (iter->type != SMPD_CONTEXT_LISTENER)
 			break;
-		    }
-		    smpd_err_printf("unable to post a close of the listener sock, error:\n%s\n",
-			get_sock_error_string(result));
+		    iter = iter->next;
 		}
-		smpd_free_context(context);
-		smpd_dbg_printf("all contexts closed, exiting state machine.\n");
-		/*smpd_exit(0);*/
-		smpd_exit_fn(FCNAME);
-		return SMPD_EXIT;
+		if (iter == NULL)
+		{
+		    if (smpd_process.listener_context)
+		    {
+			smpd_dbg_printf("all contexts closed, closing the listener.\n");
+			smpd_process.listener_context->state = SMPD_EXITING;
+			result = MPIDU_Sock_post_close(smpd_process.listener_context->sock);
+			if (result == MPI_SUCCESS)
+			{
+			    break;
+			}
+			smpd_err_printf("unable to post a close of the listener sock, error:\n%s\n",
+			    get_sock_error_string(result));
+		    }
+		    smpd_free_context(context);
+		    smpd_dbg_printf("all contexts closed, exiting state machine.\n");
+		    /*smpd_exit(0);*/
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_EXIT;
+		}
 	    }
 	}
 	break;
