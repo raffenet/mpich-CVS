@@ -285,7 +285,7 @@ case "$enable_strict" in
     posix)
         if test "$ac_cv_prog_gcc" = "yes" ; then
             $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L -std=c89"
-            AC_MSG_RESULT([yes, POSIX flavor flags.])
+            AC_MSG_RESULT([yes, POSIX flavored flags.])
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
@@ -293,7 +293,7 @@ case "$enable_strict" in
     noopt)
         if test "$ac_cv_prog_gcc" = "yes" ; then
             $1="[$]$1 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
-            AC_MSG_RESULT([yes, non-optimization flags.])
+            AC_MSG_RESULT([yes, non-optimized flags.])
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
