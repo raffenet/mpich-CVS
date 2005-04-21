@@ -12,7 +12,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef HAVE_SYS_PTRACE_H
 #include <sys/ptrace.h>
+#endif
 #include <sys/wait.h>
 #include <errno.h>
 #ifdef USE__LLSEEK

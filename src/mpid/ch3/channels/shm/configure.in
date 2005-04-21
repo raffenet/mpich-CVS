@@ -88,6 +88,7 @@ AC_CHECK_HEADERS(				\
     sys/ipc.h sys/shm.h sys/param.h \
     sys/socket.h netinet/in.h \
     fcntl.h sys/mman.h \
+    sys/ptrace.h \
 )
 
 AC_MSG_CHECKING([for x86 mfence instruction])
