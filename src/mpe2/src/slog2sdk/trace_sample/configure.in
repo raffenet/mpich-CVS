@@ -160,6 +160,7 @@ dnl  Set SED that is not set in AC_PROG_LIBTOOL in autoconf 2.5x
 AC_CHECK_PROG(SED, sed, sed, ;)
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
 AC_SUBST(LIBTOOL_DEPS)
 
 dnl Checks for libraries.
