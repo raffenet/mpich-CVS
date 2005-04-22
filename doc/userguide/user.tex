@@ -33,12 +33,12 @@
 
 \begin{document}
 \markright{MPICH2 User's Guide}
-\title{MPICH2 User's Guide\thanks{This work was supported by the Mathematical,
+\title{\textbf{MPICH2 User's Guide}\thanks{This work was supported by the Mathematical,
     Information, and Computational Sciences Division subprogram of the
     Office of Advanced Scientific Computing Research, SciDAC Program,
     Office of Science, U.S. Department of Energy, under Contract
     W-31-109-ENG-38.}\\
-Version 0.4\\
+Version 1.0.1b\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
@@ -627,7 +627,8 @@ A small number of environment variables affect the behavior of
 
 SMPD is an alternate process manager that runs on both Unix and Windows.
 It can launch jobs across both platforms if the binary formats match 
-(big/little endianness and size of C types - int,long,void*,etc).
+(big/little endianness and size of C types-- \texttt{int},
+\texttt{long}, \texttt{void*}, etc).
 
 
 \subsubsection{\texttt{mpiexec} arguments for SMPD}
@@ -650,10 +651,10 @@ All options to \texttt{mpiexec}:
 \begin{description}
 \item[\texttt{-n x}]
 \item[\texttt{-np x}]\mbox{}\\
-  launch x processes
+  launch \texttt{x} processes
 \item[\texttt{-localonly x}]
 \item[\texttt{-np x -localonly}]\mbox{}\\
-  launch x processes on the local machine
+  launch \texttt{x} processes on the local machine
 \item[\texttt{-machinefile filename}]\mbox{}\\
   use a file to list the names of machines to launch on
 \item[\texttt{-host hostname}]\mbox{}\\
@@ -664,8 +665,8 @@ All options to \texttt{mpiexec}:
   In the second version the number of processes = m1 + m2 + ... + mn
 \item[\texttt{-dir drive:$\backslash$my$\backslash$working$\backslash$directory}]
 \item[\texttt{-wdir /my/working/directory}]\mbox{}\\
-  launch processes with the specified working directory. (-dir and -wdir are
-equivalent)
+  launch processes with the specified working directory. (\texttt{-dir}
+  and \texttt{-wdir} are equivalent)
 \item[\texttt{-env var val}]\mbox{}\\
   set environment variable before launching the processes
 %\item[\texttt{-nocolor}]\mbox{}\\
@@ -686,7 +687,7 @@ be printed and \texttt{mpiexec} will exit.
 \item[\texttt{-phrase passphrase}]\mbox{}\\
   specify the passphrase to authenticate connections to \texttt{smpd} with.
 \item[\texttt{-smpdfile filename}]\mbox{}\\
-  specify the file where the smpd options are stored including the 
+  specify the file where the \texttt{smpd} options are stored including the 
 passphrase. (unix only option)
 %\item[\texttt{-soft Fortran90\_triple}]\mbox{}\\
 %  acceptable number of processes to launch up to maxprocs
@@ -795,7 +796,7 @@ a number of approaches, some of which depend on the exact version of
 MPICH2 you are using. 
 
 
-\subsection{\texttt{gdb via mpiexec}}
+\subsection{\texttt{gdb} via \texttt{mpiexec}}
 \label{sec:gdb via mpiexec}
 
 If you are using the MPD process manager, you can use the
@@ -810,8 +811,9 @@ by the ``\texttt{z}'' command.
 
 %
 % We need to make this tiny; small is still too big for the line lengths
-% that are in this example
-\begin{tiny}
+% that are in this example.
+% But tiny makes it too hard to read, so I applied minor edits instead- RL
+\begin{small}
 \begin{verbatim}
 ksl2% mpiexec -gdb -n 10 cpi
 0-9:  (gdb) l
@@ -842,13 +844,14 @@ ksl2% mpiexec -gdb -n 10 cpi
 0-9:  27                    myid, numprocs, processor_name);
 0-9:  28            fflush(stdout);
 0-9:  29        
-0-9:  30            n = 10000;                  /* default # of rectangles */
+0-9:  30            n = 10000;       /* default # of rectangles */
 0-9:  31            if (myid == 0)
 0-9:  32                startwtime = MPI_Wtime();
 0-9:  33        
 0-9:  34            MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 0-9:  (gdb) b 30
-0-9:  Breakpoint 2 at 0x4000000000002541: file /home/lusk/mpich2/examples/cpi.c, line 30.
+0-9:  Breakpoint 2 at 0x4000000000002541: 
+                      file /home/lusk/mpich2/examples/cpi.c, line 30.
 0-9:  (gdb) r
 0-9:  Continuing.
 0:  Process 0 of 10 is on ksl2
@@ -864,7 +867,7 @@ ksl2% mpiexec -gdb -n 10 cpi
 0-9:  
 0-9:  Breakpoint 2, main (argc=1, argv=0x60000fffffffb4b8)
 0-9:      at /home/lusk/mpich2/examples/cpi.c:30
-0-9:  30            n = 10000;                  /* default # of rectangles */
+0-9:  30            n = 10000;        * default # of rectangles */
 0-9:  (gdb) n
 0-9:  31            if (myid == 0)
 0-9:  (gdb) n
@@ -940,7 +943,7 @@ ksl2% mpiexec -gdb -n 10 cpi
 0-9:  MPIGDB ENDING
 ksl2% 
 \end{verbatim}
-\end{tiny}
+\end{small}
 You can attach to a running job with
 \begin{verbatim}
     mpiexec -gdba <jobid>
@@ -967,9 +970,9 @@ MPICH2 are copied to the Windows system32 directory.
 
 The libraries in the \texttt{lib} directory were compiled with MS Visual C++ .NET 2003
 and Intel Fortran 8.1.  These 
-compilers and any others that can link with the MS .lib files can be used to
-create user applications.  gcc and g77 for cygwin can be used with the 
-libmpich*.a libraries.
+compilers and any others that can link with the MS \texttt{.lib} files can be used to
+create user applications.  \texttt{gcc} and \texttt{g77} for \texttt{cygwin} can be used with the 
+\texttt{libmpich*.a} libraries.
 
 For MS Developer Studio users: Create a project and add
 \begin{verbatim}
@@ -993,7 +996,7 @@ Cygwin users should use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
 \label{sec:winrun}
 
 MPI jobs are run from a command prompt using \texttt{mpiexec.exe}.  See
-section \ref{sec:extensions-smpd} on \texttt{mpiexec} for \texttt{smpd}
+Section~\ref{sec:extensions-smpd} on \texttt{mpiexec} for \texttt{smpd}
 for a description of the options to \texttt{mpiexec}.
 
 
