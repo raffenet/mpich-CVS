@@ -26,7 +26,7 @@ if (!isatty(0) && !isatty(1) && !isatty(2) && getsid(0) != getpid()) {
     pid_t rc;
     /* printf( "Creating a new session\n" ); */
 /*    printf( "Session id = %d and process id = %d\n", getsid(0), getpid() );*/
-    MPIE_SYSCALL(rc,setsid,);
+    MPIE_SYSCALL(rc,setsid,());
     if (rc < 0) {
 	MPIU_Internal_sys_error_printf( "setsid", errno, 
 				"Could not create new process group\n" );
