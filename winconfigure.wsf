@@ -946,6 +946,7 @@ F77_MPI_2DOUBLE_COMPLEX   = HexToInt(dtypes.Item("MPI_2DOUBLE_COMPLEX"))
 F77_MPI_2REAL             = HexToInt(dtypes.Item("MPI_2REAL"))
 F77_MPI_2DOUBLE_PRECISION = HexToInt(dtypes.Item("MPI_2DOUBLE_PRECISION"))
 F77_MPI_CHARACTER         = HexToInt(dtypes.Item("MPI_CHARACTER"))
+F77_MPI_BYTE              = HexToInt(dtypes.Item("MPI_BYTE"))
 F77_MPI_LB                = HexToInt(dtypes.Item("MPI_LB"))
 F77_MPI_PACKED            = HexToInt(dtypes.Item("MPI_PACKED"))
 F77_MPI_UB                = HexToInt(dtypes.Item("MPI_UB"))
@@ -1846,7 +1847,11 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@MPI_LONG_DOUBLE@"
 				str = Replace(str, "@MPI_LONG_DOUBLE@", MPI_LONG_DOUBLE)
 			Case "@MPI_BYTE@"
-				str = Replace(str, "@MPI_BYTE@", MPI_BYTE)
+				If use_f77 Then
+					str = Replace(str, "@MPI_BYTE@", F77_MPI_BYTE)
+				Else
+					str = Replace(str, "@MPI_BYTE@", MPI_BYTE)
+				End If
 			Case "@MPI_WCHAR_T@"
 				str = Replace(str, "@MPI_WCHAR_T@", MPI_WCHAR_T)
 			Case "@MPI_PACKED@"
