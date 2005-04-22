@@ -10,19 +10,24 @@ EXPORTS
 	MPIR_Grequest_set_lang_f77
 ;	MPIR_F_TRUE
 ;	MPIR_F_FALSE
+	MPIR_F_NeedInit
 	MPIR_F_MPI_BOTTOM
+	MPIR_F_MPI_IN_PLACE
 	MPI_F_STATUS_IGNORE
 	MPI_F_STATUSES_IGNORE
 	MPI_F_ERRCODES_IGNORE
 	MPI_F_ARGVS_NULL
+	MPIRINITF
+	mpirinitf=MPIRINITF
+	mpirinitf_=MPIRINITF
 ; C++ values
-        MPIR_Keyval_set_cxx
-        MPIR_Errhandler_set_cxx
+	MPIR_Keyval_set_cxx
+	MPIR_Errhandler_set_cxx
 	MPIR_Op_set_cxx
 ; misc
-        MPID_Wtick
-;        MPID_Wtime
-        MPID_Wtime_todouble
+	MPID_Wtick
+;	MPID_Wtime
+	MPID_Wtime_todouble
 	MPIR_Dup_fn
 	MPI_DUP_FN=MPIR_Dup_fn
 	MPID_Parse_option

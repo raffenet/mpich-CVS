@@ -683,18 +683,20 @@ static struct fn_table
     void (*MPIR_Keyval_set_cxx)(int, void (*)(void), void (*)(void));
     void (*MPIR_Errhandler_set_cxx)(MPI_Errhandler, void (*)(void));
     void (*MPIR_Op_set_cxx)(MPI_Op, void (*)(void));
+    void (*MPIRINITF)(void);
     double (*MPID_Wtick)(void);
     void (*MPID_Wtime_todouble)(MPID_Time_t *, double *);
     /*int (*MPIR_Dup_fn)(MPI_Comm, int, void *, void *, void *, int *);*/
 } fn;
 
 /* Extra exported internal symbols */
-void *MPIR_F_MPI_BOTTOM;
-void *MPIR_F_MPI_IN_PLACE;
-void *MPI_F_STATUS_IGNORE;
-void *MPI_F_STATUSES_IGNORE;
-int  *MPI_F_ERRCODES_IGNORE;
-void *MPI_F_ARGVS_NULL;
+int MPIR_F_NeedInit = 1;
+void *MPIR_F_MPI_BOTTOM = NULL;
+void *MPIR_F_MPI_IN_PLACE = NULL;
+void *MPI_F_STATUS_IGNORE = NULL;
+void *MPI_F_STATUSES_IGNORE = NULL;
+int  *MPI_F_ERRCODES_IGNORE = NULL;
+void *MPI_F_ARGVS_NULL = NULL;
 
 static HMODULE hMPIModule = NULL;
 static HMODULE hPMPIModule = NULL;
@@ -1643,6 +1645,7 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     fn.MPIR_Keyval_set_cxx = (void (*)(int, void (*)(void), void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Keyval_set_cxx");
     fn.MPIR_Errhandler_set_cxx = (void (*)(MPI_Errhandler, void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Errhandler_set_cxx");
     fn.MPIR_Op_set_cxx = (void (*)(MPI_Op, void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Op_set_cxx");
+    fn.MPIRINITF = (void (*)(void))GetProcAddress(hPMPIModule, "MPIRINITF");
     fn.MPID_Wtick = (double (*)(void))GetProcAddress(hPMPIModule, "MPID_Wtick");
     fn.MPID_Wtime_todouble = (void (*)(MPID_Time_t *, double *))GetProcAddress(hPMPIModule, "MPID_Wtime_todouble");
     /*fn.MPIR_Dup_fn = (int (*)(MPI_Comm, int, void *, void *, void *, int *))GetProcAddress(hPMPIModule, "MPIR_Dup_fn");*/
@@ -1747,6 +1750,11 @@ void MPIR_Op_set_cxx(MPI_Op op, void (*opcall)(void))
     fn.MPIR_Op_set_cxx(op, opcall);
 }
 
+void MPIRINITF()
+{
+    fn.MPIRINITF();
+}
+
 double MPID_Wtick(void)
 {
     return fn.MPID_Wtick();
@@ -1763,9 +1771,15 @@ int MPI_Init( int *argc, char ***argv )
     int result;
     void **p;
     int **i;
+    int *n;
 
     result = fn.MPI_Init(argc, argv);
     /* These variables need to be initialized after MPI_Init is called */
+    n = (int*)GetProcAddress(hMPIModule, "MPIR_F_NeedInit");
+    if (n)
+    {
+	MPIR_F_NeedInit = *n;
+    }
     p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_BOTTOM");
     if (p)
     {
@@ -1804,8 +1818,15 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int result;
     void **p;
     int **i;
+    int *n;
+
     result = fn.MPI_Init_thread(argc, argv, required, provided);
     /* These variables need to be initialized after MPI_Init is called */
+    n = (int*)GetProcAddress(hMPIModule, "MPIR_F_NeedInit");
+    if (n)
+    {
+	MPIR_F_NeedInit = *n;
+    }
     p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_BOTTOM");
     if (p)
     {
@@ -3501,9 +3522,15 @@ int PMPI_Init( int *argc, char ***argv )
     int result;
     void **p;
     int **i;
+    int *n;
 
     result = fn.PMPI_Init(argc, argv);
     /* These variables need to be initialized after MPI_Init is called */
+    n = (int*)GetProcAddress(hPMPIModule, "MPIR_F_NeedInit");
+    if (n)
+    {
+	MPIR_F_NeedInit = *n;
+    }
     p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_BOTTOM");
     if (p)
     {
@@ -3542,8 +3569,15 @@ int PMPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int result;
     void **p;
     int **i;
+    int *n;
+
     result = fn.PMPI_Init_thread(argc, argv, required, provided);
     /* These variables need to be initialized after MPI_Init is called */
+    n = (int*)GetProcAddress(hPMPIModule, "MPIR_F_NeedInit");
+    if (n)
+    {
+	MPIR_F_NeedInit = *n;
+    }
     p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_BOTTOM");
     if (p)
     {
