@@ -76,7 +76,7 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
                 while (1) {
                     if (pscw_sync_addr[src] == '1') {
                         /* reset it and break */
-                        pscw_sync_addr[src] == '0';
+                        pscw_sync_addr[src] = '0';
                         break;
                     }
                 }
