@@ -19,14 +19,14 @@ $do_dependencies = "dynamic"; # set to no, static, or dynamic to attempt
 			      # recursive ops) but no actions
 $makeInclude = "include";     # set to the include command to use.
                               # This is more robust if it ignores missing files
-$arAllAtOnce = 1;             # Set to 1 to ar all objects in the 
-                              # profiling target at once, rather than
-                              # one at a time.  Change to 0 if 
-                              # failures are encountered due to line-length
-                              # limits.  Use the smvar_name option to
-                              # control this on a file-by-file basis.
+                              # (e.g., the gnumake "-include")
 $gCheckForTargets = 0;        # Set to 1 to look for files not included
                               # in the Makefile.sm
+
+# makeBlockSep is used to deliniate blocks of code in the generated makefile
+# to enhance readability
+$makeBlockSep = 
+"# --------------------------------------------------------------------------\n";
 
 # Set the names for the autoconf and autoheader program, along with 
 # the optional args and the argument used to specify the include dir for
@@ -75,9 +75,9 @@ $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib
 # <program>_DEPS = other program dependencies
 # DEPSALL = dependencies for *all* programs
 
-$make_depend = "gcc -MM -MT '$$*.pf $$*.o'";  
+$make_depend = "gcc -MM -MT '_$$*.o $$*.o'";  
            # Set to command to create dependency list.  Include the
-           # Profiling objects (.pf).  If gcc includes -MF, we can
+           # Profiling objects (_xxx.o).  If gcc includes -MF, we can
            # output directly: -MF '.deps/$*.d'
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
@@ -93,6 +93,7 @@ $doc_heading = "MPI";
 #%doc_extra   = ();  # for kinds html, man, latex
 #
 $fixup_for_timestamps = 1; # make is broken
+$fixup_for_timestamps = 0;
 # FIXME:
 # The sleep amount should be parameterized.  One developer at IBM 
 # needed 10 seconds, not 1, because of the variation in file system times
@@ -174,52 +175,51 @@ $quiet = 0;
 	@mv -f _s$*.o $*.lo',
 	      'f90:lo' => '$(F90_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo',
-# This has an MPICH-specific definition that we should eventually generalize
-# We use -o on the compile line to keep from overwriting the .o file;
-# this improves the behavior when weak symbols are not supported
-# We use _ for the profiling lib intermediates
-              'c:pf' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< -o _$*.o
-	@mv -f _$*.o $*.pf'
+## This has an MPICH-specific definition that we should eventually generalize
+## We use -o on the compile line to keep from overwriting the .o file;
+## this improves the behavior when weak symbols are not supported
+## We use _ for the profiling lib intermediates
+#              'c:pf' => '${C_COMPILE} -c $< -o _$*.o
 	     );
 
 # When we are building profiled versions, we use a separate ext rule
 %extrules_with_profile = %extrules;
 # PROFILE_DEF_MPI is set when needed to create the profiling libraries.
-$extrules_with_profile{'c:o'} =~ s/-c/-c \@PROFILE_DEF_MPI\@/;
-print "rule = $extrules_with_profile{'c:o'}\n" if $debug;
+#$extrules_with_profile{'c:o'} =~ s/-c/-c \@PROFILE_DEF_MPI\@/;
+#print "rule = $extrules_with_profile{'c:o'}\n" if $debug;
 
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
-%extdef = ( 'c:o'   => 'CC          = @CC@
-CFLAGS      = @CFLAGS@
-C_COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
-	    'f:o'   => 'FC          = @FC@
-FFLAGS      = @FFLAGS@
-F77_COMPILE = $(FC) $(FFLAGS) $(F77INCLUDES)',
-	    'cxx:o' => 'CXX         = @CXX@
-CXXFLAGS    = @CXXFLAGS@
-CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
-	    'cpp:o' => 'CXX         = @CXX@
-CXXFLAGS    = @CXXFLAGS@
-CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
-	    'cs:o'  => 'CSHARP      = @CSHARP@
-CSFLAGS     = @CSFLAGS@
-CSHARP_COMPILE = $(CSHARP) $(DEFS) $(INCLUDES) $(CSFLAGS) $(CPPFLAGS)',
-	    's:o'   => 'AS          = @AS@
-AS_COMPILE  = $(AS)',
-	    'f90:o'   => 'F90          = @F90@
-F90FLAGS    = @F90FLAGS@
-F90_COMPILE = $(F90) $(F90FLAGS) $(F90INCLUDES)',
+%extdef = ( 'c:o'   => 'CC              = @CC@
+CFLAGS          = @CFLAGS@
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
+	    'f:o'   => 'FC              = @FC@
+FFLAGS          = @FFLAGS@
+F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)',
+	    'cxx:o' => 'CXX             = @CXX@
+CXXFLAGS        = @CXXFLAGS@
+CXX_COMPILE     = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
+	    'cpp:o' => 'CXX             = @CXX@
+CXXFLAGS        = @CXXFLAGS@
+CXX_COMPILE     = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
+	    'cs:o'  => 'CSHARP          = @CSHARP@
+CSFLAGS         = @CSFLAGS@
+CSHARP_COMPILE  = $(CSHARP) $(DEFS) $(INCLUDES) $(CSFLAGS) $(CPPFLAGS)',
+	    's:o'   => 'AS              = @AS@
+AS_COMPILE      = $(AS)',
+	    'f90:o'   => 'F90              = @F90@
+F90FLAGS        = @F90FLAGS@
+F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)',
 # Similarly, but for shared-library versions
-	    'c:lo'   => 'CC_SHL      = @CC_SHL@
+	    'c:lo'   => 'CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
-	    'f:lo'   => 'FC_SHL      = @FC_SHL@
+	    'f:lo'   => 'FC_SHL          = @FC_SHL@
 F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
-	    'f90:lo'   => 'F90_SHL      = @F90_SHL@
+	    'f90:lo'   => 'F90_SHL          = @F90_SHL@
 F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS)',
-	    'cxx:lo' => 'CXX_SHL     = @CXX_SHL@
+	    'cxx:lo' => 'CXX_SHL         = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
-	    'cpp:lo' => 'CXX_SHL     = @CXX_SHL@
+	    'cpp:lo' => 'CXX_SHL         = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	   );
 #
@@ -259,27 +259,23 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 # Directories needed.  These are the prefix etc.  Many are needed only
 # at the top level, particularly for installation.  srcdir is needed only for
 # VPATH builds
-# We must build the srcdir and top_srcdir specially because autoconf
-# insists on replacing this text.  The rest we had to do to allow the
-# maint/configure to work under Cygwin
-$srcdir_name =               'srcdir          = @' . "srcdir"      . '@';
-$master_topsrcdir_name =     
-               'master_top_srcdir  = @' . "master_top_srcdir"  . '@';
-$topsrcdir_name =            'top_srcdir      = @' . "top_srcdir"  . '@';
-$prefix_name =               'prefix          = @' . "prefix"      . '@'; 
-$exec_prefix_name =          'exec_prefix     = @' . "exec_prefix" . '@';
-$bindir_name =               'bindir          = @' . "bindir"      . '@';
-$sbindir_name =              'sbindir         = @' . "sbindir"     . '@';
-$libdir_name =               'libdir          = @' . "libdir"      . '@';
-$includedir_name =           'includedir      = @' . "includedir"  . '@';
-$mandir_name =               'mandir          = @' . "mandir"      . '@';
-$htmldir_name =              'htmldir         = @' . "htmldir"     . '@';
-$docdir_name =               'docdir          = @' . "docdir"      . '@';
-$sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
+$srcdir_name =               "srcdir          = \@srcdir\@";
+$master_topsrcdir_name =     "master_top_srcdir  = \@master_top_srcdir\@";
+$topsrcdir_name =            "top_srcdir      = \@top_srcdir\@";
+$prefix_name =               "prefix          = \@prefix\@"; 
+$exec_prefix_name =          "exec_prefix     = \@exec_prefix\@";
+$bindir_name =               "bindir          = \@bindir\@";
+$sbindir_name =              "sbindir         = \@sbindir\@";
+$libdir_name =               "libdir          = \@libdir\@";
+$includedir_name =           "includedir      = \@includedir\@";
+$mandir_name =               "mandir          = \@mandir\@";
+$htmldir_name =              "htmldir         = \@htmldir\@";
+$docdir_name =               "docdir          = \@docdir\@";
+$sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
 # top_builddir is used by libtool.  We use master_top_builddir because
 # the various configure scripts need to use the root of the build (that
 # is the model that we use for simplemake projects)
-$top_builddir_name = "\@master_top_builddir\@";
+$top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
@@ -463,6 +459,12 @@ foreach $_ (@ARGV) {
     elsif (/-debug/) {
 	$debug = 1;
     }
+    elsif (/-smvar_([\w_]*)=(.*)/) {
+	# Allow the command-line to override internal variables
+	my $varname = $1;
+	my $varvalue   = $2;
+	$${varname} = $varvalue;
+    }
     elsif (/-quietmake/) { $quietmake = "@"; }
     elsif (/-noquietmake/) { $quietmake = ""; }
     elsif (/-quiet/) { $quiet = 1; }
@@ -504,24 +506,6 @@ if ($do_dependencies eq "static") {
 }
 
 # Routines
-# Strip \n or \r\n from the end of a string
-#sub strip (\@@);
-sub strip {
-#    my $aref = @_;
-#    foreach (@$aref) { s/[\r,\n]*$//; }
-    for(@_)
-    {
-        s/\W*$//;
-    }
-}
-
-# Try this one soon:
-# sub strip_newline {
-#   my $line = $_[0];
-#   $line =~ s/\r\n$//;
-#   return $line;
-#}
-
 # =========================================================================
 # Read Makefile.sm
 sub ReadMfile {
@@ -558,12 +542,17 @@ sub ReadMfile {
 	# Using the _a_ in the library lines is necessary to distinguish
 	# between libraries and programs that start with lib...
         if (/^lib([@\${}\(\)\w-]*)_a_SOURCES\s*=\s*(.*)$/) {
-            $libname = "$1";
+            $libname   = $1;
             $libsource = $2;
             $libraries{ $libname } = $libsource;
+	    # Keep a number for each library; this is used for
+	    # alternate targets used to handle filesystem timestamp problems
+	    $libnum{$libname} = $libcount++;
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
 	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.a";
+	    &LibraryTimestampTarget( "${libloc}lib$libname.a", 
+				     ".libstamp" . $libnum{$libname} );
 	    # Shared libraries should not be built unconditionally.  
 	    # Instead of adding them to the alltargets, add them
 	    # to a allshlibtargets
@@ -575,6 +564,8 @@ sub ReadMfile {
 	    if ($do_sharedlibs) {
 	    	$allshlibtargets[$#allshlibtargets+1] = 
 		    "${libloc}lib$libname.la";
+		$dirs_seen{'top_builddir'} = 1;   # For libtool
+		$libnum{$libname.".la"} = $libcount++;
 	    }
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
@@ -596,6 +587,7 @@ sub ReadMfile {
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
 	    $allshlibtargets[$#allshlibtargets+1] = "${libloc}lib$libname.so";
+	    $dirs_seen{'top_builddir'} = 1;   # For libtool
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
 	    # Keep track of source files
@@ -629,6 +621,10 @@ sub ReadMfile {
 	elsif (/^profilelib_([@\${}\(\)\w-]*)\s*=\s*(.*)\s*$/) {
 	    # proflib_<oldname> = <newname>
 	    $profile_libraries{$1} = $2;
+	    $libnum{$2} = $libcount++;
+	    if ($do_sharedlibs) {
+		$libnum{$2.".la"} = $libcount++;
+	    }
 	    $found_profilelib = 1;
 	}
 	elsif (/^install_([\w-]*)\s*=\s*(.*)\s*$/) {
@@ -808,32 +804,30 @@ sub WriteMfile {
 	print FD "# \@configure_input\@$newline";
     }
     # Ensure that the default target takes us to "all"
+    print FD "$newline$makeBlockSep";
     print FD "all: all-redirect$newline$newline";
     # Autoconf sets a number of directories that some tools (such as libtool)
     # may rely on.  
-    # We use the master_top_builddir instead of top_builddir because
-    # we manage subdirectory builds in a different way than the Automake and
-    # Autoconf style
-    # (but we do need top_builddir if we're using libtool)
-# These are not currently in use (or we should generate them only
-# when they are used)
-#    print FD "top_builddir = \@master_top_builddir\@$newline";
-#    print FD "builddir     = \@builddir\@$newline";
     if ($useinclude) {
-        print FD "SHELL = \@SHELL\@$newline";
+	printMakeVariable( FD, "SHELL", "\@SHELL\@" );
         print FD "include $includedir/$makefilebase$newline";
+	# Print out variables before generated targets
+	print FD $other_vars;
+	print FD "$newline";
     }
     else {
 	# We may want to break DefaultRules into a pre and post version
+	&DefaultVariables;
+
+	# Other variables
+	
+	# Print out variables before generated targets
+	print FD $other_vars;
+	print FD "$newline";
+
         &DefaultRules;
     }
     
-    # Other variables
-    &VariableDocs;
-
-    # Print out variables before generated targets
-    print FD $other_vars;
-    print FD "$newline";
 
     # Generate the all-redirect: target (libraries, programs, and 
     # anything specified by all-local)
@@ -854,6 +848,9 @@ sub WriteMfile {
 	    }
 	}
     }
+
+    # Handle any specifically requested shared libraries (ones that
+    # have no static counterpart)
     if (%shared_libraries) {
 	# If any shared libraries were requested...
 	&TargetSharedLibraries( \%shared_libraries );
@@ -861,16 +858,12 @@ sub WriteMfile {
 	    &TargetSharedLibraryFinal( "lib$libname.la", "lib$libname.so", "." );
 	}
     }
+
     if ($do_profilelibs && $found_profilelib) {
 	&print_make_endline( FD );
-	&print_make_line_nobreak( FD, "@" . "NO_WEAK_SYM_TARGET\@:" );
-	foreach $lib (keys(%profile_libraries)) {
-	    $libloc = &GetLibLoc( $lib );
-	    $proflib_name = $profile_libraries{$lib};
-	    print_make_line( FD, " ${libloc}lib$proflib_name.a" );
-	}
-	print_make_endline( FD );
+	print FD $makeBlockSep;
 	&TargetProfileLibraries;
+	print FD $makeBlockSep;
     }
 
     # Coverage analysis
@@ -880,11 +873,11 @@ sub WriteMfile {
     &TargetPrograms;
 
     # Documentation
-    if ($maint_targets) {
-	&TargetDocs;
-    }
+    &TargetDocs;
 
+    print FD $makeBlockSep;
     &TargetInstall;
+    print FD $makeBlockSep;
 
     # This is ugly, but we need to tell the install target when we're at
     # the top for the documentation.  This should be promoted to 
@@ -905,14 +898,19 @@ sub WriteMfile {
     }
 
     # Tags
+    print FD $makeBlockSep;
     &TargetTags;
+    print FD $makeBlockSep;
 
     # Unrecognized lines go here
     print FD $other_text;
+
+    # Add a final target, used by gnumake
     print FD "${newline}FORCE_TARGET:${newline}${newline}";
+
     close FD;
 
-    # Make the file read only
+    # FIXME: Make the file read only
     # ($dev,$ino,$mode) = stat $output_filename
     # Modifiy $mode to remove write permissions
     # use chmod $mode $output_filename
@@ -930,42 +928,31 @@ sub WriteMfile {
 # Output files may contain either a set of default rules, written by this
 # routine, or an include of a set of base rules.
 #
-sub DefaultRules {
+sub DefaultVariables {
     # SHELL must be in uppercase for Make to use it as the shell to
     # execute commands with.
-    print FD "SHELL           = \@SHELL\@$newline";
+    printMakeVariable( FD, "SHELL", "\@SHELL\@" );
 
     # Library definitions
     if (scalar(%libraries)) {
 	# Add ar, ranlib definitions if there are any library targets.
-        print FD "AR              = \@AR\@$newline";
-	print FD "RANLIB          = \@RANLIB\@$newline";
-# Replace this with a block to create the actual shared library (.so), 
-# not just the archive of sharable objects (.la)	
-# 	if ($do_sharedlibs) {
-# 	    foreach $ext (keys(%ext_seen)) {
-# 		if (defined($shlibdefs{$ext})) {
-# 		    print FD "$shlibdefs{$ext}$newline";
-# 		}
-# 	    }
-# 	}
+	printMakeVariable( FD, "AR", "\@AR\@" );
+	printMakeVariable( FD, "RANLIB", "\@RANLIB\@" );
     }
-    $out_mkdir_p = 0;
     if ($do_sharedlibs) {
 	if (defined($optinstall_files{'SHLIB'})) {
-	    # Add the definition of libtool incase we're using
+	    # Add the definition of libtool in case we're using
 	    # libtool to provide the shared library.
-	    print FD "LIBTOOL = \@LIBTOOL\@$newline";
+	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
 	    print FD "$shlibdefs{'c'}$newline";
 	}
 	elsif ($found_sharedlib) {
 	    # No install target, but a shared library is begin built
 	    # Add the definition of libtool incase we're using
 	    # libtool to provide the shared library.
-	    print FD "LIBTOOL = \@LIBTOOL\@$newline";
+	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
 	    print FD "$shlibdefs{'c'}$newline";
-	    $out_mkdir_p = 1;
-	    print FD "MKDIR_P         = \@MKDIR_P\@$newline";
+	    printMakeVariable( FD, "MKDIR_P", "\@MKDIR_P\@" );
 	}
     }
 
@@ -973,9 +960,7 @@ sub DefaultRules {
 	print FD "INSTALL         = \@INSTALL\@$newline";
 	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
 	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
-	if (! $out_mkdir_p) {
-	    print FD "MKDIR_P         = \@MKDIR_P\@$newline";
-	}
+	printMakeVariable( FD, "MKDIR_P", "\@MKDIR_P\@" );
     }
 
     # Directory definitions
@@ -1022,40 +1007,28 @@ sub DefaultRules {
     if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"}) ||
 	defined($ext_seen{"cpp"})) {
 	if (!defined($makevars{'DEFS'})) {
-	    my $otherdefs = "";
-	    if (defined($PrependVar{'DEFS'})) {
-		$otherdefs = $PrependVar{'DEFS'};
-	    }
-	    print FD "DEFS            = $otherdefs \@DEFS\@ -I. -I\${srcdir}$newline";
+	    printMakeVariable( FD, "DEFS", "\@DEFS\@ -I. -I\${srcdir}" );
 	}
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
-	    print FD "INCLUDES            = $include_list$newline";
+	    printMakeVariable( FD, "INCLUDES", $include_list );
         }
 	if (!defined($makevars{"CPPFLAGS"})) {
-	    my $otherflags = "";
-	    if (defined($PrependVar{'CPPFLAGS'})) {
-		$otherflags = $PrependVar{'CPPFLAGS'};
-	    }
-	    print FD "CPPFLAGS        = $otherflags \@CPPFLAGS\@$newline";
+	    printMakeVariable( FD, "CPPFLAGS", "\@CPPFLAGS\@" );
 	}
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
 	if (!defined($makevars{"LIBS"})) {
-	    my $otherlibs = "";
-	    if (defined($PrependVar{'LIBS'})) {
-		$otherlibs = $PrependVar{'LIBS'};
-	    }
-	    print FD "LIBS            = $otherlibs \@LIBS\@$newline";
+	    printMakeVariable( FD, "LIBS", "\@LIBS\@" );
 	}
     }
 
     # If there are subdirs, we need make
     if (($#subdirs >= 0 || $#doc_subdirs >= 0) && 
 	! defined($makevars{"MAKE"})) {
-	print FD "MAKE            = \@MAKE\@$newline";
+	printMakeVariable( FD, "MAKE", "\@MAKE\@" );
     }
 
     # Add any standard definitions
@@ -1065,8 +1038,6 @@ sub DefaultRules {
 
     # Definitions for each possible program type seen
     $any_prog_def = 0;
-    $libtool_def = 0;   # Keep track of whether libtool definitions have 
-                        # been made.
     foreach $ext (keys(%ext_seen)) {
 	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
@@ -1088,15 +1059,10 @@ sub DefaultRules {
 	    $any_prog_def = 1;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
-	    if (!$libtool_def && $#allshlibtargets >= 0) {
+	    if ($#allshlibtargets >= 0) {
 		# Only add the libtool definition if there are targets that
 		# may need it.
-		$libtool_def = 1;
-		if (!defined($dir_added{'top_builddir'})) {
-		    $dir_added{'top_builddir'} = 1;
-		    print FD "top_builddir = \@master_top_builddir\@$newline";
-		}
-		print FD "LIBTOOL  = \@LIBTOOL\@$newline";
+		printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
 	    }
 	    $extkey = "$ext:lo";
 	    if (defined($extdef{$extkey})) {
@@ -1127,8 +1093,15 @@ sub DefaultRules {
         print FD '@VPATH@'; print FD "$newline";
     }
     else {
-        print FD 'VPATH = .:${srcdir}'; print FD "$newline";
+	# Some make programs require a specific directory, not a make
+	# variable, in the VPATH specification
+        print FD "VPATH = .:\@srcdir\@$newline";
     }
+
+    &VariableDocs;
+}
+
+sub DefaultRules {
 
     # Add the compilation rules.  Include only those needed for the
     # given files.  Remove all default suffix rules
@@ -1136,9 +1109,6 @@ sub DefaultRules {
 	$suffixes = ".o";
 	if ($do_sharedlibs || $found_sharedlib) { 
 	    $suffixes .= " .lo";
-	}
-	if ($do_profilelibs && $found_profilelib) {
-	    $suffixes .= " .pf";
 	}
     }
     foreach $ext (keys(%ext_seen)) {
@@ -1187,11 +1157,6 @@ sub DefaultRules {
 	    if (defined($extrules{$extkey})) {
 		print FD "\t$extrules{$extkey}$newline";
 	    }
-	}
-	if ($found_profilelib && $ext eq "c" && $do_profilelibs) {
-	    $extkey = "$ext:pf";
-	    print FD ".c.pf:$newline";
-	    print FD "\t$extrules{$extkey}$newline";
 	}
 	$extkey = "$ext:";
 	# We may want to make this conditional, only generating it
@@ -1285,6 +1250,7 @@ sub DefaultRules {
     }
     if ($maint_targets && $smdir && $smdir ne "") {
 	print FD "$newline";
+	print FD $makeBlockSep;
 	print FD "\${srcdir}/Makefile.in: \${srcdir}/Makefile.sm$newline";
 	if ($rootdir) {
 	    print FD "\t( cd \${srcdir} && $smdir/simplemake -rootdir=$rootdir \\$newline";
@@ -1307,6 +1273,7 @@ sub DefaultRules {
 	if ($lcurdir && defined($autoconf_files_by_dir{$lcurdir})) {
 	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\$newline";
 	}
+	print FD "\t-smvar_doc_attop=0 \\$newline";
 	print FD "\t\tMakefile.sm )$newline";
 	print FD "Makefile: \${srcdir}/Makefile.in$newline";
 
@@ -1339,6 +1306,7 @@ sub DefaultRules {
 	}
 	print STDOUT "curdir is $curdir and relcurdir is $relcurdir\n" if $debug_confdir;
 	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
+	print FD $makeBlockSep;
     }
     # Clean targets
     &TargetClean;
@@ -1441,12 +1409,16 @@ sub ClearVars {
     $regular_headers = "";
     %sources = ();
     %headers = ();
+
     # Targets
     @alltargets = ();   # implicit targets 
     @allshlibtargets = (); # implicit shared library targets
+    %altalltargets = ();   # related targets to items in alltargets
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
     %libraries = ();
+    $libcount = 0;
+    %libnum    = ();    # Gives number associated with library
     %shared_libraries = ();
     %profile_libraries = ();
     %profile_library_sources = ();
@@ -1464,9 +1436,14 @@ sub ClearVars {
     $ldadd_all = "";
     %pgm_depadd = ();
     $depadd_all = "";
+
     # Variables
+    # makevars are variables seen in the Makefile.sm
+    # addedMakeVars are variables that have been added to the output
+    # Makefile.in
     %PrependVar = ();
     %makevars = ();
+    %addedMakeVars = ();
     # Information about program targets
     %pgmlinktypes = ();
     # Other directories
@@ -1667,18 +1644,16 @@ sub ProcessFile {
 }
 
 sub ListTargets {
-  T: foreach $target (@alltargets) {
+  foreach $target (@alltargets) {
       # Skip the extra programs
-      if (defined($extra_programs{$target})) { next T; }
+      if (defined($extra_programs{$target})) { next; }
+      # Add any alternate target (used for targets in other directories
+      # to work around timestamp problems).
+      if (defined($altalltargets{$target})) {
+	  print_make_line( FD, " " . $altalltargets{$target} );
+      }
       print_make_line( FD,  " $target" );
   }
-    if ($found_profilelib) { 
-	# Add the special configure name that is used for building extra
-	# code when weak symbols are not supported.
-	# Special case: we do not want this alone on a line (so we 
-	# force the print routine to NOT flush the line
-	print_make_line_nobreak( FD,  " @" . "NO_WEAK_SYM@" );
-    }
 }			       
 
 #
@@ -1827,10 +1802,6 @@ sub LookForSuffixes {
 	if (defined($extdef{"$suffix:o"})) {  
 	    $ext_seen{$suffix} = 1;
 	}
-#  	# Also check for .txt files, used for documentation
-#  	if ($suffix eq "txt") {
-#  	    $ext_seen{$suffix} = 1;
-#  	}
     }
 }
 
@@ -1882,6 +1853,8 @@ sub TargetAll {
 	    print_make_line( FD, "all-local:" );
 	    &ListTargets;
 	}
+	
+	#  Create the final shared library (typically .so) from the .la file
 	if (defined($optinstall_files{'SHLIB'})) {
 	    # Conditionally create the shared libraries.
 	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
@@ -1891,6 +1864,7 @@ sub TargetAll {
 	    }
 	    print FD "\tfi\n";
 	}
+
 	&TargetPostamble( "all" );
     }
     else {
@@ -1901,12 +1875,38 @@ sub TargetAll {
 	    print_make_line( FD, " all-local " );
 	}
 	&ListTargets;
+	if ($found_profilelib) {
+	    print_make_endline( FD );
+	    # Add a conditional step
+	    print FD "\t\@if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
+	    foreach my $lib (keys(%profile_libraries)) {
+		my $proflib = $profile_libraries{$lib};
+		my $libstamp = ".libstamp" . $libnum{$proflib};
+#		my $libloc = &GetLibLoc( $lib );
+#		my $fullname = "${libloc}lib$proflib.a";
+#		print FD "\t    \${MAKE} $fullname ; \\\n";
+		print FD "\t    \${MAKE} $libstamp ; \\\n";
+	    }
+	    print FD "\tfi";
+	}
 	if ($do_sharedlibs && $#allshlibtargets >= 0) {
 	    # Add a conditional step
 	    print_make_endline( FD );
 	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $shlib (@allshlibtargets) {
 		print FD "\t    \${MAKE} $shlib ; \\\n";
+	    }
+	    if ($found_profilelib) {
+		print FD "\t    if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
+		foreach my $lib (keys(%profile_libraries)) {
+		    my $proflib = $profile_libraries{$lib};
+		    my $libloc = &GetLibLoc( $lib );
+		    my $fullname = "${libloc}lib$proflib.la";
+		    my $libstamp = ".libstamp" . $libnum{$proflib.".la"};
+		    print FD "\t        \${MAKE} $libstamp ; \\\n";
+#		    print FD "\t        \${MAKE} $fullname ; \\\n";
+		}
+		print FD "\t    fi ; \\\n";
 	    }
 	    print FD "\tfi\n";
 	}
@@ -1975,6 +1975,7 @@ sub TargetClean {
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
     print FD "\t-${quietLine}rm -f *.o \${srcdir}/*.o $programnames$newline";
+    &LibraryTimestampClean;
     # Add Windows names of executables
     if ($programnames ne "") {
 	print FD "\t-${quietLine}rm -f";
@@ -1992,10 +1993,6 @@ sub TargetClean {
     # these files even if we're not building for enabling shared libraries
     # this time around.
     print FD "\t-${quietLine}rm -f *.lo \${srcdir}/*.lo$newline";
-
-    if ($do_profilelibs && $found_profilelib) {
-	print FD "\t-${quietLine}rm -f *.pf \${srcdir}/*.pf$newline";
-    }
 
     # Clean coverage analysis files
     &GcovClean;
@@ -2138,13 +2135,14 @@ sub TargetDistclean {
 # LibraryBuild ( libname, libloc, libfiles, lib extension, member extension )
 # Not quite right.  Need to include the update command as well as ways
 # to handle the "special extensions", both for the library (e.g., .a vs. .la)
-# and members (e.g., .o vs .pf)
+# and members (e.g., .o vs .lo)
 sub LibraryBuild {
     my $libname = $_[0];
     my $libloc  = $_[1];
     my $sourcefiles = $_[2];
     my $libext = $_[3];
     my $memext = $_[4];
+
     if (!$dolib_member) {
 	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
     }
@@ -2193,20 +2191,73 @@ sub TargetLibraries {
     foreach $lib (keys(%libraries)) {
 	my $libloc = &GetLibLoc( $lib );
 	my $sourcefiles = &ExpandMakeVars($libraries{$lib});
+
+	&LibraryTimestampPrefix( $lib, $libloc );
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
         if ($ranliblib) { 
 	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
 	}
 	# To handle timestamp problems with recursive makes, add a delay
-	if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
- 	    $SleepText = $Sleep;
-	    $SleepText =~ s/LIB/${libloc}lib$lib.a/;
-	    print FD "\t$SleepText$newline"; 
-        }
-
+	&LibraryTimestampFix( $lib, $libloc )
     }
 }
 
+#
+# Fix for problems with timestamps.  If the file is not local (not
+# obviously in the current directory), then apply one of the fixes
+#
+# LibraryTimestampTarget - Save additional target name in altalltargets hash
+#                          (used in ListTargets)
+# LibraryTimestampPrefix - Additional target for the library
+# LibraryTimestampFix - Fix *after* all other operations
+# LibraryTimestampClean - Add clean commands for library timestamps
+sub LibraryTimestampTarget {
+    my ($fulllibname,$libstamp) = @_;
+    if ($fulllibname =~ /^\.\./ && !$fixup_for_timestamps) {
+	$altalltargets{$fulllibname} = $libstamp;
+    }
+}
+sub LibraryTimestampPrefix {
+    my ($lib, $libloc) = @_;
+
+    if ($libloc =~ /^\.\./) {
+	if (!$fixup_for_timestamps) {
+	    my $num = "";
+	    if (defined($libnum{$lib})) {
+		$num = $libnum{$lib};
+	    }
+	    &print_make_line( FD, ".libstamp$num " );
+	}
+    }
+}
+sub LibraryTimestampFix {
+    my ($lib,$libloc) = @_;
+    if ($libloc =~ /^\.\./) {
+	if ($fixup_for_timestamps) {
+	    my $SleepText = $Sleep;
+	    my $fulllibname = $libloc . "lib$lib.a";
+	    $SleepText =~ s/LIB/$fulllibname/;
+            print FD "\t$SleepText$newline"; 
+        } else {
+	    if (defined($libnum{$lib})) {
+		my $num = "";
+		$num = $libnum{$lib};
+		print FD "\tdate > .libstamp$num\n";
+	    }
+	}
+    }
+}  
+
+sub LibraryTimestampClean {
+    if ($libcount > 0) {
+	print FD "\trm -f ";
+	for( my $i=0; $i<$libcount; $i++) {
+	    print FD ".libstamp$i ";
+	}
+	print FD "\n";
+    }
+}
+# --------------------------------------------------------------------------
 
 # This code is similar to TargetLibraries.
 sub TargetProfileLibraries {
@@ -2217,13 +2268,17 @@ sub TargetProfileLibraries {
 	# Take the sources from the base library unless 
 	# they were explicitly listed
 	if (defined($profile_library_sources{$lib})) {
-	    $sourcefiles = &ExpandMakeVars($profile_library_sources{$lib});
+	    $sourcefiles = $profile_library_sources{$lib};
 	}
 	else {
-            $sourcefiles = &ExpandMakeVars($libraries{$lib});
+            $sourcefiles = $libraries{$lib};
 	}
-#	&LibraryBuild( $proflib_name, $libloc, $sourcefiles, "a", "pf" );
-	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
+	$sourcefiles = &ExpandMakeVars( $sourcefiles );
+	# FIXME: Use LibraryBuild here
+	# Use the library stamp
+	my $libstamp = ".libstamp" . $libnum{$proflib_name};
+	print FD "$libstamp: ";
+	#&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
         foreach $sourcefile (split(/\s+/,$sourcefiles)) {
 	    $found_source_files = 1;
             $obj = $sourcefile;
@@ -2235,7 +2290,8 @@ sub TargetProfileLibraries {
 		next;
 	    }
 	    elsif (defined($extrules{"$ext:o"})) {
-		$obj =~ s/\.$ext/\.pf/g;
+		$obj =~ s/\.$ext/\.o/g;
+		$obj = "_" . $obj;
 	    }
 	    else {
 		# Be silent on .h files
@@ -2248,34 +2304,73 @@ sub TargetProfileLibraries {
 	&print_make_endline( FD );
 	if ($found_source_files) {
 	    # Add these files as objects to the archive
-	    print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
-	    print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
-	    print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file _\$\${bname}.o ; done;)$newline";
-	    # We should try to use a single invocation of ar instead of
-	    # a separate one for each file, since ar is usually O(length) 
-	    # for a single file, so this approach is O(length*nfiles).
-	    # The only reason not to do this is that a particularly long
-	    # command line may exceed commandline length limits.
-	    if ($arAllAtOnce) {
-		print FD "\t\${AR} cr ${libloc}lib$proflib_name.a .tmp/*.o$newline";
-	    }
-	    else {
-		print FD "\tfor file in .tmp/*.o ; do \\$newline";
-		print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
-	    }
+	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$?$newline";
 	    if ($ranliblib) { 
 		print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+	    }
+	    # To handle timestamp problems with recursive makes, 
+	    # add a delay
+	    &LibraryTimestampFix( $proflib_name, $libloc );
+	}
+
+	if ($do_sharedlibs) {
+	    my $libstamp = ".libstamp" . $libnum{$proflib_name.".la"};
+	    print FD "$libstamp: ";
+	    #&print_make_line( FD, "${libloc}lib$proflib_name.la: " );
+	    foreach $sourcefile (split(/\s+/,$sourcefiles)) {
+		$found_source_files = 1;
+		$obj = $sourcefile;
+		# Convert to object file
+		$ext = $sourcefile;
+		$ext =~ s/^.*\.//g;
+		if ($ext eq "f") { 
+		    # Ignore Fortran source files (setbotf.f in mpich2)
+		    next;
+		}
+		elsif (defined($extrules{"$ext:o"})) {
+		    $obj =~ s/\.$ext/\.lo/g;
+		    $obj = "_" . $obj;
+		}
+		else {
+		    # Be silent on .h files
+		    if ($ext ne "h") {
+			print STDERR "Unknown extension $ext for $sourcefile for profile library $proflib_name\n";
+		    }
+		}
+		&print_make_line( FD, "$obj " );
+	    }
+	    &print_make_endline( FD );
+	    if ($found_source_files) {
+		# Add these files as objects to the archive
+		print FD "\t\${AR} cr ${libloc}lib$proflib_name.la \$?$newline";
 		# To handle timestamp problems with recursive makes, 
 		# add a delay
-		if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
-		    $SleepText = $Sleep;
-		    $SleepText =~ s/LIB/${libloc}lib$proflib_name.a/;
-		    print FD "\t$SleepText$newline"; 
-		}
+		&LibraryTimestampFix( $proflib_name.".la", $libloc );
 	    }
-	    print FD "\t-rm -rf .tmp$newline";
 	}
-    }
+	
+	# The new dependencies on the object files
+        foreach $sourcefile (split(/\s+/,$sourcefiles)) {
+	    $found_source_files = 1;
+            $obj = $sourcefile;
+            # Convert to object file
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    if ($ext ne "c") {
+		print STDERR "Unknown extension $ext for $sourcefile for profile library $proflib_name\n";
+		next;
+	    }
+	    $obj =~ s/\.$ext/.o/;
+	    $obj = "_" . $obj;
+	    print FD "$obj: $sourcefile$newline";
+	    print FD "\t\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$< -o $obj$newline";
+	    if ($do_sharedlibs) {
+		$obj =~ s/\.o/.lo/;
+	        print FD "$obj: $sourcefile$newline";
+	        print FD "\t\$(C_COMPILE_SHL) -c \@PROFILE_DEF_MPI\@ \$< -o $obj$newline";
+	    }
+        }
+    } # foreach lib
 }
 #
 # ===========================================================================
@@ -2377,15 +2472,29 @@ library, or new library name)\n" if $debug;
 	my $rule = $extdef{"c:o"}; 
 	print FD "$rule\n";
     }
-    print FD "# Build the shared library from the shared object files\n";
-    print FD "$libdir/$newlibname: $libdir/$libname\n";
-    print FD "\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi\n";
-    print FD "\t\$(MKDIR_P) $libdir/.tmp\n";
-    print FD "\t(cd $libdir/.tmp && ar x ../$libname && \\\n";
-    print FD "\tfor file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\\n";
-    print FD "\t\tmv \$\$file \$\$bfile.o ; done; \\\n";
-    print FD "\t\${C_LINK_SHL} -o ../$newlibname *.o)\n";
-    print FD "\trm -rf $libdir/.tmp\n";
+    print FD "# Build the shared library from the shared object files
+$libdir/$newlibname: $libdir/$libname
+\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi
+\t\$(MKDIR_P) $libdir/.tmp
+\t(cd $libdir/.tmp && ar x ../$libname && \\
+\tfor file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
+\t\tmv \$\$file \$\$bfile.o ; done; \\
+\t\${C_LINK_SHL} -o ../$newlibname *.o)
+\trm -rf $libdir/.tmp\n";
+
+    # FIXME: Here are the directions for building a shared library under
+    # cygwin:
+    #\t(cd $libdir/.tmp && ar x ../$libname && \\
+    #\tfor file in *.lo ; do bfile=\`basename \$file .lo\` ; \\
+    #\t\tmv \$\$file \$\$bfile.o ; done; \\
+    #\tdlltool -e exports.o -l $libbase.lib *.o
+    #\tgcc -shared *.o -o $newlibname)
+    #
+    # where libbase is like "libmpich", not "libmpich.a", and
+    # the extension is dll, not so, e.g.,
+    # dlltool -e exports.o -l libmpich.lib *.o
+    # gcc -shared *.o -o libmpich.dll
+    #
 }
 #
 # ===========================================================================
@@ -2467,14 +2576,14 @@ sub TargetTags {
     $has_sources = 0;
     $has_headers = 0;
     if ($regular_sources ne "") {
-	&print_make_longline( FD, "SOURCES = $regular_sources" );
+	printMakeVariable( FD, "SOURCES", $regular_sources );
 	$has_sources = 1;
     }
     elsif (defined($makevars{'SOURCES'})) {
 	$has_sources = 1;
     }
     if ($regular_headers ne "") {
-	&print_make_longline( FD, "HEADERS = $regular_headers" );
+	printMakeVariable( FD, "HEADERS", $regular_headers );
 	$has_headers = 1;
     }
     if (defined($makevars{'HEADERS'})) {
@@ -2490,7 +2599,7 @@ sub TargetTags {
     if ($has_headers || $has_sources) {
 	# Make it eaiser to change the tags program options.
 	# For example, this adds .i as a known "C" language file
-	&print_make_longline( FD, "ETAGS = etags --langmap=c:+.i" );
+	printMakeVariable( FD, "ETAGS", "etags --langmap=c:+.i" );
     }
 
     # Add a synonym for tags.
@@ -2576,7 +2685,7 @@ sub VariableDocs {
     # Let us set doctext from configure.  We only need this if
     # we saw any sources.  This expresion is true if docsrc is non-empty
     if (scalar(%docsrc)) {
-	print FD "DOCTEXT = \@DOCTEXT\@\n";
+	printMakeVariable( FD, "DOCTEXT", "\@DOCTEXT\@" );
     }
 }
 
@@ -2673,8 +2782,10 @@ sub SubForSuffixes {
 # Generate the documentation targets.
 #
 sub TargetDocs {
-    if (! $do_docs) { return; }
+    if (! $do_docs || $maint_targets) { return; }
     my %didkind = ( "html" => 0, "man" => 0, "latex" => 0 );
+
+    print FD $makeBlockSep;
     foreach my $kind (keys(%docsrc)) {
 	$targetKind = $docTargetName{$kind};
 	print FD "$targetKind: ";
@@ -2753,6 +2864,7 @@ sub TargetDocs {
 	    }
 	}
     }
+    print FD $makeBlockSep;
 }
 
 #
@@ -3088,9 +3200,9 @@ sub AddDependency {
 	s/\S*mpidpre\.h//g;
 	s/\S*mpidpost\.h//g;
 
-	# For derived object files like lo and pf, add these
+	# For derived object files like lo and _xxx.o, add these
 	if ($do_profilelibs && $found_profilelib) {
-	    s/^(.*)\.o:(.*)/$1.o $1.pf:$2/;
+	    s/^(.*)\.o:(.*)/$1.o _$1.o:$2/;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
 	    s/^(.*)\.o(.*)/$1.o $1.lo$2/;
@@ -3153,7 +3265,7 @@ sub TargetDependenciesDynamic {
     # -include is gnumake for "include if file exists, ignore otherwise"
     if ($makeInclude eq "") { $makeInclude = "-include"; }
 
-    print FD "# --------------------------------------------------------$newline";
+    print FD $makeBlockSep;
     print FD "# Dependencies$newline";
     # This definition follows the cone for COMPILE_C
     if ($has_sources) {
@@ -3161,10 +3273,11 @@ sub TargetDependenciesDynamic {
 	# dependencies with gcc
 	print FD "DEPS_DIR = .deps$newline";
 	# We'd like to use $found_profilelib to decide whether
-	# to include the $*.pf in the target string.  
+	# to include the _$*.o in the target string.  
 	# But make wants to do the $* substitutions before variable
 	# substitutions
-	print FD "MAKE_DEPEND_C = \@MAKE_DEPEND_C\@ \$(DEFS) \$(INCLUDES) \$(CPPFLAGS)$newline";
+	printMakeVariable( FD, "MAKE_DEPEND_C", 
+             "\@MAKE_DEPEND_C\@ \$(DEFS) \$(INCLUDES) \$(CPPFLAGS)$newline" );
 	print FD "dependencies: \$(DEPS_DIR)/timestamp$newline";
     }
     else {
@@ -3181,7 +3294,7 @@ sub TargetDependenciesDynamic {
     # when each file is compile (gcc can almost do this, as long as
     # you don't mind having .d files in the build directory)
     if ($has_sources) {
-	# Use $found_profilelib to decide whether to add .pf to the
+	# Use $found_profilelib to decide whether to add _xxx.o to the
 	# target name.  This requires that the MAKE_DEPEND_C compiler
 	# accept the -MT option
 	foreach $lib (keys(%libraries)) {
@@ -3190,7 +3303,7 @@ sub TargetDependenciesDynamic {
 		$ext =~ s/^.*\.//g;
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
-		my $targetOpts = "-MT \'$sourcebasename.pf $sourcebasename.o\'";
+		my $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
 		if (!$found_profilelib) {
 		    $targetOpts = "";
 		}
@@ -3226,7 +3339,7 @@ sub TargetDependenciesDynamic {
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
 		if ($ext eq "c") {
-		    $targetOpts = "-MT \'$sourcebasename.pf $sourcebasename.o\'";
+		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
 		    if (!$found_profilelib) {
 			$targetOpts = "";
 		    }
@@ -3241,7 +3354,7 @@ sub TargetDependenciesDynamic {
 	print FD "$makeInclude \$(DEPS_DIR)/alldeps$newline";
     }
     print FD "# End of Dependencies$newline";
-    print FD "# --------------------------------------------------------$newline";
+    print FD $makeBlockSep;
 }
 
 sub DistCleanDependencies {
@@ -3250,7 +3363,12 @@ sub DistCleanDependencies {
     print FD "\t-${quietLine}rm -rf \$(DEPS_DIR)$newline";
 }
 
-
+# ===========================================================================
+#
+# Routines to support autoconf and configure, including extracting information
+# from the configure file and rebuilding configure from configure.in
+#
+#
 # Extract derived files from autoconf
 # Also record whether there is an AC_CONFIG_HEADER
 # If AC_OUTOUT contains any shell variables, you can use
@@ -3354,7 +3472,7 @@ sub ReadAutoconf {
 		    else {
 			print STDERR "Shell variable $varname will not be added to the list\
 of known autoconf file files for ";
-			if ($lcurdir ne "") {
+			if (defined($lcurdir) && $lcurdir ne "") {
 			    print STDERR "$lcurdir.\n";
 			}
 			else {
@@ -3464,7 +3582,6 @@ sub print_make_setpos {
 sub print_make_longline {
     my $FD = $_[0];
     my $line = $_[1];
-    my $len = length( $line );
     &PrintMakeLongline( $FD, $line, "last" );
 }
 
@@ -3499,34 +3616,27 @@ sub PrintMakeLongline {
 	&print_make_endline( $FD );
     }
 }
+# Print a Make variable definition only if it hasn't been made already
+# Add and prepend value that may have been specified
+sub printMakeVariable {
+    my ($FD,$var,$definition) = @_;
 
-# Eventually we will use this to generate the profiling targets.
-#### THIS IS DEAD CODE!! DO NOT USE!!!
-sub ProfileTargets {
-    print FD "\
-# Instead, we define the PMPI_OBJECTS as having suffix pf:\
-PMPI_OBJECTS = \${OBJECTS:.o=.pf}\
-# Convert foo.pf to _foo.o, then archive all at once\
-\${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
-        \@echo \"Rename xxx.pf to _xxx.o for profiling interface.\"\
-        \@if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi\
-        \@for file in \$? ; do \\\
-            bname=`basename \$\$file .pf`; \\\
-            cp \$\$file .tmp/_\$\${bname}.o ; \\\
-        done\
-        \@cd .tmp && \${AR} cr \$\@ *.o && rm -f *.o\
-        -\@rmdir .tmp\
-# Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file\
-# named with -o to have any suffix other than .o !\
-.c.pf:\
-        \${C_COMPILE} -c -DMPICH_MPI_FROM_PMPI \$< -o \$*.o\
-        \@mv -f \$*.o \$*.pf\
-.f.pf:\
-        \${F77_COMPILE} -c \$<\
-        \@mv -f \$*.o \$*.pf\
-";
+    if (!defined($addedMakeVars{$var})) {
+	$addedMakeVars{$var} = $definition;
+	if (defined($PrependVar{$var})) {
+	    $definition = $PrependVar{$var} . $definition;
+	}
+	my $nspace = 16 - length($var);
+	my $blanks = "";
+	while ($nspace > 0) { $blanks .= " "; $nspace-- }
+	PrintMakeLongline( $FD, "$var$blanks= $definition", "last" );
+    }
+    elsif ($addedMakeVars{$var} ne $definition) {
+	my $value = $addedMakeVars{$var};
+	print STDERR "Variable $var, being defined with $definition, already has value $value\n";
+    }
 }
-#
+#
 # Find a working autoconf.
 # If the variables autoconf and autoconf_version are set, try to
 # find one that works in the user's path.  The format for these
@@ -3680,4 +3790,36 @@ sub checkForTargets {
     }
     closedir DIR;
 }
-
+#
+#  ------------------------------------------------------------------------
+# Comments and explanation for the various library rules (new version)
+# 
+# 1) GNU tools attempt to generate several files at the same time.
+#    For example, dependency generation is best viewed (when done with gcc)
+#    as a side effect of compiling.  Libtool, used to produce shared 
+#    libraries, normally produces both .o and .lo files (objects for 
+#    conventional, non-shared libraries, and objects for shared libraries).
+#
+# 2) Make does not reliably determine dependencies between source and result 
+#    files when the result file has recently been modified.  There are two 
+#    sources to this problem: the obvious one of inconsistent time-of-day
+#    values between the system on which the build is occuring and the 
+#    system with the source or destination files.  The more subtle problem, 
+#    verified by using detailed debugging, is that gnumake and makes with
+#    similar implementations sometimes use a "less than or equal to" test
+#    where they should use a "less than" test (it wouldn't be so bad if they 
+#    used *either* version consistently.  Because of the inconsistent use, some
+#    files will be rebuilt (dependency rule triggered) but then not added to 
+#    the library (dependency rule *not* triggered).  
+# 
+# 3) The profiling library construction needs to handle several cases,
+#    including the case where all of the files are in a single library, 
+#    in two libraries, and where weak symbols are or are not available.
+#
+# These led to the following changes:
+#
+#    To work around (2), without having a shadow copy of the library in 
+#    every directory, we use a timestamp file that is updated (in the same 
+#    directory as the object files) when the objects are updated.  
+#
+#    For (3), the original design used a 
