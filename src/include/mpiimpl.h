@@ -2162,17 +2162,6 @@ extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 extern void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
 #endif
 
-#ifdef HAVE_FORTRAN_BINDING
-    /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs) */
-#if defined(F77_NAME_LOWER_USCORE) || defined(F77_NAME_LOWER_2USCORE)
-extern void mpirinitf_(void);
-#elif defined(F77_NAME_UPPER)
-extern void MPIRINITF(void);
-#else
-extern void mpirinitf(void);
-#endif
-#endif
-
 int MPIR_Group_create( int, MPID_Group ** );
 int MPIR_Group_release(MPID_Group *group_ptr);
 
