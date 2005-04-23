@@ -613,7 +613,7 @@ lib\${FWRAPNAME}_a_SOURCES = \${mpi_sources}\
 \
 HEADERS = fproto.h mpi_fortimpl.h\
 profilelib_\${MPIFLIBNAME} = \${PMPIFLIBNAME}\
-profilelib_\${MPILIBNAME}_SOURCES = \${mpi_sources}\
+profilelib_\${MPIFLIBNAME}_SOURCES = \${mpi_sources}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
 maint-clean:\
 \trm -f \${mpi_sources} $prototype_header_file\n";
