@@ -526,7 +526,7 @@ define(PAC_MPI_OFFSET_KIND,
 # .f and not all accept .f90)
 if test -z "$ac_f90ext" ; then
     if test -z "$F90" ; then
-       F90=f90
+       AC_CHECK_PROGS(F90,f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 fc ifc efc)
     fi
     AC_MSG_CHECKING([for extension for Fortran 90 programs])
     ac_f90ext="f90"
