@@ -30,7 +30,7 @@
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
-#ifndef MPICH_MPI_FROM_MPI
+#ifndef MPICH_MPI_FROM_PMPI
 int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[], 
 		      const int periods[], int reorder, MPI_Comm *comm_cart )
 {
