@@ -5,6 +5,7 @@ smvar_do_sharedlibs = 0
 uallreducef_SOURCES  = uallreducef.f
 exscanf_SOURCES     = exscanf.f
 alltoallwf_SOURCES  = alltoallwf.f
+inplacef_SOURCES  = inplacef.f
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
