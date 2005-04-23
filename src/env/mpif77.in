@@ -43,6 +43,7 @@ F77CPP="@F77CPP@"
 MPI_FFLAGS="@MPI_FFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
+PMPILIBNAME="@PMPILIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 #
@@ -219,9 +220,10 @@ done
 # Derived variables.  These are assembled from variables set from the
 # default, environment, configuration file (if any) and command-line
 # options (if any)
-mpilibs=-l$MPILIBNAME
 if [ "$NEEDSPLIB" = yes ] ; then
-     mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME"
+    mpilibs="-l$PMPILIBNAME -l$MPILIBNAME"
+else
+    mpilibs="-l$MPILIBNAME"
 fi
 #
 # Concatenate the user flags with the ones needed by MPI
