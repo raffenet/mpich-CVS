@@ -90,14 +90,6 @@ elif test "$enable_threads" = "no" ; then
     enable_threads=single
 fi
 dnl
-dnl NOT YET COMPLETE: make use of this value to turn MPI_Wtime into
-dnl a macro in mpi.h.  
-AC_ARG_ENABLE(mpi-macros,
-[--enable-mpi-macros - Implement MPI_Wtime and MPI_Wtick as C macros
-The default is no.],
-,enable_mpi_macros=no)
-dnl
-dnl
 AC_ARG_ENABLE(g,
 [--enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
@@ -109,13 +101,12 @@ implementation.  option may be a list of common separated names including
                eliminate access warnings from programs like valgrind
     all      - All of the above choices],,enable_g=none)
 dnl
-dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
 dnl sharedlibs support has been withdrawn
 dnl
-AC_ARG_ENABLE(internat,
-[--enable-internat - Enable internationalization of messages.
- Not yet supported])
+dnl AC_ARG_ENABLE(internat,
+dnl [--enable-internat - Enable internationalization of messages.
+dnl  Not yet supported])
 dnl
 dnl --enable-fast
 AC_ARG_ENABLE(fast,
@@ -123,7 +114,6 @@ AC_ARG_ENABLE(fast,
                 turns off error checking and timing collection],,
 enable_fast=no)
 dnl
-dnl 
 dnl We enable f77 and f90 if we can find compilers for them.
 dnl In addition, we check whether f77 and f90 can work together.
 dnl
@@ -186,42 +176,32 @@ AC_ARG_WITH(cross,
 [--with-cross=file - Specify the values of variables that configure cannot
 determine in a cross-compilation environment],,with_cross=no)
 dnl
-dnl Flavor is used to setup separate directories for the flavor-specific
-dnl code (e.g., libraries that depend on a particular thread library) from
-dnl the generic files (e.g., the manual pages).
-AC_ARG_WITH(flavor,
-[--with-flavor=name - Set the name to associate with this flavor of MPICH],,)
-dnl
-dnl
-dnl
 AC_ARG_WITH(namepublisher,
 [--with-namepublisher=name - Choose the system that will support 
                              MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
                              include
                                no (no service available)
 			       file:directory
-			       mpd
-                               ldap:ldapservername
-                             Only no, file, and mpd have been implemented so far.],,
+			       mpd],,
 with_namepublisher=file)
-
+dnl
 AC_ARG_WITH(cxxlibname,
 [--with-cxxlibname=name  - Specify name of library containing C++ interface
 routines],[MPICXXLIBNAME=$withval;set_MPICXXLIBNAME="yes"],MPICXXLIBNAME=)
 AC_SUBST(MPICXXLIBNAME)
-
+dnl
 AC_ARG_WITH(flibname,
 [--with-flibname=name  - Specify name of library containing Fortran interface
 routines],[MPIFLIBNAME=$withval;set_MPIFLIBNAME="yes"],MPIFLIBNAME=)
 AC_SUBST(MPIFLIBNAME)
 AC_SUBST(PMPIFLIBNAME)
-
+dnl
 dnl The default is a special wrapper library
 AC_ARG_WITH(fwrapname,
 [--with-fwrapname=name  - Specify name of library containing Fortran interface
 routines],[FWRAPNAME=$withval;set_FWRAPNAME="yes"],FWRAPNAME=fmpich)
 AC_SUBST(FWRAPNAME)
-
+dnl
 # -----------------------------------------------------------------------------
 # First check that we have a clean build if we are doing a VPATH build
 PAC_VPATH_CHECK(src/include/mpi.h src/env/mpicc src/env/mpicc.conf)
@@ -231,12 +211,17 @@ if test "`cd $srcdir && pwd`" != "`pwd`" ; then
     configured.  Remove the lib directory in $srcdir first.])
     fi
 fi
-dnl
 # Set default variable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
-if test -z "$MPIFLIBNAME" ; then MPIFLIBNAME=$MPILIBNAME ; fi
-PMPIFLIBNAME=${PMPIFLIBNAME:-"p$MPIFLIBNAME"}
+# Set the defaults for the Fortran libraries to be the same as the C libraries
+if test -z "$MPIFLIBNAME" ; then 
+    MPIFLIBNAME=$MPILIBNAME 
+    if test -z "$PMPIFLIBNAME" ; then
+        PMPIFLIBNAME=$PMPILIBNAME
+    fi
+fi
+PMPIFLIBNAME=${PMPIFLIBNAME:-p"$MPIFLIBNAME"}
 # We use a different library for the C++ wrappers to avoid problems when
 # creating shared libraries
 if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
@@ -244,24 +229,25 @@ export MPIFLIBNAME
 export PMPIFLIBNAME
 export MPICXXLIBNAME
 
-dnl Process any enable or with values
-dnl We must do enable-fast first, because it changes the other enable values
+# Process any enable or with values
+# We must do enable-fast first, because it changes the other enable values
 if test "$enable_fast" = "yes" ; then
     enable_error_checking=no
     enable_error_messages=no
     enable_timing=no
-dnl
-dnl [BRT] removed the reseting of enable_g so that --with-enable=dbg,meminit
-dnl can be specified with -enable-fast.  This change was largely made for the
-dnl PETSc folks who want to use --enable-fast to eliminate parameter checking
-dnl overhead, but also wish to use meminit to eliminate initialization
-dnl warnings from valgrind.
-dnl
-dnl enable_g=no
-dnl
+#
+# [BRT] removed the reseting of enable_g so that --with-enable=dbg,meminit
+# can be specified with -enable-fast.  This change was largely made for the
+# PETSc folks who want to use --enable-fast to eliminate parameter checking
+# overhead, but also wish to use meminit to eliminate initialization
+# warnings from valgrind.
+#
+#   enable_g=no
+#
     AC_DEFINE(NDEBUG,1,[Define to suppress assertions])
 fi
-dnl error-checking
+
+# error-checking
 case "$enable_error_checking" in 
     no)
     ;;
@@ -275,8 +261,8 @@ case "$enable_error_checking" in
     AC_MSG_WARN([Unknown value $enable_error_checking for enable-error-checking])
     ;;
 esac
-dnl
-dnl error-messages
+
+# error-messages
 case "$enable_error_messages" in 
     no|none)
         error_message_kind="MPICH_ERROR_MSG_NONE"
@@ -297,11 +283,11 @@ esac
 AC_DEFINE_UNQUOTED(MPICH_ERROR_MSG_LEVEL,$error_message_kind,[define to enable error messages])
 
 # ----------------------------------------------------------------------------
-dnl
-dnl enable-timing and with-logging
-dnl
-dnl Still to do: add subsets: e.g., class=pt2pt,class=coll.  See mpich2 doc
-dnl
+#
+# enable-timing and with-logging
+#
+# Still to do: add subsets: e.g., class=pt2pt,class=coll.  See mpich2 doc
+#
 # ----------------------------------------------------------------------------
 collect_stats=false
 logging_required=false
@@ -463,9 +449,9 @@ AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging l
 # End of logging tests
 # ----------------------------------------------------------------------------
 
-dnl
-dnl threads
-dnl
+#
+# threads
+#
 case "$enable_threads" in 
     single|funneled)
     thread_pkg_required=no
@@ -515,8 +501,7 @@ if test "$thread_pkg_required" = "no" ; then
 fi
 export MPE_THREAD_DEFAULT
 
-dnl
-dnl enable-g
+# enable-g
 # strip off multiple options, separated by commas
 save_IFS="$IFS"
 IFS=","
@@ -616,9 +601,6 @@ if test "$enable_nmpi_as_mpi" = yes ; then
    AC_DEFINE(USE_MPI_FOR_NMPI,1,[Define if the NMPI names should use MPI instead of PMPI])
 fi
 
-if test "$enable_mpi_macros" = yes ; then
-    AC_DEFINE(USE_MACROS_FOR_WTIME,1,[Define if macros may be used for MPI_Wtime and MPI_Wtick])
-fi
 # ----------------------------------------------------------------------------
 #
 # Set the defaults for directories that are not included in configure's
@@ -636,9 +618,9 @@ else
     docdir='${prefix}/doc'
 fi
 AC_SUBST(docdir)
-dnl
-dnl This test is complicated by the fact that top_srcdir is not set until
-dnl the very end of configure.  Instead, we get it ourselves
+
+# This test is complicated by the fact that top_srcdir is not set until
+# the very end of configure.  Instead, we get it ourselves
 if test -z "$top_srcdir" ; then
    use_top_srcdir=$srcdir   
 else
@@ -720,8 +702,8 @@ if test "$enable_romio" = "yes" ; then
        top_build_dir=`pwd`
        export top_build_dir
        # if there is no $top_build_dir/lib, romio puts lib in wrong place
-       dnl This test used -e under Linux, but not all test programs understand
-       dnl -e
+       # This test used -e under Linux, but not all test programs understand
+       # -e
        if test ! -d lib ; then mkdir lib ; fi
        # tell mpi.h to include mpio.h
        PAC_HAVE_ROMIO
@@ -738,7 +720,6 @@ if test "$enable_romio" = "yes" ; then
        fi
    fi
 fi
-dnl
 #
 # FIXME: If an external device, don't necessarily complain (e.g.,
 # if the device is already built)
@@ -752,20 +733,20 @@ elif test ! -x $devicedir/configure ; then
 else 
     # Add the device to the configure list
     devsubsystems="$devsubsystems $devicereldir"
-    dnl Make device_name available to subdirs
+    # Make device_name available to subdirs
 fi
 AC_SUBST(device_name)
-dnl with-pmi
+# with-pmi
 if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
     with_pmi=simple
 fi
 pmi_name=$with_pmi
-dnl
-dnl FIXME: Details like this should not be in the top-level configure
+
+# FIXME: Details like this should not be in the top-level configure
 if test "$with_pmi" = "smpd" ; then
     AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
 fi
-dnl
+
 if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
     AC_MSG_WARN([$use_top_srcdir/src/pmi/$pmi_name does not exist. PMI is unknown])
 elif test ! -x $use_top_srcdir/src/pmi/$pmi_name/configure ; then
@@ -775,7 +756,7 @@ else
     subsystems="$subsystems src/pmi/$pmi_name"
 fi
 AC_SUBST(pmi_name)
-dnl with-pm
+# with-pm
 if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
     with_pm=""
 fi
@@ -783,10 +764,9 @@ if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
     with_pm=mpd
 fi
 pm_name=$with_pm
-dnl
-dnl Eventually, we should allow multiple pm names, separated by :
-dnl Set the value MANY_PM to yes in this case
-dnl
+
+# Eventually, we should allow multiple pm names, separated by :
+# Set the value MANY_PM to yes in this case
 MANY_PM=no
 AC_SUBST(MANY_PM)
 for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
@@ -808,7 +788,7 @@ for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
 	fi
     fi
 done
-dnl pm_name is the *primary* pm
+# pm_name is the *primary* pm
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
 AC_SUBST(other_pm_names)
@@ -870,12 +850,12 @@ if test -f $devicedir/mpich2prereq ; then
 fi
 
 #
-dnl
-dnl Find a C compiler (choose gcc first).
-dnl Autoconf 2.13 has the feature that you cannot override the test for
-dnl cross-compilation made in [AC_PROG_CC].  
-dnl We also need to do this before the F77 and F90 test to ensure that we
-dnl find the C preprocessor reliably.
+#
+# Find a C compiler (choose gcc first).
+# Autoconf 2.13 has the feature that you cannot override the test for
+# cross-compilation made in PROG_CC.  
+# We also need to do this before the F77 and F90 test to ensure that we
+# find the C preprocessor reliably.
 saveCFLAGS=$CFLAGS
 AC_PROG_CC
 # Bug in autoconf.  Restore cross settings
@@ -1390,7 +1370,6 @@ dnl     check for structures
 dnl     check for compiler characteristics
 dnl     check for library functions
 dnl     check for system services
-dnl Here are some sample tests
 # Look for ar.  If we fail, abort
 AC_CHECK_PROGS(AR,ar)
 if test -z "$AR" ; then
@@ -1400,7 +1379,7 @@ fi
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
 
-dnl Set CFLAGS for enable strict if necessary
+# Set CFLAGS for enable strict if necessary
 PAC_CC_STRICT
 # Check for broken handling of common symbols.  There are two fixes:
 # Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
@@ -1420,19 +1399,7 @@ PAC_PROG_MAKE
 # ----------------------------------------------------------------------------
 # Don't setup the shared libraries until we know which compiler we will be
 # using
-dnl We do not support shared libraries in general, but they are working on at least some versions of Linux, if C++ is disabled. 
 PAC_ARG_SHAREDLIBS
-### FOR SHAREDLIB TESTING WITH CXX
-dnl if test "$ENABLE_SHLIB" != "none" -a "$enable_cxx" = "yes" ; then
-dnl     AC_MSG_ERROR([Building shared libraries requires disabling C++ (--disable-cxx)])
-dnl fi
-### END FOR SHAREDLIB TESTING WITH CXX
-os_type=`uname -s | tr 'LINUX' 'linux'`
-if test "$ENABLE_SHLIB" != "none" ; then
-   if test "$os_type" != "SunOS" -a "$os_type" != "linux" ; then
-       AC_MSG_ERROR([Building shared libraries is only supported on some systems])
-   fi
-fi
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(C_LINKPATH_SHL)
 # ----------------------------------------------------------------------------
@@ -1604,8 +1571,15 @@ if test $enable_weak_symbols = "yes" ; then
     fi
 else
     NO_WEAK_SYM=build_proflib
-    PROFILE_DEF_MPI="-DMPICH_PROFILE_MPI -DMPICH_MPI_FROM_PMPI"
-    NEEDSPLIB=yes
+    PROFILE_DEF_MPI="-DMPICH_MPI_FROM_PMPI"
+    if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
+        # NEEDSPLIB is used to indicate that there are two libraries,
+	# one with the basic routines (PMPI + utility) and one with the 
+	# MPI routines
+        NEEDSPLIB=yes
+    else
+        NEEDSPLIB=no
+    fi
 fi
 export NEEDSPLIB
 export NO_WEAK_SYM
@@ -1736,8 +1710,8 @@ if test -n "$pac_cv_c_struct_align_nr" ; then
     AC_DEFINE_UNQUOTED(HAVE_MAX_STRUCT_ALIGNMENT,$pac_cv_c_struct_align_nr,[Controls byte alignment of structures])
 fi
 
-dnl Test whether pointers can be aligned on a int boundary or require
-dnl a pointer boundary.
+# Test whether pointers can be aligned on a int boundary or require
+# a pointer boundary.
 AC_MSG_CHECKING([for alignment restrictions on pointers])
 AC_TRY_RUN(
 changequote(<<,>>)
@@ -1760,9 +1734,8 @@ else
    AC_MSG_RESULT([int or better])
 fi
 
-dnl
-dnl Get the size of the C types for encoding in the basic datatypes and for
-dnl the specific-sized integers
+# Get the size of the C types for encoding in the basic datatypes and for
+# the specific-sized integers
 AC_CHECK_SIZEOF(char,$CROSS_SIZEOF_CHAR)
 AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
 AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
@@ -1804,8 +1777,8 @@ PAC_CHECK_SIZEOF_2TYPES(short int, short, int, $CROSS_SIZEOF_SHORT_INT)
 PAC_CHECK_SIZEOF_2TYPES(2 int, int, int, $CROSS_SIZEOF_2_INT)
 PAC_CHECK_SIZEOF_2TYPES(long double int, long double, int, $CROSS_SIZEOF_LONG_DOUBLE_INT)
 
-dnl The following code is correct for the EXTENT, but not the size, 
-dnl of these types.
+dnl # The following code is correct for the EXTENT, but not the size, 
+dnl # of these types.
 dnl PAC_CHECK_SIZEOF_DERIVED(float int,[struct { float a; int b; }],$CROSS_EXTENTOF_FLOAT_INT)
 dnl PAC_CHECK_SIZEOF_DERIVED(double int,[struct { double a; int b; }],$CROSS_EXTENTOF_DOUBLE_INT)
 dnl PAC_CHECK_SIZEOF_DERIVED(long int,[struct { long a; int b; }],$CROSS_EXTENTOF_LONG_INT) 
@@ -1813,7 +1786,6 @@ dnl PAC_CHECK_SIZEOF_DERIVED(short int,[struct { short a; int b; }],$CROSS_EXTEN
 dnl PAC_CHECK_SIZEOF_DERIVED(2 int,[struct { int a; int b; }],$CROSS_EXTENTOF_2_INT)
 dnl PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],$CROSS_EXTENTOF_LONG_DOUBLE_INT)
 
-dnl
 # sys/bitypes.h defines the int16_t etc. on some systems (e.g., OSF1).
 # Include it when testing for these types
 AC_CHECK_HEADER(sys/bitypes.h,[use_bitypes="#include <sys/bitypes.h>"
@@ -1823,8 +1795,8 @@ AC_TRY_COMPILE([#include <sys/types.h>
 $use_bitypes
 ],[int16_t a=0;],
 pac_cv_int16_t=yes,pac_cv_int16_t=no)])
-dnl
-dnl If there is not int16_t, try to define one
+
+# If there is not int16_t, try to define one
 if test "$pac_cv_int16_t" = "no" ; then
     if test -z "$CROSS_SIZEOF_SHORT" ; then CROSS_SIZEOF_SHORT=2 ; fi
     AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
@@ -1844,8 +1816,7 @@ AC_TRY_COMPILE([#include <sys/types.h>
 $use_bitypes
 ],[int32_t a=0;],
 pac_cv_int32_t=yes,pac_cv_int32_t=no)])
-dnl
-dnl If there is not int32_t, try to define one
+# If there is not int32_t, try to define one
 if test "$pac_cv_int32_t" = "no" ; then
     if test -z "$CROSS_SIZEOF_INT" ; then CROSS_SIZEOF_INT=4 ; fi
     AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
@@ -1865,8 +1836,7 @@ AC_TRY_COMPILE([#include <sys/types.h>
 $use_bitypes
 ],[int64_t a=0;],
 pac_cv_int64_t=yes,pac_cv_int64_t=no)])
-dnl
-dnl If there is not int64_t, try to define one
+# If there is not int64_t, try to define one
 if test "$pac_cv_int64_t" = "no" ; then
     if test -z "$CROSS_SIZEOF_LONG_LONG" ; then CROSS_SIZEOF_LONG_LONG=8 ; fi
     AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
@@ -1886,8 +1856,7 @@ if test "$pac_cv_int64_t" = "no" ; then
 else
     AC_DEFINE(HAVE_INT64_T,1,[Define if int64_t is supported by the C compiler])
 fi
-dnl
-dnl Generate a hex version of the size of each type
+# Generate a hex version of the size of each type
 for type in short int long long_long float double long_double wchar_t \
     float_int double_int long_int short_int 2_int long_double_int ; do
     eval len=\$ac_cv_sizeof_$type
@@ -2022,7 +1991,6 @@ export MPI_LONG_LONG
 export MPI_FLOAT
 export MPI_DOUBLE
 export MPI_LONG_DOUBLE
-dnl
 #
 # Size-specific types.  Initialize as NULL
 MPI_REAL4=MPI_DATATYPE_NULL
@@ -2164,15 +2132,15 @@ fi
 # 
 # ----------------------------------------------------------------------------
 if test "$enable_f77" = yes ; then
-    dnl Up to size checking code in master configure.in (where it tries to 
-    dnl find the matching C sizes) as part of defining mpi_integer8 etc.
-    dnl The results are available in pac_cv_sizeof_f77_<type>
-    dnl Size is 0 if unknown or unavailable (or cross-compiling)
-    dnl Due to limitations in autoconf, we cannot put these into a loop.
-    dnl We also check integer to find the type of MPI_Fint
-    dnl
-    dnl Cross-compilation results can be included with the --with-cross=file
-    dnl option.
+    # Up to size checking code in master configure.in (where it tries to 
+    # find the matching C sizes) as part of defining mpi_integer8 etc.
+    # The results are available in pac_cv_sizeof_f77_<type>
+    # Size is 0 if unknown or unavailable (or cross-compiling)
+    # Due to limitations in autoconf, we cannot put these into a loop.
+    # We also check integer to find the type of MPI_Fint
+    #
+    # Cross-compilation results can be included with the --with-cross=file
+    # option.
     CROSS_F77_SIZEOF_INTEGER=${CROSS_F77_SIZEOF_INTEGER:-0}
     CROSS_F77_SIZEOF_REAL=${CROSS_F77_SIZEOF_REAL:-0}
     CROSS_F77_SIZEOF_DOUBLE_PRECISION=${CROSS_F77_SIZEOF_DOUBLE_PRECISION:-0}
@@ -2612,17 +2580,14 @@ if test "$enable_f77" = yes ; then
         MPI_FINT="int"
         AC_MSG_RESULT([unavailable])
     fi
-    dnl
-    dnl We also need to check the size of MPI_Aint vs MPI_Fint, and
-    dnl define AINT_LARGER_THAN_FINT if aint is larger (this 
-    dnl affects code in MPI_Address)
+    # We also need to check the size of MPI_Aint vs MPI_Fint, and
+    # define AINT_LARGER_THAN_FINT if aint is larger (this 
+    # affects code in MPI_Address)
     if test "$ac_cv_sizeof_void_p" != "0" -a \
         "$ac_cv_sizeof_void_p" -gt "$pac_cv_f77_sizeof_integer" ; then
         AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,1,[Define if addresses are larger than Fortran integers])
     fi
-    dnl
-    dnl
-    dnl Include a defined value for Fint is int
+    # Include a defined value for Fint is int
     if test "$MPI_FINT" = "int" ; then
         AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
     elif test "$SIZEOF_F77_INTEGER" != "$ac_cv_sizeof_int" ; then
@@ -2880,8 +2845,7 @@ AC_SUBST(DLLIMPORT)
 fi
 # ----------------------------------------------------------------------------
 
-dnl
-dnl Is char * the byte address?
+# Is char * the byte address?
 AC_CACHE_CHECK([if char * pointers use byte addresses],
 pac_cv_c_char_p_is_byte,[
 AC_TRY_RUN([
@@ -2894,13 +2858,12 @@ pac_cv_char_p_is_byte=unknown)])
 if test "$pac_cv_char_p_is_byte" = "yes" ; then
     AC_DEFINE(CHAR_PTR_IS_BYTE,1,[define if char * is byte pointer])
 fi
-dnl
-dnl Get the size for the bsendoverhead
+# Get the size for the bsendoverhead
 rm -f conftestval
-dnl FIXME This should really use code from bsendutil.c.  Types
-dnl defined in the mpiimpl.h file or in mpi.h have been replaced here. 
-dnl The sizeof(void*)-1 allows us to force the first byte of the 
-dnl buffer to be aligned.
+# FIXME This should really use code from bsendutil.c.  Types
+# defined in the mpiimpl.h file or in mpi.h have been replaced here. 
+# The sizeof(void*)-1 allows us to force the first byte of the 
+# buffer to be aligned.
 AC_CACHE_CHECK([for size of MPI_BSEND_OVERHEAD],pac_cv_mpi_bsend_overhead,[
 AC_TRY_RUN([
 #include <stdio.h>
@@ -2936,8 +2899,7 @@ BSEND_OVERHEAD=$pac_cv_mpi_bsend_overhead
 export BSEND_OVERHEAD
 AC_SUBST(BSEND_OVERHEAD)
 
-dnl
-dnl Check for special compile characteristics
+# Check for special compile characteristics
 # If we are either gcc or icc, see if we can use __asm__
 # We test on prog_gcc to allow gcc by any name; if we are using
 # icc, the value of CC must be icc for this test to pass
@@ -2965,9 +2927,8 @@ fi
 if test "$lac_cv_use_atomic_updates" = "yes" ; then
     AC_DEFINE(USE_ATOMIC_UPDATES,, [Define if assembly language atomic update macros should be used (if available)])
 fi
-dnl
-dnl check for x86_64
-dnl 
+
+# check for x86_64
 if test "$ac_cv_prog_gcc" = "yes" ; then
 AC_MSG_CHECKING([for gcc __asm__ and AMD x86_64 cmpxchgq instruction])
 AC_TRY_RUN([
@@ -3034,9 +2995,9 @@ return (oldval == 1 && val == 2) ? 0 : -1;
    AC_DEFINE(HAVE_GCC_AND_IA64_ASM, 1,[Define if using gcc on a system with an IA64 class chip]), 
 AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 fi
-dnl
-dnl Check for support of enable-coverage.  Put this near the end of the tests
-dnl because the coverage options may affect the other tests.
+
+# Check for support of enable-coverage.  Put this near the end of the tests
+# because the coverage options may affect the other tests.
 if test "$enable_coverage" = "yes" ; then
     if test "$ac_cv_prog_gcc" = "yes" ; then
         CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
@@ -3052,8 +3013,8 @@ if test "$enable_coverage" = "yes" ; then
 fi
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
-dnl
-dnl Look for Standard headers
+
+# Look for Standard headers
 AC_HEADER_STDC
 # Check for a specific header
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
@@ -3068,22 +3029,16 @@ AC_TRY_COMPILE([
 if test "$ac_cv_header_sys_uio_h" = yes ; then
     AC_DEFINE(HAVE_SYS_UIO_H,1,[Define if you have the <sys/uio.h> header file.])
 fi
-dnl
-dnl Check for functions.  This invokes another test if the function is 
-dnl found.  The braces around the second test are essential. 
-dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
-dnl
-dnl These are used to support timeouts
+
+# These are used to support timeouts
 AC_CHECK_FUNCS(setitimer alarm)
-dnl
-dnl These are used for error reporting
+# These are used for error reporting
 AC_CHECK_FUNCS(vsnprintf vsprintf)
-dnl Use snprintf if possible when creating messages
+# Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
-dnl
 # if we are using stdarg, we may need va_copy .  Test to see if we have it
 # Since it may be a built-in instead of a function, we must try to 
 # compile and link a program that uses it.
@@ -3120,34 +3075,34 @@ void foo1( char *fmt, ... ) {
 fi
 dnl
 dnl If internationalization selected, try to find the needed functions
-if test "$enable_internat" = "yes" ; then
-    AC_CHECK_HEADERS(libintl.h)
-    AC_CHECK_FUNCS(gettext dgettext)
-    if test "$ac_cv_header_libintl" = "yes" -a \
-	    "$ac_cv_func_gettext" = "yes" -a \
-	    "$ac_cv_func_dgettext" = "yes" ; then
-	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
-    else
-        AC_MSG_WARN([Cannot use internationalization because necessary headers and functions are not available])
-    fi
-fi
+dnl if test "$enable_internat" = "yes" ; then
+dnl     AC_CHECK_HEADERS(libintl.h)
+dnl     AC_CHECK_FUNCS(gettext dgettext)
+dnl     if test "$ac_cv_header_libintl" = "yes" -a \
+dnl 	    "$ac_cv_func_gettext" = "yes" -a \
+dnl 	    "$ac_cv_func_dgettext" = "yes" ; then
+dnl 	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
+dnl     else
+dnl         AC_MSG_WARN([Cannot use internationalization because necessary headers and functions are not available])
+dnl     fi
+dnl fi
 # Check for alloca function.  May set HAVE_ALLOCA_H and HAVE_ALLOCA
 AC_FUNC_ALLOCA
 
 if test "$enable_g_mem" != "yes" ; then
-    dnl Strdup is needed only if memory tracing is not enabled.
+    # Strdup is needed only if memory tracing is not enabled.
     AC_CHECK_FUNCS(strdup)
     if test "$ac_cv_func_strdup" = "yes" ; then
         # Do we need to declare strdup?
         PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
     fi
 else
-    dnl search.h is used for fancier output from trmem.  Disabled for now,
-    dnl since the tsearch routines have problematic prototypes.
+    # search.h is used for fancier output from trmem.  Disabled for now,
+    # since the tsearch routines have problematic prototypes.
     AC_CHECK_HEADERS(search)
     AC_CHECK_FUNCS(tsearch)
-    dnl Check that we can compile tsearch without error.  Try to compile
-    dnl it with the header and the char * args
+    # Check that we can compile tsearch without error.  Try to compile
+    # it with the header and the char * args
     if test "$ac_cv_func_tsearch" = "yes" ; then
         AC_CACHE_CHECK([whether tsearch requires char* args],
 	               pac_cv_tsearch_charp,[
@@ -3160,16 +3115,9 @@ else
 	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,1,[Define if tsearch requires char pointers])
 	fi
     fi
-    dnl Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
-    dnl _XOPEN_SOURCE be defined respectively.
+    # Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
+    # _XOPEN_SOURCE be defined respectively.
 fi
-dnl
-dnl Specific checks that a function works correctly
-dnl AC_FUNC_VFORK
-dnl
-dnl Check for support for long file names
-dnl AC_SYS_LONG_FILE_NAMES
-dnl
 # ----------------------------------------------------------------------------
 # Support for timers.  The following code processes the 
 #  --enable-timer-type=name argument and selects the timer based on 
@@ -3177,7 +3125,7 @@ dnl
 # The file src/include/mpichtimer.h is also created.
 
 # ----------------------------------------------------------------------------
-dnl Default type for timer stamp.
+# Default type for timer stamp.
 MPID_TIMER_TYPE=long
 AC_SUBST(MPID_TIMER_TYPE)
 
@@ -3207,7 +3155,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
     gcc_ia64_cycle - IPF ar.itc timer
     ],timer_type=$enable_timer_type)
-dnl
+
 if test -z "$timer_type" ; then 
     # Try to pick a timer based on what is available
     AC_CHECK_FUNCS(clock_gettime clock_getres gethrtime gettimeofday)
@@ -3241,8 +3189,8 @@ fi
 if test -z "$timer_type" ; then
     AC_MSG_ERROR([No timer found])
 fi
-dnl
-dnl Check for valid timer and select datatypes for the time stamp
+
+# Check for valid timer and select datatypes for the time stamp
 case "$timer_type" in
 
     gethrtime)
@@ -3383,7 +3331,7 @@ pac_cv_linuxalpha_cycle,[
     AC_MSG_ERROR([Invalid timer type $timer_type])
     ;;
 esac
-dnl Convert timer type to upper case
+# Convert timer type to upper case
 timer_type=`echo $timer_type | \
     tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
 MPICH_TIMER_KIND=USE_$timer_type
@@ -3391,8 +3339,7 @@ AC_SUBST(MPICH_TIMER_KIND)
 # ----------------------------------------------------------------------------
 # End of code for timer support (except for ac_ OUTPUT)
 # ----------------------------------------------------------------------------
-dnl
-dnl Setup other replaceable values
+# Setup other replaceable values
 AC_SUBST(MPILIBNAME)
 AC_SUBST(PMPILIBNAME)
 MPI_AINT=int
@@ -3407,20 +3354,20 @@ for type in int long long_long short ; do
     fi
 done
 AC_SUBST(MPI_AINT)
-dnl
-dnl If sizeof(mpi_aint) = sizeof(int), set this value
+
+# If sizeof(mpi_aint) = sizeof(int), set this value
 if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
     AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(void*)])
 fi
-dnl
-dnl define MPIU_Size_t - used to express the size of objects
-dnl
-dnl FIXME: this should really be in a util configure file, but we don't
-dnl have one at the moment
-dnl
+#
+# define MPIU_Size_t - used to express the size of objects
+#
+# FIXME: this should really be in a util configure file, but we don't
+# have one at the moment
+#
 MPIU_SIZE_T="unsigned $MPI_AINT"
 AC_DEFINE_UNQUOTED(MPIU_SIZE_T,$MPIU_SIZE_T,[Set to a type that can express the size of the entire address space]) 
-dnl
+
 #
 # If it is necessary for the device to update some of the variables,
 # this step allows that to happen.  Possible variables to update are
@@ -3605,7 +3552,6 @@ fi
 # End of thread configure
 # -----------------------------------------------------------------------------
 
-dnl PAC_CONFIG_SUBDIRS_IMMEDIATE(src/util/thread)
 #
 # Update the cache first with the results of the previous configure steps
 # We don't use the subdir cache because ensuring that the cache is consistant
@@ -3736,7 +3682,7 @@ dnl PAC_CONFIG_SUBDIRS_IMMEDIATE($bindingsubsystems)
 subsystems="$devsubsystems $subsystems $bindingsubsystems"
 AC_SUBST(subsystems)
 #
-dnl
+
 if test "$enable_f77" != "yes" ; then
     # These are Fortran datatypes ONLY.  Set to null if no Fortran compiler.
     for name in CHARACTER INTEGER REAL LOGICAL COMPLEX DOUBLE_PRECISION \
@@ -3829,12 +3775,11 @@ AC_SUBST(MPI_OFFSET)
 MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET_TYPEDEF)
 #
-dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
-dnl
+
 # Get the value of MPI_MAX_PROCESSOR_NAME
-dnl FIXME: make the device specify this without a Makefile
+# FIXME: make the device specify this without a Makefile
 if test -s $devicereldir/Makefile ; then
     #
     # The dependency handling will look for a file in a .deps directory.
@@ -3866,25 +3811,22 @@ fi
 # We should check that the maxproc value is a valid integer
 MPI_MAX_PROCESSOR_NAME="$maxproc"
 AC_SUBST(MPI_MAX_PROCESSOR_NAME)
-dnl
-dnl
-dnl Set the libraries to use in building programs
+
+# Set the libraries to use in building programs
 if test "$NEEDSPLIB" = "yes" ; then
-    # Ugh.  We don't have the dependencies between the libraries right 
-    # yet.  We *should* only need -lmpich -lpmpich .  
-    EXAMPLE_LIBS="-l$MPILIBNAME -l$PMPILIBNAME -l$MPILIBNAME -l$PMPILIBNAME $LIBS"
+    EXAMPLE_LIBS="-l$PMPILIBNAME -l$MPILIBNAME $LIBS"
 else
     EXAMPLE_LIBS="-l$MPILIBNAME $LIBS"
 fi
 AC_SUBST(EXAMPLE_LIBS)
-dnl default settings for compiler and linker flags 
+# default settings for compiler and linker flags 
 # Note:
-#   The MPI_CFLAGS should not contain *all* of the CFLAGS, just the 
+#   The MPI_CFLAGS must not contain *all* of the CFLAGS, just the 
 #   flags needed to compile with the mpi.h header.  Normally, no flags
 #   should be required to compile MPI programs (otherwise, users that choose
 #   not to use the compile scripts will submit bug reports).
-#   For now, we try using no extra Flags.  
-#MPI_CFLAGS="$MPI_CFLAGS $CFLAGS"
+#   For now, we try using no extra Flags.  (Never, ever set MPI_CFLAGS to 
+#   $CFLAGS)
 #
 # Unlike MPI_CFLAGS, the linker flags will always be needed to ensure that 
 # all of the required libraries are present.
@@ -3906,7 +3848,6 @@ elif test -s "$srcdir/CVS/Root" ; then
 fi
 AC_SUBST(MPICVSHOME)
 
-dnl
 dnl We can include external packages at configure/build time by 
 dnl adding them to EXTERNAL_SRC_DIRS.
 AC_SUBST(EXTERNAL_SRC_DIRS)
@@ -4003,11 +3944,10 @@ dnl a build aborts due to an error (this is intended to help developers)
 AC_OUTPUT_COMMANDS([if [ ! -d lib ] ; then mkdir lib ; fi 
 date > lib/newconfig])
 
-dnl
-dnl For the examples, we want to use the scripts to encourage users
-dnl to use them and to make them work more robustly with shared libraries
-dnl and, for Fortran 90, any special Fortran 90 module features.
-dnl 
+
+# For the examples, we want to use the scripts to encourage users
+# to use them and to make them work more robustly with shared libraries
+# and, for Fortran 90, any special Fortran 90 module features.
 if test -z "$MPICC" ; then MPICC='$(MPICHDIR)/bin/mpicc' ; fi
 if test -z "$MPIF77" ; then MPICC='$(MPICHDIR)/bin/mpif77' ; fi
 if test -z "$MPIF90" ; then MPICC='$(MPICHDIR)/bin/mpif90' ; fi
@@ -4016,7 +3956,7 @@ AC_SUBST(MPICC)
 AC_SUBST(MPICXX)
 AC_SUBST(MPIF77)
 AC_SUBST(MPIF90)
-dnl
+
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/include/mpichtimer.h \
           src/binding/Makefile \
