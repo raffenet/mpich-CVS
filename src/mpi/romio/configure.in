@@ -72,7 +72,6 @@ FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
-F90=""
 TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
@@ -793,7 +792,7 @@ fi
 if test $FROM_MPICH2 = yes ; then
    dnl Made this a message instead of a warning because the warning is
    dnl likely to confuse users.
-   AC_MSG_RESULT("Overriding Array test for MPICH2")
+   AC_MSG_RESULT([Overriding Array test for MPICH2])
    unset BUILD_MPI_ARRAY
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -1533,7 +1532,9 @@ if test "$FROM_MPICH" = yes ; then
    else
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
-   CC=$MPI_BIN_DIR/mpicc
+   if test "$FROM_MPICH2" != yes -o -z "$CC" ; then
+       CC=$MPI_BIN_DIR/mpicc
+   fi
 #   if test $FROM_MPICH2 != yes ; then
 #       BUILD_MPI_ARRAY=1
 #       BUILD_MPI_INFO=1
@@ -1575,7 +1576,11 @@ elif test $FROM_MPICH2 = yes ; then
    # CC="$CC -I${use_top_srcdir}/src/include -I${top_build_dir}/src/include"
    # TEST_CC="$CC"
    # MPI_LIB="$LIBNAME"
-   CC=${top_build_dir}/bin/mpicc
+   # To allow ROMIO to work with the LIBTOOL scripts, we want to 
+   # work directly with the CC, not the mpicc, compiler.
+   # Note that in the "FROM_MPICH2" case, the CPPFLAGS and INCLUDES are already
+   # properly set
+   #CC=${top_build_dir}/bin/mpicc
    TEST_CC=${top_build_dir}/bin/mpicc
    TEST_F77=${top_build_dir}/bin/mpif77
    ROMIO_INCLUDE=""
