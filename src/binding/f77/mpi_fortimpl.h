@@ -182,6 +182,8 @@ extern FORT_C_DLL_SPEC void *MPI_F_ARGVS_NULL;
 #else
 #define mpirinitf_ mpirinitf
 #endif
+/* Provide a prototype for the mpirinitf function */
+extern void mpirinitf_( void );
 
 #endif
 
