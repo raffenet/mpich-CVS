@@ -586,7 +586,7 @@ sub ReadMfile {
             $shared_libraries{ $libname } = $libsource;
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
-	    $allshlibtargets[$#allshlibtargets+1] = "${libloc}lib$libname.so";
+	    $allshlibtargets[$#allshlibtargets+1] = "${libloc}lib$libname.\@SHLIB_EXT\@";
 	    $dirs_seen{'top_builddir'} = 1;   # For libtool
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
@@ -843,7 +843,15 @@ sub WriteMfile {
 		$libdir = $1;
 		$libname = $2;
 		$libsrc = $libname;
-		$libsrc =~ s/\.so/\.la/;
+		if ($libsrc =~ /\.so$/) {
+		    $libsrc =~ s/\.so/\.la/;
+		}
+		elsif ($libsrc =~ /\.\@SHLIB_EXT\@$/) {
+		    $libsrc =~ s/\.\@SHLIB_EXT\@$/.la/;
+		}
+		else {
+		    print STDERR "Unrecognized suffix on library $libsrc\n";
+		}
 		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
 	    }
 	}
@@ -855,7 +863,7 @@ sub WriteMfile {
 	# If any shared libraries were requested...
 	&TargetSharedLibraries( \%shared_libraries );
 	foreach $libname (keys(%shared_libraries)) {
-	    &TargetSharedLibraryFinal( "lib$libname.la", "lib$libname.so", "." );
+	    &TargetSharedLibraryFinal( "lib$libname.la", "lib$libname.\@SHLIB_EXT\@", "." );
 	}
     }
 
@@ -1894,7 +1902,16 @@ sub TargetAll {
 	    print_make_endline( FD );
 	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $shlib (@allshlibtargets) {
-		print FD "\t    \${MAKE} $shlib ; \\\n";
+		# Get the library stamp name from the lib name
+		my $libbase = $shlib;
+		if ($shlib =~ /.*\/lib([^\/]*)/) {
+		    $libbase = $1;
+		}
+		my $libstamp = $shlib;
+		if (defined($libnum{$libbase})) {
+		    $libstamp = ".libstamp" . $libnum{$libbase};
+		}
+		print FD "\t    \${MAKE} $libstamp ; \\\n";
 	    }
 	    if ($found_profilelib) {
 		print FD "\t    if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
@@ -2436,9 +2453,11 @@ sub TargetSharedLibraries {
     foreach $lib (keys(%$libraries)) {
 	$libloc = &GetLibLoc( $lib );
 	$sourcefiles = &ExpandMakeVars($$libraries{$lib});
+	&LibraryTimestampPrefix( $lib.".la", $libloc );
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "la", "lo" );
 	# no ranlib step here because we can't "link" the shared library
 	# until all members are added.
+	&LibraryTimestampFix( $lib.".la", $libloc )
     }
 }
 
