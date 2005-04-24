@@ -37,8 +37,8 @@ all-local:
 cleanobjsandlibs:
 	rm -f lib/lib${MPILIBNAME}.a lib/lib${PMPILIBNAME}.a
 	rm -f lib/lib${MPILIBNAME}cxx.a 
-	rm -f lib/lib${MPILIBNAME}.so* lib/lib${PMPILIBNAME}.so*
-	rm -f lib/lib${MPILIBNAME}cxx.so* 
+	rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${PMPILIBNAME}.@SHLIB_EXT@*
+	rm -f lib/lib${MPILIBNAME}cxx.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
 	rm -f lib/lib${MPILIBNAME}cxx.la* 
 	${MAKE} clean ; cd test && ${MAKE} clean
@@ -52,13 +52,13 @@ all-preamble:
 # Move the "pkglist.new" file to "pkglist" on successful completion
 all-postamble:
 	@if [ "@BUILD_TVDLL@" = "yes" ] ; then \
-	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.so ) ; fi
+	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.@SHLIB_EXT@ ) ; fi
 	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
 	@echo "Make completed"
 
 distclean-local:
 	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
-	-@rm -f lib/lib${MPILIBNAME}.so* lib/lib${MPILIBNAME}.la
+	-@rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${MPILIBNAME}.la
 	-@rm -f src/include/${MPILIBNAME}conf.h
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
@@ -182,16 +182,16 @@ MPIFLIBNAME   = @MPIFLIBNAME@
 install_LIB = lib/lib${MPILIBNAME}.a
 optinstall_LIB = lib/lib${MPIFLIBNAME}.a
 optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
-#optinstall_SHLIB = lib/lib${MPIFLIBNAME}.so
-#optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.so
+#optinstall_SHLIB = lib/lib${MPIFLIBNAME}.@SHLIB_EXT@
+#optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@
 
 install_INCLUDE = src/include/mpi.h
 
 optinstall_LIB = lib/lib${PMPILIBNAME}.a
-optinstall_SHLIB = lib/lib${MPILIBNAME}.so
+optinstall_SHLIB = lib/lib${MPILIBNAME}.@SHLIB_EXT@
 optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 optinstall_LIB = lib/libf${MPILIBNAME}.a
-optinstall_SHLIB = lib/libf${MPILIBNAME}.so
+optinstall_SHLIB = lib/libf${MPILIBNAME}.@SHLIB_EXT@
 
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
@@ -199,8 +199,8 @@ INSTALL_SUBDIRS = src/util/thread src/env src/pm/@pm_name@ @bindings_dirs@ @othe
 
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
-	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.so \
-			${libdir}/libtvmpich.so ; fi
+	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.@SHLIB_EXT@ \
+			${libdir}/libtvmpich.@SHLIB_EXT@ ; fi
 	if test ! -d ${exec_prefix}/examples ; then \
 	    $(MKDIR_P) ${exec_prefix}/examples ; \
 	fi
