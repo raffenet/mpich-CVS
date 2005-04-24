@@ -11,7 +11,7 @@ CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 
 top_builddir  = @master_topbuild_dir@
 LIBTOOL       = @LIBTOOL@
-C_COMPILE_SHL = $(CC_SHL) @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
+C_COMPILE_SHL = $(CC_SHL) @CPPFLAGS@ @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 
 @VPATH@
 
@@ -105,7 +105,7 @@ all: $(LIBNAME)
 	    $(MAKE) $(SHLIBNAME).la ;\
 	fi
 
-.SUFFIXES: $(SUFFIXES) .p .lo .man .html .latex .txt 
+.SUFFIXES: $(SUFFIXES) .p .sp .lo .man .html .latex .txt 
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -117,9 +117,15 @@ all: $(LIBNAME)
 	@cp $(srcdir)/$*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
 	@rm -f _$*.c
+.c.sp:
+	$(C_COMPILE_SHL) -c $< -o _$*.lo
+
 
 profile: $(MPIO_TMP_POBJECTS) $(MPIO_EXTRA_TMP_POBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_POBJECTS) $(MPIO_EXTRA_REAL_POBJECTS)
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    $(MAKE) P$(SHLIBNAME).la ;\
+	fi
 	@rm -f _*.o
 
 coverage:
@@ -134,7 +140,17 @@ MPIO_EXTRA_LOOBJECTS = $(MPIO_EXTRA_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
+# --------------------------------------------------------------------------
+# We use P$(SHLBNAME) simply to distinguish the regular lib build from the
+# profiling library build
+MPIO_LOPOBJECTS = $(MPIO_REAL_POBJECTS:.o=.lo)
+MPIO_EXTRA_LOPOBJECTS = $(MPIO_EXTRA_REAL_POBJECTS:.o=.lo)
+MPIO_TMP_LOPOBJECTS = ${MPIO_TMP_POBJECTS:.p=.sp}
+MPIO_EXTRA_LOPOBJECTS = ${MPIO_EXTRA_TMP_OBJECTS:.p=.sp}
+P$(SHLIBNAME).la: $(MPIO_TMP_LOPOBJECTS) $(MPIO_EXTRA_TMP_LOPOBJECTS)
+	$(AR) $(SHLIBNAME).la $(MPIO_LOPOBJECTS) $(MPIO_EXTRA_LOPOBJECTS)
 
+# --------------------------------------------------------------------------
 clean:
 	@rm -f *.o *.lo
 
