@@ -356,10 +356,19 @@ public class InfoPanelForDrawable extends SearchPanel // SearchPanel is JPanel
             this.setCoordsText( shade.getVertices(), " (ave)" );
             strbuf.append( "\n" );
     
-            StringBuffer  linebuf;
+            StringBuffer      linebuf;
+            Topology          shade_topo;
+            CategoryWeight[]  twgts;
+            CategoryWeight    twgt;
+            String            twgt_str;
+            int               print_status;
+            int               idx;
+
+            shade_topo  = shade.getCategory().getTopology();
+
             // linebuf = new StringBuffer( "Number of Real Drawables = " );
             linebuf = new StringBuffer( "Number of Real " );
-            linebuf.append( Shadow.getTopology() + "s = " );
+            linebuf.append( shade_topo + "s = " );
             linebuf.append( shade.getNumOfRealObjects() );
             if ( num_cols < linebuf.length() )
                 num_cols = linebuf.length();
@@ -367,13 +376,7 @@ public class InfoPanelForDrawable extends SearchPanel // SearchPanel is JPanel
             strbuf.append( "\n" + linebuf.toString() );
             strbuf.append( "\n" );
     
-            CategoryWeight[]  twgts;
-            CategoryWeight    twgt;
-            String            twgt_str;
-            int               print_status;
-            int               idx;
-
-            print_status = getPrintStatus( shade.getCategory().getTopology() );
+            print_status = getPrintStatus( shade_topo );
             strbuf.append( "\n" + CategoryWeight.getPrintTitle(print_status) );
             twgts = shade.arrayOfCategoryWeights();
             for ( idx = 0; idx < twgts.length; idx++ ) {
