@@ -104,7 +104,7 @@ profile:
 
 coverage:
 	(cd mpi-io && make coverage)
-	(cd adio/ad_ufs && make coverage
+	(cd adio/ad_ufs && make coverage)
 	(cd adio/ad_nfs && make coverage)
 
 cleanall:
