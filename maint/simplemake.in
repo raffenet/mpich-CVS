@@ -1490,6 +1490,9 @@ sub ExpandMakeVars {
     # look for ${\w*} and replace with the value of $makevars{$1}
     my $line = $_[0];
     print "Looking at $line\n" if $debug;
+
+    if (!defined($line)) { return ""; }
+
     my $after = "";
     my $processed = "";
     while ($line =~ /([^\$]*)\$([{\(])(\w+)([}\)])(.*)/) {
@@ -1769,13 +1772,18 @@ sub GetLibLoc {
     my $libloc = "";
     if (defined($libdir{$libname})) {
 	$libloc = $libdir{$libname};
+	my $rootdir;
+	if (!defined($rootdirpath)) {
+	    $rootdir = "."
+	    }
+	else {
+	    $rootdir = $rootdirpath;
+	    $rootdir =~ s/\r?\n?$//; # strip off any newlines
+	}
+	$libloc =~ s/ROOTDIR/$rootdir/;
+	# Remove duplicated //
+	$libloc =~ s/\/\//\//;
     }
-    #chomp( $rootdir =  $rootdirpath );
-    ( $rootdir =  $rootdirpath ) =~ s/[\r\n]*$//; # David added
-	#strip ( $rootdir =  $rootdirpath );
-    $libloc =~ s/ROOTDIR/$rootdir/;
-    # Remove duplicated //
-    $libloc =~ s/\/\//\//;
 
     return $libloc;
 }
@@ -2164,6 +2172,8 @@ sub LibraryBuild {
 	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
     }
     # Handle any variables in the lib line
+    if (!defined($sourcefiles)) { 
+	print STDERR "Warning: no source files in library $libname in LibraryBuild\n" ; }
     $sourcefiles = &ExpandMakeVars($sourcefiles);
     foreach $sourcefile (split(/\s+/,$sourcefiles)) {
 	$ext = "";
@@ -2207,6 +2217,8 @@ sub LibraryBuild {
 sub TargetLibraries {
     foreach $lib (keys(%libraries)) {
 	my $libloc = &GetLibLoc( $lib );
+	if (!defined($libraries{$lib})) { next; }
+
 	my $sourcefiles = &ExpandMakeVars($libraries{$lib});
 
 	&LibraryTimestampPrefix( $lib, $libloc );
@@ -2267,7 +2279,7 @@ sub LibraryTimestampFix {
 
 sub LibraryTimestampClean {
     if ($libcount > 0) {
-	print FD "\trm -f ";
+	print FD "\t-${quietLine}rm -f ";
 	for( my $i=0; $i<$libcount; $i++) {
 	    print FD ".libstamp$i ";
 	}
@@ -2526,19 +2538,19 @@ $libdir/$newlibname: $libdir/$libname
     }
     if (defined($profile_libraries{$libbase})) {
 	my $newbase = $profile_libraries{$libbase};
-	$libname = "lib" . $newbase . "libext";
+	$libname = "lib" . $newbase . $libext;
 	if ($newlibname =~ /(.*lib)[^\/]*(\..*)/) {
 	    $newlibname = $1 . $newbase . $2;
 	}
 	print FD "\tif [ -n \"\@NO_WEAK_SYM\@\" -a \\
 \t\t\"$libbase\" != \"$newbase\" ] ; then \\
-\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi \\
-\t    \$(MKDIR_P) $libdir/.tmp \\
+\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi ;\\
+\t    \$(MKDIR_P) $libdir/.tmp ;\\
 \t    (cd $libdir/.tmp && ar x ../$libname && \\
 \t    for file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
 \t\tmv \$\$file \$\$bfile.o ; done; \\
-\t    \${C_LINK_SHL} -o ../$newlibname *.o) \\
-\t    rm -rf $libdir/.tmp\\
+\t    \${C_LINK_SHL} -o ../$newlibname *.o) ;\\
+\t    rm -rf $libdir/.tmp ;\\
 \tfi\n";
     }
 }
@@ -3551,8 +3563,13 @@ of known autoconf file files for ";
 sub GetPathToParent {
     my ($path_child, $path_parent) = @_;
     # Remove parent path from child path
-    $path_child =~ s/^$path_parent//;
-    # convert all of the non directory separators into ..
+    if (defined($path_parent)) {
+	$path_child =~ s/^$path_parent//;
+	# convert all of the non directory separators into ..
+    }
+    else {
+	print STDERR "Path to parent is unknown in GetPathToParent\n";
+    }
     $path_child =~ s/[^\/\.]*\//..\//g;
     return $path_child;
 }
