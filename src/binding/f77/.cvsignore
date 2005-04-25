@@ -336,3 +336,4 @@ statusf2c.c
 *fs.c
 fprotos.h
 *.user
+.libstamp*

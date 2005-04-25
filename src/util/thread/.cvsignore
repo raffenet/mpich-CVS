@@ -8,6 +8,7 @@ Makefile
 Makefile.in
 .deps
 .libs
+.libstamp*
 configure
 config.*
 *.cache

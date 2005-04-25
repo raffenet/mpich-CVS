@@ -18,3 +18,4 @@ timerconf.h
 mpichtimer.h
 .deps
 .libs
+.libstamp*

@@ -6,3 +6,4 @@ config.*
 .deps
 autom4te*
 pmutilconf.h*
+.libstamp*

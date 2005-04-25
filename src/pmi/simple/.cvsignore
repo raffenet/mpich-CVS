@@ -17,3 +17,4 @@ pmiconf.h.in
 pmiconf.h
 .deps
 .libs
+.libstamp*

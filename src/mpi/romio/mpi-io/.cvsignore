@@ -3,3 +3,5 @@ Makefile
 *.o
 *.bb
 *.bbg
+.libs
+.libstamp*

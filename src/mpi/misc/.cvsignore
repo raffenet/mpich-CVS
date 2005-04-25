@@ -1,4 +1,5 @@
 *.o
+*.d
 *.lo
 *.pf
 *.bb
@@ -9,3 +10,4 @@ Makefile
 Makefile.in
 .deps
 .libs
+.libstamp*
