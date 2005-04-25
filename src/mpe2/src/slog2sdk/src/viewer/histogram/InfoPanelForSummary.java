@@ -274,14 +274,8 @@ public class InfoPanelForSummary extends JPanel
         // For Shadow Primitive
         public void setTimeAveBoxText( final TimeAveBox  avebox )
         {
-            StringBuffer  linebuf;
-            linebuf = new StringBuffer("Averaged Number of Real Drawables = ");
-            linebuf.append( nfmt.format( avebox.getAveNumOfRealObjects() ) );
-            if ( num_cols < linebuf.length() )
-                num_cols = linebuf.length();
-            num_rows++;
-            strbuf.append( "\n" + linebuf.toString() );
-    
+            StringBuffer       linebuf;
+            Topology           avebox_topo;
             CategoryTimeBox[]  typeboxes;
             CategoryWeight     twgt;
             String             twgt_str;
@@ -290,7 +284,18 @@ public class InfoPanelForSummary extends JPanel
 
             typeboxes     = avebox.arrayOfCategoryTimeBoxes(); 
             twgt          = typeboxes[ 0 ].getCategoryWeight();
-            print_status  = getPrintStatus( twgt.getCategory().getTopology() );
+            avebox_topo   = twgt.getCategory().getTopology(); 
+
+         // linebuf = new StringBuffer("Averaged Number of Real Drawables = ");
+            linebuf = new StringBuffer( "Averaged Number of Real " );
+            linebuf.append( avebox_topo + "s = " );
+            linebuf.append( nfmt.format( avebox.getAveNumOfRealObjects() ) );
+            if ( num_cols < linebuf.length() )
+                num_cols = linebuf.length();
+            num_rows++;
+            strbuf.append( "\n" + linebuf.toString() );
+    
+            print_status  = getPrintStatus( avebox_topo );
             num_rows++;
             strbuf.append( "\n" + CategoryWeight.getPrintTitle(print_status) );
             for ( idx = 0; idx < typeboxes.length; idx++ ) {

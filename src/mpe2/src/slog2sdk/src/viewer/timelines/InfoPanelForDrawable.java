@@ -357,7 +357,9 @@ public class InfoPanelForDrawable extends SearchPanel // SearchPanel is JPanel
             strbuf.append( "\n" );
     
             StringBuffer  linebuf;
-            linebuf = new StringBuffer( "Number of Real Drawables = " );
+            // linebuf = new StringBuffer( "Number of Real Drawables = " );
+            linebuf = new StringBuffer( "Number of Real " );
+            linebuf.append( Shadow.getTopology() + "s = " );
             linebuf.append( shade.getNumOfRealObjects() );
             if ( num_cols < linebuf.length() )
                 num_cols = linebuf.length();
