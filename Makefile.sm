@@ -177,6 +177,7 @@ htmldoc-local:
 testing:
 	(cd test && $(MAKE) testing)
 
+profilelib_${MPILIBNAME} = ${PMPILIBNAME}
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPIFLIBNAME   = @MPIFLIBNAME@
 install_LIB = lib/lib${MPILIBNAME}.a

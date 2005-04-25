@@ -2514,6 +2514,33 @@ $libdir/$newlibname: $libdir/$libname
     # dlltool -e exports.o -l libmpich.lib *.o
     # gcc -shared *.o -o libmpich.dll
     #
+
+    # If there is a profiling library, we need to build it
+    # now, as part of this target, to handle the case where the
+    # profiling library name might be the same as the regular name
+    my $libbase = $libname;
+    my $libext = ".so";
+    if ($libbase =~ /lib(.*)(\..*)/) {
+	$libbase = $1;
+	$libext = $2;
+    }
+    if (defined($profile_libraries{$libbase})) {
+	my $newbase = $profile_libraries{$libbase};
+	$libname = "lib" . $newbase . "libext";
+	if ($newlibname =~ /(.*lib)[^\/]*(\..*)/) {
+	    $newlibname = $1 . $newbase . $2;
+	}
+	print FD "\tif [ -n \"\@NO_WEAK_SYM\@\" -a \\
+\t\t\"$libbase\" != \"$newbase\" ] ; then \\
+\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi \\
+\t    \$(MKDIR_P) $libdir/.tmp \\
+\t    (cd $libdir/.tmp && ar x ../$libname && \\
+\t    for file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
+\t\tmv \$\$file \$\$bfile.o ; done; \\
+\t    \${C_LINK_SHL} -o ../$newlibname *.o) \\
+\t    rm -rf $libdir/.tmp\\
+\tfi\n";
+    }
 }
 #
 # ===========================================================================
