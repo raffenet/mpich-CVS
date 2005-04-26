@@ -68,7 +68,7 @@ def mpdexit():
         raise RuntimeError, 'mpdexit: INVALID msg=:%s:' % (msg)
     if msg['cmd'] != 'mpdexit_ack':
         print 'mpdexit failed; may have wrong mpdid'
-    print 'mpdexit done'
+    # print 'mpdexit done'
 
 
 
