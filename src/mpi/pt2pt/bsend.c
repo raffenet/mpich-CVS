@@ -162,6 +162,8 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  BSEND, &request_ptr );
+    /* Note that we can ignore the request_ptr because it is handled internally
+       by the bsend util routines */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
