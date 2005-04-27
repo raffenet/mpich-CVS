@@ -142,6 +142,9 @@
 				RelativePath=".\src\ch3_abort.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_alloc_mem.c">
+			</File>
+			<File
 				RelativePath=".\src\ch3_cancel_send.c">
 			</File>
 			<File
@@ -155,6 +158,9 @@
 			</File>
 			<File
 				RelativePath=".\src\ch3_finalize.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_free_mem.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_init.c">

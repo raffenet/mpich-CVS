@@ -191,6 +191,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 int ibu_register_memory(void *buf, int len, ibu_mem_t *state);
 int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state);
 int ibu_invalidate_memory(void *buf, int len);
+int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state);
+int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state);
 
 #ifdef __cplusplus
 }

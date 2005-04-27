@@ -435,4 +435,62 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
     return IBU_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME ibu_nocache_register_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state)
+{
+    ib_api_status_t status;
+    ib_mr_create_t mem;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+
+    MPIU_DBG_PRINTF(("entering ibu_nocache_register_memory\n"));
+
+    mem.vaddr = buf;
+    mem.length = (uint64_t)len;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
+    status = ib_reg_mem(
+	IBU_Process.pd_handle,
+	&mem,
+	&state->lkey,
+	&state->rkey,
+	&state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_nocache_register_memory: ib_reg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+
+    MPIU_DBG_PRINTF(("exiting ibu_nocache_register_memory\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+    return IBU_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME ibu_nocache_deregister_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state)
+{
+    ib_api_status_t status;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+
+    status = ib_dereg_mem(IBU_Process.pd_handle, state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+    return IBU_SUCCESS;
+}
+
 #endif

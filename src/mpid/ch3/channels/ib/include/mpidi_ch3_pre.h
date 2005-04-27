@@ -174,4 +174,28 @@ MPIDI_CH3I_RTS_IOV_READ_REQUEST
 #define MPIDI_CH3I_RTS_IOV_READ_REQUEST MPID_LAST_REQUEST_KIND + 3
 */
 
+typedef struct MPIDI_CH3I_Alloc_mem_list_t
+{
+    ibu_mem_t mem;
+    void *ptr;
+    size_t length;
+    struct MPIDI_CH3I_Alloc_mem_list_t *next;
+} MPIDI_CH3I_Alloc_mem_list_t;
+
+extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
+
+#define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
+#define MPIDI_CH3_IMPLEMENTS_FREE_MEM
+/*
+#define MPIDI_CH3_IMPLEMENTS_START_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_END_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_PUT
+#define MPIDI_CH3_IMPLEMENTS_GET
+#define MPIDI_CH3_IMPLEMENTS_ACCUMULATE
+#define MPIDI_CH3_IMPLEMENTS_WIN_CREATE
+#define MPIDI_CH3_IMPLEMENTS_WIN_FREE
+#define MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_END_PT_EPOCH
+*/
+
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

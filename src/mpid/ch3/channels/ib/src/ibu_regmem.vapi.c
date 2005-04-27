@@ -586,4 +586,67 @@ int ibu_invalidate_memory(void *buf, int len)
 #endif
 }
 
+#undef FUNCNAME
+#define FUNCNAME ibu_nocache_register_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state)
+{
+    VAPI_ret_t status;
+    VAPI_mrw_t mem, mem_out;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+
+    MPIU_DBG_PRINTF(("entering ibu_nocache_register_memory\n"));
+
+    memset(&mem, 0, sizeof(VAPI_mrw_t));
+    memset(&mem_out, 0, sizeof(VAPI_mrw_t));
+    mem.type = VAPI_MR;
+    mem.start = (VAPI_virt_addr_t)buf;
+    mem.size = len;
+    mem.pd_hndl = IBU_Process.pd_handle;
+    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
+    mem.l_key = 0;
+    mem.r_key = 0;
+    status = VAPI_register_mr(
+	IBU_Process.hca_handle,
+	&mem,
+	&state->handle,
+	&mem_out);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_nocache_register_memory: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+    state->lkey = mem_out.l_key;
+    state->rkey = mem_out.r_key;
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
+    return IBU_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME ibu_nocache_deregister_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state)
+{
+    VAPI_ret_t status;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+
+    status = VAPI_deregister_mr(IBU_Process.hca_handle, state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
+    return IBU_SUCCESS;
+}
+
 #endif
