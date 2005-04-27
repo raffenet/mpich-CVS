@@ -44,6 +44,7 @@ void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI
     void *ptr;
     VAPI_mrw_t mem, mem_out;
     MPIDI_STATE_DECL(MPID_STATE_IB_MALLOC_REGISTER);
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_REGISTER_MR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_MALLOC_REGISTER);
 
@@ -67,11 +68,13 @@ void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
     mem.l_key = 0;
     mem.r_key = 0;
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_REGISTER_MR);
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
 	mhp,
 	&mem_out);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_REGISTER_MR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ib_malloc_register: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
@@ -192,6 +195,8 @@ void remove_mem(void *p)
 static int ibui_free_pin_tree(ibu_mem_node_t *node)
 {
     VAPI_ret_t status;
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_DEREGISTER_MR);
+
     if (node == NULL)
 	return IBU_SUCCESS;
     ibui_free_pin_tree(node->left);
@@ -199,7 +204,9 @@ static int ibui_free_pin_tree(ibu_mem_node_t *node)
 
     if (node->ref_count == 0)
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_VAPI_DEREGISTER_MR);
 	status = VAPI_deregister_mr(IBU_Process.hca_handle, node->mem.handle);
+	MPIDI_FUNC_EXIT(MPID_STATE_VAPI_DEREGISTER_MR);
 	if (status != IBU_SUCCESS)
 	{
 	    MPIU_Internal_error_printf("ibu_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));
@@ -290,6 +297,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     ibu_mem_node_t *iter;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_REGISTER_MEMORY);
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_REGISTER_MR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_REGISTER_MEMORY);
 
@@ -307,11 +315,13 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
     mem.l_key = 0;
     mem.r_key = 0;
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_REGISTER_MR);
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
 	&state->handle,
 	&mem_out);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_REGISTER_MR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_register_memory: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
@@ -407,11 +417,13 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
     mem.l_key = 0;
     mem.r_key = 0;
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_REGISTER_MR);
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
 	&state->handle,
 	&mem_out);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_REGISTER_MR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_register_memory: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
@@ -445,13 +457,16 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
     ibu_mem_node_t *iter;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_DEREGISTER_MEMORY);
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_DEREGISTER_MR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_DEREGISTER_MEMORY);
 
 #ifdef USE_NO_PIN_CACHE
 
     /* caching turned off */
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_DEREGISTER_MR);
     status = VAPI_deregister_mr(IBU_Process.hca_handle, state->handle);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_DEREGISTER_MR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));
@@ -505,7 +520,9 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
     /* error, node not found */
     /*MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);*/
 /*
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_DEREGISTER_MR);
     status = VAPI_deregister_mr(IBU_Process.hca_handle, state->handle);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_DEREGISTER_MR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));

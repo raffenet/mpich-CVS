@@ -30,6 +30,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     ibu_work_id_handle_t *id_ptr;
     ibu_rdma_type_t entry_type;
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_POST_SR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_WRITE);
 
@@ -74,9 +75,11 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     }
 #endif
     MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", len));
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_POST_SR);
     status = VAPI_post_sr( IBU_Process.hca_handle,
 			   ibu->qp_handle, 
 			   &work_req);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_POST_SR);
     if (status != VAPI_OK)
     {
 	MPIU_Internal_error_printf("%s: Error: failed to post ib rdma send, status = %s\n", FCNAME, VAPI_strerror(status));
@@ -104,6 +107,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     ibu_work_id_handle_t *id_ptr;
     ibu_rdma_type_t entry_type;
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_READ);
+    MPIDI_STATE_DECL(MPID_STATE_VAPI_POST_SR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_READ);
 
@@ -148,9 +152,11 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     }
 #endif
     MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", len));
+    MPIDI_FUNC_ENTER(MPID_STATE_VAPI_POST_SR);
     status = VAPI_post_sr( IBU_Process.hca_handle,
 			   ibu->qp_handle, 
 			   &work_req);
+    MPIDI_FUNC_EXIT(MPID_STATE_VAPI_POST_SR);
     if (status != VAPI_OK)
     {
 	MPIU_Internal_error_printf("%s: Error: failed to post ib rdma send, status = %s\n", FCNAME, VAPI_strerror(status));
