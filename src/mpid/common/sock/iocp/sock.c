@@ -11,7 +11,6 @@
 #define MPIDI_QUOTE2(A) #A
 
 #define SOCKI_TCP_BUFFER_SIZE       32*1024
-#define SOCKI_STREAM_PACKET_LENGTH  8*1024
 #define SOCKI_DESCRIPTION_LENGTH    256
 #define SOCKI_NUM_PREPOSTED_ACCEPTS 32
 
@@ -25,12 +24,9 @@ typedef int SOCKI_STATE;
 
 typedef struct sock_buffer
 {
-    int use_iov;
     DWORD num_bytes;
     OVERLAPPED ovl;
-    void *buffer;
-    MPIU_Size_t bufflen;
-    MPIU_Size_t maxbufflen;
+    MPID_IOV tiov;
 #ifdef USE_SOCK_IOV_COPY
     MPID_IOV iov[MPID_IOV_MAXLEN];
 #else
@@ -54,7 +50,6 @@ typedef struct sock_state_t
     SOCKET listen_sock;
     char accept_buffer[sizeof(struct sockaddr_in)*2+32];
     /* read and write structures */
-    /*int readfile_returned_immediate_success;*/
     sock_buffer read;
     sock_buffer write;
     /* connect structures */
@@ -76,7 +71,8 @@ typedef struct sock_state_t
 
 static int g_num_cp_threads = 2;
 static int g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
-static int g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
+static int g_socket_rbuffer_size = SOCKI_TCP_BUFFER_SIZE;
+static int g_socket_sbuffer_size = SOCKI_TCP_BUFFER_SIZE;
 static int g_init_called = 0;
 static int g_num_posted_accepts = SOCKI_NUM_PREPOSTED_ACCEPTS;
 static int g_min_port = 0;
@@ -201,13 +197,13 @@ static int easy_create_ranged(SOCKET *sock, int port, unsigned long addr)
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_rbuffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_sbuffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -279,13 +275,13 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_rbuffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_sbuffer_size;
 	setsockopt(temp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -333,7 +329,7 @@ static inline void init_state_struct(sock_state_t *p)
     p->pending_operations = 0;
     p->read.total = 0;
     p->read.num_bytes = 0;
-    p->read.buffer = NULL;
+    p->read.tiov.MPID_IOV_BUF = NULL;
 #ifndef USE_SOCK_IOV_COPY
     p->read.iov = NULL;
 #endif
@@ -344,7 +340,7 @@ static inline void init_state_struct(sock_state_t *p)
     p->read.progress_update = NULL;
     p->write.total = 0;
     p->write.num_bytes = 0;
-    p->write.buffer = NULL;
+    p->write.tiov.MPID_IOV_BUF = NULL;
 #ifndef USE_SOCK_IOV_COPY
     p->write.iov = NULL;
 #endif
@@ -357,7 +353,6 @@ static inline void init_state_struct(sock_state_t *p)
     p->next = NULL;
     p->accepted = 0;
     p->listener_closed = 0;
-    /*p->readfile_returned_immediate_success = 0;*/
     /*
     p->bogus_t1 = 0;
     p->bogus_t2 = 0;
@@ -445,14 +440,23 @@ int MPIDU_Sock_init()
 	    g_socket_buffer_size = SOCKI_TCP_BUFFER_SIZE;
     }
 
-    /* get the stream packet size */
-    /* messages larger than this size will be broken into pieces of this size when sending */
-    szNum = getenv("MPICH_SOCKET_STREAM_PACKET_SIZE");
+    g_socket_rbuffer_size = g_socket_buffer_size;
+    g_socket_sbuffer_size = g_socket_buffer_size;
+
+    szNum = getenv("MPICH_SOCKET_RBUFFER_SIZE");
     if (szNum != NULL)
     {
-	g_stream_packet_length = atoi(szNum);
-	if (g_stream_packet_length < 1)
-	    g_stream_packet_length = SOCKI_STREAM_PACKET_LENGTH;
+	g_socket_rbuffer_size = atoi(szNum);
+	if (g_socket_rbuffer_size < 0)
+	    g_socket_rbuffer_size = g_socket_buffer_size;
+    }
+
+    szNum = getenv("MPICH_SOCKET_SBUFFER_SIZE");
+    if (szNum != NULL)
+    {
+	g_socket_sbuffer_size = atoi(szNum);
+	if (g_socket_sbuffer_size < 0)
+	    g_socket_sbuffer_size = g_socket_buffer_size;
     }
 
     /* get the number of accepts to pre-post */
@@ -1022,13 +1026,13 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_rbuffer_size;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
     }
     len = sizeof(int);
     if (!getsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
     {
-	optval = g_socket_buffer_size;
+	optval = g_socket_sbuffer_size;
 	setsockopt(accept_state->sock, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 
@@ -1104,94 +1108,6 @@ static unsigned int GetMask(char *pszMask)
     printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
     */
     return nMask;
-}
-
-static int GetHostAndPort(char *host, int *port, char *business_card)
-{
-    char pszNetMask[50];
-    char *pEnv, *token;
-    unsigned int nNicNet, nNicMask;
-    char *temp, *pszHost, *pszIP, *pszPort;
-    unsigned int ip;
-
-    pEnv = getenv("MPICH_NETMASK");
-    if (pEnv != NULL)
-    {
-	MPIU_Strncpy(pszNetMask, pEnv, 50);
-	token = strtok(pszNetMask, "/");
-	if (token != NULL)
-	{
-	    token = strtok(NULL, "\n");
-	    if (token != NULL)
-	    {
-		nNicNet = GetIP(pszNetMask);
-		nNicMask = GetMask(token);
-
-		/* parse each line of the business card and match the ip address with the network mask */
-		temp = MPIU_Strdup(business_card);
-		token = strtok(temp, ":\r\n");
-		while (token)
-		{
-		    pszHost = token;
-		    pszIP = strtok(NULL, ":\r\n");
-		    pszPort = strtok(NULL, ":\r\n");
-		    ip = GetIP(pszIP);
-		    /*msg_printf("masking '%s'\n", pszIP);*/
-		    if ((ip & nNicMask) == nNicNet)
-		    {
-			/* the current ip address matches the requested network so return these values */
-			MPIU_Strncpy(host, pszIP, 32); /*pszHost);*/
-			*port = atoi(pszPort);
-			MPIU_Free(temp);
-			return MPI_SUCCESS;
-		    }
-		    token = strtok(NULL, ":\r\n");
-		}
-		if (temp)
-		    MPIU_Free(temp);
-	    }
-	}
-    }
-
-    temp = MPIU_Strdup(business_card);
-    if (temp == NULL)
-    {
-	/*MPIDI_err_printf("GetHostAndPort", "MPIU_Strdup failed\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|strdup", NULL);
-    }
-    /* move to the host part */
-    token = strtok(temp, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
-				    "**ch3|sock|badbuscard %s", business_card);
-    }
-    /*strcpy(host, token);*/
-    /* move to the ip part */
-    token = strtok(NULL, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
-				    "**ch3|sock|badbuscard %s", business_card);
-    }
-    MPIU_Strncpy(host, token, 32); /* use the ip string instead of the hostname, it's more reliable */
-    /* move to the port part */
-    token = strtok(NULL, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
-				    "**ch3|sock|badbuscard %s", business_card);
-    }
-    *port = atoi(token);
-    MPIU_Free(temp);
-
-    return MPI_SUCCESS;
 }
 
 #undef FUNCNAME
@@ -1462,35 +1378,19 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is connecting.\n", MPIDU_Sock_get_sock_id(sock)));
 	if (sock->state & SOCKI_READING)
 	{
-	    if (sock->read.use_iov)
-	    {
-		int i, n = 0;
-		for (i=0; i<sock->read.iovlen; i++)
-		    n += sock->read.iov[i].MPID_IOV_LEN;
-		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d, index %d, iovlen %d.\n",
-		    MPIDU_Sock_get_sock_id(sock), sock->read.total, n, sock->read.index, sock->read.iovlen));
-	    }
-	    else
-	    {
-		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d.\n",
-		    MPIDU_Sock_get_sock_id(sock), sock->read.total, sock->read.bufflen));
-	    }
+	    int i, n = 0;
+	    for (i=0; i<sock->read.iovlen; i++)
+		n += sock->read.iov[i].MPID_IOV_LEN;
+	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d, index %d, iovlen %d.\n",
+		MPIDU_Sock_get_sock_id(sock), sock->read.total, n, sock->read.index, sock->read.iovlen));
 	}
 	if (sock->state & SOCKI_WRITING)
 	{
-	    if (sock->write.use_iov)
-	    {
-		int i, n = 0;
-		for (i=0; i<sock->write.iovlen; i++)
-		    n += sock->write.iov[i].MPID_IOV_LEN;
-		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d, index %d, iovlen %d.\n",
-		    MPIDU_Sock_get_sock_id(sock), sock->write.total, n, sock->write.index, sock->write.iovlen));
-	    }
-	    else
-	    {
-		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d.\n",
-		    MPIDU_Sock_get_sock_id(sock), sock->write.total, sock->write.bufflen));
-	    }
+	    int i, n = 0;
+	    for (i=0; i<sock->write.iovlen; i++)
+		n += sock->write.iov[i].MPID_IOV_LEN;
+	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d, index %d, iovlen %d.\n",
+		MPIDU_Sock_get_sock_id(sock), sock->write.total, n, sock->write.index, sock->write.iovlen));
 	}
 	fflush(stdout);
 #endif
@@ -1518,7 +1418,6 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 		return mpi_errno;
-
 	    }
 	    *sp = INVALID_SOCKET;
 	    if (!PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL))
@@ -1594,55 +1493,9 @@ int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_READ);
-    if (!g_init_called)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READ);
-	return mpi_errno;
-    }
-    /*sock->rt1 = PMPI_Wtime();*/
-    sock->read.total = 0;
-    sock->read.buffer = buf;
-    sock->read.bufflen = minbr;
-    sock->read.maxbufflen = maxbr;
-    sock->read.use_iov = FALSE;
-    sock->read.progress_update = fn;
-    sock->state |= SOCKI_READING;
-    MPIU_DBG_PRINTF(("sock_post_read - %d,%d bytes\n", minbr, maxbr));
-    if (!ReadFile((HANDLE)(sock->sock), buf, (DWORD)minbr, &sock->read.num_bytes, &sock->read.ovl))
-    {
-	mpi_errno = GetLastError();
-	switch (mpi_errno)
-	{
-        case ERROR_IO_PENDING:
-	    mpi_errno = MPI_SUCCESS;
-	    break;
-	case ERROR_HANDLE_EOF:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED, "**sock_closed", 0);
-	    break;
-	default:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-	    break;
-	}
-    }
-    /*
-    else
-    {
-	if (sock->read.num_bytes == 0)
-	{
-	    printf("[%d] ReadFile returned success immediately of zero bytes for sock: %d\n", sock->sock);
-	}
-	else
-	{
-	    printf("[%d] ReadFile returned success immediately for sock: %d\n", sock->sock);
-	}
-	sock->readfile_returned_immediate_success = 1;
-    }
-    */
-    if (mpi_errno == MPI_SUCCESS)
-	sock->pending_operations++;
-    else
-	sock->state &= ~SOCKI_READING;
+    sock->read.tiov.MPID_IOV_BUF = buf;
+    sock->read.tiov.MPID_IOV_LEN = minbr;
+    mpi_errno = MPIDU_Sock_post_readv(sock, &sock->read.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READ);
     return mpi_errno;
 }
@@ -1686,7 +1539,6 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
 #endif
     sock->read.iovlen = iov_n;
     sock->read.index = 0;
-    sock->read.use_iov = TRUE;
     sock->read.progress_update = fn;
     sock->state |= SOCKI_READING;
 #ifdef MPICH_DBG_OUTPUT
@@ -1699,11 +1551,6 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
     {
 	if ((result = WSARecv(sock->sock, sock->read.iov, iov_n, &sock->read.num_bytes, &flags, &sock->read.ovl, NULL)) != SOCKET_ERROR)
 	{
-	    /*
-	    printf("[%d] WSARecv returned success immediately for sock: %d\n", sock->sock);
-	    sock->readfile_returned_immediate_success = 1;
-	    MPIU_Assert(result == 0);
-	    */
 	    break;
 	}
 
@@ -1724,11 +1571,6 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
 		/*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
 		if ((result = WSARecv(sock->sock, &tmp, 1, &sock->read.num_bytes, &flags, &sock->read.ovl, NULL)) != SOCKET_ERROR)
 		{
-		    /*
-		    printf("[%d] WSARecv returned success immediately for sock: %d\n", sock->sock);
-		    sock->readfile_returned_immediate_success = 1;
-		    MPIU_Assert(result == 0);
-		    */
 		    mpi_errno = MPI_SUCCESS;
 		    break;
 		}
@@ -1775,41 +1617,9 @@ int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_S
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_WRITE);
-    if (!g_init_called)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITE);
-	return mpi_errno;
-    }
-    /*sock->wt1 = PMPI_Wtime();*/
-    sock->write.total = 0;
-    sock->write.buffer = buf;
-    sock->write.bufflen = min;
-    sock->write.maxbufflen = max;
-    sock->write.use_iov = FALSE;
-    sock->write.progress_update = fn;
-    sock->state |= SOCKI_WRITING;
-    MPIU_DBG_PRINTF(("sock_post_write - %d,%d bytes\n", min, max));
-    if (!WriteFile((HANDLE)(sock->sock), buf, (DWORD)min, &sock->write.num_bytes, &sock->write.ovl))
-    {
-	mpi_errno = GetLastError();
-	switch (mpi_errno)
-	{
-        case ERROR_IO_PENDING:
-	    mpi_errno = MPI_SUCCESS;
-	    break;
-	case ERROR_HANDLE_EOF:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED, "**sock_closed", 0);
-	    break;
-	default:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-	    break;
-	}
-    }
-    if (mpi_errno == MPI_SUCCESS)
-	sock->pending_operations++;
-    else
-	sock->state &= ~SOCKI_WRITING;
+    sock->write.tiov.MPID_IOV_BUF = buf;
+    sock->write.tiov.MPID_IOV_LEN = min;
+    mpi_errno = MPIDU_Sock_post_writev(sock, &sock->write.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITE);
     return mpi_errno;
 }
@@ -1842,7 +1652,6 @@ int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_S
 #endif
     sock->write.iovlen = iov_n;
     sock->write.index = 0;
-    sock->write.use_iov = TRUE;
     sock->write.progress_update = fn;
     sock->state |= SOCKI_WRITING;
 #ifdef MPICH_DBG_OUTPUT
@@ -1982,13 +1791,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		{
 		    /*sock->ct2 = PMPI_Wtime();*/
 		    /*printf("[%d] time from post_close to op_close: %.3f - sock %d\n", getpid(), sock->ct2 - sock->ct1, sock->sock);*/
-		    /*
-		    if (sock->readfile_returned_immediate_success)
-		    {
-			printf("[%d] completion notification for immediately completed read on sock: %d\n", sock->sock);
-			sock->readfile_returned_immediate_success = 0;
-		    }
-		    */
 		    /*printf("<1>");fflush(stdout);*/
 		    out->op_type = MPIDU_SOCK_OP_CLOSE;
 		    out->num_bytes = 0;
@@ -2017,13 +1819,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		}
 		if (ovl == &sock->read.ovl)
 		{
-		    /*
-		    if (sock->readfile_returned_immediate_success)
-		    {
-			printf("[%d] completion notification for immediately completed read on sock: %d\n", getpid(), sock->sock);
-			sock->readfile_returned_immediate_success = 0;
-		    }
-		    */
 		    if (num_bytes == 0)
 		    {
 			/*sock->rt2 = PMPI_Wtime();*/
@@ -2060,37 +1855,77 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			return MPI_SUCCESS;
 		    }
-		    MPIU_DBG_PRINTF(("sock_wait read%s update: %d bytes\n", sock->read.use_iov ? "v" : "", num_bytes));
+		    MPIU_DBG_PRINTF(("sock_wait readv update: %d bytes\n", num_bytes));
 		    sock->read.total += num_bytes;
-		    if (sock->read.use_iov)
+		    while (num_bytes)
 		    {
-			while (num_bytes)
+			if (sock->read.iov[sock->read.index].MPID_IOV_LEN <= num_bytes)
 			{
-			    if (sock->read.iov[sock->read.index].MPID_IOV_LEN <= num_bytes)
-			    {
-				num_bytes -= sock->read.iov[sock->read.index].MPID_IOV_LEN;
-				sock->read.index++;
-				sock->read.iovlen--;
-			    }
-			    else
-			    {
-				sock->read.iov[sock->read.index].MPID_IOV_LEN -= num_bytes;
-				sock->read.iov[sock->read.index].MPID_IOV_BUF = 
-				    (char*)(sock->read.iov[sock->read.index].MPID_IOV_BUF) + num_bytes;
-				num_bytes = 0;
-			    }
+			    num_bytes -= sock->read.iov[sock->read.index].MPID_IOV_LEN;
+			    sock->read.index++;
+			    sock->read.iovlen--;
 			}
-			if (sock->read.iovlen == 0)
+			else
+			{
+			    sock->read.iov[sock->read.index].MPID_IOV_LEN -= num_bytes;
+			    sock->read.iov[sock->read.index].MPID_IOV_BUF = 
+				(char*)(sock->read.iov[sock->read.index].MPID_IOV_BUF) + num_bytes;
+			    num_bytes = 0;
+			}
+		    }
+		    if (sock->read.iovlen == 0)
+		    {
+			/*sock->rt2 = PMPI_Wtime();*/
+			/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
+			MPIU_DBG_PRINTF(("sock_wait readv %d bytes\n", sock->read.total));
+			out->op_type = MPIDU_SOCK_OP_READ;
+			out->num_bytes = sock->read.total;
+			out->error = MPI_SUCCESS;
+			out->user_ptr = sock->user_ptr;
+			sock->pending_operations--;
+			sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
+			if (sock->closing && sock->pending_operations == 0)
+			{
+			    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
+			    FlushFileBuffers((HANDLE)sock->sock);
+			    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
+			    {
+				mpi_errno = WSAGetLastError();
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return mpi_errno;
+			    }
+			    if (closesocket(sock->sock) == SOCKET_ERROR)
+			    {
+				mpi_errno = WSAGetLastError();
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return mpi_errno;
+			    }
+			    sock->sock = INVALID_SOCKET;
+			}
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			return MPI_SUCCESS;
+		    }
+		    /* make the user upcall */
+		    if (sock->read.progress_update != NULL)
+			sock->read.progress_update(num_bytes, sock->user_ptr);
+		    /* post a read of the remaining data */
+		    /*WSARecv(sock->sock, sock->read.iov, sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);*/
+		    if (WSARecv(sock->sock, &sock->read.iov[sock->read.index], sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) == SOCKET_ERROR)
+		    {
+			mpi_errno = WSAGetLastError();
+			if (mpi_errno == 0)
 			{
 			    /*sock->rt2 = PMPI_Wtime();*/
 			    /*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-			    MPIU_DBG_PRINTF(("sock_wait readv %d bytes\n", sock->read.total));
 			    out->op_type = MPIDU_SOCK_OP_READ;
 			    out->num_bytes = sock->read.total;
-			    out->error = MPI_SUCCESS;
+			    /*printf("sock_wait returning %d bytes and socket closed\n", sock->read.total);*/
+			    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
-			    sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
+			    sock->state &= ~SOCKI_READING;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
 				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
@@ -2114,127 +1949,45 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			    return MPI_SUCCESS;
 			}
-			/* make the user upcall */
-			if (sock->read.progress_update != NULL)
-			    sock->read.progress_update(num_bytes, sock->user_ptr);
-			/* post a read of the remaining data */
-			/*WSARecv(sock->sock, sock->read.iov, sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);*/
-			if (WSARecv(sock->sock, &sock->read.iov[sock->read.index], sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) == SOCKET_ERROR)
+			if (mpi_errno == WSAENOBUFS)
 			{
-			    mpi_errno = WSAGetLastError();
-			    if (mpi_errno == 0)
+			    WSABUF tmp;
+			    tmp.buf = sock->read.iov[sock->read.index].buf;
+			    tmp.len = sock->read.iov[sock->read.index].len;
+			    while (mpi_errno == WSAENOBUFS)
 			    {
-				/*sock->rt2 = PMPI_Wtime();*/
-				/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				out->op_type = MPIDU_SOCK_OP_READ;
-				out->num_bytes = sock->read.total;
-				/*printf("sock_wait returning %d bytes and socket closed\n", sock->read.total);*/
-				out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
-				out->user_ptr = sock->user_ptr;
-				sock->pending_operations--;
-				sock->state &= ~SOCKI_READING;
-				if (sock->closing && sock->pending_operations == 0)
+				/*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+				if (WSARecv(sock->sock, &tmp, 1, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) != SOCKET_ERROR)
 				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-				    FlushFileBuffers((HANDLE)sock->sock);
-				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    if (closesocket(sock->sock) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    sock->sock = INVALID_SOCKET;
+				    mpi_errno = WSA_IO_PENDING;
+				    break;
 				}
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				return MPI_SUCCESS;
-			    }
-			    if (mpi_errno == WSAENOBUFS)
-			    {
-				WSABUF tmp;
-				tmp.buf = sock->read.iov[sock->read.index].buf;
-				tmp.len = sock->read.iov[sock->read.index].len;
-				while (mpi_errno == WSAENOBUFS)
+				mpi_errno = WSAGetLastError();
+				if (mpi_errno == WSA_IO_PENDING)
 				{
-				    /*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
-				    if (WSARecv(sock->sock, &tmp, 1, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) != SOCKET_ERROR)
-				    {
-					mpi_errno = WSA_IO_PENDING;
-					break;
-				    }
-				    mpi_errno = WSAGetLastError();
-				    if (mpi_errno == WSA_IO_PENDING)
-				    {
-					break;
-				    }
-				    /*printf("[%d] reducing recv length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
-				    tmp.len = tmp.len / 2;
-				    if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
-				    {
-					break;
-				    }
+				    break;
 				}
-			    }
-			    if (mpi_errno != WSA_IO_PENDING)
-			    {
-				/*sock->rt2 = PMPI_Wtime();*/
-				/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				out->op_type = MPIDU_SOCK_OP_READ;
-				out->num_bytes = sock->read.total;
-				out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-				out->user_ptr = sock->user_ptr;
-				sock->pending_operations--;
-				sock->state &= ~SOCKI_READING;
-				if (sock->closing && sock->pending_operations == 0)
+				/*printf("[%d] reducing recv length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+				tmp.len = tmp.len / 2;
+				if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
 				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-				    FlushFileBuffers((HANDLE)sock->sock);
-				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    if (closesocket(sock->sock) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    sock->sock = INVALID_SOCKET;
+				    break;
 				}
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				return MPI_SUCCESS;
 			    }
 			}
-		    }
-		    else
-		    {
-			sock->read.buffer = (char*)(sock->read.buffer) + num_bytes;
-			sock->read.bufflen -= num_bytes;
-			if (sock->read.bufflen == 0)
+			if (mpi_errno != WSA_IO_PENDING)
 			{
 			    /*sock->rt2 = PMPI_Wtime();*/
 			    /*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-			    MPIU_DBG_PRINTF(("sock_wait read %d bytes\n", sock->read.total));
 			    out->op_type = MPIDU_SOCK_OP_READ;
 			    out->num_bytes = sock->read.total;
-			    out->error = MPI_SUCCESS;
+			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
-			    sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
+			    sock->state &= ~SOCKI_READING;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
-				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple read completed.\n", MPIDU_Sock_get_sock_id(sock)));
+				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
 				FlushFileBuffers((HANDLE)sock->sock);
 				if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
 				{
@@ -2254,82 +2007,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			    }
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			    return MPI_SUCCESS;
-			}
-			/* make the user upcall */
-			if (sock->read.progress_update != NULL)
-			    sock->read.progress_update(num_bytes, sock->user_ptr);
-			/* post a read of the remaining data */
-			if (!ReadFile((HANDLE)(sock->sock), sock->read.buffer, (DWORD)sock->read.bufflen, &sock->read.num_bytes, &sock->read.ovl))
-			{
-			    mpi_errno = GetLastError();
-			    MPIU_DBG_PRINTF(("GetLastError: %d\n", mpi_errno));
-			    if (mpi_errno == ERROR_HANDLE_EOF || mpi_errno == 0)
-			    {
-				/*sock->rt2 = PMPI_Wtime();*/
-				/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				out->op_type = MPIDU_SOCK_OP_READ;
-				out->num_bytes = sock->read.total;
-				/*printf("sock_wait returning %d bytes and socket closed\n", sock->read.total);*/
-				out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
-				out->user_ptr = sock->user_ptr;
-				sock->pending_operations--;
-				sock->state &= ~SOCKI_READING;
-				if (sock->closing && sock->pending_operations == 0)
-				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-				    FlushFileBuffers((HANDLE)sock->sock);
-				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    if (closesocket(sock->sock) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    sock->sock = INVALID_SOCKET;
-				}
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				return MPI_SUCCESS;
-			    }
-			    if (mpi_errno != ERROR_IO_PENDING)
-			    {
-				/*sock->rt2 = PMPI_Wtime();*/
-				/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				out->op_type = MPIDU_SOCK_OP_READ;
-				out->num_bytes = sock->read.total;
-				out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-				out->user_ptr = sock->user_ptr;
-				sock->pending_operations--;
-				sock->state &= ~SOCKI_READING;
-				if (sock->closing && sock->pending_operations == 0)
-				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-				    FlushFileBuffers((HANDLE)sock->sock);
-				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    if (closesocket(sock->sock) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    sock->sock = INVALID_SOCKET;
-				}
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				return MPI_SUCCESS;
-			    }
 			}
 		    }
 		}
@@ -2408,188 +2085,85 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			}
 			MPIU_DBG_PRINTF(("sock_wait: write update, total = %d + %d = %d\n", sock->write.total, num_bytes, sock->write.total + num_bytes));
 			sock->write.total += num_bytes;
-			if (sock->write.use_iov)
+			while (num_bytes)
 			{
-			    while (num_bytes)
+			    if (sock->write.iov[sock->write.index].MPID_IOV_LEN <= num_bytes)
 			    {
-				if (sock->write.iov[sock->write.index].MPID_IOV_LEN <= num_bytes)
-				{
-				    /*MPIU_DBG_PRINTF(("sock_wait: write.index %d, len %d\n", sock->write.index, 
-					sock->write.iov[sock->write.index].MPID_IOV_LEN));*/
-				    num_bytes -= sock->write.iov[sock->write.index].MPID_IOV_LEN;
-				    sock->write.index++;
-				    sock->write.iovlen--;
-				}
-				else
-				{
-				    /*MPIU_DBG_PRINTF(("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
-					sock->write.iov[sock->write.index].MPID_IOV_LEN, num_bytes));*/
-				    sock->write.iov[sock->write.index].MPID_IOV_LEN -= num_bytes;
-				    sock->write.iov[sock->write.index].MPID_IOV_BUF =
-					(char*)(sock->write.iov[sock->write.index].MPID_IOV_BUF) + num_bytes;
-				    num_bytes = 0;
-				}
+				/*MPIU_DBG_PRINTF(("sock_wait: write.index %d, len %d\n", sock->write.index, 
+				sock->write.iov[sock->write.index].MPID_IOV_LEN));*/
+				num_bytes -= sock->write.iov[sock->write.index].MPID_IOV_LEN;
+				sock->write.index++;
+				sock->write.iovlen--;
 			    }
-			    if (sock->write.iovlen == 0)
+			    else
 			    {
-				/*sock->wt2 = PMPI_Wtime();*/
-				/*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				if (sock->write.total > 0)
-				{
-				    MPIU_DBG_PRINTF(("sock_wait wrotev %d bytes\n", sock->write.total));
-				}
-				out->op_type = MPIDU_SOCK_OP_WRITE;
-				out->num_bytes = sock->write.total;
-				out->error = MPI_SUCCESS;
-				out->user_ptr = sock->user_ptr;
-				sock->pending_operations--;
-				sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
-				if (sock->closing && sock->pending_operations == 0)
-				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", MPIDU_Sock_get_sock_id(sock)));
-				    FlushFileBuffers((HANDLE)sock->sock);
-				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    if (closesocket(sock->sock) == SOCKET_ERROR)
-				    {
-					mpi_errno = WSAGetLastError();
-					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					return mpi_errno;
-				    }
-				    sock->sock = INVALID_SOCKET;
-				}
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				return MPI_SUCCESS;
-			    }
-			    /* make the user upcall */
-			    if (sock->write.progress_update != NULL)
-				sock->write.progress_update(num_bytes, sock->user_ptr);
-			    /* post a write of the remaining data */
-			    MPIU_DBG_PRINTF(("sock_wait: posting write of the remaining data, vec size %d\n", sock->write.iovlen));
-			    if (WSASend(sock->sock, sock->write.iov, sock->write.iovlen, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) == SOCKET_ERROR)
-			    {
-				mpi_errno = WSAGetLastError();
-				if (mpi_errno == 0)
-				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = sock->write.total;
-				    /*printf("sock_wait returning %d bytes and socket closed\n", sock->write.total);*/
-				    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
-				    out->user_ptr = sock->user_ptr;
-				    sock->pending_operations--;
-				    sock->state &= ~SOCKI_WRITING;
-				    if (sock->closing && sock->pending_operations == 0)
-				    {
-					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-					FlushFileBuffers((HANDLE)sock->sock);
-					if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					if (closesocket(sock->sock) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					sock->sock = INVALID_SOCKET;
-				    }
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
-				if (mpi_errno == WSAENOBUFS)
-				{
-				    WSABUF tmp;
-				    tmp.buf = sock->write.iov[0].buf;
-				    tmp.len = sock->write.iov[0].len;
-				    while (mpi_errno == WSAENOBUFS)
-				    {
-					/*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
-					if (WSASend(sock->sock, &tmp, 1, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) != SOCKET_ERROR)
-					{
-					    /* FIXME: does this data need to be handled immediately? */
-					    mpi_errno = WSA_IO_PENDING;
-					    break;
-					}
-					mpi_errno = WSAGetLastError();
-					if (mpi_errno == WSA_IO_PENDING)
-					{
-					    break;
-					}
-					/*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
-					tmp.len = tmp.len / 2;
-				    }
-				}
-				if (mpi_errno != WSA_IO_PENDING)
-				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = sock->write.total;
-				    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-				    out->user_ptr = sock->user_ptr;
-				    sock->pending_operations--;
-				    sock->state &= ~SOCKI_WRITING;
-				    if (sock->closing && sock->pending_operations == 0)
-				    {
-					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-					FlushFileBuffers((HANDLE)sock->sock);
-					if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					if (closesocket(sock->sock) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					sock->sock = INVALID_SOCKET;
-				    }
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
+				/*MPIU_DBG_PRINTF(("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
+				sock->write.iov[sock->write.index].MPID_IOV_LEN, num_bytes));*/
+				sock->write.iov[sock->write.index].MPID_IOV_LEN -= num_bytes;
+				sock->write.iov[sock->write.index].MPID_IOV_BUF =
+				    (char*)(sock->write.iov[sock->write.index].MPID_IOV_BUF) + num_bytes;
+				num_bytes = 0;
 			    }
 			}
-			else
+			if (sock->write.iovlen == 0)
 			{
-			    sock->write.buffer = (char*)(sock->write.buffer) + num_bytes;
-			    sock->write.bufflen -= num_bytes;
-			    if (sock->write.bufflen == 0)
+			    /*sock->wt2 = PMPI_Wtime();*/
+			    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
+			    if (sock->write.total > 0)
+			    {
+				MPIU_DBG_PRINTF(("sock_wait wrotev %d bytes\n", sock->write.total));
+			    }
+			    out->op_type = MPIDU_SOCK_OP_WRITE;
+			    out->num_bytes = sock->write.total;
+			    out->error = MPI_SUCCESS;
+			    out->user_ptr = sock->user_ptr;
+			    sock->pending_operations--;
+			    sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
+			    if (sock->closing && sock->pending_operations == 0)
+			    {
+				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", MPIDU_Sock_get_sock_id(sock)));
+				FlushFileBuffers((HANDLE)sock->sock);
+				if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
+				{
+				    mpi_errno = WSAGetLastError();
+				    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return mpi_errno;
+				}
+				if (closesocket(sock->sock) == SOCKET_ERROR)
+				{
+				    mpi_errno = WSAGetLastError();
+				    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return mpi_errno;
+				}
+				sock->sock = INVALID_SOCKET;
+			    }
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			    return MPI_SUCCESS;
+			}
+			/* make the user upcall */
+			if (sock->write.progress_update != NULL)
+			    sock->write.progress_update(num_bytes, sock->user_ptr);
+			/* post a write of the remaining data */
+			MPIU_DBG_PRINTF(("sock_wait: posting write of the remaining data, vec size %d\n", sock->write.iovlen));
+			if (WSASend(sock->sock, sock->write.iov, sock->write.iovlen, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) == SOCKET_ERROR)
+			{
+			    mpi_errno = WSAGetLastError();
+			    if (mpi_errno == 0)
 			    {
 				/*sock->wt2 = PMPI_Wtime();*/
 				/*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-#ifdef MPICH_DBG_OUTPUT
-				if (sock->write.total > 0)
-				{
-				    MPIU_DBG_PRINTF(("sock_wait wrote %d bytes\n", sock->write.total));
-				}
-#endif
 				out->op_type = MPIDU_SOCK_OP_WRITE;
 				out->num_bytes = sock->write.total;
-				out->error = MPI_SUCCESS;
+				/*printf("sock_wait returning %d bytes and socket closed\n", sock->write.total);*/
+				out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
-				sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
+				sock->state &= ~SOCKI_WRITING;
 				if (sock->closing && sock->pending_operations == 0)
 				{
-				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple write completed.\n", MPIDU_Sock_get_sock_id(sock)));
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
 				    FlushFileBuffers((HANDLE)sock->sock);
 				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
 				    {
@@ -2610,81 +2184,61 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 				return MPI_SUCCESS;
 			    }
-			    /* make the user upcall */
-			    if (sock->write.progress_update != NULL)
-				sock->write.progress_update(num_bytes, sock->user_ptr);
-			    /* post a write of the remaining data */
-			    if (!WriteFile((HANDLE)(sock->sock), sock->write.buffer, (DWORD)sock->write.bufflen, &sock->write.num_bytes, &sock->write.ovl))
+			    if (mpi_errno == WSAENOBUFS)
 			    {
-				mpi_errno = GetLastError();
-				MPIU_DBG_PRINTF(("GetLastError: %d\n", mpi_errno));
-				if (mpi_errno == ERROR_HANDLE_EOF || mpi_errno == 0)
+				WSABUF tmp;
+				tmp.buf = sock->write.iov[0].buf;
+				tmp.len = sock->write.iov[0].len;
+				while (mpi_errno == WSAENOBUFS)
 				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = sock->write.total;
-				    /*printf("sock_wait returning %d bytes and socket closed\n", sock->write.total);*/
-				    out->error = MPIDU_SOCK_ERR_CONN_CLOSED;
-				    out->user_ptr = sock->user_ptr;
-				    sock->pending_operations--;
-				    sock->state &= ~SOCKI_WRITING;
-				    if (sock->closing && sock->pending_operations == 0)
+				    /*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+				    if (WSASend(sock->sock, &tmp, 1, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) != SOCKET_ERROR)
 				    {
-					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-					FlushFileBuffers((HANDLE)sock->sock);
-					if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					if (closesocket(sock->sock) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					sock->sock = INVALID_SOCKET;
+					/* FIXME: does this data need to be handled immediately? */
+					mpi_errno = WSA_IO_PENDING;
+					break;
 				    }
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
+				    mpi_errno = WSAGetLastError();
+				    if (mpi_errno == WSA_IO_PENDING)
+				    {
+					break;
+				    }
+				    /*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+				    tmp.len = tmp.len / 2;
 				}
-				if (mpi_errno != ERROR_IO_PENDING)
+			    }
+			    if (mpi_errno != WSA_IO_PENDING)
+			    {
+				/*sock->wt2 = PMPI_Wtime();*/
+				/*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
+				out->op_type = MPIDU_SOCK_OP_WRITE;
+				out->num_bytes = sock->write.total;
+				out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+				out->user_ptr = sock->user_ptr;
+				sock->pending_operations--;
+				sock->state &= ~SOCKI_WRITING;
+				if (sock->closing && sock->pending_operations == 0)
 				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = sock->write.total;
-				    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-				    out->user_ptr = sock->user_ptr;
-				    sock->pending_operations--;
-				    sock->state &= ~SOCKI_WRITING;
-				    if (sock->closing && sock->pending_operations == 0)
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
+				    if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
 				    {
-					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", MPIDU_Sock_get_sock_id(sock)));
-					FlushFileBuffers((HANDLE)sock->sock);
-					if (shutdown(sock->sock, SD_BOTH) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					if (closesocket(sock->sock) == SOCKET_ERROR)
-					{
-					    mpi_errno = WSAGetLastError();
-					    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
-					    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-					    return mpi_errno;
-					}
-					sock->sock = INVALID_SOCKET;
+					mpi_errno = WSAGetLastError();
+					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**shutdown", "**shutdown %s %d", get_error_string(mpi_errno), mpi_errno);
+					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+					return mpi_errno;
 				    }
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
+				    if (closesocket(sock->sock) == SOCKET_ERROR)
+				    {
+					mpi_errno = WSAGetLastError();
+					mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**closesocket", "**closesocket %s %d", get_error_string(mpi_errno), mpi_errno);
+					MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+					return mpi_errno;
+				    }
+				    sock->sock = INVALID_SOCKET;
 				}
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return MPI_SUCCESS;
 			    }
 			}
 		    }
@@ -2827,76 +2381,36 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    {
 			if (ovl == &sock->read.ovl)
 			{
-			    if (sock->read.use_iov)
+			    /*printf("repost readv of length %d\n", sock->read.iovlen);fflush(stdout);*/
+			    mpi_errno = MPIDU_Sock_post_readv(sock, sock->read.iov, sock->read.iovlen, NULL);
+			    if (mpi_errno != MPI_SUCCESS)
 			    {
-				/*printf("repost readv of length %d\n", sock->read.iovlen);fflush(stdout);*/
-				mpi_errno = MPIDU_Sock_post_readv(sock, sock->read.iov, sock->read.iovlen, NULL);
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    /*sock->rt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_READ;
-				    out->num_bytes = 0;
-				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
-				    out->user_ptr = sock->user_ptr;
-				    sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
-			    }
-			    else
-			    {
-				/*printf("repost read of length %d\n", sock->read.bufflen);fflush(stdout);*/
-				mpi_errno = MPIDU_Sock_post_read(sock, sock->read.buffer, sock->read.bufflen, sock->read.bufflen, NULL);
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    /*sock->rt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_READ;
-				    out->num_bytes = 0;
-				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
-				    out->user_ptr = sock->user_ptr;
-				    sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
+				/*sock->rt2 = PMPI_Wtime();*/
+				/*printf("[%d] time from post_read  to op_read : %.3f - sock %d\n", getpid(), sock->rt2 - sock->rt1, sock->sock);*/
+				out->op_type = MPIDU_SOCK_OP_READ;
+				out->num_bytes = 0;
+				out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
+				out->user_ptr = sock->user_ptr;
+				sock->state &= ~SOCKI_READING; /* remove the SOCKI_READING bit */
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return MPI_SUCCESS;
 			    }
 			}
 			else if (ovl == &sock->write.ovl)
 			{
-			    if (sock->write.use_iov)
+			    /*printf("repost writev of length %d\n", sock->write.iovlen);fflush(stdout);*/
+			    mpi_errno = MPIDU_Sock_post_writev(sock, sock->write.iov, sock->write.iovlen, NULL);
+			    if (mpi_errno != MPI_SUCCESS)
 			    {
-				/*printf("repost writev of length %d\n", sock->write.iovlen);fflush(stdout);*/
-				mpi_errno = MPIDU_Sock_post_writev(sock, sock->write.iov, sock->write.iovlen, NULL);
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = 0;
-				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
-				    out->user_ptr = sock->user_ptr;
-				    sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
-			    }
-			    else
-			    {
-				/*printf("repost write of length %d\n", sock->write.bufflen);fflush(stdout);*/
-				mpi_errno = MPIDU_Sock_post_write(sock, sock->write.buffer, sock->write.bufflen, sock->write.bufflen, NULL);
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    /*sock->wt2 = PMPI_Wtime();*/
-				    /*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
-				    out->op_type = MPIDU_SOCK_OP_WRITE;
-				    out->num_bytes = 0;
-				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
-				    out->user_ptr = sock->user_ptr;
-				    sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
-				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPI_SUCCESS;
-				}
+				/*sock->wt2 = PMPI_Wtime();*/
+				/*printf("[%d] time from post_write to op_write: %.3f - sock %d\n", getpid(), sock->wt2 - sock->wt1, sock->sock);*/
+				out->op_type = MPIDU_SOCK_OP_WRITE;
+				out->num_bytes = 0;
+				out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
+				out->user_ptr = sock->user_ptr;
+				sock->state &= ~SOCKI_WRITING; /* remove the SOCKI_WRITING bit */
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return MPI_SUCCESS;
 			    }
 			}
 			else
@@ -2923,12 +2437,28 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    else if (sock->type == SOCKI_LISTENER)
 		    {
 			/*printf("aborted listener operation\n");fflush(stdout);*/
-			mpi_errno = post_next_accept(sock);
-			if (mpi_errno != MPI_SUCCESS)
+			iter = sock->list;
+			while (iter && &iter->read.ovl != ovl)
+			    iter = iter->next;
+			if (iter != NULL)
 			{
-			    out->op_type = MPIDU_SOCK_OP_ACCEPT;
+			    mpi_errno = post_next_accept(iter);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				out->op_type = MPIDU_SOCK_OP_ACCEPT;
+				out->num_bytes = 0;
+				out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted accept operation");
+				out->user_ptr = sock->user_ptr;
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				return MPI_SUCCESS;
+			    }
+			}
+			else
+			{
+			    /*printf("aborted unknown listener socket operation\n");fflush(stdout);*/
+			    out->op_type = -1;
 			    out->num_bytes = 0;
-			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted accept operation");
+			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted unknown listener socket operation");
 			    out->user_ptr = sock->user_ptr;
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			    return MPI_SUCCESS;
@@ -2958,13 +2488,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    {
 			/*sock->ct2 = PMPI_Wtime();*/
 			/*printf("[%d] time from post_close to op_close: %.3f - sock %d\n", getpid(), sock->ct2 - sock->ct1, sock->sock);*/
-			/*
-			if (sock->readfile_returned_immediate_success)
-			{
-			    printf("[%d] completion notification for immediately completed read on sock: %d\n", sock->sock);
-			    sock->readfile_returned_immediate_success = 0;
-			}
-			*/
 			out->op_type = MPIDU_SOCK_OP_CLOSE;
 			if (sock->sock != INVALID_SOCKET)
 			{
@@ -3077,38 +2600,11 @@ int MPIDU_Sock_wakeup(MPIDU_Sock_set_t set)
 int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_read)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPID_IOV iov = {len, buf};
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_READ);
-    mpi_errno = recv(sock->sock, buf, (int)len, 0);
-    if (mpi_errno == SOCKET_ERROR)
-    {
-	mpi_errno = WSAGetLastError();
-	if (mpi_errno == WSAEWOULDBLOCK)
-	{
-	    *num_read = 0;
-	    mpi_errno = MPI_SUCCESS;
-	}
-	else
-	{
-	    MPIU_DBG_PRINTF(("sock_read error %d\n", mpi_errno));
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-	}
-    }
-    else
-    {
-	*num_read = mpi_errno;
-	if (mpi_errno == 0)
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED, "**sock_closed", 0);
-	else
-	    mpi_errno = MPI_SUCCESS;
-    }
-#ifdef MPICH_DBG_OUTPUT
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPIU_DBG_PRINTF(("sock_read %d of %d bytes\n", *num_read, len));
-    }
-#endif
+    mpi_errno = MPIDU_Sock_readv(sock, &iov, 1, num_read);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READ);
     return mpi_errno;
 }
@@ -3182,65 +2678,11 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_written)
 {
     int mpi_errno;
-    int length, num_sent, total = 0;
-#ifdef MPICH_DBG_OUTPUT
-    MPIU_Size_t len_orig = len;
-#endif
+    MPID_IOV iov = {len, buf};
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITE);
-    if ((int)len < g_stream_packet_length)
-    {
-	total = send(sock->sock, buf, (int)len, 0);
-	if (total == SOCKET_ERROR)
-	{
-	    mpi_errno = WSAGetLastError();
-	    if (mpi_errno == WSAEWOULDBLOCK)
-		total = 0;
-	    else
-	    {
-		MPIU_DBG_PRINTF(("single send failed: error %d\n", mpi_errno));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
-		return mpi_errno;
-	    }
-	}
-	*num_written = total;
-	MPIU_DBG_PRINTF(("sock_write %d of %d bytes\n", total, len_orig));
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
-	return MPI_SUCCESS;
-    }
-    *num_written = 0;
-    while (len)
-    {
-	length = min((int)len, g_stream_packet_length);
-	num_sent = send(sock->sock, buf, length, 0);
-	if (num_sent == SOCKET_ERROR)
-	{
-	    mpi_errno = WSAGetLastError();
-	    if (mpi_errno == WSAEWOULDBLOCK)
-		num_sent = 0;
-	    else
-	    {
-		MPIU_DBG_PRINTF(("stream send failed: %d\n", mpi_errno));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
-		return mpi_errno;
-	    }
-	}
-	total += num_sent;
-	len -= num_sent;
-	buf = (char*)buf + num_sent;
-	if (num_sent < length)
-	{
-	    *num_written = total;
-	    MPIU_DBG_PRINTF(("sock_write %d of %d bytes\n", total, len_orig));
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
-	    return MPI_SUCCESS;
-	}
-    }
-    *num_written = total;
-    MPIU_DBG_PRINTF(("sock_write %d of %d bytes\n", total, len_orig));
+    mpi_errno = MPIDU_Sock_writev(sock, &iov, 1, num_written);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
     return MPI_SUCCESS;
 }
@@ -3252,81 +2694,52 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t * num_written)
 {
     int mpi_errno;
-    int i;
-    MPIU_Size_t total;
-    MPIU_Size_t num_sent;
     DWORD num_written_local;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITEV);
-    if (iov_n>1 && (int)iov[1].MPID_IOV_LEN > g_stream_packet_length)
+    if (WSASend(sock->sock, iov, iov_n, &num_written_local, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
     {
-	total = 0;
-	for (i=0; i<iov_n; i++)
+	mpi_errno = WSAGetLastError();
+	*num_written = 0;
+	if (mpi_errno == WSAENOBUFS)
 	{
-	    mpi_errno = MPIDU_Sock_write(sock, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, &num_sent);
-	    if (mpi_errno != MPI_SUCCESS)
+	    WSABUF tmp;
+	    tmp.buf = iov[0].buf;
+	    tmp.len = iov[0].len;
+	    while (mpi_errno == WSAENOBUFS)
 	    {
-		MPIU_DBG_PRINTF(("sock_write failed.\n"));
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
-		return mpi_errno;
-	    }
-	    total += num_sent;
-	    if (num_sent != iov[i].MPID_IOV_LEN)
-	    {
-		*num_written = total;
-		MPIU_DBG_PRINTF(("sock_writev %d bytes\n", total));
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
-		return MPI_SUCCESS;
+		/*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+		if (WSASend(sock->sock, &tmp, 1, &num_written_local, 0, NULL, NULL) != SOCKET_ERROR)
+		{
+		    /*printf("[%d] wrote %d bytes\n", __LINE__, num_written_local);fflush(stdout);*/
+		    *num_written = num_written_local;
+		    mpi_errno = MPI_SUCCESS;
+		    break;
+		}
+		mpi_errno = WSAGetLastError();
+		/*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+		tmp.len = tmp.len / 2;
+		if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
+		{
+		    break;
+		}
 	    }
 	}
-	*num_written = total;
+	if (mpi_errno != WSAEWOULDBLOCK)
+	{
+	    MPIU_DBG_PRINTF(("WSASend failed: error %d\n", mpi_errno));
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
+	    return mpi_errno;
+	}
     }
     else
     {
-	if (WSASend(sock->sock, iov, iov_n, &num_written_local, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
-	{
-	    mpi_errno = WSAGetLastError();
-	    *num_written = 0;
-	    if (mpi_errno == WSAENOBUFS)
-	    {
-		WSABUF tmp;
-		tmp.buf = iov[0].buf;
-		tmp.len = iov[0].len;
-		while (mpi_errno == WSAENOBUFS)
-		{
-		    /*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
-		    if (WSASend(sock->sock, &tmp, 1, &num_written_local, 0, NULL, NULL) != SOCKET_ERROR)
-		    {
-			/*printf("[%d] wrote %d bytes\n", __LINE__, num_written_local);fflush(stdout);*/
-			*num_written = num_written_local;
-			mpi_errno = MPI_SUCCESS;
-			break;
-		    }
-		    mpi_errno = WSAGetLastError();
-		    /*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
-		    tmp.len = tmp.len / 2;
-		    if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
-		    {
-			break;
-		    }
-		}
-	    }
-	    if (mpi_errno != WSAEWOULDBLOCK)
-	    {
-		MPIU_DBG_PRINTF(("WSASend failed: error %d\n", mpi_errno));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
-		return mpi_errno;
-	    }
-	}
-	else
-	{
-	    *num_written = num_written_local;
-	}
-	MPIU_DBG_PRINTF(("sock_writev %d bytes\n", *num_written));
+	*num_written = num_written_local;
     }
+    MPIU_DBG_PRINTF(("sock_writev %d bytes\n", *num_written));
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
     return MPI_SUCCESS;
 }
