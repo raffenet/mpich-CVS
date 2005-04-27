@@ -563,8 +563,37 @@ typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
 
+#define MPIDI_DEV_WIN_DECL                                                              \
+    volatile int my_counter;  /* completion counter for operations                      \
+                                 targeting this window */                               \
+    void **base_addrs;     /* array of base addresses of the windows of                 \
+                              all processes */                                          \
+    int *disp_units;      /* array of displacement units of all windows */              \
+    MPI_Win *all_win_handles;    /* array of handles to the window objects              \
+                                          of all processes */                           \
+    MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */                 \
+    volatile int lock_granted;  /* flag to indicate whether lock has                    \
+                                   been granted to this process (as source) for         \
+                                   passive target rma */                                \
+    volatile int current_lock_type;   /* current lock type on this window (as target)   \
+                              * (none, shared, exclusive) */                            \
+    volatile int shared_lock_ref_cnt;                                                   \
+    struct MPIDI_Win_lock_queue volatile *lock_queue;  /* list of unsatisfied locks */  \
+                                                                                        \
+    int *pt_rma_puts_accs;  /* array containing the no. of passive target               \
+                               puts/accums issued from this process to other            \
+                               processes. */                                            \
+    volatile int my_pt_rma_puts_accs;  /* no. of passive target puts/accums             \
+                                          that this process has                         \
+                                          completed as target */
+ 
 #ifdef MPIDI_CH3_WIN_DECL
-#define MPID_DEV_WIN_DECL MPIDI_CH3_WIN_DECL
+#define MPID_DEV_WIN_DECL \
+MPIDI_DEV_WIN_DECL \
+MPIDI_CH3_WIN_DECL
+#else
+#define MPID_DEV_WIN_DECL \
+MPIDI_DEV_WIN_DECL
 #endif
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */
