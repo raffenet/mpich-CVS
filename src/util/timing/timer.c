@@ -283,8 +283,14 @@ static char *get_random_color_str()
     return random_color_str;
 }
 
+static int s_RLOG_Initialized = 0;
 int MPIU_Timer_init(int rank, int size)
 {
+    if (s_RLOG_Initialized)
+    {
+	/* MPIU_Timer_init already called. */
+	return -1;
+    }
     g_pRLOG = RLOG_InitLog(rank, size);
     if (g_pRLOG == NULL)
 	return -1;
@@ -300,16 +306,23 @@ int MPIU_Timer_init(int rank, int size)
 
     MPIR_Describe_timer_states();
 
+    s_RLOG_Initialized = 1;
     return MPI_SUCCESS;
 }
 
 int MPIU_Timer_finalize()
 {
+    if (g_pRLOG == NULL)
+	return -1;
+    if (!s_RLOG_Initialized)
+	return 0;
+
     RLOG_DisableLogging(g_pRLOG);
 
     MPIU_Msg_printf( "Writing logfile.\n");fflush(stdout);
     RLOG_FinishLog(g_pRLOG, "mpi_logfile.rlog");
     MPIU_Msg_printf("finished.\n");fflush(stdout);
+    s_RLOG_Initialized = 0;
 
     return MPI_SUCCESS;
 }
