@@ -25,9 +25,12 @@ typedef struct {
     int           cancelled;
 } ibsend_req_info;
 
+#ifdef DEBUG
 #define DBG(_s) { int _r; MPI_Comm_rank( MPI_COMM_WORLD, &_r);\
 printf( "[%d] %s\n", _r, _s ); fflush(stdout); }
-
+#else
+#define DBG(_s)
+#endif
 PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status );
 PMPI_LOCAL int MPIR_Ibsend_free( void *extra );
 PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
@@ -45,16 +48,17 @@ PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status )
 PMPI_LOCAL int MPIR_Ibsend_free( void *extra )
 {
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
-    int              inuse;
 
     DBG("free")
     /* Release the MPID_Request (there is still another ref pending
      within the bsendutil functions) */
-    if (ibsend_info->req->ref_count <= 1) {
-	fprintf( stderr, "Panic, ref count is %d\n",
-		 ibsend_info->req->ref_count ); fflush(stderr);
+    if (ibsend_info->req->ref_count > 1) {
+        int inuse;
+	/* Note that this should mean that the request was 
+	   cancelled (that would have decremented the ref count)
+	 */
+        MPIU_Object_release_ref( ibsend_info->req, &inuse );
     }
-    MPIU_Object_release_ref( ibsend_info->req, &inuse );
 
     MPIU_Free( ibsend_info );
     return 0;
