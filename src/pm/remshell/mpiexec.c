@@ -63,6 +63,7 @@
 #include "pmiserv.h"
 #include "ioloop.h"
 #include "labelout.h"
+#include "rm.h"
 #include "simple_pmiutil.h"
 
 /* mpimem.h contains prototypes for MPIU_Strncpy etc. */
@@ -104,7 +105,7 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
     /* If there were any soft arguments, we need to handle them now */
-    rc = MPIE_ChooseHosts( &pUniv.worlds[0] );
+    rc = MPIE_ChooseHosts( &pUniv.worlds[0], MPIE_ReadMachines, 0 );
 
     if (MPIE_Debug) MPIE_PrintProcessUniverse( stdout, &pUniv );
 
