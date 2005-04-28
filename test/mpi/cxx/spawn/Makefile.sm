@@ -6,6 +6,7 @@ DEPADD = @MPILIBLOC@ ../util/mtest.o
 spawnargvx_SOURCES  = spawnargvx.cxx
 spawnintrax_SOURCES = spawnintrax.cxx
 namepubx_SOURCES    = namepubx.cxx
+selfconaccx_SOURCES = selfconaccx.cxx
 
 ../util/mtest.o:
 	cd ../util && $(MAKE) mtest.o
