@@ -114,10 +114,13 @@ static PMICmdMap pmiCommands[] = {
 
 /*
  * Create a socket fd and setup the handler on that fd.
- * FIXME: need to close the fds in the child, parent (child closes 0, parent
- * closes 1.  Child process sends fd # in PMI_FD to exec child through 
- * environment.
- * Need a PMISetup typedef
+ *
+ * You must also call 
+ *    PMISetupInClient (in the child process)
+ * and
+ *    PMISetupFinishInServer (in the originating process, also called the 
+ *                            parent)
+ * 
  */
 int PMISetupSockets( int kind, PMISetup *pmiinfo )
 {
