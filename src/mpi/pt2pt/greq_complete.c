@@ -93,7 +93,9 @@ int MPI_Grequest_complete( MPI_Request request )
     /* ... body of routine ...  */
     
     MPID_Request_set_completed( request_ptr );
-    MPID_Request_release(request_ptr);
+    /* The request release comes with the wait/test, not this complete
+       routine */
+    /*    MPID_Request_release(request_ptr); */
     
     /* ... end of body of routine ... */
 
