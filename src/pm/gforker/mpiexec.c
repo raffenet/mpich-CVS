@@ -24,7 +24,7 @@
    stdin,out,err, and for the PMI calls.
 
    3. (Optionally) allow the forked processes to use a host:port to 
-   contact this program, rather than just sharing a pipe.  This allows the
+   contact this program, rather than just sharing a pipe.  This also allows the
    forker to start other programs, such as debuggers.
 
    4. Establish a signal handler for SIGCHLD.  This will allow us to 
@@ -153,6 +153,7 @@ void mpiexec_usage( const char *msg )
     exit( -1 );
 }
 
+/* ------------------------------------------------------------------------- */
 /* Redirect stdout and stderr to a handler */
 int mypreamble( void *data )
 {
