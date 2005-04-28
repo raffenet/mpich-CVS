@@ -25,12 +25,6 @@ typedef struct {
     int           cancelled;
 } ibsend_req_info;
 
-#ifdef DEBUG
-#define DBG(_s) { int _r; MPI_Comm_rank( MPI_COMM_WORLD, &_r);\
-printf( "[%d] %s\n", _r, _s ); fflush(stdout); }
-#else
-#define DBG(_s)
-#endif
 PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status );
 PMPI_LOCAL int MPIR_Ibsend_free( void *extra );
 PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
@@ -41,7 +35,6 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
 PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status )
 {
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
-    DBG("query")
     status->cancelled = ibsend_info->cancelled;
     return 0;
 }
@@ -49,7 +42,6 @@ PMPI_LOCAL int MPIR_Ibsend_free( void *extra )
 {
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
 
-    DBG("free")
     /* Release the MPID_Request (there is still another ref pending
      within the bsendutil functions) */
     if (ibsend_info->req->ref_count > 1) {
@@ -69,12 +61,12 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
     MPI_Status status;
     MPI_Request req = ibsend_info->req->handle;
 
-    DBG("ibsend_cancel")
     /* Try to cancel the underlying request */
+    MPIR_Nest_incr();
     NMPI_Cancel( &req );
     NMPI_Wait( &req, &status );
     NMPI_Test_cancelled( &status, &ibsend_info->cancelled );
-    DBG("returning")
+    MPIR_Nest_decr();
     return 0;
 }
 
@@ -186,11 +178,11 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 				  IBSEND, &request_ptr );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    DBG("after bsend-isend")
     /* FIXME: use the memory management macros */
     ibinfo = (ibsend_req_info *)MPIU_Malloc( sizeof(ibsend_req_info) );
     ibinfo->req       = request_ptr;
     ibinfo->cancelled = 0;
+    MPIR_Nest_incr();
     NMPI_Grequest_start( MPIR_Ibsend_query, 
 			 MPIR_Ibsend_free,
 			 MPIR_Ibsend_cancel, ibinfo, request );
@@ -198,7 +190,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
        already moved the data out of the user's buffer */
     MPIU_Object_add_ref( request_ptr );
     NMPI_Grequest_complete( *request );
-    DBG("after complete")
+    MPIR_Nest_decr();
     /* ... end of body of routine ... */
 
   fn_exit:
