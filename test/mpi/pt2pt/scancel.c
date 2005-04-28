@@ -141,6 +141,7 @@ int main( int argc, char *argv[] )
 	}
 	MPI_Barrier( comm );
 
+#ifdef TEST_IRSEND
 	/* We avoid ready send to self because an implementation
 	   is free to detect the error in delivering a message to
 	   itself without a pending receive; we could also check
@@ -201,6 +202,7 @@ int main( int argc, char *argv[] )
 	    }
 	}
 	MPI_Barrier( comm );
+#endif
 
 	if (rank == 0) {
 	    n = bufsizes[cs];
