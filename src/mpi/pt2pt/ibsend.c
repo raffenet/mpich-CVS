@@ -20,8 +20,59 @@
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
+typedef struct {
+    MPID_Request *req;
+    int           cancelled;
+} ibsend_req_info;
+
+#define DBG(_s) { int _r; MPI_Comm_rank( MPI_COMM_WORLD, &_r);\
+printf( "[%d] %s\n", _r, _s ); fflush(stdout); }
+
+PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status );
+PMPI_LOCAL int MPIR_Ibsend_free( void *extra );
+PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Ibsend PMPI_Ibsend
+
+
+PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status )
+{
+    ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
+    DBG("query")
+    status->cancelled = ibsend_info->cancelled;
+    return 0;
+}
+PMPI_LOCAL int MPIR_Ibsend_free( void *extra )
+{
+    ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
+    int              inuse;
+
+    DBG("free")
+    /* Release the MPID_Request (there is still another ref pending
+     within the bsendutil functions) */
+    if (ibsend_info->req->ref_count <= 1) {
+	fprintf( stderr, "Panic, ref count is %d\n",
+		 ibsend_info->req->ref_count ); fflush(stderr);
+    }
+    MPIU_Object_release_ref( ibsend_info->req, &inuse );
+
+    MPIU_Free( ibsend_info );
+    return 0;
+}
+PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
+{
+    ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
+    MPI_Status status;
+    MPI_Request req = ibsend_info->req->handle;
+
+    DBG("ibsend_cancel")
+    /* Try to cancel the underlying request */
+    NMPI_Cancel( &req );
+    NMPI_Wait( &req, &status );
+    NMPI_Test_cancelled( &status, &ibsend_info->cancelled );
+    DBG("returning")
+    return 0;
+}
 
 #endif
 
@@ -63,6 +114,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr;
+    ibsend_req_info *ibinfo;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IBSEND);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -123,7 +175,6 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
     /* We don't try tbsend in for MPI_Ibsend because we must create a
        request even if we can send the message */
 
@@ -131,20 +182,19 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 				  IBSEND, &request_ptr );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* FIXME.  For now, we'll assume that the all the message has
-       been copied, so we can return a created request here */
-    /* Create a completed request */
-    request_ptr = MPID_Request_create();
-    MPIU_ERR_CHKANDJUMP1(!request_ptr,mpi_errno,MPI_ERR_OTHER,
-			 "**nomem", "**nomem %s", "MPI_Request");
-
-    request_ptr->kind                 = MPID_REQUEST_SEND;
-    MPIU_Object_set_ref( request_ptr, 1 );
-    request_ptr->cc_ptr               = &request_ptr->cc;
-    request_ptr->cc                   = 0;
-    request_ptr->comm                 = NULL;
-    *request = request_ptr->handle;
-
+    DBG("after bsend-isend")
+    /* FIXME: use the memory management macros */
+    ibinfo = (ibsend_req_info *)MPIU_Malloc( sizeof(ibsend_req_info) );
+    ibinfo->req       = request_ptr;
+    ibinfo->cancelled = 0;
+    NMPI_Grequest_start( MPIR_Ibsend_query, 
+			 MPIR_Ibsend_free,
+			 MPIR_Ibsend_cancel, ibinfo, request );
+    /* The request is immediately complete because the MPIR_Bsend_isend has
+       already moved the data out of the user's buffer */
+    MPIU_Object_add_ref( request_ptr );
+    NMPI_Grequest_complete( *request );
+    DBG("after complete")
     /* ... end of body of routine ... */
 
   fn_exit:

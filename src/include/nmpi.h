@@ -87,6 +87,10 @@
 #define NMPI_Open_port MPI_Open_port
 #define NMPI_Comm_accept MPI_Comm_accept
 #define NMPI_Comm_connect MPI_Comm_connect
+#define NMPI_Grequest_start MPI_Grequest_start
+#define NMPI_Grequest_complete MPI_Grequest_complete
+#define NMPI_Cancel MPI_Cancel
+#define NMPI_Test_cancelled MPI_Test_cancelled
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -152,5 +156,9 @@
 #define NMPI_Close_port PMPI_Close_port
 #define NMPI_Comm_accept PMPI_Comm_accept
 #define NMPI_Comm_connect PMPI_Comm_connect
+#define NMPI_Grequest_start PMPI_Grequest_start
+#define NMPI_Grequest_complete PMPI_Grequest_complete
+#define NMPI_Cancel PMPI_Cancel
+#define NMPI_Test_cancelled PMPI_Test_cancelled
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */

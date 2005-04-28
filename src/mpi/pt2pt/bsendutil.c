@@ -481,7 +481,22 @@ static void MPIR_Bsend_check_active( void )
 	int         flag;
 	
 	next_active = active->next;
-	NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
+
+	if (active->kind == IBSEND) {
+	    /* We handle ibsend specially to allow for the uesr
+	       to attempt and cancel the request. Also, to allow
+	       for a cancel attempt (which must be attempted before
+	       a successful test or wait), we only start
+	       testing when the user has successfully released
+	       the request (it is a grequest, the free call will do it) */
+	    flag = 0;
+	    if (active->request->ref_count == 1) {
+		NMPI_Test(&r, &flag, MPI_STATUS_IGNORE );
+	    }
+	}
+	else {
+	    NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
+	}
 	if (flag) {
 	    /* We're done.  Remove this segment */
 	    MPIU_DBG_PRINTF(("Removing segment %x\n", active ));
