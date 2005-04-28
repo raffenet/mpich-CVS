@@ -8,8 +8,8 @@
 usage: mpd --help
        mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
            [--trace] [--echo] [--daemon] [--bulletproof] \ 
-           [--if <interface/hostname>] [--listenport <listenport>]
-           [--pid <pidfilename>]
+           [--if=<interface/hostname>] [--listenport=<listenport>]
+           [--pid=<pidfilename>]
 
 Long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
