@@ -89,37 +89,37 @@ case "$enable_sharedlibs" in
     ;;
     libtool)
     AC_MSG_WARN([Creating shared libraries using libtool not yet supported])
-    dnl Using libtool requires a heavy-weight process to test for 
-    dnl various stuff that libtool needs.  Without this, you'll get a
-    dnl bizarre error message about libtool being unable to find
-    dnl configure.in or configure.ac (!)
-    AC_PROG_LIBTOOL
-    # Likely to be
-    # either CC or CC_SHL is libtool $cc
-    CC_SHL='${LIBTOOL} --mode=compile ${CC}'
-    # CC_LINK_SHL includes the final installation path
-    # For many systems, the link may need to include *all* libraries
-    # (since many systems don't allow any unsatisfied dependencies)
-    # We need to give libtool the .lo file, not the .o files
-    SHLIB_FROM_LO=yes
-    # We also need to add -no-undefined when the compiler is gcc and
-    # we are building under cygwin
-    sysname=`uname -s | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
-    isCygwin=no
-    case "$sysname" in 
-	*CYGWIN*) isCygwin=yes;;
-    esac
-    if test "$isCygwin" = yes ; then
-        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -no-undefined -rpath ${libdir}'
-    else
-        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
-    fi
-    C_LINKPATH_SHL="-rpath "
-    # We also need a special install process with libtool.  Note that this
-    # will also install the static libraries
-    SHLIB_INSTALL='$(LIBTOOL) --mode=install $(INSTALL_PROGRAM)'
-    # Note we may still need to add
-    #'$(LIBTOOL) --mode=finish $(libdir)'
+dnl     dnl Using libtool requires a heavy-weight process to test for 
+dnl     dnl various stuff that libtool needs.  Without this, you'll get a
+dnl     dnl bizarre error message about libtool being unable to find
+dnl     dnl configure.in or configure.ac (!)
+dnl     AC_PROG_LIBTOOL
+dnl     # Likely to be
+dnl     # either CC or CC_SHL is libtool $cc
+dnl     CC_SHL='${LIBTOOL} --mode=compile ${CC}'
+dnl     # CC_LINK_SHL includes the final installation path
+dnl     # For many systems, the link may need to include *all* libraries
+dnl     # (since many systems don't allow any unsatisfied dependencies)
+dnl     # We need to give libtool the .lo file, not the .o files
+dnl     SHLIB_FROM_LO=yes
+dnl     # We also need to add -no-undefined when the compiler is gcc and
+dnl     # we are building under cygwin
+dnl     sysname=`uname -s | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+dnl     isCygwin=no
+dnl     case "$sysname" in 
+dnl 	*CYGWIN*) isCygwin=yes;;
+dnl     esac
+dnl     if test "$isCygwin" = yes ; then
+dnl         C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -no-undefined -rpath ${libdir}'
+dnl     else
+dnl         C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
+dnl     fi
+dnl     C_LINKPATH_SHL="-rpath "
+dnl     # We also need a special install process with libtool.  Note that this
+dnl     # will also install the static libraries
+dnl     SHLIB_INSTALL='$(LIBTOOL) --mode=install $(INSTALL_PROGRAM)'
+dnl     # Note we may still need to add
+dnl     #'$(LIBTOOL) --mode=finish $(libdir)'
     ;;
 dnl
 dnl Other, such as solaris-cc
