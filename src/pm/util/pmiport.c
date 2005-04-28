@@ -50,6 +50,16 @@
 #ifndef TCP
 #define TCP 0
 #endif
+
+/*
+ * Input Parameters:
+ *   portLen - Number of characters in portString
+ * Output Parameters:
+ *   fdout - An fd that is listening for connection attempts.
+ *           Use PMIServAcceptFromPort to process reads from this fd
+ *   portString - The name of a port that can be used to connect to 
+ *           this process (using connect).
+ */
 int PMIServGetPort( int *fdout, char *portString, int portLen )
 {
     int                fd = -1;
@@ -132,8 +142,9 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
     /* Create the port string */
     {
 	char hostname[MAX_HOST_NAME+1];
-    MPIE_GetMyHostName( hostname, sizeof(hostname) );
-    MPIU_Snprintf( portString, portLen, "%s:%d", hostname, portnum );
+	hostname[0] = 0;
+	MPIE_GetMyHostName( hostname, sizeof(hostname) );
+	MPIU_Snprintf( portString, portLen, "%s:%d", hostname, portnum );
     }
     
     return 0;
@@ -147,10 +158,11 @@ int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1], int namelen )
     /*
      * First, get network name if necessary
      */
-    if (!hostname) {
-	hostname = myname;
+    hostname = myname;
+    if (!myname[0]) {
 	gethostname( myname, namelen );
     }
+    /* ??? */
     hp = gethostbyname( hostname );
     if (!hp) {
 	return -1;
