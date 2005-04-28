@@ -141,6 +141,8 @@ int main( int argc, char *argv[] )
 	}
 	MPI_Barrier( comm );
 
+	/* Because this test is erroneous, we do not perform it unless
+	   TEST_IRSEND is defined.  */
 #ifdef TEST_IRSEND
 	/* We avoid ready send to self because an implementation
 	   is free to detect the error in delivering a message to
@@ -251,7 +253,6 @@ int main( int argc, char *argv[] )
 	    }
 	}
 	MPI_Barrier( comm );
-
     }
 
     MTest_Finalize( errs );
