@@ -61,6 +61,8 @@ dnl
 CC_SHL=true
 C_LINK_SHL=true
 SHLIB_EXT=so
+SHLIB_FROM_LO=no
+SHLIB_INSTALL='$(INSTALL_PROGRAM)'
 case "$enable_sharedlibs" in 
     no|none)
     ;;
@@ -98,8 +100,26 @@ case "$enable_sharedlibs" in
     # CC_LINK_SHL includes the final installation path
     # For many systems, the link may need to include *all* libraries
     # (since many systems don't allow any unsatisfied dependencies)
-    C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
+    # We need to give libtool the .lo file, not the .o files
+    SHLIB_FROM_LO=yes
+    # We also need to add -no-undefined when the compiler is gcc and
+    # we are building under cygwin
+    sysname=`uname -s | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+    isCygwin=no
+    case "$sysname" in 
+	*CYGWIN*) isCygwin=yes;;
+    esac
+    if test "$isCygwin" = yes ; then
+        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -no-undefined -rpath ${libdir}'
+    else
+        C_LINK_SHL='${LIBTOOL} --mode=link ${CC} -rpath ${libdir}'
+    fi
     C_LINKPATH_SHL="-rpath "
+    # We also need a special install process with libtool.  Note that this
+    # will also install the static libraries
+    SHLIB_INSTALL='$(LIBTOOL) --mode=install $(INSTALL_PROGRAM)'
+    # Note we may still need to add
+    #'$(LIBTOOL) --mode=finish $(libdir)'
     ;;
 dnl
 dnl Other, such as solaris-cc
@@ -118,6 +138,8 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(C_LINKPATH_SHL)
 AC_SUBST(SHLIB_EXT)
+AC_SUBST(SHLIB_FROM_LO)
+AC_SUBST(SHLIB_INSTALL)
 ])
 
 dnl /*D
