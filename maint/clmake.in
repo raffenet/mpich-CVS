@@ -1,25 +1,46 @@
 #! @PERL@
 # -*- Mode: perl; -*-
 #
+# Set Defaults
 $debug = 0;
+$debugDir = 0;
 # Define the known commands, along with known make noise (results of
 # echo)
+# We include /bin/rm and /bin/mv because some Makefile authors prefer
+# to get the full path for these routines
 @commands = ( "pgcc", "gcc", "icc", "rm", "mv", "ar", "ranlib", "perl", "for", 
-	      "if", "make", "[A-Za-z0-9_\/-]*\/mpicc",
-	      "cleaning", "/bin/rm", "sleep", "g77", "f77", "f90", "pgCC",
-	      "pgf77", "pgf90", "CC", "g\\+\\+", "c\\+\\+",
+	      "/bin/rm", "/bin/mv", 
+	      "if", "make", "[A-Za-z0-9_\/\.-]*\/mpicc",
+	      "cleaning", "sleep", "date", "g77", "f77", "f90", "pgCC",
+	      "pgf77", "pgf90", "CC", "g95", "g\\+\\+", "c\\+\\+",
 	      "[A-Za-z0-9_\/-]*\/icc",
 	      "/usr/bin/ar", "mkdir",
 	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
-	      "cd\s+\$dir\s+\&\&\s+make.*\s+clean",
 	      "^\s*echo\s",
-	      "\\(cd .tmp", 
+	      "\\(?cd",
+	      "sed -e",
 	      "building profiling interface in directory",
 	      "/usr/bin/install",
 	      "Copying Upshot",
 	      "Making upshot", "\s*\$", );
+
+
+$trimCompileLine = 1;
+
+# Create the variables that keep track of state
+# dirstack keeps the directory name that gnumake and similar make
+# implementations echo as a directory is entered or exited (this can generate
+# a great deal of output noise that can obscure important data.  However, when
+# a problem *does* occur, this directory information is valuable.
+# dirprinted is a parallel array that indicates whether the corresponding
+# directory entry has been printed.
+@dirstack = ();
+@dirprinted = ();
+
+# Process arguments to select options
+
 # Read lines.  Categorize lines as commands and output.  This
 # script suppresses commands that generate no extra output.
 # The approach is to read a line and then read the next line.
@@ -28,71 +49,71 @@ $debug = 0;
 #
 # We use eof() (see man perlfun) so that we can accept filenames on the
 # commandline.
+#
 $cmdline = "";
-while (<>) {
+while ($line = <>) {
     if (eof()) { next; }
-    if ($cmdline eq "") {
-	# Get the next command line
-	print "Read line cmdline \n" if $debug;
-	$cmdline = <>;
-	# Get any continuation lines
-	while ($cmdline =~ /\\$/) {
-	    print "Read continuation line ... \n" if $debug;
-	    $cmdline .= <>;
-	}
-    }
-    if ($nextline eq "") {
-	print "Read line ... \n" if $debug;
-	$nextline = <>;
-	while ($nextline =~ /\\$/) {
-	    print "Read line continuation ... \n" if $debug;
-	    $nextline .= <>;
-	}
+
+    # Read the next line, including handling any continuation lines
+    while ($line =~ /\\$/) {
+	print "Read continuation line (cmd) ... \n" if $debug;
+	$line .= <>;
     }
     
-    # Now, is $nextline a command or not?
-    $is_command = 0;
-    foreach $cmdname (@commands) {
-	if ($nextline =~ /^\s*$cmdname/) {
-	    $is_command = 1;
-	    last;
-	}
+    # Is the line a command (including a directory change?)
+    # Check first for a directory change
+    if ($line =~ /^\s*make.* Entering directory \`([^\']*)\'/) {
+	my $dirname = $1;
+	$dirstack[$#dirstack+1] = $dirname;
+	$dirprinted[$#dirprinted+1] = 0;
+	print ">>entering $dirname\n" if $debugDir;
+	$cmdline = "";
+	next;
     }
-    # If it isn't, we assume that it is an error message for the
-    # preceding command.  We'll then keep reading lines until
-    # we find the next command.
-    if (!$is_command) {
-	# Simplify the command line before printing
-	$cmdline =~ s/-I[^\s]*\s+//g;
-	$cmdline =~ s/-ansi//g;
-	$cmdline =~ s/-W[^\s]*\s+//g;
-	$cmdline =~ s/-DHAVE_CONFIG_H//g;
-	$cmdline =~ s/-DGCC_WALL//g;
-	print $cmdline;
-	
-	# Now, keep looking for a cmdline
-	while (!$is_command) {
-	    print $nextline;
-	    print "Read line ... \n" if $debug;
-	    $nextline = <>;
-	    while ($nextline =~ /\\$/) {
-		print "Read line continuation ... \n" if $debug;
-		$nextline .= <>;
-	    }
-	    if ($nextline eq "" || eof()) { 
+    elsif ($line =~ /^\s*make.* Leaving directory \`([^\']*)\'/) {
+	# We should check that the directory names match
+	my $dirname = $1;
+	print ">>leaving $dirname\n" if $debugDir;
+	if ($dirname ne $dirstack[$#dirstack]) {
+	    print STDERR "Warning: leaving directory $dirname but expected to leave directory " . $dirstack[$#dirstack] . "\n";
+	}
+	$#dirstack--;
+	$#dirprinted--;
+	$cmdline = "";
+	next;
+    }
+    else {
+	$is_command = 0;
+	foreach $cmdname (@commands) {
+	    if ($line =~ /^\s*$cmdname[^\w]/) {
 		$is_command = 1;
-	    }
-	    foreach $cmdname (@commands) {
-		if ($nextline =~ /^\s*$cmdname/) {
-		    $is_command = 1;
-		    last;
-		}
+		$cmdline = $line;
+		last;
 	    }
 	}
-	# Add a newline to separate the output
-	print "\n";
+	if ($is_command) { next; }
     }
-    $cmdline = $nextline;
-    $nextline = "";
+
+    # If we got to this point, the line was not a recognized command or
+    # ignorable output.  Output the line, including the command if this 
+    # is the first time.  We can then forget the command 
+    if ($#dirstack >= 0 && $dirprinted[$#dirstack] == 0) {
+	print "In directory: ". $dirstack[$#dirstack] . "\n";
+	$dirprinted[$#dirstack] = 1;
+    }
+    if ($cmdline ne "") { 
+	if ($trimCompileLine) {
+	    # Simplify the command line before printing
+	    $cmdline =~ s/-I[^\s]*\s+//g;
+	    $cmdline =~ s/-ansi//g;
+	    $cmdline =~ s/-W[^\s]*\s+//g;
+	    $cmdline =~ s/-DHAVE_CONFIG_H//g;
+	    $cmdline =~ s/-DGCC_WALL//g;
+	}
+	# We could print a newline here to separate commands
+	print $cmdline;
+	$cmdline = "";
+    }
+    print $line;
 }
 
