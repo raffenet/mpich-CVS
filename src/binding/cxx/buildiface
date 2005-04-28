@@ -2296,6 +2296,12 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
                     "Comm_join",
                     "fd,&vv", "(v = (Intercomm)vv,v)" );
 
+    &PrintWrapper( $OUTFD, "void", "Close_port", 
+                   "const char *pn", "", "", "(char *)pn", "" );
+    &PrintWrapper( $OUTFD, "void", "Open_port", 
+                   "const Info &info, char *portname", "", "", 
+                   "(MPI_Info)info, portname", "" );
+
     print $OUTFD "
 //
 // Rather than use a registered interposer, instead we interpose taking 
