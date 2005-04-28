@@ -110,7 +110,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	pState = app->pState;
 
 	for (i=0; i<app->nProcess; i++) {
-	    pState[i].app    = app;
+	    pState[i].app                   = app;
 	    pState[i].wRank                 = wRank++;
 	    pState[i].status                = PROCESS_UNINITIALIZED;
 	    pState[i].exitStatus.exitReason = EXIT_NOTYET;
