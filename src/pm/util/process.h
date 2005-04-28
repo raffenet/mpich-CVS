@@ -26,8 +26,8 @@ ProcessUniverse - All processes, consisting of a list of ProcessWorld
                      command line, and other parameters (such as
                      working dir), and an array of process descriptions
             ProcessState - Information for a specific process,
-                     including host, exit status, pid, MPI rank, and state
-                 ProcessExitStatus - 
+                     including host, pid, MPI rank, and state
+                 ProcessExitStatus - exit status
 The I/O for processes is handled separately.  I/O handlers for each fd
 include an "extra-data" pointer that can store pointers to the process
 structures as necessary.
