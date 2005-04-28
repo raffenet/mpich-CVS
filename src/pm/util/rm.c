@@ -35,6 +35,7 @@
 
 #include "pmutil.h"
 #include "process.h"
+#include "rm.h"
 
 #ifndef isascii
 #define isascii(c) (((c)&~0x7f)==0)
@@ -48,26 +49,9 @@
 /* ----------------------------------------------------------------------- */
 /* These structures are used as part of the code to assign machines to 
    processes */
-typedef struct {
-    char *hostname;        /* Name of the machine (used for ssh etc) */
-    int  np;               /* Number of processes on this machine */
-    char *login;           /* Login name to use (if different).
-			      Q: do we also want to provide for a password? */
-    char *netname;         /* Interface name to use (if different from host) */
-    /* Other resource descriptions would go here, such as memory, 
-       software, file systems */
-} MachineDesc;
-
-typedef struct {
-    int nHosts; 
-    MachineDesc *desc;
-} MachineTable;
-
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
-
-MachineTable *MPIE_ReadMachines( const char *, int, void * );
 
 /* Choose the hosts for the processes in the ProcessList.  In
    addition, expand the list into a table with one entry per process.
@@ -88,6 +72,23 @@ int MPIE_ChooseHosts( ProcessWorld *pWorld,
     /* First, determine how many processes require host names */
     app = pWorld->apps;
     while (app) {
+	if (!app->pState) {
+	    pState = (ProcessState *)MPIU_Malloc( 
+		app->nProcess * sizeof(ProcessState) );
+	    if (!pState) {
+		return -1;
+	    }
+	    /* Set the defaults (this should be in process.c?) */
+	    for (i=0; i<app->nProcess; i++) {
+		pState[i].hostname = 0;
+		pState[i].app      = app;
+		pState[i].wRank    = -1;  /* Unassigned */
+		pState[i].pid      = -1;
+		pState[i].status   = PROCESS_UNINITIALIZED;
+		pState[i].exitStatus.exitReason = EXIT_NOTYET;
+	    }
+	    app->pState = pState;
+	}
 	pState = app->pState;
 	for (i=0; i<app->nProcess; i++) {
 	    if (!pState[i].hostname) nNeeded++;
