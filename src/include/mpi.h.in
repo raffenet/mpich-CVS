@@ -1100,10 +1100,9 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
    This is necessary, for example, when building the C++ interfaces.  It
    can also be used when you want to use a C++ compiler to compile C code,
    and do not want to load the C++ bindings.  These definitions can
-   be made by the C++ compilation script (e.g., it must do
-   -DHAVE_MPI_CXX).
+   be made by the C++ compilation script
  */
-#if defined(HAVE_MPI_CXX) && !defined(MPICH_SKIP_MPICXX)
+#if !defined(MPICH_SKIP_MPICXX)
 #include "mpicxx.h"
 #endif 
 #endif

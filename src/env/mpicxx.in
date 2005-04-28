@@ -168,9 +168,7 @@ if [ "$MPICXXLIBNAME" != "$MPILIBNAME" ] ; then
 fi
 #
 # Concatenate the user flags with the ones needed by MPI
-# For now, the HAVE_MPI_CXX flag is used to control the inclusion of 
-# mpicxx.h in the mpi.h file.
-CXXFLAGS="$CFLAGS $MPI_CXXFLAGS -DHAVE_MPI_CXX"
+CXXFLAGS="$CFLAGS $MPI_CXXFLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 #
 # A temporary statement to invoke the compiler
