@@ -55,6 +55,24 @@ int main( int argc, char *argv[] )
 		nnodes, ndims );
     }
 
+    /* Test multiple dims create values.  For each, make sure that the 
+       product of dims is the number of input nodes */
+    nnodes = 2*7;
+    ndims  = 2;
+    dims[0] = dims[1] = 0;
+    MPI_Dims_create( nnodes, ndims, dims );
+    if (prodof(ndims,dims) != nnodes) {
+	errs++;
+	printf( "dims create returned the wrong decomposition for %d in %d dims\n",
+		nnodes, ndims );
+    }
+    if (increasing( ndims, dims )) {
+	errs++;
+	printf( "dims create returned a decomposition with increasing dimensions (see MPI-1 standard section 6.5)\n" );
+	printf( "dims create returned the wrong decomposition for %d in %d dims\n",
+		nnodes, ndims );
+    }
+
     nnodes = 2*2*3*3*5*7*11;
     ndims  = 2;
     dims[0] = dims[1] = 0;
