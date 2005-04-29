@@ -20,6 +20,8 @@
    store all of the factors for a large number (grows *faster* than n 
    factorial). */
 #define MAX_FACTORS 10
+/* 2^20 is a millon */
+#define MAX_DIMS    20
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
@@ -27,6 +29,7 @@
 typedef struct Factors { int val, cnt; } Factors;
 /* This routine may be global if we are not using weak symbols */
 PMPI_LOCAL int factor( int, Factors [], int * );
+PMPI_LOCAL int chooseFactors( int, Factors [], int, int, int [] );
 
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Dims_create PMPI_Dims_create
@@ -108,12 +111,80 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
     }
     else if (n > 1) {
 	/* We need one more factor (a single prime > n_root) */
-	factors[nfactors].val = n;
-	factors[nfactors++].cnt   = 1;
+	factors[nfactors].val   = n;
+	factors[nfactors++].cnt = 1;
 	nall++;
     }
     *ndivisors = nall;
     return nfactors;
+}
+
+/* 
+   Given a collection of factors from the factors routine and a number of
+   required values, combine the elements in factors into "needed" elements
+   of the array chosen.  These are non-increasing and so can be used directly
+   in setting values in the dims array in MPIR_Dims_create.
+
+   Algorithm (very simple)
+
+   target_size = nnodes / ndims needed.
+   Accumulate factors, starting from the bottom,
+   until the target size is met or exceeded.
+   Put all of the remaining factors into the last dimension
+   (recompute target_size with each step, since we may
+   miss the target by a wide margin.
+   
+   A much more sophisticated code would try to balance
+   the number of nodes assigned to each dimension, possibly
+   in concert with guidelines from the device about "good"
+   sizes
+
+ */
+PMPI_LOCAL int chooseFactors( int nfactors, Factors factors[], int nnodes, 
+			      int needed, int chosen[] )
+{
+    int nodes_needed = nnodes;
+    int target_size = nodes_needed / needed;
+    int factor;
+    int i, j;
+
+    /* First, distribute the factors into the chosen array */
+    j = 0;
+    for (i=0; i<needed; i++) {
+	if (i == needed-1) {
+	    /* Dump all of the remaining factors into this
+	       entry */
+	    factor = 1;
+	    while (j < nfactors) {
+		factor *= factors[j].val;
+		if (--factors[j].cnt == 0) j++;
+	    }
+	}
+	else {
+	    /* Get the current target size */
+	    factor = 1;
+	    while (j < nfactors && factor < target_size) {
+		factor *= factors[j].val;
+		if (--factors[j].cnt == 0) j++;
+	    }
+	}
+	chosen[i] = factor;
+	nodes_needed /= factor;
+	target_size = nodes_needed / (needed - i);
+    }
+
+    /* Second, sort the chosen array in non-increasing order.  Use
+       a simple bubble sort because the number of elements is always small */
+    for (i=0; i<needed-1; i++) {
+	for (j=i+1; j<needed; j++) {
+	    if (chosen[j] > chosen[i]) {
+		int tmp = chosen[i];
+		chosen[i] = chosen[j];
+		chosen[j] = tmp;
+	    }
+	}
+    }
+    return 0;
 }
 
 int MPIR_Dims_create( int nnodes, int ndims, int *dims )
@@ -178,15 +249,19 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
           This is done in an ad hoc fashion
     */
 
-/* DEBUG
+/* DEBUG 
     printf( "factors are (%d of them) with %d divisors\n", nfactors, ndivisors );
     for (j=0; j<nfactors; j++) {
 	printf( "val = %d repeated %d\n", factors[j].val, factors[j].cnt );
     }
-*/
+ */
+    /* The MPI spec requires that the values that are set be in nonincreasing
+       order (MPI-1, section 6.5).  */
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
-	/* Just use the factors as needed */
+	/* Just use the factors as needed.  We start at the end of the
+	   factors array so that we can start with the largest factors
+	   first */
 	j = 0;
 	for (i=0; i<ndims; i++) {
 	    if (dims[i] == 0) {
@@ -239,48 +314,24 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 	    }
 	}	    
 	else {
-	    /* Here is the general case.  For now, we do the following
-	       simple approach:
-	       target_size = nnodes / ndims needed.
-	       Accumulate factors, starting from the bottom,
-	       until the target size is met or exceeded.
-	       Put all of the remaining factors into the last dimension
-	       (recompute target_size with each step, since we may
-	       miss the target by a wide margin.
+	    /* Here is the general case.  */
+	    int chosen[MAX_DIMS];
 
-	       A much more sophisticated code would try to balance
-	       the number of nodes assigned to each dimension, possibly
-	       in concert with guidelines from the device about "good"
-	       sizes
-	    */
-	    int nodes_needed = nnodes;
-	    int target_size = nodes_needed / dims_needed;
-	    int factor;
+	    if (dims_needed > MAX_DIMS) {
+		/* --BEGIN ERROR HANDLING-- */
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+						  MPIR_ERR_RECOVERABLE,
+			"MPIR_Dims_create", __LINE__,  MPI_ERR_DIMS, 
+		     "**dimsmany", "**dimsmany %d %d", dims_needed, MAX_DIMS );
+		return mpi_errno;
+		/* --END ERROR HANDLING-- */
+	    }
+
+	    chooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
 	    j = 0;
 	    for (i=0; i<ndims; i++) {
 		if (dims[i] == 0) {
-		    if (dims_needed == 1) {
-			/* Dump all of the remaining factors into this
-			   entry */
-			factor = 1;
-			while (j < nfactors) {
-			    factor *= factors[j].val;
-			    if (--factors[j].cnt == 0) j++;
-			}
-		    }
-		    else {
-			/* Get the current target size */
-			factor = 1;
-			while (j < nfactors && factor < target_size) {
-			    factor *= factors[j].val;
-			    if (--factors[j].cnt == 0) j++;
-			}
-		    }
-		dims[i] = factor;
-		nodes_needed /= factor;
-		dims_needed--;
-		if (dims_needed)
-		    target_size = nodes_needed / dims_needed;
+		    dims[i] = chosen[j++];
 		}
 	    }
 	}
