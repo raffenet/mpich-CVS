@@ -25,11 +25,6 @@ MPIU_Object_alloc_t MPID_Keyval_mem = { 0, 0, 0, 0, MPID_KEYVAL,
 					    MPID_Keyval_direct,
 					    MPID_KEYVAL_PREALLOC, };
 
-void MPID_Keyval_free(MPID_Keyval *keyval_ptr)
-{
-    MPIU_Handle_obj_free(&MPID_Keyval_mem, keyval_ptr);
-}
-
 #ifndef MPID_ATTR_PREALLOC 
 #define MPID_ATTR_PREALLOC 32
 #endif
