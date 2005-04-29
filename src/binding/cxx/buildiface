@@ -314,6 +314,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Get_remote_group' => MPI_Group,
 		     'Merge' => 'MPI_Comm:2',
 		     );
+$specialReturnType{"inter-Dup"} = "Intercomm";
 %class_mpi1intra = ( 'Barrier' => 0, 
 		     'Bcast' => 0, 
 		     'Gather' => 0,
@@ -335,6 +336,10 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Create_cart' => 'MPI_Comm:4:5',
 		     'Create_graph' => 'MPI_Comm:5' 
 );
+$specialReturnType{"intra-Split"} = "Intracomm";
+$specialReturnType{"intra-Create"} = "Intracomm";
+$specialReturnType{"intra-Dup"} = "Intracomm";
+
 %class_mpi1op = ( 'Free' => 0);
 %class_mpi1preq = ( 'Start' => 0,
 		    'Startall' => 'static:0:2' );
@@ -3101,6 +3106,11 @@ sub PrintMethodDef {
     if ($return_type =~ /MPI_/) {
 	$real_return_type =~ s/MPI_//;
     }
+    # Check for a special return type (e.g., IntraComm instead of Comm)
+    if (defined($specialReturnType{"$class-$routine"})) {
+	$real_return_type = $specialReturnType{"$class-$routine"};
+    }
+
     print $OUTFD $indent;
     if (defined($funcDeclaration{$fnchash})) {
 	my $decl = $funcDeclaration{$fnchash};
