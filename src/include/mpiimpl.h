@@ -1950,6 +1950,14 @@ extern MPICH_PerProcess_t MPIR_Process;
   D*/
 #define MPID_MAX_THREAD_LEVEL MPICH_THREAD_LEVEL
 
+/* Define a macro that can be used to select code for thread-safe handling */
+/* This is used in bsendutil.c */
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
+#define MPIU_IFTHREADED(_a) _a
+#else
+#define MPIU_IFTHREADED(_a) 
+#endif
+
 /* Allocation locks */
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED
 
