@@ -151,6 +151,7 @@ PMPI_LOCAL int chooseFactors( int nfactors, Factors factors[], int nnodes,
     /* First, distribute the factors into the chosen array */
     j = 0;
     for (i=0; i<needed; i++) {
+	if (j >= nfactors) break;
 	if (i == needed-1) {
 	    /* Dump all of the remaining factors into this
 	       entry */
@@ -172,6 +173,8 @@ PMPI_LOCAL int chooseFactors( int nfactors, Factors factors[], int nnodes,
 	nodes_needed /= factor;
 	target_size = nodes_needed / (needed - i);
     }
+    /* finish up */
+    for (; i<needed; i++) chosen[i] = 1;
 
     /* Second, sort the chosen array in non-increasing order.  Use
        a simple bubble sort because the number of elements is always small */
@@ -190,6 +193,7 @@ PMPI_LOCAL int chooseFactors( int nfactors, Factors factors[], int nnodes,
 int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 {
     Factors factors[MAX_FACTORS];
+    int chosen[MAX_DIMS];
     int i, j, mpi_errno;
     int dims_needed, dims_product, nfactors, ndivisors;
     
@@ -223,6 +227,17 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 	/* Special case - all dimensions provided */
 	return MPI_SUCCESS;
     }
+    
+    if (dims_needed > MAX_DIMS) {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+		  MPIR_ERR_RECOVERABLE,
+		  "MPIR_Dims_create", __LINE__,  MPI_ERR_DIMS, 
+		  "**dimsmany", "**dimsmany %d %d", dims_needed, MAX_DIMS );
+	return mpi_errno;
+	/* --END ERROR HANDLING-- */
+    }
+
     nnodes /= dims_product;
 
     /* Now, factor nnodes into dims_needed components.  We'd like these
@@ -254,28 +269,27 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
     for (j=0; j<nfactors; j++) {
 	printf( "val = %d repeated %d\n", factors[j].val, factors[j].cnt );
     }
- */
+*/
     /* The MPI spec requires that the values that are set be in nonincreasing
        order (MPI-1, section 6.5).  */
+
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
-	/* Just use the factors as needed.  We start at the end of the
-	   factors array so that we can start with the largest factors
-	   first */
+	/* Just use the factors as needed.  */
+	chooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
 	j = 0;
 	for (i=0; i<ndims; i++) {
 	    if (dims[i] == 0) {
-		dims[i] = factors[j].val;
-		if (--factors[j].cnt == 0) {
-		    if (++j >= nfactors) break;
-		}
+		dims[i] = chosen[j++];
 	    }
 	}
+#if 0
 	/* Any remaining unset dims are set to one */
 	for (i++;i<ndims; i++) {
 	    if (dims[i] == 0) 
 		dims[i] = 1;
 	}
+#endif
     }
     else {
 	/* We must combine some of the factors */
@@ -315,18 +329,6 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 	}	    
 	else {
 	    /* Here is the general case.  */
-	    int chosen[MAX_DIMS];
-
-	    if (dims_needed > MAX_DIMS) {
-		/* --BEGIN ERROR HANDLING-- */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE,
-			"MPIR_Dims_create", __LINE__,  MPI_ERR_DIMS, 
-		     "**dimsmany", "**dimsmany %d %d", dims_needed, MAX_DIMS );
-		return mpi_errno;
-		/* --END ERROR HANDLING-- */
-	    }
-
 	    chooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
 	    j = 0;
 	    for (i=0; i<ndims; i++) {
