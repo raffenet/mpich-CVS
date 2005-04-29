@@ -203,6 +203,8 @@ int MPIR_Datatype_init_names( void )
 
 .N ThreadSafeNoUpdate
 
+.N NULL
+
 .N Fortran
 
 .N Errors
@@ -234,15 +236,11 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
         MPID_END_ERROR_CHECKS;
     }
 #   endif
-    
-    /* Handle MPI_DATATYPE_NULL as a special case */
-    if (datatype == MPI_DATATYPE_NULL)
-    { 
-	MPIU_Strncpy( type_name, "MPI_DATATYPE_NULL", MPI_MAX_OBJECT_NAME );
-	*resultlen = (int)strlen( type_name );
-	goto fn_exit;
-    }
-    
+
+    /* Note that MPI_DATATYPE_NULL is invalid input to this routine;
+       it must not return a string for MPI_DATATYPE_NULL.  Instead, 
+       it must return an error indicating an invalid datatype argument */
+
     /* Convert MPI object handles to object pointers */
     MPID_Datatype_get_ptr( datatype, datatype_ptr );
     
