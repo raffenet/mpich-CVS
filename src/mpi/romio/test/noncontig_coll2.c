@@ -21,7 +21,7 @@
  */
 
 /* we are going to muck with this later to make it evenly divisible by however many compute nodes we have */
-#define STARTING_SIZE 5000
+#define STARTING_SIZE 100 //5000
 
 int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, 
 		char *msg, int verbose); 
@@ -327,6 +327,8 @@ int main(int argc, char **argv)
     char * cb_config_string;
     int cb_config_len;
     ADIO_cb_name_array array;
+    MPI_Info info;
+    char infoval[100];
 
 
     MPI_Init(&argc,&argv);
@@ -427,6 +429,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg,
     MPI_Status status;
     int SIZE = (STARTING_SIZE/nprocs)*nprocs;
     MPI_Info info;
+    char infoval[100];
 
     if (mynod==0 && verbose) fprintf(stderr, "%s\n", msg);
 
@@ -440,8 +443,16 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts, char *msg,
     if (cb_hosts != NULL ) {
 	    MPI_Info_create(&info);
 	    MPI_Info_set(info, "cb_config_list", cb_hosts);
+
+	    sprintf(infoval, "%d", 32768);
+	    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval);
+
     } else {
-	    info = MPI_INFO_NULL;
+	//	    info = MPI_INFO_NULL;
+	MPI_Info_create(&info);
+	sprintf(infoval, "%d", 32768);
+	MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval);
+
     }
 
     MPI_Type_vector(SIZE/nprocs, 1, nprocs, MPI_INT, &typevec);

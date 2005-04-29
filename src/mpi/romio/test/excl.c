@@ -63,12 +63,12 @@ int main(int argc, char **argv)
 
     /* this open should fail */
     err = MPI_File_open(MPI_COMM_WORLD, filename, 
-         MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
+			MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
     if (err == MPI_SUCCESS) {
 	errs++;
 	fprintf(stderr, "Process %d: open succeeded when it should have failed\n", rank);
     }
-
+    
     MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
     if (rank == 0) {
 	if( toterrs > 0) {

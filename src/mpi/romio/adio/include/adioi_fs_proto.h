@@ -65,4 +65,14 @@ extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
 /* prototypes are in adio/ad_testfs/ad_testfs.h */
 #endif
 
+#ifdef ROMIO_RFS
+extern struct ADIOI_Fns_struct ADIO_RFS_operations;
+/* prototypes are in adio/ad_rfs/ad_rfs.h */
+#endif
+
+#ifdef ROMIO_LN
+extern struct ADIOI_Fns_struct ADIO_LN_operations;
+/* prototypes are in adio/ad_ln/ad_ln.h */
+#endif
+
 #endif

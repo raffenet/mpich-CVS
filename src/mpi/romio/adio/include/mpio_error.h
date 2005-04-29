@@ -63,6 +63,11 @@
 #define MPIR_ERR_NO_NTFS 35
 #define MPIR_ERR_NO_TESTFS 36
 
+/*** added by Jonghyun ***/
+#define MPIR_ERR_NO_RFS 37
+#define MPIR_ERR_NO_LN 38
+/*************************/
+
 /* MPI_ERR_COMM */
 #ifndef MPIR_ERR_COMM_NULL
 #define MPIR_ERR_COMM_NULL 3

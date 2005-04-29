@@ -107,6 +107,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 /* noncontiguous in memory, contiguous in file. */
 
 	ADIOI_Flatten_datatype(datatype);
+
 	flat_buf = ADIOI_Flatlist;
 	while (flat_buf->type != datatype) flat_buf = flat_buf->next;
 
@@ -271,6 +272,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 /* noncontiguous in memory as well as in file */
 
 	    ADIOI_Flatten_datatype(datatype);
+
 	    flat_buf = ADIOI_Flatlist;
 	    while (flat_buf->type != datatype) flat_buf = flat_buf->next;
 

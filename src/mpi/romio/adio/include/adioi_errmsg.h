@@ -43,7 +43,7 @@ MPI_ERR_REQUEST
 
 MPI_ERR_IO
     MPIR_ERR_ETYPE_FRACTIONAL "Only an integral number of etypes can be accessed"
-    MPIR_ERR_NO_FSTYPE "Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:)"
+    MPIR_ERR_NO_FSTYPE "Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:, rfs:, ln:)"
     MPIR_ERR_NO_PFS "ROMIO has not been configured to use the PFS file system"
     MPIR_ERR_NO_PIOFS "ROMIO has not been configured to use the PIOFS file system"
     MPIR_ERR_NO_UFS "ROMIO has not been configured to use the UFS file system"
@@ -60,6 +60,8 @@ MPI_ERR_IO
     MPIR_PREALLOC_PERM "To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR."
     MPIR_ERR_FILETYPE  "Filetype must be constructed out of one or more etypes"
     MPIR_ERR_NO_TESTFS "ROMIO has not been configured to use the TESTFS file system"
+    MPIR_ERR_NO_RFS "ROMIO has not been configured to use the RFS file system"
+    MPIR_ERR_NO_LN "ROMIO has not been configured to use the LN file system"
     MPIR_ERR_DEFERRED "independent IO attempted even though no_indep_rw hint given"
 
 MPI_ERR_COMM

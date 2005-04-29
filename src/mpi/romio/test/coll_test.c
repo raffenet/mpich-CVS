@@ -44,6 +44,7 @@ int main(int argc, char **argv)
     MPI_Request request;
     MPI_Info info = MPI_INFO_NULL;
     int errcode;
+    char infoval[100];
 
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynod);
@@ -139,6 +140,9 @@ int main(int argc, char **argv)
     MPI_Info_set(info, "cb_config_list", "schwinn.mcs.anl.gov:1");
 #endif
 
+    MPI_Info_create(&info);
+    sprintf(infoval, "%d", 32768);
+    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval);
 
     /* write the array to the file */
     errcode = MPI_File_open(MPI_COMM_WORLD, filename, 

@@ -18,10 +18,11 @@
 int main(int argc, char **argv)
 {
     int *buf, i, rank, nints, len;
-    char *filename, *tmp;
+    char *filename, *tmp, infoval[100];
     int  errs = 0, toterrs;
     MPI_File fh;
     MPI_Status status;
+    MPI_Info info;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -61,16 +62,21 @@ int main(int argc, char **argv)
     strcpy(tmp, filename);
     sprintf(filename, "%s.%d", tmp, rank);
 
+    MPI_Info_create(&info);
+    sprintf(infoval, "%d", 4*1048576); /* 4MB */
+    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval); 
+    
     MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-		   MPI_INFO_NULL, &fh);
+		  info/*MPI_INFO_NULL*/, &fh);
     MPI_File_write(fh, buf, nints, MPI_INT, &status);
+    /*    MPI_File_write_at(fh, 100, buf, 100, MPI_INT, &status);*/
     MPI_File_close(&fh);
 
     /* reopen the file and read the data back */
 
     for (i=0; i<nints; i++) buf[i] = 0;
     MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, 
-                  MPI_INFO_NULL, &fh);
+		  info/*MPI_INFO_NULL*/, &fh);
     MPI_File_read(fh, buf, nints, MPI_INT, &status);
     MPI_File_close(&fh);
 
@@ -78,8 +84,8 @@ int main(int argc, char **argv)
     for (i=0; i<nints; i++) {
 	if (buf[i] != (rank*100000 + i)) {
 	    errs++;
-	    fprintf(stderr, "Process %d: error, read %d, should be %d\n", 
-		    rank, buf[i], rank*100000+i);
+	    /*    fprintf(stderr, "Process %d: error, buf[%d] read %d, should be %d\n", 
+		  rank, i, buf[i], rank*100000+i); */
 	}
     }
 

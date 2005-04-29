@@ -11,7 +11,7 @@
 
 /* tests noncontiguous reads/writes using nonblocking I/O */
 
-#define SIZE 5000
+#define SIZE 100 //5000
 
 #define VERBOSE 0
 

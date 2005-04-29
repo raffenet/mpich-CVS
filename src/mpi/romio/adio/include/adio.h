@@ -274,6 +274,11 @@ typedef struct {
 #define ADIO_TESTFS              159   /* fake file system for testing */
 #define ADIO_PVFS2               160   /* PVFS2: 2nd generation PVFS */
 
+/*** added by Jonghyun ***/
+#define ADIO_RFS                 161   /* RFS for remote I/O */
+#define ADIO_LN                  162   /* Logistical Networking */
+/*************************/
+
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR
 #define ADIO_SEEK_END            SEEK_END

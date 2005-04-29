@@ -79,6 +79,7 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
 		req_off = off;
 		req_len = flat_buf->blocklens[b_index];
 
+		if (req_len > 0) /* added by Jonghyun Lee */
 		ADIO_ReadContig(fd, 
 				(char *) buf + userbuf_off,
 				req_len, 
@@ -303,6 +304,7 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
 		    req_len = size;
 		    userbuf_off = i;
 
+		    printf("***** Calling ADIO_ReadContig with userbuf_off %Ld, req_len %Ld, req_off %Ld\n", userbuf_off, req_len, req_off);
 		    ADIO_ReadContig(fd, 
 				    (char *) buf + userbuf_off,
 				    req_len, 

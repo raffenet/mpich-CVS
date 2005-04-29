@@ -67,7 +67,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     ADIOI_Access *others_req;
     /* array of nprocs structures, one for each other process
        whose request lies in this process's file domain. */
-
+    
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
     int contig_access_count, interleave_count = 0, buftype_is_contig;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
@@ -75,15 +75,15 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     ADIO_Offset *offset_list = NULL, *st_offsets = NULL, *fd_start = NULL,
 	*fd_end = NULL, *end_offsets = NULL;
     int *len_list = NULL, *buf_idx = NULL;
-
+    
 #ifdef HAVE_STATUS_SET_BYTES
     int bufsize, size;
 #endif
-
+    
 #ifdef PROFILE
-        MPE_Log_event(13, 0, "start computation");
+    MPE_Log_event(13, 0, "start computation");
 #endif
-
+    
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
 
@@ -176,6 +176,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
      * needs to be mapped to an actual rank in the communicator later.
      *
      */
+
     ADIOI_Calc_file_domains(st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
 			    &fd_start, &fd_end, &fd_size);
@@ -192,6 +193,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
      * buf_idx[] - array of locations into which data can be directly moved;
      *     this is only valid for contiguous buffer case
      */
+
     ADIOI_Calc_my_req(fd, offset_list, len_list, contig_access_count,
 		      min_st_offset, fd_start, fd_end, fd_size,
 		      nprocs, &count_my_req_procs, 
@@ -205,6 +207,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
      * count_others_req_per_proc[] - number of separate contiguous
      *     requests from proc i lie in this process's file domain.
      */
+
     ADIOI_Calc_others_req(fd, count_my_req_procs, 
 			  count_my_req_per_proc, my_req, 
 			  nprocs, myrank, &count_others_req_procs, 
@@ -213,6 +216,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     /* my_req[] and count_my_req_per_proc aren't needed at this point, so 
      * let's free the memory 
      */
+
     ADIOI_Free(count_my_req_per_proc);
     for (i=0; i<nprocs; i++) {
 	if (my_req[i].count) {
@@ -226,12 +230,14 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     /* read data in sizes of no more than ADIOI_Coll_bufsize, 
      * communicate, and fill user buf. 
      */
+
     ADIOI_Read_and_exch(fd, buf, datatype, nprocs, myrank,
                         others_req, offset_list,
 			len_list, contig_access_count, min_st_offset,
 			fd_size, fd_start, fd_end, buf_idx, error_code);
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
+
 
     /* free all memory allocated for collective I/O */
     for (i=0; i<nprocs; i++) {
@@ -261,6 +267,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 #endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
+
 }
 
 void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
@@ -485,6 +492,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     MPI_Aint buftype_extent;
     int coll_bufsize;
 
+
     *error_code = MPI_SUCCESS;  /* changed below if error */
     /* only I/O errors are currently reported */
     
@@ -563,6 +571,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	flat_buf = ADIOI_Flatlist;
         while (flat_buf->type != datatype) flat_buf = flat_buf->next;
     }
+
     MPI_Type_extent(datatype, &buftype_extent);
 
     done = 0;

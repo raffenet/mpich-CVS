@@ -32,7 +32,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
 
     *error_code = MPI_SUCCESS;
-
+ 
     /* obtain MPI_File handle */
     mpi_fh = MPIO_File_create(sizeof(struct ADIOI_FileD));
     if (mpi_fh == MPI_FILE_NULL) {
@@ -64,7 +64,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
 
-/* create and initialize info object */
+    /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
     if (fd->hints == NULL) {
 	/* NEED TO HANDLE ENOMEM ERRORS */
@@ -95,7 +95,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	rank_ct = ADIOI_cb_config_list_parse(fd->hints->cb_config_list, 
 					     array, tmp_ranklist,
 					     fd->hints->cb_nodes);
-
+ 
 	/* store the ranklist using the minimum amount of memory */
 	if (rank_ct > 0) {
 	    fd->hints->ranklist = (int *) ADIOI_Malloc(sizeof(int) * rank_ct);

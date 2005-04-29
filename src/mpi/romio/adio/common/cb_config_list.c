@@ -350,6 +350,7 @@ int ADIOI_cb_config_list_parse(char *config_list,
 	match_procs(cur_procname_p, max_procs, procnames, used_procnames,
 		    nr_procnames, ranklist, cb_nodes, &cur_rank);
     }
+
     ADIOI_Free(cur_procname);
     ADIOI_Free(yylval);
     yylval = NULL;

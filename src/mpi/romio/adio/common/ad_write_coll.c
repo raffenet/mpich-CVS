@@ -89,6 +89,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
  * is stored in the hints off the ADIO_File structure
  */
     nprocs_for_coll = fd->hints->cb_nodes;
+    printf("[%d/%d] nprocs_for_coll = %d\n", myrank, nprocs, nprocs_for_coll);
     orig_fp = fd->fp_ind;
 
     /* only check for interleaving if cb_write isn't disabled */

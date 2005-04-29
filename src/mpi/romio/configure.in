@@ -72,6 +72,7 @@ FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
+F90=""
 TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
@@ -90,7 +91,7 @@ MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall
 #
 have_aio=no
 #
-known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs sfs"
+known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs sfs ln"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -792,7 +793,7 @@ fi
 if test $FROM_MPICH2 = yes ; then
    dnl Made this a message instead of a warning because the warning is
    dnl likely to confuse users.
-   AC_MSG_RESULT([Overriding Array test for MPICH2])
+   AC_MSG_RESULT("Overriding Array test for MPICH2")
    unset BUILD_MPI_ARRAY
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -966,6 +967,10 @@ fi
 
 if test -n "$file_system_testfs"; then
     AC_DEFINE(ROMIO_TESTFS,1,[Define for ROMIO with TESTFS])
+fi
+
+if test -n "$file_system_ln"; then
+    AC_DEFINE(ROMIO_LN,1,[Define for ROMIO with LN])
 fi
 
 if test -n "$file_system_xfs"; then
@@ -1532,9 +1537,7 @@ if test "$FROM_MPICH" = yes ; then
    else
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
-   if test "$FROM_MPICH2" != yes -o -z "$CC" ; then
-       CC=$MPI_BIN_DIR/mpicc
-   fi
+   CC=$MPI_BIN_DIR/mpicc
 #   if test $FROM_MPICH2 != yes ; then
 #       BUILD_MPI_ARRAY=1
 #       BUILD_MPI_INFO=1
@@ -1576,11 +1579,7 @@ elif test $FROM_MPICH2 = yes ; then
    # CC="$CC -I${use_top_srcdir}/src/include -I${top_build_dir}/src/include"
    # TEST_CC="$CC"
    # MPI_LIB="$LIBNAME"
-   # To allow ROMIO to work with the LIBTOOL scripts, we want to 
-   # work directly with the CC, not the mpicc, compiler.
-   # Note that in the "FROM_MPICH2" case, the CPPFLAGS and INCLUDES are already
-   # properly set
-   #CC=${top_build_dir}/bin/mpicc
+   CC=${top_build_dir}/bin/mpicc
    TEST_CC=${top_build_dir}/bin/mpicc
    TEST_F77=${top_build_dir}/bin/mpif77
    ROMIO_INCLUDE=""
@@ -1763,7 +1762,7 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   adio/ad_xfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
-		   adio/ad_pvfs2/Makefile \
+		   adio/ad_pvfs2/Makefile adio/ad_ln/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \

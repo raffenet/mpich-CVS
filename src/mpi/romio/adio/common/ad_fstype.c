@@ -408,7 +408,13 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     else if (!strncmp(filename, "testfs:", 7) 
 	     || !strncmp(filename, "TESTFS:", 7))
     {
-	*fstype = ADIO_TESTFS;
+	    *fstype = ADIO_TESTFS;
+    }
+    else if (!strncmp(filename, "rfs:", 4)||!strncmp(filename, "RFS:", 4)) {
+	*fstype = ADIO_RFS;
+    }
+    else if (!strncmp(filename, "ln:", 3)||!strncmp(filename, "LN:", 3)) {
+	*fstype = ADIO_LN;
     }
     else {
 #ifdef ROMIO_NTFS
@@ -590,6 +596,27 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	*ops = &ADIO_TESTFS_operations;
 #endif
     }
+    if (file_system == ADIO_RFS) {
+#ifndef ROMIO_RFS
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
+	return;
+#else
+	*ops = &ADIO_RFS_operations;
+#endif
+    }
+    if (file_system == ADIO_LN) {
+#ifndef ROMIO_LN
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
+	return;
+#else
+	*ops = &ADIO_LN_operations;
+#endif
+    }
+    
     *error_code = MPI_SUCCESS;
     *fstype = file_system;
     return;

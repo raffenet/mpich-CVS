@@ -11,7 +11,7 @@
 
 /* tests noncontiguous reads/writes using independent I/O */
 
-#define SIZE 5000
+#define SIZE 10 /*5000*/
 
 #define VERBOSE 0
 int main(int argc, char **argv)
@@ -21,10 +21,10 @@ int main(int argc, char **argv)
     MPI_Aint d[3];
     MPI_File fh;
     MPI_Status status;
-    char *filename;
+    char *filename, infoval[100];
     MPI_Datatype typevec, newtype, t[3];
     MPI_Info info;
-
+    
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynod);
@@ -86,6 +86,10 @@ int main(int argc, char **argv)
     MPI_Info_set(info, "ind_rd_buffer_size", "1209");
     MPI_Info_set(info, "ind_wr_buffer_size", "1107");
 
+    sprintf(infoval, "%d", 32768);
+    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval);
+
+    
     if (!mynod) {
 #if VERBOSE
 	fprintf(stderr, "\ntesting noncontiguous in memory, noncontiguous in file using independent I/O\n");
@@ -93,10 +97,10 @@ int main(int argc, char **argv)
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
                   info, &fh);
-
+    
     /* set the file view for each process -- now writes go into the non-
      * overlapping but interleaved region defined by the struct type up above
      */
@@ -107,14 +111,22 @@ int main(int argc, char **argv)
     MPI_File_write(fh, buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
+    if (!mynod) {
+	for (i = 0; i < SIZE / 2; i++) {
+	    MPI_File_read_at(fh, i, buf, 1, MPI_INT, &status);
+	    printf("proc 0: buf[%d] = %d\n", i * 2, buf[0]);
+	}
+    }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    
     /* fill the entire buffer with -1's.  read back with type.
      * note that the result of this read should be that every other value
      * in the buffer is still -1, as defined by our type.
      */
     for (i=0; i<SIZE; i++) buf[i] = -1;
     MPI_File_read_at(fh, 0, buf, 1, newtype, &status);
-
+    
     /* check that all the values read are correct and also that we didn't
      * overwrite any of the -1 values that we shouldn't have.
      */
@@ -148,7 +160,7 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     if (!mynod) {
 #if VERBOSE
 	fprintf(stderr, "\ntesting noncontiguous in memory, contiguous in file using independent I/O\n");
@@ -156,25 +168,25 @@ int main(int argc, char **argv)
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
                   info, &fh);
-
+    
     /* in this case we write to either the first half or the second half
      * of the file space, so the regions are not interleaved.  this is done
      * by leaving the file view at its default.
      */
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &status);
-
+    
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     /* same as before; fill buffer with -1's and then read; every other
      * value should still be -1 after the read
      */
     for (i=0; i<SIZE; i++) buf[i] = -1;
     MPI_File_read_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &status);
-
+    
     /* verify that the buffer looks like it should */
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
@@ -206,7 +218,7 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     if (!mynod) {
 #if VERBOSE
 	fprintf(stderr, "\ntesting contiguous in memory, noncontiguous in file using independent I/O\n");
@@ -217,20 +229,20 @@ int main(int argc, char **argv)
 
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, 
                   info, &fh);
-
+    
     /* set the file view so that we have interleaved access again */
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
-
+    
     /* this time write a contiguous buffer */
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write(fh, buf, SIZE, MPI_INT, &status);
-
+    
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     /* fill buffer with -1's; this time they will all be overwritten */
     for (i=0; i<SIZE; i++) buf[i] = -1;
     MPI_File_read_at(fh, 0, buf, SIZE, MPI_INT, &status);
-
+    
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if (buf[i] != i) {
@@ -249,7 +261,7 @@ int main(int argc, char **argv)
     }
 
     MPI_File_close(&fh);
-
+    
     MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
     if (mynod == 0) {
 	if( toterrs > 0) {
