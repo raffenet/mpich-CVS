@@ -85,14 +85,16 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     /* --BEGIN ERROR HANDLING-- */
     if (lrequest_ptr == NULL)
     {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
-					  "**nomem", "**nomem %s", "generalized request" );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+					  FCNAME, __LINE__, MPI_ERR_OTHER, 
+					  "**nomem", "**nomem %s", 
+					  "generalized request" );
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
     
     lrequest_ptr->kind                 = MPID_UREQUEST;
-    MPIU_Object_set_ref( lrequest_ptr, 2 );
+    MPIU_Object_set_ref( lrequest_ptr, 1 );
     lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
     lrequest_ptr->cc                   = 1;
     lrequest_ptr->comm                 = NULL;
@@ -101,11 +103,6 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr->query_fn             = query_fn;
     lrequest_ptr->grequest_extra_state = extra_state;
     lrequest_ptr->greq_lang            = MPID_LANG_C;
-
-    /* NOTE: the request is given a ref_count of 2 so that the object is not
-       destroyed until both MPI_Grequest_complete() and a communication
-       completion routine (e.g., MPI_Wait()) is called. */
-    
     *request = lrequest_ptr->handle;
     
     /* ... end of body of routine ... */
@@ -120,8 +117,10 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_grequest_start",
-	    "**mpi_grequest_start %p %p %p %p %p", query_fn, free_fn, cancel_fn, extra_state, request);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_grequest_start",
+	    "**mpi_grequest_start %p %p %p %p %p", 
+	    query_fn, free_fn, cancel_fn, extra_state, request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
