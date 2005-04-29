@@ -39,14 +39,36 @@
  * any complexities associated with alignment, since we must ensure that each
  * BsendData_t structure is properly aligned (i.e., we can't simply
  * do (sizeof(BsendData_t) + size) to get total_size).
+ *
+ * Function Summary
+ *   MPIR_Bsend_attach - Performs the work of MPI_Buffer_attach
+ *   MPIR_Bsend_detach - Performs the work of MPI_Buffer_detach
+ *   MPIR_Bsend_isend  - Essentially performs an MPI_Ibsend.  Returns
+ *                an MPID_Request that is also stored internally in the
+ *                corresponding BsendData_t entry
+ *   MPIR_Bsend_free_segment - Free a buffer that is no longer needed,
+ *                merging with adjacent segments
+ *   MPIR_Bsend_check_active - Check for completion of any pending sends
+ *                for bsends (all bsends, both MPI_Ibsend and MPI_Bsend,
+ *                are internally converted into Isends on the data
+ *                in the Bsend buffer)
+ *   MPIR_Bsend_retry_pending - Routine for future use to handle the
+ *                case where an Isend cannot be initiated.
+ *   MPIR_Bsend_find_buffer - Find a buffer in the bsend buffer large 
+ *                enough for the message.  However, does not acquire that
+ *                buffer (see MPIR_Bsend_take_buffer)
+ *   MPIR_Bsend_take_buffer - Find and acquire a buffer for a message
+ *   MPIR_Bsend_finalize - Finalize handler when Bsend routines are used 
+ *   MPIR_Bsend_dump - Debugging routine to print the contents of the control
+ *                information in the bsend buffer (the BsendData_t entries)
  */
 
 #if 1
 #define DEBUG(a) 
 #define DEBUG1(a) 
 #else
-#define DEBUG(a) a;fflush(stdout) 
-#define DEBUG1(a) a;fflush(stdout)
+#define DEBUG(a) {a;fflush(stdout);}
+#define DEBUG1(a) {a;fflush(stdout);}
 #define DBG_PRINT_AVAIL
 #define DBG_PRINT_ARENA
 #endif
@@ -106,10 +128,8 @@ static struct BsendBuffer {
 					  available) */
     BsendData_t        *active;        /* Pointer to the first active (sending)
 					  message */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
-    MPID_Thread_mutex_t bsend_lock;    /* Thread lock for bsend access */
-#endif
-
+    MPIU_IFTHREADED(
+    MPID_Thread_mutex_t bsend_lock;)    /* Thread lock for bsend access */
 } BsendBuffer = { 0, 0, 0, 0, 0, 0, 0 };
 
 static int initialized = 0;   /* keep track of the first call to any
@@ -174,9 +194,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     BsendBuffer.avail		= buffer;
     BsendBuffer.pending		= 0;
     BsendBuffer.active		= 0;
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
-    MPID_Thread_mutex_create( BsendBuffer.bsend_lock );
-#endif
+    MPIU_IFTHREADED(MPID_Thread_mutex_create( BsendBuffer.bsend_lock ));
 
     /* Set the first block */
     p		  = (BsendData_t *)buffer;
@@ -259,9 +277,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
      * ones.  If the message can be initiated in the first pass,
      * do not perform the second pass.
      */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
-    MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock );
-#endif
+    MPIU_IFTHREADED(MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock ));
     for (pass = 0; pass < 2; pass++) {
 	
 	p = MPIR_Bsend_find_buffer( packsize );
@@ -281,55 +297,25 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    mpi_errno = MPID_Isend(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
 				   dest, tag, comm_ptr,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
-	    /* --BEGIN ERROR HANDLING-- */
-	    if(mpi_errno)
-	    {
-		/* This is a printf (instead of an MPIU_Error_printf) because
-		   this is a bug that needs to be fixed! */
-		MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d\n", mpi_errno );
-	    }
-	    /* --END ERROR HANDLING-- */
-	    /* If the error is "request not available", put this on the
-	       pending list */
-	    /* FIXME : Add request to pending list NOT YET DONE */
-	    if (mpi_errno == -1) /* -1 is a temporary place holder for request-not-available */
-	    /*if (MPIR_ERR_GET_CLASS(mpi_errno) == MPI_ERR_NO_MEM, MPI_ERR_OTHER, ???)*/
-	    {
-		p->msg.dtype     = MPI_PACKED;
-		p->msg.tag       = tag;
-		p->msg.comm_ptr  = comm_ptr;
-		p->msg.dest      = dest;
-		
-		/* FIXME : Still need to add to pending list */
-		
-		/* ibsend has a problem.  
-		   Use a generalized request here? */
-		p->kind = kind;
-	    }
-	    else if (p->request)
-	    {
+	    if (p->request) {
 		MPIU_DBG_PRINTF(("saving request %x in %x\n",p->request,p));
-		/* Only remove this block from the avail list if the 
-		   message has not been sent (MPID_Send may have already 
-		   sent the data, in which case it returned a null
-		   request) */
-#if 0
-		/* If the request is already complete, bypass the step
-		   of saving the require and taking the buffer */
-		if (p->request->cc_ptr == 0) {
-		    mpi_errno = MPIR_Request_complete(p->request->handle, 
-						      p->requestr, 
-					      MPI_STATUS_IGNORE, &active_flag);
-		}
-#endif
+		/* An optimization is to check to see if the 
+		   data has already been sent.  The original code
+		   to do this was commented out and probably did not match
+		   the current request internals */
 		MPIR_Bsend_take_buffer( p, p->msg.count );
 		p->kind  = kind;
 		*request = p->request;
 	    }
-	    else
-	    {
-		/* This code cannot execute - either the request is returned or there is an mpi_errno returned. */
-		*request = 0;
+	    else {
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno) {
+		    MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d\n", mpi_errno );
+		}
+		/* --END ERROR HANDLING-- */
+		/* If the error is "request not available", we should 
+		   put this on the pending list.  This will depend on
+		   how we signal failure to send. */
 	    }
 	    break;
 	}
@@ -340,17 +326,15 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	/* Give priority to any pending operations */
 	MPIR_Bsend_retry_pending( );
     }
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE && USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED
-    MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock );
-#endif
+    MPIU_IFTHREADED(MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock ));
     MPIR_Nest_decr();
     
     if (!p) {
 	/* Return error for no buffer space found */
-#if 0
+#ifdef DBG_PRINT_ARENA
 	/* Generate a traceback of the allocated space, explaining why
 	   packsize could not be found */
-	PRINTF( "Could not find space; dumping arena\n" );
+	DBG_PRINTF( "Could not find space; dumping arena\n" );
 	MPIR_Bsend_dump();
 #endif
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
