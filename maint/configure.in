@@ -10,7 +10,7 @@ else
 fi
 AC_SUBST(VERSION)
 AC_PATH_PROG(PERL,perl)
-AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getcoverage genstates])
+AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getcoverage genstates clmake])
 # We have to redefine the variables that autoconf always substitutes and that
 # are used in simplemake
 CFLAGS='@CFLAGS@'
