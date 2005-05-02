@@ -25,7 +25,9 @@
 
    3. (Optionally) allow the forked processes to use a host:port to 
    contact this program, rather than just sharing a pipe.  This also allows the
-   forker to start other programs, such as debuggers.
+   forker to start other programs, such as debuggers.  To enable this feature,
+   both the compile-time definition MPIEXEC_ALLOW_PORT and the environment 
+   variable MPIEXEC_USE_PORT must be set.
 
    4. Establish a signal handler for SIGCHLD.  This will allow us to 
    get information about process termination; in particular, the exit
@@ -71,15 +73,18 @@
 typedef struct { PMISetup pmiinfo; IOLabelSetup labelinfo; } SetupInfo;
 
 /* Forward declarations */
-int mypreamble( void * );
-int myprefork( void *, void *, ProcessState* );
+int mypreamble( void *, ProcessState * );
+int mypostfork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
-
 
 /* Set printFailure to 1 to get an explanation of the failure reason
    for each process when a process fails */
 static int printFailure = 0;
+/* Set usePort to 1 if a host:port should be used insted of inheriting 
+   an FD to a socketpair.  Meaningful only if code is compilete with 
+   -DMPIEXEC_ALLOW_PORT */
+static int usePort = 0;
 
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
@@ -109,11 +114,32 @@ int main( int argc, char *argv[], char *envp[] )
 
     DBG_PRINTF( ("timeout_seconds = %d\n", pUniv.timeout) );
 
+#ifdef MPIEXEC_ALLOW_PORT
+    /* Establish a host:port for use with the created processes.
+       In this code, the major use is to illustrate the use of a port for 
+       connecting to processes rather than an FD that is inherited through the
+       fork and exec.  This could allow gforker to support the "singleton"
+       init, allowing an MPI process to contact a waiting mpiexec that 
+       would serve as a process manager.  This option is not implemented */
+    if (getenv("MPIEXEC_USE_PORT")) {
+	s.pmiinfo.portName = (char *)malloc( 1024 );
+	if (!s.pmiinfo.portName) {
+	    MPIU_Error_printf( "Failed to allocate storage for portName" );
+	}
+	if (PMIServSetupPort( &pUniv, s.pmiinfo.portName, 1024 )) {
+	    MPIU_Error_printf( "Failed to setup a host:port\n" );
+	}
+	else {
+	    usePort = 1;
+	}
+    }
+#endif
+
     PMIServInit(myspawn,0);
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
-			myprefork, 0, mypostamble, 0 );
+			mypostfork, 0, mypostamble, 0 );
     reason = MPIE_IOLoop( pUniv.timeout );
 
     if (reason == IOLOOP_TIMEOUT) {
@@ -155,22 +181,29 @@ void mpiexec_usage( const char *msg )
 
 /* ------------------------------------------------------------------------- */
 /* Redirect stdout and stderr to a handler */
-int mypreamble( void *data )
+int mypreamble( void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)data;
 
     IOLabelSetupFDs( &s->labelinfo );
-    PMISetupSockets( 0, &s->pmiinfo );
+    /* In the inherit-FD case, this routine creates the FD that will
+       be used for PMI commands between the mpiexec process and the
+       fork/exec'ed process */
+    PMISetupSockets( usePort, &s->pmiinfo );
+
+    /* Tell MPIE_ForkProcesses not to include the PMI environment if
+       we are using a port, and use the PMI_PORT and ID instead */
+    if (usePort) pState->initWithEnv = 0;
     
     return 0;
 }
 /* Close one side of each pipe pair and replace stdout/err with the pipes */
-int myprefork( void *predata, void *data, ProcessState *pState )
+int mypostfork( void *predata, void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)predata;
 
     IOLabelSetupInClient( &s->labelinfo );
-    PMISetupInClient( &s->pmiinfo );
+    PMISetupInClient( usePort, &s->pmiinfo );
 
     return 0;
 }
@@ -180,7 +213,7 @@ int mypostamble( void *predata, void *data, ProcessState *pState )
     SetupInfo *s = (SetupInfo *)predata;
 
     IOLabelSetupFinishInServer( &s->labelinfo, pState );
-    PMISetupFinishInServer( &s->pmiinfo, pState );
+    PMISetupFinishInServer( usePort, &s->pmiinfo, pState );
 
     return 0;
 }
@@ -201,6 +234,6 @@ int myspawn( ProcessWorld *pWorld, void *data )
     /* FIXME: This should be part of the PMI initialization in the clients */
     putenv( "PMI_SPAWNED=1" );
     MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
-			myprefork, 0, mypostamble, 0 );
+			mypostfork, 0, mypostamble, 0 );
     return 0;
 }
