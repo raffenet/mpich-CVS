@@ -120,6 +120,9 @@ int PMI_Init( int *spawned )
 	    hostname[(pn-p)] = 0;
 	    portnum = atoi( pn+1 );
 	    /* FIXME: Check for valid integer after : */
+	    /* This routine only gets the fd to use to talk to 
+	       the process manager. The handshake below is used
+	       to setup the initial values */
 	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
 	}
 	/* FIXME: If PMI_PORT specified but either no valid value of
