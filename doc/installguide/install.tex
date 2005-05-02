@@ -261,11 +261,15 @@ MPICH2, unlike MPICH, uses an external process manager for scalable
 startup of large MPI jobs.  The default process manager is called
 MPD, which is a ring of daemons on the machines where you will run
 your MPI programs.  In the next few steps, you will get this ring up
-and tested.  More details on interacting with MPD can be found in
-the README file in \texttt{mpich2/src/pm/mpd}, such as how to list
-running jobs, kill, suspend, or otherwise signal them, and how to
-use the \texttt{gdb} debugger via special arguments to \texttt{mpiexec}.
-The instructions given here should be enough to get you started.
+and tested.
+The instructions given here will probably be enough to get you started.
+If not, you should refer to Appendix~\ref{app:mpd} for troubleshooting help.
+More details on interacting with MPD can be found by running
+\texttt{mpdhelp} or any mpd command with the \texttt{--help} option, or by
+viewing the README file in \texttt{mpich2/src/pm/mpd}.  The information
+provided includes how to list running jobs, kill, suspend, or otherwise
+signal them, and how to use the \texttt{gdb} debugger via special
+arguments to \texttt{mpiexec}.
 
 For security reasons, mpd looks in your home directory for a file named
 \texttt{.mpd.conf} containing the line
@@ -298,6 +302,8 @@ down.
 \end{verbatim}
 The output of mpdtrace should be the hostname of the machine you are
 running on.  The \texttt{mpdallexit} causes the mpd daemon to exit.
+If you encounter problems,
+you should check the troubleshooting section in Appendix~\ref{app:mpd}.
 
 \item
 The next sanity check is to run a non-MPI program using the daemon.
@@ -307,7 +313,7 @@ The next sanity check is to run a non-MPI program using the daemon.
     mpdallexit
 \end{verbatim}
 This should print the name of the machine you are running on.  If not,
-you should check the troubleshooting section below.
+you should check the troubleshooting section in Appendix~\ref{app:mpd}.
 
 \item
 Now we will bring up a ring of mpd's on a set of machines.  Create
@@ -1089,14 +1095,40 @@ We assume \texttt{}hostname is in your path.
 \subsection{mpdcheck}
 \label{sec:mpdcheck}
 
-\texttt{mpdcheck} is a program that tries to verify that your set of
-machines is configured properly to support a ring of mpd's.
-So, before trying to start a whole set of mpd's on a collection of
-machines with \texttt{mpdboot}, we have found that it is typically a
-very good idea to run a few tests with \texttt{mpdcheck} that help to ensure
-later success.  If you are troubleshooting, it would be a good idea to 
-select two machines for which you are having problems connecting into
-an mpd ring, and use the pair to do debugging with mpdcheck.
+\texttt{mpdcheck} is a program that tries to verify that your set
+of machines is configured properly to support a ring of mpd's.  So,
+before trying to start a whole set of mpd's on a collection of machines
+with \texttt{mpdboot}, we have found that it is typically a \emph{very}
+good idea to run a few tests with \texttt{mpdcheck} that help to ensure
+later success.
+
+If you are troubleshooting, it is best to select two machines (call them
+m1 and m2) for which you are having problems connecting into an mpd ring,
+and use the pair to do debugging with mpdcheck.  Sometimes we find that
+folks get a pair of machines working correctly, and then have trouble
+bringing a third one into the ring.  In that case, it is generally best
+to try this troubleshooting section with the new machine and just one
+of the original ones.
+
+There are cluster configurations that can be a bit tricky to get right.
+For example, if you have a cluster which has a \texttt{head node} that
+is special because it has two interfaces (and thus two IP addresses),
+the head node must be configured such that mpd's running on it and
+the \texttt{internal} nodes can form a ring.  Among other things, this
+implies that processes running on the internal nodes will need to be
+able to identify (via DNS, /etc/hosts, etc.) and reach the head node.
+While this seems obvious, it requires some care.  If the head node
+generally identifies itself by its \texttt{external} address, that can
+cause confusion when a process runs there, but wishes to identify its
+location to a process running on an internal node.
+
+Currently \texttt{mpdcheck} does not try to identify all possible methods
+by which mpd may be made to work on a pair of machines.  It simply tries
+to see if the configuration is such that a simple client-server pair
+of processes can connect and communicate.  Thus, we recommend below
+that when running the client-server trials below (-s and -c options),
+that you run them ``in both directions'', i.e. first run the server on m1
+and the client on m2; then, run the server on m2 and the client on m1.
 
 \begin{enumerate}
 \item \verb+ $ mpdcheck -h +
@@ -1132,6 +1164,9 @@ discover the other host, and with the \texttt{-ssh} option try to
 run some \texttt{ssh} tests between the 2 machines to make sure
 that those kinds of things work also.
 
+\item Next, you should try running
+the previous test from the second machine in the file.
+
 \item If all above went fine above, you can probably skip this step.
 This step was attempted automatically in the previous one.  But,
 if there were problems, you may find it useful to rerun by hand and
@@ -1147,6 +1182,7 @@ Do this on m2:
     $ mpdcheck -c host port
 \end{verbatim}
 where you use the host and port printed by \texttt{mpdcheck} on m1.
+Then, try running this client-server test from m2.
 
 \item Try running a pair of mpd's on the two machines.  First, on both
   machines:
