@@ -59,6 +59,8 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
+import re
+
 from sys    import argv, exit, stdout
 from os     import path, kill, system
 from signal import SIGKILL
@@ -133,11 +135,14 @@ if __name__ == '__main__':    # so I can be imported by pydoc
             except:
                 print 'unable to open file ', argv[argidx+1]
                 exit(-1)
-            for host in hostsFile:
-                host = host.rstrip()
-                if host != ''  and  host[0] != '#':
-                    if ':' in host:
-                        (host,ncpus) = host.split(':')
+            for line in hostsFile:
+                line = line.rstrip()
+                if not line  or  line[0] == '#':
+                    continue
+                splitLine = re.split(r'\s+',line)
+                host = splitLine[0]
+                if ':' in host:
+                    (host,ncpus) = host.split(':')
                 hostsFromFile.append(host)
             argidx += 2
         elif argv[argidx] == '-ssh':
@@ -461,7 +466,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
         port = 0
         if runout1 in readyFDs:
             line = runout1.readline()
-            if line.startswith('server listening on:'):
+            if line.startswith('server listening at '):
                 port = line.rstrip().split(' ')[-1]
             else:
                 failed = 1
