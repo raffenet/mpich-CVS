@@ -33,6 +33,9 @@
 #ifndef MAX_HOST_NAME
 #define MAX_HOST_NAME 1024
 #endif
+#ifndef MAX_PORT_STRING
+#define MAX_PORT_STRING (MAX_HOST_NAME+15)
+#endif
 
 /* ----------------------------------------------------------------------- */
 /* Get a port for the PMI interface                                        */
@@ -206,6 +209,9 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	int           nSoFar = 0;
 	PMIProcess   *pmiprocess;
 
+	/* This code assigns processes to the states in a pWorld
+	   by using the id as the rank, and finding the corresponding
+	   process among the ranks */
 	app = pWorld->apps;
 	while (app) {
 	    if (app->nProcess < id - nSoFar) {
@@ -218,22 +224,49 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	    }
 	    app = app->nextApp;
 	}
-	
+
 	/* Now, initialize the connection */
-#if 0
-	PMIServAddtoGroup( 0, id, ps->pid, ps->fdPMI );
-	PMIServSetupEntry( newfd, 0, ptable->nProcesses, id, 
-				   &ps->pmientry );
-	PMI_Init_remote_proc( newfd, &ps->pmientry,
-			      id, ptable->nProcesses, debug );
-#endif
+	/* Create the new process structure (see PMISetupFinishInServer
+	   for this step when a pre-existing FD is used */
+	pmiprocess = PMISetupNewProcess( newfd, pState );
+	PMI_Init_remote_proc( newfd, pmiprocess );
+	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, 
+			 pmiprocess );
+
 	/* See PMISetupFinishInServer for similar code */
 	pmiprocess = PMISetupNewProcess( newfd, pState );
 	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, pmiprocess );
     }
     else {
+	/* Error, the id should never be less than zero or unset */
+	/* An alternative would be to dynamically assign the ranks
+	   as processes come in (but we'd still need to use the 
+	   PMI_ID to identify the ProcessApp) */
+	return -1;
     }
 
     /* Return success. */
     return 0;
+}
+/*
+ * Setup a port and register the handler on which to listen.
+ * Input Parameter:
+ *   pUniv - Pointer to a process universe.  This is passed to the
+ *           routine that is called to handle connection requests to the port
+ *
+ * Output Parameter:
+ *   portString - Name of the port (of maximum size portLen)
+ *
+ * Return Value:
+ *   0 on success.
+ *
+ */
+int PMIServSetupPort( ProcessUniverse *pUniv, char *portString, int portLen )
+{
+    int rc = 0, listenfd;
+    
+    rc = PMIServGetPort( &listenfd, portString, portLen );
+    if (rc) return rc;
+    rc = MPIE_IORegister( listenfd, IO_READ, PMIServAcceptFromPort, pUniv );
+    return rc;
 }

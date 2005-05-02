@@ -76,12 +76,6 @@ static PMIKVSpace *fPMIKVSAllocate( void );
 
 int PMIServHandleInput( int, int, void * );
 
-typedef struct {
-    ProcessState *pstate;
-    /* ProcessState contains a PMIProcess member */
-} PMIData;
-
-
 /*
  * All PMI commands are handled by calling a routine that is associated with
  * the command.  New PMI commands can be added by updating this table.
@@ -120,15 +114,22 @@ static PMICmdMap pmiCommands[] = {
  * and
  *    PMISetupFinishInServer (in the originating process, also called the 
  *                            parent)
- * 
+ * You must also pass those routines the same value for usePort.
+ * If you use a port, call PMIServSetupPort to get the port and set the
+ * portName field in PMISetup.
  */
-int PMISetupSockets( int kind, PMISetup *pmiinfo )
+int PMISetupSockets( int usePort, PMISetup *pmiinfo )
 {
-    if (kind == 0) {
+    if (usePort == 0) {
 	socketpair( AF_UNIX, SOCK_STREAM, 0, pmiinfo->fdpair );
     }
     else {
-	return 1;
+	/* If we are using a port, the connection is set up only
+	   after the process is created */
+	pmiinfo->fdpair[0] = -1;
+	pmiinfo->fdpair[1] = -1;
+	/* Check for a non-null portName */
+	if (!pmiinfo->portName || !pmiinfo->portName[0]) return 1;
     }
     return 0;
 }
@@ -138,17 +139,32 @@ int PMISetupSockets( int kind, PMISetup *pmiinfo )
  * client the information needed to connect to the server (currently the
  * FD of a pre-existing socket).
  */
-int PMISetupInClient( PMISetup *pmiinfo )
+int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 {
-    char env_pmi_fd[100];
 
-    close( pmiinfo->fdpair[0] );
-    MPIU_Snprintf( env_pmi_fd, sizeof(env_pmi_fd), "PMI_FD=%d" , 
-	      pmiinfo->fdpair[1] );
-    if (putenv( env_pmi_fd )) {
-	MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
-	perror( "Reason: " );
-	return 1;
+    if (usePort == 0) {
+	char env_pmi_fd[100];
+	close( pmiinfo->fdpair[0] );
+	MPIU_Snprintf( env_pmi_fd, sizeof(env_pmi_fd), "PMI_FD=%d" , 
+		       pmiinfo->fdpair[1] );
+	if (putenv( env_pmi_fd )) {
+	    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
+	    perror( "Reason: " );
+	    return 1;
+	}
+    }
+    else {
+	/* We must communicate the port name to the process */
+	char env_pmi_port[1024];
+	char env_pmi_id[100];
+	MPIU_Snprintf( env_pmi_port, sizeof(env_pmi_port), "PMI_PORT=%s",
+		       pmiinfo->portName );
+	if (putenv( env_pmi_port )) {
+	    MPIU_Internal_error_printf( "Could not set environment PMI_PORT" );
+	    perror( "Reason: " );
+	    return 1;
+	}
+	
     }
     /* Indicate that this is a spawned process */
     /* putenv( "PMI_SPAWNED=1" ); */
@@ -156,19 +172,30 @@ int PMISetupInClient( PMISetup *pmiinfo )
 }
 
 /* Finish setting up the server end of the PMI interface */
-int PMISetupFinishInServer( PMISetup *pmiinfo, ProcessState *pState )
+int PMISetupFinishInServer( int usePort, 
+			    PMISetup *pmiinfo, ProcessState *pState )
 {
     PMIProcess *pmiprocess;
 
-    /* Close the other end of the socket pair */
-    close( pmiinfo->fdpair[1] );
-
-    /* We must initialize this process in the list of PMI processes. We
-       pass the PMIProcess information to the handler */
-    pmiprocess = PMISetupNewProcess( pmiinfo->fdpair[0], pState );
-    MPIE_IORegister( pmiinfo->fdpair[0], IO_READ, PMIServHandleInput, 
-		     pmiprocess );
-
+    if (usePort == 0) {
+	/* Close the other end of the socket pair */
+	close( pmiinfo->fdpair[1] );
+	
+	/* We must initialize this process in the list of PMI processes. We
+	   pass the PMIProcess information to the handler */
+	pmiprocess = PMISetupNewProcess( pmiinfo->fdpair[0], pState );
+	MPIE_IORegister( pmiinfo->fdpair[0], IO_READ, PMIServHandleInput, 
+			 pmiprocess );
+    }
+    else {
+	/* We defer the step of setting up the process until the client
+	   contacts the server.  See PMIServAcceptFromPort for the 
+	   creation of the pmiprocess structure and the initialization of 
+	   the IO handler for the PMI communication */
+	/* FIXME: We may need to record some information, such as the 
+	   curPMIGroup, in the pState or pmiprocess entry */
+	;
+    }
     return 0;
 }
 
@@ -293,10 +320,8 @@ int PMIServHandleInput( int fd, int rdwr, void *extra )
 /*
  * Perform any initialization.
  * Input
- * nprocs - Initial number of processes to create (size of initial group)
- * Output
- * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
- * Return value: groupid
+ *   spawner - A routine to spawn processes
+ *   spawnerData - data passed to spawner
  */
 int PMIServInit( int (*spawner)(ProcessWorld *, void*), void * spawnerData )
 {
@@ -799,6 +824,53 @@ static int fPMI_Handle_getbyidx( PMIProcess *pentry )
     return rc;
 }
 
+/* ------------------------------------------------------------------------- */
+/* Using a host:port instead of a pre-existing FD to establish communication.
+ * Steps:
+ * The server sets up a listener with 
+ *      PMIServSetupPort - also returns the host:port name (in that form)
+ * When the server creates the process, the routine
+ *      PMISetupSockets( 1, &pmiinfo )
+ * will check that there is a host/port name, and initialize the fd for
+ * communication to the PMI server to -1 (to indicate that no connection is
+ * set up)
+ * After the fork, the child will call
+ *      PMISetupInClient( 1, &pmiinfo )
+ * This addes the PMI_PORT and PMI_ID values to the enviroment
+ * The parent also calls
+ *      PMISetupFinishInServer( 1, &pmiinfo, pState )
+ * ? What should this do, since there is no connection yet?
+ * ? Remember about the process in pmiinfo (curPMIGroup, pState?)
+ *
+ * The connection process is as follows:
+ *    The client (the created process), if using simple_pmi, does the
+ *    following:
+ *    PMI_Init checks for the environment variables PMI_FD and PMI_PORT,
+ *      If PMI_FD is not set but PMI_PORT is set, then call 
+ *        PMII_Connect_to_pm( hostname, portnum )
+ *          This returns an open FD that will be used for further
+ *          communication.  (the server side handles this through
+ *          the listener)
+ *      Next, use the value in the environment variable PMI_ID and
+ *      call
+ *        PMII_Set_from_port
+ *           First, write cmd=initack pmiid=<value>
+ *           Read line, require cmd=initack
+ *           (This completes the handshake)
+ *           Next, read a sequence of 3 commands in this order
+ *           cmd=set size=<value>
+ *           cmd=set rank=<value>
+ *           cmd=set debug=<value>
+ *        At this point, the connection is in the same state (with respect
+ *        to the PMI protocol) as a new if PMI_FD was set.  In particular,
+ *        the next command will be cmd=init.  Think of the port setup as
+ *        a prefix on the wire protocol.
+ *
+ * To handle this in the server
+ *       
+ *
+ *
+/* ------------------------------------------------------------------------- */
 /*
  * These routines are called when communication is established through 
  * a port instead of an fd, and no information is communicated
@@ -809,8 +881,12 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
     char outbuf[PMIU_MAXLINE];
 
     DBG_PRINTFCOND(pmidebug,
-		   ( "Entering fPMI_Handle_init to start connection\n" ));
+		   ( "Entering fPMI_Handle_init_port to start connection\n" ));
 
+    /* simple_pmi wants to see cmd=initack after the initack request before
+       the other data */
+    PMIU_writeline( pentry->fd, "cmd=initack\n" );
+    DBG_PRINTFCOND(pmidebug,( "%s", "cmd=initack\n" ));
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
 		   pentry->group->nProcess );
     PMIU_writeline( pentry->fd, outbuf );
@@ -824,6 +900,7 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
+/* ------------------------------------------------------------------------- */
 
 /* Handle a spawn command.  This makes use of the spawner routine that
    was set during PMIServInit
@@ -1049,7 +1126,6 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 }
 
 /* ------------------------------------------------------------------------- */
-#if 0
 /*  
  * FIXME:
  * Question: What does this need to do?
@@ -1064,17 +1140,12 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
  *    Also, is part fo the group associated with these processes or
  *    another group (the spawner?) of processes?
  */
-void PMI_Init_remote_proc( int fd, PMIProcess *pentry,
-			   int rank, int np, int debug )
+void PMI_Init_remote_proc( int fd, PMIProcess *pentry )
 {
-    pentry->fd	       = fd;
-    pentry->nProcesses = np;
-    pentry->rank       = rank;
-    pentry->group      = 0;
-    PMIU_writeline( fd, "cmd=initack\n" );
+    /* Everything else should be setup by PMISetupNewProcess */
     fPMI_Handle_init_port( pentry );
 }
-#endif
+
 /* 
  * This is a special routine.  It accepts the first input from the
  * remote process, and returns the PMI_ID value.  -1 is returned on error 

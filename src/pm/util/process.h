@@ -80,6 +80,9 @@ typedef struct ProcessState {
     const char        *hostname;         /* Host for process */
     int               wRank;             /* Rank in COMM_WORLD */
     pid_t             pid;               /* pid for process */
+    int               initWithEnv;       /* true if PMI_FD, PMI_RANK etc.
+					    passed to process to initialize
+					    PMI connection */
     ProcessStatus_t   status;            /* what state the process is in */
     ProcessExitStatus exitStatus;        /* Exit status */
     struct ProcessApp *app;              /* Pointer to "parent" app */
@@ -137,7 +140,7 @@ extern ProcessUniverse pUniv;
 
 /* Function prototypes */    
 int MPIE_ForkProcesses( ProcessWorld *, char *[], 
-			int (*)(void*), void *,
+			int (*)(void*,ProcessState*), void *,
 			int (*)(void*,void*,ProcessState*), void *,
 			int (*)(void*,void*,ProcessState*), void * );
 int MPIE_ExecProgram( ProcessState *, char *[] );

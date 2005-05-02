@@ -82,7 +82,8 @@ static void MPIE_InstallSigHandler( int sig, void (*handler)(int) );
 
   @*/
 int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
-			int (*preamble)(void*), void *preambleData,
+			int (*preamble)(void*,ProcessState*), 
+			void *preambleData,
 			int (*postfork)(void*,void*,ProcessState*), 
 			void *postforkData,
 			int (*postamble)(void*,void*,ProcessState*), 
@@ -112,13 +113,15 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	for (i=0; i<app->nProcess; i++) {
 	    pState[i].app                   = app;
 	    pState[i].wRank                 = wRank++;
+	    pState[i].initWithEnv           = 1;  /* Default is to use env
+						    to initialize connection */
 	    pState[i].status                = PROCESS_UNINITIALIZED;
 	    pState[i].exitStatus.exitReason = EXIT_NOTYET;
 	    pState[i].pid                   = -1;
 
 	    /* Execute any preamble */
 	    if (preamble) {
-		rc = (*preamble)( preambleData );
+		rc = (*preamble)( preambleData, &pState[i] );
 	    }
 
 	    pid = fork();
@@ -210,6 +213,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 
     /* Provide local variables in which to hold new environment variables. */
     char env_pmi_rank[MAXNAMELEN];
+    char env_pmi_id[MAXNAMELEN];
     char env_pmi_size[MAXNAMELEN];
     char env_pmi_debug[MAXNAMELEN];
     char env_appnum[MAXNAMELEN];
@@ -233,18 +237,32 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 			   MAX_CLIENT_ENV-7);
 	exit(-1);
     }
-    MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", pState->wRank );
-    client_env[j++] = env_pmi_rank;
-    MPIU_Snprintf( env_pmi_size, MAXNAMELEN, "PMI_SIZE=%d", 
-		   app->pWorld->nProcess );
-    client_env[j++] = env_pmi_size;
-    MPIU_Snprintf( env_pmi_debug, MAXNAMELEN, "PMI_DEBUG=%d", MPIE_Debug );
-    client_env[j++] = env_pmi_debug; 
-    /* FIXME: Get the correct universsize */
+
+    /* FIXME: For the "port" case, don't rely on the environment variables */
+    if (pState->initWithEnv) {
+	MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", 
+		       pState->wRank );
+	client_env[j++] = env_pmi_rank;
+	MPIU_Snprintf( env_pmi_size, MAXNAMELEN, "PMI_SIZE=%d", 
+		       app->pWorld->nProcess );
+	client_env[j++] = env_pmi_size;
+	MPIU_Snprintf( env_pmi_debug, MAXNAMELEN, "PMI_DEBUG=%d", MPIE_Debug );
+	client_env[j++] = env_pmi_debug; 
+    }
+    else {
+	/* We must also communicate the ID to the process.  For now,
+	   we use the rank */
+	MPIU_Snprintf( env_pmi_id, sizeof(env_pmi_id), "PMI_ID=%s",
+		       pState->wRank );
+	client_env[j++] = env_pmi_id;
+    }
+
+    /* FIXME: Get the correct universe size */
     MPIU_Snprintf( env_appnum, MAXNAMELEN, "MPI_APPNUM=%d", app->myAppNum );
     client_env[j++] = env_appnum;
     MPIU_Snprintf( env_universesize, MAXNAMELEN, "MPI_UNIVERSE_SIZE=%d", 0 );
     client_env[j++] = env_universesize;
+    
     client_env[j]   = 0;
     for ( j = 0; client_env[j]; j++ )
 	if (putenv( client_env[j] )) {

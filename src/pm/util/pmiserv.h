@@ -85,6 +85,8 @@ typedef struct PMIMaster {
 typedef struct {
     int        fdpair[2];    /* fd's used to communicate between the
 				client and the server */
+    char       *portName;    /* Optional portname if the fd is not provided
+			        at startup */
 } PMISetup;
 
 /* version to check with client PMI library */
@@ -94,10 +96,15 @@ typedef struct {
 int PMIServInit( int (*)(ProcessWorld *, void*), void * );
 PMIProcess *PMISetupNewProcess( int, ProcessState * );
 int PMISetupSockets( int, PMISetup * );
-int PMISetupInClient( PMISetup * );
-int PMISetupFinishInServer( PMISetup *, ProcessState * );
+int PMISetupInClient( int, PMISetup * );
+int PMISetupFinishInServer( int, PMISetup *, ProcessState * );
 int PMISetupNewGroup( int, PMIKVSpace * );
 
-int PMIServAcceptFromPort( int, int, void * );
 int PMIServHandleInput( int, int, void * );
+
+/* Setup for initialization with a port */
+void PMI_Init_remote_proc( int, PMIProcess * );
+/* pmiport.c routines for working with host:ports*/
+int PMIServAcceptFromPort( int, int, void * );
+int PMIServSetupPort( ProcessUniverse *, char *, int );
 #endif

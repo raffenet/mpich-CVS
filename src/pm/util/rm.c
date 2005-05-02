@@ -80,11 +80,12 @@ int MPIE_ChooseHosts( ProcessWorld *pWorld,
 	    }
 	    /* Set the defaults (this should be in process.c?) */
 	    for (i=0; i<app->nProcess; i++) {
-		pState[i].hostname = 0;
-		pState[i].app      = app;
-		pState[i].wRank    = -1;  /* Unassigned */
-		pState[i].pid      = -1;
-		pState[i].status   = PROCESS_UNINITIALIZED;
+		pState[i].hostname    = 0;
+		pState[i].app         = app;
+		pState[i].wRank       = -1;  /* Unassigned */
+		pState[i].initWithEnv = -1;
+		pState[i].pid         = -1;
+		pState[i].status      = PROCESS_UNINITIALIZED;
 		pState[i].exitStatus.exitReason = EXIT_NOTYET;
 	    }
 	    app->pState = pState;
