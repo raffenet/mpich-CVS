@@ -18,6 +18,7 @@
 #endif
 
 #include "pmutil.h"
+#include "ioloop.h"
 #include "process.h"
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
@@ -146,6 +147,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	    else {
 		/* Parent */
 		nProcess++;
+		/* Add this to the live processes in the Universe */
+		pUniv.nLive++;
 
 		pState[i].pid    = pid;
 		pState[i].status = PROCESS_ALIVE;
@@ -252,7 +255,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     else {
 	/* We must also communicate the ID to the process.  For now,
 	   we use the rank */
-	MPIU_Snprintf( env_pmi_id, sizeof(env_pmi_id), "PMI_ID=%s",
+	MPIU_Snprintf( env_pmi_id, sizeof(env_pmi_id), "PMI_ID=%d",
 		       pState->wRank );
 	client_env[j++] = env_pmi_id;
     }
@@ -475,6 +478,13 @@ static void handle_sigchild( int sig )
 		   remaining processes */
 		MPIE_OnAbend( &pUniv );
 	    }
+	    /* Let the universe know that there are fewer processes */
+	    pUniv.nLive--;
+	    if (pUniv.nLive == 0) {
+		/* Invoke any special code for handling all processes
+		   exited (e.g., terminate a listener socket) */
+		if (pUniv.OnNone) { (*pUniv.OnNone)(); }
+	    }
 	}
 	else {
 	    /* Remember this process id and exit status for later */
@@ -500,6 +510,8 @@ void MPIE_ProcessInit( void )
 {
     MPIE_InstallSigHandler( SIGCHLD, handle_sigchild );
     pUniv.worlds = 0;
+    pUniv.nLive  = 0;
+    pUniv.OnNone = 0;
 }
 
 /*
