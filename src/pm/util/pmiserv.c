@@ -44,6 +44,11 @@ int snprintf(char *, size_t, const char *, ...);
 #endif
 #endif
 
+/* isascii is an extension, so define it if it isn't defined */
+#ifndef isascii
+#define isascii(c) (((c)&~0x7f)==0)
+#endif
+
 /* These need to be imported from the pmiclient */
 #define MAXPMICMD   256         /* max length of a PMI command */
 
@@ -138,12 +143,18 @@ int PMISetupSockets( int usePort, PMISetup *pmiinfo )
  * This is the client side of the PMIserver setup.  It communicates to the
  * client the information needed to connect to the server (currently the
  * FD of a pre-existing socket).
+ *
+ * The env_pmi_fd and port must be static because putenv doesn't make a copy
+ * of them.  It is ok to use static variable since this is called only within
+ * the client; this routine will be called only once (in the forked process, 
+ * before the exec).
  */
 int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 {
+    static char env_pmi_fd[100];
+    static char env_pmi_port[1024];
 
     if (usePort == 0) {
-	char env_pmi_fd[100];
 	close( pmiinfo->fdpair[0] );
 	MPIU_Snprintf( env_pmi_fd, sizeof(env_pmi_fd), "PMI_FD=%d" , 
 		       pmiinfo->fdpair[1] );
@@ -155,8 +166,6 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
     }
     else {
 	/* We must communicate the port name to the process */
-	char env_pmi_port[1024];
-	char env_pmi_id[100];
 	MPIU_Snprintf( env_pmi_port, sizeof(env_pmi_port), "PMI_PORT=%s",
 		       pmiinfo->portName );
 	if (putenv( env_pmi_port )) {
@@ -175,9 +184,9 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 int PMISetupFinishInServer( int usePort, 
 			    PMISetup *pmiinfo, ProcessState *pState )
 {
-    PMIProcess *pmiprocess;
-
     if (usePort == 0) {
+	PMIProcess *pmiprocess;
+
 	/* Close the other end of the socket pair */
 	close( pmiinfo->fdpair[1] );
 	
@@ -289,7 +298,7 @@ int PMIServHandleInput( int fd, int rdwr, void *extra )
     int        cmdtype;
 
     DBG_PRINTFCOND(pmidebug,("Handling PMI input\n") );
-    if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
+    if ( ( rc = PMIReadLine( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
 	DBG_PRINTFCOND(pmidebug,
 		       ("Entering PMIServHandleInputFd %s\n", inbuf) );
 
@@ -358,11 +367,6 @@ int PMIGetCommand( char *cmd, int cmdlen )
 /* ------------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------------- */
-/* 
- * Handle an incoming "barrier" command
- *
- * Need a structure that has the fds for all members of a pmi group
- */
 static int fPMI_Handle_finalize( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
@@ -371,14 +375,19 @@ static int fPMI_Handle_finalize( PMIProcess *pentry )
 
     /* send back an acknowledgement to release the process */
     snprintf(outbuf, PMIU_MAXLINE, "cmd=finalize_ack\n");
-    PMIU_writeline(pentry->fd, outbuf);
-    
+    PMIWriteLine(pentry->fd, outbuf);
+
     return 0;
 }
 static int fPMI_Handle_abort( PMIProcess *pentry )
 {
     return 1;
 }
+/* 
+ * Handle an incoming "barrier" command
+ *
+ * Need a structure that has the fds for all members of a pmi group
+ */
 static int fPMI_Handle_barrier( PMIProcess *pentry )
 {
     int i;
@@ -390,7 +399,7 @@ static int fPMI_Handle_barrier( PMIProcess *pentry )
     group->nInBarrier++;
     if (group->nInBarrier == group->nProcess) {
 	for ( i=0; i<group->nProcess; i++) {
-	    PMIU_writeline(group->pmiProcess[i]->fd, "cmd=barrier_out\n" );
+	    PMIWriteLine(group->pmiProcess[i]->fd, "cmd=barrier_out\n" );
 	}
 	group->nInBarrier = 0;
     }
@@ -576,7 +585,7 @@ static int fPMI_Handle_create_kvs( PMIProcess *pentry )
 	return 1;
     }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug, ("Handle_create_kvs new name %s\n", kvsname ) );
     return 0;
 }
@@ -604,7 +613,7 @@ static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
     }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=kvs_destroyed rc=%d msg=%s\n",
 	      rc, message );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     return 0;
 }
 
@@ -648,7 +657,7 @@ static int fPMI_Handle_put( PMIProcess *pentry )
     }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=put_result rc=%d msg=%s\n",
 	      rc, message );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     return 0;
 }
 
@@ -689,7 +698,7 @@ static int fPMI_Handle_get( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, 
 		   "cmd=get_result rc=%d msg=%s value=%s\n",
 		   rc, message, value );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND( pmidebug, ("%s", outbuf ));
     return rc;
 }
@@ -709,7 +718,7 @@ static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 	MPIU_Internal_error_printf( "Group has no associated KVS" );
 	return -1;
     }
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
@@ -721,7 +730,7 @@ static int fPMI_Handle_get_universe_size( PMIProcess *pentry )
     /* Import the universe size from the process structures */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%d\n",
 	      pUniv.size );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
@@ -733,7 +742,7 @@ static int fPMI_Handle_get_appnum( PMIProcess *pentry )
     char outbuf[PMIU_MAXLINE];
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=appnum appnum=%d\n",
 		   app->myAppNum );		
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
@@ -759,7 +768,7 @@ static int fPMI_Handle_init( PMIProcess *pentry )
     snprintf( outbuf, PMIU_MAXLINE,
 	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
 	      PMI_VERSION, PMI_SUBVERSION, rc);
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
@@ -771,7 +780,7 @@ static int fPMI_Handle_get_maxes( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE,
 	      "cmd=maxes kvsname_max=%d keylen_max=%d vallen_max=%d\n",
 	      MAXKVSNAME, MAXKEYLEN, MAXVALLEN );
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
@@ -819,7 +828,7 @@ static int fPMI_Handle_getbyidx( PMIProcess *pentry )
 		  "reason=kvs_%s_not_found\n", kvsname );
     }
 
-    PMIU_writeline( pentry->fd, outbuf );
+    PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return rc;
 }
@@ -869,7 +878,7 @@ static int fPMI_Handle_getbyidx( PMIProcess *pentry )
  * To handle this in the server
  *       
  *
- *
+ */
 /* ------------------------------------------------------------------------- */
 /*
  * These routines are called when communication is established through 
@@ -885,19 +894,19 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
 
     /* simple_pmi wants to see cmd=initack after the initack request before
        the other data */
-    PMIU_writeline( pentry->fd, "cmd=initack\n" );
-    DBG_PRINTFCOND(pmidebug,( "%s", "cmd=initack\n" ));
+    PMIWriteLine( pentry->fd, "cmd=initack\n" );
+/*    DBG_PRINTFCOND(pmidebug,( "%s", "cmd=initack\n" )); */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
 		   pentry->group->nProcess );
-    PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
+    PMIWriteLine( pentry->fd, outbuf );
+/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", 
 		   pentry->pState->wRank );
-    PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
+    PMIWriteLine( pentry->fd, outbuf );
+/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
-    PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
+    PMIWriteLine( pentry->fd, outbuf );
+/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
     return 0;
 }
 /* ------------------------------------------------------------------------- */
@@ -943,7 +952,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     ProcessApp   *app = 0;
     int           preputNum = 0, rc;
     int           i;
-    int           totspawns, spawnnum;
+    int           totspawns=0, spawnnum=0;
     PMIKVSpace    *kvs = 0;
 
     DBG_PRINTFCOND(pmidebug,( "Entering fPMI_Handle_spawn\n" ));
@@ -1001,7 +1010,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 
     /* Get lines until we find either cmd or mcmd (an error) or endcmd 
        (expected end) */
-    while ((rc = PMIU_readline( pentry->fd, inbuf, sizeof(inbuf) )) > 0) {
+    while ((rc = PMIReadLine( pentry->fd, inbuf, sizeof(inbuf) )) > 0) {
 	char *cmdPtr, *valPtr, *p;
 
 	/* Find the command = format */
@@ -1110,7 +1119,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	}
 	
 	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=spawn_result rc=%d\n", rc );
-	PMIU_writeline( pentry->fd, outbuf );
+	PMIWriteLine( pentry->fd, outbuf );
 	DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
 
 	/* Clear for the next spawn */
@@ -1156,7 +1165,7 @@ int PMI_Init_port_connection( int fd )
     int pmiid = -1;
 
     DBG_PRINTFCOND(pmidebug,( "Beginning initial handshake read\n" ));
-    PMIU_readline( fd, message, PMIU_MAXLINE );
+    PMIReadLine( fd, message, PMIU_MAXLINE );
     DBG_PRINTFCOND(pmidebug,( "received message %s\n", message ));
 
     PMIU_parse_keyvals( message );
@@ -1170,3 +1179,42 @@ int PMI_Init_port_connection( int fd )
 
     return pmiid;
 }
+
+/* ------------------------------------------------------------------------- */
+#ifndef PMIWriteLine
+int PMIWriteLine( int fd, const char *buf )
+{
+    int rc;
+
+    if (pmidebug) {
+	printf( "Writing to fd %d the line :%s:\n", fd, buf );
+    }
+    rc = PMIU_writeline( fd, (char*)buf );
+    if (pmidebug && rc < 0) {
+	DBG_PRINTFCOND(1,( "Write on fd %d returned rc %d\n", fd, rc ));
+    }
+
+    return rc;
+}
+int PMIReadLine( int fd, char *buf, int maxlen )
+{
+    int rc;
+
+    /* If no data is read, PMIU_readline doesn't place a null in the
+       buffer.  We make sure that buf[0] is always valid */
+    buf[0] = 0;
+    rc = PMIU_readline( fd, buf, maxlen );
+    if (pmidebug) {
+	if (rc < 0) {
+	    DBG_PRINTFCOND(1,( "Read on fd %d returned rc %d\n", fd, rc ) );
+	}
+	else {
+	    DBG_PRINTFCOND(1,( "Read from fd %d the line :%s:\n", fd, buf ) );
+	}
+	DBG_COND(1,fflush(stdout));
+    }
+
+    return rc;
+}
+#endif
+/* ------------------------------------------------------------------------- */
