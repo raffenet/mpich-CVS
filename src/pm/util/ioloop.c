@@ -70,6 +70,43 @@ int MPIE_IORegister( int fd, int rdwr,
     return 0;
 }
 
+/*@ 
+  MPIE_IODeregister - Remove a handler for an FD
+
+  Input Parameters:
+. fd - fd to deregister  
+  @*/
+int MPIE_IODeregister( int fd )
+{
+    int i;
+    int newMaxFd;
+
+    if (fd > MAXFD) {
+	/* Error; fd is too large */
+	return 1;
+    }
+    if (fd > maxFD) {
+	/* Error; fd is unknown */
+	return 1;
+    }
+
+    /* Recompute the new maxfd */
+    newMaxFd = -1;
+    for (i=0; i<=maxFD; i++) {
+	if (handlesByFD[i].fd >= 0 && i > newMaxFd) {
+	    newMaxFd = i;
+	}
+    }
+    maxFD = newMaxFd;
+
+    handlesByFD[fd].fd         = -1;
+    handlesByFD[fd].rdwr       = 0;
+    handlesByFD[fd].handler    = 0;
+    handlesByFD[fd].extra_data = 0;
+    
+    return 0;
+}
+
 /*@
   MPIE_IOLoop - Handle all registered I/O
 

@@ -23,6 +23,7 @@ typedef struct {
 #define IOLOOP_ERROR   0x2
 
 int MPIE_IORegister( int, int, int (*)(int,int,void*), void * );
+int MPIE_IODeregister( int );
 int MPIE_IOLoop( int );
 void TimeoutInit( int );
 int  TimeoutGetRemaining( void );
