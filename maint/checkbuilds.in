@@ -801,6 +801,7 @@ sub RunIntelTestSuite {
 
 sub RunMPICH2TestSuite {
     my $nargs = 0;
+    my $makepgm;
 
     $cwd = `pwd`;
     chomp $cwd;
@@ -819,6 +820,17 @@ sub RunMPICH2TestSuite {
 
     # MPICH2 tests are already built, so no configure step required
     %saveENV = %ENV;
+    #
+    # Make sure that there a no leftovers
+    # Get the version of make to use
+    if (defined($ENV{"MAKE"})) {
+	$makepgm = $ENV{"MAKE"};
+    }
+    else {
+	$makepgm = "make";
+    }
+    &RunProgram( "$makepgm clean" );
+
     # This timeout needs to be made uniform for all mpiruns
     # 3 minutes is enough for some of our slower machines
     $ENV{MPIEXEC_TIMEOUT} = "180";
