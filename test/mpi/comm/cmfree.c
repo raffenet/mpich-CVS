@@ -98,6 +98,14 @@ int main( int argc, char *argv[] )
 	}
     }
 
+    MPI_Barrier( MPI_COMM_WORLD );
+
+    if (rank != dest) {
+	/* Clean up the communicators */
+	for (i=0; i<NCOMM; i++) {
+	    MPI_Comm_free( &tmpComm[i] );
+	}
+    }
     
     MTest_Finalize( errs );
     MPI_Finalize();
