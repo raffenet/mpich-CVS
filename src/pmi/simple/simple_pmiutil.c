@@ -12,6 +12,9 @@
 #include "pmiconf.h"
 
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include <stdarg.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -51,16 +54,39 @@ void PMIU_Set_rank( int PMI_rank )
 void PMIU_printf( int print_flag, char *fmt, ... )
 {
     va_list ap;
+    static FILE *logfile= 0;
+    
+    /* In some cases when we are debugging, the handling of stdout or
+       stderr may be unreliable.  In that case, we make it possible to
+       select an output file. */
+    if (!logfile) {
+	char *p;
+	p = getenv("PMI_USE_LOGFILE");
+	if (p) {
+	    p = getenv("PMI_ID");
+	    char filename[1024];
+	    if (p) {
+		MPIU_Snprintf( filename, sizeof(filename), 
+			       "testclient-%s.out", p );
+		logfile = fopen( filename, "w" );
+	    }
+	    else {
+		logfile = fopen( "testserver.out", "w" );
+	    }
+	}
+	else 
+	    logfile = stderr;
+    }
 
     if ( print_flag ) {
 	/* MPIU_Error_printf( "[%s]: ", PMIU_print_id ); */
 	/* FIXME: Decide what role PMIU_printf should have (if any) and
 	   select the appropriate MPIU routine */
-	fprintf( stderr, "[%s]: ", PMIU_print_id );
+	fprintf( logfile, "[%s]: ", PMIU_print_id );
 	va_start( ap, fmt );
-	vfprintf( stderr, fmt, ap );
+	vfprintf( logfile, fmt, ap );
 	va_end( ap );
-	fflush( stderr );
+	fflush( logfile );
     }
 }
 
