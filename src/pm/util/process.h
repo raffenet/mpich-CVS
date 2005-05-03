@@ -79,6 +79,8 @@ typedef struct {
 typedef struct ProcessState {
     const char        *hostname;         /* Host for process */
     int               wRank;             /* Rank in COMM_WORLD */
+    int               id;                /* An integer used to identify
+					    process entries */
     pid_t             pid;               /* pid for process */
     int               initWithEnv;       /* true if PMI_FD, PMI_RANK etc.
 					    passed to process to initialize

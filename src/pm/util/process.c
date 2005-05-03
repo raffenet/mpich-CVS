@@ -97,6 +97,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
     int          wRank = 0;    /* Rank in this comm world of the process */
     int          i, rc;
     int          nProcess = 0;
+    static       int UniqId = 0; /* A unique ID for each forked process, 
+				    up to 2 billion */
 
     app = pWorld->apps;
     while (app) {
@@ -114,6 +116,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	for (i=0; i<app->nProcess; i++) {
 	    pState[i].app                   = app;
 	    pState[i].wRank                 = wRank++;
+	    pState[i].id                    = UniqId++;
 	    pState[i].initWithEnv           = 1;  /* Default is to use env
 						    to initialize connection */
 	    pState[i].status                = PROCESS_UNINITIALIZED;
@@ -241,7 +244,6 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	exit(-1);
     }
 
-    /* FIXME: For the "port" case, don't rely on the environment variables */
     if (pState->initWithEnv) {
 	MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", 
 		       pState->wRank );
@@ -253,10 +255,12 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	client_env[j++] = env_pmi_debug; 
     }
     else {
-	/* We must also communicate the ID to the process.  For now,
-	   we use the rank */
+	/* We must also communicate the ID to the process.  
+	   This id is saved in the pState so that we can match it 
+	   when it comes back to us (it is the same as the rank 
+	   in the simple case) */
 	MPIU_Snprintf( env_pmi_id, sizeof(env_pmi_id), "PMI_ID=%d",
-		       pState->wRank );
+		       pState->id );
 	client_env[j++] = env_pmi_id;
     }
 

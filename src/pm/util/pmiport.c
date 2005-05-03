@@ -224,17 +224,20 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	/* This code assigns processes to the states in a pWorld
 	   by using the id as the rank, and finding the corresponding
 	   process among the ranks */
-	app = pWorld->apps;
-	while (app) {
-	    if (app->nProcess > id - nSoFar) {
-		/* Found the matching app */
-		pState = app->pState + (id - nSoFar);
-		break;
+	while (pWorld) {
+	    app = pWorld->apps;
+	    while (app) {
+		if (app->nProcess > id - nSoFar) {
+		    /* Found the matching app */
+		    pState = app->pState + (id - nSoFar);
+		    break;
+		}
+		else {
+		    nSoFar += app->nProcess;
+		}
+		app = app->nextApp;
 	    }
-	    else {
-		nSoFar += app->nProcess;
-	    }
-	    app = app->nextApp;
+	    pWorld = pWorld->nextWorld;
 	}
 	if (!pState) {
 	    /* We have a problem */
