@@ -104,10 +104,8 @@ int PMI_Init( int *spawned )
 	char hostname[MAXHOSTNAME];
 	char *pn;
 	int id = 0;
-	/* Not yet implemented.  Connect to the indicated port (in
-	   format hostname:portnumber) and get the fd for the socket */
-
-	PMI_debug = 0;
+	/* Connect to the indicated port (in format hostname:portnumber) 
+	   and get the fd for the socket */
 	
 	/* Split p into host and port */
 	pn = strchr( p, ':' );
@@ -1146,19 +1144,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 	perror( "Error calling setsockopt:" );
     }
 
-    /* If a non-blocking socket, then can use select on write to test for
-       connect would succeed.  Thus, we mark the socket as non-blocking now */
-#ifdef FOO
-    /* Mark this fd as non-blocking */
-    /* Do we want to do this? */
-    if (!q_wait) {
-	flags = fcntl( fd, F_GETFL, 0 );
-	if (flags >= 0) {
-	    flags |= O_NDELAY;
-	    fcntl( fd, F_SETFL, flags );
-	}
-    }
-#endif
+    /* We wait here for the connection to succeed */
     if (connect( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {
 	switch (errno) {
 	case ECONNREFUSED:
@@ -1180,16 +1166,6 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 	    return -1;
 	}
     }
-#ifdef FOO
-    /* Do we want to make the fd nonblocking ? */
-    if (fd >= 0 && q_wait) {
-	flags = fcntl( fd, F_GETFL, 0 );
-	if (flags >= 0) {
-	    flags |= O_NDELAY;
-	    fcntl( fd, F_SETFL, flags );
-	}
-    }
-#endif
 
     return fd;
 }
@@ -1220,6 +1196,7 @@ static int PMII_Set_from_port( int fd, int id )
 #else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
 #endif
+    PMIU_printf( 0, "writing on fd %d line :%s:\n", fd, buf );
     err = PMIU_writeline( fd, buf );
     if (err) {
 	PMIU_printf( 1, "Error in writeline initack\n" );
@@ -1227,6 +1204,8 @@ static int PMII_Set_from_port( int fd, int id )
     }
 
     /* cmd=initack */
+    buf[0] = 0;
+    PMIU_printf( 0, "reading initack\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading initack on %d\n", fd );
@@ -1244,6 +1223,7 @@ static int PMII_Set_from_port( int fd, int id )
        the handshake to include a version number */
 
     /* size */
+    PMIU_printf( 0, "reading size\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading size on %d\n", fd );
@@ -1261,6 +1241,7 @@ static int PMII_Set_from_port( int fd, int id )
     PMI_size = atoi(cmd);
 
     /* rank */
+    PMIU_printf( 0, "reading rank\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading rank on %d\n", fd );
@@ -1276,6 +1257,7 @@ static int PMII_Set_from_port( int fd, int id )
     /* cmd=set rank=n */
     PMIU_getval( "rank", cmd, PMIU_MAXLINE );
     PMI_rank = atoi(cmd);
+    PMIU_Set_rank( PMI_rank );
 
     /* debug flag */
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
@@ -1296,6 +1278,7 @@ static int PMII_Set_from_port( int fd, int id )
     if (PMI_debug) {
 	DBG_PRINTF( ("end of handshake, rank = %d, size = %d\n", 
 		    PMI_rank, PMI_size )); 
+	DBG_PRINTF( ("Completed init\n" ) );
     }
 
     return 0;
