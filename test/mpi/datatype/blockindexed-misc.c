@@ -149,6 +149,8 @@ int blockindexed_contig_test(void)
 				 i, buf[i], goodval);
 	}
     }
+    
+    MPI_Type_free( &newtype );
 
     return errs;
 }

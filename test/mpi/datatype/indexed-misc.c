@@ -106,6 +106,8 @@ int indexed_zeroblock_first_test(void)
 	errs++;
     }
     
+    MPI_Type_free( &type );
+    
     return errs;
 }
 
@@ -145,6 +147,8 @@ int indexed_zeroblock_middle_test(void)
 	}
 	errs++;
     }
+
+    MPI_Type_free( &type );
     
     return errs;
 }
@@ -185,6 +189,8 @@ int indexed_zeroblock_last_test(void)
 	}
 	errs++;
     }
+
+    MPI_Type_free( &type );
     
     return errs;
 }
@@ -283,6 +289,8 @@ int indexed_contig_test(void)
 				 i, buf[i], goodval);
 	}
     }
+
+    MPI_Type_free( &newtype );
 
     return errs;
 }

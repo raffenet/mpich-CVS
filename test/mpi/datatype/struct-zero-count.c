@@ -105,6 +105,8 @@ int builtin_struct_test(void)
 	errs++;
     }    
 
+    MPI_Type_free( &newtype );
+
     return errs;
 }
 

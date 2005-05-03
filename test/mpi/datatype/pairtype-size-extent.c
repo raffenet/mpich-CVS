@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
 				 pairtypes[i].name, (int) ptype_extent,
 				 (int) stype_extent);
 	}
+	MPI_Type_free( &stype );
     }
     
 

@@ -304,6 +304,9 @@ int contig_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
 
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
+
     return errs;
 }
 
@@ -404,6 +407,9 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
 
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
+    
     return errs;
 }
 
@@ -503,6 +509,9 @@ int vector_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
+
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
 
     return errs;
 }
@@ -607,6 +616,9 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 49);
     }
 
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
+
     return errs;
 }
 
@@ -707,6 +719,9 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
 
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
+
     return errs;
 }
 
@@ -806,6 +821,9 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
+
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
 
     return errs;
 }
@@ -1006,6 +1024,9 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
 
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
+
     return errs;
 }
 
@@ -1106,6 +1127,9 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
+
+    MPI_Type_free( &inttype );
+    MPI_Type_free( &eviltype );
 
     return errs;
 }

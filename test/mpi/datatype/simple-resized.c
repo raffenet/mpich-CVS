@@ -111,6 +111,9 @@ int derived_resized_test(void)
 	errs++;
     }    
 
+    MPI_Type_free( &newtype );
+    MPI_Type_free( &resizedtype );
+
     return errs;
 }
 

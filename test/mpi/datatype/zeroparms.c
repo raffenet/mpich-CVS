@@ -19,6 +19,7 @@ int main( int argc, char *argv[] )
      */
     MPI_Type_hvector( 0, 1, 10, MPI_DOUBLE, &newtype );
     MPI_Type_commit( &newtype );
+    MPI_Type_free( &newtype );
 
     MPI_Type_indexed( 0, b, d, MPI_DOUBLE, &newtype );
     MPI_Type_commit( &newtype );
@@ -28,6 +29,8 @@ int main( int argc, char *argv[] )
 		  MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
     printf( " No Errors\n" );
+
+    MPI_Type_free( &newtype );
     
     MPI_Finalize();
 
