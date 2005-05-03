@@ -134,9 +134,12 @@ int main( int argc, char *argv[], char *envp[] )
 	    usePort = 1;
 	}
     }
+    else {
+	s.pmiinfo.portName = 0;
+    }
 #endif
 
-    PMIServInit(myspawn,0);
+    PMIServInit(myspawn,&s);
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
@@ -221,7 +224,7 @@ int mypostamble( void *predata, void *data, ProcessState *pState )
 
 int myspawn( ProcessWorld *pWorld, void *data )
 {
-    SetupInfo    s;
+    SetupInfo    *s = (SetupInfo *)data;
     ProcessWorld *p, **pPtr;
 
     p = pUniv.worlds;
@@ -234,7 +237,7 @@ int myspawn( ProcessWorld *pWorld, void *data )
 
     /* FIXME: This should be part of the PMI initialization in the clients */
     putenv( "PMI_SPAWNED=1" );
-    MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
+    MPIE_ForkProcesses( pWorld, 0, mypreamble, s,
 			mypostfork, 0, mypostamble, 0 );
     return 0;
 }

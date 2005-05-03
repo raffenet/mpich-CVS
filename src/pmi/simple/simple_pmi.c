@@ -123,7 +123,7 @@ int PMI_Init( int *spawned )
 	       to setup the initial values */
 	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
 	}
-	/* FIXME: If PMI_PORT specified but either no valid value of
+	/* FIXME: If PMI_PORT specified but either no valid value or
 	   fd is -1, give an error return */
 	if (PMI_fd < 0) return -1;
 
@@ -1196,7 +1196,7 @@ static int PMII_Set_from_port( int fd, int id )
 #else
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
 #endif
-    PMIU_printf( 0, "writing on fd %d line :%s:\n", fd, buf );
+    PMIU_printf( PMI_debug, "writing on fd %d line :%s:\n", fd, buf );
     err = PMIU_writeline( fd, buf );
     if (err) {
 	PMIU_printf( 1, "Error in writeline initack\n" );
@@ -1205,7 +1205,7 @@ static int PMII_Set_from_port( int fd, int id )
 
     /* cmd=initack */
     buf[0] = 0;
-    PMIU_printf( 0, "reading initack\n" );
+    PMIU_printf( PMI_debug, "reading initack\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading initack on %d\n", fd );
@@ -1223,7 +1223,7 @@ static int PMII_Set_from_port( int fd, int id )
        the handshake to include a version number */
 
     /* size */
-    PMIU_printf( 0, "reading size\n" );
+    PMIU_printf( PMI_debug, "reading size\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading size on %d\n", fd );
@@ -1241,7 +1241,7 @@ static int PMII_Set_from_port( int fd, int id )
     PMI_size = atoi(cmd);
 
     /* rank */
-    PMIU_printf( 0, "reading rank\n" );
+    PMIU_printf( PMI_debug, "reading rank\n" );
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading rank on %d\n", fd );
