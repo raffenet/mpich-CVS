@@ -20,6 +20,8 @@
 
 #include "pmutil.h"
 #include "process.h"
+#include "labelout.h"
+#include "env.h"
 #include "cmnargs.h"
 
 /* Use the memory defintions from mpich2/src/include */
