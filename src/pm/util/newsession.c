@@ -7,6 +7,8 @@
 #include "pmutilconf.h"
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
+/* To get the prototype for getsid in gcc environments, 
+   define _XOPEN_SOURCE and _XOPEN_SOURCE_EXTENDED */
 #include <unistd.h>
 #endif
 #include <errno.h>
