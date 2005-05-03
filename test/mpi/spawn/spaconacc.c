@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     MPI_Comm comm_connector, comm_acceptor, comm_parent, comm;
     char port[MPI_MAX_PORT_NAME];
     MPI_Status status;
+    MPI_Info spawn_path = MPI_INFO_NULL;
     int verbose = 0;
 
     if (getenv("MPITEST_VERBOSE"))
@@ -51,20 +52,36 @@ int main(int argc, char *argv[])
 
     if (argc == 1)
     {
+	/* Make sure that the current directory is in the path.
+	   Not all implementations may honor or understand this, but
+	   it is highly recommended as it gives users a clean way
+	   to specify the location of the executable without
+	   specifying a particular directory format (e.g., this 
+	   should work with both Windows and Unix implementations) */
+	MPI_Info_create( &spawn_path );
+	MPI_Info_set( spawn_path, "path", "." );
+
 	if (verbose) { printf("spawn connector.\n");fflush(stdout); }
-	error = MPI_Comm_spawn("spaconacc", argv1, 1, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm_connector, MPI_ERRCODES_IGNORE);
+	error = MPI_Comm_spawn("spaconacc", argv1, 1, spawn_path, 0, 
+			       MPI_COMM_SELF, &comm_connector, 
+			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
 
 	if (verbose) { printf("spawn acceptor.\n");fflush(stdout); }
-	error = MPI_Comm_spawn("spaconacc", argv2, 1, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm_acceptor, MPI_ERRCODES_IGNORE);
+	error = MPI_Comm_spawn("spaconacc", argv2, 1, spawn_path, 0, 
+			       MPI_COMM_SELF, &comm_acceptor, 
+			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
+	MPI_Info_free( &spawn_path );
 
 	if (verbose) { printf("recv port.\n");fflush(stdout); }
-	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, comm_acceptor, &status);
+	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
+			 comm_acceptor, &status);
 	check_error(error, "MPI_Recv");
 
 	if (verbose) { printf("send port.\n");fflush(stdout); }
-	error = MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, comm_connector);
+	error = MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
+			 comm_connector);
 	check_error(error, "MPI_Send");
 
 	if (verbose) { printf("barrier acceptor.\n");fflush(stdout); }
@@ -124,7 +141,8 @@ int main(int argc, char *argv[])
 	}
 	
 	if (verbose) { printf("recv.\n");fflush(stdout); }
-	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, comm_parent, &status);
+	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
+			 comm_parent, &status);
 	check_error(error, "MPI_Recv");
 
 	if (verbose) { printf("1: received port: <%s>\n", port);fflush(stdout); }
