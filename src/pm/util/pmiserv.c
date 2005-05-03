@@ -895,18 +895,14 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
     /* simple_pmi wants to see cmd=initack after the initack request before
        the other data */
     PMIWriteLine( pentry->fd, "cmd=initack\n" );
-/*    DBG_PRINTFCOND(pmidebug,( "%s", "cmd=initack\n" )); */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
 		   pentry->group->nProcess );
     PMIWriteLine( pentry->fd, outbuf );
-/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", 
 		   pentry->pState->wRank );
     PMIWriteLine( pentry->fd, outbuf );
-/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", pmidebug );
     PMIWriteLine( pentry->fd, outbuf );
-/*    DBG_PRINTFCOND(pmidebug,( "%s", outbuf )); */
     return 0;
 }
 /* ------------------------------------------------------------------------- */
