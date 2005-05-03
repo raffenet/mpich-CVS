@@ -104,7 +104,20 @@ int PMIServHandleInput( int, int, void * );
 
 /* Setup for initialization with a port */
 void PMI_Init_remote_proc( int, PMIProcess * );
+int PMI_Init_port_connection( int );
+int PMIServEndPort( void );
+int PMIServGetPort( int *, char *, int );
+
 /* pmiport.c routines for working with host:ports*/
 int PMIServAcceptFromPort( int, int, void * );
 int PMIServSetupPort( ProcessUniverse *, char *, int );
+int MPIE_GetMyHostName( char myname[], int );
+
+/* Should the following be an internal-only routine? */
+int PMIGetCommand( char *cmd, int cmdlen );
+#ifndef PMIWriteLine
+int PMIWriteLine( int, const char * );
+int PMIReadLine( int, char *, int );
+#endif
+
 #endif
