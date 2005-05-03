@@ -94,9 +94,10 @@ int main( int argc, char *argv[], char *envp[] )
     int          reason;
     SetupInfo    s;
 
+    /* MPIE_ProcessInit initializes the global pUniv */
     MPIE_ProcessInit();
     /* Set a default for the universe size */
-    pUniv.size = 64;
+    pUniv.size  = 64;
 
     /* Set defaults for any arguments that are options.  Also check the
        environment for special options, such as debugging.  Set 
