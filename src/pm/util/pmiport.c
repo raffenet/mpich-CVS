@@ -12,6 +12,9 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -36,6 +39,8 @@
 #ifndef MAX_PORT_STRING
 #define MAX_PORT_STRING (MAX_HOST_NAME+15)
 #endif
+
+static int listenfd = -1;
 
 /* ----------------------------------------------------------------------- */
 /* Get a port for the PMI interface                                        */
@@ -96,7 +101,7 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
     }
 
     for (portnum=low_port; portnum<=high_port; portnum++) {
-	bzero( (void *)&sa, sizeof(sa) );
+	memset( (void *)&sa, 0, sizeof(sa) );
 	sa.sin_family	   = AF_INET;
 	sa.sin_port	   = htons( portnum );
 	sa.sin_addr.s_addr = INADDR_ANY;
@@ -130,8 +135,12 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
 	return -1;
     }
 
+    DBG_PRINTF( ("Listening on fd %d\n", fd) );
     /* Listen is a non-blocking call that enables connections */
     listen( fd, MAX_PENDING_CONN );
+
+    /* Make sure that this fd doesn't get sent to the children */
+    fcntl( fd, F_SETFD, FD_CLOEXEC );
     
     *fdout = fd;
     if (portnum == 0) {
@@ -184,7 +193,8 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
     struct sockaddr sock;
     int    addrlen;
     int    id;
-    ProcessWorld *pWorld = (ProcessWorld *)data;
+    ProcessUniverse *univ = (ProcessUniverse *)data;
+    ProcessWorld *pWorld = univ->worlds;
     ProcessApp   *app;
 
     /* Get the new socket */
@@ -199,13 +209,15 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	fcntl( newfd, F_SETFL, flags );
     }
 #endif
+    /* Make sure that exec'd processes don't get this fd */
+    fcntl( newfd, F_SETFD, FD_CLOEXEC );
 
     /* Find the matching process.  Do this by reading from the socket and 
        getting the id value with which process was created. */
     id = PMI_Init_port_connection( newfd );
     if (id >= 0) {
 	/* find the matching entry */
-	ProcessState *pState;
+	ProcessState *pState = 0;
 	int           nSoFar = 0;
 	PMIProcess   *pmiprocess;
 
@@ -214,7 +226,7 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	   process among the ranks */
 	app = pWorld->apps;
 	while (app) {
-	    if (app->nProcess < id - nSoFar) {
+	    if (app->nProcess > id - nSoFar) {
 		/* Found the matching app */
 		pState = app->pState + (id - nSoFar);
 		break;
@@ -224,18 +236,20 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	    }
 	    app = app->nextApp;
 	}
+	if (!pState) {
+	    /* We have a problem */
+	    MPIU_Error_printf( "Unable to find process with PMI_ID = %d in the universe", id );
+	    return -1;
+	}
 
 	/* Now, initialize the connection */
 	/* Create the new process structure (see PMISetupFinishInServer
 	   for this step when a pre-existing FD is used */
+	DBG_PRINTF( ("Server connection to id = %d on fd %d\n", id, newfd ));
 	pmiprocess = PMISetupNewProcess( newfd, pState );
 	PMI_Init_remote_proc( newfd, pmiprocess );
 	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, 
 			 pmiprocess );
-
-	/* See PMISetupFinishInServer for similar code */
-	pmiprocess = PMISetupNewProcess( newfd, pState );
-	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, pmiprocess );
     }
     else {
 	/* Error, the id should never be less than zero or unset */
@@ -260,13 +274,30 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
  * Return Value:
  *   0 on success.
  *
+ * Notes:
+ * The listenfd is global to simplify closing it once all processes have 
+ * exited.
  */
 int PMIServSetupPort( ProcessUniverse *pUniv, char *portString, int portLen )
 {
-    int rc = 0, listenfd;
+    int rc = 0;
     
     rc = PMIServGetPort( &listenfd, portString, portLen );
     if (rc) return rc;
     rc = MPIE_IORegister( listenfd, IO_READ, PMIServAcceptFromPort, pUniv );
+    if (pUniv->OnNone) {
+	MPIU_Internal_error_printf( "pUniv.OnNone already set; cannot set to PMIServEndPort\n" );
+	return -1;
+    }
+    else {
+	pUniv->OnNone = PMIServEndPort;
+    }
     return rc;
+}
+/* This is a signal-safe routine, used to terminate the use of the port
+   within the ioloop */
+int PMIServEndPort( )
+{
+    MPIE_IODeregister( listenfd );
+    return 0;
 }
