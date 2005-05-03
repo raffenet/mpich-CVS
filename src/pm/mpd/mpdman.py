@@ -297,6 +297,7 @@ def mpdman():
                 clientPgmArgs.insert(0,clientPgm)
                 execvpe(gdbdrv,clientPgmArgs,cli_environ)    # client
             else:
+                environ['PATH'] = cli_environ['PATH']
                 execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
@@ -1027,7 +1028,7 @@ def mpdman():
                     spawnExecs[(tpsf,tpsf+spawnNprocs-1)] = parsedMsg['execname']
                     spawnUsers[(tpsf,tpsf+spawnNprocs-1)] = mpd_get_my_username()
                     spawnCwds[(tpsf,tpsf+spawnNprocs-1)]  = environ['MPDMAN_CWD']
-                    spawnPaths[(tpsf,tpsf+spawnNprocs-1)] = ''
+                    spawnPaths[(tpsf,tpsf+spawnNprocs-1)] = environ['MPDMAN_CLI_PATH']
 
 		    spawnEnv = {}
 		    spawnEnv.update(environ)
