@@ -260,7 +260,7 @@ if [ $do_geterrmsgs = "yes" ] ; then
         echo "Extracting the error messages..."
         rm -rf .tmp
         rm -f .err
-        maint/extracterrmsgs `cat maint/errmsgdirs` > .tmp 2>.err
+        maint/extracterrmsgs -skip=src/util/multichannel/mpi.c `cat maint/errmsgdirs` > .tmp 2>.err
         # (error here is ok)
         update_errdefs=yes
         if [ -s .err ] ; then 

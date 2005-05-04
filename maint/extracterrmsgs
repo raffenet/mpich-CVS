@@ -28,6 +28,7 @@ if (defined($ENV{"DEBUG_STRICT"})) { $gStrict = 1; }
 
 # Check for special args
 @files = ();
+%skipFiles = ();
 $outfile = "";
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
@@ -37,6 +38,7 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
     elsif( $arg =~ /-careful/) { $careful = 1; }
     elsif( $arg =~ /-strict/)  { $gStrict = 1; }
+    elsif( $arg =~ /-skip=(.*)/) { $skipFiles{$1} = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	if (-d $arg) {
@@ -719,7 +721,9 @@ sub ExpandDir {
 	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
 	}
 	elsif ($filename =~ /(.*\.[chi])$/) {
-	    $files[$#files + 1] = "$dir/$filename";
+	    if (!defined($skipFiles{"$dir/$filename"})) {
+		$files[$#files + 1] = "$dir/$filename";
+	    }
 	}
     }
     closedir DIR;
