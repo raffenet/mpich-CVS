@@ -56,7 +56,6 @@ int main( int argc, char *argv[] )
 			}
 		    }
 		    MPI_Win_fence( 0, win );
-		    MTestFreeDatatype( &sendtype );
 		}
 		else if (rank == dest) {
 		    MPI_Win_fence( 0, win );
@@ -76,6 +75,7 @@ int main( int argc, char *argv[] )
 		else {
 		    MPI_Win_fence( 0, win );
 		}
+		MTestFreeDatatype( &sendtype );
 		MTestFreeDatatype( &recvtype );
 		MPI_Win_free( &win );
 	    }

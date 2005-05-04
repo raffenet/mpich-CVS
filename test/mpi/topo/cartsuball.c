@@ -37,6 +37,7 @@ int main( int argc, char *argv[] )
     /* Free the new communicator so that storage leak tests will
        be happy */
     MPI_Comm_free( &newcomm );
+    MPI_Comm_free( &comm );
     
     MTest_Finalize( errs );
     MPI_Finalize();

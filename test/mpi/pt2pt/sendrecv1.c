@@ -48,7 +48,6 @@ int main( int argc, char *argv[] )
 			    MTestPrintError( err );
 			}
 		    }
-		    MTestFreeDatatype( &sendtype );
 		}
 		else if (rank == dest) {
 		    err = MPI_Recv( recvtype.buf, recvtype.count, 
@@ -73,6 +72,7 @@ int main( int argc, char *argv[] )
 			errs += err;
 		    }
 		}
+		MTestFreeDatatype( &sendtype );
 		MTestFreeDatatype( &recvtype );
 	    }
 	}

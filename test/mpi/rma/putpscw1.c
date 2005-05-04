@@ -59,7 +59,6 @@ int main( int argc, char *argv[] )
 			errs++;
 			MTestPrintError( err );
 		    }
-		    MTestFreeDatatype( &sendtype );
 		}
 		else if (rank == dest) {
 		    MPI_Group_incl( wingroup, 1, &source, &neighbors );
@@ -78,11 +77,13 @@ int main( int argc, char *argv[] )
 		       MPI routines */
 		    ;
 		}
+		MTestFreeDatatype( &sendtype );
 		MTestFreeDatatype( &recvtype );
 		MPI_Group_free( &wingroup );
 		MPI_Win_free( &win );
 	    }
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

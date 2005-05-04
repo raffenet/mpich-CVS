@@ -133,6 +133,8 @@ C Only free derived type
          print *, " Group of file does not match group of comm_world"
          errs = errs + 1
       endif
+      call mpi_group_free( group, ierr )
+      call mpi_group_free( worldgroup, ierr )
 
       offset = 1000+25*integer_size
       call mpi_file_set_size(fh, offset, ierr )

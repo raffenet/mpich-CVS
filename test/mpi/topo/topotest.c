@@ -35,6 +35,7 @@ int main( int argc, char *argv[] )
 	printf( "Topo type of cart comm is not CART\n" );
     }
 
+    MPI_Comm_free( &comm );
     /* FIXME: still need graph example */
 
     MTest_Finalize( errs );

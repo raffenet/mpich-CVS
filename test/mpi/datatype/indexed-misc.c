@@ -78,7 +78,7 @@ int indexed_zeroblock_first_test(void)
     int disp[3] = { 0, 1, 4 };
     MPI_Aint lb, ub;
 
-    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    err = MPI_Type_indexed(3, len, disp, MPI_INT, &type);
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,
@@ -120,7 +120,7 @@ int indexed_zeroblock_middle_test(void)
     int disp[3] = { 1, 2, 4 };
     MPI_Aint lb, ub;
 
-    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    err = MPI_Type_indexed(3, len, disp, MPI_INT, &type);
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,
@@ -162,7 +162,7 @@ int indexed_zeroblock_last_test(void)
     int disp[3] = { 1, 4, 8 };
     MPI_Aint lb, ub;
 
-    err = MPI_Type_indexed(3, len, disp, MPI_INTEGER, &type);
+    err = MPI_Type_indexed(3, len, disp, MPI_INT, &type);
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,

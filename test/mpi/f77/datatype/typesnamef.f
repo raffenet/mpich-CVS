@@ -57,6 +57,9 @@ C now add a name, then dup
           print *, ' (type2) Datatype name is not all blank'
        endif
        
+       call mpi_type_free( ntype1, ierr )
+       call mpi_type_free( ntype2, ierr )
+       
        call MTest_Finalize( errs )
        call MPI_Finalize( ierr )
 

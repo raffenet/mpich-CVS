@@ -87,8 +87,7 @@ int main( int argc, char *argv[] )
 	errs++;
 	printf( "dest for non-periodic shift -1 is %d\n", dest );
     }
-
-
+    MPI_Comm_free( &comm );
     
     MTest_Finalize( errs );
     MPI_Finalize();

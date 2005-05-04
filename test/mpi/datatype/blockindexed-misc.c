@@ -265,6 +265,8 @@ int blockindexed_vector_test(void)
 	}
     }
 
+    MPI_Type_free( &vectype );
+    MPI_Type_free( &newtype );
     return errs;
 }
 

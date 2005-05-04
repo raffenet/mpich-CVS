@@ -92,6 +92,7 @@ int main( int argc, char *argv[] )
 		errs++;
 	    }
 	}
+	MPI_Group_free( &selfgroup );
 
 	/* Exclude everyone in our group */
 	{
@@ -172,9 +173,9 @@ int main( int argc, char *argv[] )
 	MPI_Group_free( &g4 );
 	MPI_Group_free( &g5 );
 	MPI_Group_free( &g45 );
+        MPI_Group_free( &g1 );
 
 #ifdef MPIR_TEST_GROUPS
-        MPI_Group_free( &g1 );
     }
 #endif
     

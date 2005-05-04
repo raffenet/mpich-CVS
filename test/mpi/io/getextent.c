@@ -31,6 +31,7 @@ int main( int argc, char *argv[] )
         errs++;
 	fprintf( stderr, "Native extent not the same as the file extent\n" );
     }
+    MPI_File_close( &fh );
 
     MTest_Finalize( errs );
     MPI_Finalize();

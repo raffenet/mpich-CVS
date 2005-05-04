@@ -284,6 +284,10 @@ int vector_of_vectors_test(void)
     if (nadds) free(adds);
     free(types);
 
+    MPI_Type_free( &inner_vector_copy );
+    MPI_Type_free( &inner_vector );
+    MPI_Type_free( &outer_vector );
+
     return 0;
 }
 
@@ -363,6 +367,8 @@ int optimizable_vector_of_basics_test(void)
     free(ints);
     if (nadds) free(adds);
     free(types);
+
+    MPI_Type_free( &parent_type );
 
     return errs;
 }
@@ -450,6 +456,7 @@ int indexed_of_basics_test(void)
     if (nadds) free(adds);
     free(types);
 
+    MPI_Type_free( &parent_type );
     return errs;
 }
 
@@ -637,6 +644,10 @@ int indexed_of_vectors_test(void)
     if (nadds) free(adds);
     free(types);
 
+    MPI_Type_free( &inner_vector_copy );
+    MPI_Type_free( &inner_vector );
+    MPI_Type_free( &outer_indexed );
+
     return 0;
 }
 
@@ -730,6 +741,8 @@ int struct_of_basics_test(void)
     free(ints);
     free(adds);
     free(types);
+
+    MPI_Type_free( &parent_type );
 
     return errs;
 }

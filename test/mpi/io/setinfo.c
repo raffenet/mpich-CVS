@@ -59,6 +59,7 @@ int main( int argc, char *argv[] )
 	errs ++;
 	MTestPrintError( err );
     }
+    MPI_Info_free( &infoin );
     buf[0] = -1;
     
     err = MPI_File_read_ordered( fh, buf, 1, MPI_INT, &status );

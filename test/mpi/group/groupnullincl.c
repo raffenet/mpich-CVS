@@ -39,6 +39,8 @@ int main( int argc, char *argv[] )
 	if (outgroup != MPI_GROUP_NULL) {
 	    MPI_Group_free( &outgroup );
 	}
+
+	MTestFreeComm( &comm );
     }
     
     MTest_Finalize( errs );

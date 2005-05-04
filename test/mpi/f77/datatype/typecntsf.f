@@ -50,6 +50,8 @@ C
           call mpi_type_get_contents( dtype, 
      &         max_nints, max_asizev, max_dtypes,
      &         intv, asizev, dtypesv, ierr )
+C
+C              dtypesv of constructed types must be free'd now
        endif
        if (combiner .ne. mycomb) then
           errs = errs + 1
@@ -80,6 +82,6 @@ C List all combiner types to check that they are defined in mpif.h
           errs = errs + 1
           print *, ' Unknown combiner ', combiner
        endif
-
+       
        return
        end

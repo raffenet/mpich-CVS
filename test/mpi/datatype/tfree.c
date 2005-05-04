@@ -91,6 +91,11 @@ int main( int argc, char *argv[] )
 	free( buf );
     }
 
+    /* Clean up the strideType */
+    if (rank != dest) {
+	MPI_Type_free( &strideType );
+    }
+
 
     MTest_Finalize( errs );
     MPI_Finalize();

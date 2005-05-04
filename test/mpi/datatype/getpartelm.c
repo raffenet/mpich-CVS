@@ -111,6 +111,7 @@ int main( int argc, char *argv[] )
 		printf( "For partial send, Get_count did not return MPI_UNDEFINED\n" );
 	    }
 	}
+	MPI_Type_free( &outtype );
     }
 
     MTest_Finalize( errs );
