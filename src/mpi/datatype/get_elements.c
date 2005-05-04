@@ -278,6 +278,10 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 
    Notes:
 
+ If the size of the datatype is zero and the amount of data returned as
+ determined by 'status' is also zero, this routine will return a count of
+ zero.  This is consistent with a clarification made by the MPI Forum.
+
 .N Fortran
 
 .N Errors
