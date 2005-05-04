@@ -282,15 +282,17 @@ int MPIR_Scatter (
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
-            MPIU_Free(tmp_buf);
         }
+
+        if (tmp_buf != NULL)
+            MPIU_Free(tmp_buf);
     }
     
 #ifdef MPID_HAS_HETERO
     else { /* communicator is heterogeneous */
-            if (rank == root) {
+        if (rank == root) {
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
-                          &tmp_buf_size); 
+                           &tmp_buf_size); 
             tmp_buf = MPIU_Malloc(tmp_buf_size);
 	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) { 
