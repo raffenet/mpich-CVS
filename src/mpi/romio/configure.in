@@ -1053,7 +1053,7 @@ if test -n "$file_system_pvfs2"; then
     AC_CHECK_HEADERS(pvfs2.h,
 	AC_DEFINE(ROMIO_PVFS2,1,[Define for ROMIO with PVFS2])
 	AC_DEFINE(HAVE_PVFS2_SUPER_MAGIC, 1, [Define if PVFS2_SUPER_MAGIC defined.]),
-	AC_MSG_WARN(missing pvfs2.h header file; disabling ROMIO PVFS2 support)
+        AC_MSG_ERROR([PVFS2 support requested but cannot find pvfs2.h header file])                                        
     )
 fi
 
