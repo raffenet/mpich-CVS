@@ -229,6 +229,101 @@ export MPIFLIBNAME
 export PMPIFLIBNAME
 export MPICXXLIBNAME
 
+# ----------------------------------------------------------------------------
+#
+# Set the defaults for directories that are not included in configure's
+# repetoire
+if test -n "$with_htmldir" ; then 
+    htmldir=$with_htmldir
+else
+    htmldir='${prefix}/www'
+fi
+AC_SUBST(htmldir)
+
+if test -n "$with_docdir" ; then 
+    docdir=$with_docdir
+else
+    docdir='${prefix}/doc'
+fi
+AC_SUBST(docdir)
+
+# This test is complicated by the fact that top_srcdir is not set until
+# the very end of configure.  Instead, we get it ourselves
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    # This needs to be an absolute pathname
+    case "$use_top_srcdir" in
+    /) ;;
+    *)
+        use_top_srcdir=`(cd $use_top_srcdir && pwd)`
+	;;	
+    esac
+    master_top_srcdir=$use_top_srcdir
+fi
+# Get the directory that we're running in...
+if test -z "$master_top_builddir" ; then
+   master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+master_top_builddir="`pwd`"
+AC_SUBST(master_top_builddir)
+export master_top_builddir
+
+# We create this file to allow other configures to find the "master" 
+# top builddir
+rm -f .mpich2
+date > .mpich2
+# ----------------------------------------------------------------------------
+# with-device
+if test "$with_device" = "default" ; then
+    # Pick the device.  For now, always choose ch3
+    with_device=ch3
+fi
+# Extract the device name from any options
+# Allow the device to specify a directory; if no directory, use the
+# included directories
+# 
+DEVICE=$with_device
+AC_SUBST(DEVICE)
+
+device_name=`echo $with_device | sed -e 's/:.*$//'`
+changequote(<<,>>)
+device_args=`echo $with_device | sed -e 's/^[^:]*//' -e 's/^://'`
+changequote([,])
+
+hasdir=no
+devicedir=$use_top_srcdir/src/mpid/$device_name
+devicereldir=src/mpid/$device_name
+case "$device_name" in
+     /) hasdir=yes 
+     devicedir=$DEVICE
+     # Get the name from the leaf
+     device_name=`echo $device_name ~ sed -e 's%.*/%%'`
+     # FIXME: should the devicereldir be different (perhaps not -
+     # this allows use to build within our tree, even when other data
+     # is outside of the tree)
+     ;;
+     *) hasdir=no
+     ;;
+esac
+export device_name
+export device_args
+
+#
+# See if the device wants to say something about the compilers (for example,
+# the globus device may need to do this)
+if test -f $devicedir/mpich2prereq ; then
+    . $devicedir/mpich2prereq
+fi
+
+# ----------------------------------------------------------------------------
 # Process any enable or with values
 # We must do enable-fast first, because it changes the other enable values
 if test "$enable_fast" = "yes" ; then
@@ -601,93 +696,6 @@ if test "$enable_nmpi_as_mpi" = yes ; then
    AC_DEFINE(USE_MPI_FOR_NMPI,1,[Define if the NMPI names should use MPI instead of PMPI])
 fi
 
-# ----------------------------------------------------------------------------
-#
-# Set the defaults for directories that are not included in configure's
-# repetoire
-if test -n "$with_htmldir" ; then 
-    htmldir=$with_htmldir
-else
-    htmldir='${prefix}/www'
-fi
-AC_SUBST(htmldir)
-
-if test -n "$with_docdir" ; then 
-    docdir=$with_docdir
-else
-    docdir='${prefix}/doc'
-fi
-AC_SUBST(docdir)
-
-# This test is complicated by the fact that top_srcdir is not set until
-# the very end of configure.  Instead, we get it ourselves
-if test -z "$top_srcdir" ; then
-   use_top_srcdir=$srcdir   
-else
-   use_top_srcdir=$top_srcdir
-fi
-if test -z "$master_top_srcdir" ; then 
-    # This needs to be an absolute pathname
-    case "$use_top_srcdir" in
-    /) ;;
-    *)
-        use_top_srcdir=`(cd $use_top_srcdir && pwd)`
-	;;	
-    esac
-    master_top_srcdir=$use_top_srcdir
-fi
-# Get the directory that we're running in...
-if test -z "$master_top_builddir" ; then
-   master_top_builddir=`pwd`
-fi
-export master_top_builddir
-AC_SUBST(master_top_builddir)
-AC_SUBST(master_top_srcdir)
-export master_top_srcdir
-master_top_builddir="`pwd`"
-AC_SUBST(master_top_builddir)
-export master_top_builddir
-
-# We create this file to allow other configures to find the "master" 
-# top builddir
-rm -f .mpich2
-date > .mpich2
-# ----------------------------------------------------------------------------
-# with-device
-if test "$with_device" = "default" ; then
-    # Pick the device.  For now, always choose ch3
-    with_device=ch3
-fi
-# Extract the device name from any options
-# Allow the device to specify a directory; if no directory, use the
-# included directories
-# 
-DEVICE=$with_device
-AC_SUBST(DEVICE)
-
-device_name=`echo $with_device | sed -e 's/:.*$//'`
-changequote(<<,>>)
-device_args=`echo $with_device | sed -e 's/^[^:]*//' -e 's/^://'`
-changequote([,])
-
-hasdir=no
-devicedir=$use_top_srcdir/src/mpid/$device_name
-devicereldir=src/mpid/$device_name
-case "$device_name" in
-     /) hasdir=yes 
-     devicedir=$DEVICE
-     # Get the name from the leaf
-     device_name=`echo $device_name ~ sed -e 's%.*/%%'`
-     # FIXME: should the devicereldir be different (perhaps not -
-     # this allows use to build within our tree, even when other data
-     # is outside of the tree)
-     ;;
-     *) hasdir=no
-     ;;
-esac
-export device_name
-export device_args
-
 # This goes here because we need the top_srcdir
 FROM_MPICH2=yes
 export FROM_MPICH2
@@ -737,39 +745,50 @@ else
 fi
 AC_SUBST(device_name)
 # with-pmi
-if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
-    with_pmi=simple
-fi
-pmi_name=$with_pmi
-
-# FIXME: Details like this should not be in the top-level configure
-if test "$with_pmi" = "smpd" ; then
-    AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
-fi
-
-if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
-    AC_MSG_WARN([$use_top_srcdir/src/pmi/$pmi_name does not exist. PMI is unknown])
-elif test ! -x $use_top_srcdir/src/pmi/$pmi_name/configure ; then
-    AC_MSG_WARN([pmi $pmi_name has no configure or Makefile])
-    pmi_name=""
+if test "$with_pmi" != "no" ; then
+    if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
+        with_pmi=simple
+    fi
+    pmi_name=$with_pmi
+    
+    # FIXME: Details like this should not be in the top-level configure
+    if test "$with_pmi" = "smpd" ; then
+        AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
+    fi
+    
+    if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
+        AC_MSG_WARN([$use_top_srcdir/src/pmi/$pmi_name does not exist. PMI is unknown])
+    elif test ! -x $use_top_srcdir/src/pmi/$pmi_name/configure ; then
+        AC_MSG_WARN([pmi $pmi_name has no configure or Makefile])
+        pmi_name=""
+    else
+        subsystems="$subsystems src/pmi/$pmi_name"
+    fi
 else
-    subsystems="$subsystems src/pmi/$pmi_name"
+    pmi_name=""
 fi
 AC_SUBST(pmi_name)
 # with-pm
+if test -z "$with_pm" ; then
+    with_pm="no"
+fi
 if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
-    with_pm=""
+    with_pm="no"
 fi
 if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
     with_pm=mpd
 fi
-pm_name=$with_pm
 
 # Eventually, we should allow multiple pm names, separated by :
 # Set the value MANY_PM to yes in this case
 MANY_PM=no
 AC_SUBST(MANY_PM)
-for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
+if test "$with_pm" != "no" ; then
+    pm_names="`echo $with_pm | sed -e 's/:/ /g'`"
+else
+    pm_names=""
+fi
+for pm_name in $pm_names ; do
     if test -z "$first_pm_name" ; then
        first_pm_name=$pm_name
     else 
@@ -782,6 +801,7 @@ for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
         pm_name=""
     else
         subsystems="$subsystems src/pm/$pm_name"
+	other_install_dirs="${other_install_dirs} src/pm/$pm_name"
         if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
 	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
 	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
@@ -842,12 +862,6 @@ if test $with_mpe != no ; then
 fi
 AC_SUBST(mpe_dir)
 AC_SUBST(other_install_dirs)
-#
-# See if the device wants to say something about the compilers (for example,
-# the globus device may need to do this)
-if test -f $devicedir/mpich2prereq ; then
-    . $devicedir/mpich2prereq
-fi
 
 #
 #

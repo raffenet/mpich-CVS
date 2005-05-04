@@ -114,6 +114,8 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
+	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
+	  -print | xargs -r rm -rf)
 	if test "$(doc)" = "yes" ; then \
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
@@ -196,7 +198,7 @@ optinstall_SHLIB = lib/libf${MPILIBNAME}.@SHLIB_EXT@
 
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
-INSTALL_SUBDIRS = src/util/thread src/env src/pm/@pm_name@ @bindings_dirs@ @other_install_dirs@
+INSTALL_SUBDIRS = src/util/thread src/env @bindings_dirs@ @other_install_dirs@
 
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
