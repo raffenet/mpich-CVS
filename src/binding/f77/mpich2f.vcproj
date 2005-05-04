@@ -34,7 +34,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpid.lib"
+				AdditionalDependencies="mpid.lib mpich2ffsd.lib"
 				OutputFile="../../../lib/fmpich2sd.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fs.def"
@@ -81,7 +81,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpi.lib"
+				AdditionalDependencies="mpi.lib mpich2ffs.lib"
 				OutputFile="../../../lib/fmpich2s.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fs.def"/>
@@ -127,7 +127,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpi.lib"
+				AdditionalDependencies="mpi.lib mpich2ff.lib"
 				OutputFile="../../../lib/fmpich2.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2f.def"/>
@@ -177,7 +177,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpid.lib"
+				AdditionalDependencies="mpid.lib mpich2ffd.lib"
 				OutputFile="../../../lib/fmpich2d.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2f.def"
@@ -229,7 +229,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpid.lib"
+				AdditionalDependencies="mpid.lib mpich2ffgd.lib"
 				OutputFile="../../../lib/fmpich2gd.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fg.def"
@@ -276,7 +276,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpi.lib"
+				AdditionalDependencies="mpi.lib mpich2ffg.lib"
 				OutputFile="../../../lib/fmpich2g.dll"
 				AdditionalLibraryDirectories="../../../lib"
 				ModuleDefinitionFile="mpich2fg.def"/>
@@ -361,11 +361,6 @@
 			</File>
 			<File
 				RelativePath=".\allgatherfs.c">
-				<FileConfiguration
-					Name="sfortDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="fortRelease|Win32"
 					ExcludedFromBuild="TRUE">
@@ -1928,6 +1923,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\setbot.c">
+			</File>
+			<File
 				RelativePath=".\sndrcvrplf.c">
 			</File>
 			<File
@@ -2031,6 +2029,12 @@
 			</File>
 			<File
 				RelativePath=".\statsetelf.c">
+			</File>
+			<File
+				RelativePath=".\statusc2f.c">
+			</File>
+			<File
+				RelativePath=".\statusf2c.c">
 			</File>
 			<File
 				RelativePath=".\testallf.c">

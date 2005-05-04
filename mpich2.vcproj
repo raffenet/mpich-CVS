@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib ch3shmd.lib cxxd.lib dbgd.lib pmid.lib smpd_utild.lib sockd.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib ch3shmd.lib cxxd.lib dbgd.lib pmid.lib smpd_utild.lib sockd.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2shmd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -118,7 +118,7 @@ copy $(ConfigurationName)\mpich2shmd.lib lib\mpich2shmd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib sock.lib mpich2ff.lib ch3shm.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib sock.lib ch3shm.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2shm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -188,7 +188,7 @@ copy $(ConfigurationName)\mpich2shm.lib lib\mpich2shm.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib dbgd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssmd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -259,7 +259,7 @@ copy $(ConfigurationName)\mpich2ssmd.lib lib\mpich2ssmd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbg.lib sock.lib ch3ssm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sock.lib ch3ssm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -329,7 +329,7 @@ copy $(ConfigurationName)\mpich2ssm.lib lib\mpich2ssm.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgd.lib sockd.lib ch3sockd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib dbgd.lib sockd.lib ch3sockd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -406,7 +406,7 @@ copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbg.lib sock.lib ch3sock.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sock.lib ch3sock.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -483,7 +483,7 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbg.lib sockp.lib ch3sockp.lib pmi.lib rlog.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sockp.lib ch3sockp.lib pmi.lib rlog.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2p.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -556,7 +556,7 @@ copy $(ConfigurationName)\mpich2p.lib lib\mpich2p.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgd.lib rlogd.lib sockpd.lib ch3ssmpd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib dbgd.lib rlogd.lib sockpd.lib ch3ssmpd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssmpd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -631,7 +631,7 @@ copy $(ConfigurationName)\mpich2ssmpd.lib lib\mpich2ssmpd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbg.lib sockpl.lib ch3sockpl.lib pmi.lib rlog.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sockpl.lib ch3sockpl.lib pmi.lib rlog.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2pl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -704,7 +704,7 @@ copy $(ConfigurationName)\mpich2pl.lib lib\mpich2pl.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib sockd.lib dbgd.lib ch3sshmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib sockd.lib dbgd.lib ch3sshmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2sshmd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -775,7 +775,7 @@ copy $(ConfigurationName)\mpich2sshmd.lib lib\mpich2sshmd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib sockpd.lib dbgd.lib rlogd.lib ch3sshmpd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib sockpd.lib dbgd.lib rlogd.lib ch3sshmpd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2sshmpd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -846,7 +846,7 @@ copy $(ConfigurationName)\mpich2sshmpd.lib lib\mpich2sshmpd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib sock.lib dbg.lib ch3sshm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib sock.lib dbg.lib ch3sshm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2sshm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -916,7 +916,7 @@ copy $(ConfigurationName)\mpich2sshm.lib lib\mpich2sshm.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib sockd.lib dbgd.lib ch3ibd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib sockd.lib dbgd.lib ch3ibd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
 				OutputFile="lib/mpich2ibd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -993,7 +993,7 @@ copy $(ConfigurationName)\mpich2ibd.lib lib\mpich2ibd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbg.lib sock.lib ch3ib.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sock.lib ch3ib.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
 				OutputFile="lib/mpich2ib.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1071,7 +1071,7 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib sockp.lib mpich2ff.lib ch3shmp.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib sockp.lib ch3shmp.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2shmp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1141,7 +1141,7 @@ copy $(ConfigurationName)\mpich2shmp.lib lib\mpich2shmp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib dbg.lib sockp2.lib ch3ssmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbg.lib sockp2.lib ch3ssmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssmp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1211,7 +1211,7 @@ copy $(ConfigurationName)\mpich2ssmp.lib lib\mpich2ssmp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib sockp.lib dbg.lib ch3sshmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib sockp.lib dbg.lib ch3sshmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2sshmp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1285,7 +1285,7 @@ copy $(ConfigurationName)\mpich2sshmp.lib lib\mpich2sshmp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib dbg.lib sockp.lib ch3ibp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbg.lib sockp.lib ch3ibp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib vapi.lib vapi_common.lib crypt32.lib"
 				OutputFile="lib/mpich2ibp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1358,7 +1358,7 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgmtd.lib sockmtd.lib ch3essmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib dbgmtd.lib sockmtd.lib ch3essmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2essmd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -1429,7 +1429,7 @@ copy $(ConfigurationName)\mpich2essmd.lib lib\mpich2essmd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbgmt.lib sockmt.lib ch3essm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbgmt.lib sockmt.lib ch3essm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2essm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1499,7 +1499,7 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib dbgmt.lib sockp3.lib ch3essmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbgmt.lib sockp3.lib ch3essmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2essmp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1569,7 +1569,7 @@ copy $(ConfigurationName)\mpich2essmp.lib lib\mpich2essmp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgmtd.lib sockmtd.lib ch3sockmtd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib dbgmtd.lib sockmtd.lib ch3sockmtd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2mtd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -1646,7 +1646,7 @@ copy $(ConfigurationName)\mpich2mtd.lib lib\mpich2mtd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbgmt.lib sockmt.lib ch3sockmt.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbgmt.lib sockmt.lib ch3sockmt.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2mt.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1723,7 +1723,7 @@ copy $(ConfigurationName)\mpich2mt.lib lib\mpich2mt.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib dbgmtp.lib sockmtp.lib ch3sockmtp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbgmtp.lib sockmtp.lib ch3sockmtp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2mtp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -3511,153 +3511,6 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				RelativePath=".\src\mpi\romio\mpi-io\set_view.c">
 			</File>
 			<File
-				RelativePath=".\src\binding\f77\setbot.c">
-				<FileConfiguration
-					Name="ch3shmDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3shmRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ssmDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ssmRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ssmPDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPliteRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sshmDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sshmPDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sshmRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ibDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ibRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3shmPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ssmPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sshmPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3essmDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3essmRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3essmPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockmtDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockmtRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockmtPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\adio\common\shfp_fname.c">
 			</File>
 			<File
@@ -3680,12 +3533,6 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\status_setb.c">
-			</File>
-			<File
-				RelativePath=".\src\binding\f77\statusc2f.c">
-			</File>
-			<File
-				RelativePath=".\src\binding\f77\statusf2c.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\test.c">

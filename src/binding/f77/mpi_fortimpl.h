@@ -48,10 +48,10 @@
  */
 
 /* Support Windows extension to specify calling convention */
-#ifdef USE_FORT_STDCALL
-#define FORT_CALL __stdcall
-#elif defined (USE_FORT_CDECL)
+#ifdef USE_FORT_CDECL
 #define FORT_CALL __cdecl
+#elif defined (USE_FORT_STDCALL)
+#define FORT_CALL __stdcall
 #else
 #define FORT_CALL
 #endif
@@ -69,14 +69,8 @@
 # else
 #  define FORT_DLL_SPEC __declspec(dllimport)
 # endif
-# ifdef FORTRAN_FROM_C_EXPORTS
-#  define FORT_C_DLL_SPEC __declspec(dllexport)
-# else
-#  define FORT_C_DLL_SPEC __declspec(dllimport)
-# endif
 #else
 # define FORT_DLL_SPEC
-# define FORT_C_DLL_SPEC
 #endif
 
 
@@ -159,13 +153,13 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #define MPIR_F_PTR(a) (a)
 #else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
-extern FORT_C_DLL_SPEC int  MPIR_F_NeedInit;
-extern FORT_C_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
-extern FORT_C_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
-extern FORT_C_DLL_SPEC void *MPI_F_STATUS_IGNORE;
-extern FORT_C_DLL_SPEC void *MPI_F_STATUSES_IGNORE;
-extern FORT_C_DLL_SPEC int  *MPI_F_ERRCODES_IGNORE;
-extern FORT_C_DLL_SPEC void *MPI_F_ARGVS_NULL;
+extern FORT_DLL_SPEC int  MPIR_F_NeedInit;
+extern FORT_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
+extern FORT_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
+extern FORT_DLL_SPEC void *MPI_F_STATUS_IGNORE;
+extern FORT_DLL_SPEC void *MPI_F_STATUSES_IGNORE;
+extern FORT_DLL_SPEC int  *MPI_F_ERRCODES_IGNORE;
+extern FORT_DLL_SPEC void *MPI_F_ARGVS_NULL;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 
    MPI_BOTTOM if found 
    See src/pt2pt/addressf.c for why MPIR_F_PTR(a) is just (a)

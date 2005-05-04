@@ -213,7 +213,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="rem Combining libraries into mpich2socksd.lib"
-				CommandLine="rem lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib lib\smpd_utild.lib"/>
+				CommandLine="rem lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\smpd_utild.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -260,7 +260,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="rem Combining libraries into mpich2socks.lib"
-				CommandLine="rem lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib lib\smpd_util.lib"/>
+				CommandLine="rem lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\smpd_util.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -2033,15 +2033,6 @@
 				RelativePath="src\mpi\romio\mpi-io\set_view.c">
 			</File>
 			<File
-				RelativePath=".\src\binding\f77\setbot.c">
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="F77_NAME_UPPER"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="src\mpi\romio\adio\common\shfp_fname.c">
 			</File>
 			<File
@@ -2064,12 +2055,6 @@
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\common\status_setb.c">
-			</File>
-			<File
-				RelativePath=".\src\binding\f77\statusc2f.c">
-			</File>
-			<File
-				RelativePath=".\src\binding\f77\statusf2c.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi2-other\array\subarray.c">

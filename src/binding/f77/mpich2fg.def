@@ -724,3 +724,23 @@ EXPORTS
         mpi_type_null_delete_fn__=pmpi_type_null_delete_fn__
         pmpi_type_null_copy_fn__
         mpi_type_null_copy_fn__=pmpi_type_null_copy_fn__
+;	pmpi_status_c2f__
+;	mpi_status_c2f__=pmpi_status_c2f__
+;	pmpi_status_f2c__
+;	mpi_status_f2c__=pmpi_status_f2c__
+	PMPI_Status_c2f
+	MPI_Status_c2f=PMPI_Status_c2f
+	PMPI_Status_f2c
+	MPI_Status_f2c=PMPI_Status_f2c
+	mpipriv1_
+	mpipriv2_
+	mpiprivc_
+;	MPIR_F_TRUE
+;	MPIR_F_FALSE
+	MPIR_F_NeedInit
+	MPIR_F_MPI_BOTTOM
+	MPIR_F_MPI_IN_PLACE
+	MPI_F_STATUS_IGNORE
+	MPI_F_STATUSES_IGNORE
+	MPI_F_ERRCODES_IGNORE
+	MPI_F_ARGVS_NULL
