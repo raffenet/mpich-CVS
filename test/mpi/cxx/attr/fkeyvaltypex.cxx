@@ -97,7 +97,6 @@ int main( int argc, char *argv[] )
 
 	if (!mstype.isBasic) {
 	    type.Get_name( dtypename, tnlen );
-	    type.Free();
 	    /* Check that the original attribute was freed */
 	    if (attrval != 0) {
 		errs++;
@@ -113,6 +112,8 @@ int main( int argc, char *argv[] )
 	for (i=0; i<32; i++) {
 	    MPI::Datatype::Free_keyval( key[i] );
 	}
+        MTestFreeDatatype(&mstype);
+        MTestFreeDatatype(&mrtype);
     }
     MTest_Finalize( errs );
     MPI::Finalize();

@@ -62,6 +62,7 @@ void Explore( MPI::Datatype dtype, int mycomb, int &errs )
     if (combiner != MPI::COMBINER_NAMED) {
 	dtype.Get_contents( MAX_NINTS, MAX_ASIZEV, MAX_DTYPES,
 			    intv, aintv, dtypesv );
+
 	if (combiner != mycomb) {
 	    errs++;
 	    cout << "Expected combiner " << mycomb << " but got " <<
@@ -70,7 +71,9 @@ void Explore( MPI::Datatype dtype, int mycomb, int &errs )
 
 	// List all combiner types to check that they are defined in mpif.h
 	if (combiner == MPI::COMBINER_NAMED) { ; }
-	else if (combiner == MPI::COMBINER_DUP) { ; }
+	else if (combiner == MPI::COMBINER_DUP) { 
+            dtypesv[0].Free(); 
+        }
 	else if (combiner == MPI::COMBINER_CONTIGUOUS) { ; }
 	else if (combiner == MPI::COMBINER_VECTOR) { ; }
 	else if (combiner == MPI::COMBINER_HVECTOR_INTEGER) { ; }
