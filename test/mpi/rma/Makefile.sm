@@ -34,5 +34,14 @@ putpscw1_SOURCES = putpscw1.c
 getgroup_SOURCES = getgroup.c
 contig_displ_SOURCES = contig_displ.c
 
+test1_am_SOURCES = test1_am.c
+test2_am_SOURCES = test2_am.c
+test3_am_SOURCES = test3_am.c
+test4_am_SOURCES = test4_am.c
+test5_am_SOURCES = test5_am.c
+fetchandadd_am_SOURCES = fetchandadd_am.c
+fetchandadd_tree_am_SOURCES = fetchandadd_tree_am.c
+accfence2_am_SOURCES = accfence2_am.c
+
 ../util/mtest.o:
 	(cd ../util && $(MAKE) )

@@ -9,11 +9,16 @@
 
 /* tests a series of puts, gets, and accumulate on 2 processes using fence */
 
+/* same as test1.c but uses alloc_mem */
+
 #define SIZE 100
 
 int main(int argc, char *argv[]) 
 { 
-    int rank, nprocs, A[SIZE], B[SIZE], i;
+/*    int rank, nprocs, A[SIZE], B[SIZE], i; */
+    int rank, nprocs, i;
+    int *A, *B;
+
     MPI_Win win;
     int errs = 0;
  
@@ -26,6 +31,17 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD,1);
     }
 
+    i = MPI_Alloc_mem(SIZE * sizeof(int), MPI_INFO_NULL, &A);
+    if (i) {
+        printf("Can't allocate memory in test program\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    i = MPI_Alloc_mem(SIZE * sizeof(int), MPI_INFO_NULL, &B);
+    if (i) {
+        printf("Can't allocate memory in test program\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    
     if (rank == 0) {
         for (i=0; i<SIZE; i++)
             A[i] = B[i] = i;
@@ -70,6 +86,10 @@ int main(int argc, char *argv[])
     }
 
     MPI_Win_free(&win); 
+
+    MPI_Free_mem(A);
+    MPI_Free_mem(B);
+
     MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 

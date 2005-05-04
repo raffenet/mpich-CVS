@@ -9,12 +9,15 @@
 
 /* tests put and get with post/start/complete/wait on 2 processes */
 
+/* same as test1.c but uses alloc_mem */
+
 #define SIZE1 100
 #define SIZE2 200
 
 int main(int argc, char *argv[]) 
 { 
-    int rank, destrank, nprocs, A[SIZE2], B[SIZE2], i;
+/*    int rank, destrank, nprocs, A[SIZE2], B[SIZE2], i; */
+    int rank, destrank, nprocs, *A, *B, i;
     MPI_Group comm_group, group;
     MPI_Win win;
     int errs = 0;
@@ -28,6 +31,17 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD,1);
     }
 
+    i = MPI_Alloc_mem(SIZE2 * sizeof(int), MPI_INFO_NULL, &A);
+    if (i) {
+        printf("Can't allocate memory in test program\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    i = MPI_Alloc_mem(SIZE2 * sizeof(int), MPI_INFO_NULL, &B);
+    if (i) {
+        printf("Can't allocate memory in test program\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    
     MPI_Comm_group(MPI_COMM_WORLD, &comm_group);
 
     if (rank == 0) {
@@ -70,6 +84,9 @@ int main(int argc, char *argv[])
     MPI_Group_free(&group);
     MPI_Group_free(&comm_group);
     MPI_Win_free(&win); 
+    MPI_Free_mem(A);
+    MPI_Free_mem(B);
+
     MTest_Finalize(errs);
     MPI_Finalize();
     return 0; 

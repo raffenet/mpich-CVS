@@ -12,6 +12,7 @@
    example from Using MPI-2, pg 206-207. The code in the book (Fig
    6.16) has bugs that are fixed below. */ 
 
+/* same as fetchandadd_tree.c but uses alloc_mem */
 
 #define NTIMES 20  /* no of times each process calls the counter
                       routine */
@@ -44,12 +45,23 @@ int main(int argc, char *argv[])
         pof2 = 1;
         while (pof2 < nprocs) pof2 *= 2;
 
-        counter_mem = (int *) calloc(pof2*2, sizeof(int));
+        /* counter_mem = (int *) calloc(pof2*2, sizeof(int)); */
+
+        i = MPI_Alloc_mem(pof2*2*sizeof(int), MPI_INFO_NULL, &counter_mem);
+        if (i) {
+            printf("Can't allocate memory in test program\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
+        for (i=0; i<(pof2*2); i++) counter_mem[i] = 0;
+
         MPI_Win_create(counter_mem, pof2*2*sizeof(int), sizeof(int),
                        MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
         MPI_Win_free(&win); 
-        free(counter_mem);
+
+        /* free(counter_mem) */
+        MPI_Free_mem(counter_mem);
 
         /* gather the results from other processes, sort them, and check 
            whether they represent a counter being incremented by 1 */
