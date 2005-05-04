@@ -105,6 +105,18 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
 				RelativePath=".\smpd_ad.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="MPICH_SKIP_MPICXX"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="MPICH_SKIP_MPICXX"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\smpd_adreg.cpp">
@@ -112,13 +124,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"/>
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500;MPICH_SKIP_MPICXX"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"/>
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500;MPICH_SKIP_MPICXX"/>
 				</FileConfiguration>
 			</File>
 			<File
