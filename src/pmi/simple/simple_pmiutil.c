@@ -63,8 +63,8 @@ void PMIU_printf( int print_flag, char *fmt, ... )
 	char *p;
 	p = getenv("PMI_USE_LOGFILE");
 	if (p) {
-	    p = getenv("PMI_ID");
 	    char filename[1024];
+	    p = getenv("PMI_ID");
 	    if (p) {
 		MPIU_Snprintf( filename, sizeof(filename), 
 			       "testclient-%s.out", p );
