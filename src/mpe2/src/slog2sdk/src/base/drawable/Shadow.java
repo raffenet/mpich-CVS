@@ -229,8 +229,10 @@ public class Shadow extends Primitive
                 this_twgt.rescaleAllRatios( duration_ratio ); 
                 map_type2twgt.put( sobj_type, this_twgt );
             }
-            else
+            else {
+                this_twgt.addDrawableCount( sobj_twgt.getDrawableCount() );
                 this_twgt.addAllRatios( sobj_twgt, duration_ratio );
+            }
         }
 
         // if ( super.getCategory().getTopology().isState() )
@@ -318,7 +320,8 @@ public class Shadow extends Primitive
                 incl_fract  = dobj.getDuration() / shadow_duration;
                 incl_ratio += (float) incl_fract;
             }
-            twgt  = new CategoryWeight( type, incl_ratio, 0.0f );
+            twgt  = new CategoryWeight( type, incl_ratio, 0.0f,
+                                        dobj_list.size() );
             map_type2twgt.put( type, twgt );
             dobj_list  = null;
         }
