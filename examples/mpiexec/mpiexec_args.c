@@ -51,13 +51,13 @@ void print_options(void)
     printf("Usage:\n");
     printf("mpiexec -n <maxprocs> [options] executable [args ...]\n");
     printf("mpiexec [options] executable [args ...] : [options] exe [args] : ...\n");
-    printf("mpiexec -file <configfile>\n");
+    printf("mpiexec -configfile <configfile>\n");
     printf("\n");
     printf("options:\n");
     printf("\n");
     printf("-n <maxprocs>\n");
     printf("-wdir <working directory>\n");
-    printf("-file <filename> -\n");
+    printf("-configfile <filename> -\n");
     printf("       each line contains a complete set of mpiexec options\n");
     printf("       including the executable and arguments\n");
     printf("-host <hostname>\n");
@@ -173,7 +173,7 @@ int parse_arguments(int *argcp, char **argvp[],
      * -wdir <working directory>
      * -path <search path for executable>
      * -arch <architecture> - sun, linux, rs6000, ...
-     * -file <filename> - each line contains a complete set of mpiexec options, #commented
+     * -configfile <filename> - each line contains a complete set of mpiexec options, #commented
      *
      * Backwards compatibility
      * -np <numprocs>
@@ -209,7 +209,7 @@ configfile_loop:
 	path[0] = '\0';
 	host[0] = '\0';
 
-	/* Check for the -file option.  It must be the first and only option in a group. */
+	/* Check for the -configfile option.  It must be the first and only option in a group. */
 	if ((*argvp)[1] && (*argvp)[1][0] == '-')
 	{
 	    if ((*argvp)[1][1] == '-')
@@ -223,16 +223,16 @@ configfile_loop:
 		}
 		(*argvp)[1][index-1] = '\0';
 	    }
-	    if (strcmp(&(*argvp)[1][1], "file") == 0)
+	    if (strcmp(&(*argvp)[1][1], "configfile") == 0)
 	    {
 		if (use_configfile)
 		{
-		    printf("Error: -file option is not valid from within a configuration file.\n");
+		    printf("Error: -configfile option is not valid from within a configuration file.\n");
 		    return MPIEXEC_FAIL;
 		}
 		if (argc < 3)
 		{
-		    printf("Error: no filename specifed after -file option.\n");
+		    printf("Error: no filename specifed after -configfile option.\n");
 		    return MPIEXEC_FAIL;
 		}
 		strncpy(configfilename, (*argvp)[2], MPIEXEC_MAX_FILENAME);
@@ -300,9 +300,9 @@ configfile_loop:
 		strncpy(wdir, (*argvp)[2], MPIEXEC_MAX_DIR_LENGTH);
 		num_args_to_strip = 2;
 	    }
-	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
+	    else if (strcmp(&(*argvp)[1][1], "configfile") == 0)
 	    {
-		printf("Error: The -file option must be the first and only option specified in a block.\n");
+		printf("Error: The -configfile option must be the first and only option specified in a block.\n");
 		return MPIEXEC_FAIL;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "host") == 0)
@@ -320,8 +320,8 @@ configfile_loop:
 		strncpy(host, (*argvp)[2], MPIEXEC_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
 	    }
-	    /* catch -help, -?, and --help */
-	    else if (strcmp(&(*argvp)[1][1], "help") == 0 || (*argvp)[1][1] == '?' || strcmp(&(*argvp)[1][1], "-help") == 0)
+	    /* catch -help and -? */
+	    else if (strcmp(&(*argvp)[1][1], "help") == 0 || (*argvp)[1][1] == '?')
 	    {
 		print_options();
 		exit(0);
