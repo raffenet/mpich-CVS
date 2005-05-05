@@ -53,6 +53,9 @@
 #include "smpd_database.h"
 #include "pmi.h"
 
+#define SMPD_VERSION                   "1.1"
+#define SMPD_VERSION_FAILURE "version_failure"
+
 #define SMPD_LISTENER_PORT               8676
 
 #define SMPD_SUCCESS                        0
@@ -102,6 +105,7 @@ typedef int SMPD_BOOL;
 #define SMPD_AUTHENTICATION_STR_LEN       256
 #define SMPD_AUTHENTICATION_REPLY_LENGTH  100
 #define SMPD_AUTHENTICATION_REJECTED_STR  "FAIL"
+#define SMPD_AUTHENTICATION_REJECTED_VERSION_STR "FAIL_VERSION"
 #define SMPD_AUTHENTICATION_ACCEPTED_STR  "SUCCESS"
 #define SMPD_SMPD_SESSION_STR             "smpd"
 #define SMPD_PROCESS_SESSION_STR          "process"
@@ -855,6 +859,7 @@ int smpd_remove_job_key(const char *key);
 int smpd_associate_job_key(const char *key, const char *username, const char *domain, const char *full_domain, HANDLE user_handle);
 int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle);
 #endif
+SMPD_BOOL smpd_verify_version(const char *challenge);
 
 #if defined(__cplusplus)
 }

@@ -27,8 +27,8 @@ int smpd_gen_authentication_strings(char *phrase, char *append, char *crypted)
 
     stamp = rand();
 
-    snprintf(phrase_internal, SMPD_PASSPHRASE_MAX_LENGTH, "%s%d", phrase, stamp);
-    snprintf(append, SMPD_AUTHENTICATION_STR_LEN, "%d", stamp);
+    snprintf(phrase_internal, SMPD_PASSPHRASE_MAX_LENGTH, "%s%s %d", phrase, SMPD_VERSION, stamp);
+    snprintf(append, SMPD_AUTHENTICATION_STR_LEN, "%s %d", SMPD_VERSION, stamp);
 
     smpd_hash(phrase_internal, (int)strlen(phrase_internal), hash, SMPD_PASSPHRASE_MAX_LENGTH);
     if (strlen(hash) > SMPD_PASSPHRASE_MAX_LENGTH)

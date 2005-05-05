@@ -581,6 +581,30 @@ char * smpd_get_state_string(smpd_state_t state)
 }
 
 #undef FCNAME
+#define FCNAME "smpd_verify_version"
+SMPD_BOOL smpd_verify_version(const char *challenge)
+{
+    char version[100];
+    char *space_char;
+
+    smpd_enter_fn(FCNAME);
+    space_char = strchr(challenge, ' ');
+    if (space_char != NULL && space_char - challenge < 100)
+    {
+	strncpy(version, challenge, space_char - challenge);
+	version[space_char - challenge] = '\0';
+	if (strcmp(version, SMPD_VERSION) == 0)
+	{
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_TRUE;
+	}
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_FALSE;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_state_reading_challenge_string"
 int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
@@ -597,20 +621,28 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_even
     }
     smpd_dbg_printf("read challenge string: '%s'\n", context->pszChallengeResponse);
     context->read_state = SMPD_IDLE;
-    strcpy(phrase, smpd_process.passphrase);
-    /* crypt the passphrase + the challenge */
-    if (strlen(phrase) + strlen(context->pszChallengeResponse) > SMPD_PASSPHRASE_MAX_LENGTH)
-    {
-	smpd_err_printf("smpd_client_authenticate: unable to process passphrase - too long.\n");
-	smpd_exit_fn(FCNAME);
-	return SMPD_FAIL;
-    }
-    strcat(phrase, context->pszChallengeResponse);
 
-    /*smpd_dbg_printf("crypting: %s\n", phrase);*/
-    smpd_hash(phrase, (int)strlen(phrase), context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN);
-    /* save the response to be used as a prefix to the password when encrypting the password */
-    MPIU_Strncpy(smpd_process.encrypt_prefix, context->pszChallengeResponse, SMPD_MAX_PASSWORD_LENGTH);
+    if (smpd_verify_version(context->pszChallengeResponse) == SMPD_TRUE)
+    {
+	strcpy(phrase, smpd_process.passphrase);
+	/* crypt the passphrase + the challenge */
+	if (strlen(phrase) + strlen(context->pszChallengeResponse) > SMPD_PASSPHRASE_MAX_LENGTH)
+	{
+	    smpd_err_printf("smpd_client_authenticate: unable to process passphrase - too long.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	strcat(phrase, context->pszChallengeResponse);
+
+	/*smpd_dbg_printf("crypting: %s\n", phrase);*/
+	smpd_hash(phrase, (int)strlen(phrase), context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN);
+	/* save the response to be used as a prefix to the password when encrypting the password */
+	MPIU_Strncpy(smpd_process.encrypt_prefix, context->pszChallengeResponse, SMPD_MAX_PASSWORD_LENGTH);
+    }
+    else
+    {
+	strcpy(context->pszChallengeResponse, SMPD_VERSION_FAILURE);
+    }
 
     /* write the response */
     /*smpd_dbg_printf("writing response: %s\n", pszStr);*/
@@ -672,6 +704,7 @@ int smpd_state_reading_connect_result(smpd_context_t *context, MPIDU_Sock_event_
     context->read_state = SMPD_IDLE;
     if (strcmp(context->pszChallengeResponse, SMPD_AUTHENTICATION_ACCEPTED_STR))
     {
+	char post_message[100];
 	/* rejected connection, close */
 	smpd_dbg_printf("connection rejected, server returned - %s\n", context->pszChallengeResponse);
 	context->read_state = SMPD_IDLE;
@@ -686,18 +719,27 @@ int smpd_state_reading_connect_result(smpd_context_t *context, MPIDU_Sock_event_
 
 	/* connection failed, abort? */
 	/* when does a forming context get assinged it's global place?  At creation?  At connection? */
+	if (strcmp(context->pszChallengeResponse, SMPD_AUTHENTICATION_REJECTED_VERSION_STR) == 0)
+	{
+	    /* Customize the abort message to state that the smpd version did not match */
+	    strcpy(post_message, ", smpd version mismatch");
+	}
+	else
+	{
+	    post_message[0] = '\0';
+	}
 	if (smpd_process.left_context == context)
 	    smpd_process.left_context = NULL;
 	if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
-	    result = smpd_post_abort_command("1 unable to connect to %s", smpd_process.console_host);
+	    result = smpd_post_abort_command("unable to connect to %s%s", smpd_process.console_host, post_message);
 	else if (context->connect_to && context->connect_to->host[0] != '\0')
-	    result = smpd_post_abort_command("2 unable to connect to %s", context->connect_to->host);
+	    result = smpd_post_abort_command("unable to connect to %s%s", context->connect_to->host, post_message);
 	else
 	{
 	    if (context->host[0] != '\0')
-		result = smpd_post_abort_command("3 unable to connect to %s", context->host);
+		result = smpd_post_abort_command("unable to connect to %s%s", context->host, post_message);
 	    else
-		result = smpd_post_abort_command("connection to smpd rejected");
+		result = smpd_post_abort_command("connection to smpd rejected%s", post_message);
 	}
 	if (result != SMPD_SUCCESS)
 	{
@@ -800,7 +842,9 @@ int smpd_state_reading_challenge_response(smpd_context_t *context, MPIDU_Sock_ev
     smpd_dbg_printf("read challenge response: '%s'\n", context->pszChallengeResponse);
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_CONNECT_RESULT;
-    if (strcmp(context->pszChallengeResponse, context->pszCrypt) == 0)
+    if (strcmp(context->pszChallengeResponse, SMPD_VERSION_FAILURE) == 0)
+	strcpy(context->pszChallengeResponse, SMPD_AUTHENTICATION_REJECTED_VERSION_STR);
+    else if (strcmp(context->pszChallengeResponse, context->pszCrypt) == 0)
 	strcpy(context->pszChallengeResponse, SMPD_AUTHENTICATION_ACCEPTED_STR);
     else
 	strcpy(context->pszChallengeResponse, SMPD_AUTHENTICATION_REJECTED_STR);
