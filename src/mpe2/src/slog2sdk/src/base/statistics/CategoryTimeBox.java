@@ -13,46 +13,46 @@ import java.awt.Color;
 import java.util.Comparator;
 
 import base.drawable.TimeBoundingBox;
-import base.drawable.CategoryWeight;
 
 public class CategoryTimeBox extends TimeBoundingBox
 {
     public static final Comparator  INDEX_ORDER       = new IndexOrder();
     public static final Comparator  INCL_RATIO_ORDER  = new InclRatioOrder();
     public static final Comparator  EXCL_RATIO_ORDER  = new ExclRatioOrder();
+    public static final Comparator  COUNT_ORDER       = new CountOrder();
 
-    private CategoryWeight   twgt;
+    private CategoryWeightF   twgf;
     
     public CategoryTimeBox()
     {
         super();
-        twgt  = null;
+        twgf  = null;
     }
 
-    public CategoryTimeBox( final CategoryWeight  in_twgt )
+    public CategoryTimeBox( final CategoryWeightF  in_twgf )
     {
         super();
-        twgt  = in_twgt;
+        twgf  = in_twgf;
     }
 
     public float  getCategoryRatio( boolean isInclusive )
     {
-        return twgt.getRatio( isInclusive );
+        return twgf.getRatio( isInclusive );
     }
 
     public Color  getCategoryColor()
     {
-        return twgt.getCategory().getColor();
+        return twgf.getCategory().getColor();
     }
 
     public boolean  isCategoryVisiblySearchable()
     {
-        return twgt.getCategory().isVisiblySearchable();
+        return twgf.getCategory().isVisiblySearchable();
     }
 
-    public CategoryWeight  getCategoryWeight()
+    public CategoryWeightF  getCategoryWeightF()
     {
-        return twgt;
+        return twgf;
     }
 
 
@@ -62,8 +62,8 @@ public class CategoryTimeBox extends TimeBoundingBox
         {
             CategoryTimeBox typebox1 = (CategoryTimeBox) o1;
             CategoryTimeBox typebox2 = (CategoryTimeBox) o2;
-            return CategoryWeight.INDEX_ORDER.compare( typebox1.twgt,
-                                                       typebox2.twgt );
+            return CategoryWeightF.INDEX_ORDER.compare( typebox1.twgf,
+                                                        typebox2.twgf );
         }
     }
 
@@ -73,8 +73,8 @@ public class CategoryTimeBox extends TimeBoundingBox
         {
             CategoryTimeBox typebox1 = (CategoryTimeBox) o1;
             CategoryTimeBox typebox2 = (CategoryTimeBox) o2;
-            return CategoryWeight.INCL_RATIO_ORDER.compare( typebox1.twgt,
-                                                            typebox2.twgt );
+            return CategoryWeightF.INCL_RATIO_ORDER.compare( typebox1.twgf,
+                                                             typebox2.twgf );
         }
     }
 
@@ -84,8 +84,19 @@ public class CategoryTimeBox extends TimeBoundingBox
         {
             CategoryTimeBox typebox1 = (CategoryTimeBox) o1;
             CategoryTimeBox typebox2 = (CategoryTimeBox) o2;
-            return CategoryWeight.EXCL_RATIO_ORDER.compare( typebox1.twgt,
-                                                            typebox2.twgt );
+            return CategoryWeightF.EXCL_RATIO_ORDER.compare( typebox1.twgf,
+                                                             typebox2.twgf );
+        }
+    }
+
+    private static class CountOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            CategoryTimeBox typebox1 = (CategoryTimeBox) o1;
+            CategoryTimeBox typebox2 = (CategoryTimeBox) o2;
+            return CategoryWeightF.COUNT_ORDER.compare( typebox1.twgf,
+                                                        typebox2.twgf );
         }
     }
 }

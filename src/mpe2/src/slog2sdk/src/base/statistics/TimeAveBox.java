@@ -20,8 +20,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import base.drawable.TimeBoundingBox;
-import base.drawable.CategoryWeight;
 import base.drawable.Category;
+import base.drawable.CategoryWeight;
 import base.drawable.Drawable;
 import base.drawable.Composite;
 import base.drawable.Primitive;
@@ -29,7 +29,7 @@ import base.drawable.Shadow;
 
 public class TimeAveBox extends TimeBoundingBox
 {
-    private              Map                 map_type2twgt;
+    private              Map                 map_type2twgf;
     private              List                list_nestables;
     private              SortedSet           set_timeblocks;
     private              CategoryTimeBox[]   typebox_ary;
@@ -42,7 +42,7 @@ public class TimeAveBox extends TimeBoundingBox
                              boolean          isNestable )
     {
         super( timebox );
-        map_type2twgt   = new HashMap();
+        map_type2twgf   = new HashMap();
         box_duration    = super.getDuration();
         num_real_objs   = 0.0d;
         typebox_ary     = null;
@@ -67,24 +67,28 @@ public class TimeAveBox extends TimeBoundingBox
     public void mergeWithReal( final Drawable  dobj )
     {
         Category          type;
-        CategoryWeight    twgt;
+        CategoryWeightF   twgf;
         double            overlap_duration;
-        float             duration_ratio;
+        float             box_overlap_ratio;
+        double            ave_num_real_objs;
 
-        overlap_duration = super.getIntersectionDuration( dobj );
-        duration_ratio   = (float) (overlap_duration / box_duration);
+        overlap_duration   = super.getIntersectionDuration( dobj );
+        box_overlap_ratio  = (float) (overlap_duration / box_duration);
+        ave_num_real_objs  = overlap_duration / dobj.getDuration()
+                           * dobj.getNumOfPrimitives();
 
         type  = dobj.getCategory();
-        twgt  = (CategoryWeight) map_type2twgt.get( type );
-        if ( twgt == null ) {
-            twgt  = new CategoryWeight( type, duration_ratio, 0.0f );
-            map_type2twgt.put( type, twgt );
+        twgf  = (CategoryWeightF) map_type2twgf.get( type );
+        if ( twgf == null ) {
+            twgf  = new CategoryWeightF( type, box_overlap_ratio, 0.0f,
+                                         ave_num_real_objs );
+            map_type2twgf.put( type, twgf );
         }
-        else
-            twgt.addInclusiveRatio( duration_ratio );
-        // num_real_objs += duration_ratio * dobj.getNumOfPrimitives();
-        num_real_objs += overlap_duration / dobj.getDuration()
-                       * dobj.getNumOfPrimitives();
+        else {
+            twgf.addDrawableCount( ave_num_real_objs );
+            twgf.addInclusiveRatio( box_overlap_ratio );
+        }
+        num_real_objs += ave_num_real_objs;
 
         if ( list_nestables != null )
             list_nestables.add( dobj );
@@ -94,31 +98,39 @@ public class TimeAveBox extends TimeBoundingBox
     {
         TimeBoundingBox   timeblock;
         Category          sobj_type;
-        CategoryWeight    sobj_twgt, this_twgt;
+        CategoryWeightF   this_twgf;
+        CategoryWeight    sobj_twgt;
         CategoryWeight[]  sobj_twgts;
         double            overlap_duration;
-        float             duration_ratio;
+        float             box_overlap_ratio;
+        double            sobj_overlap_ratio;
+        double            ave_num_real_objs;
         int               idx;
 
-        overlap_duration = super.getIntersectionDuration( shade );
-        duration_ratio   = (float) (overlap_duration / box_duration);
+        overlap_duration   = super.getIntersectionDuration( shade );
+        box_overlap_ratio  = (float) (overlap_duration / box_duration);
+        sobj_overlap_ratio = overlap_duration / shade.getDuration();
+        ave_num_real_objs  = sobj_overlap_ratio * shade.getNumOfRealObjects();
 
         sobj_twgts = shade.arrayOfCategoryWeights();
         for ( idx = sobj_twgts.length-1 ; idx >= 0 ; idx-- ) {
             sobj_twgt = sobj_twgts[ idx ];
             sobj_type = sobj_twgt.getCategory();
-            this_twgt = (CategoryWeight) map_type2twgt.get( sobj_type );
-            if ( this_twgt == null ) {
-                this_twgt = new CategoryWeight( sobj_twgt );// sobj_twgt's clone
-                this_twgt.rescaleAllRatios( duration_ratio );
-                map_type2twgt.put( sobj_type, this_twgt );
+            this_twgf = (CategoryWeightF) map_type2twgf.get( sobj_type );
+            if ( this_twgf == null ) {
+                // sobj_twgt's clone + rescaling ratios & num_real_objs
+                this_twgf = new CategoryWeightF( sobj_twgt );
+                this_twgf.rescaleAllRatios( box_overlap_ratio );
+                this_twgf.rescaleDrawableCount( sobj_overlap_ratio );
+                map_type2twgf.put( sobj_type, this_twgf );
             }
-            else
-                this_twgt.addAllRatios( sobj_twgt, duration_ratio );
+            else {
+                this_twgf.addDrawableCount( sobj_overlap_ratio
+                                          * sobj_twgt.getDrawableCount() );
+                this_twgf.addAllRatios( sobj_twgt, box_overlap_ratio );
+            }
         }
-	// num_real_objs += duration_ratio * shade.getNumOfRealObjects() ;
-        num_real_objs += overlap_duration / shade.getDuration()
-                       * shade.getNumOfRealObjects() ;
+        num_real_objs += ave_num_real_objs;
 
         if ( list_nestables != null )
             set_timeblocks.add( shade );
@@ -128,30 +140,38 @@ public class TimeAveBox extends TimeBoundingBox
     {
         TimeBoundingBox   timeblock;
         Category          abox_type;
-        CategoryWeight    abox_twgt, this_twgt;
-        Iterator          abox_twgts;
+        CategoryWeightF   abox_twgf, this_twgf;
+        Iterator          abox_twgfs;
         double            overlap_duration;
-        float             duration_ratio;
+        float             box_overlap_ratio;
+        double            abox_overlap_ratio;
+        double            ave_num_real_objs;
         int               idx;
 
-        overlap_duration = super.getIntersectionDuration( avebox );
-        duration_ratio   = (float) (overlap_duration / box_duration);
+        overlap_duration   = super.getIntersectionDuration( avebox );
+        box_overlap_ratio  = (float) (overlap_duration / box_duration);
+        abox_overlap_ratio = overlap_duration / avebox.getDuration();
+        ave_num_real_objs  = abox_overlap_ratio * avebox.num_real_objs;
 
-        abox_twgts = avebox.map_type2twgt.values().iterator();
-        while ( abox_twgts.hasNext() ) {
-            abox_twgt = (CategoryWeight) abox_twgts.next();
-            abox_type = abox_twgt.getCategory();
-            this_twgt = (CategoryWeight) map_type2twgt.get( abox_type );
-            if ( this_twgt == null ) {
-                this_twgt = new CategoryWeight( abox_twgt );// abox_twgt's clone
-                this_twgt.rescaleAllRatios( duration_ratio );
-                map_type2twgt.put( abox_type, this_twgt );
+        abox_twgfs = avebox.map_type2twgf.values().iterator();
+        while ( abox_twgfs.hasNext() ) {
+            abox_twgf = (CategoryWeightF) abox_twgfs.next();
+            abox_type = abox_twgf.getCategory();
+            this_twgf = (CategoryWeightF) map_type2twgf.get( abox_type );
+            if ( this_twgf == null ) {
+                // abox_twgf's clone + rescaling ratios & num_real_objs
+                this_twgf = new CategoryWeightF( abox_twgf );
+                this_twgf.rescaleAllRatios( box_overlap_ratio );
+                this_twgf.rescaleDrawableCount( abox_overlap_ratio );
+                map_type2twgf.put( abox_type, this_twgf );
             }
-            else
-                this_twgt.addAllRatios( abox_twgt, duration_ratio );
+            else {
+                this_twgf.addDrawableCount( abox_overlap_ratio
+                                          * abox_twgf.getDrawableCount() );
+                this_twgf.addAllRatios( abox_twgf, box_overlap_ratio );
+            }
         }
-        num_real_objs += overlap_duration / avebox.getDuration()
-                       * avebox.num_real_objs;
+        num_real_objs += ave_num_real_objs;
 
         if ( list_nestables != null )
             set_timeblocks.add( avebox );
@@ -219,12 +239,12 @@ public class TimeAveBox extends TimeBoundingBox
         set_timeblocks = null;
     }
 
-    private void adjustMapOfCategoryWeights()
+    private void adjustMapOfCategoryWeightFs()
     {
         Iterator          dobjs_itr;
         Drawable          curr_dobj;
         Category          dobj_type;
-        CategoryWeight    dobj_twgt;
+        CategoryWeightF   dobj_twgf;
         float             excl_ratio;
 
         dobjs_itr      = list_nestables.iterator();
@@ -232,9 +252,9 @@ public class TimeAveBox extends TimeBoundingBox
             curr_dobj  = (Drawable) dobjs_itr.next();
             excl_ratio = (float) ( curr_dobj.getExclusion() / box_duration );
             dobj_type  = curr_dobj.getCategory();
-            // CategoryWeight is guaranteed to be in map_type2twgt
-            dobj_twgt  = (CategoryWeight) map_type2twgt.get( dobj_type );
-            dobj_twgt.addExclusiveRatio( excl_ratio );
+            // CategoryWeightF is guaranteed to be in map_type2twgf
+            dobj_twgf  = (CategoryWeightF) map_type2twgf.get( dobj_type );
+            dobj_twgf.addExclusiveRatio( excl_ratio );
         }
         list_nestables.clear();
         // Don't set list_nestables=null so list_nestables indicates Nestability
@@ -245,7 +265,7 @@ public class TimeAveBox extends TimeBoundingBox
     {
         this.patchSetOfTimeBlocks();
         this.setRealDrawableExclusion();
-        this.adjustMapOfCategoryWeights();
+        this.adjustMapOfCategoryWeightFs();
     }
 
     public double getAveNumOfRealObjects()
@@ -255,18 +275,18 @@ public class TimeAveBox extends TimeBoundingBox
 
     public void initializeCategoryTimeBoxes()
     {
-        Iterator        twgts_itr;
-        CategoryWeight  twgt;
+        Iterator        twgfs_itr;
+        CategoryWeightF twgf;
         CategoryTimeBox typebox;
         int             idx;
 
         if ( typebox_ary == null ) {
-            typebox_ary = new CategoryTimeBox[ map_type2twgt.size() ];
+            typebox_ary = new CategoryTimeBox[ map_type2twgf.size() ];
             idx         = 0;
-            twgts_itr   = map_type2twgt.values().iterator();
-            while ( twgts_itr.hasNext() ) {
-                twgt    = (CategoryWeight) twgts_itr.next();
-                typebox = new CategoryTimeBox( twgt );
+            twgfs_itr   = map_type2twgf.values().iterator();
+            while ( twgfs_itr.hasNext() ) {
+                twgf    = (CategoryWeightF) twgfs_itr.next();
+                typebox = new CategoryTimeBox( twgf );
                 typebox_ary[ idx ] = typebox;
                 idx++;
             }
@@ -288,13 +308,13 @@ public class TimeAveBox extends TimeBoundingBox
         StringBuffer rep = new StringBuffer( super.toString() );
         rep.append( " Nrobjs=" + (float) num_real_objs );
 
-        if ( map_type2twgt.size() > 0 ) {
-            Object[] twgts;
-            twgts = map_type2twgt.values().toArray( new CategoryWeight[0] );
-            Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
-            int  twgts_length = twgts.length;
-            for ( int idx = 0; idx < twgts_length; idx++ )
-                rep.append( "\n" + twgts[ idx ] );
+        if ( map_type2twgf.size() > 0 ) {
+            Object[] twgfs;
+            twgfs = map_type2twgf.values().toArray( new CategoryWeightF[0] );
+            Arrays.sort( twgfs, CategoryWeightF.INCL_RATIO_ORDER );
+            int  twgfs_length = twgfs.length;
+            for ( int idx = 0; idx < twgfs_length; idx++ )
+                rep.append( "\n" + twgfs[ idx ] );
             rep.append( "\n" );
         }
         return rep.toString();

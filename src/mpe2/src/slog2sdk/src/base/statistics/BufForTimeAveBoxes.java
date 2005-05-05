@@ -22,7 +22,6 @@ import java.util.Collections;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Topology;
 import base.drawable.Category;
-import base.drawable.CategoryWeight;
 import base.drawable.Drawable;
 import base.drawable.Primitive;
 import base.drawable.Shadow;
@@ -64,7 +63,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         TimeAveBox  avebox;
         Integer     lineID_start, lineID_final;
 
-        key = new ArrayList();
+        key  = new ArrayList();
         topo = dobj.getCategory().getTopology();
         key.add( topo );
         // key.addAll( prime.getListOfVertexLineIDs() );
@@ -92,7 +91,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         TimeAveBox  avebox;
         Integer     lineID_start, lineID_final;
 
-        key = new ArrayList();
+        key  = new ArrayList();
         topo = dobj.getCategory().getTopology();
         key.add( topo );
         // key.addAll( prime.getListOfVertexLineIDs() );
