@@ -7,6 +7,7 @@
 // pman_vis.cpp : Defines the class behaviors for the application.
 //
 
+#include "mpi.h"
 #include "stdafx.h"
 #include "pman_vis.h"
 #include "MainFrm.h"
@@ -14,8 +15,6 @@
 #include "pman_visDoc.h"
 #include "pman_visView.h"
 #include ".\pman_vis.h"
-
-#include "mpi.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
