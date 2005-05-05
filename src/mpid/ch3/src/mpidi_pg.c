@@ -133,6 +133,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		MPIDI_PG_iterator_next = MPIDI_PG_iterator_next->next;
 	    }
 
+            if (pg == MPIDI_PG_list)
+                MPIDI_PG_list = pg->next; 
+
 	    MPIDI_PG_Destroy_fn(pg, pg->id);
 	    MPIU_Free(pg->vct);
 	    MPIU_Free(pg);
