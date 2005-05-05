@@ -9,144 +9,56 @@
 
 package base.drawable;
 
-import java.util.Map;
 import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
-public class CategoryWeight
+public class CategoryWeight extends CategoryRatios
 {
-    public  static final int         BYTESIZE          = 12;
+    public  static final int         BYTESIZE          = CategoryRatios.BYTESIZE
+                                                       + 8; // num_real_objs
 
-    public  static final Comparator  INDEX_ORDER       = new IndexOrder();
-    public  static final Comparator  INCL_RATIO_ORDER  = new InclRatioOrder();
-    public  static final Comparator  EXCL_RATIO_ORDER  = new ExclRatioOrder();
+    public  static final Comparator  COUNT_ORDER       = new CountOrder();
 
-    public  static final int         PRINT_ALL_RATIOS  = 0;
-    public  static final int         PRINT_INCL_RATIO  = 1;
-    public  static final int         PRINT_EXCL_RATIO  = 2;
-
-    private static final String      TITLE_ALL_RATIOS
-                                     = "*** All Duration Ratios:";
-    private static final String      TITLE_INCL_RATIO
-                                     = "*** Inclusive Duration Ratio:";
-    private static final String      TITLE_EXCL_RATIO
-                                     = "*** Exclusive Duration Ratio:";
-
-    private static final int INVALID_INDEX = Integer.MIN_VALUE;
-
-    private int        type_idx;
-    private Category   type;
-    private float      incl_ratio;
-    private float      excl_ratio;
-
-    private int        width;    // pixel width, for SLOG-2 Input & Jumpshot
-    private int        height;   // pixel height, for SLOG-2 Input & Jumpshot
+    private long       num_real_objs;
 
     public CategoryWeight()
     {
-        type        = null;
-        type_idx    = INVALID_INDEX;
-        incl_ratio  = 0.0f;
-        excl_ratio  = 0.0f;
-        width       = 0;
-        height      = 0;
+        super();
+        num_real_objs  = 0;
     }
 
     // For SLOG-2 Output
     public CategoryWeight( final Category new_type,
-                           float new_incl_r, float new_excl_r )
+                           float new_incl_r, float new_excl_r,
+                           long new_num_real_objs )
     {
-        type        = new_type;
-        type_idx    = type.getIndex();
-        incl_ratio  = new_incl_r;
-        excl_ratio  = new_excl_r;
+        super( new_type, new_incl_r, new_excl_r );
+        num_real_objs  = new_num_real_objs;
     }
 
     // For SLOG-2 Output
     public CategoryWeight( final CategoryWeight type_wgt )
     {
-        this.type        = type_wgt.type;
-        this.type_idx    = type_wgt.type_idx;
-        this.incl_ratio  = type_wgt.incl_ratio;
-        this.excl_ratio  = type_wgt.excl_ratio;
+        super( type_wgt );
+        this.num_real_objs  = type_wgt.num_real_objs;
     }
 
-    public void setPixelWidth( int wdh )
+    public long getDrawableCount()
     {
-        width = wdh;
+        return num_real_objs;
     }
 
-    public int getPixelWidth()
+    public void addDrawableCount( long new_num_real_objs )
     {
-        return width;
-    }
-
-    public void setPixelHeight( int hgt )
-    {
-        height = hgt;
-    }
-
-    public int getPixelHeight()
-    {
-        return height;
-    }
-
-    public Category getCategory()
-    {
-        return type;
-    }
-
-    public float getRatio( boolean isInclusive )
-    {
-        if ( isInclusive )
-            return incl_ratio;
-        else
-            return excl_ratio;
-    }
-
-    public void rescaleAllRatios( float ftr )
-    {
-        incl_ratio *= ftr;
-        excl_ratio *= ftr;
-    }
-
-    public void addAllRatios( final CategoryWeight a_type_wgt, float ftr )
-    {
-        this.incl_ratio += a_type_wgt.incl_ratio * ftr;
-        this.excl_ratio += a_type_wgt.excl_ratio * ftr;
-    }
-
-    public void addExclusiveRatio( float extra_ratio )
-    {
-        this.excl_ratio += extra_ratio;
-    }
-
-    // For Jumpshot-4
-    public void addInclusiveRatio( float extra_ratio )
-    {
-        this.incl_ratio += extra_ratio;
-    }
-
-    //  For SLOG-2 Input API, used by Shadow.resolveCategory() 
-    public boolean resolveCategory( final Map categorymap )
-    {
-        if ( type == null ) {
-            if ( type_idx != INVALID_INDEX ) {
-                type = (Category) categorymap.get( new Integer( type_idx ) );
-                if ( type != null )
-                    return true;
-            }
-        }
-        return false;
+        this.num_real_objs  += new_num_real_objs;
     }
 
     public void writeObject( DataOutput outs )
     throws java.io.IOException
     {
-        outs.writeInt( type_idx );
-        outs.writeFloat( incl_ratio );
-        outs.writeFloat( excl_ratio );
+        super.writeObject( outs );
+        outs.writeLong( num_real_objs );
     }
 
     public CategoryWeight( DataInput ins )
@@ -159,82 +71,32 @@ public class CategoryWeight
     public void readObject( DataInput ins )
     throws java.io.IOException
     {
-        type_idx   = ins.readInt();
-        incl_ratio = ins.readFloat();
-        excl_ratio = ins.readFloat();
-    }
-
-    // For InfoPanelForDrawable
-    public static String getPrintTitle( int print_status )
-    {
-        if ( print_status == PRINT_INCL_RATIO )
-            return TITLE_INCL_RATIO;
-        else if ( print_status == PRINT_EXCL_RATIO )
-            return TITLE_EXCL_RATIO;
-        else // if ( print_status == PRINT_ALL_RATIOS )
-            return TITLE_ALL_RATIOS;
+        super.readObject( ins );
+        num_real_objs  = ins.readLong();
     }
 
     // For InfoPanelForDrawable
     public String toInfoBoxString( int print_status )
     {
-        StringBuffer rep = new StringBuffer( "legend=" );
-        if ( type != null )
-            rep.append( type.getName() );
-        else
-            rep.append( "null:" + type_idx );
-        
-        if ( print_status == PRINT_INCL_RATIO )
-            rep.append( ", ratio=" + incl_ratio );
-        else if ( print_status == PRINT_EXCL_RATIO )
-            rep.append( ", ratio=" + excl_ratio ); 
-        else // if ( print_status == PRINT_ALL_RATIOS )
-            rep.append( ", incl_ratio=" + incl_ratio
-                      + ", excl_ratio=" + excl_ratio );
-        return rep.toString();
+        return super.toInfoBoxString( print_status )
+             + ", count=" + num_real_objs;
     }
 
     public String toString()
     {
-        if ( type != null )
-            return "(type=" + type_idx + ":" + type.getName()
-                 + ",wgt=" + incl_ratio + "," + excl_ratio + ")";
-        else
-            return "(type=" + type_idx
-                 + ",wgt=" + incl_ratio + "," + excl_ratio + ")";
+        return "(" + super.toString() + ", count=" + num_real_objs + ")";
     }
 
 
 
-    private static class IndexOrder implements Comparator
+    private static class CountOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {
             CategoryWeight type_wgt1 = (CategoryWeight) o1;
             CategoryWeight type_wgt2 = (CategoryWeight) o2;
-            return type_wgt1.type_idx - type_wgt2.type_idx;
-        }
-    }
-
-    private static class InclRatioOrder implements Comparator
-    {
-        public int compare( Object o1, Object o2 )
-        {
-            CategoryWeight type_wgt1 = (CategoryWeight) o1;
-            CategoryWeight type_wgt2 = (CategoryWeight) o2;
-            float diff = type_wgt1.incl_ratio - type_wgt2.incl_ratio;
-            return ( diff < 0.0f ? -1 : ( diff == 0.0f ? 0 : 1 ) );
-        }
-    }
-
-    private static class ExclRatioOrder implements Comparator
-    {
-        public int compare( Object o1, Object o2 )
-        {
-            CategoryWeight type_wgt1 = (CategoryWeight) o1;
-            CategoryWeight type_wgt2 = (CategoryWeight) o2;
-            float diff = type_wgt1.excl_ratio - type_wgt2.excl_ratio;
-            return ( diff < 0.0f ? -1 : ( diff == 0.0f ? 0 : 1 ) );
+            long diff = type_wgt1.num_real_objs - type_wgt2.num_real_objs;
+            return ( diff < 0 ? -1 : ( diff == 0 ? 0 : 1 ) );
         }
     }
 }
