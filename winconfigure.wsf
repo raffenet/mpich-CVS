@@ -1737,7 +1737,7 @@ Function GenerateDefmsg()
 	contents = Trim(contents)
 	contents = Replace(contents, "/", "\")
 	contents = Replace(contents, vbCrLf, "")
-	cmd_line = "perl maint\extracterrmsgs -skip=src\util\multichannel\mpi.c " & contents
+	cmd_line = "perl maint\extracterrmsgs -skip=src\util/multichannel/mpi.c " & contents
 	'WScript.Echo(cmd_line)
 	output = RunCmd(cmd_line)
 	output(1) = RemoveWarnings(output(1))
