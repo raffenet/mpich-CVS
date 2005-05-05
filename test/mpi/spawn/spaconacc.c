@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define IF_VERBOSE(a) if (verbose) { printf a ; fflush(stdout); }
+
 void check_error(int error, char *fcname)
 {
     char err_string[MPI_MAX_ERROR_STRING];
@@ -38,15 +40,15 @@ int main(int argc, char *argv[])
 	verbose = 1;
     }
 
-    if (verbose) { printf("init.\n");fflush(stdout); }
+    IF_VERBOSE(("init.\n"));
     error = MPI_Init(&argc, &argv);
     check_error(error, "MPI_Init");
 
-    if (verbose) { printf("size.\n");fflush(stdout); }
+    IF_VERBOSE(("size.\n"));
     error = MPI_Comm_size(MPI_COMM_WORLD, &size);
     check_error(error, "MPI_Comm_size");
 
-    if (verbose) { printf("rank.\n");fflush(stdout); }
+    IF_VERBOSE(("rank.\n"));
     error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     check_error(error, "MPI_Comm_rank");
 
@@ -61,34 +63,34 @@ int main(int argc, char *argv[])
 	MPI_Info_create( &spawn_path );
 	MPI_Info_set( spawn_path, "path", "." );
 
-	if (verbose) { printf("spawn connector.\n");fflush(stdout); }
+	IF_VERBOSE(("spawn connector.\n"));
 	error = MPI_Comm_spawn("spaconacc", argv1, 1, spawn_path, 0, 
 			       MPI_COMM_SELF, &comm_connector, 
 			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
 
-	if (verbose) { printf("spawn acceptor.\n");fflush(stdout); }
+	IF_VERBOSE(("spawn acceptor.\n"));
 	error = MPI_Comm_spawn("spaconacc", argv2, 1, spawn_path, 0, 
 			       MPI_COMM_SELF, &comm_acceptor, 
 			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
 	MPI_Info_free( &spawn_path );
 
-	if (verbose) { printf("recv port.\n");fflush(stdout); }
+	IF_VERBOSE(("recv port.\n"));
 	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
 			 comm_acceptor, &status);
 	check_error(error, "MPI_Recv");
 
-	if (verbose) { printf("send port.\n");fflush(stdout); }
+	IF_VERBOSE(("send port.\n"));
 	error = MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
 			 comm_connector);
 	check_error(error, "MPI_Send");
 
-	if (verbose) { printf("barrier acceptor.\n");fflush(stdout); }
+	IF_VERBOSE(("barrier acceptor.\n"));
 	error = MPI_Barrier(comm_acceptor);
 	check_error(error, "MPI_Barrier");
 
-	if (verbose) { printf("barrier connector.\n");fflush(stdout); }
+	IF_VERBOSE(("barrier connector.\n"));
 	error = MPI_Barrier(comm_connector);
 	check_error(error, "MPI_Barrier");
 
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
     }
     else if ((argc == 2) && (strcmp(argv[1], "acceptor") == 0))
     {
-	if (verbose) { printf("get_parent.\n");fflush(stdout); }
+	IF_VERBOSE(("get_parent.\n"));
 	error = MPI_Comm_get_parent(&comm_parent);
 	check_error(error, "MPI_Comm_get_parent");
 	if (comm_parent == MPI_COMM_NULL)
@@ -104,34 +106,34 @@ int main(int argc, char *argv[])
 	    printf("acceptor's parent is NULL.\n");fflush(stdout);
 	    MPI_Abort(MPI_COMM_WORLD, -1);
 	}
-	if (verbose) { printf("open_port.\n");fflush(stdout); }
+	IF_VERBOSE(("open_port.\n"));
 	error = MPI_Open_port(MPI_INFO_NULL, port);
 	check_error(error, "MPI_Open_port");
 
-	if (verbose) { printf("0: opened port: <%s>\n", port);fflush(stdout); }
-	if (verbose) { printf("send.\n");fflush(stdout); }
+	IF_VERBOSE(("0: opened port: <%s>\n", port));
+	IF_VERBOSE(("send.\n"));
 	error = MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, comm_parent);
 	check_error(error, "MPI_Send");
 
-	if (verbose) { printf("accept.\n");fflush(stdout); }
+	IF_VERBOSE(("accept.\n"));
 	error = MPI_Comm_accept(port, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
 	check_error(error, "MPI_Comm_accept");
 
-	if (verbose) { printf("close_port.\n");fflush(stdout); }
+	IF_VERBOSE(("close_port.\n"));
 	error = MPI_Close_port(port);
 	check_error(error, "MPI_Close_port");
 
-	if (verbose) { printf("disconnect.\n");fflush(stdout); }
+	IF_VERBOSE(("disconnect.\n"));
 	error = MPI_Comm_disconnect(&comm);
 	check_error(error, "MPI_Comm_disconnect");
 
-	if (verbose) { printf("barrier.\n"); fflush(stdout); }
+	IF_VERBOSE(("barrier.\n"));
 	error = MPI_Barrier(comm_parent);
 	check_error(error, "MPI_Barrier");
     }
     else if ((argc == 2) && (strcmp(argv[1], "connector") == 0))
     {
-	if (verbose) { printf("get_parent.\n");fflush(stdout); }
+	IF_VERBOSE(("get_parent.\n"));
 	error = MPI_Comm_get_parent(&comm_parent);
 	check_error(error, "MPI_Comm_get_parent");
 	if (comm_parent == MPI_COMM_NULL)
@@ -139,22 +141,22 @@ int main(int argc, char *argv[])
 	    printf("acceptor's parent is NULL.\n");fflush(stdout);
 	    MPI_Abort(MPI_COMM_WORLD, -1);
 	}
-	
-	if (verbose) { printf("recv.\n");fflush(stdout); }
+
+	IF_VERBOSE(("recv.\n"));
 	error = MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, 
 			 comm_parent, &status);
 	check_error(error, "MPI_Recv");
 
-	if (verbose) { printf("1: received port: <%s>\n", port);fflush(stdout); }
-	if (verbose) { printf("connect.\n");fflush(stdout); }
+	IF_VERBOSE(("1: received port: <%s>\n", port));
+	IF_VERBOSE(("connect.\n"));
 	error = MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
 	check_error(error, "MPI_Comm_connect");
 
-	if (verbose) { printf("disconnect.\n");fflush(stdout); }
+	IF_VERBOSE(("disconnect.\n"));
 	error = MPI_Comm_disconnect(&comm);
 	check_error(error, "MPI_Comm_disconnect");
 
-	if (verbose) { printf("barrier.\n"); fflush(stdout); }
+	IF_VERBOSE(("barrier.\n"));
 	error = MPI_Barrier(comm_parent);
 	check_error(error, "MPI_Barrier");
     }
