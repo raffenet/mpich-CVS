@@ -8,6 +8,8 @@
 
 #ifdef USE_IB_VAPI
 #include "ibuimpl.vapi.h"
+#else
+#include "ibuimpl.ibal.h"
 #endif
 
 #ifdef MPIDI_CH3_CHANNEL_RNDV
@@ -79,7 +81,6 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 		/* --END ERROR HANDLING-- */
 	    }
 	}
-#ifdef USE_IB_VAPI
 	/* Send a CTS_IOV_REG_ERROR packet. */
 	mpi_errno = ibui_post_rndv_cts_iov_reg_err(vc->ch.ibu, rreq);
 
@@ -89,10 +90,6 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_exit;
 	}
-#else
-	/* IBAL code doesn't handle failure yet */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "failed to register memory");
-#endif
 	/* --END ERROR HANDLING-- */
 	goto fn_exit;        
     }
@@ -164,7 +161,6 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 		/* --END ERROR HANDLING-- */
 	    }
 	}		
-#ifdef USE_IB_VAPI
 	/* Send a CTS_IOV_REG_ERROR packet. */
 	mpi_errno = ibui_post_rndv_cts_iov_reg_err(vc->ch.ibu, rreq);
 
@@ -174,10 +170,6 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_exit;
 	}
-#else
-	/* IBAL code doesn't handle failure yet */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "failed to register memory");
-#endif
 	/* --END ERROR HANDLING-- */
 	goto fn_exit;        
     }
