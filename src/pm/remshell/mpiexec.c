@@ -72,8 +72,8 @@
 typedef struct { PMISetup pmiinfo; IOLabelSetup labelinfo; } SetupInfo;
 
 /* Forward declarations */
-int mypreamble( void * );
-int myprefork( void *, void *, ProcessState* );
+int mypreamble( void *, ProcessState* );
+int mypostfork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
 
@@ -128,7 +128,7 @@ int main( int argc, char *argv[], char *envp[] )
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
-			myprefork, 0, mypostamble, 0 );
+			mypostfork, 0, mypostamble, 0 );
     reason = MPIE_IOLoop( pUniv.timeout );
 
     if (reason == IOLOOP_TIMEOUT) {
@@ -164,7 +164,7 @@ void mpiexec_usage( const char *msg )
 }
 
 /* Redirect stdout and stderr to a handler */
-int mypreamble( void *data )
+int mypreamble( void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)data;
 
@@ -174,12 +174,12 @@ int mypreamble( void *data )
     return 0;
 }
 /* Close one side of each pipe pair and replace stdout/err with the pipes */
-int myprefork( void *predata, void *data, ProcessState *pState )
+int mypostfork( void *predata, void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)predata;
 
     IOLabelSetupInClient( &s->labelinfo );
-    PMISetupInClient( &s->pmiinfo );
+    PMISetupInClient( 1, &s->pmiinfo );
 
     return 0;
 }
@@ -194,7 +194,7 @@ int mypostamble( void *predata, void *data, ProcessState *pState )
     SetupInfo *s = (SetupInfo *)predata;
 
     IOLabelSetupFinishInServer( &s->labelinfo, pState );
-    PMISetupFinishInServer( &s->pmiinfo, pState );
+    PMISetupFinishInServer( 1, &s->pmiinfo, pState );
 
     return 0;
 }
@@ -215,7 +215,7 @@ int myspawn( ProcessWorld *pWorld, void *data )
     /* FIXME: This should be part of the PMI initialization in the clients */
     putenv( "PMI_SPAWNED=1" );
     MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
-			myprefork, 0, mypostamble, 0 );
+			mypostfork, 0, mypostamble, 0 );
     return 0;
 }
 
