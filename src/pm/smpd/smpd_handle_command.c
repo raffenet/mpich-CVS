@@ -2145,6 +2145,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_CLOSE;
 	}
+	/* fall through if there are no more contexts */
     }
     else if (context == smpd_process.right_context)
     {
@@ -2157,9 +2158,11 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_CLOSE;
 	}
+	/* fall through if there are no more contexts */
     }
     else if (context == smpd_process.parent_context)
     {
+	/* closed command received from the parent in response to an earlier closed_request command from this node */
 	smpd_dbg_printf("closed command received from parent, closing sock.\n");
 	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(smpd_process.parent_context->sock));
 	smpd_process.parent_context->state = SMPD_CLOSING;
@@ -2173,13 +2176,19 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+
     if (smpd_process.parent_context == NULL)
     {
+	/* The last child has closed and there is no parent so this must be the root node (mpiexec) */
+	/* Set the state to SMPD_EXITING so when the posted close from above finishes the state machine will exit */
 	context->state = SMPD_EXITING;
 	smpd_dbg_printf("received a closed at node with no parent context, assuming root, returning SMPD_EXITING.\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_EXITING;
     }
+
+    /* The last child has closed and there is a parent so send a closed_request up to the parent */
+    /* The parent will respond with a closed command and then this node will exit */
     result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
     {
