@@ -2145,6 +2145,7 @@ int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 #ifdef HAVE_CXX_BINDING
 extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 extern void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
+extern void MPIR_Errhandler_set_cxx( MPI_Errhandler, void (*)(void) );
 #endif
 
 int MPIR_Group_create( int, MPID_Group ** );
