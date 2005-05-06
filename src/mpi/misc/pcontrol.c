@@ -48,7 +48,6 @@
 @*/
 int MPI_Pcontrol(const int level, ...)
 {
-    static const char FCNAME[] = "MPI_Pcontrol";
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PCONTROL);
 
@@ -63,26 +62,9 @@ int MPI_Pcontrol(const int level, ...)
        use by the user (or a tool) with the profiling interface */
     
     /* ... end of body of routine ... */
-#if 0
-  fn_exit:
-#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     MPID_CS_EXIT();
     return mpi_errno;
-
     /* There should never be any fn_fail case; this suppresses warnings from
        compilers that object to unused labels */
-#if 0 
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_pcontrol", "**mpi_pcontrol %d", level);
-    }
-#   endif
-    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-#endif
 }
