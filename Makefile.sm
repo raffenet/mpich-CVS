@@ -192,6 +192,7 @@ install_INCLUDE = src/include/mpi.h
 
 optinstall_LIB = lib/lib${PMPILIBNAME}.a
 optinstall_SHLIB = lib/lib${MPILIBNAME}.@SHLIB_EXT@
+optinstall_SHLIB = lib/lib${PMPILIBNAME}.@SHLIB_EXT@
 optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 optinstall_LIB = lib/libf${MPILIBNAME}.a
 optinstall_SHLIB = lib/libf${MPILIBNAME}.@SHLIB_EXT@
