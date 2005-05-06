@@ -1268,7 +1268,11 @@ fi
 if test "$enable_cxx" = "default" ; then
     # This test uses the list from a recent PROG_CXX, but with the
     # addition of the Portland group, IBM, and Intel C++ compilers
-    AC_CHECK_PROGS(CXX,$CCC c++ g++ gcc CC cxx cc++ cl pgCC xlC icc)
+    # (While the Intel icc compiler will compile C++ programs, it will
+    # not *link* C++ object files unless there is at least one C++ source
+    # file present on the command that performs the linking.  icpc is the
+    # Intel C++ compiler that both compiles and links C++ programs)
+    AC_CHECK_PROGS(CXX,$CCC c++ g++ gcc CC cxx cc++ cl pgCC xlC icpc)
     if test -n "$CXX" ; then
         enable_cxx=yes
     fi
