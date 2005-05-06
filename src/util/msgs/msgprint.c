@@ -82,7 +82,7 @@ int MPIU_Internal_error_printf(char *str, ...)
 int MPIU_Internal_sys_error_printf(const char *name, int errnum, 
 				   const char *str, ...)
 {
-    int n;
+    int n = 0;
     va_list list;
     const char *format_str=0;
 
