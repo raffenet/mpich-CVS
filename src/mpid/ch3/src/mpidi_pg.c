@@ -121,7 +121,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
     MPIDI_PG_t * pg_prev;
     MPIDI_PG_t * pg_cur;
     int mpi_errno = MPI_SUCCESS;
-    
+
     pg_prev = NULL;
     pg_cur = MPIDI_PG_list;
     while(pg_cur != NULL)
@@ -133,8 +133,10 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		MPIDI_PG_iterator_next = MPIDI_PG_iterator_next->next;
 	    }
 
-            if (pg == MPIDI_PG_list)
+            if (pg_prev == NULL)
                 MPIDI_PG_list = pg->next; 
+            else
+                pg_prev->next = pg->next;
 
 	    MPIDI_PG_Destroy_fn(pg, pg->id);
 	    MPIU_Free(pg->vct);

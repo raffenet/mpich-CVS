@@ -14,7 +14,7 @@
 int MPID_Finalize()
 {
     MPID_Progress_state progress_state;
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, inuse;
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
@@ -51,13 +51,22 @@ int MPID_Finalize()
 
 	for (i = 0; i < MPIDI_PG_Get_size(pg); i++)
 	{
+	    MPIDI_PG_Get_vcr(pg, i, &vc);
+
 	    /* If the VC is myself then skip the close message */
 	    if (pg == MPIDI_Process.my_pg && i == MPIDI_Process.my_pg_rank)
 	    {
+                if (vc->ref_count != 0) {
+                    MPIDI_PG_Release_ref(pg, &inuse);
+                    if (inuse == 0)
+                    {
+                        MPIDI_PG_Destroy(pg);
+                    }
+                }
+
 		continue;
 	    }
 
-	    MPIDI_PG_Get_vcr(pg, i, &vc);
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE)
 	    {
 		MPIDI_CH3_Pkt_t upkt;
@@ -103,6 +112,14 @@ int MPID_Finalize()
 	    }
 	    else
 	    {
+                if (vc->state == MPIDI_VC_STATE_INACTIVE && vc->ref_count != 0) {
+                    MPIDI_PG_Release_ref(pg, &inuse);
+                    if (inuse == 0)
+                    {
+                        MPIDI_PG_Destroy(pg);
+                    }
+                }
+
 		MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
 				  MPIDI_VC_Get_state_description(vc->state)));
 	    }
@@ -137,9 +154,13 @@ int MPID_Finalize()
 	}
     }
 
-
     mpi_errno = MPIDI_CH3_Finalize();
     
+    MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
+    if (inuse == 0)
+    {
+        MPIDI_PG_Destroy(MPIDI_Process.my_pg);
+    }
     MPIDI_Process.my_pg = NULL;
     
     MPIU_Free(MPIDI_Process.processor_name);

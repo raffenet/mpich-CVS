@@ -85,7 +85,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     MPIU_Object_release_ref(vcrt, &count);
     if (count == 0)
     {
-	int i;
+	int i, inuse;
 
 	for (i = 0; i < vcrt->size; i++)
 	{
@@ -97,6 +97,11 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		/* If the VC is myself then skip the close message */
 		if (vc->pg == MPIDI_Process.my_pg && vc->pg_rank == MPIDI_Process.my_pg_rank)
 		{
+                    MPIDI_PG_Release_ref(vc->pg, &inuse);
+                    if (inuse == 0)
+                    {
+                        MPIDI_PG_Destroy(vc->pg);
+                    }
 		    continue;
 		}
 		
@@ -146,6 +151,12 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		}
 		else
 		{
+                    MPIDI_PG_Release_ref(vc->pg, &inuse);
+                    if (inuse == 0)
+                    {
+                        MPIDI_PG_Destroy(vc->pg);
+                    }
+
 		    MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
 				      MPIDI_VC_Get_state_description(vc->state)));
 		}
