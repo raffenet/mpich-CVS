@@ -97,6 +97,7 @@ int main( int argc, char *argv[] )
 
 	if (!mstype.isBasic) {
 	    type.Get_name( dtypename, tnlen );
+            MTestFreeDatatype(&mstype);
 	    /* Check that the original attribute was freed */
 	    if (attrval != 0) {
 		errs++;
@@ -107,12 +108,15 @@ int main( int argc, char *argv[] )
 	else {
 	    /* Explicitly delete the attributes from world and self */
 	    type.Delete_attr( saveKeyval );
+            if (mstype.buf) {
+                free(mstype.buf);
+                mstype.buf = 0;
+            }
 	}
 	/* Free those other keyvals */
 	for (i=0; i<32; i++) {
 	    MPI::Datatype::Free_keyval( key[i] );
 	}
-        MTestFreeDatatype(&mstype);
         MTestFreeDatatype(&mrtype);
     }
     MTest_Finalize( errs );

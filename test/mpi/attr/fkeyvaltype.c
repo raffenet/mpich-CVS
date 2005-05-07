@@ -7,6 +7,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include "mpitest.h"
+#include "stdlib.h"
 
 static char MTestDescrip[] = "Test freeing keyvals while still attached to \
 a datatype, then make sure that the keyval delete and copy code are still \
@@ -83,6 +84,7 @@ int main( int argc, char *argv[] )
 
 	if (!mstype.isBasic) {
 	    MPI_Type_get_name( type, typename, &tnlen );
+            MTestFreeDatatype(&mstype);
 	    /* Check that the original attribute was freed */
 	    if (attrval != 0) {
 		errs++;
@@ -93,12 +95,15 @@ int main( int argc, char *argv[] )
 	else {
 	    /* Explicitly delete the attributes from world and self */
 	    MPI_Type_delete_attr( type, saveKeyval );
+            if (mstype.buf) {
+                free(mstype.buf);
+                mstype.buf = 0;
+            }
 	}
 	/* Free those other keyvals */
 	for (i=0; i<32; i++) {
 	    MPI_Type_free_keyval( &key[i] );
 	}
-        MTestFreeDatatype(&mstype);
         MTestFreeDatatype(&mrtype);
     }
     MTest_Finalize( errs );
