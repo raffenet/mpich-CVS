@@ -1718,7 +1718,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	if (process->pmi != NULL)
 	{
-	    /* create the result command */
+	    /* create the abort command */
 	    result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
