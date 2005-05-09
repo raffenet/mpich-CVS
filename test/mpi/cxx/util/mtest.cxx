@@ -747,6 +747,7 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
 	/* Active target window */
 	win = MPI::Win::Create( actbuf, 1024, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "active-window";
+        win.Set_attr( mem_keyval, (void *) 0 );
 	break;
     case 1:
 	/* Passive target window */
@@ -754,6 +755,7 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
 	/* FIXME: storage leak */
 	win = MPI::Win::Create( pasbuf, 1024, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "passive-window";
+        win.Set_attr( mem_keyval, (void *) 2 );
 	break;
     case 2:
 	/* Active target; all windows different sizes */
@@ -766,6 +768,7 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
 	    buf = 0;
 	win = MPI::Win::Create( buf, n, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "active-all-different-win";
+        win.Set_attr( mem_keyval, (void *) 1 );
 	break;
     case 3:
 	/* Active target, no locks set */
