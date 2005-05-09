@@ -65,6 +65,8 @@ int main( int argc, char *argv[] )
 			       &key[i], (void *)0 );
 	}
 
+        MTestFreeWin(&win);
+
 	/* Check that the original attribute was freed */
 	if (attrval != 0) {
 	    errs++;
@@ -76,7 +78,6 @@ int main( int argc, char *argv[] )
 	    MPI_Win_free_keyval( &key[i] );
 	}
 
-        MTestFreeWin(&win);
     }
     MTest_Finalize( errs );
     MPI_Finalize();

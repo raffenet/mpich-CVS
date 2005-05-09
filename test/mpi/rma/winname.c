@@ -39,7 +39,6 @@ int main( int argc, char *argv[] )
 	}
 
 	MTestFreeWin( &win );
-	MPI_Win_free( &win );
     }
 
     MTest_Finalize( errs );
