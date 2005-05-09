@@ -579,8 +579,8 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	    MPID_VCRT_Release(comm_ptr->vcrt);
             if (comm_ptr->comm_kind == MPID_INTERCOMM) {
                 MPID_VCRT_Release(comm_ptr->local_vcrt);
-                if (intercomm->local_comm) 
-                    MPIR_Comm_release(intercomm->local_comm);
+                if (comm_ptr->local_comm) 
+                    MPIR_Comm_release(comm_ptr->local_comm);
             }
 
 	    /* Free the context value */
