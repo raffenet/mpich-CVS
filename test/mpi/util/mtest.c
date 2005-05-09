@@ -1091,8 +1091,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	    buf = 0;
 	MPI_Info_create( &info );
 	MPI_Info_set( info, "nolocks", "true" );
-	MPI_Win_create( buf, n, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
-			win );
+	MPI_Win_create( buf, n, 1, info, MPI_COMM_WORLD, win );
 	MPI_Info_free( &info );
 	winName = "active-nolocks-all-different-win";
 	MPI_Win_set_attr( *win, mem_keyval, (void *)1 );
