@@ -115,6 +115,7 @@ int main( int argc, char *argv[] )
 	    delete [] recvcounts;
 	    delete [] recvdispls;
         }
+        MTestFreeComm(comm);
     }
 
     MTest_Finalize( errs );

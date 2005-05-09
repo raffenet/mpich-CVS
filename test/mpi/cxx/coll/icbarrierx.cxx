@@ -48,6 +48,7 @@ int main( int argc, char *argv[] )
 		MTestPrintError( e.Get_error_code() );
 	    }
 	}
+        MTestFreeComm(comm);
     }
 
     MTest_Finalize( errs );

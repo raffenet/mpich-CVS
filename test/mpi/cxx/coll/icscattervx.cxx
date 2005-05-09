@@ -112,6 +112,7 @@ int main( int argc, char *argv[] )
 	    delete [] senddispls;
 	    delete [] buf;
 	}
+        MTestFreeComm(comm);
     }
 
     MTest_Finalize( errs );

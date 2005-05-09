@@ -105,6 +105,7 @@ int main( int argc, char **argv )
       delete [] sendcounts;
       delete [] rbuf;
       delete [] sbuf;
+      MTestFreeComm(comm);
     }
 
     MTest_Finalize( err );

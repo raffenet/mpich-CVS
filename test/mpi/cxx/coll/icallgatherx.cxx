@@ -98,6 +98,7 @@ int main( int argc, char *argv[] )
 	    delete [] rbuf;
 	    delete [] sbuf;
 	}
+        MTestFreeComm(comm);
     }
 
     MTest_Finalize( errs );

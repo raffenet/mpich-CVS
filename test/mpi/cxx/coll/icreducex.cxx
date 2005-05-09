@@ -83,6 +83,7 @@ int main( int argc, char *argv[] )
 	    delete [] sendbuf;
 	    delete [] recvbuf;
 	}
+        MTestFreeComm(comm);
     }
 
     MTest_Finalize( errs );
