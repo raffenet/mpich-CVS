@@ -65,6 +65,12 @@ int main( int argc, char *argv[] )
 			       &key[i], (void *)0 );
 	}
 
+	if (attrval != 1) {
+	    errs++;
+	    MPI_Type_get_name( type, typename, &tnlen );
+	    printf( "attrval is %d, should be 1, before dup in type %s\n",
+		     attrval, typename );
+	}
 	MPI_Type_dup( type, &duptype );
 	/* Check that the attribute was copied */
 	if (attrval != 2) {
