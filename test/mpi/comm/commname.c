@@ -55,9 +55,7 @@ int main( int argc, char *argv[] )
 		    nameout, name );
 	}
 	
-	if (comm != MPI_COMM_WORLD && comm != MPI_COMM_SELF) {
-	    MPI_Comm_free( &comm );
-	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

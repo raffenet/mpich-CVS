@@ -86,7 +86,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm_dup( dupcomm, &dupcomm2 );
 	MPI_Comm_free( &dupcomm2 );
 	MPI_Comm_free( &dupcomm );
-	MPI_Comm_free( &comm );
+	MTestFreeComm( &comm );
     }
     MTest_Finalize( errs );
     MPI_Finalize();
