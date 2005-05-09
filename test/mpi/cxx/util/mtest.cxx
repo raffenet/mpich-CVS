@@ -20,14 +20,26 @@ using namespace std;
 #include "mpitestcxx.h"
 #include <stdlib.h>
 
-static int dbgflag = 0;
-static int wrank = -1;
+static int dbgflag = 0;         /* Flag used for debugging */
+static int wrank = -1;          /* World rank */
+static int verbose = 0;         /* Message level (0 is none) */
 /* 
  * Initialize and Finalize MTest
+ */
+
+/* 
+   Initialize MTest, initializing MPI if necessary.  
+
+ Environment Variables:
++ MPITEST_DEBUG - If set (to any value), turns on debugging output
+- MPITEST_VERBOSE - If set to a numeric value, turns on that level of
+  verbose output.  This is used by the routine 'MTestPrintfMsg'
+
  */
 void MTest_Init( void )
 {
     bool flag;
+    char *envval = 0;
 
     flag = MPI::Is_initialized( );
     if (!flag) {
@@ -37,6 +49,25 @@ void MTest_Init( void )
     if (getenv( "MPITEST_DEBUG" )) {
 	dbgflag = 1;
 	wrank = MPI::COMM_WORLD.Get_rank();
+    }
+    /* Check for verbose control */
+    envval = getenv( "MPITEST_VERBOSE" );
+    if (envval) {
+	char *s;
+	long val = strtol( envval, &s, 0 );
+	if (s == envval) {
+	    /* This is the error case for strtol */
+	    cerr << "Warning: "<< envval << " not valid for MPITEST_VERBOSE\n";
+	}
+	else {
+	    if (val >= 0) {
+		verbose = val;
+	    }
+	    else {
+		cerr << "Warning: " << envval << 
+		    " not valid for MPITEST_VERBOSE\n";
+	    }
+	}
     }
 }
 
@@ -77,7 +108,9 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	int  i, totsize;
 	mtype->datatype.Get_extent( lb, size );
 	totsize = size * mtype->count;
-	mtype->buf = (void *) malloc( totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
@@ -93,6 +126,39 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
     }
     return mtype->buf;
 }
+
+/* 
+ * Setup contiguous buffers of n copies of a datatype.  Initialize for
+ * reception (e.g., set initial data to detect failure)
+ */
+static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
+{
+    MPI_Aint size;
+    if (mtype->count > 0) {
+	signed char *p;
+	int  i, totsize;
+	MPI_Type_extent( mtype->datatype, &size );
+	totsize = size * mtype->count;
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
+	p = (signed char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    MTestError( "Out of memory in type buffer init" );
+	}
+	for (i=0; i<totsize; i++) {
+	    p[i] = 0xff;
+	}
+    }
+    else {
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
+	mtype->buf = 0;
+    }
+    return mtype->buf;
+}
 static void *MTestTypeContigFree( MTestDatatype *mtype )
 {
     if (mtype->buf) {
@@ -103,32 +169,71 @@ static void *MTestTypeContigFree( MTestDatatype *mtype )
 }
 static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 {
-    signed char *p;
+    unsigned char *p;
+    unsigned char expected;
     int  i, totsize, err = 0;
-    MPI::Aint size, lb;
+    MPI_Aint size;
 
-    p = (signed char *)mtype->buf;
+    p = (unsigned char *)mtype->buf;
     if (p) {
-	mtype->datatype.Get_extent(lb,size);
+	MPI_Type_extent( mtype->datatype, &size );
 	totsize = size * mtype->count;
 	for (i=0; i<totsize; i++) {
-	    if (p[i] != (0xff ^ (i & 0xff)))
+	    expected = (0xff ^ (i & 0xff));
+	    if (p[i] != expected) {
 		err++;
+		if (mtype->printErrors && err < 10) {
+		    printf( "Data expected = %x but got %x for %dth entry\n",
+			    expected, p[i], i );
+		    fflush( stdout );
+		}
+	    }
 	}
     }
     return err;
 }
 
-/*
- * 
- */
+/* ------------------------------------------------------------------------ */
+/* Datatype routines for vector datatypes                                   */
+/* ------------------------------------------------------------------------ */
 
 static void *MTestTypeVectorInit( MTestDatatype *mtype )
 {
     MPI::Aint size, lb;
+
     if (mtype->count > 0) {
-	mtype->datatype.Get_extent(lb,size);
-	mtype->buf = (void *) malloc( mtype->count * size );
+	unsigned char *p;
+	int  i, j, k, nc, totsize;
+
+	mtype->datatype.Get_extent( lb, size );
+	totsize	   = mtype->count * size;
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
+	p	   = (unsigned char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    MTestError( "Out of memory in type buffer init" );
+	}
+
+	/* First, set to -1 */
+	for (i=0; i<totsize; i++) p[i] = 0xff;
+
+	/* Now, set the actual elements to the successive values.
+	   To do this, we need to run 3 loops */
+	nc = 0;
+	/* count is usually one for a vector type */
+	for (k=0; k<mtype->count; k++) {
+	    /* For each element (block) */
+	    for (i=0; i<mtype->nelm; i++) {
+		/* For each value */
+		for (j=0; j<mtype->blksize; j++) {
+		    p[j] = (0xff ^ (nc & 0xff));
+		    nc++;
+		}
+		p += mtype->stride;
+	    }
+	}
     }
     else {
 	mtype->buf = 0;
@@ -155,20 +260,25 @@ static void *MTestTypeVectorFree( MTestDatatype *mtype )
 int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 		       int count )
 {
-    sendtype->InitBuf  = 0;
-    sendtype->FreeBuf  = 0;
-    sendtype->datatype = 0;
-    sendtype->isBasic  = 0;
-    recvtype->InitBuf  = 0;
-    recvtype->FreeBuf  = 0;
-    recvtype->datatype = 0;
-    recvtype->isBasic  = 0;
-    sendtype->buf      = 0;
-    recvtype->buf      = 0;
+    sendtype->InitBuf	  = 0;
+    sendtype->FreeBuf	  = 0;
+    sendtype->CheckBuf	  = 0;
+    sendtype->datatype	  = 0;
+    sendtype->isBasic	  = 0;
+    sendtype->printErrors = 0;
+    recvtype->InitBuf	  = 0;
+    recvtype->FreeBuf	  = 0;
+    recvtype->CheckBuf	  = 0;
+    recvtype->datatype	  = 0;
+    recvtype->isBasic	  = 0;
+    recvtype->printErrors = 0;
+
+    sendtype->buf	  = 0;
+    recvtype->buf	  = 0;
 
     /* Set the defaults for the message lengths */
-    sendtype->count    = count;
-    recvtype->count    = count;
+    sendtype->count       = count;
+    recvtype->count       = count;
     /* Use datatype_index to choose a datatype to use.  If at the end of the
        list, return 0 */
     switch (datatype_index) {
@@ -401,6 +511,14 @@ int MTestGetIntracommGeneral( MPI::Intracomm &comm, int min_size,
     return intraCommIdx;
 }
 
+/* 
+ * Get an intracommunicator with at least min_size members.
+ */
+int MTestGetIntracomm( MPI::Intracomm &comm, int min_size ) 
+{
+    return MTestGetIntracommGeneral( comm, min_size, false );
+}
+
 const char *MTestGetIntracommName( void )
 {
     return intraCommName;
@@ -550,25 +668,6 @@ int MTestGetComm( MPI::Comm *comm, int min_size )
     return idx;
 }
 
-/* ------------------------------------------------------------------------ */
-void MTestPrintError( int errcode )
-{
-    int errclass, slen;
-    char string[MPI_MAX_ERROR_STRING];
-    
-    errclass = MPI::Get_error_class( errcode );
-    MPI::Get_error_string( errcode, string, slen );
-    cout << "Error class " << errclass << "(" << string << ")\n";
-}
-
-
-/* 
- * Get an intracommunicator with at least min_size members.
- */
-int MTestGetIntracomm( MPI::Intracomm &comm, int min_size ) 
-{
-    return MTestGetIntracommGeneral( comm, min_size, false );
-}
 
 void MTestFreeComm( MPI::Comm &comm )
 {
@@ -579,18 +678,69 @@ void MTestFreeComm( MPI::Comm &comm )
     }
 }
 
+/* ------------------------------------------------------------------------ */
+void MTestPrintError( int errcode )
+{
+    int errclass, slen;
+    char string[MPI_MAX_ERROR_STRING];
+    
+    errclass = MPI::Get_error_class( errcode );
+    MPI::Get_error_string( errcode, string, slen );
+    cout << "Error class " << errclass << "(" << string << ")\n";
+}
+void MTestPrintErrorMsg( const char msg[], int errcode )
+{
+    int errclass, slen;
+    char string[MPI_MAX_ERROR_STRING];
+    
+    errclass = MPI::Get_error_class( errcode );
+    MPI::Get_error_string( errcode, string, slen );
+    cout << msg << ": Error class " << errclass << " (" << string << ")\n";
+}
+/* ------------------------------------------------------------------------ */
+#if 0
+void MTestPrintfMsg( int level, const char format[], ... )
+{
+    va_list list;
+    int n;
+
+    if (verbose && level >= verbose) {
+	va_start(list,format);
+	n = vprintf( format, list );
+	va_end(list);
+	fflush(stdout);
+    }
+}
+#endif
+/* Fatal error.  Report and exit */
+void MTestError( const char *msg )
+{
+    cerr << msg << "\n";
+    MPI::COMM_WORLD.Abort(1);
+}
+
 #ifdef HAVE_MPI_WIN_CREATE
 /*
  * Create MPI Windows
  */
 static int win_index = 0;
 static const char *winName;
+/* Use an attribute to remember the type of memory allocation (static,
+   malloc, or MPI_Alloc_mem) */
+static int mem_keyval = MPI::KEYVAL_INVALID;
 int MTestGetWin( MPI::Win &win, bool mustBePassive )
 {
     static char actbuf[1024];
     static char *pasbuf;
-    char *buf;
-    int n, rank;
+    char        *buf;
+    int         n, rank;
+    MPI::Info   info;
+
+    if (mem_keyval == MPI::KEYVAL_INVALID) {
+	/* Create the keyval */
+	mem_keyval = MPI::Win::Create_keyval( MPI::Win::NULL_COPY_FN, 
+					      MPI::Win::NULL_DELETE_FN, 0 );
+    }
 
     switch (win_index) {
     case 0:
@@ -617,6 +767,21 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
 	win = MPI::Win::Create( buf, n, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "active-all-different-win";
 	break;
+    case 3:
+	/* Active target, no locks set */
+	rank = MPI::COMM_WORLD.Get_rank();
+	n = rank * 64;
+	if (n) 
+	    buf = (char *)malloc( n );
+	else
+	    buf = 0;
+	info = MPI::Info::Create( );
+	info.Set( "nolocks", "true" );
+	win = MPI::Win::Create( buf, n, 1, info, MPI::COMM_WORLD );
+	info.Free();
+	winName = "active-nolocks-all-different-win";
+	win.Set_attr( mem_keyval, (void *)1 );
+	break;
     default:
 	win_index = -1;
     }
@@ -627,5 +792,29 @@ const char *MTestGetWinName( void )
 {
     
     return winName;
+}
+/* Free the storage associated with a window object */
+void MTestFreeWin( MPI::Win &win )
+{
+    void *addr;
+    bool flag;
+
+    flag = win.Get_attr( MPI_WIN_BASE, &addr );
+    if (!flag) {
+	MTestError( "Could not get WIN_BASE from window" );
+    }
+    if (addr) {
+	void *val;
+	flag = win.Get_attr( mem_keyval, &val );
+	if (flag) {
+	    if (val == (void *)1) {
+		free( addr );
+	    }
+	    else if (val == (void *)2) {
+		MPI::Free_mem( addr );
+	    }
+	    /* if val == (void *)0, then static data that must not be freed */
+	}
+    }
 }
 #endif
