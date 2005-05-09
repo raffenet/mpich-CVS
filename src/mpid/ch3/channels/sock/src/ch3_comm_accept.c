@@ -27,7 +27,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     char *bizcards=NULL, *bizcard_ptr;
     MPIDI_PG_t ** remote_pgs_array;
     MPIDI_PG_t * new_pg;
-    MPIDI_VC_t * vc;
+    MPIDI_VC_t * vc, *new_vc;
     int n_local_pgs=1, *local_pg_sizes=NULL, n_remote_pgs, *remote_pg_sizes;
     int sendtag=0, recvtag=0, local_comm_size, pg_no;
     char **local_pg_ids=NULL, **remote_pg_ids;
@@ -84,12 +84,12 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
            engine (the connection is returned in the form of a vc). If
            not, poke the progress engine. */
 
-        vc = NULL;
+        new_vc = NULL;
 	MPID_Progress_start(&progress_state);
         for(;;)
 	{
-            MPIDI_CH3I_Acceptq_dequeue(&vc);
-            if (vc != NULL)
+            MPIDI_CH3I_Acceptq_dequeue(&new_vc);
+            if (new_vc != NULL)
 	    {
 		break;
 	    }
@@ -165,7 +165,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         }
 	/* --END ERROR HANDLING-- */
 
-        MPID_VCR_Dup(vc, tmp_comm->vcr);
+        MPID_VCR_Dup(new_vc, tmp_comm->vcr);
 
         /* tmp_comm is now established; can communicate with the root on
            the other side. */
@@ -774,8 +774,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         }
 	/* --END ERROR HANDLING-- */
 
-        /* All communication with remote root done. Release the
-           communicator. */
+        /* All communication with remote root done. Release the communicator. */
         MPIR_Comm_release(tmp_comm);
     }
 
@@ -787,6 +786,12 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
+
+    /* Free new_vc. It was explicitly allocated in ch3_progress.c and returned by 
+       MPIDI_CH3I_Acceptq_dequeue. */
+/*    if (rank == root)
+        MPIU_Free(new_vc);
+*/
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);

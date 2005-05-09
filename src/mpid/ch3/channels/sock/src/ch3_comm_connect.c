@@ -27,7 +27,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     MPID_Comm *tmp_comm, *intercomm, *commself_ptr;
     char *bizcards=NULL, *bizcard_ptr;
     MPIDI_PG_t **remote_pgs_array, *new_pg;
-    MPIDI_VC_t * vc;
+    MPIDI_VC_t * vc, *new_vc;
     int sendtag=0, recvtag=0, n_remote_pgs, *remote_pg_sizes, pg_no;
     int n_local_pgs=1, *local_pg_sizes=NULL, local_comm_size;
     char **local_pg_ids=NULL, **remote_pg_ids;
@@ -68,7 +68,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
            temporary intercommunicator between the two roots so that
            we can use MPI functions to communicate data between them. */
 
-        mpi_errno = MPIDI_CH3I_Connect_to_root(port_name, &vc);
+        mpi_errno = MPIDI_CH3I_Connect_to_root(port_name, &new_vc);
         /* Function implemented in ch3_progress.c */
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
@@ -133,7 +133,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         }
 	/* --END ERROR HANDLING-- */
 
-        MPID_VCR_Dup(vc, tmp_comm->vcr);
+        MPID_VCR_Dup(new_vc, tmp_comm->vcr);
         
         /* tmp_comm is now established; can communicate with the root on
            the other side. */
@@ -749,8 +749,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         }
 	/* --END ERROR HANDLING-- */
 
-        /* All communication with remote root done. Release the
-           communicator. */
+        /* All communication with remote root done. Release the communicator. */
         MPIR_Comm_release(tmp_comm);
     }
 
@@ -762,6 +761,11 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
+
+    /* Free new_vc. It was explicitly allocated in MPIDI_CH3I_Connect_to_root. */
+/*    if (rank == root)
+        MPIU_Free(new_vc);
+*/
 
  fn_exit: 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
