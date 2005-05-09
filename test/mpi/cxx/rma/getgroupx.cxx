@@ -55,6 +55,7 @@ int main( int argc, char *argv[] )
 	wingroup.Free();
 	group.Free();
 	win.Free();
+	MTestFreeComm( comm );
     }
 
     MTest_Finalize( errs );
