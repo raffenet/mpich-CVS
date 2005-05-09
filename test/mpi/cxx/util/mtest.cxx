@@ -816,5 +816,6 @@ void MTestFreeWin( MPI::Win &win )
 	    /* if val == (void *)0, then static data that must not be freed */
 	}
     }
+    win.Free();
 }
 #endif

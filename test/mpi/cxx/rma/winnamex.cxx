@@ -50,7 +50,7 @@ int main( int argc, char *argv[] )
 		" but should be " << name << "\n";
 	}
 
-	win.Free();
+	MTestFreeWin(win);
     }
     if (cnt == 0) {
         errs++;
