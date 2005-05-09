@@ -9,6 +9,8 @@
 #include "ibu.h"
 #ifdef USE_IB_VAPI
 #include "ibuimpl.vapi.h"
+#else
+#include "ibuimpl.ibal.h"
 #endif
 
 #undef FUNCNAME
@@ -28,6 +30,11 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
     VAPI_lkey_t dest_rdma_buf_rkey;
     ibu_rdma_buf_t *RDMA_buf, *pdest_rdma_buf;
     VAPI_rkey_t rkey;
+#else
+    /* Mellanox added by Dafna July 7th 2004*/
+    uint32_t dest_rdma_buf_rkey;
+    ibu_rdma_buf_t *RDMA_buf, *pdest_rdma_buf;
+    uint32_t rkey;
 #endif
     MPIDI_VC_t *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
@@ -115,8 +122,7 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	}
 	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
 
-#ifdef USE_IB_VAPI
-	/*Mellanox -sleybo */
+	/* Mellanox by Dafna July 7th 2004 - applies to both IBAL and VAPI */
 	RDMA_buf = ibui_RDMA_buf_init(vc->ch.ibu, &rkey);
 	if (RDMA_buf == NULL)
 	{
@@ -182,7 +188,6 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
-#endif
 	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
     }
 
@@ -208,12 +213,10 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	return mpi_errno;
     }
 
-
     /* complete the queue pairs and post the receives */
     for (i=0; i<MPIDI_PG_Get_size(pg); i++)
     {
 	MPIDI_PG_Get_vc(pg, i, &vc);
-
 	if (vc->pg_rank == pg_rank)
 	    continue;
 
@@ -227,6 +230,7 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
+	
 	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
@@ -237,7 +241,11 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    return mpi_errno;
 	}
 	dlid = atoi(val);
-	if (dlid < 0)
+#ifdef USE_IB_VAPI	
+	if (dlid < 0) 
+#else
+	if (cl_ntoh32(dlid) < 0) /* Mellanox added by Dafna July 7th 2004. IBAL's endianess requires */
+#endif
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
@@ -264,9 +272,15 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
+	
 	dest_qp_num = atoi(val);
+
+#ifdef USE_IB_VAPI	
 	if (dest_qp_num < 0)
-	{
+#else
+	if (cl_ntoh32(dest_qp_num) < 0) /* Mellanox added by Dafna July 7th 2004 - endianess of IBAL requires */
+#endif
+	{		
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**arg", 0);
@@ -283,7 +297,7 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    return mpi_errno;
 	}
 
-#ifdef USE_IB_VAPI
+	/* Mellanox by Dafna July 7th 2004 - applies for both IBAL and VAPI */
 	/* get the destination RDMA bufeer address and keys from the pmi database */
 	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf", vc->pg_rank, pg_rank);
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
@@ -323,10 +337,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
-	dest_rdma_buf_rkey = (VAPI_rkey_t)atoi(val);
+#ifdef USE_IB_VAPI 
+	dest_rdma_buf_rkey = (VAPI_rkey_t)atoi(val); /* Mellanox added by Dafna July 7th 2004*/
+#else
+	dest_rdma_buf_rkey = (uint32_t)atoi(val);
+#endif
 
 	ibui_update_remote_RDMA_buf(vc->ch.ibu, pdest_rdma_buf, dest_rdma_buf_rkey);
-#endif
 
 	/* set the state to connected */
 	vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;

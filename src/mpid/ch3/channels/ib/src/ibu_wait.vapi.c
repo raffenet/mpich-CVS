@@ -87,7 +87,7 @@ void PrintWC(VAPI_wc_desc_t *p)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 VAPI_ret_t ibu_poll(VAPI_wc_desc_t *completion_data)
 {
-    int i,RDMA_buf_water_mark;
+    int i, RDMA_buf_water_mark;
     ibu_t ibu;
     MPIDI_VC_t *vc;
     ibu_work_id_handle_t *id_ptr;
@@ -239,7 +239,7 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
     MPIU_DBG_PRINTFX(("entering ibu_wait\n"));
 
-    for (;;) 
+    for (;;)
     {
 	if (IBU_Process.unex_finished_list)
 	{
@@ -291,11 +291,11 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 	/*
 	if (completion_data.status != VAPI_SUCCESS)
 	{
-	MPIU_Internal_error_printf("%s: error: status = %s != VAPI_SUCCESS\n", 
-	FCNAME, VAPI_strerror(completion_data.status));
-	MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	return IBU_FAIL;
+	    MPIU_Internal_error_printf("%s: error: status = %s != VAPI_SUCCESS\n", 
+		FCNAME, VAPI_strerror(completion_data.status));
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+	    return IBU_FAIL;
 	}
 	*/
 
@@ -409,7 +409,8 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 			MPIU_DBG_PRINTF(("ibu_register_memory failed. deregistering the sender's iov.\n"));
 			if (i > 0) 
 			{
-			    for (i-=1; i==0; i--) { /* take last i's value one down, since last did not succeed*/
+			    for (i-=1; i==0; i--) /* take last i's value one down, since last did not succeed*/
+			    {
 				ibu_reg_status = ibu_deregister_memory(
 				    sreq->dev.iov[i].MPID_IOV_BUF, 
 				    sreq->dev.iov[i].MPID_IOV_LEN, 
@@ -587,7 +588,8 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 			MPIU_DBG_PRINTF(("ibu_register_memory failed. deregistering the sender's iov.\n"));
 			if (i > 0) 
 			{
-			    for (i-=1; i==0; i--) { /* take last i's value one down, since last did not succeed*/
+			    for (i-=1; i==0; i--) /* take last i's value one down, since last did not succeed*/
+			    {
 				ibu_reg_status = ibu_deregister_memory(
 				    rreq->dev.iov[i].MPID_IOV_BUF, 
 				    rreq->dev.iov[i].MPID_IOV_LEN, 
@@ -913,7 +915,8 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 				    MPIU_DBG_PRINTF(("ibu_register_memory failed. deregistering the sender's iov.\n"));
 				    if (i > 0) 
 				    {
-					for (i-=1; i==0; i--) { /* take last i's value one down, since last did not succeed*/
+					for (i-=1; i==0; i--) /* take last i's value one down, since last did not succeed*/
+					{
 					    ibu_reg_status = ibu_deregister_memory(
 						sreq->dev.iov[i].MPID_IOV_BUF, 
 						sreq->dev.iov[i].MPID_IOV_LEN, 
@@ -1103,7 +1106,8 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 					MPID_Request_release(cts_sreq);
 				    }
 				}
-				else {
+				else
+				{
 				    /* Send a CTS_IOV_REG_ERROR packet. */
 				    mpi_errno = ibui_post_rndv_cts_iov_reg_err(ibu, rreq);
 				    /* --BEGIN ERROR HANDLING-- */
@@ -1290,7 +1294,7 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 		    recv_vc_ptr->ch.recv_active->dev.iov_count);
 		    for (z=0; z<recv_vc_ptr->ch.recv_active->dev.iov_count; z++)
 		    {
-		    printf(" [%d].len = %d\n", z, recv_vc_ptr->ch.recv_active->dev.iov[z].MPID_IOV_LEN);
+			printf(" [%d].len = %d\n", z, recv_vc_ptr->ch.recv_active->dev.iov[z].MPID_IOV_LEN);
 		    }
 		    fflush(stdout);
 		    */

@@ -49,7 +49,7 @@ void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_
 
     MPIU_DBG_PRINTF(("entering ib_malloc_register\n"));
 
-    /*printf("ib_malloc_register(%d) called\n", size);*/
+    MPIU_DBG_PRINTF(("ib_malloc_register(%d) called\n", size));
 
     ptr = MPIU_Malloc(size);
     if (ptr == NULL)
@@ -58,9 +58,11 @@ void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
+    memset(&mem, 0, sizeof(ib_mr_create_t)); /* Added by Mellanox, dafna April 11th */
     mem.vaddr = ptr;
     mem.length = (uint64_t)size;
-    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
+
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE | IB_AC_RDMA_READ;
     status = ib_reg_mem(IBU_Process.pd_handle, &mem, lp, rp, mhp);
     if (status != IBU_SUCCESS)
     {
@@ -86,12 +88,12 @@ void ib_free_deregister(void *p/*, ib_mr_handle_t mem_handle*/)
     MPIDI_FUNC_ENTER(MPID_STATE_IB_FREE_DEREGISTER);
     MPIU_DBG_PRINTF(("entering ib_free_derigister\n"));
     /*
-    status = ib_dereg_mem(IBU_Process.pd_handle, state->handle);
+    status = ib_dereg_mr(mem_handle);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
-	return IBU_FAIL;
+    MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mr failed, error %s\n", ib_get_err_str(status));
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_FREE_DEREGISTER);
+    return IBU_FAIL;
     }
     */
     MPIU_Free(p);
@@ -100,9 +102,9 @@ void ib_free_deregister(void *p/*, ib_mr_handle_t mem_handle*/)
 }
 
 /*
- * Test code to track registering/deregistering memory
- *
- */
+* Test code to track registering/deregistering memory
+*
+*/
 #ifdef TRACK_MEMORY_REGISTRATION
 typedef struct regmem_t
 {
@@ -164,8 +166,8 @@ void remove_mem(void *p)
     printf("removing pointer that was not registered: %p\n", p);fflush(stdout);
 }
 /*
- * End test code
- */
+* End test code
+*/
 #endif
 
 static int ibui_free_pin_tree(ibu_mem_node_t *node)
@@ -178,10 +180,10 @@ static int ibui_free_pin_tree(ibu_mem_node_t *node)
 
     if (node->ref_count == 0)
     {
-	status = ib_dereg_mem(IBU_Process.pd_handle, node->mem.handle);
+	status = ib_dereg_mr(node->mem.handle);
 	if (status != IBU_SUCCESS)
 	{
-	    MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
+	    MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mr failed, error %s\n", ib_get_err_str(status));
 	    return IBU_FAIL;
 	}
 	g_total_mem_pinned -= node->len;
@@ -265,17 +267,47 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 {
     ib_api_status_t status;
     ib_mr_create_t mem;
+
+#ifndef USE_NO_PIN_CACHE    /* Added by Mellanox, dafna April 11th */
     ibu_mem_node_t *iter;
+#endif    
     MPIDI_STATE_DECL(MPID_STATE_IBU_REGISTER_MEMORY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_REGISTER_MEMORY);
 
     MPIU_DBG_PRINTF(("entering ibu_register_memory\n"));
 
+#ifdef USE_NO_PIN_CACHE /* Added by Mellanox, dafna April 11th */
+
+    /* caching turned off */
+    memset(&mem, 0, sizeof(ib_mr_create_t));
+    mem.vaddr = buf;
+    mem.length = (uint64_t)len;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE | IB_AC_RDMA_READ;
+    status = ib_reg_mem(
+	IBU_Process.pd_handle,
+	&mem,
+	&state->lkey,
+	&state->rkey,
+	&state->handle);
+
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_register_memory: ib_reg_mem failed, error %s\n", ibu_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
+    return IBU_SUCCESS;
+
+#else
+
+
 #ifdef TRACK_MEMORY_REGISTRATION
     add_mem(buf);
 #endif
- start_over:
+start_over:
     iter = ibu_pin_cache;
     while (iter != NULL)
     {
@@ -344,9 +376,11 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 	iter->ref_count = 1;
 	ibu_pin_cache = iter;
     }
+
+    memset(&mem, 0, sizeof(ib_mr_create_t)); /* Added by Mellanox, dafna April 11th */
     mem.vaddr = buf;
     mem.length = (uint64_t)len;
-    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE | IB_AC_RDMA_READ;
     status = ib_reg_mem(
 	IBU_Process.pd_handle,
 	&mem,
@@ -368,6 +402,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     MPIU_DBG_PRINTF(("exiting ibu_register_memory\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
     return IBU_SUCCESS;
+#endif /* USE_NO_PIN_CACHE */    
 }
 
 #undef FUNCNAME
@@ -376,10 +411,29 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
 {
+#ifdef USE_NO_PIN_CACHE	
     ib_api_status_t status;
+#else
+    ibu_mem_node_t *iter;    
+#endif    
     MPIDI_STATE_DECL(MPID_STATE_IBU_DEREGISTER_MEMORY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_DEREGISTER_MEMORY);
+
+#ifdef USE_NO_PIN_CACHE /* Added by Mellanox, dafna April 11th */ 
+
+    /* caching turned off */
+    status =  ib_dereg_mr(state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mr failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
+    return IBU_SUCCESS;
+
+#else
 
 #ifdef TRACK_MEMORY_REGISTRATION
     remove_mem(buf);
@@ -404,7 +458,7 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
 	    if (iter->left == NULL)
 	    {
 		/* error, node not found */
-		MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);
+		/*MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);*/
 		break;
 	    }
 	    iter = iter->left;
@@ -414,25 +468,94 @@ int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
 	    if (iter->right == NULL)
 	    {
 		/* error, node not found */
-		MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);
+		/*MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);*/
 		break;
 	    }
 	    iter = iter->right;
 	}	
     }
     /* error, node not found */
-    MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);
-/*
-    status = ib_dereg_mem(IBU_Process.pd_handle, state->handle);
+    /*MPIU_Internal_error_printf("deregister memory not in cache buf = %p len = %d", buf, len);*/
+    /*
+    status = ib_dereg_mr(state->handle);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
-	return IBU_FAIL;
+    MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mr failed, error %s\n", ib_get_err_str(status));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
+    return IBU_FAIL;
     }
-*/
+    */
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
     return IBU_SUCCESS;
+
+#endif    
+}
+
+#undef FUNCNAME
+#define FUNCNAME ibu_invalidate_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_invalidate_memory(void *buf, int len)
+{
+#ifndef USE_NO_PIN_CACHE
+    ibu_mem_node_t *iter;
+#endif
+    MPIDI_STATE_DECL(MPID_STATE_IBU_INVALIDATE_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_INVALIDATE_MEMORY);
+
+#ifdef USE_NO_PIN_CACHE
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INVALIDATE_MEMORY);
+    return IBU_SUCCESS;
+
+#else
+
+    iter = ibu_pin_cache;
+    while (iter != NULL)
+    {
+	if (buf == iter->buf && len == iter->len)
+	{
+	    /* destroy this node */
+	    iter->ref_count = 0;
+	    ibu_clean_pin_cache();
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INVALIDATE_MEMORY);
+	    return IBU_SUCCESS;
+	}
+	if ((buf >= iter->buf) && ((char*)buf + len < ((char*)iter->buf + iter->len)))
+	{
+	    /* destroy this node */
+	    iter->ref_count = 0;
+	    ibu_clean_pin_cache();
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INVALIDATE_MEMORY);
+	    return IBU_SUCCESS;
+	}
+	if (buf < iter->buf)
+	{
+	    if (iter->left == NULL)
+	    {
+		/* node not found */
+		break;
+	    }
+	    iter = iter->left;
+	}
+	else
+	{
+	    if (iter->right == NULL)
+	    {
+		/* node not found */
+		break;
+	    }
+	    iter = iter->right;
+	}	
+    }
+
+    /* memory not found */
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INVALIDATE_MEMORY);
+    return IBU_SUCCESS;
+
+#endif
 }
 
 #undef FUNCNAME
@@ -449,23 +572,24 @@ int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state)
 
     MPIU_DBG_PRINTF(("entering ibu_nocache_register_memory\n"));
 
+    memset(&mem, 0, sizeof(ib_mr_create_t));
     mem.vaddr = buf;
     mem.length = (uint64_t)len;
-    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE | IB_AC_RDMA_READ;
     status = ib_reg_mem(
 	IBU_Process.pd_handle,
 	&mem,
 	&state->lkey,
 	&state->rkey,
 	&state->handle);
+
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_nocache_register_memory: ib_reg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIU_Internal_error_printf("ibu_nocache_register_memory: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
 	return IBU_FAIL;
     }
 
-    MPIU_DBG_PRINTF(("exiting ibu_nocache_register_memory\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
     return IBU_SUCCESS;
 }
@@ -481,14 +605,13 @@ int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
 
-    status = ib_dereg_mem(IBU_Process.pd_handle, state->handle);
+    status =  ib_dereg_mr(state->handle);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
 	return IBU_FAIL;
     }
-
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
     return IBU_SUCCESS;
 }

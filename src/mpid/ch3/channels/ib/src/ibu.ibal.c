@@ -1,8 +1,8 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+*  (C) 2001 by Argonne National Laboratory.
+*      See COPYRIGHT in top-level directory.
+*/
 
 #include "mpidimpl.h"
 #include "ibu.h"
@@ -14,16 +14,50 @@
 #endif
 #include "mpidi_ch3_impl.h"
 
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+#include <crtdbg.h>
+#endif
+#endif
+
 #ifdef USE_IB_IBAL
 
 #include "ibuimpl.ibal.h"
+#include <complib/cl_thread.h>
 
-ibuBlockAllocator g_workAllocator = NULL;
 IBU_Global IBU_Process;
-ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
-int g_cur_write_stack_index = 0;
+
+/*============== static functions prototypes ==================*/
+static int ibui_get_first_active_ca();
 
 /* utility ibu functions */
+#undef FUNCNAME
+#define FUNCNAME getMaxInlineSize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+ib_api_status_t getMaxInlineSize( ibu_t ibu )
+{
+    ib_api_status_t status = IB_SUCCESS;
+    ib_qp_attr_t qp_prop;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_GETMAXINLINESIZE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_GETMAXINLINESIZE);
+    MPIU_DBG_PRINTF(("entering getMaxInlineSize\n"));
+
+    status = ib_query_qp(ibu->qp_handle, &qp_prop);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_Internal_error_printf("getMaxInlineSize: ib_query_qp failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
+	return status;
+    }
+    ibu->max_inline_size = qp_prop.sq_max_inline;
+
+    MPIU_DBG_PRINTF(("exiting getMaxInlineSize\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_GETMAXINLINESIZE);
+    return IBU_SUCCESS;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME modifyQP
@@ -45,24 +79,35 @@ ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	qp_mod.state.init.qkey = 0x0;
 	qp_mod.state.init.pkey_index = 0x0;
 	qp_mod.state.init.primary_port = IBU_Process.port;
-	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE;
+
+	qp_mod.state.init.access_ctrl = /* Mellanox, dafna April 11th added rdma write and read	for access control */
+	    IB_AC_LOCAL_WRITE | 
+	    IB_AC_RDMA_WRITE  |
+	    IB_AC_RDMA_READ;
     }
     else if (qp_state == IB_QPS_RTR) 
     {
 	qp_mod.req_state = IB_QPS_RTR;
-	qp_mod.state.rtr.rq_psn = cl_hton32(0x00000001);
+	qp_mod.state.rtr.rq_psn = cl_hton32(0x00000000); /*Mellanox, dafna April 11th changed from '1' to '0'*/
 	qp_mod.state.rtr.dest_qp = ibu->dest_qp_num;
 	qp_mod.state.rtr.resp_res = 1;
-	qp_mod.state.rtr.pkey_index = 0x0;
 	qp_mod.state.rtr.rnr_nak_timeout = 7;
 	qp_mod.state.rtr.pkey_index = 0x0;
 	qp_mod.state.rtr.opts = IB_MOD_QP_PRIMARY_AV;
 	qp_mod.state.rtr.primary_av.sl = 0;
 	qp_mod.state.rtr.primary_av.dlid = ibu->dlid;
 	qp_mod.state.rtr.primary_av.grh_valid = 0;
-	qp_mod.state.rtr.primary_av.static_rate = 0;
+	/* static rate: IB_PATH_RECORD_RATE_10_GBS for 4x link width, 30GBS for 12x*/
+	qp_mod.state.rtr.primary_av.static_rate = IB_PATH_RECORD_RATE_10_GBS; /* Mellanox dafna April 11th, TODO - set to IBU_Process.port_static_rate*/
 	qp_mod.state.rtr.primary_av.path_bits = 0;
-	qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_1024;
+	if (IBU_Process.dev_id == 0x5A44) /* Tavor Based */
+	{
+	    qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_1024;
+	}
+	else
+	{
+	    qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_2048;
+	}		
 	qp_mod.state.rtr.primary_av.conn.local_ack_timeout = 7;
 	qp_mod.state.rtr.primary_av.conn.seq_err_retry_cnt = 7;
 	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 7;
@@ -71,18 +116,18 @@ ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     else if (qp_state == IB_QPS_RTS)
     {
 	qp_mod.req_state = IB_QPS_RTS;
-	qp_mod.state.rts.sq_psn = cl_hton32(0x00000001);
-	qp_mod.state.rts.retry_cnt = 7;
-	qp_mod.state.rts.rnr_retry_cnt = 7;
+	qp_mod.state.rts.sq_psn = cl_hton32(0x00000000);/*Mellanox, dafna April 11th changed from '1' to '0'*/
+	qp_mod.state.rts.retry_cnt = 1; /*Mellanox, dafna April 11th changed from '7' to '1'*/
+	qp_mod.state.rts.rnr_retry_cnt = 3; /*Mellanox, dafna April 11th changed from '7' to '3'*/
 	qp_mod.state.rts.rnr_nak_timeout = 7;
-	qp_mod.state.rts.local_ack_timeout = 0x20;
+	qp_mod.state.rts.local_ack_timeout = 10; /*Mellanox, dafna April 11th changed from '20' to '10'*/
 	qp_mod.state.rts.init_depth = 7;
 	qp_mod.state.rts.opts = 0;
     }
     else if (qp_state == IB_QPS_RESET)
     {
 	qp_mod.req_state = IB_QPS_RESET;
-	qp_mod.state.reset.timewait = 0;
+	/* Mellanox, dafna April 11th no RESET union which holdes timewait anymore/ removed qp_mod.state.reset.timewait = 0*/
     }
     else
     {
@@ -91,7 +136,7 @@ ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     }
 
     status = ib_modify_qp(ibu->qp_handle, &qp_mod);
-    if( status != IB_SUCCESS )
+    if ( status != IB_SUCCESS )
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	return status;
@@ -112,9 +157,9 @@ ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATEQP);
     MPIU_DBG_PRINTF(("entering createQP\n"));
     qp_init_attr.qp_type = IB_QPT_RELIABLE_CONN;
-    qp_init_attr.h_rdd = 0;
-    qp_init_attr.sq_depth = 10000;
-    qp_init_attr.rq_depth = 10000;
+    /* Mellanox, dafna April 11th h_rdd not a member of qp_create anymore qp_init_attr.h_rdd = 0 */
+    qp_init_attr.sq_depth = IBU_DEFAULT_MAX_WQE; /* Mellanox, dafna April 11th 10000;*/
+    qp_init_attr.rq_depth = IBU_DEFAULT_MAX_WQE; /* Mellanox, dafna April 11th 10000;*/
     qp_init_attr.sq_sge = 8;
     qp_init_attr.rq_sge = 8;
     qp_init_attr.h_sq_cq = set;
@@ -136,14 +181,90 @@ ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
 	return status;
     }
     MPIU_DBG_PRINTF(("qp: num = %d, dest_num = %d\n",
-		     cl_ntoh32(qp_prop.num),
-		     cl_ntoh32(qp_prop.dest_num)));
+	cl_ntoh32(qp_prop.num),
+	cl_ntoh32(qp_prop.dest_num)));
     ibu->qp_num = qp_prop.num;
 
     MPIU_DBG_PRINTF(("exiting createQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
     return IBU_SUCCESS;
 }
+
+
+/* * Added by Mellanox, dafna April 11th * *
+args:
+ibu - pointer to ibu_state_t
+retrun value:
+p - memory hndl of the buffers , NULL if fail.
+
+Allocates local RDMA buffers and registers them to the HCA
+*/
+#undef FUNCNAME
+#define FUNCNAME ibui_update_remote_RDMA_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibui_update_remote_RDMA_buf(ibu_t ibu, ibu_rdma_buf_t* buf, uint32_t rkey)
+{
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
+    MPIU_DBG_PRINTF(("entering ibui_update_remote_RDMA_buf\n"));
+    ibu->remote_RDMA_buf_base = buf;
+    ibu->remote_RDMA_buf_hndl.rkey = rkey;
+    ibu->remote_RDMA_head = 0;
+    ibu->remote_RDMA_limit = IBU_NUM_OF_RDMA_BUFS - 1;
+
+    MPIU_DBG_PRINTF(("ibu_update_RDMA_buf  rkey = %x  buf= %p\n",rkey,buf));
+    MPIU_DBG_PRINTF(("ibu_update_RDMA_buf  ************** remote_RDMA_head = %d  remote_RDMA_limit= %d\n",
+	ibu->remote_RDMA_head,
+	ibu->remote_RDMA_limit));
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_UPDATE_REMOTE_RDMA_BUF);
+    return IBU_SUCCESS;
+}
+
+/* * Added by Mellanox, dafna April 11th  * *
+args:
+ibu - pointer to ibu_state_t 
+retrun value:
+p - memory hndl of the buffers , NULL if fail.
+
+Allocates local RDMA buffers and registers them to the HCA
+*/
+#undef FUNCNAME
+#define FUNCNAME ibui_RDMA_buf_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, uint32_t* rkey)
+{
+    ibu_rdma_buf_t *buf;
+    ibu_mem_t mem_handle;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_RDMA_BUF_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_RDMA_BUF_INIT);
+    MPIU_DBG_PRINTF(("entering ibui_RDMA_buf_init\n"));
+
+    buf = ibuRDMAAllocInitIB(&mem_handle); 
+
+    if (buf == NULL)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_RDMA_BUF_INIT);
+	return NULL;
+    }
+
+    ibu->local_RDMA_buf_base = buf;
+    ibu->local_RDMA_buf_hndl = mem_handle; 
+    ibu->local_RDMA_head =  0;
+    ibu->local_last_updated_RDMA_limit = IBU_NUM_OF_RDMA_BUFS - 1;
+
+    *rkey = ibu->local_RDMA_buf_hndl.rkey;
+    MPIU_DBG_PRINTF(("ibui_RDMA_buf_init rkey = %x buf= %p\n", *rkey, buf));
+    MPIU_DBG_PRINTF(("ibui_RDMA_buf_init ************* ibu->local_RDMA_head = %d ibu->local_last_updated_RDMA_limit= %d\n", 
+	ibu->local_RDMA_head, ibu->local_last_updated_RDMA_limit));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
+    return buf;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME ibu_start_qp
@@ -156,6 +277,8 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
     MPIDI_STATE_DECL(MPID_STATE_IBU_START_QP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_START_QP);
+    MPIU_DBG_PRINTF(("entering ibu_start_qp\n"));
+
     p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
@@ -165,9 +288,7 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    p->allocator = ibuBlockAllocInitIB(); /*IBU_PACKET_SIZE, IBU_PACKET_COUNT,
-				     IBU_PACKET_COUNT,
-				     ib_malloc_register, ib_free_deregister);*/
+    p->allocator = ibuBlockAllocInitIB();
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "creating the queue pair\n"));*/
     /* Create the queue pair */
@@ -189,9 +310,7 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
 {
-    int mpi_errno;
     ib_api_status_t status;
-    int i;
     MPIDI_STATE_DECL(MPID_STATE_IBU_FINISH_QP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINISH_QP);
@@ -226,289 +345,210 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
 	return -1;
     }
 
-    /* pre post some receives on each connection */
-    p->nAvailRemote = 0;
-    p->nUnacked = 0;
-    for (i=0; i<IBU_NUM_PREPOSTED_RECEIVES; i++)
+    /* Added by Mellanox, dafna April 11th */ 
+    status = getMaxInlineSize(p);
+    if (status != IBU_SUCCESS)
     {
-	ibui_post_receive_unacked(p);
-	p->nAvailRemote++; /* assumes the other side is executing this same code */
+	MPIU_Internal_error_printf("ibu_finish_qp: getMaxInlineSize() failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
-    p->nAvailRemote--; /* remove one from nAvailRemote so a ack packet can always get through */
+    p->send_wqe_info_fifo.head = 0;
+    p->send_wqe_info_fifo.tail = 0;	
+
+    /* Finished scope added by Mellanox, dafna April 11th; removed receive posting.  */ 
 
     MPIU_DBG_PRINTF(("exiting ibu_finish_qp\n"));    
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
     return MPI_SUCCESS;
 }
-
-#undef FUNCNAME
-#define FUNCNAME ibui_post_receive_unacked
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibui_post_receive_unacked(ibu_t ibu)
-{
-    ib_api_status_t status;
-    ib_local_ds_t data;
-    ib_recv_wr_t work_req;
-    void *mem_ptr;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-
-    /*MPIU_DBG_PRINTF(("entering ibui_post_receive_unacked\n"));*/
-    mem_ptr = ibuBlockAllocIB(ibu->allocator);
-    if (mem_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAllocIB returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-	return IBU_FAIL;
-    }
-
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-    if (id_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-	return IBU_FAIL;
-    }
-    id_ptr->ptr = (void*)ibu;
-    id_ptr->mem = (void*)mem_ptr;
-#endif
-    work_req.p_next = NULL;
-    work_req.num_ds = 1;
-    work_req.ds_array = &data;
-    data.vaddr = mem_ptr;
-    data.length = IBU_PACKET_SIZE;
-    data.lkey = GETLKEY(mem_ptr);
-
-    /*MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));*/
-    MPIU_DBG_PRINTF(("."));
-    status = ib_post_recv(ibu->qp_handle, &work_req, NULL);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	MPIU_Internal_error_printf("%s: Error: failed to post ib receive, status = %s\n", FCNAME, ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-	return status;
-    }
-#ifdef TRACE_IBU
-    IBU_Process.outstanding_recvs++;
-#endif
-
-    /*MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));*/
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
-    return IBU_SUCCESS;
-}
-
-#undef FUNCNAME
-#define FUNCNAME ibui_post_receive
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibui_post_receive(ibu_t ibu)
-{
-    ib_api_status_t status;
-    ib_local_ds_t data;
-    ib_recv_wr_t work_req;
-    void *mem_ptr;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
-
-    /*MPIU_DBG_PRINTF(("entering ibui_post_receive\n"));*/
-    mem_ptr = ibuBlockAllocIB(ibu->allocator);
-    if (mem_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAllocIB returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
-	return IBU_FAIL;
-    }
-
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-    if (id_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
-	return IBU_FAIL;
-    }
-    id_ptr->ptr = (void*)ibu;
-    id_ptr->mem = (void*)mem_ptr;
-#endif
-    work_req.p_next = NULL;
-    work_req.num_ds = 1;
-    work_req.ds_array = &data;
-    data.vaddr = mem_ptr;
-    data.length = IBU_PACKET_SIZE;
-    data.lkey = GETLKEY(mem_ptr);
-
-    /*MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));*/
-    MPIU_DBG_PRINTF(("*"));
-
-    status = ib_post_recv(ibu->qp_handle, &work_req, NULL);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	MPIU_Internal_error_printf("%s: Error: failed to post ib receive, status = %s\n", FCNAME, ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
-	return status;
-    }
-#ifdef TRACE_IBU
-    IBU_Process.outstanding_recvs++;
-#endif
-    if (++ibu->nUnacked > IBU_ACK_WATER_LEVEL)
-    {
-	ibui_post_ack_write(ibu);
-    }
-
-    /*MPIU_DBG_PRINTF(("exiting ibui_post_receive\n"));*/
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
-    return IBU_SUCCESS;
-}
-
+/* * Mellanox, dafna April 11th changed post_ack_write upside down to match new methodology * */
 #undef FUNCNAME
 #define FUNCNAME ibui_post_ack_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibui_post_ack_write(ibu_t ibu)
 {
-    ib_api_status_t status;
-    ib_local_ds_t data;
-    ib_send_wr_t work_req;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
+    int mpi_errno = MPI_SUCCESS;
+    int num_bytes;
+    MPIDI_CH3_Pkt_t upkt;
+    MPIDI_CH3_Pkt_rdma_limit_upt_t * const ack_pkt = &upkt.limit_upt;
+    ack_pkt->iov_len = 0;
+    ack_pkt->type = MPIDI_CH3_PKT_LMT_UPT;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
+    MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
 
-    /*MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));*/
-    data.vaddr = IBU_Process.ack_mem_ptr;
-    data.length = 1;
-    data.lkey = IBU_Process.ack_lkey;
-
-    work_req.p_next = NULL;
-    work_req.wr_type = WR_SEND;
-    work_req.send_opt = IB_SEND_OPT_IMMEDIATE | IB_SEND_OPT_SIGNALED;
-    work_req.num_ds = 1;
-    work_req.ds_array = &data;
-    work_req.immediate_data = ibu->nUnacked;
-#ifdef HAVE_32BIT_POINTERS
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)-1;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-    if (id_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-	return IBU_FAIL;
-    }
-    id_ptr->ptr = (void*)ibu;
-    id_ptr->mem = (void*)-1;
+#ifdef MPICH_DBG_OUTPUT
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)ack_pkt);
 #endif
+    mpi_errno = ibu_write(ibu, ack_pkt, (int)sizeof(MPIDI_CH3_Pkt_t), &num_bytes); /* Mellanox - write with special ack pkt header */
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(ack = %d)", ibu->nUnacked));
-    /*printf("ib_post_send(ack = %d)\n", ibu->nUnacked);fflush(stdout);*/
-    status = ib_post_send(ibu->qp_handle, &work_req, NULL);
-    if (status != IB_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS || num_bytes != sizeof(MPIDI_CH3_Pkt_t))
     {
-	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	MPIU_Internal_error_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, ib_get_err_str(status));
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
-	return status;
+	return mpi_errno;
     }
-#ifdef TRACE_IBU
-    IBU_Process.outstanding_sends++;
-#endif
-    ibu->nUnacked = 0;
 
-    /*MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));*/
+    MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
-    return IBU_SUCCESS;
+    return mpi_errno;
 }
-
-#if 0
-#undef FUNCNAME
-#define FUNCNAME ibui_post_ack_write
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibui_post_ack_write(ibu_t ibu)
-{
-    ib_api_status_t status;
-    ib_local_ds_t data;
-    ib_send_wr_t work_req;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
-
-    /*MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));*/
-    work_req.p_next = NULL;
-    work_req.wr_type = WR_SEND;
-    work_req.send_opt = IB_SEND_OPT_IMMEDIATE | IB_SEND_OPT_SIGNALED;
-    data.vaddr = NULL;
-    data.length = 0;
-    data.lkey = GETLKEY(mem_ptr);
-    work_req.num_ds = 1;
-    work_req.ds_array = &data;
-    work_req.immediate_data = ibu->nUnacked;
-#ifdef HAVE_32BIT_POINTERS
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)-1;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-    if (id_ptr == NULL)
-    {
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
-	return IBU_FAIL;
-    }
-    id_ptr->ptr = (void*)ibu;
-    id_ptr->mem = (void*)-1;
-#endif
-    
-    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(ack = %d)", ibu->nUnacked));
-    printf("ib_post_send(ack = %d)\n", ibu->nUnacked);fflush(stdout);
-    status = ib_post_send(ibu->qp_handle, &work_req, NULL);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	MPIU_Internal_error_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
-	return status;
-    }
-#ifdef TRACE_IBU
-    IBU_Process.outstanding_sends++;
-#endif
-    ibu->nUnacked = 0;
-
-    /*MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));*/
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
-    return IBU_SUCCESS;
-}
-#endif
-
 /* ibu functions */
+
+//Mellanox, dafna April 11th added functions (up to ibu_write)
+
+#undef FUNCNAME
+#define FUNCNAME ibui_post_rndv_cts_iov_reg_err
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibui_post_rndv_cts_iov_reg_err(ibu_t ibu, MPID_Request * rreq)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int num_bytes;
+    MPIDI_CH3_Pkt_t upkt;
+    MPIDI_CH3_Pkt_rndv_reg_error_t* const cts_iov_reg_err_pkt = &upkt.rndv_reg_error;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+    MPIU_DBG_PRINTF(("entering ibui_post_rndv_cts_iov_reg_err\n"));
+
+    cts_iov_reg_err_pkt->iov_len = 0;
+    cts_iov_reg_err_pkt->type = MPIDI_CH3_PKT_RNDV_CTS_IOV_REG_ERR;
+    cts_iov_reg_err_pkt->sreq = rreq->dev.sender_req_id;
+    cts_iov_reg_err_pkt->rreq = rreq->handle;
+
+#ifdef MPICH_DBG_OUTPUT
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)cts_iov_reg_err_pkt);
+#endif
+    mpi_errno = ibu_write(ibu, cts_iov_reg_err_pkt, (int)sizeof(MPIDI_CH3_Pkt_t), &num_bytes); /* Mellanox - write with special cts registration errorr pkt header */
+
+    if (mpi_errno != MPI_SUCCESS || num_bytes != sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+	return mpi_errno;
+    }
+    MPIU_DBG_PRINTF(("exiting ibui_post_rndv_cts_iov_reg_err\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RNDV_CTS_IOV_REG_ERR);
+    return mpi_errno;
+}
+
+/* Mellanox July 12th 
+send_wqe_info_fifo_empty - check if fifo is emptry or not:
+return TRUE if empty, FALSE otherwise
+*/
+#undef FUNCNAME
+#define FUNCNAME send_wqe_info_fifo_empty
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int send_wqe_info_fifo_empty(int head, int tail)
+{	
+    if (head == tail)
+    {
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/* Mellanox July 12th 
+send_wqe_info_fifo_pop - pop entry to send_wqe_fifo:
+Update signaled_wqes counter, and advance tail
+*/
+#undef FUNCNAME
+#define FUNCNAME send_wqe_info_fifo_pop
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void send_wqe_info_fifo_pop(ibu_t ibu, ibui_send_wqe_info_t* entry)
+{
+    int head, tail;
+    head = ibu->send_wqe_info_fifo.head;
+    tail = ibu->send_wqe_info_fifo.tail;
+    if (!send_wqe_info_fifo_empty(head, tail))
+    {
+	*entry = ibu->send_wqe_info_fifo.entries[tail];
+	if (entry->RDMA_type == IBU_RDMA_EAGER_SIGNALED || 
+	    entry->RDMA_type == IBU_RDMA_RDNV_SIGNALED)
+	{
+	    ibu->send_wqe_info_fifo.num_of_signaled_wqes--;
+	    IBU_Process.num_send_cqe--;
+	}
+    }
+    else
+    {
+	entry = NULL;
+    }
+    ibu->send_wqe_info_fifo.tail = (tail + 1) % IBU_DEFAULT_MAX_WQE;
+}
+/* Mellanox July 12th 
+check if send_wqe_fifo if full and cannot be pushed into:
+return TRUE if full, FALSE otherwise
+*/
+#undef FUNCNAME
+#define FUNCNAME send_wqe_info_fifo_full
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int send_wqe_info_fifo_full(int head, int tail)
+{
+    if (((head + 1) % IBU_DEFAULT_MAX_WQE) == tail)
+    {
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/* Mellanox July 12th 
+push entry to send_wqe_fifo:
+Update RDMA type, signaled_wqes counter, length, mem_ptr and advance header
+*/
+#undef FUNCNAME
+#define FUNCNAME send_wqe_info_fifo_push
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void send_wqe_info_fifo_push(ibu_t ibu, ibu_rdma_type_t entry_type, void* mem_ptr, int length)
+{
+    int head,tail;
+    head = ibu->send_wqe_info_fifo.head;
+    tail = ibu->send_wqe_info_fifo.tail;
+    if (!send_wqe_info_fifo_full(head,tail))
+    {
+	ibu->send_wqe_info_fifo.entries[head].RDMA_type = entry_type;
+	if (entry_type == IBU_RDMA_EAGER_SIGNALED ||
+	    entry_type == IBU_RDMA_RDNV_SIGNALED ) 
+	{
+	    ibu->send_wqe_info_fifo.num_of_signaled_wqes++;
+	    IBU_Process.num_send_cqe++;
+	}
+	ibu->send_wqe_info_fifo.entries[head].length = length;
+	ibu->send_wqe_info_fifo.entries[head].mem_ptr = mem_ptr;
+
+	ibu->send_wqe_info_fifo.head = (head + 1) % IBU_DEFAULT_MAX_WQE;
+    }
+}
+
+/* Mellanox July 11th 
+Given the next posted index, determines whether this description posting
+is singnalled or not.
+returns signal bit according to API definitions.
+*/
+#undef FUNCNAME
+#define FUNCNAME ibui_signaled_completion
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+ib_send_opt_t ibui_signaled_completion(ibu_t ibu)
+{
+    int signaled = 0x00000000 /* unsignalled */;	
+    if (ibu->send_wqe_info_fifo.head % (IBU_PACKET_COUNT >> 1) == 0)
+    {
+	signaled = IB_SEND_OPT_SIGNALED;
+    }
+    return signaled;
+}
+
+
+//Mellanox, dafna April 11th finished added funcions
 
 #undef FUNCNAME
 #define FUNCNAME ibu_write
@@ -520,30 +560,62 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
     ib_local_ds_t data;
     ib_send_wr_t work_req;
     void *mem_ptr;
-    int length;
+    //Mellanox, dafna April 11th added msg_size 
+    unsigned int length, msg_size;	
+    int signaled_type = 0x00000000; /*UNSIGNALED*/ 
     int total = 0;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
+    ibu_work_id_handle_t *id_ptr = NULL;	
+    ibu_rdma_type_t entry_type; /* Mellanox, dafna April 11th added entry_type */
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
     MPIU_DBG_PRINTF(("entering ibu_write\n"));
+
     while (len)
     {
-	length = min(len, IBU_PACKET_SIZE);
+	length = min(len, IBU_EAGER_PACKET_SIZE); /*Mellanox, dafna April 11th replaced IBU_PACKET_SIZE*/
 	len -= length;
 
-	if (ibu->nAvailRemote < 1)
+	/* Mellanox, dafna April 11th replaced nAvailRemote with rmote_RDMA_limit  */
+	if ((((ibu->remote_RDMA_limit - ibu->remote_RDMA_head) + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS) < 2)
 	{
-	    /*printf("ibu_write: no remote packets available\n");fflush(stdout);*/
-	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available"));
-	    *num_bytes_ptr = total;
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-	    return IBU_SUCCESS;
+	    /* Mellanox - check if packet is update limit packet. if not - return and enqueue */
+	    if (((MPIDI_CH3_Pkt_t*)buf)->type != MPIDI_CH3_PKT_LMT_UPT)
+	    {
+		/*printf("ibu_write: no remote packets available\n");fflush(stdout);*/			
+
+		MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available"));
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head = %d ibu->remote_RDMA_limit = %d .",
+		    ibu->remote_RDMA_head ,ibu->remote_RDMA_limit));
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head - limit = %d ",
+		    ((ibu->remote_RDMA_head - ibu->remote_RDMA_limit + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS)));
+
+		*num_bytes_ptr = total;
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+		return IBU_SUCCESS;
+	    }
+	    MPIDI_DBG_PRINTF((60, FCNAME, "Going to send update limit pkt"));
+	    /* Mellanox - check for update limit packet if sending is available*/
+	    if ((((ibu->remote_RDMA_limit - ibu->remote_RDMA_head)  + IBU_NUM_OF_RDMA_BUFS ) % IBU_NUM_OF_RDMA_BUFS) < 1)
+	    {
+		/* No send is available. Pretend as if sent and ignore ibu_write request */
+		*num_bytes_ptr = len;
+
+		MPIDI_DBG_PRINTF((60, FCNAME, "update limit is not available. exiting ibu_write"));
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head = %d ibu->remote_RDMA_limit = %d .",
+		    ibu->remote_RDMA_head ,ibu->remote_RDMA_limit));
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head - limit = %d ",
+		    ((ibu->remote_RDMA_head - ibu->remote_RDMA_limit + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS)));
+
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+		return IBU_SUCCESS;
+	    }
 	}
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head = %d ibu->remote_RDMA_limit = %d .",ibu->remote_RDMA_head ,ibu->remote_RDMA_limit));
 
 	mem_ptr = ibuBlockAllocIB(ibu->allocator);
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAllocIB returned address %p\n",mem_ptr));
+
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAllocIB returned NULL\n"));
@@ -551,56 +623,101 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_SUCCESS;
 	}
-	memcpy(mem_ptr, buf, length);
-	total += length;
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, length));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
-	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	g_cur_write_stack_index++;
 
-	data.vaddr = mem_ptr;
-	data.length = length;
+	/* Mellanox - adding the RDMA header */
+	if (((MPIDI_CH3_Pkt_t*)buf)->type == MPIDI_CH3_PKT_LMT_UPT)
+	{
+	    length = 0; /* Only footer will be sent, no other body message */
+	}
+	msg_size = length + sizeof(ibu_rdma_buf_footer_t); /* Added size of additional header*/
+
+	((ibu_rdma_buf_t*)mem_ptr)->footer.RDMA_buf_valid_flag = IBU_VALID_RDMA_BUF;
+	((ibu_rdma_buf_t*)mem_ptr)->footer.updated_remote_RDMA_recv_limit = 
+	    ((ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS) - 1) % IBU_NUM_OF_RDMA_BUFS; /* Piggybacked update of remote Q state */
+	((ibu_rdma_buf_t*)mem_ptr)->footer.total_size = msg_size;
+
+	/* Mellanox - END adding the RDMA header */
+	memcpy(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size), buf, length);
+	total += length;
+
+	data.length = msg_size; /*Mellanox descriptor holds additional header */ /*Mellanox, dafna April 11th length*/;
+	/* Data.vaddr points to Beginning of original buffer */
+	data.vaddr = (uint64_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size)) /*Mellanox, dafna April 11th mem_ptr*/;
 	data.lkey = GETLKEY(mem_ptr);
-	
+
 	work_req.p_next = NULL;
-	work_req.wr_type = WR_SEND;
-	work_req.send_opt = IB_SEND_OPT_SIGNALED;
+	work_req.wr_type = WR_RDMA_WRITE /*Mellanox, dafna April 11th SEND*/;
+	signaled_type = ibui_signaled_completion(ibu); 
+	work_req.send_opt = signaled_type /*Mellanox, dafna April 11th IB_SEND_OPT_SIGNALED*/;
 	work_req.num_ds = 1;
 	work_req.ds_array = &data;
 	work_req.immediate_data = 0;
-#ifdef HAVE_32BIT_POINTERS
-	/* store the ibu ptr and the mem ptr in the work id */
-	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
-#else
-	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-	*((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-	if (id_ptr == NULL)
+	/* Mellanox, dafna April 11th added remote_ops parameters  */
+	work_req.remote_ops.vaddr	= (uint64_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
+	work_req.remote_ops.vaddr	-= msg_size;
+	work_req.remote_ops.rkey = ibu->remote_RDMA_buf_hndl.rkey;
+	work_req.remote_ops.atomic1 = 0x0;
+	work_req.remote_ops.atomic2 = 0x0;
+
+	MPIU_DBG_PRINTF((" work_req remote_addr = %p  \n",work_req.remote_ops.vaddr ));
+
+	/* Mellanox, dafna April 11th added signaling type */
+	/* Allocate id_ptr only if wqe is signaled  */
+	if (signaled_type == IB_SEND_OPT_SIGNALED)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-	    return IBU_FAIL;
+	    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator/*Mellanox, dafna April 11th g_workAllocator*/);
+	    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+	    if (id_ptr == NULL)
+	    {
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+		return IBU_FAIL;
+	    }
+	    id_ptr->ibu = ibu;
+	    id_ptr->mem = (void*)mem_ptr;
+	    id_ptr->length = msg_size; /* Mellanox, dafna April 11th added msg_size*/
 	}
-	id_ptr->ptr = (void*)ibu;
-	id_ptr->mem = (void*)mem_ptr;
-#endif
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_send(%d bytes)", length));
-	status = ib_post_send(ibu->qp_handle, &work_req, NULL);
+
+	if (msg_size < ibu->max_inline_size)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_inline_sr(%d bytes)", msg_size));
+	    work_req.send_opt |= IB_SEND_OPT_INLINE;
+	    status = ib_post_send(ibu->qp_handle, &work_req, NULL);
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_send(%d bytes)", length));
+	    status = ib_post_send(ibu->qp_handle, &work_req, NULL);
+	}
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
+	    if (signaled_type == IB_SEND_OPT_SIGNALED)
+	    {
+		ibuBlockFree(IBU_Process.workAllocator, (void*)id_ptr);
+	    }
 	    MPIU_Internal_error_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, ib_get_err_str(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_FAIL;
 	}
-#ifdef TRACE_IBU
-	IBU_Process.outstanding_sends++;
-#endif
-	ibu->nAvailRemote--;
+	/* Mellanox push entry to send_wqe_fifo */
+	entry_type = (signaled_type == IB_SEND_OPT_SIGNALED)? IBU_RDMA_EAGER_SIGNALED : IBU_RDMA_EAGER_UNSIGNALED;
+	send_wqe_info_fifo_push(ibu, entry_type, mem_ptr, msg_size);
 
+	/* Mellanox update head of remote RDMA buffer to write to */
+	ibu->remote_RDMA_head = (ibu->remote_RDMA_head + 1) % IBU_NUM_OF_RDMA_BUFS;
+
+	/* Mellanox update remote RDMA limit to what was sent in the packet */
+	ibu->local_last_updated_RDMA_limit = (( ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS )- 1) % IBU_NUM_OF_RDMA_BUFS;
+
+	/* Mellanox change of print. use remote_RDMA_head/remote_RMDA_limit instead of nAvailRemote 
+	use new local RDMA limit for nUnacked */
+	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, local_last_updated_RDMA_limit: %d\n", 
+	    (ibu->remote_RDMA_limit - ibu->remote_RDMA_head + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS, 
+	    ((ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS)- 1) % IBU_NUM_OF_RDMA_BUFS));
+
+	//Mellanox, dafna April 11th removed ibu->nAvailRemote--;
 	buf = (char*)buf + length;
+
     }
 
     *num_bytes_ptr = total;
@@ -621,113 +738,195 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
     ib_send_wr_t work_req;
     void *mem_ptr;
     unsigned int len, msg_size;
-    int total = 0;
+    int cur_msg_total, total = 0;
     unsigned int num_avail;
     unsigned char *buf;
-    int cur_index;
-    unsigned int cur_len;
+    int cur_index, msg_calc_cur_index; /* Added by Mellanox, dafna April 11th (msg_calc)*/
+    unsigned int cur_len, msg_calc_cur_len; /* Added by Mellanox, dafna April 11th (msg_calc)*/
     unsigned char *cur_buf;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
+    int signaled_type = 0x00000000; /*UNSIGNALED*/ 
+    ibu_work_id_handle_t *id_ptr = NULL;
+    ibu_rdma_type_t entry_type; /* Added by Mellanox, dafna April 11th */
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
     MPIU_DBG_PRINTF(("entering ibu_writev\n"));
 
     cur_index = 0;
-    cur_len = iov[0].MPID_IOV_LEN;
-    cur_buf = iov[0].MPID_IOV_BUF;
+    msg_calc_cur_index = 0;
+    cur_len = iov[cur_index].MPID_IOV_LEN;
+    cur_buf = iov[cur_index].MPID_IOV_BUF;
+    msg_calc_cur_len   = iov[cur_index].MPID_IOV_LEN;
     do
     {
-	if (ibu->nAvailRemote < 1)
+	cur_msg_total = 0;
+	if ((((ibu->remote_RDMA_limit - ibu->remote_RDMA_head) + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS) < 2)
 	{
-	    /*printf("ibu_writev: no remote packets available\n");fflush(stdout);*/
-	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
 	    *num_bytes_ptr = total;
+
+	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head = %d ibu->remote_RDMA_limit = %d .",
+		ibu->remote_RDMA_head ,ibu->remote_RDMA_limit));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head - limit = %d ",
+		((ibu->remote_RDMA_head - ibu->remote_RDMA_limit + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS)));
+
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return IBU_SUCCESS;
+	    return IBU_SUCCESS; 
 	}
+
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibu->remote_RDMA_head = %d ibu->remote_RDMA_limit = %d .",ibu->remote_RDMA_head ,ibu->remote_RDMA_limit));
 	mem_ptr = ibuBlockAllocIB(ibu->allocator);
+
 	if (mem_ptr == NULL)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAllocIB returned NULL."));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
 	    *num_bytes_ptr = total;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_SUCCESS;
 	}
-	buf = mem_ptr;
-	num_avail = IBU_PACKET_SIZE;
-	/*MPIU_DBG_PRINTF(("iov length: %d\n", n));*/
-	for (; cur_index < n && num_avail; )
+
+	/*MPIU_DBG_PRINTF(("iov length: %d\n, n));*/		
+	if (2 == n && (iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN) < IBU_EAGER_PACKET_SIZE)  
+	{	
+	    total = iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN;
+	    msg_size = total + sizeof(ibu_rdma_buf_footer_t);
+	    buf = ((ibu_rdma_buf_t *)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size);
+	    memcpy(buf,iov[0].MPID_IOV_BUF,iov[0].MPID_IOV_LEN);
+	    memcpy(buf+iov[0].MPID_IOV_LEN,iov[1].MPID_IOV_BUF,iov[1].MPID_IOV_LEN);
+	    cur_index =n;
+	}
+	else
 	{
-	    len = min (num_avail, cur_len);
-	    num_avail -= len;
-	    total += len;
-	    /*MPIU_DBG_PRINTF(("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail));*/
-	    memcpy(buf, cur_buf, len);
-	    buf += len;
-	    
-	    if (cur_len == len)
+	    num_avail = IBU_EAGER_PACKET_SIZE;
+	    for (; msg_calc_cur_index < n && num_avail; )
 	    {
-		cur_index++;
-		cur_len = iov[cur_index].MPID_IOV_LEN;
-		cur_buf = iov[cur_index].MPID_IOV_BUF;
+		len = min (num_avail, msg_calc_cur_len);
+		num_avail -= len;
+		cur_msg_total += len;
+
+		MPIU_DBG_PRINTF((" Cur index IOV[%d] - Adding 0x%x to msg_size. Total is 0x%x \n",msg_calc_cur_index, len, total));
+		if (msg_calc_cur_len == len)
+		{
+		    msg_calc_cur_index++;
+		    msg_calc_cur_len = iov[msg_calc_cur_index].MPID_IOV_LEN;
+		}			
+		else
+		{
+		    msg_calc_cur_len -= len;
+		}
+
 	    }
-	    else
+
+
+	    msg_size = cur_msg_total + sizeof(ibu_rdma_buf_footer_t); 
+	    /* set buf pointer to where data should start . cpy_index will be equal to cur_index after loop*/
+	    buf = ((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size);
+
+	    num_avail = IBU_EAGER_PACKET_SIZE;
+	    for (; cur_index < n && num_avail; )
 	    {
-		cur_len -= len;
-		cur_buf += len;
+		len = min (num_avail, cur_len);
+		num_avail -= len;
+		total += len;
+		memcpy(buf, cur_buf, len);
+		buf += len;
+
+		if (cur_len == len)
+		{
+		    cur_index++;
+		    cur_len = iov[cur_index].MPID_IOV_LEN;
+		    cur_buf = iov[cur_index].MPID_IOV_BUF;
+		}
+		else
+		{
+		    cur_len -= len;
+		    cur_buf += len;
+		}
 	    }
 	}
-	msg_size = IBU_PACKET_SIZE - num_avail;
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, msg_size));
-	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
-	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
-	g_cur_write_stack_index++;
-	
-	data.vaddr = mem_ptr;
+	/*((ibu_rdma_buf_t*)mem_ptr)->footer.cur_offset = 0;*/
+	((ibu_rdma_buf_t*)mem_ptr)->footer.RDMA_buf_valid_flag = IBU_VALID_RDMA_BUF;
+	((ibu_rdma_buf_t*)mem_ptr)->footer.updated_remote_RDMA_recv_limit = 
+	    (( ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS) - 1) % IBU_NUM_OF_RDMA_BUFS; /* Piggybacked update of remote Q state */
+	((ibu_rdma_buf_t*)mem_ptr)->footer.total_size = msg_size; /* Already added size of additional header*/
+
+	/* Mellanox END copying data */
 	data.length = msg_size;
+	MPIU_Assert(data.length);
+
+	/* Data.vaddr points to beginning of original buffer */
+	data.vaddr = (uint64_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size)); 
 	data.lkey = GETLKEY(mem_ptr);
 
 	work_req.p_next = NULL;
-	work_req.wr_type = WR_SEND;
-	work_req.send_opt = IB_SEND_OPT_SIGNALED;
+	work_req.wr_type = WR_RDMA_WRITE; /* replaced WR_SEND by Mellanox, dafna April 11th */
+	signaled_type = ibui_signaled_completion(ibu);
+	work_req.send_opt = signaled_type;
 	work_req.num_ds = 1;
 	work_req.ds_array = &data;
 	work_req.immediate_data = 0;
-#ifdef HAVE_32BIT_POINTERS
-	/* store the ibu ptr and the mem ptr in the work id */
-	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
-#else
-	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
-	*((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
-	if (id_ptr == NULL)
+
+	/* Added and updated remote ops by Mellanox, dafna April 11th */
+	work_req.remote_ops.vaddr	= (uint64_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
+	work_req.remote_ops.vaddr	-= msg_size;
+	work_req.remote_ops.rkey = ibu->remote_RDMA_buf_hndl.rkey;
+	work_req.remote_ops.atomic1 = 0x0;
+	work_req.remote_ops.atomic2 = 0x0;
+
+	MPIU_DBG_PRINTF((" work_req remote_addr = %p  \n",work_req.remote_ops.vaddr ));
+
+	if (signaled_type == IB_SEND_OPT_SIGNALED)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return IBU_FAIL;
+	    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator);
+	    *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
+	    if (id_ptr == NULL)
+	    {
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
+		MPIU_Assert(0);
+		return IBU_FAIL;
+	    }
+	    id_ptr->ibu = ibu;
+	    id_ptr->mem = (void*)mem_ptr;
+	    id_ptr->length = msg_size;
 	}
-	id_ptr->ptr = (void*)ibu;
-	id_ptr->mem = (void*)mem_ptr;
-#endif
-	
-	MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(%d bytes)", msg_size));
+	if (msg_size < (unsigned int)ibu->max_inline_size)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_inline_sr(%d bytes)", msg_size));
+	    work_req.send_opt |= IB_SEND_OPT_INLINE;
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(%d bytes)", msg_size));
+	}
 	status = ib_post_send(ibu->qp_handle, &work_req, NULL);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
+	    /* Free id_ptr if was signaled and VAPI posting failed */
+	    if (signaled_type == IB_SEND_OPT_SIGNALED)
+	    {
+		ibuBlockFree(IBU_Process.workAllocator, (void*)id_ptr);
+	    }
 	    MPIU_Internal_error_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, ib_get_err_str(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return IBU_SUCCESS;
+	    return IBU_FAIL;
 	}
-#ifdef TRACE_IBU
-	IBU_Process.outstanding_sends++;
-#endif
-	ibu->nAvailRemote--;
-	
+
+	/* Mellanox push entry to send_wqe_fifo */
+	entry_type = (signaled_type == IB_SEND_OPT_SIGNALED)? IBU_RDMA_EAGER_SIGNALED : IBU_RDMA_EAGER_UNSIGNALED;
+	send_wqe_info_fifo_push(ibu, entry_type , mem_ptr, msg_size);
+
+	/* Mellanox update head of remote RDMA buffer to write to */
+	ibu->remote_RDMA_head = (ibu->remote_RDMA_head + 1) % IBU_NUM_OF_RDMA_BUFS;
+
+	/* Mellanox update remote RDMA limit to what was sent in the packet */
+	ibu->local_last_updated_RDMA_limit = (( ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS )- 1) % IBU_NUM_OF_RDMA_BUFS;
+
+	/* Mellanox change of print. use remote_RDMA_head/remote_RMDA_limit instead of nAvailRemote 
+	use new local RDMA limit for nUnacked */
+	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, local_last_updated_RDMA_limit: %d\n", 
+	    (ibu->remote_RDMA_limit - ibu->remote_RDMA_head + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS, 
+	    ((ibu->local_RDMA_head + IBU_NUM_OF_RDMA_BUFS)- 1) % IBU_NUM_OF_RDMA_BUFS));
     } while (cur_index < n);
 
     *num_bytes_ptr = total;
@@ -737,11 +936,37 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
     return IBU_SUCCESS;
 }
 
+
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+int __cdecl ibu_allocation_hook(int nAllocType, void * pvData, size_t nSize, int nBlockUse, long lRequest, const unsigned char * szFileName, int nLine) 
+{
+    /*nBlockUse = _FREE_BLOCK, _NORMAL_BLOCK, _CRT_BLOCK, _IGNORE_BLOCK, _CLIENT_BLOCK */
+    if ( nBlockUse == _CRT_BLOCK ) /* Ignore internal C runtime library allocations */
+	return( TRUE ); 
+
+    /*nAllocType = _HOOK_ALLOC, _HOOK_REALLOC, _HOOK_FREE */
+    if (nAllocType == _HOOK_FREE)
+    {
+	/* remove from cache */
+	if ( pvData != NULL )
+	{
+	    ibu_invalidate_memory(pvData, nSize);
+	}
+    }
+
+    return( TRUE ); /* Allow the memory operation to proceed */
+}
+#endif
+#endif
+
+
+
 #undef FUNCNAME
 #define FUNCNAME ibui_get_first_active_ca
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibui_get_first_active_ca()
+static int ibui_get_first_active_ca()
 {
     int mpi_errno;
     ib_api_status_t	status;
@@ -753,19 +978,25 @@ int ibui_get_first_active_ca()
     size_t		bsize;
     ib_port_attr_t      *p_port_attr;
     ib_ca_handle_t      hca_handle;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
+    MPIU_DBG_PRINTF(("entering ibui_get_first_active_ca\n"));
 
     status = ib_get_ca_guids( IBU_Process.al_handle, NULL, &guid_count );
-    if(status != IB_INSUFFICIENT_MEMORY)
+    if (status != IB_INSUFFICIENT_MEMORY)
     {
 	MPIU_Internal_error_printf( "[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**get_guids", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
 	return mpi_errno;
     }
     /*printf("Total number of CA's = %d\n", (uint32_t)guid_count);fflush(stdout);*/
-    if(guid_count == 0) 
+    if (guid_count == 0) 
     {
 	MPIU_Internal_error_printf("no channel adapters available.\n");
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**noca", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
 	return mpi_errno;
     }
     if (guid_count > 12)
@@ -774,22 +1005,23 @@ int ibui_get_first_active_ca()
     }
 
     status = ib_get_ca_guids(IBU_Process.al_handle, p_ca_guid_array, &guid_count);
-    if( status != IB_SUCCESS )
+    if ( status != IB_SUCCESS )
     {
 	MPIU_Internal_error_printf("[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca_guids", "**ca_guids %s", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
 	return mpi_errno;
     }
 
     /* walk guid table */
-    for( i = 0; i < guid_count; i++ )
+    for ( i = 0; i < guid_count; i++ )
     {
 	status = ib_open_ca( IBU_Process.al_handle, p_ca_guid_array[i], 
-				NULL, NULL, &hca_handle );
-	if(status != IB_SUCCESS)
+	    NULL, NULL, &hca_handle );
+	if (status != IB_SUCCESS)
 	{
 	    MPIU_Internal_error_printf( "[%d] ib_open_ca failed [%s]\n", __LINE__, 
-		    ib_get_err_str(status));
+		ib_get_err_str(status));
 	    continue;
 	}		
 
@@ -798,28 +1030,28 @@ int ibui_get_first_active_ca()
 	/* Query the CA */
 	bsize = 0;
 	status = ib_query_ca( hca_handle, NULL, &bsize );
-	if(status != IB_INSUFFICIENT_MEMORY)
+	if (status != IB_INSUFFICIENT_MEMORY)
 	{
 	    MPIU_Internal_error_printf( "[%d] ib_query_ca failed [%s]\n", __LINE__, 
-		    ib_get_err_str(status));
+		ib_get_err_str(status));
 	    ib_close_ca(hca_handle, NULL);
 	    continue;
 	}
 
 	/* Allocate the memory needed for query_ca */
 	p_ca_attr = (ib_ca_attr_t *)cl_zalloc( bsize );
-	if( !p_ca_attr )
+	if ( !p_ca_attr )
 	{
 	    MPIU_Internal_error_printf( "[%d] not enough memory\n", __LINE__); 
 	    ib_close_ca(hca_handle, NULL);
 	    continue;
 	}
-		
+
 	status = ib_query_ca( hca_handle, p_ca_attr, &bsize );
-	if(status != IB_SUCCESS)
+	if (status != IB_SUCCESS)
 	{
 	    MPIU_Internal_error_printf( "[%d] ib_query_ca failed [%s]\n", __LINE__,
-			ib_get_err_str(status));
+		ib_get_err_str(status));
 	    ib_close_ca(hca_handle, NULL);
 	    cl_free( p_ca_attr );
 	    continue;
@@ -829,38 +1061,45 @@ int ibui_get_first_active_ca()
 	for( port = 0; port < p_ca_attr->num_ports; port++ )
 	{
 	    p_port_attr = &p_ca_attr->p_port_attr[port];
-	    
+
 	    /* is there an active port? */
-	    if( p_port_attr->link_state == IB_LINK_ACTIVE )
+	    if ( p_port_attr->link_state == IB_LINK_ACTIVE )
 	    {
 		/* yes, is there a port_guid or lid we should attach to? */
 		/*
 		printf("port %d active with lid %d\n", 
-		       p_port_attr->port_num,
-		       cl_ntoh16(p_port_attr->lid));
+		p_port_attr->port_num,
+		cl_ntoh16(p_port_attr->lid));
 		fflush(stdout);
 		*/
 		/* get a protection domain handle */
 		status = ib_alloc_pd(hca_handle, IB_PDT_NORMAL,
-				     NULL, &IBU_Process.pd_handle);
+		    NULL, &IBU_Process.pd_handle);
 		if (status != IB_SUCCESS)
 		{
 		    MPIU_Internal_error_printf("get_first_ca: ib_alloc_pd failed, status %s\n", ib_get_err_str(status));
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pd_alloc", "**pd_alloc %s", ib_get_err_str(status));
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
 		    return mpi_errno;
 		}
-		IBU_Process.port = p_port_attr->port_num;
+		IBU_Process.port = p_port_attr->port_num;				
+		IBU_Process.port_static_rate = 
+		    ib_port_info_compute_rate(p_port_attr); /* Mellanox dafna April 11th, compute port's static rate according to link width*/
 		IBU_Process.lid = p_port_attr->lid;
-		MPIU_DBG_PRINTF(("port = %d, lid = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %s\n",
-		     p_port_attr->port_num,
-		     cl_ntoh16(p_port_attr->lid),
-		     p_port_attr->mtu,
-		     p_ca_attr->max_cqes,
-		     p_port_attr->max_msg_size,
-		     ib_get_port_state_str(p_port_attr->link_state)));
+		MPIU_DBG_PRINTF(("port = %d, lid = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %s, static_rate = %d\n",
+		    p_port_attr->port_num,
+		    cl_ntoh16(p_port_attr->lid),
+		    p_port_attr->mtu,
+		    p_ca_attr->max_cqes,
+		    p_port_attr->max_msg_size,
+		    ib_get_port_state_str(p_port_attr->link_state),
+		    IBU_Process.port_static_rate));
+
 		IBU_Process.hca_handle = hca_handle;
+		IBU_Process.dev_id = p_ca_attr->dev_id;	/* Mellanox dafna April 11th, added dev_id */		
 		IBU_Process.cq_size = p_ca_attr->max_cqes;
 		cl_free( p_ca_attr );
+		MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
 		return MPI_SUCCESS;
 	    }
 	}
@@ -868,11 +1107,12 @@ int ibui_get_first_active_ca()
 	/* free allocated mem */
 	cl_free( p_ca_attr );
 	ib_close_ca(hca_handle, NULL);
-	
+
     }
 
     MPIU_Internal_error_printf("no channel adapters available.\n");
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**noca", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_FIRST_ACTIVE_CA);
     return mpi_errno;
 }
 
@@ -883,25 +1123,38 @@ int ibui_get_first_active_ca()
 int ibu_init()
 {
     ib_api_status_t status;
-    ib_net64_t al_guid;
-    uintn_t num_guids;
-    size_t ca_size;
-    void *ca_attr_ptr;
-    uint32_t rkey;
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
     MPIU_DBG_PRINTF(("entering ibu_init\n"));
 
-    /* Initialize globals */
-
-#ifdef TRACE_IBU
-    IBU_Process.outstanding_recvs = 0;
-    IBU_Process.outstanding_sends = 0;
-    IBU_Process.total_recvs = 0;
-    IBU_Process.total_sends = 0;
+    /* FIXME: This is a temporary solution to prevent cached pointers from pointing to old
+    physical memory pages.  A better solution might be to add a user hook to free() to remove
+    cached pointers at that time.
+    */
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+    /* taken from the OSU mvapich source: */
+    /* Set glibc/stdlib malloc options to prevent handing
+    * memory back to the system (brk) upon free.
+    * Also, dont allow MMAP memory for large allocations.
+    */
+#ifdef M_TRIM_THRESHOLD
+    mallopt(M_TRIM_THRESHOLD, -1);
 #endif
-    IBU_Process.cq_size = IBU_MAX_CQ_ENTRIES;
+#ifdef M_MMAP_MAX
+    mallopt(M_MMAP_MAX, 0);
+#endif
+    /* End of OSU code */
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+    _CrtSetAllocHook(ibu_allocation_hook);
+#endif
+#endif
+#endif
+
+    /* Initialize globals */
+    IBU_Process.num_send_cqe = 0; /* Added by Mellanox, dafna April 11th */
+
     /* get a handle to the infiniband access layer */
     status = ib_open_al(&IBU_Process.al_handle);
     if (status != IB_SUCCESS)
@@ -911,10 +1164,10 @@ int ibu_init()
 	return status;
     }
     /* wait for 50 ms before querying al. This fixes a potential race 
-       condition in al where ib_query is not ready with port information
-       on faster systems
+    condition in al where ib_query is not ready with port information
+    on faster systems
     */
-    cl_thread_suspend( 50 );
+    cl_thread_suspend(50);
     status = ibui_get_first_active_ca();
     if (status != MPI_SUCCESS)
     {
@@ -923,13 +1176,9 @@ int ibu_init()
 	return status;
     }
 
-    IBU_Process.ack_mem_ptr = ib_malloc_register(4096, &IBU_Process.ack_mr_handle, &IBU_Process.ack_lkey, &rkey);
-
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
-#ifndef HAVE_32BIT_POINTERS
-    g_workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
-#endif
+    IBU_Process.workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
     MPIU_DBG_PRINTF(("exiting ibu_init\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
     return IBU_SUCCESS;
@@ -945,20 +1194,18 @@ int ibu_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     MPIU_DBG_PRINTF(("entering ibu_finalize\n"));
-#ifdef HAVE_32BIT_POINTERS
-    ibuBlockAllocFinalize(&g_workAllocator);
-#endif
+    ibuBlockAllocFinalize(&IBU_Process.workAllocator); /* replaced g_allocator by Mellanox, dafna April 11th */
     ib_close_ca(IBU_Process.hca_handle, NULL);
     ib_close_al(IBU_Process.al_handle);
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
-
-void FooBar(void *p)
+void AL_API FooBar(const ib_cq_handle_t h_cq, void *p)
 {
-    MPIU_Internal_error_printf("FooBar should never be called.\n");
+    MPIU_Internal_error_printf("FooBar\n");
 }
+
 
 #undef FUNCNAME
 #define FUNCNAME ibu_create_set
@@ -972,11 +1219,14 @@ int ibu_create_set(ibu_set_t *set)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_SET);
     MPIU_DBG_PRINTF(("entering ibu_create_set\n"));
+
     /* create the completion queue */
     cq_attr.size = IBU_Process.cq_size;
     cq_attr.pfn_comp_cb = FooBar; /* completion routine */
     cq_attr.h_wait_obj = NULL; /* client specific wait object */
-    status = ib_create_cq(IBU_Process.pd_handle, &cq_attr, NULL, NULL, set);
+
+    status = ib_create_cq(IBU_Process.hca_handle, &cq_attr, NULL, NULL, set);
+
     if (status != IB_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_set: ib_create_cq failed, error %s\n", ib_get_err_str(status));
@@ -987,9 +1237,9 @@ int ibu_create_set(ibu_set_t *set)
     status = ib_rearm_cq(*set, TRUE);
     if (status != IB_SUCCESS)
     {
-	MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
-	return IBU_FAIL;
+    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+    return IBU_FAIL;
     }
     */
 
@@ -1078,13 +1328,10 @@ int ibui_read_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
-	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
 	    MPIU_Free(temp);
-	    /* post another receive to replace the consumed one */
-	    ibui_post_receive(ibu);
 	}
 	/* check to see if the entire message was received */
 	if (ibu->read.bufflen == 0)
@@ -1149,15 +1396,14 @@ int ibui_readv_unex(ibu_t ibu)
 	    }
 	    MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
-	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
+
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
 	    MPIU_Free(temp);
-	    /* replace the consumed read descriptor */
-	    ibui_post_receive(ibu);
+	    /* replace the consumed read descriptor */	    
 	}
-	
+
 	if (ibu->read.iovlen == 0)
 	{
 	    ibu->state &= ~IBU_READING;
@@ -1314,13 +1560,13 @@ int ibu_post_writev(ibu_t ibu, MPID_IOV *iov, int n)
     ibu->state |= IBU_WRITING;
     /*
     {
-	char str[1024], *s = str;
-	int i;
-	s += sprintf(s, "ibu_post_writev(");
-	for (i=0; i<n; i++)
-	    s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
-	sprintf(s, ")\n");
-	MPIU_DBG_PRINTF(("%s", str));
+    char str[1024], *s = str;
+    int i;
+    s += sprintf(s, "ibu_post_writev(");
+    for (i=0; i<n; i++)
+    s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
+    sprintf(s, ")\n");
+    MPIU_DBG_PRINTF(("%s", str));
     }
     */
     num_bytes = ibui_post_writev(ibu, iov, n, wfn);
@@ -1364,7 +1610,6 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
 	return MPI_SUCCESS;
     }
-
     ibu = recv_vc_ptr->ch.ibu;
     recv_vc_ptr->ch.reading_pkt = TRUE;
     mem_ptr = ibu->unex_list->buf;
@@ -1375,6 +1620,8 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
 	return mpi_errno;
     }
+
+    /* This is not correct.  It must handle the same cases that ibu_wait does. */
 
     mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
     if (mpi_errno != MPI_SUCCESS)
@@ -1394,14 +1641,11 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	    MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	}
 	MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
-	ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
+
 	/* MPIU_Free the unexpected data node */
 	temp = ibu->unex_list;
 	ibu->unex_list = ibu->unex_list->next;
 	MPIU_Free(temp);
-	/* replace the consumed read descriptor */
-	ibui_post_receive(ibu);
     }
 
     if (recv_vc_ptr->ch.recv_active == NULL)

@@ -25,6 +25,9 @@
 
 IBU_Global IBU_Process;
 
+/*============== static functions prototypes ==================*/
+static VAPI_ret_t ibui_get_list_of_hcas(VAPI_hca_id_t **hca_id_buf_p, u_int32_t *num_of_hcas);
+
 /* utility ibu functions */
 #undef FUNCNAME
 #define FUNCNAME getMaxInlineSize
@@ -314,7 +317,6 @@ int ibu_finish_qp(ibu_t p, ibu_lid_t dest_lid, int dest_qp_num)
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINISH_QP);
     MPIU_DBG_PRINTF(("entering ibu_finish_qp\n"));
 
-
     p->dest_qp_num = dest_qp_num;
     p->dlid = dest_lid;
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(INIT)"));*/
@@ -561,7 +563,6 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
     int total = 0;
     ibu_work_id_handle_t *id_ptr = NULL;
     ibu_rdma_type_t entry_type;
-
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
@@ -569,7 +570,6 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
     while (len)
     {
 	length = min(len, IBU_EAGER_PACKET_SIZE);
-
 	len -= length;
 
 	if ((((ibu->remote_RDMA_limit - ibu->remote_RDMA_head) + IBU_NUM_OF_RDMA_BUFS) % IBU_NUM_OF_RDMA_BUFS) < 2)
@@ -735,7 +735,6 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
-
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
     VAPI_sr_desc_t work_req;
@@ -750,7 +749,6 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
     int signaled_type = VAPI_UNSIGNALED;
     ibu_work_id_handle_t *id_ptr = NULL;
     ibu_rdma_type_t entry_type;
-
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
@@ -976,6 +974,52 @@ int __cdecl ibu_allocation_hook(int nAllocType, void * pvData, size_t nSize, int
 #endif
 #endif
 
+
+#undef FUNCNAME
+#define FUNCNAME ibui_get_list_of_hcas
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static VAPI_ret_t ibui_get_list_of_hcas(VAPI_hca_id_t **hca_id_buf_p, u_int32_t *num_of_hcas)
+{
+    VAPI_hca_id_t *hca_id_buf;
+    VAPI_ret_t rc;
+    u_int32_t local_num_of_hcas;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+    MPIU_DBG_PRINTF(("entering ibui_get_list_of_hcas\n"));
+
+    *hca_id_buf_p = NULL;
+    rc = EVAPI_list_hcas(0, &local_num_of_hcas, NULL);
+    switch ( rc )
+    {
+    case VAPI_OK:
+	*num_of_hcas = local_num_of_hcas;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+	return VAPI_OK;
+    case VAPI_EAGAIN:
+	hca_id_buf = malloc(sizeof(VAPI_hca_id_t)*local_num_of_hcas);
+	if ( !hca_id_buf )
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+	    return VAPI_ERR;
+	}
+	rc = EVAPI_list_hcas(local_num_of_hcas, &local_num_of_hcas, hca_id_buf);
+	if ( rc != VAPI_OK )
+	{
+	    free(hca_id_buf);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+	    return VAPI_ERR;
+	}
+	*num_of_hcas = local_num_of_hcas;
+	*hca_id_buf_p = hca_id_buf;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+	return VAPI_OK;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
+    return VAPI_ERR;
+}
+
 #undef FUNCNAME
 #define FUNCNAME ibu_init
 #undef FCNAME
@@ -983,10 +1027,11 @@ int __cdecl ibu_allocation_hook(int nAllocType, void * pvData, size_t nSize, int
 int ibu_init()
 {
     VAPI_ret_t status;
-    VAPI_hca_id_t id = "InfiniHost0";
+    VAPI_hca_id_t id = "blablabla";
+    VAPI_hca_id_t *hca_id_buf;
+    u_int32_t num_of_hcas;
     VAPI_hca_vendor_t vendor;
     VAPI_hca_cap_t hca_cap;
-    /*VAPI_rkey_t rkey;*/
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
@@ -1018,6 +1063,17 @@ int ibu_init()
 
     /* Initialize globals */
     IBU_Process.num_send_cqe = 0;
+
+    status = ibui_get_list_of_hcas(&hca_id_buf, &num_of_hcas);
+    if (status != VAPI_OK || num_of_hcas == 0)
+    {
+	MPIU_Internal_error_printf("ibu_init: ibui_get_list_of_hcas failed, status %s, num_of_hcas: %d\n", VAPI_strerror(status),num_of_hcas);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	return status;
+    }
+    strncpy(id, hca_id_buf[0], sizeof(VAPI_hca_id_t));
+    if ( hca_id_buf ) free(hca_id_buf);
+
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {

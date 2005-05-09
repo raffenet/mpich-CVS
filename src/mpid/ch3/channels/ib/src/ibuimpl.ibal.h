@@ -11,33 +11,12 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define IBU_ERROR_MSG_LENGTH       255
-#define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           128
-#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
-#define IBU_MAX_CQ_ENTRIES         255
-#define IBU_MAX_POSTED_SENDS       8192
-#define IBU_MAX_DATA_SEGMENTS      100
-#define IBU_ACK_WATER_LEVEL        32
-
-#define TRACE_IBU
-
-#if 0
-#define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
-typedef struct ibmem_t
-{
-    ib_mr_handle_t handle;
-    uint32_t lkey;
-    uint32_t rkey;
-} ibmem_t;
-#endif
-
 typedef struct ibuBlock_t
 {
     struct ibuBlock_t *next;
     ib_mr_handle_t handle;
     uint32_t lkey;
-    unsigned char data[IBU_PACKET_SIZE];
+    ibu_rdma_buf_t data; /* Added by Mellanox, dafna April 11th */
 } ibuBlock_t;
 
 typedef struct ibuQueue_t
@@ -46,9 +25,6 @@ typedef struct ibuQueue_t
     ibuBlock_t *pNextFree;
     ibuBlock_t block[IBU_PACKET_COUNT];
 } ibuQueue_t;
-
-extern int g_offset;
-#define GETLKEY(p) (((ibuBlock_t*)((char *)p - g_offset))->lkey)
 
 struct ibuBlockAllocator_struct
 {
@@ -62,27 +38,29 @@ struct ibuBlockAllocator_struct
 
 typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
 
-#ifdef HAVE_32BIT_POINTERS
-
-typedef union ibu_work_id_handle_t
+typedef struct ibui_send_wqe_info_t 
 {
-    uint64_t id;
-    struct ibu_data
-    {
-	uint32_t ptr, mem;
-    } data;
-} ibu_work_id_handle_t;
+    int length; /* Send operation length*/
+    ibu_rdma_type_t RDMA_type;
+    void* mem_ptr;
+} ibui_send_wqe_info_t;
 
-#else
+typedef struct ibui_send_wqe_info_fifo_t
+{
+    ibui_send_wqe_info_t entries[IBU_DEFAULT_MAX_WQE];
+    int head;
+    int tail;
+    int num_of_signaled_wqes; /* used to avoid CQ polling when empty*/
+} ibui_send_wqe_info_fifo_t;
+
 
 typedef struct ibu_work_id_handle_t
 {
-    void *ptr, *mem;
+    void *mem;
+    ibu_t ibu;
+    int length;
 } ibu_work_id_handle_t;
 
-extern ibuBlockAllocator g_workAllocator /*= NULL*/;
-
-#endif
 
 typedef int IBU_STATE;
 #define IBU_READING      0x0001
@@ -131,64 +109,74 @@ typedef struct ibu_state_t
     ibu_buffer_t read;
     ibu_unex_read_t *unex_list;
     ibu_buffer_t write;
-    int nAvailRemote, nUnacked;
+
     /* vc pointer */
     MPIDI_VC_t *vc_ptr;
-    /*void *user_ptr;*/
     /* unexpected queue pointer */
     struct ibu_state_t *unex_finished_queue;
+
+    /* The following were added by Mellanox, dafna April 11th */
+    unsigned int max_inline_size;
+    ibu_rdma_buf_t *local_RDMA_buf_base;   /* Reciver RDMA buffers base address*/
+    ibu_mem_t local_RDMA_buf_hndl;	   /* Keys for RDMA Write*/
+    int local_RDMA_head;		   /* Receiver local: Buffer Index that should be polled  */
+    int local_last_updated_RDMA_limit;	   /* Receiver: tracking the pigyback updated last remote_sndbuf_tail  */
+    ibu_rdma_buf_t *remote_RDMA_buf_base;  /* Base Address for RDMA Writes */
+    ibu_mem_t remote_RDMA_buf_hndl;	   /* Keys for RDMA Write*/
+    int remote_RDMA_head;		   /* Sender   remote index to write to */
+    int remote_RDMA_limit;		   /* Sender limit for RDMA outs ops. head should not bypass this value */
+    ibui_send_wqe_info_fifo_t send_wqe_info_fifo;
+    /* Added by Mellanox, dafna April 11th - end */    
 } ibu_state_t;
 
 typedef struct IBU_Global {
     ib_al_handle_t   al_handle;
     ib_ca_handle_t   hca_handle;
     ib_pd_handle_t   pd_handle;
+    uint16_t         dev_id; /* Mellanox dafna April 11th. store device ID */
     int              cq_size;
     ib_net16_t       lid;
     int              port;
+    uint8_t          port_static_rate;
     ibu_state_t *    unex_finished_list;
     int              error;
     char             err_msg[IBU_ERROR_MSG_LENGTH];
-    /* hack to get around zero sized messages */
-    void *           ack_mem_ptr;
-    ib_mr_handle_t   ack_mr_handle;
-    uint32_t         ack_lkey;
-#ifdef TRACE_IBU
-    int outstanding_recvs, outstanding_sends, total_recvs, total_sends;
-#endif
+    long             offset_to_lkey; /* instead of g_offset. Mellanox, dafna April 11th */
+    ibuBlockAllocator	workAllocator;
+    int              num_send_cqe;
 } IBU_Global;
 
 extern IBU_Global IBU_Process;
 
-typedef struct ibu_num_written_t
-{
-    void *mem_ptr;
-    int length;
-} ibu_num_written_t;
-
-extern ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
-extern int g_cur_write_stack_index /*= 0*/;
+#define GETLKEY(p) (((ibuBlock_t*)((char *)p - IBU_Process.offset_to_lkey))->lkey)
 
 /* local prototypes */
-int ibui_post_receive(ibu_t ibu);
-int ibui_post_receive_unacked(ibu_t ibu);
-#if 0
-int ibui_post_write(ibu_t ibu, void *buf, int len);
-int ibui_post_writev(ibu_t ibu, MPID_IOV *iov, int n);
-#endif
 int ibui_post_ack_write(ibu_t ibu);
-
+/* Following funtions were added by Mellanox, dafna April 11th */
+int ibui_post_rndv_cts_iov_reg_err(ibu_t ibu, MPID_Request * rreq);
+int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, unsigned int num_bytes);
+ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, uint32_t *rkey);
+int ibui_update_remote_RDMA_buf(ibu_t ibu, ibu_rdma_buf_t *buf, uint32_t rkey);
+int send_wqe_info_fifo_empty(int head, int tail);
+void send_wqe_info_fifo_pop(ibu_t ibu, ibui_send_wqe_info_t* entry);
+int send_wqe_info_fifo_full(int head, int tail);
+void send_wqe_info_fifo_push(ibu_t ibu, int signaled_type, void* mem_ptr, int length);
+ib_send_opt_t ibui_signaled_completion(ibu_t ibu);
+/* Added by Mellanox, dafna April 11th - finish */
 /* utility allocator functions */
 
 ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
 ibuQueue_t * ibuBlockAllocInitIB();
+ibu_rdma_buf_t *ibuRDMAAllocInitIB(ibu_mem_t *handle); /* Added by Mellanox, dafna April 11th */
 int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 int ibuBlockAllocFinalizeIB(ibuQueue_t *p);
+int ibuRDMAAllocFinalizeIB(ibu_rdma_buf_t *buf, uint32_t mem_handle);
 void * ibuBlockAlloc(ibuBlockAllocator p);
 void * ibuBlockAllocIB(ibuQueue_t *p);
 int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
 int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock);
+
 void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_t *rp);
-void ib_free_deregister(void *p);
+void ib_free_deregister(void *p/*, ib_mr_handle_t mem_handle*/);
 
 #endif

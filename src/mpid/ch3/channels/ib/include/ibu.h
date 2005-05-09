@@ -59,6 +59,24 @@ typedef struct ibu_mem_t
 } ibu_mem_t;
 typedef IB_lid_t ibu_lid_t;
 
+#elif defined(USE_IB_IBAL)
+
+#define IBU_MAX_PINNED (128*1024*1024)
+
+#include <ib_al.h>
+typedef ib_cq_handle_t ibu_set_t;
+typedef struct ibu_mem_t
+{
+    ib_mr_handle_t handle;
+    uint32_t lkey;
+    uint32_t rkey;
+} ibu_mem_t;
+typedef int ibu_lid_t;
+
+#else
+#error No infiniband access layer specified
+#endif
+
 /* This is a buffer that holds additional footer sent with the data */
 /* Size of ibu_rdma_buf_footer_t is IBU_CACHELINE */
 typedef struct ibu_rdma_buf_footer_t
@@ -73,22 +91,6 @@ typedef struct ibu_rdma_buf_footer_t
 #define ibu_seqnum_t MPID_Seqnum_t seqnum;
 #else
 #define ibu_seqnum_t
-#endif
-
-#elif defined(USE_IB_IBAL)
-
-#define IBU_MAX_PINNED (128*1024*1024)
-
-#include <ib_al.h>
-typedef ib_cq_handle_t ibu_set_t;
-typedef struct ibu_mem_t
-{
-    int handle, lkey, rkey;
-} ibu_mem_t;
-typedef int ibu_lid_t;
-
-#else
-#error No infiniband access layer specified
 #endif
 
 
@@ -167,13 +169,9 @@ typedef struct ibu_state_t * ibu_t;
 /* function prototypes */
 int ibu_init(void);
 int ibu_finalize(void);
-
 int ibu_get_lid(void);
-
 int ibu_create_set(ibu_set_t *set);
 int ibu_destroy_set(ibu_set_t set);
-
-/*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);*/
 int ibu_set_vc_ptr(ibu_t ibu, void *vc_ptr);
 ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr);
 int ibu_finish_qp(ibu_t ibu, ibu_lid_t dest_lid, int dest_qpnum);
@@ -181,16 +179,12 @@ int ibu_post_read(ibu_t ibu, void *buf, int len);
 int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n);
 int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr);
 int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr);
-
-#ifdef USE_IB_VAPI
 int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
-#else
-int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
-#endif
-
+/* These functions may or may not cache the memory registrations based on the build parameters */
 int ibu_register_memory(void *buf, int len, ibu_mem_t *state);
 int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state);
 int ibu_invalidate_memory(void *buf, int len);
+/* These functions never cache the registrations */
 int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state);
 int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state);
 

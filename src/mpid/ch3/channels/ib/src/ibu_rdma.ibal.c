@@ -27,15 +27,14 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     ib_api_status_t status;
     ib_local_ds_t data;
     ib_send_wr_t work_req;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
+    ibu_rdma_type_t entry_type; /* Added by Mellanox, dafna April 11th */
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_WRITE);
 
     data.length = len;
-    data.vaddr = sbuf;
+    data.vaddr = (uint64_t)sbuf;
     data.lkey = smem->lkey;
 
     work_req.p_next = NULL;
@@ -47,12 +46,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     work_req.remote_ops.vaddr = (uint64_t)rbuf;
     work_req.remote_ops.rkey = rmem->rkey;
 
-#ifdef HAVE_32BIT_POINTERS
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)sreq;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator); /* replaced g_workAllocator by Mellanox, dafna April 11th */
     *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -60,45 +54,52 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_WRITE);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = ibu;
     id_ptr->mem = (void*)sreq;
-#endif
 
     ibu->state |= IBU_RDMA_WRITING;
 
-    /*
+#ifdef MPICH_DBG_OUTPUT
     if (signalled)
     {
-	printf("signalled rdma write sreq: sreq=0x%x, rreq=0x%x\n", sreq->handle, sreq->dev.rdma_request);
-	fflush(stdout);
+	MPIU_DBG_PRINTF(("signalled rdma write sreq: sreq=0x%x, rreq=0x%x\n", sreq->handle, sreq->dev.rdma_request));
     }
-    */
+#endif
     MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma ib_post_send(%d bytes)", len));
+
     status = ib_post_send( ibu->qp_handle, &work_req, NULL);
     if (status != IB_SUCCESS)
     {
 	MPIU_Internal_error_printf("%s: Error: failed to post ib rdma send, status = %s\n", FCNAME, ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_WRITE);
-	return status;
+	return IBU_FAIL;
     }
+
+    /* Added by Mellanox, dafna April 11th: push entry to send_wqe_fifo */
+    entry_type = (signalled)? IBU_RDMA_RDNV_SIGNALED : IBU_RDMA_RNDV_UNSIGNALED;
+    send_wqe_info_fifo_push(ibu, entry_type, sreq, len);
+
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_WRITE);
     return IBU_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME ibu_rdma_read
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t *smem, int len, int signalled, MPID_Request *rreq)
 {
     ib_api_status_t status;
     ib_local_ds_t data;
     ib_send_wr_t work_req;
-#ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
-#endif
+    ibu_rdma_type_t entry_type; /* Added by Mellanox, dafna April 11th */
     MPIDI_STATE_DECL(MPID_STATE_IBU_RDMA_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_READ);
 
     data.length = len;
-    data.vaddr = sbuf;
+    data.vaddr  = (uint64_t)rbuf;
     data.lkey = rmem->lkey;
 
     work_req.p_next = NULL;
@@ -110,12 +111,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     work_req.remote_ops.vaddr = (uint64_t)sbuf;
     work_req.remote_ops.rkey = smem->rkey;
 
-#ifdef HAVE_32BIT_POINTERS
-    /* store the ibu ptr and the mem ptr in the work id */
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)rreq;
-#else
-    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(IBU_Process.workAllocator); /* replaced g_workAllocator by Mellanox, dafna April 11th */
     *((ibu_work_id_handle_t**)&work_req.wr_id) = id_ptr;
     if (id_ptr == NULL)
     {
@@ -123,27 +119,30 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_READ);
 	return IBU_FAIL;
     }
-    id_ptr->ptr = (void*)ibu;
+    id_ptr->ibu = (void*)ibu;
     id_ptr->mem = (void*)rreq;
-#endif
-
     ibu->state |= IBU_RDMA_READING;
 
-    /*
+#ifdef MPICH_DBG_OUTPUT
     if (signalled)
     {
-	printf("signalled rdma read rreq: sreq=0x%x, rreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);
+	MPIU_DBG_PRINTF(("signalled rdma read rreq: sreq=0x%x, rreq=0x%x\n", rreq->handle, rreq->dev.rdma_request));
 	fflush(stdout);
     }
-    */
+#endif
     MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma ib_post_send(%d bytes)", len));
     status = ib_post_send( ibu->qp_handle, &work_req, NULL);
     if (status != IB_SUCCESS)
     {
 	MPIU_Internal_error_printf("%s: Error: failed to post ib rdma send, status = %s\n", FCNAME, ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_READ);
-	return status;
+	return IBU_FAIL;
     }
+
+    /* Added by Mellanox, dafna April 11th : push entry to send_wqe_fifo */
+    entry_type = (signalled)? IBU_RDMA_RDNV_SIGNALED : IBU_RDMA_RNDV_UNSIGNALED;
+    send_wqe_info_fifo_push(ibu, entry_type, rreq, len);
+
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_READ);
     return IBU_SUCCESS;
 }
@@ -164,10 +163,8 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     int num_written;
     MPID_IOV *send_iov, *recv_iov;
     int send_count, recv_count;
-    int complete;
     MPIDI_CH3_Pkt_t pkt;
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
-    MPID_Request * reload_sreq;
     int signalled = 1;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
 
@@ -183,23 +180,21 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     recv_count = sreq->dev.rdma_iov_count;
     riov_offset = sreq->ch.riov_offset;
 
-    /*
-    printf("ibu_rdma: sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq);
-    printf("ibu_rdma: writing %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
-    */
-    /*
+#ifdef MPICH_DBG_OUTPUT
+    MPIU_DBG_PRINTF(("ibu_rdma: sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq));
+    MPIU_DBG_PRINTF(("ibu_rdma: writing %d send buffers into %d recv buffers.\n", send_count, recv_count));
     for (i=0; i<send_count; i++)
     {
-	printf("ibu_rdma: send buf[%d] = %p, len = %d\n",
-	       i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	MPIU_DBG_PRINTF(("ibu_rdma: send buf[%d] = %p, len = %d\n",
+	    i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN));
     }
     for (i=0; i<recv_count; i++)
     {
-	printf("ibu_rdma: recv buf[%d] = %p, len = %d\n",
-	       i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	MPIU_DBG_PRINTF(("ibu_rdma: recv buf[%d] = %p, len = %d\n",
+	    i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN));
     }
-    fflush(stdout);
-    */
+#endif
+
     rbuf = recv_iov[0].MPID_IOV_BUF;
     rbuf_len = recv_iov[0].MPID_IOV_LEN;
     for (i=sreq->ch.iov_offset; i<send_count; i++)
@@ -209,10 +204,10 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	while (sbuf_len)
 	{
 	    len = MPIDU_MIN(sbuf_len, rbuf_len);
-	    /*printf("posting write of %d bytes to remote process.\n", len);fflush(stdout);*/
-	    
+	    MPIU_DBG_PRINTF(("posting write of %d bytes to remote process.\n", len));
+
 	    if ( ((i == send_count - 1) && (sbuf_len == len)) ||
-		 ((riov_offset == recv_count - 1) && (rbuf_len == len)) )
+		((riov_offset == recv_count - 1) && (rbuf_len == len)) )
 	    {
 		signalled = 1;
 	    }
@@ -221,9 +216,9 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		signalled = 0;
 	    }
 	    mpi_errno = ibu_rdma_write(vc->ch.ibu,
-				       sbuf, &sreq->ch.local_iov_mem[i],
-				       rbuf, &sreq->ch.remote_iov_mem[riov_offset],
-				       len, signalled, sreq);
+		sbuf, &sreq->ch.local_iov_mem[i],
+		rbuf, &sreq->ch.remote_iov_mem[riov_offset],
+		len, signalled, sreq);
 	    if (mpi_errno != IBU_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ibu_rdma_write failed", mpi_errno);
@@ -232,7 +227,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	    }
 	    num_written = len;
 
-	    /*printf("wrote %d bytes to remote process\n", num_written);fflush(stdout);*/
+	    MPIU_DBG_PRINTF(("wrote %d bytes to remote process\n", num_written));
 	    if (num_written < rbuf_len)
 	    {
 		rbuf = rbuf + num_written;
@@ -258,7 +253,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		if ( (i != (send_count - 1)) || (sbuf_len != 0) )
 		{
 		    /* partial send, the recv iov needs to be reloaded */
-		    
+
 		    if (sbuf_len != 0)
 		    {
 			sreq->dev.iov[i].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sbuf;
@@ -269,7 +264,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    /* send the reload receiver message after the rdma writes have completed */
 		    sreq->ch.reload_state = MPIDI_CH3I_RELOAD_RECEIVER;
 
-		    /*printf("ibu_rdma: on exit 1 - sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq);*/
+		    MPIU_DBG_PRINTF(("ibu_rdma: on exit 1 - sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq));
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
 		    return MPI_SUCCESS;
 		}
@@ -289,8 +284,8 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     }
     sreq->ch.riov_offset = riov_offset;
     sreq->ch.reload_state |= MPIDI_CH3I_RELOAD_SENDER;
-    
-    /*printf("ibu_rdma: on exit 2 - sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq);*/
+
+    MPIU_DBG_PRINTF(("ibu_rdma: on exit 2 - sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
     return mpi_errno;
 #else
@@ -298,7 +293,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
     return mpi_errno;
 #endif
@@ -320,10 +315,8 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     int num_read;
     MPID_IOV *send_iov, *recv_iov;
     int send_count, recv_count;
-    int complete;
     MPIDI_CH3_Pkt_t pkt;
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
-    MPID_Request * reload_rreq;
     int signalled = 1;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
 
@@ -340,20 +333,20 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     send_count = rreq->dev.rdma_iov_count;
     siov_offset = rreq->dev.rdma_iov_offset;
 
-    /*
-    printf("ibu_rdma: reading %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
+#ifdef MPICH_DBG_OUTPUT
+    MPIU_DBG_PRINTF(("ibu_rdma: reading %d send buffers into %d recv buffers.\n", send_count, recv_count));
     for (i=siov_offset; i<send_count; i++)
     {
-	printf("ibu_rdma: send buf[%d] = %p, len = %d\n",
-	       i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	MPIU_DBG_PRINTF(("ibu_rdma: send buf[%d] = %p, len = %d\n",
+	    i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN));
     }
     for (i=0; i<recv_count; i++)
     {
-	printf("ibu_rdma: recv buf[%d] = %p, len = %d\n",
-	       i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	MPIU_DBG_PRINTF(("ibu_rdma: recv buf[%d] = %p, len = %d\n",
+	    i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN));
     }
-    fflush(stdout);
-    */
+#endif
+
     sbuf = send_iov[siov_offset].MPID_IOV_BUF;
     sbuf_len = send_iov[siov_offset].MPID_IOV_LEN;
     for (i=rreq->ch.iov_offset; i<recv_count; i++)
@@ -363,10 +356,10 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	while (rbuf_len)
 	{
 	    len = MPIDU_MIN(rbuf_len, sbuf_len);
-	    /*printf("reading %d bytes from the remote process.\n", len);fflush(stdout);*/
+	    MPIU_DBG_PRINTF(("reading %d bytes from the remote process.\n", len));
 
 	    if ( ((i == recv_count - 1) && (rbuf_len == len)) ||
-		 ((siov_offset == send_count - 1) && (sbuf_len == len)) )
+		((siov_offset == send_count - 1) && (sbuf_len == len)) )
 	    {
 		signalled = 1;
 	    }
@@ -375,9 +368,9 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		signalled = 0;
 	    }
 	    mpi_errno = ibu_rdma_read(vc->ch.ibu,
-				      rbuf, &rreq->ch.local_iov_mem[i],
-				      sbuf, &rreq->ch.remote_iov_mem[siov_offset],
-				      len, signalled, rreq);
+		rbuf, &rreq->ch.local_iov_mem[i],
+		sbuf, &rreq->ch.remote_iov_mem[siov_offset],
+		len, signalled, rreq);
 	    if (mpi_errno != IBU_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ibu_rdma_read failed", mpi_errno);
@@ -386,7 +379,7 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	    }
 	    num_read = len;
 
-	    /*printf("read %d bytes from the remote process\n", num_read);fflush(stdout);*/
+	    MPIU_DBG_PRINTF(("read %d bytes from the remote process\n", num_read));
 	    if (num_read < sbuf_len)
 	    {
 		sbuf = sbuf + num_read;
@@ -412,6 +405,7 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		if ( (i != (recv_count - 1)) || (rbuf_len != 0) )
 		{
 		    /* partial read, the send iov needs to be reloaded */
+		    MPIU_DBG_PRINTF(("partial read, the send iov needs to be reloaded.\n"));
 
 		    if (rbuf_len != 0)
 		    {
@@ -438,10 +432,12 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     }
     if (siov_offset == send_count && sbuf_len == 0)
     {
-	rreq->ch.reload_state != MPIDI_CH3I_RELOAD_SENDER;
+	MPIU_DBG_PRINTF(("reload sender state set.\n"));
+	rreq->ch.reload_state |= MPIDI_CH3I_RELOAD_SENDER;
     }
     rreq->ch.siov_offset = siov_offset;
-    rreq->ch.reload_state != MPIDI_CH3I_RELOAD_RECEIVER;
+    MPIU_DBG_PRINTF(("reload receiver state set.\n"));
+    rreq->ch.reload_state |= MPIDI_CH3I_RELOAD_RECEIVER;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
     return mpi_errno;
@@ -450,7 +446,7 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
     return mpi_errno;
 #endif
