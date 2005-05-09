@@ -43,7 +43,7 @@ int main( int argc, char *argv[] )
 		     size, gsize );
 	}
 	MPI_Group_free( &group );
-	MPI_Comm_free( &comm );
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

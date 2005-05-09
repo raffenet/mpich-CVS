@@ -76,6 +76,7 @@ int main( int argc, char *argv[] )
 		MTestFreeDatatype( &recvtype );
 	    }
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );
