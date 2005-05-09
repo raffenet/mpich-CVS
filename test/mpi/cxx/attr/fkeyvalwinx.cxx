@@ -73,7 +73,7 @@ int main( int argc, char *argv[] )
 		MPI::Win::NULL_COPY_FN, MPI::Win::NULL_DELETE_FN, (void *)0 );
 	}
 
-	win.Free();
+	MTestFreeWin( win );
 	/* Check that the original attribute was freed */
 	if (attrval != 0) {
 	    errs++;
