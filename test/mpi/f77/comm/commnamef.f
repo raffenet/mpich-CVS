@@ -72,6 +72,7 @@ C     Now test them all
             errs = errs + 1
             print *, ' Expected ', inname(i), ' got ', cname
          endif
+         call MTestFreeComm( comm(i) )
       enddo
 C      
       call mtest_finalize( errs )
