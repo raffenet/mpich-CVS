@@ -163,6 +163,8 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
     recvtype->FreeBuf  = 0;
     recvtype->datatype = 0;
     recvtype->isBasic  = 0;
+    sendtype->buf      = 0;
+    recvtype->buf      = 0;
 
     /* Set the defaults for the message lengths */
     sendtype->count    = count;
@@ -254,6 +256,10 @@ void MTestFreeDatatype( MTestDatatype *mtype )
 {
     if (mtype->FreeBuf) {
 	(mtype->FreeBuf)( mtype );
+    }
+    // Free the datatype itself if it was created
+    if (!mtype->isBasic) {
+	mtype->datatype.Free();
     }
 }
 
