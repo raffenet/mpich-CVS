@@ -170,6 +170,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	newcomm_ptr->comm_kind   = MPID_INTRACOMM;
 	/* Since the group has been provided, let the new communicator know
 	   about the group */
+        newcomm_ptr->local_comm  = 0;
 	newcomm_ptr->local_group  = group_ptr;
 	newcomm_ptr->remote_group = group_ptr;
 	MPIU_Object_add_ref( group_ptr );
