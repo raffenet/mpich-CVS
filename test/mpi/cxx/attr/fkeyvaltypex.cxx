@@ -78,6 +78,11 @@ int main( int argc, char *argv[] )
 		(void *)0 );
 	}
 
+	if (attrval != 1) {
+	    errs++;
+	    type.Get_name( dtypename, tnlen );
+	    cout << "attrval is " << attrval << ", should be 1, before dup in type " << dtypename << "\n";
+	}
 	duptype = type.Dup();
 	/* Check that the attribute was copied */
 	if (attrval != 2) {
