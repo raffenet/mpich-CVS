@@ -46,6 +46,7 @@ int main( int argc, char *argv[] )
 	    free( sendbuf );
 	    free( recvbuf );
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );
