@@ -96,6 +96,7 @@ int main( int argc, char **argv )
       free( sendcounts );
       free( rbuf );
       free( sbuf );
+      MTestFreeComm( &comm );
     }
 
     MTest_Finalize( err );

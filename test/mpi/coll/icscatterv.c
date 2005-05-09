@@ -96,6 +96,7 @@ int main( int argc, char *argv[] )
 	    free( senddispls );
 	    free( buf );
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

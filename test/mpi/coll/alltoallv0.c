@@ -123,6 +123,7 @@ int main( int argc, char **argv )
       free( rdispls );
       free( recvcounts );
       free( sendcounts );
+      MTestFreeComm( &comm );
     }
 
     MTest_Finalize( err );

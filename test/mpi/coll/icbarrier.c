@@ -42,6 +42,7 @@ int main( int argc, char *argv[] )
 		MTestPrintError( err );
 	    }
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

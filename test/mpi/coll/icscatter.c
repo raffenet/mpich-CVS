@@ -88,6 +88,7 @@ int main( int argc, char *argv[] )
 	    }
 	    free( buf );
 	}
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );

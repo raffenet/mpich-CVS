@@ -106,6 +106,7 @@ int main( int argc, char *argv[] )
 	    free( recvcounts );
 	    free( recvdispls );
         }
+	MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );
