@@ -117,8 +117,8 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 	    &new_dtp->attributes );
 	if (mpi_errno)
 	{
+            MPID_Datatype_release(new_dtp);
 	    *newtype = MPI_DATATYPE_NULL;
-	    /* FIXME - free new_dtp */
 	    goto fn_fail;
 	}
     }
