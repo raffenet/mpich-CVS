@@ -124,6 +124,9 @@ $debug = 0;                 # General debugging
 $debug_dirs = 0;            # Debug the choice of directories
 $debug_confdir = 0;         # Track the directory containing the controlling
                             # configure.in
+$gDebugWhy = 1;             # Provide an explanation of why certain
+                            # targets are created
+
 # Allow us to set the debug variables from the environment:
 if (defined($ENV{"DEBUG"})) { $debug = 1; }
 if (defined($ENV{"DEBUG_DIRS"})) { $debug_dirs = 1; }
@@ -621,6 +624,7 @@ sub ReadMfile {
 	elsif (/^profilelib_([@\${}\(\)\w-]*)\s*=\s*(.*)\s*$/) {
 	    # proflib_<oldname> = <newname>
 	    $profile_libraries{$1} = $2;
+	    $profile_libraries_basename{$2} = $1;
 	    $libnum{$2} = $libcount++;
 	    if ($do_sharedlibs) {
 		$libnum{$2.".la"} = $libcount++;
@@ -833,7 +837,8 @@ sub WriteMfile {
     # anything specified by all-local)
     &TargetAll;
 
-    # Output the generated targets.  First, the libraries
+    # Output the generated targets.  First, the libraries and the shared 
+    # libraries
     &TargetLibraries;
     if ($do_sharedlibs) {
 	&TargetSharedLibraries( \%libraries );
@@ -852,7 +857,15 @@ sub WriteMfile {
 		else {
 		    print STDERR "Unrecognized suffix on library $libsrc\n";
 		}
-		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+		# Note that we skip the related file names, since
+		# their build is already handled
+		my $baselibname = $libname;
+		$baselibname =~ s/^lib//;
+		$baselibname =~ s/\..*//;
+		if (!defined($profile_libraries_basename{$baselibname})) {
+		    print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
+		    &TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+		}
 	    }
 	}
     }
@@ -1429,6 +1442,7 @@ sub ClearVars {
     %libnum    = ();    # Gives number associated with library
     %shared_libraries = ();
     %profile_libraries = ();
+    %profile_libraries_basename = (); # inverse of profile_libraries
     %profile_library_sources = ();
     %install_files = ();
     @install_subdirs = ();
