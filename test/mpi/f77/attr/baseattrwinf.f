@@ -77,6 +77,8 @@ C         endif
          print *, " Found ", errs, " errors"
       endif
 
+      call MPI_Win_free( win, ierr )
+
       call MPI_Finalize( ierr )
 
       end

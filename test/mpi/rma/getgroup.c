@@ -41,6 +41,7 @@ int main( int argc, char *argv[] )
 	MPI_Group_free( &wingroup );
 	MPI_Group_free( &group );
 	MPI_Win_free( &win );
+        MTestFreeComm(&comm);
     }
 
     MTest_Finalize( errs );

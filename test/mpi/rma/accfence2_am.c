@@ -77,6 +77,7 @@ int main( int argc, char *argv[] )
             MPI_Free_mem(winbuf);
             MPI_Free_mem(sbuf);
 	}
+        MTestFreeComm(&comm);
     }
 
     MTest_Finalize( errs );

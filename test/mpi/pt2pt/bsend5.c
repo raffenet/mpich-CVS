@@ -59,6 +59,8 @@ int main( int argc, char *argv[] )
     }
     MPI_Buffer_detach( &bptr, &bl );
 
+    MPI_Comm_free(&comm);
+
     MTest_Finalize( errs );
     
     MPI_Finalize();

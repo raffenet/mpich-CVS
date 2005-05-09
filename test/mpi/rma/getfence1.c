@@ -75,6 +75,7 @@ int main( int argc, char *argv[] )
 		MPI_Win_free( &win );
 	    }
 	}
+        MTestFreeComm(&comm);
     }
 
     MTest_Finalize( errs );
