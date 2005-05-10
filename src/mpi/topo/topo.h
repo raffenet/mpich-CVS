@@ -37,5 +37,6 @@ int MPIR_Graph_create( const MPID_Comm *, int,
 		       MPI_Comm *);
 int MPIR_Dims_create( int, int, int * );
 int MPIR_Graph_map( const MPID_Comm *, int, const int[], const int[], int* );
+int MPIR_Cart_map( const MPID_Comm *, int, const int[],  const int[], int* );
 
 #define MAX_CART_DIM 16
