@@ -94,6 +94,11 @@ int main(int argc, char *argv[])
 	error = MPI_Barrier(comm_connector);
 	check_error(error, "MPI_Barrier");
 
+        error = MPI_Comm_free(&comm_acceptor);
+	check_error(error, "MPI_Comm_free");
+        error = MPI_Comm_free(&comm_connector);
+	check_error(error, "MPI_Comm_free");
+
 	printf(" No Errors\n");
     }
     else if ((argc == 2) && (strcmp(argv[1], "acceptor") == 0))
