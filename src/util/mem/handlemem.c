@@ -8,8 +8,9 @@
 #include "mpiimpl.h"
 #include <stdio.h>
 
-
+#ifdef NEEDS_PRINT_HANDLE
 static void MPIU_Print_handle( int handle );
+#endif
 
 /* This is the utility file for info that contains routines used to 
    manage the arrays used to store handle objects.  
@@ -356,6 +357,7 @@ void *MPIU_Handle_get_ptr_indirect( int handle, MPIU_Object_alloc_t *objmem )
     }
 }
 
+#ifdef NEEDS_PRINT_HANDLE
 /* For debugging */
 /* style: allow:printf:4 sig:0 */
 static void MPIU_Print_handle( int handle )
@@ -382,3 +384,4 @@ static void MPIU_Print_handle( int handle )
 	break;
     }
 }
+#endif
