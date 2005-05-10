@@ -273,6 +273,10 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    'Sub' => 'MPI_Comm:2',
 		    'Map' => '5:4',
 );
+$specialReturnType{"cart-Dup"} = "Cartcomm";
+$specialReturnType{"cart-Sub"} = "Cartcomm";
+$specialReturnType{"cart-Split"} = "Cartcomm";
+
 %class_mpi1dtype = ( 'Create_contiguous' => 'MPI_Datatype',
 		     'Create_vector' => 'MPI_Datatype', 
 		     'Create_indexed' => 'MPI_Datatype', 
@@ -293,6 +297,9 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Get_neighbors' => 0,
 		     'Map' => 5,
 		     );
+$specialReturnType{"graph-Dup"} = "Graphcomm";
+$specialReturnType{"graph-Split"} = "Graphcomm";
+
 # Range routines will require special handling
 # The Translate_ranks, Union, Intersect, Difference, and Compare routines are 
 # static and don't work on an instance of a group
@@ -315,6 +322,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Merge' => 'MPI_Comm:2',
 		     );
 $specialReturnType{"inter-Dup"} = "Intercomm";
+$specialReturnType{"inter-Split"} = "Intercomm";
+
 %class_mpi1intra = ( 'Barrier' => 0, 
 		     'Bcast' => 0, 
 		     'Gather' => 0,
@@ -440,6 +449,7 @@ $specialReturnType{"intra-Dup"} = "Intracomm";
 		     'Scan' => 0,
 		     'Exscan' => 0,
 );
+#$specialReturnType{"inter-Split"} = "Intercomm";
 
 # Alltoallw uses an array of datatypes, which requires special handling
 # Spawn and spawn mulitple uses arrays of character strings, which
@@ -619,6 +629,7 @@ if ($build_io) {
 		   'req', 
 		   'preq', 
                    'comm', 
+	           'null',
 		   'inter', 
 		   'intra', 
 		   'greq', 
@@ -636,6 +647,7 @@ if ($build_io) {
 %class_extra_fnc = ( 'st'        => 'Status_methods',
                      'except'    => 'Exception_methods',
 		     'comm'      => 'Comm_methods',
+		     'null'  => 'Nullcomm_methods',
 		     'inter' => 'Intercomm_methods',
 		     'intra' => 'Intracomm_methods',
 		     'graph' => 'Graphcomm_methods',
@@ -764,6 +776,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		'cart' => MPI_Comm,
 		'dtype' => MPI_Datatype,
 		'errh' => MPI_Errhandler,
+		'null'  => MPI_Comm,
 		'graph' => MPI_Comm,
 		'group' => MPI_Group,
 		'inter' => MPI_Comm,
@@ -786,6 +799,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		   'errh' => 'Errhandler',
 		   'graph' => 'Graphcomm',
 		   'group' => 'Group',
+		   'null'  => 'Nullcomm',
 		   'inter' => 'Intercomm',
 		   'intra' => 'Intracomm',
 		   'op' => 'Op',
@@ -804,7 +818,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # This has gives the list of friends for each class (i.e., the
 # classes that are allowed to directly access the protected members).
 # The friends are the full class names
-%class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype,Win,File',
+%class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Nullcomm,Datatype,Win,File',
 		   'cart' => '',
 		   'dtype' => 'Comm,Status,Intracomm,Intercomm,Win,File',
 		   'errh' => 'Comm,File,Win',
@@ -829,6 +843,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 %derived_class = ( 'graph' => 'Intracomm', 
 		   'preq' => 'Request',
 		   'greq' => 'Request',
+		   'null' => 'Comm',
 		   'inter' => 'Comm',
 		   'intra' => 'Comm',
 		   'cart' => 'Intracomm',
@@ -840,6 +855,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # used to store the C version of the class handle.
 %mytopclass = ( 'graph'     => 'comm', 
 		'graphcomm' => 'comm',
+		'nullcomm'  => 'comm',
 	        'intracomm' => 'comm', 
 	        'intercomm' => 'comm',
 	        'intra'     => 'comm', 
@@ -959,6 +975,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 %class_has_no_compare = ( 'Status' => 1,
 			  'Intracomm' => 1,
 			  'Intercomm' => 1,
+			  'Nullcomm' => 1,
 			  'Cartcomm' => 1,
 			  'Graphcomm' => 1,
 			  'Prequest' => 1,
@@ -978,8 +995,8 @@ if ($doFuncspec) {
     $defer_definition{"Get_parent"}   = "Comm";
     $defer_definition{"Join"}         = "Comm";
     $defer_definition{"Merge"}        = "Intercomm";
-	      
 }
+
 # FIXME: TODO
 # Some of the routine definitions require future class definitions; e.g.,
 # The Intracomm routine Create_cart needs to create a Cartcomm.  These
@@ -1021,6 +1038,7 @@ typedef MPI_Fint   Fint;
 
 // Forward class declarations
 class Comm;
+class Nullcomm;
 class Intercomm;
 class Intracomm;
 class Cartcomm;
@@ -1642,7 +1660,10 @@ extern Datatype TWOINTEGER;
 	print $OUTFD "extern Intracomm COMM_SELF;\n";
 	print $OUTFD "extern const Group GROUP_EMPTY;\n";
     }
-    print $OUTFD "${extern}const Comm COMM_NULL;\n";
+    # COMM_NULL can't be a Comm since Comm is an abstract base class.
+    # Following the model of Intracomm etc., we make this a separate class,
+    # and a peer to the other communicator classes.
+    print $OUTFD "${extern}const Nullcomm COMM_NULL;\n";
     print $OUTFD "${extern}const Group GROUP_NULL;\n"; 
 
     # Predefined requests
@@ -2020,9 +2041,29 @@ extern \"C\" int MPIR_Call_delfn( int handleType, int handle, int keyval,
     switch (handleType) {
 	case MPID_COMM:
 	{
-	MPI::Comm cxxcomm = handle;
-	MPI::Comm::Delete_attr_function *f1 = (MPI::Comm::Delete_attr_function *)f;
-	err=(*f1)( cxxcomm, keyval, value, extra_state );
+	    int ttype;
+	    MPI::Comm::Delete_attr_function *f1 = (MPI::Comm::Delete_attr_function *)f;
+	    
+	    MPI_Topo_test( handle, &ttype );
+	    if (ttype == MPI_UNDEFINED) {
+		MPI_Comm_test_inter( handle, &ttype );
+		if (ttype) {
+		    MPI::Intercomm comm1 = (MPI_Comm)handle;
+		    err=(*f1)( comm1, keyval, value, extra_state );
+		}
+		else {
+		    MPI::Intracomm comm1 = (MPI_Comm)handle;
+		    err=(*f1)( comm1, keyval, value, extra_state );
+		}
+	    }
+	    else if (ttype == MPI_CART) {
+		MPI::Cartcomm comm1 = (MPI_Comm)handle;
+		err=(*f1)( comm1, keyval, value, extra_state );
+	    }
+	    else {
+		MPI::Graphcomm comm1 = (MPI_Comm)handle;
+		err=(*f1)( comm1, keyval, value, extra_state );
+	    }
         }
 	break;
 	case MPID_DATATYPE:
@@ -2052,9 +2093,29 @@ extern \"C\" int MPIR_Call_copyfn( int handleType, int handle, int keyval,
     switch (handleType) {
 	case MPID_COMM:
 	{
-	MPI::Comm cxxcomm = handle;
-	MPI::Comm::Copy_attr_function *f1 = (MPI::Comm::Copy_attr_function *)f;
-	err=(*f1)( cxxcomm, keyval, extra_state, value, new_value, flag );
+	    int ttype;
+	    MPI::Comm::Copy_attr_function *f1 = (MPI::Comm::Copy_attr_function *)f;
+	    
+	    MPI_Topo_test( handle, &ttype );
+	    if (ttype == MPI_UNDEFINED) {
+		MPI_Comm_test_inter( handle, &ttype );
+		if (ttype) {
+		    MPI::Intercomm comm1 = (MPI_Comm)handle;
+		    err=(*f1)( comm1, keyval, extra_state, value, new_value, flag );
+		}
+		else {
+		    MPI::Intracomm comm1 = (MPI_Comm)handle;
+		    err=(*f1)( comm1, keyval, extra_state, value, new_value, flag );
+		}
+	    }
+	    else if (ttype == MPI_CART) {
+		MPI::Cartcomm comm1 = (MPI_Comm)handle;
+		err=(*f1)( comm1, keyval, extra_state, value, new_value, flag );
+	    }
+	    else {
+		MPI::Graphcomm comm1 = (MPI_Comm)handle;
+	        err=(*f1)( comm1, keyval, extra_state, value, new_value, flag );
+	    }
         }
 	break;
 	case MPID_DATATYPE:
@@ -2188,17 +2249,28 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
 \n";
 
     print $OUTFD "\
-    void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
-			int outsize, int &position, const Comm &comm ) const {\n";
+void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
+		     int outsize, int &position, const Comm &comm ) const {\n";
     &printCoverageStart( $OUTFD, "Pack", 6 );
     print $OUTFD "\
 	MPIX_CALL( MPI_Pack( (void *)inbuf, incount, the_real_datatype, outbuf, 
 			    outsize, &position, comm.the_real_comm ) );\n";
     &printCoverageEnd( $OUTFD, "Pack", 6 );
     print $OUTFD "\
-    }
-    void Datatype::Unpack( const void *inbuf, int insize, void *outbuf,
-			  int outcount, int &position, const Comm &comm ) const {\n";
+    }\n";
+    print $OUTFD "\
+int Datatype::Pack_size( int count, const Comm &comm ) const {\n";
+    &printCoverageStart( $OUTFD, "Pack_size", 6 );
+    print $OUTFD "\
+        int size;
+	MPIX_CALL( MPI_Pack_size( count, the_real_datatype, comm.the_real_comm, &size ) );\n";
+    &printCoverageEnd( $OUTFD, "Pack_size", 6 );
+    print $OUTFD "\
+	return size;
+    }\n";
+    print $OUTFD "\
+void Datatype::Unpack( const void *inbuf, int insize, void *outbuf,
+                       int outcount, int &position, const Comm &comm ) const {\n";
     &printCoverageStart( $OUTFD, "Unpack", 6 );
     print $OUTFD "\
 	MPIX_CALL( MPI_Unpack( (void *)inbuf, insize, &position, outbuf, outcount, 
@@ -2715,13 +2787,13 @@ sub Clone_method {
         $classname *clone = new $classname(ncomm); 
         return *clone; };\n";
 }
-sub Cartcomm_methods {
-    my $OUTFD = $_[0];
-    &Clone_method( $OUTFD, "Cartcomm" );
-}
 sub Comm_methods {
     my $OUTFD = $_[0];
-    &Clone_method( $OUTFD, "Comm" );
+
+    # The Clone method is pure virtual in the Comm class
+    print $OUTFD "    virtual Comm &Clone(void) const = 0;\n";
+    #&Clone_method( $OUTFD, "Comm" );
+
     # Typedefs
     print $OUTFD  "
     typedef int Copy_attr_function(const Comm& oldcomm, int comm_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
@@ -2776,6 +2848,20 @@ sub Win_methods {
     *(void **)attr_out = attr_in; return 0;} 
 
 \n";
+}
+sub Nullcomm_methods {
+    my $OUTFD = $_[0];
+    # We can't use Clone_method because 
+    # there is no (oldcomm) initializer.
+    #&Clone_method( $OUTFD, "Nullcomm" );
+    print $OUTFD "    Nullcomm & Clone(void) const { 
+        Nullcomm *clone = new Nullcomm();
+        return *clone; };\n";
+}
+
+sub Cartcomm_methods {
+    my $OUTFD = $_[0];
+    &Clone_method( $OUTFD, "Cartcomm" );
 }
 sub Graphcomm_methods {
     my $OUTFD = $_[0];
@@ -3124,6 +3210,12 @@ sub PrintMethodDef {
     }
     if ($is_static) {
 	print $OUTFD "static ";
+    }
+    elsif ($class ne "base") {
+	#print "Class for $routine = $class\n";
+	if ($routine ne "Dup") {
+	    print $OUTFD "virtual ";
+	}
     }
     
     print $OUTFD "$real_return_type $routine";
