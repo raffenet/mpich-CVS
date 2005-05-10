@@ -52,6 +52,10 @@ C
      &         intv, asizev, dtypesv, ierr )
 C
 C              dtypesv of constructed types must be free'd now
+C
+          if (combiner .eq. MPI_COMBINER_DUP) then
+             call mpi_type_free( dtypesv(1), ierr )
+          endif
        endif
        if (combiner .ne. mycomb) then
           errs = errs + 1
