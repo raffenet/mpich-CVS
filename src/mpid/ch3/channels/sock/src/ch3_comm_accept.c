@@ -508,6 +508,9 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             }
         }
         else { 
+            /* free the memory allocated for remote_pg_ids[i] */
+            MPIU_Free(remote_pg_ids[i]);
+
             /* do a sanity check on the process group that was found */
 
             /* --BEGIN ERROR HANDLING-- */
@@ -789,9 +792,27 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
     /* Free new_vc. It was explicitly allocated in ch3_progress.c and returned by 
        MPIDI_CH3I_Acceptq_dequeue. */
-/*    if (rank == root)
+    if (rank == root) {
+        MPID_Progress_state progress_state;
+
+        if (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
+            MPID_Progress_start(&progress_state);
+            while (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
+                mpi_errno = MPID_Progress_wait(&progress_state);
+                /* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                    break;
+                }
+                /* --END ERROR HANDLING-- */
+            }
+            MPID_Progress_end(&progress_state);
+        }
+
         MPIU_Free(new_vc);
-*/
+    }
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
