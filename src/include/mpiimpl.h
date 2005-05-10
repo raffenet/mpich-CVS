@@ -1700,6 +1700,9 @@ typedef struct MPID_Stateinfo_t {
     int count;
 } MPID_Stateinfo_t;
 #define MPICH_MAX_STATES 512
+/* Timer state routines (src/util/instrm/states.c) */
+void MPID_TimerStateBegin( int, MPID_Time_t * );
+void MPID_TimerStateEnd( int, MPID_Time_t * );
 
 /* ------------------------------------------------------------------------- */
 /* Thread types */
@@ -3401,5 +3404,8 @@ void MPIR_Free_err_dyncodes( void );
    user error. Currently they are just being macroed out. */
 #define MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER(comm_ptr)
 #define MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT(comm_ptr)
+
+/* Miscellaneous */
+void MPIU_SetTimeout( int );
 
 #endif /* MPIIMPL_INCLUDED */
