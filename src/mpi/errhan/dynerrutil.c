@@ -390,3 +390,21 @@ const char *MPIR_Err_get_dynerr_string( int code )
     return errstr;
 }
 
+
+void MPIR_Free_err_dyncodes( void )
+{
+    int i;
+
+    if (not_initialized == 0) {
+
+        for (i=0; i<ERROR_MAX_NCLASS; i++) {
+            if (user_class_msgs[i])
+                MPIU_Free(user_class_msgs[i]);
+        }
+
+        for (i=0; i<ERROR_MAX_NCODE; i++) {
+            if (user_code_msgs[i])
+                MPIU_Free(user_code_msgs[i]);
+        }
+    }
+}
