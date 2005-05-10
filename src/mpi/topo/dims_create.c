@@ -5,6 +5,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Dims_create */
 #if defined(HAVE_PRAGMA_WEAK)

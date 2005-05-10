@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Graph_map */
 #if defined(HAVE_PRAGMA_WEAK)
