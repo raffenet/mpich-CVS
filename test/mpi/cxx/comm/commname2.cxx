@@ -27,7 +27,7 @@ int main( int argc, char **argv )
     char name[MPI_MAX_OBJECT_NAME], tname[MPI_MAX_OBJECT_NAME];
     int  rlen;
     int  i, n;
-    MPI::Comm comm[10];
+    MPI::Comm *(comm[10]);
     
     MTest_Init( );
 
@@ -57,24 +57,24 @@ int main( int argc, char **argv )
     MPI::COMM_WORLD.Get_name( name, rlen );
     if (strcmp( name, "FooBar !" ) != 0) {
 	errs ++;
-	cout << "Changed name of COMM_SELF was " << name << "\n";
+	cout << "Changed name of COMM_WORLD was " << name << "\n";
     }
 
     // Test a few other communicators
     n = 0;
     while (MTestGetComm( &comm[n], 1 ) && n < 4) {
 	sprintf( name, "test%d", n );
-	comm[n].Set_name( name );
+	comm[n]->Set_name( name );
 	n++;
     }
     for (i=0; i<n; i++) {
 	sprintf( tname, "test%d", i );
-	comm[i].Get_name( name, rlen );
+	comm[i]->Get_name( name, rlen );
 	if (strcmp( name, tname ) != 0) {
 	    errs++;
 	    cout << "comm[" << i << "] gave name " << name << "\n";
 	}
-        MTestFreeComm (comm[i]);
+        MTestFreeComm ( *comm[i] );
     }
     
     MTest_Finalize( errs );

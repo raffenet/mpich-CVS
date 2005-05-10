@@ -26,7 +26,7 @@ int main( int argc, char *argv[] )
     int rank, size;
     char port[MPI_MAX_PORT_NAME];
     MPI::Status status;
-    MPI::Comm comm;
+    MPI::Intercomm comm;
 
     MPI::Init(argc, argv);
 
