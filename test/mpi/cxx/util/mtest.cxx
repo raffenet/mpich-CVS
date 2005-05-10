@@ -71,6 +71,12 @@ void MTest_Init( void )
     }
 }
 
+/*
+  Finalize MTest.  errs is the number of errors on the calling process; 
+  this routine will write the total number of errors over all of MPI_COMM_WORLD
+  to the process with rank zero, or " No Errors".
+  It does *not* finalize MPI.
+ */
 void MTest_Finalize( int errs )
 {
     int rank, toterrs;
@@ -114,8 +120,7 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    cerr << "Out of memory in type buffer init\n";
-	    MPI::COMM_WORLD.Abort(1);
+	    MTestError( "Out of memory in type buffer init" );
 	}
 	for (i=0; i<totsize; i++) {
 	    p[i] = 0xff ^ (i & 0xff);
@@ -250,6 +255,11 @@ static void *MTestTypeVectorFree( MTestDatatype *mtype )
     return 0;
 }
 
+/* ------------------------------------------------------------------------ */
+/* Routines to select a datatype and associated buffer create/fill/check    */
+/* routines                                                                 */
+/* ------------------------------------------------------------------------ */
+
 /* 
    Create a range of datatypes with a given count elements.
    This uses a selection of types, rather than an exhaustive collection.
@@ -317,7 +327,10 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	break;
     case 5:
 	/* vector send type and contiguous receive type */
-	sendtype->stride = 3;
+	/* These sizes are in bytes (see the VectorInit code) */
+	sendtype->stride   = 3 * sizeof(int);
+	sendtype->blksize  = sizeof(int);
+	sendtype->nelm     = recvtype->count;
 	sendtype->datatype = MPI::INT.Create_vector( recvtype->count, 1, sendtype->stride );
         sendtype->datatype.Commit();
 	sendtype->datatype.Set_name( "int-vector" );
@@ -325,9 +338,11 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->datatype = MPI::INT;
 	recvtype->isBasic  = 1;
 	sendtype->InitBuf  = MTestTypeVectorInit;
-	recvtype->InitBuf  = MTestTypeContigInit;
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
 	sendtype->FreeBuf  = MTestTypeVectorFree;
 	recvtype->FreeBuf  = MTestTypeContigFree;
+	sendtype->CheckBuf = 0;
+	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
     default:
 	datatype_index = -1;
@@ -335,7 +350,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 
     if (!sendtype->InitBuf) {
 	sendtype->InitBuf  = MTestTypeContigInit;
-	recvtype->InitBuf  = MTestTypeContigInit;
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
 	sendtype->FreeBuf  = MTestTypeContigFree;
 	recvtype->FreeBuf  = MTestTypeContigFree;
 	sendtype->CheckBuf = MTestTypeContigCheckbuf;
@@ -357,13 +372,25 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
     return datatype_index;
 }
 
+/* Reset the datatype index (start from the initial data type.
+   Note: This routine is rarely needed; MTestGetDatatypes automatically
+   starts over after the last available datatype is used.
+*/
 void MTestResetDatatypes( void )
 {
     datatype_index = 0;
 }
+/* Return the index of the current datatype.  This is rarely needed and
+   is provided mostly to enable debugging of the MTest package itself */
+int MTestGetDatatypeIndex( void )
+{
+    return datatype_index;
+}
 
 void MTestFreeDatatype( MTestDatatype *mtype )
 {
+    /* Invoke a datatype-specific free function to handle
+       both the datatype and the send/receive buffers */
     if (mtype->FreeBuf) {
 	(mtype->FreeBuf)( mtype );
     }
@@ -373,6 +400,8 @@ void MTestFreeDatatype( MTestDatatype *mtype )
     }
 }
 
+/* Check that a message was received correctly.  Returns the number of
+   errors detected.  Status may be NULL or MPI_STATUS_IGNORE */
 int MTestCheckRecv( MPI::Status &status, MTestDatatype *recvtype )
 {
     int count;
@@ -394,13 +423,17 @@ int MTestCheckRecv( MPI::Status &status, MTestDatatype *recvtype )
     return errs;
 }
 
+/* This next routine uses a circular buffer of static name arrays just to
+   simplify the use of the routine */
 const char *MTestGetDatatypeName( MTestDatatype *dtype )
 {
-    static char name[MPI_MAX_OBJECT_NAME];
+    static char name[4][MPI_MAX_OBJECT_NAME];
+    static int sp=0;
     int rlen;
 
-    dtype->datatype.Get_name( name, rlen );
-    return (const char *)name;
+    if (sp >= 4) sp = 0;
+    dtype->datatype.Get_name( name[sp], rlen );
+    return (const char *)name[sp++];
 }
 /* ----------------------------------------------------------------------- */
 
@@ -416,6 +449,12 @@ static int intraCommIdx = 0;
 static const char *intraCommName = 0;
 static const char *interCommName = 0;
 
+/* 
+ * Get an intracommunicator with at least min_size members.  If "allowSmaller"
+ * is true, allow the communicator to be smaller than MPI::COMM_WORLD and
+ * for this routine to return MPI::COMM_NULL for some values.  Returns 0 if
+ * no more communicators are available.
+ */
 int MTestGetIntracommGeneral( MPI::Intracomm &comm, int min_size, 
 			      bool allowSmaller )
 {
@@ -457,6 +496,8 @@ int MTestGetIntracommGeneral( MPI::Intracomm &comm, int min_size,
 	    intraCommName = "MPI::COMM_SELF";
 	    break;
 
+	    /* These next cases are communicators that include some
+	       but not all of the processes */
 	case 5:
 	case 6:
 	case 7:
@@ -519,6 +560,7 @@ int MTestGetIntracomm( MPI::Intracomm &comm, int min_size )
     return MTestGetIntracommGeneral( comm, min_size, false );
 }
 
+/* Return the name of an intra communicator */
 const char *MTestGetIntracommName( void )
 {
     return intraCommName;
@@ -635,24 +677,30 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
     interCommIdx++;
     return interCommIdx;
 }
+/* Return the name of an intercommunicator */
 const char *MTestGetIntercommName( void )
 {
     return interCommName;
 }
 
-int MTestGetComm( MPI::Comm *comm, int min_size )
+/* Get a communicator of a given minimum size.  Both intra and inter 
+   communicators are provided
+   Because Comm is an abstract base class, you can only have references 
+   to a Comm.*/
+int MTestGetComm( MPI::Comm **comm, int min_size )
 {
     int idx;
     static int getinter = 0;
-    MPI::Intracomm rcomm;
 
     if (!getinter) {
+	MPI::Intracomm rcomm;
 	idx = MTestGetIntracomm( rcomm, min_size );
 	if (idx == 0) {
 	    getinter = 1;
 	}
 	else {
-	    *comm = rcomm;
+	    MPI::Intracomm *ncomm = new MPI::Intracomm(rcomm);
+	    *comm = ncomm;
 	}
     }
     if (getinter) {
@@ -662,13 +710,17 @@ int MTestGetComm( MPI::Comm *comm, int min_size )
 	if (idx == 0) {
 	    getinter = 0;
 	}
-	*comm = icomm;
+	else {
+	    MPI::Intercomm *ncomm = new MPI::Intercomm(icomm);
+	    *comm = ncomm;
+	}
     }
 
     return idx;
 }
 
-
+/* Free a communicator.  It may be called with a predefined communicator
+ or MPI_COMM_NULL */
 void MTestFreeComm( MPI::Comm &comm )
 {
     if (comm != MPI::COMM_WORLD &&
@@ -747,28 +799,26 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
 	/* Active target window */
 	win = MPI::Win::Create( actbuf, 1024, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "active-window";
-        win.Set_attr( mem_keyval, (void *) 0 );
+	win.Set_attr( mem_keyval, (void *)0 );
 	break;
     case 1:
 	/* Passive target window */
 	pasbuf = (char *)MPI::Alloc_mem( 1024, MPI::INFO_NULL );
-	/* FIXME: storage leak */
 	win = MPI::Win::Create( pasbuf, 1024, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "passive-window";
-        win.Set_attr( mem_keyval, (void *) 2 );
+	win.Set_attr( mem_keyval, (void *)2 );
 	break;
     case 2:
 	/* Active target; all windows different sizes */
 	rank = MPI::COMM_WORLD.Get_rank();
 	n = rank * 64;
-	/* FIXME: storage leak */
 	if (n) 
 	    buf = (char *)malloc( n );
 	else
 	    buf = 0;
 	win = MPI::Win::Create( buf, n, 1, MPI::INFO_NULL, MPI::COMM_WORLD );
 	winName = "active-all-different-win";
-        win.Set_attr( mem_keyval, (void *) 1 );
+	win.Set_attr( mem_keyval, (void *)1 );
 	break;
     case 3:
 	/* Active target, no locks set */
@@ -791,6 +841,7 @@ int MTestGetWin( MPI::Win &win, bool mustBePassive )
     win_index++;
     return win_index;
 }
+/* Return a pointer to the name associated with a window object */
 const char *MTestGetWinName( void )
 {
     
