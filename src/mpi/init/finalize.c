@@ -148,6 +148,8 @@ int MPI_Finalize( void )
         mpi_errno = MPID_NS_Free( &MPIR_Namepub );
 #endif
 
+    MPIR_Free_err_dyncodes();
+
     mpi_errno = MPID_Finalize();
     MPIU_ERR_CHKANDSTMT((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**fail");
     
