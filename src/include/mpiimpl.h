@@ -3393,6 +3393,9 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
 int MPIR_Comm_create( MPID_Comm *, MPID_Comm ** );
 
+void MPIR_Free_err_dyncodes( void );
+
+
 /* Collective functions cannot be called from multiple threads. These
    are stubs used in the collective communication calls to check for
    user error. Currently they are just being macroed out. */
