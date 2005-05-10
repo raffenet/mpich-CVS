@@ -17,6 +17,10 @@
 #endif
 /* -- End Profiling Symbol Block */
 
+/* Prototypes for local functions */
+int MPIR_fd_send(int, void *, int);
+int MPIR_fd_recv(int, void *, int);
+
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
@@ -34,10 +38,6 @@
 #endif
 #define SOCKET_EINTR	    EINTR
 #endif
-
-/* Prototypes for local functions */
-int MPIR_fd_send(int, void *, int);
-int MPIR_fd_recv(int, void *, int);
 
 int MPIR_fd_send(int fd, void *buffer, int length)
 {

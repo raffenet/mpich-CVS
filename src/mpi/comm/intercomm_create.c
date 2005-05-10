@@ -23,13 +23,13 @@
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
+PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Intercomm_create PMPI_Intercomm_create
 
 /* 128 allows us to handle up to 4k processes */
 #ifdef HAVE_ERROR_CHECKING
 #define MAX_LPID32_ARRAY 128
-PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1, 
 					 int lpids2[], int n2 )
 {
