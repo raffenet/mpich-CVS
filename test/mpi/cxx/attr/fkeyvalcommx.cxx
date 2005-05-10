@@ -83,14 +83,16 @@ int main( int argc, char *argv[] )
 	/* Check that the attribute was copied */
 	if (attrval != 2) {
 	    errs++;
-	    printf( "Attribute not incremented when comm dup'ed (%s)\n",
-		    MTestGetIntracommName() );
+	    cout << "Attribute not incremented when comm dup'ed, attrval = " <<
+		attrval << " should be 2 in communicator " << 
+		MTestGetIntracommName() << "\n";
 	}
 	dupcomm.Free();
 	if (attrval != 1) {
 	    errs++;
-	    printf( "Attribute not decremented when dupcomm %s freed\n",
-		    MTestGetIntracommName() );
+	    cout << "Attribute not decremented when comm dup'ed, attrval = " <<
+		attrval << " should be 1 in communicator " << 
+		MTestGetIntracommName() << "\n";
 	}
 	/* Check that the attribute was freed in the dupcomm */
 
