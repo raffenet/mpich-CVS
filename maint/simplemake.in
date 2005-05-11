@@ -1889,8 +1889,18 @@ sub TargetAll {
 	    # Conditionally create the shared libraries.
 	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
-		print FD "\t    echo \"make $libspec\" ;\\\n";
-		print FD "\t    \${MAKE} $libspec ; \\\n";
+		# Be careful of library names that are related to
+		# the profile library (those libraries are built
+		# as part of the "master" library name build)
+		my $baselibname = $libspec;
+		$baselibname =~ s/^.*\///g;
+		$baselibname =~ s/^lib//;
+		$baselibname =~ s/\..*//;
+		if (!defined($profile_libraries_basename{$baselibname})) {
+		    print "Building sharedlib library $baselibname (from $libspec) as part of all-redirect\n" if $gDebugWhy;
+		    print FD "\t    echo \"make $libspec\" ;\\\n";
+		    print FD "\t    \${MAKE} $libspec ; \\\n";
+		}
 	    }
 	    print FD "\tfi\n";
 	}
