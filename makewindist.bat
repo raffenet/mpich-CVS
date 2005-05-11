@@ -1,5 +1,6 @@
 IF "%1" == "" GOTO HELP
 IF "%1" == "--help" GOTO HELP
+IF "%CVS_HOST%" == "" set CVS_HOST=harley.mcs.anl.gov
 GOTO AFTERHELP
 :HELP
 REM
@@ -45,10 +46,10 @@ GOTO AFTERCHECKOUT
 :CHECKOUT
 set CVS_RSH=ssh
 IF "%2" == "" GOTO CHECKOUT_HEAD
-cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r %2 mpich2allWithMPE
+cvs -d :ext:%USERNAME%@%CVS_HOST%:/home/MPI/cvsMaster export -r %2 mpich2allWithMPE
 GOTO AFTER_CHECKOUT_HEAD
 :CHECKOUT_HEAD
-cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2allWithMPE
+cvs -d :ext:%USERNAME%@%CVS_HOST%:/home/MPI/cvsMaster export -r HEAD mpich2allWithMPE
 :AFTER_CHECKOUT_HEAD
 if %errorlevel% NEQ 0 goto CVSERROR
 pushd mpich2
@@ -73,9 +74,9 @@ echo maint/updatefiles >> sshcmds.txt
 echo tar cvf dotin.tar `find . -name "*.h.in"` >> sshcmds.txt
 echo gzip dotin.tar >> sshcmds.txt
 echo exit >> sshcmds.txt
-ssh -l %USERNAME% petagate.mcs.anl.gov < sshcmds.txt
-scp %USERNAME%@petagate.mcs.anl.gov:/sandbox/%USERNAME%/dotintmp/mpich2/dotin.tar.gz .
-ssh -l %USERNAME% petagate.mcs.anl.gov rm -rf /sandbox/%USERNAME%/dotintmp
+ssh -l %USERNAME% %CVS_HOST% < sshcmds.txt
+scp %USERNAME%@%CVS_HOST%:/sandbox/%USERNAME%/dotintmp/mpich2/dotin.tar.gz .
+ssh -l %USERNAME% %CVS_HOST% rm -rf /sandbox/%USERNAME%/dotintmp
 del sshcmds.txt
 tar xvfz dotin.tar.gz
 del dotin.tar.gz
