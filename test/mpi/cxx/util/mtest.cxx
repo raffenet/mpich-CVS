@@ -188,9 +188,9 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 	    if (p[i] != expected) {
 		err++;
 		if (mtype->printErrors && err < 10) {
-		    printf( "Data expected = %x but got %x for %dth entry\n",
-			    expected, p[i], i );
-		    fflush( stdout );
+		    cout << "Data expected = " << hex << expected << 
+			" but got " << p[i] << " for the " <<
+			 dec << i << "th entry\n";
 		}
 	    }
 	}
