@@ -142,20 +142,24 @@ Additional command specific keys are described in the following section.
 \subsection{Commands}
 \begin{description}
 \item[\texttt{init}]\mbox{}\\
-name=kvsname
+Add \texttt{name=kvsname
 key=rank
 value=nproc
-node\_id=smpd node id
+node\_id=smpd\_node\_id}.
 
 The init command is sent to the root from each process.  This lets mpiexec know
-that the processes have started and made it to PMI\_Init
+that the processes have started and made it to PMI\_Init.
+
+Example: \texttt{cmd=init src=1 dest=0 tag=101 ctx\_key=0 name=mykvsname key=0 value=3 node\_id=1}
 \item[\texttt{finalize}]\mbox{}\\
-name=kvsname
+Add \texttt{name=kvsname
 key=rank
-node\_id=smpd node id
+node\_id=smpd\_node\_id}.
 
 The finalize command is sent to the root from each process when PMI\_Finalize is called.
 This lets mpiexec know that when the process exits it is a successful exit.
+
+Example: \texttt{cmd=finalize src=2 dest=0 tag=123 ctx\_key=0 name=mykvsname key=1 value=3 node\_id=2}
 %\item[\texttt{exit\_on\_done}]\mbox{}\\
 %Tell the root to exit when all done commands are received - used in rPMI only.
 \item[\texttt{done}]\mbox{}\\
@@ -219,13 +223,15 @@ The \texttt{command\_tag} matches the tag of the command the result command
 refers to.  The \texttt{result\_string} is SUCCESS or a failure message. 
 Other return fields will be present as specified by the issued command.
 \item[\texttt{abort\_job}]\mbox{}\\
-name=kvsname
+Add \texttt{name=kvsname
 rank=rank
 error=error message
-exit\_code=exit code
+exit\_code=exit code}.
 
 abort\_job is sent from any node to the root to abort the entire job.  This
 command represents a user abort usually caused by an MPI\_Abort call.
+
+Example: \texttt{cmd=abort\_job src=3 dest=0 tag=1 ctx\_key=0 rank=4 error=''user abort'' exit\_code=13}
 \end{description}
 
 \subsection{spawn command}
