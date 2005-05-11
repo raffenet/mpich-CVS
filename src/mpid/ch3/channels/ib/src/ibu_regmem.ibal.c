@@ -293,7 +293,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_register_memory: ib_reg_mem failed, error %s\n", ibu_get_err_str(status));
+	MPIU_Internal_error_printf("ibu_register_memory: ib_reg_mem failed, error %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
 	return IBU_FAIL;
     }
