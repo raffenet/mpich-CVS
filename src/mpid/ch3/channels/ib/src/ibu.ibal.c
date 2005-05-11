@@ -48,7 +48,7 @@ ib_api_status_t getMaxInlineSize( ibu_t ibu )
     if (status != IB_SUCCESS)
     {
 	MPIU_Internal_error_printf("getMaxInlineSize: ib_query_qp failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_GETMAXINLINESIZE);
 	return status;
     }
     ibu->max_inline_size = qp_prop.sq_max_inline;
@@ -261,7 +261,7 @@ ibu_rdma_buf_t* ibui_RDMA_buf_init(ibu_t ibu, uint32_t* rkey)
     MPIU_DBG_PRINTF(("ibui_RDMA_buf_init rkey = %x buf= %p\n", *rkey, buf));
     MPIU_DBG_PRINTF(("ibui_RDMA_buf_init ************* ibu->local_RDMA_head = %d ibu->local_last_updated_RDMA_limit= %d\n", 
 	ibu->local_RDMA_head, ibu->local_last_updated_RDMA_limit));
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_RDMA_BUF_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_RDMA_BUF_INIT);
     return buf;
 }
 
@@ -373,12 +373,13 @@ int ibui_post_ack_write(ibu_t ibu)
     int num_bytes;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_rdma_limit_upt_t * const ack_pkt = &upkt.limit_upt;
-    ack_pkt->iov_len = 0;
-    ack_pkt->type = MPIDI_CH3_PKT_LMT_UPT;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
     MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
+
+    ack_pkt->iov_len = 0;
+    ack_pkt->type = MPIDI_CH3_PKT_LMT_UPT;
 
 #ifdef MPICH_DBG_OUTPUT
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)ack_pkt);
