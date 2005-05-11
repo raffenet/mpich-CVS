@@ -134,11 +134,11 @@ devenv.com mpich2.sln /build ch3ssmRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3ssmPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-devenv.com mpich2.sln /build ch3ibDebug
+devenv.com mpich2.sln /build ch3ibIbalDebug
 if %errorlevel% NEQ 0 goto BUILDERROR
-devenv.com mpich2.sln /build ch3ibRelease
+devenv.com mpich2.sln /build ch3ibIbalRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-devenv.com mpich2.sln /build ch3ibPRelease
+devenv.com mpich2.sln /build ch3ibIbalPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3essmDebug
 if %errorlevel% NEQ 0 goto BUILDERROR

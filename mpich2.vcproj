@@ -887,7 +887,7 @@ copy $(ConfigurationName)\mpich2sshm.lib lib\mpich2sshm.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3ibDebug|Win32"
+			Name="ch3ibVapiDebug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
@@ -898,7 +898,7 @@ copy $(ConfigurationName)\mpich2sshm.lib lib\mpich2sshm.lib
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING;USE_IB_VAPI"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -960,7 +960,7 @@ copy $(ConfigurationName)\mpich2ibd.lib lib\mpich2ibd.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3ibRelease|Win32"
+			Name="ch3ibVapiRelease|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
@@ -974,7 +974,7 @@ copy $(ConfigurationName)\mpich2ibd.lib lib\mpich2ibd.lib
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING;USE_IB_VAPI"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -1252,7 +1252,7 @@ copy $(ConfigurationName)\mpich2sshmp.lib lib\mpich2sshmp.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3ibPRelease|Win32"
+			Name="ch3ibVapiPRelease|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
@@ -1266,7 +1266,7 @@ copy $(ConfigurationName)\mpich2sshmp.lib lib\mpich2sshmp.lib
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\mellanox\include,src\mpi\datatype"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG;USE_IB_VAPI"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -1766,6 +1766,233 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ch3ibIbalDebug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\ibal\src\base\shared\include,c:\ibal\src\base\shared\include\iba,c:\ibal\src\base\winuser\include,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING;USE_IB_IBAL"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_utild.lib sockd.lib dbgd.lib ch3ibd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib ibal.lib complib.lib crypt32.lib"
+				OutputFile="lib/mpich2ibd.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib,c:\ibal\Install\x86"
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="libcd.lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2ibd.pdb"
+				ImportLibrary=".\$(ConfigurationName)/mpich2ibd.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2ibd.dll to system32 directory"
+				CommandLine="copy lib\mpich2ibd.dll %SystemRoot%\system32\mpich2ibd.dll
+copy $(ConfigurationName)\mpich2ibd.lib lib\mpich2ibd.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3ibIbalPRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				OmitFramePointers="TRUE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\ibal\src\base\shared\include\iba,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG;USE_IB_IBAL"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbg.lib sockp.lib ch3ibp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib ibal.lib complib.lib crypt32.lib"
+				OutputFile="lib/mpich2ibp.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib,c:\ibal\Install\x86"
+				IgnoreDefaultLibraryNames="libc.lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2ibp.pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\$(ConfigurationName)/mpich2ibp.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2ibp.dll to system32 directory"
+				CommandLine="copy lib\mpich2ibp.dll %SystemRoot%\system32\mpich2ibp.dll
+copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3ibIbalRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				OmitFramePointers="TRUE"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\ib\include,c:\ibal\src\base\shared\include\iba,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING;USE_IB_IBAL"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sock.lib ch3ib.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib ibal.lib complib.lib crypt32.lib"
+				OutputFile="lib/mpich2ib.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib,c:\ibal\Install\x86"
+				IgnoreDefaultLibraryNames="libc.lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2ib.pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\$(ConfigurationName)/mpich2ib.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2ib.dll to system32 directory"
+				CommandLine="copy lib\mpich2ib.dll %SystemRoot%\system32\mpich2ib.dll
+copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -2133,13 +2360,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32"
+					Name="ch3ibVapiDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32"
+					Name="ch3ibVapiRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2164,6 +2391,18 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2301,13 +2540,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
@@ -2331,7 +2570,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
@@ -2368,6 +2607,24 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"/>
@@ -2646,13 +2903,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
@@ -2676,7 +2933,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
@@ -2713,6 +2970,24 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
@@ -2964,13 +3239,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -2994,7 +3269,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3031,6 +3306,24 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3111,13 +3404,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3141,7 +3434,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3178,6 +3471,24 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3258,13 +3569,13 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3288,7 +3599,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3325,6 +3636,24 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -3450,14 +3779,14 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibDebug|Win32">
+					Name="ch3ibVapiDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"
 						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibRelease|Win32">
+					Name="ch3ibVapiRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"
@@ -3485,7 +3814,7 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ibPRelease|Win32">
+					Name="ch3ibVapiPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"
@@ -3528,6 +3857,27 @@ copy $(ConfigurationName)\mpich2mtp.lib lib\mpich2mtp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockmtPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ibIbalRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"

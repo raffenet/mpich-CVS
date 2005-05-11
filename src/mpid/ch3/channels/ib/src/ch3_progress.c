@@ -209,11 +209,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 
     do
     {
-#ifdef USE_IB_VAPI
 	mpi_errno = ibu_wait(0, (void*)&vc_ptr, &num_bytes, &wait_result);
-#else
-	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
-#endif
 	if (mpi_errno != IBU_SUCCESS)
 	{
 	    /*MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");*/

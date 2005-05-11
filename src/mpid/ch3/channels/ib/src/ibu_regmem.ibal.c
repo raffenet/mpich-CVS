@@ -585,7 +585,7 @@ int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state)
 
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_nocache_register_memory: VAPI_register_mr failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("ibu_nocache_register_memory: ib_reg_mem failed, error %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_REGISTER_MEMORY);
 	return IBU_FAIL;
     }
@@ -608,7 +608,7 @@ int ibu_nocache_deregister_memory(void *buf, int len, ibu_mem_t *state)
     status =  ib_dereg_mr(state->handle);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: VAPI_deregister_mr failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("ibu_nocache_deregister_memory: ib_dereg_mr failed, error %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_NOCACHE_DEREGISTER_MEMORY);
 	return IBU_FAIL;
     }

@@ -27,12 +27,15 @@ extern "C" {
 #define IBU_EAGER_PACKET_SIZE		(1024 * (1 << 5) - IBU_CACHELINE)
 #endif
 
+#define IBU_MAX_PINNED (128*1024*1024)
 #define IBU_PACKET_COUNT		64
 #define IBU_ERROR_MSG_LENGTH		255
+/*
 #define IBU_NUM_PREPOSTED_RECEIVES	(IBU_ACK_WATER_LEVEL*3)
 #define IBU_MAX_POSTED_SENDS		8192
 #define IBU_MAX_DATA_SEGMENTS		100
 #define IBU_ACK_WATER_LEVEL		32
+*/
 
 /* Mellanox: Added by dafna July 7th */
 #define IBU_NUM_OF_RDMA_BUFS    64
@@ -44,8 +47,6 @@ extern "C" {
 /* Mellanox: END Added by dafna July 7th */
 
 #ifdef USE_IB_VAPI
-
-#define IBU_MAX_PINNED (128*1024*1024)
 
 #include <vapi.h>
 #include <vapi_common.h>
@@ -60,8 +61,6 @@ typedef struct ibu_mem_t
 typedef IB_lid_t ibu_lid_t;
 
 #elif defined(USE_IB_IBAL)
-
-#define IBU_MAX_PINNED (128*1024*1024)
 
 #include <ib_al.h>
 typedef ib_cq_handle_t ibu_set_t;

@@ -2667,8 +2667,10 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef HAVE_SYS_POLL_H */")
 				Case "USE_IB_IBAL"
 					fout.WriteLine("/* #undef USE_IB_IBAL */")
+					fout.WriteLine("/* This is set in the project settings */")
 				Case "USE_IB_VAPI"
-					fout.WriteLine("#define USE_IB_VAPI 1")
+					fout.WriteLine("/* #define USE_IB_VAPI */")
+					fout.WriteLine("/* This is set in the project settings */")
 				Case "MPID_IBU_TYPE_UNIX"
 					fout.WriteLine("/* #undef MPID_IBU_TYPE_UNIX */")
 					'fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS 1")
@@ -3148,6 +3150,7 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	Call WriteHeader(fout, "mpidi_ch3i_ib_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", false)
 	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	fout.WriteLine("#define __WIN__")
 	fout.WriteLine("#define __i386__")
 	If bUseIbRDMA Then
 		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
@@ -3159,7 +3162,8 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	else
 		fout.WriteLine("#define USE_NO_PIN_CACHE")
 	End If
-	fout.WriteLine("#define USE_RDMA_GET")
+	fout.WriteLine("/*#define USE_RDMA_GET*/")
+	fout.WriteLine("#define USE_RDMA_PUT")
 	Call WriteFooter(fout)
 	fout.Close()
 	cEcho "Creating src\include\win64\mpidi_ch3i_ib_conf.h"
@@ -3167,6 +3171,7 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	Call WriteHeader(fout, "mpidi_ch3i_ib_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", true)
 	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	fout.WriteLine("#define __WIN__")
 	If x64 then
 		fout.WriteLine("#define __x64__")
 	else
@@ -3182,7 +3187,8 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	else
 		fout.WriteLine("#define USE_NO_PIN_CACHE")
 	End If
-	fout.WriteLine("#define USE_RDMA_GET")
+	fout.WriteLine("/*#define USE_RDMA_GET*/")
+	fout.WriteLine("#define USE_RDMA_PUT")
 	Call WriteFooter(fout)
 	fout.Close()
 Else
