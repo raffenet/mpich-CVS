@@ -141,6 +141,21 @@ Additional command specific keys are described in the following section.
 
 \subsection{Commands}
 \begin{description}
+\item[\texttt{init}]\mbox{}\\
+name=kvsname
+key=rank
+value=nproc
+node_id=smpd node id
+
+The init command is sent to the root from each process.  This lets mpiexec know
+that the processes have started and made it to PMI_Init
+\item[\texttt{finalize}]\mbox{}\\
+name=kvsname
+key=rank
+node_id=smpd node id
+
+The finalize command is sent to the root from each process when PMI_Finalize is called.
+This lets mpiexec know that when the process exits it is a successful exit.
 %\item[\texttt{exit\_on\_done}]\mbox{}\\
 %Tell the root to exit when all done commands are received - used in rPMI only.
 \item[\texttt{done}]\mbox{}\\
@@ -203,6 +218,14 @@ fields, \texttt{cmd\_tag=command\_tag} and \texttt{result=result\_string}.
 The \texttt{command\_tag} matches the tag of the command the result command 
 refers to.  The \texttt{result\_string} is SUCCESS or a failure message. 
 Other return fields will be present as specified by the issued command.
+\item[\texttt{abort_job}]\mbox{}\\
+name=kvsname
+rank=rank
+error=error message
+exit_code=exit code
+
+abort_job is sent from any node to the root to abort the entire job.  This
+command represents a user abort usually caused by an MPI_Abort call.
 \end{description}
 
 \subsection{spawn command}
