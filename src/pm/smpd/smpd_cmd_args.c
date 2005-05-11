@@ -65,6 +65,8 @@ void smpd_print_options(void)
     printf(" -stop\n");
     printf(" -register_spn\n");
     printf(" -remove_spn\n");
+    printf(" -traceon <logfilename> [<hostA> <hostB> ...]\n");
+    printf(" -traceoff [<hostA> <hostB> ...]\n");
     printf("\n");
     printf("bracketed [] items are optional\n");
     printf("\n");
@@ -83,7 +85,7 @@ void smpd_print_options(void)
 #define FCNAME "smpd_parse_command_args"
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
-    int result;
+    int result = 0;
 #ifdef HAVE_WINDOWS_H
     char str[20], read_handle_str[20], write_handle_str[20];
     int port;
@@ -96,6 +98,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     char domain[SMPD_MAX_HOST_LENGTH];
     char opt[SMPD_MAX_NAME_LENGTH];
     char opt_val[SMPD_MAX_VALUE_LENGTH];
+    char filename[SMPD_MAX_FILENAME];
+    int i;
 
     smpd_enter_fn(FCNAME);
 
@@ -373,12 +377,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	{
 	    smpd_set_smpd_data("port", port_str);
 	}
-	/*ParseRegistry(true);*/
 	smpd_install_service(SMPD_FALSE, SMPD_TRUE, smpd_get_opt(argcp, argvp, "-delegation"));
-	/*
-	GetMPDVersion(version, 100);
-	WriteMPDRegistry("version", version);
-	*/
+	smpd_set_smpd_data("version", SMPD_VERSION);
 	ExitProcess(0);
     }
     if (smpd_get_opt(argcp, argvp, "-start"))
@@ -568,14 +568,12 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt_string(argcp, argvp, "-status", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	/*smpd_process.do_status = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_DO_STATUS;
     }
     else if (smpd_get_opt(argcp, argvp, "-status"))
     {
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	/*smpd_process.do_status = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_DO_STATUS;
     }
 
@@ -601,21 +599,18 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	/*smpd_process.shutdown = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_SHUTDOWN;
     }
     else if (smpd_get_opt(argcp, argvp, "-shutdown"))
     {
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	/*smpd_process.shutdown = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_SHUTDOWN;
     }
 
     if (smpd_get_opt_string(argcp, argvp, "-restart", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	/*smpd_process.restart = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_RESTART;
     }
     else if (smpd_get_opt(argcp, argvp, "-restart"))
@@ -629,7 +624,6 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #else
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	/*smpd_process.restart = 1;*/
 	smpd_process.builtin_cmd = SMPD_CMD_RESTART;
 #endif
     }
@@ -683,6 +677,135 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 		return SMPD_FAIL;
 	    }
 	}
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-traceon", filename, SMPD_MAX_FILENAME))
+    {
+	smpd_process.do_console_returns = SMPD_TRUE;
+	if (*argcp > 1)
+	{
+	    for (i=1; i<*argcp; i++)
+	    {
+		strcpy(smpd_process.console_host, (*argvp)[i]);
+
+		smpd_process.do_console = 1;
+		smpd_process.builtin_cmd = SMPD_CMD_SET;
+		strcpy(smpd_process.key, "logfile");
+		strcpy(smpd_process.val, filename);
+		result = smpd_do_console();
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("Unable to set the logfile name on host '%s'\n", smpd_process.console_host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+
+		smpd_process.do_console = 1;
+		smpd_process.builtin_cmd = SMPD_CMD_SET;
+		strcpy(smpd_process.key, "log");
+		strcpy(smpd_process.val, "yes");
+		result = smpd_do_console();
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("Unable to set the log option on host '%s'\n", smpd_process.console_host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+
+		smpd_process.do_console = 1;
+		smpd_process.builtin_cmd = SMPD_CMD_RESTART;
+		result = smpd_do_console();
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("Unable to restart the smpd on host '%s'\n", smpd_process.console_host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+	    }
+	}
+	else
+	{
+	    result = smpd_set_smpd_data("logfile", filename);
+	    result = smpd_set_smpd_data("log", "yes");
+
+#ifdef HAVE_WINDOWS_H
+	    printf("restarting the smpd service...\n");
+	    smpd_stop_service();
+	    Sleep(1000);
+	    smpd_start_service();
+#else
+	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    smpd_process.do_console = 1;
+	    smpd_process.builtin_cmd = SMPD_CMD_RESTART;
+	    result = smpd_do_console();
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("Unable to restart the smpd on host '%s'\n", smpd_process.console_host);
+		smpd_exit_fn(FCNAME);
+		return result;
+	    }
+#endif
+	}
+	smpd_exit_fn(FCNAME);
+	smpd_exit(result);
+    }
+
+    if (smpd_get_opt(argcp, argvp, "-traceoff"))
+    {
+	smpd_process.do_console_returns = SMPD_TRUE;
+	if (*argcp > 1)
+	{
+	    for (i=1; i<*argcp; i++)
+	    {
+		strcpy(smpd_process.console_host, (*argvp)[i]);
+
+		smpd_process.do_console = 1;
+		smpd_process.builtin_cmd = SMPD_CMD_SET;
+		strcpy(smpd_process.key, "log");
+		strcpy(smpd_process.val, "no");
+		result = smpd_do_console();
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("Unable to set the log option on host '%s'\n", smpd_process.console_host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+
+		smpd_process.do_console = 1;
+		smpd_process.builtin_cmd = SMPD_CMD_RESTART;
+		result = smpd_do_console();
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("Unable to restart the smpd on host '%s'\n", smpd_process.console_host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+	    }
+	}
+	else
+	{
+	    result = smpd_set_smpd_data("log", "no");
+
+#ifdef HAVE_WINDOWS_H
+	    printf("restarting the smpd service...\n");
+	    smpd_stop_service();
+	    Sleep(1000);
+	    smpd_start_service();
+#else
+	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    smpd_process.do_console = 1;
+	    smpd_process.builtin_cmd = SMPD_CMD_RESTART;
+	    result = smpd_do_console();
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("Unable to restart the smpd on host '%s'\n", smpd_process.console_host);
+		smpd_exit_fn(FCNAME);
+		return result;
+	    }
+#endif
+	}
+	smpd_exit_fn(FCNAME);
+	smpd_exit(result);
     }
 
     if (smpd_process.do_console)

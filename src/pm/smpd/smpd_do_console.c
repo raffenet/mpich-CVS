@@ -108,6 +108,13 @@ quit_job:
 	printf("no smpd running on %s\n", smpd_process.console_host);
 	smpd_process.dbg_state = saved_state;
     }
+
+    if (smpd_process.do_console_returns == SMPD_TRUE)
+    {
+	smpd_exit_fn(FCNAME);
+	return exit_code;
+    }
+
     /* finalize */
     smpd_dbg_printf("calling MPIDU_Sock_finalize\n");
     result = MPIDU_Sock_finalize();

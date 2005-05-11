@@ -5332,6 +5332,41 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    break;
 	}
 
+	/* check to see if this is a set session */
+	if (smpd_process.builtin_cmd == SMPD_CMD_SET)
+	{
+	    result = smpd_create_command("set", 0, 1, SMPD_TRUE, &cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a set command.\n");
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "key", smpd_process.key);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the key(%s) to the set command.\n", smpd_process.key);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "value", smpd_process.val);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the value(%s) to the set command.\n", smpd_process.val);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_write_command(context, cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the set command on the %s context.\n",
+		    smpd_get_context_str(context));
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    break;
+	}
+
 	/* check to see if this is a status session */
 	if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	{

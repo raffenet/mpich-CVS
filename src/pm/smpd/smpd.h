@@ -565,6 +565,9 @@ typedef enum smpd_builtin_commands_t
     SMPD_CMD_RESTART,
     SMPD_CMD_VALIDATE,
     SMPD_CMD_DO_STATUS,
+    SMPD_CMD_SET,
+    SMPD_CMD_GET,
+    SMPD_CMD_DELETE,
     SMPD_CMD_ADD_JOB,
     SMPD_CMD_ADD_JOB_AND_PASSWORD,
     SMPD_CMD_REMOVE_JOB,
@@ -687,6 +690,9 @@ typedef struct smpd_global_t
     char job_key[SMPD_SSPI_JOB_KEY_LENGTH];
     char job_key_account[SMPD_MAX_ACCOUNT_LENGTH];
     char job_key_password[SMPD_MAX_PASSWORD_LENGTH];
+    char key[SMPD_MAX_NAME_LENGTH];
+    char val[SMPD_MAX_VALUE_LENGTH];
+    SMPD_BOOL do_console_returns;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

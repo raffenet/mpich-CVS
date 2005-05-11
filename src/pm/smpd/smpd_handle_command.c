@@ -1096,8 +1096,29 @@ int smpd_handle_result(smpd_context_t *context)
 		}
 		else if (strcmp(iter->cmd_str, "set") == 0 || strcmp(iter->cmd_str, "delete") == 0)
 		{
-		    /* print the result of the set command */
+		    /* print the result of the set or delete command */
 		    printf("%s\n", str);
+		    if (smpd_process.do_console_returns)
+		    {
+			/* close the session */
+			ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
+			if (ret_val == SMPD_SUCCESS)
+			{
+			    ret_val = smpd_post_write_command(context, cmd_ptr);
+			    if (ret_val == SMPD_SUCCESS)
+			    {
+				ret_val = SMPD_CLOSE;
+			    }
+			    else
+			    {
+				smpd_err_printf("unable to post a write of a done command.\n");
+			    }
+			}
+			else
+			{
+			    smpd_err_printf("unable to create a done command.\n");
+			}
+		    }
 		}
 		else if (strcmp(iter->cmd_str, "stat") == 0)
 		{
