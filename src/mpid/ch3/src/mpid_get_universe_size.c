@@ -33,7 +33,9 @@ int MPID_Get_universe_size(int  * universe_size)
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
+#if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE)
   fn_fail:
+#endif
     *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     goto fn_exit;
     /* --END ERROR HANDLING-- */
