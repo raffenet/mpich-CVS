@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 
+
 #include "mpitestconf.h"
 #ifdef HAVE_IOSTREAM
 // Not all C++ compilers have iostream instead of iostream.h
@@ -20,6 +21,7 @@ using namespace std;
 #endif
 #include <stdio.h>
 #include "mpitestcxx.h"
+#include <stdlib.h>
 
 static char MTestDescrip[] = "Test freeing keyvals while still attached to \
 a datatype, then make sure that the keyval delete and copy code are still \
