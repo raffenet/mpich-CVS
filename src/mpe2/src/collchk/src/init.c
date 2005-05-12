@@ -8,7 +8,7 @@ int MPI_Init(int * c, char *** v)
 {
     int ret;
 
-    fprintf( stdout, "Starting MPI Collective Error Checking!\n" );
+    fprintf( stdout, "Starting MPI Collective and Datatype Checking!\n" );
     /* make the call */
     ret = PMPI_Init(c, v);
 

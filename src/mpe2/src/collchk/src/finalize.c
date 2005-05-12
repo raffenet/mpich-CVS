@@ -7,6 +7,6 @@
 
 int MPI_Finalize( void )
 {
-    fprintf( stdout, "Done with MPI Collective checking!\n" );
+    fprintf( stdout, "Done with MPI Collective and Datatype Checking!\n" );
     return PMPI_Finalize();
 }
