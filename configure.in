@@ -950,8 +950,8 @@ if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
 	    FFLAGS=$saveFFLAGS
 	fi
         PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
-    elif test $pac_cv_prog_f90_works = no; then
-        AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compielr])
+    elif test "$pac_cv_prog_f90_works" = no; then
+        AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
     fi
 fi
 if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
