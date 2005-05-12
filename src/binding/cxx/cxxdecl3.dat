@@ -230,22 +230,22 @@ dtype-Pack void (in:const, , , , , in:refint ,in:constref:Comm ) const
 # arguments to the C routine.
 #dtype-Unpack void (in:const, ,in:refint , , , ,in:constref:Comm ) const
 dtype-Pack_size int (, ,in:constref:Comm ,return) const
-intra-Barrier void () const
-intra-Bcast void (, ,in:constref:Datatype , ,) const
-intra-Gather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
-intra-Gatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype , ) const
-intra-Scatter void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
-intra-Scatterv void (in:const ,in:const ,in:const ,in:constref:Datatype , , ,in:constref:Datatype , ) const
-intra-Allgather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype ) const
-intra-Allgatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype ) const
-intra-Alltoall void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype ) const
-intra-Alltoallv void (in:const ,in:const ,in:const ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype ) const
-intra-Reduce void (in:const , , ,in:constref:Datatype ,in:constref:Op , ) const
+#intra-Barrier void () const
+#intra-Bcast void (, ,in:constref:Datatype , ,) const
+#intra-Gather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
+#intra-Gatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype , ) const
+#intra-Scatter void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
+#intra-Scatterv void (in:const ,in:const ,in:const ,in:constref:Datatype , , ,in:constref:Datatype , ) const
+#intra-Allgather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype ) const
+#intra-Allgatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype ) const
+#intra-Alltoall void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype ) const
+#intra-Alltoallv void (in:const ,in:const ,in:const ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype ) const
+#intra-Reduce void (in:const , , ,in:constref:Datatype ,in:constref:Op , ) const
 # op-Init requires special handling
 #op-Init void (,User_function* function ,in:bool )
 op-Free void ()
-intra-Allreduce void (in:const , , ,in:constref:Datatype ,in:constref:Op ) const
-intra-Reduce_scatter void (in:const , , ,in:constref:Datatype ,in:constref:Op ) const
+#intra-Allreduce void (in:const , , ,in:constref:Datatype ,in:constref:Op ) const
+#intra-Reduce_scatter void (in:const , , ,in:constref:Datatype ,in:constref:Op ) const
 intra-Scan void (in:const , , ,in:constref:Datatype ,in:constref:Op ) const
 group-Get_size int (,return) const
 group-Get_rank int (,return) const
