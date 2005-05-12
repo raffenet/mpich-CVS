@@ -116,7 +116,14 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	int attr_idx = comm_keyval & 0x0000000f;
 	void **attr_val_p = (void **)attribute_val;
 #ifdef HAVE_FORTRAN_BINDING
-	MPI_Fint  *attr_int = (MPI_Fint *)attribute_val;
+	/* This is an address-sized int instead of a Fortran (MPI_Fint)
+	   integer because, even for the Fortran keyvals, the C interface is 
+	   used which stores the result in a pointer (hence we need a
+	   pointer-sized int).  Thus we use MPI_Aint instead of MPI_Fint.
+	   On some 64-bit plaforms, such as Solaris-SPARC, using an MPI_Fint
+	   will cause the value to placed into the high, rather than low,
+	   end of the output value. */
+	MPI_Aint  *attr_int = (MPI_Aint *)attribute_val;
 #endif
 	*flag = 1;
 
