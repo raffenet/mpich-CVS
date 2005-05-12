@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.2.0. January, 2005
+                          Version 2.2.0. May, 2005
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -18,7 +18,7 @@ The first set of tools to be used with user MPI programs is profiling libraries
 which provide a collection of routines that create log files.  These log files
 can be created manually by inserting MPE calls in the MPI program, or 
 automatically by linking with the appropriate MPE libraries, or by combining 
-the above two methods.  Currently, the MPE offers the following 3 profiling 
+the above two methods.  Currently, the MPE offers the following 4 profiling 
 libraries.
 
    1) Tracing Library - Traces all MPI calls.  Each MPI call is preceded by a 
@@ -42,6 +42,10 @@ libraries.
       original SLOG format.  SLOG-2 allows for much improved scalability for 
       visualization purpose.  CLOG2 file can be easily converted to 
       SLOG-2 file through the new SLOG-2 viewer, Jumpshot-4.
+
+   4) Collective and datatype checking library - An argument consistency 
+      checking library for MPI collective calls.  It checks for datatype, root,
+      and various argument consistency in MPI collective calls.
 
 The set of utility programs in MPE includes log format converter (e.g. 
 clogTOslog2), logfile print (e.g. slog2print) and logfile viewer and
@@ -78,14 +82,17 @@ IV.  EXAMPLE PROGRAMS
 As previously noted, the MPE library is composed of 3 different profiling
 libraries.  During configure, the compiler's library linkage flags and 
 appropriate libraries are determined.  These variables are first substituted
-in the Makefiles in the directories, mpe2/src/wrappers/test and
-mpe2/src/graphics/contrib/test.  The Makefiles are then installed into 
-directory share/ as examples_logging/ and examples_graphics/ during the 
+in the Makefiles in the directories, mpe2/src/wrappers/test,
+mpe2/src/graphics/contrib/test and mpe2/src/collchk/test.  The Makefiles for
+mpe2/src/wrappers/test and mpe2/src/graphics/contrib/test are then installed
+into directory share/ as examples_logging/ and examples_graphics/ during the 
 final installation process.  The following are some of the crucial variables:
 
-LOG_LIBS   = compiler's library flag needed to link with the logging library
-TRACE_LIBS = compiler's library flag needed to link with the tracing library
-ANIM_LIBS  = compiler's library flag needed to link with the animation library
+LOG_LIBS     = library flag that links with the logging libraries
+TRACE_LIBS   = library flag that links with the tracing library
+ANIM_LIBS    = library flag that links with the animation library
+COLLCHK_LIBS = library flag that links with the collective and datatype
+               checking library
 
 The variable FLIB_PATH is the compiler's library path needed to link fortran 
 MPI programs with the logging library.
@@ -300,6 +307,11 @@ logconvertor : a standalone GUI based convertor that invokes clog2TOslog2
                shows the progress of the conversion.  The same convertor
                can be invoked from within the logfile viewer, jumpshot.
 
+slog2filter : a SLOG-2 to SLOG-2 logfile convertor.  It allows for removal
+              unwanted categories (when used with slog2print -c).  It also
+              allows for changing of the SLOG-2 internal structure, e.g.
+              modify the duration of preview drawable.
+
 
 Log Format Print Programs
 -------------------------
@@ -318,6 +330,32 @@ Log File Display Program
 jumpshot : the Jumpshot-4 launcher script.  Jumpshot-4 does logfile
            conversion as well as visualization.
 
+To view a logfile, say fpilog.slog2, do
+
+jumpshot fpilog.slog2
+
+The command will select and invoke Jumpshot-4 to display the content
+of SLOG-2 file if Jumpshot-4 has been built and installed successfully.
+
+One can also do
+
+jumpshot fpilog.clog2
+
+or
+
+jumpshot barrier.rlog
+
+Both will invoke the logfile convertor first before visualization.
+
+
+Collective and Datatype Checking
+--------------------------------
+
+Linking an MPI application with the collective and datatype checking library
+as follows
+
+mpicc -o mpi_pgm *.o -L<mpe2_libdir> -lmpe_collchk.
+
 
 
 
@@ -334,8 +372,8 @@ the differences of using MPE with MPICH and with other MPI implementations.
 
 VII. a) Compilation and Linkage
 -------------------------------
-MPICH provides scripts to help users to compile and link C/C++ and
-F77/F90 programs.  They are mpicc for C programs, mpiCC for C++ programs,
+MPICH (not MPICH2) provides scripts to help users to compile and link C/C++ 
+and F77/F90 programs.  They are mpicc for C programs, mpiCC for C++ programs,
 mpif77 for F77 and mpif90 for F90 programs.  In addition, these 4 scripts
 allows special options to be used to link with MPE profiling libraries.
 These options are :
@@ -349,8 +387,9 @@ generates logfile when it is executed.
 
 mpif77 -mpilog -o fpilog fpilog.f 
 
-For other MPI implementations, user needs to compile and link their application
-with MPE profiling libraries explicitly as shown in the example makefile.
+For other MPI implementations(including MPICH2), user needs to compile and
+link their application with MPE profiling libraries explicitly as shown in
+the example makefile.
 
 
 
@@ -393,20 +432,5 @@ VII. c) Viewing Logfiles
 ------------------------
 MPE's install directory structure is the same as MPICH's and MPICH-2's.
 So all MPE's utility programs will be located in the bin/ directory of 
-MPICH and MPICH-2.  To view a logfile, say fpilog.slog2, do
-
-jumpshot fpilog.slog2
-
-The command will select and invoke Jumpshot-4 to display the content
-of SLOG-2 file if Jumpshot-4 has been built and installed successfully.
-
-One can also do
-
-jumpshot fpilog.clog2
-
-or
-
-jumpshot barrier.rlog
-
-Both will invoke the logfile convertor first before visualization.
+MPICH and MPICH-2.
 
