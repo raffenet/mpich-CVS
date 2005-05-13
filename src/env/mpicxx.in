@@ -168,7 +168,7 @@ if [ "$MPICXXLIBNAME" != "$MPILIBNAME" ] ; then
 fi
 #
 # Concatenate the user flags with the ones needed by MPI
-CXXFLAGS="$CFLAGS $MPI_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $MPI_CXXFLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 #
 # A temporary statement to invoke the compiler
