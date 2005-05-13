@@ -109,8 +109,14 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 		fhandle = (MPI_Fint) (handle);
 		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
 		/* The following cast can lose data on systems whose
-		   pointers are longer than integers */
-		fvalue  = (MPI_Fint) (attr_p->value);
+		   pointers are longer than integers.
+		   We do this in two steps to keep compilers happy.
+		   Note that the casts are consistent with the 
+		   way in which the Fortran attributes are used (they
+                   are MPI_Fint values, and we assume 
+		   sizeof(MPI_Fint) <= sizeof(MPI_Aint).  
+		   See also src/binding/f77/attr_getf.c . */
+		fvalue  = (MPI_Fint) (MPI_Aint)(attr_p->value);
 		fextra  = (MPI_Fint*) (attr_p->keyval->extra_state);
 		delfn.F77_DeleteFunction( &fhandle, &fkeyval, &fvalue, 
 					  fextra, &ierr );
@@ -230,13 +236,13 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
 		    /* The following cast can lose data on systems whose
 		       pointers are longer than integers */
-		    fvalue  = (MPI_Fint) (p->value);
+		    fvalue  = (MPI_Fint) (MPI_Aint)(p->value);
 		    fextra  = (MPI_Fint*) (p->keyval->extra_state );
 		    copyfn.F77_CopyFunction( &fhandle, &fkeyval, fextra,
 					     &fvalue, &fnew, &fflag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag      = fflag;
-		    new_value = (void *)fnew;
+		    new_value = (void *)(MPI_Aint)fnew;
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != 0)
 		    {
