@@ -38,6 +38,13 @@ int MPIDI_CH3_Finalize()
 					 MPI_ERR_OTHER, "**ch3|sock|pmi_finalize", "**ch3|sock|pmi_finalize %d", rc);
     }
 
+    mpi_errno = MPIDI_PG_Finalize();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+					 MPI_ERR_OTHER, "**ch3|sock|pg_finalize", 0);
+    }
+
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
 }

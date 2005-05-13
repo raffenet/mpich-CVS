@@ -163,22 +163,22 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete"));
 		}
 	    }
+	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_writev failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
-		/* --BEGIN ERROR HANDLING-- */
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		    goto fn_exit;
 		}
-		/* --END ERROR HANDLING-- */
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
 		/* TODO: Create an appropriate error message based on the return value */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{
@@ -226,23 +226,23 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	/* --END ERROR HANDLING-- */
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	/* Connection failed, so allocate a request and return an error. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed"));
 	sreq = MPIDI_CH3_Request_create();
-	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
-	/* --END ERROR HANDLING-- */
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
 	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
     }
+    /* --END ERROR HANDLING-- */
 
   fn_exit:
     *sreq_ptr = sreq;

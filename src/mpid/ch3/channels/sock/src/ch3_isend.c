@@ -113,6 +113,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 		    /* --END ERROR HANDLING-- */
 		}
 	    }
+	    /* --BEGIN ERROR HANDLING-- */
 	    else if (MPIR_ERR_GET_CLASS(rc) == MPIDU_SOCK_ERR_NOMEM)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_write failed, out of memory"));
@@ -128,6 +129,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 		 /* MT -CH3U_Request_complete() performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{
@@ -157,6 +159,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
+    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	/* Connection failed.  Mark the request complete and return an error. */
@@ -165,7 +168,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 	/* MT - CH3U_Request_complete() performs write barrier */
 	MPIDI_CH3U_Request_complete(sreq);
     }
-    
+    /* --END ERROR HANDLING-- */
+
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return mpi_errno;

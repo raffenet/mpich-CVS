@@ -1651,6 +1651,7 @@ static inline int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_ALLOC);
     return mpi_errno;
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_fail:
     if (conn != NULL)
     {
@@ -1663,6 +1664,7 @@ static inline int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
     }
 
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 
