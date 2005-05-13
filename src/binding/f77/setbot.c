@@ -18,6 +18,11 @@
 #define mpirinitc_ mpirinitc
 #define mpirinitc2_ mpirinitc2
 #endif
+/* These functions are called from Fortran so only need prototypes in 
+   this file */
+FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *, void *, void *, void *, 
+                                         void *, void * );
+FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char * );
 
 #ifndef F77_USE_BOOLEAN_LITERALS
 #if defined(F77_RUNTIME_VALUES) || !defined(F77_TRUE_VALUE_SET)
