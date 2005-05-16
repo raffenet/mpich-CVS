@@ -160,8 +160,10 @@ int MPIE_IOLoop( int timeoutSeconds )
 	    /* We allow errno == 0 as a synonym for EINTR.  We've seen this
 	       on Solaris; in addition, we set errno to 0 after a failed 
 	       waitpid in the process routines, and if the OS isn't careful,
-	       the value of errno may get 0 instead of EINTR when the
-	       signal handler returns (we suspect Linux of this problem) */
+	       the value of errno may get ECHILD instead of EINTR when the
+	       signal handler returns (we suspect Linux of this problem),
+	       which is why we have the signal handler in process.c reset 
+	       errno to 0 (we may need to allow ECHILD here (!)) */
 	    continue;
 	}
 	if (nfds < 0) {
