@@ -467,6 +467,10 @@ static void handle_sigchild( int sig )
 	       do not find a child */
 	    DBG_EPRINTFCOND(MPIE_Debug && !foundChild,
 			    (stderr, "Did not find child process!\n") );
+	    /* We need to reset errno since otherwise a system call being
+	       used in the main thread might see this errno and 
+	       mistakenly decide that it suffered an error */
+	    errno = 0;
 	    break;
 	}
 	foundChild = 1;

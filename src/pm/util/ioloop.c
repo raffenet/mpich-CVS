@@ -155,8 +155,13 @@ int MPIE_IOLoop( int timeoutSeconds )
 	}
 	if (maxfd < 0) break;
 	MPIE_SYSCALL(nfds,select,( maxfd + 1, &readfds, &writefds, 0, &tv ));
-	if (nfds < 0 && errno == EINTR) {
+	if (nfds < 0 && errno == EINTR || errno == 0) {
 	    /* Continuing through EINTR */
+	    /* We allow errno == 0 as a synonym for EINTR.  We've seen this
+	       on Solaris; in addition, we set errno to 0 after a failed 
+	       waitpid in the process routines, and if the OS isn't careful,
+	       the value of errno may get 0 instead of EINTR when the
+	       signal handler returns (we suspect Linux of this problem) */
 	    continue;
 	}
 	if (nfds < 0) {
