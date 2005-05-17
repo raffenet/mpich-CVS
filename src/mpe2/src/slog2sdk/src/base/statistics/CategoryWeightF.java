@@ -10,111 +10,99 @@
 package base.statistics;
 
 import java.util.Comparator;
-import java.io.DataInput;
-import java.io.DataOutput;
 
 import base.drawable.Category;
-import base.drawable.CategoryRatios;
 import base.drawable.CategoryWeight;
 
-public class CategoryWeightF extends CategoryRatios
+/*
+   CategoryWeightF extends CategorySummaryF which extends CategoryRatios
+*/
+public class CategoryWeightF extends CategorySummaryF
 {
-    public  static final int         BYTESIZE          = CategoryRatios.BYTESIZE
-                                                       + 8; // num_real_objs
+    public  static final int         BYTESIZE        = CategorySummaryF.BYTESIZE
+                                                     + 4;  // type_idx
 
-    public  static final Comparator  COUNT_ORDER       = new CountOrder();
+    public  static final Comparator  INDEX_ORDER     = new IndexOrder();
 
-    private double     num_real_objs;
+    private static final int INVALID_INDEX = Integer.MIN_VALUE;
+
+    private int        type_idx;
+    private Category   type;
 
     public CategoryWeightF()
     {
         super();
-        num_real_objs  = 0.0;
+        type           = null;
+        type_idx       = INVALID_INDEX;
     }
 
-    // For Jumpshot
+    // For SLOG-2 Output
     public CategoryWeightF( final Category new_type,
                             float new_incl_r, float new_excl_r,
                             double new_num_real_objs )
     {
-        super( new_type, new_incl_r, new_excl_r );
-        num_real_objs  = new_num_real_objs;
+        super( new_incl_r, new_excl_r, new_num_real_objs );
+        type           = new_type;
+        type_idx       = type.getIndex();
     }
 
-    // For Jumpshot
+    // For SLOG-2 Output
     public CategoryWeightF( final CategoryWeightF type_wgf )
     {
         super( type_wgf );
-        this.num_real_objs  = type_wgf.num_real_objs;
+        this.type           = type_wgf.type;
+        this.type_idx       = type_wgf.type_idx;
     }
 
     // For Jumpshot, copy construct,  CategoryWeight -> CategoryWeightF.
     public CategoryWeightF( final CategoryWeight type_wgt )
     {
         super( type_wgt );
-        this.num_real_objs  = (double) type_wgt.getDrawableCount();
+        this.type           = type_wgt.getCategory();
+        this.type_idx       = this.type.getIndex();
     }
 
-    public double getDrawableCount()
+    public Category getCategory()
     {
-        return num_real_objs;
-    }
-
-    public void addDrawableCount( double new_num_real_objs )
-    {
-        this.num_real_objs  += new_num_real_objs;
-    }
-
-    // For Jumpshot's TimeAveBox, i.e. statistics window
-    public void rescaleDrawableCount( double ftr )
-    {
-        this.num_real_objs  *= ftr;
-    }
-
-    public void writeObject( DataOutput outs )
-    throws java.io.IOException
-    {
-        super.writeObject( outs );
-        outs.writeDouble( num_real_objs );
-    }
-
-    public CategoryWeightF( DataInput ins )
-    throws java.io.IOException
-    {
-        super();
-        this.readObject( ins );
-    }
-
-    public void readObject( DataInput ins )
-    throws java.io.IOException
-    {
-        super.readObject( ins );
-        num_real_objs  = ins.readDouble();
+        return type;
     }
 
     // For InfoPanelForDrawable
     public String toInfoBoxString( int print_status )
     {
-        return super.toInfoBoxString( print_status )
-             + ", count=" + (float) num_real_objs;
+        StringBuffer rep = new StringBuffer( "legend=" );
+        if ( type != null )
+            rep.append( "legend=" + type.getName() );
+        else
+            rep.append( "legend=" + "null:" + type_idx );
+        rep.append( ", " );
+        rep.append( super.toInfoBoxString( print_status ) );
+        
+        return rep.toString();
     }
 
     public String toString()
     {
-        return "(" + super.toString()
-             + ", count=" + (float) num_real_objs + ")";
+        StringBuffer rep = new StringBuffer( "(type=" + type_idx );
+        if ( type != null )
+            rep.append( ":" + type.getName() );
+        else
+            rep.append( ", " );
+        rep.append( super.toString() );
+        rep.append( ")" );
+
+        return rep.toString();
     }
 
 
 
-    private static class CountOrder implements Comparator
+    private static class IndexOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {
             CategoryWeightF type_wgf1 = (CategoryWeightF) o1;
             CategoryWeightF type_wgf2 = (CategoryWeightF) o2;
-            double diff = type_wgf1.num_real_objs - type_wgf2.num_real_objs;
-            return ( diff < 0.0 ? -1 : ( diff == 0.0 ? 0 : 1 ) );
+            return type_wgf1.type_idx - type_wgf2.type_idx;
         }
     }
 }
