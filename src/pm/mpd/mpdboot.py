@@ -380,7 +380,7 @@ def mpdboot():
                 if line.find('RC=MPDBOOT_ERREXIT') >= 0:
                     err_exit('RC=MPDBOOT_ERREXIT')
                 else:
-		    if lfd_first_line:
+		    if not verbosity  and  lfd_first_line:
 		        lfd_first_line = 0
 			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (lchild,hostsAndInfo[lchild]))
                     print '  ', line, ; stdout.flush()
@@ -393,7 +393,7 @@ def mpdboot():
                 if line.find('RC=MPDBOOT_ERREXIT') >= 0:
                     err_exit('RC=MPDBOOT_ERREXIT')
                 else:
-		    if rfd_first_line:
+		    if not verbosity  and  rfd_first_line:
 		        rfd_first_line = 0
 			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (rchild,hostsAndInfo[rchild]))
                     print '  ', line, ; stdout.flush()
