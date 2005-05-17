@@ -48,7 +48,8 @@ static jmethodID  mid4NewCmplx     = NULL;
  *      a Java long is a 64 bit entity by definition,
  *      a C pointer may be 32 or 64 bits.
  */
-void *Jlong2Cptr(jlong a_jlong)
+static void *Jlong2Cptr(jlong a_jlong);
+static void *Jlong2Cptr(jlong a_jlong)
 {
 #if SIZEOF_INT == SIZEOF_VOIDP
     unsigned int tmp = (unsigned int) a_jlong;
@@ -64,7 +65,8 @@ void *Jlong2Cptr(jlong a_jlong)
     return (void *) tmp;
 }
 
-jlong Cptr2Jlong(void *a_ptr)
+static jlong Cptr2Jlong(void *a_ptr);
+static jlong Cptr2Jlong(void *a_ptr)
 {
 #if SIZEOF_INT == SIZEOF_VOIDP
     unsigned int tmp = (unsigned int) a_ptr;
@@ -225,7 +227,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
 {
     TRACE_file              tracefile;
     jlong                   filehandle;
-    int                     n_label, n_legend, n_method;
+    /* int                     n_label, n_legend, n_method; */
     TRACE_Category_head_t   type_head;
     int                     legend_sz, legend_pos, legend_max;
     char                   *legend_base; 
@@ -260,6 +262,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     }
 
     legend_pos  = 0;
+    legend_max  = 0;
     if ( legend_sz > 0 ) {
         legend_max  = legend_sz+1;
         legend_base = (char *) malloc( legend_max * sizeof( char ) );
@@ -268,6 +271,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
         legend_base = NULL;
 
     label_pos   = 0;
+    label_max   = 0;
     if ( label_sz > 0 ) {
         label_max   = label_sz+1;
         label_base  = (char *) malloc( label_max * sizeof( char ) );
@@ -275,7 +279,8 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     else
         label_base  = NULL;
 
-   	methods_pos  = 0;
+    methods_pos  = 0;
+    methods_max  = 0;
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
         methods_base = (int *)  malloc( methods_max * sizeof( int ) );
@@ -378,7 +383,7 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     jobjectArray            jcolnames;
     jobject                 ycoordmap;
 
-    int                     irow, icol, idx;
+    int                     icol;
     int                     ierr;
 
     filehandle = (*env)->GetLongField( env, this, fid4filehandle );
@@ -415,6 +420,7 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     coordmap_pos  = 0;
 
     methods_pos  = 0;
+    methods_max  = 0;
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
         methods_base = (int *) malloc( methods_max * sizeof( int ) );
@@ -668,14 +674,13 @@ Java_logformat_trace_InputLog_getNextComposite( JNIEnv *env, jobject this )
     if ( n_primitives <= 0 )
         return NULL;
 
-    j_cm_infos = NULL;
+    j_cm_infos     = NULL;
+    cm_info_base   = NULL;
     if ( cm_info_sz >= 0 ) {
         cm_info_pos    = 0;
         cm_info_max    = cm_info_sz;
         if ( cm_info_max > 0 )
             cm_info_base   = (char *)   malloc( cm_info_max * sizeof( char ) );
-        else
-            cm_info_base   = NULL;
         ierr = TRACE_Get_next_composite( tracefile, &cmplx_type_idx,
                                          &cm_info_sz, cm_info_base,
                                          &cm_info_pos, cm_info_max );

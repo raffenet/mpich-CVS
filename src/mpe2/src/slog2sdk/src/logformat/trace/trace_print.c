@@ -27,7 +27,7 @@
 #define MAX_INFO_LEN      128
 #define MAX_METHODS       10
 
-main( int argc, char **argv )
+int main( int argc, char **argv )
 {
     TRACE_file               tf;
     TRACE_Rec_Kind_t         next_kind;
@@ -128,9 +128,9 @@ main( int argc, char **argv )
                 }
             }
             obj_no++;
-            printf( "%d : Composite: index=%d times=(%lf, %lf) Nprimes=%d ",
-                    obj_no, cmplx_type_idx, cmplx_stime, cmplx_etime,
-                    num_primes );
+            printf( "%ld : Composite: index=%d times=(%lf, %lf) ",
+                    obj_no, cmplx_type_idx, cmplx_stime, cmplx_etime );
+            printf( "Nprimes=%d ", num_primes );
             printf( "info_sz=%d\n", cmplx_info_sz );
 
             for ( idx2prime = 0; idx2prime < num_primes; idx2prime++ ) {
@@ -200,7 +200,7 @@ main( int argc, char **argv )
                 exit( 1 );
             }
             obj_no++;
-            printf( "%d : Primitive: index=%d times=(%lf, %lf) ",
+            printf( "%ld : Primitive: index=%d times=(%lf, %lf) ",
                     obj_no, type_idx, stime, etime );
             for ( idx = 0; idx < tcoord_sz; idx++ )
                  printf( "(%lf, %d) ", tcoord_base[idx], ycoord_base[idx] );
@@ -337,4 +337,6 @@ main( int argc, char **argv )
         fflush( stderr );
         exit( 1 );
     }
+
+    return 0;
 }

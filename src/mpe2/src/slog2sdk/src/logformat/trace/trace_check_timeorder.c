@@ -32,7 +32,7 @@ typedef enum { TRACE_true=1,
                TRACE_false=0 }
 TRACE_boolean_t;
 
-main( int argc, char **argv )
+int main( int argc, char **argv )
 {
     TRACE_file               tf;
     TRACE_Rec_Kind_t         next_kind;
@@ -143,7 +143,7 @@ main( int argc, char **argv )
 
             obj_no++;
             rec_sz = sprintf( offending_rec,
-                              "%d : Composite: index=%d times=(%lf, %lf) ",
+                              "%ld : Composite: index=%d times=(%lf, %lf) ",
                               obj_no, cmplx_type_idx,
                               cmplx_stime, cmplx_etime );
             rec_sz += sprintf( &(offending_rec[ rec_sz ]),
@@ -275,7 +275,7 @@ main( int argc, char **argv )
 
             obj_no++;
             rec_sz = sprintf( offending_rec,
-                              "%d : Primitive: index=%d times=(%lf, %lf) ",
+                              "%ld : Primitive: index=%d times=(%lf, %lf) ",
                               obj_no, type_idx, stime, etime );
             for ( idx = 0; idx < tcoord_sz; idx++ )
                 rec_sz += sprintf( &(offending_rec[ rec_sz ]),
@@ -453,11 +453,16 @@ main( int argc, char **argv )
         fflush( stderr );
         exit( 1 );
     }
+
+    return 0;
 }
 
 
-TRACE_boolean_t IsIncreasingEndTimes( double *prev_dobj_etime,
-                                      double *curr_dobj_etime )
+/*
+static TRACE_boolean_t IsIncreasingEndTimes( double *prev_dobj_etime,
+                                             double *curr_dobj_etime );
+static TRACE_boolean_t IsIncreasingEndTimes( double *prev_dobj_etime,
+                                             double *curr_dobj_etime )
 {
     if ( *prev_dobj_etime > *curr_dobj_etime ) {
         printf( "**** Violation of Increasing Endtime Order ****\n" );
@@ -468,3 +473,4 @@ TRACE_boolean_t IsIncreasingEndTimes( double *prev_dobj_etime,
     *prev_dobj_etime = *curr_dobj_etime;
     return TRACE_true;
 }
+*/
