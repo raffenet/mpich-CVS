@@ -24,6 +24,9 @@
 
 void bswp_byteswap( const int    Nelem,
                     const int    elem_sz,
+                          char  *bytes );
+void bswp_byteswap( const int    Nelem,
+                    const int    elem_sz,
                           char  *bytes )
 {
     char *bptr;
@@ -105,6 +108,7 @@ typedef struct _trace_file {
 #define  MAX_LEGEND_LEN  128
 #define  MAX_LABEL_LEN   512
 
+DRAW_YCoordMap *YCoordMap_alloc( int Nrows, int Ncols, int Nmethods );
 DRAW_YCoordMap *YCoordMap_alloc( int Nrows, int Ncols, int Nmethods )
 {
     DRAW_YCoordMap   *map;
@@ -126,6 +130,7 @@ DRAW_YCoordMap *YCoordMap_alloc( int Nrows, int Ncols, int Nmethods )
     return map;
 }
 
+void YCoordMap_free( DRAW_YCoordMap *map );
 void YCoordMap_free( DRAW_YCoordMap *map )
 {
     if ( map != NULL ) {
@@ -142,6 +147,7 @@ void YCoordMap_free( DRAW_YCoordMap *map )
 }
 
 /* legend_len & label_len are lengths of the string withOUT counting NULL */
+DRAW_Category *Category_alloc( int legend_len, int label_len, int Nmethods );
 DRAW_Category *Category_alloc( int legend_len, int label_len, int Nmethods )
 {
     DRAW_Category    *type;
@@ -168,6 +174,7 @@ DRAW_Category *Category_alloc( int legend_len, int label_len, int Nmethods )
     return type;
 }
 
+void Category_free( DRAW_Category *type );
 void Category_free( DRAW_Category *type )
 {
     if ( type != NULL ) {
@@ -192,6 +199,8 @@ void Category_free( DRAW_Category *type )
 }
 
 void Category_head_copy(       TRACE_Category_head_t *hdr_copy,
+                         const TRACE_Category_head_t *hdr_copier );
+void Category_head_copy(       TRACE_Category_head_t *hdr_copy,
                          const TRACE_Category_head_t *hdr_copier )
 {
     if ( hdr_copy != NULL && hdr_copier != NULL ) {
@@ -205,6 +214,7 @@ void Category_head_copy(       TRACE_Category_head_t *hdr_copy,
     }
 }
 
+DRAW_Primitive *Primitive_alloc( int num_vtxs );
 DRAW_Primitive *Primitive_alloc( int num_vtxs )
 {
     DRAW_Primitive    *prime;
@@ -219,6 +229,7 @@ DRAW_Primitive *Primitive_alloc( int num_vtxs )
     return prime;
 }
 
+void Primitive_free( DRAW_Primitive *prime );
 void Primitive_free( DRAW_Primitive *prime )
 {
     if ( prime != NULL ) {
@@ -241,6 +252,7 @@ void Primitive_free( DRAW_Primitive *prime )
     }
 }
 
+DRAW_Composite *Composite_alloc( int Nprimes );
 DRAW_Composite *Composite_alloc( int Nprimes )
 {
     DRAW_Composite    *cmplx;
@@ -273,6 +285,7 @@ int Composite_setPrimitiveAt( DRAW_Composite *cmplx,
 }
 */
 
+void Composite_free( DRAW_Composite *cmplx );
 void Composite_free( DRAW_Composite *cmplx )
 {
     int idx;
@@ -475,7 +488,6 @@ int TRACE_Peek_next_category( const TRACE_file fp,
     char            typename[10];
     int             type_idx;
     int             line_pos;
-    int             lgd_pos, lbl_pos;
     char           *newline;
     char           *info_A, *info_B;
 
@@ -786,7 +798,7 @@ int TRACE_Get_next_ycoordmap( TRACE_file fp,
                               int *method_pos, const int method_max )
 {
     DRAW_YCoordMap  *ymap;
-    int              irow, icol, idx;
+    int              icol;
 
     if ( fp->ymap == NULL ) {
         fprintf( stderr, "TRACE_Get_next_ycoordmap(): Cannot locate "
