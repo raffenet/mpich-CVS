@@ -220,6 +220,8 @@ extern char *strdup( const char * );
 
 #define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
 
+#define MPIU_Realloc(a,b)    MPIU_trrealloc((a),(b),__LINE__,__FILE__)
+
 /* Define these as invalid C to catch their use in the code */
 #define malloc(a)         'Error use MPIU_Malloc'
 #define calloc(a,b)       'Error use MPIU_Calloc'
@@ -257,6 +259,7 @@ void MPIU_trdumpGrouped ( FILE *, int );
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))
+#define MPIU_Realloc(a,b)  realloc((a),(b))
 #ifdef HAVE_STRDUP
 /* Watch for the case where strdup is defined as a macro by a header include */
 # if defined(NEEDS_STRDUP_DECL) && !defined(strdup)
