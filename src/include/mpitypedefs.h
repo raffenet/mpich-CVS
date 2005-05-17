@@ -106,7 +106,7 @@ typedef MPIU_SIZE_T MPIU_Size_t;
 #ifdef HAVE_AINTTOPTR
 #define MPIU_AintToPtr AintToPtr
 #else
-#define MPIU_AintToPtr(a) (MPI_Aint*)(a)
+#define MPIU_AintToPtr(a) (void*)(a)
 #endif
 /* ------------------------------------------------------------------------- */
 /* end of mpitypedefs.h */
