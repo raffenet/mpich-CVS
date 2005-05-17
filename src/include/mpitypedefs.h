@@ -84,6 +84,12 @@ typedef MPIU_SIZE_T MPIU_Size_t;
 #else
 #define MPIU_PtrToInt(a) (int)(a)
 #endif
+/* PtrToAint converts a pointer to an MPI_Aint type, truncating bits if necessary */
+#ifdef HAVE_PTRTOAINT
+#define MPIU_PtrToAint PtrToAint
+#else
+#define MPIU_PtrToAint(a) (MPI_Aint)(a)
+#endif
 /* LongToPtr converts a long to a pointer type, extending bits if necessary */
 #ifdef HAVE_LONGTOPTR
 #define MPIU_LongToPtr LongToPtr
@@ -96,7 +102,12 @@ typedef MPIU_SIZE_T MPIU_Size_t;
 #else
 #define MPIU_IntToPtr(a) (void*)(a)
 #endif
-
+/* AintToPtr converts an MPI_Aint to a pointer type, extending bits if necessary */
+#ifdef HAVE_AINTTOPTR
+#define MPIU_AintToPtr AintToPtr
+#else
+#define MPIU_AintToPtr(a) (MPI_Aint*)(a)
+#endif
 /* ------------------------------------------------------------------------- */
 /* end of mpitypedefs.h */
 /* ------------------------------------------------------------------------- */
