@@ -1041,8 +1041,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         type_size = MPID_Datatype_get_basic_size(type);
                         for (i=0; i<vec_len; i++) {
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                            (*uop)((char *)tmp_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                            (char *)win_buf_addr + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                            (*uop)((char *)tmp_buf + MPIU_PtrToAint( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                            (char *)win_buf_addr + MPIU_PtrToAint( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                  &count, &type);
                         }
 
