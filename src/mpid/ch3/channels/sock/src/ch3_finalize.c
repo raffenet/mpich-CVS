@@ -6,6 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
+#include "mpidu_sock.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Finalize
@@ -44,6 +45,8 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 					 MPI_ERR_OTHER, "**ch3|sock|pg_finalize", 0);
     }
+
+    MPIDU_Socki_free_eventq_mem();
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
