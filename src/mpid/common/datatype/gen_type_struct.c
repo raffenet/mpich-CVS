@@ -74,8 +74,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
     /* variables used in general case only */
     int loop_idx, new_loop_sz, new_loop_depth;
     int old_loop_sz = 0, old_loop_depth = 0;
-    char *curpos;
-    DLOOP_Dataloop *new_dlp;
+    DLOOP_Dataloop *new_dlp, *curpos;
 
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
@@ -279,7 +278,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
     PREPEND_PREFIX(Dataloop_struct_alloc)(nr_basics + nr_derived,
 					  old_loop_sz,
 					  nr_basics,
-					  (MPID_Dataloop **) &curpos,
+					  &curpos,
 					  &new_dlp,
 					  &new_loop_sz);
     /* --BEGIN ERROR HANDLING-- */
@@ -343,9 +342,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	     * region
 	     */
 	    PREPEND_PREFIX(Dataloop_copy)(curpos, dummy_dlp, dummy_sz);
-	    new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
-		(DLOOP_Dataloop *) curpos;
-	    curpos += dummy_sz;
+	    new_dlp->loop_params.s_t.dataloop_array[loop_idx] = curpos;
+	    curpos = (DLOOP_Dataloop *) ((char *) curpos + dummy_sz);
 
 	    /* we stored the block size in the contig -- use 1 here */
 	    new_dlp->loop_params.s_t.blocksize_array[loop_idx] = 1;
@@ -364,9 +362,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	    DLOOP_Handle_get_extent_macro(oldtypes[i], old_extent);
 
 	    PREPEND_PREFIX(Dataloop_copy)(curpos, old_loop_ptr, old_loop_sz);
-	    new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
-		(DLOOP_Dataloop *) curpos;
-	    curpos += old_loop_sz;
+	    new_dlp->loop_params.s_t.dataloop_array[loop_idx] = curpos;
+	    curpos = (DLOOP_Dataloop *) ((char *) curpos + old_loop_sz);
 
 	    new_dlp->loop_params.s_t.blocksize_array[loop_idx] =
 		blklens[i];
