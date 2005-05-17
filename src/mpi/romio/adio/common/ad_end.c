@@ -8,12 +8,16 @@
 
 #include "adio.h"
 #include "adio_extern.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 void ADIO_End(int *error_code)
 {
     ADIOI_Flatlist_node *curr, *next;
     ADIOI_Malloc_async *tmp;
     ADIOI_Malloc_req *tmp1;
+    ADIOI_Datarep *datarep, *datarep_next;
     static char myname[] = "ADIO_END";
     
 /*    FPRINTF(stderr, "reached end\n"); */
@@ -65,6 +69,20 @@ void ADIO_End(int *error_code)
 #ifndef HAVE_MPI_INFO
     if (MPIR_Infotable) ADIOI_Free(MPIR_Infotable);
 #endif
+
+
+/* free the memory allocated for a new data representation, if any */
+    datarep = ADIOI_Datarep_head;
+    while (datarep) {
+        datarep_next = datarep->next;
+#ifdef MPICH2
+        MPIU_Free(datarep->name);
+#else
+        ADIOI_Free(datarep->name);
+#endif
+        ADIOI_Free(datarep);
+        datarep = datarep_next;
+    }
 
     *error_code = MPI_SUCCESS;
 }
