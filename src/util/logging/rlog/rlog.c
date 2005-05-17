@@ -14,7 +14,6 @@
 
 #include "mpi.h"
 /*#define RLOG_timestamp PMPI_Wtime*/
-#include "timerconf.h"
 #include "mpichtimer.h"
 double RLOG_timestamp()
 {

@@ -132,7 +132,7 @@ dnl AC_CHECK_LIB(thread, mutex_init)
 dnl AC_CHECK_HEADERS(foo.h bar.h)
 dnl AC_CHECK_FUNCS(baz biff)
 
-AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include)
+dnl AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include/rlogconf.h)
 
 dnl Generate the Makefiles from Makefile.in
 
