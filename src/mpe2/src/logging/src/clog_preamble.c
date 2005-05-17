@@ -32,6 +32,10 @@
 #include "mpi.h"
 #endif
 
+#ifdef NEEDS_SNPRINTF_DECL
+extern int snprintf( char *, size_t, const char *, ... );
+#endif
+
 #define ONE_GIGA  1073741824
 
 

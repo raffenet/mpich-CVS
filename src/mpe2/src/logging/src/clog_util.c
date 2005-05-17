@@ -30,6 +30,12 @@
 #include "clog_common.h"
 #include "clog_util.h"
 
+#if defined( HAVE_MKSTEMP )
+#if defined( NEEDS_MKSTEMP_DECL )
+extern int mkstemp(char *t);
+#endif
+#endif
+
 /*
     errorcode - errorcode to be returned to the invoking environment
 */
