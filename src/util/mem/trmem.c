@@ -134,6 +134,25 @@ static long    TRMaxMemId = 0;
 /* Used to limit allocation */
 static long    TRMaxMemAllow = 0;
 
+/*
+ * Printing of addresses.  
+ *
+ * This is particularly difficult because there isn't a C integer type that is
+ * known in advance to be the same size as an address, so we need some
+ * way to convert a pointer into the characters the represent the address in 
+ * hex.  We can't simply use %x or %lx since the size of an address might not
+ * be an int or a long (e.g., it might be a long long).
+ *
+ * In order to handle this, we have our own routine to convert
+ * an address to hex digits.  For thread safety, the character
+ * string is allocated within the calling routine (rather than returning
+ * a static string from the conversion routine).
+ */
+
+/* 8 bytes = 16 hex chars + 0x (2 chars) + the null is 19 */
+#define MAX_ADDRESS_CHARS 19
+static void addrToHex( void *addr, char string[MAX_ADDRESS_CHARS] );
+
 /*+C
    MPIU_trinit - Setup the space package.  Only needed for 
    error messages and flags.
@@ -236,6 +255,7 @@ void MPIU_trfree( void *a_ptr, int line, const char file[] )
     char     *a = (char *)a_ptr;
     unsigned long *nend;
     int      l, nset;
+    char     hexstring[MAX_ADDRESS_CHARS];
 
 /* Don't try to handle empty blocks */
     if (!a) return;
@@ -269,15 +289,16 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     }
     if (*nend != COOKIE_VALUE) {
 	if (*nend == ALREADY_FREED) {
+	    addrToHex( (char *)a + sizeof(TrSPACE), hexstring );
 	    if (TRidSet) {
 		MPIU_Error_printf( 
-		     "[%d] Block [id=%d(%lu)] at address %lx was already freed\n", 
-		     world_rank, head->id, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
+		     "[%d] Block [id=%d(%lu)] at address %s was already freed\n", 
+		     world_rank, head->id, head->size, hexstring );
 	    }
 	    else {
 		MPIU_Error_printf( 
-		     "[%d] Block at address %lx was already freed\n", 
-		     world_rank, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
+		     "[%d] Block at address %s was already freed\n", 
+		     world_rank, hexstring );
 	    }
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
@@ -291,15 +312,16 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	}
 	else {
 	    /* Damaged tail */
+	    addrToHex( a, hexstring );
 	    if (TRidSet) {
 		MPIU_Error_printf(
-		     "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
-		     world_rank, head->id, head->size, MPIU_PtrToLong(a) );
+		     "[%d] Block [id=%d(%lu)] at address %s is corrupted (probably write past end)\n", 
+		     world_rank, head->id, head->size, hexstring );
 	    }
 	    else {
 		MPIU_Error_printf(
-		     "[%d] Block at address %lx is corrupted (probably write past end)\n", 
-		     world_rank, MPIU_PtrToLong(a) );
+		     "[%d] Block at address %s is corrupted (probably write past end)\n", 
+		     world_rank, hexstring );
 	    }
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    MPIU_Error_printf(
@@ -322,10 +344,11 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 
     if (head->next)
 	head->next->prev = head->prev;
-    if (TRlevel & TR_FREE)
-	MPIU_Error_printf( "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
-		     world_rank, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE),
-		     file, line );
+    if (TRlevel & TR_FREE) {
+	addrToHex( (char *)a + sizeof(TrSPACE), hexstring );
+	MPIU_Error_printf( "[%d] Freeing %lu bytes at %s in %s:%d\n", 
+		     world_rank, head->size, hexstring, file, line );
+    }
     
     /* 
        Now, scrub the data (except possibly the first few ints) to
@@ -370,14 +393,16 @@ int MPIU_trvalid( const char str[] )
     char    *a;
     unsigned long *nend;
     int     errs = 0;
+    char    hexstring[MAX_ADDRESS_CHARS];
 
     head = TRhead;
     while (head) {
 	if (head->cookie != COOKIE_VALUE) {
 	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
-	    MPIU_Error_printf( "[%d] Block at address %lx is corrupted\n", 
-			 world_rank, MPIU_PtrToLong(head) );
+	    addrToHex( head, hexstring );
+	    MPIU_Error_printf( "[%d] Block at address %s is corrupted\n", 
+			 world_rank, hexstring );
 	    /* Must stop because if head is invalid, then the data in the
 	       head is probably also invalid, and using could lead to 
 	       SEGV or BUS  */
@@ -389,15 +414,16 @@ int MPIU_trvalid( const char str[] )
 	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
+	    addrToHex( a, hexstring );
 	    if (TRidSet) {
 		MPIU_Error_printf( 
-"[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
-			 world_rank, head->id, head->size, MPIU_PtrToLong(a) );
+"[%d] Block [id=%d(%lu)] at address %s is corrupted (probably write past end)\n", 
+			 world_rank, head->id, head->size, hexstring );
 	    }
 	    else {
 		MPIU_Error_printf( 
-"[%d] Block at address %lx is corrupted (probably write past end)\n", 
-			 world_rank, MPIU_PtrToLong(a) );
+"[%d] Block at address %s is corrupted (probably write past end)\n", 
+			 world_rank, hexstring );
 	    }
 	    MPIU_Error_printf(
 			 "[%d] Block allocated in %s[%d]\n", 
@@ -435,13 +461,15 @@ void MPIU_trspace( int *space, int *fr )
 void MPIU_trdump( FILE *fp, int minid )
 {
     TRSPACE *head;
+    char    hexstring[MAX_ADDRESS_CHARS];
 
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
 	if (head->id >= minid) {
-	    FPRINTF( fp, "[%d] %lu at [%lx], ", 
-		 world_rank, head->size, MPIU_PtrToLong(head) + sizeof(TrSPACE) );
+	    addrToHex( (char *)head + sizeof(TrSPACE), hexstring );
+	    FPRINTF( fp, "[%d] %lu at [%s], ", 
+		 world_rank, head->size, hexstring );
 	    head->fname[TR_FNAME_LEN-1] = 0; /* Be extra careful */
 	    if (TRidSet) {
 		/* For head->id >= 0, we can add code to map the id to
@@ -631,16 +659,18 @@ void *MPIU_trrealloc( void *p, int size, int lineno, const char fname[] )
     char    *pa;
     int     nsize;
     TRSPACE *head;
+    char    hexstring[MAX_ADDRESS_CHARS];
 
 /* We should really use the size of the old block... */
     pa   = (char *)p;
     head = (TRSPACE *)(pa - sizeof(TrSPACE));
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
+	addrToHex( pa, hexstring );
 	MPIU_Error_printf( 
-"[%d] Block at address %lx is corrupted; cannot realloc;\n\
+"[%d] Block at address %s is corrupted; cannot realloc;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n", 
-		     world_rank, MPIU_PtrToLong(pa) );
+		     world_rank, hexstring );
 	return 0;
     }
 
@@ -797,4 +827,23 @@ void MPIU_trdumpGrouped( FILE *fp, int minid )
 void MPIU_TrSetMaxMem( int size )
 {
     TRMaxMemAllow = size;
+}
+
+static void addrToHex( void *addr, char string[MAX_ADDRESS_CHARS] )
+{
+    int i;
+    static char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+			    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    MPI_Aint iaddr = (MPI_Aint) (char *)addr;
+
+    /* Initial location */
+    i = sizeof(void*) * 2;
+    string[i+2] = 0;
+    while (i) {
+	string[i+1] = hex[iaddr & 0xF];
+	iaddr >>= 4;
+	i--;
+    }
+    string[0] = '0';
+    string[1] = 'x';
 }
