@@ -196,9 +196,17 @@ public class ClogToSlog2
         String        arg_str;
         int           idx;
         StringBuffer  err_msg = new StringBuffer();
-        in_filename  = null;
+
+        in_filename              = null;
         enable_endtime_check     = false;
         continue_when_violation  = false;
+
+        if ( argv.length == 0 ) {
+            System.out.println( help_msg );
+            System.out.flush();
+            System.exit( 0 );
+        }
+
         idx = 0;
         try {
             while ( idx < argv.length ) {

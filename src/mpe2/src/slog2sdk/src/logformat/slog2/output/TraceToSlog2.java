@@ -211,7 +211,7 @@ public class TraceToSlog2
             return Integer.parseInt( size_str );
     }
 
-    private static String help_msg = "Usage: java slog2.output.TraceToSlog "
+    private static String help_msg = "Usage: java slog2.output.TraceToSlog2 "
                                    + "[options] trace_filename.\n"
                                    + " options: \n"
                                    + "\t [-h|--h|-help|--help]             "
@@ -245,8 +245,15 @@ public class TraceToSlog2
         int           idx;
         StringBuffer  err_msg       = new StringBuffer();
         StringBuffer  filespec_buf  = new StringBuffer();
+
         enable_endtime_check     = false;
         continue_when_violation  = false;
+
+        if ( argv.length == 0 ) {
+            System.out.println( help_msg );
+            filespec_buf.append(  "-h " );
+        }
+
         idx = 0;
         try {
             while ( idx < argv.length ) {

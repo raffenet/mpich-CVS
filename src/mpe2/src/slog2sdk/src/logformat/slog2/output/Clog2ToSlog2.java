@@ -200,6 +200,13 @@ public class Clog2ToSlog2
         in_filename              = null;
         enable_endtime_check     = false;
         continue_when_violation  = false;
+
+        if ( argv.length == 0 ) {
+            System.out.println( help_msg );
+            System.out.flush();
+            System.exit( 0 );
+        }
+
         idx = 0;
         try {
             while ( idx < argv.length ) {
