@@ -809,7 +809,7 @@ sub RunMPICH2TestSuite {
     # This must match the directory into which mpich2 was built for
     # us to use the configure there.
     if ($mpich2_test_dir eq "") {
-	$mpich2_test_dir = "$builddir/test";
+	$mpich2_test_dir = "$builddir/test/mpi";
     }
 
     $rc = chdir $mpich2_test_dir;

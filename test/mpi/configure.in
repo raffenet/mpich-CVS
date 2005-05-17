@@ -96,6 +96,9 @@ if test -n "$with_mpi" ; then
     else
         CXX=$MPICXX
     fi
+    if test -z "$MPIEXEC" ; then
+        MPIEXEC=$with_mpi/bin/mpiexec
+    fi        
 else
     if test -z "$top_build_dir" ; then 
         top_build_dir=`cd ../.. ; pwd`
@@ -116,6 +119,22 @@ else
         F77=$FC
 dnl        F90=$top_build_dir/bin/mpif90
         CXX=$top_build_dir/bin/mpicxx
+        # Be careful of exec prefix
+	if test "X$exec_prefix" = "XNONE" ; then
+	    saveExec_prefix=$exec_prefix
+	    if test "X$prefix" = "XNONE" ; then
+	        # Use the default
+	        exec_prefix=$ac_default_prefix
+	    else
+	        exec_prefix=$prefix
+	    fi
+	    # Evaluate with the current setting of exec_prefix
+	    eval mpibindir=${bindir}
+	    exec_prefix=$saveExec_prefix
+        else
+            eval  mpibindir=${bindir}
+	fi
+        MPIEXEC=$mpibindir/mpiexec
     else
         # Remove the libraries, since they will not be needed for the
         # few tests that we do
@@ -175,6 +194,7 @@ if test "$FROM_MPICH2" = yes ; then
         F77=$FC
         CXX=$top_build_dir/bin/mpicxx
 dnl        F90=$top_build_dir/bin/mpif90
+	MPIEXEC=$top_build_dir/bin/mpiexec
         MPILIBLOC=$top_build_dir/lib/libmpich.a
     else
         # note that the default definition of bindir is 
@@ -203,6 +223,7 @@ dnl        F90=$top_build_dir/bin/mpif90
         BASEF77=$F77
         F77=$FC
         CXX=$mpibindir/mpicxx
+        MPIEXEC=$mpibindir/mpiexec
         # For some of the tests below, we'll need a separate compiler
         if test ! -x $CXX ; then
             CXXTEST=$top_build_dir/bin/mpicxx
@@ -231,10 +252,11 @@ elif test "$enable_f77" = yes ; then
         program main
         include 'mpif.h'
         integer ierr
-	call mpi_init(ierr)
+        call mpi_init(ierr)
         call mpi_finalize(ierr)
         end
 EOF
+    if test -z "$FC" ; then FC=$F77 ; fi
     if $FC -o conftest conftest.f >conftest.out 2>&1 ; then
         AC_MSG_RESULT(yes)
         otherlangs="$otherlangs f77"
@@ -242,6 +264,10 @@ EOF
 	buildingF77=yes
     else
         AC_MSG_RESULT(no)
+	echo "Failed program was" >&AC_FD_CC
+	cat conftest.f >&AC_FD_CC
+	echo "Compiler output was" >&AC_FD_CC
+        cat conftest.out >&AC_FD_CC
     fi
     rm -f conftest*
 fi
@@ -504,6 +530,7 @@ AC_SUBST(F90FLAGS)
 AC_SUBST(FFLAGS)
 AC_SUBST(CXX)
 AC_SUBST(CXXFLAGS)
+AC_SUBST(MPIEXEC)
 AC_SUBST(MAKE)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
@@ -511,9 +538,11 @@ AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
 AC_OUTPUT_COMMANDS([chmod a+x maint/testmerge])
+AC_OUTPUT_COMMANDS([chmod a+x runtests])
 dnl Note that this format for AC_OUTPUT can cause problems for autoconf
 dnl run under cygwin
 AC_OUTPUT(maint/testmerge \
+          runtests \
           Makefile \
           basic/Makefile \
 	  attr/Makefile \

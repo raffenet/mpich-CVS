@@ -4,6 +4,4 @@ distclean-local:
 	rm -f runtests
 
 testing:
-	./runtests -srcdir=$(srcdir) -tests=testlist \
-		   -mpiexec=$(bindir)/mpiexec \
-		   -xmlfile=summary.xml
+	(cd mpi && $(MAKE) testing)

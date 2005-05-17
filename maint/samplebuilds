@@ -95,7 +95,7 @@ if $srcdir/configure --prefix=$instdir $config_args ; then
 		    fi
 		fi
 	        if make testing ; then
-		    echo "Tests completed in test/summary.xml"
+		    echo "Tests completed in test/mpi/summary.xml"
 		    # Really should copy failures if any
 	        else
 		    echo "Tests failed ($testname)"

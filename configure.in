@@ -3906,8 +3906,6 @@ export PMPILIBNAME
 export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB ; export C_LINKPATH_SHL
 ])
 
-AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
-
 if test -z "$includebuild_dir" ; then
     includebuild_dir=`pwd`/src/include
 fi
@@ -4033,7 +4031,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/util/param/Makefile \
           src/util/dbg/Makefile \
           src/include/mpi.h \
-	  test/Makefile test/runtests test/util/Makefile \
+	  test/Makefile test/util/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
 	  examples/Makefile \
