@@ -37,7 +37,8 @@ typedef struct _trace_file
     RLOG_BOOL **ppEventAvail;
 } _trace_file;
 
-RLOG_BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max)
+static RLOG_BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max);
+static RLOG_BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max)
 {
     /* Am I supposed to include the terminating NULL character? */
     /* This function does not. */
@@ -49,7 +50,8 @@ RLOG_BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int m
     return RLOG_TRUE;
 }
 
-RLOG_BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const int max)
+static RLOG_BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const int max);
+static RLOG_BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const int max)
 {
     if (*pos + 2 > max)
 	return RLOG_FALSE;
@@ -60,7 +62,8 @@ RLOG_BOOL PackQuadInt(int n1, int n2, int *length, int *base, int *pos, const in
     return RLOG_TRUE;
 }
 
-RLOG_BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, const int max)
+static RLOG_BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, const int max);
+static RLOG_BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, const int max)
 {
     if (*pos + 2 > max)
 	return RLOG_FALSE;
@@ -280,7 +283,7 @@ TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
                                int *n_tcoords, int *n_ycoords, int *n_bytes )
 {
     int i, j, rank = -1, level = -1;
-    double dmin;
+    double dmin = -10000000.0;
     RLOG_BOOL done = RLOG_FALSE;
 
     *n_tcoords = 2;
@@ -348,8 +351,8 @@ TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp,
                               int *byte_pos, const int byte_max )
 {
     int i, j, rank = 1, level = -1;
-    double dmin;
-    RLOG_BOOL done = RLOG_FALSE;
+    double dmin = -10000000.0;
+    /* RLOG_BOOL done = RLOG_FALSE; */
 
     *n_bytes = 0;
 

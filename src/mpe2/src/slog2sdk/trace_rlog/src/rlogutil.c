@@ -58,7 +58,8 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
     return 0;
 }
 
-int rlog_err_printf(char *str, ...)
+static int rlog_err_printf(char *str, ...);
+static int rlog_err_printf(char *str, ...)
 {
     int n;
     va_list list;
@@ -384,7 +385,8 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 }
 #endif
 
-int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
+static int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n);
+static int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 {
     RLOG_EVENT event;
     int i, index;
@@ -863,7 +865,8 @@ int RLOG_GetRankRange(RLOG_IOStruct *pInput, int *pMin, int *pMax)
     return 0;
 }
 
-RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index)
+static RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index);
+static RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index)
 {
     int i,j;
     double dmin = RLOG_MAX_DOUBLE;
@@ -893,7 +896,8 @@ RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *
     return found;
 }
 
-RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index)
+static RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index);
+static RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *index)
 {
     int i,j;
     double dmax = RLOG_MIN_DOUBLE;
