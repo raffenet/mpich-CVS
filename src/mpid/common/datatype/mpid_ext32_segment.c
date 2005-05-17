@@ -101,8 +101,7 @@ static int external32_basic_convert(char *dest_buf,
         {
             while(src_ptr != src_end)
             {
-                BASIC_convert64((EIGHT_BYTE_BASIC_TYPE *)src_ptr,
-                                (EIGHT_BYTE_BASIC_TYPE *)dest_ptr);
+                BASIC_convert64(src_ptr, dest_ptr);
 
                 src_ptr += src_el_size;
                 dest_ptr += dest_el_size;

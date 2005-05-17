@@ -105,20 +105,24 @@
 }
 #endif
 
-static inline void BASIC_convert64(uint64_t *src, uint64_t *dest)
+
+/* changed the argument types to be char* instead of uint64_t* because the Sun compiler 
+   prints out warnings that the function expects unsigned long long, but is being passed 
+   signed long long in mpid_ext32_segment.c. */
+static inline void BASIC_convert64(char *src, char *dest)
 {
     uint32_t tmp_src[2];
     uint32_t tmp_dest[2];
 
-    tmp_src[0] = (uint32_t)(*src >> 32);
-    tmp_src[1] = (uint32_t)((*src << 32) >> 32);
+    tmp_src[0] = (uint32_t)(*((uint64_t *)src) >> 32);
+    tmp_src[1] = (uint32_t)((*((uint64_t *)src) << 32) >> 32);
 
     BASIC_convert32(tmp_src[0], tmp_dest[0]);
     BASIC_convert32(tmp_src[1], tmp_dest[1]);
 
-    *dest = (uint64_t)tmp_dest[0];
-    *dest <<= 32;
-    *dest |= (uint64_t)tmp_dest[1];
+    *((uint64_t *)dest) = (uint64_t)tmp_dest[0];
+    *((uint64_t *)dest) <<= 32;
+    *((uint64_t *)dest) |= (uint64_t)tmp_dest[1];
 }
 
 static inline void BASIC_convert96(char *src, char *dest)
@@ -152,8 +156,8 @@ static inline void BASIC_convert128(char *src, char *dest)
     tmp_src[0] = *((uint64_t *)src);
     tmp_src[1] = *((uint64_t *)((char *)src + sizeof(uint64_t)));
 
-    BASIC_convert64(&tmp_src[0], &tmp_dest[0]);
-    BASIC_convert64(&tmp_src[1], &tmp_dest[1]);
+    BASIC_convert64((char *) &tmp_src[0], (char *) &tmp_dest[0]);
+    BASIC_convert64((char *) &tmp_src[1], (char *) &tmp_dest[1]);
 
     *((uint64_t *)ptr) = tmp_dest[0];
     ptr += sizeof(uint64_t);
@@ -176,8 +180,8 @@ static inline void BASIC_convert128(char *src, char *dest)
             BASIC_convert32(src, dest);        \
             break;                             \
         case 8:                                \
-            BASIC_convert64((uint64_t *)&src,  \
-                            (uint64_t *)&dest);\
+            BASIC_convert64((char *)&src,  \
+                            (char *)&dest);\
             break;                             \
     }                                          \
 }
@@ -322,8 +326,8 @@ static inline void BASIC_convert128(char *src, char *dest)
         break;                                \
         case 8:                               \
         {                                     \
-           BASIC_convert64((uint64_t *)&src,  \
-                           (uint64_t *)&dest);\
+           BASIC_convert64((char *)&src,  \
+                           (char *)&dest);\
         }                                     \
         case 12:                              \
         {                                     \
