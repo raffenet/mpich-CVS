@@ -227,7 +227,9 @@ extern char *strdup( const char * );
 #if defined(strdup) || defined(__strdup)
 #undef strdup
 #endif
-#define strdup(a)         'Error use MPIU_Strdup'
+    /* The ::: should cause the compiler to choke; the string 
+       will give the explanation */
+#define strdup(a)         'Error use MPIU_Strdup' :::
 
 /* FIXME: Note that some of these prototypes are for old functions in the 
    src/util/mem/trmem.c package, and are no longer used.  Also, 
