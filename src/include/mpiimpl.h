@@ -3408,4 +3408,9 @@ void MPIR_Free_err_dyncodes( void );
 /* Miscellaneous */
 void MPIU_SetTimeout( int );
 
+#if defined(HAVE_VSNPRINTF) && defined(NEEDS_VSNPRINTF_DECL) && !defined(vsnprintf)
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+# endif
+
+
 #endif /* MPIIMPL_INCLUDED */

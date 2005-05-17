@@ -29,6 +29,9 @@
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#endif
 
 #ifdef HAVE_INT64
 #define uint64_t __int64

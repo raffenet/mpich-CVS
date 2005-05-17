@@ -20,6 +20,10 @@
 #include <unistd.h>
 #endif
 
+#if defined(HAVE_GETHOSTNAME) && defined(NEEDS_GETHOSTNAME_DECL) && !defined(gethostname)
+int gethostname(char *name, size_t len);
+# endif
+
 #ifndef SSIZE_MAX
 /* SSIZE_MAX is the maximum amount of data that we expect to be able
    to read from a socket at one time.  If this is not defined, we

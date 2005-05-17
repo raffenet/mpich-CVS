@@ -17,8 +17,8 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
 #else
     int aio_errno = 0;
-#endif
     static char myname[] = "ADIOI_NFS_IWRITECONTIG";
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;

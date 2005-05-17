@@ -1612,6 +1612,32 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
+AC_CHECK_FUNCS(strdup)
+if test "$ac_cv_func_strdup" = "yes" ; then
+    # Do we need to declare strdup?
+    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+fi
+AC_CHECK_FUNCS(lstat)
+if test "$ac_cv_func_lstat" = "yes" ; then
+    # Do we need to declare lstat?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],lstat)
+fi
+AC_CHECK_FUNCS(readlink)
+if test "$ac_cv_func_readlink" = "yes" ; then
+    # Do we need to declare readlink?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],readlink)
+fi
+AC_CHECK_FUNCS(fsync)
+if test "$ac_cv_func_fsync" = "yes" ; then
+    # Do we need to declare fsync?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],fsync)
+fi
+AC_CHECK_FUNCS(ftruncate)
+if test "$ac_cv_func_ftruncate" = "yes" ; then
+    # Do we need to declare ftruncate?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],ftruncate)
+fi
+#
 # Create the directory lists for the Makefile
 FILE_SYS_DIRS=""
 for dir in $FILE_SYSTEM ; do

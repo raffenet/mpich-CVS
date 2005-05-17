@@ -395,7 +395,7 @@ int MPIDI_CH3I_Progress_finalize()
 /* end MPIDI_CH3I_Progress_finalize() */
 
 
-
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_wakeup
 #undef FCNAME
@@ -404,6 +404,7 @@ void MPIDI_CH3I_Progress_wakeup(void)
 {
     MPIDU_Sock_wakeup(sock_set);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Get_business_card

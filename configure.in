@@ -3038,7 +3038,7 @@ AC_HEADER_STDC
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
 # stddef.h is sometimes needed for types like wchar_t
-AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h)
+AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
 AC_TRY_COMPILE([
 #include <sys/types.h>
@@ -3052,6 +3052,9 @@ fi
 AC_CHECK_FUNCS(setitimer alarm)
 # These are used for error reporting
 AC_CHECK_FUNCS(vsnprintf vsprintf)
+if test "$ac_cv_func_vsnprintf" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdarg.h>],vsnprintf)
+fi
 # Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then

@@ -32,7 +32,6 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     int size_in_filetype, sum;
     int filetype_size, etype_size, filetype_is_contig;
     MPI_Aint filetype_extent;
-    static char myname[] = "ADIOI_GEN_SEEKINDIVIDUAL";
 
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
     etype_size = fd->etype_size;

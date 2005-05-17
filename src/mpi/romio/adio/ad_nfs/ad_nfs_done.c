@@ -11,10 +11,10 @@
 int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 		       int *error_code)
 {
-    static char myname[] = "ADIOI_NFS_READDONE";
 #ifdef ROMIO_HAVE_WORKING_AIO
     int done=0;
     int err;
+    static char myname[] = "ADIOI_NFS_READDONE";
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif

@@ -58,7 +58,7 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
     int i;
 
     if (header) {
-	MPIU_dbg_printf("digraph %d {   {\n", (int) loop_p);
+	MPIU_dbg_printf("digraph %p {   {\n", loop_p);
     }
 
     switch (loop_p->kind & DLOOP_KIND_MASK) {

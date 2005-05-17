@@ -104,6 +104,12 @@ AC_MSG_RESULT([no])
 AC_MSG_ERROR([This device requires the poll function])
 ])
 
+AC_CHECK_FUNCS(gethostname)
+if test "$ac_cv_func_gethostname" = "yes" ; then
+    # Do we need to declare gethostname?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],gethostname)
+fi
+
 saveLIBS="$LIBS"
 LIBS=""
 AC_SEARCH_LIBS(socket,socket,,,$saveLIBS)

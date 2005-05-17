@@ -43,7 +43,9 @@
 @*/
 int MPI_Free_mem(void *base)
 {
+#if 0
     static const char FCNAME[] = "MPI_Free_mem";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FREE_MEM);
 

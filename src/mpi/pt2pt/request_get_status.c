@@ -99,90 +99,93 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
     {
 	switch(request_ptr->kind)
 	{
-	    case MPID_REQUEST_SEND:
-	    {
-		if (status != MPI_STATUS_IGNORE)
-		{
-		    status->cancelled = request_ptr->status.cancelled;
-		}
-		mpi_errno = request_ptr->status.MPI_ERROR;
-		break;
-	    }
+        case MPID_REQUEST_SEND:
+        {
+            if (status != MPI_STATUS_IGNORE)
+            {
+                status->cancelled = request_ptr->status.cancelled;
+            }
+            mpi_errno = request_ptr->status.MPI_ERROR;
+            break;
+        }
+        
+        case MPID_REQUEST_RECV:
+        {
+            MPIR_Request_extract_status(request_ptr, status);
+            mpi_errno = request_ptr->status.MPI_ERROR;
+            break;
+        }
+        
+        case MPID_PREQUEST_SEND:
+        {
+            MPID_Request * prequest_ptr = request_ptr->partner_request;
+            
+            if (prequest_ptr != NULL)
+            {
+                if (status != MPI_STATUS_IGNORE)
+                {
+                    status->cancelled = request_ptr->status.cancelled;
+                }
+                mpi_errno = prequest_ptr->status.MPI_ERROR;
+            }
+            else
+            {
+                if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
+                {
+                    /* if the persistent request failed to start then 
+                       make the error code available */
+                    if (status != MPI_STATUS_IGNORE)
+                    {
+                        status->cancelled = request_ptr->status.cancelled;
+                    }
+                    mpi_errno = request_ptr->status.MPI_ERROR;
+                }
+                else
+                {
+                    MPIR_Status_set_empty(status);
+                }
+            }
 	    
-	    case MPID_REQUEST_RECV:
-	    {
-		MPIR_Request_extract_status(request_ptr, status);
-		mpi_errno = request_ptr->status.MPI_ERROR;
-		break;
-	    }
-			
-	    case MPID_PREQUEST_SEND:
-	    {
-		MPID_Request * prequest_ptr = request_ptr->partner_request;
-		
-		if (prequest_ptr != NULL)
-		{
-		    if (status != MPI_STATUS_IGNORE)
-		    {
-			status->cancelled = request_ptr->status.cancelled;
-		    }
-		    mpi_errno = prequest_ptr->status.MPI_ERROR;
-		}
-		else
-		{
-		    if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
-		    {
-			/* if the persistent request failed to start then 
-			   make the error code available */
-			if (status != MPI_STATUS_IGNORE)
-			{
-			    status->cancelled = request_ptr->status.cancelled;
-			}
-			mpi_errno = request_ptr->status.MPI_ERROR;
-		    }
-		    else
-		    {
-			MPIR_Status_set_empty(status);
-		    }
-		}
+            break;
+        }
+        
+        case MPID_PREQUEST_RECV:
+        {
+            MPID_Request * prequest_ptr = request_ptr->partner_request;
+            
+            if (prequest_ptr != NULL)
+            {
+                MPIR_Request_extract_status(prequest_ptr, status);
+                mpi_errno = prequest_ptr->status.MPI_ERROR;
+            }
+            else
+            {
+                /* if the persistent request failed to start then
+                   make the error code available */
+                mpi_errno = request_ptr->status.MPI_ERROR;
+                MPIR_Status_set_empty(status);
+            }
 	    
-		break;
-	    }
-		
-	    case MPID_PREQUEST_RECV:
-	    {
-		MPID_Request * prequest_ptr = request_ptr->partner_request;
-		
-		if (prequest_ptr != NULL)
-		{
-		    MPIR_Request_extract_status(prequest_ptr, status);
-		    mpi_errno = prequest_ptr->status.MPI_ERROR;
-		}
-		else
-		{
-		    /* if the persistent request failed to start then
-		       make the error code available */
-		    mpi_errno = request_ptr->status.MPI_ERROR;
-		    MPIR_Status_set_empty(status);
-		}
-	    
-		break;
-	    }
+            break;
+        }
 
-	    case MPID_UREQUEST:
-	    {
-		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-		         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-                         MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
-		}
-		/* --END ERROR HANDLING-- */
-		MPIR_Request_extract_status(request_ptr, status);
-		break;
-	    }
+        case MPID_UREQUEST:
+        {
+            mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                                                 MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
+            }
+            /* --END ERROR HANDLING-- */
+            MPIR_Request_extract_status(request_ptr, status);
+            break;
+        }
+        
+        default:
+            break;
 	}
 
 	*flag = TRUE;

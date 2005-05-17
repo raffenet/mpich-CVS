@@ -39,6 +39,9 @@
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
 #endif
 
+#if defined(HAVE_GETHOSTNAME) && defined(NEEDS_GETHOSTNAME_DECL) && !defined(gethostname)
+int gethostname(char *name, size_t len);
+# endif
 
 typedef struct MPIDI_Process
 {

@@ -11,6 +11,8 @@
 /* set the shared file pointer to "offset" etypes relative to the current 
    view */
 
+void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
+
 void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 {
     ADIO_Status status;

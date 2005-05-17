@@ -399,12 +399,12 @@ void MPIR_Free_err_dyncodes( void )
 
         for (i=0; i<ERROR_MAX_NCLASS; i++) {
             if (user_class_msgs[i])
-                MPIU_Free(user_class_msgs[i]);
+                MPIU_Free((char *) user_class_msgs[i]);
         }
 
         for (i=0; i<ERROR_MAX_NCODE; i++) {
             if (user_code_msgs[i])
-                MPIU_Free(user_code_msgs[i]);
+                MPIU_Free((char *) user_code_msgs[i]);
         }
     }
 }

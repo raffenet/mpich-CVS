@@ -205,10 +205,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	}
 #       elif (defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT))
 	{
-	    int p0_mpi_errno = MPI_SUCCESS;
 	    char * parent_port;
 
 #         if 0
+	    int p0_mpi_errno = MPI_SUCCESS;
   	    /*
 	     * Ideally, only process zero would call MPIDI_CH3_Get_parent_port(), but MPI/R_Bcast() cannot be called until
 	     * initialization of MPI is complete.  Obviously that's not the case here... (we are in MPID_Init :-)

@@ -628,7 +628,7 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 	paramp->u.flatten.sizep[index - 1] += size;
     }
     else {
-	paramp->u.flatten.offp[index] = (int64_t) bufp + (int64_t) rel_off;
+	paramp->u.flatten.offp[index] =  ((int64_t) (MPI_Aint) bufp) + (int64_t) rel_off;
 	paramp->u.flatten.sizep[index] = size;
 
 	paramp->u.flatten.index++;

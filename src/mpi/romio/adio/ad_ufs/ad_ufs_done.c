@@ -14,11 +14,11 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 #ifdef ROMIO_HAVE_WORKING_AIO
     int done=0;
     int err;
+    static char myname[] = "ADIOI_UFS_READDONE";
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
+ #endif
 #endif
-#endif
-    static char myname[] = "ADIOI_UFS_READDONE";
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;

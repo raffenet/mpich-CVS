@@ -83,7 +83,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
 		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
-		    sizeof(foo.a) : -1;
+		    (int) sizeof(foo.a) : -1;
 		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
@@ -98,7 +98,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
 		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
-		    sizeof(foo.a) : -1;
+		    (int) sizeof(foo.a) : -1;
 		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
@@ -113,7 +113,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
 		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
-		    sizeof(foo.a) : -1;
+		    (int) sizeof(foo.a) : -1;
 		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
@@ -128,7 +128,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
 		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
-		    sizeof(foo.a) : -1;
+		    (int) sizeof(foo.a) : -1;
 		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
@@ -143,7 +143,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
 		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
-		    sizeof(foo.a) : -1;
+		    (int) sizeof(foo.a) : -1;
 		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;

@@ -13,6 +13,9 @@
    shared_fp by the number of etypes to be accessed (incr) in the read
    or write following this function. */
 
+void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp, 
+                             int *error_code);
+
 void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp, 
 			 int *error_code)
 {

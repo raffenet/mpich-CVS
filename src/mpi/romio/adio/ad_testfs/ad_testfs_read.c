@@ -37,8 +37,8 @@ void ADIOI_TESTFS_ReadContig(ADIO_File fd, void *buf, int count,
 	fd->fp_sys_posn = offset + datatype_size * count;
     }
 
-    FPRINTF(stdout, "[%d/%d]    reading (buf = 0x%x, loc = %Ld, sz = %Ld)\n",
-	    myrank, nprocs, (int) buf, (long long) offset, 
+    FPRINTF(stdout, "[%d/%d]    reading (buf = %p, loc = %Ld, sz = %Ld)\n",
+	    myrank, nprocs, buf, (long long) offset, 
 	    (long long) datatype_size * count);
 
 #ifdef HAVE_STATUS_SET_BYTES

@@ -135,8 +135,8 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 for (i=0; i<vec_len; i++)
                 {
                     count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                    (*uop)((char *)source_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                           (char *)target_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                    (*uop)((char *)source_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                           (char *)target_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
                            &count, &type);
                 }
                 

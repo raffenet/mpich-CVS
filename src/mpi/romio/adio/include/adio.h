@@ -162,6 +162,23 @@ MPI_Info PMPI_Info_f2c(MPI_Fint info);
 
 #endif
 
+#if defined(HAVE_STRDUP) && defined(NEEDS_STRDUP_DECL) && !defined(strdup)
+char *strdup(const char *s);
+# endif
+#if defined(HAVE_READLINK) && defined(NEEDS_READLINK_DECL) && !defined(readlink)
+int readlink(const char *path, char *buf, size_t bufsiz);
+# endif
+#if defined(HAVE_LSTAT) && defined(NEEDS_LSTAT_DECL) && !defined(lstat)
+int lstat(const char *file_name, struct stat *buf);
+# endif
+#if defined(HAVE_FSYNC) && defined(NEEDS_FSYNC_DECL) && !defined(fsync)
+int fsync(int fd);
+# endif
+#if defined(HAVE_FTRUNCATE) && defined(NEEDS_FTRUNCATE_DECL) && !defined(ftruncate)
+int ftruncate(int fd, off_t length);
+# endif
+
+
 typedef struct ADIOI_Fns_struct ADIOI_Fns;
 typedef struct ADIOI_Hints_struct ADIOI_Hints;
 
