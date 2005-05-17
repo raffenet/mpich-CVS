@@ -17,11 +17,12 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
                     MPID_Comm *comm_ptr, MPID_Win **win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, i, comm_size, rank, found, result;
-    void **tmp_buf, *offset=0;
+    void *offset=0;
     MPIDI_CH3I_Alloc_mem_list_t *curr_ptr;
     MPIDU_Process_lock_t *locks_base_addr;
     int *shared_lock_state_baseaddr;
     volatile char *pscw_sync_addr;
+    MPI_Aint *tmp_buf;
         
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_WIN_CREATE);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
@@ -113,7 +114,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
        of all processes */  
     
     /* allocate temp. buffer for communication */
-    tmp_buf = (void **) MPIU_Malloc(3*comm_size*sizeof(void*));
+    tmp_buf = (MPI_Aint *) MPIU_Malloc(3*comm_size*sizeof(MPI_Aint));
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_buf)
     {
@@ -123,12 +124,12 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     /* --END ERROR HANDLING-- */
     
     /* FIXME: This needs to be fixed for heterogeneous systems */
-    tmp_buf[3*rank] = base;
-    tmp_buf[3*rank+1] = MPIU_IntToPtr(disp_unit);
-    tmp_buf[3*rank+2] = MPIU_IntToPtr((*win_ptr)->handle);
+    tmp_buf[3*rank] = MPIU_PtrToAint(base);
+    tmp_buf[3*rank+1] = (MPI_Aint) disp_unit;
+    tmp_buf[3*rank+2] = (MPI_Aint) (*win_ptr)->handle;
     
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               tmp_buf, 3 * sizeof(void *), MPI_BYTE, 
+                               tmp_buf, 3 * sizeof(MPI_Aint), MPI_BYTE, 
                                comm_ptr->handle);   
     
     /* --BEGIN ERROR HANDLING-- */
@@ -141,9 +142,9 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     
     for (i=0; i<comm_size; i++)
     {
-        (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
-        (*win_ptr)->disp_units[i] = MPIU_PtrToInt(tmp_buf[3*i+1]);
-        (*win_ptr)->all_win_handles[i] = MPIU_PtrToInt(tmp_buf[3*i+2]);
+        (*win_ptr)->base_addrs[i] = MPIU_AintToPtr(tmp_buf[3*i]);
+        (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
+        (*win_ptr)->all_win_handles[i] = (MPI_Win) tmp_buf[3*i+2];
     }
     
     MPIU_Free(tmp_buf);

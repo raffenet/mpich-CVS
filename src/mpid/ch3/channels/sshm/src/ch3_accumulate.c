@@ -184,8 +184,8 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 for (i=0; i<vec_len; i++)
                 {
                     count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                    (*uop)((char *)tmp_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                           (char *)target_addr + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                    (*uop)((char *)tmp_buf + MPIU_PtrToAint( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                           (char *)target_addr + MPIU_PtrToAint( dloop_vec[i].DLOOP_VECTOR_BUF ),
                            &count, &type);
                 }
                 if (win_ptr->pt_rma_excl_lock == 0)

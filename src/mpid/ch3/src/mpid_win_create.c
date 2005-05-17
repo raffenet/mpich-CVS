@@ -137,7 +137,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
         /* --END ERROR HANDLING-- */
         
         /* FIXME: This needs to be fixed for heterogeneous systems */
-        tmp_buf[3*rank] = (MPI_Aint) base;
+        tmp_buf[3*rank] = MPIU_PtrToAint(base);
         tmp_buf[3*rank+1] = (MPI_Aint) disp_unit;
         tmp_buf[3*rank+2] = (MPI_Aint) (*win_ptr)->handle;
         
@@ -155,7 +155,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
         
         for (i=0; i<comm_size; i++)
         {
-            (*win_ptr)->base_addrs[i] = (void *) tmp_buf[3*i];
+            (*win_ptr)->base_addrs[i] = MPIU_AintToPtr(tmp_buf[3*i]);
             (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
             (*win_ptr)->all_win_handles[i] = (MPI_Win) tmp_buf[3*i+2];
         }
