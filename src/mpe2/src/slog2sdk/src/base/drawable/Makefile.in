@@ -23,7 +23,8 @@ PACKAGE = base.drawable
 SRC     = ColorAlpha.java Topology.java Method.java \
           TimeBoundingBox.java Coord.java CoordPixelXform.java \
           InfoType.java InfoValue.java \
-          Category.java CategoryRatios.java CategoryWeight.java \
+          CategoryRatios.java CategorySummary.java \
+          Category.java CategoryWeight.java \
           DrawnBox.java DrawnBoxSet.java \
           InfoBox.java Drawable.java NestingStacks.java \
           Primitive.java Primitive_TwoVtx.java \

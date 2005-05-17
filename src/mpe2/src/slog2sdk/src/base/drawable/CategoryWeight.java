@@ -9,23 +9,36 @@
 
 package base.drawable;
 
+import java.util.Map;
 import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
-public class CategoryWeight extends CategoryRatios
+/*
+   CategoryWeight extends CategorySummary which extends CategoryRatios
+*/
+public class CategoryWeight extends CategorySummary
 {
-    public  static final int         BYTESIZE          = CategoryRatios.BYTESIZE
-                                                       + 8; // num_real_objs
+    public  static final int         BYTESIZE        = CategorySummary.BYTESIZE
+                                                     + 4;  // type_idx
 
-    public  static final Comparator  COUNT_ORDER       = new CountOrder();
+    public  static final Comparator  INDEX_ORDER     = new IndexOrder();
 
-    private long       num_real_objs;
+    private static final int INVALID_INDEX = Integer.MIN_VALUE;
+
+    private int        type_idx;
+    private Category   type;
+
+    private int        width;    // pixel width, for SLOG-2 Input & Jumpshot
+    private int        height;   // pixel height, for SLOG-2 Input & Jumpshot
 
     public CategoryWeight()
     {
         super();
-        num_real_objs  = 0;
+        type           = null;
+        type_idx       = INVALID_INDEX;
+        width          = 0;
+        height         = 0;
     }
 
     // For SLOG-2 Output
@@ -33,32 +46,62 @@ public class CategoryWeight extends CategoryRatios
                            float new_incl_r, float new_excl_r,
                            long new_num_real_objs )
     {
-        super( new_type, new_incl_r, new_excl_r );
-        num_real_objs  = new_num_real_objs;
+        super( new_incl_r, new_excl_r, new_num_real_objs );
+        type           = new_type;
+        type_idx       = type.getIndex();
     }
 
     // For SLOG-2 Output
     public CategoryWeight( final CategoryWeight type_wgt )
     {
         super( type_wgt );
-        this.num_real_objs  = type_wgt.num_real_objs;
+        this.type           = type_wgt.type;
+        this.type_idx       = type_wgt.type_idx;
     }
 
-    public long getDrawableCount()
+    public void setPixelWidth( int wdh )
     {
-        return num_real_objs;
+        width = wdh;
     }
 
-    public void addDrawableCount( long new_num_real_objs )
+    public int getPixelWidth()
     {
-        this.num_real_objs  += new_num_real_objs;
+        return width;
+    }
+
+    public void setPixelHeight( int hgt )
+    {
+        height = hgt;
+    }
+
+    public int getPixelHeight()
+    {
+        return height;
+    }
+
+    public Category getCategory()
+    {
+        return type;
+    }
+
+    //  For SLOG-2 Input API, used by Shadow.resolveCategory() 
+    public boolean resolveCategory( final Map categorymap )
+    {
+        if ( type == null ) {
+            if ( type_idx != INVALID_INDEX ) {
+                type = (Category) categorymap.get( new Integer( type_idx ) );
+                if ( type != null )
+                    return true;
+            }
+        }
+        return false;
     }
 
     public void writeObject( DataOutput outs )
     throws java.io.IOException
     {
+        outs.writeInt( type_idx );
         super.writeObject( outs );
-        outs.writeLong( num_real_objs );
     }
 
     public CategoryWeight( DataInput ins )
@@ -71,32 +114,46 @@ public class CategoryWeight extends CategoryRatios
     public void readObject( DataInput ins )
     throws java.io.IOException
     {
+        type_idx       = ins.readInt();
         super.readObject( ins );
-        num_real_objs  = ins.readLong();
     }
 
     // For InfoPanelForDrawable
     public String toInfoBoxString( int print_status )
     {
-        return super.toInfoBoxString( print_status )
-             + ", count=" + num_real_objs;
+        StringBuffer rep = new StringBuffer( "legend=" );
+        if ( type != null )
+            rep.append( type.getName() );
+        else
+            rep.append( "null:" + type_idx );
+        rep.append( ", " );
+        rep.append( super.toInfoBoxString( print_status ) );
+        
+        return rep.toString();
     }
 
     public String toString()
     {
-        return "(" + super.toString() + ", count=" + num_real_objs + ")";
+        StringBuffer rep = new StringBuffer( "(type=" + type_idx );
+        if ( type != null )
+            rep.append( ":" + type.getName() );
+        else
+            rep.append( ", " );
+        rep.append( super.toString() );
+        rep.append( ")" );
+
+        return rep.toString();
     }
 
 
 
-    private static class CountOrder implements Comparator
+    private static class IndexOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {
             CategoryWeight type_wgt1 = (CategoryWeight) o1;
             CategoryWeight type_wgt2 = (CategoryWeight) o2;
-            long diff = type_wgt1.num_real_objs - type_wgt2.num_real_objs;
-            return ( diff < 0 ? -1 : ( diff == 0 ? 0 : 1 ) );
+            return type_wgt1.type_idx - type_wgt2.type_idx;
         }
     }
 }

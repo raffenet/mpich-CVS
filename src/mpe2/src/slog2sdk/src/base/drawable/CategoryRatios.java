@@ -9,18 +9,15 @@
 
 package base.drawable;
 
-import java.util.Map;
 import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
 public class CategoryRatios
 {
-    public  static final int         BYTESIZE          = 4   // type_idx
-                                                       + 4   // incl_ratio
+    public  static final int         BYTESIZE          = 4   // incl_ratio
                                                        + 4;  // excl_ratio
 
-    public  static final Comparator  INDEX_ORDER       = new IndexOrder();
     public  static final Comparator  INCL_RATIO_ORDER  = new InclRatioOrder();
     public  static final Comparator  EXCL_RATIO_ORDER  = new ExclRatioOrder();
 
@@ -35,32 +32,18 @@ public class CategoryRatios
     private static final String      TITLE_EXCL_RATIO
                                      = "*** Exclusive Duration Ratio:";
 
-    private static final int INVALID_INDEX = Integer.MIN_VALUE;
-
-    private int        type_idx;
-    private Category   type;
     private float      incl_ratio;
     private float      excl_ratio;
 
-    private int        width;    // pixel width, for SLOG-2 Input & Jumpshot
-    private int        height;   // pixel height, for SLOG-2 Input & Jumpshot
-
     public CategoryRatios()
     {
-        type           = null;
-        type_idx       = INVALID_INDEX;
         incl_ratio     = 0.0f;
         excl_ratio     = 0.0f;
-        width          = 0;
-        height         = 0;
     }
 
     // For SLOG-2 Output
-    public CategoryRatios( final Category new_type,
-                           float new_incl_r, float new_excl_r )
+    public CategoryRatios( float new_incl_r, float new_excl_r )
     {
-        type           = new_type;
-        type_idx       = type.getIndex();
         incl_ratio     = new_incl_r;
         excl_ratio     = new_excl_r;
     }
@@ -68,35 +51,8 @@ public class CategoryRatios
     // For SLOG-2 Output
     public CategoryRatios( final CategoryRatios type_rts )
     {
-        this.type           = type_rts.type;
-        this.type_idx       = type_rts.type_idx;
         this.incl_ratio     = type_rts.incl_ratio;
         this.excl_ratio     = type_rts.excl_ratio;
-    }
-
-    public void setPixelWidth( int wdh )
-    {
-        width = wdh;
-    }
-
-    public int getPixelWidth()
-    {
-        return width;
-    }
-
-    public void setPixelHeight( int hgt )
-    {
-        height = hgt;
-    }
-
-    public int getPixelHeight()
-    {
-        return height;
-    }
-
-    public Category getCategory()
-    {
-        return type;
     }
 
     public float getRatio( boolean isInclusive )
@@ -130,23 +86,9 @@ public class CategoryRatios
         this.incl_ratio += extra_ratio;
     }
 
-    //  For SLOG-2 Input API, used by Shadow.resolveCategory() 
-    public boolean resolveCategory( final Map categorymap )
-    {
-        if ( type == null ) {
-            if ( type_idx != INVALID_INDEX ) {
-                type = (Category) categorymap.get( new Integer( type_idx ) );
-                if ( type != null )
-                    return true;
-            }
-        }
-        return false;
-    }
-
     public void writeObject( DataOutput outs )
     throws java.io.IOException
     {
-        outs.writeInt( type_idx );
         outs.writeFloat( incl_ratio );
         outs.writeFloat( excl_ratio );
     }
@@ -161,7 +103,6 @@ public class CategoryRatios
     public void readObject( DataInput ins )
     throws java.io.IOException
     {
-        type_idx       = ins.readInt();
         incl_ratio     = ins.readFloat();
         excl_ratio     = ins.readFloat();
     }
@@ -180,43 +121,20 @@ public class CategoryRatios
     // For InfoPanelForDrawable
     public String toInfoBoxString( int print_status )
     {
-        StringBuffer rep = new StringBuffer( "legend=" );
-        if ( type != null )
-            rep.append( type.getName() );
-        else
-            rep.append( "null:" + type_idx );
-        
         if ( print_status == PRINT_INCL_RATIO )
-            rep.append( ", ratio=" + incl_ratio );
+            return "ratio=" + incl_ratio;
         else if ( print_status == PRINT_EXCL_RATIO )
-            rep.append( ", ratio=" + excl_ratio );
+            return "ratio=" + excl_ratio;
         else // if ( print_status == PRINT_ALL_RATIOS )
-            rep.append( ", incl_ratio=" + incl_ratio
-                      + ", excl_ratio=" + excl_ratio );
-        return rep.toString();
+            return "incl_ratio=" + incl_ratio + ", excl_ratio=" + excl_ratio;
     }
 
     public String toString()
     {
-        if ( type != null )
-            return "type=" + type_idx + ":" + type.getName()
-                 + ",wgt=" + incl_ratio + "," + excl_ratio;
-        else
-            return "type=" + type_idx
-                 + ",wgt=" + incl_ratio + "," + excl_ratio;
+        return "ratios=" + incl_ratio + "," + excl_ratio;
     }
 
 
-
-    private static class IndexOrder implements Comparator
-    {
-        public int compare( Object o1, Object o2 )
-        {
-            CategoryRatios type_rts1 = (CategoryRatios) o1;
-            CategoryRatios type_rts2 = (CategoryRatios) o2;
-            return type_rts1.type_idx - type_rts2.type_idx;
-        }
-    }
 
     private static class InclRatioOrder implements Comparator
     {
