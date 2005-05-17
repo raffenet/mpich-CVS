@@ -229,7 +229,6 @@ int MPIU_Param_get_string( const char name[], const char *default_val,
 	*value = (char *)default_val;
 	return 1;
     }
-    return 0;
 }
 
 void MPIU_Param_finalize( void )
