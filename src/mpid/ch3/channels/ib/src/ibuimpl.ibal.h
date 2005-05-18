@@ -160,7 +160,7 @@ int ibui_update_remote_RDMA_buf(ibu_t ibu, ibu_rdma_buf_t *buf, uint32_t rkey);
 int send_wqe_info_fifo_empty(int head, int tail);
 void send_wqe_info_fifo_pop(ibu_t ibu, ibui_send_wqe_info_t* entry);
 int send_wqe_info_fifo_full(int head, int tail);
-void send_wqe_info_fifo_push(ibu_t ibu, int signaled_type, void* mem_ptr, int length);
+void send_wqe_info_fifo_push(ibu_t ibu, ibu_rdma_type_t entry_type, void* mem_ptr, int length);
 ib_send_opt_t ibui_signaled_completion(ibu_t ibu);
 /* Added by Mellanox, dafna April 11th - finish */
 /* utility allocator functions */
