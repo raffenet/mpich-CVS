@@ -57,7 +57,10 @@ unsigned int CollChk_basic_value(MPI_Datatype type);
 unsigned int CollChk_basic_value(MPI_Datatype type)
 {
     switch (type) {
-        /* MPI_Datatype's that return 0x0 are being skipped/ignored. */
+        /*
+           MPI_Datatype's that return 0x0 are as if they are being
+           skipped/ignored in the comparison of any 2 MPI_Datatypes.
+        */
         case MPI_DATATYPE_NULL :
         case MPI_UB :
         case MPI_LB :
