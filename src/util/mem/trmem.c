@@ -834,7 +834,9 @@ static void addrToHex( void *addr, char string[MAX_ADDRESS_CHARS] )
     int i;
     static char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
 			    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-    MPI_Aint iaddr = (MPI_Aint) (char *)addr;
+    /* The following construction is used to keep compilers from issuing
+       a warning message about casting a pointer to an integer type */
+    MPI_Aint iaddr = (MPI_Aint) ((char *)addr - (char*)0);
 
     /* Initial location */
     i = sizeof(void*) * 2;
