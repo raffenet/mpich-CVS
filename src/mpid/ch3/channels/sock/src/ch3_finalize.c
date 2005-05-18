@@ -46,8 +46,6 @@ int MPIDI_CH3_Finalize()
 					 MPI_ERR_OTHER, "**ch3|sock|pg_finalize", 0);
     }
 
-    MPIDU_Socki_free_eventq_mem();
-
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
 }
