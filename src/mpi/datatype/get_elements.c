@@ -26,6 +26,13 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Get_elements PMPI_Get_elements
 
+PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,
+						 int count,
+						 MPI_Datatype datatype);
+PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
+				      int count,
+				      MPI_Datatype datatype);
+
 /* NOTE: I think that this is in here so that we don't get two copies of it
  * in the case where we don't have weak symbols.
  */

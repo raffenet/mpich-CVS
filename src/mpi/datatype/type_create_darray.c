@@ -36,6 +36,30 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 			       MPI_Aint orig_extent,
 			       MPI_Datatype type_old,
 			       MPI_Datatype *type_new,
+			       MPI_Aint *st_offset); 
+PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
+				int dim,
+				int ndims,
+				int nprocs,
+				int rank,
+				int darg,
+				int order,
+				MPI_Aint orig_extent,
+				MPI_Datatype type_old,
+				MPI_Datatype *type_new,
+				MPI_Aint *st_offset); 
+
+
+PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
+			       int dim,
+			       int ndims,
+			       int nprocs,
+			       int rank,
+			       int darg,
+			       int order,
+			       MPI_Aint orig_extent,
+			       MPI_Datatype type_old,
+			       MPI_Datatype *type_new,
 			       MPI_Aint *st_offset) 
 {
 /* nprocs = no. of processes in dimension dim of grid
