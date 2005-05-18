@@ -8,17 +8,21 @@ $debugDir = 0;
 # echo)
 # We include /bin/rm and /bin/mv because some Makefile authors prefer
 # to get the full path for these routines
-@commands = ( "pgcc", "gcc", "icc", "rm", "mv", "ar", "ranlib", "perl", "for", 
+@commands = ( "cc", "pgcc", "gcc", "icc", 
+              "rm", "mv", "ar", "ranlib", "perl", "for", 
 	      "/bin/rm", "/bin/mv", 
 	      "if", "make", "[A-Za-z0-9_\/\.-]*\/mpicc",
 	      "cleaning", "sleep", "date", "g77", "f77", "f90", "pgCC",
 	      "pgf77", "pgf90", "CC", "g95", "g\\+\\+", "c\\+\\+",
+	      "/bin/sh\s+[A-Za-z0-9_\/\.-]*libtool\s+--mode=",
 	      "[A-Za-z0-9_\/-]*\/icc",
+	      "[A-Za-z0-9_\/-]*\/install-sh",
 	      "/usr/bin/ar", "mkdir",
+	      "/usr/ucb/ld",
 	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
-	      "^\s*echo\s",
+	      "echo", "cat",
 	      "\\(?cd",
 	      "sed -e",
 	      "building profiling interface in directory",
@@ -26,6 +30,14 @@ $debugDir = 0;
 	      "Copying Upshot",
 	      "Making upshot", "\s*\$", );
 
+# OtherNoise is an array of patterns that describe blocks of
+# text that we'd like to skip.  The initial use it to handle 
+# libtool install output.
+@OtherNoise = ( 'Libraries have been installed in:<SEP>more information, such as the ld(1) and ld.so(8) manual pages.',
+		'^\s*-*\s*$<SEP>', 
+		'^In directory:<SEP>',
+		'^creating\s<SEP>', 
+		);
 
 $trimCompileLine = 1;
 
@@ -58,6 +70,21 @@ while ($line = <>) {
     while ($line =~ /\\$/) {
 	print "Read continuation line (cmd) ... \n" if $debug;
 	$line .= <>;
+    }
+
+    # Check for noise
+    foreach my $pat (@OtherNoise) {
+	my ($beginpat,$endpat) = split( '<SEP>', $pat );
+	if ($line =~ /$beginpat/) {
+	    # Found the beginning.  Look for the end
+	    if ($endpat =~ /\S/) {
+		while ($line = <>) {
+		    if (eof()) { last; }
+		    if ($line =~ /$endpat/) { last; }
+		}
+	    }
+	    next;
+	}
     }
     
     # Is the line a command (including a directory change?)
@@ -117,3 +144,7 @@ while ($line = <>) {
     print $line;
 }
 
+#
+# ToDo:
+# Handle lines containing just ----, e.g., patterns of the form
+# -*
