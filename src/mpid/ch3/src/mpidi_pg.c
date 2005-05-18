@@ -33,8 +33,15 @@ int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn, MPIDI_PG_Destroy_fn_
 int MPIDI_PG_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
+
+/* ifdefing out this check because the list will not be NULL in Ch3_finalize because
+   one additional reference is retained in MPIDI_Process.my_pg. That reference is released
+   only after ch3_finalize returns. If I release it before ch3_finalize, the ssm channel
+   crashes.
+*/
     
-#ifdef MPICH_DBG_OUTPUT
+#ifdef FOO
+
     if (MPIDI_PG_list != NULL)
     { 
 	/* --BEGIN ERROR HANDLING-- */

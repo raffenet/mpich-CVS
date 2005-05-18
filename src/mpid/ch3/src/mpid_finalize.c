@@ -154,14 +154,14 @@ int MPID_Finalize()
 	}
     }
 
+    mpi_errno = MPIDI_CH3_Finalize();
+    
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
     if (inuse == 0)
     {
         MPIDI_PG_Destroy(MPIDI_Process.my_pg);
     }
     MPIDI_Process.my_pg = NULL;
-    
-    mpi_errno = MPIDI_CH3_Finalize();
     
     MPIU_Free(MPIDI_Process.processor_name);
 
