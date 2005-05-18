@@ -115,7 +115,7 @@ void *MPIU_Handle_direct_init(void *direct,
 	hptr = (MPIU_Handle_common *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->handle   = (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
+	hptr->handle = ((unsigned)HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
     }
 
@@ -163,7 +163,7 @@ static void *MPIU_Handle_indirect_init( void *(**indirect)[],
 	hptr       = (MPIU_Handle_common *)ptr;
 	ptr        = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->handle   = (HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
+	hptr->handle   = ((unsigned)HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | 
 	    (*indirect_size << HANDLE_INDIRECT_SHIFT) | i;
     }
