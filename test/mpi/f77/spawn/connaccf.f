@@ -76,7 +76,7 @@ C Check that this is an acceptable intercomm
          print *, ' Wrong size for intercomm = ', s1+s2
       endif
 
-      call mpi_comm_free(comm, ierr);
+      call mpi_comm_free(comm, ierr)
 C Everyone can now abandon the new intercomm      
       call mpi_comm_disconnect( intercomm, ierr )
 
