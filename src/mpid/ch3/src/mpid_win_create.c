@@ -180,7 +180,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     }
 #   endif
 
+#ifndef MPIDI_CH3_IMPLEMENTS_WIN_CREATE
  fn_exit:
+#endif
     MPIR_Nest_decr();
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
     return mpi_errno;
