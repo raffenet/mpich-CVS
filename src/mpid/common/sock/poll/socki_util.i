@@ -21,12 +21,16 @@ static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, enum MPIDU_Sock
 				     void * user_ptr, int error);
 static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, int * set_elem, struct MPIDU_Sock_event * eventp);
 
-static struct MPIDU_Socki_eventq_elem **MPIDU_Socki_eventq_mem_list=0;
-static int MPIDU_Socki_eventq_mem_list_size=1024; 
-static int MPIDU_Socki_eventq_mem_list_ptr=0; 
-static int MPIDU_Socki_eventq_mem_list_size_incr=1024; 
-static int MPIDU_Socki_track_eventq_mem(struct MPIDU_Socki_eventq_elem * eventq_elem);
-void MPIDU_Socki_free_eventq_mem(void);
+static void MPIDU_Socki_free_eventq_mem(void);
+
+struct MPIDU_Socki_eventq_table
+{
+    struct MPIDU_Socki_eventq_elem elems[MPIDU_SOCK_EVENTQ_POOL_SIZE];
+    struct MPIDU_Socki_eventq_table * next;
+};
+
+static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
+
 
 
 #define MPIDU_Socki_sock_get_pollfd(sock_)          (&(sock_)->sock_set->pollfds[(sock_)->elem])
@@ -749,10 +753,11 @@ static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, MPIDU_Sock_op_t
     else
     {
 	int i;
-	
-	eventq_elem = MPIU_Malloc(sizeof(struct MPIDU_Socki_eventq_elem) * MPIDU_SOCK_EVENTQ_POOL_SIZE);
+	struct MPIDU_Socki_eventq_table *eventq_table;
+
+	eventq_table = MPIU_Malloc(sizeof(struct MPIDU_Socki_eventq_table));
 	/* --BEGIN ERROR HANDLING-- */
-	if (eventq_elem == NULL)
+	if (eventq_table == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**sock|poll|eqmalloc", 0);
@@ -760,11 +765,10 @@ static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, MPIDU_Sock_op_t
 	}
 	/* --END ERROR HANDLING-- */
 
-        mpi_errno = MPIDU_Socki_track_eventq_mem(eventq_elem);
-        if (mpi_errno != MPI_SUCCESS) {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-            goto fn_exit;
-        }
+        eventq_elem = eventq_table->elems;
+
+        eventq_table->next = MPIDU_Socki_eventq_table_head;
+        MPIDU_Socki_eventq_table_head = eventq_table;
 
 	if (MPIDU_SOCK_EVENTQ_POOL_SIZE > 1)
 	{ 
@@ -841,60 +845,20 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 /* end MPIDU_Socki_event_dequeue() */
 
 
-
-static int MPIDU_Socki_track_eventq_mem(struct MPIDU_Socki_eventq_elem * eventq_elem)
+static void MPIDU_Socki_free_eventq_mem(void)
 {
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_SOCKI_TRACK_EVENTQ_MEM);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_TRACK_EVENTQ_MEM);
-
-    if (MPIDU_Socki_eventq_mem_list == NULL) {
-        MPIDU_Socki_eventq_mem_list = (struct MPIDU_Socki_eventq_elem **) 
-            MPIU_Malloc(MPIDU_Socki_eventq_mem_list_size * sizeof(void *));
-        /* --BEGIN ERROR HANDLING-- */
-        if (MPIDU_Socki_eventq_mem_list == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
-    }
-    else if (MPIDU_Socki_eventq_mem_list_ptr == MPIDU_Socki_eventq_mem_list_size) {
-        MPIDU_Socki_eventq_mem_list_size += MPIDU_Socki_eventq_mem_list_size_incr;
-        MPIDU_Socki_eventq_mem_list = MPIU_Realloc(MPIDU_Socki_eventq_mem_list,
-                                                   MPIDU_Socki_eventq_mem_list_size);
-         /* --BEGIN ERROR HANDLING-- */
-        if (MPIDU_Socki_eventq_mem_list == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
-   }
-
-    MPIDU_Socki_eventq_mem_list[MPIDU_Socki_eventq_mem_list_ptr] = eventq_elem;
-    MPIDU_Socki_eventq_mem_list_ptr++;
-
-fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_TRACK_EVENTQ_MEM);
-    return mpi_errno;
-}
-
-
-void MPIDU_Socki_free_eventq_mem(void)
-{
-    int i;
+    struct MPIDU_Socki_eventq_table *eventq_table, *eventq_table_next;
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_FREE_EVENTQ_MEM);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_FREE_EVENTQ_MEM);
 
-    if (MPIDU_Socki_eventq_mem_list != NULL) {
-        for (i=0; i<MPIDU_Socki_eventq_mem_list_ptr; i++)
-            MPIU_Free(MPIDU_Socki_eventq_mem_list[i]);
-
-        MPIU_Free(MPIDU_Socki_eventq_mem_list);
+    eventq_table = MPIDU_Socki_eventq_table_head;
+    while (eventq_table) {
+        eventq_table_next = eventq_table->next;
+        MPIU_Free(eventq_table);
+        eventq_table = eventq_table_next;
     }
+    MPIDU_Socki_eventq_table_head = NULL;
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_FREE_EVENTQ_MEM);
 }

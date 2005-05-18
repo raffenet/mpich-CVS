@@ -53,6 +53,8 @@ int MPIDU_Sock_finalize(void)
 
     MPIDU_Socki_initialized--;
     
+    MPIDU_Socki_free_eventq_mem();
+
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
     return mpi_errno;

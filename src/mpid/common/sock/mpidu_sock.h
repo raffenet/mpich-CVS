@@ -1051,9 +1051,6 @@ Utility-Sock
 int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length);
 
 
-void MPIDU_Socki_free_eventq_mem(void);
-
-
 CPLUSPLUS_END
 
 #endif /* !defined(MPIDU_SOCK_H_INCLUDED) */
