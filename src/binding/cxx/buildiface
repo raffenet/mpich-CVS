@@ -2012,6 +2012,9 @@ void operator delete[](void *p) {
     # (void (*)(void)) function, expecting an `extern "C"' as well, but
     # other compilers do not accept the extern "C".  Sigh.
     print $OUTFD "
+    extern \"C\" {
+typedef void (*mpircallback)(void);
+}
 extern \"C\" void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
 extern \"C\" 
 void MPIR_Call_op_fn( void *invec, void *outvec, int len, MPI_Datatype dtype,
@@ -2026,7 +2029,7 @@ void Op::Init( User_function *f, bool commute )
      print $OUTFD "\
 	MPIX_CALL( MPI_Op_create( (MPI_User_function *)f, 
 				 (int) commute, &the_real_op ) ); 
-	MPIR_Op_set_cxx( the_real_op, (void (*)(void)) MPIR_Call_op_fn );\n";
+	MPIR_Op_set_cxx( the_real_op, (mpircallback) MPIR_Call_op_fn );\n";
 &printCoverageEnd( $OUTFD, "Op_create", 2 );
 print $OUTFD "\
     }\n";
@@ -2149,8 +2152,8 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
 				       (MPI_Comm_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn, 
-			         (void (*)(void)) MPIR_Call_copyfn );\n";
+    MPIR_Keyval_set_cxx( keyval, (mpircallback) MPIR_Call_delfn, 
+			         (mpircallback) MPIR_Call_copyfn );\n";
     &printCoverageEnd( $OUTFD, "Comm_create_keyval", 3 );
     print $OUTFD "\
     return keyval;
@@ -2166,8 +2169,8 @@ int Datatype::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Type_create_keyval( (MPI_Type_copy_attr_function *)cf, 
 				       (MPI_Type_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn, 
-			         (void (*)(void)) MPIR_Call_copyfn );\n";
+    MPIR_Keyval_set_cxx( keyval, (mpircallback) MPIR_Call_delfn, 
+			         (mpircallback) MPIR_Call_copyfn );\n";
     &printCoverageEnd( $OUTFD, "Type_create_keyval", 3 );
     print $OUTFD "\
     return keyval;
@@ -2183,8 +2186,8 @@ int Win::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Win_create_keyval( (MPI_Win_copy_attr_function *)cf, 
 				       (MPI_Win_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn, 
-			         (void (*)(void)) MPIR_Call_copyfn );\n";
+    MPIR_Keyval_set_cxx( keyval, (mpircallback) MPIR_Call_delfn, 
+			         (mpircallback) MPIR_Call_copyfn );\n";
     &printCoverageEnd( $OUTFD, "Win_create_keyval", 3 );
     print $OUTFD "\
     return keyval;
@@ -2222,7 +2225,7 @@ Errhandler File::Create_errhandler( Errhandler_fn *f )
     MPI::Errhandler e1;
     MPI_File_create_errhandler( (MPI_File_errhandler_fn *)f, &eh );
     MPIR_Errhandler_set_cxx( eh, 
-			     (void (*)(void))MPIR_Call_errhandler_fn );
+			     (mpircallback)MPIR_Call_errhandler_fn );
     e1.the_real_errhandler = eh;
     return e1;
 }
@@ -2233,7 +2236,7 @@ Errhandler Comm::Create_errhandler( Errhandler_fn *f )
     MPI::Errhandler e1;
     MPI_Comm_create_errhandler( (MPI_Comm_errhandler_fn *)f, &eh );
     MPIR_Errhandler_set_cxx( eh, 
-			     (void (*)(void))MPIR_Call_errhandler_fn );
+			     (mpircallback)MPIR_Call_errhandler_fn );
     e1.the_real_errhandler = eh;
     return e1;
 }
@@ -2243,7 +2246,7 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
     MPI::Errhandler e1;
     MPI_Win_create_errhandler( (MPI_Win_errhandler_fn *)f, &eh );
     MPIR_Errhandler_set_cxx( eh, 
-			     (void (*)(void))MPIR_Call_errhandler_fn );
+			     (mpircallback)MPIR_Call_errhandler_fn );
     e1.the_real_errhandler = eh;
     return e1;
 }
