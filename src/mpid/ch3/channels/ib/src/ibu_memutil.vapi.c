@@ -329,7 +329,11 @@ ibu_rdma_buf_t* ibuRDMAAllocInitIB(ibu_mem_t *mem_handle)
     VAPI_rkey_t rkey;
     VAPI_mr_hndl_t handle;
     buf = (ibu_rdma_buf_t*)ib_malloc_register((sizeof(ibu_rdma_buf_t)*(IBU_NUM_OF_RDMA_BUFS+1)), &handle, &lkey, &rkey);
-    buf = (ibu_rdma_buf_t*)((UINT_PTR)((unsigned char*)buf + (IBU_RDMA_BUF_SIZE -1))&(~(IBU_RDMA_BUF_SIZE-1)));
+    /*buf = (ibu_rdma_buf_t*)((UINT_PTR)((unsigned char*)buf + (IBU_RDMA_BUF_SIZE -1))&(~(IBU_RDMA_BUF_SIZE-1)));*/
+    buf = (ibu_rdma_buf_t*)
+	MPIU_AintToPtr(
+	    MPIU_PtrToAint((unsigned char*)buf + (IBU_RDMA_BUF_SIZE -1)) &
+	    (MPI_Aint)(~(IBU_RDMA_BUF_SIZE-1)));
     if (buf == NULL)
     {
 	return NULL;
