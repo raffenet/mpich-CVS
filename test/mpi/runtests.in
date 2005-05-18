@@ -121,6 +121,9 @@ foreach $_ (@ARGV) {
 	$xmloutput = 1;
 	open( XMLOUT, ">$xmlfile" ) || die "Cannot open $xmlfile\n";
 	my $date = `date "+%Y-%m-%d-%H-%M"`;
+	$date =~ s/\r?\n//;
+	# MPISOURCE can be used to describe the source of MPI for this
+	# test.
 	print XMLOUT "<?xml version='1.0' ?>
 <?xml-stylesheet href=\"TestResults.xsl\" type=\"text/xsl\" ?>
 <MPITESTRESULTS>
