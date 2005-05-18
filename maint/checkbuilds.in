@@ -839,7 +839,7 @@ sub RunMPICH2TestSuite {
 	&RunMPD;
     }
     # The MPICH2 test suite has a program for running the tests
-    $rc = &RunProgram( "./runtests -mpiexec=$instdir/bin/mpiexec -srcdir=$srcdir/test -tests=testlist -xmlfile=summary.xml" );
+    $rc = &RunProgram( "./runtests -mpiexec=$instdir/bin/mpiexec -srcdir=$srcdir/test/mpi -tests=testlist -xmlfile=summary.xml" );
     $test_status = $rc;
     if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
     if ($built_for_mpd) {
