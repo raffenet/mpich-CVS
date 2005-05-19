@@ -430,20 +430,37 @@ cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
     make install PREFIX=${MPE_INSTALL_DIR}
 
 
-For BlueGene/Light's frontend node, for example
+For BlueGene/Light's MPI implementation: If the compilers are set up correctly
 
+    ${MPE_SRC_DIR}/configure                                               \
+    MPI_CC=blrts_xlc MPI_F77=blrts_xlf CC=xlc F77=xlf                      \
+    MPI_INC="-I/bgl/BlueLight/ppcfloor/bglsys/include"                     \
+    MPI_LIBS="-L/bgl/BlueLight/ppcfloor/bglsys/lib                         \
+             -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lc"       \
+    CFLAGS=-O3 FFLAGS=-O3                                                  \
+    --with-java=/usr/lib/IBMJava2/jre                                      \
+    --disable-misc --disable-graphics --disable-sample --disable-rlog
+
+i.e. make sure that blrts_xlc uses the same xlc as listed in CC, the same
+     applies to blrts_xlf.
+
+If the above does not work, try the following:
 
 for older XL compilers, do
 
     ${MPE_SRC_DIR}/configure                                               \
-    CC=xlc F77=xlf                                                         \
-    MPI_CC="xlc -F /etc/opt/ibmcmp/blrts-ppcfloor.cfg"                     \
-    MPI_F77="xlf -F /etc/opt/ibmcmp/blrts-ppcfloor.cfg"                    \
+    MPI_CC="/opt/ibmcmp/vac/7.0/bin/xlc                                    \
+           -F /etc/opt/ibmcmp/vac/7.0/blrts-vac.cfg"                       \
+    MPI_F77="/opt/ibmcmp/xlf/9.1/bin/xlf                                   \
+           -F /etc/opt/ibmcmp/xlf/9.1/blrts-xlf.cfg"                       \
+    CC="/opt/ibmcmp/vac/7.0/bin/xlc -F /etc/opt/ibmcmp/vac/7.0/vac.cfg"    \
+    F77="/opt/ibmcmp/xlf/9.1/bin/xlf -F /etc/opt/ibmcmp/xlf/9.1/xlf.cfg"   \
     MPI_INC="-I/bgl/BlueLight/ppcfloor/bglsys/include"                     \
     MPI_LIBS="-L/bgl/BlueLight/ppcfloor/bglsys/lib                         \
              -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lc"       \
     --with-java=/usr/lib/IBMJava2/jre                                      \
-    --disable-misc --disable-graphics --disable-sample --disable-rlog
+    --disable-misc --disable-graphics --disable-sample --disable-rlog      \
+    CFLAGS=-O3 FFLAGS=-O3  
 
 For newer XL compilers, do
 
@@ -463,24 +480,9 @@ For newer XL compilers, do
     --with-java=/usr/lib/IBMJava2/jre                                      \
     --disable-misc --disable-graphics --disable-sample --disable-rlog
 
-or
-
-    ${MPE_SRC_DIR}/configure                                               \
-    MPI_CC="/opt/ibmcmp/vac/7.0/bin/xlc                                    \
-           -F /etc/opt/ibmcmp/vac/7.0/blrts-vac.cfg"                       \
-    MPI_F77="/opt/ibmcmp/xlf/9.1/bin/xlf                                   \
-           -F /etc/opt/ibmcmp/xlf/9.1/blrts-xlf.cfg"                       \
-    CC="/opt/ibmcmp/vac/7.0/bin/xlc -F /etc/opt/ibmcmp/vac/7.0/vac.cfg"    \
-    F77="/opt/ibmcmp/xlf/9.1/bin/xlf -F /etc/opt/ibmcmp/xlf/9.1/xlf.cfg"   \
-    MPI_INC="-I/bgl/BlueLight/ppcfloor/bglsys/include"                     \
-    MPI_LIBS="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts             \
-            -lmsglayer.rts -lrts.rts -ldevices.rts -lc"                    \
-    --with-java=/usr/lib/IBMJava2/jre                                      \
-    --disable-misc --disable-graphics --disable-sample --disable-rlog      \
-    CFLAGS=-O3 FFLAGS=-O3  
-
-or MPI_INC and MPI_LIBS can be included in a mpicc_ibm and mpif77_ibm wrapper
-scripts.
+Preferred approach: MPI_INC and MPI_LIBS should be included in some kind of
+mpicc/mpif77 scripts, e.g. mpicc_ibm(or mpxlc) and mpif77_ibm(or mpxlf)
+wrappers
 
      ${MPE_SRC_DIR}/configure                                              \
      MPI_CC=/home/chan/bin/mpicc_ibm                                       \
@@ -489,6 +491,8 @@ scripts.
      F77=/opt/ibmcmp/xlf/9.1/bin/xlf                                       \
      --with-java=/usr/lib/IBMJava2/jre                                     \
      --disable-misc --disable-graphics --disable-sample --disable-rlog
+
+After the successful configure, do make and make install.
 
      make
      make install PREFIX=${MPE_INSTALL_DIR}
