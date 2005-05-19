@@ -573,6 +573,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/pt2pt/Makefile \
 	  f77/info/Makefile \
 	  f77/spawn/Makefile \
+	  f77/spawn/typeaints.h \
 	  f77/rma/Makefile \
 	  f77/ext/Makefile \
           f77/io/Makefile \

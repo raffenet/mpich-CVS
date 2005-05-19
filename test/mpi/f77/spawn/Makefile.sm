@@ -1,3 +1,4 @@
+F77INCLUDES = -I. 
 LDADD = ../util/mtestf.o 
 DEPADD = @MPILIBLOC@ ../util/mtestf.o
 smvar_do_sharedlibs = 0

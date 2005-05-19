@@ -9,6 +9,7 @@ C executable is running.
 C
        program main
        include 'mpif.h'
+       include 'typeaints.h'
        integer errs, err
        integer rank, size, rsize, wsize, i
        integer np(2)
@@ -92,10 +93,11 @@ C       (the error count will still be reported to the parent)
          endif
 C
 C       Check for correct APPNUM
-         call mpi_comm_get_attr( MPI_COMM_WORLD, MPI_APPNUM, appnum,        &
+         call mpi_comm_get_attr( MPI_COMM_WORLD, MPI_APPNUM, asize,         &
      &        flag, ierr )
 C        My appnum should be my rank in comm world
          if (flag) then
+            appnum = asize
             if (appnum .ne. rank) then
                 errs = errs + 1
                 print *, "appnum is ", appnum, " but should be ", rank
