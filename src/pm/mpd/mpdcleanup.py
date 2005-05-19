@@ -22,7 +22,7 @@ __credits__ = ""
 from sys    import argv, exit
 from os     import environ, system
 from getopt import getopt
-from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError
+from mpdlib import mpd_set_my_id, mpd_get_my_username
 
 def mpdcleanup():
     rshCmd    = 'ssh'
@@ -32,8 +32,8 @@ def mpdcleanup():
     try:
 	(opts, args) = getopt(argv[1:], 'hf:r:u:c:', ['help', 'file=', 'rsh=', 'user=', 'clean='])
     except:
+        print 'invalid arg(s) specified'
 	usage()
-        mpd_raise('invalid arg(s) specified')
     else:
 	for opt in opts:
 	    if opt[0] == '-r' or opt[0] == '--rsh':
@@ -47,8 +47,8 @@ def mpdcleanup():
 	    elif opt[0] == '-c' or opt[0] == '--clean':
 		cleanCmd = opt[1]
     if args:
+        print 'invalid arg(s) specified: ' + ' '.join(args)
 	usage()
-        mpd_raise('invalid arg(s) specified: ' + ' '.join(args) )
 
     if environ.has_key('MPD_CON_EXT'):
         conExt = '_' + environ['MPD_CON_EXT']

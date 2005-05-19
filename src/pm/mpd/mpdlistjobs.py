@@ -17,17 +17,19 @@ __version__ = "$Revision$"
 __credits__ = ""
 
 
-from sys    import argv, exit
-from os     import environ, getuid, close
-from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
-from re     import sub
-from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
-from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
+from  sys     import  argv, exit
+from  os      import  environ, getuid, close
+from  socket  import  socket, fromfd, AF_UNIX, SOCK_STREAM
+from  re      import  sub
+from  signal  import  signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
+from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
+                      mpd_handle_signal, mpd_get_my_username, MPDConsClientSock
 
 def mpdlistjobs():
-    mpd_set_my_id('mpdlistjobs_')
-    username = mpd_get_my_username()
+    import sys    # to get access to excepthook in next line
+    sys.excepthook = mpd_uncaught_except_tb
+    signal(SIGINT, sig_handler)
+    mpd_set_my_id(myid='mpdlistjobs')
     uname    = ''
     jobid    = ''
     sjobid   = ''
@@ -79,42 +81,23 @@ def mpdlistjobs():
             else:
                 print 'unrecognized arg: %s' % argv[aidx]
                 exit(-1)
-    if environ.has_key('UNIX_SOCKET'):
-        conFD = int(environ['UNIX_SOCKET'])
-        conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
-        close(conFD)
-    else:
-        if environ.has_key('MPD_CON_EXT'):
-            conExt = '_' + environ['MPD_CON_EXT']
-        else:
-            conExt = ''
-        consoleName = '/tmp/mpd2.console_' + username + conExt
-        conSocket = socket(AF_UNIX,SOCK_STREAM)  # note: UNIX socket
-        try:
-            conSocket.connect(consoleName)
-        except Exception, errmsg:
-            print 'mpdlistjobs: cannot connect to local mpd (%s); possible causes:' % consoleName
-            print '    1. no mpd running on this host'
-            print '    2. mpd is running but was started without a "console" (-n option)'
-	    print 'you can start an mpd with the "mpd" command; to get help, run:'
-	    print '    mpd -h'
-            exit(-1)
-        msgToSend = 'realusername=%s\n' % username
-        mpd_send_one_line(conSocket,msgToSend)
+    conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
     msgToSend = { 'cmd' : 'mpdlistjobs' }
-    mpd_send_one_msg(conSocket,msgToSend)
-    msg = recv_one_msg_with_timeout(conSocket,5)
+    conSock.send_dict_msg(msgToSend)
+    msg = conSock.recv_dict_msg(timeout=5.0)
     if not msg:
-        mpd_raise('no msg recvd from mpd before timeout')
+        mpd_print(1,'no msg recvd from mpd before timeout')
     if msg['cmd'] != 'local_mpdid':     # get full id of local mpd for filters later
-        mpd_raise('did not recv local_mpdid msg from local mpd; instead, recvd: %s' % msg)
+        mpd_print(1,'did not recv local_mpdid msg from local mpd; instead, recvd: %s' % msg)
     else:
         if len(sjobid) == 1:
             sjobid.append(msg['id'])
-    while 1:
-        msg = mpd_recv_one_msg(conSocket)
+    done = 0
+    while not done:
+        msg = conSock.recv_dict_msg()
         if not msg.has_key('cmd'):
-            raise RuntimeError, 'mpdlistjobs: INVALID msg=:%s:' % (msg)
+            mpd_print(1,'mpdlistjobs: INVALID msg=:%s:' % (msg) )
+            exit(-1)
         if msg['cmd'] == 'mpdlistjobs_info':
             smjobid = msg['jobid'].split('  ')  # jobnum, mpdid, and alias (if present)
             if len(smjobid) < 3:
@@ -147,30 +130,17 @@ def mpdlistjobs():
                     print 'rank     = %s'    % (msg['rank'])
                     print 'pgm      = %s'    % (msg['pgm'])
                     print
-        else:
-            break  # mpdlistjobs_trailer
+        else:  # mpdlistjobs_trailer
+            done = 1
+    conSock.close()
 
+def sig_handler(signum,frame):
+    mpd_handle_signal(signum,frame)  # not nec since I exit next
+    exit(-1)
 
 def usage():
     print __doc__
     exit(-1)
 
-def signal_handler(signum,frame):
-    if signum == SIGALRM:
-        pass
-    else:
-        exit(-1)
-
-def recv_one_msg_with_timeout(sock,timeout):
-    oldTimeout = alarm(timeout)
-    msg = mpd_recv_one_msg(sock)    # fails WITHOUT a msg if sigalrm occurs
-    alarm(oldTimeout)
-    return(msg)
-
 if __name__ == '__main__':
-    signal(SIGINT,signal_handler)
-    signal(SIGALRM,signal_handler)
-    try:
-        mpdlistjobs()
-    except mpdError, errmsg:
-	print 'mpdlistjobs failed: %s' % (errmsg)
+    mpdlistjobs()

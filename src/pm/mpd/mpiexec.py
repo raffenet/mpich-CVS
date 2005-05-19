@@ -11,17 +11,20 @@ mpiexec -file filename             # filename contains XML job description
 mpiexec [global args] [local args] executable [args]
    where global args may be
       -l                           # line labels by MPI rank
-      -if                          # network interface to use locally
       -kx                          # keep generated xml for debugging
       -bnr                         # MPICH1 compatibility mode
       -g<local arg name>           # global version of local arg (below)
       -machinefile                 # file mapping procs to machines
       -s <spec>                    # direct stdin to "all" or 1,2 or 2-4,6 
+      -1                           # override default of trying 1st proc locally
+      -ifhn                        # network interface to use locally
+      -tv                          # run procs under totalview (must be installed)
       -gdb                         # run procs under gdb
       -gdba jobid                  # gdb-attach to existing jobid
     and local args may be
       -n <n> or -np <n>            # number of processes to start
       -wdir <dirname>              # working directory to start in
+      -umask <umask>               # umask for remote process
       -path <dirname>              # place to look for executables
       -host <hostname>             # host to start on
       -soft <spec>                 # modifier of -n value
@@ -48,7 +51,7 @@ __credits__ = ""
 
 from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
-                   open as osopen, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
+                   open as osopen, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY, umask
 from popen2 import Popen3
 from pwd    import getpwuid
 from urllib import quote
@@ -63,13 +66,13 @@ def mpiexec():
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
     validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-gdba' : 1, '-bnr' : 0, '-tv' : 0,
-                        '-if' : 1, '-machinefile' : 1, '-kx' : 0, '-s' : 1,
+                        '-ifhn' : 1, '-machinefile' : 1, '-kx' : 0, '-s' : 1, '-1' : 0,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
-			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1,
+			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1, '-gumask' : 1,
 			'-genvall' : 0, '-genv' : 2, '-genvnone' : 0,
 			'-genvlist' : 1 }
     validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1,
-                        '-soft' : 1, '-arch' : 1,
+                        '-soft' : 1, '-arch' : 1, '-umask' : 1,
 			'-envall' : 0, '-env' : 2, '-envnone' : 0, '-envlist' : 1 }
 
     globalArgs   = {}
@@ -90,18 +93,24 @@ def mpiexec():
     if not access(mpdrun,X_OK):
         print 'mpiexec: cannot execute mpdrun %s' % mpdrun
         exit(0);
-    if argv[1] == '-file':
+    if argv[1] == '-gdba':
 	if len(argv) != 3:
+            print '-gdba arg must appear only with jobid'
+	    usage()
+        execvpe(mpdrun,[mpdrun,'-gdba',argv[2]],environ)
+        print 'mpiexec: exec failed for %s' % mpdrun
+        exit(-1)
+    elif argv[1] == '-file':
+	if len(argv) != 3:
+            print '-file arg must appear alone'
 	    usage()
         xmlFilename = argv[2]
         globalArgs['-kx'] = 1
+        execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
+        print 'mpiexec: exec failed for %s' % mpdrun
+        exit(-1)
     else:
-        if argv[1] == '-gdba':
-            if len(argv) != 3:
-                print '-gdba must be used only with a jobid'
-                usage()
-            execvpe(mpdrun,[mpdrun,'-ga',argv[2]],environ)
-        elif argv[1] == '-configfile':
+        if argv[1] == '-configfile':
 	    if len(argv) != 3:
 	        usage()
             configFileFD = osopen(argv[2],O_RDONLY)
@@ -123,20 +132,24 @@ def mpiexec():
         xmlCPG = xmlDOC.createElement('create-process-group')
         xmlDOC.appendChild(xmlCPG)
         for k in localArgSets.keys():
-            handle_argset(localArgSets[k],xmlDOC,xmlCPG,machineFileInfo)
+	    handle_argset(localArgSets[k],xmlDOC,xmlCPG,machineFileInfo)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if globalArgs['-l']:
             xmlCPG.setAttribute('output', 'label')
-        if globalArgs['-if']:
-            xmlCPG.setAttribute('net_interface', globalArgs['-if'])
+        if globalArgs['-ifhn']:
+            xmlCPG.setAttribute('ifhn', globalArgs['-ifhn'])
         if globalArgs['-s']:
-            xmlCPG.setAttribute('stdin_goes_to_who', globalArgs['-s'])
+            xmlCPG.setAttribute('stdin_dest', globalArgs['-s'])
         if globalArgs['-bnr']:
             xmlCPG.setAttribute('doing_bnr', '1')
         if globalArgs['-gdb']:
             xmlCPG.setAttribute('gdb', '1')
         if globalArgs['-tv']:
             xmlCPG.setAttribute('tv', '1')
+        if globalArgs['-1']:
+            xmlCPG.setAttribute('try_1st_locally', '0')
+        else:
+            xmlCPG.setAttribute('try_1st_locally', '1')
         submitter = getpwuid(getuid())[0]
         xmlCPG.setAttribute('submitter', submitter)
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
@@ -147,34 +160,39 @@ def mpiexec():
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         # print xmlDOC.toprettyxml(indent='   ')    #### RMB: TEMP DEBUG
         xmlFile.close()
-    if globalArgs['-kx']:
-        execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
-    else:
-        execvpe(mpdrun,[mpdrun,'-delxmlfile',xmlFilename],environ)
-    print 'mpiexec: exec failed for %s' % mpdrun
-    exit(0);
+        if globalArgs['-kx']:
+            execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
+        else:
+            execvpe(mpdrun,[mpdrun,'-delxmlfile',xmlFilename],environ)
+        print 'mpiexec: exec failed for %s' % mpdrun
+        exit(-1)
+    print 'mpiexec: should not be here; failed to exec mpdrun'
+    exit(-1)
 
 def collect_args(args):
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
-    globalArgs['-l']        = 0
-    globalArgs['-if']       = ''
-    globalArgs['-s']        = '0'
-    globalArgs['-kx']       = 0
-    globalArgs['-usize']    = 0
-    globalArgs['-gdb']      = 0
-    globalArgs['-bnr']      = 0
-    globalArgs['-tv']       = 0
+    currumask = umask(0) ; umask(currumask)  # grab it and set it back
+    globalArgs['-l']           = 0
+    globalArgs['-ifhn']        = ''
+    globalArgs['-s']           = '0'
+    globalArgs['-kx']          = 0
+    globalArgs['-usize']       = 0
+    globalArgs['-gdb']         = 0
+    globalArgs['-bnr']         = 0
+    globalArgs['-tv']          = 0
+    globalArgs['-1']           = 0
     globalArgs['-machinefile'] = ''
-    globalArgs['-gn']       = 1
-    globalArgs['-ghost']    = '_any_'
-    globalArgs['-gpath']    = environ['PATH']
-    globalArgs['-gwdir']    = path.abspath(getcwd())
-    globalArgs['-gsoft']    = 0
-    globalArgs['-garch']    = ''
-    globalArgs['-gexec']    = ''
-    globalArgs['-genv']     = {}
-    globalArgs['-genvlist'] = []
-    globalArgs['-genvnone'] = 0
+    globalArgs['-gn']          = 1
+    globalArgs['-ghost']       = '_any_'
+    globalArgs['-gpath']       = environ['PATH']
+    globalArgs['-gwdir']       = path.abspath(getcwd())
+    globalArgs['-gumask']      = str(currumask)
+    globalArgs['-gsoft']       = 0
+    globalArgs['-garch']       = ''
+    globalArgs['-gexec']       = ''
+    globalArgs['-genv']        = {}
+    globalArgs['-genvlist']    = []
+    globalArgs['-genvnone']    = 0
     argidx = 1
     while argidx < len(args)  and  args[argidx] in validGlobalArgs.keys():
         garg = args[argidx]
@@ -202,7 +220,7 @@ def collect_args(args):
         else:
             globalArgs[garg] = 1
             argidx += 1
-    if argidx < len(args)  and  args[argidx] == ':':
+    if args[argidx] == ':':
         argidx += 1
     localArgsKey = 0
     while argidx < len(args):
@@ -223,6 +241,7 @@ def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
 
     host   = globalArgs['-ghost']
     wdir   = globalArgs['-gwdir']
+    umask  = globalArgs['-gumask']
     wpath  = globalArgs['-gpath']
     nProcs = globalArgs['-gn']
     usize  = globalArgs['-usize']
@@ -275,6 +294,12 @@ def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
                 print '** missing arg to -wdir'
                 usage()
             wdir = argset[argidx+1]
+            argidx += 2
+        elif argset[argidx] == '-umask':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -umask'
+                usage()
+            umask = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-soft':
             if len(argset) < (argidx+2):
@@ -350,6 +375,7 @@ def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
         xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
         xmlPROCSPEC.setAttribute('path',wpath)
         xmlPROCSPEC.setAttribute('cwd',wdir)
+        xmlPROCSPEC.setAttribute('umask',umask)
         xmlPROCSPEC.setAttribute('host',host)
         xmlPROCSPEC.setAttribute('range','%d-%d' % (loRange,hiRange))
 

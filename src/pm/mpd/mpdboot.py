@@ -49,9 +49,8 @@ from popen2 import Popen4, popen2
 from socket import gethostname, gethostbyname_ex
 from select import select, error
 from signal import SIGKILL
-from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, \
-                   mpd_same_ips, mpd_get_ranks_in_binary_tree, mpd_print, \
-                   mpd_get_inet_socket_and_connect, mpd_send_one_msg, mpd_recv_one_msg
+from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_same_ips, mpd_get_ranks_in_binary_tree, \
+                   mpd_print, MPDSock
 
 global myHost, fullDirName, topMPDBoot, user
 
@@ -272,16 +271,16 @@ def mpdboot():
         mpd_print(1, 'p=%d l=%d r=%d' % (parent,lchild,rchild) )
 
     if myIfhn:
-        ifhnVal = '--if %s' % (myIfhn)
+        ifhnVal = '--ifhn=%s' % (myIfhn)
     elif hostsAndInfo[myBootRank]['ifhn']:
-        ifhnVal = '--if %s' % (hostsAndInfo[myBootRank]['ifhn'])
+        ifhnVal = '--ifhn=%s' % (hostsAndInfo[myBootRank]['ifhn'])
     else:
         ifhnVal = ''
     if entryHost:
-        cmd = '%s %s -h %s -p %s -d -e --ncpus %s %s' % \
+        cmd = '%s %s -h %s -p %s -d -e --ncpus=%s %s' % \
 	      (mpdCmd,myConsoleVal,entryHost,entryPort,myNcpus,ifhnVal)
     else:
-        cmd = '%s %s -d -e --ncpus %s %s' % \
+        cmd = '%s %s -d -e --ncpus=%s %s' % \
 	      (mpdCmd,myConsoleVal,myNcpus,ifhnVal)
     if verbosity:
         mpd_print(1,'starting local mpd on %s' % (myHost) )
@@ -295,14 +294,22 @@ def mpdboot():
     locMPDPort = locMPDFD.readline().strip()
     if locMPDPort.isdigit():
 	# can't do this until he's already in his ring
-        locMPDSocket = mpd_get_inet_socket_and_connect(myHost,int(locMPDPort))
-        if locMPDSocket:
-            msgToSend = { 'cmd' : 'ping', 'host' : 'ping', 'port' : 0} # dummy host & port
-            mpd_send_one_msg(locMPDSocket, { 'cmd' : 'ping', 'host' : myHost, 'port' : 0} )
-            msg = mpd_recv_one_msg(locMPDSocket)    # RMB: WITH TIMEOUT ??
-            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ping_ack':
-                err_exit('%d: unable to ping local mpd; invalid msg from mpd :%s:' % (myBootRank,msg) )
-            locMPDSocket.close()
+        locMPDSock = MPDSock(name='to_local_mpd')
+        locMPDSock.connect((myHost,int(locMPDPort)))
+        if locMPDSock:
+            msgToSend = { 'cmd' : 'ping', 'ifhn' : 'ping', 'port' : 0} # dummy values
+            locMPDSock.send_dict_msg( msgToSend)
+            msg = locMPDSock.recv_dict_msg()    # RMB: WITH TIMEOUT ??
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'challenge':
+                locMPDOut = locMPDFD.read()
+                errMsg  = '%d: unable to ping local mpd;\n' % (myBootRank)
+                errMsg += 'invalid msg from mpd :%s:\n' % (msg)
+                errMsg += '** mpd may have disappeared, perhaps due to mismatched secretwords\n'
+                errMsg += '** see msgs logged in syslog and /tmp/mpd2.logfile* on %s\n' % (myHost)
+                errMsg += 'last printed output from mpd before becoming a daemon:\n'
+                errMsg += locMPDOut
+                err_exit(errMsg)
+            locMPDSock.close()
         else:
             err_exit('failed to connect to mpd' )
     else:
@@ -373,7 +380,8 @@ def mpdboot():
         try:
             (readyFDs,unused1,unused2) = select(fdsToSelect,[],[],0.1)
         except error, errmsg:
-            mpd_raise('mpdboot: select failed: errmsg=:%s:' % (errmsg) )
+            mpd_print(1111,'mpdboot: select failed: errmsg=:%s:' % (errmsg) )
+            exit(-1)
         if lfd  and  lfd in readyFDs:
             line = lfd.readline()
             if line:
@@ -437,10 +445,4 @@ def usage():
 
     
 if __name__ == '__main__':
-    try:
-        mpdboot()
-    except mpdError, errmsg:
-        print 'mpdboot failed: %s' % (errmsg)
-    ## RMB: I commented these 2 lines out as unnec (I think) on 10/5/04
-    # except SystemExit, errmsg:
-        # pass
+    mpdboot()

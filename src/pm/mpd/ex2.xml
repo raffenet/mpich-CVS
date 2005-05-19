@@ -1,6 +1,6 @@
 <create-process-group
 	   totalprocs='7'
-	   stdin_goes_to_who='0,2-4,6'
+	   stdin_dest='0,2-4,6'
 	   output='label'
 	   >
       <process-spec

@@ -12,8 +12,8 @@ mpd           start an mpd daemon
 mpdtrace      show all mpd's in ring
 mpdboot       start a ring of daemons all at once
 mpdringtest   test how long it takes for a message to circle the ring 
-mpdallexit    take down all daemons in ring
 mpdexit       remove one mpd from the ring
+mpdallexit    take down all daemons in ring
 mpdcleanup    repair local Unix socket if ring crashed badly
 mpdrun        start a parallel job
 mpdlistjobs   list processes of jobs (-a or --all: all jobs for all users)

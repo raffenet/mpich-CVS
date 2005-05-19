@@ -15,6 +15,7 @@ COPTIONS  = @COPTIONS@
 LDFLAGS	  = @LDFLAGS@
 LIBS	  = @LIBS@ 
 PYTHON    = @PYTHON@
+DO_MTV    = @DO_MTV@
 INSTALL   = @INSTALL@
 
 C_COMPILE = ${CC} ${INCLUDES} ${CFLAGS} ${COPTIONS}
@@ -33,7 +34,7 @@ MPD      = mpd
 MPDBOOT  = mpdboot
 CMDS     = mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob \
            mpdexit mpdallexit mpdcleanup mpdhelp mpdcheck
-HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver mpdtest
+HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver
 
 PYTHON_SOURCE =  ${MPD} ${MPDBOOT} ${CMDS} ${HELPERS}
 
@@ -43,7 +44,6 @@ example_SOURCES	 = sigcatcher.c infloop.c
 mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
 example_OBJECTS	= ${example_SOURCES:.c=.o}
 
-# -@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 
 all: Makefile ${PROGRAMS}
 	@if [ ! -x ${srcdir}/install.sh ] ; then \
@@ -56,6 +56,10 @@ all: Makefile ${PROGRAMS}
 	        exit 1 ;\
 	    fi ;\
 	fi
+	@if [ ${DO_MTV} = "yes" ] ; then \
+	    currdir=`pwd` ; cd ${srcdir}  &&  ${PYTHON} ./mtv_setup.py build_ext --build-lib=$$currdir --build-temp=$$currdir ;\
+	fi
+
 
 
 .SUFFIXES:
@@ -83,7 +87,7 @@ clean:
 # ls -l | grep rwx
 distclean: clean
 	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${PYTHON_SOURCE} \
-                   config.status config.cache config.log
+                   config.status config.cache config.log mtv.so
 
 
 maintainer-clean: distclean
@@ -99,6 +103,8 @@ Makefile: ${srcdir}/Makefile.in config.status
 .c.o:	
 	${C_COMPILE} -c $<
 
+# if configured with wrong prefix, use:
+#     make prefix=new_install_dir install
 install: all
 	@if [ ! -d ${bindir} ] ; then \
 	    echo "mkdir -p ${bindir} " ;\
@@ -111,7 +117,7 @@ install: all
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${PYTHON_SOURCE} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
+	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
 	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
@@ -128,6 +134,9 @@ install: all
 	-@cd ${bindir} && @LN_S@ mpdrun mpirun
 	-@cd ${bindir} && rm -f mpirun.py
 	-@cd ${bindir} && @LN_S@ mpdrun.py mpirun.py
+	-@if [ ${DO_MTV} = "yes" ] ; then \
+	    ${INSTALL} -m 755 mtv.so ${bindir}/mtv.so ;\
+	fi
 
 
 mpich2-build-install: mpich2-mpdroot install
@@ -162,11 +171,6 @@ TAGS:
 
 
 # EXPERIMENTAL TOTALVIEW STUFF
-mtv:
-	currdir=`pwd` ; cd ${srcdir}  &&  ${PYTHON} ./mtv_setup.py build_ext --build-lib=$$currdir --build-temp=$$currdir
-
-install_mtv:	mtv.so
-	-@${INSTALL} -m 755 mtv.so ${bindir}/mtv.so
 
 # EXPERIMENTAL MAN STUFF
 man:
