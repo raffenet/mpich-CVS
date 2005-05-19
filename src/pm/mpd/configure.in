@@ -62,7 +62,7 @@ AC_ARG_WITH(python,
             [--with-python=name - Specify a particular python to use for mpd],,
             with_python="")
 PYTHON=$with_python
-echo "GOT PYTHON", $PYTHON
+# echo "GOT PYTHON", $PYTHON
 if test -z "$PYTHON" ; then  ## user did not give us a python; find one
     dnl Find a Python
     AC_CHECK_PROG(PY23, python2.3, python2.3)
