@@ -219,7 +219,7 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
                     return;
                 }
 #elif defined(HAVE__INTERLOCKEDEXCHANGE)
-                if (_InterlockedExchange(lock, 1) == 0)
+                if (_InterlockedExchange((volatile void *) lock, 1) == 0)
                 {
                     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
                     return;
