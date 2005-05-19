@@ -23,7 +23,7 @@ void ADIOI_TESTFS_WriteContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_WriteContig called on %s\n", myrank, 
 	    nprocs, fd->filename);
-    FPRINTF(stdout, "[%d/%d]    writing (buf = %p, loc = %Ld, sz = %Ld)\n",
+    FPRINTF(stdout, "[%d/%d]    writing (buf = %p, loc = %lld, sz = %lld)\n",
 	    myrank, nprocs, buf, (long long) offset, 
 	    (long long) datatype_size * count);
 
@@ -31,7 +31,7 @@ void ADIOI_TESTFS_WriteContig(ADIO_File fd, void *buf, int count,
     {
 	fd->fp_ind += datatype_size * count;
 	fd->fp_sys_posn = fd->fp_ind;
-	FPRINTF(stdout, "[%d/%d]    new file position is %Ld\n", myrank, 
+	FPRINTF(stdout, "[%d/%d]    new file position is %lld\n", myrank, 
 		nprocs, (long long) fd->fp_ind);
     }
     else {

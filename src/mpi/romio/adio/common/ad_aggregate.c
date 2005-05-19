@@ -84,7 +84,7 @@ int ADIOI_Calc_aggregator(ADIO_File fd,
 
 #ifdef AGG_DEBUG
 #if 0
-    FPRINTF(stdout, "off = %Ld, min_off = %Ld, len = %Ld, fd_size = %Ld\n",
+    FPRINTF(stdout, "off = %lld, min_off = %lld, len = %lld, fd_size = %lld\n",
 	    off, min_off, *len, fd_size);
 #endif
 #endif
@@ -318,7 +318,7 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
 	    FPRINTF(stdout, "data needed from %d (count = %d):\n", i, 
 		    my_req[i].count);
 	    for (l=0; l < my_req[i].count; l++) {
-		FPRINTF(stdout, "   off[%d] = %Ld, len[%d] = %d\n", l,
+		FPRINTF(stdout, "   off[%d] = %lld, len[%d] = %d\n", l,
 			my_req[i].offsets[l], l, my_req[i].lens[l]);
 	    }
 	}
