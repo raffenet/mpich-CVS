@@ -6,6 +6,7 @@ configure.lineno
 autom4te.cache
 .deps
 testlist
+runtests
 results.txt
 test.sln
 test.ncb
