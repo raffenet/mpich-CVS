@@ -24,71 +24,71 @@ C
        pbufsize = 1000 * intsize
 
        call mpi_pack_external_size( 'external32', 10, MPI_INTEGER, 
-     &                              esize, ierr ) 
-       if (esize .ne. 10 * 4) then
+     &                              asize, ierr ) 
+       if (asize .ne. 10 * 4) then
           errs = errs + 1
           print *, 'Expected 40 for size of 10 external32 integers',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        call mpi_pack_external_size( 'external32', 10, MPI_LOGICAL, 
-     &                              esize, ierr ) 
-       if (esize .ne. 10 * 4) then
+     &                              asize, ierr ) 
+       if (asize .ne. 10 * 4) then
           errs = errs + 1
           print *, 'Expected 40 for size of 10 external32 logicals',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        call mpi_pack_external_size( 'external32', 10, MPI_CHARACTER, 
-     &                              esize, ierr ) 
-       if (esize .ne. 10 * 1) then
+     &                              asize, ierr ) 
+       if (asize .ne. 10 * 1) then
           errs = errs + 1
           print *, 'Expected 10 for size of 10 external32 characters',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        
        call mpi_pack_external_size( 'external32', 3, MPI_INTEGER2,
-     &                              esize, ierr )
-       if (esize .ne. 3 * 2) then
+     &                              asize, ierr )
+       if (asize .ne. 3 * 2) then
           errs = errs + 1
           print *, 'Expected 6 for size of 3 external32 INTEGER*2',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        call mpi_pack_external_size( 'external32', 3, MPI_INTEGER4,
-     &                              esize, ierr )
-       if (esize .ne. 3 * 4) then
+     &                              asize, ierr )
+       if (asize .ne. 3 * 4) then
           errs = errs + 1
           print *, 'Expected 12 for size of 3 external32 INTEGER*4',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        call mpi_pack_external_size( 'external32', 3, MPI_REAL4,
-     &                              esize, ierr )
-       if (esize .ne. 3 * 4) then
+     &                              asize, ierr )
+       if (asize .ne. 3 * 4) then
           errs = errs + 1
           print *, 'Expected 12 for size of 3 external32 REAL*4',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        call mpi_pack_external_size( 'external32', 3, MPI_REAL8,
-     &                              esize, ierr )
-       if (esize .ne. 3 * 8) then
+     &                              asize, ierr )
+       if (asize .ne. 3 * 8) then
           errs = errs + 1
           print *, 'Expected 24 for size of 3 external32 REAL*8',
-     &       ', got ', esize
+     &       ', got ', asize
        endif
        if (MPI_INTEGER1 .ne. MPI_DATATYPE_NULL) then
           call mpi_pack_external_size( 'external32', 3, MPI_INTEGER1,
-     &                              esize, ierr )
-          if (esize .ne. 3 * 1) then
+     &                              asize, ierr )
+          if (asize .ne. 3 * 1) then
              errs = errs + 1
              print *, 'Expected 3 for size of 3 external32 INTEGER*1',
-     &            ', got ', esize
+     &            ', got ', asize
           endif
        endif
        if (MPI_INTEGER8 .ne. MPI_DATATYPE_NULL) then
           call mpi_pack_external_size( 'external32', 3, MPI_INTEGER8,
-     &                              esize, ierr )
-          if (esize .ne. 3 * 8) then
+     &                              asize, ierr )
+          if (asize .ne. 3 * 8) then
              errs = errs + 1
              print *, 'Expected 24 for size of 3 external32 INTEGER*8',
-     &            ', got ', esize
+     &            ', got ', asize
           endif
        endif
 
