@@ -573,6 +573,16 @@ time by adding
 to the \texttt{configure} argments.  This is not necessary, since
 \texttt{mpd} is the default.
 
+\texttt{mpd} consists of a number of components written in Python.
+The \texttt{configure} script should automatically find a version of
+python in your \texttt{PATH} that has all the features needed to run
+\texttt{mpd}.  If for some reason you need to pick a specific version of
+Python for \texttt{mpd} to use, you can do so by adding
+\begin{verbatim}
+    --with-python=<fullpathname of python interpreter>
+\end{verbatim}
+to your \texttt{configure} arguments.
+
 The \texttt{mpd} process manager supports the use of the TotalView
 parallel debugger from Etnus.  If \texttt{totalview} is in your
 \texttt{PATH} when MPICH2 is configured, then an interface module will
