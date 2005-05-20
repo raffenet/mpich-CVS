@@ -85,8 +85,6 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     
     fd_sys = fd->fd_sys;
 
-
-
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
     aiocbp->aio_offset = offset;
     aiocbp->aio_buf    = buf;
