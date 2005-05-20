@@ -143,18 +143,22 @@ public class TreeTrunk
     public void flushToFile()
     {
         TreeNode    node;
+        Iterator    nodes_itr;
 
         // System.err.println( "TreeTrunk.flushToFile(): START" );
         //  next()      goes from  leafs  to  root,
-        Iterator nodes_itr = treenodes.iterator();
+        nodes_itr = treenodes.iterator();
         while ( nodes_itr.hasNext() ) {
             node = ( TreeNode ) nodes_itr.next();
             node.finalizeLatestTime( last_dobj_added );
             slog.writeTreeNode( node );
-            if ( ! nodes_itr.hasNext() )
+            if ( ! nodes_itr.hasNext() ) { // node = root ?
                 lineIDmapOne = node.getIdentityLineIDMap();
-            node.empty();  // empty the node for reuse.
+                node.summarizeCategories();
+            }
+            // node.empty();  // empty the node for reuse.
         }
+
         last_dobj_added = null;
         // System.err.println( "TreeTrunk.flushToFile(): END" );
     }
