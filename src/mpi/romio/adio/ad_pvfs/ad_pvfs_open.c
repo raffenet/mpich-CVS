@@ -51,6 +51,7 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     if (flag && (atoi(value) >= 0)) pstat.base = atoi(value);
 
     fd->fd_sys = pvfs_open64(fd->filename, amode, perm, &pstat, NULL);
+    fd->fd_direct = -1;
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
 	fd->fp_ind = fd->fp_sys_posn = pvfs_lseek64(fd->fd_sys, 0, SEEK_END);

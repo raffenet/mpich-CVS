@@ -49,6 +49,7 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
 #ifdef PROFILE
     MPE_Log_event(2, 0, "end open");
 #endif
+    fd->fd_direct = -1;
 
     if (fd->fd_sys != -1) {
 	value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
