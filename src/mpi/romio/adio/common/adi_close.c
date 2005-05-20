@@ -19,7 +19,7 @@
 
 void ADIOI_GEN_Close(ADIO_File fd, int *error_code)
 {
-    int err;
+    int err, derr;
     static char myname[] = "ADIOI_GEN_CLOSE";
 
 #ifdef PROFILE
@@ -27,14 +27,18 @@ void ADIOI_GEN_Close(ADIO_File fd, int *error_code)
 #endif
 
     err = close(fd->fd_sys);
+    if (fd->fd_direct >= 0) {
+	derr = close(fd->fd_direct);
+    }
 
 #ifdef PROFILE
     MPE_Log_event(10, 0, "end close");
 #endif
 
-    fd->fd_sys = -1;
+    fd->fd_sys    = -1;
+    fd->fd_direct = -1;
 
-    if (err == -1) {
+    if (err == -1 || derr == -1) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**io",
