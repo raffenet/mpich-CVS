@@ -7,6 +7,7 @@
  */
 
 #include "mpioimpl.h"
+#include "adioi.h" /* ADIOI_Get_byte_offset() prototype */
 
 #ifdef HAVE_WEAK_SYMBOLS
 
