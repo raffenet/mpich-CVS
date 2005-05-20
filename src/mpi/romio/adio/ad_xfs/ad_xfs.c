@@ -22,7 +22,7 @@ struct ADIOI_Fns_struct ADIO_XFS_operations = {
     ADIOI_XFS_SetInfo, /* SetInfo */
     ADIOI_GEN_ReadStrided, /* ReadStrided */
     ADIOI_GEN_WriteStrided, /* WriteStrided */
-    ADIOI_XFS_Close, /* Close */
+    ADIOI_GEN_Close, /* Close */
     ADIOI_XFS_IreadContig, /* IreadContig */
     ADIOI_XFS_IwriteContig, /* IwriteContig */
     ADIOI_XFS_ReadDone, /* ReadDone */

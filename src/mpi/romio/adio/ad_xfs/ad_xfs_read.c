@@ -7,6 +7,9 @@
  */
 
 #include "ad_xfs.h"
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
 
 static void ADIOI_XFS_Aligned_Mem_File_Read(ADIO_File fd, void *buf, int len, 
 					     ADIO_Offset offset, int *err);

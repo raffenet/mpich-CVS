@@ -7,6 +7,14 @@
  */
 
 #include "ad_xfs.h"
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+
+#if defined(MPISGI)
+#include <mpitypedefs.h>
+#include <mpifunctions.h>
+#endif
 
 void ADIOI_XFS_Open(ADIO_File fd, int *error_code)
 {
@@ -41,10 +49,24 @@ void ADIOI_XFS_Open(ADIO_File fd, int *error_code)
 
     fd->fd_direct = open(fd->filename, amode_direct, perm);
     if (fd->fd_direct != -1) {
+
+#if defined(LINUX) && defined(MPISGI)
+	ioctl(fd->fd_direct, XFS_IOC_DIOINFO, &st);
+#else
 	fcntl(fd->fd_direct, F_DIOINFO, &st);
+#endif
+
 	fd->d_mem = st.d_mem;
 	fd->d_miniosz = st.d_miniosz;
 	fd->d_maxiosz = st.d_maxiosz;
+
+	if (fd->d_mem > XFS_MEMALIGN) {
+	    FPRINTF(stderr, "MPI: Run-time Direct-IO memory alignment, %d, does not match compile-time value, %d.\n",
+		fd->d_mem, XFS_MEMALIGN);
+	    FPRINTF(stderr, "MPI: Report this error and rerun with Direct-IO disabled.\n");
+	    close(fd->fd_direct);
+	    fd->fd_direct = -1;
+	}
     }
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
