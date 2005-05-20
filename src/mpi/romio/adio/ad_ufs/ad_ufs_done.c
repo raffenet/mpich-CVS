@@ -36,8 +36,8 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
     return 1;
 #endif    
 
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
-/* IBM */
+#ifndef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+/* old IBM API */
     if ((*request)->queued) {
 	tmp1 = (struct aiocb *) (*request)->handle;
 	errno = aio_error(tmp1->aio_handle);

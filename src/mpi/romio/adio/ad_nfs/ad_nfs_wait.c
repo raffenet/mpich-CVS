@@ -24,7 +24,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 	return;
     }
     
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
+#ifdef ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS
 /* IBM */
     if ((*request)->queued) {
 	do {
