@@ -1,0 +1,148 @@
+#! @PERL@
+#
+# f77tof90 indir outdir [ Makefile-template [Make-Append] ]
+# For each file in indir/*.[fF], create a corresponding file in outdir
+# with .f90/.F90, and with any include "mpif.h" replaced with use mpi
+# It also changes to the new comment style, because some compilers
+# use the comment style to choose other features of the language
+#
+$indir = $ARGV[0];
+$outdir = $ARGV[1];
+$makeTemplate = $ARGV[2];
+$makeAppend   = $ARGV[3];
+$convertToFreeForm    = 1;
+$convertToNewComments = 1;
+# Including a newline variable allows us to handle Unix and DOS source files
+$newline = "\n";
+
+#
+# Check the input arguments
+if ($indir eq "" || $outdir eq "") {
+    print STDERR "Usage: f77tof90 indir outdir [ makefile-template ]\n";
+    exit 1;
+}
+if ( ! -d $indir) {
+    print STDERR "Input directory $indir does not exist\n";
+    exit 1;
+}
+if (! -d $outdir) {
+    print STDERR "Output directory $outdir does not exist\n";
+    exit 1;
+}
+
+opendir( DIR, "$indir" );
+my @filelist = ();
+while ($file = readdir(DIR)) {
+    # Extract the extension
+    if ($file =~ /^(.*)\.([^\.]*)$/) {
+	$name = $1;
+	$ext  = $2;
+	# Skip if the file isn't a Fortran source file
+	if ($ext ne "f" && $ext ne "F") { next; }
+	&ConvertToF90( "$indir/$file", "$outdir/$name.${ext}90" );
+	$filelist[$#filelist+1] = $file;
+    }
+}
+closedir( DIR );
+
+# &CreateMakefile( "filelist", $outdir );
+if ($makeTemplate ne "" &&
+    -s "$indir/$makeTemplate") {
+    &ConvertMakefile( $indir, $outdir, $makeTemplate );
+    if (-s "$outdir/$makeAppend") {
+	# If there is a makeAppend in the output directory, then 
+	# append that to the generated makefile
+	&AppendFile( "$outdir/$makeAppend", "$outdir/$makeTemplate" );
+    }
+}
+
+exit 0;
+
+# -----------------------------------------------------------------------------
+
+sub ConvertToF90 {
+    my $infile = $_[0];
+    my $outfile = $_[1];
+    
+    open (INF, "<$infile" ) || die "Could not open $infile\n";
+    open (OUTF, ">$outfile" ) || die "Could not open $outfile\n";
+
+    my $lastLine = "";
+    my $firstline = 1;
+    while (<INF>) {
+	if (/\r/) { $newline = "\r\n"; }
+	# Remove any end-of-line characters
+	s/[\r\n]*//g;
+	if (/^(\s*)include\s+[\'\"]mpif\.h/) {
+	    $_ = "$1use mpi";
+	}
+	if ($convertToNewComments) {
+	    s/^C/!/;
+	}	
+	# We could also detect continuations in column six and 
+	# convert to free-form input by holding one line back
+	if ($convertToFreeForm) {
+	    if (/^     [^ ](.*)/) {
+		$leftover = $1;
+		# This line contains a continuation marker
+		$lastline .= " &";
+		$_ = "      $leftover";
+	    }
+	}
+	print OUTF "$lastline$newline" if (! $firstline);
+	$firstline = 0;
+	$lastline = $_;
+    }
+    print OUTF "$lastline$newline";
+
+    close (INF);
+    close (OUTF);
+}
+
+# Create a makefile from a template.  Replace @EXECS@ with the programs
+# in the filelist.
+# CreateMakefile( "filelist", $outdir )
+sub CreateMakefile {
+    my $filelist = $_[0];
+    my $outdir   = $_[1];
+}
+
+#
+# Take an existing makefile and perform the following transformations:
+# .f -> .f90, .F -> .F90
+# Others as necessary
+# ConvertMakefile( indir, outdir, filename )
+# By providing the filename, we can accept Makefile, Makefile.in, Makefile.am,
+# Makefile.sm, or even nonstandard names such as buildscript.
+sub ConvertMakefile {
+    my ($indir, $outdir, $filename) = @_;
+    open( INF, "<$indir/$filename" ) || die "Cannot open $indir/$filename\n";
+    open( OUTF, ">$outdir/$filename" ) || die "Cannot open $outdir/$filename\n";
+    while (<INF>) {
+	s/\.f/.f90/g;
+	s/\.F/.F90/g;
+	s/f77/f90/g;
+	s/F77/F90/g;
+	# Eventually need some way to update directory paths (particularly
+	# relative ones) and add F90 compile rules when not present.
+	print OUTF $_;
+    }
+
+    close( INF );
+    close( OUTF );
+}
+
+# Append infile to the end of inout file
+sub AppendFile( infile, inoutfile )
+{
+    my $infile = $_[0];
+    my $outfile = $_[1];
+    
+    open( INA, "<$infile" ) || die "Cannot open $infile\n";
+    open( OUTA, ">>$outfile" ) || die "Cannot open $outfile\n";
+    while (<INA>) {
+        print OUTA $_;
+    }
+    close(INA);
+    close(OUTA);
+}
