@@ -49,6 +49,7 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 				cmode, 
 				FILE_ATTRIBUTE_NORMAL, 
 				NULL);
+        fd->fd_direct = -1;
 
     if ((fd->fd_sys != INVALID_HANDLE_VALUE) &&
 	(fd->access_mode & ADIO_APPEND))

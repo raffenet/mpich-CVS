@@ -34,6 +34,7 @@ void ADIOI_NFS_Open(ADIO_File fd, int *error_code)
 	amode = amode | O_EXCL;
 
     fd->fd_sys = open(fd->filename, amode, perm);
+    fd->fd_direct = -1;
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
         fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
