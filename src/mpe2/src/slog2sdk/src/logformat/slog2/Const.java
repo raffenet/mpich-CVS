@@ -12,7 +12,7 @@ package logformat.slog2;
 public class Const
 {
            static final String  SLOG2_ID       = "SLOG 2";
-           static final String  version_ID     = SLOG2_ID + ".0.5";
+           static final String  version_ID     = SLOG2_ID + ".0.6";
            static final byte    INVALID_byte   = Byte.MIN_VALUE;
            static final short   INVALID_short  = Short.MIN_VALUE;
            static final int     INVALID_int    = Integer.MIN_VALUE;
@@ -41,6 +41,8 @@ public class Const
                                 + "  category objects.\n"
                                 + "- Version SLOG 2.0.5 expanded preview data\n"
                                 + "  to include inclusive & exclusive ratios.\n"
+                                + "- Version SLOG 2.0.6 expanded preview data\n"
+                                + "  to include the count of real drawables.\n"
                                 + "  \n"
                                 + "- 2.0.1 viewer draws 2.0.0 logfile's\n"
                                 + "  state nesting stack incorrectly!\n"
@@ -49,5 +51,6 @@ public class Const
                                 + "  preview weight incorrectly.\n"
                                 + "- 2.0.4 viewer supports JOIN method and\n"
                                 + "  can display 2.0.3 logfile correctly.\n"
-                                + "- 2.0.5 viewer cannot read 2.0.4 logfile.\n";
+                                + "- 2.0.5 viewer cannot read 2.0.4 logfile.\n"
+                                + "- 2.0.6 viewer cannot read 2.0.5 logfile.\n";
 }
