@@ -742,7 +742,7 @@ Windows specific options:
 processes on a single machine, so called because the MPI processes are
 simply \texttt{fork}ed from the \texttt{mpiexec} process.
 
-\subsubsection{\texttt{mpiexec} arguments for Forker}
+\subsubsection{\texttt{mpiexec} arguments for gforker}
 \label{sec:mpiexec-forker}
 
 The argument \texttt{-maxtime} sets a maximum time in seconds for the
@@ -950,6 +950,26 @@ You can attach to a running job with
 \end{verbatim}
 where \texttt{<jobid>} comes from \texttt{mpdlistjobs}.
 
+
+\subsection{TotalView}
+\label{sec:totalview}
+
+MPICH2 supports use of the TotalView debugger from Etnus.  If
+\texttt{mpich} has been configured to enable debugging with TotalView
+(See the section on configuration of the mpd process manager in the
+\emph{Installer's Guide}) then one can debug an MPI program started
+with \texttt{mpd} by adding \texttt{-tv} to the global \texttt{mpiexec}
+arguments, as in
+\begin{verbatim}
+    mpiexec -tv -n 3 cpi
+\end{verbatim}
+You will get a popup window from TotalView asking whether you want to
+start the job in a stopped state.  If so,
+when the TotalView window appears, you may see assembly code in the
+source window.  Click on \texttt{main} in the stack window (upper left)
+to see the source of the \texttt{main} function.  TotalView will show
+that the program (all processes) are stopped in the call to
+\texttt{MPI\_Init}. 
 \section{MPICH2 under Windows}
 \label{sec:windows}
 
