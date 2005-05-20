@@ -252,6 +252,19 @@ public class BufForShadows extends BufForObjects
         }
     }
 
+    // For SLOG-2 Output API
+    public void summarizeCategories()
+    {
+        Iterator  sobjs_itr;
+        Shadow    sobj;
+
+        sobjs_itr = buf4shadows.values().iterator();
+        while ( sobjs_itr.hasNext() ) {
+            sobj = (Shadow) sobjs_itr.next();
+            sobj.summarizeCategories( super.getDuration() );
+        }
+    }
+
     public void writeObject( MixedDataOutput outs )
     throws java.io.IOException
     {

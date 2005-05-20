@@ -45,7 +45,7 @@ public class Shadow extends Primitive
 
     private              CategoryWeight[]    twgt_ary;           // For Input
 
-    // For SLOG2 Ouput, map_type2twgt ?= null determine getByteSize().
+    // For SLOG2 Ouput, map_type2twgt ?= null determines getByteSize().
     private              Map                 map_type2twgt;      // For Output
     private              Map                 map_type2dobjs;     // For Output
     private              Set                 set_nestables;      // For Output 
@@ -443,6 +443,23 @@ public class Shadow extends Primitive
     public long getNumOfRealObjects()
     {
         return num_real_objs;
+    }
+
+    public void summarizeCategories( double buf4sobjs_duration )
+    {
+        CategoryWeight   this_twgt;
+        CategorySummary  type_smy;
+        Iterator         this_twgts_itr;
+        float            duration_ratio;
+
+        duration_ratio = (float) ( super.getDuration() / buf4sobjs_duration );
+        this_twgts_itr = this.map_type2twgt.values().iterator();
+        while ( this_twgts_itr.hasNext() ) {
+            this_twgt = (CategoryWeight) this_twgts_itr.next(); 
+            type_smy  = this_twgt.getCategory().getSummary();
+            type_smy.addDrawableCount( this_twgt.getDrawableCount() );
+            type_smy.addAllRatios( this_twgt, duration_ratio );
+        }
     }
 
     public void writeObject( MixedDataOutput outs )

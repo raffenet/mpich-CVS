@@ -226,6 +226,28 @@ public class TreeNode extends BufForDrawables
         return lineIDmap;
     }
 
+    //  This is only applicable to the ROOT treenode.
+    public void summarizeCategories()
+    {
+        BufForShadows   buf;
+        // Assume shiftHorizontalShadowBuf() has just been called,
+        // so shadowbuf == null, otherwise this function needs to call
+        // this.shiftHorizontalShadowBuf()
+        if ( shadowbuf != null ) {
+            throw new RuntimeException( "UnexpectedError: "
+                                      + "shadowbuf is NOT NULL! Aborting..." );
+        }
+
+        if ( shadowbufs.size() != 1 ) {
+            throw new RuntimeException( "UnexpectedError: "
+                                      + "shadowbufs[]'s size is "
+                                      + shadowbufs.size() + "! Aborting..." );
+        }
+            
+        shadowbuf = (BufForShadows) shadowbufs.get( 0 );
+        shadowbuf.summarizeCategories();
+    }
+
     public void writeObject( MixedDataOutput outs )
     throws java.io.IOException
     {
