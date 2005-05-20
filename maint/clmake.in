@@ -4,6 +4,7 @@
 # Set Defaults
 $debug = 0;
 $debugDir = 0;
+$gDebugOther = 0;
 # Define the known commands, along with known make noise (results of
 # echo)
 # We include /bin/rm and /bin/mv because some Makefile authors prefer
@@ -33,11 +34,21 @@ $debugDir = 0;
 # OtherNoise is an array of patterns that describe blocks of
 # text that we'd like to skip.  The initial use it to handle 
 # libtool install output.
-@OtherNoise = ( 'Libraries have been installed in:<SEP>more information, such as the ld(1) and ld.so(8) manual pages.',
-		'^\s*-*\s*$<SEP>', 
-		'^In directory:<SEP>',
-		'^creating\s<SEP>', 
+# The PG entries are work-arounds for bugs in the PG header files that have
+# small incompatibilities with the system header file /usr/include/unistd.h
+#
+@OtherNoise = ( 'Libraries have been installed in:<SEP>more information, such as the ld\(1\) and ld.so\(8\) manual pages.<SEP>20',
+		'^\s*-+\s*$<SEP><SEP>1', 
+		'^In directory:<SEP><SEP>1',
+		'^creating\s<SEP><SEP>1', 
+#		'^PGC-W-0114-More than one type.*/usr/include/unistd.h: 189<SEP>^PGC-W-0143-Useless typedef.*/usr/include/unistd.h: 189<SEP>2',
+#		'^PGC-W-0114-More than one type.*/usr/include/unistd.h: 243<SEP>^PGC-W-0143-Useless typedef.*/usr/include/unistd.h: 243<SEP>2',
+		'^PGC.*: compilation completed with warnings<SEP><SEP>1',
+# This next is a general version to handle all of these mistakes
+		'^PGC-W-0114-More than one type specified.*/usr/include<SEP>^PGC-W-0143-Useless typedef declaration \(no declarators present\).*/usr/include<SEP>2',
 		);
+
+
 
 $trimCompileLine = 1;
 
@@ -63,6 +74,7 @@ $trimCompileLine = 1;
 # commandline.
 #
 $cmdline = "";
+T:
 while ($line = <>) {
     if (eof()) { next; }
 
@@ -74,16 +86,26 @@ while ($line = <>) {
 
     # Check for noise
     foreach my $pat (@OtherNoise) {
-	my ($beginpat,$endpat) = split( '<SEP>', $pat );
+	# maxlines is the maximum number of lines to match
+	my ($beginpat,$endpat,$maxlines) = split( '<SEP>', $pat );
+	print "Trying to match $beginpat\n" if $gDebugOther;
 	if ($line =~ /$beginpat/) {
-	    # Found the beginning.  Look for the end
+	    $maxlines --;
+	    print "Found match to $beginpat\n" if $gDebugOther;
+	    # Found the beginning.  Look for the end (if one requested)
 	    if ($endpat =~ /\S/) {
+		print "Trying to match endpat $endpat\n" if $gDebugOther;
 		while ($line = <>) {
 		    if (eof()) { last; }
+		    print "Trying to match to $line" if $gDebugOther;
 		    if ($line =~ /$endpat/) { last; }
+		    if ($maxlines-- <= 0) { 
+			print STDOUT "Failed to match $endpat; last line was $line";
+			last; 
+		    }
 		}
 	    }
-	    next;
+	    next T;
 	}
     }
     
