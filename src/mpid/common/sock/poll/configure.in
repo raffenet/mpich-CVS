@@ -104,6 +104,27 @@ AC_MSG_RESULT([no])
 AC_MSG_ERROR([This device requires the poll function])
 ])
 
+dnl
+dnl needed on AIX
+dnl
+AC_MSG_CHECKING([whether bit fields work in ip.h]);
+AC_TRY_COMPILE([
+#include <netinet/tcp.h>
+],[
+int i;
+],[
+AC_MSG_RESULT([yes])
+bit_fields=yes
+],[
+AC_MSG_RESULT([no])
+bit_fields=no
+])
+if test "$bit_fields" = "no" ; then
+     AC_MSG_RESULT([Adding -D_NO_BITFIELDS to CFLAGS])
+     CFLAGS="$CFLAGS -D_NO_BITFIELDS"
+fi
+
+
 AC_CHECK_FUNCS(gethostname)
 if test "$ac_cv_func_gethostname" = "yes" ; then
     # Do we need to declare gethostname?
