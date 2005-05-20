@@ -156,7 +156,7 @@ public class TreeTrunk
                 lineIDmapOne = node.getIdentityLineIDMap();
                 node.summarizeCategories();
             }
-            // node.empty();  // empty the node for reuse.
+            node.empty();  // empty the node for reuse.
         }
 
         last_dobj_added = null;
