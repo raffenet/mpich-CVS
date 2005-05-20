@@ -60,6 +60,10 @@
 # endif
 #endif
 
+# if defined(ROMIO_XFS) && !defined(XFS_SUPER_MAGIC)
+# define XFS_SUPER_MAGIC 0x58465342
+# endif
+
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
 # ifdef HAVE_SYS_STATVFS_H
 # include <sys/statvfs.h>
@@ -124,10 +128,15 @@ Output Parameters:
 #    endif
 #endif
 
+/* ADIO_FileSysType_parentdir
+ *
+ * Returns pointer to string in dirnamep; that string is allocated with
+ * strdup and must be free()'d.
+ */
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 {
     int err;
-    char *dir, *slash;
+    char *dir = NULL, *slash;
     struct stat statbuf;
     
     err = lstat(filename, &statbuf);
@@ -144,11 +153,12 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 	 * but this code doesn't care if the target is really there
 	 * or not.
 	 */
+	int namelen;
 	char *linkbuf;
 
 	linkbuf = ADIOI_Malloc(PATH_MAX+1);
-	err = readlink(filename, linkbuf, PATH_MAX+1);
-	if (err) {
+	namelen = readlink(filename, linkbuf, PATH_MAX+1);
+	if (namelen == -1) {
 	    /* something strange has happened between the time that
 	     * we determined that this was a link and the time that
 	     * we attempted to read it; punt and use the old name.
@@ -157,6 +167,7 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 	}
 	else {
 	    /* successfully read the link */
+	    linkbuf[namelen] = '\0'; /* readlink doesn't null terminate */
 	    dir = strdup(linkbuf);
 	    ADIOI_Free(linkbuf);
 	}
@@ -165,7 +176,7 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
     slash = strrchr(dir, '/');
     if (!slash) strcpy(dir, ".");
     else {
-	if (slash == dir) *(dir + 1) = 0;
+	if (slash == dir) *(dir + 1) = '\0';
 	else *slash = '\0';
     }
 
@@ -207,6 +218,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
     struct stat sbuf;
 #endif
+    static char myname[] = "ADIO_RESOLVEFILETYPE_FNCALL";
 
     *error_code = MPI_SUCCESS;
 
@@ -216,15 +228,24 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     } while (err && (errno == ESTALE));
 
     if (err && (errno == ENOENT)) {
+	/* ENOENT may be returned in two cases:
+	 * 1) no directory entry for "filename"
+	 * 2) "filename" is a dangling symbolic link
+	 *
+	 * ADIO_FileSysType_parentdir tries to deal with both cases.
+	 */
 	ADIO_FileSysType_parentdir(filename, &dir);
 	err = statvfs(dir, &vfsbuf);
+
+ 	/* "dir" was allocated with strdup() in ADIO_FileSysType_parentdir */
 	free(dir);
     }
 
     /* --BEGIN ERROR HANDLING-- */
     if (err) {
-	/* TODO: CREATE ERROR CODE */
-	*error_code = MPI_ERR_UNKNOWN;
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+					   "**filename", "**filename %s", filename);
 	return;
     }
     /* --END ERROR HANDLING-- */
@@ -246,8 +267,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 # endif
 
     /* --BEGIN ERROR HANDLING-- */
-    /* TODO: CREATE ERROR CODE */
-    *error_code = MPI_ERR_UNKNOWN;
+    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				       myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+				       "**filename", "**filename %s", filename);
     /* --END ERROR HANDLING-- */
 #endif /* STATVFS APPROACH */
 
@@ -264,7 +286,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 
     /* --BEGIN ERROR HANDLING-- */
     if (err) {
-	*error_code = MPI_ERR_UNKNOWN;
+    	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+					   "**filename", "**filename %s", filename);
 	return;
     }
     /* --END ERROR HANDLING-- */
@@ -324,8 +348,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     return;
 # endif
     /* --BEGIN ERROR HANDLING-- */
-    /* TODO: CREATE ERROR CODE */
-    *error_code = MPI_ERR_UNKNOWN;
+    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				       myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+				       "**filename", "**filename %s", filename);
     /* --END ERROR HANDLING-- */
 #endif /* STATFS APPROACH */
 
@@ -340,7 +365,14 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	free(dir);
     }
     
-    if (err) *error_code = MPI_ERR_UNKNOWN;
+    if (err) {
+    	/* --BEGIN ERROR HANDLING-- */
+    	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				           myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+				           "**filename", "**filename %s", filename);
+    	/* --END ERROR HANDLING-- */
+	return;
+    }
     else {
 	if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
 	else *fstype = ADIO_SFS; /* assuming SX4 for now */
@@ -362,7 +394,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     return;
 #endif
 
-    *error_code = MPI_ERR_UNKNOWN;
+    /* --BEGIN ERROR HANDLING-- */
+    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				       myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+				       "**filename", "**filename %s", filename);
+    /* --END ERROR HANDLING-- */
 }
 
 /*
@@ -383,6 +419,7 @@ Output Parameters:
  */
 static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code)
 {
+    static char myname[] = "ADIO_RESOLVEFILETYPE_PREFIX";
     *error_code = MPI_SUCCESS;
 
     if (!strncmp(filename, "pfs:", 4) || !strncmp(filename, "PFS:", 4)) {
@@ -430,7 +467,11 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
 	*fstype = ADIO_NTFS;
 #else
 	*fstype = 0;
-	*error_code = MPI_ERR_UNKNOWN;
+        /* --BEGIN ERROR HANDLING-- */
+        *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				           myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+				           "**filename", "**filename %s", filename);
+        /* --END ERROR HANDLING-- */
 #endif
     }
 }
@@ -467,10 +508,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	/* no prefix; use system-dependent function call to determine type */
 	ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
-	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					       MPIR_ERR_RECOVERABLE, myname,
-					       __LINE__, MPI_ERR_IO,
-					       "**iofstype", 0);
+	    *error_code = myerrcode;
 	    return;
 	}
 
@@ -487,9 +525,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	 */
 	ADIO_FileSysType_prefix(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
-	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					       MPIR_ERR_RECOVERABLE, myname,
-					       __LINE__, MPI_ERR_IO, "**io", 0);
+	    *error_code = myerrcode;
 	    return;
 	}
     }
