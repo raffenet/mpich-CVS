@@ -1781,7 +1781,7 @@ char *** argv;
       state->is_active    = 0;
       state->name         = NULL;
       state->kind_mask    = 0;
-      state->color        = "white:vlines";
+      state->color        = "white";
   }
 
   /* By default, log only message-passing (pt-to-pt and collective) */
@@ -1808,33 +1808,37 @@ char *** argv;
   state = &states[MPE_ALLGATHER_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Allgather";
+  state->color = "purple3";
 
   state = &states[MPE_ALLGATHERV_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Allgatherv";
+  state->color = "purple3";
 
   state = &states[MPE_ALLREDUCE_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Allreduce";
-  state->color = "purple:vlines3";
+  state->color = "purple";
 
   state = &states[MPE_ALLTOALL_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Alltoall";
+  state->color = "DarkViolet";
 
   state = &states[MPE_ALLTOALLV_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Alltoallv";
+  state->color = "DarkViolet";
 
   state = &states[MPE_BARRIER_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Barrier";
-  state->color = "yellow:dimple3";
+  state->color = "yellow";
 
   state = &states[MPE_BCAST_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Bcast";
-  state->color = "cyan:boxes";
+  state->color = "cyan";
 
   state = &states[MPE_GATHER_ID];
   state->kind_mask = MPE_KIND_COLL;
@@ -1855,7 +1859,7 @@ char *** argv;
   state = &states[MPE_REDUCE_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Reduce";
-  state->color = "purple:2x2";
+  state->color = "MediumPurple";
 
   state = &states[MPE_SCAN_ID];
   state->kind_mask = MPE_KIND_COLL;
@@ -1864,10 +1868,12 @@ char *** argv;
   state = &states[MPE_SCATTER_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Scatter";
+  state->color = "orchid";
 
   state = &states[MPE_SCATTERV_ID];
   state->kind_mask = MPE_KIND_COLL;
   state->name = "MPI_Scatterv";
+  state->color = "orchid";
 
   state = &states[MPE_ATTR_DELETE_ID];
   state->kind_mask = MPE_KIND_ATTR;
@@ -2040,7 +2046,7 @@ char *** argv;
   state = &states[MPE_BSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Bsend";
-  state->color = "blue:gray3";
+  state->color = "SlateBlue";
 
   state = &states[MPE_BSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
@@ -2085,26 +2091,27 @@ char *** argv;
   state = &states[MPE_IPROBE_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Iprobe";
-  state->color = "seagreen:gray";
+  state->color = "LavenderBlush";
 
   state = &states[MPE_IRECV_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Irecv";
-  state->color = "springgreen:gray";
+  state->color = "PaleGreen";
 
   state = &states[MPE_IRSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Irsend";
+  state->color = "LightSkyBlue";
 
   state = &states[MPE_ISEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Isend";
-  state->color = "skyblue:gray";
+  state->color = "SkyBlue";
   
   state = &states[MPE_ISSEND_ID];
   state->kind_mask = MPE_ISSEND_ID;
   state->name = "MPI_Issend";
-  state->color = "seagreen:gray";
+  state->color = "LightSteelBlue";
   
   state = &states[MPE_PACK_ID];
   state->kind_mask = MPE_KIND_MSG;
@@ -2117,17 +2124,17 @@ char *** argv;
   state = &states[MPE_PROBE_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Probe";
-  state->color = "seagreen:gray";
+  state->color = "lavender";
   
   state = &states[MPE_RECV_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Recv";
-  state->color = "green:light_gray";
+  state->color = "green";
   
   state = &states[MPE_RSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Rsend";
-  state->color = "DeepSkyBlue:gray";
+  state->color = "DeepSkyBlue";
 
   state = &states[MPE_RSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
@@ -2136,22 +2143,22 @@ char *** argv;
   state = &states[MPE_SEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Send";
-  state->color = "blue:gray3";
+  state->color = "blue";
 
   state = &states[MPE_SENDRECV_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Sendrecv";
-  state->color = "seagreen:gray";
+  state->color = "SeaGreen";
   
   state = &states[MPE_SENDRECV_REPLACE_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Sendrecv_replace";
-  state->color = "seagreen:gray";
+  state->color = "SeaGreen1";
 
   state = &states[MPE_SSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Ssend";
-  state->color = "deepskyblue:gray";
+  state->color = "DeepSkyBlue";
 
   state = &states[MPE_SSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
@@ -2168,17 +2175,17 @@ char *** argv;
   state = &states[MPE_TEST_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Test";
-  state->color = "orange:gray";
+  state->color = "orange";
 
   state = &states[MPE_TESTALL_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Testall";
-  state->color = "orange:gray";
+  state->color = "orange1";
 
   state = &states[MPE_TESTANY_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Testany";
-  state->color = "orange:gray";
+  state->color = "orange3";
 
   state = &states[MPE_TEST_CANCELLED_ID];
   state->kind_mask = MPE_KIND_MSG;
@@ -2187,7 +2194,7 @@ char *** argv;
   state = &states[MPE_TESTSOME_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Testsome";
-  state->color = "orange:gray";
+  state->color = "orange4";
 
   state = &states[MPE_TYPE_COMMIT_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
@@ -2244,22 +2251,22 @@ char *** argv;
   state = &states[MPE_WAIT_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Wait";
-  state->color = "red:black";
+  state->color = "red";
 
   state = &states[MPE_WAITALL_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Waitall";
-  state->color = "OrangeRed:gray";
+  state->color = "OrangeRed";
 
   state = &states[MPE_WAITANY_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Waitany";
-  state->color = "coral:gray";
+  state->color = "coral";
 
   state = &states[MPE_WAITSOME_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Waitsome";
-  state->color = "red:black";
+  state->color = "IndianRed";
   
   state = &states[MPE_CART_COORDS_ID];
   state->kind_mask = MPE_KIND_TOPO;
