@@ -45,3 +45,15 @@ Frequent Asked Question and Anwser:
    MPI categories defined in the Legend window, then the unknown categories
    would most likely refer to the user-defined states whose definitions
    are supplied in the user code.
+
+5, The exclusion ratios reported by Jumpshot or SLOG-2 printing program 
+   for large SLOG-2 file seem to be less than what it should be ?
+
+   The exclusion ratio computed in SLOG-2 is less than or equal to what
+   it should be. This artifact is due to the fact that preview state is
+   used in the determination of exclusion region. The nesting level of
+   preview state is approximate by construction. This approximate nature
+   of the preview state may exclude more region in the enclosing state than
+   what the appropriate shares of its enclosed states should be.
+   Nevertheless, even with this limitation, the innermost state's exclusion
+   ratio is still correct.

@@ -340,7 +340,16 @@ has been used to illustrate the concept and representation of the
 preview state. Jumpshot-4 actually uses several different representations
 of the preview state. All these representations are based on two ratios
 stored in the SLOG-2 file: \emph{inclusion ratio} and \emph{exclusion
-ratio.} The inclusion ratio is computed without taking into account
+ratio}%
+\footnote{The exclusion ratio computed in SLOG-2 is less than or equal to what
+it should be. This artifact is due to the fact that preview state
+is used in the determination of exclusion region. The nesting level
+of preview state is approximate by construction. This approximate
+nature of the preview state may exclude more region in the enclosing
+state than what the appropriate shares of its enclosed states should
+be. Nevertheless, even with this limitation, the innermost state's
+exclusion ratio is still correct.%
+}\emph{.} The inclusion ratio is computed without taking into account
 the nesting order of the states. States that either are nested inside
 or enclose other states contribute equally to the inclusion ratio.
 The result is that the sum of all inclusion ratios from all state

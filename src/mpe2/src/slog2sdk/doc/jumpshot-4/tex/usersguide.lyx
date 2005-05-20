@@ -792,7 +792,25 @@ CumulativeInclusionRatio
 \emph default 
 and 
 \emph on 
-exclusion ratio.
+exclusion ratio
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+The exclusion ratio computed in SLOG-2 is less than or equal to what it should
+ be.
+ This artifact is due to the fact that preview state is used in the
+ determination of exclusion region.
+ The nesting level of preview state is approximate by construction.
+ This approximate nature of the preview state may exclude more region in the
+ enclosing state than what the appropriate shares of its enclosed states
+ should be.
+ Nevertheless, even with this limitation, the innermost state's exclusion
+ ratio is still correct.
+\end_inset 
+
+.
  
 \emph default 
 The inclusion ratio is computed without taking into account the nesting
