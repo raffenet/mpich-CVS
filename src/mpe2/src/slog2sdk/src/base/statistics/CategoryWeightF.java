@@ -72,9 +72,9 @@ public class CategoryWeightF extends CategorySummaryF
     {
         StringBuffer rep = new StringBuffer( "legend=" );
         if ( type != null )
-            rep.append( "legend=" + type.getName() );
+            rep.append( type.getName() );
         else
-            rep.append( "legend=" + "null:" + type_idx );
+            rep.append( "null:" + type_idx );
         rep.append( ", " );
         rep.append( super.toInfoBoxString( print_status ) );
         
