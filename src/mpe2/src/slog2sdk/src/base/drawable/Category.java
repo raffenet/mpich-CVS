@@ -20,25 +20,28 @@ import base.io.MixedDataOutput;
 
 public class Category
 {
-    private int          index;
-    private String       name;
-    private Topology     topo;         // private Shape    shape;
-    private ColorAlpha   color;
-    private int          width;
-    private String[]     infokeys;     // string infokeys for the infovals
-    private InfoType[]   infotypes;    // % token to represent infoval type
-    private Method[]     methods;
+    private int             index;
+    private String          name;
+    private Topology        topo;         // private Shape    shape;
+    private ColorAlpha      color;
+    private int             width;
+    private String[]        infokeys;     // string infokeys for the infovals
+    private InfoType[]      infotypes;    // % token to represent infoval type
+    private Method[]        methods;
+    private CategorySummary summary;
 
-    private boolean      hasBeenUsed;  // For SLOG-2 Output API, remove unused.
+    private boolean         hasBeenUsed;  // For SLOG-2 Output, remove unused.
 
-    private boolean      isVisible;    // For SLOG-2 Input API, or Jumpshot
-    private boolean      isSearchable; // For SLOG-2 Input API, or Jumpshot
+    private boolean         isVisible;    // For SLOG-2 Input, or Jumpshot
+    private boolean         isSearchable; // For SLOG-2 Input, or Jumpshot
+
 
     public Category()
     {
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        summary      = new CategorySummary();
         hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
@@ -55,12 +58,13 @@ public class Category
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        summary      = new CategorySummary();
         hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
     }
 
-    //  For TRACE-API
+    //  For TRACE-API where Category is created through DobjDef class.
     public Category( int obj_idx, String obj_name, int obj_width )
     {
         index        = obj_idx;
@@ -69,6 +73,7 @@ public class Category
         infokeys     = null;
         infotypes    = null;
         methods      = null;
+        summary      = new CategorySummary();
         hasBeenUsed  = false;
         isVisible    = true;
         isSearchable = true;
@@ -213,6 +218,11 @@ public class Category
             methods = null;
     }
 
+    public CategorySummary getSummary()
+    {
+        return this.summary;
+    }
+
     public void writeObject( MixedDataOutput outs )
     throws java.io.IOException
     {
@@ -247,6 +257,8 @@ public class Category
         }
         else
             outs.writeShort( 0 );
+
+        summary.writeObject( outs );
     }
 
     public Category( MixedDataInput ins )
@@ -293,6 +305,8 @@ public class Category
         }
         else
             methods   = null;
+
+        summary.readObject( ins );
     }
 
     public String toString()
@@ -334,6 +348,7 @@ public class Category
         }
         rep.append( ", vis=" + isVisible );
         rep.append( ", search=" + isSearchable );
+        rep.append( ", " + summary );
         rep.append( " ]" );
         return rep.toString();
     }
