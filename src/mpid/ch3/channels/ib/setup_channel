@@ -29,7 +29,7 @@ pathlist=""
 pathlist="$pathlist src/mpid/${device_name}/channels/${channel_name}/include"
 pathlist="$pathlist src/mpid/common/locks"
 for path in $pathlist ; do
-    CPPFLAGS="$CPPFLAGS -I`pwd`/${path}"
+    CPPFLAGS="$CPPFLAGS -I${master_top_builddir}/${path}"
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
