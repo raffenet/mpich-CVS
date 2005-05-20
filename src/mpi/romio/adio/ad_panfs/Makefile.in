@@ -12,8 +12,7 @@ C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-AD_PANFS_OBJECTS = ad_panfs_close.o ad_panfs_open.o ad_panfs_hints.o \
-	ad_panfs.o
+AD_PANFS_OBJECTS = ad_panfs.o ad_panfs_open.o ad_panfs_hints.o
 
 
 default: $(LIBNAME)

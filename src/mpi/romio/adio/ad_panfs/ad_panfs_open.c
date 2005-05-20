@@ -228,6 +228,7 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
 	ADIOI_Free(value);
 
     fd->fd_sys = open(fd->filename, amode, perm);
+    fd->fd_direct = -1;
 
     if (fd->fd_sys != -1)
     {
