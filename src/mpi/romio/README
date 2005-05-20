@@ -4,6 +4,13 @@
 
 Major Changes in this version:
 ------------------------------
+* Better support for building against existing MPICH and MPICH2 versions.
+
+  When building against an existing MPICH installation, use the
+  "--with-mpi=mpich" option to ROMIO configure.  For MPICH2, use the
+  "--with-mpi=mpich2" option.  These will allow ROMIO to take advantage
+  of internal features of these implementations.
+
 * Deprecation of SFS, HFS, and PIOFS implementations.
 
   These are no longer actively supported, although the code will continue
