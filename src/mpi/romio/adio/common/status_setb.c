@@ -37,17 +37,15 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype,
     return MPI_SUCCESS;
 }
 
-#elif defined(MPILAM)
+#elif defined(MPILAM) || defined(MPISGI)
 int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype,
 		int nbytes)
 {
   /* Bogusness to silence compiler warnings */
-
   if (datatype == MPI_DATATYPE_NULL);
 
   if (status != MPI_STATUS_IGNORE)
 	  status->st_length = nbytes;
   return MPI_SUCCESS;
 }
-
 #endif
