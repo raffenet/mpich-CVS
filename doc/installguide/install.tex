@@ -351,9 +351,9 @@ The -1 option exists mostly to support internal testing.
 Check to see if all the hosts you listed in mpd.hosts are in the output
 of 
 \begin{verbatim}
-mpdtrace
+    mpdtrace
 \end{verbatim}
-if so move on to step 12.
+and if so move on to step 12.
 
 There is a workaround if you cannot get \texttt{mpdboot} to work because of
 difficulties with \texttt{ssh} or \texttt{rsh} setup.  You can start the daemons ``by
@@ -544,13 +544,46 @@ process managers and the choice of communication device.
 
 \section{Installing and Managing Process Managers}
 \label{sec:process-managers}
+MPICH2 has been designed to work with multiple process managers; that
+is, although you can start MPICH2 jobs with \texttt{mpiexec}, there are
+different mechanisms by which your processes are started.  An interface
+(called PMI) isolates the MPICH2 library code from the process manager.
+Currently three process managers are distributed with MPICH2
+\begin{description}
+\item[mpd] This is the default, and the one that is described
+  in~Section~\ref{sec:steps}.  It consists of a ring of daemons.
+\item[smpd] This one can be used for both Linux and Windows.  It is the
+  only process manager that supports the Windows version of MPICH2.
+\item[gforker] This is a simple process manager that creates all
+  processes on a single machine.  It is useful for both debugging and on
+  shared memory multiprocessors.
+\end{description}
 
-\hbox{}\marginpar{It may be a good idea to explain what MPICH2 means
-  by a process manager here, and to enumerate the choices, before
-  describing the mpd process manager}.
-
-\subsection{MPD}
+\subsection{mpd}
 \label{sec:mpd}
+
+\subsubsection{Configuring mpd}
+\label{sec:configuring-mpd}
+
+The \texttt{mpd} process manager can be explicitly chosen at configure
+time by adding
+\begin{verbatim}
+    --with-pm=mpd
+\end{verbatim}
+to the \texttt{configure} argments.  This is not necessary, since
+\texttt{mpd} is the default.
+
+The \texttt{mpd} process manager supports the use of the TotalView
+parallel debugger from Etnus.  If \texttt{totalview} is in your
+\texttt{PATH} when MPICH2 is configured, then an interface module will
+be automatically compiler, linked and installed so that you can use
+TotalView to debug MPICH jobs (See the \texttt{User's Guide} under
+``Debugging''.  You can also explicitly enable or disable this
+capability with \texttt{--enable-totalview} or
+\texttt{--disable-totalview} as arguments to \texttt{configure}.
+
+\subsubsection{Using mpd}
+\label{sec:using-mpd}
 
 In Section~\ref{sec:steps} you installed the mpd ring.  Several commands
 can be used to use, test, and manage this ring.  You can find out about
@@ -682,11 +715,6 @@ host until smpd is started again.
 \texttt{gforker} is a simple process manager that runs all processes
 on a single node; it uses the system \texttt{fork} and \texttt{exec}
 calls to create the new processes.  
-
-\subsection{Other Process Managers}
-\label{sec:other-pms}
-
-\hbox{}\marginpar{Are there any other process managers?}
 
 \section{Testing}
 \label{sec:testing}
