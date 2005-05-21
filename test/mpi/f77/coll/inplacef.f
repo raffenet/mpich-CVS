@@ -5,10 +5,12 @@ C
 C This is a simple test that Fortran support the MPI_IN_PLACE value
 C
        program main
+       implicit none
        include 'mpif.h'
        integer ierr, errs
-       integer comm
+       integer comm, root
        integer rank, size
+       integer i
        integer MAX_SIZE
        parameter (MAX_SIZE=1024)
        integer rbuf(MAX_SIZE), rdispls(MAX_SIZE), rcount(MAX_SIZE),
