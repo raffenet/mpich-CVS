@@ -1,4 +1,6 @@
 for arg in $ac_configure_args ; do
+  narg=`expr x$arg : 'x'"'"'\(.*\)'"'"`
+  if test -n "$narg" ; then arg=$narg ; fi
   case $arg in
     --with-rdma)
     channel_rndv=yes
@@ -9,7 +11,7 @@ for arg in $ac_configure_args ; do
     rdma_mode=`echo $arg | sed 's/--with-rdma-mode=//'`
     ;;
   esac
-  case $arg in 
+  case $arg in
     --with-ib=*)
     ibu_name=`echo $arg | sed 's/--with-ib=//'`
     ;;
