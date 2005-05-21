@@ -1291,10 +1291,11 @@ static int PMII_Set_from_port( int fd, int id )
 static int mpd_singinit(void);
 static int mpd_singinit()
 {
-    int pid, rc, len;
+    int pid, rc;
     int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
     char *newargv[8], charpid[8], port_c[8];
     struct sockaddr_in sin;
+    socklen_t len;
 
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = INADDR_ANY;
@@ -1346,8 +1347,9 @@ static int mpd_singinit()
 
 static int accept_one_connection(int list_sock)
 {
-    int len, gotit, new_sock;
+    int gotit, new_sock;
     struct sockaddr_in from;
+    socklen_t len;
 
     len = sizeof(from);
     gotit = 0;
