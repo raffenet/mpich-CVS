@@ -1,0 +1,3 @@
+c2f2c.c: $(srcdir)/../../f77/ext/c2f2c.c
+	cp $(srcdir)/../../f77/ext/c2f2c.c c2f2c.c
+

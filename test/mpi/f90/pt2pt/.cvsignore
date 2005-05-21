@@ -1,5 +1,6 @@
 Makefile.sm
 Makefile
 Makefile.in
-statusesf.f90
-greqf.f90
+testlist
+statusesf90.f90
+greqf90.f90

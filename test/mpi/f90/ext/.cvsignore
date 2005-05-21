@@ -1,4 +1,6 @@
 Makefile.sm
 Makefile
 Makefile.in
-allocmem.f90
+testlist
+allocmem90.f90
+c2f2cf90.f90

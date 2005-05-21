@@ -1,8 +1,10 @@
 Makefile.sm
 Makefile
 Makefile.in
-namepubf.f90
-spawnf.f90
-spawnargvf.f90
-spawnmultf.f90
-connaccf.f90
+testlist
+namepubf90.f90
+spawnf90.f90
+spawnargvf90.f90
+spawnmultf90.f90
+spawnmult2f90.f90
+connaccf90.f90

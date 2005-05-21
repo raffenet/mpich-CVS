@@ -2,23 +2,20 @@
 !  (C) 2004 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
-C Thanks to 
-C William R. Magro
-C for this test
-C
-C It has been modifiedly slightly to work with the automated MPI
-C tests.
-C  WDG.
-C
-C It was further modified to use MPI_Get_address instead of MPI_Address
-C for MPICH2, and to fit in the MPICH2 test harness - WDG
-C
+! Thanks to 
+! William R. Magro
+! for this test
+!
+! It has been modifiedly slightly to work with the automated MPI
+! tests.
+!  WDG.
+!
+! It was further modified to use MPI_Get_address instead of MPI_Address
+! for MPICH2, and to fit in the MPICH2 test harness - WDG
+!
       program bustit
-      implicit none
-
       use mpi
 
-      integer ierr
       integer comm
       integer newtype
       integer me
@@ -79,15 +76,15 @@ C
 
              name = " "
              x    = 0.0d0
-             call mpi_recv(buf,bufsize,MPI_PACKED, src,
-     .            1, comm, status, ierr)
+             call mpi_recv(buf,bufsize,MPI_PACKED, src,                    &
+     &            1, comm, status, ierr)
              
-             call mpi_unpack(buf,bufsize,position,
-     .            name,5,MPI_CHARACTER, comm,ierr)
-             call mpi_unpack(buf,bufsize,position,
-     .            x,1,MPI_DOUBLE_PRECISION, comm,ierr)
-!            Check the return values
-             if (name .nes. "Hello") then
+             call mpi_unpack(buf,bufsize,position,                         &
+     &            name,5,MPI_CHARACTER, comm,ierr)
+             call mpi_unpack(buf,bufsize,position,                         &
+     &            x,1,MPI_DOUBLE_PRECISION, comm,ierr)
+!            Check the return values (/= is not-equal in F90)
+             if (name /= "Hello") then
                 errs = errs + 1
                 print *, "Received ", name, " but expected Hello"
              endif
@@ -101,7 +98,8 @@ C
       endif
 !
 !     Sum up errs and report the result
-      call mpi_reduce( errs, toterrs, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
+      call mpi_reduce( errs, toterrs, 1, MPI_INTEGER, 0,                   &
+     &                 MPI_COMM_WORLD, ierr )
       if (me .eq. 0) then
          if (toterrs .eq. 0) then
             print *, " No Errors"

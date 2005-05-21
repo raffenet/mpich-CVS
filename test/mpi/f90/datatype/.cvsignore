@@ -1,9 +1,11 @@
 Makefile.in
 Makefile.sm
 Makefile
-typenamef.f90
-packef.f90
-typecntsf.f90
-typem2f.f90
-typesnamef.f90
-typesubf.f90
+testlist
+typenamef90.f90
+packef90.f90
+typecntsf90.f90
+typem2f90.f90
+typesnamef90.f90
+typesubf90.f90
+gaddressf90.f90

@@ -1,5 +1,6 @@
 Makefile.sm
 Makefile.in
 Makefile
+testlist
 *.o
-baseenvf.f90
+baseenvf90.f90

@@ -1,3 +1,13 @@
 attr
 coll
-misc
+comm
+#ext
+info
+init
+io
+#misc
+pt2pt
+rma
+spawn
+timer
+topo

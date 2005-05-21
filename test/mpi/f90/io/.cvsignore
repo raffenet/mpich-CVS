@@ -1,6 +1,8 @@
-shpositionf.f90
-fileerrf.f90
-fileinfof.f90
+shpositionf90.f90
+fileerrf90.f90
+fileinfof90.f90
+miscfilef90.f90
+atomicityf90.f90
 iwritef.f90
 iwriteatf.f90
 iwriteshf.f90
@@ -16,4 +18,7 @@ writeallbef.f90
 Makefile.in
 Makefile
 Makefile.sm
+testlist
 *.o
+ioharness.defn
+ioharness.tlt

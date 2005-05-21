@@ -1,7 +1,8 @@
 Makefile.sm
-infotestf.f90
-infotest2f.f90
+infotestf90.f90
+infotest2f90.f90
 infotest
 *.o
 Makefile.in
 Makefile
+testlist
