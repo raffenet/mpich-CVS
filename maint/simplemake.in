@@ -124,7 +124,7 @@ $debug = 0;                 # General debugging
 $debug_dirs = 0;            # Debug the choice of directories
 $debug_confdir = 0;         # Track the directory containing the controlling
                             # configure.in
-$gDebugWhy = 1;             # Provide an explanation of why certain
+$gDebugWhy = 0;             # Provide an explanation of why certain
                             # targets are created
 
 # Allow us to set the debug variables from the environment:
@@ -1896,10 +1896,23 @@ sub TargetAll {
 		$baselibname =~ s/^.*\///g;
 		$baselibname =~ s/^lib//;
 		$baselibname =~ s/\..*//;
+		# We need to be careful about the optional files, since
+		# the prerequisites may not exist
+		# We could either test on the conditions under which
+		# the optional files should exist (this is probably the
+		# best option), or we can coordinate with the
+		# target that we invoke for each case.  We'll do the
+		# latter for now and consider adding an optional predicate
+		# that can be supplied for each OPTINSTALL item.
 		if (!defined($profile_libraries_basename{$baselibname})) {
 		    print "Building sharedlib library $baselibname (from $libspec) as part of all-redirect\n" if $gDebugWhy;
-		    print FD "\t    echo \"make $libspec\" ;\\\n";
-		    print FD "\t    \${MAKE} $libspec ; \\\n";
+		    # Get the condition
+		    my $prereq = $libspec;
+		    $prereq =~ s/\.\@SHLIB_EXT\@/.la/;
+		    print FD "\t    if [ -s $prereq ] ; then \\\n";
+		    print FD "\t        echo \"make $libspec\" ;\\\n";
+		    print FD "\t        \${MAKE} $libspec ; \\\n";
+		    print FD "\t    fi ; \\\n";
 		}
 	    }
 	    print FD "\tfi\n";
