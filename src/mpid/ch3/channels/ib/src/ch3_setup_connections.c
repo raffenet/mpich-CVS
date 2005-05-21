@@ -19,7 +19,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     char * key;
     char * val;
     int key_max_sz;
@@ -351,11 +351,16 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	post_pkt_recv(vc);
     }
 
-    PMI_Barrier();
+    mpi_errno = PMI_Barrier();
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	return mpi_errno;
+    }
 
     MPIU_Free(val);
     MPIU_Free(key);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
-    return 0;
+    return mpi_errno;
 }
