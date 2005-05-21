@@ -672,7 +672,7 @@ int MPIR_Allgather_inter (
     remote_size = comm_ptr->remote_size;
     rank = comm_ptr->rank;
 
-    if (rank == 0) {
+    if ((rank == 0) && (sendcount != 0)) {
         /* In each group, rank 0 allocates temp. buffer for local
            gather */
         mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb, &true_extent);
@@ -704,68 +704,80 @@ int MPIR_Allgather_inter (
     newcomm_ptr = comm_ptr->local_comm;
     newcomm = newcomm_ptr->handle;
 
-    mpi_errno = MPIR_Gather(sendbuf, sendcount, sendtype, tmp_buf, sendcount,
-                            sendtype, 0, newcomm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	return mpi_errno;
+    if (sendcount != 0) {
+        mpi_errno = MPIR_Gather(sendbuf, sendcount, sendtype, tmp_buf, sendcount,
+                                sendtype, 0, newcomm_ptr);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
     }
-    /* --END ERROR HANDLING-- */
 
     /* first broadcast from left to right group, then from right to
        left group */
     if (comm_ptr->is_low_group) {
         /* bcast to right*/
-        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
-                               sendtype, root, comm_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
+        if (sendcount != 0) {
+            root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+            mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
+                                         sendtype, root, comm_ptr);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                return mpi_errno;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+
         /* receive bcast from right */
-        root = 0;
-        mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
-                               recvtype, root, comm_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
+        if (recvcount != 0) {
+            root = 0;
+            mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
+                                         recvtype, root, comm_ptr);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                return mpi_errno;
+            }
+            /* --END ERROR HANDLING-- */
+        }
     }
     else {
         /* receive bcast from left */
-        root = 0;
-        mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
-                               recvtype, root, comm_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
+        if (recvcount != 0) {
+            root = 0;
+            mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
+                                         recvtype, root, comm_ptr);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                return mpi_errno;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+
         /* bcast to left */
-        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
-                               sendtype, root, comm_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
+        if (sendcount != 0) {
+            root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+            mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
+                                         sendtype, root, comm_ptr);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                return mpi_errno;
+            }
+            /* --END ERROR HANDLING-- */
+        }
     }
     
-    if (rank == 0)
+    if ((rank == 0) && (sendcount != 0))
         MPIU_Free((char*)tmp_buf+true_lb);
 
     return mpi_errno;
