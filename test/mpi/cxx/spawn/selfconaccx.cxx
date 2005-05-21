@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
+#include "mpitestconf.h"
 #ifdef HAVE_IOSTREAM
 // Not all C++ compilers have iostream instead of iostream.h
 #include <iostream>
@@ -14,9 +15,6 @@ using namespace std;
 #endif
 #else
 #include <iostream.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
 #endif
 #include "mpitestcxx.h"
 
