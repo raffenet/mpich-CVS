@@ -126,7 +126,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -136,7 +136,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		    ((MPIR_Grequest_f77_query_function *)(request_ptr->query_fn))( 
 			request_ptr->grequest_extra_state, &request_ptr->status, &ierr );
 		    rc = (int)ierr;
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		}
 		break;
 #endif	    
@@ -144,7 +144,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,;, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -159,7 +159,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -169,7 +169,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		    
 		    ((MPIR_Grequest_f77_free_function *)(request_ptr->free_fn))(request_ptr->grequest_extra_state, &ierr);
 		    rc = (int) ierr;
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		    break;
 		}
 #endif
@@ -178,7 +178,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,;, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -196,7 +196,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    /* This should not happen */
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->kind);
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,;, "**badcase", "**badcase %d", request_ptr->kind);
 	    break;
 	    /* --END ERROR HANDLING-- */
 	}
@@ -250,7 +250,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -261,7 +261,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 			request_ptr->grequest_extra_state, &request_ptr->status,
 			&ierr );
 		    rc = (int) ierr;
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
 		    break;
 		}
 #endif
@@ -270,7 +270,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,;, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -284,7 +284,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    /* This should not happen */
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->kind);
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,;, "**badcase", "**badcase %d", request_ptr->kind);
 	    break;
 	    /* --END ERROR HANDLING-- */
 	}

@@ -151,7 +151,7 @@ int MPI_Finalize( void )
     MPIR_Free_err_dyncodes();
 
     mpi_errno = MPID_Finalize();
-    MPIU_ERR_CHKANDSTMT((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**fail");
+    MPIU_ERR_CHKANDSTMT((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**fail");
     
     /* delete local and remote groups on comm_world and comm_self if
        they had been created (should we use a function pointer here

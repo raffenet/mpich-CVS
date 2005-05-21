@@ -85,7 +85,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    slen = (int)strlen( type_name );
-	    MPIU_ERR_CHKANDSTMT1((slen >= MPI_MAX_OBJECT_NAME), mpi_errno, MPI_ERR_ARG,, "**typenamelen",
+	    MPIU_ERR_CHKANDSTMT1((slen >= MPI_MAX_OBJECT_NAME), mpi_errno, MPI_ERR_ARG,;, "**typenamelen",
 				    "**typenamelen %d", slen );
             if (mpi_errno) goto fn_fail;
         }

@@ -98,7 +98,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 
 	    /* Check value arguments */
 	    MPIR_ERRTEST_ARGNEG(valuelen, "valuelen", mpi_errno);
-	    MPIU_ERR_CHKANDSTMT((!value), mpi_errno, MPI_ERR_INFO_VALUE,, "**infovalnull");
+	    MPIU_ERR_CHKANDSTMT((!value), mpi_errno, MPI_ERR_INFO_VALUE,;, "**infovalnull");
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
