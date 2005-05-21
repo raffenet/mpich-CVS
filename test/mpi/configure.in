@@ -17,9 +17,8 @@ otherlangs=""
 AC_ARG_ENABLE(f77,
 [--enable-f77 - Turn on Fortran 77 tests (default)],,enable_f77=yes)
 dnl
-dnl Set the f90 default to the same as MPICH2 (that is, off by default)
-dnl AC_ARG_ENABLE(f90,
-dnl [--enable-f90 - Turn on Fortran 90 tests (default)],,enable_f90=no)
+AC_ARG_ENABLE(f90,
+[--enable-f90 - Turn on Fortran 90 tests (if f90 available)],,enable_f90=default)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Turn on C++ tests (default)],,enable_cxx=yes)
 AC_ARG_WITH(mpi,
@@ -117,7 +116,7 @@ else
         CC=$top_build_dir/bin/mpicc
         FC=$top_build_dir/bin/mpif77
         F77=$FC
-dnl        F90=$top_build_dir/bin/mpif90
+        F90=$top_build_dir/bin/mpif90
         CXX=$top_build_dir/bin/mpicxx
         # Be careful of exec prefix
 	if test "X$exec_prefix" = "XNONE" ; then
@@ -193,7 +192,7 @@ if test "$FROM_MPICH2" = yes ; then
         FC=$top_build_dir/bin/mpif77
         F77=$FC
         CXX=$top_build_dir/bin/mpicxx
-dnl        F90=$top_build_dir/bin/mpif90
+        F90=$top_build_dir/bin/mpif90
 	MPIEXEC=$top_build_dir/bin/mpiexec
         MPILIBLOC=$top_build_dir/lib/libmpich.a
     else
@@ -230,7 +229,7 @@ dnl        F90=$top_build_dir/bin/mpif90
         else 
             CXXTEST=$CXX
         fi
-dnl        F90=$mpibindir/mpif90
+        F90=$mpibindir/mpif90
     fi
 fi
 # Simple tests for which other languages we can handle.  
@@ -430,35 +429,35 @@ AC_SUBST(F77_MPI_ADDRESS)
 
 f90dir="#"
 AC_SUBST(f90dir)
-dnl if test "$FROM_MPICH2" = yes ; then
-dnl     if test "$enable_f90" = yes ; then
-dnl         otherlangs="$otherlangs f90"
-dnl 	f90dir=f90
-dnl     fi
-dnl elif test "$enable_f90" = yes ; then
-dnl     AC_MSG_CHECKING([that we can build MPI programs with Fortran 90])
-dnl     rm -f conftest*
-dnl     cat >conftest.f90 <<EOF
-dnl         program main
-dnl         use mpi
-dnl         integer ierr
-dnl 	call mpi_init(ierr)
-dnl         call mpi_finalize(ierr)
-dnl         end
-dnl EOF
-dnl     if $F90 -o conftest conftest.f90 >conftest.out 2>&1 ; then
-dnl         AC_MSG_RESULT(yes)
-dnl         otherlangs="$otherlangs f90"
-dnl 	f90dir=f90
-dnl     else
-dnl         AC_MSG_RESULT(no)
-dnl 	echo "Failed to build program" >&AC_FD_CC
-dnl 	cat conftest.f90 >&AC_FD_CC
-dnl         echo "Error messages:" >&AC_FD_CC
-dnl 	cat conftest.out >&AC_FD_CC
-dnl     fi
-dnl     rm -f conftest*
-dnl fi
+if test "$FROM_MPICH2" = yes ; then
+    if test "$enable_f90" = yes ; then
+        otherlangs="$otherlangs f90"
+	f90dir=f90
+    fi
+elif test "$enable_f90" = yes ; then
+    AC_MSG_CHECKING([that we can build MPI programs with Fortran 90])
+    rm -f conftest*
+    cat >conftest.f90 <<EOF
+        program main
+        use mpi
+        integer ierr
+	call mpi_init(ierr)
+        call mpi_finalize(ierr)
+        end
+EOF
+    if $F90 -o conftest conftest.f90 >conftest.out 2>&1 ; then
+        AC_MSG_RESULT(yes)
+        otherlangs="$otherlangs f90"
+	f90dir=f90
+    else
+        AC_MSG_RESULT(no)
+	echo "Failed to build program" >&AC_FD_CC
+	cat conftest.f90 >&AC_FD_CC
+        echo "Error messages:" >&AC_FD_CC
+	cat conftest.out >&AC_FD_CC
+    fi
+    rm -f conftest*
+fi
 # Simple tests for which other languages we can handle
 cxxdir="#"
 AC_SUBST(cxxdir)
@@ -580,6 +579,22 @@ AC_OUTPUT(maint/testmerge \
 	  f77/io/iooffset.h \
 	  f77/io/iodisp.h \
 	  f77/io/ioaint.h \
+	  f90/Makefile \
+	  f90/attr/Makefile \
+	  f90/datatype/Makefile \
+	  f90/util/Makefile \
+	  f90/coll/Makefile \
+	  f90/comm/Makefile \
+	  f90/topo/Makefile \
+	  f90/init/Makefile \
+	  f90/pt2pt/Makefile \
+	  f90/rma/Makefile \
+	  f90/info/Makefile \
+	  f90/spawn/Makefile \
+	  f90/timer/Makefile \
+	  f90/ext/Makefile \
+          f90/io/Makefile \
+	  f90/misc/Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/attr/Makefile \
