@@ -965,6 +965,7 @@ with MPI_Alloc_mem.
 **pd_alloc:unable to allocate a protection domain
 **pd_alloc %s:unable to allocate a protection domain - %s
 **finish_qp:unable to establish a queue pair connection
+**setup_connections:MPIDI_CH3I_Setup_connections failed
 
 #
 # pmi
