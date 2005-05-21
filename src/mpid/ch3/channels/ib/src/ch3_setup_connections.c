@@ -20,6 +20,7 @@
 int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 {
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno = PMI_SUCCESS;
     char * key;
     char * val;
     int key_max_sz;
@@ -41,12 +42,12 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
 
-    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
+    pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (pmi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
 	    __LINE__, MPI_ERR_OTHER, "**fail",
-	    "**fail %d", mpi_errno);
+	    "**fail %d", pmi_errno);
 	return mpi_errno;
     }
     key = MPIU_Malloc(key_max_sz);
@@ -56,12 +57,12 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
+    pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    if (pmi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
 	    __LINE__, MPI_ERR_OTHER, "**fail",
-	    "**fail %d", mpi_errno);
+	    "**fail %d", pmi_errno);
 	return mpi_errno;
     }
     val = MPIU_Malloc(val_max_sz);
@@ -111,13 +112,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("putting qp_num (%s => %s)\n", key, val));
-	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_put", "**pmi_kvs_put %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
@@ -151,13 +152,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("putting rdma buf (%s => %s)\n", key, val));
-	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_put", "**pmi_kvs_put %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf_rkey", pg_rank,i);
@@ -178,14 +179,15 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
+	mpi_errno = MPI_SUCCESS;
 	MPIU_DBG_PRINTF(("putting rdma buf rkeys (%s => %s)\n", key, val));
-	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_put", "**pmi_kvs_put %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
@@ -194,22 +196,22 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 
 
     /* commit the qp_num puts and barrier so gets can happen */
-    mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
-    if (mpi_errno != 0)
+    pmi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
+    if (pmi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
 	    __LINE__, MPI_ERR_OTHER,
 	    "**pmi_kvs_commit", "**pmi_kvs_commit %d",
-	    mpi_errno);
+	    pmi_errno);
 	return mpi_errno;
     }
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno != 0)
+    pmi_errno = PMI_Barrier();
+    if (pmi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
 	    __LINE__, MPI_ERR_OTHER,
 	    "**pmi_barrier", "**pmi_barrier %d",
-	    mpi_errno);
+	    pmi_errno);
 	return mpi_errno;
     }
 
@@ -231,13 +233,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	    return mpi_errno;
 	}
 	
-	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_get", "**pmi_kvs_get %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	dlid = atoi(val);
@@ -263,13 +265,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_get", "**pmi_kvs_get %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	
@@ -308,13 +310,13 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	if (mpi_errno != 0)
+	pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_get", "**pmi_kvs_get %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 	sscanf((val), "%p", &pdest_rdma_buf);
@@ -328,13 +330,14 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 		mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-	if (mpi_errno != 0)
+	mpi_errno = MPI_SUCCESS;
+	pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (pmi_errno != PMI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 		FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**pmi_kvs_get", "**pmi_kvs_get %d",
-		mpi_errno);
+		pmi_errno);
 	    return mpi_errno;
 	}
 #ifdef USE_IB_VAPI 
@@ -351,10 +354,10 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	post_pkt_recv(vc);
     }
 
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno != 0)
+    pmi_errno = PMI_Barrier();
+    if (pmi_errno != PMI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 	return mpi_errno;
     }
 
