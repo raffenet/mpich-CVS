@@ -3435,6 +3435,8 @@ export CXX
 export CXXFLAGS
 export FFLAGS
 export CFLAGS
+export F90FLAGS
+export LDFLAGS
 # Make sure that any Fortran 77 and Fortran 90 compilers are exported to 
 # the subdir builds (in particular, ROMIO may try to use the Fortran 90
 # compiler to determine the Fortran 90 KINDS for MPI_OFFSET_KIND).
