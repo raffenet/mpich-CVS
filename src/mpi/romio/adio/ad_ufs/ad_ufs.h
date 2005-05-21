@@ -21,6 +21,12 @@
 #include <aio.h>
 #endif
 
+/* Workaround for incomplete set of definitions if __REDIRECT is not 
+   defined and large file support is used in aio.h */
+#if !defined(__REDIRECT) && defined(__USE_FILE_OFFSET64)
+#define aiocb aiocb64
+#endif
+
 int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle);
 
