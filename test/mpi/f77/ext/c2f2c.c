@@ -159,7 +159,7 @@ int c2finfo_ ( int *info )
 
 int c2frequest_ ( int *request )
 {
-    MPI_Request req = MPI_Request_c2f( *request );
+    MPI_Request req = MPI_Request_f2c( *request );
     MPI_Status status;
     int flag;
     MPI_Test( &req, &flag, &status );
@@ -167,6 +167,9 @@ int c2frequest_ ( int *request )
     if (!flag) { 
 	fprintf( stderr, "Request: Wrong value for flag\n" );
 	return 1;
+    }
+    else {
+	*request = MPI_Request_c2f( req );
     }
     return 0;
 }
