@@ -55,7 +55,7 @@ $has_cxx = 1;
 @with_array = (
 	       'logging;none;rlog;dlog',
 	       'pmi;simple',    #; uni no longer supported
-	       'pm;gforker;mpd;rmpd', #;remshell
+	       'pm;gforker;mpd', #;remshell
 	       'namepublisher;no;file', #;ldap:ldapserver',
 	       'device;ch3;ch3:shm;ch3:ssm',
 );
