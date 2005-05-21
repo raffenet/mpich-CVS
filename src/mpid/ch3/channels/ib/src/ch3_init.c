@@ -235,6 +235,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
+    mpi_errno = MPI_SUCCESS; /* reset errno after successful snprintf calls */
     pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
     if (pmi_errno != 0)
     {
@@ -257,7 +258,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
 
-    /*
+#if 0
     {
 	for (p = 0; p < pg_size; p++)
 	{
@@ -269,8 +270,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
 	    fflush(stdout);
 	}
+	mpi_errno = MPI_SUCCESS; /* reset errno after snprintf calls */
     }
-    */
+#endif
 
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
@@ -309,8 +311,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     /* for now, connect all the processes at init time */
     MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
-    MPIDI_CH3I_Setup_connections(pg, pg_rank);
+    mpi_errno = MPIDI_CH3I_Setup_connections(pg, pg_rank);
     MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**setup_connections", 0);
+    }
 
  fn_exit:
     if (val != NULL)
