@@ -366,8 +366,9 @@ if [ -x maint/getstates -a $do_getstates = "yes" ] ; then
     maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
 	            -namefile=src/util/logging/lwlog/lwnames.h src
 fi
+# Create and/or update the f90 tests
 if [ -x maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
-    echo "Create or update the Fortran 90 tests derived from the Fortran 77 tess"
+    echo "Create or update the Fortran 90 tests derived from the Fortran 77 tests"
     for dir in test/mpi/f77/* ; do
         if [ ! -d $dir ] ; then continue ; fi
 	leafDir=`basename $dir`
