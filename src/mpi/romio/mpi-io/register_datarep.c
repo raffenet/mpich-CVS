@@ -79,6 +79,7 @@ int MPI_Register_datarep(char *name,
 	error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /* first check if ADIO has been initialized. If not, initialize it */
     if (ADIO_Init_keyval == MPI_KEYVAL_INVALID) {
@@ -108,6 +109,7 @@ int MPI_Register_datarep(char *name,
         ADIO_Init( (int *)0, (char ***)0, &error_code);
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     /* check datarep isn't already registered */
     for (datarep = ADIOI_Datarep_head; datarep; datarep = datarep->next) {
 	if (!strncmp(name, datarep->name, MPI_MAX_DATAREP_STRING)) {
