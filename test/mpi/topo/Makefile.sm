@@ -17,6 +17,6 @@ graphcr_SOURCES = graphcr.c
 	(cd ../util && make mtest.o)
 
 testing:
-	../../runtests -srcdir=$(srcdir) -tests=testlist \
+	../runtests -srcdir=$(srcdir) -tests=testlist \
 			-mpiexec=$(bindir)/mpiexec \
 		   	-xmlfile=summary.xml

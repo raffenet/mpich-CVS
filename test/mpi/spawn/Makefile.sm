@@ -17,6 +17,6 @@ join_SOURCES = join.c
 	(cd ../util && $(MAKE) mtest.o)
 
 testing:
-	../../runtests -srcdir=$(srcdir) -tests=testlist \
+	../runtests -srcdir=$(srcdir) -tests=testlist \
 			-mpiexec=$(bindir)/mpiexec \
 		   	-xmlfile=summary.xml
