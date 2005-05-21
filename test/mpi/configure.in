@@ -594,7 +594,6 @@ AC_OUTPUT(maint/testmerge \
 	  f90/timer/Makefile \
 	  f90/ext/Makefile \
           f90/io/Makefile \
-	  f90/misc/Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/attr/Makefile \
