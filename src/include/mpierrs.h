@@ -254,7 +254,7 @@
 {											\
     if ((comm_) == MPI_COMM_NULL)							\
     {											\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_COMM,, "**commnull");			\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_COMM,;, "**commnull");			\
     }											\
     else										\
     {											\
@@ -266,7 +266,7 @@
 {											\
     if ((win_) == MPI_WIN_NULL)								\
     {											\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_WIN,, "**winnull");				\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_WIN,;, "**winnull");			\
     }											\
     else										\
     {											\
@@ -278,7 +278,7 @@
 {													\
     if ((request_) == MPI_REQUEST_NULL)									\
     {													\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_REQUEST,, "**requestnull");					\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_REQUEST,;, "**requestnull");				\
     }													\
     else												\
     {													\
@@ -296,7 +296,7 @@
 
 #define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_)			\
     if (errhandler_ == MPI_ERRHANDLER_NULL) {				\
-        MPIU_ERR_SETANDSTMT(err_,MPI_ERR_ARG,,"**errhandlernull");	\
+        MPIU_ERR_SETANDSTMT(err_,MPI_ERR_ARG,;,"**errhandlernull");	\
     }									\
     else {								\
         MPIR_ERRTEST_VALID_HANDLE(errhandler_,MPID_ERRHANDLER,		\
@@ -307,7 +307,7 @@
 {											\
     if ((info_) == MPI_INFO_NULL)							\
     {											\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_ARG,, "**infonull");				\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_ARG,;, "**infonull");				\
     }											\
     else										\
     {											\
@@ -327,15 +327,15 @@
 {									\
     if ((keyval_) == MPI_KEYVAL_INVALID)				\
     {									\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyvalinvalid");	\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,;, "**keyvalinvalid");	\
     }									\
     else if (HANDLE_GET_MPI_KIND(keyval_) != MPID_KEYVAL)		\
     {									\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyval");		\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,;, "**keyval");	\
     }									\
     else if ((((keyval_) & 0x03c00000) >> 22) != (object_))		\
     {									\
-	MPIU_ERR_SETANDSTMT1(err_, MPI_ERR_KEYVAL,, "**keyvalobj",	\
+	MPIU_ERR_SETANDSTMT1(err_, MPI_ERR_KEYVAL,;, "**keyvalobj",	\
 			     "**keyvalobj %s", (objectdesc_));		\
     }                                                                   \
 }
@@ -345,7 +345,7 @@
     if (HANDLE_GET_MPI_KIND(keyval_) == MPID_KEYVAL &&			\
 	HANDLE_GET_KIND(keyval_) == HANDLE_KIND_BUILTIN)		\
     {									\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**permattr");	\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,;, "**permattr");	\
     }                                                                   \
 }
 
