@@ -426,7 +426,9 @@ sub AddTestCall {
 	    }
 	    elsif ($type eq "F")
 	    {
-		print TESTFD "    int i$narg = MPI_FILE_NULL;\n";
+		# This must be an MPI_File since that type may not
+		# be an integer (it is a pointer at this time)
+		print TESTFD "    MPI_File i$narg = MPI_FILE_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
 	    elsif ($type eq "W")
