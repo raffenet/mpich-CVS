@@ -1072,11 +1072,20 @@ class MPDMan(object):
                     return
             else:
                 self.spawnHosts[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = '_any_'
+            if pmiInfo.has_key('path'):
+                self.spawnPaths[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['path']
+            else:
+                self.spawnPaths[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = environ['MPDMAN_CLI_PATH']
+            if pmiInfo.has_key('cwd'):
+                self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['cwd']
+            else:
+                self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = environ['MPDMAN_CWD']
+            if pmiInfo.has_key('umask'):
+                self.spawnUmasks[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['umask'] 
+            else:
+                self.spawnUmasks[(self.tpsf,self.tpsf+self.spawnNprocs-1)]  = environ['MPDMAN_UMASK']
             self.spawnExecs[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = parsedMsg['execname']
             self.spawnUsers[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = mpd_get_my_username()
-            self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)]  = environ['MPDMAN_CWD']
-            self.spawnUmasks[(self.tpsf,self.tpsf+self.spawnNprocs-1)]  = environ['MPDMAN_UMASK']
-            self.spawnPaths[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = environ['MPDMAN_CLI_PATH']
             self.spawnEnv = {}
             self.spawnEnv.update(environ)
             self.spawnEnv['MPI_APPNUM'] = str(spawnssofar-1)
