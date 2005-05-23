@@ -16,4 +16,5 @@ topo
 io
 @f77dir@
 @cxxdir@
+@f90dir@
 @threadsdir@

@@ -116,6 +116,7 @@ else
         CC=$top_build_dir/bin/mpicc
         FC=$top_build_dir/bin/mpif77
         F77=$FC
+	BASEF90=$F90
         F90=$top_build_dir/bin/mpif90
         CXX=$top_build_dir/bin/mpicxx
         # Be careful of exec prefix
@@ -192,6 +193,7 @@ if test "$FROM_MPICH2" = yes ; then
         FC=$top_build_dir/bin/mpif77
         F77=$FC
         CXX=$top_build_dir/bin/mpicxx
+	BASEF90=$F90
         F90=$top_build_dir/bin/mpif90
 	MPIEXEC=$top_build_dir/bin/mpiexec
         MPILIBLOC=$top_build_dir/lib/libmpich.a
@@ -229,6 +231,7 @@ if test "$FROM_MPICH2" = yes ; then
         else 
             CXXTEST=$CXX
         fi
+	BASEF90=$F90
         F90=$mpibindir/mpif90
     fi
 fi
@@ -429,6 +432,28 @@ AC_SUBST(F77_MPI_ADDRESS)
 
 f90dir="#"
 AC_SUBST(f90dir)
+# First, see if we have an f90 compiler.  This uses code similar to that
+# in the MPICH2 top-level configure
+if test "$enable_f90" = default -a "$enable_f77" = yes ; then
+    enable_f90=no
+    if test -n "$BASEF90" ; then
+        saveF90=$F90 
+        F90=$BASEF90
+    fi
+    PAC_PROG_F90
+    if test -n "$F90" ; then
+        # Make sure that the compilers are compatible.  This 
+	# will also make sure that the program named in F90 is
+	# a working Fortran 90 compiler
+        PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
+    elif test "$pac_cv_prog_f90_works" = no; then
+        AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
+    fi
+    if test -n "$BASEF90" ; then
+        F90=$saveF90
+    fi
+fi
+#
 if test "$FROM_MPICH2" = yes ; then
     if test "$enable_f90" = yes ; then
         otherlangs="$otherlangs f90"
@@ -572,7 +597,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/pt2pt/Makefile \
 	  f77/info/Makefile \
 	  f77/spawn/Makefile \
-	  f77/spawn/typeaints.h \
+	  f77/spawn/type1aint.h \
 	  f77/rma/Makefile \
 	  f77/ext/Makefile \
           f77/io/Makefile \

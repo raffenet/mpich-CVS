@@ -9,7 +9,7 @@ C executable is running.
 C
        program main
        include 'mpif.h'
-       include 'typeaints.h'
+       include 'type1aint.h'
        integer errs, err
        integer rank, size, rsize, wsize, i
        integer np(2)
