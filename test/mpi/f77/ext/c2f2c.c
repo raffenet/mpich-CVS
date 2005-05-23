@@ -57,11 +57,32 @@
 #define f2cwin_ F2CWIN
 #define f2cfile_ F2CFILE
 
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+/* Mixed is ok because we use lowercase in all uses */
+#define c2fcomm_ c2fcomm
+#define c2fgroup_ c2fgroup
+#define c2ftype_ c2ftype
+#define c2finfo_ c2finfo
+#define c2frequest_ c2frequest
+#define c2fop_ c2fop
+#define c2ferrhandler_ c2ferrhandler
+#define c2fwin_ c2fwin
+#define c2ffile_ c2ffile
+
+#define f2ccomm_ f2ccomm
+#define f2cgroup_ f2cgroup
+#define f2ctype_ f2ctype
+#define f2cinfo_ f2cinfo
+#define f2crequest_ f2crequest
+#define f2cop_ f2cop
+#define f2cerrhandler_ f2cerrhandler
+#define f2cwin_ f2cwin
+#define f2cfile_ f2cfile
+
 #elif defined(F77_NAME_LOWER_2USCORE) || defined(F77_NAME_LOWER_USCORE) || \
       defined(F77_NAME_MIXED_USCORE)
 /* Else leave name alone (routines have no underscore, so both
    of these map to a lowercase, single underscore) */
-#elif defined(F77_NAME_MIXED)
 #else 
 #error 'Unrecognized Fortran name mapping'
 #endif
