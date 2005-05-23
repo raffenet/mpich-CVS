@@ -18,9 +18,9 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
     static char myname[] = "ADIOI_PANFS_OPEN";
 
     if (fd->perm == ADIO_PERM_NULL) {
-	old_mask = umask(022);
-	umask(old_mask);
-	perm = old_mask ^ 0666;
+        old_mask = umask(022);
+        umask(old_mask);
+        perm = ~old_mask & 0666;
     }
     else perm = fd->perm;
 
@@ -71,32 +71,53 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
 	    amode = amode | O_CREAT;
         /* Check for valid set of hints */
         if ((layout_type < PAN_FS_CLIENT_LAYOUT_TYPE__DEFAULT) ||
-	    (layout_type > PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE))
+           (layout_type > PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE))
         {
-            FPRINTF(stderr, "ADIOI_PANFS_SetInfo: panfs_layout_type is not a valid value: %u.\n",layout_type);
+            FPRINTF(stderr, "%s: panfs_layout_type is not a valid value: %u.\n", myname, layout_type);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if ((layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID0) &&
-	    ((layout_stripe_unit == 0) || (layout_total_num_comps == 0)))
+           ((layout_stripe_unit == 0) || (layout_total_num_comps == 0)))
         {
-            FPRINTF(stderr, "ADIOI_PANFS_SetInfo: MPI_Info does not contain all the hints (panfs_layout_stripe_unit, panfs_layout_total_num_comps) necessary to provide a valid RAID0 layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n");
+            if(layout_stripe_unit == 0)
+            {
+                FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_stripe_unit hint which is necessary to specify a valid RAID0 layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+            }
+            if(layout_total_num_comps == 0)
+            {
+                FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_total_num_comps hint which is necessary to specify a valid RAID0 layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+            }
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if (layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE)
         {
-           if ((layout_stripe_unit == 0) ||
-	       (layout_parity_stripe_width == 0) ||
-	       (layout_parity_stripe_depth == 0) ||
-	       (layout_total_num_comps == 0) ||
-	       (layout_visit_policy == 0))
-	   {
-                FPRINTF(stderr, "ADIOI_PANFS_SetInfo: MPI_Info does not contain all the hints (panfs_layout_stripe_unit, panfs_layout_total_num_comps, panfs_layout_parity_stripe_width, panfs_layout_parity_stripe_depth, panfs_layout_visit_policy) necessary to provide a valid RAID5 parity stripe layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n");
+            if ((layout_stripe_unit == 0) ||
+               (layout_parity_stripe_width == 0) ||
+               (layout_parity_stripe_depth == 0) ||
+               (layout_total_num_comps == 0))
+            {
+                if(layout_stripe_unit == 0)
+                {
+                    FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_stripe_unit hint which is necessary to specify a valid RAID5 parity stripe layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+                }
+                if(layout_total_num_comps == 0)
+                {
+                    FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_total_num_comps hint which is necessary to specify a valid RAID5 parity stripe layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+                }
+                if(layout_parity_stripe_width == 0)
+                {
+                    FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_parity_stripe_width hint which is necessary to specify a valid RAID5 parity stripe layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+                }
+                if(layout_parity_stripe_depth == 0)
+                {
+                    FPRINTF(stderr, "%s: MPI_Info does not contain the panfs_layout_parity_stripe_depth hint which is necessary to specify a valid RAID5 parity stripe layout to the PAN_FS_CLIENT_LAYOUT_CREATE_FILE ioctl.\n", myname);
+                }
                 MPI_Abort(MPI_COMM_WORLD, 1);
            }
-           if((layout_visit_policy < PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN) ||
-	      (layout_visit_policy > PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN_WITH_HASHED_OFFSET))
+           if ((layout_visit_policy < PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN) ||
+              (layout_visit_policy > PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN_WITH_HASHED_OFFSET))
            {
-                FPRINTF(stderr, "ADIOI_PANFS_SetInfo: panfs_layout_visit_policy is not a valid value: %u.\n",layout_visit_policy);
+                FPRINTF(stderr, "%s: panfs_layout_visit_policy is not a valid value: %u.\n", myname, layout_visit_policy);
                 MPI_Abort(MPI_COMM_WORLD, 1);
            }
         }
@@ -109,7 +130,6 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
             if (myrank == 0) {
                 pan_fs_client_layout_create_args_t file_create_args;    
                 int fd_dir;
-                int perm, old_mask;
                 char* slash;
                 struct stat stat_buf;
                 int err;
@@ -125,28 +145,18 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                 err = stat(fd->filename,&stat_buf);
                 if((err == -1) && (errno != ENOENT))
                 {
-                    FPRINTF(stderr,"Unexpected I/O Error calling stat() on PanFS file: %s.\n", strerror(errno));
+                    FPRINTF(stderr,"%s: Unexpected I/O Error calling stat() on PanFS file: %s.\n", myname, strerror(errno));
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
                 else if (err == 0)
                 {
-                    FPRINTF(stderr,"Cannot create PanFS file with ioctl when file already exists.\n");
+                    FPRINTF(stderr,"%s: Cannot create PanFS file with ioctl when file already exists.\n", myname);
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
                 else
                 {
                     /* (err == -1) && (errno == ENOENT) */
                     /* File does not exist */
-                    if (fd->perm == ADIO_PERM_NULL) {
-                        old_mask = umask(022);
-                        umask(old_mask);
-                        perm = old_mask ^ 0666;
-                    }
-                    else 
-                    {
-                        perm = fd->perm;
-                    }
-
                     path = strdup(fd->filename);
                     slash = strrchr(path, '/');
                     if (!slash)
@@ -162,7 +172,7 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                     /* open directory */
                     fd_dir = open(path, O_RDONLY);
                     if (fd_dir < 0) {
-                        FPRINTF(stderr, "I/O Error opening parent directory to create PanFS file using ioctl: %s.\n", strerror(errno));
+                        FPRINTF(stderr, "%s: I/O Error opening parent directory to create PanFS file using ioctl: %s.\n", myname, strerror(errno));
                         MPI_Abort(MPI_COMM_WORLD, 1);
                     }
                     else
@@ -195,7 +205,7 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                         }
                         err = ioctl(fd_dir, PAN_FS_CLIENT_LAYOUT_CREATE_FILE, &file_create_args);
                         if (err < 0) {
-                            FPRINTF(stderr, "I/O Error doing ioctl on parent directory to create PanFS file using ioctl: %s.\n", strerror(errno));
+                            FPRINTF(stderr, "%s: I/O Error doing ioctl on parent directory to create PanFS file using ioctl: %s.\n", myname, strerror(errno));
                             MPI_Abort(MPI_COMM_WORLD, 1);
                         }
                         err = close(fd_dir);

@@ -77,7 +77,7 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
             MPI_Info_get(users_info, "panfs_layout_parity_stripe_width", MPI_MAX_INFO_VAL, 
                  value, &flag);
-            if (flag) {
+            if (flag && (layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE)) {
                 layout_parity_stripe_width = strtoul(value,NULL,10);
                 tmp_val = layout_parity_stripe_width;
                 MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
@@ -90,7 +90,7 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
             MPI_Info_get(users_info, "panfs_layout_parity_stripe_depth", MPI_MAX_INFO_VAL, 
                  value, &flag);
-            if (flag) {
+            if (flag && (layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE)) {
                 layout_parity_stripe_depth = strtoul(value,NULL,10);
                 tmp_val = layout_parity_stripe_depth;
                 MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
@@ -116,7 +116,7 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
             MPI_Info_get(users_info, "panfs_layout_visit_policy", MPI_MAX_INFO_VAL, 
                  value, &flag);
-            if (flag) {
+            if (flag && (layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE)) {
                 layout_visit_policy = strtoul(value,NULL,10);
                 tmp_val = layout_visit_policy;
                 MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
@@ -129,10 +129,6 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
 	        ADIOI_Free(value);
 
-        }
-        else
-        {
-	        MPI_Info_set(fd->info, "panfs_concurrent_write", "0");
         }
     }
 
