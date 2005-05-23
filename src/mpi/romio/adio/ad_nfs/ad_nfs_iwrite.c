@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -17,8 +15,8 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
 #else
     int aio_errno = 0;
-#endif
     static char myname[] = "ADIOI_NFS_IWRITECONTIG";
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;

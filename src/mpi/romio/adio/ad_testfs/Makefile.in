@@ -9,7 +9,9 @@ SHLIBNAME   = @SHLIBNAME@
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
-C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
+top_builddir  = @master_topbuild_dir@
+LIBTOOL       = @LIBTOOL@
+C_COMPILE_SHL = $(CC_SHL) 
 
 @VPATH@
 
@@ -30,7 +32,7 @@ default: $(LIBNAME)
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) $(INC) -c $<
+	$(C_COMPILE_SHL) $(CFLAGS) -c $<
 	@mv -f $*.o $*.lo
 
 $(LIBNAME): $(AD_TESTFS_OBJECTS)

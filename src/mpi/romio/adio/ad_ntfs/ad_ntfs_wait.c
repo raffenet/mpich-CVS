@@ -23,12 +23,11 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 	ret_val = GetOverlappedResult((*request)->fd, (*request)->handle,
 				      &(*request)->nbytes, TRUE);
 
-	/*
-	// Is this a busy wait on the aio handle?
+	/* Is this a busy wait on the aio handle?
 	do {
 	    err = aio_suspend((const aiocb_t **) &((*request)->handle), 1, 0);
 	} while ((err == -1) && (errno == EINTR));
-	//*/
+	*/
 
 	if (!ret_val)
 	    (*request)->nbytes = -1;

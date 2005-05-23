@@ -657,7 +657,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	        break;
 	} /* while (size_read < bufsize) */
 
-	mem_offsets = (PVFS_size*)ADIOI_Malloc(max_mem_list*sizeof(PVFS_size*));
+	mem_offsets = (PVFS_size*)ADIOI_Malloc(max_mem_list*sizeof(PVFS_size));
 	mem_lengths = (int *)ADIOI_Malloc(max_mem_list*sizeof(int));
 	file_offsets = (int64_t *)ADIOI_Malloc(max_file_list*sizeof(int64_t));
 	file_lengths = (int32_t *)ADIOI_Malloc(max_file_list*sizeof(int32_t));

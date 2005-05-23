@@ -13,19 +13,19 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 {
 #ifdef ROMIO_HAVE_WORKING_AIO
     int err;
+    static char myname[] = "ADIOI_NFS_READCOMPLETE";
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
 #endif
-    static char myname[] = "ADIOI_NFS_READCOMPLETE";
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;
 	return;
     }
     
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
-/* IBM */
+#ifdef ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS
+/* old IBM */
     if ((*request)->queued) {
 	do {
 	    err = aio_suspend(1, (struct aiocb **) &((*request)->handle));
@@ -108,7 +108,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
     }
 
 #else
-/* HP, FreeBSD, Linux */
+/* no aio */
 
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);

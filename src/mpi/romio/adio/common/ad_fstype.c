@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -22,6 +20,10 @@
 
 #ifdef HAVE_PVFS_H
 #include "pvfs.h"
+#endif
+
+#ifdef HAVE_PVFS2_H
+#include "pvfs2.h"
 #endif
 
 /* Notes on detection process:

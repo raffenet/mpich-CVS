@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     }
     if ((disp != 1000) || strcmp(datarep, "native")) {
 	errs++;
-	fprintf(stderr, "disp = @LL@, datarep = %s, should be 1000, native\n\n", disp, datarep);
+	fprintf(stderr, "disp = %@LL@, datarep = %s, should be 1000, native\n\n", disp, datarep);
     }
 #if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_byte_offset\n");
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     }
     if (disp != (1000+20*sizeof(int))) {
 	errs++;
-	fprintf(stderr, "byte offset = @LL@, should be %d\n\n", 
+	fprintf(stderr, "byte offset = %@LL@, should be %d\n\n", 
 		disp, (int) (1000+20*sizeof(int)));
     }
 
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     }
     if (disp != 1000+15*sizeof(int)) {
 	errs++;
-	fprintf(stderr, "file size = @LL@, should be %d\n\n", 
+	fprintf(stderr, "file size = %@LL@, should be %d\n\n", 
 		disp, (int) (1000+15*sizeof(int)));
     }
 
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
     }
     if (disp != 10) {
 	errs++;
-	fprintf(stderr, "file pointer posn = @LL@, should be 10\n\n", disp);
+	fprintf(stderr, "file pointer posn = %@LL@, should be 10\n\n", disp);
     }
 
 #if VERBOSE
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
     }
     if (offset != (1000+20*sizeof(int))) {
 	errs++;
-	fprintf(stderr, "byte offset = @LL@, should be %d\n\n", 
+	fprintf(stderr, "byte offset = %@LL@, should be %d\n\n", 
 		offset, (int) (1000+20*sizeof(int)));
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     }
     if (offset != 1000) {
 	errs++;
-	fprintf(stderr, "file pointer posn in bytes = @LL@, should be 1000\n\n", offset);
+	fprintf(stderr, "file pointer posn in bytes = %@LL@, should be 1000\n\n", offset);
     }
 
 #if VERBOSE

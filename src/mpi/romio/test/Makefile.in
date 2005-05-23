@@ -62,17 +62,17 @@ large_array: large_array.o
 
 #
 # The Fortran tests must be built with the Fortran linker
-fperf: fperf.f
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+fperf: fperf.o
+	$(F77) $(USER_FFLAGS) -o  fperf fperf.o $(OUR_LIBS)
 
-fcoll_test: fcoll_test.f
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+fcoll_test: fcoll_test.o
+	$(F77) $(USER_FFLAGS) -o  fcoll_test fcoll_test.o $(OUR_LIBS)
 
-fmisc: fmisc.f
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+fmisc: fmisc.o
+	$(F77) $(USER_FFLAGS) -o  fmisc fmisc.o $(OUR_LIBS)
 
-pfcoll_test: pfcoll_test.f	
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+pfcoll_test: pfcoll_test.o	
+	$(F77) $(USER_FFLAGS) -o  pfcoll_test pfcoll_test.o $(OUR_LIBS)
 
 #testing: 
 #	-./runtests $(TESTARGS)

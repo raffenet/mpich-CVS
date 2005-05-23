@@ -3,6 +3,7 @@
 # autoconf --localdir=../confdb configure.in
 # (or wherever the confdb is)
 #
+AC_PREREQ(2.59)
 AC_INIT(adio/include/romioconf.h.in)
 VERSION=1.2.6
 AC_MSG_RESULT([Configuring ROMIO Version $VERSION])
@@ -36,7 +37,7 @@ fi
 FROM_LAM=${FROM_LAM:-no}
 if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
 CFLAGS=${CFLAGS:-""}
-LL="\%lld"
+LL="lld"
 AR_LOCAL=l
 DEFINE_HAVE_MPI_GREQUEST="#undef HAVE_MPI_GREQUEST"
 HAVE_MPI_INFO=""
@@ -71,7 +72,6 @@ FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
-F90=""
 TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
@@ -709,6 +709,8 @@ fi
 dnl The original ROMIO configure used a set of complex tests here; this
 dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
 dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
+# LL is the printf-style format name for output of a MPI_Offset.
+# We have to match this to the type that we use for MPI_Offset.
 CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
 AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
 if test "$ac_cv_sizeof_long_long" != 0 ; then
@@ -717,13 +719,13 @@ if test "$ac_cv_sizeof_long_long" != 0 ; then
        MPI_OFFSET_TYPE="long long"
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
-       LL="\%lld"
+       LL="lld"
     elif test "$ac_cv_sizeof_long_long" = "$ac_cv_sizeof_int" ; then
        MPI_OFFSET_TYPE="int"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
        AC_DEFINE(MPI_OFFSET_IS_INT,1,[Define if MPI_Offset is int])
-       LL="\%d"
+       LL="d"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
     else
@@ -731,7 +733,7 @@ if test "$ac_cv_sizeof_long_long" != 0 ; then
        MPI_OFFSET_TYPE="long"
        DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
-       LL="\%ld"
+       LL="ld"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
     fi
@@ -740,7 +742,7 @@ else
     MPI_OFFSET_TYPE="long"
     DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
     FORTRAN_MPI_OFFSET="integer"
-    LL="\%ld"
+    LL="ld"
     MPI_OFFSET_KIND1="!"
     MPI_OFFSET_KIND2="!"
 fi
@@ -797,7 +799,7 @@ fi
 if test $FROM_MPICH2 = yes ; then
    dnl Made this a message instead of a warning because the warning is
    dnl likely to confuse users.
-   AC_MSG_RESULT("Overriding Array test for MPICH2")
+   AC_MSG_RESULT([Overriding Array test for MPICH2])
    unset BUILD_MPI_ARRAY
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -1061,7 +1063,7 @@ if test -n "$file_system_pvfs2"; then
     AC_CHECK_HEADERS(pvfs2.h,
 	AC_DEFINE(ROMIO_PVFS2,1,[Define for ROMIO with PVFS2])
 	AC_DEFINE(HAVE_PVFS2_SUPER_MAGIC, 1, [Define if PVFS2_SUPER_MAGIC defined.]),
-	AC_MSG_WARN(missing pvfs2.h header file; disabling ROMIO PVFS2 support)
+        AC_MSG_ERROR([PVFS2 support requested but cannot find pvfs2.h header file])                                        
     )
 fi
 
@@ -1163,19 +1165,36 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	AC_DEFINE(ROMIO_HAVE_AIO_CALLS_NEED_FILEDES, 1, Define if AIO calls need file descriptor)
     fi
 
+    AC_MSG_CHECKING([for obsolete two-argument aio_suspend])
+    AC_TRY_RUN([
+#include <sys/types.h>
+#include <aio.h>
+	int main(int argc, char **argv)
+	{
+		struct aiocb *aiocbp;
+		if (argc > 10) aio_suspend(1, &aiocbp);
+		return 0;
+	}
+	],
+	aio_two_arg_suspend=yes
+	AC_MSG_RESULT(yes),
+	aio_two_arg_suspend=no 
+	AC_MSG_RESULT(no),
+	aio_two_arg_suspend=unknown
+	AC_MSG_RESULT(unknown)
+    )
+
+    if test "$aio_two_arg_suspend" != "no" -a "$aio_runs" != "yes" ; then
+	AC_DEFINE(ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS, 1, Define if aio_suspend needs two arguments)
+    fi
+
     LIBS=$save_libs
 
     AC_CHECK_HEADERS(signal.h)
-    # Just because aio.h is found by CPP doesn't mean that we can use it
-    # We try to compile it, not just read it.
-    AC_MSG_CHECKING([if aio.h exists and can be compiled])
-    AC_TRY_COMPILE([
-#include <aio.h>],
-[],have_aio_h=yes,have_aio_h=no)
-    AC_MSG_RESULT($have_aio_h)
-    if test "$have_aio_h" = yes ; then
-        AC_DEFINE(HAVE_AIO_H,1,[Define if aio.h exists and can be compiled])
-    fi
+    # Autoconf 2.57 and newer test for presence *and* ability to be compiled
+    AC_CHECK_HEADERS(aio.h)
+    AC_CHECK_HEADERS(sys/aio.h)
+
     AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
     AC_TRY_COMPILE([
 	#ifdef HAVE_SIGNAL_H
@@ -1183,6 +1202,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	],[
 	struct aiocb a;
@@ -1199,6 +1221,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	#include <sys/types.h>
 	#include <unistd.h>
@@ -1218,6 +1243,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
 	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
+	#endif
 	],[
 	struct aiocb a;
 	aio_handle_t h;
@@ -1236,6 +1264,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
 	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
+	#endif
 	],[
 	struct aiocb a;
 
@@ -1252,6 +1283,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	],[
 	struct aiocb a;
@@ -1453,6 +1487,10 @@ if test -z "$master_top_builddir" ; then
 fi
 export master_top_builddir
 AC_SUBST(master_top_builddir)
+# Make sure the alternate spelling is used until we clean up all of the code
+master_topbuild_dir=$master_top_builddir
+export master_topbuild_dir
+AC_SUBST(master_topbuild_dir)
 
 # The following definitions are needed within adio/common/status_setb.c
 if test "$FROM_MPICH" = yes ; then
@@ -1582,7 +1620,11 @@ elif test $FROM_MPICH2 = yes ; then
    # CC="$CC -I${use_top_srcdir}/src/include -I${top_build_dir}/src/include"
    # TEST_CC="$CC"
    # MPI_LIB="$LIBNAME"
-   CC=${top_build_dir}/bin/mpicc
+   # To allow ROMIO to work with the LIBTOOL scripts, we want to 
+   # work directly with the CC, not the mpicc, compiler.
+   # Note that in the "FROM_MPICH2" case, the CPPFLAGS and INCLUDES are already
+   # properly set
+   #CC=${top_build_dir}/bin/mpicc
    TEST_CC=${top_build_dir}/bin/mpicc
    TEST_F77=${top_build_dir}/bin/mpif77
    ROMIO_INCLUDE=""
@@ -1612,6 +1654,32 @@ if test -z "$TEST_CC" ; then
 fi
 if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
+fi
+#
+AC_CHECK_FUNCS(strdup)
+if test "$ac_cv_func_strdup" = "yes" ; then
+    # Do we need to declare strdup?
+    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+fi
+AC_CHECK_FUNCS(lstat)
+if test "$ac_cv_func_lstat" = "yes" ; then
+    # Do we need to declare lstat?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],lstat)
+fi
+AC_CHECK_FUNCS(readlink)
+if test "$ac_cv_func_readlink" = "yes" ; then
+    # Do we need to declare readlink?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],readlink)
+fi
+AC_CHECK_FUNCS(fsync)
+if test "$ac_cv_func_fsync" = "yes" ; then
+    # Do we need to declare fsync?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],fsync)
+fi
+AC_CHECK_FUNCS(ftruncate)
+if test "$ac_cv_func_ftruncate" = "yes" ; then
+    # Do we need to declare ftruncate?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],ftruncate)
 fi
 #
 # Create the directory lists for the Makefile
