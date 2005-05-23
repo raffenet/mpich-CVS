@@ -8,14 +8,15 @@
 
 #include "ad_xfs.h"
 #include "adio_extern.h"
-/* #ifdef MPISGI
-#include "mpisgi2.h"
-#endif */
 
 void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
     int i, err;
+#if defined(LINUX) && defined(MPISGI)
+    struct xfs_flock64 fl;
+#else
     struct flock64 fl;
+#endif
     static char myname[] = "ADIOI_XFS_FCNTL";
 
     switch(flag) {
@@ -35,7 +36,13 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	fl.l_start = 0;
 	fl.l_whence = SEEK_SET;
 	fl.l_len = fcntl_struct->diskspace;
+
+#if defined(LINUX) && defined(MPISGI)
+	err = fcntl(fd->fd_sys, XFS_IOC_RESVSP64, &fl);
+#else
 	err = fcntl(fd->fd_sys, F_RESVSP64, &fl);
+#endif
+
 	if (err) i = 1;
 	if (fcntl_struct->diskspace > lseek64(fd->fd_sys, 0, SEEK_END)) {
 	    /* also need to set the file size */

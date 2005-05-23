@@ -14,6 +14,7 @@ void ADIOI_TESTFS_Open(ADIO_File fd, int *error_code)
     int myrank, nprocs;
 
     fd->fd_sys = 1;
+    fd->fd_direct = -1;
     *error_code = MPI_SUCCESS;
 
     MPI_Comm_size(fd->comm, &nprocs);

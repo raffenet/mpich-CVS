@@ -24,6 +24,10 @@
 #include <stdio.h>
 #include "mpipr.h"
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #define FPRINTF fprintf
 void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname);
 void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname);

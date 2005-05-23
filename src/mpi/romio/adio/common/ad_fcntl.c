@@ -2,20 +2,20 @@
 /* 
  *   $Id$
  *
- *   Copyright (C) 1997 University of Chicago. 
+ *   Copyright (C) 2005 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#include "ad_ufs.h"
-#include "adio_extern.h"
-/* #ifdef MPISGI
-#include "mpisgi2.h"
-#endif */
+#include "adio.h"
 
-void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+void ADIOI_GEN_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 		     int *error_code)
 {
-    static char myname[] = "ADIOI_UFS_FCNTL";
+    static char myname[] = "ADIOI_GEN_FCNTL";
 
     switch(flag) {
     case ADIO_FCNTL_GET_FSIZE:

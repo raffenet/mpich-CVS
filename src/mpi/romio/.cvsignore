@@ -13,3 +13,5 @@ bin
 misc
 localdefs
 .deps
+cscope.files
+cscope.out

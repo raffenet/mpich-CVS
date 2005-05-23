@@ -23,14 +23,14 @@ struct ADIOI_Fns_struct ADIO_PVFS_operations = {
     ADIOI_PVFS_ReadStrided, /* ReadStrided */
     ADIOI_PVFS_WriteStrided, /* WriteStrided */
     ADIOI_PVFS_Close, /* Close */
-    ADIOI_GEN_IreadContig, /* IreadContig */
-    ADIOI_GEN_IwriteContig, /* IwriteContig */
-    ADIOI_GEN_IODone, /* ReadDone */
-    ADIOI_GEN_IODone, /* WriteDone */
-    ADIOI_GEN_IOComplete, /* ReadComplete */
-    ADIOI_GEN_IOComplete, /* WriteComplete */
-    ADIOI_GEN_IreadStrided, /* IreadStrided */
-    ADIOI_GEN_IwriteStrided, /* IwriteStrided */
+    ADIOI_FAKE_IreadContig, /* IreadContig */
+    ADIOI_FAKE_IwriteContig, /* IwriteContig */
+    ADIOI_FAKE_IODone, /* ReadDone */
+    ADIOI_FAKE_IODone, /* WriteDone */
+    ADIOI_FAKE_IOComplete, /* ReadComplete */
+    ADIOI_FAKE_IOComplete, /* WriteComplete */
+    ADIOI_FAKE_IreadStrided, /* IreadStrided */
+    ADIOI_FAKE_IwriteStrided, /* IwriteStrided */
     ADIOI_PVFS_Flush, /* Flush */
     ADIOI_PVFS_Resize, /* Resize */
     ADIOI_PVFS_Delete, /* Delete */

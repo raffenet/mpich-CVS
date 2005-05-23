@@ -90,12 +90,19 @@ MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall
 #
 have_aio=no
 #
-known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs sfs"
-known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
+known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp"
+known_mpi_impls="mpich2_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
 AC_ARG_ENABLE(aio,[
---enable-aio - Request use of asynchronous I/O routines],,enable_aio=notgiven)
+--enable-aio - Request use of asynchronous I/O routines (default)],
+[ 
+  if test "x$enableval" = "xno" ; then
+    disable_aio=yes
+  else
+    disable_aio=no
+  fi
+], disable_aio=no)
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 AC_ARG_ENABLE(f77,
@@ -678,7 +685,7 @@ AC_C_INLINE
 # Header files
 # Find the CPP before the header check
 AC_PROG_CPP
-AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(unistd.h fcntl.h malloc.h stddef.h)
 #
 CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
 CROSS_SIZEOF_VOID_P=${CROSS_SIZEOF_VOID_P:-0}
@@ -950,6 +957,9 @@ if test -n "$file_system_nfs" ; then
 users manual for instructions on testing and if necessary fixing this])
 fi
 
+if test -n "$file_system_panfs"; then
+    AC_DEFINE(ROMIO_PANFS,1,[Define for ROMIO with PANFS])
+fi
 if test -n "$file_system_ufs"; then
     AC_DEFINE(ROMIO_UFS,1,[Define for ROMIO with UFS])
 fi
@@ -1057,29 +1067,36 @@ if test -n "$file_system_pvfs2"; then
     )
 fi
 
+if test -n "$file_system_gridftp"; then
+	AC_DEFINE(ROMIO_GRIDFTP, 1, [Define for ROMIO with gridftp])
+fi
 
 #
-# Check for presence and characteristics of async. I/O calls
+# Check for presence and characteristics of async. I/O calls if
+# not disabled.
 #
 # Q: Do we need to list some "other libs" to get things to link?
-# Q: Do we only want to do this if the user asked for aio?
+#
 save_libs=$LIBS
 LIBS=
 #
 # Some systems need pthreads to get AIO to work
 #
-AC_SEARCH_LIBS(pthread_create,pthread,
-    ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-    MPI_LIB="$MPI_LIB $LIBS"
+if test "x$disable_aio" = "xno" ; then
+    AC_SEARCH_LIBS(pthread_create,pthread,
+        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+        MPI_LIB="$MPI_LIB $LIBS"
+        )
+    LIBS=
+    AC_SEARCH_LIBS(aio_write,aio rt,
+        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+        MPI_LIB="$MPI_LIB $LIBS"
+        aio_write_found=yes
     )
-LIBS=
-AC_SEARCH_LIBS(aio_write,aio rt,
-    ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-    MPI_LIB="$MPI_LIB $LIBS"
-    aio_write_found=yes
-)
+fi
 LIBS=$save_libs
-if test -n "$aio_write_found" ; then
+
+if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).
     # The test is the following: if not cross compiling, try to run a 
@@ -1145,7 +1162,30 @@ if test -n "$aio_write_found" ; then
 
     if test "$aio_two_arg_write" != "no" -a "$aio_runs" != "yes" ; then
     	AC_DEFINE(ROMIO_HAVE_WORKING_AIO, 1, Define if AIO calls seem to work)
-	AC_DEFINE(ROMIO_HAVE_AIO_CALLS_NEED_FILEDES, 1, Define if AIO calls needfile descriptor)
+	AC_DEFINE(ROMIO_HAVE_AIO_CALLS_NEED_FILEDES, 1, Define if AIO calls need file descriptor)
+    fi
+
+    AC_MSG_CHECKING([for obsolete two-argument aio_suspend])
+    AC_TRY_RUN([
+#include <sys/types.h>
+#include <aio.h>
+	int main(int argc, char **argv)
+	{
+		struct aiocb *aiocbp;
+		if (argc > 10) aio_suspend(1, &aiocbp);
+		return 0;
+	}
+	],
+	aio_two_arg_suspend=yes
+	AC_MSG_RESULT(yes),
+	aio_two_arg_suspend=no 
+	AC_MSG_RESULT(no),
+	aio_two_arg_suspend=unknown
+	AC_MSG_RESULT(unknown)
+    )
+
+    if test "$aio_two_arg_suspend" != "no" -a "$aio_runs" != "yes" ; then
+	AC_DEFINE(ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS, 1, Define if aio_suspend needs two arguments)
     fi
 
     AC_MSG_CHECKING([for obsolete two-argument aio_suspend])
@@ -1281,6 +1321,7 @@ if test -n "$aio_write_found" ; then
     )
 	
 fi
+# End of aio-related tests
 
 #
 # Check for statfs (many) and specifically f_fstypename field (BSD)
@@ -1478,7 +1519,7 @@ AC_SUBST(master_topbuild_dir)
 if test "$FROM_MPICH" = yes ; then
    AC_DEFINE(MPICH,1,[Define if compiling within MPICH])
 elif test "$FROM_MPICH2" = yes ; then 
-   AC_DEFINE(MPICH2,1,[Define if compiling within MPICH2])
+   AC_DEFINE(ROMIO_INSIDE_MPICH2,1,[Define if compiling within MPICH2])
 elif test "$FROM_MPILAM" = yes ; then
    AC_DEFINE(MPILAM,1,[Define if compiling within LAM/MPI])
 fi
@@ -1564,13 +1605,7 @@ if test "$FROM_MPICH" = yes ; then
    else
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
-   if test "$FROM_MPICH2" != yes -o -z "$CC" ; then
-       CC=$MPI_BIN_DIR/mpicc
-   fi
-#   if test $FROM_MPICH2 != yes ; then
-#       BUILD_MPI_ARRAY=1
-#       BUILD_MPI_INFO=1
-#   fi
+   CC=$MPI_BIN_DIR/mpicc
    # A later test will insert the mpi2-other/info and array directories based
    # on the value of BUILD_MPI_xxxx.  This lets MPICH2 turn these off,
    # since MPICH2 provides these routines elsewhere
@@ -1676,10 +1711,12 @@ for dir in $FILE_SYSTEM ; do
     FILE_SYS_DIRS="$FILE_SYS_DIRS adio/ad_$dir"
 done
 EXTRA_SRC_DIRS=""
-if test "$FROM_MPICH2" = yes ; then
+if test "$FROM_MPICH2" = yes -o "${MPI}_mpi" = "mpich2_mpi"; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
-elif test "$FROM_MPICH" = yes ; then
+elif test "$FROM_MPICH" = yes -o "${MPI}_mpi" = "mpich_mpi"; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich1"
+else
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/default"
 fi
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
@@ -1818,31 +1855,23 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   test/runtests util/romioinstall include/mpio.h \
 		   include/mpiof.h \
 		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
+		   adio/ad_panfs/Makefile \
 		   adio/ad_xfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
 		   adio/ad_pvfs2/Makefile \
+		   adio/ad_gridftp/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
 		   mpi-io/glue/mpich2/Makefile \
-		   mpi-io/glue/mpich1/Makefile )
+		   mpi-io/glue/mpich1/Makefile \
+		   mpi-io/glue/default/Makefile )
 #
 rm -f *.o
-if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = no -a \
-         $FROM_MPICH2 = no ; then
-cat <<EOF
 
-Please register your copy of ROMIO with us by sending email
-to majordomo@mcs.anl.gov with the message
-subscribe romio-users
-This will enable us to notify you of new releases of ROMIO
-as well as bug fixes.
-
-EOF
-fi
 if test $FROM_MPICH = no -a $FROM_MPICH2 = no ; then
-   AC_MSG_RESULT([Configure done. Now type make])
+   AC_MSG_RESULT([Configure done. Now type make.])
 fi
 dnl PAC_SUBDIR_CACHE_CLEANUP
 exit 0

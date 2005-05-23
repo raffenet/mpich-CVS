@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -50,7 +48,14 @@ int MPI_SGI_type_is_contig(MPI_Datatype datatype);
 
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 {
-    *flag = MPI_SGI_type_is_contig(datatype);
+    MPI_Aint displacement;
+    MPI_Type_lb(datatype, &distplacement);
+
+    /* SGI's MPI_SGI_type_is_contig() returns true for indexed
+     * datatypes with holes at the beginning, which causes
+     * problems with ROMIO's use of this function.
+     */
+    *flag = MPI_SGI_type_is_contig(datatype) && (displacement == 0);
 }
 
 #else

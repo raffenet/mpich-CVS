@@ -15,6 +15,11 @@ extern struct ADIOI_Fns_struct ADIO_NFS_operations;
 /* prototypes are in adio/ad_nfs/ad_nfs.h */
 #endif
 
+#ifdef ROMIO_PANFS
+extern struct ADIOI_Fns_struct ADIO_PANFS_operations;
+/* prototypes are in adio/ad_panfs/ad_panfs.h */
+#endif
+
 #ifdef ROMIO_PFS
 extern struct ADIOI_Fns_struct ADIO_PFS_operations;
 /* prototypes are in adio/ad_pfs/ad_pfs.h */
@@ -63,6 +68,11 @@ extern struct ADIOI_Fns_struct ADIO_PVFS2_operations;
 #ifdef ROMIO_TESTFS
 extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
 /* prototypes are in adio/ad_testfs/ad_testfs.h */
+#endif
+
+#ifdef ROMIO_GRIDFTP
+/* prototypes are in adio/ad_gridftp/ad_gridftp.h */
+extern struct ADIOI_Fns_struct ADIO_GRIDFTP_operations;
 #endif
 
 #endif

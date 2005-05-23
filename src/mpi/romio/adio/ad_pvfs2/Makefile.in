@@ -5,7 +5,7 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I${srcdir}/../../../../include -I../../../../include
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
 top_builddir  = @master_topbuild_dir@

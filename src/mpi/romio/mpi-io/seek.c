@@ -7,6 +7,7 @@
  */
 
 #include "mpioimpl.h"
+#include "adioi.h"
 
 #ifdef HAVE_WEAK_SYMBOLS
 

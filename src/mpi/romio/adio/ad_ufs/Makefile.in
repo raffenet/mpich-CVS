@@ -5,7 +5,7 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I${srcdir}/../../../../include -I../../../../include
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
 top_builddir  = @master_topbuild_dir@
@@ -14,10 +14,7 @@ C_COMPILE_SHL = $(CC_SHL)
 
 @VPATH@
 
-AD_UFS_OBJECTS = \
-      ad_ufs_open.o ad_ufs_done.o \
-      ad_ufs_fcntl.o ad_ufs_iread.o ad_ufs_iwrite.o ad_ufs_wait.o \
-      ad_ufs.o
+AD_UFS_OBJECTS = ad_ufs_open.o ad_ufs.o
 
 
 default: $(LIBNAME)

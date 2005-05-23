@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -65,8 +63,13 @@
 #endif
 
 #include "mpi.h"
+#include "mpio.h"
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 #include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
@@ -290,6 +293,8 @@ typedef struct {
 #define ADIO_NTFS                158   /* NTFS for Windows NT */
 #define ADIO_TESTFS              159   /* fake file system for testing */
 #define ADIO_PVFS2               160   /* PVFS2: 2nd generation PVFS */
+#define ADIO_PANFS               161   /* Panasas FS */
+#define ADIO_GRIDFTP             162   /* Globus GridFTP */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR

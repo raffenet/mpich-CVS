@@ -177,7 +177,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
      */
     if (((file_system == ADIO_PIOFS) ||
 	 (file_system == ADIO_PVFS) ||
-	 (file_system == ADIO_PVFS2)) && 
+	 (file_system == ADIO_PVFS2) ||
+	 (file_system == ADIO_GRIDFTP)) && 
         (amode & MPI_MODE_SEQUENTIAL))
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
@@ -211,10 +212,11 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
-       support file locking, e.g., PIOFS, PVFS, PVFS2 */
+       support file locking. */
     if ((error_code == MPI_SUCCESS) && ((*fh)->file_system != ADIO_PIOFS)
           && ((*fh)->file_system != ADIO_PVFS) 
-	  && ((*fh)->file_system != ADIO_PVFS2) ){
+	  && ((*fh)->file_system != ADIO_PVFS2)
+	  && ((*fh)->file_system != ADIO_GRIDFTP) ){
 	MPI_Comm_rank(dupcomm, &rank);
 	ADIOI_Shfp_fname(*fh, rank);
 

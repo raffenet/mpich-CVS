@@ -3,12 +3,12 @@ AR          = @AR@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I${srcdir}/../../../../include -I../../../../include
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-AD_XFS_OBJECTS = ad_xfs_close.o ad_xfs_read.o \
+AD_XFS_OBJECTS = ad_xfs_read.o \
       ad_xfs_open.o ad_xfs_write.o ad_xfs_done.o \
       ad_xfs_fcntl.o ad_xfs_iread.o ad_xfs_iwrite.o ad_xfs_wait.o \
       ad_xfs_resize.o ad_xfs_hints.o \

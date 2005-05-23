@@ -15,7 +15,7 @@
 
 #include "adio.h"
 #include "mpio.h"
-#ifdef MPICH2
+#ifdef ROMIO_INSIDE_MPICH2
 #include "mpiimpl.h"
 #include "mpiimplthread.h"
 #else
