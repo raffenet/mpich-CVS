@@ -10,6 +10,7 @@
 #include "ad_pvfs2_common.h"
 #include <unistd.h>
 #include <sys/types.h>
+#include <time.h>
 
 /* maybe give romio access to the globalconfig struct */
 /* keyval hack to both tell us if we've already initialized pvfs2 and also
@@ -84,6 +85,9 @@ void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs)
     attribs->group = getegid();
     attribs->perms = 1877;
     attribs->mask =  PVFS_ATTR_SYS_ALL_SETABLE;
+    attribs->atime = time(NULL);
+    attribs->mtime = attribs->atime;
+    attribs->ctime = attribs->atime;
 }
 
 
