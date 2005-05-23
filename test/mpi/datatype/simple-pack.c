@@ -124,7 +124,7 @@ int vector_of_vectors_test(void)
     if (sizeoftype != 4*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 4*sizeof(int));
+			     (int) sizeoftype, (int) (4*sizeof(int)));
 	return errs;
     }
 
@@ -225,7 +225,7 @@ int optimizable_vector_of_basics_test(void)
     if (sizeofint != sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of MPI_Int = %d; should be %d\n",
-			     sizeofint, sizeof(int));
+			     sizeofint, (int) sizeof(int));
     }
 
     /* set up type */
@@ -242,7 +242,7 @@ int optimizable_vector_of_basics_test(void)
     if (sizeoftype != 20 * sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of vector = %d; should be %d\n",
-			     sizeoftype, 20 * sizeof(int));
+			     (int) sizeoftype, (int) (20 * sizeof(int)));
     }
 
     buf = (char *) malloc(sizeoftype);

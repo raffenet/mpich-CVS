@@ -45,7 +45,7 @@ int main( int argc, char *argv[] )
 	    if (dsize != sizeof(float)) {
 		errs++;
 		printf( "Unexpected size for float (%d != %d)\n", 
-			dsize, sizeof(float) );
+			dsize, (int) sizeof(float) );
 	    }
 	}
     }

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static int verbose = 0;
 
@@ -89,7 +90,8 @@ int vector_of_vectors_test(void)
 		      3, -5,  4 };
 
     char *buf;
-    int i, err, errs = 0, sizeoftype, position;
+    int i, err, errs = 0;
+    MPI_Aint sizeoftype, position;
 
     /* set up type */
     err = MPI_Type_vector(2,
@@ -122,7 +124,7 @@ int vector_of_vectors_test(void)
     if (sizeoftype != 4*4) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 4*4);
+			     (int) sizeoftype, 4*4);
 	return errs;
     }
 
@@ -140,7 +142,7 @@ int vector_of_vectors_test(void)
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
-			     position, sizeoftype);
+			     (int) position, (int) sizeoftype);
     }
 
 #if 0
@@ -167,7 +169,7 @@ int vector_of_vectors_test(void)
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (unpack)\n",
-			     position, sizeoftype);
+			     (int) position, (int) sizeoftype);
     }
 
     for (i=0; i < 9; i++) {
@@ -214,7 +216,8 @@ int optimizable_vector_of_basics_test(void)
     int array[20] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		      16, 17, 18, 19 };
     char *buf;
-    int i, sizeofint, sizeoftype, position;
+    int i;
+    MPI_Aint sizeofint, sizeoftype, position;
 
     int err, errs = 0;
 
@@ -223,7 +226,7 @@ int optimizable_vector_of_basics_test(void)
     if (sizeofint != 4) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of external32 MPI_INT = %d; should be %d\n",
-			     sizeofint, 4);
+			     (int) sizeofint, 4);
     }
 
     /* set up type */
@@ -242,7 +245,7 @@ int optimizable_vector_of_basics_test(void)
     if (sizeoftype != 20 * sizeofint) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of vector = %d; should be %d\n",
-			     sizeoftype, 20 * sizeofint);
+			     (int) sizeoftype, (int) (20 * sizeofint));
     }
 
     buf = (char *) malloc(sizeoftype);
@@ -259,7 +262,7 @@ int optimizable_vector_of_basics_test(void)
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
-			     position, sizeoftype);
+			     (int) position, (int) sizeoftype);
     }
 
 #if 0
@@ -285,8 +288,8 @@ int optimizable_vector_of_basics_test(void)
 
     if (position != sizeoftype) {
 	errs++;
-	if (verbose) fprintf(stderr, "position = %d; should be %d (unpack)\n",
-			     position, sizeoftype);
+	if (verbose) fprintf(stderr, "position = %ld; should be %ld (unpack)\n",
+			     (long) position, (long) sizeoftype);
     }
 
     for (i=0; i < 20; i++) {

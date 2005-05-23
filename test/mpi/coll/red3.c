@@ -76,6 +76,7 @@ static void initMat( MPI_Comm comm, int mat[] )
     }
 }
 
+#ifdef FOO
 /* Compare a matrix with the identity matrix */
 static int isIdentity( MPI_Comm comm, int mat[] )
 {
@@ -100,6 +101,7 @@ static int isIdentity( MPI_Comm comm, int mat[] )
     }
     return errs;
 }
+#endif
 
 /* Compare a matrix with the identity matrix */
 static int isShiftLeft( MPI_Comm comm, int mat[] )

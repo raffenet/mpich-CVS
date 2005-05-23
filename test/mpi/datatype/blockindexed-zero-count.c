@@ -61,7 +61,7 @@ int blockindexed_test(void)
 
     err = MPI_Type_create_indexed_block(count,
 					0,
-					(MPI_Aint *) 0,
+					(int *) 0,
 					MPI_INT,
 					&newtype);
     if (err != MPI_SUCCESS) {

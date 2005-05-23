@@ -5,6 +5,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {

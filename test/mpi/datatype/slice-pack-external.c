@@ -22,9 +22,7 @@ int main(int argc, char *argv[])
     /* Variable declarations */
     MPI_Datatype oneslice, twoslice, threeslice;
     int errs = 0;
-    MPI_Aint sizeofint;
-	
-    int bufsize, position;
+    MPI_Aint sizeofint, bufsize, position;
     void *buffer;
 	
     int i, j, k;
@@ -60,7 +58,7 @@ int main(int argc, char *argv[])
     MPI_Pack_external_size("external32", 1, threeslice, &bufsize);
     if (bufsize != 2916)
     {
-        fprintf(stderr," Error on pack size! Got %d; expecting %d\n", bufsize, 2916);
+        fprintf(stderr," Error on pack size! Got %d; expecting %d\n", (int) bufsize, 2916);
     }
     buffer = (void *) malloc((unsigned) bufsize);
 

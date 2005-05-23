@@ -6,6 +6,7 @@
 
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitestconf.h"
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -23,6 +24,8 @@ pairtypes[] =
     };
 
 int parse_args(int argc, char **argv);
+
+MPI_Aint pairtype_displacement(MPI_Datatype type);
 
 MPI_Aint pairtype_displacement(MPI_Datatype type)
 {

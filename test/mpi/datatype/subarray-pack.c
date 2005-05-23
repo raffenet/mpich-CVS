@@ -119,7 +119,7 @@ int subarray_1d_c_test1(void)
     if (sizeoftype != 3 * sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 3 * sizeof(int));
+			     sizeoftype, (int) (3 * sizeof(int)));
 	return errs;
     }
 
@@ -189,7 +189,7 @@ int subarray_1d_fortran_test1(void)
     if (sizeoftype != 3 * sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 3 * sizeof(int));
+			     sizeoftype, (int) (3 * sizeof(int)));
 	return errs;
     }
 
@@ -262,7 +262,7 @@ int subarray_2d_c_test1(void)
     if (sizeoftype != 4*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 4*sizeof(int));
+			     sizeoftype, (int) (4*sizeof(int)));
 	return errs;
     }
 
@@ -336,7 +336,7 @@ int subarray_2d_c_test2(void)
     if (sizeoftype != 2*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 2*sizeof(int));
+			     sizeoftype, (int) (2*sizeof(int)));
 	return errs;
     }
 
@@ -417,7 +417,7 @@ int subarray_4d_c_test1(void)
     if (sizeoftype != 6*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 6*sizeof(int));
+			     sizeoftype, (int) (6*sizeof(int)));
 	return errs;
     }
 
@@ -509,7 +509,7 @@ int subarray_4d_fortran_test1(void)
     if (sizeoftype != 6*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 6*sizeof(int));
+			     sizeoftype, (int) (6*sizeof(int)));
 	return errs;
     }
 
@@ -590,7 +590,7 @@ int subarray_2d_fortran_test1(void)
     if (sizeoftype != 2*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 2*sizeof(int));
+			     sizeoftype, (int) (2*sizeof(int)));
 	return errs;
     }
 

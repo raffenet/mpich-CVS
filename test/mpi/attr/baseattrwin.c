@@ -36,8 +36,8 @@ int main( int argc, char **argv)
     else {
 	if ((int*)v != base) {
 	    errs++;
-	    fprintf( stderr, "Got incorrect value for WIN_BASE (%x, should be %x)", 
-		     (int)v, (int)base );
+	    fprintf( stderr, "Got incorrect value for WIN_BASE (%p, should be %p)", 
+		     v, base );
 	}
     }
 
@@ -50,8 +50,8 @@ int main( int argc, char **argv)
 	MPI_Aint vval = *(MPI_Aint*)v;
 	if (vval != n) {
 	    errs++;
-	    fprintf( stderr, "Got wrong value for WIN_SIZE (%d, should be %d)\n", 
-		     vval, n );
+	    fprintf( stderr, "Got wrong value for WIN_SIZE (%ld, should be %ld)\n", 
+		     (long) vval, (long) n );
 	}
     }
 

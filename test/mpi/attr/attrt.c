@@ -180,7 +180,7 @@ int test_communicators( void )
 	/* This may generate a compilation warning; it is, however, an
 	   easy way to cache a value instead of a pointer */
 	/* printf( "key1 = %x key3 = %x\n", key_1, key_3 ); */
-	MPI_Attr_put(lo_comm, key_1, (void *)world_rank );
+	MPI_Attr_put(lo_comm, key_1, (void *) (MPI_Aint) world_rank );
 	/*         MPI_Attr_put(lo_comm, key_2, world_size ) */
 	MPI_Attr_put(lo_comm, key_3, (void *)0 );
 	
@@ -223,7 +223,7 @@ int test_communicators( void )
 	   }
 	*/
 	MPI_Attr_get(dup_comm, key_3, (void **)&vvalue, &flag );
-	value = (int)vvalue;
+	value = (MPI_Aint)vvalue;
 	if (flag) {
 	    errs++;
 	    printf( "dup_comm key_3 found!\n" );

@@ -103,7 +103,7 @@ int darray_2d_c_test1(void)
 	if (sizeoftype != sizeof(int)) {
 	    errs++;
 	    if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-				 sizeoftype, sizeof(int));
+				 sizeoftype, (int) sizeof(int));
 	    return errs;
 	}
 	
@@ -183,7 +183,7 @@ int darray_4d_c_test1(void)
 	if (sizeoftype != 4*sizeof(int)) {
 	    errs++;
 	    if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-				 sizeoftype, 4*sizeof(int));
+				 sizeoftype, (int) (4*sizeof(int)));
 	    return errs;
 	}
 

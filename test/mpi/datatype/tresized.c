@@ -15,7 +15,7 @@ int main( int argc, char *argv[] )
 {
     int errs = 0, i;
     int rank, size, source, dest;
-    int minsize = 2, count; 
+    int count; 
     int *buf; 
     MPI_Comm      comm;
     MPI_Status    status;

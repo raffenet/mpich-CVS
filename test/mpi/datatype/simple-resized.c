@@ -87,7 +87,7 @@ int derived_resized_test(void)
     if (size != 2*sizeof(int)) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error: size != %d in derived_resized_test()\n", 2*sizeof(int));
+		    "error: size != %d in derived_resized_test()\n", (int) (2*sizeof(int)));
 	}
 	errs++;
     }    
@@ -106,7 +106,7 @@ int derived_resized_test(void)
 	    fprintf(stderr,
 		    "error: invalid extent (%d) in derived_resized_test(); should be %d\n",
 		    (int) extent,
-		    2*sizeof(int) + 10);
+		    (int) (2*sizeof(int) + 10));
 	}
 	errs++;
     }    

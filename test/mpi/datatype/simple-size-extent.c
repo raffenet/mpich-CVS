@@ -8,7 +8,7 @@
 
 #include "mpi.h"
 #include <stdio.h>
-
+#include "mpitestconf.h"
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     if (size != sizeof(int)) {
 	if (verbose) {
 	    fprintf(stderr, "MPI_Type_size of MPI_INT incorrect size (%d); should be %d.\n",
-		    size, sizeof(int));
+		    size, (int) sizeof(int));
 	}
 	errs++;
     }
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     if (extent != sizeof(int)) {
 	if (verbose) {
 	    fprintf(stderr, "MPI_Type_get_extent of MPI_INT returned incorrect extent (%d); should be %d.\n",
-		    (int) extent, sizeof(int));
+		    (int) extent, (int) sizeof(int));
 	}
 	errs++;
     }
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     if (size != sizeof(float) + sizeof(int)) {
 	if (verbose) {
 	    fprintf(stderr, "MPI_Type_size of MPI_FLOAT_INT returned incorrect size (%d); should be %d.\n",
-		    size, sizeof(float) + sizeof(int));
+		    size, (int) (sizeof(float) + sizeof(int)));
 	}
 	errs++;
     }
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
     if (extent != sizeof(foo)) {
 	if (verbose) {
 	    fprintf(stderr, "MPI_Type_get_extent of MPI_FLOAT_INT returned incorrect extent (%d); should be %d.\n",
-		    (int) extent, sizeof(foo));
+		    (int) extent, (int) sizeof(foo));
 	}
 	errs++;
     }

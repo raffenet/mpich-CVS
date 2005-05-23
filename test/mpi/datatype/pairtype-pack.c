@@ -13,6 +13,8 @@
 
 static int verbose = 0;
 
+int short_int_pack_test(void);
+
 /* helper functions */
 int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf,

@@ -92,7 +92,7 @@ int indexed_zeroblock_first_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "lb mismatch; is %d, should be %d\n",
-		    (int) lb, sizeof(int));
+		    (int) lb, (int) sizeof(int));
 	}
 	errs++;
     }
@@ -101,7 +101,7 @@ int indexed_zeroblock_first_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "ub mismatch; is %d, should be %d\n",
-		    (int) ub, 5 * sizeof(int));
+		    (int) ub, (int) (5 * sizeof(int)));
 	}
 	errs++;
     }
@@ -134,7 +134,7 @@ int indexed_zeroblock_middle_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "lb mismatch; is %d, should be %d\n",
-		    (int) lb, sizeof(int));
+		    (int) lb, (int) sizeof(int));
 	}
 	errs++;
     }
@@ -143,7 +143,7 @@ int indexed_zeroblock_middle_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "ub mismatch; is %d, should be %d\n",
-		    (int) ub, 5 * sizeof(int));
+		    (int) ub, (int) (5 * sizeof(int)));
 	}
 	errs++;
     }
@@ -176,7 +176,7 @@ int indexed_zeroblock_last_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "lb mismatch; is %d, should be %d\n",
-		    (int) lb, sizeof(int));
+		    (int) lb, (int) sizeof(int));
 	}
 	errs++;
     }
@@ -185,7 +185,7 @@ int indexed_zeroblock_last_test(void)
 	if (verbose) {
 	    fprintf(stderr,
 		    "ub mismatch; is %d, should be %d\n",
-		    (int) ub, 5 * sizeof(int));
+		    (int) ub, (int) (5 * sizeof(int)));
 	}
 	errs++;
     }
