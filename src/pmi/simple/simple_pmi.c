@@ -918,6 +918,8 @@ int PMI_Spawn_multiple(int count,
 	PMIU_getval( "rc", buf, PMIU_MAXLINE );
 	rc = atoi( buf );
 	if ( rc != 0 ) {
+	    PMIU_getval( "status", tempbuf, PMIU_MAXLINE );
+	    PMIU_printf( 1, "pmi_spawn_mult failed; status: %s\n",tempbuf);
 	    return( -1 );
 	}
     }
