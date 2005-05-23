@@ -1174,16 +1174,10 @@ if test -n "$aio_write_found" ; then
     LIBS=$save_libs
 
     AC_CHECK_HEADERS(signal.h)
-    # Just because aio.h is found by CPP doesn't mean that we can use it
-    # We try to compile it, not just read it.
-    AC_MSG_CHECKING([if aio.h exists and can be compiled])
-    AC_TRY_COMPILE([
-#include <aio.h>],
-[],have_aio_h=yes,have_aio_h=no)
-    AC_MSG_RESULT($have_aio_h)
-    if test "$have_aio_h" = yes ; then
-        AC_DEFINE(HAVE_AIO_H,1,[Define if aio.h exists and can be compiled])
-    fi
+    # Autoconf 2.57 and newer test for presence *and* ability to be compiled
+    AC_CHECK_HEADERS(aio.h)
+    AC_CHECK_HEADERS(sys/aio.h)
+
     AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
     AC_TRY_COMPILE([
 	#ifdef HAVE_SIGNAL_H
@@ -1191,6 +1185,9 @@ if test -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	],[
 	struct aiocb a;
@@ -1207,6 +1204,9 @@ if test -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	#include <sys/types.h>
 	#include <unistd.h>
@@ -1226,6 +1226,9 @@ if test -n "$aio_write_found" ; then
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
 	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
+	#endif
 	],[
 	struct aiocb a;
 	aio_handle_t h;
@@ -1244,6 +1247,9 @@ if test -n "$aio_write_found" ; then
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
 	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
+	#endif
 	],[
 	struct aiocb a;
 
@@ -1260,6 +1266,9 @@ if test -n "$aio_write_found" ; then
 	#endif
 	#ifdef HAVE_AIO_H
 	#include <aio.h>
+	#endif
+	#ifdef HAVE_SYS_AIO_H
+	#include <sys/aio.h>
 	#endif
 	],[
 	struct aiocb a;
