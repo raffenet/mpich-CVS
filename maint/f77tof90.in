@@ -22,6 +22,7 @@ $newline = "\n";
 %replaceInclude = ( 'iodisp' => 'integer (kind=MPI_OFFSET_KIND) disp',
 		    'ioaint' => 'integer (kind=MPI_ADDRESS_KIND) aint',
 		    'iooffset' => 'integer (kind=MPI_OFFSET_KIND) offset',
+		    'type1aint' => 'integer (kind=MPI_ADDRESS_KIND) asize', 
 		    'typeaints' => 'integer (kind=MPI_ADDRESS_KIND) asize, asizev(max_asizev)', 
 		    '../attr/attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
 		    'attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
@@ -30,6 +31,7 @@ $newline = "\n";
 
 %excludePrograms = ();
 $debugReplace = 0;
+$reportSkipped = 0;
 # --------------------------------------------------------------------------
 # Check the input arguments
 if ($indir eq "" || $outdir eq "") {
@@ -191,7 +193,7 @@ sub ConvertMakefile {
 	    my $sourcebase = $1;
 	    my $sourcename = $2;
 	    if (! -s "$indir/$sourcename") {
-		print "Skipping source file $indir/$sourcename because it is not present\n";
+		print "Skipping source file $indir/$sourcename because it is not present\n" if $reportSkipped;
 		$excludePrograms{$sourcebase} = 1;
 		next; 
 	    }
