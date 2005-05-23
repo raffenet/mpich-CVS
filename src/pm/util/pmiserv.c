@@ -52,6 +52,10 @@ int snprintf(char *, size_t, const char *, ...);
 /* These need to be imported from the pmiclient */
 #define MAXPMICMD   256         /* max length of a PMI command */
 
+/* Sizes of info keys and values (should match MPI versions in mpi.h) */
+#define PMI_MAX_INFO_KEY       256
+#define PMI_MAX_INFO_VAL      1025
+
 /* There is only a single PMI master, so we allocate it here */
 static PMIMaster pmimaster = { 0, 0, 0 };
 /* Allow the user to register a routine to be used for the PMI spawn 
@@ -78,6 +82,8 @@ static int fPMI_Handle_get_universe_size( PMIProcess * );
 static int fPMI_Handle_get_appnum( PMIProcess * );
 
 static PMIKVSpace *fPMIKVSAllocate( void );
+
+static int fPMIInfoKey( ProcessApp *, const char [], const char [] );
 
 int PMIServHandleInput( int, int, void * );
 
@@ -922,6 +928,8 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
    preput_key_%d=%s
    preput_val_%d=%s
    info_num=%d
+   info_key_%d=%s
+   info_val_%d=%s
    endcmd
 
    After all of the data is collected, a ProcessWorld structure is
@@ -950,6 +958,9 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     int           i;
     int           totspawns=0, spawnnum=0;
     PMIKVSpace    *kvs = 0;
+    /* Variables for info */
+    char curInfoKey[PMI_MAX_INFO_KEY], curInfoVal[PMI_MAX_INFO_VAL];
+    int  curInfoIdx = -1;
 
     DBG_PRINTFCOND(pmidebug,( "Entering fPMI_Handle_spawn\n" ));
 
@@ -1029,6 +1040,8 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    *++p = 0;
 	    if (strcmp( "endcmd", cmdPtr ) == 0) { break; }
 	    /* FIXME: Otherwise, we have a problem */
+	    MPIU_Error_printf( "Malformed PMI command (no endcmd seen\n" );
+	    return 1;
 	}
 	else {
 	    *p = 0;
@@ -1068,9 +1081,11 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    /* Handle arg%d.  Values are 1 - origin */
 	    argnum = atoi( cmdPtr + 3 ) - 1;
 	    if (argnum < 0 || argnum >= PMI_MAX_ARGS) {
-		/* FIXME: malformed command */
+		MPIU_Error_printf( "Malformed PMI Spawn command; the index of an argument in the command is %d but must be between 0 and %d\n",
+				   argnum, PMI_MAX_ARGS );
+		return 1;
 	    }
-	    args[argnum] = (char *)MPIU_Strdup( valPtr );
+	    args[argnum] = MPIU_Strdup( valPtr );
 	}
 	else if (strcmp( "preput_num", cmdPtr ) == 0) {
 	    preputNum = atoi(valPtr);
@@ -1084,10 +1099,44 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	       PMI group */
 	    fPMIKVSAddPair( kvs, key, valPtr );
 	}
+	/* Info is on a per-app basis (it is an array of info items in
+	   spawn multiple).  We can ignore most info values.
+	   The ones that are handled are processed by a 
+	   separate routine (not yet implemented).
+	   simple_pmi.c sends (key,value), so we can keep just the
+	   last key and pass the key/value to the registered info
+	   handler, along with tha app structure.  Alternately,
+	   we could save all info items and let the user's 
+	   spawner handle it */
 	else if (strcmp( "info_num", cmdPtr ) == 0) {
+	    /* Number of info values */
+	    ;
+	}
+	else if (strncmp( "info_key_", cmdPtr, 9 ) == 0) {
+	    /* The actual name has a digit, which indicates *which* info 
+	       key this is */
+	    curInfoIdx = atoi( cmdPtr + 9 );
+	    MPIU_Strncpy( curInfoKey, valPtr, sizeof(curInfoKey) );
+	}
+	else if (strncmp( "info_val_", cmdPtr, 9 ) == 0) {
+	    /* The actual name has a digit, which indicates *which* info 
+	       value this is */
+	    int idx = atoi( cmdPtr + 9 );
+	    if (idx != curInfoIdx) {
+		MPIU_Error_printf( "Malformed PMI command: info keys and values not ordered as expected (expected value %d but got %d)\n", curInfoIdx, idx );
+		return 1;
+	    }
+	    else {
+		MPIU_Strncpy( curInfoVal, valPtr, sizeof(curInfoVal) );
+		/* Apply this info item */
+		fPMIInfoKey( app, curInfoKey, curInfoVal );
+		/* printf( "Got info %s+%s\n", curInfoKey, curInfoVal ); */
+	    }
 	}
 	else {
-	    /* FIXME: Unrecognized subcommand */
+	    MPIU_Error_printf( "Unrecognized PMI subcommand on spawnmult: %s\n",
+			       cmdPtr );
+	    return 1;
 	}
     }	
 
@@ -1175,6 +1224,32 @@ int PMI_Init_port_connection( int fd )
 
     return pmiid;
 }
+
+/* Handle the default info values */
+static int fPMIInfoKey( ProcessApp *app, const char key[], const char val[] )
+{
+    if (strcmp( key, "host" ) == 0) {
+	app->hostname = MPIU_Strdup( val );
+    }
+    else if (strcmp( key, "arch" ) == 0) {
+	app->arch     = MPIU_Strdup( val );
+    }
+    else if (strcmp( key, "wdir" ) == 0) {
+	app->wdir     = MPIU_Strdup( val );
+    }
+    else if (strcmp( key, "path" ) == 0) {
+	app->path     = MPIU_Strdup( val );
+    }
+    else if (strcmp( key, "soft" ) == 0) {
+	MPIE_ParseSoftspec( val, &app->soft );
+    }
+    else {
+	/* FIXME: call user-specified info handler, if any.
+	   Unspecified info keys are ignored */
+    }
+    return 0;
+}
+
 
 /* ------------------------------------------------------------------------- */
 #ifndef PMIWriteLine

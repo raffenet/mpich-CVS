@@ -50,7 +50,6 @@
 /* Internal routines */
 static int getInt( int, int, char *[] );
 static int GetIntValue( const char [], int );
-static int ParseSoftspec( const char *, ProcessSoftSpec * );
 static int ReadConfigFile( const char *, ProcessUniverse * );
 
 /*@ MPIE_Args - Process the arguments for mpiexec.  
@@ -252,7 +251,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		if (np > 0) {
 		    mpiexec_usage( "-n and -soft may not be used together" );
 		}
-		ParseSoftspec( soft, &pApp->soft );
+		MPIE_ParseSoftspec( soft, &pApp->soft );
 	    }
 	    else {
 		if (np == -1) np = 1;
@@ -473,7 +472,7 @@ static int GetIntValue( const char name[], int default_val )
  *  element -> number | range
  *  range   -> number:number[:number]
  */
-static int ParseSoftspec( const char *str, ProcessSoftSpec *sspec )
+int MPIE_ParseSoftspec( const char *str, ProcessSoftSpec *sspec )
 {
     const char *p = str, *p1, *p2;
     int s, e, incr;
