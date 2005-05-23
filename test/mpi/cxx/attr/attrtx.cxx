@@ -182,7 +182,7 @@ int test_communicators( void )
 	
 	/* This may generate a compilation warning; it is, however, an
 	   easy way to cache a value instead of a pointer */
-	lo_comm.Set_attr( key_1, (void *)world_rank );
+	lo_comm.Set_attr( key_1, (void *) (MPI_Aint) world_rank );
 	lo_comm.Set_attr( key_3, (void *)0 );
 	
 	dup_comm = lo_comm.Dup();

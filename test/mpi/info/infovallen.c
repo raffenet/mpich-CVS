@@ -47,8 +47,8 @@ int main( int argc, char *argv[] )
 	}
 	if (strlen(value) != vallen) {
 	    errs++;
-	    printf( "value_len returned %d but actual len is %u\n", 
-		    vallen, strlen(value) );
+	    printf( "value_len returned %d but actual len is %d\n", 
+		    vallen, (int) strlen(value) );
 	}
     }
 
