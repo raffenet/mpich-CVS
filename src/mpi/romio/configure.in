@@ -4,9 +4,11 @@
 # (or wherever the confdb is)
 #
 AC_PREREQ(2.59)
+
+# if this blows up, it's because you forgot to run autoheader
 AC_INIT(adio/include/romioconf.h.in)
-VERSION=1.2.6
-AC_MSG_RESULT([Configuring ROMIO Version $VERSION])
+# VERSION=1.2.6
+# AC_MSG_RESULT([Configuring ROMIO Version $VERSION])
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
