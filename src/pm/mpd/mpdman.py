@@ -19,7 +19,7 @@ from os       import environ, getpid, pipe, fork, write, close, dup2, \
                      chdir, execvpe, kill, waitpid, setpgrp, WNOHANG, X_OK, \
                      path, access, umask
 from sys      import exit
-from socket   import gethostname, fromfd, AF_INET, SOCK_STREAM
+from socket   import gethostname, gethostbyname_ex, fromfd, AF_INET, SOCK_STREAM
 from types    import ClassType
 from re       import findall, sub
 from signal   import signal, SIGINT, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD
@@ -1062,7 +1062,14 @@ class MPDMan(object):
                 pmiInfo[info_key] = info_val
 
             if pmiInfo.has_key('host'):
-                self.spawnHosts[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['host']
+                try:
+                    toIfhn = gethostbyname_ex(pmiInfo['host'])[2][0]
+                    self.spawnHosts[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = toIfhn
+                except:
+                    mpd_print(1, "unable to obtain host info for :%s:" % (pmiInfo['host']))
+                    pmiMsgToSend = 'cmd=spawn_result rc=-2 status=unknown_host\n'
+                    self.pmiSock.send_char_msg(pmiMsgToSend)
+                    return
             else:
                 self.spawnHosts[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = '_any_'
             self.spawnExecs[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = parsedMsg['execname']
