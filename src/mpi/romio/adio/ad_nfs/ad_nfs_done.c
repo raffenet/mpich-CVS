@@ -34,7 +34,8 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
     *request = ADIO_REQUEST_NULL;
     *error_code = MPI_SUCCESS;
     return 1;
-#endif    
+
+#else
 
 #ifndef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
 /* old IBM API */
@@ -71,7 +72,8 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif defined(ROMIO_HAVE_WORKING_AIO)
+#else 
+/* everything other than old IBM */
     if ((*request)->queued) {
 	errno = aio_error((const struct aiocb *) (*request)->handle);
 	if (errno == EINPROGRESS) {
@@ -106,7 +108,6 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 
 #endif
 
-#ifdef ROMIO_HAVE_WORKING_AIO
     if (done) {
 	/* if request is still queued in the system, it is also there
            on ADIOI_Async_list. Delete it from there. */
