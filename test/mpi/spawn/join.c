@@ -28,10 +28,11 @@ int main( int argc, char *argv[] )
     int sendbuf[COUNT], recvbuf[COUNT], i;
     int err=0, rank, nprocs, errs=0;
     MPI_Comm intercomm;
-    int listenfd, connfd, clilen, port, namelen, len;
+    int listenfd, connfd, port, namelen;
     struct sockaddr_in cliaddr, servaddr;
     struct hostent *h;
     char hostname[MPI_MAX_PROCESSOR_NAME];
+    socklen_t len, clilen;
 
     MTest_Init( &argc, &argv );
 
