@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
@@ -35,10 +36,12 @@ default: $(LIBNAME)
 
 $(LIBNAME): $(AD_PVFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_PVFS_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 AD_PVFS_LOOBJECTS=$(AD_PVFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_PVFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_PVFS_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 coverage:
 	-@for file in  ${AD_PVFS_OBJECTS:.o=.c} ; do \

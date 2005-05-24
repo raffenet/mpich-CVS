@@ -123,6 +123,7 @@ all: $(LIBNAME)
 
 profile: $(MPIO_TMP_POBJECTS) $(MPIO_EXTRA_TMP_POBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_POBJECTS) $(MPIO_EXTRA_REAL_POBJECTS)
+	$(RANLIB) $(LIBNAME) 
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    $(MAKE) P$(SHLIBNAME).la ;\
 	fi
@@ -134,12 +135,14 @@ coverage:
 
 $(LIBNAME): $(MPIO_OBJECTS) $(MPIO_EXTRA_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS) $(MPIO_EXTRA_OBJECTS)
+	$(RANLIB) $(LIBNAME)
 
 MPIO_LOOBJECTS = $(MPIO_OBJECTS:.o=.lo)
 MPIO_EXTRA_LOOBJECTS = $(MPIO_EXTRA_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 # --------------------------------------------------------------------------
 # We use P$(SHLBNAME) simply to distinguish the regular lib build from the
 # profiling library build
@@ -149,7 +152,7 @@ MPIO_TMP_LOPOBJECTS = ${MPIO_TMP_POBJECTS:.p=.sp}
 MPIO_EXTRA_LOPOBJECTS = ${MPIO_EXTRA_TMP_OBJECTS:.p=.sp}
 P$(SHLIBNAME).la: $(MPIO_TMP_LOPOBJECTS) $(MPIO_EXTRA_TMP_LOPOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOPOBJECTS) $(MPIO_EXTRA_LOPOBJECTS)
-
+	$(RANLIB) $(SHLIBNAME) 
 # --------------------------------------------------------------------------
 clean:
 	@rm -f *.o *.lo

@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 
@@ -21,6 +22,7 @@ default: $(LIBNAME)
 
 $(LIBNAME): $(AD_GRIDFTP_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_GRIDFTP_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 clean:
 	@rm -f *.o

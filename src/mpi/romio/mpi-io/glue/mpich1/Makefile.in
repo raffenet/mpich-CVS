@@ -28,6 +28,7 @@ profile:
 
 $(LIBNAME): $(MPIO_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 clean:
 	@rm -f *.o

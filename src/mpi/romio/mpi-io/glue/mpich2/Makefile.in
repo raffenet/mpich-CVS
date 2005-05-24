@@ -40,10 +40,12 @@ profile:
 
 $(LIBNAME): $(MPIO_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS)
+	$(RANLIB) $(LIBNAME)  
 
 MPIO_LOOBJECTS = $(MPIO_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(MPIO_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 clean:
 	@rm -f *.o

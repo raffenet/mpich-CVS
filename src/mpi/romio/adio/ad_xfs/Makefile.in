@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
@@ -36,10 +37,12 @@ default: $(LIBNAME)
 
 $(LIBNAME): $(AD_XFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_XFS_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 AD_XFS_LOOBJECTS=$(AD_XFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_XFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_XFS_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 clean:
 	@rm -f *.o

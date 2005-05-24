@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
@@ -34,10 +35,12 @@ default: $(LIBNAME)
 
 $(LIBNAME): $(AD_NFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_NFS_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 AD_NFS_LOOBJECTS=$(AD_NFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_NFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_NFS_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 coverage:
 	-@for file in  ${AD_NFS_OBJECTS:.o=.c} ; do \

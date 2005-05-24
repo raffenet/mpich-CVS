@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 MPI         = @MPI@
 srcdir      = @srcdir@
@@ -37,11 +38,13 @@ default: $(LIBNAME)
 
 $(LIBNAME): $(AD_TESTFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_TESTFS_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 AD_TESTFS_LOOBJECTS = $(AD_TESTFS_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(AD_TESTFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_TESTFS_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 clean:
 	@rm -f *.o *.lo

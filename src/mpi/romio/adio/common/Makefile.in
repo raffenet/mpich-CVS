@@ -1,5 +1,6 @@
 CC          = @CC@
 AR          = @AR@
+RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 MPI         = @MPI@
 srcdir      = @srcdir@
@@ -43,11 +44,13 @@ all: $(LIBNAME)
 
 $(LIBNAME): $(AD_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_OBJECTS)
+	$(RANLIB) $(LIBNAME) 
 
 AD_LOOBJECTS = $(AD_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(AD_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_LOOBJECTS)
+	$(RANLIB) $(SHLIBNAME) 
 
 clean:
 	@rm -f *.o *.lo
