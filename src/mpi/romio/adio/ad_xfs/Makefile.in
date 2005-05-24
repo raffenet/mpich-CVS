@@ -2,9 +2,15 @@ CC          = @CC@
 AR          = @AR@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
+CC_SHL      = @CC_SHL@
+SHLIBNAME   = @SHLIBNAME@
 
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
+
+top_builddir  = @master_topbuild_dir@
+LIBTOOL       = @LIBTOOL@
+C_COMPILE_SHL = $(CC_SHL)
 
 @VPATH@
 
@@ -15,12 +21,25 @@ AD_XFS_OBJECTS = ad_xfs_read.o \
       ad_xfs.o
 
 default: $(LIBNAME)
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    $(MAKE) $(SHLIBNAME).la ;\
+	fi
+
+.SUFFIXES: $(SUFFIXES) .p .lo
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
+.c.lo:
+	$(C_COMPILE_SHL) $(CFLAGS) -c $<
+	@mv -f $*.o $*.lo
+
 $(LIBNAME): $(AD_XFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_XFS_OBJECTS)
+
+AD_XFS_LOOBJECTS=$(AD_XFS_OBJECTS:.o=.lo)
+$(SHLIBNAME).la: $(AD_XFS_LOOBJECTS)
+	$(AR) $(SHLIBNAME).la $(AD_XFS_LOOBJECTS)
 
 clean:
 	@rm -f *.o
