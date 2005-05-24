@@ -1196,29 +1196,6 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 	AC_DEFINE(ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS, 1, Define if aio_suspend needs two arguments)
     fi
 
-    AC_MSG_CHECKING([for obsolete two-argument aio_suspend])
-    AC_TRY_RUN([
-#include <sys/types.h>
-#include <aio.h>
-	int main(int argc, char **argv)
-	{
-		struct aiocb *aiocbp;
-		if (argc > 10) aio_suspend(1, &aiocbp);
-		return 0;
-	}
-	],
-	aio_two_arg_suspend=yes
-	AC_MSG_RESULT(yes),
-	aio_two_arg_suspend=no 
-	AC_MSG_RESULT(no),
-	aio_two_arg_suspend=unknown
-	AC_MSG_RESULT(unknown)
-    )
-
-    if test "$aio_two_arg_suspend" != "no" -a "$aio_runs" != "yes" ; then
-	AC_DEFINE(ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS, 1, Define if aio_suspend needs two arguments)
-    fi
-
     LIBS=$save_libs
 
     AC_CHECK_HEADERS(signal.h)
