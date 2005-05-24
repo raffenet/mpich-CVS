@@ -57,6 +57,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 #endif
 
 #elif defined(ROMIO_HAVE_WORKING_AIO)
+/* all other aio types */
     if ((*request)->queued) {
 	do {
 	    err = aio_suspend((const struct aiocb **) &((*request)->handle), 1, 0);
