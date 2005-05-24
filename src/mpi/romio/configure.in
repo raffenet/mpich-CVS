@@ -40,7 +40,7 @@ FROM_LAM=${FROM_LAM:-no}
 if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
 CFLAGS=${CFLAGS:-""}
 LL="lld"
-AR_LOCAL=l
+AR_LOCAL=""
 DEFINE_HAVE_MPI_GREQUEST="#undef HAVE_MPI_GREQUEST"
 HAVE_MPI_INFO=""
 BUILD_MPI_INFO=""
@@ -1563,8 +1563,8 @@ if test "$FROM_MPICH2" = no -a "$FROM_MPICH" = no ; then
 else
     MPILIBNAME=${MPILIBNAME:-mpich}
     if test -z "$LIBNAME" ; then
-        if test -d "$top_build_dir/lib" ; then
-            LIBNAME=$top_build_dir/lib/lib${MPILIBNAME}.a
+        if test -d "$master_top_builddir/lib" ; then
+            LIBNAME=$master_top_builddir/lib/lib${MPILIBNAME}.a
         else
             LIBNAME="$ROMIO_HOME/lib${MPILIBNAME}.a"
 	fi
@@ -1736,12 +1736,13 @@ for dir in $FILE_SYSTEM ; do
     FILE_SYS_DIRS="$FILE_SYS_DIRS adio/ad_$dir"
 done
 EXTRA_SRC_DIRS=""
+GLUE_DIR=""
 if test "$FROM_MPICH2" = yes -o "${MPI}_mpi" = "mpich2_mpi"; then
-    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
+    GLUE_DIRS="$GLUE_DIRS mpi-io/glue/mpich2"
 elif test "$FROM_MPICH" = yes -o "${MPI}_mpi" = "mpich_mpi"; then
-    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich1"
+    GLUE_DIRS="$GLUE_DIRS mpi-io/glue/mpich1"
 else
-    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/default"
+    GLUE_DIRS="$GLUE_DIRS mpi-io/glue/default"
 fi
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
@@ -1760,6 +1761,7 @@ if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
 fi
 AC_SUBST(EXTRA_SRC_DIRS)
 AC_SUBST(FILE_SYS_DIRS)
+AC_SUBST(GLUE_DIR)
 
 #
 CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H"
