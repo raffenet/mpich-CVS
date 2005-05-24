@@ -19,7 +19,7 @@
 
 void ADIOI_GEN_Close(ADIO_File fd, int *error_code)
 {
-    int err, derr;
+    int err, derr=0;
     static char myname[] = "ADIOI_GEN_CLOSE";
 
 #ifdef PROFILE
