@@ -187,6 +187,12 @@ else
 fi
 AC_MSG_RESULT([ROMIO home directory is $ROMIO_HOME_TRIAL])
 ROMIO_HOME=$ROMIO_HOME_TRIAL
+
+# get a fully qualified pathname for our build directory
+top_build_dir=`pwd`
+# used in romioinstall
+AC_SUBST(top_build_dir)
+
 #
 # Create the "autoconf" style directory names...
 # Most of these are done for us; add the documentation directories
@@ -1528,19 +1534,16 @@ fi
 
 if test "$FROM_MPICH2" = no -a "$FROM_MPICH" = no ; then 
     if test -z "$LIBNAME"; then
-        LIBNAME="$ROMIO_HOME/lib/$ARCH/libmpio.a"
+        LIBNAME="$top_build_dir/lib/libmpio.a"
     fi
     #
-    if test ! -d $ROMIO_HOME/lib ; then 
-        mkdir $ROMIO_HOME/lib
-    fi
-    if test ! -d $ROMIO_HOME/lib/$ARCH ; then 
-        mkdir $ROMIO_HOME/lib/$ARCH
+    if test ! -d $top_build_dir/lib ; then 
+        mkdir $top_build_dir/lib
     fi
 else
     MPILIBNAME=${MPILIBNAME:-mpich}
     if test -z "$LIBNAME" ; then
-        if test -n "$top_build_dir" -a -d "$top_build_dir/lib" ; then
+        if test -d "$top_build_dir/lib" ; then
             LIBNAME=$top_build_dir/lib/lib${MPILIBNAME}.a
         else
             LIBNAME="$ROMIO_HOME/lib${MPILIBNAME}.a"

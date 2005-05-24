@@ -7,9 +7,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#if 0
-#include "mpiimpl.h"
-#endif
 #include "mpioimpl.h"
 #include "adio_extern.h"
 
