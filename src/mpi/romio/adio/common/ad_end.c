@@ -6,8 +6,10 @@
 
 #include "adio.h"
 #include "adio_extern.h"
+#if 0
 #ifdef MPICH2
 #include "mpiimpl.h"
+#endif
 #endif
 
 void ADIO_End(int *error_code)
