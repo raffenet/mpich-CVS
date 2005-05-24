@@ -331,7 +331,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 		goto fn_fail;
 		/* --END ERROR HANDLING-- */
 	    }
-	    pmi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	    pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	    if (pmi_errno != PMI_SUCCESS)
 	    {
 		/* --BEGIN ERROR HANDLING-- */
@@ -342,7 +342,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    }
 
 	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
-	    fflush(stdout);
 	}
     }
 #   endif
