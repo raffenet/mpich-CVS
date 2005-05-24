@@ -61,7 +61,7 @@ void ADIOI_GRIDFTP_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 		    globus_err_handler("globus_ftp_client_size",myname,result);
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
 				    MPIR_ERR_RECOVERABLE,
-				    myname, __LINE__,
+                                    myname, __LINE__, MPI_ERR_IO,
 				    "**io", "**io %s", 
 				    globus_object_printable_to_string(result));
 		    return;

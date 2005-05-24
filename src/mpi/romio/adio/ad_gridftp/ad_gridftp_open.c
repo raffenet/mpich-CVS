@@ -82,7 +82,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    globus_err_handler("globus_ftp_client_handleattr_init",
 			       myname,result);
 	    fd->fd_sys = -1;
-	    *error_code = MPIO_Err_create_code( MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -94,7 +94,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    globus_err_handler("globus_ftp_client_operationattr_init",
 			       myname,result);
 	    fd->fd_sys = -1;
-	    *error_code = MPIO_Err_create_code( MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -240,7 +240,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	{
 	    globus_err_handler("globus_ftp_client_handle_init",myname,result);
 	    fd->fd_sys = -1;
-	    *error_code = MPIO_Err_create_code( MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -262,7 +262,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 		{
 		    globus_err_handler("globus_ftp_client_exists",myname,result);
 		    fd->fd_sys = -1; 
-		    *error_code = MPIO_Err_create_code( MPIR_ERR_RECOVERABLE,
+		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 				    myname, __LINE__, MPI_ERR_IO,
 				    "**io", "**io %s", 
 				    globus_object_printable_to_string(result));
@@ -295,7 +295,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 			{
 			    globus_err_handler("globus_ftp_client_put",myname,result);
 			    fd->fd_sys = -1;
-			    *error_code = MPIO_Err_create_code( 
+			    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				MPIR_ERR_RECOVERABLE,
 				myname, __LINE__, MPI_ERR_IO,
 				"**io", "**io %s", 
@@ -310,7 +310,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 		    if ( result != GLOBUS_SUCCESS )
 			{
 			    globus_err_handler("globus_ftp_client_register_write",myname,result);
-			    *error_code = MPIO_Err_create_code( 
+			    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				MPIR_ERR_RECOVERABLE,
 				myname, __LINE__, MPI_ERR_IO,
 				"**io", "**io %s", 
@@ -327,7 +327,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
     else if ( (fd->access_mode&MPI_MODE_EXCL) && (file_exists==GLOBUS_TRUE) )
 	{
 	    fd->fd_sys = -1;
-	    *error_code = MPIO_Err_create_code(MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 			    myname, __LINE__, MPI_ERR_IO, 
 			    "**io", 0);
 	    return;

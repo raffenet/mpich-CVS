@@ -239,7 +239,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	    fflush(stderr);
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 			    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
-			    MPI_ERR_IO, "**io", "**io" );
+			    MPI_ERR_IO, "**io", 0 );
 	    return;
 	}
     /* from here we can assume btype_extent==btype_size */

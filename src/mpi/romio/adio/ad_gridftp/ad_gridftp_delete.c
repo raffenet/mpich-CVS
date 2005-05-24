@@ -47,7 +47,7 @@ void ADIOI_GRIDFTP_Delete(char *filename, int *error_code)
 	    *error_code= MPIO_Err_create_code(MPI_SUCCESS,
 			    MPIR_ERR_RECOVERABLE,
 			    myname, __LINE__,
-			    *error_code,
+			    MPI_ERR_IO,
 			    "**io", "**io %s", 
 			    globus_object_printable_to_string(result));
 	    return; 
@@ -62,7 +62,7 @@ void ADIOI_GRIDFTP_Delete(char *filename, int *error_code)
 	    *error_code= MPIO_Err_create_code(MPI_SUCCESS,
 			    MPIR_ERR_RECOVERABLE,
 			    myname, __LINE__,
-			    *error_code,
+			    MPI_ERR_IO,
 			    "**io", "**io %s",
 			    globus_object_printable_to_string(result));
 	    return;
@@ -78,7 +78,7 @@ void ADIOI_GRIDFTP_Delete(char *filename, int *error_code)
 	    *error_code= MPIO_Err_create_code(MPI_SUCCESS,
 			    MPIR_ERR_RECOVERABLE,
 			    myname, __LINE__,
-			    *error_code,
+			    MPI_ERR_IO,
 			    "**io", "**io %s", 
 			    globus_object_printable_to_string(result));
 	    return;
@@ -89,6 +89,7 @@ void ADIOI_GRIDFTP_Delete(char *filename, int *error_code)
 	    *error_code= MPIO_Err_create_code(MPI_SUCCESS,
 			    MPIR_ERR_RECOVERABLE,
 			    myname, __LINE__,
+			    MPI_ERR_IO,
 			    "**io", "**io %s", 
 			    globus_object_printable_to_string(result));
 	}
