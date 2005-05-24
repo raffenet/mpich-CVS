@@ -188,7 +188,6 @@ typedef struct ADIOI_Hints_struct ADIOI_Hints;
 typedef struct ADIOI_FileD {
     int cookie;              /* for error checking */
     FDTYPE fd_sys;              /* system file descriptor */
-#ifdef ROMIO_XFS
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
     int direct_read;         /* flag; 1 means use direct read */
@@ -198,7 +197,6 @@ typedef struct ADIOI_FileD {
     unsigned d_miniosz;      /* min xfer size, xfer size multiple,
                                 and file seek offset alignment */
     unsigned d_maxiosz;      /* max xfer size */
-#endif
     ADIO_Offset fp_ind;      /* individual file pointer in MPI-IO (in bytes)*/
     ADIO_Offset fp_sys_posn; /* current location of the system file-pointer
                                 in bytes */
