@@ -416,6 +416,29 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
 
+
+int ADIOI_FAKE_IODone(ADIO_Request *request, ADIO_Status *status,
+                      int *error_code);
+void ADIOI_FAKE_IreadContig(ADIO_File fd, void *buf, int count, 
+			   MPI_Datatype datatype, int file_ptr_type,
+			   ADIO_Offset offset, ADIO_Request *request,
+                            int *error_code);
+void ADIOI_FAKE_IreadStrided(ADIO_File fd, void *buf, int count, 
+			    MPI_Datatype datatype, int file_ptr_type,
+			    ADIO_Offset offset, ADIO_Request *request,
+                             int *error_code);
+void ADIOI_FAKE_IwriteContig(ADIO_File fd, void *buf, int count, 
+			    MPI_Datatype datatype, int file_ptr_type,
+			    ADIO_Offset offset, ADIO_Request *request,
+                             int *error_code);  
+void ADIOI_FAKE_IwriteStrided(ADIO_File fd, void *buf, int count, 
+			     MPI_Datatype datatype, int file_ptr_type,
+			     ADIO_Offset offset, ADIO_Request *request,
+                              int *error_code);
+void ADIOI_FAKE_IOComplete(ADIO_Request *request, ADIO_Status *status,
+                           int *error_code);
+
+
 /* File I/O common functionality */
 int MPIOI_File_read(MPI_File fh,
 		    MPI_Offset offset,
