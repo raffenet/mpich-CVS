@@ -22,7 +22,7 @@
 @*/
 int MPID_Type_commit(MPI_Datatype *datatype_p)
 {
-    int count;
+    int count, mpi_errno=MPI_SUCCESS;
     MPI_Aint first, last;
     MPID_Datatype *datatype_ptr;
     MPID_Segment *segp;
@@ -36,6 +36,19 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 
 	/* determine number of contiguous blocks in the type */
 	segp = MPID_Segment_alloc();
+        /* --BEGIN ERROR HANDLING-- */
+        if (!segp)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+                                             MPIR_ERR_RECOVERABLE,
+                                             "MPID_Type_commit",
+                                             __LINE__,
+                                             MPI_ERR_OTHER,
+                                             "**nomem",
+                                             0);
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
 	MPID_Segment_init(0, 1, *datatype_p, segp, 0); /* first 0 is bufptr,
 							* 1 is count
 							* last 0 is homogeneous
@@ -61,6 +74,6 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 #endif
     }
 
-    return 0;
+    return mpi_errno;
 }
 
