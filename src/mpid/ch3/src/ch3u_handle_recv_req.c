@@ -212,7 +212,13 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 MPIU_Free(rreq->dev.dtype_info);
 
                 /* create request for sending data */
-		sreq = MPIDI_CH3_Request_create();
+		sreq = MPID_Request_create();
+                if (sreq == NULL) {
+                    /* --BEGIN ERROR HANDLING-- */
+                    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+                    goto fn_exit;
+                    /* --END ERROR HANDLING-- */
+                }
                 sreq->kind = MPID_REQUEST_SEND;
                 MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_GET_RESP);
                 sreq->dev.user_buf = rreq->dev.user_buf;
@@ -479,6 +485,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 
 
 
+#undef FUNCNAME
+#define FUNCNAME create_derived_datatype
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
 {
     MPIDI_RMA_dtype_info *dtype_info;
@@ -537,6 +547,10 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME do_accumulate_op
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int do_accumulate_op(MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -653,6 +667,10 @@ static int do_accumulate_op(MPID_Request *rreq)
 
 /* Release the current lock on the window and grant the next lock in the
    queue if any */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Release_lock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 {
     MPIDI_Win_lock_queue *lock_queue, **lock_queue_ptr;
@@ -796,6 +814,10 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Send_pt_rma_done_pkt
+#undef FCNAME 
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 {
     MPIDI_CH3_Pkt_t upkt;
@@ -824,6 +846,10 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME do_simple_accumulate
+#undef FCNAME 
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int do_simple_accumulate(MPIDI_PT_single_op *single_op)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -868,6 +894,10 @@ static int do_simple_accumulate(MPIDI_PT_single_op *single_op)
 
 
 
+#undef FUNCNAME
+#define FUNCNAME do_simple_get
+#undef FCNAME 
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
 {
     MPIDI_CH3_Pkt_t upkt;
@@ -877,6 +907,12 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     int type_size, mpi_errno=MPI_SUCCESS;
 
     req = MPID_Request_create();
+    if (req == NULL) {
+        /* --BEGIN ERROR HANDLING-- */
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        return mpi_errno;
+        /* --END ERROR HANDLING-- */
+    }
     req->dev.target_win_handle = win_ptr->handle;
     req->dev.source_win_handle = lock_queue->source_win_handle;
     req->dev.single_op_opt = 1;

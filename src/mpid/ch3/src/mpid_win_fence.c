@@ -385,6 +385,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Send_rma_msg
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
                             MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, 
@@ -627,6 +631,10 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Recv_rma_msg
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
                             MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, void **dataloop, 

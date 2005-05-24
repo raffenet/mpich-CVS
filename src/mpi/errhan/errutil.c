@@ -780,11 +780,17 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     MPI_Request R;
     MPI_Errhandler E;
     char *s;
-    int d;
+    int d, mpi_errno=MPI_SUCCESS;
     void *p;
 
     fmt = MPIU_Strdup(fmt_orig);
-
+    if (fmt == NULL) {
+        /* --BEGIN ERROR HANDLING-- */
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "vsnprintf_mpi", __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        return mpi_errno;
+        /* --END ERROR HANDLING-- */
+    }
+    
     begin = fmt;
     end = strchr(fmt, '%');
     while (end)
@@ -931,7 +937,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     /* Free the dup'ed format string */
     MPIU_Free( fmt );
 
-    return 0;
+    return mpi_errno;
 }
 
 /* Err_create_code is just a shell that accesses the va_list and then

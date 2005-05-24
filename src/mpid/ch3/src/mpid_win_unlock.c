@@ -202,6 +202,10 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Do_passive_target_rma
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma_done_pkt)
 {
     int mpi_errno = MPI_SUCCESS, comm_size, done, i, nops;
@@ -446,7 +450,10 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
 }
 
 
-
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Send_lock_put_or_acc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, lock_type, origin_dt_derived, iov_n, iovcnt;
@@ -647,6 +654,10 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Send_lock_get
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, lock_type;

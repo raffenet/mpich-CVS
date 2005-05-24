@@ -55,6 +55,12 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 #   if defined(HAVE_GETHOSTNAME)
     {
 	MPIDI_Process.processor_name = MPIU_Malloc(MPIDI_PROCESSOR_NAME_SIZE);
+        if (MPIDI_Process.processor_name == NULL) {
+            /* --BEGIN ERROR HANDLING-- */
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_fail;
+            /* --END ERROR HANDLING-- */
+        }
 	
 #       if defined(HAVE_WINDOWS_H)
 	{
