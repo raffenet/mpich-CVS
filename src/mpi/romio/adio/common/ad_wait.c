@@ -17,6 +17,9 @@
 #ifdef HAVE_AIO_H
 #include <aio.h>
 #endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 
 /* Workaround for incomplete set of definitions if __REDIRECT is not 
    defined and large file support is used in aio.h */

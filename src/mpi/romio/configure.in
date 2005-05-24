@@ -1105,6 +1105,30 @@ fi
 LIBS=$save_libs
 
 if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
+    AC_CHECK_HEADERS(signal.h)
+    # Just because aio.h is found by CPP doesn't mean that we can use it
+    # We try to compile it, not just read it.
+    AC_MSG_CHECKING([if aio.h exists and can be compiled])
+    AC_TRY_COMPILE([
+#include <aio.h>],
+[],have_aio_h=yes,have_aio_h=no)
+    AC_MSG_RESULT($have_aio_h)
+    if test "$have_aio_h" = yes ; then
+        AC_DEFINE(HAVE_AIO_H,1,[Define if aio.h exists and can be compiled])
+    fi
+
+    AC_MSG_CHECKING([if sys/aio.h exists and can be compiled])
+    AC_TRY_COMPILE([
+#include <sys/aio.h>],
+[],have_sys_aio_h=yes,have_sys_aio_h=no)
+    AC_MSG_RESULT($have_sys_aio_h)
+    if test "$have_sys_aio_h" = yes ; then
+        AC_DEFINE(HAVE_SYS_AIO_H,1,[Define if sys/aio.h exists and can be compiled])
+    fi
+fi
+
+if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" ; then
+
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).
     # The test is the following: if not cross compiling, try to run a 
@@ -1119,7 +1143,15 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     # (an old IBM interface needs an fd argument as well)
     AC_TRY_RUN([
 #include <sys/types.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_AIO_H
 #include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	int main(int argc, char **argv)
 	{
             struct aiocb *aiocbp;
@@ -1151,7 +1183,15 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     AC_MSG_CHECKING([for obsolete two-argument aio_write])
     AC_TRY_RUN([
 #include <sys/types.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_AIO_H
 #include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	int main(int argc, char **argv)
 	{
 		int fd;
@@ -1176,7 +1216,15 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     AC_MSG_CHECKING([for obsolete two-argument aio_suspend])
     AC_TRY_RUN([
 #include <sys/types.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_AIO_H
 #include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	int main(int argc, char **argv)
 	{
 		struct aiocb *aiocbp;
@@ -1197,11 +1245,6 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     fi
 
     LIBS=$save_libs
-
-    AC_CHECK_HEADERS(signal.h)
-    # Autoconf 2.57 and newer test for presence *and* ability to be compiled
-    AC_CHECK_HEADERS(aio.h)
-    AC_CHECK_HEADERS(sys/aio.h)
 
     AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
     AC_TRY_COMPILE([

@@ -17,6 +17,9 @@
 #ifdef HAVE_AIO_H
 #include <aio.h>
 #endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 
 /* ADIOI_GEN_IreadContig
  *
