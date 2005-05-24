@@ -784,13 +784,13 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     void *p;
 
     fmt = MPIU_Strdup(fmt_orig);
-    if (fmt == NULL) {
-        /* --BEGIN ERROR HANDLING-- */
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "vsnprintf_mpi", __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        return mpi_errno;
-        /* --END ERROR HANDLING-- */
+    if (fmt == NULL)
+    {
+	if (maxlen > 0 && str != NULL)
+	    *str = '\0';
+	return 0;
     }
-    
+
     begin = fmt;
     end = strchr(fmt, '%');
     while (end)
@@ -923,6 +923,8 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	default:
 	    /* Error: unhandled output type */
 	    return 0;
+	    if (maxlen > 0 && str != NULL)
+		*str = '\0';
 	    break;
 	}
 	len = strlen(str);
