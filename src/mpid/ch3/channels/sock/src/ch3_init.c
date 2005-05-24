@@ -318,7 +318,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
-#   if defined(DEBUG)
+#if 0
     {
 	for (p = 0; p < pg_size; p++)
 	{
@@ -344,7 +344,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	}
     }
-#   endif
+#endif
 
     /* FIXME: has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
