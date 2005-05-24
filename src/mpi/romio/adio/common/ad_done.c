@@ -43,11 +43,11 @@ int ADIOI_GEN_IODone(ADIO_Request *request, ADIO_Status *status,
 #ifdef ROMIO_HAVE_WORKING_AIO
     int done=0;
     int err;
+    static char myname[] = "ADIOI_GEN_IODONE";
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
 #endif
-    static char myname[] = "ADIOI_GEN_IODONE";
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;

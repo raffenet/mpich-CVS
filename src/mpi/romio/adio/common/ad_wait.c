@@ -45,16 +45,16 @@ void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
 #ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
-#endif
     static char myname[] = "ADIOI_GEN_IOCOMPLETE";
+#endif
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;
 	return;
     }
     
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
-/* IBM */
+#ifdef ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS
+/* old IBM */
     if ((*request)->queued) {
 	do {
 	    err = aio_suspend(1, (struct aiocb **) &((*request)->handle));
@@ -90,7 +90,7 @@ void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
 #endif
 
 #elif defined(ROMIO_HAVE_WORKING_AIO)
-/* DEC, SGI IRIX 5 and 6 */
+/* all other aio types */
     if ((*request)->queued) {
 	do {
 	    err = aio_suspend((const struct aiocb **) &((*request)->handle), 1, 0);
@@ -141,7 +141,7 @@ void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
     }
 
 #else
-/* HP, FreeBSD, Linux */
+/* no aio */
 
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);

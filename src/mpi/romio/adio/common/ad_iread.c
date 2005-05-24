@@ -40,8 +40,8 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
 #else
     int aio_errno = 0;
-#endif
     static char myname[] = "ADIOI_GEN_IREADCONTIG";
+#endif
 
     (*request) = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
