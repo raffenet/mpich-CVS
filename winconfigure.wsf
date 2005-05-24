@@ -2748,6 +2748,14 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#define HAVE_CXX_EXCEPTIONS 1")
 				Case "bool"
 					fout.WriteLine("/* bool */")
+				Case "HAVE_ENDIAN_H"
+					fout.WriteLine("/* HAVE_ENDIAN_H */")
+				Case "NEEDS_VSNPRINTF_DECL"
+					fout.WriteLine("/* NEEDS_VSNPRINTF_DECL */")
+				Case "NEEDS_GETHOSTNAME_DECL"
+					fout.WriteLine("/* NEEDS_GETHOSTNAME_DECL */")
+				Case "NEEDS_MKSTEMP_DECL"
+					fout.WriteLine("/* NEEDS_MKSTEMP_DECL */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
