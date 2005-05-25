@@ -804,6 +804,10 @@ sub print_name_map_block {
     # using the same macro as for the rest of the MPI code
     $uc_out_prefix = uc($out_prefix);
     if ($do_profiling) {
+	# Remove the leading MPI_ if the name has it.
+	if ($routine_name =~ /^MPI_/) {
+	    $routine_name =~ s/^MPI_//;
+	}
 	print $OUTFD "
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
