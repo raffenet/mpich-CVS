@@ -4031,8 +4031,10 @@ Function GenBuild()
 	mfile.WriteLine("!IFDEF RLOG")
 	mfile.WriteLine("P = p")
 	mfile.WriteLine("common_cflags = $(common_cflags) /DHAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED /DUSE_LOGGING=MPID_LOGGING_RLOG")
+	mfile.WriteLine("rlog_libs = $(RLOG_OUTDIR)\rlog$(D).lib")
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine("P =")
+	mfile.WriteLine("rlog_libs =")
 	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine
 	mfile.WriteLine("common_cflags = -c -nologo $(common_cflags) \")
@@ -4410,7 +4412,7 @@ Function GenBuild()
 	mfile.WriteLine("ch3sock: $(SOCK_OUTDIR)\mpich2$(P)$(D).dll")
 	mfile.WriteLine
 	mfile.WriteLine("$(SOCK_OUTDIR)\mpich2$(P)$(D).dll: $(ch3sock_objs) $(mpich2_objs)")
-	mfile.WriteLine("	$(link) $(dlllflags) $(ch3sock_objs) $(mpich2_objs) $(mpich2_libs) -out:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll /DEF:..\mpich2.def")
+	mfile.WriteLine("	$(link) $(dlllflags) $(ch3sock_objs) $(mpich2_objs) $(mpich2_libs) $(rlog_libs) -out:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll /DEF:..\mpich2.def")
 	mfile.WriteLine
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine
@@ -4431,7 +4433,7 @@ Function GenBuild()
 	mfile.WriteLine("ch3$(CHANNEL): $(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	mfile.WriteLine
 	mfile.WriteLine("$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(channel_objs) $(mpich2_objs)")
-	mfile.WriteLine("	$(link) $(dlllflags) $(channel_objs) $(mpich2_objs) $(mpich2_libs) -out:$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll /DEF:..\mpich2.def")
+	mfile.WriteLine("	$(link) $(dlllflags) $(channel_objs) $(mpich2_objs) $(mpich2_libs) $(rlog_libs) -out:$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll /DEF:..\mpich2.def")
 	mfile.WriteLine
 	mfile.WriteLine("!ENDIF")
 
@@ -4440,37 +4442,37 @@ Function GenBuild()
 	'mfile.WriteLine("ch3sock: $(SOCK_OUTDIR)\mpich2$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(SOCK_OUTDIR)\mpich2$(P)$(D).dll: $(ch3sock_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3sock_objs) $(mpich2_objs) -out:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3sock_objs) $(mpich2_objs) $(rlog_libs) -out:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ssm""")
 	'mfile.WriteLine("ch3ssm: $(SSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(SSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3ssm_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ssm_objs) $(mpich2_objs) -out:$(SSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ssm_objs) $(mpich2_objs) $(rlog_libs) -out:$(SSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""shm""")
 	'mfile.WriteLine("ch3shm: $(SHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(SHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3shm_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3shm_objs) $(mpich2_objs) -out:$(SHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3shm_objs) $(mpich2_objs) $(rlog_libs) -out:$(SHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""sshm""")
 	'mfile.WriteLine("ch3sshm: $(SSHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(SSHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3sshm_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3sshm_objs) $(mpich2_objs) -out:$(SSHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3sshm_objs) $(mpich2_objs) $(rlog_libs) -out:$(SSHM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""essm""")
 	'mfile.WriteLine("ch3essm: $(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3essm_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3essm_objs) $(mpich2_objs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3essm_objs) $(mpich2_objs) $(rlog_libs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
 	'mfile.WriteLine("ch3ib: $(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3ib_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ib_objs) $(mpich2_objs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ib_objs) $(mpich2_objs) $(rlog_libs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSE")
 	'mfile.WriteLine("!ERROR No channel selected")
@@ -4633,7 +4635,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""sock""")
 	mfile.WriteLine("!IFDEF RLOG")
-	mfile.WriteLine("all: $(OUTDIR) ch3$(CHANNEL)")
+	mfile.WriteLine("all: $(OUTDIR) rlog ch3$(CHANNEL)")
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine("all: $(OUTDIR) $(BIN_OUTDIR) ch3$(CHANNEL) smpd mpiexec mpi mpe mpe_wrap")
 	mfile.WriteLine("!ENDIF")
