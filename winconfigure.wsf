@@ -4569,6 +4569,22 @@ Function GenBuild()
 	mfile.WriteLine("mpe_wrap: $(MPE_WRAP_OUTDIR) $(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll")
 
 	mfile.WriteLine
+	mfile.WriteLine("# RLOG")
+	mfile.WriteLine
+	mfile.WriteLine("{..\src\util\logging\rlog}.c{$(RLOG_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(RLOG_OUTDIR)\\"" /Fd""$(RLOG_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	mfile.WriteLine("rlog_objs = \")
+	mfile.WriteLine("	$(RLOG_OUTDIR)\rlog.obj \")
+	mfile.WriteLine("	$(RLOG_OUTDIR)\rlogutil.obj \")
+	mfile.WriteLine("	$(RLOG_OUTDIR)\irlogutil.obj")
+	mfile.WriteLine
+	mfile.WriteLine("$(RLOG_OUTDIR)\rlog$(D).lib: $(rlog_objs)")
+	mfile.WriteLine("	$(implib) $(liblflags) $(rlog_objs) -out:$(RLOG_OUTDIR)\rlog$(D).lib")
+	mfile.WriteLine
+	mfile.WriteLine("rlog: $(RLOG_OUTDIR) $(RLOG_OUTDIR)\rlog$(D).lib")
+
+	mfile.WriteLine
 	mfile.WriteLine("# mpiexec")
 	mfile.WriteLine
 	mfile.WriteLine("$(OUTDIR)\mpiexec.obj: ..\src\pm\smpd\mpiexec.c")
