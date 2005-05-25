@@ -493,7 +493,9 @@ foreach $_ (@ARGV) {
     'File_get_view' => '5', 'File_get_view-5' => 'out:blankpad',
     'File_set_atomicity' => '2', 'File_set_atomicity-2' => 'in:logical',
     'File_get_atomicity' => '2', 'File_get_atomicity-2' => 'out:logical',
-    'Register_datarep' => '1', 'Register_datarep-1' => 'in:addnull',
+    'Register_datarep' => '1:2:3', 'Register_datarep-1' => 'in:addnull',
+		  'Register_datarep-2' => 'in:checkdatarep',
+		  'Register_datarep-3' => 'in:checkdatarep',
     );
 
 # 
@@ -1584,6 +1586,7 @@ sub blankpad_ctof {
 ";
 }
 
+# ---------------------------------------------------------------------------
 # Add null to input strings
 # We must make a copy 
 sub addnull_in_decl {
@@ -1926,6 +1929,43 @@ sub FileToFint_out_arg {
     print $OUTFD "&l$count";
 }
 # ---------------------------------------------------------------------------
+# Check for the null datarep functions
+sub checkdatarep_in_decl {
+    my $count = $_[0];
+}
+sub checkdatarep_in_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
+sub checkdatarep_ftoc {
+    my $count = $_[0];
+
+    # Check to see if the pointer is the same as the null function
+    # We do something ugly here:  we exploit the fact that we know which is
+    # the first argument that needs this definition
+    if ($count == 2) {
+print $OUTFD "
+#ifndef HAVE_MPI_CONVERSION_DEFN
+#define HAVE_MPI_CONVERSION_DEFN
+#ifdef F77_NAME_UPPER
+#define mpi_conversion_fn_null_ MPI_CONVERSION_FN_NULL
+#elif defined(F77_NAME_LOWER_2USCORE)
+#define mpi_conversion_fn_null_ mpi_conversion_fn_null__
+#elif !defined(F77_NAME_LOWER_USCORE)
+#define mpi_conversion_fn_null_ mpi_conversion_fn_null
+/* Else leave name alone */
+#endif
+/* Add the prototype so the routine knows what this ise */
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+#endif
+";
+    }
+    print $OUTFD "\
+    if (v$count == (MPI_Datarep_conversion_function *)mpi_conversion_fn_null_){
+         v$count = 0;
+    }\n";
+}
+# ---------------------------------------------------------------------------
 # Special post processing for some routines
 sub setF90keyval {
     my $FD = $_[0];
@@ -2219,6 +2259,7 @@ if ($write_mpif) {
     print MPIFFD "       EXTERNAL MPI_WIN_NULL_COPY_FN\n";
     print MPIFFD "       EXTERNAL MPI_TYPE_DUP_FN, MPI_TYPE_NULL_DELETE_FN\n";
     print MPIFFD "       EXTERNAL MPI_TYPE_NULL_COPY_FN\n";
+    print MPIFFD "       EXTERNAL MPI_CONVERSION_FN_NULL\n";
     # the time/tick functions
     print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
     print MPIFFD "       DOUBLE PRECISION PMPI_WTIME, PMPI_WTICK\n";
@@ -2656,6 +2697,24 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     &WriteAttrDefaults( "comm_" );
     &WriteAttrDefaults( "win_" );
     &WriteAttrDefaults( "type_" );
+
+    # Datarep conversion function
+    $OUTFD = "NULLCONVERSIONFN";
+    $filename = "null_conv_fnf.c";
+    $returnType = "int";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
+    $args = "void *, MPI_Fint *, MPI_Fint *, void *, MPI_Offset *, MPI_Aint *, MPI_Fint *";
+    &print_header( "mpi_conversion_fn_null", "conversion_fn_null", $args );
+    &print_routine_type_decl( $OUTFD, "conversion_fn_null" );
+    &print_args( $OUTFD, $args, 0, "conversion_fn_null" );
+    # This is tricky; we don't want to call this function at all
+    # FIXME    
+    print $OUTFD "\n{\n   return MPI_SUCCESS;\n}\n";
+    close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+    &AddPrototype( "conversion_fn_null", $args );
+
 
     # The status conversion functions.
     # These are a little different because they are routines that
