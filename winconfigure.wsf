@@ -4885,7 +4885,7 @@ Sub UpdateSMPDVersion
 	'WScript.Echo "Version = " & version_str
 	'WScript.Echo "smpd.h = " & contents
 	If contents <> "" Then
-		cEcho "Creating file: src\pm\smpd\smpd.h"
+		cEcho "Modifying version in file: src\pm\smpd\smpd.h"
 		Set fout = f.CreateTextFile("src\pm\smpd\smpd.h", true)
 		fout.Write(contents)
 		fout.Close()
