@@ -127,6 +127,11 @@
 			helpstring = "generate a build script and nmake file"
 			require = "false"
 		/>
+		<unnamed
+			name = "--smpd_version"
+			helpstring = "update the smpd version in smpd.h"
+			require = "false"
+		/>
 <!--		<unnamed
 			name = "--mt"
 			helpstring = "build multithreaded libraries"
@@ -311,6 +316,9 @@ For arg = 0 To argCount - 1
     bVS2005 = True
   ElseIf argValue = "--genbuild" Then
     GenBuild()
+    WScript.Quit
+  ElseIf argValue = "--smpd_version" Then
+    UpdateSMPDVersion()
     WScript.Quit
 '  ElseIf argValue = "--mt" Then
 '    bMultiThreaded = true
@@ -4657,6 +4665,7 @@ Function GenBuild()
 	mfile.Close()
 End Function
 
+cEcho "Creating winbuild directory"
 GenBuild()
 
 Function ReplaceBetweenTags(str, tag1, find_str, tag2, replace_str)
@@ -4861,6 +4870,29 @@ End If
 'If Not f.FileExists("src\binding\mpi\mpi.c") Then
 '	f.CopyFile("src\pm\smpd\mpi.c", "src\binding\mpi\")
 'End If
+
+Sub UpdateSMPDVersion
+	dim regEx, Match, Matches
+	set regEx = New RegExp
+	Set fin = f.OpenTextFile("maint\Version")
+	version_str = MyTrim(fin.ReadLine())
+	fin.Close()
+	Set fin = f.OpenTextFile("src\pm\smpd\smpd.h")
+	contents = fin.ReadAll()
+	fin.Close()
+	regEx.Pattern = "(#define SMPD_VERSION .*)"".*"""
+	contents = regEx.Replace(contents, "$1""" & version_str & """")
+	'WScript.Echo "Version = " & version_str
+	'WScript.Echo "smpd.h = " & contents
+	If contents <> "" Then
+		cEcho "Creating file: src\pm\smpd\smpd.h"
+		Set fout = f.CreateTextFile("src\pm\smpd\smpd.h", true)
+		fout.Write(contents)
+		fout.Close()
+	End If
+End Sub
+
+Call UpdateSMPDVersion()
 
 '
 ' Report any errors
