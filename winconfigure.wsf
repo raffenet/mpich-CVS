@@ -4534,7 +4534,7 @@ Function GenBuild()
 	mfile.WriteLine("# MPE")
 	mfile.WriteLine
 	mfile.WriteLine("{..\src\mpe2\src\logging\src}.c{$(MPE_OUTDIR)}.obj:")
-	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_objs = \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog.obj \")
@@ -4558,7 +4558,7 @@ Function GenBuild()
 	mfile.WriteLine("# MPE wrapper")
 	mfile.WriteLine
 	mfile.WriteLine("{..\src\mpe2\src\wrappers\src}.c{$(MPE_WRAP_OUTDIR)}.obj:")
-	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(MPE_WRAP_OUTDIR)\\"" /Fd""$(MPE_WRAP_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags)  /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /I..\src\mpe2\src\wrappers\include /Fo""$(MPE_WRAP_OUTDIR)\\"" /Fd""$(MPE_WRAP_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_wrap_objs = \")
 	mfile.WriteLine("	$(MPE_WRAP_OUTDIR)\log_mpi_core.obj")
