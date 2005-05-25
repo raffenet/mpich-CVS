@@ -5,13 +5,12 @@ C      See COPYRIGHT in top-level directory.
 C
       program main
       include 'mpif.h'
-      integer v, value
+      integer value
       logical flag
       integer ierr, errs
       integer base(1024)
       integer disp
       integer win
-      integer baseadd
       integer commsize
       errs = 0
       

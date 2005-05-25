@@ -6,8 +6,8 @@ C
       program main
       include 'mpif.h'
       integer errs, ierr
-      integer win, i, rlen, ln
-      character*(MPI_MAX_OBJECT_NAME) inname(4), cname
+      integer win, rlen, ln
+      character*(MPI_MAX_OBJECT_NAME) cname
       integer buf(10)
 C Include addsize defines asize as an address-sized integer
       include 'addsize.h'

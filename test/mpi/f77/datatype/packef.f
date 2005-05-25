@@ -6,7 +6,6 @@ C
        program main
        implicit none
        include 'mpif.h'
-       integer esize
        integer ierr, errs
        integer inbuf(10), ioutbuf(10), inbuf2(10), ioutbuf2(10)
        integer i, insize, rsize, csize, insize2

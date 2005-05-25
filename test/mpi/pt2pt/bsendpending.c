@@ -29,7 +29,7 @@ int main( int argc, char *argv[] )
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     msgsize = 128 * 1024;
-    msg1 = (char *)malloc( 3 * msgsize );
+    msg1 = (unsigned char *)malloc( 3 * msgsize );
     msg2 = msg1 + msgsize;
     msg3 = msg2 + msgsize;
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
 	       internals will (probably) not use a eager send for the data.
 	       Have three such messages */
 	    bufsize = 3 * (MPI_BSEND_OVERHEAD + msgsize);
-	    buf     = (char *)malloc( bufsize );
+	    buf     = (unsigned char *)malloc( bufsize );
 	    if (!buf) {
 		fprintf( stderr, "Unable to allocate a buffer of %d bytes\n",
 			 bufsize );
