@@ -291,7 +291,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
-#   if defined(DEBUG)
+#   if defined(MPICH_DBG_OUTPUT)
     {
 	MPIU_dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
 	fflush(stdout);
