@@ -154,7 +154,6 @@ fi
 #
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
 # previous versions of autoconf (!!), even 2.52 (!!!).  
-acIncDirFlag=-l
 acVersion=ok
 if test -d .tmp ; then rm -rf .tmp ; fi
 if test -s .tmp ; then rm -f .tmp ; fi
@@ -163,7 +162,8 @@ if test ! -d .tmp ; then
 fi
 # As of autoconf 2.59, the command line arguments changed (again)
 # We now require 2.59 everywhere, so we just double check
-# Argh.  In autoconf 2.59, -B doesn't work.  You must use -I
+# Somewhere between 2.12 and 2.58, -l changed to -B
+# Argh.  In autoconf 2.59, -B doesn't work.  You must use -I instead of -B (!!)
 # Find the configure version
 # acSubversion is the version number minus 2.  (we assume autoconf 2.xx)
 # -1 is used for unknown
@@ -452,8 +452,9 @@ fi
 # Create the configure files and run autoheader
 # Eventually, make this a test for find available.  Perhaps
 # find . -name configure.in > /dev/null 2>&1
-# The problem is that even though cygnus has find, the DOS find
+# The problem is that even though cygwin has find, the DOS find
 # is identified first.  We probably need a test for this case
+fixBackWhackCtrlMBug=no
 if [ $do_build_configure = yes ] ; then
     find . -name 'configure.in' >/dev/null 2>&1
     if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
@@ -486,6 +487,7 @@ if [ $do_build_configure = yes ] ; then
         for dir in `find . -name 'configure.in' -print` ; do
             dir=`dirname $dir`
   	    allowFailure=no
+	    builtConfigure=no
   	    #echo $dir
  	    qmpe2dir=`echo $dir | sed -e 's%.*src/mpe2.*%FOUNDMPE2%'`
 	    if [ "$qmpe2dir" = "FOUNDMPE2" ] ; then
@@ -494,12 +496,6 @@ if [ $do_build_configure = yes ] ; then
 	        # be used instead of this one.
 	        continue
             fi
-	    if [ $dir = "./src/binding/f77" -a $do_f77 != yes ] ; then
-	        # Skip building the f77 configure (it requires special 
-	        # support because of bugs in the Fortran support in 
-	        # various releases of autoconf)
-	        continue
-	    fi
 	    if [ -s $dir/Makefile.in ] ; then 
                 #echo "Found $dir/configure.in"
 	        #
@@ -519,13 +515,14 @@ if [ $do_build_configure = yes ] ; then
 		        fixBackWhackCtrlMBug=yes
                     fi
 	            # Add other tests here (sigh) as necessary
-	            if [ $fixBackWhackCtrlMBug = yes ] ; then
+	            if [ "$fixBackWhackCtrlMBug" = yes ] ; then
 		        rm -f c.tmp 
 		        sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		        rm -f $dir/configure
 		        mv c.tmp $dir/configure
 		        chmod a+x $dir/configure
 	            fi
+		    builtConfigure=yes
 	            continue
 	        elif [ $dir = "./src/mpe2" ] ; then
 		    # Use acIncDirFlag to ensure that a consistent
@@ -535,6 +532,7 @@ if [ $do_build_configure = yes ] ; then
  		    if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
 		        (cd $dir && $autoheader $acIncDirFlag . )
 		    fi
+		    builtConfigure=yes
 		    (cd $dir && $autoconf $acIncDirFlag . && rm -rf autom4te*.cache)
 		    continue
 	        fi
@@ -543,6 +541,8 @@ if [ $do_build_configure = yes ] ; then
  	            # The make -q checks whether the target is upto date first;
 	            # if it isn't, we remake it.	
 		    rm -f $dir/mf.out 
+		    rm -f $dir/mf.newer
+		    date > $dir/mf.newer
                     (cd $dir && rm -f mf.tmp ; \
 	            sed -e 's%@SHELL@%/bin/sh%' \
 		        -e "s%@srcdir@%.%g" \
@@ -553,17 +553,53 @@ if [ $do_build_configure = yes ] ; then
 	            echo "Found $dir/configure.in; executing make configure target" ; \
 	            make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	            )
+		    # Newer versions of test support -nt, which is
+		    # filea newer-than fileb.  If this doesn't 
+		    # work on your platform, simply comment out this test
+		    # and set builtConfigure to true (or use find with
+		    # -newer if you want to replace the test)
+		    if [ $dir/configure -nt $dir/mf.newer ] ; then
+			builtConfigure=yes
+		    fi
+		    rm -f $dir/mf.newer
 		    if [ ! -x $dir/configure ] ; then
 		        echo "Error! Could not build configure in $dir with make configure"
 	                finalStatus=3
 	            elif grep PAC_ $dir/configure >/dev/null 2>&1 ; then
-                        echo "Error! autoconf did not find local macro definitions for configure in $dir"
-	                echo "The following (at most 40 lines) local macros were not found:"
-		        grep PAC_ $dir/configure | head -40
-		        if [ -s $dir/mf.out ] ; then
- 	  	            echo "Output of make configure step was:"
-		            cat mf.out
-		        fi
+			# If the user manually builds the configure without
+			# properly specifying the include path, then
+			# this code will detect the problem but will
+			# the message may be confusing since the make 
+			# step above will *not* have rebuilt the configure
+			# (once the user builds it manually, the make step
+			# will see the configure as newer than its 
+			# dependencies and not rebuild it).
+			mydir=$dir
+			if [ "$dir" = "." ] ; then
+			    mydir=`pwd`
+			fi
+			if [ "$buildConfigure" = "yes" ] ; then
+			    echo "Error! autoconf did not find local macro definitions for configure in $mydir"
+			    echo "Try removing configure in `pwd` and rerunning maint/updatefiles"
+			    echo "The following (at most 40 lines) local macros were not found:"
+			    grep PAC_ $dir/configure | head -40
+			    if [ -s $dir/mf.out ] ; then
+				echo "Output of make configure step was:"
+				cat mf.out
+			    fi
+			else 
+			    echo "Error! The file $mydir/configure contains local macro names (PAC_) and was not built by this "
+			    echo "updatefiles step.  Try removing $mydir/configure (but do not"
+			    echo "remove $mydir/configure.in) and rerun maint/updatefiles."
+			    if [ -s $dir/aclocal.m4 ] ; then
+				echo "Also, make sure that $mydir/aclocal.m4 is correct; only src/mpi/romio, "
+				echo "src/pm/mpd, and src/mpe2/... directories should have an aclocal.m4"
+				echo "file in the same directory with configure.in (others use the "
+				echo "aclocal.m4 in confdb)."
+			    fi
+			    echo "*Never* run autoconf or autoheader manually because many of the configure.in "
+			    echo "files require extra definitions from confdb/aclocal.m4 ."
+			fi
 		        finalStatus=3
 		    fi
 	  	    # Remove make output now that we no longer need it.
@@ -617,7 +653,7 @@ if [ $do_build_configure = yes ] ; then
 		        fixBackWhackCtrlMBug=yes
                     fi
  	            # Add other tests here (sigh) as necessary
-	            if [ $fixBackWhackCtrlMBug = yes ] ; then
+	            if [ "$fixBackWhackCtrlMBug" = yes ] ; then
 		        rm -f c.tmp 
   	  	        sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		        rm -f $dir/configure
