@@ -8,9 +8,6 @@
 #include "mpiimpl.h"
 #include "mpicomm.h"
 
-/* #define DEBUG(a) a;fflush(stdout)  */
-#define DEBUG(a) 
-
 /* -- Begin Profiling Symbol Block for routine MPI_Intercomm_create */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Intercomm_create = PMPI_Intercomm_create
@@ -269,14 +266,14 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* Exchange information with my peer.  Use sendrecv */
 	local_size = comm_ptr->local_size;
 
-	DEBUG(printf( "rank %d sendrecv to rank %d\n", peer_comm_ptr->rank, remote_leader ));
+	MPIU_DBG_PRINTF(("rank %d sendrecv to rank %d\n", peer_comm_ptr->rank, remote_leader));
 	mpi_errno = NMPI_Sendrecv( &local_size,  1, MPI_INT, 
 				   remote_leader, tag,
 				   &remote_size, 1, MPI_INT, 
 				   remote_leader, tag, 
 				   peer_comm, MPI_STATUS_IGNORE );
 
-	DEBUG(printf( "local size = %d, remote size = %d\n", local_size, 
+	MPIU_DBG_PRINTF(( "local size = %d, remote size = %d\n", local_size, 
 		      remote_size ));
 	/* With this information, we can now send and receive the 
 	   local process ids from the peer.  This works only
@@ -334,7 +331,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
      * we know that the local and remote groups are disjoint, this 
      * step will complete 
      */
-    DEBUG(printf( "About to get contextid (commsize=%d) on %d\n",
+    MPIU_DBG_PRINTF(( "About to get contextid (commsize=%d) on %d\n",
 		  comm_ptr->local_size, comm_ptr->rank ));
     context_id = MPIR_Get_contextid( comm_ptr );
     /* --BEGIN ERROR HANDLING-- */
@@ -344,7 +341,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
-    DEBUG(printf( "Got contextid\n" ));
+    MPIU_DBG_PRINTF(( "Got contextid\n" ));
 
     /* Increment the nest count for everyone because all processes
        will be communicating now */
@@ -372,17 +369,17 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	comm_info[0] = remote_size;
 	comm_info[1] = final_context_id;
 	comm_info[2] = is_low_group;
-	DEBUG(printf ("About to bcast on local_comm\n"));
+	MPIU_DBG_PRINTF(("About to bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
-	DEBUG(printf( "end of bcast on local_comm of size %d\n", 
+	MPIU_DBG_PRINTF(( "end of bcast on local_comm of size %d\n", 
 		      comm_ptr->local_size ));
     }
     else
     {
 	/* were the other processes */
-	DEBUG(printf ("About to receive bcast on local_comm\n"));
+	MPIU_DBG_PRINTF(("About to receive bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
 	MPIU_CHKLMEM_MALLOC(remote_lpids,int*,remote_size*sizeof(int),
