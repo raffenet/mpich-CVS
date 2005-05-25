@@ -56,7 +56,7 @@ all: Makefile ${PROGRAMS}
 	        exit 1 ;\
 	    fi ;\
 	fi
-	@if [ ${DO_MTV} = "yes" ] ; then \
+	@if [ "${DO_MTV}" = "yes" ] ; then \
 	    currdir=`pwd` ; cd ${srcdir}  &&  ${PYTHON} ./mtv_setup.py build_ext --build-lib=$$currdir --build-temp=$$currdir ;\
 	fi
 
@@ -134,7 +134,7 @@ install: all
 	-@cd ${bindir} && @LN_S@ mpdrun mpirun
 	-@cd ${bindir} && rm -f mpirun.py
 	-@cd ${bindir} && @LN_S@ mpdrun.py mpirun.py
-	-@if [ ${DO_MTV} = "yes" ] ; then \
+	-@if [ "${DO_MTV}" = "yes" ] ; then \
 	    ${INSTALL} -m 755 mtv.so ${bindir}/mtv.so ;\
 	fi
 
