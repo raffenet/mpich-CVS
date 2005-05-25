@@ -142,7 +142,7 @@ MPIO_EXTRA_LOOBJECTS = $(MPIO_EXTRA_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
-	$(RANLIB) $(SHLIBNAME) 
+	$(RANLIB) $(SHLIBNAME).la 
 # --------------------------------------------------------------------------
 # We use P$(SHLBNAME) simply to distinguish the regular lib build from the
 # profiling library build
@@ -152,7 +152,7 @@ MPIO_TMP_LOPOBJECTS = ${MPIO_TMP_POBJECTS:.p=.sp}
 MPIO_EXTRA_LOPOBJECTS = ${MPIO_EXTRA_TMP_OBJECTS:.p=.sp}
 P$(SHLIBNAME).la: $(MPIO_TMP_LOPOBJECTS) $(MPIO_EXTRA_TMP_LOPOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOPOBJECTS) $(MPIO_EXTRA_LOPOBJECTS)
-	$(RANLIB) $(SHLIBNAME) 
+	$(RANLIB) $(SHLIBNAME).la 
 # --------------------------------------------------------------------------
 clean:
 	@rm -f *.o *.lo

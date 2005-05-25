@@ -38,7 +38,7 @@ $(LIBNAME): $(AD_UFS_OBJECTS)
 AD_UFS_LOOBJECTS=$(AD_UFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_UFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_UFS_LOOBJECTS)
-	$(RANLIB) $(SHLIBNAME) 
+	$(RANLIB) $(SHLIBNAME).la 
 
 coverage:
 	-@for file in  ${AD_UFS_OBJECTS:.o=.c} ; do \
