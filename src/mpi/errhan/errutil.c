@@ -1022,7 +1022,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	    /* TODO: lookup index for class error message */
 	    err_code &= ~ERROR_GENERIC_MASK;
 	    
-#           ifdef DEBUG
+#           ifdef MPICH_DBG_OUTPUT
 	    {
 		if (generic_msg[0] == '*' && generic_msg[1] == '*')
 		{
