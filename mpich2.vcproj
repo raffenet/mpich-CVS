@@ -2017,6 +2017,12 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\ad_end.c">
+				<FileConfiguration
+					Name="ch3sockDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="ROMIO_INSIDE_MPICH2"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\ad_fstype.c">
@@ -2034,10 +2040,10 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 				RelativePath=".\src\mpi\romio\adio\common\ad_iopen.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\common\ad_iread.c">
+				RelativePath="..\..\..\mpich2\src\mpi\romio\adio\common\ad_iread_fake.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\common\ad_iwrite.c">
+				RelativePath="..\..\..\mpich2\src\mpi\romio\adio\common\ad_iwrite_fake.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs.c">
