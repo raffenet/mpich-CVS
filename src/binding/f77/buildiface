@@ -816,6 +816,8 @@ sub print_name_map_block {
 #else
 #define ${out_prefix}${lcname}_ pmpi_${lcname}_
 #endif
+/* Map the called MPI routine to the PMPI version */
+#define MPI_${routine_name} PMPI_${routine_name}
 
 #else
 ";
@@ -3219,11 +3221,14 @@ sub ReplaceIfDifferent {
 	$rc >>= 8;   # Shift right to get exit status
     }
     if ($rc != 0) {
-	print STDERR "Replacing $oldfilename\n";
 	# The files differ.  Replace the old file 
 	# with the new one
 	if (-s $oldfilename) {
+	    print STDERR "Replacing $oldfilename\n";
 	    unlink $oldfilename;
+	}
+	else {
+	    print STDERR "Creating $oldfilename\n";
 	}
 	rename $newfilename, $oldfilename || 
 	    die "Could not replace $oldfilename";
