@@ -4550,7 +4550,7 @@ Function GenBuild()
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_log.obj")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR)\mpe$(D).dll: $(mpe_objs)")
-	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_objs) /DEF:..\src\mpe2\mpe.def -out:$(MPE_OUTDIR)\mpe$(D).dll /IMPLIB:$(MPE_OUTDIR)\mpe$(D).lib")
+	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_objs) $(MPI_OUTDIR)\mpi$(D).lib /DEF:..\src\mpe2\mpe.def -out:$(MPE_OUTDIR)\mpe$(D).dll /IMPLIB:$(MPE_OUTDIR)\mpe$(D).lib")
 	mfile.WriteLine
 	mfile.WriteLine("mpe: $(MPE_OUTDIR) $(MPE_OUTDIR)\mpe$(D).dll")
 
@@ -4564,7 +4564,7 @@ Function GenBuild()
 	mfile.WriteLine("	$(MPE_WRAP_OUTDIR)\log_mpi_core.obj")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll: $(mpe_wrap_objs)")
-	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_wrap_objs) $(MPI_OUTDIR)\mpi$(D).lib /DEF:..\src\mpe2\src\wrappers\mpewrap.def -out:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll /IMPLIB:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).lib")
+	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_wrap_objs) $(MPI_OUTDIR)\mpi$(D).lib $(MPE_OUTDIR)\mpe$(D).lib /DEF:..\src\mpe2\src\wrappers\mpewrap.def -out:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll /IMPLIB:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).lib")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_wrap: $(MPE_WRAP_OUTDIR) $(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll")
 
