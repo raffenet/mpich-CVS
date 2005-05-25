@@ -34,10 +34,8 @@ Install the launcher:
 10) Log on to each node as an administrator and execute "smpd.exe -install"
 
 Compile and run an MPI application:
-10) compile an mpi application.  Use mpi.h from mpich2\src\include\win32 and 
-the mpich2 import libraries in mpich2\lib
-11) Place your executable along with the mpich2 dlls somewhere accessable to
-all the machines.
+10) compile an mpi application.  Use mpi.h from mpich2\src\include\win32 and mpi.lib in mpich2\lib
+11) Place your executable along with the mpich2 dlls somewhere accessable to all the machines.
 12) Execute a job by running something like: mpiexec -n 3 myapp.exe
 
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.
