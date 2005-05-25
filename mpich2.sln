@@ -943,7 +943,6 @@ Global
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.gfortRelease.ActiveCfg = gfortRelease|Win32
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.gfortRelease.Build.0 = gfortRelease|Win32
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.Installer.ActiveCfg = sfortRelease|Win32
-		{F2B709B4-AB53-4E39-8025-00060DA5279D}.Installer.Build.0 = sfortRelease|Win32
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.Release.ActiveCfg = sfortRelease|Win32
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.sfortDebug.ActiveCfg = sfortDebug|Win32
 		{F2B709B4-AB53-4E39-8025-00060DA5279D}.sfortDebug.Build.0 = sfortDebug|Win32
