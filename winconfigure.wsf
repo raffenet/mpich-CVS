@@ -189,6 +189,7 @@ fortran_files_found = false
 outdir = "OUTDIR"
 cxxflags = "impl_cxxflags"
 extra_flags = ""
+fort_prefix = ""
 '
 ' Miscellaneous settings
 '
@@ -3890,7 +3891,7 @@ Sub FindSimpleMakeFiles(folder, trimpath)
 				End If
 				If fortran_files_found Then
 					mfile.WriteLine("{..\" & Right(file.ParentFolder, Len(file.ParentFolder) - trimpath) & "}.f{$(" & outdir & ")}.obj:")
-					mfile.WriteLine("    $(fc) $(fortflags) /Fo""$(" & outdir & ")\\"" /Fd""$(" & outdir & ")\\"" $**")
+					mfile.WriteLine("    $(fc) $(" & fort_prefix & "fortflags) /Fo""$(" & outdir & ")\\"" /Fd""$(" & outdir & ")\\"" $**")
 					mfile.WriteLine
 				End If
 			End If
@@ -4091,7 +4092,9 @@ Function GenBuild()
 	mfile.WriteLine(" /DF77_NAME_UPPER \")
 	mfile.WriteLine(" /DUSE_FORT_MIXED_STR_LEN \")
 	mfile.WriteLine(" /DHAVE_C_API")
-	mfile.WriteLine("fortflags = -nologo -c")
+	mfile.WriteLine("fortflags = /nologo /iface:cref /c")
+	mfile.WriteLine("gfortflags = /nologo /names:lowercase /iface:cref /assume:underscore /c")
+	mfile.WriteLine("sfortflags = /nologo /iface:stdcall /c")
 	mfile.WriteLine("impl_cxxflags = $(cflags)")
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(fc)"" == """"")
@@ -4487,6 +4490,7 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "FORT_OUTDIR"
 	extra_flags = "$(fcflags)"
+	fort_prefix = ""
 	CreateRules f.GetFolder("src\binding\f77"), trimlength
 	CreateObjs "fort", f.GetFolder("src\binding\f77"), trimlength, true, true
 	mfile.WriteLine("$(FORT_OUTDIR)\fmpich2$(D).dll: $(fort_objs)")
@@ -4496,6 +4500,7 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "GFORT_OUTDIR"
 	extra_flags = "$(gfcflags)"
+	fort_prefix = "g"
 	CreateRules f.GetFolder("src\binding\f77"), trimlength
 	CreateObjs "gfort", f.GetFolder("src\binding\f77"), trimlength, true, true
 	mfile.WriteLine("$(GFORT_OUTDIR)\fmpich2g$(D).dll: $(gfort_objs)")
@@ -4505,6 +4510,7 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "SFORT_OUTDIR"
 	extra_flags = "$(sfcflags)"
+	fort_prefix = "s"
 	CreateRules f.GetFolder("src\binding\f77"), trimlength
 	CreateObjs "sfort", f.GetFolder("src\binding\f77"), trimlength, true, true
 	mfile.WriteLine("$(SFORT_OUTDIR)\fmpich2s$(D).dll: $(sfort_objs)")
@@ -4512,6 +4518,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("sfort: $(SFORT_OUTDIR) $(SFORT_OUTDIR)\fmpich2s$(D).dll")
 	extra_flags = ""
+	fort_prefix = ""
 
 	mfile.WriteLine
 	mfile.WriteLine("# MPI multi-channel wrapper")
