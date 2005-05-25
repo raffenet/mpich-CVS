@@ -368,11 +368,20 @@ dnl                 jac_JNI_INC="$jac_JNI_INC -I$jac_JDK_INCDIR/genunix"
         fi
 
         if test "$jac_jni_working" = "yes" ; then
-            AC_MSG_CHECKING([for including <jni.h>])
+            AC_MSG_CHECKING([for <jni.h> usability])
             jac_save_CPPFLAGS="$CPPFLAGS"
             CPPFLAGS="$jac_save_CPPFLAGS $jac_JNI_INC"
-            AC_TRY_CPP([#include <jni.h>],
-                       [jac_jni_working=yes], [jac_jni_working=no])
+dnl Explicitly test for JNIEnv and jobject.
+dnl <stdio.h> and <stdlib.h> are here to make sure include path like
+dnl -I/usr/include/linux dnl won't be accepted.
+            AC_TRY_COMPILE([
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
+                           ], [
+    JNIEnv  *env;
+    jobject  obj;
+                           ], [jac_jni_working=yes], [jac_jni_working=no])
             CPPFLAGS="$jac_save_CPPFLAGS"
             if test "$jac_jni_working" = "yes" ; then
                 $1="$jac_JNI_INC"
@@ -430,11 +439,20 @@ dnl                 jac_JNI_INC="$jac_JNI_INC -I$jac_JDK_INCDIR/genunix"
         fi
         if test "$jac_jni_working" = "yes" ; then
             AC_MSG_RESULT([found $jac_JNI_INC])
-            AC_MSG_CHECKING([for including <jni.h>])
+            AC_MSG_CHECKING([for <jni.h> usability])
             jac_save_CPPFLAGS="$CPPFLAGS"
             CPPFLAGS="$jac_save_CPPFLAGS $jac_JNI_INC"
-            AC_TRY_CPP([#include <jni.h>],
-                       [jac_jni_working=yes], [jac_jni_working=no])
+dnl Explicitly test for JNIEnv and jobject.
+dnl <stdio.h> and <stdlib.h> are here to make sure include path like
+dnl -I/usr/include/linux dnl won't be accepted.
+            AC_TRY_COMPILE([
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
+                           ], [
+    JNIEnv  *env;
+    jobject  obj;
+                           ], [jac_jni_working=yes], [jac_jni_working=no])
             CPPFLAGS="$jac_save_CPPFLAGS"
         fi
         if test "$jac_jni_working" = "yes" ; then
