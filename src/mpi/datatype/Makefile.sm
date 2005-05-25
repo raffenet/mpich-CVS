@@ -11,7 +11,7 @@ mpi_sources = address.c get_address.c get_count.c \
  pack_external.c pack_external_size.c unpack_external.c \
  type_create_indexed_block.c type_create_resized.c \
  type_create_darray.c type_create_subarray.c
-
+win_sources = register_datarep.c
 HEADERS = datatype.h
 
 lib${MPILIBNAME}_a_SOURCES = $(mpi_sources) typeutil.c
