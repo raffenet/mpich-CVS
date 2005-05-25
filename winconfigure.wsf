@@ -4218,6 +4218,8 @@ Function GenBuild()
 	CreateRules f.GetFolder("src\mpid\common\locks"), trimlength
 	CreateRules f.GetFolder("src\mpid\common\sock\iocp"), trimlength
 	CreateRules f.GetFolder("src\util\info"), trimlength
+	CreateRules f.GetFolder("src\util\timing"), trimlength
+	CreateRules f.GetFolder("src\util\logging\common"), trimlength
 	' Insert rules for romio manually since romio is not build with Makefile.sm files
 	mfile.WriteLine("{..\src\mpi\romio\adio\ad_ntfs}.c{$(OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(OUTDIR)\\"" /Fd""$(OUTDIR)\\"" $**")
@@ -4248,6 +4250,8 @@ Function GenBuild()
 	CreateObjs "mpich2", f.GetFolder("src\mpid\common\locks"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\util\info"), trimlength, false, false
+	CreateObjs "mpich2", f.GetFolder("src\util\timing"), trimlength, false, false
+	CreateObjs "mpich2", f.GetFolder("src\util\logging\common"), trimlength, false, false
 	mfile.WriteLine(" \" & vbCrLf & "	$(OUTDIR)\ad_ntfs.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_ntfs_close.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_ntfs_done.obj \")
