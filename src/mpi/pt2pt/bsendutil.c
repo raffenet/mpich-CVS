@@ -63,12 +63,7 @@
  *                information in the bsend buffer (the BsendData_t entries)
  */
 
-#if 1
-#define DEBUG(a) 
-#define DEBUG1(a) 
-#else
-#define DEBUG(a) {a;fflush(stdout);}
-#define DEBUG1(a) {a;fflush(stdout);}
+#if 0
 #define DBG_PRINT_AVAIL
 #define DBG_PRINT_ARENA
 #endif
@@ -386,9 +381,9 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 #ifdef DBG_PRINT_AVAIL_LIST
     {
 	BsendData_t *a = BsendBuffer.avail;
-	PRINTF( "Avail list is:\n" );
+	DBG_PRINTF( "Avail list is:\n" );
 	while (a) {
-	    PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+	    DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
 		   a->total_size );
 	    a = a->next;
 	}
