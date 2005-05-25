@@ -376,8 +376,12 @@ dnl <stdio.h> and <stdlib.h> are here to make sure include path like
 dnl -I/usr/include/linux dnl won't be accepted.
             AC_TRY_COMPILE([
 #include <jni.h>
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 #include <stdlib.h>
+#endif
                            ], [
     JNIEnv  *env;
     jobject  obj;
@@ -447,8 +451,12 @@ dnl <stdio.h> and <stdlib.h> are here to make sure include path like
 dnl -I/usr/include/linux dnl won't be accepted.
             AC_TRY_COMPILE([
 #include <jni.h>
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 #include <stdlib.h>
+#endif
                            ], [
     JNIEnv  *env;
     jobject  obj;
