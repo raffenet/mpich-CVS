@@ -369,7 +369,7 @@ if test ! -d $srcbuild_dir/logformat ; then
     $MKDIR $srcbuild_dir/logformat
 fi
 if test ! -d $srcbuild_dir/viewer ; then
-    echo "creating directory $srcbuild_dir/format"
+    echo "creating directory $srcbuild_dir/viewer"
     $MKDIR $srcbuild_dir/viewer
 fi
 if test ! -d $srcbuild_dir/images ; then
