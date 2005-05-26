@@ -233,4 +233,7 @@ typedef char *MPID_FCHAR_T;
 #undef MPI_WIN_NULL_COPY_FN
 #undef MPI_WIN_NULL_DELETE_FN
 #undef MPI_WIN_DUP_FN
+
+/* Ditto the null datarep conversion */
+#undef MPI_CONVERSION_FN_NULL
 #endif /* MPI_DUP_FN */
