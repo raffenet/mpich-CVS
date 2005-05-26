@@ -40,7 +40,6 @@ $(LIBNAME): $(AD_NFS_OBJECTS)
 AD_NFS_LOOBJECTS=$(AD_NFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_NFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_NFS_LOOBJECTS)
-	$(RANLIB) $(SHLIBNAME).la 
 
 coverage:
 	-@for file in  ${AD_NFS_OBJECTS:.o=.c} ; do \

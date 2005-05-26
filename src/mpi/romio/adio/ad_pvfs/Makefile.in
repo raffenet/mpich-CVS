@@ -41,7 +41,6 @@ $(LIBNAME): $(AD_PVFS_OBJECTS)
 AD_PVFS_LOOBJECTS=$(AD_PVFS_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(AD_PVFS_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_PVFS_LOOBJECTS)
-	$(RANLIB) $(SHLIBNAME).la 
 
 coverage:
 	-@for file in  ${AD_PVFS_OBJECTS:.o=.c} ; do \

@@ -50,7 +50,6 @@ AD_LOOBJECTS = $(AD_OBJECTS:.o=.lo)
 
 $(SHLIBNAME).la: $(AD_LOOBJECTS)
 	$(AR) $(SHLIBNAME).la $(AD_LOOBJECTS)
-	$(RANLIB) $(SHLIBNAME).la 
 
 clean:
 	@rm -f *.o *.lo
