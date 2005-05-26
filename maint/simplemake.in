@@ -315,9 +315,11 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 # without defining INSTALL_DATA as install -p, which configure 
 # does not figure out(!).  The MPICH2 configure does check for 
 # whether install works with or without -p.
+#
+# CREATESHLIB is a special script for shared libraries
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
-		     'SHLIB'   => '$(INSTALL_PROGRAM)',
+		     'SHLIB'   => '$(CREATESHLIB) --mode=install',
 		     'INCLUDE' => '$(INSTALL_DATA)',
 		     'MAN'     => '$(INSTALL_DATA)',
 		     'HTML'    => '$(INSTALL_DATA)',
@@ -965,6 +967,7 @@ sub DefaultVariables {
 	    # Add the definition of libtool in case we're using
 	    # libtool to provide the shared library.
 	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
+	    printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
 	    print FD "$shlibdefs{'c'}$newline";
 	}
 	elsif ($found_sharedlib) {
@@ -972,6 +975,7 @@ sub DefaultVariables {
 	    # Add the definition of libtool incase we're using
 	    # libtool to provide the shared library.
 	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
+	    printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
 	    print FD "$shlibdefs{'c'}$newline";
 	    printMakeVariable( FD, "MKDIR_P", "\@MKDIR_P\@" );
 	}
@@ -1084,6 +1088,7 @@ sub DefaultVariables {
 		# Only add the libtool definition if there are targets that
 		# may need it.
 		printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
+		printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
 	    }
 	    $extkey = "$ext:lo";
 	    if (defined($extdef{$extkey})) {
@@ -2540,6 +2545,12 @@ library, or new library name)\n" if $debug;
 	my $rule = $extdef{"c:o"}; 
 	print FD "$rule\n";
     }
+    if (1) {
+	print FD "# Build the shared library from the shared object files\n";
+	print FD "$libdir/$newlibname: $libdir/$libname
+\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname -rpath \$(libdir))\n";
+    }
+    else {
     print FD "# Build the shared library from the shared object files
 $libdir/$newlibname: $libdir/$libname
 \tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi
@@ -2549,7 +2560,7 @@ $libdir/$newlibname: $libdir/$libname
 \t\tmv \$\$file \$\$bfile.o ; done; \\
 \t\${C_LINK_SHL} -o ../$newlibname *.o)
 \trm -rf $libdir/.tmp\n";
-
+}
     # FIXME: Here are the directions for building a shared library under
     # cygwin:
     #\t(cd $libdir/.tmp && ar x ../$libname && \\
@@ -2580,15 +2591,21 @@ $libdir/$newlibname: $libdir/$libname
 	    $newlibname = $1 . $newbase . $2;
 	}
 	print FD "\tif [ -n \"\@NO_WEAK_SYM\@\" -a \\
-\t\t\"$libbase\" != \"$newbase\" ] ; then \\
-\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi ;\\
+\t\t\"$libbase\" != \"$newbase\" ] ; then \\\n";
+	if (1) {
+	    print FD "\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname -rpath \$(libdir));\\\n";
+	}
+	else {
+	print FD \
+"\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi ;\\
 \t    \$(MKDIR_P) $libdir/.tmp ;\\
 \t    (cd $libdir/.tmp && ar x ../$libname && \\
 \t    for file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
 \t\tmv \$\$file \$\$bfile.o ; done; \\
 \t    \${C_LINK_SHL} -o ../$newlibname *.o) ;\\
-\t    rm -rf $libdir/.tmp ;\\
-\tfi\n";
+\t    rm -rf $libdir/.tmp ;\\\n";
+    }
+	print FD "\tfi\n";
     }
 }
 #

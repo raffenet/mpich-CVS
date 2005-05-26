@@ -903,7 +903,11 @@ if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
     # Also turn off the libtool tests
     enable_shared=no
 fi
-
+CREATESHLIB=false
+if test "$ENABLE_SHLIB" != "none" ; then
+   CREATESHLIB=`pwd`/src/util/createshlib
+fi
+AC_SUBST(CREATESHLIB)
 # ----------------------------------------------------------------------------
 # Support for the language bindings: Fortran 77, Fortran 90, and C++
 #
@@ -3965,6 +3969,7 @@ dnl a build aborts due to an error (this is intended to help developers)
 AC_OUTPUT_COMMANDS([if [ ! -d lib ] ; then mkdir lib ; fi 
 date > lib/newconfig])
 
+AC_OUTPUT_COMMANDS([chmod +x src/util/createshlib])
 
 # For the examples, we want to use the scripts to encourage users
 # to use them and to make them work more robustly with shared libraries
@@ -3997,6 +4002,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/env/mpif90.conf \
           src/env/mpich2version \
 	  src/env/Makefile\
+	  src/util/createshlib \
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
 	  src/mpi/coll/Makefile \

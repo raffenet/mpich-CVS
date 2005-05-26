@@ -1,0 +1,156 @@
+#! /bin/sh
+# -*- Mode: shell-script; -*-
+#
+# This is a simplified tool for creating and installing shared libraries
+# Like libtool, is has a link and install mode
+# It handles fewer cases than libtool, but it is also simpler and easier to
+# fix for specific systems.  At some time, we may decide to switch to 
+# libtool.  For simplicity in that case, we use a subset of libtool's 
+# command-line options (almost; not all args are included)
+#
+#
+# Typical use
+#    --mode=link -o libname.la -rpath $libdir 
+# creates the libname.<shared-library-extension> from libname.la,
+# for eventual installation in libdir
+#
+#    --mode=install libname.la $destdir/libname.la
+# or
+#    --mode=install dir/libname.sharedlibext $destdir/libname.sharelibext
+# installs libname into destdir.  It may need to re-link to handle the
+# effect of rpath.
+#
+# Set the characteristics of the shared library support, determined 
+# by configure
+CC="@CC@"
+C_LINK_SHL="@C_LINK_SHL@"
+SHLIB_EXT="@SHLIB_EXT@"
+INSTALL="@INSTALL@"
+INSTALL_PROGRAM="@INSTALL_PROGRAM@"
+libtype="@ENABLE_SHLIB@"
+#
+# Set the defaults
+mode=link
+srclibname=""
+destlibname=""
+destdir=""
+Show=eval
+
+# Get the options
+nextarg=""
+for arg in "$@" ; do
+   if [ -n "$nextarg" ] ; then
+       case $nextarg in 
+	   -o)
+	   srclibname=$arg
+	   ;;
+	   -rpath)
+	   destdir=$arg
+	   ;;
+	   *)
+	   # Ignoring things like version info for now
+	   ;;
+       esac
+       nextarg=""
+       continue
+   fi
+   option=""
+   case $arg in 
+       *=*) option=`echo A$arg | sed -e 's/A.*=//'`
+   esac
+
+   case $arg in 
+       --mode=*) mode=$option ;;
+       -o|-rpath|-version-info) # next arg is value for this option
+       nextarg=$arg
+       ;;
+       -echo) set -x ;;
+       -dryrun) Show=echo ;;
+       *)
+       # The remaining arguments are used for install
+       if [ -z "$srclibname" ] ; then
+	   srclibname=$arg
+       elif [ -z "$destlibname" ] ; then
+	   destlibname=$arg
+       else
+	   echo "Unrecognized argument $arg"
+	   exit 1
+       fi
+       ;;
+   esac
+done
+
+if [ -z "$srclibname" ] ; then
+    exit 1
+fi
+
+# Peel the srclibname into the srclibdir, srclibbase, srclibext
+srclibext=`echo $srclibname | sed -e 's/.*\.//'`
+srclibdir=`echo $srclibname | sed 's/\(.*\)\/.*/\1/'`
+if [ "$srclibdir" = "$srclibname" ] ; then
+    srclibdir=.
+fi
+srclibbase=`basename $srclibname .$srclibext`
+
+# Now, process the steps
+
+postmode=""
+if [ $mode = install ] ; then
+    postmode=install
+    case $libtype in 
+	gcc-osx)
+	# Rebuild the library with a new install name.  We do this by 
+	# changing the mode to link and performing the install later.
+	mode=link
+	;;
+	*)
+	# Done during postmode
+	;;
+    esac
+fi
+
+if [ $mode = link ] ; then
+    # The common step: extract the .lo files and make them .o files
+    
+    curdir=`pwd`
+
+    if [ "$srclibdir" != "." ] ; then cd $srclibdir ; fi
+    if [ -d .tmp ] ; then rm -rf .tmp ; fi
+    mkdir .tmp
+    (cd .tmp && ar x ../$srclibbase.la && \
+        for file in *.lo ; do bfile=`basename $file .lo` ; \
+            mv $file $bfile.o ; done; )
+
+    # This step depends on the specific type of shared library,
+    # though many systems can use a similar model
+
+    case $libtype in 
+    gcc-osx)
+    # Mac OS/X
+    $Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT \
+		  -install_name $libdir/$srclibbase.$SHLIB_EXT .tmp/*.o
+		  ;;		
+    *)
+    # This is the default model
+    $Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT .tmp/*.o
+    ;;
+    esac
+
+    # Common cleanup code
+    rm -rf .tmp
+
+    if [ "$srclibdir" != "." ] ; then cd $curdir ; fi
+
+elif [ $mode = install ] ; then
+    :
+else 
+    echo "Unknown mode $mode"
+    exit 1
+fi
+
+if [ "$postmode" = install ] ; then
+    if [ -z "$destlibname" ] ; then
+	destlibname="$destdir/$srclibname.$SHLIB_EXT"
+    fi
+    $Show $INSTALL_PROGRAM $srclibdir/$srclibbase.$SHLIB_EXT $destlibname
+fi
