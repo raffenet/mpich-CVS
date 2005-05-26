@@ -86,6 +86,14 @@ case "$enable_sharedlibs" in
     # May need -fPIC 
     CC_SHL='${CC} -fpic'
     C_LINKPATH_SHL="-Wl,-rpath -Wl,"
+    # We need to test that this isn't osx.  The following is a 
+    # simple hack
+    osname=`uname -s`
+    case $osname in 
+    *Darwin*|*darwin*)
+	AC_MSG_ERROR([You must specify --enable-sharedlibs=gcc-osx for Mac OS/X])
+    ;;	
+    esac
     ;;
     libtool)
     AC_MSG_WARN([Creating shared libraries using libtool not yet supported])
