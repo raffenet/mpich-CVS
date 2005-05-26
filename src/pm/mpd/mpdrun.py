@@ -146,8 +146,8 @@ def mpdrun():
         mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
         exit(-1)
     if msg['mpd_version'] != mpd_version():
-        mpd_print(1,'mpd version %s does not match mine %s' % \
-                  (msg['mpd_version'],mpd_version) )
+        mpd_print(1,'mpd version %s does not match mpdrun version %s' % \
+                  (msg['mpd_version'],mpd_version()) )
         exit(-1)
 
     if not parmdb['ignore_rcfile']:
