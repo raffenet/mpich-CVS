@@ -1010,7 +1010,7 @@ if ($doFuncspec) {
 # create the master file
 $filename = "mpicxx.h.in";
 $OUTFD = OUTFILEHANDLE;
-open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
+open ( $OUTFD, ">${filename}.new" ) || die "Could not open ${filename}.new\n";
 # Use the derived file as a source
 $files[$#files+1] = "mpicxx.h";
 &print_header;
@@ -1147,6 +1147,12 @@ typedef int MPI_File;\
 	#print "$routine - $arginfo\n";
         &PrintRoutineDef( $OUTFD, "base", $routine, $arginfo, 1 );
     }
+    # Special case: the typedefs for the datarep function
+print $OUTFD "\
+typedef int Datarep_extent_function( const Datatype&, Aint&, void *);
+typedef int Datarep_conversion_function( void *, Datatype &, int, void *,
+                Offset, void * );
+\n";
 
     print $OUTFD "\n";
 
@@ -1167,6 +1173,7 @@ typedef int MPI_File;\
     print $OUTFD "} // namespace MPI\n";
 
     close ( $OUTFD );
+    &ReplaceIfDifferent( $filename, "${filename}.new" );
 
 
 # Build the special routines
@@ -1176,7 +1183,8 @@ typedef int MPI_File;\
 # This block can be used to create the Makefile
 #
 # This isn't quite right.  mpicxx.h isn't a regular kind of source file.
-open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
+$filename = "Makefile.sm";
+open ( MAKEFD, ">${filename}.new" ) || die "Cannot create ${filename}.new";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 # This line is unfortunately necessary to ensure that a working
 # autoconf is used.
@@ -1230,6 +1238,8 @@ if ($doCoverage) {
 }
 
 close( MAKEFD );
+&ReplaceIfDifferent( $filename, "${filename}.new" );
+
 
 #
 # ------------------------------------------------------------------------
@@ -1784,7 +1794,8 @@ extern Datatype TWOINTEGER;
 # Build the special routines
 sub build_specials {
     # The init routine contains some configure-time values.
-    open( $OUTFD, ">initcxx.cxx" ) || die "Cannot open initcxx.cxx\n";
+    my $filename = "initcxx.cxx";
+    open( $OUTFD, ">${filename}.new" ) || die "Cannot open ${filename}.new\n";
     @files[$#files+1] = "initcxx.cxx";
     &print_header;
     print $OUTFD "#include \"mpi.h\"\n";
@@ -2252,6 +2263,70 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
 }
 \n";
 
+    # The data rep conversion functions need to be wrapped in C code
+    print $OUTFD "
+extern \"C\" {
+//
+// Rather than use a registered interposer, instead we interpose, taking 
+// advantage of the extra_data field, similar to the handling of Grequest.
+typedef struct { 
+    Datarep_conversion_function *read_fn;
+    Datarep_conversion_function *write_fn;
+    Datarep_extent_function *extent_fn;
+    void *orig_extra_state;
+    } MPIR_Datarep_data;
+int MPIR_Call_datarep_read_fn( void *userbuf, MPI_Datatype datatype, 
+			       int count, 
+			       void *filebuf, MPI_Offset position, 
+			       void *extra_state )
+{
+    MPIR_Datarep_data *ldata = (MPIR_Datarep_data *)extra_state;
+    Datatype dtype = (Datatype)datatype;
+    return (ldata->read_fn)( userbuf, dtype, count, filebuf,
+			    position, ldata->orig_extra_state);
+}
+int MPIR_Call_datarep_write_fn( void *userbuf, MPI_Datatype datatype, 
+			       int count, 
+			       void *filebuf, MPI_Offset position, 
+			       void *extra_state )
+{
+    MPIR_Datarep_data *ldata = (MPIR_Datarep_data *)extra_state;
+    Datatype dtype = (Datatype)datatype;
+    return (ldata->write_fn)( userbuf, dtype, count, filebuf,
+			     position, ldata->orig_extra_state);
+}
+int MPIR_Call_datarep_extent_fn( MPI_Datatype datatype, MPI_Aint *extent,
+				 void *extra_state ) {
+    MPIR_Datarep_data *ldata = (MPIR_Datarep_data *)extra_state;
+    Aint myextent;
+    int err;
+    err =  (ldata->extent_fn)( (Datatype)datatype, myextent, 
+			       ldata->orig_extra_state);
+    *extent = myextent;
+}
+} /* extern C */
+void Register_datarep( const char *datarep, 
+		       Datarep_conversion_function *read_fn,
+		       Datarep_conversion_function *write_fn,
+		       Datarep_extent_function *extent_fn,
+		       void *orig_extra_state )
+{
+    int err;
+    MPIR_Datarep_data *ldata = new(MPIR_Datarep_data);
+    ldata->read_fn = read_fn;
+    ldata->write_fn = write_fn;
+    ldata->extent_fn = extent_fn;
+    ldata->orig_extra_state = orig_extra_state;
+    err = MPI_Register_datarep( (char *)datarep, 
+				MPIR_Call_datarep_read_fn,
+				MPIR_Call_datarep_write_fn, 
+				MPIR_Call_datarep_extent_fn, (void *)ldata );
+    /* Because datareps are never freed, the space allocated in this
+       routine for ldata will never be freed */
+}
+";
+
+
     print $OUTFD "\
 void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
 		     int outsize, int &position, const Comm &comm ) const {\n";
@@ -2444,6 +2519,7 @@ Grequest Grequest::Start( Grequest::Query_function query_fn,
 
     print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, "${filename}.new" );
 }
 
 # ------------------------------------------------------------------------
@@ -4225,6 +4301,34 @@ sub printDelete {
     }
     else {
 	print $FD "delete $name;\n";
+    }
+}
+# ----------------------------------------------------------------------------
+#
+# Replace old file with new file only if new file is different
+# Otherwise, remove new filename 
+sub ReplaceIfDifferent {
+    my ($oldfilename,$newfilename) = @_;
+    my $rc = 1;
+    if (-s $oldfilename) { 
+	$rc = system "cmp -s $newfilename $oldfilename";
+	$rc >>= 8;   # Shift right to get exit status
+    }
+    if ($rc != 0) {
+	# The files differ.  Replace the old file 
+	# with the new one
+	if (-s $oldfilename) {
+	    print STDERR "Replacing $oldfilename\n";
+	    unlink $oldfilename;
+	}
+	else {
+	    print STDERR "Creating $oldfilename\n";
+	}
+	rename $newfilename, $oldfilename || 
+	    die "Could not replace $oldfilename";
+    }
+    else {
+	unlink $newfilename;
     }
 }
 # ----------------------------------------------------------------------------
