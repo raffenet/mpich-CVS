@@ -127,8 +127,12 @@ if [ $mode = link ] ; then
     case $libtype in 
     gcc-osx)
     # Mac OS/X
+    if [ -z "$destlibname" ] ; then
+	abssrclibdir=`(cd $srclibdir && pwd)`
+        destlibname="$abssrclibdir/$srclibbase.$SHLIB_EXT"
+    fi
     $Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT \
-		  -install_name $libdir/$srclibbase.$SHLIB_EXT .tmp/*.o
+		  -install_name $destlibname .tmp/*.o
 		  ;;		
     *)
     # This is the default model
