@@ -138,7 +138,7 @@
 			require = "false"
 		/>
 -->
-        <example>Example: winconfigure.wsf --force</example>
+        <example>Example: winconfigure.wsf --cleancode</example>
     </runtime>
 <script language="VBScript">
 
@@ -3792,6 +3792,9 @@ Function CompileFile(fname)
 	If Right(fname, 2) = ".h" Then
 		CompileFile = false
 	End If
+	If fname = "register_datarepf.c" Then
+		CompileFile = false
+	End If
 End Function
 
 Sub OutputLine(path, line)
@@ -3899,7 +3902,8 @@ Sub FindSimpleMakeFiles(folder, trimpath)
 				End If
 				If fortran_files_found Then
 					mfile.WriteLine("{..\" & Right(file.ParentFolder, Len(file.ParentFolder) - trimpath) & "}.f{$(" & outdir & ")}.obj:")
-					mfile.WriteLine("    $(fc) $(" & fort_prefix & "fortflags) /Fo""$(" & outdir & ")\\"" /Fd""$(" & outdir & ")\\"" $**")
+					'mfile.WriteLine("    $(fc) $(" & fort_prefix & "fortflags) /Fo""$(" & outdir & ")\\"" /Fd""$(" & outdir & ")\\"" $**")
+					mfile.WriteLine("    $(fc) $(" & fort_prefix & "fortflags) /module:""$(" & outdir & ")\\"" /object:""$(" & outdir & ")\\"" $**")
 					mfile.WriteLine
 				End If
 			End If
@@ -3932,26 +3936,27 @@ Function GenBuild()
 	bfile.WriteLine("REM   (C) 2001 by Argonne National Laboratory.")
 	bfile.WriteLine("REM      See COPYRIGHT in top-level directory.")
 	bfile.WriteLine
-	bfile.WriteLine("nmake /S")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=sock RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=mt")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=mt RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ssm")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ssm RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=shm")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=shm RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=sshm")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=sshm RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ib")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ib RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ib IB=VAPI")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=essm")
-	bfile.WriteLine("nmake /S /NOLOGO CHANNEL=essm RLOG=1")
-	bfile.WriteLine("nmake /S /NOLOGO cxx")
-	bfile.WriteLine("nmake /S /NOLOGO fort")
-	bfile.WriteLine("nmake /S /NOLOGO gfort")
-	bfile.WriteLine("nmake /S /NOLOGO sfort")
+	bfile.WriteLine("IF ""%1"" == """" ( SET SILENT=/S ) ELSE ( SET SILENT= )")
+	bfile.WriteLine("nmake %SILENT%")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sock RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=mt")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=mt RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ssm")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ssm RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO cxx")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO fort")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO gfort")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO sfort")
 	bfile.Close()
 
 	Set mfile = f.CreateTextFile("winbuild\makefile", true)
@@ -4100,9 +4105,9 @@ Function GenBuild()
 	mfile.WriteLine(" /DF77_NAME_UPPER \")
 	mfile.WriteLine(" /DUSE_FORT_MIXED_STR_LEN \")
 	mfile.WriteLine(" /DHAVE_C_API")
-	mfile.WriteLine("fortflags = /nologo /iface:cref /c")
-	mfile.WriteLine("gfortflags = /nologo /names:lowercase /iface:cref /assume:underscore /c")
-	mfile.WriteLine("sfortflags = /nologo /iface:stdcall /c")
+	mfile.WriteLine("fortflags = /iface:cref /c /names:uppercase")
+	mfile.WriteLine("gfortflags = /iface:cref /assume:underscore /c /names:lowercase")
+	mfile.WriteLine("sfortflags = /iface:stdcall /c /names:uppercase")
 	mfile.WriteLine("impl_cxxflags = $(cflags)")
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(fc)"" == """"")
@@ -4117,6 +4122,17 @@ Function GenBuild()
 	mfile.WriteLine("IB_PATH = c:\mellanox")
 	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine("cflags = $(cflags) /DUSE_IB_$(IB) /I$(IB_PATH)\include")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""mt""")
+	mfile.WriteLine("cflags = $(cflags) \")
+	mfile.WriteLine(" /DMPICH_MULTITHREADED \")
+	mfile.WriteLine(" /I..\src\mpid\ch3\channels\sock\include \")
+	mfile.WriteLine(" /I..\src\mpid\ch3\channels\sock\src")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""essm""")
+	mfile.WriteLine("cflags = $(cflags) /DMPICH_MULTITHREADED")
 	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine
 	mfile.WriteLine("mpich2_libs = activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mswsock.lib ws2_32.lib mpr.lib rpcrt4.lib crypt32.lib gdi32.lib kernel32.lib advapi32.lib")
@@ -4141,6 +4157,7 @@ Function GenBuild()
 	mfile.WriteLine("OUTDIR = $(CPU)\$(CFG)\$(CHANNEL)$(P)")
 	mfile.WriteLine("BIN_OUTDIR = $(CPU)\$(CFG)\bin")
 	mfile.WriteLine("SOCK_OUTDIR = $(CPU)\$(CFG)\sock$(P)")
+	mfile.WriteLine("MT_OUTDIR = $(CPU)\$(CFG)\mt$(P)")
 	mfile.WriteLine("SSM_OUTDIR = $(CPU)\$(CFG)\ssm$(P)")
 	mfile.WriteLine("SHM_OUTDIR = $(CPU)\$(CFG)\shm$(P)")
 	mfile.WriteLine("SSHM_OUTDIR = $(CPU)\$(CFG)\sshm$(P)")
@@ -4193,6 +4210,7 @@ Function GenBuild()
 	mfile.WriteLine("	if exist $(OUTDIR)\$(NULL) rd /s /q $(OUTDIR)")
 	mfile.WriteLine("	if exist $(BIN_OUTDIR)\$(NULL) rd /s /q $(BIN_OUTDIR)")
 	mfile.WriteLine("	if exist $(SOCK_OUTDIR)\$(NULL) rd /s /q $(SOCK_OUTDIR)")
+	mfile.WriteLine("	if exist $(MT_OUTDIR)\$(NULL) rd /s /q $(MT_OUTDIR)")
 	mfile.WriteLine("	if exist $(SSM_OUTDIR)\$(NULL) rd /s /q $(SSM_OUTDIR)")
 	mfile.WriteLine("	if exist $(SHM_OUTDIR)\$(NULL) rd /s /q $(SHM_OUTDIR)")
 	mfile.WriteLine("	if exist $(SSHM_OUTDIR)\$(NULL) rd /s /q $(SSHM_OUTDIR)")
@@ -4383,13 +4401,24 @@ Function GenBuild()
 	'CreateObjs "ch3sock", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, true
 
 	mfile.WriteLine
+	mfile.WriteLine("# ch3mt")
+	mfile.WriteLine
+	outdir = "MT_OUTDIR"
+	CreateRules f.GetFolder("src\mpid\ch3\channels\sock"), trimlength
+	CreateRules f.GetFolder("src\util\events"), trimlength
+	mfile.WriteLine("{..\src\util\thread}.c{$(MT_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(MT_OUTDIR)\\"" /Fd""$(MT_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	CreateObjs "ch3mt", f.GetFolder("src\mpid\ch3\channels\sock"), trimlength, true, false
+	CreateObjs "ch3mt", f.GetFolder("src\util\events"), trimlength, false, false
+	mfile.WriteLine(" \" & vbCrLf & "	$(MT_OUTDIR)\mpe_thread_win.obj")
+
+	mfile.WriteLine
 	mfile.WriteLine("# ch3ssm")
 	mfile.WriteLine
 	outdir = "SSM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength
-	'CreateRules f.GetFolder("src\mpid\common\sock\iocp"), trimlength
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength, true, true
-	'CreateObjs "ch3sock", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, true
 
 	mfile.WriteLine
 	mfile.WriteLine("# ch3shm")
@@ -4410,9 +4439,13 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "ESSM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\essm"), trimlength
-	'CreateRules f.GetFolder("src\mpid\common\sock\iocp"), trimlength
-	CreateObjs "ch3essm", f.GetFolder("src\mpid\ch3\channels\essm"), trimlength, true, true
-	'CreateObjs "ch3sock", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, true
+	CreateRules f.GetFolder("src\util\events"), trimlength
+	mfile.WriteLine("{..\src\util\thread}.c{$(ESSM_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(ESSM_OUTDIR)\\"" /Fd""$(ESSM_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	CreateObjs "ch3essm", f.GetFolder("src\mpid\ch3\channels\essm"), trimlength, true, false
+	CreateObjs "ch3essm", f.GetFolder("src\util\events"), trimlength, false, false
+	mfile.WriteLine(" \" & vbCrLf & "	$(ESSM_OUTDIR)\mpe_thread_win.obj")
 
 	mfile.WriteLine
 	mfile.WriteLine("# ch3ib")
@@ -4441,6 +4474,8 @@ Function GenBuild()
 	mfile.WriteLine("channel_objs = $(ch3essm_objs)")
 	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
 	mfile.WriteLine("channel_objs = $(ch3ib_objs)")
+	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""mt""")
+	mfile.WriteLine("channel_objs = $(ch3mt_objs)")
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine("!ERROR Invalid channel selected - $(CHANNEL)")
 	mfile.WriteLine("!ENDIF")
@@ -4484,10 +4519,16 @@ Function GenBuild()
 	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3essm_objs) $(mpich2_objs) $(rlog_libs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
-	'mfile.WriteLine("ch3ib: $(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("ch3ib: $(IB_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
-	'mfile.WriteLine("$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3ib_objs) $(mpich2_objs)")
-	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ib_objs) $(mpich2_objs) $(rlog_libs) -out:$(ESSM_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine("$(IB_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3ib_objs) $(mpich2_objs)")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3ib_objs) $(mpich2_objs) $(rlog_libs) -out:$(IB_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine
+	'mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""mt""")
+	'mfile.WriteLine("ch3mt: $(MT_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
+	'mfile.WriteLine
+	'mfile.WriteLine("$(MT_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(ch3mt_objs) $(mpich2_objs)")
+	'mfile.WriteLine("	$(link) $(dlllflags) $(ch3mt_objs) $(mpich2_objs) $(rlog_libs) -out:$(MT_OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll")
 	'mfile.WriteLine
 	'mfile.WriteLine("!ELSE")
 	'mfile.WriteLine("!ERROR No channel selected")
@@ -4520,7 +4561,47 @@ Function GenBuild()
 	extra_flags = "$(sfcflags)"
 	fort_prefix = "s"
 	CreateRules f.GetFolder("src\binding\f77"), trimlength
-	CreateObjs "sfort", f.GetFolder("src\binding\f77"), trimlength, true, true
+	CreateObjs "sfort", f.GetFolder("src\binding\f77"), trimlength, true, false
+	' Add the extra character* versions of the MPI functions here
+	mfile.WriteLine(" \" & vbCrLf & "	$(SFORT_OUTDIR)\accumulatefs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\allgatherfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\allgathervfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\allreducefs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\alltoallfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\alltoallvfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\alltoallwfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\bcastfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\bsendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\bsend_initfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\bufattachfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\bufdetachfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\exscanfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\gatherfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\gathervfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\getfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\ibsendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\irecvfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\irsendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\isendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\issendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\putfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\recvfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\recv_initfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\redscatfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\reducefs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\rsendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\rsend_initfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\scanfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\scatterfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\scattervfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\sendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\sendrecvfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\send_initfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\sndrcvrplfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\ssendfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\ssend_initfs.obj \")
+	mfile.WriteLine("	$(SFORT_OUTDIR)\win_createfs.obj")
+	mfile.WriteLine
 	mfile.WriteLine("$(SFORT_OUTDIR)\fmpich2s$(D).dll: $(sfort_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(sfort_objs) $(MPI_OUTDIR)\mpi$(D).lib -out:$(SFORT_OUTDIR)\fmpich2s$(D).dll")
 	mfile.WriteLine
