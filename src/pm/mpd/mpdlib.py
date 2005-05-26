@@ -152,7 +152,7 @@ def mpd_check_python_version():
     return 0
 
 def mpd_version():
-    return (0,5,0,'September, 2004 release')  # major, minor, micro, special
+    return (1,0,0,'May, 2005 release')  # major, minor, micro, special
 
 def mpd_get_my_username():
     return getpwuid(getuid())[0]    #### instead of environ['USER']
