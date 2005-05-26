@@ -146,7 +146,7 @@ Long parameter names may be abbreviated to their first letters by using
 --listenport specifies a port for this mpd to listen on; by default it will
   acquire one from the system.
 
-A file named .mpd.conf file must be present in the users home directory
+A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
   a line with secretword=<secretword>
 
