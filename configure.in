@@ -257,7 +257,7 @@ fi
 if test -z "$master_top_srcdir" ; then 
     # This needs to be an absolute pathname
     case "$use_top_srcdir" in
-    /) ;;
+    /*) ;;
     *)
         use_top_srcdir=`(cd $use_top_srcdir && pwd)`
 	;;	
@@ -302,7 +302,7 @@ hasdir=no
 devicedir=$use_top_srcdir/src/mpid/$device_name
 devicereldir=src/mpid/$device_name
 case "$device_name" in
-     /) hasdir=yes 
+     /*) hasdir=yes 
      devicedir=$DEVICE
      # Get the name from the leaf
      device_name=`echo $device_name ~ sed -e 's%.*/%%'`
