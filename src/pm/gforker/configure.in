@@ -102,6 +102,9 @@ dnl AC_PROG_RANLIB
 # that we're not using in mpiexec).
 case "$ENABLE_SHLIB" in 
     none) ;;
+    gcc-osx)
+    # We need to panic; -static won't work on OS/X.
+    ;;
     gcc) 
     LDFLAGS="$LDFLAGS -static"    
     ;;
