@@ -536,14 +536,14 @@ if ($build_prototypes) {
 }
 
 %skipBlocks = ();
-&ReadAndProcessInterface( $prototype_file );
+&ReadAndProcessInterface( $prototype_file, 0 );
 
 # if doing MPI2, we also need to read the MPI-2 protottypes
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
  	 	    'HAVE_MPI_INFO' => 1,
 		    'MPICH2' => 1 );
-    &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in" );
+    &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in", 1 );
     %skipBlocks = ();
 }
 
@@ -2865,12 +2865,13 @@ sub print_mpif_int {
     print MPIFFD "       PARAMETER ($key=$value)\n";
 }
 
+
 sub ReadAndProcessInterface {
     my $prototype_file = $_[0];
+    my $protectMPIO = $_[1];      # Wrap MPI-IO routines in ifdefs MPI_MODE_RDONLY
     my $linecount = 0;
     my $newfilename = "";
     my $filename = "";
-
     open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
 
     # Skip to prototypes
@@ -2984,12 +2985,18 @@ sub ReadAndProcessInterface {
 		#&print_attr;
 		print $OUTFD "{\n";
 		&specialInitClear;
+		if ($protectMPIO) {
+		    print $OUTFD "#ifdef MPI_MODE_RDONLY\n";
+ 		}
 		&print_special_decls( $routine_name );
 		print $OUTFD "    $errparmlval = $routine_prefix$routine_name";
 		print "Printing call arguments for mpi_${lcname}_\n" if $debug;
 		&print_call_args( $args );
 		# Print any post call processing
 		&print_post_call( $routine_name, $args );
+		if ($protectMPIO) {
+		    print $OUTFD "#else\n$errparmlval = MPI_ERR_INTERN;\n#endif\n";
+ 		}
 		if ($returnErrval) {
 		    print $OUTFD "    return $errparmrval;\n";
 		}
