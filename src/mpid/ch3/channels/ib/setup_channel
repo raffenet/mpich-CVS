@@ -35,11 +35,15 @@ done
 
 devsubsystems="$devsubsystems src/mpid/common/locks"
 
-if test "$ibu_name" = ibal ; then
-    CPPFLAGS="$CPPFLAGS -I$ibu_path/iba/linux/include/iba"
-fi
-if test "$ibu_name" = vapi ; then
-    CPPFLAGS="$CPPFLAGS -I$ibu_path/include -I$ibu_path/wrap"
+if test -z "$ibu_path_include" ; then
+  if test "$ibu_name" = ibal ; then
+      CPPFLAGS="$CPPFLAGS -I$ibu_path/iba/linux/include/iba"
+  fi
+  if test "$ibu_name" = vapi ; then
+      CPPFLAGS="$CPPFLAGS -I$ibu_path/include -I$ibu_path/wrap"
+  fi
+else
+    CPPFLAGS="$CPPFLAGS -I$ibu_path_include"
 fi
 if test "$rdma_mode" = get ; then
     CPPFLAGS="$CPPFLAGS -DUSE_RDMA_GET"

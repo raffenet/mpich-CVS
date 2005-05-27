@@ -41,7 +41,7 @@ fi
 if test "$ibu_name" = vapi ; then
     AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
     IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
-    IB_LDFLAGS="$IB_LDFLAGS -L$ibu_path/lib"
+    IB_LDFLAGS="$IB_LDFLAGS -L$ibu_path_lib"
 fi
 
 PAC_PROG_MAKE

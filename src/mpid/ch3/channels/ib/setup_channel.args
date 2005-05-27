@@ -21,6 +21,16 @@ for arg in $ac_configure_args ; do
     ibu_path=`echo $arg | sed 's/--with-ib-path=//'`
     ;;
   esac
+  case $arg in
+    --with-ib-path-include=*)
+    ibu_path_include=`echo $arg | sed 's/--with-ib-path-include=//'`
+    ;;
+  esac
+  case $arg in
+    --with-ib-path-lib=*)
+    ibu_path_lib=`echo $arg | sed 's/--with-ib-path-lib=//'`
+    ;;
+  esac
 done
 
 if test -z "$channel_rndv" ; then
@@ -41,4 +51,8 @@ fi
 
 if test "$ibu_name" = vapi -a -z "$ibu_path" ; then
     ibu_path=/usr/mellanox
+fi
+
+if test -z "$ibu_path_lib" ; then
+    ibu_path_lib=$ibu_path/lib
 fi
