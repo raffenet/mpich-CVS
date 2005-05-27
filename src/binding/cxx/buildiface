@@ -1148,10 +1148,14 @@ typedef int MPI_File;\
         &PrintRoutineDef( $OUTFD, "base", $routine, $arginfo, 1 );
     }
     # Special case: the typedefs for the datarep function
+    # Only define these typedefs when MPI-IO is available (this is the same
+    # test as used for the rest of the I/O routines );
 print $OUTFD "\
+#ifdef MPI_MODE_RDONLY
 typedef int Datarep_extent_function( const Datatype&, Aint&, void *);
 typedef int Datarep_conversion_function( void *, Datatype &, int, void *,
                 Offset, void * );
+#endif
 \n";
 
     print $OUTFD "\n";
@@ -2264,6 +2268,9 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
 \n";
 
     # The data rep conversion functions need to be wrapped in C code
+    # Only define this routine when MPI-IO is available (this is the same
+    # test as used for the rest of the I/O routines );
+print $OUTFD "#ifdef MPI_MODE_RDONLY\n";
     print $OUTFD "
 extern \"C\" {
 //
@@ -2325,6 +2332,7 @@ void Register_datarep( const char *datarep,
        routine for ldata will never be freed */
 }
 ";
+print $OUTFD "#endif\n";
 
 
     print $OUTFD "\
