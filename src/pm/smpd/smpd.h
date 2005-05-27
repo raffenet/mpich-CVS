@@ -53,7 +53,7 @@
 #include "smpd_database.h"
 #include "pmi.h"
 
-#define SMPD_VERSION                   "1.1"
+#include "smpd_version.h"
 #define SMPD_VERSION_FAILURE "version_failure"
 
 #define SMPD_LISTENER_PORT               8676

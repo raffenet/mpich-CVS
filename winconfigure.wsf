@@ -3792,9 +3792,9 @@ Function CompileFile(fname)
 	If Right(fname, 2) = ".h" Then
 		CompileFile = false
 	End If
-	If fname = "register_datarepf.c" Then
-		CompileFile = false
-	End If
+'	If fname = "register_datarepf.c" Then
+'		CompileFile = false
+'	End If
 End Function
 
 Sub OutputLine(path, line)
@@ -4962,24 +4962,14 @@ End If
 'End If
 
 Sub UpdateSMPDVersion
-	dim regEx, Match, Matches
-	set regEx = New RegExp
 	Set fin = f.OpenTextFile("maint\Version")
 	version_str = MyTrim(fin.ReadLine())
 	fin.Close()
-	Set fin = f.OpenTextFile("src\pm\smpd\smpd.h")
-	contents = fin.ReadAll()
-	fin.Close()
-	regEx.Pattern = "(#define SMPD_VERSION .*)"".*"""
-	contents = regEx.Replace(contents, "$1""" & version_str & """")
 	'WScript.Echo "Version = " & version_str
-	'WScript.Echo "smpd.h = " & contents
-	If contents <> "" Then
-		cEcho "Modifying version in file: src\pm\smpd\smpd.h"
-		Set fout = f.CreateTextFile("src\pm\smpd\smpd.h", true)
-		fout.Write(contents)
-		fout.Close()
-	End If
+	cEcho "Creating src\pm\smpd\smpd_version.h: " & version_str
+	Set fout = f.CreateTextFile("src\pm\smpd\smpd_version.h", true)
+	fout.WriteLine("#define SMPD_VERSION """ & version_str & """")
+	fout.Close()
 End Sub
 
 Call UpdateSMPDVersion()

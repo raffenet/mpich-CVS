@@ -15,6 +15,7 @@ mpiexec
 smpd
 smpdconf.h.in
 smpdconf.h
+smpd_version.h
 *.ncb
 *.suo
 *ebug*
