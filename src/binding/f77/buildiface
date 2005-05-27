@@ -1932,17 +1932,6 @@ sub FileToFint_out_arg {
 # Check for the null datarep functions
 sub checkdatarep_in_decl {
     my $count = $_[0];
-}
-sub checkdatarep_in_arg {
-    my $count = $_[0];
-    print $OUTFD "v$count";
-}
-sub checkdatarep_ftoc {
-    my $count = $_[0];
-
-    # Check to see if the pointer is the same as the null function
-    # We do something ugly here:  we exploit the fact that we know which is
-    # the first argument that needs this definition
     if ($count == 2) {
 print $OUTFD "
 #ifndef HAVE_MPI_CONVERSION_DEFN
@@ -1955,11 +1944,22 @@ print $OUTFD "
 #define mpi_conversion_fn_null_ mpi_conversion_fn_null
 /* Else leave name alone */
 #endif
-/* Add the prototype so the routine knows what this ise */
+/* Add the prototype so the routine knows what this is */
 extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
 #endif
 ";
     }
+}
+sub checkdatarep_in_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
+sub checkdatarep_ftoc {
+    my $count = $_[0];
+
+    # Check to see if the pointer is the same as the null function
+    # We do something ugly here:  we exploit the fact that we know which is
+    # the first argument that needs this definition
     print $OUTFD "\
     if (v$count == (MPI_Datarep_conversion_function *)mpi_conversion_fn_null_){
          v$count = 0;
